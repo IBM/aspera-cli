@@ -7,8 +7,12 @@ Released: [Place date of release here]
 ### New Features
 
 * `aoc`: Added `admin node update_status` to tell AoC to scan the node and get a new status.
+* **Windows**: Zip installer supports per-user or global installation.
+* **general**: Harden single file executable generation with `ocran`.
 
 ### Issues Fixed
+
+* `direct`: Fixed #263: Boolean transfer spec parameter `preserve_times` was incorrectly generating ascp option: `-p true`. Leading to error message: `no remote host specified`. Now it correctly generates `-p`.
 
 ### Breaking Changes
 
@@ -123,7 +127,7 @@ Released: 2026-05-28
 ### Issues Fixed
 
 * `format`: In `table` format with option `flat_hash=yes`, fixed that some parameters were not shown. Moreover, (Node API: /info), if an array of hash with name/value keys is returned with one extra key, still apply simplification.
-* **global**: Fixed #254.
+* **global**: Fixed #254: Security for SDK installation.
 
 ### Breaking Changes
 

@@ -63,7 +63,9 @@ namespace :doc do
   pdf_rule(Paths::PDF_MANUAL, Paths::MD_MANUAL)
 
   file Paths::TMPL_CONF_FILE => [Paths::BUILD_TOOLS, Paths::CONF_SIGNATURE] do
-    DocHelper.config_to_template(TestEnv.configuration, Paths::TMPL_CONF_FILE)
+    config = TestEnv.configuration
+    Aspera.assert(!config.empty?) { 'Need configuration to generate template' }
+    DocHelper.config_to_template(config, Paths::TMPL_CONF_FILE)
   end
 
   file Paths::TSPEC_JSON_SCHEMA => [Paths::TSPEC_YAML_SCHEMA] do
