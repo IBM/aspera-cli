@@ -478,6 +478,7 @@ properties:
       - direct
       - transferd
       - node
+    x-cli-switch: true
     x-cli-option: -p
   rate_policy:
     description: >-
