@@ -6,14 +6,16 @@ module Aspera
     # ═════════════════════════════════════════════════════════════════════════════
     # CommentParser
     #
-    # Parses the structured comments that aspera.conf places after each element.
+    # Parses the structured comments that `aspera.conf` places after each element.
     #
-    # Comment anatomy in aspera.conf:
+    # Comment anatomy in `aspera.conf`:
     #
+    # ```xml
     #   <level>log</level>
     #     <ǃ-- Logging Level: Lookup disable, log, dbg1 or dbg2 -->    ← primary
     #     <ǃ-- asconfigurator -x "set_logging_data;level,<value>" -->  ← tool hint (skip)
     #     <ǃ-- Amount of detail in logging. -->                        ← description
+    # ```
     #
     # The primary comment encodes:
     #   - Optional marker  : "Not defined by default."
