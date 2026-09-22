@@ -20,9 +20,11 @@ module Aspera
     class Result
       attr_reader :data, :fields
 
-      # @param data [Object,nil] The result data
-      # @param fields [Object] Specification of fields to include
+      # @param data [nil, Object] The result data
+      # @param fields [nil, Array<String>, Proc] Specification of fields to include
       def initialize(data: nil, fields: nil)
+        Aspera.assert_type(fields, NilClass, Array, Proc)
+        Aspera.assert_array_all(fields, String) if fields.is_a?(Array)
         @data = data
         @fields = fields
       end
@@ -39,18 +41,12 @@ module Aspera
         # Apply field filtering once for formats that need it
         filtered_data = formatter.filter_list_on_fields(@data)
         case formatter.format_type
-        when :text
-          formatter.display_message(:data, @data.to_s)
-        when :nagios
-          Nagios.process(@data)
-        when :ruby
-          formatter.display_message(:data, PP.pp(filtered_data, +''))
-        when :json
-          formatter.display_message(:data, JSON.generate(filtered_data))
-        when :jsonpp
-          formatter.display_message(:data, JSON.pretty_generate(filtered_data))
-        when :yaml
-          formatter.display_message(:data, YAML.dump(filtered_data))
+        when :nagios then Nagios.process(@data)
+        when :text   then formatter.display_message(:data, @data.to_s)
+        when :ruby   then formatter.display_message(:data, PP.pp(filtered_data, +''))
+        when :json   then formatter.display_message(:data, JSON.generate(filtered_data))
+        when :jsonpp then formatter.display_message(:data, JSON.pretty_generate(filtered_data))
+        when :yaml   then formatter.display_message(:data, YAML.dump(filtered_data))
         when :image
           if @data.nil?
             formatter.display_message(:data, formatter.special_format('null (no image)'))
@@ -82,8 +78,7 @@ module Aspera
             # here, data is the image blob
             formatter.display_message(:data, Preview::Terminal.build(data, **formatter.image_options))
           end
-        else
-          Aspera.error_unexpected_value(formatter.format_type) { 'format' }
+        else Aspera.error_unexpected_value(formatter.format_type) { 'format' }
         end
       end
     end
