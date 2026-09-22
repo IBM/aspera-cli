@@ -138,7 +138,7 @@ module Aspera
         end
       end
 
-      # Derive an AES key from +new_password+.
+      # Derive an AES key from `new_password`.
       # @legacy_key is true for vaults created by v4.26.0 or earlier (no kdf field):
       #   key = password truncated/zero-padded to key_bytes (same as symmetric-encryption did).
       # Otherwise PBKDF2 is used. When @kdf_params is nil (new vault or password change)

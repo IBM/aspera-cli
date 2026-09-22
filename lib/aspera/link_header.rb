@@ -31,7 +31,7 @@ module Aspera
       @links = links
     end
 
-    # Return the href of the first link whose +rel+ attribute matches +rel+.
+    # Return the href of the first link whose `rel` attribute matches `rel`.
     # Comparison is case-insensitive per RFC 7230 s.3.2 and RFC 8288 s.3.
     # Returns nil if no link with that relation exists.
     # @param rel [String]
@@ -41,7 +41,7 @@ module Aspera
     end
 
     class << self
-      # Parse a raw Link header value into a +LinkHeader+ instance.
+      # Parse a raw Link header value into a `LinkHeader` instance.
       # Uses StringScanner so that commas inside <URI> are not treated as separators.
       # @param raw [String, nil]
       # @return [LinkHeader]

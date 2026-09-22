@@ -1241,7 +1241,7 @@ module Aspera
         # and the command symbol was already consumed before the Node was instantiated.
         # Re-enters the DSL registry so Proc actions and intermediate nodes (sync, access_keys)
         # are resolved normally.
-        # Pre-resolved CLI arguments (e.g. path:) can be forwarded via +ctx+ to avoid
+        # Pre-resolved CLI arguments (e.g. path:) can be forwarded via `ctx` to avoid
         # re-consuming tokens that were already resolved by the calling plugin's DSL.
         # @param command [Symbol] command already consumed from the argument stream
         # @param ctx     [Hash]   pre-resolved context (keyword args forwarded to dispatch)

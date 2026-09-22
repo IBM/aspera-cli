@@ -282,7 +282,7 @@ module Aspera
         end
       end
 
-      # Downloads and extracts the SDK archive for the current platform into +folder+
+      # Downloads and extracts the SDK archive for the current platform into `folder`
       # @param folder  [String]      Destination folder path
       # @param url     [nil, String] URL to SDK archive, if nil: default url for version
       # @param version [nil, String] Specific version, if nil: latest version

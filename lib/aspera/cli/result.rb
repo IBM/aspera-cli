@@ -223,7 +223,7 @@ module Aspera
       end
 
       # Object list result (Array of Hash)
-      # @note The +total+ parameter is used to display pagination information (e.g., "Items: 10/100")
+      # @note The `total` parameter is used to display pagination information (e.g., "Items: 10/100")
       class ObjectList < Result
         attr_reader :total
 
@@ -294,7 +294,7 @@ module Aspera
         # @param id_result [String] Key in the result Hash used as item identifier
         # @param fields   [Object] Fields hint passed to the Result constructor (non-bulk only, when not :default)
         # @param bfail    [Boolean] When true, re-raise errors; when false, capture them as a status string
-        # @yieldparam item [Object] Each item in +items+
+        # @yieldparam item [Object] Each item in `items`
         # @yieldreturn [Hash, Array, nil] REST response; a Hash replaces the default id-keyed result
         # @return [Result::ObjectList, Result::SingleObject]
         def bulk(items, is_bulk:, command:, id_result: 'id', fields: :default, bfail: true)

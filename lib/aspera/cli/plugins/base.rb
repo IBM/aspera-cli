@@ -520,7 +520,7 @@ module Aspera
         end
 
         # Execute a leaf CommandSpec: resolve arguments and call action.
-        # Arguments already present in +ctx+ (pre-resolved by a parent plugin, e.g. aoc.rb forwarding
+        # Arguments already present in `ctx` (pre-resolved by a parent plugin, e.g. aoc.rb forwarding
         # path: into execute_nodegen4_command) are skipped — the token has already been consumed.
         # instance_arg (if any) is resolved here as an ArgumentSpec(type: :identifier) and merged
         # into ctx, exactly like any other keyword argument received by the action.
@@ -613,7 +613,7 @@ module Aspera
           end
         end
 
-        # Convenience wrapper: reads :bulk and :bfail from options, normalises +items+
+        # Convenience wrapper: reads :bulk and :bfail from options, normalizes `items`
         # to an Array, then delegates to Result.bulk.
         # Use this in action methods instead of the three-line boilerplate:
         #   is_bulk = options.get_option(:bulk)
@@ -623,7 +623,7 @@ module Aspera
         # @param command   [Symbol]         Operation name (:create, :delete, ...)
         # @param id_result [String]         Key used as item identifier in the result row
         # @param fields    [Object]         Fields hint passed to Result constructor (non-bulk only)
-        # @yieldparam item [Object]         Each item in +items+
+        # @yieldparam item [Object]         Each item in `items`
         # @return [Result::ObjectList, Result::SingleObject]
         def bulk_result(items, command:, id_result: 'id', fields: :default, &block)
           items = items.is_a?(Array) ? items : [items]

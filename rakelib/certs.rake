@@ -32,13 +32,13 @@ class Signer
     key_path
   end
 
-  # @return [Pathname] absolute path to the public certificate file, from the gemspec +cert_chain+
+  # @return [Pathname] absolute path to the public certificate file, from the gemspec `cert_chain`
   def cert_path
     cert_file = @spec.cert_chain&.first or abort('spec.cert_chain missing')
     Paths::TOP / cert_file
   end
 
-  # @return [String] maintainer email address, from the gemspec +email+ field
+  # @return [String] maintainer email address, from the gemspec `email` field
   def admin_email
     Array(@spec.email).first or abort('spec.email missing')
   end

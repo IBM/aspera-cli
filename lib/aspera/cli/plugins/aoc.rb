@@ -337,8 +337,8 @@ module Aspera
         # @param name   [Boolean] Include name
         # @return [Hash{Symbol, String => String}] the modified hash containing:
         #   * `workspace_id` [String] the unique identifier.
-        #   * `workspace_name` [String] (optional) the name, included if +name+ is true.
-        # @note The key type (String or Symbol) depends on the +string+ parameter.
+        #   * `workspace_name` [String] (optional) the name, included if `name` is true.
+        # @note The key type (String or Symbol) depends on the `string` parameter.
         def workspace_id_hash(hash = nil, string: false, name: false)
           info = aoc_api.workspace_info
           hash = {} if hash.nil?
@@ -416,7 +416,7 @@ module Aspera
         FILES_COMMANDS = (Node::COMMANDS_GEN4 + %i[transfer]).freeze
 
         # Execute a node gen4 command starting at given node and file IDs.
-        # Arguments already resolved by the DSL (e.g. path:) are forwarded via +resolved_args+
+        # Arguments already resolved by the DSL (e.g. path:) are forwarded via `resolved_args`
         # and injected into the dispatch context so node.rb does not re-consume them from the CLI.
         # @param command_repo       [Symbol] Command to execute (from Node::COMMANDS_GEN4 or :transfer)
         # @param node_id            [String] Node identifier
@@ -531,7 +531,7 @@ module Aspera
         end
 
         # Compute short-link purposes from shared_data keys and link_type.
-        # @param shared_data [Hash] :dropbox_id+:name or :file_id+:node_id
+        # @param shared_data [Hash] :dropbox_id + :name or :file_id + :node_id
         # @param link_type [Symbol] :public or :private
         # @return [Array(String,String)] [token_purpose, short_link_purpose]
         def short_link_purposes(shared_data, link_type)

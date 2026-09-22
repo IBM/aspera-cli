@@ -229,10 +229,10 @@ module Aspera
       end
 
       # Composite option handler for the `log` option (dot-notation sub-properties).
-      # Supported sub-properties: +level+, +type+, +format+
+      # Supported sub-properties: `level`, `type`, `format`
       # @param _option_sym [Symbol] Option name (unused, always :log)
-      # @param operation   [Symbol] +:set+ or +:get+
-      # @param value       [Hash,nil] Hash of sub-properties to set (only for +:set+)
+      # @param operation   [Symbol] `:set` or `:get`
+      # @param value       [Hash,nil] Hash of sub-properties to set (only for `:set`)
       def option_log(_option_sym, operation, value = nil)
         Aspera.assert_values(operation, %i[set get])
         case operation

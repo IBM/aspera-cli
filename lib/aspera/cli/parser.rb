@@ -622,8 +622,8 @@ module Aspera
         @current_group = name
       end
 
-      # Low-level positional argument reader.  Prefer +Base#resolve_argument+ from action methods.
-      # Direct calls from outside +Parser+ are legacy exceptions documented in ST12/ST13
+      # Low-level positional argument reader.  Prefer `Base#resolve_argument` from action methods.
+      # Direct calls from outside `Parser` are legacy exceptions documented in ST12/ST13
       # (mixins without DSL: sync_actions, ascp_actions; setup callbacks: aoc.rb).
       # @api private
       # @param descr       [String] description for help

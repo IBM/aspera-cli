@@ -5,7 +5,7 @@ require 'aspera/log'
 require 'aspera/assert'
 
 module Aspera
-  # Run +ascmd+ commands using specified executor (usually, remotely on transfer node)
+  # Run `ascmd` commands using specified executor (usually, remotely on transfer node)
   # Equivalent of SDK "command client"
   # execute: "ascmd -h" to get syntax
   # Note: "ls" can take filters: as_ls -f *.txt -f *.bin /

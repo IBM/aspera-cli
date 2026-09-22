@@ -40,7 +40,7 @@ module Aspera
       end
 
       # Install the transfer SDK (ascp + transferd) from a URL or using the default source.
-      # Version defaults to +Info::SDK_VERSION+; pass +LATEST+ as argument to install the latest available version.
+      # Version defaults to `Info::SDK_VERSION`; pass `LATEST` as argument to install the latest available version.
       # @param version [String, nil] version to install; nil means use the default SDK version
       # @return [Result::Status] installation result message
       def install_transfer_sdk(version: nil)

@@ -22,7 +22,7 @@ module Aspera
   #
   # The short form is consistent with RFC 8089 (file:///<path> = absolute,
   # file:<path> = relative).  Both forms are handled identically by this module.
-  # The canonical form built by {file_url} uses the +file:///+ prefix.
+  # The canonical form built by {file_url} uses the `file:///` prefix.
   module UriReader
     SCHEME_FILE = 'file'
     SCHEME_FILE_PFX1 = "#{SCHEME_FILE}:"
@@ -31,13 +31,13 @@ module Aspera
     SCHEME_FILE_PFX2 = "#{SCHEME_FILE_PFX1}///"
     private_constant :SCHEME_FILE, :SCHEME_FILE_PFX1, :SCHEME_FILE_PFX2
     class << self
-      # @return [Boolean] true if +url+ uses the file: scheme recognised by this module
+      # @return [Boolean] true if `url` uses the file: scheme recognised by this module
       def file?(url)
         url.start_with?(SCHEME_FILE_PFX1)
       end
 
-      # Build a file: URL from +path+.
-      # A relative path yields +file:///path+; an absolute path yields +file:////path+.
+      # Build a file: URL from `path`.
+      # A relative path yields `file:///path`; an absolute path yields `file:////path`.
       # @param path [String] relative or absolute file-system path
       # @return [String] corresponding file: URL
       def file_url(path)
@@ -45,7 +45,7 @@ module Aspera
       end
 
       # Extract the file-system path from a file: URL.
-      # Accepts both the canonical +file:///+ form and the short +file:+ form.
+      # Accepts both the canonical `file:///` form and the short `file:` form.
       # Returns the literal path (relative or absolute) without working-directory expansion.
       # @param url [String] a file: URL (canonical or short form)
       # @return [String] the literal path encoded in the URL
@@ -57,12 +57,12 @@ module Aspera
       end
 
       # Read content from a URI and return it as a String.
-      # Supported schemes: +http+, +https+, +data+, +file+, and bare paths (no scheme).
+      # Supported schemes: `http`, `https`, `data`, `file`, and bare paths (no scheme).
       # For file: URLs the path is extracted via {file_path} to respect the module convention
       # (see module-level documentation).  Ruby's URI parser is not used for file: URLs because
       # it interprets the three-slash prefix differently (it always produces an absolute path).
-      # Bare paths (no scheme) are passed to File.read directly; leading +/~/+, +/./+, +/../+
-      # are expanded via +File.expand_path+ after stripping the synthetic leading slash added by
+      # Bare paths (no scheme) are passed to File.read directly; leading `/~/`, `/./`, `/../`
+      # are expanded via `File.expand_path` after stripping the synthetic leading slash added by
       # URI.
       def read(uri_to_read)
         # Handle file: URLs directly to honour the file:///relative vs file:////absolute convention.
@@ -87,7 +87,7 @@ module Aspera
         end
       end
 
-      # Return the local file-system path for the content at +url+, downloading to a temp file if needed.
+      # Return the local file-system path for the content at `url`, downloading to a temp file if needed.
       # For file: URLs the path is extracted directly (no download).
       # For data: and http(s): URLs the content is written to a temporary file and its path is returned.
       # @return [String] local path to a file containing the URL content

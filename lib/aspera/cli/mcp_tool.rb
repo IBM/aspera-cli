@@ -208,7 +208,7 @@ module Aspera
           end.join("\n")
         end
 
-        # Returns the largest prefix of +items+ whose JSON serialization fits within +max_bytes+.
+        # Returns the largest prefix of `items` whose JSON serialization fits within `max_bytes`.
         # Items are appended whole — no item is ever split mid-JSON.
         def truncate_items_by_bytes(items, max_bytes)
           buf = +''

@@ -55,7 +55,7 @@ module Aspera
 
       SECRET_KEYWORDS = %w[password secret].freeze
 
-      # If +option_name+ ends with a secret keyword and the vault is configured,
+      # If `option_name` ends with a secret keyword and the vault is configured,
       # move the clear-text value into the vault and replace it with a @vault: reference.
       # @param preset      [Hash]   the preset hash (modified in place)
       # @param preset_name [String] name used as base for the vault label
