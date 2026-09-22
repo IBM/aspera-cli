@@ -43,13 +43,14 @@ module Aspera
       # `false` and `true`
       TYPES = [FalseClass, TrueClass].freeze
       SYMBOLS = [NO_SYM, YES_SYM].freeze
-      # @return [Boolean] `true` if value is a value for `true` in ALL
+      # @return [Boolean] `true` if value is a value for `true` in `ALL`
       def true?(enum)
         Aspera.assert_values(enum, ALL) { 'boolean' }
         TRUE_VALUES.include?(enum)
       end
 
-      # @return [:yes, :no]
+      # @param enum [true, false, :yes, :no] Any value from `ALL`
+      # @return [:yes, :no] Symbol for boolean value.
       def to_sym(enum) = true?(enum) ? YES_SYM : NO_SYM
 
       # @return [Boolean] `true` if value is a value for `true` or `false` in ALL

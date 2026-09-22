@@ -136,6 +136,7 @@ module Aspera
         def action_health(api_console:)
           nagios = Nagios.new
           begin
+            # TODO: use unauthenticated api : health/up
             api_console.read('ssh_keys')
             nagios.add_ok('console api', 'accessible')
           rescue StandardError => e
