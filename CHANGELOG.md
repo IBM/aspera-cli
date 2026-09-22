@@ -12,6 +12,8 @@ Released: [Place date of release here]
 
 ### Breaking Changes
 
+* `preview`: Renamed option `mimemagic` to `detect_mime`.
+
 ## 4.27.2
 
 Released: 2026-09-18

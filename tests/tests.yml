@@ -5662,14 +5662,14 @@ prev_dcm_mm:
     - test
     - "@preset:file.dcm"
     - --base=$(TMP / 'prev_dcm_mm')
-    - --mimemagic=yes
+    - --detect-mime=yes
 prev_jpg_unk_mm:
   args:
     - preview
     - test
     - "@preset:file.jpg_unk"
     - --base=$(TMP / 'prev_jpg_unk_mm')
-    - --mimemagic=yes
+    - --detect-mime=yes
 prev_mxf_blend:
   args:
     - preview

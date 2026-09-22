@@ -43,7 +43,7 @@ module Aspera
           # DSL class method: register a command in this plugin's registry.
           # Inherits parent from the enclosing commands_under block when parent: is omitted.
           # @param id [Symbol]
-          # @param kwargs [Hash] forwarded to CommandSpec
+          # @param kwargs [Hash] forwarded to [CommandSpec]
           def command(id, **kwargs)
             kwargs[:parent] = @current_parent if kwargs[:parent].nil? && @current_parent
             command_registry.register(CommandSpec.new(id: id, **kwargs))

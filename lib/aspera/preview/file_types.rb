@@ -57,11 +57,11 @@ module Aspera
 
       private_constant :SUPPORTED_MIME_TYPES
 
-      # @attr use_mimemagic [Boolean] `true` to use mimemagic to determine real mime type based on file content
-      attr_accessor :use_mimemagic
+      # @attr detect_mime [Boolean] `true` to determine real mime type based on file content
+      attr_accessor :detect_mime
 
       def initialize
-        @use_mimemagic = false
+        @detect_mime = false
       end
 
       # @param mimetype [String] mime type
@@ -81,7 +81,7 @@ module Aspera
       # @return [Symbol] file type, one of enum CONVERSION_TYPES
       # @raise [RuntimeError] if no conversion type found
       def conversion_type(filepath, mimetype)
-        Log.log.debug { "conversion_type(#{filepath},mime=#{mimetype},magic=#{@use_mimemagic})" }
+        Log.log.debug { "conversion_type(#{filepath},mime=#{mimetype},magic=#{@detect_mime})" }
         # Default type or empty means no type
         mimetype = TYPE_NOT_FOUND if mimetype.nil? || (mimetype.is_a?(String) && mimetype.empty?)
         mimetype = Marcel::MimeType.for(Pathname.new(filepath), name: File.basename(filepath), declared_type: mimetype)

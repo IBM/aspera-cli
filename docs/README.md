@@ -9682,8 +9682,8 @@ The mp4 video preview file is only for category `video`.
 
 By default, the Mime type used for conversion is the one returned by the Node API, based on file name extension.
 
-It is also possible to detect the MIME type using option `mimemagic`.
-To use it, set option `mimemagic` to `yes`: `--mimemagic=yes`.
+It is also possible to detect the MIME type using option `detect_mime`.
+To use it, set option `detect_mime` to `yes`: `--detect-mime=yes`.
 
 In this case the `preview` command will first analyze the file content using gem `marcel`, and if no match, will try by extension.
 
@@ -9722,8 +9722,8 @@ show my_pdf --base=test
 show my_small_mp4 --base=test --video-png-conv=animated
 show my_small_mp4 --base=test --video-png-conv=fixed
 test my_dcm --base=test
-test my_dcm --base=test --mimemagic=yes
-test my_jpg_unk --base=test --mimemagic=yes
+test my_dcm --base=test --detect-mime=yes
+test my_jpg_unk --base=test --detect-mime=yes
 test my_mpg mp4 --base=test --video-conversion=clips
 test my_mpg mp4 --base=test --video-conversion=reencode
 test my_mxf mp4 --base=test --video-conversion=blend --query.text=true --query.double=true
