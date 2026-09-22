@@ -25,7 +25,7 @@ module Aspera
     class Formatter
       extend OptionDeclarator
 
-      # remove a fields from the list
+      # `-` remove a fields from the list
       FIELDS_LESS = '-'
       # supported output formats
       DISPLAY_FORMATS = %i[text nagios ruby json jsonpp yaml table csv image].freeze
@@ -85,8 +85,11 @@ module Aspera
           end
         end
 
-        def all_but(list)
-          Array(list).map { |i| "#{FIELDS_LESS}#{i}" }.unshift(SpecialValues::ALL)
+        # @param fields [Array<String>] List of fields to not display
+        # @return [Array<String>] List of fields to display, including special values (`ALL`) and tagged (`-`) fields
+        def all_but(*fields)
+          Aspera.assert_array_all(fields, String)
+          fields.map { |i| "#{FIELDS_LESS}#{i}" }.unshift(SpecialValues::ALL)
         end
       end
 
@@ -214,9 +217,9 @@ module Aspera
       # @param hide_secrets [Boolean] Whether to hide secrets in the message (default: true)
       # @return [nil]
       # @note Message display behavior depends on the message_level:
-      #   - +:data+ messages are displayed unless display level is +:error+
-      #   - +:info+ messages are only displayed when display level is +:info+
-      #   - +:error+ messages are always displayed on stderr
+      #   - `:data` messages are displayed unless display level is `:error`
+      #   - `:info` messages are only displayed when display level is `:info`
+      #   - `:error` messages are always displayed on `stderr`
       def display_message(message_level, message, hide_secrets: true)
         message = SecretHider.instance.hide_secrets_in_string(message) if hide_secrets && message.is_a?(String) && hide_secrets?
         case message_level
@@ -291,14 +294,18 @@ module Aspera
         @options[:image].symbolize_keys
       end
 
-      # @return [Array<String>] all fields of all objects in list of objects
+      # Compute the list of all fields for all provided objects
+      # @param data [Array<Hash>] objects
+      # @return [Array<String>] All fields of all objects in list of objects
       def all_fields(data)
-        data.each_with_object({}) { |v, m| v.each_key { |c| m[c] = true } }.keys
+        data.flat_map(&:keys).uniq
       end
 
-      # @return [Array<String>] the list of fields to display
-      # @param data    [Array<Hash>]         data to display
-      # @param default [Array<String>, Proc] list of fields to display by default (may contain special values)
+      # Given the list of objects (with all fields) and a default filter, including `DEF`, `ALL` and `-`,
+      # expand and compute the actual list of fields to display.
+      # @param data [Array<Hash>] Data to display
+      # @param default [Array<String>, Proc] List of fields to display by default (may contain special values)
+      # @return [Array<String>] List of fields to display
       def compute_fields(data, default)
         Log.log.debug { "compute_fields: data:#{data.class} default:#{default.class} #{default}" }
         Log.dump(:compute_fields_default, default, level: :trace1)
@@ -355,8 +362,9 @@ module Aspera
         return data.map { |i| i.slice(*selected_fields) }
       end
 
-      # filter the list of items on the select option
-      # @param data [Array<Hash>] list of items
+      # Filter the list of items on the select option
+      # @param data [Array<Hash>] List of items
+      # @return [nil]
       def filter_columns_on_select(data)
         case @options[:select]
         when Proc
@@ -368,12 +376,14 @@ module Aspera
         when Hash
           @options[:select].each { |k, v| data.select! { |i| i[k].eql?(v) } }
         end
+        nil
       end
 
       # Displays a list of objects
       # @param object_array [Array<Hash>] Array of hash
       # @param fields [Array<String>] List of column names
       # @param single [Boolean] Contains a single object to display
+      # @return [nil]
       def display_table(object_array, fields, single: false)
         Aspera.assert_array_all(object_array, Hash)
         Aspera.assert_array_all(fields, String)

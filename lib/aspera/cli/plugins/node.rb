@@ -360,7 +360,7 @@ module Aspera
         GEN3_NODE_ACTIONS = {
           ls:          ->(path:, **) { browse_gen3(path) },
           transport:   ->(**) { Result::SingleObject.new(@api_node.transport_params) },
-          spec:        ->(**) { Result::SingleObject.new(@api_node.base_spec, fields: Formatter.all_but(Transfer::Spec::SPECIFIC)) },
+          spec:        ->(**) { Result::SingleObject.new(@api_node.base_spec, fields: Formatter.all_but(*Transfer::Spec::SPECIFIC)) },
           api_details: ->(**) { Result::SingleObject.new({base_url: @api_node.base_url}.merge(@api_node.params)) },
           events:      ->(**) { Result::ObjectList.new(@api_node.read('events', query_read_delete(schema: Schema::Registry.query_params(Schema::Registry::NODE, 'events'))), fields: ->(f) { !f.start_with?('data') }) },
           info:        ->(**) { Result::SingleObject.new(@api_node.read('info')) },
