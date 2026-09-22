@@ -36,7 +36,7 @@ module Aspera
           return @available_h264_encoder if defined?(@available_h264_encoder)
           stdout, = execute(:ffmpeg, '-encoders', mode: :capture, exception: false)
           @available_h264_encoder = H264_ENCODER_PREFERENCE.find { |enc| stdout.include?(enc) } ||
-            raise("No supported H.264 encoder found in ffmpeg. Available: #{stdout.lines.grep(/h264/i).map(&:strip).join(', ')}")
+            raise("No supported H.264 encoder found in ffmpeg. Available: #{stdout.lines.grep(/264/).map(&:strip).join(', ')}")
         end
 
         # Check that external tools can be executed.
