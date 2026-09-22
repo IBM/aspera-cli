@@ -10,7 +10,7 @@ require 'websocket'
 require 'base64'
 require 'json'
 
-# throw exception on error, instead of error code
+# Throw exception on error, instead of error code
 WebSocket.should_raise = true
 
 module Aspera
@@ -43,18 +43,17 @@ module Aspera
       LOG_WS_SEND = 'ws: send: '.red
       LOG_WS_RECV = "ws: #{THR_RECV}: ".green
       private_constant :MSG_RECV_DATA_RECEIVED_SIGNAL, :MSG_RECV_SLICE_UPLOAD_SIGNAL
-      # send message on http gw web socket
+
+      # Send message on http gw web socket
+      # @param msg_type [String] type of message to send
+      # @param payload [Hash] Data to send
       def ws_snd_json(msg_type, payload)
         if msg_type.eql?(MSG_SEND_SLICE_UPLOAD) && @upload_version.eql?(API_V2)
           @shared_info[:count][:sent_v2_delimiter] += 1
         else
           @shared_info[:count][:sent_general] += 1
         end
-        Log.log.trace1 do
-          log_data = payload.dup
-          log_data[:data] = "[data #{log_data[:data].length} bytes]" if log_data.key?(:data)
-          "#{LOG_WS_SEND}json: #{msg_type}: #{JSON.generate(log_data)}"
-        end
+        Log.dump("#{LOG_WS_SEND} #{msg_type}", level: :trace1) { payload.dup.tap { |d| d[:data] = "[data #{d[:data].length} bytes]" if d.key?(:data) } }
         ws_send(ws_type: :text, data: JSON.generate({msg_type => payload}))
       end
 
@@ -117,7 +116,7 @@ module Aspera
         end
       end
 
-      # main function of read thread
+      # Main function of read thread
       def process_read_thread
         Log.log.debug { "#{LOG_WS_RECV}read thread started" }
         frame_parser = ::WebSocket::Frame::Incoming::Client.new(version: @ws_handshake.version)
@@ -283,17 +282,20 @@ module Aspera
             # it is a plain file if we don't require zip and there is only one file
             File.basename(default_file_name)
           end
-        file_path = File.join(transfer_spec['destination_root'], file_name)
-        call(operation: 'GET', subpath: "download/#{transfer_uuid}", save_to: file_path)
+        call(
+          operation: 'GET',
+          subpath: "download/#{transfer_uuid}",
+          save_to: File.join(transfer_spec['destination_root'], file_name)
+        )
       end
 
       def info
-        return @api_info
+        @api_info
       end
 
       # @return [String] the base url of the gateway
       def base_url
-        return @gw_root_url
+        @gw_root_url
       end
 
       # @param url [String] URL of the HTTP Gateway, without version
@@ -306,10 +308,10 @@ module Aspera
         **opts
       )
         Log.dump(:gw_url, url)
-        # add scheme if missing
+        # Add scheme if missing
         url = "https://#{url}" unless url.match?(%r{^[a-z]{1,6}://})
         Aspera.assert(url.start_with?('https://'), type: Error) { 'GW URL shall be with scheme https' }
-        # remove trailing slash and version (o=only once) if present
+        # Remove trailing slash and version (o=only once) if present
         # TODO: issue warning ?
         url = url.chomp('/').gsub(%r{/#{API_V1}$}o, '')
         # assume GW is always under specific path (TODO: remove this ?)
@@ -372,8 +374,7 @@ module Aspera
             until folders_to_process.empty?
               folder = folders_to_process.shift
               # read all entries
-              Dir.entries(folder).each do |entry|
-                next if entry.eql?('.') || entry.eql?('..')
+              Dir.each_child(folder) do |entry|
                 entry_path = File.join(folder, entry)
                 if File.directory?(entry_path)
                   folders_to_process.push(entry_path)
@@ -396,7 +397,6 @@ module Aspera
         end
         transfer_spec['paths'] = files_to_send.map { |i| {'source' => i[:name]} }
         files_to_send.push(total_bytes_to_transfer)
-        return files_to_send
       end
     end
   end
