@@ -393,7 +393,7 @@ module Aspera
         # @return [Hash{Symbol => Hash}]
         RESOURCE_CONFIG = {
           accounts:            {
-            display_fields:        -> { Formatter.all_but('user_profile_data_attributes') },
+            display_fields:        Formatter.all_but('user_profile_data_attributes'),
             extra_commands:        [:reset_password],
             instance_arg_commands: {reset_password: {arguments: [{name: :contact_id, type: :identifier, lookup: ->(field, value, **) { res_lookup_id(:accounts, field, value) }}]}},
             query_component:       Schema::Registry::FASPEX,
@@ -422,7 +422,7 @@ module Aspera
             body_component:        Schema::Registry::FASPEX
           },
           oauth_clients:       {
-            display_fields:  -> { Formatter.all_but('public_key') },
+            display_fields:  Formatter.all_but('public_key'),
             api:             -> { Api::Faspex.new(root: Api::Faspex::PATH_AUTH, **Oauth.kwargs_from_options(options)) },
             list_query:      {'expand': true, 'no_api_path': true, 'client_types[]': 'public'},
             query_component: Schema::Registry::FASPEX,

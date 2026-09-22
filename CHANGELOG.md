@@ -8,6 +8,8 @@ Released: [Place date of release here]
 
 ### Issues Fixed
 
+* `faspex5`: Command `admin account show` was failing.
+
 ### Breaking Changes
 
 ## 4.27.2
