@@ -10,19 +10,19 @@ module Aspera
       # types of generation for video files
       VIDEO_CONVERSION_METHODS = %i[reencode blend clips].freeze
       VIDEO_THUMBNAIL_METHODS = %i[fixed animated].freeze
-      # methods for office document conversion
+      # @type [Array<Symbol>] methods for office document conversion
       OFFICE_CONVERSION_METHODS = %i[soffice unoconv].freeze
-      # options used in generator
-      # for scaling see: https://trac.ffmpeg.org/wiki/Scaling
+      # Options used in generator
+      # For scaling see: https://trac.ffmpeg.org/wiki/Scaling
       # iw/ih : input width or height
       # -x : keep aspect ratio, having value a multiple of x
       DESCRIPTIONS = [
+        {name: :office_conversion,    default: :soffice,           description: 'office: method for office document conversion', values: OFFICE_CONVERSION_METHODS},
         {name: :max_size,             default: 1 << 24,            description: 'maximum size (in bytes) of preview file'},
         {name: :thumb_vid_scale,      default: '-1:min(ih,100)',   description: 'png: video: size (ffmpeg scale argument)'},
         {name: :thumb_vid_fraction,   default: 0.1,                description: 'png: video: time percent position of snapshot'},
         {name: :thumb_img_size,       default: 800,                description: 'png: non-video: height (and width)'},
         {name: :thumb_text_font,      default: 'Courier',          description: 'png: plaintext: font for text rendering: `magick identify -list font`'},
-        {name: :office_conversion,    default: :soffice,           description: 'office: method for office document conversion', values: OFFICE_CONVERSION_METHODS},
         {name: :video_conversion,     default: :reencode,          description: 'mp4: method for preview generation', values: VIDEO_CONVERSION_METHODS},
         {name: :video_png_conv,       default: :fixed,             description: 'mp4: method for thumbnail generation', values: VIDEO_THUMBNAIL_METHODS},
         {name: :video_scale,          default: 'min(iw,360):-2',   description: 'mp4: all: video scale (ffmpeg scale argument)'},

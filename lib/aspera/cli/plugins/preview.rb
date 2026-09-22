@@ -83,8 +83,9 @@ module Aspera
           Aspera::Preview::Options::DESCRIPTIONS.each do |opt|
             options.set_handler(opt[:name], object: @gen_options, method: opt[:name])
           end
-
           options.parse_options!
+          # Tell which tool we will use for office docs
+          Aspera::Preview::Utils.office_tool = @gen_options.office_conversion
           Api::Node.api_options[:cache] = !@option_folder_reset_cache.eql?(:header)
           # Start from the full supported format list, then remove any skipped format.
           @preview_formats_to_generate = Aspera::Preview::Generator::PREVIEW_FORMATS.clone
@@ -493,7 +494,7 @@ module Aspera
         end
 
         def action_show(source_file:, **)
-          status = action_test(source_file, :png)
+          status = action_test(source_file: source_file, format: :png)
           formatter.display_status(status.data)
           generated_file_path = status.data.delete_prefix(MSG_GEN_TITLE)
           Result::Image.new(UriReader.file_url(generated_file_path))

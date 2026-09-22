@@ -251,6 +251,7 @@ module Aspera
         tmp_pdf_file = File.join(this_tmpdir, "#{File.basename(@source, File.extname(@source))}.pdf")
         case @options.office_conversion
         when :unoconv
+          # `unoconv` is a python wrapper over `soffice`
           Utils.silent_execute(
             :unoconv,
             '-f', 'pdf',
@@ -261,6 +262,12 @@ module Aspera
           Utils.silent_execute(
             :soffice,
             '--headless',
+            '--invisible',
+            '--nocrashreport',
+            '--nodefault',
+            '--nofirststartwizard',
+            '--nologo',
+            '--norestore',
             '--convert-to', 'pdf',
             '--outdir', File.dirname(tmp_pdf_file),
             @source

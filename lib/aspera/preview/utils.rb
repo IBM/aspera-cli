@@ -25,6 +25,9 @@ module Aspera
       private_constant :EXTERNAL_TOOLS, :TEMP_FORMAT, :FFMPEG_DEFAULT_PARAMS, :H264_ENCODER_PREFERENCE
 
       class << self
+        # @param tool [Symbol] either `unoconv` or `soffice`
+        attr_accessor :office_tool
+
         # Return the first H.264 encoder available in the local ffmpeg installation.
         # Result is memoized after the first call.
         # @return [String] encoder name (e.g. 'libx264', 'libopenh264')
@@ -42,10 +45,8 @@ module Aspera
         # @return [nil]
         def check_tools(skip_types = [])
           tools_to_check = EXTERNAL_TOOLS.dup
-          if skip_types.include?(:office)
-            tools_to_check.delete(:unoconv)
-            tools_to_check.delete(:soffice)
-          end
+          tools_to_check.delete(:unoconv) if skip_types.include?(:office) || office_tool.eql?(:soffice)
+          tools_to_check.delete(:soffice) if skip_types.include?(:office) || office_tool.eql?(:unoconv)
           # Check for binaries
           tools_to_check.each do |command_sym|
             silent_execute(command_sym, '-h')
