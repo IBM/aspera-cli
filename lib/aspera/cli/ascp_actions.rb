@@ -57,10 +57,10 @@ module Aspera
       end
 
       def action_ascp_info(**)
+        SecretHider.instance.add_secret_keys(DataRepository::ELEMENTS)
         data = Ascp::Installation.instance.ascp_info
         data['ts'] = transfer.user_transfer_spec
         DataRepository::ELEMENTS.each_with_object(data) { |i, h| h[i.to_s] = DataRepository.instance.item(i) }
-        SecretHider::ADDITIONAL_KEYS_TO_HIDE.concat(DataRepository::ELEMENTS.map(&:to_s))
         Result::SingleObject.new(data)
       end
 

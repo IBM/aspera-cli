@@ -139,7 +139,7 @@ module Aspera
             end
             MCP::Tool::Response.new(content, structured_content: structured)
           else
-            MCP::Tool::Response.new([{type: 'text', text: SecretHider.instance.hide_secrets_in_string(result.data.to_s)}])
+            MCP::Tool::Response.new([{type: 'text', text: SecretHider.instance.hide_secrets_in_string(result.data.to_s, all: true)}])
           end
         rescue Cli::SchemaRequest => e
           schema_path = e.path
