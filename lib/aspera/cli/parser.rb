@@ -164,7 +164,7 @@ module Aspera
         end
       end
 
-      # Initialise @types and @values from the resolved `allowed` specifier.
+      # Initialize @types and @values from the resolved `allowed` specifier.
       # @param allowed [Class, Array<Class>, Array<Symbol>] resolved allowed value (never nil)
       def apply_allowed(allowed)
         allowed = [allowed] if allowed.is_a?(Class)
@@ -401,15 +401,15 @@ module Aspera
       # (public: shared with Parser)
     end
 
-    # parse command line options
-    # arguments options start with '-', others are commands
-    # resolves on extended value syntax
+    # Parse command line options and positional arguments.
+    # Options start with '-', others are positional arguments.
+    # Resolves on extended value syntax
     class Parser
       class << self
         # Find shortened string value in allowed symbol list
-        # @param short_value   [String] value or prefix to find
-        # @param descr         [String] description for error messages
-        # @param allowed_values [Array] list of allowed values
+        # @param short_value    [String] Value or prefix to find
+        # @param descr          [String] Description for error messages
+        # @param allowed_values [Array]  List of allowed values
         # @return [Symbol, Boolean] matched symbol or boolean value
         def get_from_list(short_value, descr, allowed_values)
           Aspera.assert_type(short_value, String)
@@ -613,24 +613,14 @@ module Aspera
         @current_group = name
       end
 
-      # Rename all options currently tagged with @current_group to a new name,
-      # then update @current_group. Used by add_manual_header when a plugin
-      # declares its options before its group name is known (e.g. Plugins::Config).
-      # @param name [String] new group name
-      def rename_current_group(name)
-        @declared_options.each_value { |opt| opt.group = name if opt.group.eql?(@current_group) }
-        @current_group = name
-      end
-
-      # Low-level positional argument reader.  Prefer `Base#resolve_argument` from action methods.
-      # Direct calls from outside `Parser` are legacy exceptions documented in ST12/ST13
-      # (mixins without DSL: sync_actions, ascp_actions; setup callbacks: aoc.rb).
-      # @api private
-      # @param descr       [String] description for help
+      # Low-level positional argument reader.
+      # Prefer `Base#resolve_argument` from action methods.
+      # The only direct call from outside `Cli::Parser` and `Cli::Plugins::Base` is to retrieve the list of files.
+      # @param descr       [String]  Description for help
       # @param mandatory   [Boolean] `true`: raise error no more argument
       # @param multiple    [Boolean] `true`: return all remaining arguments (Array). String: until marker
-      # @param accept_list [Array<Symbol>, NilClass] list of allowed values
-      # @param validation  [Class, Array, NilClass] Accepted value type(s) or list of Symbols
+      # @param accept_list [Array<Symbol>, nil] list of allowed values
+      # @param validation  [Class, Array, nil] Accepted value type(s) or list of Symbols
       # @param aliases     [Hash] map of aliases: key = alias, value = real value
       # @param default     [Object] default value
       # @return [Object, Array, nil] one value, list or nil (if optional and no default)
@@ -853,9 +843,9 @@ module Aspera
       def parse_options!
         Log.log.trace1('parse_options!'.red)
         # First options from conf file
-        @option_pairs_batch = consume_option_pairs(@option_pairs_batch, 'set')
+        consume_option_pairs(@option_pairs_batch, 'set')
         # Then, env var (to override)
-        @option_pairs_env = consume_option_pairs(@option_pairs_env, 'env')
+        consume_option_pairs(@option_pairs_env, 'env')
         # Then, command line override.
         # Iterate @argv_tokens in order so that --opt val and -s val can consume the next argument
         # token directly, without any secondary index.
@@ -965,22 +955,22 @@ module Aspera
       end
 
       # Validate and coerce a single argument value.
-      # Raises SchemaRequest when the value is 'help' and validation includes Hash.
-      # Raises BadArgument when the value is an Integer on a STRING validation (coerced upstream).
-      # Raises BadArgument when the value's type is not in the validation list.
       # @param value      [Object]        the value to validate
       # @param validation [Array<Class>]  accepted types
       # @param descr      [String]        argument description (for error messages)
       # @param schema     [String, nil]   schema path for SchemaRequest
+      # @raise [SchemaRequest] when the value is 'help' and validation includes Hash.
+      # @raise [BadArgument] when the value is an Integer on a STRING validation (coerced upstream).
+      # @raise [BadArgument] when the value's type is not in the validation list.
       def validate_argument(value, validation:, descr:, schema:)
         raise SchemaRequest.new(:argument, descr, schema) if validation.include?(Hash) && value.eql?(HELP)
-        raise Cli::BadArgument,
+        raise BadArgument,
           "Argument #{descr} is a #{value.class} but must be #{'one of: ' if validation.length > 1}#{validation.map(&:name).join(', ')}" \
           unless validation.any? { |t| value.is_a?(t) }
       end
 
       # Prompt user for console input
-      # @param prompt    [String]  prompt string to display
+      # @param prompt [String]  prompt string to display
       # @param sensitive [Boolean] whether to hide typed input
       # @return [String] user input stripped of trailing newline
       def prompt_user_input(prompt, sensitive: false)
@@ -991,7 +981,7 @@ module Aspera
         line.chomp
       end
 
-      # prompt user for input in a list of symbols
+      # Prompt user for input in a list of symbols
       # @param prompt [String] prompt to display
       # @param sym_list [Array] list of symbols to select from
       # @return [Symbol] selected symbol
@@ -1010,7 +1000,7 @@ module Aspera
       # @param descr        [String] description for help
       # @param check_option [Boolean] Check attributes of option with name=descr
       # @param multiple     [Boolean, String] `true` if multiple values expected
-      # @param accept_list  [Array<Symbol>,NilClass] List of expected values
+      # @param accept_list  [Array<Symbol>, nil] List of expected values
       # @return [String] user input
       def get_interactive(descr, check_option: false, multiple: false, accept_list: nil, aliases: nil, schema: nil)
         option_attrs = @declared_options[descr.to_sym]
@@ -1022,7 +1012,7 @@ module Aspera
           message += "\n#{TerminalFormatter::HINT}Give `#{HELP}` as argument to retrieve the schema of the missing argument." if schema
           raise Cli::MissingArgument, message
         end
-        # ask interactively
+        # Ask interactively
         result = []
         puts(' (one per line, end with empty line)') if multiple
         loop do
@@ -1172,16 +1162,15 @@ module Aspera
       # @return [Hash{Symbol => Object}] pairs whose keys were not yet declared (deferred to next round)
       def consume_option_pairs(option_pairs, where)
         Log.log.trace1 { "consume_option_pairs: #{where}" }
-        remaining = {}
-        option_pairs.each do |k, v|
+        option_pairs.reject! do |k, v|
           if @declared_options.key?(k)
             set_option(k, v, where: where)
+            true  # Remove this pair from the hash
           else
             Log.log.trace1 { "unprocessed: #{k}: #{v}" }
-            remaining[k] = v
+            false # Keep this pair in the hash
           end
         end
-        remaining
       end
 
       # Consume the Argument token immediately following the current option in @argv_tokens.
@@ -1204,7 +1193,8 @@ module Aspera
         @argv_tokens.grep(Option).map(&:raw)
       end
 
-      # when this is alone, this stops option processing (same characters as Option::PREFIX but distinct semantics)
+      # When this is alone, this stops option processing
+      # (same characters as Option::PREFIX but distinct semantics)
       OPTIONS_STOP = '--'
       SOURCE_USER = 'cmdline' # cspell:disable-line
       # Percent selector: select by this field for this value
