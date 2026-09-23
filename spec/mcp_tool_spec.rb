@@ -84,6 +84,14 @@ RSpec.describe(Aspera::Cli::McpTool) do
       expect(JSON.parse(resp.content.first[:text])).to(eq(data))
       expect(resp.structured_content).to(eq(data))
     end
+
+    it 'hides secrets in both text and structuredContent' do
+      data = {'username' => 'john', 'password' => 'my_secret'}
+      resp = call_with_result(Aspera::Cli::Result::SingleObject.new(data))
+      expect(resp.content.first[:text]).not_to(include('my_secret'))
+      expect(resp.structured_content['password']).not_to(eq('my_secret'))
+      expect(resp.structured_content['username']).to(eq('john'))
+    end
   end
 
   # -----------------------------------------------------------------------

@@ -45,64 +45,29 @@ module Aspera
         DEFAULT_INSTRUCTIONS = <<~INST.strip
           This is the Aspera CLI (ascli) MCP server (IBM Aspera file transfer and management).
           It exposes a single tool, execute_ascli_command, which runs any ascli command in-process.
-          Refer to the tool description for full syntax, discovery steps, and examples.
+          Its description gives the syntax and the discovery sequence: follow it before any
+          command whose syntax you have not verified in this session.
 
-          Key plugins: aoc (Aspera on Cloud), faspex5 (Faspex 5), node (Node API),
-          server (FASP/SSH server), config (local configuration), console, orchestrator,
-          ats (Aspera Transfer Service), preview, shares, cos, httpgw, faspio, alee.
+          Plugins: aoc (Aspera on Cloud), faspex5 (Faspex 5), node (Node API), server (FASP/SSH
+          server), config (local configuration), console, orchestrator, ats, preview, shares,
+          cos, httpgw, faspio, alee.
 
-          Recommended workflow for any task:
-          1. Call ["config", "commands"] to map all 800+ commands to their syntax.
-             Never guess subcommand names from training data — always verify with this call.
-          2. For any command whose syntax shows a <data> argument, call it with "help"
-             instead of the real value to see the full field schema before constructing
-             the @json:{...} payload. This is mandatory — never infer fields from errors.
-          2b. For any list command, add --query=help to discover available filter parameters.
-              Example: ["aoc", "admin", "user", "list", "--query=help"]
-          3. Call ["config", "options", "<plugin>"] to list every --flag accepted by a
-             plugin with its allowed values (e.g. --auth=basic|oauth2|..., --url, --preset).
-          4. When credentials are already saved, use --preset=name instead of inline
-             credentials. Call ["config", "preset", "list"] to see saved presets.
+          CREDENTIALS
+          Use saved presets by default: call ["config", "preset", "overview"] first, then pass
+          --preset=<name>, or nothing if a default preset exists for the plugin.
+          If the user provides credentials inline (--url, --username, --password, --private-key),
+          use those exact values verbatim — never substitute a preset or another server.
+          Some plugins support browser login (--auth=web).
+          On error, report it as-is and stop.
 
-          AUTOMATIC FLAGS
-          The server automatically injects --interactive=no and --transfer.asynchronous=true
-          before every command. Do NOT add them yourself — they are already applied.
-          If credentials are missing, the command returns an error; report it and stop.
-          The transfer agent defaults to "direct" (in-process ascp). To use the IBM Aspera
-          Desktop Client for all transfers, the server can be started with extra_args including
-          --transfer.agent=desktop:
-            ascli mcp server @json:{"extra_args":["--interactive=no","--transfer.asynchronous=true","--transfer.agent=desktop"]}
-
-          CREDENTIAL INTEGRITY
-          Use saved presets by default — do not specify server address or credentials if a
-          default preset is already configured, unless the user asks otherwise.
-          Call ["config", "preset", "overview"] to check available presets.
-          Some plugins support web-based authentication: the user logs in via a browser
-          (use --auth=web or follow the wizard).
-          If the user explicitly provides credentials inline (--url, --username, --password,
-          --private-key), use those exact values verbatim — never silently substitute a
-          preset or a different server. Report errors as-is and stop.
-
-          TRANSFER OPTIONS
-          Any flags explicitly requested by the user (--transfer.agent=<agent>, --to-folder,
-          etc.) must be passed verbatim. Never omit or replace them.
-          The agent is selected with "--transfer.agent=<agent>" (e.g. "--transfer.agent=desktop",
-          "--transfer.agent=direct", "--transfer.agent=node").
-          For a graphical transfer (IBM Aspera Desktop Client), use --transfer.agent=desktop.
-          Because --transfer.asynchronous=true is injected automatically, transfer commands
-          return a job_id immediately — never retry a command that already returned one.
-          Async transfer lifecycle:
-            submit  → e.g. ["server", "download", "/file", "--to-folder=/tmp"] → returns job_id
+          TRANSFERS
+          Pass verbatim any flag the user requests (--transfer.agent=<agent>, --to-folder, …).
+          Agents: direct (default, in-process ascp), desktop (IBM Aspera Desktop Client,
+          graphical), node, transferd, httpgw, connect.
+          Transfers are asynchronous: the command returns a job_id immediately — never retry it.
             monitor → ["config", "transfer", "status", "<job_id>"]
             list    → ["config", "transfer", "list"]
             cleanup → ["config", "transfer", "cleanup"]
-
-          FILE LIST FOR TRANSFERS
-          For all transfers (upload, download, package send, …), append source file paths
-          at the end of the args array — no --sources flag needed.
-          ["server", "upload", "--to-folder=/dst", "/local/a.txt", "/local/b.txt"]
-          ["aoc", "packages", "send", "@:", "name=pkg", "recipients.0=u@example.com", "END",
-           "/local/a.txt", "/local/b.txt"]
         INST
 
         # Keys forwarded to MCP::Server constructor (symbolized)

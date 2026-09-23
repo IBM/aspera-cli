@@ -4,6 +4,7 @@
 
 require 'json'
 require 'aspera/log'
+require 'aspera/secret_hider'
 require 'aspera/cli/runner'
 require 'aspera/cli/error'
 require 'aspera/schema/reader'
@@ -36,100 +37,59 @@ module Aspera
         SYNTAX
           args is a JSON array of strings mirroring the CLI command line.
           Element 0 : plugin name (aoc, faspex5, node, server, config, …).
-          Elements 1+: sub-commands, then --option=value flags in any order.
-          Passing structured values: use an extended-value prefix on the relevant element:
-            "@json:{...}"   — inline JSON object or array (preferred for LLMs: no shell quoting, natural JSON)
-            "@preset:name"  — expand a saved credential preset
+          Elements 1+: sub-commands, positional arguments, and --option=value flags in any order.
+          Structured values use an extended-value prefix on the relevant element:
+            "@json:{...}"   — inline JSON object or array (preferred: no shell quoting)
+            "@preset:name"  — expand a saved preset
             "@env:VAR"      — read value from environment variable
             "@file:/path"   — read value from a file
-          Note: the dot-path form (@: key=value ...) is designed for humans typing in a terminal shell.
-          Prefer @json: when building args programmatically or as an LLM.
 
         AUTOMATIC FLAGS
-          The server automatically prepends extra_args to every call (default:
-          #{DEFAULT_EXTRA_ARGS.join(' ')}).
-          Do NOT repeat these flags in your args array — they are already injected.
-          If you explicitly need to override one (e.g. --interactive=yes), include it
-          in your args; your value will take precedence because it appears after the
-          injected ones.
-          If credentials are missing or incomplete, the command will return an error;
-          report it and stop, never wait for input.
+          The server prepends extra_args to every call (default: #{DEFAULT_EXTRA_ARGS.join(' ')}).
+          Do NOT repeat them. To override one, include it in args: later values take precedence.
+          Commands never prompt: if credentials are missing, an error is returned; report it and stop.
 
-        DISCOVERY — recommended sequence
-          Step 1 — enumerate all commands:
-            ["config", "commands"]
-            Returns { syntax, description } for every leaf command of every plugin.
-            Syntax notation: <arg> mandatory, [<arg>] optional, <a|b> enum, <arg...> variadic.
-            This single call covers all 800+ commands — no other discovery step is needed
-            unless you want details about a specific command or its Hash arguments.
-            IMPORTANT: never guess command names from training data. If you are unsure of
-            the exact subcommand name (e.g. shared_folders vs shared_inboxes), always call
-            ["config", "commands"] first to find the correct name.
-
-          Step 2 — inspect a Hash argument schema BEFORE calling any command with <data>:
-            MANDATORY: whenever the command syntax shows a <data> argument, you MUST call
-            "help" offline first. Never infer field names from server error messages.
+        DISCOVERY — never guess command or field names from training data
+          Step 1 — commands of a plugin, with syntax:
+            ["config", "commands", "<plugin>"]
+            Returns { syntax, description } for every command of that plugin.
+            Notation: <arg> mandatory, [<arg>] optional, <a|b> enum, <arg...> variadic.
+            Omit <plugin> to list all 800+ commands of all plugins (large: ~70 KB).
+          Step 2 — schema of a <data> (Hash) argument, MANDATORY before calling such a command:
             ["<plugin>", "<cmd>", ..., "help"]
-            Replace the Hash positional argument with the literal string "help".
-            Returns a table of field names, types, and descriptions for that argument.
-            Example: ["aoc", "admin", "user", "create", "help"]
-            Note: only works for Hash-typed arguments, not for plain String arguments.
-
-          Step 2b — discover available query/filter parameters for list commands:
+            Put the literal "help" in place of the Hash argument. Returns field names, types,
+            required flags and descriptions. Never infer fields from server error messages.
+          Step 2b — filter parameters of a list command:
             ["<plugin>", "<cmd>", ..., "--query=help"]
-            Add --query=help to any list command to see all supported filter parameters
-            with their types and descriptions.
-            Example: ["aoc", "admin", "user", "list", "--query=help"]
-            Example: ["faspex5", "admin", "packages", "list", "--query=help"]
-            Note: only works on commands that support --query filtering (list/delete).
-
-          Step 3 — list all options for a plugin as structured data:
+          Step 3 — all --flags of a plugin, with allowed values:
             ["config", "options", "<plugin>"]
-            Returns { option, description, allowed, deprecated } for every --flag
-            accepted by that plugin (global + plugin-specific, ~80 entries).
-            Use when you need to know the exact allowed values or find a specific flag.
-
-          Full documentation:
-            ["config", "documentation", "toc"]
-            Returns the table of contents: { level, title, anchor } for every heading.
-            ["config", "documentation", "local", "<anchor>"]
-            Returns only the section matching that anchor (same slugs as GitHub).
-            ["config", "documentation", "local", "--ui=text"]
-            Returns the complete README (~300 KB). Use only when a specific section
-            is insufficient and you need broader narrative context.
+          Documentation:
+            ["config", "documentation", "toc"]              → { level, title, anchor } per heading
+            ["config", "documentation", "local", "<anchor>"] → one README section
+          Presets (saved credentials):
+            ["config", "preset", "overview"]
 
         RESULT FORMAT
-          Structured data is always in structuredContent (a JSON object).
-          For list results, text content is limited to #{DEFAULT_MAX_TEXT_BYTES} bytes (whole items only).
-          When truncated, a WARNING block is appended: "WARNING: result truncated to N of TOTAL items."
-          You MUST read structuredContent.items to obtain the full dataset — never report
-          counts, totals, or search results from a truncated text block.
+          Structured data is always in structuredContent (a JSON object; lists are under "items").
+          For lists, text content is limited to #{DEFAULT_MAX_TEXT_BYTES} bytes (whole items only);
+          when truncated, a WARNING line gives the real total. Read structuredContent.items for
+          the full dataset — never report counts or search results from a truncated text block.
 
         FILE LIST FOR TRANSFERS
-          For all transfers (upload, download, package send, …), append source file paths
-          at the end of the args array — no --sources flag needed.
-          ["server", "upload", "--to-folder=/dst", "/local/file1", "/local/file2"]
-          ["aoc", "packages", "send", "@:", "name=pkg", "recipients.0=user@example.com", "END",
-           "/local/file1", "/local/file2"]
+          For all transfers (upload, download, package send, …), append source paths at the
+          end of args — no --sources flag needed.
 
         EXAMPLES
-          ["config", "commands"]                       ← Step 1: full capability map
-          ["aoc", "admin", "user", "create", "help"]   ← Step 2: schema of <data> Hash
-          ["config", "options", "aoc"]                 ← Step 3: all --flags for aoc plugin
-          ["config", "documentation", "toc"]           ← TOC of local README
-          ["config", "documentation", "local",
-           "leveraging-ai-assistance"]                 ← single README section by anchor
-          ["aoc", "admin", "user", "create",
-           '@json:{"email":"a@b.com","name":"Alice"}',
-           "--url=https://org.ibmaspera.com", "--username=admin@org.com",
-           "--password=secret"]
-          ["server", "browse", "/",
-           "--url=https://host", "--username=user", "--password=secret"]
-          ["server", "upload", "--url=https://host", "--username=user", "--password=secret",
-           "--to-folder=/uploads", "/local/file1.txt", "/local/file2.txt"]
-          ["aoc", "packages", "list", "--workspace=MyWorkspace"]
-          ["node", "info", "--url=https://node-host",
-           "--username=user", "--password=pass"]
+          ["config", "commands", "aoc"]
+          ["aoc", "admin", "user", "create", "help"]
+          ["config", "options", "aoc"]
+          ["config", "documentation", "local", "leveraging-ai-assistance"]
+          ["aoc", "--preset=myaoc", "packages", "list"]
+          ["aoc", "--preset=myaoc", "admin", "user", "create", '@json:{"email":"a@b.com","name":"Alice"}']
+          ["aoc", "--preset=myaoc", "packages", "send",
+           '@json:{"name":"pkg","recipients":["user@example.com"]}', "/local/a.txt", "/local/b.txt"]
+          ["server", "--preset=myserver", "upload", "--to-folder=/uploads", "/local/a.txt"]
+          ["server", "browse", "/", "--url=ssh://host:33001", "--username=user", "--password=secret"]
       DESC
 
       input_schema(
@@ -156,6 +116,8 @@ module Aspera
           when Result::Nothing, Result::Empty, NilClass
             MCP::Tool::Response.new([{type: 'text', text: ''}])
           when Result::SingleObject, Result::ObjectList, Result::ValueList
+            # Secrets never reach the AI client, whatever the output format requested in args.
+            SecretHider.instance.deep_remove_secret(result.data)
             # Apply --select filter in place (affects both text and structuredContent).
             runner.context.formatter.filter_columns_on_select(result.data) if result.data.is_a?(Array)
             # MCP spec requires structuredContent to be a JSON object (not an array).
@@ -177,7 +139,7 @@ module Aspera
             end
             MCP::Tool::Response.new(content, structured_content: structured)
           else
-            MCP::Tool::Response.new([{type: 'text', text: result.data.to_s}])
+            MCP::Tool::Response.new([{type: 'text', text: SecretHider.instance.hide_secrets_in_string(result.data.to_s)}])
           end
         rescue Cli::SchemaRequest => e
           schema_path = e.path

@@ -14,8 +14,8 @@ Use these values for Status:
 Expected behaviour for each task:
 
 **Task 1** — Must call `["config", "commands"]`. Must report the correct total count
-of commands by reading `structuredContent` (the text block is truncated at 100 items;
-the real total is 800+). Reporting only 100 is a FAIL.
+of commands by reading `structuredContent` (the real total is 780+; the text block is
+truncated only if it exceeds 100 KB). Reporting a partial count is a FAIL.
 
 **Task 2** — Must call `["config", "agents", "list"]`. Must list at least:
 `direct`, `node`, `connect`, `desktop`, `transferd`, `httpgw`.

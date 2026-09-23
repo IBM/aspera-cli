@@ -220,7 +220,8 @@ module Aspera
           command :import,   description: 'Import secrets from a JSON array (supports --bulk)',
             arguments: [{name: :secrets, type: Array, schema: {type: 'array', items: {'$ref' => Schema::Registry::VAULT_SECRET}}}]
         end
-        command :commands, description: 'List all available commands across all plugins'
+        command :commands, description: 'List all available commands, of all plugins or only the given one',
+          arguments: [{name: :plugin_name, type: String, mandatory: false, default: nil}]
         command :options, description: 'List all options available for a plugin',
           arguments: [{name: :plugin_name, type: String}]
         command :test, description: 'Internal test commands'
@@ -517,8 +518,13 @@ module Aspera
           Result::Status.new('Done')
         end
 
-        def action_commands
-          commands = Plugins::Factory.instance.plugin_list.flat_map do |name|
+        def action_commands(plugin_name: nil, **)
+          plugin_names = Plugins::Factory.instance.plugin_list
+          unless plugin_name.nil?
+            Aspera.assert_values(plugin_name.to_sym, plugin_names, type: Cli::BadArgument)
+            plugin_names = [plugin_name.to_sym]
+          end
+          commands = plugin_names.flat_map do |name|
             plugin_class = Plugins::Factory.instance.plugin_class(name)
             reg = plugin_class.command_registry
             reg.all_paths.reject { |path| reg.children_of(path).any? }.map do |path|

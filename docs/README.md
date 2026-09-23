@@ -2737,6 +2737,7 @@ coffee --ui=text
 coffee --ui=text --out.img.text=true
 coffee --ui=text --out.img=@json:'{"text":true,"double":false}'
 commands
+commands server
 detect app.example.com
 detect https://f5.example.com/path
 detect https://f5.example.com/path faspex5
@@ -9961,7 +9962,8 @@ are active for each plugin.
 
 #### Command discovery
 
-Always use `["config", "commands"]` to enumerate every available command and its syntax.
+Always use `["config", "commands", "<plugin>"]` to enumerate the commands of a plugin and their syntax.
+Omit `<plugin>` to list the commands of all plugins (much larger result).
 Never guess command names from training data — names like `shared_folders` vs
 `shared_inboxes` are easily confused.
 

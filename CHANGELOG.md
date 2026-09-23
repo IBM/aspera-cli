@@ -6,9 +6,13 @@ Released: [Place date of release here]
 
 ### New Features
 
+* `config`: Command `commands` accepts an optional plugin name to list only that plugin's commands.
+* `mcp`: Shorter server instructions and tool description, examples use presets and `@json:`.
+
 ### Issues Fixed
 
 * `faspex5`: Command `admin account show` was failing.
+* `mcp`: Secrets (e.g. from `config preset show`) are now hidden in tool results.
 
 ### Breaking Changes
 

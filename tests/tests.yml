@@ -4725,6 +4725,22 @@ conf_commands:
   args:
     - config
     - commands
+conf_commands_plugin:
+  description: List commands of a single plugin
+  args:
+    - config
+    - commands
+    - server
+conf_commands_unknown:
+  description: Error when plugin name does not exist
+  tags:
+    - must_fail
+    - nodoc
+  expect: "expecting one of"
+  args:
+    - config
+    - commands
+    - no_such_plugin_xyz
 conf_options_server:
   description: List all options for the server plugin as structured data
   args:
