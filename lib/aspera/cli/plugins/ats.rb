@@ -8,6 +8,8 @@ require 'aspera/api/ats'
 require 'aspera/api/aoc'
 require 'aspera/api/alee'
 require 'aspera/assert'
+require 'aspera/rainbow'
+using Rainbow
 
 module Aspera
   module Cli
@@ -162,7 +164,7 @@ module Aspera
             server_data = server_by_cloud_region
             params['transfer_server_id'] = server_data['id']
           end
-          Log.log.debug { "using params: #{params}".bg_red.gray }
+          Log.log.debug { "using params: #{params}".bg(:red).white }
           if params.key?('storage')
             case params['storage']['type']
             # here we need somehow to map storage type to field to get for auth end point

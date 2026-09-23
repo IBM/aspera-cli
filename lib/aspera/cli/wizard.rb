@@ -4,6 +4,8 @@ require 'aspera/oauth/jwt'
 require 'aspera/assert'
 require 'aspera/cli/option_declarator'
 require 'aspera/cli/plugins/factory'
+require 'aspera/rainbow'
+using Rainbow
 
 module Aspera
   module Cli

@@ -18,6 +18,8 @@ require 'yaml'
 require 'pp'
 require 'csv'
 require 'word_wrap'
+require 'aspera/rainbow'
+using Rainbow
 
 module Aspera
   module Cli
@@ -106,7 +108,7 @@ module Aspera
         total = total.to_i
         return if total.eql?(0) && count.eql?(0)
         count_msg = "Items: #{count}/#{total}"
-        count_msg = count_msg.bg_red unless count.eql?(total)
+        count_msg = count_msg.bg(:red) unless count.eql?(total)
         display_status(count_msg)
       end
 

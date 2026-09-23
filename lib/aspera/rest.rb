@@ -14,6 +14,8 @@ require 'base64'
 require 'singleton'
 require 'securerandom'
 require 'fileutils'
+require 'aspera/rainbow'
+using Rainbow
 
 # Cancel method for HTTP
 class Net::HTTP::Cancel < Net::HTTPRequest # rubocop:disable Style/ClassAndModuleChildren
@@ -346,7 +348,7 @@ module Aspera
     )
       subpath = subpath.to_s if subpath.is_a?(Symbol)
       subpath = '' if subpath.nil?
-      Log.log.debug { "call #{operation} [#{subpath}]".red.bold.bg_green }
+      Log.log.debug { "call #{operation} [#{subpath}]".red.bold.bg(:green) }
       Log.dump(:body, body, level: :trace1)
       Log.dump(:query, query, level: :trace1)
       Log.dump(:headers, headers, level: :trace1)
@@ -401,7 +403,7 @@ module Aspera
             req['Authorization'] = oauth.authorization(refresh: true)
           rescue RestCallError => e_tok
             e = e_tok
-            Log.log.error('refresh failed'.bg_red)
+            Log.log.error('refresh failed'.bg(:red))
             # regenerate a brand new token
             req['Authorization'] = oauth.authorization(cache: false)
           end

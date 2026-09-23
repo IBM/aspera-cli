@@ -8,6 +8,8 @@ require 'singleton'
 require 'open3'
 require 'English'
 require 'shellwords'
+require 'aspera/rainbow'
+using Rainbow
 
 # cspell:words MEBI mswin bccwin
 

@@ -18,6 +18,8 @@ require 'aspera/uri_reader'
 require 'aspera/log'
 require 'aspera/assert'
 require 'securerandom'
+require 'aspera/rainbow'
+using Rainbow
 
 module Aspera
   module Cli
@@ -361,7 +363,7 @@ module Aspera
             Log.log.debug { "processing entry #{entry_path_with_slash}" } if @periodic.trigger?
             entry_path_with_slash = "#{entry_path_with_slash}/" unless entry_path_with_slash.end_with?('/')
             if !top_path.nil? && !top_path.start_with?(entry_path_with_slash) && !entry_path_with_slash.start_with?(top_path)
-              Log.log.debug { "#{entry['path']} folder (skip start)".bg_red }
+              Log.log.debug { "#{entry['path']} folder (skip start)".bg(:red) }
               next
             end
             Log.log.debug { "item:#{entry}" }
@@ -377,7 +379,7 @@ module Aspera
                 Log.log.debug('Ignoring link.')
               when 'folder'
                 if @option_skip_folders.include?(entry['path'])
-                  Log.log.debug { "#{entry['path']} folder (skip list)".bg_red }
+                  Log.log.debug { "#{entry['path']} folder (skip list)".bg(:red) }
                 else
                   Log.log.debug { "#{entry['path']} folder".green }
                   # get folder content

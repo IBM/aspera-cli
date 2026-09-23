@@ -4,6 +4,8 @@ require 'aspera/oauth/factory'
 require 'aspera/log'
 require 'aspera/assert'
 require 'date'
+require 'aspera/rainbow'
+using Rainbow
 
 module Aspera
   module OAuth
@@ -62,7 +64,7 @@ module Aspera
       # @return [Net::HTTPResponse] Raw HTTP response with token
       # @raise [RestCallError] If not 2XX code
       def create_token_base(include_secret: false, **other_params)
-        Log.log.debug { 'Generating a new token'.bg_green }
+        Log.log.debug { 'Generating a new token'.bg(:green) }
         creation_params = base_parameters(include_secret: include_secret, **other_params)
         return @api.create(@path_token, nil, query: creation_params, ret: :resp) if @use_query
         return @api.create(@path_token, creation_params, content_type: Mime::WWW, ret: :resp)

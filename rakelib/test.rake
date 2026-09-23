@@ -15,6 +15,8 @@ require 'yaml'
 require_relative '../build/lib/build_tools'
 require_relative '../build/lib/paths'
 require_relative '../build/lib/test_env'
+require 'aspera/rainbow'
+using Rainbow
 # spec tests (only if rspec is available)
 begin
   require 'rspec/core/rake_task'

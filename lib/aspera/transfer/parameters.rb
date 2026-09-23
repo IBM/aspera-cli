@@ -16,6 +16,8 @@ require 'base64'
 require 'json'
 require 'fileutils'
 require 'openssl'
+require 'aspera/rainbow'
+using Rainbow
 
 module Aspera
   module Transfer

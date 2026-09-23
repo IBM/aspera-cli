@@ -9,6 +9,8 @@ require 'aspera/transfer/spec'
 require 'aspera/api/node'
 require 'aspera/rest_list'
 require 'base64'
+require 'aspera/rainbow'
+using Rainbow
 
 module Aspera
   module Api

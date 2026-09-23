@@ -6,6 +6,8 @@ require 'aspera/products/other'
 require 'aspera/rest'
 require 'aspera/environment'
 require 'securerandom'
+require 'aspera/rainbow'
+using Rainbow
 
 module Aspera
   module Agent

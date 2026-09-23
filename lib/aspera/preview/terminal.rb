@@ -2,11 +2,12 @@
 
 # cspell:words Magick MAGICKCORE ITERM mintty winsize termcap
 
-require 'rainbow'
 require 'base64'
 require 'io/console'
 require 'aspera/log'
 require 'aspera/environment'
+require 'aspera/rainbow'
+using Rainbow
 
 module Aspera
   module Preview
@@ -155,9 +156,9 @@ module Aspera
             row_data.each_with_index do |pixel_rgb, col|
               text_pixels.push("\n") if col.eql?(0) && !row.eql?(0)
               if double
-                text_pixels.push(Rainbow('▄').background(pixel_rgb).foreground(pixel_colors[row + 1][col]))
+                text_pixels.push('▄'.bg(pixel_rgb).fg(pixel_colors[row + 1][col]))
               else
-                text_pixels.push(Rainbow(' ').background(pixel_rgb))
+                text_pixels.push(' '.bg(pixel_rgb))
               end
             end
           end

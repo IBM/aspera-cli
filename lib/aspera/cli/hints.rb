@@ -8,6 +8,8 @@ require 'aspera/assert'
 require 'aspera/cli/info'
 require 'net/ssh'
 require 'openssl'
+require 'aspera/rainbow'
+using Rainbow
 
 module Aspera
   module Cli
@@ -145,7 +147,7 @@ module Aspera
               else Aspera.error_unexpected_value(m) { 'hint match' }
               end
               hint[:remediation].each do |r|
-                Log.log.info { "#{'HINT:'.bg_green.gray.blink.freeze} #{r}" }
+                Log.log.info { "#{'HINT:'.bg(:green).white.blink.freeze} #{r}" }
               end
             end
           end

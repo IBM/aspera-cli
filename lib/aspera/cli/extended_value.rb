@@ -12,6 +12,8 @@ require 'base64'
 require 'zlib'
 require 'csv'
 require 'singleton'
+require 'aspera/rainbow'
+using Rainbow
 
 module Aspera
   module Cli

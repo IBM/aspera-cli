@@ -12,6 +12,8 @@ require 'openssl'
 require 'pathname'
 require 'zlib'
 require 'net/ssh/buffer'
+require 'aspera/rainbow'
+using Rainbow
 
 module Aspera
   module Api
@@ -329,7 +331,7 @@ module Aspera
         until folders_to_explore.empty?
           # Consume first in job list
           current_item = folders_to_explore.shift
-          Log.log.debug { "Exploring #{current_item[:path]}".bg_green }
+          Log.log.debug { "Exploring #{current_item[:path]}".bg(:green) }
           # Get folder content
           folder_contents = read_folder_content(current_item[:id], query, exception: false, path: current_item[:path])
           Log.dump(:folder_contents, folder_contents)

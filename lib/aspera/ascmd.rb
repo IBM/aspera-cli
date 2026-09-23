@@ -3,6 +3,8 @@
 # cspell:ignore ascmd smode errstr zstr zmode zuid zgid zctime zatime zmtime fcount dcount btype blist codeset lc_ctype ascmdtypes
 require 'aspera/log'
 require 'aspera/assert'
+require 'aspera/rainbow'
+using Rainbow
 
 module Aspera
   # Run `ascmd` commands using specified executor (usually, remotely on transfer node)

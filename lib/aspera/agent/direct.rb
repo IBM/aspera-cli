@@ -14,6 +14,8 @@ require 'socket'
 require 'securerandom'
 require 'shellwords'
 require 'English'
+require 'aspera/rainbow'
+using Rainbow
 
 module Aspera
   module Agent
@@ -258,7 +260,7 @@ module Aspera
           @resume_policy.execute_with_resume do
             start_and_monitor_process(session: session, exec_spec: session[:exec_spec])
           end
-          Log.log.debug('transfer ok'.bg_green)
+          Log.log.debug('transfer ok'.bg(:green))
         rescue => e
           session[:error] = e
           raise if Log.log.debug? || !e.is_a?(Transfer::Error)

@@ -24,6 +24,8 @@ require 'pathname'
 require_relative 'test_env'
 require_relative 'paths'
 require_relative 'build_tools'
+require 'aspera/rainbow'
+using Rainbow
 
 # Markdown/HTML formatter for static documentation
 # @see Aspera::FormatterInterface

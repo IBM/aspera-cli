@@ -5,7 +5,8 @@ require 'rake'
 require 'openssl'
 require 'pathname'
 require 'singleton'
-require 'aspera/colors'
+require 'aspera/rainbow'
+using Rainbow
 
 require_relative '../build/lib/build_tools'
 include BuildTools

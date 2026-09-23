@@ -9,6 +9,8 @@ require 'securerandom'
 require 'websocket'
 require 'base64'
 require 'json'
+require 'aspera/rainbow'
+using Rainbow
 
 # Throw exception on error, instead of error code
 WebSocket.should_raise = true

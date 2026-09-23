@@ -4,6 +4,8 @@ require 'aspera/environment'
 require 'aspera/formatter_interface'
 require 'aspera/markdown'
 require 'aspera/assert'
+require 'aspera/rainbow'
+using Rainbow
 
 module Aspera
   module Cli
@@ -11,7 +13,7 @@ module Aspera
     # @see FormatterInterface
     # @see MarkdownFormatter (in build/lib/doc_helper.rb)
     module TerminalFormatter
-      HINT = 'HINT:'.bg_green.gray.blink.freeze
+      HINT = 'HINT:'.bg(:green).white.blink.freeze
       include FormatterInterface
 
       # Format boolean with colored symbol (+/- or Y/ )
@@ -29,7 +31,7 @@ module Aspera
       # Format special values with colors (dim for empty, reverse for others)
       def special_format(what)
         result = "<#{what}>"
-        return %w[null empty].any? { |s| what.include?(s) } ? result.dim : result.reverse_color
+        return %w[null empty].any? { |s| what.include?(s) } ? result.faint : result.inverse
       end
 
       # Prepare table row for terminal display (word wrap arrays)

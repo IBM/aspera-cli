@@ -1,13 +1,14 @@
 # frozen_string_literal: true
 
 require 'aspera/assert'
-require 'aspera/colors'
 require 'aspera/secret_hider'
 require 'logger'
 require 'pp'
 require 'json'
 require 'singleton'
 require 'stringio'
+require 'aspera/rainbow'
+using Rainbow
 
 # Ignore warnings
 old_verbose = $VERBOSE
@@ -230,22 +231,17 @@ module Aspera
       self.logger_type = @logger_type
     end
 
-    # Define decoration of levels
-    LVL_DECO = {
-      TRACE2:  %i{dim},
-      TRACE1:  %i{blue},
-      DEBUG:   %i{cyan},
-      INFO:    %i{green},
-      WARN:    %i{bg_brown black},
-      ERROR:   %i{bg_red blink},
-      FATAL:   %i{magenta},
-      UNKNOWN: %i{blink}
-    }.freeze
-
     # Short (4-letters) levels with color
-    LVL_COLOR = LVL_DECO.to_h do |k, v|
-      [k, short_levl(k).apply(*v)]
-    end.freeze
+    LVL_COLOR = {
+      TRACE2:  short_levl(:TRACE2).faint,
+      TRACE1:  short_levl(:TRACE1).blue,
+      DEBUG:   short_levl(:DEBUG).cyan,
+      INFO:    short_levl(:INFO).green,
+      WARN:    short_levl(:WARN).bg(:yellow).black,
+      ERROR:   short_levl(:ERROR).bg(:red).blink,
+      FATAL:   short_levl(:FATAL).magenta,
+      UNKNOWN: short_levl(:UNKNOWN).blink
+    }.freeze
 
     DEFAULT_FORMATTER = ->(s, _d, _p, m) { "#{LVL_COLOR[s]} #{m}\n" }
 
@@ -258,6 +254,6 @@ module Aspera
 
     FORMATTERS = FORMATTER_LAMBDAS.keys
 
-    private_constant :LVL_DECO, :DEFAULT_FORMATTER, :FORMATTER_LAMBDAS
+    private_constant :DEFAULT_FORMATTER, :FORMATTER_LAMBDAS
   end
 end

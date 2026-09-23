@@ -8,6 +8,8 @@ require 'aspera/environment'
 require 'aspera/cli/version'
 require 'aspera/cli/parser'
 require_relative 'paths'
+require 'aspera/rainbow'
+using Rainbow
 
 module BuildTools
   # @see Aspera::Log#logger

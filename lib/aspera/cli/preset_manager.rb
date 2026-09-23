@@ -9,6 +9,8 @@ require 'aspera/assert'
 require 'aspera/yaml'
 require 'digest'
 require 'yaml'
+require 'aspera/rainbow'
+using Rainbow
 
 module Aspera
   module Cli

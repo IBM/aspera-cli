@@ -18,6 +18,8 @@ require 'aspera/assert'
 require 'aspera/graphql'
 require 'securerandom'
 require 'date'
+require 'aspera/rainbow'
+using Rainbow
 
 module Aspera
   module Cli

@@ -15,6 +15,8 @@ require 'aspera/nagios'
 require 'aspera/environment'
 require 'aspera/assert'
 require 'securerandom'
+require 'aspera/rainbow'
+using Rainbow
 
 module Aspera
   module Cli
