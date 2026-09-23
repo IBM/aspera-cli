@@ -2,7 +2,7 @@
 
 require 'aspera/oauth/base'
 require 'aspera/environment'
-require 'aspera/web_auth'
+require 'aspera/web_auth/server'
 require 'aspera/assert'
 module Aspera
   module OAuth
@@ -37,7 +37,7 @@ module Aspera
         # here, we need a human to authorize on a web page
         Log.log.debug { "login_page_url=#{login_page_url}" }
         # start a web server to receive request code
-        web_server = WebAuth.new(@redirect_uri, self.class.additional_info)
+        web_server = WebAuth::Server.new(@redirect_uri, self.class.additional_info)
         # start browser on login page
         Environment.instance.open_uri(login_page_url)
         # wait for code in request
