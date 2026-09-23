@@ -1,7 +1,9 @@
 Metrics/ClassLength:
-  Enabled: false
+  Enabled: true
+  Max: 1300
 Metrics/MethodLength:
-  Enabled: false
+  Enabled: true
+  Max: 150
 Metrics/AbcSize:
   Enabled: false
 Layout/SpaceBeforeBlockBraces:
