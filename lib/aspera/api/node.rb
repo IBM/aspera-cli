@@ -42,6 +42,26 @@ module Aspera
         # Separator between node.AK and user:all
         SEPARATOR = ':'
         NODE_PREFIX = 'node.'
+
+        extend self
+
+        # Encode node API scope
+        # @param access_key [String] Access Key
+        # @param scope [String] internal scope
+        # @return [String] full node scope
+        def join(access_key:, scope:)
+          ["#{NODE_PREFIX}#{access_key}", scope].join(SEPARATOR)
+        end
+
+        # Decode node scope into access key and scope
+        # @param scope [String] scope string to split
+        # @return [Hash] decoded scope with access key and scope parts
+        def split(scope)
+          items = scope.split(Scope::SEPARATOR, 2)
+          Aspera.assert(items.length.eql?(2)) { "invalid scope: #{scope}" }
+          Aspera.assert(items[0].start_with?(NODE_PREFIX)) { "invalid scope: #{scope}" }
+          {access_key: items[0].delete_prefix(NODE_PREFIX), scope: items[1]}
+        end
       end
       # Delimiter in decoded node token
       SIGNATURE_DELIMITER = '==SIGNATURE=='
@@ -54,10 +74,10 @@ module Aspera
       HEADER_X_ASPERA_ACCESS_KEY = 'X-Aspera-AccessKey'
       HEADER_X_CACHE_CONTROL = 'X-Aspera-Cache-Control'
       HEADER_X_NEXT_ITER_TOKEN = 'X-Aspera-Next-Iteration-Token'
+      HEADER_X_TOTAL_COUNT = 'X-Total-Count'
       HEADER_ACCEPT_VERSION = 'Accept-Version'
       # / in cloud
       PATH_SEPARATOR = '/'
-      HEADER_X_TOTAL_COUNT = 'X-Total-Count'
 
       # Register node special token decoder
       OAuth::Factory.instance.register_decoder(lambda { |token| Node.decode_bearer_token(token) })
@@ -133,22 +153,6 @@ module Aspera
           [folder.join(PATH_SEPARATOR), inside]
         end
 
-        # Node API scopes
-        # @return [String] node scope
-        def token_scope(access_key, scope)
-          return [Scope::NODE_PREFIX, access_key, Scope::SEPARATOR, scope].join('')
-        end
-
-        # Decode node scope into access key and scope
-        # @param scope [String] scope string to decode
-        # @return [Hash] decoded scope with access key and scope parts
-        def decode_scope(scope)
-          items = scope.split(Scope::SEPARATOR, 2)
-          Aspera.assert(items.length.eql?(2)) { "invalid scope: #{scope}" }
-          Aspera.assert(items[0].start_with?(Scope::NODE_PREFIX)) { "invalid scope: #{scope}" }
-          return {access_key: items[0].delete_prefix(Scope::NODE_PREFIX), scope: items[1]}
-        end
-
         # Create an Aspera Node bearer token
         # @param access_key [String] Access key identifier
         # @param payload [String] JSON payload to be included in the token
@@ -162,9 +166,8 @@ module Aspera
           # Manage convenience parameters
           expiration_sec = payload['_validity'] || BEARER_TOKEN_VALIDITY_DEFAULT
           payload.delete('_validity')
-          scope = payload['_scope'] || Scope::USER
-          payload.delete('_scope')
-          payload['scope'] ||= token_scope(access_key, scope)
+          scope = payload.delete('_scope') || Scope::USER
+          payload['scope'] ||= Scope.join(access_key: access_key, scope: scope)
           payload['auth_type'] ||= 'access_key'
           payload['expires_at'] ||= (Time.now + expiration_sec).utc.strftime('%FT%TZ')
           payload_json = JSON.generate(payload)
@@ -185,7 +188,7 @@ module Aspera
         def bearer_headers(bearer_auth, access_key: nil)
           # If username is not provided, use the access key from the token
           if access_key.nil?
-            access_key = Node.decode_scope(Node.decode_bearer_token(OAuth::Factory.bearer_token(bearer_auth))['scope'])[:access_key]
+            access_key = Node::Scope.split(Node.decode_bearer_token(OAuth::Factory.bearer_token(bearer_auth))['scope'])[:access_key]
             Aspera.assert(!access_key.nil?, 'access_key could not be determined from token')
           end
           return {

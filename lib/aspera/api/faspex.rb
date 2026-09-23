@@ -142,6 +142,7 @@ module Aspera
 
       # @param url            [String] Faspex URL, can be a public link
       # @param auth           [Symbol] Authentication method: :boot (token in header), :web (open browser), :jwt (client_id + private key), :public_link (context in URL)
+      # @param root           [String] Root path for API
       # @param password       [String, nil] For :boot auth, the token copied directly from browser in developer mode
       # @param client_id      [String, nil] For :web and :jwt auth, the client_id of web UI application
       # @param client_secret  [String, nil] For :web auth, the client_secret of web UI application (not needed for :jwt)
