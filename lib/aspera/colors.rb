@@ -4,11 +4,6 @@
 
 # simple vt100 colors
 class String
-  class << self
-    private
-
-    def vt_cmd(code); "\e[#{code}m"; end
-  end
   # see https://en.wikipedia.org/wiki/ANSI_escape_code
   # symbol is the method name added to String, e.g. "hello".bold
   # it adds control chars to set color (and reset at the end).
@@ -39,24 +34,32 @@ class String
     bg_gray:       47
   }.freeze
   private_constant :VT_STYLES
-  # Defines methods to String, one per entry in VT_STYLES
-  VT_STYLES.each do |name, code|
-    if $stdout.tty?
-      begin_seq = vt_cmd(code)
-      end_seq = vt_cmd(
-        if code <= 2 then 22
-        elsif code <= 8 then code + 20
-        elsif code <= 37 then 39
-        elsif code <= 47 then 49
+  class << self
+    # Defines methods to String, one per entry in VT_STYLES
+    def enable_colors(enabled = $stdout.tty?)
+      VT_STYLES.each do |name, code|
+        if enabled
+          define_method(name) { "#{String.vt_cmd(code)}#{self}#{String.vt_cmd(String.vt_end_code(code))}" }
         else
-          0 # by default reset all
+          define_method(name) { self }
         end
-      )
-      define_method(name) { "#{begin_seq}#{self}#{end_seq}" }
-    else
-      define_method(name) { self }
+      end
     end
+
+    def vt_end_code(code)
+      if code <= 2 then 22
+      elsif code <= 8 then code + 20
+      elsif code <= 37 then 39
+      elsif code <= 47 then 49
+      else
+        0 # by default reset all
+      end
+    end
+
+    def vt_cmd(code); "\e[#{code}m"; end
   end
+
+  enable_colors
 
   # Applies the provided list of string decoration (colors).
   # @param colors [Array<Symbol>] List of decorations.
