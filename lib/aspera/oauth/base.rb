@@ -47,36 +47,39 @@ module Aspera
       # Sub path to generate token
       attr_reader :path_token
 
+      # Parameters for token creation call
+      # @param include_secret [Boolean] Add secret in default call parameters
+      # @param other_params [Hash] Other parameters to merge
+      # @return [Hash] Token creation parameters
+      def base_parameters(include_secret: false, **other_params)
+        call_params = @params.dup
+        call_params.delete(:client_secret) unless include_secret
+        call_params.merge(other_params)
+      end
+
       # Helper method to create token as per RFC
-      # @return [Net::HTTPResponse] raw HTTP response with token
-      # @raise [RestCallError] if not 2XX code
-      def create_token_call(creation_params)
+      # @param other_params [Hash] Additional parameter to base parameters
+      # @return [Net::HTTPResponse] Raw HTTP response with token
+      # @raise [RestCallError] If not 2XX code
+      def create_token_base(include_secret: false, **other_params)
         Log.log.debug { 'Generating a new token'.bg_green }
+        creation_params = base_parameters(include_secret: include_secret, **other_params)
         return @api.create(@path_token, nil, query: creation_params, ret: :resp) if @use_query
         return @api.create(@path_token, creation_params, content_type: Mime::WWW, ret: :resp)
       end
 
-      # Create base parameters for token creation calls
-      # @param add_secret [Boolean] Add secret in default call parameters
-      # @return [Hash] Optional general parameters
-      def base_params(add_secret: false)
-        call_params = @params.dup
-        call_params.delete(:client_secret) unless add_secret
-        return call_params
-      end
-
-      # @return [String] value suitable for Authorization header
+      # @return [String] Value suitable for Authorization header: adds `Bearer `
       def authorization(**kwargs)
         return OAuth::Factory.bearer_authorization(token(**kwargs))
       end
 
-      # get an OAuth v2 token (generated, cached, refreshed)
-      # call token() to get a token.
-      # if a token is expired (api returns 4xx), call again token(refresh: true)
+      # Get a OAuth v2 token (generated, cached, refreshed)
+      # If a token is expired (api returns 4xx), call again token(refresh: true)
       # @param cache   [Boolean] set to false to disable cache
       # @param refresh [Boolean] set to true to force refresh or re-generation (if previous failed)
+      # @return [String] The bearer token
       def token(cache: true, refresh: false)
-        # get token info from cache (or nil), decoded with date and expiration status
+        # Get token info from cache (or nil), decoded with date and expiration status
         token_info = Factory.instance.get_token_info(@token_cache_id) if cache
         token_data = nil
         unless token_info.nil?
@@ -90,17 +93,21 @@ module Aspera
             Log.log.trace1 { "refresh: #{refresh} expired: #{token_info[:expired]}" }
             refresh_token = nil
             if token_data.key?('refresh_token') && !token_data['refresh_token'].eql?('not_supported')
-              # save possible refresh token, before deleting the cache
+              # Save possible refresh token, before deleting the cache
               refresh_token = token_data['refresh_token']
             end
-            # delete cache
+            # Delete cache
             Factory.instance.persist_mgr.delete(@token_cache_id)
             token_data = nil
-            # lets try the existing refresh token
+            # Lets try the existing refresh token
             # NOTE: AoC admin token has no refresh, and lives by default 1800secs
             if !refresh_token.nil?
               begin
-                http = create_token_call(base_params(add_secret: true).merge(grant_type: 'refresh_token', refresh_token: refresh_token))
+                http = create_token_base(
+                  include_secret: true,
+                  grant_type: 'refresh_token',
+                  refresh_token: refresh_token
+                )
                 # Save only if success
                 json_data = http.body
                 token_data = JSON.parse(json_data)
@@ -116,13 +123,13 @@ module Aspera
         # no cache, nor refresh: generate a token
         if token_data.nil?
           # Call the method-specific token creation
-          # which returns the result of create_token_call
+          # which returns the result of create_token_base
           json_data = create_token.body
           token_data = JSON.parse(json_data)
           Factory.instance.persist_mgr.put(@token_cache_id, json_data)
         end
         Aspera.assert(token_data.key?(@token_field)) { "API error: No such field in answer: #{@token_field}" } unless token_data.nil?
-        # ok we shall have a token here
+        # Ok we shall have a token here
         return token_data[@token_field]
       end
     end

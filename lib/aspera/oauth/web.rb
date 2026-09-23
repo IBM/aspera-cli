@@ -32,7 +32,7 @@ module Aspera
         random_state = SecureRandom.uuid
         login_page_url = Rest.build_uri(
           "#{api.base_url}/#{@path_authorize}",
-          base_params.merge(response_type: 'code', redirect_uri: @redirect_uri, state: random_state)
+          base_parameters(response_type: 'code', redirect_uri: @redirect_uri, state: random_state)
         )
         # here, we need a human to authorize on a web page
         Log.log.debug { "login_page_url=#{login_page_url}" }
@@ -44,11 +44,12 @@ module Aspera
         received_params = web_server.received_request
         Aspera.assert(random_state.eql?(received_params['state'])) { 'wrong received state' }
         # exchange code for token
-        return create_token_call(base_params(add_secret: true).merge(
-          grant_type:   'authorization_code',
-          code:         received_params['code'],
-          redirect_uri: @redirect_uri
-        ))
+        create_token_base(
+          include_secret: true,
+          grant_type:     'authorization_code',
+          code:           received_params['code'],
+          redirect_uri:   @redirect_uri
+        )
       end
     end
     Factory.instance.register_token_creator(Web)

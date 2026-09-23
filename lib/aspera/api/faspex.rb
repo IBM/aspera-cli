@@ -15,6 +15,7 @@ module Aspera
     # @param context        [String] The `context` query parameter in public link
     # @param redirect_uri   [String] URI of web UI login
     # @param path_authorize [String] Path to provide passcode
+    # @param base_params    [Hash] Parameters for base class
     def initialize(
       context:,
       redirect_uri:,
@@ -48,11 +49,11 @@ module Aspera
       raise Error, info['action_message'] if info['action_message']
       Aspera.assert(info['code'], 'Missing code in answer')
       # Exchange code for token
-      return create_token_call(base_params.merge(
+      create_token_base(
         grant_type:   'authorization_code',
         code:         info['code'],
         redirect_uri: @redirect_uri
-      ))
+      )
     end
   end
   OAuth::Factory.instance.register_token_creator(FaspexPubLink)
