@@ -3,7 +3,7 @@ Metrics/ClassLength:
   Max: 1300
 Metrics/MethodLength:
   Enabled: true
-  Max: 150
+  Max: 105
 Metrics/AbcSize:
   Enabled: false
 Layout/SpaceBeforeBlockBraces:

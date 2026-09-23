@@ -450,7 +450,7 @@ module Aspera
         Log.log.debug('declare_global_options')
         @context.options.declare(:help, description: 'Show this message', allowed: Type::NONE, short: 'h') do
           @option_help = true
-          @context.options.help_requested = true
+          @context.help_requested = true
         end
         @context.options.declare(:show_config, description: 'Display parameters used for the provided action', allowed: Type::NONE) { @option_show_config = true }
         @context.options.declare(:version, description: 'Display version', allowed: Type::NONE, short: 'v') { @context.formatter.display_message(:data, Cli::VERSION); Process.exit(0) } # rubocop:disable Style/Semicolon

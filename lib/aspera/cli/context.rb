@@ -36,6 +36,8 @@ module Aspera
       attr_accessor :progress_bar
       # Optional: nil when no PAC script is configured
       attr_accessor :pac_executor
+      # `true` when help is requested (`-h`)
+      attr_accessor :help_requested
 
       # Initialize all members to nil, so that they are defined and can be validated later
       # @return [nil]
@@ -43,6 +45,7 @@ module Aspera
         MEMBERS.each { |i| instance_variable_set(:"@#{i}", nil) }
         @progress_bar = nil
         @pac_executor = nil
+        @help_requested = false
       end
 
       # Validate that all mandatory members are non-nil (detect bootstrap bugs)

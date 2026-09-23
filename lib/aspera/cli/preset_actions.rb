@@ -148,7 +148,7 @@ module Aspera
         cp = presets.config_presets
         cp[name] ||= {}
         option_names.each do |option_name|
-          option_value = options.get_interactive(option_name, check_option: true)
+          option_value = options.get_interactive(option_name)
           cp[name][option_name] = option_value
           secure_preset_option(cp[name], name, option_name)
         end

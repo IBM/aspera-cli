@@ -392,7 +392,7 @@ module Aspera
           spec     = registry[current_path]
           is_leaf  = spec && registry.children_of(current_path).empty?
 
-          if options.help_requested || skip_setup
+          if @context.help_requested || skip_setup
             # help_requested on an intermediate node: drain positional args without validation
             # so that dispatch_child can still consume the correct sub-command token
             if !is_leaf && !skip_setup && spec&.arguments
@@ -440,7 +440,7 @@ module Aspera
         # @param ctx [Hash]
         # @return [Object]
         def dispatch_leaf(current_path, spec, ctx)
-          if options.help_requested
+          if @context.help_requested
             @help_path = current_path
             raise Cli::HelpRequest, self
           end
@@ -468,7 +468,7 @@ module Aspera
 
           # Intercept --help before consuming the command token when no arg is pending.
           # This avoids MissingArgument being raised by get_next_command before HelpRequest.
-          if options.help_requested && options.command_or_arg_empty?
+          if @context.help_requested && options.command_or_arg_empty?
             @help_path = current_path
             raise Cli::HelpRequest, self
           end
@@ -478,7 +478,7 @@ module Aspera
 
           # Intercept --help after a command was consumed but no further args remain.
           # (e.g. `aoc files find -h`). When further args remain, keep recursing.
-          if options.help_requested && options.command_or_arg_empty?
+          if @context.help_requested && options.command_or_arg_empty?
             @help_path = current_path + [command]
             raise Cli::HelpRequest, self
           end

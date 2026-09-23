@@ -25,7 +25,7 @@ module Aspera
         it 'parses -X value when value is a separate token (after parse via set_option)' do
           opts = build_parser([])
           opts.declare(:xenon, description: 'Xenon option', short: 'X')
-          opts.set_option(:xenon, 'world', where: 'test')
+          opts.set_option(:xenon, 'world')
           expect(opts.get_option(:xenon)).to(eq('world'))
         end
 
@@ -37,11 +37,10 @@ module Aspera
           expect(opts.final_errors).to(be_empty)
         end
 
-        it 'treats -X alone (no glued value) as nil' do
+        it 'raises BadArgument for -X alone (no value)' do
           opts = build_parser(['-X'])
           opts.declare(:xenon, description: 'Xenon option', short: 'X')
-          opts.parse_options!
-          expect(opts.get_option(:xenon)).to(be_nil)
+          expect { opts.parse_options! }.to(raise_error(BadArgument, /requires a value/))
         end
 
         it 'does not consume the next token for flag options (TYPES_NONE) with -N syntax' do
@@ -198,18 +197,209 @@ module Aspera
       end
 
       describe 'edge cases' do
-        it 'raises BadArgument for a typed long option at end of line with no following value' do
+        it 'raises BadArgument for a long option at end of line with no following value' do
           opts = build_parser(['--level'])
           opts.declare(:level, description: 'Level', allowed: %i[debug info warn])
-          # nil is passed to assign_value when no argument follows; type validation raises BadArgument
-          expect { opts.parse_options! }.to(raise_error(BadArgument))
+          expect { opts.parse_options! }.to(raise_error(BadArgument, /requires a value/))
         end
 
-        it 'returns nil for an untyped (String) short option at end of line with no following value' do
-          opts = build_parser(['-X'])
-          opts.declare(:xenon, description: 'Xenon option', short: 'X')
+        it 'does not take a following option as value' do
+          opts = build_parser(['--name', '--level=info'])
+          opts.declare(:name, description: 'Name')
+          opts.declare(:level, description: 'Level', allowed: %i[debug info warn])
+          expect { opts.parse_options! }.to(raise_error(BadArgument, /requires a value/))
+        end
+
+        it 'accepts a negative number and a single dash as values' do
+          opts = build_parser(['--count', '-5', '--name', '-'])
+          opts.declare(:count, description: 'Count', allowed: Type::INTEGER)
+          opts.declare(:name, description: 'Name')
           opts.parse_options!
-          expect(opts.get_option(:xenon)).to(be_nil)
+          expect(opts.get_option(:count)).to(eq(-5))
+          expect(opts.get_option(:name)).to(eq('-'))
+        end
+
+        it 'raises BadArgument for a flag given a value' do
+          opts = build_parser(['--flag=x'])
+          opts.declare(:flag, description: 'Flag', allowed: Type::NONE) { nil }
+          expect { opts.parse_options! }.to(raise_error(BadArgument, /does not take a value/))
+        end
+      end
+
+      describe 'incremental declaration' do
+        it 'keeps unknown option with its space-separated value for a later parse' do
+          opts = build_parser(['--late', 'val', 'cmd'])
+          opts.parse_options!
+          # value is claimed by the unknown option, not a positional argument
+          expect(opts.get_next_argument('cmd')).to(eq('cmd'))
+          opts.declare(:late, description: 'Late option')
+          opts.parse_options!
+          expect(opts.get_option(:late)).to(eq('val'))
+          expect(opts.final_errors).to(be_empty)
+        end
+
+        it 'keeps positional order for unknown dotted option' do
+          opts = build_parser(['cmd1', '--custom.x', 'val', 'cmd2'])
+          opts.parse_options!
+          expect(opts.get_next_argument('a', multiple: true)).to(eq(%w[cmd1 cmd2]))
+          opts.declare(:custom, description: 'Custom object', allowed: [Hash, NilClass])
+          opts.parse_options!
+          expect(opts.get_option(:custom)).to(eq({'x' => 'val'}))
+        end
+
+        it 'gives back the token following a flag declared later' do
+          opts = build_parser(['-N', 'cmd', '--help', 'sub'])
+          opts.parse_options!
+          count = 0
+          opts.declare(:no_default, description: 'No default', short: 'N', allowed: Type::NONE) { count += 1 }
+          opts.declare(:help, description: 'Help', short: 'h', allowed: Type::NONE) { count += 1 }
+          opts.parse_options!
+          expect(count).to(eq(2))
+          expect(opts.get_next_argument('a', multiple: true)).to(eq(%w[cmd sub]))
+        end
+
+        it 'supports combined short flags' do
+          opts = build_parser(['-hN'])
+          called = []
+          opts.declare(:help, description: 'Help', short: 'h', allowed: Type::NONE) { called << :help }
+          opts.declare(:no_default, description: 'No default', short: 'N', allowed: Type::NONE) { called << :no_default }
+          opts.parse_options!
+          expect(called).to(eq(%i[help no_default]))
+        end
+
+        it 'accepts unique abbreviation of long option' do
+          opts = build_parser(['--form=json'])
+          opts.declare(:format, description: 'Format')
+          opts.parse_options!
+          expect(opts.get_option(:format)).to(eq('json'))
+        end
+
+        it 'raises BadArgument for ambiguous abbreviation' do
+          opts = build_parser(['--fo=json'])
+          opts.declare(:format, description: 'Format')
+          opts.declare(:folder, description: 'Folder')
+          expect { opts.parse_options! }.to(raise_error(BadArgument, /Ambiguous option/))
+        end
+
+        it 'raises BadArgument when a later declaration makes a used abbreviation ambiguous' do
+          opts = build_parser(['--fo=json'])
+          opts.declare(:format, description: 'Format')
+          opts.parse_options!
+          expect { opts.declare(:folder, description: 'Folder') }.to(raise_error(BadArgument, /Ambiguous option/))
+        end
+      end
+
+      describe 'value sources priority' do
+        it 'does not override command line with a preset added later' do
+          opts = build_parser(['--name=cli'])
+          opts.declare(:name, description: 'Name')
+          opts.parse_options!
+          opts.add_option_preset({name: 'preset'}, 'test')
+          opts.parse_options!
+          expect(opts.get_option(:name)).to(eq('cli'))
+        end
+
+        it 'merges a preset added later under a Hash from command line' do
+          opts = build_parser(['--vault.name=cli'])
+          opts.declare(:vault, description: 'Vault', allowed: Hash)
+          opts.parse_options!
+          opts.add_option_preset({vault: {'type' => 'file', 'name' => 'preset'}}, 'test', override: false)
+          opts.parse_options!
+          expect(opts.get_option(:vault)).to(eq({'type' => 'file', 'name' => 'cli'}))
+        end
+
+        it 'does not fill a Hash emptied on command line with a preset added later' do
+          opts = build_parser(['--vault=@none:'])
+          opts.declare(:vault, description: 'Vault', allowed: Hash)
+          opts.parse_options!
+          opts.add_option_preset({vault: {'type' => 'file'}}, 'test')
+          opts.parse_options!
+          expect(opts.get_option(:vault)).to(eq({}))
+        end
+
+        it 'does not restore a value explicitly cleared on command line' do
+          opts = build_parser(['--name=@none:'])
+          opts.declare(:name, description: 'Name')
+          opts.add_option_preset({name: 'preset'}, 'test')
+          opts.parse_options!
+          expect(opts.get_option(:name)).to(be_nil)
+        end
+
+        it 'does not override a preset with a plugin default preset added later' do
+          opts = build_parser([])
+          opts.declare(:name, description: 'Name')
+          opts.add_option_preset({name: 'preset'}, 'test')
+          opts.parse_options!
+          opts.add_option_preset({name: 'default'}, 'test', override: false)
+          opts.parse_options!
+          expect(opts.get_option(:name)).to(eq('preset'))
+        end
+      end
+
+      describe 'automatic parse' do
+        it 'applies command line on read of option, without explicit parse' do
+          opts = build_parser(['--name', 'val', 'cmd'])
+          opts.declare(:name, description: 'Name')
+          expect(opts.get_option(:name)).to(eq('val'))
+          expect(opts.get_next_argument('cmd')).to(eq('cmd'))
+        end
+
+        it 'applies options declared after a first read' do
+          opts = build_parser(['cmd', '--late=val'])
+          expect(opts.get_next_argument('cmd')).to(eq('cmd'))
+          opts.declare(:late, description: 'Late option')
+          expect(opts.get_option(:late)).to(eq('val'))
+          expect(opts.final_errors).to(be_empty)
+        end
+      end
+
+      describe 'option kinds' do
+        it 'recognizes boolean whatever the order of classes' do
+          opts = build_parser(['--flag=no'])
+          opts.declare(:flag, description: 'Flag', allowed: [TrueClass, FalseClass])
+          expect(opts.get_option(:flag)).to(be(false))
+        end
+
+        it 'accepts @none: on an integer option allowing nil' do
+          opts = build_parser(['--count=@none:'])
+          opts.declare(:count, description: 'Count', allowed: [Integer, NilClass])
+          expect(opts.get_option(:count)).to(be_nil)
+        end
+      end
+
+      describe 'misc' do
+        it 'returns a boolean from get_from_list for exact and prefix match' do
+          expect(Parser.get_from_list('yes', 'b', BoolValue::ALL)).to(be(true))
+          expect(Parser.get_from_list('ye', 'b', BoolValue::ALL)).to(be(true))
+          expect(Parser.get_from_list('no', 'b', BoolValue::ALL)).to(be(false))
+        end
+
+        it 'does not read a handler getter when assigning a scalar (getter may fail when unset)' do
+          target = Object.new
+          target.define_singleton_method(:path) { @path || raise('not initialized') }
+          target.define_singleton_method(:path=) { |v| @path = v }
+          opts = build_parser([])
+          opts.declare(:path, description: 'Path', handler: {o: target, m: :path})
+          opts.add_option_preset({path: '/a'}, 'test')
+          opts.parse_options!
+          expect(target.path).to(eq('/a'))
+        end
+
+        it 'clears an option stored by a handler' do
+          target = Struct.new(:val).new('x')
+          opts = build_parser([])
+          opts.declare(:val, description: 'Val', handler: {o: target, m: :val})
+          opts.clear_option(:val)
+          expect(opts.get_option(:val)).to(be_nil)
+          expect(target.val).to(be_nil)
+        end
+
+        it 'unprocessed_options_with_value consumes space-separated values' do
+          opts = build_parser(['--url', 'https://x', '--user.name=me', 'cmd'])
+          opts.parse_options!
+          expect(opts.unprocessed_options_with_value).to(eq({'url' => 'https://x', 'user' => {'name' => 'me'}}))
+          expect(opts.get_next_argument('a', multiple: true)).to(eq(%w[cmd]))
+          expect(opts.final_errors).to(be_empty)
         end
       end
 
@@ -221,12 +411,12 @@ module Aspera
 
         it 'set_option stores "help" without raising when option has no static schema' do
           opts = build_query_option(build_parser([]))
-          expect { opts.set_option(:query, 'help', where: 'test') }.not_to(raise_error)
+          expect { opts.set_option(:query, 'help') }.not_to(raise_error)
         end
 
         it 'raises SchemaRequest in get_option when value is "help" and schema: is provided' do
           opts = build_query_option(build_parser([]))
-          opts.set_option(:query, 'help', where: 'test')
+          opts.set_option(:query, 'help')
           expect do
             opts.get_option(:query, schema: 'faspex:paths./packages.get.parameters')
           end.to(raise_error(SchemaRequest) do |e|
@@ -237,13 +427,13 @@ module Aspera
 
         it 'returns the value normally when schema: is provided but value is not "help"' do
           opts = build_query_option(build_parser([]))
-          opts.set_option(:query, {'status' => 'completed'}, where: 'test')
+          opts.set_option(:query, {'status' => 'completed'})
           expect(opts.get_option(:query, schema: 'faspex:paths./packages.get.parameters')).to(eq({'status' => 'completed'}))
         end
 
         it 'does not raise SchemaRequest in get_option when schema: is nil and value is "help"' do
           opts = build_query_option(build_parser([]))
-          opts.set_option(:query, 'help', where: 'test')
+          opts.set_option(:query, 'help')
           expect { opts.get_option(:query) }.not_to(raise_error(SchemaRequest))
         end
 
@@ -259,7 +449,7 @@ module Aspera
             schema: 'faspex:paths./packages.post.requestBody.content.application/json.schema'
           )
           expect do
-            opts.set_option(:data, 'help', where: 'test')
+            opts.set_option(:data, 'help')
           end.to(raise_error(SchemaRequest) do |e|
             expect(e.path).to(include('requestBody'))
           end)
