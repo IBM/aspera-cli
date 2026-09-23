@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/assert'
+require 'aspera/string_ext'
 
 module Aspera
   module Ascp

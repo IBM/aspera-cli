@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'bundler/setup'
-require 'aspera/colors'
+require 'aspera/string_ext'
 
 RSpec.describe(String) do
   it 'converts capitalized to snake' do

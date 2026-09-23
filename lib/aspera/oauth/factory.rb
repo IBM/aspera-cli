@@ -2,6 +2,7 @@
 
 require 'aspera/id_generator'
 require 'aspera/assert'
+require 'aspera/string_ext'
 require 'singleton'
 require 'base64'
 module Aspera

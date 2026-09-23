@@ -48,3 +48,7 @@ Improve the DSL to distinguish between global CLI options, plugin-level options,
 - **DSL declaration**: Allow options to be declared with reduced/specific scopes (e.g., at command/subtree level via `command(..., options: [...])` or `scope:` parameter on `option`) in addition to global and plugin-wide options.
 - **Contextual `--help`**: In `--help` output, display only options relevant to the targeted command/path (command-specific, plugin-wide, and global sections).
 - **Documentation generation**: Enhance documentation generator to display scoped options only under the concerned commands.
+
+## Replace `colors.rb` with `Rainbow`
+
+Finally remove `colors.rb`

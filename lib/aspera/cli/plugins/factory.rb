@@ -4,6 +4,7 @@ require 'singleton'
 require 'aspera/assert'
 require 'aspera/cli/error'
 require 'aspera/environment'
+require 'aspera/string_ext'
 
 module Aspera
   module Cli
