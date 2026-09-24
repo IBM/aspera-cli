@@ -406,7 +406,10 @@ module Aspera
         NODE_GEN4_MOUNT = {plugin: Node, at: %i[access_keys do]}.freeze
         # Package identifier argument, `%name:` selector (lookup method shared with `admin package`)
         PACKAGE_ID_ARG = {name: :package_id, type: :identifier, lookup: :lookup_aoc_package_id}.freeze
-        private_constant :TRANSFER_ARGS, :NODE_GEN4_MOUNT, :PACKAGE_ID_ARG
+        # Resource of analytics events (`admin analytics transfers|files`)
+        EVENT_RESOURCE_TYPE_ARG = {name: :event_resource_type, allowed: %i[organizations users nodes]}.freeze
+        EVENT_RESOURCE_ID_ARG = {name: :event_resource_id, description: 'Resource identifier, empty for the one of the current user'}.freeze
+        private_constant :TRANSFER_ARGS, :NODE_GEN4_MOUNT, :PACKAGE_ID_ARG, :EVENT_RESOURCE_TYPE_ARG, :EVENT_RESOURCE_ID_ARG
 
         # Node API on a Gen4 node, and its root file id.
         # @param node_id [String]      Node identifier
@@ -751,14 +754,14 @@ module Aspera
           )
           command :transfers,          description: 'List transfer events',
             arguments: [
-              {name: :event_resource_type, mandatory: true,  allowed: %i[organizations users nodes]},
-              {name: :event_resource_id,   mandatory: false, default: nil}
+              EVENT_RESOURCE_TYPE_ARG,
+              EVENT_RESOURCE_ID_ARG.merge(mandatory: false, default: nil)
             ]
           command :files,              description: 'List file events',
             arguments: [
-              {name: :event_resource_type, mandatory: true, allowed: %i[organizations users nodes]},
-              {name: :event_resource_id,   mandatory: true},
-              {name: :event_uuid,          type: :identifier}
+              EVENT_RESOURCE_TYPE_ARG,
+              EVENT_RESOURCE_ID_ARG,
+              {name: :event_uuid, type: :identifier}
             ]
         end
         # application sub-commands
@@ -1374,15 +1377,20 @@ module Aspera
           Result::SingleObject.new(result['aoc'])
         end
 
+        # @return [String] the given resource id, or the one of the current user if empty
+        def analytics_resource_id(event_resource_type, event_resource_id)
+          return event_resource_id unless event_resource_id.to_s.empty?
+          case event_resource_type
+          when :organizations then aoc_api.current_user_info['organization_id']
+          when :users         then aoc_api.current_user_info['id']
+          when :nodes         then aoc_api.current_user_info['read_only_home_node_id']
+          else Aspera.error_unreachable_line
+          end
+        end
+
         # admin > analytics > transfers
         def action_admin_analytics_transfers(event_resource_type:, event_resource_id:, **)
-          event_resource_id ||=
-            case event_resource_type
-            when :organizations then aoc_api.current_user_info['organization_id']
-            when :users         then aoc_api.current_user_info['id']
-            when :nodes         then aoc_api.current_user_info['read_only_home_node_id']
-            else Aspera.error_unreachable_line
-            end
+          event_resource_id = analytics_resource_id(event_resource_type, event_resource_id)
           filter = query_read_delete(default: {})
           filter['limit'] ||= 100
           if options.get_option(:once_only, mandatory: true)
@@ -1406,13 +1414,7 @@ module Aspera
 
         # admin > analytics > files
         def action_admin_analytics_files(event_resource_type:, event_resource_id:, event_uuid:, **)
-          event_resource_id =
-            case event_resource_type
-            when :organizations then aoc_api.current_user_info['organization_id']
-            when :users         then aoc_api.current_user_info['id']
-            when :nodes         then aoc_api.current_user_info['read_only_home_node_id']
-            else Aspera.error_unreachable_line
-            end if event_resource_id.to_s.empty?
+          event_resource_id = analytics_resource_id(event_resource_type, event_resource_id)
           filter = query_read_delete(default: {})
           filter['limit'] ||= 100
           events = build_analytics_api.read("#{event_resource_type}/#{event_resource_id}/transfers/#{event_uuid}/files", filter)['files']
