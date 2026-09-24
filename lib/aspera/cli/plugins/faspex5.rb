@@ -385,40 +385,37 @@ module Aspera
         end
 
         # Per-resource configuration for admin CRUD sub-trees.
-        # Keys mirror entity_list/show/create/modify/delete kwargs; extra_commands lists additional leaf commands.
+        # Keys mirror entity_list/show/create/modify/delete kwargs; extra_commands declares additional leaf commands: {name => command attributes}.
         # @return [Hash{Symbol => Hash}]
         RESOURCE_CONFIG = {
           accounts:            {
-            display_fields:        Formatter.all_but('user_profile_data_attributes'),
-            extra_commands:        [:reset_password],
-            instance_arg_commands: {reset_password: {description: 'Send password reset email to account', arguments: [{name: :account_id, type: :identifier, lookup: ->(field, value, **) { res_lookup_id(:accounts, field, value) }}]}},
-            query_component:       Schema::Registry::FASPEX,
-            body_component:        Schema::Registry::FASPEX
+            display_fields:  Formatter.all_but('user_profile_data_attributes'),
+            extra_commands:  {reset_password: {description: 'Send password reset email to account', arguments: [{name: :account_id, type: :identifier, lookup: ->(field, value, **) { res_lookup_id(:accounts, field, value) }}]}},
+            query_component: Schema::Registry::FASPEX,
+            body_component:  Schema::Registry::FASPEX
           },
           alternate_addresses: {entity: 'configuration/alternate_addresses', query_component: Schema::Registry::FASPEX, body_component: Schema::Registry::FASPEX},
           contacts:            {query_component: Schema::Registry::FASPEX},
           distribution_lists:  {entity: 'account/distribution_lists', delete_style: 'ids', query_component: Schema::Registry::FASPEX, body_component: Schema::Registry::FASPEX},
           email_notifications: {id_as_arg: 'type', query_component: Schema::Registry::FASPEX},
           file_processing:     {
-            commands:              %i[modify],
-            extra_commands:        %i[next],
-            instance_arg_commands: {next: {description: 'List next files to process'}},
-            body_component:        Schema::Registry::FASPEX,
-            is_singleton:          true
+            commands:       %i[modify],
+            extra_commands: {next: {description: 'List next files to process'}},
+            body_component: Schema::Registry::FASPEX,
+            is_singleton:   true
           },
           jobs:                {display_fields: %w[id job_name job_type status], query_component: Schema::Registry::FASPEX},
           metadata_profiles:   {entity: 'configuration/metadata_profiles', items_key: 'profiles', query_component: Schema::Registry::FASPEX, body_component: Schema::Registry::FASPEX},
           nodes:               {
-            extra_commands:        %i[browse],
-            instance_arg_commands: {
+            extra_commands:  {
               browse: {
                 description: 'Browse files of node',
                 arguments:   [{name: :node_id, type: :identifier, lookup: :lookup_node_id},
                               {name: :folder_path, mandatory: false, default: '/'}]
               }
             },
-            query_component:       Schema::Registry::FASPEX,
-            body_component:        Schema::Registry::FASPEX
+            query_component: Schema::Registry::FASPEX,
+            body_component:  Schema::Registry::FASPEX
           },
           oauth_clients:       {
             display_fields:  Formatter.all_but('public_key'),
@@ -578,8 +575,7 @@ module Aspera
           )
           Api::Faspex::ADMIN_RESOURCES.each do |res|
             cfg          = RESOURCE_CONFIG.fetch(res, {})
-            extra        = cfg[:extra_commands] || []
-            ia_cmds      = cfg[:instance_arg_commands] || {}
+            extra        = cfg[:extra_commands] || {}
             is_singleton = cfg[:is_singleton] || false
             entity_path  = cfg[:entity] || res.to_s
             crud_ops     = ((cfg[:commands] || Operations::ALL) - %i[list]) & Operations::ALL
@@ -607,8 +603,8 @@ module Aspera
               )
 
               # Extra commands (e.g. browse, reset_password, next)
-              extra.each do |c|
-                command c, description: c.to_s.tr('_', ' ').capitalize, **ia_cmds[c] || {}
+              extra.each do |name, attrs|
+                command name, **attrs
               end
             end
           end
