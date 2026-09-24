@@ -14,6 +14,7 @@ require 'base64'
 require 'singleton'
 require 'securerandom'
 require 'fileutils'
+require 'pathname'
 require 'aspera/rainbow'
 using Rainbow
 
@@ -328,7 +329,7 @@ module Aspera
     # @param content_type [String, nil] Type of body parameters (one of MIME_*) and serialization, else use headers
     # @param body         [Hash, String, nil] Body parameters
     # @param headers      [Hash{String => String}] Additional headers (override Content-Type)
-    # @param save_to      [String, IO, nil] File path or IO object to save response body; progress bar is used when set
+    # @param save_to      [String, Pathname, IO, nil] File path or IO object to save response body; progress bar is used when set
     # @param exception    [Boolean] Whether to raise an exception on HTTP error
     # @param ret          [Symbol] One of :data, :resp, :both - controls return value
     # @return [Array(Hash, Net::HTTPResponse)] When `ret` is :both
@@ -348,6 +349,10 @@ module Aspera
     )
       subpath = subpath.to_s if subpath.is_a?(Symbol)
       subpath = '' if subpath.nil?
+      # File path (String or Pathname) or stream (responds to `write`)
+      # Pathname also responds to `write` (overwrites file), so it must not be taken as a stream
+      save_to = save_to.to_s if save_to.is_a?(Pathname)
+      Aspera.assert(save_to.nil? || save_to.is_a?(String) || save_to.respond_to?(:write)) { "save_to: unsupported type #{save_to.class}" }
       Log.log.debug { "call #{operation} [#{subpath}]".red.bold.bg(:green) }
       Log.dump(:body, body, level: :trace1)
       Log.dump(:query, query, level: :trace1)
@@ -523,8 +528,8 @@ module Aspera
       total_size = result_http['Content-Length']&.to_i
       Log.log.debug('before write file')
       target_file = save_to
-      # override user's path to path in header
-      unless response['Content-Disposition'].nil?
+      # override user's path to path in header (only for file path, not for stream)
+      if target_file.is_a?(String) && !response['Content-Disposition'].nil?
         disposition = self.class.parse_header(response['Content-Disposition'])
         if disposition[:parameters].key?(:filename) && !disposition[:parameters][:filename].eql?('.')
           # Use only the basename to prevent path traversal via a server-controlled Content-Disposition header
