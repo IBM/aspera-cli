@@ -701,21 +701,13 @@ module Aspera
         end
 
         # Create one or more instances of an entity (supports bulk).
-        # @param api            [Aspera::Rest]  REST API object
-        # @param entity         [String]        API sub-path
-        # @param display_fields [Array, nil]    Fields to display
-        # @param body_component [String, nil]   Registry key for request body schema
-        # @param input_data     [Array, nil]    Pre-resolved data; when nil, read from CLI
-        def entity_create(api:, entity:, display_fields: nil, body_component: nil, input_data: nil, data: nil, **)
-          schema = body_component ? Schema::Registry.req_body(body_component, "#{entity}.post") : nil
-          input_data ||= data
-          unless input_data
-            is_bulk = options.get_option(:bulk)
-            raw = options.get_next_argument('data', validation: is_bulk ? Array : Hash, schema: schema)
-            input_data = is_bulk ? raw : [raw]
-          end
-          input_data = [input_data] unless input_data.is_a?(Array)
-          bulk_result(input_data, command: :create, fields: display_fields) do |params|
+        # @param api            [Aspera::Rest]      REST API object
+        # @param entity         [String]            API sub-path
+        # @param data           [Hash, Array<Hash>] Entity data (Array with bulk), from the command's declared `data` argument
+        # @param display_fields [Array, nil]        Fields to display
+        def entity_create(api:, entity:, data:, display_fields: nil, **)
+          data = [data] unless data.is_a?(Array)
+          bulk_result(data, command: :create, fields: display_fields) do |params|
             api.create(entity, params)
           end
         end
@@ -726,13 +718,10 @@ module Aspera
         # @param id             [String, nil]     Resource identifier; nil when is_singleton: true
         # @param is_singleton   [Boolean]         When true, entity is the full path (no id appended)
         # @param id_as_arg      [Boolean, String] When set, id is appended as ?<id_as_arg>=<id>
-        # @param body_component [String, nil]     Registry key for request body schema
-        # @param input_data     [Hash, nil]       Pre-resolved data; when nil, read from CLI
-        def entity_modify(api:, entity:, id: nil, is_singleton: false, id_as_arg: false, body_component: nil, input_data: nil, data: nil, **)
-          schema = body_component ? Schema::Registry.req_body(body_component, "#{entity}/{id}.put") : nil
+        # @param data           [Hash]            Modified fields, from the command's declared `data` argument
+        def entity_modify(api:, entity:, data:, id: nil, is_singleton: false, id_as_arg: false, **)
           path = entity_res_path(entity, id, is_singleton: is_singleton, id_as_arg: id_as_arg)
-          parameters = input_data || data || options.get_next_argument('data', validation: Hash, schema: schema)
-          api.update(path, parameters)
+          api.update(path, data)
           Result::Status.new('modified')
         end
 

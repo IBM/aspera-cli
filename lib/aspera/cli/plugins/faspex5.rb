@@ -661,6 +661,8 @@ module Aspera
               args =
                 if c.eql?(:create)
                   {arguments: [{name: :users, bulk: true}, {name: :access, mandatory: false, default: :standard}]}
+                elsif c.eql?(:modify)
+                  {arguments: [{name: :member_id, type: :identifier, lookup: :"lookup_#{res}_members_id"}, {name: :data, type: Hash}]}
                 elsif Operations::INSTANCE.include?(c)
                   {arguments: [{name: :member_id, type: :identifier, lookup: :"lookup_#{res}_members_id"}]}
                 else
@@ -843,8 +845,8 @@ module Aspera
             entity_list(api: @api_v5, entity: "#{res_instance_path}/members", items_key: 'members')
           end
 
-          define_action_method([:admin, res, :members, :modify]) do |res_instance_path:, **kwargs|
-            entity_modify(api: @api_v5, entity: "#{res_instance_path}/members", id: kwargs[:member_id])
+          define_action_method([:admin, res, :members, :modify]) do |res_instance_path:, member_id:, data:, **|
+            entity_modify(api: @api_v5, entity: "#{res_instance_path}/members", id: member_id, data: data)
           end
 
           define_action_method([:admin, res, :members, :delete]) do |res_instance_path:, **kwargs|
@@ -854,8 +856,7 @@ module Aspera
           define_action_method([:admin, res, :members, :create]) do |users:, access:, res_instance_path:, **|
             res_path = "#{res_instance_path}/members"
             resolved = resolve_member_user_ids(users)
-            input_data = [{user: resolved.map { |u| {id: u, access: access} }}]
-            entity_create(api: @api_v5, entity: res_path, input_data: input_data)
+            entity_create(api: @api_v5, entity: res_path, data: {user: resolved.map { |u| {id: u, access: access} }})
           end
         end
 

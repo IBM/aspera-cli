@@ -674,20 +674,18 @@ module Aspera
             inst.entity_show(api: api_obj, entity: 'things', is_singleton: true)
           end
 
-          it 'entity_create reads data from CLI and calls api.create' do
+          it 'entity_create calls api.create with data' do
             inst = Base.new(context: context)
             allow(options).to(receive(:get_option).with(:bulk).and_return(false))
-            allow(options).to(receive(:get_next_argument).with('data', validation: Hash, schema: nil).and_return({'name' => 'x'}))
             allow(api_obj).to(receive(:create).with('things', {'name' => 'x'}).and_return({'id' => '1'}))
-            result = inst.entity_create(api: api_obj, entity: 'things')
+            result = inst.entity_create(api: api_obj, entity: 'things', data: {'name' => 'x'})
             expect(result).to(be_a(Result::SingleObject))
           end
 
           it 'entity_modify calls api.update and returns Status' do
             inst = Base.new(context: context)
-            allow(options).to(receive(:get_next_argument).with('data', validation: Hash, schema: nil).and_return({'name' => 'y'}))
             allow(api_obj).to(receive(:update).with('things/42', {'name' => 'y'}))
-            result = inst.entity_modify(api: api_obj, entity: 'things', id: '42')
+            result = inst.entity_modify(api: api_obj, entity: 'things', id: '42', data: {'name' => 'y'})
             expect(result).to(be_a(Result::Status))
           end
 

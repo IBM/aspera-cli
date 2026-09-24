@@ -182,7 +182,21 @@ All plugins declare their command tree using a class-level DSL defined in `Base`
 | `allowed` | `Array<Symbol> \| nil` | Allowed values (accept list) |
 | `interactive` | `Boolean` | Prompt for the value when missing (sets `ask_missing_mandatory`) |
 
-Arguments already present in `ctx` (e.g. injected by a caller) are not read again.
+Arguments already present in `ctx` are not read again from the command line: this is how a caller (e.g. a mount seed, or `aoc packages ls` calling `Node`) or a leaf `setup:` provides a value.
+
+**Rule**: every positional argument is declared with `arguments:`, so that `--help`, completion and `config commands` show it. Plugins never read positional arguments themselves (`options.get_next_argument`, `options.instance_identifier`). When an argument may come from elsewhere, declare it anyway and let the leaf `setup:` inject it in `ctx`, since a leaf setup runs before its arguments are resolved:
+
+```ruby
+command :show, description: 'Show a package', setup: :setup_package_id,
+  arguments: [{name: :package_id, type: :identifier}],
+  action: ->(package_id:, **) { ... }
+
+# With a public link to a package, the id comes from the link and is not read from the command line
+def setup_package_id(**)
+  return {} unless @api_v5.pub_link_context&.key?('package_id')
+  {package_id: @api_v5.pub_link_context['package_id']}
+end
+```
 
 **`crud_commands` helper**:
 
@@ -344,11 +358,12 @@ end
 | Node | Argument | Setup → injects into ctx |
 | --- | --- | --- |
 | `aoc admin workspace dropbox` | `workspace_id` | [`setup_admin_workspace_dropbox`](../lib/aspera/cli/plugins/aoc.rb) → `ws_res_id:` |
-| `aoc admin workspace shared_folder` | `workspace_id` | [`setup_admin_workspace_shared_folder`](../lib/aspera/cli/plugins/aoc.rb) |
+| `aoc admin workspace shared_folder` | `workspace_id` | [`setup_admin_workspace_shared_folder`](../lib/aspera/cli/plugins/aoc.rb) → `ws_res_id:`, `shared_folders:` |
 | `faspex5 admin nodes shared_folders` | `node_id` | [`setup_admin_nodes_shared_folders`](../lib/aspera/cli/plugins/faspex5.rb) → `sf_entity:` |
 | `faspex5 admin nodes shared_folders user` | `sf_id` | [`setup_admin_nodes_shared_folders_user`](../lib/aspera/cli/plugins/faspex5.rb) → `user_path:` |
 | `node access_keys do` | `access_key_id` | [`setup_access_key_do`](../lib/aspera/cli/plugins/node.rb) → `do_root_file_id:` |
-| `ats access_key node` | `access_key_id` | [`setup_ak_node`](../lib/aspera/cli/plugins/ats.rb) → `ak_node_plugin:`, `ak_root_file_id:` |
+| `node access_keys do <id> permission` | `path` | [`setup_access_key_do_permission`](../lib/aspera/cli/plugins/node.rb) → `apifid:` |
+| `aoc packages shared_inboxes short_link` | `link_type`, `dropbox_id` | [`setup_packages_short_link`](../lib/aspera/cli/plugins/aoc.rb) → `sl_shared_data:`, … |
 
 ---
 
@@ -393,17 +408,18 @@ Mount points:
 
 `mount:` is the only cross-plugin delegation mechanism of the DSL.
 
-#### Legitimate residual uses of `get_next_command` and `case command`
+#### Legitimate residual imperative reads
 
-Plugin-level imperative dispatch has been eliminated. The remaining occurrences are infrastructure and are intentional:
+Plugin-level imperative dispatch and argument reads have been eliminated. The remaining occurrences are infrastructure and are intentional:
 
 | File | Location | Role |
 | --- | --- | --- |
 | [`parser.rb`](../lib/aspera/cli/parser.rb) | `get_next_command` | Infrastructure — defines `get_next_command` |
 | [`base.rb`](../lib/aspera/cli/plugins/base.rb) | `dispatch_child` | Infrastructure — the DSL dispatcher itself calls `get_next_command` |
 | [`runner.rb`](../lib/aspera/cli/runner.rb) | `run_with_result` | Top-level plugin selector (`case command_sym`), not a per-plugin dispatch |
+| [`base.rb`](../lib/aspera/cli/plugins/base.rb) | `dispatch_from_registry`, `execute_leaf`, `resolve_argument` | Infrastructure — resolution of declared `arguments:` |
 
-No plugin file uses `get_next_command` or a bare `case command` for dispatching.
+No plugin file uses `get_next_command`, `get_next_argument` or `instance_identifier`.
 
 #### Transfer Agent Abstraction
 
