@@ -32,13 +32,46 @@ module Aspera
         # @param admin_path  [Symbol, Array<Symbol>]  path relative to current scope, e.g. :admin
         def register_sync_admin_commands(base, admin_path)
           base.commands_under(admin_path) do
-            base.command(:find,      description: 'Find sync database files',     arguments: [{name: :path, type: String}], action: :action_sync_admin_find)
-            base.command(:status,    description: 'Show sync session status',     arguments: PATH_AND_INFO_ARGS, action: :action_sync_admin_status)
-            base.command(:meta,      description: 'Show sync session metadata',   arguments: PATH_AND_INFO_ARGS, action: :action_sync_admin_meta)
-            base.command(:counters,  description: 'Show sync counters',           arguments: PATH_AND_INFO_ARGS, action: :action_sync_admin_counters)
-            base.command(:file_info, description: 'Show per-file sync state',     arguments: PATH_AND_INFO_ARGS, action: :action_sync_admin_file_info)
-            base.command(:overview,  description: 'Show sync database overview',  arguments: PATH_AND_INFO_ARGS, action: :action_sync_admin_overview)
-            base.command(:query,     description: 'Execute a raw SQL query',      arguments: PATH_AND_INFO_ARGS, action: :action_sync_admin_query)
+            base.command(
+              :find, description: 'Find sync database files', arguments: [{name: :path, type: String}],
+              action: lambda do |path:, **|
+                dbs = Sync::Operations.list_db_files(path)
+                Result::ObjectList.new(dbs.keys.map { |n| {name: n, path: dbs[n]} })
+              end
+            )
+            base.command(
+              :status, description: 'Show sync session status', arguments: PATH_AND_INFO_ARGS,
+              action: ->(path:, sync_info: {}, **) { Result::SingleObject.new(Sync::Operations.admin_status(async_info_from_args(path: path, sync_info: sync_info))) }
+            )
+            base.command(
+              :meta, description: 'Show sync session metadata', arguments: PATH_AND_INFO_ARGS,
+              action: lambda do |path:, sync_info: {}, **|
+                require 'aspera/sync/database'
+                Result::SingleObject.new(db_from_args(path: path, sync_info: sync_info).meta(options.get_option(:sql)))
+              end
+            )
+            base.command(
+              :counters, description: 'Show sync counters', arguments: PATH_AND_INFO_ARGS,
+              action: lambda do |path:, sync_info: {}, **|
+                require 'aspera/sync/database'
+                Result::SingleObject.new(db_from_args(path: path, sync_info: sync_info).counters(options.get_option(:sql)))
+              end
+            )
+            base.command(:file_info, description: 'Show per-file sync state', arguments: PATH_AND_INFO_ARGS, action: :action_sync_admin_file_info)
+            base.command(
+              :overview, description: 'Show sync database overview', arguments: PATH_AND_INFO_ARGS,
+              action: lambda do |path:, sync_info: {}, **|
+                require 'aspera/sync/database'
+                Result::ObjectList.new(db_from_args(path: path, sync_info: sync_info).overview, fields: %w[table name type])
+              end
+            )
+            base.command(
+              :query, description: 'Execute a raw SQL query', arguments: PATH_AND_INFO_ARGS,
+              action: lambda do |path:, sync_info: {}, **|
+                require 'aspera/sync/database'
+                Result.auto(db_from_args(path: path, sync_info: sync_info).execute(options.get_option(:sql, mandatory: true)))
+              end
+            )
           end
         end
       end
@@ -119,25 +152,6 @@ module Aspera
         Sync::Database.new(Sync::Operations.session_db_file(sync_info))
       end
 
-      def action_sync_admin_status(path:, sync_info: {}, **)
-        Result::SingleObject.new(Sync::Operations.admin_status(async_info_from_args(path: path, sync_info: sync_info)))
-      end
-
-      def action_sync_admin_find(path:, **)
-        dbs = Sync::Operations.list_db_files(path)
-        Result::ObjectList.new(dbs.keys.map { |n| {name: n, path: dbs[n]} })
-      end
-
-      def action_sync_admin_meta(path:, sync_info: {}, **)
-        require 'aspera/sync/database'
-        Result::SingleObject.new(db_from_args(path: path, sync_info: sync_info).meta(options.get_option(:sql)))
-      end
-
-      def action_sync_admin_counters(path:, sync_info: {}, **)
-        require 'aspera/sync/database'
-        Result::SingleObject.new(db_from_args(path: path, sync_info: sync_info).counters(options.get_option(:sql)))
-      end
-
       def action_sync_admin_file_info(path:, sync_info: {}, **)
         require 'aspera/sync/database'
         result = db_from_args(path: path, sync_info: sync_info).file_info(options.get_option(:sql))
@@ -145,16 +159,6 @@ module Aspera
           r['sstate'] = SyncActions::STATE_STR[r['state']] if r['state']
         end
         Result::ObjectList.new(result, fields: %w[sstate record_id f_meta_path message])
-      end
-
-      def action_sync_admin_overview(path:, sync_info: {}, **)
-        require 'aspera/sync/database'
-        Result::ObjectList.new(db_from_args(path: path, sync_info: sync_info).overview, fields: %w[table name type])
-      end
-
-      def action_sync_admin_query(path:, sync_info: {}, **)
-        require 'aspera/sync/database'
-        Result.auto(db_from_args(path: path, sync_info: sync_info).execute(options.get_option(:sql, mandatory: true)))
       end
 
       # Execute a sync transfer for a given direction.

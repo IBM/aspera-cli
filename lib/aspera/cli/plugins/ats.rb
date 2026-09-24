@@ -64,15 +64,28 @@ module Aspera
             action: ->(access_key_id:, **) { Result::SingleObject.new(ats_api.read("access_keys/#{access_key_id}")) }
           command :modify,      description: 'Modify an access key',
             arguments: [{name: :access_key_id, type: :identifier}, {name: :access_key, type: Hash}]
-          command :delete,      description: 'Delete an access key',
-            arguments: [{name: :access_key_id, type: :identifier}]
+          command(
+            :delete, description: 'Delete an access key',
+            arguments: [{name: :access_key_id, type: :identifier}],
+            action: lambda do |access_key_id:, **|
+              ats_api.delete("access_keys/#{access_key_id}")
+              Result::Status.new("deleted #{access_key_id}")
+            end
+          )
           command :node,        description: 'Execute node commands via ATS access key',
             arguments: [{name: :access_key_id, type: :identifier}],
             mount: {plugin: Node, at: %i[access_keys do], instance: :ak_node_plugin}
           command :cluster,     description: 'Show cluster info for an access key',
             arguments: [{name: :access_key_id, type: :identifier}]
-          command :entitlement, description: 'Show ATS entitlement for an access key',
-            arguments: [{name: :access_key_id, type: :identifier}]
+          command(
+            :entitlement, description: 'Show ATS entitlement for an access key',
+            arguments: [{name: :access_key_id, type: :identifier}],
+            action: lambda do |access_key_id:, **|
+              ak = ats_api.read("access_keys/#{access_key_id}")
+              api_bss = Api::Alee.new(ak['license']['entitlement_id'], ak['license']['customer_id'])
+              return Result::SingleObject.new(api_bss.read('entitlement'))
+            end
+          )
         end
 
         commands_under(:api_key) do
@@ -88,8 +101,14 @@ module Aspera
           command :show,   description: 'Show an ATS API key',
             arguments: [{name: :api_key_id, type: :identifier}],
             action: ->(api_key_id:, **) { Result::SingleObject.new(build_ats_ibm_api_with_instance.read("api_keys/#{api_key_id}")) }
-          command :delete, description: 'Delete an ATS API key',
-            arguments: [{name: :api_key_id, type: :identifier}]
+          command(
+            :delete, description: 'Delete an ATS API key',
+            arguments: [{name: :api_key_id, type: :identifier}],
+            action: lambda do |api_key_id:, **|
+              build_ats_ibm_api_with_instance.delete("api_keys/#{api_key_id}")
+              Result::Status.new("deleted #{api_key_id}")
+            end
+          )
         end
 
         # --- conditions ---
@@ -192,17 +211,6 @@ module Aspera
           return Result::Status.new('modified')
         end
 
-        def action_access_key_delete(access_key_id:, **)
-          ats_api.delete("access_keys/#{access_key_id}")
-          Result::Status.new("deleted #{access_key_id}")
-        end
-
-        def action_access_key_entitlement(access_key_id:, **)
-          ak = ats_api.read("access_keys/#{access_key_id}")
-          api_bss = Api::Alee.new(ak['license']['entitlement_id'], ak['license']['customer_id'])
-          return Result::SingleObject.new(api_bss.read('entitlement'))
-        end
-
         # access_key > node - mount target: Node plugin for an ATS access key.
         # access_key_id: is already in ctx via arguments: on the :node command.
         # @return [Array(Node, Hash)] Node plugin and seed ctx for `access_keys do`
@@ -226,11 +234,6 @@ module Aspera
           instances = ats_api_v2_auth_ibm.read('instances')
           Log.log.warn { "more instances remaining: #{instances['remaining']}" } unless instances['remaining'].to_i.eql?(0)
           Result::ValueList.new(instances['data'], name: 'instance')
-        end
-
-        def action_api_key_delete(api_key_id:, **)
-          build_ats_ibm_api_with_instance.delete("api_keys/#{api_key_id}")
-          Result::Status.new("deleted #{api_key_id}")
         end
 
         def action_access_key_cluster(access_key_id:, **)

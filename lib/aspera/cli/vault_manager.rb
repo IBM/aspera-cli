@@ -10,17 +10,6 @@ module Aspera
     # Mixin providing vault/keychain functionality to Plugin::Config.
     # Depends on `options` and `context.main_folder` being available in the including class.
     module VaultManager
-      def action_vault_show(label:, id: nil, **)
-        v = vault_required
-        kwargs = id && v.method(:get).parameters.any? { |_t, n| n == :id } ? {id: id} : {}
-        Result::SingleObject.new(v.get(label: label, **kwargs))
-      end
-
-      def action_vault_create(secret:, **)
-        vault_required.set(secret.symbolize_keys)
-        Result::Status.new('Secret added')
-      end
-
       # Import secrets from a JSON array; skips entries missing :label
       def action_vault_import(secrets:, **)
         bulk_result(secrets, command: :import, id_result: 'label') do |entry|
@@ -34,12 +23,6 @@ module Aspera
         kwargs = id && v.method(:delete).parameters.any? { |_t, n| n == :id } ? {id: id} : {}
         v.delete(label: label, **kwargs)
         Result::Status.new("Secret deleted: #{label}")
-      end
-
-      def action_vault_password(new_password:, **)
-        Aspera.assert(vault_required.respond_to?(:change_password), 'Vault does not support password change')
-        vault_required.change_password(new_password)
-        Result::Status.new('Vault password updated')
       end
 
       # @return [Keychain::Base] vault instance, raises if not configured

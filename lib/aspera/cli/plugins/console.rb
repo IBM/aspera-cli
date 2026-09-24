@@ -124,8 +124,15 @@ module Aspera
           command :show,          description: 'Show a transfer',
             arguments: [{name: :transfer_id, type: :identifier}],
             action: ->(api_console:, transfer_id:, **) { Result::SingleObject.new(api_console.read("transfers/#{transfer_id}")) }
-          command :files,         description: 'List files in a transfer',
-            arguments: [{name: :transfer_id, type: :identifier}]
+          command(
+            :files, description: 'List files in a transfer',
+            arguments: [{name: :transfer_id, type: :identifier}],
+            action: lambda do |api_console:, transfer_id:, **|
+              query = query_read_delete(default: {})
+              query['limit'] ||= 100
+              Result::ObjectList.new(api_console.read("transfers/#{transfer_id}/files", query))
+            end
+          )
           command :start,         description: 'Start a transfer',
             arguments: [{name: :transfer_id, type: :identifier}]
           command :pause,         description: 'Pause a transfer',
@@ -135,7 +142,8 @@ module Aspera
           command :resume,        description: 'Resume a transfer',
             arguments: [{name: :transfer_id, type: :identifier}]
           command :rerun,         description: 'Rerun a transfer',
-            arguments: [{name: :transfer_id, type: :identifier}]
+            arguments: [{name: :transfer_id, type: :identifier}],
+            action: ->(api_console:, transfer_id:, **) { Result::SingleObject.new(api_console.create("transfers/#{transfer_id}/rerun", {})) }
           command :change_rate,   description: 'Change transfer rate',
             arguments: [{name: :transfer_id, type: :identifier},
                         {name: :rate, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::CONSOLE, 'transfers/{id}/change_rate.put')}]
@@ -179,7 +187,8 @@ module Aspera
         commands_under %i[transfer smart] do
           command :list,   description: 'List smart transfers', action: ->(api_console:, **) { Result::ObjectList.new(api_console.read('smart_transfers')) }
           command :submit, description: 'Submit a smart transfer',
-            arguments: [{name: :smart_id}, {name: :transfer, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::CONSOLE, 'smart_transfers/{id}.post')}]
+            arguments: [{name: :smart_id}, {name: :transfer, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::CONSOLE, 'smart_transfers/{id}.post')}],
+            action: ->(api_console:, smart_id:, transfer:, **) { Result::ObjectList.new(api_console.create("smart_transfers/#{smart_id}", transfer)) }
           command :pause,  description: 'Pause a smart transfer',
             arguments: [{name: :smart_id}],
             action: ->(api_console:, smart_id:, **) { Result::SingleObject.new(api_console.update("smart_transfers/#{smart_id}/pause", {})) }
@@ -229,21 +238,7 @@ module Aspera
           )
         end
 
-        def action_transfer_current_rerun(api_console:, transfer_id:, **)
-          Result::SingleObject.new(api_console.create("transfers/#{transfer_id}/rerun", {}))
-        end
-
-        def action_transfer_current_files(api_console:, transfer_id:, **)
-          query = query_read_delete(default: {})
-          query['limit'] ||= 100
-          Result::ObjectList.new(api_console.read("transfers/#{transfer_id}/files", query))
-        end
-
         # --- transfer smart ---
-
-        def action_transfer_smart_submit(api_console:, smart_id:, transfer:, **)
-          Result::ObjectList.new(api_console.create("smart_transfers/#{smart_id}", transfer))
-        end
 
         private
 

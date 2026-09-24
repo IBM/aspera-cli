@@ -409,7 +409,7 @@ module Aspera
           arguments: [{name: :path, type: String, description: 'File or folder from which to start scanning', mandatory: false, default: '/'}]
         command :events,   description: 'Process file events and generate previews',        setup: :setup_node_api, action: ->(**) { run_event_loop(:events) }
         command :trevents, description: 'Process transfer events and generate previews',    setup: :setup_node_api, action: ->(**) { run_event_loop(:trevents) }
-        command :check,    description: 'Check required tools are installed'
+        command :check,    description: 'Check required tools are installed', action: ->(**) { tools_cleanup { Result::Status.new('Tools validated') } }
         command :show,     description: 'Generate and display preview of a source file',
           arguments: [{name: :source_file, type: String, description: 'Local file to preview'}]
         command :test,     description: 'Test preview generation for a source file',
@@ -478,10 +478,6 @@ module Aspera
             scan_folder_files(@api_node.read("files/#{apifid.file_id}"))
             Result::Status.new('scan finished')
           end
-        end
-
-        def action_check(**)
-          tools_cleanup { Result::Status.new('Tools validated') }
         end
 
         # Status message for generation

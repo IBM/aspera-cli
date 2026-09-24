@@ -52,25 +52,12 @@ module Aspera
         return Result::Status.new("Installed #{name} version #{ver} in #{folder}")
       end
 
-      def action_ascp_show(**)
-        Result::Text.new(Ascp::Installation.instance.path(:ascp))
-      end
-
       def action_ascp_info(**)
         SecretHider.instance.add_secret_keys(DataRepository::ELEMENTS)
         data = Ascp::Installation.instance.ascp_info
         data['ts'] = transfer.user_transfer_spec
         DataRepository::ELEMENTS.each_with_object(data) { |i, h| h[i.to_s] = DataRepository.instance.item(i) }
         Result::SingleObject.new(data)
-      end
-
-      def action_ascp_install(version: nil, **)
-        install_transfer_sdk(version: version)
-      end
-
-      def action_ascp_spec(**)
-        builder = Schema::Documentation.new(TerminalFormatter, Transfer::Spec::SCHEMA, include_option: true, agent_columns: true).build
-        Result::ObjectList.new(builder.rows, fields: builder.columns)
       end
 
       def action_ascp_schema(agent_name: nil, **)
@@ -86,10 +73,6 @@ module Aspera
           error_data.push(code: code, mnemonic: prop[:c], retry: prop[:r], info: prop[:a])
         end
         Result::ObjectList.new(error_data)
-      end
-
-      def action_ascp_products_list(**)
-        Result::ObjectList.new(Ascp::Installation.instance.installed_products, fields: %w[name app_root])
       end
 
       def action_agents_list(**)
@@ -140,15 +123,6 @@ module Aspera
           {'name' => pname, 'type' => pdef['type'].to_s, 'description' => pdef['description'].to_s}
         end
         Result::ObjectList.new(rows, fields: %w[name type description])
-      end
-
-      def action_transferd_install(**)
-        install_transfer_sdk
-      end
-
-      def action_transferd_list(**)
-        sdk_list = Ascp::Installation.instance.sdk_locations
-        Result::ObjectList.new(sdk_list, fields: sdk_list.first.keys - ['url'])
       end
     end
   end

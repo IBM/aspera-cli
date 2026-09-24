@@ -250,17 +250,20 @@ Key properties of the `ctx` hash:
 
 #### Action style convention
 
-| Condition | Preferred form |
+Body size is counted in lines (excluding `do`/`end` or `def`/`end`):
+
+| Action body | Form |
 | --- | --- |
-| 1 statement, no args | `action: ->(**){…}` |
-| 1 statement, with args | `action: ->(arg:, **){…}` |
-| 2–3 statements, inline | `command(:x, …, action: lambda do \|**\| … end)` |
-| > 3 statements | named method `def action_<full_path>(**)` |
-| shared logic (called from multiple places) | named method regardless of size |
+| 1 line | inline `action: ->(**){…}` (or `->(arg:, **){…}`) |
+| 2–3 lines | inline `command(:x, …, action: lambda do \|**\| … end)`, with parentheses on `command` |
+| 4 lines or more | named method `def action_<full_path>(**)`, no `action:` |
+| used by several commands | named method regardless of size |
+
+Exception: commands declared by a loop or from a table (e.g. `COMMANDS_GEN4_SPEC`, `define_action_method` in an `each`) have no `command(...)` call of their own to hold an inline action: they use a named method (or a block shared by the loop) regardless of size.
 
 An action always accepts any keyword (`**`): it receives the whole accumulated context, whose keys depend on setups and arguments of ancestors. `validate!` rejects a lambda or method without `**` (a non-lambda `proc` is not checked, as it ignores extra keywords).
 
-The 3-statement threshold is deliberately informal. The deciding factor is readability at the call site: if the action fits on one line without obscuring the `command(...)` declaration, an inline `->` is preferred. If the body needs local variables, loops, or `rescue`, a named method is clearer. Logic shared between several commands must always live in a named method, regardless of its size. The same convention applies to `lookup:`.
+The same convention applies to `lookup:`.
 
 **Precedence rule**: `lambda do...end` has low binding priority — if `command` is called without parentheses, Ruby attaches the `do...end` to `command` instead of `lambda`, causing `tried to create Proc object without a block` at class load time. Always use `command(...)` with parentheses when the action is a `lambda do...end`.
 
@@ -271,13 +274,13 @@ Examples:
 ```ruby
 # 1 line
 command :info, description: 'Show node info',
-  action: ->{Result::SingleObject.new(@api_node.read('info'))}
+  action: ->(**){Result::SingleObject.new(@api_node.read('info'))}
 
 command :show, description: 'Show a package',
   arguments: [{name: :package_id, type: :identifier}],
   action: ->(package_id:, **){Result::SingleObject.new(@api.read("packages/#{package_id}"))}
 
-# 2–3 statements: parentheses are mandatory
+# 2–3 lines: parentheses are mandatory
 command(
   :flush, description: 'Delete all cached OAuth tokens',
   action: lambda do |**|
@@ -286,7 +289,7 @@ command(
   end
 )
 
-# > 3 statements: implicit named method
+# 4 lines or more: implicit named method
 commands_under :package do
   command :receive, description: 'Receive a package'
 end

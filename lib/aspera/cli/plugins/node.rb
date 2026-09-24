@@ -405,8 +405,14 @@ module Aspera
             action: ->(apifid:, permission_id:, **) { Result::SingleObject.new(apifid.node_api.read("permissions/#{permission_id}")) }
           command :create, description: 'Create a permission',
             arguments: [{name: :permission, type: Hash, schema: 'node:components.schemas.permissions-post-request'}]
-          command :modify, description: 'Modify a permission',
-            arguments: [{name: :permission_id, type: :identifier}, {name: :permission, type: Hash, schema: 'node:components.schemas.permissions-id-put-request'}]
+          command(
+            :modify, description: 'Modify a permission',
+            arguments: [{name: :permission_id, type: :identifier}, {name: :permission, type: Hash, schema: 'node:components.schemas.permissions-id-put-request'}],
+            action: lambda do |permission:, apifid:, permission_id:, **|
+              apifid.node_api.update("permissions/#{permission_id}", permission)
+              Result::Status.new('Updated')
+            end
+          )
           command :delete, description: 'Delete permissions',
             arguments: [{name: :permission_id, bulk: true}]
         end
@@ -415,8 +421,14 @@ module Aspera
           command :list,      description: 'List async sync IDs', action: ->(**) { Result::ValueList.new(@api_node.read('async/list')['sync_ids']) }
           command :show,      description: 'Show async summary',
             arguments: [{name: :async_id, type: :identifier, lookup: :async_lookup}]
-          command :delete,    description: 'Delete async',
-            arguments: [{name: :async_id, type: :identifier, lookup: :async_lookup}]
+          command(
+            :delete, description: 'Delete async',
+            arguments: [{name: :async_id, type: :identifier, lookup: :async_lookup}],
+            action: lambda do |async_id:, **|
+              async_ids = async_id.eql?(SpecialValues::ALL) ? @api_node.read('async/list')['sync_ids'] : [async_id]
+              Result::SingleObject.new(@api_node.create('async/delete', {'syncs' => async_ids}))
+            end
+          )
           command :bandwidth, description: 'Show async bandwidth',
             arguments: [{name: :async_id, type: :identifier, lookup: :async_lookup}]
           command :files,     description: 'List async files',
@@ -434,12 +446,20 @@ module Aspera
             operations: %i[create list show delete],
             items_key: 'ids',
             lookup: :ssync_lookup
-          command :start, description: 'Start a sync',
-            arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
-            action: :action_ssync_start
-          command :stop, description: 'Stop a sync',
-            arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
-            action: :action_ssync_stop
+          command(
+            :start, description: 'Start a sync', arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
+            action: lambda do |ssync_id:, **|
+              @api_node.call(operation: 'POST', subpath: "asyncs/#{ssync_id}/start", content_type: Mime::TEXT, body: '', ret: :resp).body
+              Result::Status.new('Done')
+            end
+          )
+          command(
+            :stop, description: 'Stop a sync', arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
+            action: lambda do |ssync_id:, **|
+              @api_node.call(operation: 'POST', subpath: "asyncs/#{ssync_id}/stop", content_type: Mime::TEXT, body: '', ret: :resp).body
+              Result::Status.new('Done')
+            end
+          )
           command :bandwidth, description: 'Show sync bandwidth',
             arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
             action: ->(ssync_id:, **) { Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/bandwidth", options.get_option(:query) || {})) }
@@ -477,24 +497,48 @@ module Aspera
         command :transfer, description: 'Manage transfer operations'
         commands_under :transfer do
           command :list, description: 'List transfers'
-          command :cancel, description: 'Cancel a transfer',
-            arguments: [{name: :transfer_id, type: :identifier}]
+          command(
+            :cancel, description: 'Cancel a transfer',
+            arguments: [{name: :transfer_id, type: :identifier}],
+            action: lambda do |transfer_id:, **|
+              @api_node.cancel("ops/transfers/#{transfer_id}")
+              Result::Status.new('Cancelled')
+            end
+          )
           command :show, description: 'Show a transfer',
             arguments: [{name: :transfer_id, type: :identifier}],
             action: ->(transfer_id:, **) { Result::SingleObject.new(@api_node.read("ops/transfers/#{transfer_id}")) }
-          command :modify,            description: 'Modify a transfer',
-            arguments: [{name: :transfer_id, type: :identifier}, {name: :transfer, type: Hash, schema: 'node:components.schemas.transferPutRequest'}]
+          command(
+            :modify, description: 'Modify a transfer',
+            arguments: [{name: :transfer_id, type: :identifier}, {name: :transfer, type: Hash, schema: 'node:components.schemas.transferPutRequest'}],
+            action: lambda do |transfer:, transfer_id:, **|
+              @api_node.update("ops/transfers/#{transfer_id}", transfer)
+              Result::Status.new('Modified')
+            end
+          )
           command :bandwidth_average, description: 'Show average bandwidth per period'
           command :sessions,          description: 'List transfer sessions'
         end
         # service
         command :service, description: 'Manage services'
         commands_under :service do
-          command :list,   description: 'List services', action: ->(**) { Result::ObjectList.new(@api_node.read('rund/services')['services']) }
-          command :create, description: 'Create a service',
-            arguments: [{name: :service, type: Hash}]
-          command :delete, description: 'Delete a service',
-            arguments: [{name: :service_id, type: :identifier}]
+          command :list, description: 'List services', action: ->(**) { Result::ObjectList.new(@api_node.read('rund/services')['services']) }
+          command(
+            :create, description: 'Create a service',
+            arguments: [{name: :service, type: Hash}],
+            action: lambda do |service:, **|
+              resp = @api_node.create('rund/services', service)
+              Result::Status.new("#{resp['id']} created")
+            end
+          )
+          command(
+            :delete, description: 'Delete a service',
+            arguments: [{name: :service_id, type: :identifier}],
+            action: lambda do |service_id:, **|
+              @api_node.delete("rund/services/#{service_id}")
+              Result::Status.new("#{service_id} deleted")
+            end
+          )
         end
         # watch_folder
         command :watch_folder, description: 'Manage watch folders', setup: :setup_watch_folder
@@ -507,11 +551,23 @@ module Aspera
           command :show,   description: 'Show a watch folder',
             arguments: [{name: :watch_folder_id, type: :identifier}],
             action: ->(watch_folder_id:, **) { Result::SingleObject.new(@api_node.read("v3/watchfolders/#{watch_folder_id}")) }
-          command :modify, description: 'Modify a watch folder',
-            arguments: [{name: :watch_folder_id, type: :identifier}, {name: :watch_folder, type: Hash}]
-          command :delete, description: 'Delete a watch folder',
-            arguments: [{name: :watch_folder_id, type: :identifier}]
-          command :state,  description: 'Show watch folder state',
+          command(
+            :modify, description: 'Modify a watch folder',
+            arguments: [{name: :watch_folder_id, type: :identifier}, {name: :watch_folder, type: Hash}],
+            action: lambda do |watch_folder:, watch_folder_id:, **|
+              @api_node.update("v3/watchfolders/#{watch_folder_id}", watch_folder)
+              Result::Status.new("#{watch_folder_id} updated")
+            end
+          )
+          command(
+            :delete, description: 'Delete a watch folder',
+            arguments: [{name: :watch_folder_id, type: :identifier}],
+            action: lambda do |watch_folder_id:, **|
+              @api_node.delete("v3/watchfolders/#{watch_folder_id}")
+              Result::Status.new("#{watch_folder_id} deleted")
+            end
+          )
+          command :state, description: 'Show watch folder state',
             arguments: [{name: :watch_folder_id, type: :identifier}],
             action: ->(watch_folder_id:, **) { Result::SingleObject.new(@api_node.read("v3/watchfolders/#{watch_folder_id}/state")) }
         end
@@ -534,8 +590,15 @@ module Aspera
         # Standalone leaf commands
         command :asperabrowser, description: 'Open Aspera browser'
         command :basic_token,   description: 'Generate basic auth token', action: ->(**) { Result::Text.new(Rest.basic_authorization(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true))) }
-        command :bearer_token, description: 'Generate bearer token',
-          arguments: [{name: :private_key_pem, type: String}, {name: :token, type: Hash, schema: 'opts:components.schemas.NodeBearerTokenOptions'}]
+        command(
+          :bearer_token, description: 'Generate bearer token',
+          arguments: [{name: :private_key_pem, type: String}, {name: :token, type: Hash, schema: 'opts:components.schemas.NodeBearerTokenOptions'}],
+          action: lambda do |private_key_pem:, token:, **|
+            private_key = OpenSSL::PKey::RSA.new(private_key_pem)
+            access_key  = options.get_option(:username, mandatory: true)
+            Result::Text.new(Api::Node.bearer_token(payload: token, access_key: access_key, private_key: private_key))
+          end
+        )
         command :simulator,     description: 'Start node simulator',
           arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: 'opts:components.schemas.NodeSimulatorOptions'}]
         command :telemetry,     description: 'Report telemetry to external system',
@@ -673,21 +736,6 @@ module Aspera
           @api_node.params[:headers] ||= {}
           @api_node.params[:headers]['X-aspera-WF-version'] = '2017_10_23'
           {}
-        end
-
-        def action_access_keys_do_permission_modify(permission:, apifid:, permission_id:, **)
-          apifid.node_api.update("permissions/#{permission_id}", permission)
-          Result::Status.new('Updated')
-        end
-
-        def action_watch_folder_modify(watch_folder:, watch_folder_id:, **)
-          @api_node.update("v3/watchfolders/#{watch_folder_id}", watch_folder)
-          Result::Status.new("#{watch_folder_id} updated")
-        end
-
-        def action_watch_folder_delete(watch_folder_id:, **)
-          @api_node.delete("v3/watchfolders/#{watch_folder_id}")
-          Result::Status.new("#{watch_folder_id} deleted")
         end
 
         # access_keys > do - setup: resolve access key and root file id
@@ -939,11 +987,6 @@ module Aspera
           Result::SingleObject.new(resp.first)
         end
 
-        def action_async_delete(async_id:, **)
-          async_ids = async_id.eql?(SpecialValues::ALL) ? @api_node.read('async/list')['sync_ids'] : [async_id]
-          Result::SingleObject.new(@api_node.create('async/delete', {'syncs' => async_ids}))
-        end
-
         def action_async_bandwidth(async_id:, **)
           Integer(async_id)
           post_data = {'syncs' => [async_id], 'seconds' => 100}
@@ -984,16 +1027,6 @@ module Aspera
           Result::SingleObject.new(resp)
         end
 
-        def action_ssync_start(ssync_id:, **)
-          @api_node.call(operation: 'POST', subpath: "asyncs/#{ssync_id}/start", content_type: Mime::TEXT, body: '', ret: :resp).body
-          Result::Status.new('Done')
-        end
-
-        def action_ssync_stop(ssync_id:, **)
-          @api_node.call(operation: 'POST', subpath: "asyncs/#{ssync_id}/stop", content_type: Mime::TEXT, body: '', ret: :resp).body
-          Result::Status.new('Done')
-        end
-
         # transfer sub-commands
         def action_transfer_list(**)
           transfer_filter = query_read_delete(default: {}, schema: Schema::Registry.query_params(Schema::Registry::NODE, 'ops/transfers'))
@@ -1028,16 +1061,6 @@ module Aspera
           Result::ObjectList.new(sessions, fields: %w[id status start_time end_time target_rate_kbps])
         end
 
-        def action_transfer_cancel(transfer_id:, **)
-          @api_node.cancel("ops/transfers/#{transfer_id}")
-          Result::Status.new('Cancelled')
-        end
-
-        def action_transfer_modify(transfer:, transfer_id:, **)
-          @api_node.update("ops/transfers/#{transfer_id}", transfer)
-          Result::Status.new('Modified')
-        end
-
         def action_transfer_bandwidth_average(**)
           transfers_data = @api_node.read('ops/transfers', query_read_delete(schema: Schema::Registry.query_params(Schema::Registry::NODE, 'ops/transfers')))
           bandwidth_period = {}
@@ -1066,17 +1089,6 @@ module Aspera
             result.push({start: Time.at(start_date / 1_000_000), end: Time.at(end_date / 1_000_000)}.merge(period_bandwidth))
           end
           Result::ObjectList.new(result)
-        end
-
-        # service sub-commands
-        def action_service_create(service:, **)
-          resp = @api_node.create('rund/services', service)
-          Result::Status.new("#{resp['id']} created")
-        end
-
-        def action_service_delete(service_id:, **)
-          @api_node.delete("rund/services/#{service_id}")
-          Result::Status.new("#{service_id} deleted")
         end
 
         # central: shared helper
@@ -1124,12 +1136,6 @@ module Aspera
           encoded_params = Base64.strict_encode64(Zlib::Deflate.deflate(JSON.generate(browse_params))).gsub(/=+$/, '').tr('+/', '-_').reverse
           Environment.instance.open_uri("#{options.get_option(:asperabrowserurl)}?goto=#{encoded_params}")
           return Result::Status.new('done')
-        end
-
-        def action_bearer_token(private_key_pem:, token:, **)
-          private_key = OpenSSL::PKey::RSA.new(private_key_pem)
-          access_key  = options.get_option(:username, mandatory: true)
-          Result::Text.new(Api::Node.bearer_token(payload: token, access_key: access_key, private_key: private_key))
         end
 
         def action_simulator(parameters: {}, **)

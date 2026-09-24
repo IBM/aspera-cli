@@ -677,7 +677,8 @@ module Aspera
         end
         # admin > workspace > shared_folder sub-tree
         commands_under %i[admin workspace shared_folder] do
-          command :list,   description: 'List shared folders'
+          command :list,   description: 'List shared folders',
+            action: ->(shared_folders:, **) { Result::ObjectList.new(shared_folders, fields: %w[id node_name node_id file_id file.path tags.aspera.files.workspace.share_as]) }
           command :node,   description: 'Execute node command on shared folder',
             arguments: [{name: :shared_folder_id, type: :identifier}],
             setup: :setup_admin_workspace_shared_folder_node,
@@ -688,18 +689,26 @@ module Aspera
         end
         # admin > workspace > shared_folder > node: Gen4 commands are mounted, plus node-to-node transfer
         commands_under %i[admin workspace shared_folder node] do
-          command :transfer, description: 'Transfer files (node-to-node)', arguments: TRANSFER_ARGS
+          command :transfer, description: 'Transfer files (node-to-node)', arguments: TRANSFER_ARGS,
+            action: ->(sf_item:, direction:, source_folder:, **) { nodegen4_transfer(sf_item['node_id'], file_id: sf_item['file_id'], scope: Api::Node::Scope::ADMIN, direction: direction, source_folder: source_folder) }
         end
         commands_under %i[admin workspace shared_folder member] do
           command :list, description: 'List members of a shared folder'
         end
         # admin > workspace > dropbox sub-tree
         commands_under %i[admin workspace dropbox] do
-          command :list, description: 'List dropboxes in workspace'
+          command(
+            :list, description: 'List dropboxes in workspace',
+            action: lambda do |ws_res_id:, **|
+              query = options.get_option(:query) || {}
+              Result::ObjectList.new(aoc_api.read('dropboxes', query.merge({'workspace_id' => ws_res_id})), fields: %w[id name description])
+            end
+          )
         end
         # admin > node > do: Gen4 commands are mounted (op_mount), plus node-to-node transfer
         commands_under %i[admin node do] do
-          command :transfer, description: 'Transfer files (node-to-node)', arguments: TRANSFER_ARGS
+          command :transfer, description: 'Transfer files (node-to-node)', arguments: TRANSFER_ARGS,
+            action: ->(node_id:, direction:, source_folder:, **) { nodegen4_transfer(node_id, scope: Api::Node::Scope::ADMIN, direction: direction, source_folder: source_folder) }
         end
         # admin > user > preferences|notifications sub-trees
         %i[preferences notifications].each do |pref|
@@ -715,8 +724,15 @@ module Aspera
           command :update, description: 'Update auth provider', action: ->(**) { Aspera.error_not_implemented }
         end
         commands_under %i[admin subscription] do
-          command :account, description: 'Show subscription account'
-          command :usage,   description: 'Show subscription usage',
+          command(
+            :account, description: 'Show subscription account',
+            action: lambda do |**|
+              org = aoc_api.read('organization')
+              result = GraphQL.execute(api_from_options('bss/platform/graphql'), 'bss_subscription_account', {organization_id: org['id']})
+              Result::SingleObject.new(result['aoc']['bssSubscription'])
+            end
+          )
+          command :usage, description: 'Show subscription usage',
             arguments: [
               {name: :aggregate,   mandatory: false, default: :ALL, allowed: %i[ALL MONTHLY]},
               {name: :start_date,  mandatory: false, default: nil},
@@ -724,7 +740,13 @@ module Aspera
             ]
         end
         commands_under %i[admin analytics] do
-          command :application_events, description: 'List application events'
+          command(
+            :application_events, description: 'List application events',
+            action: lambda do |**|
+              events = build_analytics_api.read("organizations/#{aoc_api.current_user_info['organization_id']}/application_events")['application_events']
+              Result::ObjectList.new(events)
+            end
+          )
           command :transfers,          description: 'List transfer events',
             arguments: [
               {name: :event_resource_type, mandatory: true,  allowed: %i[organizations users nodes]},
@@ -766,13 +788,7 @@ module Aspera
           end
         end
         commands_under APP_INSTANCE_PATH do
-          command(:list, description: 'List app instances', action: lambda do |**|
-            result_list(
-              'admin/apps_new',
-              fields:        %w[id app_type available workspace_id],
-              default_query: {workspace_id: aoc_api.workspace_info[:id]}
-            )
-          end)
+          command :list, description: 'List app instances'
           APP_TYPES.each do |app_type|
             command app_type, description: "Show or modify a #{app_type} instance"
             commands_under app_type do
@@ -785,8 +801,15 @@ module Aspera
         end
         commands_under %i[admin application membership] do
           command :list, description: 'List app memberships', action: ->(**) { result_list('apps/app_memberships') }
-          command :show,   description: 'Show an app membership', arguments: [{name: :membership_id, type: :identifier}]
-          command :delete, description: 'Delete an app membership', arguments: [{name: :membership_id, type: :identifier}]
+          command :show, description: 'Show an app membership', arguments: [{name: :membership_id, type: :identifier}],
+            action: ->(membership_id:, **) { Result::SingleObject.new(aoc_api.read("apps/app_memberships/#{membership_id}", query_read_delete)) }
+          command(
+            :delete, description: 'Delete an app membership', arguments: [{name: :membership_id, type: :identifier}],
+            action: lambda do |membership_id:, **|
+              aoc_api.delete("apps/app_memberships/#{membership_id}")
+              Result::Status.new('deleted')
+            end
+          )
           command :create, description: 'Create an app membership', arguments: [{name: :membership, type: Hash}]
         end
         command :automation,        description: 'Automation commands (BETA)', setup: :setup_automation_api
@@ -877,22 +900,22 @@ module Aspera
             arguments: [{name: :package_id, type: :identifier}]
           command :list, description: 'List packages'
           command :show, description: 'Show a package',
-            arguments: [{name: :package_id, type: :identifier}]
+            arguments: [{name: :package_id, type: :identifier}],
+            action: ->(package_id:, **) { Result::SingleObject.new(aoc_api.read("packages/#{package_id}")) }
           command :delete, description: 'Delete packages',
             arguments: [{name: :package_id, type: :identifier}]
-          command :modify, description: 'Modify a package',
-            arguments: [{name: :package_id, type: :identifier}, {name: :package, type: Hash}]
+          command(
+            :modify, description: 'Modify a package',
+            arguments: [{name: :package_id, type: :identifier}, {name: :package, type: Hash}],
+            action: lambda do |package:, package_id:, **|
+              aoc_api.update("packages/#{package_id}", package)
+              Result::Status.new('modified')
+            end
+          )
         end
 
         commands_under %i[packages shared_inboxes] do
-          command :list,       description: 'List shared inboxes',
-            action: (lambda do |**|
-              result_list(
-                'dropbox_memberships',
-                fields: %w[dropbox_id dropbox.name],
-                default_query: workspace_id_hash({'embed[]' => 'dropbox', 'aggregate_permissions_by_dropbox' => true, 'sort' => 'dropbox_name'}, string: true)
-              )
-            end)
+          command :list,       description: 'List shared inboxes'
           command :show,       description: 'Show a shared inbox',
             arguments: [{name: :dropbox_id, type: :identifier, lookup: :lookup_aoc_dropbox_id}],
             action: ->(dropbox_id:, **) { Result::SingleObject.new(aoc_api.read("dropboxes/#{dropbox_id}")) }
@@ -908,7 +931,8 @@ module Aspera
           command :short_link, description: 'Manage file short link',
             arguments: [{name: :folder, type: String}, {name: :link_type, allowed: %i[public private]}],
             setup: :setup_files_short_link
-          command :transfer, description: 'Transfer files (node-to-node)', arguments: TRANSFER_ARGS
+          command :transfer, description: 'Transfer files (node-to-node)', arguments: TRANSFER_ARGS,
+            action: ->(direction:, source_folder:, **) { nodegen4_transfer(aoc_api.home[:node_id], file_id: aoc_api.home[:file_id], scope: Api::Node::Scope::USER, direction: direction, source_folder: source_folder) }
         end
         # files > short_link sub-commands
         register_short_link_commands(self, %i[files short_link])
@@ -927,18 +951,22 @@ module Aspera
               arguments: [{name: :workflow_id, type: :identifier},
                           {name: :state, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::AUTOMATION, 'workflows/{id}/update_state.put')}],
               action: ->(workflow_id:, state:, **) { Result::SingleObject.new(@automation_api.update("workflows/#{workflow_id}/update_state", state)) }
-            command :cancel_instances, description: 'Cancel all jobs of workflow',
+            command(
+              :cancel_instances, description: 'Cancel all jobs of workflow',
               arguments: [{name: :workflow_id, type: :identifier}],
-              action: lambda { |workflow_id:, **|
+              action: lambda do |workflow_id:, **|
                 @automation_api.update("workflows/#{workflow_id}/cancel_instances", {})
                 Result::Status.new('canceled')
-              }
-            command :delete_instances, description: 'Delete all jobs of workflow',
+              end
+            )
+            command(
+              :delete_instances, description: 'Delete all jobs of workflow',
               arguments: [{name: :workflow_id, type: :identifier}],
-              action: lambda { |workflow_id:, **|
+              action: lambda do |workflow_id:, **|
                 @automation_api.delete("workflows/#{workflow_id}/delete_instances")
                 Result::Status.new('deleted')
-              }
+              end
+            )
             command :action, description: 'Manage actions of workflow',
               arguments: [{name: :workflow_id, type: :identifier}]
             command :permissions, description: 'Manage permissions of workflow',
@@ -951,10 +979,25 @@ module Aspera
               arguments: [{name: :action, type: Hash, mandatory: false, default: {}, schema: Schema::Registry.req_body(Schema::Registry::AUTOMATION, 'actions.post')}]
           end
           commands_under %i[workflows permissions] do
-            command :list, description: 'List permissions of workflow',
-              query_schema: Schema::Registry.query_params(Schema::Registry::AUTOMATION, 'workflow_permissions')
-            command :create, description: 'Create a permission on workflow',
-              arguments: [{name: :workflow_permission, type: Hash, bulk: true, schema: Schema::Registry.req_body(Schema::Registry::AUTOMATION, 'workflow_permissions.post')}]
+            # API requires query parameter workflow_id
+            command(
+              :list, description: 'List permissions of workflow',
+              query_schema: Schema::Registry.query_params(Schema::Registry::AUTOMATION, 'workflow_permissions'),
+              action: lambda do |workflow_id:, **|
+                schema = Schema::Registry.query_params(Schema::Registry::AUTOMATION, 'workflow_permissions')
+                query = (query_read_delete(schema: schema) || {}).merge('workflow_id' => workflow_id)
+                Result::ObjectList.new(@automation_api.read('workflow_permissions', query))
+              end
+            )
+            command(
+              :create, description: 'Create a permission on workflow',
+              arguments: [{name: :workflow_permission, type: Hash, bulk: true, schema: Schema::Registry.req_body(Schema::Registry::AUTOMATION, 'workflow_permissions.post')}],
+              action: lambda do |workflow_id:, workflow_permission:, **|
+                bulk_result(workflow_permission, command: :create) do |params|
+                  @automation_api.create('workflow_permissions', params.merge('workflow_id' => workflow_id))
+                end
+              end
+            )
             crud_commands(**AUTOMATION_CRUD, entity: 'workflow_permissions', name: 'workflow permission', operations: %i[modify delete])
           end
           commands_under :instances do
@@ -1089,23 +1132,12 @@ module Aspera
           Result::ObjectList.new(result[:items], fields: display_fields, total: result[:total])
         end
 
-        # packages > show
-        def action_packages_show(package_id:, **)
-          Result::SingleObject.new(aoc_api.read("packages/#{package_id}"))
-        end
-
         # packages > delete
         def action_packages_delete(package_id:, **)
           bulk_result(package_id, command: :delete) do |one_id|
             Aspera.assert_type(one_id, String, Integer) { 'identifier' }
             aoc_api.delete("packages/#{one_id}")
           end
-        end
-
-        # packages > modify
-        def action_packages_modify(package:, package_id:, **)
-          aoc_api.update("packages/#{package_id}", package)
-          Result::Status.new('modified')
         end
 
         # Used as `instance:` of the mount on packages: node of the package contents
@@ -1277,11 +1309,6 @@ module Aspera
           Result::Status.new('modified')
         end
 
-        # files > transfer
-        def action_files_transfer(direction:, source_folder:, **)
-          nodegen4_transfer(aoc_api.home[:node_id], file_id: aoc_api.home[:file_id], scope: Api::Node::Scope::USER, direction: direction, source_folder: source_folder)
-        end
-
         # files - mount target: Gen4 commands on the user's home folder
         def files_node_plugin(**)
           nodegen4_plugin(aoc_api.home[:node_id], file_id: aoc_api.home[:file_id], scope: Api::Node::Scope::USER)
@@ -1301,6 +1328,22 @@ module Aspera
           end
         end
 
+        def action_admin_application_instance_list(**)
+          result_list(
+            'admin/apps_new',
+            fields:        %w[id app_type available workspace_id],
+            default_query: {workspace_id: aoc_api.workspace_info[:id]}
+          )
+        end
+
+        def action_packages_shared_inboxes_list(**)
+          result_list(
+            'dropbox_memberships',
+            fields: %w[dropbox_id dropbox.name],
+            default_query: workspace_id_hash({'embed[]' => 'dropbox', 'aggregate_permissions_by_dropbox' => true, 'sort' => 'dropbox_name'}, string: true)
+          )
+        end
+
         def action_admin_application_membership_create(membership:, **)
           data = membership.dup
           app_type = data.delete('app_type')
@@ -1309,27 +1352,10 @@ module Aspera
           Result::SingleObject.new(aoc_api.create("apps/#{app_type}/app_memberships", data))
         end
 
-        # admin > application > membership > show|delete
-        def action_admin_application_membership_show(membership_id:, **)
-          Result::SingleObject.new(aoc_api.read("apps/app_memberships/#{membership_id}", query_read_delete))
-        end
-
-        def action_admin_application_membership_delete(membership_id:, **)
-          aoc_api.delete("apps/app_memberships/#{membership_id}")
-          Result::Status.new('deleted')
-        end
-
         # admin - setup: change API scope to admin once
         def setup_admin_scope(**)
           change_api_scope(Api::AoC::Scope::ADMIN)
           {}
-        end
-
-        # admin > subscription > account
-        def action_admin_subscription_account(**)
-          org = aoc_api.read('organization')
-          result = GraphQL.execute(api_from_options('bss/platform/graphql'), 'bss_subscription_account', {organization_id: org['id']})
-          Result::SingleObject.new(result['aoc']['bssSubscription'])
         end
 
         # admin > subscription > usage
@@ -1344,12 +1370,6 @@ module Aspera
             {organization_id: org['id'], aggregate: aggregate, startDate: start_date, endDate: end_date}
           )
           Result::SingleObject.new(result['aoc'])
-        end
-
-        # admin > analytics > application_events
-        def action_admin_analytics_application_events(**)
-          events = build_analytics_api.read("organizations/#{aoc_api.current_user_info['organization_id']}/application_events")['application_events']
-          Result::ObjectList.new(events)
         end
 
         # admin > analytics > transfers
@@ -1500,21 +1520,6 @@ module Aspera
           Result::SingleObject.new(new_action)
         end
 
-        # automation > workflows > permissions > list
-        # API requires query parameter workflow_id
-        def action_automation_workflows_permissions_list(workflow_id:, **)
-          schema = Schema::Registry.query_params(Schema::Registry::AUTOMATION, 'workflow_permissions')
-          query = (query_read_delete(schema: schema) || {}).merge('workflow_id' => workflow_id)
-          Result::ObjectList.new(@automation_api.read('workflow_permissions', query))
-        end
-
-        # automation > workflows > permissions > create
-        def action_automation_workflows_permissions_create(workflow_id:, workflow_permission:, **)
-          bulk_result(workflow_permission, command: :create) do |params|
-            @automation_api.create('workflow_permissions', params.merge('workflow_id' => workflow_id))
-          end
-        end
-
         # admin > client > set_pub_key
         def action_admin_client_set_pub_key(private_key_pem:, client_id:, **)
           c = aoc_res_cfg(:client)
@@ -1542,11 +1547,6 @@ module Aspera
           nodegen4_plugin(node_id, scope: Api::Node::Scope::ADMIN)
         end
 
-        # admin > node > do > transfer
-        def action_admin_node_do_transfer(node_id:, direction:, source_folder:, **)
-          nodegen4_transfer(node_id, scope: Api::Node::Scope::ADMIN, direction: direction, source_folder: source_folder)
-        end
-
         # admin > node > bearer_token
         def action_admin_node_bearer_token(scope:, node_id:, **)
           scope ||= Api::Node::Scope::ADMIN
@@ -1564,23 +1564,12 @@ module Aspera
           {ws_res_id: workspace_id}
         end
 
-        # admin > workspace > dropbox > list
-        def action_admin_workspace_dropbox_list(ws_res_id:, **)
-          query = options.get_option(:query) || {}
-          Result::ObjectList.new(aoc_api.read('dropboxes', query.merge({'workspace_id' => ws_res_id})), fields: %w[id name description])
-        end
-
         # admin > workspace > shared_folder — res_id: already in ctx via arguments:(:identifier)
         def setup_admin_workspace_shared_folder(workspace_id:, **)
           resource_instance_path = "#{aoc_res_path(:workspace)}/#{workspace_id}"
           query = options.get_option(:query) || Api::AoC.workspace_access(workspace_id).merge({'admin' => true})
           shared_folders = aoc_api.read_with_paging("#{resource_instance_path}/permissions", query)[:items]
           {ws_res_id: workspace_id, shared_folders: shared_folders}
-        end
-
-        # admin > workspace > shared_folder > list
-        def action_admin_workspace_shared_folder_list(shared_folders:, **)
-          Result::ObjectList.new(shared_folders, fields: %w[id node_name node_id file_id file.path tags.aspera.files.workspace.share_as])
         end
 
         # admin > workspace > shared_folder > node|member — shared_folder_id: already in ctx via arguments:(:identifier)
@@ -1596,11 +1585,6 @@ module Aspera
         # admin > workspace > shared_folder > node - mount target: Gen4 commands on the shared folder, admin scope
         def admin_workspace_shared_folder_node_plugin(sf_item:, **)
           nodegen4_plugin(sf_item['node_id'], file_id: sf_item['file_id'], scope: Api::Node::Scope::ADMIN)
-        end
-
-        # admin > workspace > shared_folder > node > transfer
-        def action_admin_workspace_shared_folder_node_transfer(sf_item:, direction:, source_folder:, **)
-          nodegen4_transfer(sf_item['node_id'], file_id: sf_item['file_id'], scope: Api::Node::Scope::ADMIN, direction: direction, source_folder: source_folder)
         end
 
         # admin > workspace > shared_folder > member > list

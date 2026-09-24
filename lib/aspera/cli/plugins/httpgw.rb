@@ -36,16 +36,7 @@ module Aspera
           }
         end
 
-        command(:health, description: 'Check HTTP Gateway health', action: lambda do |**|
-          nagios = Nagios.new
-          begin
-            Api::Httpgw.new(url: options.get_option(:url, mandatory: true))
-            nagios.add_ok('api', 'answered ok')
-          rescue StandardError => e
-            nagios.add_critical('api', e.to_s)
-          end
-          Result::ObjectList.new(nagios.status_list)
-        end)
+        command :health, description: 'Check HTTP Gateway health'
 
         command :info, description: 'Show HTTP Gateway information',
           action: ->(**) { Result::SingleObject.new(Api::Httpgw.new(url: options.get_option(:url, mandatory: true)).info) }
@@ -55,6 +46,17 @@ module Aspera
         def initialize(**_)
           super
           options.parse_options!
+        end
+
+        def action_health(**)
+          nagios = Nagios.new
+          begin
+            Api::Httpgw.new(url: options.get_option(:url, mandatory: true))
+            nagios.add_ok('api', 'answered ok')
+          rescue StandardError => e
+            nagios.add_critical('api', e.to_s)
+          end
+          Result::ObjectList.new(nagios.status_list)
         end
       end
     end

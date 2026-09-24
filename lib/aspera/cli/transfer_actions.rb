@@ -36,12 +36,6 @@ module Aspera
         Result::SingleObject.new(entry)
       end
 
-      # List all persisted async transfer entries.
-      def action_transfer_list(**)
-        rows = async_transfer_store.list
-        Result::ObjectList.new(rows, fields: %w[job_id agent_type status started_at ended_at bytes_transferred transfer_id])
-      end
-
       TERMINAL_STATUSES = %w[completed failed cancelled].freeze
       private_constant :TERMINAL_STATUSES
 

@@ -11,10 +11,6 @@ module Aspera
       # Display columns for preset overview
       CONF_OVERVIEW_KEYS = %w[preset parameter value].freeze
 
-      def action_preset_list(**)
-        Result::ValueList.new(presets.config_presets.keys, name: 'name')
-      end
-
       def action_preset_overview(**)
         cp = presets.config_presets
         # Display process modifies the value (hide secrets): we do not want to save removed secrets

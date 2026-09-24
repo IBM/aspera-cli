@@ -113,12 +113,7 @@ module Aspera
         command :workstep,   description: 'Manage work steps',  setup: :setup_api
 
         commands_under :workflows do
-          command(:list, description: 'List all workflows', action: lambda do |**|
-            Result::ObjectList.new(
-              call_ao('workflows_list')['workflows']['workflow'],
-              fields: %w[id portable_id name published_status published_revision_id latest_revision_id last_modification]
-            )
-          end)
+          command :list, description: 'List all workflows'
           command :status,     description: 'Show running status of a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
             action: ->(workflow_id:, **) { Result::ObjectList.new(call_ao(workflow_id.eql?(SpecialValues::ALL) ? 'workflows_status' : "workflows_status/#{workflow_id}")['workflows']['workflow']) }
@@ -209,6 +204,13 @@ module Aspera
         end
 
         # 2.1/2.2 Initiate a workorder (async / synchronous)
+        def action_workflows_list(**)
+          Result::ObjectList.new(
+            call_ao('workflows_list')['workflows']['workflow'],
+            fields: %w[id portable_id name published_status published_revision_id latest_revision_id last_modification]
+          )
+        end
+
         def action_workflows_start(workflow_id:, parameters:, **)
           call_params = {format: :json}
           # get external parameters if any

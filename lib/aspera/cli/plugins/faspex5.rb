@@ -531,8 +531,14 @@ module Aspera
         commands_under :invitations do
           command :create, description: 'Create an invitation',
             arguments: [{name: :invitation, type: Hash, bulk: true}]
-          command :resend, description: 'Resend an invitation',
-            arguments: [{name: :invitation_id, type: :identifier}]
+          command(
+            :resend, description: 'Resend an invitation',
+            arguments: [{name: :invitation_id, type: :identifier}],
+            action: lambda do |invitation_id:, **|
+              @api_v5.create("invitations/#{invitation_id}/resend", nil)
+              Result::Status.new('Invitation resent')
+            end
+          )
           crud_commands entity: 'invitations',
             api:            :@api_v5,
             operations:     Operations::ALL - %i[create],
@@ -570,8 +576,14 @@ module Aspera
           command :configuration, description: 'Manage Faspex 5 configuration'
           command :smtp,          description: 'Manage SMTP configuration'
           command :events,        description: 'List events'
-          command :clean_deleted, description: 'Clean deleted packages',
-            arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}}]
+          command(
+            :clean_deleted, description: 'Clean deleted packages',
+            arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}}],
+            action: lambda do |parameters: {}, **|
+              parameters = @api_v5.read('configuration').slice('days_before_deleting_package_records') if parameters.empty?
+              Result::SingleObject.new(@api_v5.create('internal/packages/clean_deleted', parameters))
+            end
+          )
           Api::Faspex::ADMIN_RESOURCES.each do |res|
             cfg          = RESOURCE_CONFIG.fetch(res, {})
             extra        = cfg[:extra_commands] || []
@@ -725,12 +737,6 @@ module Aspera
               Result::ObjectList.new(list, total: total)
             end
           )
-        end
-
-        # admin > clean_deleted handler (leaf, no sub-commands)
-        define_action_method(%i[admin clean_deleted]) do |parameters: {}, **|
-          parameters = @api_v5.read('configuration').slice('days_before_deleting_package_records') if parameters.empty?
-          Result::SingleObject.new(@api_v5.create('internal/packages/clean_deleted', parameters))
         end
 
         # admin > <resource> > list
@@ -950,11 +956,6 @@ module Aspera
         end
 
         # invitations sub-handlers
-
-        def action_invitations_resend(invitation_id:, **)
-          @api_v5.create("invitations/#{invitation_id}/resend", nil)
-          Result::Status.new('Invitation resent')
-        end
 
         def action_invitations_create(invitation:, **)
           bulk_result(invitation, command: :create) do |params|

@@ -116,7 +116,7 @@ module Aspera
         # DSL command declarations - replaces ACTIONS + execute_action
         command :preset, description: 'Manage configuration presets'
         commands_under :preset do
-          command :list,     description: 'List all presets'
+          command :list,     description: 'List all presets', action: ->(**) { Result::ValueList.new(presets.config_presets.keys, name: 'name') }
           command :overview, description: 'Show all options from all presets'
           command :lookup,   description: 'Find preset matching URL and username'
           command :secure,   description: 'Move secrets to vault',
@@ -152,11 +152,17 @@ module Aspera
             {name: :location, type: Symbol, mandatory: false, default: :github, allowed: %i[github local toc]},
             {name: :section,  type: String, mandatory: false}
           ]
-        command :genkey, description: 'Generate a new RSA private key',
+        command(
+          :genkey, description: 'Generate a new RSA private key',
           arguments: [
             {name: :private_key_path, type: String},
             {name: :private_key_length, type: Integer, mandatory: false, default: OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH}
-          ]
+          ],
+          action: lambda do |private_key_path:, private_key_length: OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH, **|
+            OAuth::Jwt.generate_rsa_private_key(path: private_key_path, length: private_key_length)
+            Result::Status.new("Generated #{private_key_length} bit RSA key: #{private_key_path}")
+          end
+        )
         command :pubkey, description: 'Show the public key of an RSA private key',
           arguments: [{name: :private_key_pem, type: String}],
           action: ->(private_key_pem:, **) { Result::Text.new(OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s) }
@@ -171,11 +177,25 @@ module Aspera
           ]
         command :tokens, description: 'Manage OAuth tokens'
         command :plugins, description: 'Manage CLI plugins'
-        command :detect, description: 'Detect the Aspera product from a URL (interactive)',
-          arguments: [{name: :url, type: String}, {name: :plugin_name, mandatory: false, default: nil}]
-        command :wizard, description: 'Run the setup wizard for an Aspera product (interactive)',
+        command(
+          :detect, description: 'Detect the Aspera product from a URL (interactive)',
+          arguments: [{name: :url, type: String}, {name: :plugin_name, mandatory: false, default: nil}],
+          action: lambda do |url:, plugin_name: nil, **|
+            options.ask_missing_mandatory = true
+            apps = @wizard.identify_plugins_for_url(url: url, plugin_name: plugin_name).freeze
+            Result::ObjectList.new(apps)
+          end
+        )
+        command(
+          :wizard, description: 'Run the setup wizard for an Aspera product (interactive)',
           arguments: [{name: :url, type: String}, {name: :plugin_name, mandatory: false, default: nil},
-                      {name: :preset_name, mandatory: false, default: ''}]
+                      {name: :preset_name, mandatory: false, default: ''}],
+          action: lambda do |url:, plugin_name: nil, preset_name: '', **|
+            options.ask_missing_mandatory = true
+            apps = @wizard.identify_plugins_for_url(url: url, plugin_name: plugin_name).freeze
+            @wizard.find(apps, preset_name: preset_name)
+          end
+        )
         command :coffee, description: 'Show a coffee image', action: ->(**) { Result::Image.new(COFFEE_IMAGE_URL) }
         command :image, description: 'Show an image',
           arguments: [{name: :image_uri, type: nil}],
@@ -210,15 +230,35 @@ module Aspera
             action: ->(**) { Result::ObjectList.new(vault_required.ids) }
           command :list,     description: 'List all secrets with full details',
             action: ->(**) { Result::ObjectList.new(vault_required.all) }
-          command :show,     description: 'Show a secret by label (or id)',
+          command(
+            :show,     description: 'Show a secret by label (or id)',
+            arguments: [{name: :label, type: String}, {name: :id, type: String, mandatory: false, default: nil}],
+            action: lambda do |label:, id: nil, **|
+              v = vault_required
+              kwargs = id && v.method(:get).parameters.any? { |_t, n| n == :id } ? {id: id} : {}
+              Result::SingleObject.new(v.get(label: label, **kwargs))
+            end
+          )
+          command(
+            :create,   description: 'Add a new secret to the vault',
+            arguments: [{name: :secret, type: Hash, schema: Schema::Registry::VAULT_SECRET}],
+            action: lambda do |secret:, **|
+              vault_required.set(secret.symbolize_keys)
+              Result::Status.new('Secret added')
+            end
+          )
+          command :delete, description: 'Delete a secret by label (or id)',
             arguments: [{name: :label, type: String}, {name: :id, type: String, mandatory: false, default: nil}]
-          command :create,   description: 'Add a new secret to the vault',
-            arguments: [{name: :secret, type: Hash, schema: Schema::Registry::VAULT_SECRET}]
-          command :delete,   description: 'Delete a secret by label (or id)',
-            arguments: [{name: :label, type: String}, {name: :id, type: String, mandatory: false, default: nil}]
-          command :password, description: 'Change the vault password',
-            arguments: [{name: :new_password, type: String}]
-          command :import,   description: 'Import secrets from a JSON array (supports --bulk)',
+          command(
+            :password, description: 'Change the vault password',
+            arguments: [{name: :new_password, type: String}],
+            action: lambda do |new_password:, **|
+              Aspera.assert(vault_required.respond_to?(:change_password), 'Vault does not support password change')
+              vault_required.change_password(new_password)
+              Result::Status.new('Vault password updated')
+            end
+          )
+          command :import, description: 'Import secrets from a JSON array (supports --bulk)',
             arguments: [{name: :secrets, type: Array, schema: {type: 'array', items: {'$ref' => Schema::Registry::VAULT_SECRET}}}]
         end
         command :commands, description: 'List all available commands, of all plugins or only the given one, optionally under a command path',
@@ -232,12 +272,33 @@ module Aspera
 
         # remote_certificate sub-commands
         commands_under :remote_certificate do
-          command :chain, description: 'Show the full certificate chain as PEM',
-            arguments: [{name: :remote_url, type: String}]
-          command :only, description: 'Show only the server certificate as PEM',
-            arguments: [{name: :remote_url, type: String}]
-          command :name, description: 'Show the CN of the server certificate',
-            arguments: [{name: :remote_url, type: String}]
+          command(
+            :chain, description: 'Show the full certificate chain as PEM',
+            arguments: [{name: :remote_url, type: String}],
+            action: lambda do |remote_url:, **|
+              remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
+              Aspera.assert(remote_chain&.first) { "No certificate found for #{remote_url}" }
+              Result::Text.new(remote_chain.map(&:to_pem).join("\n"))
+            end
+          )
+          command(
+            :only, description: 'Show only the server certificate as PEM',
+            arguments: [{name: :remote_url, type: String}],
+            action: lambda do |remote_url:, **|
+              remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
+              Aspera.assert(remote_chain&.first) { "No certificate found for #{remote_url}" }
+              Result::Text.new(remote_chain.first.to_pem)
+            end
+          )
+          command(
+            :name, description: 'Show the CN of the server certificate',
+            arguments: [{name: :remote_url, type: String}],
+            action: lambda do |remote_url:, **|
+              remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
+              Aspera.assert(remote_chain&.first) { "No certificate found for #{remote_url}" }
+              Result::Text.new(remote_chain.first.subject.to_a.find { |name, _, _| name == 'CN' }[1])
+            end
+          )
         end
 
         # tokens sub-commands
@@ -273,17 +334,25 @@ module Aspera
         # ascp sub-commands
         command :ascp, description: 'Manage FASP/ascp transfer engine'
         commands_under :ascp do
-          command :show,    description: 'Show ascp binary path'
+          command :show,    description: 'Show ascp binary path', action: ->(**) { Result::Text.new(Ascp::Installation.instance.path(:ascp)) }
           command :info,    description: 'Show ascp and transfer spec information'
           command :install, description: 'Install the transfer SDK',
-            arguments: [{name: :version, mandatory: false, default: nil}]
-          command :spec,    description: 'Show the transfer spec schema'
-          command :schema,  description: 'Show the transfer spec JSON schema',
+            arguments: [{name: :version, mandatory: false, default: nil}],
+            action: ->(version: nil, **) { install_transfer_sdk(version: version) }
+          command(
+            :spec, description: 'Show the transfer spec schema',
+            action: lambda do |**|
+              builder = Schema::Documentation.new(TerminalFormatter, Transfer::Spec::SCHEMA, include_option: true, agent_columns: true).build
+              Result::ObjectList.new(builder.rows, fields: builder.columns)
+            end
+          )
+          command :schema, description: 'Show the transfer spec JSON schema',
             arguments: [{name: :agent_name, mandatory: false, default: nil}]
           command :errors,   description: 'Show FASP error codes'
           command :products, description: 'Manage installed Aspera products'
           commands_under :products do
-            command :list, description: 'List installed Aspera products'
+            command :list, description: 'List installed Aspera products',
+              action: ->(**) { Result::ObjectList.new(Ascp::Installation.instance.installed_products, fields: %w[name app_root]) }
           end
         end
 
@@ -300,7 +369,13 @@ module Aspera
         # transfer async management sub-commands
         command :transfer, description: 'Manage asynchronous transfers'
         commands_under :transfer do
-          command :list,    description: 'List all async transfer jobs'
+          command(
+            :list, description: 'List all async transfer jobs',
+            action: lambda do |**|
+              rows = async_transfer_store.list
+              Result::ObjectList.new(rows, fields: %w[job_id agent_type status started_at ended_at bytes_transferred transfer_id])
+            end
+          )
           command :status,  description: 'Show status of an async transfer job',
             arguments: [{name: :job_id, type: String}]
           command :cleanup, description: 'Remove completed/failed/cancelled transfer entries'
@@ -309,8 +384,14 @@ module Aspera
         # transferd sub-commands
         command :transferd, description: 'Manage the transfer daemon (transferd)'
         commands_under :transferd do
-          command :install, description: 'Install the transfer daemon'
-          command :list,    description: 'List available SDK locations'
+          command :install, description: 'Install the transfer daemon', action: ->(**) { install_transfer_sdk }
+          command(
+            :list, description: 'List available SDK locations',
+            action: lambda do |**|
+              sdk_list = Ascp::Installation.instance.sdk_locations
+              Result::ObjectList.new(sdk_list, fields: sdk_list.first.keys - ['url'])
+            end
+          )
         end
 
         # sync sub-commands
@@ -338,11 +419,18 @@ module Aspera
 
         # test sub-commands
         commands_under :test do
-          command :throw, description: 'Raise an exception (for testing)',
+          command(
+            :throw, description: 'Raise an exception (for testing)',
             arguments: [
               {name: :exception_class_name, type: String},
               {name: :exception_text,       type: String}
-            ]
+            ],
+            action: lambda do |exception_class_name:, exception_text:, **|
+              type = Object.const_get(exception_class_name)
+              Aspera.assert(type <= Exception) { "#{type} is not an exception: #{type.class}" }
+              raise type, exception_text
+            end
+          )
           command :web, description: 'Test web browser interaction', action: ->(**) {}
         end
 
@@ -410,29 +498,6 @@ module Aspera
           end
         end
 
-        def action_genkey(private_key_path:, private_key_length: OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH, **)
-          OAuth::Jwt.generate_rsa_private_key(path: private_key_path, length: private_key_length)
-          Result::Status.new("Generated #{private_key_length} bit RSA key: #{private_key_path}")
-        end
-
-        def action_remote_certificate_chain(remote_url:, **)
-          remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
-          Aspera.assert(remote_chain&.first) { "No certificate found for #{remote_url}" }
-          Result::Text.new(remote_chain.map(&:to_pem).join("\n"))
-        end
-
-        def action_remote_certificate_only(remote_url:, **)
-          remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
-          Aspera.assert(remote_chain&.first) { "No certificate found for #{remote_url}" }
-          Result::Text.new(remote_chain.first.to_pem)
-        end
-
-        def action_remote_certificate_name(remote_url:, **)
-          remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
-          Aspera.assert(remote_chain&.first) { "No certificate found for #{remote_url}" }
-          Result::Text.new(remote_chain.first.subject.to_a.find { |name, _, _| name == 'CN' }[1])
-        end
-
         def action_download(file_url:, file_dest: nil, **)
           file_url = file_url.chomp
           file_dest = File.join(transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE), file_url.gsub(%r{.*/}, '')) if file_dest.nil?
@@ -482,18 +547,6 @@ module Aspera
           END_OF_PLUGIN_CODE
           File.write(plugin_file, content)
           Result::Status.new("Created #{plugin_file}")
-        end
-
-        def action_detect(url:, plugin_name: nil, **)
-          options.ask_missing_mandatory = true
-          apps = @wizard.identify_plugins_for_url(url: url, plugin_name: plugin_name).freeze
-          Result::ObjectList.new(apps)
-        end
-
-        def action_wizard(url:, plugin_name: nil, preset_name: '', **)
-          options.ask_missing_mandatory = true
-          apps = @wizard.identify_plugins_for_url(url: url, plugin_name: plugin_name).freeze
-          @wizard.find(apps, preset_name: preset_name)
         end
 
         def action_initdemo(**)
@@ -576,12 +629,6 @@ module Aspera
             row
           end
           Result::ObjectList.new(rows, fields: %w[option description allowed deprecated])
-        end
-
-        def action_test_throw(exception_class_name:, exception_text:, **)
-          type = Object.const_get(exception_class_name)
-          Aspera.assert(type <= Exception) { "#{type} is not an exception: #{type.class}" }
-          raise type, exception_text
         end
 
         def action_completion_bash(words: nil, **)
