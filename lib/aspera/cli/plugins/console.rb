@@ -99,9 +99,11 @@ module Aspera
           command :rerun,         description: 'Rerun a transfer',
             arguments: [{name: :transfer_id, type: :identifier}]
           command :change_rate,   description: 'Change transfer rate',
-            arguments: [{name: :transfer_id, type: :identifier}]
+            arguments: [{name: :transfer_id, type: :identifier},
+                        {name: :data, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::CONSOLE, 'transfers/{id}/change_rate.put')}]
           command :change_policy, description: 'Change transfer policy',
-            arguments: [{name: :transfer_id, type: :identifier}]
+            arguments: [{name: :transfer_id, type: :identifier},
+                        {name: :data, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::CONSOLE, 'transfers/{id}/change_policy.put')}]
           command :move_forwards, description: 'Move transfer forwards',
             arguments: [{name: :transfer_id, type: :identifier}]
           command :move_back,     description: 'Move transfer backwards',
@@ -110,17 +112,24 @@ module Aspera
 
         # Generate one handler per transfer/current action.
         # Convention: action_transfer_current_<verb>
-        # All share the same REST pattern: PATCH transfers/<id>/<verb>.
-        %i[start pause cancel resume rerun change_rate change_policy move_forwards move_back].each do |verb|
+        # All share the same REST pattern: PUT transfers/<id>/<verb>.
+        %i[start pause cancel resume move_forwards move_back].each do |verb|
           define_action_method([:transfer, :current, verb]) do |api_console:, transfer_id:, **|
             Result::SingleObject.new(api_console.update("transfers/#{transfer_id}/#{verb}", query_read_delete))
+          end
+        end
+
+        # PUT transfers/<id>/<verb> with request body
+        %i[change_rate change_policy].each do |verb|
+          define_action_method([:transfer, :current, verb]) do |api_console:, transfer_id:, data:, **|
+            Result::SingleObject.new(api_console.update("transfers/#{transfer_id}/#{verb}", data))
           end
         end
 
         commands_under %i[transfer smart] do
           command :list,   description: 'List smart transfers', action: ->(api_console:) { Result::ObjectList.new(api_console.read('smart_transfers')) }
           command :submit, description: 'Submit a smart transfer',
-            arguments: [{name: :smart_id}, {name: :transfer_params, type: Hash}]
+            arguments: [{name: :smart_id}, {name: :transfer_params, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::CONSOLE, 'smart_transfers/{id}.post')}]
         end
 
         # --- setup ---
@@ -159,6 +168,10 @@ module Aspera
             api_console.read('transfers', query),
             fields: %w[id contact name status]
           )
+        end
+
+        def action_transfer_current_rerun(api_console:, transfer_id:, **)
+          Result::SingleObject.new(api_console.create("transfers/#{transfer_id}/rerun", {}))
         end
 
         def action_transfer_current_files(api_console:, transfer_id:, **)

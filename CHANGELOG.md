@@ -8,6 +8,7 @@ Released: [Place date of release here]
 
 * `config`: Command `commands` accepts an optional plugin name to list only that plugin's commands.
 * `mcp`: Shorter server instructions and tool description, examples use presets and `@json:`.
+* `console`: Help of `transfer current change_rate|change_policy` and `transfer smart submit` shows the schema of the request body.
 
 ### Issues Fixed
 
@@ -19,10 +20,14 @@ Released: [Place date of release here]
 * `aoc`: Help of `packages ls|find|node_info|bearer_token_node` now shows the `<path>` argument.
 * `aoc`: `admin node do <id> transfer` and `admin workspace shared_folder <id> node <id> transfer` were always failing: they now take the same `direction` and `source_folder` arguments as `files transfer`.
 * `mcp`: Secrets (e.g. from `config preset show`) are now hidden in tool results.
+* `aoc`: Commands `user contacts show|create|modify|delete` were failing: they now take `<contact_id>` and `<data>` arguments.
+* `console`: `transfer current change_rate|change_policy` now take a mandatory `<data>` argument (request body), `transfer current rerun` uses `POST`.
 
 ### Breaking Changes
 
 * `preview`: Renamed option `mimemagic` to `detect_mime`.
+* `server`: Commands `ls|rm|mkdir|du|md5sum` require at least one path, `mv|cp` take exactly `<source> <destination>`, `df|info` take no argument.
+* `console`: `transfer current change_rate|change_policy` require a `<data>` argument, instead of option `query`.
 
 ## 4.27.2
 
