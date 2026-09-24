@@ -534,11 +534,7 @@ module Aspera
               path.each_with_index do |seg, i|
                 tokens << seg.to_s
                 node_args = reg[path[0, i + 1]]&.arguments.to_a
-                node_args.each do |a|
-                  token = a.allowed ? a.allowed.join('|') : a.name.to_s
-                  token += '...' if a.multiple
-                  tokens << (a.mandatory ? "<#{token}>" : "[<#{token}>]")
-                end
+                node_args.each { |a| tokens << a.syntax }
               end
               syntax = tokens.join(' ')
               {

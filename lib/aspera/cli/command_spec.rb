@@ -43,6 +43,17 @@ module Aspera
         kwargs[:interactive]  = false if kwargs[:interactive].nil?
         super
       end
+
+      # Syntax of argument for help, e.g. `<name>`, `[<name>]`, `<paths...>`, `<account:Hash>`.
+      # Type is shown only when the argument is not free text.
+      # @return [String]
+      def syntax
+        token = allowed ? allowed.join('|') : name.to_s
+        token += '...' if multiple
+        types = Array(type).grep(Class)
+        token += ":#{types.map(&:name).join('|')}" unless allowed || types.empty? || types.include?(String)
+        mandatory ? "<#{token}>" : "[<#{token}>]"
+      end
     end
 
     # Declares an option referenced by name from command declarations.

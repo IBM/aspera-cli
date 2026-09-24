@@ -287,16 +287,14 @@ module Aspera
             seg_spec = registry[seg_path]
             if seg_spec && registry.children_of(seg_path).any? && seg_spec.arguments
               seg_spec.arguments.each do |arg_spec|
-                label += " <#{arg_spec.name}>"
+                label += " #{arg_spec.syntax}"
               end
             end
           end
           if cmds.none?
             leaf_spec = registry[path]
             leaf_spec&.arguments&.each do |arg_spec|
-              argument = arg_spec.mandatory ? "<#{arg_spec.name}>" : "[#{arg_spec.name}]"
-              argument += '...' if arg_spec.multiple
-              label += " #{argument}"
+              label += " #{arg_spec.syntax}"
             end
           end
           if cmds.any?
