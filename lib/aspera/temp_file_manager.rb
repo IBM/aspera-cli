@@ -3,7 +3,7 @@
 require 'singleton'
 require 'fileutils'
 require 'etc'
-require 'tempfile'
+require 'tmpdir'
 
 module Aspera
   # create a temp file name for a given folder
@@ -58,10 +58,11 @@ module Aspera
     def new_file_path_in_folder(temp_folder, prefix: nil, suffix: nil)
       FileUtils.mkdir_p(temp_folder)
       basename = [prefix || 'aspera', SecureRandom.uuid].join('-')
-      # Tempfile.new creates the file atomically with O_EXCL; close keeps it on disk
-      tmp = Tempfile.new([basename, suffix ? "-#{suffix}" : ''], temp_folder)
-      tmp.close
-      new_file = tmp.path
+      # Create the file atomically with O_EXCL (retry with another name if it exists)
+      # Note: Tempfile is not used, as its file is deleted when the object is garbage collected
+      new_file = Dir::Tmpname.create([basename, suffix ? "-#{suffix}" : ''], temp_folder) do |path|
+        File.open(path, File::WRONLY | File::CREAT | File::EXCL, 0o600) { nil }
+      end
       @created_files.push(new_file)
       new_file
     end
