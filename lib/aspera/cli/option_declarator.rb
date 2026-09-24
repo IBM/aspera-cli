@@ -16,28 +16,38 @@ module Aspera
 
       # Declare an option in this class's registry.
       #
-      # @param name        [Symbol]          Option name
-      # @param description [String, nil]     User-facing description
-      # @param short       [String, nil]     Single-character short form
-      # @param allowed     [Object, nil]     Allowed values
-      # @param default     [Object, nil]     Default value
-      # @param handler     [Symbol, Hash, nil] Handler (Symbol or Hash)
-      # @param deprecation [String, nil]     Deprecation message
-      # @param schema      [String, nil]     Schema reference
+      # @param name        [Symbol]                  Option name
+      # @param description [String, nil]             User-facing description; if nil, derived from schema: title/description
+      # @param short       [String, nil]             Single-character short form (without leading '-')
+      # @param allowed     [Object, nil]             Allowed values (see OptionValue)
+      # @param default     [Object, nil]             Default value
+      # @param handler     [Symbol, Proc, Hash, nil] Handler (see OptionSpec)
+      # @param deprecation [String, nil]             Deprecation message forwarded to options.declare
+      # @param schema      [String, nil]             Schema reference (e.g. "opts:components.schemas.Foo");
+      #                                              when description: is nil, the schema title or first description line is used
       def option(name, description: nil,
         short: nil, allowed: nil, default: nil,
         handler: nil, deprecation: nil, schema: nil)
-        raise ArgumentError, "Duplicate option: #{name.inspect}" if option_specs.key?(name)
-        option_specs[name] = OptionSpec.new(
-          name:        name,
-          description: description,
-          short:       short,
-          allowed:     allowed,
-          default:     default,
-          handler:     handler,
-          deprecation: deprecation,
-          schema:      schema
+        register_option_spec(
+          OptionSpec.new(
+            name:        name,
+            description: description,
+            short:       short,
+            allowed:     allowed,
+            default:     default,
+            handler:     handler,
+            deprecation: deprecation,
+            schema:      schema
+          )
         )
+      end
+
+      # Store an OptionSpec in this class's registry.
+      # @param spec [OptionSpec]
+      # @raise [ArgumentError] on duplicate option name
+      def register_option_spec(spec)
+        raise ArgumentError, "Duplicate option: #{spec.name.inspect}" if option_specs.key?(spec.name)
+        option_specs[spec.name] = spec
       end
 
       # Declare all options registered on this class onto a Parser instance.

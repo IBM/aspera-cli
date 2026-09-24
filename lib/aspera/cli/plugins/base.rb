@@ -24,8 +24,10 @@ module Aspera
           ALL = (GLOBAL + INSTANCE).freeze
         end
         class << self
-          # Per-class DSL registry (not inherited: each subclass gets its own instance).
-          # @return [CommandRegistry]
+          include OptionDeclarator
+
+          # Option sources added with `use_options`.
+          # @return [Array<Class, Module>]
           def used_option_sources
             @used_option_sources ||= []
           end
@@ -36,6 +38,8 @@ module Aspera
             used_option_sources << source unless used_option_sources.include?(source)
           end
 
+          # Per-class DSL registry (not inherited: each subclass gets its own instance).
+          # @return [CommandRegistry]
           def command_registry
             @command_registry ||= CommandRegistry.new
           end
@@ -190,71 +194,50 @@ module Aspera
             @current_parent = previous
           end
 
-          # DSL class method: declare an option in this plugin's registry.
+          # Options of this plugin class (`option` DSL, see OptionDeclarator).
           # Metadata is stored as an OptionSpec at class-load time; the actual
           # options.declare call happens in Base#initialize once the instance exists.
-          #
+          # @return [Hash{Symbol => OptionSpec}]
+          def option_specs
+            command_registry.option_specs
+          end
+
+          # Store an OptionSpec in the command registry.
           # Raises ArgumentError at class-load time if the same option name is already
           # declared by any ancestor class, preventing silent shadowing.
-          #
-          # @param name        [Symbol]          Option name
-          # @param description [String, nil]     User-facing description; if nil, derived from schema: title/description
-          # @param short       [String, nil]     Single-character short form (without leading '-')
-          # @param allowed     [Object, nil]     Allowed values (see OptionValue)
-          # @param default     [Object, nil]     Default value
-          # @param handler     [Symbol, Hash, nil]
-          #   - Symbol: resolved to {o: <plugin instance>, m: <symbol>} at runtime (Category B)
-          #   - Hash:   {o: <object>, m: <method>} used as-is (Category A: singletons / constants)
-          #   - nil:    option stores its value locally (no delegation)
-          # @param deprecation [String, nil]     Deprecation message forwarded to options.declare
-          # @param schema      [String, nil]     Schema reference (e.g. "opts:components.schemas.Foo");
-          #                                      when description: is nil, the schema title or first description line is used
-          def option(name, description: nil,
-            short: nil, allowed: nil, default: nil,
-            handler: nil, deprecation: nil, schema: nil)
+          # @param spec [OptionSpec]
+          def register_option_spec(spec)
             ancestor_owner = ancestors.drop(1).find do |klass|
               klass.is_a?(Class) && klass <= Base &&
                 klass.instance_variable_defined?(:@command_registry) &&
-                klass.command_registry.option_specs.key?(name)
+                klass.command_registry.option_specs.key?(spec.name)
             end
-            raise ArgumentError, "#{self}: option :#{name} already declared in ancestor #{ancestor_owner}" if ancestor_owner
-            command_registry.register_option(
-              OptionSpec.new(
-                name:        name,
-                description: description,
-                short:       short,
-                allowed:     allowed,
-                default:     default,
-                handler:     handler,
-                deprecation: deprecation,
-                schema:      schema
-              )
-            )
+            raise ArgumentError, "#{self}: option :#{spec.name} already declared in ancestor #{ancestor_owner}" if ancestor_owner
+            command_registry.register_option(spec)
           end
 
-          # Declare all options registered on this plugin class onto a Parser instance.
-          # Walks inherited options and any sources added via `use_options`.
-          # @param options [Aspera::Cli::Parser]
-          # @param parse [Boolean] whether to call parse_options! after declaring
-          def declare_options(options, parse: false)
+          # Classes and modules whose options apply to this plugin:
+          # this class, its plugin ancestors and sources added via `use_options`.
+          # @return [Array<Class, Module>] each responds to `option_specs`
+          def option_sources
             sources = []
             ancestors.each do |klass|
               next unless klass.is_a?(Class) && klass <= Base
               sources << klass if klass.instance_variable_defined?(:@command_registry)
-              sources.concat(klass.used_option_sources) if klass.respond_to?(:used_option_sources)
+              sources.concat(klass.used_option_sources)
             end
-            sources.uniq.each do |src|
-              specs =
-                if src.respond_to?(:command_registry)
-                  src.command_registry.option_specs
-                elsif src.respond_to?(:option_specs)
-                  src.option_specs
-                else
-                  {}
-                end
-              specs.each_value do |spec|
-                # No plugin instance: Symbol and Proc handlers are not bound
-                spec.declare_on(options) unless options.option_declared?(spec.name)
+            sources.uniq
+          end
+
+          # Declare all options of `option_sources` onto a Parser instance.
+          # Skips options already declared on the parser: it is shared across all plugins in a run.
+          # @param options [Aspera::Cli::Parser]
+          # @param target  [Base, nil] plugin instance for Symbol and Proc handlers; nil: such handlers are not bound
+          # @param parse   [Boolean] whether to call parse_options! after declaring
+          def declare_options(options, target: nil, parse: false)
+            option_sources.each do |src|
+              src.option_specs.each_value do |spec|
+                spec.declare_on(options, target: target) unless options.option_declared?(spec.name)
               end
             end
             options.parse_options! if parse
@@ -301,31 +284,9 @@ module Aspera
           # below (DSL-registered and imperative) appear under the plugin section in
           # --help output, separate from the global options.
           options.group(self.class.name.split('::').last.downcase) if @context.man_header
-          # Auto-declare all options registered via the DSL `option` class method.
-          # Walk the ancestor chain so that options declared on parent plugin classes
-          # (e.g. Oauth, BasicAuth) are also registered for sub-classes (e.g. Aoc).
-          # The options object is shared across all plugins in a run; skip options already
-          # declared by an earlier plugin (Base.option prevents duplicates within one hierarchy).
-          # Each OptionSpec is declared with this plugin instance as target of Symbol and Proc handlers.
-          sources = []
-          self.class.ancestors.each do |klass|
-            next unless klass.is_a?(Class) && klass <= Base
-            sources << klass if klass.instance_variable_defined?(:@command_registry)
-            sources.concat(klass.used_option_sources) if klass.respond_to?(:used_option_sources)
-          end
-          sources.uniq.each do |src|
-            specs =
-              if src.respond_to?(:command_registry)
-                src.command_registry.option_specs
-              elsif src.respond_to?(:option_specs)
-                src.option_specs
-              else
-                {}
-              end
-            specs.each_value do |spec|
-              spec.declare_on(options, target: self) unless options.option_declared?(spec.name)
-            end
-          end
+          # Auto-declare all options registered via the DSL `option` class method,
+          # including those of parent plugin classes (e.g. Oauth, BasicAuth) and `use_options` sources.
+          self.class.declare_options(options, target: self)
         end
 
         # Global objects
