@@ -53,9 +53,9 @@ module Aspera
           Step 1 — commands of a plugin, with syntax:
             ["config", "commands", "<plugin>"]
             Returns { syntax, description } for every command of that plugin.
-            Notation: <arg> mandatory, [<arg>] optional, <a|b> enum, <arg...> variadic.
+            Notation: <arg> mandatory, [<arg>] optional, <a|b> enum, <arg...> variadic, <arg:Hash> typed.
             Omit <plugin> to list all 800+ commands of all plugins (large: ~70 KB).
-          Step 2 — schema of a <data> (Hash) argument, MANDATORY before calling such a command:
+          Step 2 — schema of a Hash argument (shown <name:Hash>), MANDATORY before calling such a command:
             ["<plugin>", "<cmd>", ..., "help"]
             Put the literal "help" in place of the Hash argument. Returns field names, types,
             required flags and descriptions. Never infer fields from server error messages.

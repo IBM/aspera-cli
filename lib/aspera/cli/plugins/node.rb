@@ -159,7 +159,7 @@ module Aspera
           delete:            {description: 'Delete entry',                   arguments: [{name: :paths, type: String, bulk: true}]},
           upload:            {description: 'Upload files',                   transfer_paths: :send},
           download:          {description: 'Download files',                 transfer_paths: :receive},
-          modify:            {description: 'Modify file',                    arguments: [{name: :path, type: String}, {name: :update_value, type: Hash, schema: 'node:components.schemas.files-id-put-request'}]},
+          modify:            {description: 'Modify file',                    arguments: [{name: :path, type: String}, {name: :file, type: Hash, schema: 'node:components.schemas.files-id-put-request'}]},
           cat:               {description: 'Show file contents',             arguments: SINGLE_PATH_ARG},
           show:              {description: 'Show file info',                 arguments: SINGLE_PATH_ARG},
           thumbnail:         {description: 'Show file thumbnail',            arguments: SINGLE_PATH_ARG},
@@ -404,9 +404,9 @@ module Aspera
             arguments: [{name: :perm_id, type: :identifier}],
             action: ->(apifid:, perm_id:, **) { Result::SingleObject.new(apifid.node_api.read("permissions/#{perm_id}")) }
           command :create, description: 'Create a permission',
-            arguments: [{name: :data, type: Hash, schema: 'node:components.schemas.permissions-post-request'}]
+            arguments: [{name: :permission, type: Hash, schema: 'node:components.schemas.permissions-post-request'}]
           command :modify, description: 'Modify a permission',
-            arguments: [{name: :perm_id, type: :identifier}, {name: :data, type: Hash, schema: 'node:components.schemas.permissions-id-put-request'}]
+            arguments: [{name: :perm_id, type: :identifier}, {name: :permission, type: Hash, schema: 'node:components.schemas.permissions-id-put-request'}]
           command :delete, description: 'Delete permissions',
             arguments: [{name: :perm_id, bulk: true}]
         end
@@ -459,14 +459,14 @@ module Aspera
         commands_under :stream do
           command :list,   description: 'List streams', action: -> { Result::ObjectList.new(@api_node.read('ops/transfers', query_read_delete), fields: %w[id status]) }
           command :create, description: 'Create a stream',
-            arguments: [{name: :data, type: Hash, schema: 'node:components.schemas.transferPostRequest'}],
-            action: ->(data:, **) { Result::SingleObject.new(@api_node.create('streams', data)) }
+            arguments: [{name: :stream, type: Hash, schema: 'node:components.schemas.transferPostRequest'}],
+            action: ->(stream:, **) { Result::SingleObject.new(@api_node.create('streams', stream)) }
           command :show,   description: 'Show a stream',
             arguments: [{name: :transfer_id, type: :identifier}],
             action: ->(transfer_id:, **) { Result::SingleObject.new(@api_node.read("ops/transfers/#{transfer_id}")) }
           command :modify, description: 'Modify a stream',
-            arguments: [{name: :transfer_id, type: :identifier}, {name: :data, type: Hash, schema: 'node:components.schemas.transferPutRequest'}],
-            action: ->(data:, transfer_id:, **) { Result::SingleObject.new(@api_node.update("streams/#{transfer_id}", data)) }
+            arguments: [{name: :transfer_id, type: :identifier}, {name: :stream, type: Hash, schema: 'node:components.schemas.transferPutRequest'}],
+            action: ->(stream:, transfer_id:, **) { Result::SingleObject.new(@api_node.update("streams/#{transfer_id}", stream)) }
           command :cancel, description: 'Cancel a stream',
             arguments: [{name: :transfer_id, type: :identifier}],
             action: ->(transfer_id:, **) { Result::SingleObject.new(@api_node.cancel("streams/#{transfer_id}")) }
@@ -481,7 +481,7 @@ module Aspera
             arguments: [{name: :transfer_id, type: :identifier}],
             action: ->(transfer_id:, **) { Result::SingleObject.new(@api_node.read("ops/transfers/#{transfer_id}")) }
           command :modify,            description: 'Modify a transfer',
-            arguments: [{name: :transfer_id, type: :identifier}, {name: :update_value, type: Hash, schema: 'node:components.schemas.transferPutRequest'}]
+            arguments: [{name: :transfer_id, type: :identifier}, {name: :transfer, type: Hash, schema: 'node:components.schemas.transferPutRequest'}]
           command :bandwidth_average, description: 'Show average bandwidth per period'
           command :sessions,          description: 'List transfer sessions'
         end
@@ -490,7 +490,7 @@ module Aspera
         commands_under :service do
           command :list,   description: 'List services', action: -> { Result::ObjectList.new(@api_node.read('rund/services')['services']) }
           command :create, description: 'Create a service',
-            arguments: [{name: :creation_data, type: Hash}]
+            arguments: [{name: :service, type: Hash}]
           command :delete, description: 'Delete a service',
             arguments: [{name: :service_id, type: :identifier}]
         end
@@ -498,15 +498,15 @@ module Aspera
         command :watch_folder, description: 'Manage watch folders', setup: :setup_watch_folder
         commands_under :watch_folder do
           command :create, description: 'Create a watch folder',
-            arguments: [{name: :data, type: Hash}],
-            action: ->(data:, **) { Result::Status.new("#{@api_node.create('v3/watchfolders', data)['id']} created") }
+            arguments: [{name: :watch_folder, type: Hash}],
+            action: ->(watch_folder:, **) { Result::Status.new("#{@api_node.create('v3/watchfolders', watch_folder)['id']} created") }
           command :list,   description: 'List watch folders',
             action: -> { Result::ValueList.new(@api_node.read('v3/watchfolders', query_read_delete)['ids']) }
           command :show,   description: 'Show a watch folder',
             arguments: [{name: :watch_folder_id, type: :identifier}],
             action: ->(watch_folder_id:, **) { Result::SingleObject.new(@api_node.read("v3/watchfolders/#{watch_folder_id}")) }
           command :modify, description: 'Modify a watch folder',
-            arguments: [{name: :watch_folder_id, type: :identifier}, {name: :data, type: Hash}]
+            arguments: [{name: :watch_folder_id, type: :identifier}, {name: :watch_folder, type: Hash}]
           command :delete, description: 'Delete a watch folder',
             arguments: [{name: :watch_folder_id, type: :identifier}]
           command :state,  description: 'Show watch folder state',
@@ -521,19 +521,19 @@ module Aspera
         end
         commands_under %i[central session] do
           command :list, description: 'List sessions',
-            arguments: [{name: :request_data, type: Hash, mandatory: false, default: nil}]
+            arguments: [{name: :criteria, type: Hash, mandatory: false, default: nil}]
         end
         commands_under %i[central file] do
           command :list,   description: 'List file transfers',
-            arguments: [{name: :request_data, type: Hash, mandatory: false, default: nil}]
+            arguments: [{name: :criteria, type: Hash, mandatory: false, default: nil}]
           command :modify, description: 'Modify file transfer validation',
-            arguments: [{name: :request_data, type: Hash, mandatory: false, default: nil}]
+            arguments: [{name: :file, type: Hash, mandatory: false, default: nil}]
         end
         # Standalone leaf commands
         command :asperabrowser, description: 'Open Aspera browser'
         command :basic_token,   description: 'Generate basic auth token', action: -> { Result::Text.new(Rest.basic_authorization(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true))) }
         command :bearer_token, description: 'Generate bearer token',
-          arguments: [{name: :private_key_pem, type: String}, {name: :user_group_id, type: Hash, schema: 'opts:components.schemas.NodeBearerTokenOptions'}]
+          arguments: [{name: :private_key_pem, type: String}, {name: :token, type: Hash, schema: 'opts:components.schemas.NodeBearerTokenOptions'}]
         command :simulator,     description: 'Start node simulator',
           arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: 'opts:components.schemas.NodeSimulatorOptions'}]
         command :telemetry,     description: 'Report telemetry to external system',
@@ -673,13 +673,13 @@ module Aspera
           {}
         end
 
-        def action_access_keys_do_permission_modify(data:, apifid:, perm_id:, **)
-          apifid.node_api.update("permissions/#{perm_id}", data)
+        def action_access_keys_do_permission_modify(permission:, apifid:, perm_id:, **)
+          apifid.node_api.update("permissions/#{perm_id}", permission)
           Result::Status.new('Updated')
         end
 
-        def action_watch_folder_modify(data:, watch_folder_id:, **)
-          @api_node.update("v3/watchfolders/#{watch_folder_id}", data)
+        def action_watch_folder_modify(watch_folder:, watch_folder_id:, **)
+          @api_node.update("v3/watchfolders/#{watch_folder_id}", watch_folder)
           Result::Status.new("#{watch_folder_id} updated")
         end
 
@@ -740,9 +740,9 @@ module Aspera
         end
 
         # access_keys > do > modify
-        def action_access_keys_do_modify(path:, update_value:, do_root_file_id:, **)
+        def action_access_keys_do_modify(path:, file:, do_root_file_id:, **)
           apifid = apifid_from_path(do_root_file_id, path)
-          apifid.node_api.update("files/#{apifid.file_id}", update_value)
+          apifid.node_api.update("files/#{apifid.file_id}", file)
           Result::Status.new('Done')
         end
 
@@ -902,8 +902,8 @@ module Aspera
           end
         end
 
-        def action_access_keys_do_permission_create(data:, apifid:, **)
-          create_param = data
+        def action_access_keys_do_permission_create(permission:, apifid:, **)
+          create_param = permission
           Aspera.assert(!create_param.key?('file_id'), type: Cli::BadArgument) { 'no file_id' }
           create_param['file_id'] = apifid.file_id
           create_param['access_levels'] = Api::Node::ACCESS_LEVELS unless create_param.key?('access_levels')
@@ -1031,8 +1031,8 @@ module Aspera
           Result::Status.new('Cancelled')
         end
 
-        def action_transfer_modify(update_value:, transfer_id:, **)
-          @api_node.update("ops/transfers/#{transfer_id}", update_value)
+        def action_transfer_modify(transfer:, transfer_id:, **)
+          @api_node.update("ops/transfers/#{transfer_id}", transfer)
           Result::Status.new('Modified')
         end
 
@@ -1067,8 +1067,8 @@ module Aspera
         end
 
         # service sub-commands
-        def action_service_create(creation_data:, **)
-          resp = @api_node.create('rund/services', creation_data)
+        def action_service_create(service:, **)
+          resp = @api_node.create('rund/services', service)
           Result::Status.new("#{resp['id']} created")
         end
 
@@ -1084,31 +1084,31 @@ module Aspera
         end
 
         # central > session > list
-        def action_central_session_list(request_data:, **)
-          request_data ||= {}
+        def action_central_session_list(criteria:, **)
+          criteria ||= {}
           validation = central_validation
-          request_data.deep_merge!({'validation' => validation}) unless validation.nil?
-          resp = @api_node.create('services/rest/transfers/v1/sessions', request_data)
+          criteria.deep_merge!({'validation' => validation}) unless validation.nil?
+          resp = @api_node.create('services/rest/transfers/v1/sessions', criteria)
           Result::ObjectList.new(resp['session_info_result']['session_info'], fields: %w[session_uuid status transport direction bytes_transferred])
         end
 
         # central > file > list
-        def action_central_file_list(request_data:, **)
-          request_data ||= {}
+        def action_central_file_list(criteria:, **)
+          criteria ||= {}
           validation = central_validation
-          request_data.deep_merge!({'validation' => validation}) unless validation.nil?
-          resp = @api_node.create('services/rest/transfers/v1/files', request_data)
+          criteria.deep_merge!({'validation' => validation}) unless validation.nil?
+          resp = @api_node.create('services/rest/transfers/v1/files', criteria)
           resp = JSON.parse(resp) if resp.is_a?(String)
           Log.dump(:resp, resp)
           Result::ObjectList.new(resp['file_transfer_info_result']['file_transfer_info'], fields: %w[session_uuid file_id status path])
         end
 
         # central > file > modify
-        def action_central_file_modify(request_data:, **)
-          request_data ||= {}
+        def action_central_file_modify(file:, **)
+          file ||= {}
           validation = central_validation
-          request_data.deep_merge!(validation) unless validation.nil?
-          @api_node.update('services/rest/transfers/v1/files', request_data)
+          file.deep_merge!(validation) unless validation.nil?
+          @api_node.update('services/rest/transfers/v1/files', file)
           Result::Status.new('updated')
         end
 
@@ -1124,10 +1124,10 @@ module Aspera
           return Result::Status.new('done')
         end
 
-        def action_bearer_token(private_key_pem:, user_group_id:, **)
+        def action_bearer_token(private_key_pem:, token:, **)
           private_key = OpenSSL::PKey::RSA.new(private_key_pem)
           access_key  = options.get_option(:username, mandatory: true)
-          Result::Text.new(Api::Node.bearer_token(payload: user_group_id, access_key: access_key, private_key: private_key))
+          Result::Text.new(Api::Node.bearer_token(payload: token, access_key: access_key, private_key: private_key))
         end
 
         def action_simulator(parameters: {}, **)

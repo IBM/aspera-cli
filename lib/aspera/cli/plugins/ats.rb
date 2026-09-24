@@ -54,7 +54,7 @@ module Aspera
 
         commands_under(:access_key) do
           command :create,      description: 'Create an access key',
-            arguments: [{name: :params, type: Hash, mandatory: false, default: {}}]
+            arguments: [{name: :access_key, type: Hash, mandatory: false, default: {}}]
           command(:list,        description: 'List access keys', action: lambda do
             res = ats_api.read('access_keys', query_read_delete(default: {'offset' => 0, 'max_results' => 1000}))
             Result::ObjectList.new(res['data'], fields: ['name', 'id', 'created.at', 'modified.at'])
@@ -63,7 +63,7 @@ module Aspera
             arguments: [{name: :access_key_id, type: :identifier}],
             action: ->(access_key_id:, **) { Result::SingleObject.new(ats_api.read("access_keys/#{access_key_id}")) }
           command :modify,      description: 'Modify an access key',
-            arguments: [{name: :access_key_id, type: :identifier}, {name: :params, type: Hash}]
+            arguments: [{name: :access_key_id, type: :identifier}, {name: :access_key, type: Hash}]
           command :delete,      description: 'Delete an access key',
             arguments: [{name: :access_key_id, type: :identifier}]
           command :node,        description: 'Execute node commands via ATS access key',
@@ -82,8 +82,8 @@ module Aspera
             Result::ValueList.new(instances['data'], name: 'instance')
           end)
           command :create, description: 'Create an ATS API key',
-            arguments: [{name: :params, type: Hash, mandatory: false, default: {}}],
-            action: ->(params:, **) { Result::SingleObject.new(build_ats_ibm_api_with_instance.create('api_keys', params)) }
+            arguments: [{name: :api_key, type: Hash, mandatory: false, default: {}}],
+            action: ->(api_key:, **) { Result::SingleObject.new(build_ats_ibm_api_with_instance.create('api_keys', api_key)) }
           command :list,   description: 'List ATS API keys', action: lambda { Result::ValueList.new(build_ats_ibm_api_with_instance.read('api_keys', {'offset' => 0, 'max_results' => 1000})['data'], name: 'ats_id') }
           command :show,   description: 'Show an ATS API key',
             arguments: [{name: :api_key_id, type: :identifier}],
@@ -150,7 +150,8 @@ module Aspera
           Result::SingleObject.new(server_data)
         end
 
-        def action_access_key_create(params: {}, **)
+        def action_access_key_create(access_key: {}, **)
+          params = access_key
           server_data = nil
           # if transfer_server_id not provided, get it from command line options
           if !params.key?('transfer_server_id')
@@ -184,7 +185,8 @@ module Aspera
           # TODO : action : modify, with "PUT"
         end
 
-        def action_access_key_modify(params:, access_key_id:, **)
+        def action_access_key_modify(access_key:, access_key_id:, **)
+          params = access_key
           params['id'] = access_key_id
           ats_api.update("access_keys/#{access_key_id}", params)
           return Result::Status.new('modified')

@@ -498,8 +498,8 @@ module Aspera
           command :list,   description: 'List packages',
             arguments: [{name: :filter, mandatory: false, default: nil, type: Proc}]
           command :send,   description: 'Send a package', transfer_paths: :send,
-            arguments: [{name: :data, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::FASPEX, 'packages.post')}],
-            action: ->(data:, **) { package_send(data) }
+            arguments: [{name: :package, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::FASPEX, 'packages.post')}],
+            action: ->(package:, **) { package_send(package) }
           command :show,   description: 'Show a package', setup: :setup_package_id, arguments: PACKAGE_ID_ARG,
             action: ->(package_id:, **) { Result::SingleObject.new(@api_v5.read("packages/#{package_id}")) }
           command :browse, description: 'Browse package files', setup: :setup_package_id,
@@ -527,7 +527,7 @@ module Aspera
 
         commands_under :invitations do
           command :create, description: 'Create an invitation',
-            arguments: [{name: :input_data, type: Hash, bulk: true}]
+            arguments: [{name: :invitation, type: Hash, bulk: true}]
           command :resend, description: 'Resend an invitation',
             arguments: [{name: :invitation_id, type: :identifier}]
           crud_commands entity: 'invitations',
@@ -547,9 +547,9 @@ module Aspera
           command(
             :modify,
             description: 'Modify user profile',
-            arguments: [{name: :properties, type: Hash}],
-            action: lambda do |properties:, **|
-              @api_v5.update('account/preferences', properties)
+            arguments: [{name: :profile, type: Hash}],
+            action: lambda do |profile:, **|
+              @api_v5.update('account/preferences', profile)
               Result::Status.new('modified')
             end
           )
@@ -568,7 +568,7 @@ module Aspera
           command :smtp,          description: 'Manage SMTP configuration'
           command :events,        description: 'List events'
           command :clean_deleted, description: 'Clean deleted packages',
-            arguments: [{name: :input_data, type: Hash, mandatory: false, default: {}}]
+            arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}}]
           Api::Faspex::ADMIN_RESOURCES.each do |res|
             cfg          = RESOURCE_CONFIG.fetch(res, {})
             extra        = cfg[:extra_commands] || []
@@ -653,7 +653,7 @@ module Aspera
               setup: :"setup_admin_#{res}_instance"
             command :invite_external_collaborator, description: 'Invite external collaborator',
               arguments: [{name: :"#{RES_SINGULAR[res]}_id", type: :identifier, lookup: lookup_res_id},
-                          {name: :input_data, type: Hash}]
+                          {name: :collaborator, type: Hash}]
           end
 
           commands_under [:admin, res, :members] do
@@ -662,7 +662,7 @@ module Aspera
                 if c.eql?(:create)
                   {arguments: [{name: :users, bulk: true}, {name: :access, mandatory: false, default: :standard}]}
                 elsif c.eql?(:modify)
-                  {arguments: [{name: :member_id, type: :identifier, lookup: :"lookup_#{res}_members_id"}, {name: :data, type: Hash}]}
+                  {arguments: [{name: :member_id, type: :identifier, lookup: :"lookup_#{res}_members_id"}, {name: :member, type: Hash}]}
                 elsif Operations::INSTANCE.include?(c)
                   {arguments: [{name: :member_id, type: :identifier, lookup: :"lookup_#{res}_members_id"}]}
                 else
@@ -685,18 +685,18 @@ module Aspera
         commands_under %i[admin configuration] do
           command :show, description: 'Show configuration', action: -> { Result::SingleObject.new(@api_v5.read('configuration')) }
           command :modify, description: 'Modify configuration',
-            arguments: [{name: :input_data, type: Hash}],
-            action: ->(input_data:, **) { Result::SingleObject.new(@api_v5.update('configuration', input_data)) }
+            arguments: [{name: :configuration, type: Hash}],
+            action: ->(configuration:, **) { Result::SingleObject.new(@api_v5.update('configuration', configuration)) }
         end
 
         commands_under %i[admin smtp] do
           command :show, description: 'Show SMTP configuration', action: -> { Result::SingleObject.new(@api_v5.read('configuration/smtp')) }
           command :create, description: 'Create SMTP configuration',
-            arguments: [{name: :input_data, type: Hash}],
-            action: ->(input_data:, **) { Result::SingleObject.new(@api_v5.create('configuration/smtp', input_data)) }
+            arguments: [{name: :smtp, type: Hash}],
+            action: ->(smtp:, **) { Result::SingleObject.new(@api_v5.create('configuration/smtp', smtp)) }
           command :modify, description: 'Modify SMTP configuration',
-            arguments: [{name: :input_data, type: Hash}],
-            action: ->(input_data:, **) { Result::SingleObject.new(@api_v5.update('configuration/smtp', input_data)) }
+            arguments: [{name: :smtp, type: Hash}],
+            action: ->(smtp:, **) { Result::SingleObject.new(@api_v5.update('configuration/smtp', smtp)) }
           command(
             :delete, description: 'Delete SMTP configuration',
             action: lambda do
@@ -705,7 +705,7 @@ module Aspera
             end
           )
           command :test, description: 'Test SMTP configuration',
-            arguments: [{name: :test_data, type: nil}]
+            arguments: [{name: :recipient, type: nil}]
         end
 
         commands_under %i[admin events] do
@@ -726,9 +726,9 @@ module Aspera
         end
 
         # admin > clean_deleted handler (leaf, no sub-commands)
-        define_action_method(%i[admin clean_deleted]) do |input_data: {}, **|
-          input_data = @api_v5.read('configuration').slice('days_before_deleting_package_records') if input_data.empty?
-          Result::SingleObject.new(@api_v5.create('internal/packages/clean_deleted', input_data))
+        define_action_method(%i[admin clean_deleted]) do |parameters: {}, **|
+          parameters = @api_v5.read('configuration').slice('days_before_deleting_package_records') if parameters.empty?
+          Result::SingleObject.new(@api_v5.create('internal/packages/clean_deleted', parameters))
         end
 
         # admin > <resource> > list
@@ -748,9 +748,9 @@ module Aspera
           end
         end
 
-        def action_admin_smtp_test(test_data:, **)
-          test_data = {test_email_recipient: test_data} if test_data.is_a?(String)
-          creation = @api_v5.create('configuration/smtp/test', test_data)
+        def action_admin_smtp_test(recipient:, **)
+          recipient = {test_email_recipient: recipient} if recipient.is_a?(String)
+          creation = @api_v5.create('configuration/smtp/test', recipient)
           result = wait_for_job(creation['job_id'])
           begin
             result['serialized_args'] = JSON.parse(result['serialized_args'])
@@ -845,8 +845,8 @@ module Aspera
             entity_list(api: @api_v5, entity: "#{res_instance_path}/members", items_key: 'members')
           end
 
-          define_action_method([:admin, res, :members, :modify]) do |res_instance_path:, member_id:, data:, **|
-            entity_modify(api: @api_v5, entity: "#{res_instance_path}/members", id: member_id, data: data)
+          define_action_method([:admin, res, :members, :modify]) do |res_instance_path:, member_id:, member:, **|
+            entity_modify(api: @api_v5, entity: "#{res_instance_path}/members", id: member_id, data: member)
           end
 
           define_action_method([:admin, res, :members, :delete]) do |res_instance_path:, **kwargs|
@@ -862,11 +862,11 @@ module Aspera
 
         # admin > shared_inboxes|workgroups > invite_external_collaborator
         %i[shared_inboxes workgroups].each do |res|
-          define_action_method([:admin, res, :invite_external_collaborator]) do |input_data:, **kwargs|
+          define_action_method([:admin, res, :invite_external_collaborator]) do |collaborator:, **kwargs|
             res_instance_path = "#{res}/#{kwargs[:"#{RES_SINGULAR[res]}_id"]}"
-            result = @api_v5.create("#{res_instance_path}/external_collaborator", input_data)
+            result = @api_v5.create("#{res_instance_path}/external_collaborator", collaborator)
             formatter.display_status(result['message'])
-            Result::SingleObject.new(@api_v5.lookup_entity_by_field(entity: "#{res_instance_path}/members", items_key: 'members', value: input_data['email_address'], query: {}))
+            Result::SingleObject.new(@api_v5.lookup_entity_by_field(entity: "#{res_instance_path}/members", items_key: 'members', value: collaborator['email_address'], query: {}))
           end
         end
 
@@ -954,8 +954,8 @@ module Aspera
           Result::Status.new('Invitation resent')
         end
 
-        def action_invitations_create(input_data:, **)
-          bulk_result(input_data, command: :create) do |params|
+        def action_invitations_create(invitation:, **)
+          bulk_result(invitation, command: :create) do |params|
             endpoint = params.key?('recipient_name') ? 'public_invitations' : 'invitations'
             @api_v5.create(endpoint, params)
           end

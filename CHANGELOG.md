@@ -7,7 +7,8 @@ Released: [Place date of release here]
 ### New Features
 
 * `config`: Command `commands` accepts an optional plugin name to list only that plugin's commands.
-* **general**: Help and `config commands` show the type of arguments that are not plain text, e.g. `<data:Hash>`.
+* **general**: Help and `config commands` show the type of arguments that are not plain text, e.g. `<account:Hash>`.
+* **general**: Hash arguments are named after their content (e.g. `faspex5 admin accounts create <account:Hash>`) instead of `data`, `params`, `properties`...
 * `mcp`: Shorter server instructions and tool description, examples use presets and `@json:`.
 * `console`: Help of `transfer current change_rate|change_policy` and `transfer smart submit` shows the schema of the request body.
 * `console`: New commands: `transfer current submit`, `transfer smart pause`, `transfer queue <queue_id> list`, `endpoint list`, `ssh_key list`, `admin email_server_update|nodeapi_credentials_update`.
@@ -27,6 +28,7 @@ Released: [Place date of release here]
 * `console`: `transfer current change_rate|change_policy` now take a mandatory `<data>` argument (request body), `transfer current rerun` uses `POST`.
 * `console`: `transfer current move_forwards|move_back` were calling a non-existent endpoint: replaced by `transfer queue <queue_id> move_forwards|move_back <transfer_id>`.
 * **general**: Help was failing when a schema enum contains `null`.
+* `aoc`: `packages shared_inboxes short_link` and `files short_link` `create|modify` were ignoring the provided `password` and `access_levels`.
 
 ### Breaking Changes
 

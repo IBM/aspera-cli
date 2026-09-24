@@ -124,11 +124,11 @@ module Aspera
         Result::Nothing.new
       end
 
-      def action_preset_initialize(name:, config_value:, **)
+      def action_preset_initialize(name:, preset:, **)
         name = presets.global_default_preset if name.eql?(GLOBAL_DEFAULT_KEYWORD)
         cp = presets.config_presets
         Log.log.warn { "configuration already exists: #{name}, overwriting" } if cp.key?(name)
-        cp[name] = config_value
+        cp[name] = preset
         Result::Status.new("Modified: #{@option_config_file}")
       end
 

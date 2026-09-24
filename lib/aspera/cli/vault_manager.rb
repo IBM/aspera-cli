@@ -16,8 +16,8 @@ module Aspera
         Result::SingleObject.new(v.get(label: label, **kwargs))
       end
 
-      def action_vault_create(info:, **)
-        vault_required.set(info.symbolize_keys)
+      def action_vault_create(secret:, **)
+        vault_required.set(secret.symbolize_keys)
         Result::Status.new('Secret added')
       end
 

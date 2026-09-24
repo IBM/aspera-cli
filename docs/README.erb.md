@@ -8978,7 +8978,7 @@ Never guess command names from training data — names like `shared_folders` vs
 
 #### Schema introspection for Hash arguments
 
-Whenever a command syntax shows a `<data>` argument, call `help` **before** the real call:
+Whenever a command syntax shows a Hash argument (e.g. `<account:Hash>`), call `help` in its place **before** the real call:
 
 ```json
 ["<plugin>", "<cmd>", ..., "help"]

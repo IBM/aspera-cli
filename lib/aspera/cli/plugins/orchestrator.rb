@@ -129,7 +129,7 @@ module Aspera
             arguments: [{name: :wf_id, type: :identifier}],
             action: ->(wf_id:, **) { Result::ObjectList.new(call_ao("workflow_details/#{wf_id}")['workflows']['workflow']['statuses']) }
           command :start,      description: 'Initiate a work order (sync or async)',
-            arguments: [{name: :wf_id, type: :identifier}, {name: :external_parameters, type: Hash, mandatory: false, default: {}}]
+            arguments: [{name: :wf_id, type: :identifier}, {name: :parameters, type: Hash, mandatory: false, default: {}}]
           command :export,     description: 'Export a workflow',
             arguments: [{name: :wf_id, type: :identifier}],
             action: ->(wf_id:, **) { Result::Text.new(call_ao("export_workflow/#{wf_id}", format: nil, http: true).body) }
@@ -209,10 +209,10 @@ module Aspera
         end
 
         # 2.1/2.2 Initiate a workorder (async / synchronous)
-        def action_workflows_start(wf_id:, external_parameters:, **)
+        def action_workflows_start(wf_id:, parameters:, **)
           call_params = {format: :json}
           # get external parameters if any
-          external_parameters.each do |name, value|
+          parameters.each do |name, value|
             call_params["external_parameters[#{name}]"] = value
           end
           # synchronous call ?

@@ -93,6 +93,7 @@ module Aspera
           #   - description: operation_description(verb, name)
           #   - arguments:   [{name: :id, type: :identifier, lookup: lookup}] for instance verbs
           #                  (:show, :modify, :delete) when not a singleton; none for global verbs
+          #                  body of :create and :modify is named after the entity (e.g. <access_key>), passed as data:
           #   - action:      calls entity_<verb>(api:, entity:, **shared_kwargs, **ctx)
           #
           # api: is resolved at runtime: :@ivar -> instance_variable_get, else -> send.
@@ -108,6 +109,8 @@ module Aspera
           def crud_commands(api:, entity:, operations: nil, name: nil, lookup: nil, **kwargs)
             name       ||= entity_noun(entity, singular: !kwargs[:is_singleton]) unless entity.is_a?(Symbol)
             operations ||= Operations::ALL
+            # Body argument is named after the entity, e.g. <access_key>, and passed as data: to entity_<verb>
+            data_name = name ? name.downcase.tr(' ', '_').to_sym : :data
             operations.each do |verb|
               id_arg = ({name: :id, type: :identifier, lookup: lookup} if Operations::INSTANCE.include?(verb) && !kwargs[:is_singleton])
               schema_val =
@@ -120,9 +123,9 @@ module Aspera
               args =
                 case verb
                 when :create
-                  [{name: :data, type: Hash, bulk: true, schema: schema_val}]
+                  [{name: data_name, type: Hash, bulk: true, schema: schema_val}]
                 when :modify
-                  [id_arg, {name: :data, type: Hash, schema: schema_val}].compact
+                  [id_arg, {name: data_name, type: Hash, schema: schema_val}].compact
                 when :delete
                   id_arg ? [id_arg.merge(bulk: true)] : nil
                 else
@@ -138,6 +141,7 @@ module Aspera
                     api
                   end
                 resolved_entity = entity.is_a?(Symbol) ? ctx.fetch(entity) : entity
+                ctx = ctx.merge(data: ctx[data_name]) if ctx.key?(data_name)
                 send(:"entity_#{verb}", api: resolved_api, entity: resolved_entity, **kwargs, **ctx)
               end
               cmd_attrs = {description: operation_description(verb, name || entity.inspect), action: action_proc}

@@ -132,7 +132,7 @@ module Aspera
             arguments: [{name: :name, type: :identifier}, {name: :param_name, type: String},
                         {name: :param_value, type: nil}]
           command :initialize, description: 'Initialize a preset with a value',
-            arguments: [{name: :name, type: :identifier}, {name: :config_value, type: Hash}]
+            arguments: [{name: :name, type: :identifier}, {name: :preset, type: Hash}]
           command :update,     description: 'Update a preset with current option values',
             arguments: [{name: :name, type: :identifier}]
           command :ask,        description: 'Interactively ask for option values',
@@ -212,7 +212,7 @@ module Aspera
           command :show,     description: 'Show a secret by label (or id)',
             arguments: [{name: :label, type: String}, {name: :id, type: String, mandatory: false, default: nil}]
           command :create,   description: 'Add a new secret to the vault',
-            arguments: [{name: :info, type: Hash, schema: Schema::Registry::VAULT_SECRET}]
+            arguments: [{name: :secret, type: Hash, schema: Schema::Registry::VAULT_SECRET}]
           command :delete,   description: 'Delete a secret by label (or id)',
             arguments: [{name: :label, type: String}, {name: :id, type: String, mandatory: false, default: nil}]
           command :password, description: 'Change the vault password',

@@ -92,18 +92,21 @@ module Aspera
         end
 
         # Payload is not documented in the API: optional
-        ADMIN_DATA_ARGS = [{name: :data, type: Hash, mandatory: false, default: {}}].freeze
-        private_constant :ADMIN_DATA_ARGS
+        # command => name of argument
+        ADMIN_UPDATES = {email_server_update: :email_server, nodeapi_credentials_update: :credentials}.freeze
+        private_constant :ADMIN_UPDATES
 
         commands_under :admin do
-          command :email_server_update,        description: 'Update email server configuration', arguments: ADMIN_DATA_ARGS
-          command :nodeapi_credentials_update, description: 'Update Node API credentials',       arguments: ADMIN_DATA_ARGS
+          command :email_server_update,        description: 'Update email server configuration',
+            arguments: [{name: ADMIN_UPDATES[:email_server_update], type: Hash, mandatory: false, default: {}}]
+          command :nodeapi_credentials_update, description: 'Update Node API credentials',
+            arguments: [{name: ADMIN_UPDATES[:nodeapi_credentials_update], type: Hash, mandatory: false, default: {}}]
         end
 
         # POST <verb>
-        %i[email_server_update nodeapi_credentials_update].each do |verb|
-          define_action_method([:admin, verb]) do |api_console:, data:, **|
-            api_console.create(verb.to_s, data)
+        ADMIN_UPDATES.each do |verb, arg|
+          define_action_method([:admin, verb]) do |api_console:, **kwargs|
+            api_console.create(verb.to_s, kwargs.fetch(arg))
             Result::Success.new
           end
         end
@@ -116,8 +119,8 @@ module Aspera
         commands_under %i[transfer current] do
           command :list,          description: 'List current transfers'
           command :submit,        description: 'Submit a simple transfer',
-            arguments: [{name: :data, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::CONSOLE, 'transfers.post')}],
-            action: ->(api_console:, data:, **) { Result::SingleObject.new(api_console.create('transfers', data)) }
+            arguments: [{name: :transfer, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::CONSOLE, 'transfers.post')}],
+            action: ->(api_console:, transfer:, **) { Result::SingleObject.new(api_console.create('transfers', transfer)) }
           command :show,          description: 'Show a transfer',
             arguments: [{name: :transfer_id, type: :identifier}],
             action: ->(api_console:, transfer_id:, **) { Result::SingleObject.new(api_console.read("transfers/#{transfer_id}")) }
@@ -135,10 +138,10 @@ module Aspera
             arguments: [{name: :transfer_id, type: :identifier}]
           command :change_rate,   description: 'Change transfer rate',
             arguments: [{name: :transfer_id, type: :identifier},
-                        {name: :data, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::CONSOLE, 'transfers/{id}/change_rate.put')}]
+                        {name: :rate, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::CONSOLE, 'transfers/{id}/change_rate.put')}]
           command :change_policy, description: 'Change transfer policy',
             arguments: [{name: :transfer_id, type: :identifier},
-                        {name: :data, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::CONSOLE, 'transfers/{id}/change_policy.put')}]
+                        {name: :policy, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::CONSOLE, 'transfers/{id}/change_policy.put')}]
         end
 
         commands_under %i[transfer queue] do
@@ -167,16 +170,16 @@ module Aspera
         end
 
         # PUT transfers/<id>/<verb> with request body
-        %i[change_rate change_policy].each do |verb|
-          define_action_method([:transfer, :current, verb]) do |api_console:, transfer_id:, data:, **|
-            Result::SingleObject.new(api_console.update("transfers/#{transfer_id}/#{verb}", data))
+        {change_rate: :rate, change_policy: :policy}.each do |verb, arg|
+          define_action_method([:transfer, :current, verb]) do |api_console:, transfer_id:, **kwargs|
+            Result::SingleObject.new(api_console.update("transfers/#{transfer_id}/#{verb}", kwargs.fetch(arg)))
           end
         end
 
         commands_under %i[transfer smart] do
           command :list,   description: 'List smart transfers', action: ->(api_console:) { Result::ObjectList.new(api_console.read('smart_transfers')) }
           command :submit, description: 'Submit a smart transfer',
-            arguments: [{name: :smart_id}, {name: :transfer_params, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::CONSOLE, 'smart_transfers/{id}.post')}]
+            arguments: [{name: :smart_id}, {name: :transfer, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::CONSOLE, 'smart_transfers/{id}.post')}]
           command :pause,  description: 'Pause a smart transfer',
             arguments: [{name: :smart_id}],
             action: ->(api_console:, smart_id:, **) { Result::SingleObject.new(api_console.update("smart_transfers/#{smart_id}/pause", {})) }
@@ -238,8 +241,8 @@ module Aspera
 
         # --- transfer smart ---
 
-        def action_transfer_smart_submit(api_console:, smart_id:, transfer_params:, **)
-          Result::ObjectList.new(api_console.create("smart_transfers/#{smart_id}", transfer_params))
+        def action_transfer_smart_submit(api_console:, smart_id:, transfer:, **)
+          Result::ObjectList.new(api_console.create("smart_transfers/#{smart_id}", transfer))
         end
 
         private

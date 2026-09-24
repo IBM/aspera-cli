@@ -106,7 +106,7 @@ module Aspera
         # Arguments of group users commands, by operation
         GROUP_USERS_ARGS = {
           show:   [{name: :user_id, type: :identifier}],
-          modify: [{name: :user_id, type: :identifier}, {name: :data, type: Hash}],
+          modify: [{name: :user_id, type: :identifier}, {name: :user, type: Hash}],
           delete: [{name: :user_id, type: :identifier}]
         }.freeze
 
@@ -166,7 +166,7 @@ module Aspera
                       op_args =
                         case op
                         when :show then setting.eql?(:share_permissions) ? [{name: :permission_id, type: :identifier, lookup: :lookup_share_id}] : nil
-                        when :modify then [{name: :data, type: Hash}]
+                        when :modify then [{name: setting, type: Hash}]
                         end
                       command op,
                         description: "#{op.capitalize} #{entity_noun(setting, singular: false)} for a #{entity_type}",
@@ -216,7 +216,7 @@ module Aspera
               # saml: import only
               commands_under :saml do
                 command :import, description: "Import a SAML #{entity_type}",
-                  arguments: [{name: :entity_parameters, type: Hash, bulk: true}]
+                  arguments: [{name: entity_type, type: Hash, bulk: true}]
               end
             end
           end
@@ -353,7 +353,7 @@ module Aspera
                 setting_ops = setting.eql?(:share_permissions) ? SHARE_PERMISSIONS_OPS : %i[show modify]
                 setting_ops.each do |op|
                   define_action_method([:admin, entity_type, location, setting, op]) do |**kwargs|
-                    action_admin_entity_setting(entity_type, location, setting, op, entity_id: kwargs[:"#{entity_type}_id"], permission_id: kwargs[:permission_id], data: kwargs[:data])
+                    action_admin_entity_setting(entity_type, location, setting, op, entity_id: kwargs[:"#{entity_type}_id"], permission_id: kwargs[:permission_id], data: kwargs[setting])
                   end
                 end
               end
@@ -361,8 +361,8 @@ module Aspera
             next unless entity_type.eql?(:group)
             # group users: no create route (Rails only exposes index+show+update+destroy)
             GROUP_USERS_OPS.each do |op|
-              define_action_method([:admin, entity_type, location, :users, op]) do |group_id:, user_id: nil, data: nil, **|
-                action_admin_entity_users(entity_type, location, op, group_id: group_id, user_id: user_id, data: data)
+              define_action_method([:admin, entity_type, location, :users, op]) do |group_id:, user_id: nil, user: nil, **|
+                action_admin_entity_users(entity_type, location, op, group_id: group_id, user_id: user_id, data: user)
               end
             end
           end
@@ -376,9 +376,9 @@ module Aspera
           end
 
           # saml: import
-          define_action_method([:admin, entity_type, :saml, :import]) do |entity_parameters:, **|
+          define_action_method([:admin, entity_type, :saml, :import]) do |**kwargs|
             path = admin_entity_path(entity_type, :saml)
-            bulk_result(entity_parameters, command: :import) do |entity_parameters|
+            bulk_result(kwargs.fetch(entity_type), command: :import) do |entity_parameters|
               entity_parameters = entity_parameters.transform_keys { |k| k.gsub(/\s+/, '_').downcase }
               Aspera.assert_type(entity_parameters, Hash)
               SAML_IMPORT_MANDATORY.each { |p| raise "missing mandatory field: #{p}" if entity_parameters[p].nil? }

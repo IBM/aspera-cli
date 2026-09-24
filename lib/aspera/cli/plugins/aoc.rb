@@ -148,11 +148,11 @@ module Aspera
             base.commands_under(parent_path) do
               base.command(
                 :create, description: base.operation_description(:create, 'short link'),
-                arguments: [{name: :custom_data, type: Hash, mandatory: false, default: {}}]
+                arguments: [{name: :short_link, type: Hash, mandatory: false, default: {}}]
               )
               base.command(
                 :modify, description: base.operation_description(:modify, 'short link'),
-                arguments: [{name: :short_link_id, type: :identifier}, {name: :custom_data, type: Hash, mandatory: false, default: {}}]
+                arguments: [{name: :short_link_id, type: :identifier}, {name: :short_link, type: Hash, mandatory: false, default: {}}]
               )
               base.command(:list, description: base.operation_description(:list, 'short link'))
               base.command(
@@ -164,8 +164,8 @@ module Aspera
                 arguments: [{name: :short_link_id, type: :identifier}]
               )
             end
-            base.define_action_method(parent_path + [:create]) do |custom_data: {}, **ctx|
-              sl_exec_create(custom_data, **ctx)
+            base.define_action_method(parent_path + [:create]) do |short_link: {}, **ctx|
+              sl_exec_create(short_link, **ctx)
             end
             base.define_action_method(parent_path + [:list]) do |**ctx|
               sl_exec_list(**sl_fetch_list(**ctx))
@@ -176,8 +176,8 @@ module Aspera
             base.define_action_method(parent_path + [:delete]) do |**ctx|
               sl_exec_delete(**sl_fetch_list(**ctx), **ctx)
             end
-            base.define_action_method(parent_path + [:modify]) do |custom_data: {}, **ctx|
-              sl_exec_modify(custom_data, **sl_fetch_list(**ctx), **ctx)
+            base.define_action_method(parent_path + [:modify]) do |short_link: {}, **ctx|
+              sl_exec_modify(short_link, **sl_fetch_list(**ctx), **ctx)
             end
           end
         end
@@ -634,10 +634,10 @@ module Aspera
                 extra_arg_list =
                   if !is_singleton && op.eql?(:create)
                     c = aoc_res_cfg(res)
-                    [{name: :data, type: Hash, bulk: true, schema: c[:schema]}]
+                    [{name: res, type: Hash, bulk: true, schema: c[:schema]}]
                   elsif !is_singleton && op.eql?(:modify)
                     c = aoc_res_cfg(res)
-                    [{name: :data, type: Hash, schema: c[:schema]}]
+                    [{name: res, type: Hash, schema: c[:schema]}]
                   elsif extra_op_args.key?(op)
                     extra_op_args[op]
                   else
@@ -688,7 +688,7 @@ module Aspera
           commands_under([:admin, :user, pref]) do
             command :show,   description: "Show #{pref}"
             command :modify, description: "Modify #{pref}",
-              arguments: [{name: :properties, type: Hash}]
+              arguments: [{name: pref, type: Hash}]
           end
         end
         commands_under %i[admin auth_providers] do
@@ -738,9 +738,9 @@ module Aspera
                 action: -> { Result::SingleObject.new(aoc_api.read("/apps/#{app_type}/settings")) }
               command(
                 :modify, description: "Modify #{app_type} settings",
-                arguments: [{name: :properties, type: Hash}],
-                action: lambda do |properties:, **|
-                  aoc_api.update("/apps/#{app_type}/settings", properties)
+                arguments: [{name: :settings, type: Hash}],
+                action: lambda do |settings:, **|
+                  aoc_api.update("/apps/#{app_type}/settings", settings)
                   Result::Status.new('modified')
                 end
               )
@@ -761,7 +761,7 @@ module Aspera
               command :show,   description: "Show a #{app_type} instance",
                 arguments: [{name: :"#{app_type}_id", type: :identifier}]
               command :modify, description: "Modify a #{app_type} instance",
-                arguments: [{name: :"#{app_type}_id", type: :identifier}, {name: :properties, type: Hash}]
+                arguments: [{name: :"#{app_type}_id", type: :identifier}, {name: :instance, type: Hash}]
             end
           end
         end
@@ -786,9 +786,9 @@ module Aspera
             command :show, description: 'Show user profile', action: -> { Result::SingleObject.new(aoc_api.current_user_info(exception: true)) }
             command(
               :modify, description: 'Modify user profile',
-              arguments: [{name: :properties, type: Hash}],
-              action: lambda do |properties:, **|
-                aoc_api.update("users/#{aoc_api.current_user_info(exception: true)['id']}", properties)
+              arguments: [{name: :profile, type: Hash}],
+              action: lambda do |profile:, **|
+                aoc_api.update("users/#{aoc_api.current_user_info(exception: true)['id']}", profile)
                 Result::Status.new('modified')
               end
             )
@@ -802,8 +802,8 @@ module Aspera
             contact_schema = aoc_res_cfg(:contact)[:schema]
             command :list,   description: operation_description(:list, 'contact')
             command :show,   description: operation_description(:show, 'contact'), arguments: [contact_id]
-            command :create, description: operation_description(:create, 'contact'), arguments: [{name: :data, type: Hash, bulk: true, schema: contact_schema}]
-            command :modify, description: operation_description(:modify, 'contact'), arguments: [contact_id, {name: :data, type: Hash, schema: contact_schema}]
+            command :create, description: operation_description(:create, 'contact'), arguments: [{name: :contact, type: Hash, bulk: true, schema: contact_schema}]
+            command :modify, description: operation_description(:modify, 'contact'), arguments: [contact_id, {name: :contact, type: Hash, schema: contact_schema}]
             command :delete, description: operation_description(:delete, 'contact'), arguments: [contact_id]
           end
           command :settings, description: 'Manage client settings'
@@ -822,10 +822,10 @@ module Aspera
           )
           command(
             :modify, description: 'Modify user preferences',
-            arguments: [{name: :properties, type: Hash}],
-            action: lambda do |properties:, **|
+            arguments: [{name: :preferences, type: Hash}],
+            action: lambda do |preferences:, **|
               user_id = aoc_api.current_user_info(exception: true)['id']
-              aoc_api.update("users/#{user_id}/user_interaction_preferences", properties)
+              aoc_api.update("users/#{user_id}/user_interaction_preferences", preferences)
               Result::Status.new('modified')
             end
           )
@@ -841,10 +841,10 @@ module Aspera
           )
           command(
             :modify, description: 'Modify notification preferences',
-            arguments: [{name: :properties, type: Hash}],
-            action: lambda do |properties:, **|
+            arguments: [{name: :notifications, type: Hash}],
+            action: lambda do |notifications:, **|
               user_id = aoc_api.current_user_info(exception: true)['id']
-              aoc_api.update("users/#{user_id}/notification_preferences", properties)
+              aoc_api.update("users/#{user_id}/notification_preferences", notifications)
               Result::Status.new('modified')
             end
           )
@@ -854,7 +854,7 @@ module Aspera
         commands_under :packages do
           command :shared_inboxes, description: 'Shared inbox commands'
           command :send, description: 'Send a package', transfer_paths: :send,
-            arguments: [{name: :data, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::AOC, 'packages.post')}]
+            arguments: [{name: :package, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::AOC, 'packages.post')}]
           command :receive, description: 'Receive packages', aliases: [:recv], transfer_paths: :receive,
             arguments: [{name: :package_id, type: :identifier}]
           command :list, description: 'List packages'
@@ -863,7 +863,7 @@ module Aspera
           command :delete, description: 'Delete packages',
             arguments: [{name: :package_id, type: :identifier}]
           command :modify, description: 'Modify a package',
-            arguments: [{name: :package_id, type: :identifier}, {name: :data, type: Hash}]
+            arguments: [{name: :package_id, type: :identifier}, {name: :package, type: Hash}]
           # Node Gen4 read-only actions on packages: package id, then the arguments of the Node command
           package_id_arg = [{name: :package_id, type: :identifier}].freeze
           {
@@ -957,8 +957,8 @@ module Aspera
         end
 
         # packages > send
-        def action_packages_send(data:, **)
-          package_data = data
+        def action_packages_send(package:, **)
+          package_data = package
           new_user_option = options.get_option(:new_user_option)
           option_validate = options.get_option(:validate_metadata)
           workspace_id_hash(package_data, string: true) unless package_data.key?('workspace_id')
@@ -1055,8 +1055,8 @@ module Aspera
         end
 
         # packages > modify
-        def action_packages_modify(data:, package_id:, **)
-          aoc_api.update("packages/#{package_id}", data)
+        def action_packages_modify(package:, package_id:, **)
+          aoc_api.update("packages/#{package_id}", package)
           Result::Status.new('modified')
         end
 
@@ -1156,7 +1156,7 @@ module Aspera
               url_token_data: {data: shared_data, purpose: sl_token_purpose}
             }
           end
-          custom_data = {}
+          custom_data = custom_data.dup
           access_levels = custom_data.delete('access_levels')
           if (pass = custom_data.delete('password'))
             create_payload[:data][:url_token_data][:password] = pass
@@ -1213,7 +1213,7 @@ module Aspera
           one_id = short_link_id
           node_file = sl_shared_data.slice(:node_id, :file_id)
           modify_payload = {edit_access: true, json_query: node_file}
-          custom_data = {}
+          custom_data = custom_data.dup
           if (pass = custom_data.delete('password'))
             modify_payload[:password_enabled] = true
             modify_payload[:data] = {url_token_data: {password: pass, data: node_file}}
@@ -1247,9 +1247,9 @@ module Aspera
             Result::SingleObject.new(aoc_api.read("admin/apps_new/#{app_type}/#{app_id}", query_read_delete))
           end
 
-          define_action_method([:admin, :application, :instance, app_type, :modify]) do |properties:, **kwargs|
+          define_action_method([:admin, :application, :instance, app_type, :modify]) do |instance:, **kwargs|
             app_id = kwargs[:"#{app_type}_id"]
-            aoc_api.update("admin/apps_new/#{app_type}/#{app_id}", properties)
+            aoc_api.update("admin/apps_new/#{app_type}/#{app_id}", instance)
             Result::Status.new('modified')
           end
         end
@@ -1384,7 +1384,8 @@ module Aspera
 
         # admin > <res> > create
         ADMIN_OBJECTS.reject { |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton) }.each do |res|
-          define_action_method([:admin, res, :create]) do |data:, **|
+          define_action_method([:admin, res, :create]) do |**kwargs|
+            data = kwargs.fetch(res)
             c = aoc_res_cfg(res)
             path = c[:path]
             # Special case: client_registration_token has a different creation URL
@@ -1399,7 +1400,8 @@ module Aspera
 
         # admin > <res> > modify
         ADMIN_OBJECTS.reject { |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton) || ADMIN_OBJECT_CONFIG.dig(r, :ops)&.then { |o| !o.include?(:modify) } }.each do |res|
-          define_action_method([:admin, res, :modify]) do |data:, **kwargs|
+          define_action_method([:admin, res, :modify]) do |**kwargs|
+            data = kwargs.fetch(res)
             res_id = kwargs[:"#{res}_id"]
             c = aoc_res_cfg(res)
             aoc_api.update("#{c[:path]}/#{res_id}", data)
@@ -1548,8 +1550,8 @@ module Aspera
           define_action_method([:admin, :user, pref, :show]) do |user_id:, **|
             Result::SingleObject.new(aoc_api.read("#{aoc_res_path(:user)}/#{user_id}/#{pref_path}"))
           end
-          define_action_method([:admin, :user, pref, :modify]) do |properties:, user_id:, **|
-            aoc_api.update("#{aoc_res_path(:user)}/#{user_id}/#{pref_path}", properties)
+          define_action_method([:admin, :user, pref, :modify]) do |user_id:, **kwargs|
+            aoc_api.update("#{aoc_res_path(:user)}/#{user_id}/#{pref_path}", kwargs.fetch(pref))
             Result::Status.new('modified')
           end
         end

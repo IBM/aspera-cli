@@ -590,10 +590,10 @@ module Aspera
               expect(spec.arguments.first.type).to(eq(:identifier))
               expect(spec.arguments.first.lookup).to(eq(:lookup_thing_id))
             end
-            # :modify also has :data as second argument
-            expect(reg[[:modify]].arguments.map(&:name)).to(eq(%i[id data]))
-            # :create has :data argument
-            expect(reg[[:create]].arguments.map(&:name)).to(eq(%i[data]))
+            # :modify also has body argument named after entity as second argument
+            expect(reg[[:modify]].arguments.map(&:name)).to(eq(%i[id thing]))
+            # :create has body argument named after entity
+            expect(reg[[:create]].arguments.map(&:name)).to(eq(%i[thing]))
             # :list has no arguments
             expect(reg[[:list]].arguments).to(be_nil)
           end
@@ -603,8 +603,8 @@ module Aspera
             reg   = klass.command_registry
             # show has no id argument when singleton
             expect(reg[[:show]].arguments).to(be_nil)
-            # modify only has data argument when singleton
-            expect(reg[[:modify]].arguments.map(&:name)).to(eq(%i[data]))
+            # modify only has body argument when singleton (plural name)
+            expect(reg[[:modify]].arguments.map(&:name)).to(eq(%i[things]))
           end
 
           it 'restricts to a given operations: list' do
