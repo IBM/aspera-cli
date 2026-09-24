@@ -77,7 +77,7 @@ module Aspera
         command :transfer, description: 'Manage transfers',         setup: :setup_api
         command :endpoint, description: 'Manage endpoints',         setup: :setup_api
         command :ssh_key,  description: 'Manage SSH keys',          setup: :setup_api
-        command :admin,    description: 'Administration',           setup: :setup_api
+        command :admin,    description: 'Administer Console',       setup: :setup_api
 
         commands_under :transfer do
           command :current, description: 'Manage current transfers'

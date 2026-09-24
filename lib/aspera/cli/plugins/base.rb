@@ -49,13 +49,6 @@ module Aspera
             command_registry.register(CommandSpec.new(id: id, **kwargs))
           end
 
-          # Derive a display name from an entity path:
-          # last segment after '/', underscores replaced by spaces, first letter capitalized.
-          # e.g. 'data/smtp_server' -> 'Smtp server', 'data/transfer_settings' -> 'Transfer settings'
-          def entity_display_name(entity)
-            entity.to_s.split('/').last.tr('_', ' ').capitalize
-          end
-
           # Words displayed with specific case in descriptions
           NOUN_WORDS = {'smtp' => 'SMTP', 'ldap' => 'LDAP', 'saml' => 'SAML', 'oauth' => 'OAuth', 'kms' => 'KMS', 'api' => 'API'}.freeze
           private_constant :NOUN_WORDS
@@ -183,7 +176,7 @@ module Aspera
             path = Array(@current_parent) + Array(parent)
             unless command_registry[path]
               id = path.last
-              desc = description || "Manage #{entity_display_name(id)}"
+              desc = description || "Manage #{entity_noun(id, singular: false)}"
               parent_path = path[0..-2]
               saved = @current_parent
               @current_parent = parent_path.empty? ? nil : parent_path

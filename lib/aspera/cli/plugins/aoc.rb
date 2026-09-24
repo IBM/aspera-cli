@@ -615,13 +615,13 @@ module Aspera
           action: ->(**) { Result::SingleObject.new(aoc_api.read('organization')) }
         command :tier_restrictions, description: 'Show tier restrictions',
           action: ->(**) { Result::SingleObject.new(aoc_api.read('tier_restrictions')) }
-        command :user,              description: 'User commands'
+        command :user,              description: 'Manage current user'
         # Node Gen4 read-only commands on packages: `packages <command> <package_id> ...`
-        command :packages,          description: 'Package commands', setup: :setup_workspace_display,
+        command :packages,          description: 'Manage packages', setup: :setup_workspace_display,
           mount: NODE_GEN4_MOUNT.merge(instance: :package_node_plugin, only: Node::NODE4_READ_ACTIONS, arguments: [PACKAGE_ID_ARG])
-        command :files,             description: 'Files commands (workspace-aware)', setup: :setup_workspace_display,
+        command :files,             description: 'Manage files (workspace-aware)', setup: :setup_workspace_display,
           mount: NODE_GEN4_MOUNT.merge(instance: :files_node_plugin)
-        command :admin, description: 'Administration commands', setup: :setup_admin_scope
+        command :admin, description: 'Administer AoC', setup: :setup_admin_scope
         commands_under :admin do
           command :bearer_token,   description: 'Show admin bearer token',
             action: ->(**) { Result::Text.new(aoc_api.oauth.authorization) }
@@ -647,7 +647,7 @@ module Aspera
             else
               Operations::ALL + (cfg[:extra_ops] || [])
             end
-            command res, description: "Manage #{res.to_s.tr('_', ' ')}"
+            command res, description: "Manage #{entity_noun(res, singular: false)}"
             commands_under res do
               ops.each do |op|
                 extra_setup = op_setup[op]
@@ -777,7 +777,7 @@ module Aspera
         private_constant :APP_SETTINGS_PATH, :APP_INSTANCE_PATH
         commands_under APP_SETTINGS_PATH do
           APP_TYPES.each do |app_type|
-            command app_type, description: "Settings for #{app_type} app"
+            command app_type, description: "Manage settings of #{app_type} app"
             commands_under app_type do
               command :show, description: "Show #{app_type} settings",
                 action: ->(**) { Result::SingleObject.new(aoc_api.read("/apps/#{app_type}/settings")) }
@@ -795,7 +795,7 @@ module Aspera
         commands_under APP_INSTANCE_PATH do
           command :list, description: 'List app instances'
           APP_TYPES.each do |app_type|
-            command app_type, description: "Show or modify a #{app_type} instance"
+            command app_type, description: "Manage #{app_type} app instance"
             commands_under app_type do
               command :show,   description: "Show #{app_type} instance",
                 arguments: [{name: :instance_id, type: :identifier}]
@@ -817,17 +817,17 @@ module Aspera
           )
           command :create, description: 'Create an app membership', arguments: [{name: :membership, type: Hash}]
         end
-        command :automation,        description: 'Automation commands (BETA)', setup: :setup_automation_api
+        command :automation,        description: 'Manage automation (BETA)', setup: :setup_automation_api
         command :gateway,           description: 'Start AoC Faspex4 gateway',
           arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}}]
 
         # user sub-commands
         commands_under :user do
-          commands_under :workspaces, description: "User's workspaces" do
+          commands_under :workspaces, description: "Manage user's workspaces" do
             command :list,    description: 'List workspaces', action: ->(**) { result_list('workspaces', fields: %w[id name]) }
             command :current, description: 'Show current workspace', action: ->(**) { Result::SingleObject.new(aoc_api.workspace_info) }
           end
-          commands_under :profile, description: "Manager user's profile" do
+          commands_under :profile, description: "Manage user's profile" do
             command :show, description: 'Show user profile', action: ->(**) { Result::SingleObject.new(aoc_api.current_user_info(exception: true)) }
             command(
               :modify, description: 'Modify user profile',
@@ -838,8 +838,8 @@ module Aspera
               end
             )
           end
-          command :preferences,   description: 'User interaction preferences'
-          command :notifications, description: 'Notification preferences'
+          command :preferences,   description: 'Manage interaction preferences'
+          command :notifications, description: 'Manage notification preferences'
           command :contacts,      description: 'Manage contacts'
           # user > contacts sub-commands (same CRUD as admin > contact)
           commands_under %i[contacts] do
@@ -898,7 +898,7 @@ module Aspera
         # packages sub-commands — instance commands consume package_id
         # Not `crud_commands`: `list` has its own query and `once_only` persistency.
         commands_under :packages do
-          command :shared_inboxes, description: 'Shared inbox commands'
+          command :shared_inboxes, description: 'Manage shared inboxes'
           command :send, description: 'Send a package', transfer_paths: :send,
             arguments: [{name: :package, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::AOC, 'packages.post')}]
           command :receive, description: 'Receive packages', aliases: [:recv], transfer_paths: :receive,

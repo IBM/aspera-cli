@@ -536,7 +536,7 @@ module Aspera
             klass.define_method(:handle_list) { |**| nil }
             reg = klass.command_registry
             expect(reg[[:things]]).not_to(be_nil)
-            expect(reg[[:things]].description).to(eq('Manage Things'))
+            expect(reg[[:things]].description).to(eq('Manage things'))
           end
 
           it 'uses description: when provided' do

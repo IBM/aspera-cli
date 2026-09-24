@@ -407,7 +407,7 @@ module Aspera
             arguments: [{name: :permission_id, type: :identifier, bulk: true}]
         end
         # async (legacy /async)
-        commands_under :async, description: 'synchronization (legacy /async)' do
+        commands_under :async, description: 'Manage legacy synchronizations (/async)' do
           command :list,      description: 'List async sync IDs', action: ->(**) { Result::ValueList.new(@api_node.read('async/list')['sync_ids']) }
           command :show,      description: 'Show async summary',
             arguments: [{name: :async_id, type: :identifier, lookup: :async_lookup}]
@@ -427,7 +427,7 @@ module Aspera
             arguments: [{name: :async_id, type: :identifier, lookup: :async_lookup}]
         end
         # ssync (/asyncs)
-        commands_under :ssync, description: 'synchronization (/asyncs)' do
+        commands_under :ssync, description: 'Manage synchronizations (/asyncs)' do
           crud_commands entity: 'asyncs',
             name: 'sync session',
             id_name: :ssync_id,

@@ -592,7 +592,7 @@ module Aspera
             entity_path  = cfg[:entity] || res.to_s
             crud_ops     = ((cfg[:commands] || Operations::ALL) - %i[list]) & Operations::ALL
 
-            command res, description: "Manage #{res.to_s.tr('_', ' ')}"
+            command res, description: "Manage #{entity_noun(res, singular: false)}"
             commands_under res do
               # List is handled with Faspex 5 pagination (item_list_with_total)
               unless is_singleton
@@ -636,7 +636,7 @@ module Aspera
             name: 'shared folder',
             lookup: :lookup_sf_id,
             items_key: 'shared_folders'
-          command :user, description: 'Custom access users',
+          command :user, description: 'Manage custom access users',
             arguments: [{name: :shared_folder_id, type: :identifier, lookup: :lookup_sf_id}],
             setup: :setup_admin_nodes_shared_folders_user
         end
@@ -664,10 +664,10 @@ module Aspera
         %i[shared_inboxes workgroups].each do |res|
           lookup_res_id = ->(field, value, **) { @api_v5.lookup_entity_by_field(entity: res.to_s, field: field, value: value, query: {'all': true})['id'] }
           commands_under [:admin, res] do
-            command :members, description: 'Members',
+            command :members, description: 'Manage members',
               arguments: [{name: :"#{RES_SINGULAR[res]}_id", type: :identifier, lookup: lookup_res_id}],
               setup: :"setup_admin_#{res}_instance"
-            command :saml_groups, description: 'Saml groups',
+            command :saml_groups, description: 'Manage SAML groups',
               arguments: [{name: :"#{RES_SINGULAR[res]}_id", type: :identifier, lookup: lookup_res_id}],
               setup: :"setup_admin_#{res}_instance"
             command :invite_external_collaborator, description: 'Invite external collaborator',
