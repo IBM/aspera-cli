@@ -90,7 +90,7 @@ module Aspera
             else Aspera.error_unexpected_value(ret_style)
             end
           end
-          add_query = options.get_option(:query)
+          add_query = query_read_delete
           call_args[:query].merge!(add_query.symbolize_keys) unless add_query.nil?
           data, resp = @api_orch.call(**call_args)
           return resp if http

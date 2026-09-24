@@ -198,6 +198,7 @@ module Aspera
         def browse_gen3(path)
           folders_to_process = path
           folders_to_process = [folders_to_process]
+          # not a URL query: merged into the POST body of files/browse
           query = options.get_option(:query) || {}
           # special parameter: max number of entries in result
           max_items = query.delete(RestList::MAX_ITEMS)
@@ -450,13 +451,13 @@ module Aspera
           )
           command :bandwidth, description: 'Show sync bandwidth',
             arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
-            action: ->(ssync_id:, **) { Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/bandwidth", options.get_option(:query) || {})) }
+            action: ->(ssync_id:, **) { Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/bandwidth", query_read_delete(default: {}))) }
           command :counters, description: 'Show sync counters',
             arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
-            action: ->(ssync_id:, **) { Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/counters", options.get_option(:query) || {})) }
+            action: ->(ssync_id:, **) { Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/counters", query_read_delete(default: {}))) }
           command :files, description: 'List sync files',
             arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
-            action: ->(ssync_id:, **) { Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/files", options.get_option(:query) || {})) }
+            action: ->(ssync_id:, **) { Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/files", query_read_delete(default: {}))) }
           command :state, description: 'Show sync state',
             arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
             action: ->(ssync_id:, **) { Result::SingleObject.new(@api_node.read("asyncs/#{ssync_id}/state")) }
@@ -603,6 +604,7 @@ module Aspera
 
         def action_search(path:, **)
           parameters = {'path' => path}
+          # not a URL query: merged into the POST body of files/search
           other_options = options.get_option(:query)
           parameters.merge!(other_options) unless other_options.nil?
           resp = @api_node.create('files/search', parameters)
@@ -879,6 +881,7 @@ module Aspera
         def gen4_mk_resolve(top_file_id, path)
           containing_folder_path, new_item = Api::Node.split_folder(path)
           apifid = @api_node.resolve_api_fid(top_file_id, containing_folder_path, true)
+          # not a URL query: special keys `check` and `target`, rest merged into the POST body
           query = options.get_option(:query)
           check_exists = true
           payload = {name: new_item}
@@ -986,6 +989,7 @@ module Aspera
         def action_async_files(async_id:, **)
           Integer(async_id)
           post_data = {'syncs' => [async_id]}
+          # not a URL query: merged into the POST body of async/files
           filter = options.get_option(:query)
           post_data.merge!(filter) unless filter.nil?
           resp = @api_node.create('async/files', post_data)

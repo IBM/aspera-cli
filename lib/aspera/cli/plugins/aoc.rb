@@ -705,7 +705,7 @@ module Aspera
           command(
             :list, description: 'List dropboxes in workspace',
             action: lambda do |ws_res_id:, **|
-              query = options.get_option(:query) || {}
+              query = query_read_delete(default: {}, schema: Schema::Registry.query_params(Schema::Registry::AOC, 'dropboxes'))
               Result::ObjectList.new(aoc_api.read('dropboxes', query.merge({'workspace_id' => ws_res_id})), fields: %w[id name description])
             end
           )
@@ -1571,7 +1571,7 @@ module Aspera
         # admin > workspace > shared_folder — res_id: already in ctx via arguments:(:identifier)
         def setup_admin_workspace_shared_folder(workspace_id:, **)
           resource_instance_path = "#{aoc_res_path(:workspace)}/#{workspace_id}"
-          query = options.get_option(:query) || Api::AoC.workspace_access(workspace_id).merge({'admin' => true})
+          query = query_read_delete(default: Api::AoC.workspace_access(workspace_id).merge({'admin' => true}))
           shared_folders = aoc_api.read_with_paging("#{resource_instance_path}/permissions", query)[:items]
           {ws_res_id: workspace_id, shared_folders: shared_folders}
         end
