@@ -143,6 +143,7 @@ module Aspera
         name = presets.global_default_preset if name.eql?(GLOBAL_DEFAULT_KEYWORD)
         cp = presets.config_presets
         cp[name] ||= {}
+        # Option names are only known at runtime: cannot be declared as interactive arguments
         option_names.each do |option_name|
           option_value = options.get_interactive(option_name)
           cp[name][option_name] = option_value

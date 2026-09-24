@@ -175,21 +175,14 @@ module Aspera
           ]
         command :tokens, description: 'Manage OAuth tokens'
         command :plugins, description: 'Manage CLI plugins'
-        command(
-          :detect, description: 'Detect the Aspera product from a URL (interactive)',
-          arguments: [{name: :url}, {name: :plugin_name, mandatory: false, default: nil}],
-          action: lambda do |url:, plugin_name: nil, **|
-            options.ask_missing_mandatory = true
-            apps = @wizard.identify_plugins_for_url(url: url, plugin_name: plugin_name).freeze
-            Result::ObjectList.new(apps)
-          end
-        )
+        command :detect, description: 'Detect the Aspera product from a URL (interactive)',
+          arguments: [{name: :url, interactive: true}, {name: :plugin_name, mandatory: false, default: nil}],
+          action: ->(url:, plugin_name: nil, **) { Result::ObjectList.new(@wizard.identify_plugins_for_url(url: url, plugin_name: plugin_name).freeze) }
         command(
           :wizard, description: 'Run the setup wizard for an Aspera product (interactive)',
-          arguments: [{name: :url}, {name: :plugin_name, mandatory: false, default: nil},
+          arguments: [{name: :url, interactive: true}, {name: :plugin_name, mandatory: false, default: nil},
                       {name: :preset_name, mandatory: false, default: ''}],
           action: lambda do |url:, plugin_name: nil, preset_name: '', **|
-            options.ask_missing_mandatory = true
             apps = @wizard.identify_plugins_for_url(url: url, plugin_name: plugin_name).freeze
             @wizard.find(apps, preset_name: preset_name)
           end
