@@ -158,7 +158,7 @@ module Aspera
                   # share_permissions: Rails only exposes index+show (read-only)
                   setting_ops = setting.eql?(:share_permissions) ? SHARE_PERMISSIONS_OPS : %i[show modify]
                   command setting,
-                    description: "Manage #{setting} for a #{entity_type}",
+                    description: "Manage #{entity_noun(setting, singular: false)} for a #{entity_type}",
                     arguments: [{name: :"#{entity_type}_id", type: :identifier, lookup: lookup_method_all}]
                   commands_under setting do
                     setting_ops.each do |op|
@@ -169,7 +169,7 @@ module Aspera
                         when :modify then [{name: :data, type: Hash}]
                         end
                       command op,
-                        description: "#{op.capitalize} #{setting} for a #{entity_type}",
+                        description: "#{op.capitalize} #{entity_noun(setting, singular: false)} for a #{entity_type}",
                         arguments: op_args
                     end
                   end
@@ -257,7 +257,7 @@ module Aspera
         %i[user_permissions group_permissions].each do |perm_type|
           commands_under [:admin, :share, perm_type] do
             SHARE_PERMISSIONS_OPS.each do |op|
-              command op, description: "#{op.capitalize} #{perm_type}",
+              command op, description: "#{op.capitalize} #{entity_noun(perm_type, singular: false)}",
                 arguments: op.eql?(:show) ? [{name: :permission_id, type: :identifier}] : nil
             end
           end
