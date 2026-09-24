@@ -44,33 +44,12 @@ module Aspera
       # Skips options already declared on the parser.
       #
       # @param parser [Aspera::Cli::Parser]
-      # @param target [Object, nil] default target object for Symbol handlers (defaults to self)
+      # @param target [Object, nil] default target object for Symbol and Proc handlers (defaults to self)
       # @return [void]
       def declare_options(parser, target: self)
         option_specs.each_value do |spec|
-          next if parser.option_declared?(spec.name)
-          resolved_handler =
-            case spec.handler
-            when Symbol then {o: target, m: spec.handler}
-            when Hash   then spec.handler
-            end
-          parser.declare(
-            spec.name,
-            description: spec.description,
-            short:       spec.short,
-            allowed:     spec.allowed,
-            default:     spec.default,
-            handler:     resolved_handler,
-            deprecation: spec.deprecation,
-            schema:      schema_for_spec(spec)
-          )
+          spec.declare_on(parser, target: target) unless parser.option_declared?(spec.name)
         end
-      end
-
-      private
-
-      def schema_for_spec(spec)
-        spec.schema
       end
     end
   end

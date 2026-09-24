@@ -267,6 +267,14 @@ module Aspera
           expect(called).to(eq(%i[help no_default]))
         end
 
+        it 'calls handler method of a flag' do
+          opts = build_parser(['-N'])
+          target = Struct.new(:called) { def flag_found = self.called = true }.new(false)
+          opts.declare(:no_default, description: 'No default', short: 'N', allowed: Type::NONE, handler: {o: target, m: :flag_found})
+          opts.parse_options!
+          expect(target.called).to(be(true))
+        end
+
         it 'accepts unique abbreviation of long option' do
           opts = build_parser(['--form=json'])
           opts.declare(:format, description: 'Format')

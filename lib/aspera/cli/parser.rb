@@ -141,7 +141,7 @@ module Aspera
       #   - Use `allowed: [Hash, String]` when the option additionally accepts a plain String shorthand;
       #     the schema then documents the Hash form and `=help` still shows it.
       # @param default       [Object] default value
-      # @param handler       [Hash]   handler for option value: keys: :o(object) and :m(method)
+      # @param handler       [Hash]   handler for option value: keys: :o(object) and :m(method). For a flag (`Type::NONE`): method called without argument when the flag is found
       # @param deprecation   [String] deprecation
       # @param schema        [String] schema path documenting the Hash form of this option
       # @param block [Proc] Block to execute when option is found
@@ -150,6 +150,12 @@ module Aspera
         Aspera.assert(!@registry.declared?(option_symbol)) { "#{option_symbol} already declared" }
         Aspera.assert_type(handler, Hash) if handler
         Aspera.assert(handler.keys.sort.eql?(%i[m o]), 'handler must have keys :m and :o') if handler
+        if handler && allowed.eql?(Type::NONE)
+          Aspera.assert(block.nil?) { "#{option_symbol}: flag with both handler and block" }
+          flag_handler = handler
+          block = -> { flag_handler[:o].send(flag_handler[:m]) }
+          handler = nil
+        end
         # An abbreviation already used on command line must stay unambiguous
         @command_line.abbreviated_option_tokens.each do |tok|
           Aspera.assert(!option_symbol.to_s.start_with?(tok.name), type: BadArgument) do

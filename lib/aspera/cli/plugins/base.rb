@@ -253,21 +253,8 @@ module Aspera
                   {}
                 end
               specs.each_value do |spec|
-                next if options.option_declared?(spec.name)
-                resolved_handler =
-                  case spec.handler
-                  when Hash then spec.handler
-                  end
-                options.declare(
-                  spec.name,
-                  description: spec.description,
-                  short:       spec.short,
-                  allowed:     spec.allowed,
-                  default:     spec.default,
-                  handler:     resolved_handler,
-                  deprecation: spec.deprecation,
-                  schema:      spec.schema
-                )
+                # No plugin instance: Symbol and Proc handlers are not bound
+                spec.declare_on(options) unless options.option_declared?(spec.name)
               end
             end
             options.parse_options! if parse
@@ -331,10 +318,7 @@ module Aspera
           # (e.g. Oauth, BasicAuth) are also registered for sub-classes (e.g. Aoc).
           # The options object is shared across all plugins in a run; skip options already
           # declared by an earlier plugin (Base.option prevents duplicates within one hierarchy).
-          # Each OptionSpec is translated to an options.declare call, resolving the
-          # handler: shorthand:
-          #   Symbol handler: {o: self, m: <symbol>}  (Category B - plugin instance methods)
-          #   Hash handler:   used as-is              (Category A - singletons / class constants)
+          # Each OptionSpec is declared with this plugin instance as target of Symbol and Proc handlers.
           sources = []
           self.class.ancestors.each do |klass|
             next unless klass.is_a?(Class) && klass <= Base
@@ -351,22 +335,7 @@ module Aspera
                 {}
               end
             specs.each_value do |spec|
-              next if options.option_declared?(spec.name)
-              resolved_handler =
-                case spec.handler
-                when Symbol then {o: self, m: spec.handler}
-                when Hash   then spec.handler
-                end
-              options.declare(
-                spec.name,
-                description: spec.description,
-                short:       spec.short,
-                allowed:     spec.allowed,
-                default:     spec.default,
-                handler:     resolved_handler,
-                deprecation: spec.deprecation,
-                schema:      spec.schema
-              )
+              spec.declare_on(options, target: self) unless options.option_declared?(spec.name)
             end
           end
         end

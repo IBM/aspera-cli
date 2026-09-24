@@ -53,4 +53,28 @@ RSpec.describe(Aspera::Cli::OptionDeclarator) do
       expect(parser).to(have_received(:declare).with(:opt_b, hash_including(description: 'Option B')))
     end
   end
+
+  describe 'Proc handler' do
+    let(:flag_class) do
+      Class.new do
+        extend Aspera::Cli::OptionDeclarator
+
+        option :flag, description: 'Flag', allowed: Aspera::Cli::Type::NONE, short: 'F', handler: -> { @flag_found = true }
+      end
+    end
+
+    it 'executes a flag handler on the target' do
+      parser = Aspera::Cli::Parser.new('test', ['-F'])
+      target = Object.new
+      flag_class.declare_options(parser, target: target)
+      parser.parse_options!
+      expect(target.instance_variable_get(:@flag_found)).to(be(true))
+    end
+
+    it 'rejects a Proc handler on an option with value' do
+      expect do
+        dummy_class.option(:opt_c, description: 'Option C', handler: -> {})
+      end.to(raise_error(ArgumentError, /only supported for a flag/))
+    end
+  end
 end

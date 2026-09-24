@@ -144,7 +144,7 @@ All plugins declare their command tree using a class-level DSL defined in `Base`
 | `commands_under(parent, description: nil) { … }` | Scope block setting the default parent for nested `command` calls. Re-entrant; `parent` is relative to the current scope. Auto-declares the parent node (`"Manage <name>"`) if not yet declared |
 | `crud_commands(api:, entity:, operations:, name:, lookup:, **kwargs)` | Declare one leaf command per CRUD verb for a REST entity (see below) |
 | `define_action_method(path) { … }` | `define_method` with the conventional `action_<path>` name; used for homogeneous generated commands |
-| `option(name, description:, short:, allowed:, default:, handler:, deprecation:, schema:)` | Declare a plugin option (stored as `OptionSpec`, declared on the parser in `Base#initialize`). Raises if an ancestor already declares it |
+| `option(name, description:, short:, allowed:, default:, handler:, deprecation:, schema:)` | Declare a plugin option (stored as `OptionSpec`, declared on the parser in `Base#initialize`). Raises if an ancestor already declares it. `handler:` Symbol: instance method (accessor); Hash `{o:, m:}`: other object; for a flag (`allowed: Type::NONE`) a Symbol or a lambda (same style rule as actions) is executed on the plugin instance when the flag is found |
 | `use_options(source)` | Include options declared by another plugin class or `OptionDeclarator` module |
 | `root_setup(method_name)` | Method called once before root dispatch; its `Hash` result seeds `ctx`. Used when root `condition:` methods depend on setup state (e.g. `server.rb`) |
 | `application_name(name)` | Human-readable application name shown in wizards |

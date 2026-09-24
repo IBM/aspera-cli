@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/schema/registry'
+require 'aspera/cli/option_types'
 
 module Aspera
   module Cli
@@ -67,8 +68,9 @@ module Aspera
     # @!attribute allowed     [Array, nil]           Allowed values (forwarded to options.declare)
     # @!attribute default     [Object, nil]          Default value
     # @!attribute short       [String, nil]          Single-character short form (e.g. 'x')
-    # @!attribute handler     [Symbol, Hash, nil]
+    # @!attribute handler     [Symbol, Proc, Hash, nil]
     #   - Symbol: resolved to {o: <plugin instance>, m: <symbol>} at runtime (Category B)
+    #   - Proc:   flag only (`allowed: Type::NONE`), called via instance_exec on the plugin instance when the flag is found
     #   - Hash:   {o: <object>, m: <method>} used as-is (Category A: singletons / class constants)
     #   - nil:    option stores its value locally (no delegation)
     # @!attribute deprecation [String, nil]          Forwarded to options.declare as deprecation:
@@ -83,7 +85,40 @@ module Aspera
       :deprecation,
       :schema,
       keyword_init: true
-    )
+    ) do
+      def initialize(**)
+        super
+        raise ArgumentError, "Option #{name.inspect}: a Proc handler is only supported for a flag (Type::NONE)" if handler.is_a?(Proc) && !allowed.eql?(Type::NONE)
+      end
+
+      # Declare this option on a parser, resolving the handler.
+      # @param parser [Parser] Parser to declare the option on
+      # @param target [Object, nil] Object for Symbol and Proc handlers (plugin instance); nil: such handlers are not bound
+      # @return [void]
+      def declare_on(parser, target: nil)
+        flag_block = nil
+        resolved_handler =
+          case handler
+          when Hash then handler
+          when Symbol then {o: target, m: handler} unless target.nil?
+          when Proc
+            proc_handler = handler
+            flag_block = -> { target.instance_exec(&proc_handler) } unless target.nil?
+            nil
+          end
+        parser.declare(
+          name,
+          description: description,
+          short:       short,
+          allowed:     allowed,
+          default:     default,
+          handler:     resolved_handler,
+          deprecation: deprecation,
+          schema:      schema,
+          &flag_block
+        )
+      end
+    end
 
     # Declares that a command node exposes a sub-tree of another plugin class.
     # The mounted children appear in the host registry (dispatch, --help, completion)

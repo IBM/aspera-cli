@@ -200,8 +200,6 @@ module Aspera
               test_args:    'organization'
             }
           end
-          options.declare(:use_generic_client, description: 'Wizard: AoC: use global or org specific jwt client id', allowed: Type::BOOLEAN, default: Api::AoC.saas_url?(app_url))
-          options.parse_options!
           # make username mandatory for jwt, this triggers interactive input
           wiz_username = options.get_option(:username, mandatory: true)
           wizard.check_email(wiz_username)
@@ -218,7 +216,10 @@ module Aspera
           client_id = options.get_option(:client_id)
           client_secret = options.get_option(:client_secret)
           if client_id.nil? || client_secret.nil?
-            if options.get_option(:use_generic_client)
+            use_generic_client = options.get_option(:use_generic_client)
+            # Default depends on URL
+            use_generic_client = Api::AoC.saas_url?(app_url) if use_generic_client.nil?
+            if use_generic_client
               client_id = client_secret = nil
               formatter.display_status('Using global client_id.')
             else
@@ -272,6 +273,7 @@ module Aspera
         option :new_user_option,   description: 'New user creation option for unknown package recipients', allowed: [Hash, NilClass]
         option :validate_metadata, description: 'Validate shared inbox metadata', allowed: Type::BOOLEAN, default: true
         option :package_folder,    schema: Schema::Registry::PACKAGE_FOLDER_OPTIONS
+        option :use_generic_client, description: 'Wizard: AoC: use global or org specific jwt client id (default: global for SaaS URL)', allowed: Type::BOOLEAN
 
         use_options Node
 

@@ -95,14 +95,13 @@ module Aspera
         option :notify_template,    description: 'Email: ERB template for notification of transfers'
         option :cache_tokens,       description: 'Save and reuse OAuth tokens', allowed: Type::BOOLEAN, default: true, handler: :option_cache_tokens
         option :expand_mounts,      description: 'Commands: list commands of sub-trees provided by another plugin', allowed: Type::BOOLEAN, default: false
+        option :no_default,         description: 'Do not load default configuration for plugin', allowed: Type::NONE, short: 'N', handler: -> { presets.use_plugin_defaults = false }
 
         def initialize(**_)
           super
           @vault_instance = nil
           @sdk_default_location = false
           @option_cache_tokens = true
-          # :no_default uses a &block callback - must stay imperative
-          options.declare(:no_default, description: 'Do not load default configuration for plugin', allowed: Type::NONE, short: 'N') { presets.use_plugin_defaults = false }
           # Declare wizard options (Wizard#initialize calls options.declare internally)
           @wizard = Wizard.new(self, context.main_folder)
           options.parse_options!
