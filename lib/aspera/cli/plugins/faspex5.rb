@@ -99,11 +99,6 @@ module Aspera
         option :shared_folder, description: 'Send package with files from shared folder'
         option :group_type,    description: 'Type of shared box', allowed: %i[shared_inboxes workgroups], default: :shared_inboxes
 
-        def initialize(**_)
-          super
-          options.parse_options!
-        end
-
         # if recipient is just an email, then convert to expected API hash : name and type
         def normalize_recipients(parameters, type)
           type = type.to_s

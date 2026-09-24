@@ -61,11 +61,6 @@ module Aspera
         option :ret_style,   description: 'How return type is requested in api', allowed: %i[header arg ext], default: :arg
         option :auth_style,  description: 'Authentication type', allowed: %i[arg_pass head_basic apikey], default: :head_basic
 
-        def initialize(**_)
-          super
-          options.parse_options!
-        end
-
         # Call orchestrator API, it's a bit special
         # @param endpoint   [String]  the endpoint to call
         # @param ret_style  [Symbol]  the return style, :header, :arg, :ext(extension)

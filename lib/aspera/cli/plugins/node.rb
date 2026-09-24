@@ -168,7 +168,7 @@ module Aspera
 
         # @param api [Rest] an existing API object for the Node API
         def initialize(context:, api: nil)
-          super(context: context, basic_options: api.nil?)
+          super(context: context)
           # Api::Node or Rest (Shares), when provided by the host plugin
           @api_node = api
         end

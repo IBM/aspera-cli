@@ -24,11 +24,6 @@ module Aspera
 
         use_options Node
 
-        def initialize(**_)
-          super
-          options.parse_options!
-        end
-
         # node - mount target: build the COS Node API and plugin from CLI options.
         # @return [Node] Node plugin instance on the COS bucket
         def cos_node_plugin(**)

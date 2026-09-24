@@ -81,7 +81,6 @@ module Aspera
           @connection_type = :ssh
           @ascmd_executor = nil
           @server_transfer_spec = nil
-          options.parse_options!
           @ssh_opts = options.get_option(:ssh_options).symbolize_keys
         end
 

@@ -50,11 +50,6 @@ module Aspera
         option :private_key, description: 'OAuth JWT RSA private key PEM **value**'
         option :passphrase,  description: 'OAuth JWT RSA private key passphrase'
 
-        def initialize(**_)
-          super
-          options.parse_options!
-        end
-
         # Build the REST API object based on the configured auth type.
         # @return [Rest]
         def build_api

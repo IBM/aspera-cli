@@ -104,12 +104,12 @@ module Aspera
           @option_cache_tokens = true
           # Declare wizard options (Wizard#initialize calls options.declare internally)
           @wizard = Wizard.new(self, context.main_folder)
-          options.parse_options!
-          set_sdk_dir
           # HTTP options: declare metadata (class method), then bind to the instance
           Http.declare_options(options)
           context.http_config.bind_options(options)
+          # Values set through handlers are used below (sdk_folder) and by the runner (cache_tokens)
           options.parse_options!
+          set_sdk_dir
         end
 
         command :preset, description: 'Manage configuration presets'

@@ -67,10 +67,6 @@ module Aspera
           }
         end
 
-        def initialize(**_)
-          super
-        end
-
         # --- DSL ---
 
         command :health,   description: 'Check Console API health'

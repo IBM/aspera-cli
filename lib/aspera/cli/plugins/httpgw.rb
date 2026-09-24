@@ -43,11 +43,6 @@ module Aspera
 
         option :url, description: 'URL of application, e.g. https://app.example.com/aspera/app'
 
-        def initialize(**_)
-          super
-          options.parse_options!
-        end
-
         def action_health(**)
           nagios = Nagios.new
           begin

@@ -85,6 +85,7 @@ module Aspera
           Aspera::Preview::Options::DESCRIPTIONS.each do |opt|
             options.set_handler(opt[:name], object: @gen_options, method: opt[:name])
           end
+          # Values set through handlers are used below
           options.parse_options!
           # Tell which tool we will use for office docs
           Aspera::Preview::Utils.office_tool = @gen_options.office_conversion

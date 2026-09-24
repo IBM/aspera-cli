@@ -12,14 +12,6 @@ module Aspera
         option :username, description: "User's identifier"
         option :password, description: "User's password"
 
-        def initialize(context:, basic_options: true)
-          super(context: context)
-          # DSL options (url, username, password) are auto-declared by Base#initialize
-          # via the ancestor chain. parse_options! is still needed here when basic_options
-          # is true so callers that rely on parsing at construction time keep working.
-          options.parse_options! if basic_options
-        end
-
         # returns a Rest object with basic auth
         def basic_auth_params(subpath = nil)
           api_url = options.get_option(:url, mandatory: true)

@@ -35,7 +35,6 @@ module Aspera
           super(**base_args)
           @ats_api_open = Api::Ats.new
           @ats_api_auth = api
-          options.parse_options!
         end
 
         # --- DSL ---

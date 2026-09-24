@@ -283,7 +283,6 @@ module Aspera
           @cache_home_node_file = nil
           @cache_api_aoc = nil
           @scope = Api::AoC::Scope::USER
-          options.parse_options!
         end
 
         # Change API scope for subsequent calls, re-instantiate API object
