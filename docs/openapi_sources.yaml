@@ -13,3 +13,5 @@ schemas:
     destination: lib/aspera/schema/IBM Aspera faspio Gateway API-1.0.0.yaml
   - url: https://raw.githubusercontent.com/laurent-martin/aspera-api-examples/refs/heads/main/openapi/IBM%20Aspera%20Console-enhanced.yaml
     destination: lib/aspera/schema/IBM Aspera Console-enhanced.yaml
+  - url: https://raw.githubusercontent.com/laurent-martin/aspera-api-examples/refs/heads/main/openapi/IBM%20Aspera%20on%20Cloud%20Automation%20API-1.0.5-enhanced.yaml
+    destination: lib/aspera/schema/IBM Aspera on Cloud Automation API-1.0.5-enhanced.yaml

@@ -12,6 +12,7 @@ Released: [Place date of release here]
 * **general**: Identifier arguments are named after their entity (e.g. `<account_id>` instead of `<id>`, `<workflow_id>` instead of `<wf_id>`), path arguments are named `<path>`, `<paths...>` or `<folder> <source> <destination>`.
 * `mcp`: Shorter server instructions and tool description, examples use presets and `@json:`.
 * `console`: Help of `transfer current change_rate|change_policy` and `transfer smart submit` shows the schema of the request body.
+* `aoc`: `automation` commands cover the whole Automation API: new `workflows update_state|cancel_instances|delete_instances`, `instances cancel`, `steps`, `actions`, `permissions`. Help shows request body schemas and `--query=help` list parameters.
 * `console`: New commands: `transfer current submit`, `transfer smart pause`, `transfer queue <queue_id> list`, `endpoint list`, `ssh_key list`, `admin email_server_update|nodeapi_credentials_update`.
 * `console`: `health` also checks the unauthenticated endpoint `health/up`.
 
@@ -31,6 +32,10 @@ Released: [Place date of release here]
 * **general**: Help was failing when a schema enum contains `null`.
 * `aoc`: `packages shared_inboxes short_link` and `files short_link` `create|modify` were ignoring the provided `password` and `access_levels`.
 * `faspex5`: Command `admin file_processing next` was not available.
+* `aoc`: `automation workflows action list|show` were creating a step and an action, `create` was removing existing steps: `list` now lists actions, `create [<action>]` appends a step.
+* `aoc`: `automation instances` was using the AoC API instead of the Automation API.
+* `aoc`: `automation workflows list` was returning the paginated object instead of the list of workflows.
+* **general**: `--query=help` was not showing query parameters defined by reference (`$ref`) in the OpenAPI schema.
 
 ### Breaking Changes
 
@@ -38,6 +43,7 @@ Released: [Place date of release here]
 * `server`: Commands `ls|rm|mkdir|du|md5sum` require at least one path, `mv|cp` take exactly `<source> <destination>`, `df|info` take no argument.
 * `console`: `transfer current change_rate|change_policy` require a `<data>` argument, instead of option `query`.
 * `console`: `transfer current move_forwards|move_back` moved to `transfer queue <queue_id> move_forwards|move_back <transfer_id>`.
+* `aoc`: `automation workflows action show` replaced by `automation actions show`, `automation instances modify` replaced by `automation instances cancel`.
 
 ## 4.27.2
 

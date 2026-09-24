@@ -154,6 +154,7 @@ module Aspera
               end
               cmd_attrs = {description: operation_description(verb, name || entity.inspect), action: action_proc}
               cmd_attrs[:arguments] = args if args
+              cmd_attrs[:query_schema] = Schema::Registry.query_params(kwargs[:query_component], entity) if verb.eql?(:list) && kwargs[:query_component] && entity.is_a?(String)
               command(verb, **cmd_attrs)
             end
           end

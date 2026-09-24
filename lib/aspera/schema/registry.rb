@@ -53,6 +53,7 @@ module Aspera
         conf:         'aspera/sync/conf.schema.yaml',
         opts:         'aspera/cli/options.schema.yaml',
         aoc:          'aspera/schema/IBM Aspera on Cloud API-0.2.6-enhanced.yaml',
+        automation:   'aspera/schema/IBM Aspera on Cloud Automation API-1.0.5-enhanced.yaml',
         faspex:       'aspera/schema/IBM Aspera Faspex API-5.0-enhanced.yaml',
         faspio:       'aspera/schema/IBM Aspera faspio Gateway API-1.0.0.yaml',
         console:      'aspera/schema/IBM Aspera Console-enhanced.yaml',
@@ -66,6 +67,7 @@ module Aspera
       SYNC_CONF = 'conf'
       SYNC_ARGS = 'args'
       AOC = 'aoc'
+      AUTOMATION = 'automation'
       FASPEX = 'faspex'
       FASPIO = 'faspio'
       CONSOLE = 'console'
@@ -113,7 +115,11 @@ module Aspera
         if path&.end_with?(QUERY_PARAMS_SUFFIX)
           parent_path = path.delete_suffix(QUERY_PARAMS_SUFFIX)
           node = @cache[sym].dig(*parent_path.split('.'))
-          return Reader.from_query_params(node&.fetch('parameters', []) || [])
+          # Parameters may be references to components.parameters
+          params = (node&.fetch('parameters', []) || []).map do |param|
+            param.key?('$ref') ? @cache[sym].dig(*param['$ref'].delete_prefix('#/').split('/')) : param
+          end
+          return Reader.from_query_params(params.compact)
         end
         reader = Reader.new(@cache[sym])
         return reader unless path

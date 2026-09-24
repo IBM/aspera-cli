@@ -24,7 +24,7 @@ using Rainbow
 module Aspera
   module Cli
     module Plugins
-      class Aoc < Oauth
+      class Aoc < Oauth # rubocop:disable Metrics/ClassLength
         # default redirect for AoC web auth
         REDIRECT_LOCALHOST = 'http://localhost:12345'
         # admin objects that can be manipulated
@@ -922,23 +922,59 @@ module Aspera
         register_short_link_commands(self, %i[files short_link])
 
         # automation sub-commands
-        commands_under :automation  do
-          commands_under :instances do
-            crud_commands api: :aoc_api, entity: 'workflow_instances', name: 'workflow instance'
-          end
-
+        # Automation API: a workflow has ordered steps (step_order), a step has ordered actions (action_order)
+        AUTOMATION_CRUD = {api: :@automation_api, body_component: Schema::Registry::AUTOMATION}.freeze
+        private_constant :AUTOMATION_CRUD
+        commands_under :automation do
           commands_under :workflows do
-            crud_commands api: :@automation_api, entity: 'workflows'
+            crud_commands(**AUTOMATION_CRUD, entity: 'workflows', items_key: 'workflows', query_component: Schema::Registry::AUTOMATION)
             command :launch, description: 'Launch a workflow',
               arguments: [{name: :workflow_id, type: :identifier}],
               action: ->(workflow_id:, **) { Result::SingleObject.new(@automation_api.create("workflows/#{workflow_id}/launch", {})) }
-            commands_under :action, description: 'Add action to workflow (TODO)' do
-              %i[list create show].each do |cmd|
-                command cmd,
-                  description: "#{cmd.capitalize} action (TODO)",
-                  arguments:   [{name: :workflow_id, type: :identifier}]
-              end
+            command :update_state, description: 'Update state of workflow',
+              arguments: [{name: :workflow_id, type: :identifier},
+                          {name: :state, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::AUTOMATION, 'workflows/{id}/update_state.put')}],
+              action: ->(workflow_id:, state:, **) { Result::SingleObject.new(@automation_api.update("workflows/#{workflow_id}/update_state", state)) }
+            command :cancel_instances, description: 'Cancel all jobs of workflow',
+              arguments: [{name: :workflow_id, type: :identifier}],
+              action: lambda { |workflow_id:, **|
+                @automation_api.update("workflows/#{workflow_id}/cancel_instances", {})
+                Result::Status.new('canceled')
+              }
+            command :delete_instances, description: 'Delete all jobs of workflow',
+              arguments: [{name: :workflow_id, type: :identifier}],
+              action: lambda { |workflow_id:, **|
+                @automation_api.delete("workflows/#{workflow_id}/delete_instances")
+                Result::Status.new('deleted')
+              }
+            commands_under :action, description: 'Manage actions of workflow' do
+              command :list,   description: 'List actions of all steps of workflow',
+                arguments: [{name: :workflow_id, type: :identifier}]
+              command :create, description: 'Add a step with one action at the end of workflow',
+                arguments: [{name: :workflow_id, type: :identifier},
+                            {name: :action, type: Hash, mandatory: false, default: {}, schema: Schema::Registry.req_body(Schema::Registry::AUTOMATION, 'actions.post')}]
             end
+          end
+          commands_under :instances do
+            crud_commands(
+              **AUTOMATION_CRUD, entity: 'workflow_instances', name: 'workflow instance', operations: %i[list show delete],
+              items_key: 'workflow_instances', query_component: Schema::Registry::AUTOMATION
+            )
+            command :cancel, description: 'Cancel workflow instance',
+              arguments: [{name: :workflow_instance_id, type: :identifier}],
+              action: ->(workflow_instance_id:, **) { Result::SingleObject.new(@automation_api.update("workflow_instances/#{workflow_instance_id}", {'status' => 'canceled'})) }
+          end
+          commands_under :steps do
+            crud_commands(**AUTOMATION_CRUD, entity: 'steps', operations: %i[create show modify delete])
+          end
+          commands_under :actions do
+            crud_commands(**AUTOMATION_CRUD, entity: 'actions', operations: %i[create show modify delete])
+          end
+          commands_under :permissions do
+            crud_commands(
+              **AUTOMATION_CRUD, entity: 'workflow_permissions', name: 'workflow permission', operations: %i[list create modify delete],
+              items_key: 'workflow_permissions', query_component: Schema::Registry::AUTOMATION
+            )
           end
         end
 
@@ -1447,6 +1483,28 @@ module Aspera
           end
         end
 
+        # automation > workflows > action > list
+        # A workflow has ordered steps (step_order), a step has ordered actions (action_order)
+        def action_automation_workflows_action_list(workflow_id:, **)
+          workflow = @automation_api.read("workflows/#{workflow_id}")
+          actions = Array(workflow['step_order']).flat_map do |step_id|
+            step = @automation_api.read("steps/#{step_id}")
+            Array(step['action_order']).map { |action_id| @automation_api.read("actions/#{action_id}") }
+          end
+          Result::ObjectList.new(actions)
+        end
+
+        # automation > workflows > action > create
+        # Default action type is `manual`
+        def action_automation_workflows_action_create(workflow_id:, action:, **)
+          workflow = @automation_api.read("workflows/#{workflow_id}")
+          step = @automation_api.create('steps', {'workflow_id' => workflow_id})
+          @automation_api.update("workflows/#{workflow_id}", {'step_order' => Array(workflow['step_order']) + [step['id']]})
+          new_action = @automation_api.create('actions', {'type' => 'manual'}.merge(action).merge('step_id' => step['id']))
+          @automation_api.update("steps/#{step['id']}", {'action_order' => [new_action['id']]})
+          Result::SingleObject.new(new_action)
+        end
+
         # admin > client > set_pub_key
         def action_admin_client_set_pub_key(private_key_pem:, client_id:, **)
           c = aoc_res_cfg(:client)
@@ -1569,18 +1627,6 @@ module Aspera
           define_action_method([:admin, :user, pref, :modify]) do |user_id:, **kwargs|
             aoc_api.update("#{aoc_res_path(:user)}/#{user_id}/#{pref_path}", kwargs.fetch(pref))
             Result::Status.new('modified')
-          end
-        end
-
-        # automation > workflows > action > * (TODO: not fully implemented)
-        %i[list create show].each do |cmd|
-          define_action_method([:automation, :workflows, :action, cmd]) do |workflow_id:, **|
-            Log.log.warn { "Not implemented: #{cmd}" }
-            step = @automation_api.create('steps', {'workflow_id' => workflow_id})
-            @automation_api.update("workflows/#{workflow_id}", {'step_order' => [step['id']]})
-            action = @automation_api.create('actions', {'step_id' => step['id'], 'type' => 'manual'})
-            @automation_api.update("steps/#{step['id']}", {'action_order' => [action['id']]})
-            Result::SingleObject.new(@automation_api.read("workflows/#{workflow_id}"))
           end
         end
 
