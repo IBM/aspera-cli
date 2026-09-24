@@ -156,7 +156,6 @@ All plugins declare their command tree using a class-level DSL defined in `Base`
 | `id` | `Symbol` | Unique identifier within its parent's namespace |
 | `parent` | `Symbol \| Array<Symbol> \| nil` | Full path to parent; `nil` for root commands (usually implied by `commands_under`) |
 | `description` | `String` | User-facing help text |
-| `options` | `Array<Symbol>` | Option names consumed by this command |
 | `arguments` | `Array<ArgumentSpec \| Hash>` | Positional arguments in parse order. On an **intermediate** node they are resolved before child dispatch (e.g. parent instance id); on a **leaf** they are resolved just before the action |
 | `action` | `Symbol \| Proc \| nil` | Leaf action. **(1)** omitted → convention `action_<full_path_joined_by_underscores>`; **(2)** `Symbol` → named instance method; **(3)** `Proc` → inline, executed with `instance_exec` |
 | `setup` | `Symbol \| nil` | Instance method called with `**ctx` after the node's `arguments` are resolved; returns a `Hash` merged into `ctx` for all descendants |

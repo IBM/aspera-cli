@@ -131,7 +131,6 @@ module Aspera
     # @!attribute id               [Symbol]                      Unique identifier within its parent's namespace
     # @!attribute parent           [Symbol, Array<Symbol>, nil]  Full path to parent; nil for root commands
     # @!attribute description      [String]                      User-facing help text
-    # @!attribute options          [Array<Symbol>]               Option names consumed by this command
     # @!attribute arguments        [Array<ArgumentSpec>]         Positional arguments, in order.
     #                                                            The first ArgumentSpec with type: :identifier is treated as the instance
     #                                                            identifier for intermediate nodes (consumed in Phase A) and leaf nodes.
@@ -146,7 +145,6 @@ module Aspera
       :id,
       :parent,
       :description,
-      :options,
       :arguments,
       :action,
       :setup,
