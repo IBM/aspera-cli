@@ -233,6 +233,27 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
       expect(registry.leaf_paths).to(eq([[:other], %i[files list], %i[files do ls], %i[files do perm list]]))
     end
 
+    it 'stops at the mount node, keeping its own children, when not expanding mounts' do
+      registry.register(spec(id: :other, action: :x))
+      mount_host(at: [:keys])
+      registry.register(spec(id: :mine, parent: :files, action: :y))
+      expect(registry.own_children_of([:files]).keys).to(eq([:mine]))
+      expect(registry.leaf_paths(expand_mounts: false)).to(eq([[:other], [:files], %i[files mine]]))
+    end
+
+    it 'finds the mount of a node reached through a mount' do
+      target_registry.register(spec(id: :nested, parent: %i[keys do], mount: {plugin: target_class, instance: :build, at: [:keys]}))
+      mount_host(at: %i[keys do])
+      expect(registry.mount_at([:files])).to(be_a(Aspera::Cli::MountSpec))
+      expect(registry.mount_at(%i[files nested]).at).to(eq([:keys]))
+      expect(registry.mount_at(%i[files ls])).to(be_nil)
+    end
+
+    it 'lists leaf paths under a path inside the mount' do
+      mount_host(at: [:keys])
+      expect(registry.leaf_paths([:files], expand_mounts: false)).to(eq([%i[files list], %i[files do ls], %i[files do perm list]]))
+    end
+
     it 'does not loop on a mount cycle' do
       target_registry.register(spec(id: :again, parent: %i[keys do], mount: {plugin: target_class, instance: :build, at: %i[keys do]}))
       mount_host(at: %i[keys do])

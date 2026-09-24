@@ -94,6 +94,7 @@ module Aspera
         option :notify_to,          description: 'Email: Recipient for notification of transfers'
         option :notify_template,    description: 'Email: ERB template for notification of transfers'
         option :cache_tokens,       description: 'Save and reuse OAuth tokens', allowed: Type::BOOLEAN, default: true, handler: :option_cache_tokens
+        option :expand_mounts,      description: 'Commands: list commands of sub-trees provided by another plugin', allowed: Type::BOOLEAN, default: false
 
         def initialize(**_)
           super
@@ -220,8 +221,9 @@ module Aspera
           command :import,   description: 'Import secrets from a JSON array (supports --bulk)',
             arguments: [{name: :secrets, type: Array, schema: {type: 'array', items: {'$ref' => Schema::Registry::VAULT_SECRET}}}]
         end
-        command :commands, description: 'List all available commands, of all plugins or only the given one',
-          arguments: [{name: :plugin_name, type: String, mandatory: false, default: nil}]
+        command :commands, description: 'List all available commands, of all plugins or only the given one, optionally under a command path',
+          arguments: [{name: :plugin_name, type: String, mandatory: false, default: nil},
+                      {name: :command_path, type: String, multiple: true, mandatory: false, default: nil}]
         command :options, description: 'List all options available for a plugin',
           arguments: [{name: :plugin_name, type: String}]
         command :test, description: 'Internal test commands'
@@ -518,32 +520,47 @@ module Aspera
           Result::Status.new('Done')
         end
 
-        def action_commands(plugin_name: nil, **)
+        def action_commands(plugin_name: nil, command_path: nil, **)
           plugin_names = Plugins::Factory.instance.plugin_list
           unless plugin_name.nil?
             Aspera.assert_values(plugin_name.to_sym, plugin_names, type: Cli::BadArgument)
             plugin_names = [plugin_name.to_sym]
           end
+          prefix = Array(command_path).map(&:to_sym)
+          Aspera.assert(prefix.empty? || plugin_names.length.eql?(1), type: Cli::BadArgument) { 'command path requires a plugin name' }
+          expand_mounts = options.get_option(:expand_mounts)
           commands = plugin_names.flat_map do |name|
-            plugin_class = Plugins::Factory.instance.plugin_class(name)
-            reg = plugin_class.command_registry
-            reg.leaf_paths.map do |path|
-              spec = reg[path]
-              # Build syntax by interleaving each path segment with the arguments declared on that node
-              tokens = [name.to_s]
-              path.each_with_index do |seg, i|
-                tokens << seg.to_s
-                node_args = reg[path[0, i + 1]]&.arguments.to_a
-                node_args.each { |a| tokens << a.syntax }
+            reg = Plugins::Factory.instance.plugin_class(name).command_registry
+            Aspera.assert(prefix.empty? || reg[prefix], type: Cli::BadArgument) { "no such command: #{name} #{prefix.join(' ')}" }
+            paths = prefix.empty? || reg.children_of(prefix).any? ? reg.leaf_paths(prefix, expand_mounts: expand_mounts) : [prefix]
+            paths.map do |path|
+              mount = expand_mounts ? nil : reg.mount_at(path)
+              description = reg[path]&.description.to_s
+              if mount
+                target = mount.plugin.name.split('::').last.downcase
+                description = "#{description} (see: #{command_syntax(target, mount.registry, mount.at)})"
               end
-              syntax = tokens.join(' ')
               {
-                syntax:      syntax,
-                description: spec&.description.to_s
+                syntax:      command_syntax(name, reg, path) + (mount ? ' <command...>' : ''),
+                description: description
               }
             end
           end
           Result::ObjectList.new(commands, fields: %w[syntax description])
+        end
+
+        # Build syntax by interleaving each path segment with the arguments declared on that node
+        # @param name [String, Symbol]       plugin name
+        # @param reg  [CommandRegistry]      registry of plugin
+        # @param path [Array<Symbol>]        command path
+        # @return [String] e.g. `node access_keys do <access_key_id> ls <path>`
+        def command_syntax(name, reg, path)
+          tokens = [name.to_s]
+          path.each_index do |i|
+            tokens << path[i].to_s
+            reg[path[0, i + 1]]&.arguments.to_a.each { |a| tokens << a.syntax }
+          end
+          tokens.join(' ')
         end
 
         def action_options(plugin_name:, **)

@@ -6,7 +6,8 @@ Released: [Place date of release here]
 
 ### New Features
 
-* `config`: Command `commands` accepts an optional plugin name to list only that plugin's commands.
+* `config`: Command `commands` accepts an optional plugin name and command path to list only the commands under that path.
+* `config`: Command `commands` lists a sub-tree provided by another plugin (e.g. `aoc files`, `ats access_key node`) as a single line with a reference, unless option `expand_mounts` is `yes`.
 * **general**: Help and `config commands` show the type of arguments that are not plain text, e.g. `<account:Hash>`.
 * **general**: Hash arguments are named after their content (e.g. `faspex5 admin accounts create <account:Hash>`) instead of `data`, `params`, `properties`...
 * **general**: Identifier arguments are named after their entity (e.g. `<account_id>` instead of `<id>`, `<workflow_id>` instead of `<wf_id>`), path arguments are named `<path>`, `<paths...>` or `<folder> <source> <destination>`.

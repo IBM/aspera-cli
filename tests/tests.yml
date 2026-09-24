@@ -4741,6 +4741,31 @@ conf_commands_plugin:
     - config
     - commands
     - server
+conf_commands_path:
+  description: List commands under a command path, including commands of a sub-tree provided by another plugin
+  args:
+    - config
+    - commands
+    - aoc
+    - files
+conf_commands_expand:
+  description: List commands of a plugin, including sub-trees provided by other plugins
+  args:
+    - config
+    - commands
+    - aoc
+    - --expand-mounts=yes
+conf_commands_path_unknown:
+  description: Error when command path does not exist
+  tags:
+    - must_fail
+    - nodoc
+  expect: "no such command"
+  args:
+    - config
+    - commands
+    - aoc
+    - no_such_command_xyz
 conf_commands_unknown:
   description: Error when plugin name does not exist
   tags:

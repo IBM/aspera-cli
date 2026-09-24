@@ -16,7 +16,9 @@ module Aspera
     #   resolve(path)           - [registry, path] owning the spec at path (follows mounts)
     #   local?(path)            - true if path is owned by this registry (not reached through a mount)
     #   mount_of(path)          - MountSpec of the local node at path, if any
-    #   leaf_paths              - Array of all leaf paths (follows mounts)
+    #   mount_at(path)          - MountSpec of the node at path, if any (follows mounts)
+    #   own_children_of(path)   - Hash{Symbol => CommandSpec} of direct children declared on the node, without mounted ones
+    #   leaf_paths              - Array of all leaf paths (follows mounts, or stops at mount nodes)
     #   all_paths               - Array of all locally registered full paths
     #   any?                    - true if at least one spec has been registered
     #   validate!               - cross-spec consistency checks; raises on violation
@@ -60,6 +62,22 @@ module Aspera
         @specs[Array(path)]&.mount
       end
 
+      # @param path [Array<Symbol>] path in this registry's namespace
+      # @return [MountSpec, nil] the mount declared on the node at path, following mounts
+      def mount_at(path)
+        registry, local_path = resolve(path)
+        registry.mount_of(local_path)
+      end
+
+      # Children declared on the node itself, without the ones exposed by its mount.
+      # @param path [Array<Symbol>] path in this registry's namespace
+      # @return [Hash{Symbol => CommandSpec}]
+      def own_children_of(path)
+        registry, local_path = resolve(path)
+        return registry.own_children_of(local_path) unless registry.equal?(self)
+        @children_index[local_path] || {}
+      end
+
       # Register a CommandSpec. Raises if the full_path is already registered.
       # Also updates the children index so children_of remains O(1).
       # @param spec [CommandSpec]
@@ -90,15 +108,23 @@ module Aspera
         mount.registry.children_of(mount.at).select { |id, _| mount.accepts?(id) }.merge(own)
       end
 
-      # All leaf paths, in tree order, following mounts.
+      # All leaf paths under path, in tree order, following mounts.
       # A mount cycle (a sub-tree mounting one of its ancestors) is not expanded twice.
+      # @param path          [Array<Symbol>] root of the listing ([] for all)
+      # @param expand_mounts [Boolean]       `false`: a mount node is listed as a leaf, followed by its own children only
       # @return [Array<Array<Symbol>>]
-      def leaf_paths(path = [], chain = [])
+      def leaf_paths(path = [], chain = [], expand_mounts: true)
         children_of(path).keys.flat_map do |id|
           child = path + [id]
           key = subtree_key(child)
           next [] if chain.include?(key)
-          children_of(child).empty? ? [child] : leaf_paths(child, chain + [key])
+          if !expand_mounts && mount_at(child)
+            next [child] + own_children_of(child).keys.flat_map do |own_id|
+              own_child = child + [own_id]
+              children_of(own_child).empty? ? [own_child] : leaf_paths(own_child, chain + [key], expand_mounts: false)
+            end
+          end
+          children_of(child).empty? ? [child] : leaf_paths(child, chain + [key], expand_mounts: expand_mounts)
         end
       end
 

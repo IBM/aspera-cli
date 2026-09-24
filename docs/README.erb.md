@@ -8972,6 +8972,9 @@ are active for each plugin.
 #### Command discovery
 
 Always use `["config", "commands", "<plugin>"]` to enumerate the commands of a plugin and their syntax.
+Add command words to list only the commands under that path, e.g. `["config", "commands", "aoc", "files"]`.
+A line ending with `<command...>` provides the commands of another plugin, given by `(see: ...)`.
+Use option `--expand-mounts=yes` to list them in place.
 Omit `<plugin>` to list the commands of all plugins (much larger result).
 Never guess command names from training data — names like `shared_folders` vs
 `shared_inboxes` are easily confused.
