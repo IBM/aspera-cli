@@ -421,7 +421,7 @@ module Aspera
               browse: {
                 description: 'Browse files of node',
                 arguments:   [{name: :node_id, type: :identifier, lookup: :lookup_node_id},
-                              {name: :folder_path, type: String, mandatory: false, default: '/'}]
+                              {name: :folder_path, mandatory: false, default: '/'}]
               }
             },
             query_component:       Schema::Registry::FASPEX,
@@ -506,7 +506,7 @@ module Aspera
           command :show,   description: 'Show a package', setup: :setup_package_id, arguments: PACKAGE_ID_ARG,
             action: ->(package_id:, **) { Result::SingleObject.new(@api_v5.read("packages/#{package_id}")) }
           command :browse, description: 'Browse package files', setup: :setup_package_id,
-            arguments: PACKAGE_ID_ARG + [{name: :folder_path, type: String, mandatory: false, default: '/'}],
+            arguments: PACKAGE_ID_ARG + [{name: :folder_path, mandatory: false, default: '/'}],
             action: ->(folder_path:, package_id:, **) { browse_folder("packages/#{package_id}/files/#{Api::Faspex.box_type(options.get_option(:box))}", recipient_query(package_id), folder_path: folder_path) }
           command :status, description: 'Wait for package status', setup: :setup_package_id,
             arguments: PACKAGE_ID_ARG + [{name: :status_list, type: Array, mandatory: false, default: nil}],
@@ -568,7 +568,7 @@ module Aspera
           command :list,   description: 'List shared folders', action: ->(**) { Result::ObjectList.new(@api_v5.read('shared_folders')['shared_folders']) }
           command :browse, description: 'Browse a shared folder',
             arguments: [{name: :shared_folder_id, type: :identifier, lookup: :lookup_shared_folder_id},
-                        {name: :folder_path, type: String, mandatory: false, default: '/'}]
+                        {name: :folder_path, mandatory: false, default: '/'}]
         end
 
         # admin sub-tree: fixed commands + all ADMIN_RESOURCES with their sub-commands
@@ -652,7 +652,12 @@ module Aspera
         CRUD_NO_LIST = %i[create modify delete show].freeze
 
         RES_SINGULAR = {shared_inboxes: :shared_inbox, workgroups: :workgroup}.freeze
-        private_constant :RES_SINGULAR
+        # Access levels of members, per resource
+        MEMBER_ACCESS = {
+          shared_inboxes: %i[submit_only standard shared_inbox_admin].freeze,
+          workgroups:     %i[standard workgroup_admin].freeze
+        }.freeze
+        private_constant :RES_SINGULAR, :MEMBER_ACCESS
 
         # admin > shared_inboxes|workgroups > members|saml_groups|invite_external_collaborator:
         # res_id consumed via arguments:(:identifier) + lookup:, builds res_instance_path for all children
@@ -674,7 +679,7 @@ module Aspera
             CRUD_NO_SHOW.each do |c|
               args =
                 if c.eql?(:create)
-                  {arguments: [{name: :users, bulk: true}, {name: :access, mandatory: false, default: :standard}]}
+                  {arguments: [{name: :users, bulk: true}, {name: :access, allowed: MEMBER_ACCESS[res], mandatory: false, default: :standard}]}
                 elsif c.eql?(:modify)
                   {arguments: [{name: :member_id, type: :identifier, lookup: :"lookup_#{res}_members_id"}, {name: :member, type: Hash}]}
                 elsif Operations::INSTANCE.include?(c)
@@ -719,7 +724,7 @@ module Aspera
             end
           )
           command :test, description: 'Test SMTP configuration',
-            arguments: [{name: :recipient, type: nil}]
+            arguments: [{name: :recipient}]
         end
 
         commands_under %i[admin events] do
@@ -985,12 +990,11 @@ module Aspera
           server.start
           Result::Status.new('Gateway terminated')
         end
-        SHARED_INBOX_MEMBER_LEVELS = %i[submit_only standard shared_inbox_admin].freeze
         ACCOUNT_TYPES = %w{local_user saml_user self_registered_user external_user}.freeze
         WORKGROUP_TYPES = %w{workgroup shared_inbox}.freeze
         CONTACT_TYPES = (WORKGROUP_TYPES + %w{distribution_list user external_user}).freeze
         PACKAGE_RECIPIENT_TYPES = %i{recipients private_recipients notified_on_upload notified_on_download notified_on_receipt}
-        private_constant :SHARED_INBOX_MEMBER_LEVELS, :ACCOUNT_TYPES, :CONTACT_TYPES, :PACKAGE_RECIPIENT_TYPES,
+        private_constant :ACCOUNT_TYPES, :CONTACT_TYPES, :PACKAGE_RECIPIENT_TYPES,
           :CRUD_NO_SHOW, :CRUD_NO_LIST
       end
     end

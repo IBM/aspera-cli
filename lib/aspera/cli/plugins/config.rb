@@ -119,17 +119,17 @@ module Aspera
           command :overview, description: 'Show all options from all presets'
           command :lookup,   description: 'Find preset matching URL and username'
           command :secure,   description: 'Move secrets to vault',
-            arguments: [{name: :config_name, type: String, mandatory: false}]
+            arguments: [{name: :config_name, mandatory: false}]
           command :show,       description: 'Show a preset',
             arguments: [{name: :name, type: :identifier}]
           command :delete,     description: 'Delete a preset',
             arguments: [{name: :name, type: :identifier}]
           command :get,        description: 'Show a single parameter of a preset',
-            arguments: [{name: :name, type: :identifier}, {name: :param_name, type: String}]
+            arguments: [{name: :name, type: :identifier}, {name: :param_name}]
           command :unset,      description: 'Remove a parameter from a preset',
-            arguments: [{name: :name, type: :identifier}, {name: :param_name, type: String}]
+            arguments: [{name: :name, type: :identifier}, {name: :param_name}]
           command :set, description: 'Set a parameter in a preset',
-            arguments: [{name: :name, type: :identifier}, {name: :param_name, type: String},
+            arguments: [{name: :name, type: :identifier}, {name: :param_name},
                         {name: :param_value, type: nil}]
           command :initialize, description: 'Initialize a preset with a value',
             arguments: [{name: :name, type: :identifier}, {name: :preset, type: Hash}]
@@ -137,7 +137,7 @@ module Aspera
             arguments: [{name: :name, type: :identifier}]
           command :ask,        description: 'Ask for option values interactively',
             arguments: [{name: :name, type: :identifier},
-                        {name: :option_names, type: String, multiple: true, interactive: true}]
+                        {name: :option_names, multiple: true, interactive: true}]
         end
         command(
           :open, description: 'Open the configuration file in the default editor',
@@ -149,12 +149,12 @@ module Aspera
         command :documentation, description: 'Open the documentation in the default browser',
           arguments: [
             {name: :location, type: Symbol, mandatory: false, default: :github, allowed: %i[github local toc]},
-            {name: :section,  type: String, mandatory: false}
+            {name: :section, mandatory: false}
           ]
         command(
           :genkey, description: 'Generate a new RSA private key',
           arguments: [
-            {name: :private_key_path, type: String},
+            {name: :private_key_path},
             {name: :private_key_length, type: Integer, mandatory: false, default: OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH}
           ],
           action: lambda do |private_key_path:, private_key_length: OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH, **|
@@ -163,7 +163,7 @@ module Aspera
           end
         )
         command :pubkey, description: 'Show the public key of an RSA private key',
-          arguments: [{name: :private_key_pem, type: String}],
+          arguments: [{name: :private_key_pem}],
           action: ->(private_key_pem:, **) { Result::Text.new(OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s) }
         command :remote_certificate, description: 'Retrieve the certificate chain of a remote HTTPS server'
         command :echo, description: 'Show the value of a given argument',
@@ -171,14 +171,14 @@ module Aspera
           action: ->(value:, **) { Result.auto(value) }
         command :download, description: 'Download a file from a URL',
           arguments: [
-            {name: :file_url,  type: String},
-            {name: :file_dest, type: String, mandatory: false}
+            {name: :file_url},
+            {name: :file_dest, mandatory: false}
           ]
         command :tokens, description: 'Manage OAuth tokens'
         command :plugins, description: 'Manage CLI plugins'
         command(
           :detect, description: 'Detect the Aspera product from a URL (interactive)',
-          arguments: [{name: :url, type: String}, {name: :plugin_name, mandatory: false, default: nil}],
+          arguments: [{name: :url}, {name: :plugin_name, mandatory: false, default: nil}],
           action: lambda do |url:, plugin_name: nil, **|
             options.ask_missing_mandatory = true
             apps = @wizard.identify_plugins_for_url(url: url, plugin_name: plugin_name).freeze
@@ -187,7 +187,7 @@ module Aspera
         )
         command(
           :wizard, description: 'Run the setup wizard for an Aspera product (interactive)',
-          arguments: [{name: :url, type: String}, {name: :plugin_name, mandatory: false, default: nil},
+          arguments: [{name: :url}, {name: :plugin_name, mandatory: false, default: nil},
                       {name: :preset_name, mandatory: false, default: ''}],
           action: lambda do |url:, plugin_name: nil, preset_name: '', **|
             options.ask_missing_mandatory = true
@@ -213,7 +213,7 @@ module Aspera
         command :smtp_settings, description: 'Show the current SMTP settings', action: ->(**) { Result::SingleObject.new(context.mailer.email_settings) }
         command(
           :proxy_check, description: 'Check the proxy returned by the PAC script for a given URL',
-          arguments: [{name: :server_url, type: String}],
+          arguments: [{name: :server_url}],
           action: lambda do |server_url:, **|
             Aspera.assert(!context.pac_executor.nil?, type: Cli::BadArgument) { 'No PAC script configured, use --fpac' }
             Result::ValueList.new(context.pac_executor.get_proxies(server_url), name: 'proxy')
@@ -231,7 +231,7 @@ module Aspera
             action: ->(**) { Result::ObjectList.new(vault_required.all) }
           command(
             :show,     description: 'Show a secret by label (or id)',
-            arguments: [{name: :label, type: String}, {name: :id, type: String, mandatory: false, default: nil}],
+            arguments: [{name: :label}, {name: :id, mandatory: false, default: nil}],
             action: lambda do |label:, id: nil, **|
               v = vault_required
               kwargs = id && v.method(:get).parameters.any? { |_t, n| n == :id } ? {id: id} : {}
@@ -247,10 +247,10 @@ module Aspera
             end
           )
           command :delete, description: 'Delete a secret by label (or id)',
-            arguments: [{name: :label, type: String}, {name: :id, type: String, mandatory: false, default: nil}]
+            arguments: [{name: :label}, {name: :id, mandatory: false, default: nil}]
           command(
             :password, description: 'Change the vault password',
-            arguments: [{name: :new_password, type: String}],
+            arguments: [{name: :new_password}],
             action: lambda do |new_password:, **|
               Aspera.assert(vault_required.respond_to?(:change_password), 'Vault does not support password change')
               vault_required.change_password(new_password)
@@ -261,10 +261,10 @@ module Aspera
             arguments: [{name: :secrets, type: Array, schema: {type: 'array', items: {'$ref' => Schema::Registry::VAULT_SECRET}}}]
         end
         command :commands, description: 'List all available commands, of all plugins or only the given one, optionally under a command path',
-          arguments: [{name: :plugin_name, type: String, mandatory: false, default: nil},
-                      {name: :command_path, type: String, multiple: true, mandatory: false, default: nil}]
+          arguments: [{name: :plugin_name, mandatory: false, default: nil},
+                      {name: :command_path, multiple: true, mandatory: false, default: nil}]
         command :options, description: 'List all options available for a plugin',
-          arguments: [{name: :plugin_name, type: String}]
+          arguments: [{name: :plugin_name}]
         command :test, description: 'Internal test commands'
         command :platform, description: 'Show the current platform/architecture', action: ->(**) { Result::Text.new(Environment.instance.architecture) }
         command :completion, description: 'Generate shell completion scripts'
@@ -273,7 +273,7 @@ module Aspera
         commands_under :remote_certificate do
           command(
             :chain, description: 'Show the full certificate chain as PEM',
-            arguments: [{name: :remote_url, type: String}],
+            arguments: [{name: :remote_url}],
             action: lambda do |remote_url:, **|
               remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
               Aspera.assert(remote_chain&.first) { "No certificate found for #{remote_url}" }
@@ -282,7 +282,7 @@ module Aspera
           )
           command(
             :only, description: 'Show only the server certificate as PEM',
-            arguments: [{name: :remote_url, type: String}],
+            arguments: [{name: :remote_url}],
             action: lambda do |remote_url:, **|
               remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
               Aspera.assert(remote_chain&.first) { "No certificate found for #{remote_url}" }
@@ -291,7 +291,7 @@ module Aspera
           )
           command(
             :name, description: 'Show the CN of the server certificate',
-            arguments: [{name: :remote_url, type: String}],
+            arguments: [{name: :remote_url}],
             action: lambda do |remote_url:, **|
               remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
               Aspera.assert(remote_chain&.first) { "No certificate found for #{remote_url}" }
@@ -325,8 +325,8 @@ module Aspera
           command :list, description: 'List all available plugins'
           command :create, description: 'Create a new plugin skeleton file',
             arguments: [
-              {name: :name,   type: String},
-              {name: :folder, type: String, mandatory: false}
+              {name: :name},
+              {name: :folder, mandatory: false}
             ]
         end
 
@@ -346,7 +346,7 @@ module Aspera
             end
           )
           command :schema, description: 'Show the transfer spec JSON schema',
-            arguments: [{name: :agent_name, mandatory: false, default: nil}]
+            arguments: [{name: :agent_name, allowed: Agent::Factory::ALL.keys, mandatory: false, default: nil}]
           command :errors,   description: 'Show FASP error codes'
           command :products, description: 'Manage installed Aspera products'
           commands_under :products do
@@ -376,7 +376,7 @@ module Aspera
             end
           )
           command :status,  description: 'Show status of an async transfer job',
-            arguments: [{name: :job_id, type: String}]
+            arguments: [{name: :job_id}]
           command :cleanup, description: 'Remove completed/failed/cancelled transfer entries'
         end
 
@@ -405,7 +405,7 @@ module Aspera
           command :admin, description: 'Manage sync database (admin operations)'
           SyncActions.register_sync_admin_commands(self, :admin)
           command :translate, description: 'Translate async-style arguments to sync config format',
-            arguments: [{name: :async_arguments, type: String, multiple: true}],
+            arguments: [{name: :async_arguments, multiple: true}],
             action: ->(async_arguments:, **) { Result::SingleObject.new(Sync::Operations.args_to_conf(async_arguments)) }
         end
 
@@ -421,8 +421,8 @@ module Aspera
           command(
             :throw, description: 'Raise an exception (for testing)',
             arguments: [
-              {name: :exception_class_name, type: String},
-              {name: :exception_text,       type: String}
+              {name: :exception_class_name},
+              {name: :exception_text}
             ],
             action: lambda do |exception_class_name:, exception_text:, **|
               type = Object.const_get(exception_class_name)
@@ -436,7 +436,7 @@ module Aspera
         # completion sub-commands
         commands_under :completion do
           command :bash, description: 'Generate bash completion script',
-            arguments: [{name: :words, type: String, multiple: true, mandatory: false}]
+            arguments: [{name: :words, multiple: true, mandatory: false}]
         end
 
         attr_accessor :option_cache_tokens

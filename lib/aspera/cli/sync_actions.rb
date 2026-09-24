@@ -16,7 +16,7 @@ module Aspera
         %w[Syncd Error Confl Pconf] +
         (23..24).map { |i| "P(#{i})" }).freeze
       # Positional arguments shared by sync transfer commands (push/pull/bidi) and sync admin commands.
-      PATH_AND_INFO_ARGS = [{name: :path, type: String}, {name: :sync_info, type: Hash, mandatory: false, default: {}}].freeze
+      PATH_AND_INFO_ARGS = [{name: :path}, {name: :sync_info, type: Hash, mandatory: false, default: {}}].freeze
       # Names of the leaf commands registered under any `sync admin` node.
       ADMIN_COMMANDS = %i[find status meta counters file_info overview query].freeze
       # When a plugin class includes SyncActions, register the :sql option
@@ -33,7 +33,7 @@ module Aspera
         def register_sync_admin_commands(base, admin_path)
           base.commands_under(admin_path) do
             base.command(
-              :find, description: 'Find sync database files', arguments: [{name: :path, type: String}],
+              :find, description: 'Find sync database files', arguments: [{name: :path}],
               action: lambda do |path:, **|
                 dbs = Sync::Operations.list_db_files(path)
                 Result::ObjectList.new(dbs.keys.map { |n| {name: n, path: dbs[n]} })

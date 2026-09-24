@@ -187,10 +187,10 @@ module Aspera
         commands_under %i[transfer smart] do
           command :list,   description: 'List smart transfers', action: ->(api_console:, **) { Result::ObjectList.new(api_console.read('smart_transfers')) }
           command :submit, description: 'Submit a smart transfer',
-            arguments: [{name: :smart_id}, {name: :transfer, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::CONSOLE, 'smart_transfers/{id}.post')}],
+            arguments: [{name: :smart_id, type: :identifier}, {name: :transfer, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::CONSOLE, 'smart_transfers/{id}.post')}],
             action: ->(api_console:, smart_id:, transfer:, **) { Result::ObjectList.new(api_console.create("smart_transfers/#{smart_id}", transfer)) }
           command :pause,  description: 'Pause a smart transfer',
-            arguments: [{name: :smart_id}],
+            arguments: [{name: :smart_id, type: :identifier}],
             action: ->(api_console:, smart_id:, **) { Result::SingleObject.new(api_console.update("smart_transfers/#{smart_id}/pause", {})) }
         end
 

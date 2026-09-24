@@ -49,7 +49,7 @@ module Aspera
           command :clouds, description: 'List cloud providers', action: ->(**) { Result::ObjectList.new(@ats_api_open.cloud_names.map { |k, v| CLOUD_TABLE.zip([k, v]).to_h }) }
           command :list,   description: 'List ATS servers',     action: ->(**) { Result::ObjectList.new(@ats_api_open.all_servers, fields: %w[id cloud region]) }
           command :show,   description: 'Show a specific server (or use options cloud and region)',
-            arguments: [{name: :server_id, type: String, mandatory: false, default: nil}]
+            arguments: [{name: :server_id, mandatory: false, default: nil}]
         end
 
         commands_under :access_key do

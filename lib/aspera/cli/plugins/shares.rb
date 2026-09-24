@@ -210,7 +210,7 @@ module Aspera
               # ldap: add only
               commands_under :ldap do
                 command :add, description: "Add a LDAP #{entity_type}",
-                  arguments: [{name: entity_type, type: String, bulk: true}]
+                  arguments: [{name: entity_type, bulk: true}]
               end
 
               # saml: import only

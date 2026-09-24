@@ -172,7 +172,7 @@ All plugins declare their command tree using a class-level DSL defined in `Base`
 | --- | --- | --- |
 | `name` | `Symbol` | Key in `ctx`, also used in help and error messages |
 | `description` | `String` | User-facing description |
-| `type` | `Class \| Array<Class> \| :identifier` | Validated type; `:identifier` resolves via `options.instance_identifier` (supports percent-selector) |
+| `type` | `Class \| Array<Class> \| :identifier \| nil` | Validated type, default `String` (not set when `allowed:` is given); `:identifier` resolves via `options.instance_identifier` (supports percent-selector); explicit `nil` accepts any value (e.g. `config echo`) |
 | `mandatory` | `Boolean` | Default `true`; optional arguments must come after all mandatory ones |
 | `multiple` | `Boolean \| String` | `true`: consume all remaining; `String`: consume until the named marker |
 | `default` | `Object \| nil` | Default value when `mandatory: false` and no argument provided |

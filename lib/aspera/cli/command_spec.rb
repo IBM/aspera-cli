@@ -10,7 +10,8 @@ module Aspera
     #
     # @!attribute name        [Symbol]                    Name used in help and error messages
     # @!attribute description [String]                    User-facing description
-    # @!attribute type        [Class, Array<Class>, :identifier] Validated type; :identifier triggers instance_identifier
+    # @!attribute type        [Class, Array<Class>, :identifier, nil] Validated type; :identifier triggers instance_identifier.
+    #                                                     Default: String (unless allowed:); explicit nil accepts any value
     # @!attribute mandatory   [Boolean]                   Default true; optional args must come after all mandatory ones
     # @!attribute multiple    [Boolean, String]           true: consume all remaining; String: consume until named marker
     # @!attribute default     [Object, nil]               Default value when mandatory: false and no argument provided
@@ -41,6 +42,7 @@ module Aspera
         kwargs[:multiple]     = false if kwargs[:multiple].nil?
         kwargs[:bulk]         = false if kwargs[:bulk].nil?
         kwargs[:interactive]  = false if kwargs[:interactive].nil?
+        kwargs[:type]         = String unless kwargs.key?(:type) || kwargs[:allowed]
         super
       end
 

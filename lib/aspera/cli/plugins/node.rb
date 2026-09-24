@@ -110,17 +110,17 @@ module Aspera
         # :access_keys is skipped (intermediate node declared separately), :sync is declared separately.
         # action: entries are in GEN3_NODE_ACTIONS, or implicit.
         COMMANDS_GEN3_SPEC = {
-          search:      {description: 'Search for files',             arguments: [{name: :path, type: String}]},
+          search:      {description: 'Search for files',             arguments: [{name: :path}]},
           space:       {description: 'Show space information',       arguments: [{name: :paths, multiple: true}]},
           mkdir:       {description: 'Create a folder (Gen3)',       arguments: [{name: :paths, multiple: true}]},
-          mklink:      {description: 'Create a symbolic link (Gen3)', arguments: [{name: :target, type: String}, {name: :link_path, type: String}]},
-          mkfile:      {description: 'Create a file (Gen3)', arguments: [{name: :path, type: String}, {name: :contents, mandatory: false, default: nil}]},
-          rename:      {description: 'Rename a file or folder (Gen3)', arguments: [{name: :folder, type: String}, {name: :source, type: String}, {name: :destination, type: String}]},
+          mklink:      {description: 'Create a symbolic link (Gen3)', arguments: [{name: :target}, {name: :link_path}]},
+          mkfile:      {description: 'Create a file (Gen3)', arguments: [{name: :path}, {name: :contents, mandatory: false, default: nil}]},
+          rename:      {description: 'Rename a file or folder (Gen3)', arguments: [{name: :folder}, {name: :source}, {name: :destination}]},
           delete:      {description: 'Delete files or folders (Gen3)', arguments: [{name: :paths, multiple: true}]},
-          ls:          {description: 'List files (Gen3)',            arguments: [{name: :path, type: String}], aliases: [:browse]},
+          ls:          {description: 'List files (Gen3)',            arguments: [{name: :path}], aliases: [:browse]},
           upload:      {description: 'Upload files (Gen3)',          transfer_paths: :send},
           download:    {description: 'Download files (Gen3)',        transfer_paths: :receive},
-          cat:         {description: 'Show file contents (Gen3)',    arguments: [{name: :path, type: String}]},
+          cat:         {description: 'Show file contents (Gen3)',    arguments: [{name: :path}]},
           transport:   {description: 'Show transport parameters'},
           spec:        {description: 'Show transfer spec base'},
           api_details: {description: 'Show API details'},
@@ -140,16 +140,16 @@ module Aspera
         # DSL metadata for Gen4 commands under `access_keys do` (description:, arguments:, transfer_paths:, aliases:).
         # Other plugins expose this sub-tree with `mount:` (aoc, ats).
         # :sync, :permission and :v3 are excluded: they are intermediate nodes declared separately.
-        SINGLE_PATH_ARG = [{name: :path, type: String}].freeze
+        SINGLE_PATH_ARG = [{name: :path}].freeze
         COMMANDS_GEN4_SPEC = {
           mkdir:             {description: 'Create folder',                  arguments: SINGLE_PATH_ARG},
           mklink:            {description: 'Create symbolic link',           arguments: SINGLE_PATH_ARG},
-          mkfile:            {description: 'Create file',                    arguments: [{name: :path, type: String}, {name: :contents, mandatory: false, default: nil}]},
-          rename:            {description: 'Rename entry',                   arguments: [{name: :source_path, type: String}, {name: :new_name, type: String}]},
-          delete:            {description: 'Delete entry',                   arguments: [{name: :path, type: String, bulk: true}]},
+          mkfile:            {description: 'Create file',                    arguments: [{name: :path}, {name: :contents, mandatory: false, default: nil}]},
+          rename:            {description: 'Rename entry',                   arguments: [{name: :source_path}, {name: :new_name}]},
+          delete:            {description: 'Delete entry',                   arguments: [{name: :path, bulk: true}]},
           upload:            {description: 'Upload files',                   transfer_paths: :send},
           download:          {description: 'Download files',                 transfer_paths: :receive},
-          modify:            {description: 'Modify file',                    arguments: [{name: :path, type: String}, {name: :file, type: Hash, schema: 'node:components.schemas.files-id-put-request'}]},
+          modify:            {description: 'Modify file',                    arguments: [{name: :path}, {name: :file, type: Hash, schema: 'node:components.schemas.files-id-put-request'}]},
           cat:               {description: 'Show file contents',             arguments: SINGLE_PATH_ARG},
           show:              {description: 'Show file info',                 arguments: SINGLE_PATH_ARG},
           thumbnail:         {description: 'Show file thumbnail',            arguments: SINGLE_PATH_ARG},
@@ -362,7 +362,7 @@ module Aspera
             arguments: [{name: :access_key_id, type: :identifier}],
             setup: :setup_access_key_do
           command :set_bearer_key, description: 'Set bearer key on access key',
-            arguments: [{name: :access_key_id}, {name: :bearer_key_pem, type: String}]
+            arguments: [{name: :access_key_id, type: :identifier}, {name: :bearer_key_pem}]
           crud_commands entity: 'access_keys',
             api:            :@api_node,
 
@@ -376,7 +376,7 @@ module Aspera
           end
           command :v3, description: 'Legacy v3 commands on files', mount: {plugin: self, instance: :v3_node_plugin}
           command :permission, description: 'Manage permissions',
-            arguments: [{name: :path, type: String, description: 'Path, or %id:<file id>, or %id: for root'}],
+            arguments: [{name: :path, description: 'Path, or %id:<file id>, or %id: for root'}],
             setup: :setup_access_key_do_permission
           command :sync, description: 'Synchronize folders'
           commands_under :sync do
@@ -403,7 +403,7 @@ module Aspera
             end
           )
           command :delete, description: 'Delete permissions',
-            arguments: [{name: :permission_id, bulk: true}]
+            arguments: [{name: :permission_id, type: :identifier, bulk: true}]
         end
         # async (legacy /async)
         commands_under :async, description: 'synchronization (legacy /async)' do
@@ -580,7 +580,7 @@ module Aspera
         command :basic_token,   description: 'Generate basic auth token', action: ->(**) { Result::Text.new(Rest.basic_authorization(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true))) }
         command(
           :bearer_token, description: 'Generate bearer token',
-          arguments: [{name: :private_key_pem, type: String}, {name: :token, type: Hash, schema: 'opts:components.schemas.NodeBearerTokenOptions'}],
+          arguments: [{name: :private_key_pem}, {name: :token, type: Hash, schema: 'opts:components.schemas.NodeBearerTokenOptions'}],
           action: lambda do |private_key_pem:, token:, **|
             private_key = OpenSSL::PKey::RSA.new(private_key_pem)
             access_key  = options.get_option(:username, mandatory: true)

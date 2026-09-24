@@ -406,15 +406,15 @@ module Aspera
         # scan, events and trevents connect to the Node API (setup: :setup_node_api).
         # `check`, `test` and `show` work without Node API authentication.
         command :scan,     description: 'Scan a file or folder and generate previews', setup: :setup_node_api,
-          arguments: [{name: :path, type: String, description: 'File or folder from which to start scanning', mandatory: false, default: '/'}]
+          arguments: [{name: :path, description: 'File or folder from which to start scanning', mandatory: false, default: '/'}]
         command :events,   description: 'Process file events and generate previews',        setup: :setup_node_api, action: ->(**) { run_event_loop(:events) }
         command :trevents, description: 'Process transfer events and generate previews',    setup: :setup_node_api, action: ->(**) { run_event_loop(:trevents) }
         command :check,    description: 'Check required tools are installed', action: ->(**) { tools_cleanup { Result::Status.new('Tools validated') } }
         command :show,     description: 'Generate and display preview of a source file',
-          arguments: [{name: :source_file, type: String, description: 'Local file to preview'}]
+          arguments: [{name: :source_file, description: 'Local file to preview'}]
         command :test,     description: 'Test preview generation for a source file',
           arguments: [
-            {name: :source_file, type: String, description: 'Local file to preview'},
+            {name: :source_file, description: 'Local file to preview'},
             {name: :format, description: 'Preview output format', allowed: Aspera::Preview::Generator::PREVIEW_FORMATS, mandatory: false, default: :png}
           ]
 
