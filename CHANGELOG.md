@@ -9,7 +9,8 @@ Released: [Place date of release here]
 * `config`: Command `commands` accepts an optional plugin name to list only that plugin's commands.
 * `mcp`: Shorter server instructions and tool description, examples use presets and `@json:`.
 * `console`: Help of `transfer current change_rate|change_policy` and `transfer smart submit` shows the schema of the request body.
-* `console`: New commands: `transfer current submit`, `transfer smart pause`, `transfer queue <queue_id> list`, `endpoint list`, `ssh_key list`.
+* `console`: New commands: `transfer current submit`, `transfer smart pause`, `transfer queue <queue_id> list`, `endpoint list`, `ssh_key list`, `admin email_server_update|nodeapi_credentials_update`.
+* `console`: `health` also checks the unauthenticated endpoint `health/up`.
 
 ### Issues Fixed
 

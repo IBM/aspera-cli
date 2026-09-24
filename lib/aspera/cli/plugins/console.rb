@@ -77,6 +77,7 @@ module Aspera
         command :transfer, description: 'Manage transfers',         setup: :setup_api
         command :endpoint, description: 'Manage endpoints',         setup: :setup_api
         command :ssh_key,  description: 'Manage SSH keys',          setup: :setup_api
+        command :admin,    description: 'Administration',           setup: :setup_api
 
         commands_under :transfer do
           command :current, description: 'Manage current transfers'
@@ -88,6 +89,23 @@ module Aspera
         commands_under :endpoint do
           command :list, description: operation_description(:list, 'endpoint'),
             action: ->(api_console:, **) { Result::ObjectList.new(api_console.read('endpoints')) }
+        end
+
+        # Payload is not documented in the API: optional
+        ADMIN_DATA_ARGS = [{name: :data, type: Hash, mandatory: false, default: {}}].freeze
+        private_constant :ADMIN_DATA_ARGS
+
+        commands_under :admin do
+          command :email_server_update,        description: 'Update email server configuration', arguments: ADMIN_DATA_ARGS
+          command :nodeapi_credentials_update, description: 'Update Node API credentials',       arguments: ADMIN_DATA_ARGS
+        end
+
+        # POST <verb>
+        %i[email_server_update nodeapi_credentials_update].each do |verb|
+          define_action_method([:admin, verb]) do |api_console:, data:, **|
+            api_console.create(verb.to_s, data)
+            Result::Success.new
+          end
         end
 
         commands_under :ssh_key do
@@ -177,7 +195,13 @@ module Aspera
         def action_health(api_console:)
           nagios = Nagios.new
           begin
-            # TODO: use unauthenticated api : health/up
+            # Unauthenticated, outside of the API prefix
+            Rest.new(base_url: options.get_option(:url, mandatory: true)).read('health/up')
+            nagios.add_ok('console process', 'up')
+          rescue StandardError => e
+            nagios.add_critical('console process', e.to_s)
+          end
+          begin
             api_console.read('ssh_keys')
             nagios.add_ok('console api', 'accessible')
           rescue StandardError => e
