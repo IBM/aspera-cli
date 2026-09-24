@@ -398,7 +398,7 @@ module Aspera
           accounts:            {
             display_fields:        Formatter.all_but('user_profile_data_attributes'),
             extra_commands:        [:reset_password],
-            instance_arg_commands: {reset_password: {arguments: [{name: :contact_id, type: :identifier, lookup: ->(field, value, **) { res_lookup_id(:accounts, field, value) }}]}},
+            instance_arg_commands: {reset_password: {arguments: [{name: :account_id, type: :identifier, lookup: ->(field, value, **) { res_lookup_id(:accounts, field, value) }}]}},
             query_component:       Schema::Registry::FASPEX,
             body_component:        Schema::Registry::FASPEX
           },
@@ -761,8 +761,8 @@ module Aspera
         end
 
         # admin > accounts > reset_password
-        def action_admin_accounts_reset_password(contact_id:, **)
-          @api_v5.create("accounts/#{contact_id}/reset_password", {})
+        def action_admin_accounts_reset_password(account_id:, **)
+          @api_v5.create("accounts/#{account_id}/reset_password", {})
           Result::Status.new('password reset, user shall check email')
         end
 

@@ -201,30 +201,42 @@ module Aspera
         end
 
         # AsCmd operations (available only when SSH/local - not WSS)
-        ASCMD_ARGS = [{name: :command_arguments, multiple: true, mandatory: false, default: nil}].freeze
-        private_constant :ASCMD_ARGS
+        # Arguments follow AsCmd::OPS_ARGS: one path per operation, or source and destination
+        PATHS_ARGS = [{name: :paths, multiple: true}].freeze
+        SRC_DST_ARGS = [{name: :source}, {name: :destination}].freeze
+        private_constant :PATHS_ARGS, :SRC_DST_ARGS
 
-        command :ls,     description: 'List files',            condition: :ascmd_available?, aliases: [:browse], arguments: ASCMD_ARGS
-        command :rm,     description: 'Delete files',          condition: :ascmd_available?, aliases: [:delete], arguments: ASCMD_ARGS
-        command :mv,     description: 'Rename/move files',     condition: :ascmd_available?, aliases: [:rename], arguments: ASCMD_ARGS
-        command :cp,     description: 'Copy files',            condition: :ascmd_available?,                     arguments: ASCMD_ARGS
-        command :mkdir,  description: 'Create directory',      condition: :ascmd_available?,                     arguments: ASCMD_ARGS
-        command :df,     description: 'Show disk usage',       condition: :ascmd_available?,                     arguments: ASCMD_ARGS
-        command :du,     description: 'Show file sizes',       condition: :ascmd_available?,                     arguments: ASCMD_ARGS
-        command :md5sum, description: 'Compute MD5 checksums', condition: :ascmd_available?,                     arguments: ASCMD_ARGS
-        command :info,   description: 'Show server system information',   condition: :ascmd_available?,                     arguments: ASCMD_ARGS
+        command :ls,     description: 'List files',            condition: :ascmd_available?, aliases: [:browse], arguments: PATHS_ARGS
+        command :rm,     description: 'Delete files',          condition: :ascmd_available?, aliases: [:delete], arguments: PATHS_ARGS
+        command :mv,     description: 'Rename/move files',     condition: :ascmd_available?, aliases: [:rename], arguments: SRC_DST_ARGS
+        command :cp,     description: 'Copy files',            condition: :ascmd_available?,                     arguments: SRC_DST_ARGS
+        command :mkdir,  description: 'Create directory',      condition: :ascmd_available?,                     arguments: PATHS_ARGS
+        command :df,     description: 'Show disk usage',       condition: :ascmd_available?
+        command :du,     description: 'Show file sizes',       condition: :ascmd_available?,                     arguments: PATHS_ARGS
+        command :md5sum, description: 'Compute MD5 checksums', condition: :ascmd_available?,                     arguments: PATHS_ARGS
+        command :info,   description: 'Show server system information', condition: :ascmd_available?
 
         # Generate ascmd handlers - convention: action_<op>
-        %i[rm mv cp mkdir].each do |op|
-          define_action_method([op]) do |command_arguments:, **|
-            execute_ascmd(op, command_arguments) { Result::Success.new }
+        %i[rm mkdir].each do |op|
+          define_action_method([op]) do |paths:, **|
+            execute_ascmd(op, paths) { Result::Success.new }
           end
         end
 
-        %i[du md5sum info].each do |op|
-          define_action_method([op]) do |command_arguments:, **|
-            execute_ascmd(op, command_arguments) { |r| Result::SingleObject.new(r.stringify_keys) }
+        %i[mv cp].each do |op|
+          define_action_method([op]) do |source:, destination:, **|
+            execute_ascmd(op, [source, destination]) { Result::Success.new }
           end
+        end
+
+        %i[du md5sum].each do |op|
+          define_action_method([op]) do |paths:, **|
+            execute_ascmd(op, paths) { |r| Result::SingleObject.new(r.stringify_keys) }
+          end
+        end
+
+        define_action_method([:info]) do
+          execute_ascmd(:info, []) { |r| Result::SingleObject.new(r.stringify_keys) }
         end
 
         # --- conditions ---
@@ -269,24 +281,24 @@ module Aspera
 
         # --- ascmd handlers ---
 
-        def action_ls(command_arguments:, **)
-          execute_ascmd(:ls, command_arguments) do |result|
+        def action_ls(paths:, **)
+          execute_ascmd(:ls, paths) do |result|
             Result::ObjectList.new(result.map(&:stringify_keys), fields: %w[zmode zuid zgid size mtime name])
           end
         end
 
-        def action_df(command_arguments:, **)
-          execute_ascmd(:df, command_arguments) do |result|
+        def action_df(**)
+          execute_ascmd(:df, []) do |result|
             Result::ObjectList.new(result.map(&:stringify_keys))
           end
         end
 
         private
 
-        def execute_ascmd(op, command_arguments)
+        def execute_ascmd(op, arguments)
           ascmd = AsCmd.new(@ascmd_executor)
           begin
-            result = ascmd.execute_single(op, command_arguments)
+            result = ascmd.execute_single(op, arguments)
             yield(result)
           rescue AsCmd::Error => e
             raise Cli::BadArgument, e.extended_message
