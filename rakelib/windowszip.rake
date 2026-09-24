@@ -124,6 +124,22 @@ def extract_7z(archive, folder)
   run(exe, *SEVEN_ZIP_EXTRACTORS[exe].call(archive.to_s, folder.to_s))
 end
 
+# Gem to package: locally built gem file if present (e.g. during release, before it is published), else from rubygems.org
+# @param gem_version [String] Version of gem
+# @return [String] Local gem file path, or gem name and version
+def windows_gem_location(gem_version)
+  local_gem = Paths::RELEASE / "#{Aspera::Cli::Info::GEM_NAME}-#{gem_version}.gem"
+  location = local_gem.exist? ? local_gem.to_s : "#{Aspera::Cli::Info::GEM_NAME}:#{gem_version}"
+  log.info("Using gem: #{location}")
+  location
+end
+
+# @param gem_version [String] Version of gem
+# @return [Pathname] Path to Windows portable package
+def windows_portable_zip(gem_version)
+  Paths::RELEASE / "#{Aspera::Cli::Info::GEM_NAME}-#{gem_version}-windows-amd64-portable.zip"
+end
+
 namespace :windowszip do
   desc 'Create installation archive for Windows'
   task :build, [:version] do |_t, args|
@@ -138,7 +154,7 @@ namespace :windowszip do
     log.info("Building in #{path_build_dir}")
 
     log.info('Getting gem dependencies')
-    get_dependency_gems("#{Aspera::Cli::Info::GEM_NAME}:#{gem_version_build}", path_resources_dir)
+    get_dependency_gems(windows_gem_location(gem_version_build), path_resources_dir)
 
     sdk_version, install_ruby_version = windows_package_versions(path_resources_dir / "#{Aspera::Cli::Info::GEM_NAME}-#{gem_version_build}.gem", gem_version_build)
     ruby_installer_exe = "rubyinstaller-devkit-#{install_ruby_version}-x64.exe"
@@ -166,7 +182,6 @@ namespace :windowszip do
   desc 'Create portable archive for Windows (extract and run, no installation)'
   task :portable, [:version] do |_t, args|
     gem_version_build = args[:version] || build_version
-    package_name = "#{Aspera::Cli::Info::GEM_NAME}-#{gem_version_build}-windows-amd64-portable"
     path_build_dir = Paths::TMP / 'build_win_portable'
     path_download_dir = path_build_dir / 'download'
     path_package_dir = path_build_dir / 'package'
@@ -178,7 +193,7 @@ namespace :windowszip do
     log.info("Building in #{path_build_dir}")
 
     log.info('Getting gem dependencies')
-    get_dependency_gems("#{Aspera::Cli::Info::GEM_NAME}:#{gem_version_build}", path_download_dir)
+    get_dependency_gems(windows_gem_location(gem_version_build), path_download_dir)
     sdk_version, ruby_version = windows_package_versions(path_download_dir / "#{Aspera::Cli::Info::GEM_NAME}-#{gem_version_build}.gem", gem_version_build)
 
     log.info("Getting Ruby #{ruby_version}")
@@ -211,7 +226,7 @@ namespace :windowszip do
     WIN_PORTABLE_SRC.each_child { |f| FileUtils.cp(f, path_package_dir) }
 
     log.info('Generating zip')
-    zip_target = Paths::RELEASE / "#{package_name}.zip"
+    zip_target = windows_portable_zip(gem_version_build)
     # Files at root of zip: Windows "Extract All" already extracts into a folder named after the zip
     zip_directory(path_package_dir, zip_target)
 

@@ -155,6 +155,8 @@ namespace :release do
     Rake::Task[dry_run? ? 'unsigned' : 'signed'].invoke
     # Build gem pack
     Rake::Task['release:gem_pack'].invoke
+    # Build Windows portable package (from gem built above)
+    Rake::Task['windowszip:portable'].invoke(versions[:release])
 
     # Commit, Tag, Push release: CHANGELOG.md README.md version.rb
     drun('git', 'add', '-A')
@@ -170,7 +172,8 @@ namespace :release do
       '--notes-file', release_notes_path,
       Paths::PDF_MANUAL,
       gem_file(versions[:release]),
-      Paths::GEM_PACK
+      Paths::GEM_PACK,
+      windows_portable_zip(versions[:release])
     )
 
     # Prepare next development cycle

@@ -295,6 +295,9 @@ There are several ways to install `ascli`:
 - As a [single file executable](#single-file-executable)
 
   This method is simple, but only a limited number of platforms are supported.
+- On Windows, as a [portable package](#windows-portable-package)
+
+  This method is the simplest on Windows: extract and run, it includes Ruby, gems and `ascp`.
 - As a [container](#container) (`docker`, `podman`, `singularity`).
 
 The following sections describe the various installation methods.
@@ -364,6 +367,37 @@ In a PowerShell as Administrator:
 ```pwsh
 choco install aspera-cli -y
 ```
+
+### Windows: Portable package
+
+A ready-to-use ZIP archive for Windows (x64) is available in the [Releases](https://github.com/IBM/aspera-cli/releases): `aspera-cli-<VERSION>-windows-amd64-portable.zip`.
+
+It contains the Ruby runtime, the aspera-cli gem with its dependencies, and the Aspera Transfer SDK (`ascp`).
+No installation step, no administrator rights, and no internet access are required.
+
+1. Download the ZIP archive, then right-click on it and select **Extract All...**.
+   Preferably, extract in a folder writable by the user, for example: `%LOCALAPPDATA%\Programs`.
+
+2. In a terminal, in the extracted folder, check that `ascli` runs:
+
+   ```batchfile
+   .\ascli.cmd -v
+   ```
+
+3. Optionally, double-click on `add_to_path.cmd` to add the folder to the user's `PATH`.
+   Then, in a new terminal, `ascli` can be used from any folder:
+
+   ```batchfile
+   ascli -v
+   ```
+
+> [!NOTE]
+> The launcher `ascli.cmd` uses the `ascp` located in folder `sdk` of the package, unless environment variable `ASCLI_SDK_FOLDER` is set.
+> So, `ascli config transferd install` is not needed.
+
+The configuration is stored in the [main folder](#main-configuration-and-persistency-folder), like for other installation methods.
+To upgrade, extract the new version, and update the `PATH` if the folder name changed.
+To uninstall, delete the folder, and remove it from the `PATH` if it was added.
 
 ### Ruby
 
@@ -937,6 +971,9 @@ The following procedure applies when using RVM for the Ruby installation:
    ```
 
 #### Windows: Installing in an air-gapped environment
+
+> [!TIP]
+> The simplest is to use the [portable package](#windows-portable-package), which requires no internet access on the target system.
 
 The procedure is similar to the internet-connected Windows installation. Copy the required files from a system with internet access, then install them on the target system.
 
@@ -2737,6 +2774,8 @@ coffee --ui=text
 coffee --ui=text --out.img.text=true
 coffee --ui=text --out.img=@json:'{"text":true,"double":false}'
 commands
+commands aoc --expand-mounts=yes
+commands aoc files
 commands server
 detect app.example.com
 detect https://f5.example.com/path
@@ -5199,10 +5238,11 @@ OPTIONS: global
     --notify-to=VALUE              Email: Recipient for notification of transfers
     --notify-template=VALUE        Email: ERB template for notification of transfers
     --cache-tokens=yes|no          Save and reuse OAuth tokens
+    --expand-mounts=yes|no         Commands: list commands of sub-trees provided by another plugin
+-N, --no-default                   Do not load default configuration for plugin
     --query=HASH                   Additional filter for for some commands (list/delete)
     --bulk=yes|no                  Bulk operation (only some)
     --bfail=yes|no                 Bulk operation error handling
--N, --no-default                   Do not load default configuration for plugin
     --override=yes|no              Wizard: override existing value
     --default=yes|no               Wizard: set as default configuration for specified plugin (also: update)
     --key-path=VALUE               Wizard: path to private key for JWT
@@ -7420,6 +7460,7 @@ packages send @: 'name=package title' recipients.0=my_username 'note=some notes'
 packages send @json:'{"name":"package title","recipients":["my_email_external"]}' --new-user-option.package_contact=true test_file.bin
 packages shared_inboxes list
 packages shared_inboxes show %name:my_shared_inbox_name
+packages show '%name:package title'
 remind --username=my_user_email --url=https://aoc.example.com/path
 servers --url=https://aoc.example.com/path
 tier_restrictions
@@ -9157,7 +9198,9 @@ In addition, it is possible to place a single `query` parameter in the request t
 > Add `ascli console` in front of the following commands:
 
 ```shell
+endpoint list
 health
+ssh_key list
 transfer current files <id>
 transfer current list --query.filter='(transfer_name contain aoc)'
 transfer current list --query=@json:'{"filter1":"transfer_name","comp1":"contain","val1":"aoc"}'
@@ -9963,13 +10006,16 @@ are active for each plugin.
 #### Command discovery
 
 Always use `["config", "commands", "<plugin>"]` to enumerate the commands of a plugin and their syntax.
+Add command words to list only the commands under that path, e.g. `["config", "commands", "aoc", "files"]`.
+A line ending with `<command...>` provides the commands of another plugin, given by `(see: ...)`.
+Use option `--expand-mounts=yes` to list them in place.
 Omit `<plugin>` to list the commands of all plugins (much larger result).
 Never guess command names from training data — names like `shared_folders` vs
 `shared_inboxes` are easily confused.
 
 #### Schema introspection for Hash arguments
 
-Whenever a command syntax shows a `<data>` argument, call `help` **before** the real call:
+Whenever a command syntax shows a Hash argument (e.g. `<account:Hash>`), call `help` in its place **before** the real call:
 
 ```json
 ["<plugin>", "<cmd>", ..., "help"]

@@ -16,6 +16,7 @@ Released: [Place date of release here]
 * `aoc`: `automation` commands cover the whole Automation API: new `workflows update_state|cancel_instances|delete_instances`, `instances cancel`, `steps`, `actions`, `workflows permissions <workflow_id>`. Help shows request body schemas and `--query=help` list parameters.
 * `console`: New commands: `transfer current submit`, `transfer smart pause`, `transfer queue <queue_id> list`, `endpoint list`, `ssh_key list`, `admin email_server_update|nodeapi_credentials_update`.
 * `console`: `health` also checks the unauthenticated endpoint `health/up`.
+* **general**: New Windows portable package `aspera-cli-<version>-windows-amd64-portable.zip` in GitHub releases: extract and run, it includes Ruby, gems and the Transfer SDK (`ascp`), no installation nor administrator rights needed.
 
 ### Issues Fixed
 
@@ -37,6 +38,8 @@ Released: [Place date of release here]
 * `aoc`: `automation instances` was using the AoC API instead of the Automation API.
 * `aoc`: `automation workflows list` was returning the paginated object instead of the list of workflows.
 * **general**: `--query=help` was not showing query parameters defined by reference (`$ref`) in the OpenAPI schema.
+* **general**: Temporary files (e.g. `ascp` file list, WSS certificate) could be deleted before use, causing random transfer failures: `failed to open input file list` (since 4.27.1).
+* `config`: `transferd install` was failing when the download server sends a `Content-Disposition` header.
 
 ### Breaking Changes
 

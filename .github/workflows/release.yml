@@ -35,10 +35,10 @@ jobs:
           ruby-version: "4.0.7"
           bundler-cache: true
 
-      - name: Install documentation dependencies
+      - name: Install documentation and packaging dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y pandoc inkscape texlive-luatex texlive-fonts-extra texlive-latex-extra fonts-ibm-plex librsvg2-bin
+          sudo apt-get install -y pandoc inkscape texlive-luatex texlive-fonts-extra texlive-latex-extra fonts-ibm-plex librsvg2-bin 7zip
 
       - name: Configure git
         run: |

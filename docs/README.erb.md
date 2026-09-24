@@ -294,6 +294,9 @@ There are several ways to install <%=tool%>:
 - As a [single file executable](#single-file-executable)
 
   This method is simple, but only a limited number of platforms are supported.
+- On Windows, as a [portable package](#windows-portable-package)
+
+  This method is the simplest on Windows: extract and run, it includes Ruby, gems and `ascp`.
 - As a [container](#container) (`docker`, `podman`, `singularity`).
 
 The following sections describe the various installation methods.
@@ -363,6 +366,37 @@ In a PowerShell as Administrator:
 ```pwsh
 choco install aspera-cli -y
 ```
+
+### Windows: Portable package
+
+A ready-to-use ZIP archive for Windows (x64) is available in the [Releases](https://github.com/IBM/aspera-cli/releases): `<%=gemspec.name%>-<%=ph :version%>-windows-amd64-portable.zip`.
+
+It contains the Ruby runtime, the <%=gemspec.name%> gem with its dependencies, and the Aspera Transfer SDK (`ascp`).
+No installation step, no administrator rights, and no internet access are required.
+
+1. Download the ZIP archive, then right-click on it and select **Extract All...**.
+   Preferably, extract in a folder writable by the user, for example: `%LOCALAPPDATA%\Programs`.
+
+2. In a terminal, in the extracted folder, check that <%=tool%> runs:
+
+   ```batchfile
+   .\<%=cmd%>.cmd -v
+   ```
+
+3. Optionally, double-click on `add_to_path.cmd` to add the folder to the user's `PATH`.
+   Then, in a new terminal, <%=tool%> can be used from any folder:
+
+   ```batchfile
+   <%=cmd%> -v
+   ```
+
+> [!NOTE]
+> The launcher `<%=cmd%>.cmd` uses the `ascp` located in folder `sdk` of the package, unless environment variable `ASCLI_SDK_FOLDER` is set.
+> So, `<%=cmd%> config transferd install` is not needed.
+
+The configuration is stored in the [main folder](#main-configuration-and-persistency-folder), like for other installation methods.
+To upgrade, extract the new version, and update the `PATH` if the folder name changed.
+To uninstall, delete the folder, and remove it from the `PATH` if it was added.
 
 ### Ruby
 
@@ -889,6 +923,9 @@ The following procedure applies when using RVM for the Ruby installation:
    ```
 
 #### Windows: Installing in an air-gapped environment
+
+> [!TIP]
+> The simplest is to use the [portable package](#windows-portable-package), which requires no internet access on the target system.
 
 The procedure is similar to the internet-connected Windows installation. Copy the required files from a system with internet access, then install them on the target system.
 
