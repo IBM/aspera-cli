@@ -593,7 +593,7 @@ module Aspera
             crud_ops     = ((cfg[:commands] || Operations::ALL) - %i[list]) & Operations::ALL
 
             command res, description: "Manage #{res.to_s.tr('_', ' ')}"
-            commands_under(res) do
+            commands_under res do
               # List is handled with Faspex 5 pagination (item_list_with_total)
               unless is_singleton
                 list_kwargs = {description: operation_description(:list, entity_noun(entity_path))}

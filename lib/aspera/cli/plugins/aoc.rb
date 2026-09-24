@@ -712,7 +712,7 @@ module Aspera
         end
         # admin > user > preferences|notifications sub-trees
         %i[preferences notifications].each do |pref|
-          commands_under([:admin, :user, pref]) do
+          commands_under [:admin, :user, pref] do
             command :show,   description: "Show user #{pref}"
             command :modify, description: "Modify user #{pref}",
               arguments: [{name: pref, type: Hash}]
