@@ -40,7 +40,7 @@ Released: [Place date of release here]
 ### Breaking Changes
 
 * `preview`: Renamed option `mimemagic` to `detect_mime`.
-* `server`: Commands `ls|rm|mkdir|du|md5sum` require at least one path, `mv|cp` take exactly `<source> <destination>`, `df|info` take no argument.
+* `server`: Commands `ls|rm|mkdir|du|md5sum|mv|cp` require at least one path, `df|info` take no argument. `mv|cp` take `<source> <destination>` pairs, or only sources with option `to_folder`.
 * `console`: `transfer current change_rate|change_policy` require a `<data>` argument, instead of option `query`.
 * `console`: `transfer current move_forwards|move_back` moved to `transfer queue <queue_id> move_forwards|move_back <transfer_id>`.
 * `aoc`: `automation workflows action show` replaced by `automation actions show`, `automation instances modify` replaced by `automation instances cancel`.

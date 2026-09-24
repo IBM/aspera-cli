@@ -203,14 +203,13 @@ module Aspera
         # AsCmd operations (available only when SSH/local - not WSS)
         # Arguments follow AsCmd::OPS_ARGS: one path per operation, or source and destination
         PATHS_ARGS = [{name: :paths, multiple: true}].freeze
-        SRC_DST_ARGS = [{name: :source}, {name: :destination}].freeze
-        private_constant :PATHS_ARGS, :SRC_DST_ARGS
+        private_constant :PATHS_ARGS
 
         command :ls,     description: 'List files',            condition: :ascmd_available?, aliases: [:browse], arguments: PATHS_ARGS
         command :rm,     description: 'Delete files',          condition: :ascmd_available?, aliases: [:delete], arguments: PATHS_ARGS
-        command :mv,     description: 'Rename/move files',     condition: :ascmd_available?, aliases: [:rename], arguments: SRC_DST_ARGS
-        command :cp,     description: 'Copy files',            condition: :ascmd_available?,                     arguments: SRC_DST_ARGS
-        command :mkdir,  description: 'Create directory',      condition: :ascmd_available?,                     arguments: PATHS_ARGS
+        command :mv,     description: 'Rename/move files: source destination pairs, or sources with --to-folder', condition: :ascmd_available?, aliases: [:rename], arguments: PATHS_ARGS
+        command :cp,     description: 'Copy files: source destination pairs, or sources with --to-folder',        condition: :ascmd_available?,                     arguments: PATHS_ARGS
+        command :mkdir,  description: 'Create directory',      condition: :ascmd_available?, arguments: PATHS_ARGS
         command :df,     description: 'Show disk usage',       condition: :ascmd_available?
         command :du,     description: 'Show file sizes',       condition: :ascmd_available?,                     arguments: PATHS_ARGS
         command :md5sum, description: 'Compute MD5 checksums', condition: :ascmd_available?,                     arguments: PATHS_ARGS
@@ -224,8 +223,8 @@ module Aspera
         end
 
         %i[mv cp].each do |op|
-          define_action_method([op]) do |source:, destination:, **|
-            execute_ascmd(op, [source, destination]) { Result::Success.new }
+          define_action_method([op]) do |paths:, **|
+            execute_ascmd(op, source_destination_pairs(paths)) { Result::Success.new }
           end
         end
 
@@ -294,6 +293,17 @@ module Aspera
         end
 
         private
+
+        # AsCmd `cp` and `mv` take source and destination pairs.
+        # With option `to_folder`, paths are only sources, copied or moved into that folder.
+        # @param paths [Array<String>] command line arguments
+        # @return [Array<String>] flat list of source and destination pairs
+        def source_destination_pairs(paths)
+          to_folder = options.get_option(:to_folder)
+          return paths.flat_map { |source| [source, "#{to_folder.chomp('/')}/#{File.basename(source)}"] } unless to_folder.nil?
+          Aspera.assert(paths.length.even?, type: Cli::BadArgument) { 'expecting pairs: <source> <destination> ..., or sources with option to_folder' }
+          paths
+        end
 
         def execute_ascmd(op, arguments)
           ascmd = AsCmd.new(@ascmd_executor)
