@@ -63,7 +63,6 @@ module Aspera
 
         def initialize(**_)
           super
-          @api_orch = nil
           options.parse_options!
         end
 
@@ -92,7 +91,7 @@ module Aspera
           end
           add_query = query_read_delete
           call_args[:query].merge!(add_query.symbolize_keys) unless add_query.nil?
-          data, resp = @api_orch.call(**call_args)
+          data, resp = api_orch.call(**call_args)
           return resp if http
           result = format.eql?('xml') ? XmlSimple.xml_in(resp.body, {'ForceArray' => xml_arrays}) : data
           Log.dump(:data, result)
@@ -103,14 +102,14 @@ module Aspera
 
         # --- DSL ---
 
-        command :health,     description: 'Check Orchestrator API health', setup: :setup_api
-        command :info,       description: 'Check that Orchestrator responds (ping)', setup: :setup_api, action: ->(**) { Result::SingleObject.new(call_ao('remote_node_ping', format: 'xml', xml_arrays: false)) }
-        command :processes,  description: 'Show Orchestrator background process status', setup: :setup_api, action: ->(**) { Result::ObjectList.new(call_ao('processes_status', format: 'xml')['process']) }
-        command :monitors,   description: 'Show Orchestrator monitor snapshot',          setup: :setup_api, action: ->(**) { Result::SingleObject.new(call_ao('monitor_snapshot')['monitor']) }
-        command :plugins,    description: 'Show Orchestrator plugin versions',           setup: :setup_api, action: ->(**) { Result::ObjectList.new(call_ao('plugin_version')['Plugin']) }
-        command :workflows,  description: 'Manage workflows',   setup: :setup_api
-        command :workorders, description: 'Manage work orders', setup: :setup_api
-        command :workstep,   description: 'Manage work steps',  setup: :setup_api
+        command :health,     description: 'Check Orchestrator API health'
+        command :info,       description: 'Check that Orchestrator responds (ping)', action: ->(**) { Result::SingleObject.new(call_ao('remote_node_ping', format: 'xml', xml_arrays: false)) }
+        command :processes,  description: 'Show Orchestrator background process status', action: ->(**) { Result::ObjectList.new(call_ao('processes_status', format: 'xml')['process']) }
+        command :monitors,   description: 'Show Orchestrator monitor snapshot', action: ->(**) { Result::SingleObject.new(call_ao('monitor_snapshot')['monitor']) }
+        command :plugins,    description: 'Show Orchestrator plugin versions', action: ->(**) { Result::ObjectList.new(call_ao('plugin_version')['Plugin']) }
+        command :workflows,  description: 'Manage workflows'
+        command :workorders, description: 'Manage work orders'
+        command :workstep,   description: 'Manage work steps'
 
         commands_under :workflows do
           command :list, description: 'List all workflows'
@@ -160,11 +159,12 @@ module Aspera
             action: ->(workstep_id:, **) { Result::SingleObject.new(call_ao("work_step_cancel/#{workstep_id}")) }
         end
 
-        # --- setup ---
+        # --- API ---
 
-        # Build the Orchestrator REST API from CLI options.
-        # @return [Hash] ctx with no extra keys (stores api in @api_orch instance var)
-        def setup_api(**)
+        # Orchestrator REST API, built from CLI options on first use.
+        # @return [Rest]
+        def api_orch
+          return @api_orch if @api_orch
           auth_params =
             case options.get_option(:auth_style, mandatory: true)
             when :arg_pass
@@ -188,7 +188,6 @@ module Aspera
             base_url: options.get_option(:url, mandatory: true),
             auth: auth_params
           )
-          {}
         end
 
         def action_health(**)

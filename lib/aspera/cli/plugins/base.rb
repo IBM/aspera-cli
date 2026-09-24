@@ -260,18 +260,6 @@ module Aspera
             options.parse_options! if parse
           end
 
-          # DSL class method: declare a setup method to run once before root dispatch.
-          # The method is called before any command is consumed, and its return value
-          # (a Hash) is merged into the initial ctx. This is useful when conditions
-          # on root commands depend on state built during setup (e.g. @connection_type).
-          # @param method_name [Symbol]
-          def root_setup(method_name)
-            @root_setup_method = method_name
-          end
-
-          # @return [Symbol, nil]
-          attr_reader :root_setup_method
-
           # DSL class method: declare the human-readable application name shown in wizards.
           # When called with an argument, sets the name. When called with no argument, returns it.
           # Falls back to the last component of the class name if never set.
@@ -372,14 +360,7 @@ module Aspera
         def execute_action
           @help_path = nil
           validate_registry
-          # Run the root setup (if declared) before consuming any argument.
-          # This ensures condition methods on root commands can read instance variables
-          # populated by the setup (e.g. @connection_type in server.rb).
-          init_ctx = {}
-          if (rsm = self.class.root_setup_method)
-            init_ctx = send(rsm) || {}
-          end
-          dispatch_from_registry([], init_ctx)
+          dispatch_from_registry([])
         end
 
         # Two-phase dispatcher: run setup on the current node (Phase A), then either
@@ -445,8 +426,9 @@ module Aspera
         def dispatch_child(current_path, registry, ctx)
           children  = registry.children_of(current_path)
           # condition: methods belong to the class declaring the spec: only evaluate local ones
-          # (mounted children are only walked here for --help, see below)
-          available = children.reject { |id, c| c.condition && registry.local?(current_path + [id]) && !send(c.condition) }
+          # (mounted children are only walked here for --help, see below).
+          # With --help, conditions are not evaluated: they may need the API, which is not built for help.
+          available = children.reject { |id, c| c.condition && !@context.help_requested && registry.local?(current_path + [id]) && !send(c.condition) }
           aliases   = children.values.each_with_object({}) do |c, h|
             Array(c.aliases).each { |a| h[a] = c.id } if c.aliases
           end

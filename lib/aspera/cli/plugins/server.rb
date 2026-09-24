@@ -160,7 +160,7 @@ module Aspera
         end
 
         Sync::Operations::DIRECTIONS.each do |dir|
-          define_method(:"action_sync_#{dir}") { |path:, sync_info: {}, **| run_sync_transfer(dir, path: path, sync_info: sync_info) { @server_transfer_spec } }
+          define_method(:"action_sync_#{dir}") { |path:, sync_info: {}, **| run_sync_transfer(dir, path: path, sync_info: sync_info) { server_transfer_spec } }
         end
 
         # --- DSL ---
@@ -169,22 +169,18 @@ module Aspera
         option :passphrase,  description: 'SSH private key passphrase'
         option :ssh_options, description: 'SSH options', allowed: Hash
 
-        # root_setup runs once before any command argument is consumed, populating
-        # @server_transfer_spec and @ascmd_executor so that condition methods work.
-        root_setup :setup_server
-
         command :health, description: 'Check transfer health'
         command(:upload, description: 'Upload files to server', transfer_paths: :send, action: lambda do |**|
-          @server_transfer_spec['direction'] = Transfer::Spec.transfer_type_to_direction(:upload)
-          Runner.result_transfer(transfer.start(@server_transfer_spec))
+          server_transfer_spec['direction'] = Transfer::Spec.transfer_type_to_direction(:upload)
+          Runner.result_transfer(transfer.start(server_transfer_spec))
         end)
         command(
           :download,
           description: 'Download files from server',
           transfer_paths: :receive,
           action: lambda do |**|
-            @server_transfer_spec['direction'] = Transfer::Spec.transfer_type_to_direction(:download)
-            Runner.result_transfer(transfer.start(@server_transfer_spec))
+            server_transfer_spec['direction'] = Transfer::Spec.transfer_type_to_direction(:download)
+            Runner.result_transfer(transfer.start(server_transfer_spec))
           end
         )
         command :sync, description: 'Synchronize files with server'
@@ -252,14 +248,25 @@ module Aspera
         # --- conditions ---
 
         def ascmd_available?
-          !@ascmd_executor.nil?
+          !ascmd_executor.nil?
         end
 
-        # --- setup ---
+        # --- server access ---
+
+        # @return [Hash] base transfer spec, built from CLI options on first use
+        def server_transfer_spec
+          build_server_access if @server_transfer_spec.nil?
+          @server_transfer_spec
+        end
+
+        # @return [LocalExecutor, Ssh, nil] ascmd executor, nil with WSS (ascmd not available)
+        def ascmd_executor
+          build_server_access if @server_transfer_spec.nil?
+          @ascmd_executor
+        end
 
         # Build the transfer spec and ascmd executor from CLI options.
-        # Stores results in instance variables; returns empty context hash.
-        def setup_server(**)
+        def build_server_access
           @server_transfer_spec = options_to_base_transfer_spec
           @ascmd_executor = case @connection_type
           when :local then LocalExecutor.new
@@ -267,14 +274,13 @@ module Aspera
           when :ssh   then Ssh.new(@server_transfer_spec['remote_host'], @server_transfer_spec['remote_user'], @ssh_opts)
           else Aspera.error_unexpected_value(@connection_type) { 'connection type' }
           end
-          {}
         end
 
         # --- health ---
 
         def action_health_transfer(**)
           nagios = Nagios.new
-          probe_ts = @server_transfer_spec.merge({
+          probe_ts = server_transfer_spec.merge({
             'direction'     => 'send',
             'cookie'        => 'aspera.sync', # hide in console
             'resume_policy' => 'none',
@@ -305,7 +311,7 @@ module Aspera
         end
 
         def execute_ascmd(op, arguments)
-          ascmd = AsCmd.new(@ascmd_executor)
+          ascmd = AsCmd.new(ascmd_executor)
           begin
             result = ascmd.execute_single(op, arguments)
             yield(result)

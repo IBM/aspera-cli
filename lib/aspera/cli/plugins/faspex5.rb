@@ -102,8 +102,6 @@ module Aspera
         def initialize(**_)
           super
           options.parse_options!
-          # [Aspera::Api::Faspex]
-          @api_v5 = nil
         end
 
         # if recipient is just an email, then convert to expected API hash : name and type
@@ -120,7 +118,7 @@ module Aspera
           parameters[type].map! do |recipient_data|
             # If just a string, make a general lookup and build expected name/type hash
             if recipient_data.is_a?(String)
-              matched = @api_v5.lookup_with_q('contacts', value: recipient_data, query: Rest.php_style({context: 'packages', type: recipient_types}))
+              matched = api_v5.lookup_with_q('contacts', value: recipient_data, query: Rest.php_style({context: 'packages', type: recipient_types}))
               recipient_data = {
                 name:           matched['name'],
                 recipient_type: matched['type']
@@ -135,7 +133,7 @@ module Aspera
         def wait_package_status(id, status_list: Api::Faspex::PACKAGE_TERMINATED)
           total_sent = false
           loop do
-            status = @api_v5.read("packages/#{id}/upload_details")
+            status = api_v5.read("packages/#{id}/upload_details")
             status['id'] = id
             # user asked to not follow
             return status if status_list.nil?
@@ -162,7 +160,7 @@ module Aspera
         def wait_for_job(job_id)
           result = nil
           loop do
-            result = @api_v5.read("jobs/#{job_id}", {type: :formatted})
+            result = api_v5.read("jobs/#{job_id}", {type: :formatted})
             break unless Api::Faspex::JOB_RUNNING.include?(result['status'])
             RestParameters.instance.spinner_cb.call(result['status'])
             sleep(0.5)
@@ -188,21 +186,21 @@ module Aspera
             when *Api::Faspex::API_LIST_MAILBOX_TYPES then "#{box}/packages"
             else
               group_type = options.get_option(:group_type)
-              "#{group_type}/#{@api_v5.lookup_entity_by_field(entity: group_type, value: box)['id']}/packages"
+              "#{group_type}/#{api_v5.lookup_entity_by_field(entity: group_type, value: box)['id']}/packages"
             end
           # Merge default query with user-provided query: user values take precedence, but defaults are preserved
           user_query = query_read_delete(schema: Schema::Registry.query_params(Schema::Registry::FASPEX, 'packages'))
           merged_query = user_query.nil? ? query.dup : query.merge(user_query)
           # Extract `max` before the API call so callers can apply it after post-API filtering
           max_items = merged_query.delete(RestList::MAX_ITEMS)&.to_i
-          list, total = @api_v5.list_entities_limit_offset_total_count(entity: entity, query: merged_query)
+          list, total = api_v5.list_entities_limit_offset_total_count(entity: entity, query: merged_query)
           return list.select(&filter), max_items, total
         end
 
         # Build query to get package recipients based on package info in case of shared inbox or workgroup recipient
         # @param package_id [String] the package id to get info from
         def recipient_query(package_id)
-          package_info = @api_v5.read("packages/#{package_id}")
+          package_info = api_v5.read("packages/#{package_id}")
           base_query = {}
           base_query['recipient_workgroup_id'] = package_info['recipients'].first['id'] if WORKGROUP_TYPES.include?(package_info['recipients'].first['recipient_type'])
           base_query['recipient_user_id'] = package_info['recipients'].first['id'] if package_info['recipients'].first['recipient_type'].eql?('user')
@@ -245,7 +243,7 @@ module Aspera
             # a single id was provided, or a list of ids
             package_ids = [package_ids] unless package_ids.is_a?(Array)
             Aspera.assert_array_all(package_ids, String) { 'Package id(s)' }
-            # packages = package_ids.map{|pkg_id|@api_v5.read("packages/#{pkg_id}")}
+            # packages = package_ids.map{|pkg_id|api_v5.read("packages/#{pkg_id}")}
             packages = package_ids.map { |pkg_id| {'id'=>pkg_id} }
           end
           result_transfer = []
@@ -260,12 +258,12 @@ module Aspera
             type:          Api::Faspex.box_type(box),
             transfer_type: Api::Faspex::TRANSFER_CONNECT
           }
-          # download_params[:recipient_workgroup_id] = @api_v5.lookup_entity_by_field(entity: options.get_option(:group_type), value: box)['id'] if !Api::Faspex::API_LIST_MAILBOX_TYPES.include?(box) && box != SpecialValues::ALL
+          # download_params[:recipient_workgroup_id] = api_v5.lookup_entity_by_field(entity: options.get_option(:group_type), value: box)['id'] if !Api::Faspex::API_LIST_MAILBOX_TYPES.include?(box) && box != SpecialValues::ALL
           packages.each do |package|
             pkg_id = package['id']
             formatter.display_status("Receiving package #{pkg_id}")
             # TODO: allow from sent as well ?
-            transfer_spec = @api_v5.call(
+            transfer_spec = api_v5.call(
               operation:    'POST',
               subpath:      "packages/#{pkg_id}/transfer_spec/download",
               query:        download_params.merge(recipient_query(pkg_id)),
@@ -288,10 +286,10 @@ module Aspera
 
         def package_send(parameters)
           # autofill recipient for public url
-          if @api_v5.pub_link_context&.key?('recipient_type') && !parameters.key?('recipients')
+          if api_v5.pub_link_context&.key?('recipient_type') && !parameters.key?('recipients')
             parameters['recipients'] = [{
-              name:           @api_v5.pub_link_context['name'],
-              recipient_type: @api_v5.pub_link_context['recipient_type']
+              name:           api_v5.pub_link_context['name'],
+              recipient_type: api_v5.pub_link_context['recipient_type']
             }]
           end
           PACKAGE_RECIPIENT_TYPES.each { |type| normalize_recipients(parameters, type) }
@@ -301,11 +299,11 @@ module Aspera
             transfer.user_transfer_spec.delete('content_protection')
             parameters['ear_enabled'] = true
           end
-          package = @api_v5.create('packages', parameters)
+          package = api_v5.create('packages', parameters)
           shared_folder = options.get_option(:shared_folder)
           if shared_folder.nil?
             # send from local files
-            transfer_spec = @api_v5.create(
+            transfer_spec = api_v5.create(
               "packages/#{package['id']}/transfer_spec/upload",
               {paths: transfer.source_list},
               query: {transfer_type: Api::Faspex::TRANSFER_CONNECT}
@@ -316,7 +314,7 @@ module Aspera
           else
             # send from remote shared folder
             if (m = Parser.percent_selector(shared_folder))
-              shared_folder = @api_v5.lookup_entity_by_field(
+              shared_folder = api_v5.lookup_entity_by_field(
                 entity: 'shared_folders',
                 field: m[:field],
                 value: m[:value]
@@ -324,7 +322,7 @@ module Aspera
             end
             transfer_request = {shared_folder_id: shared_folder, paths: transfer.source_list}
             # start remote transfer and get first status
-            result = @api_v5.create("packages/#{package['id']}/remote_transfer", transfer_request)
+            result = api_v5.create("packages/#{package['id']}/remote_transfer", transfer_request)
             result['id'] = package['id']
             unless result['status'].eql?('completed')
               formatter.display_status("Package #{package['id']}")
@@ -359,7 +357,7 @@ module Aspera
           until folders_to_process.empty?
             path = folders_to_process.shift
             loop do
-              data, http = @api_v5.call(
+              data, http = api_v5.call(
                 operation:    'POST',
                 subpath:      browse_endpoint,
                 query:        query,
@@ -452,7 +450,7 @@ module Aspera
         def res_exec_args(res_sym)
           cfg = RESOURCE_CONFIG.fetch(res_sym, {})
           {
-            api:             resource_config_value(cfg, :api) || @api_v5,
+            api:             resource_config_value(cfg, :api) || api_v5,
             entity:          resource_config_value(cfg, :entity) || res_sym.to_s,
             items_key:       resource_config_value(cfg, :items_key),
             delete_style:    resource_config_value(cfg, :delete_style),
@@ -467,7 +465,7 @@ module Aspera
 
         # admin > nodes — lookup node id by field/value
         def lookup_node_id(field, value, **)
-          @api_v5.lookup_entity_by_field(entity: 'nodes', field: field, value: value)['id']
+          api_v5.lookup_entity_by_field(entity: 'nodes', field: field, value: value)['id']
         end
 
         # Lookup id for a RESOURCE_CONFIG resource by field/value.
@@ -476,7 +474,7 @@ module Aspera
           entity      = resource_config_value(cfg, :entity) || res_sym.to_s
           items_key   = resource_config_value(cfg, :items_key)
           res_id_query = resource_config_value(cfg, :res_id_query) || :default
-          @api_v5.lookup_entity_by_field(entity: entity, value: value, field: field, items_key: items_key, query: res_id_query)['id']
+          api_v5.lookup_entity_by_field(entity: entity, value: value, field: field, items_key: items_key, query: res_id_query)['id']
         end
 
         # Dynamically define lookup methods for admin resources (used by crud_commands)
@@ -488,15 +486,14 @@ module Aspera
 
         # --- DSL ---
 
-        # Commands that need @api_v5 carry setup: :setup_api_v5.
-        # :health and :postprocessing work without authentication, so they have no setup.
+        # :health and :postprocessing work without authentication: they do not use api_v5.
         command :health,         description: 'Check Faspex 5 health'
-        command :version,        description: 'Show Faspex 5 version',             setup: :setup_api_v5, action: ->(**) { Result::SingleObject.new(@api_v5.read('version')) }
-        command :bearer_token,   description: 'Show OAuth bearer token',           setup: :setup_api_v5, action: ->(**) { Result::Text.new(@api_v5.oauth.authorization) }
+        command :version,        description: 'Show Faspex 5 version', action: ->(**) { Result::SingleObject.new(api_v5.read('version')) }
+        command :bearer_token,   description: 'Show OAuth bearer token', action: ->(**) { Result::Text.new(api_v5.oauth.authorization) }
         # Package id argument; with a public link to a package, setup_package_id provides it instead
         PACKAGE_ID_ARG = [{name: :package_id, type: :identifier}].freeze
         private_constant :PACKAGE_ID_ARG
-        command :packages, description: 'Manage packages', setup: :setup_api_v5
+        command :packages, description: 'Manage packages'
         commands_under :packages do
           command :list,   description: 'List packages',
             arguments: [{name: :filter, mandatory: false, default: nil, type: Proc}]
@@ -504,7 +501,7 @@ module Aspera
             arguments: [{name: :package, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::FASPEX, 'packages.post')}],
             action: ->(package:, **) { package_send(package) }
           command :show,   description: 'Show a package', setup: :setup_package_id, arguments: PACKAGE_ID_ARG,
-            action: ->(package_id:, **) { Result::SingleObject.new(@api_v5.read("packages/#{package_id}")) }
+            action: ->(package_id:, **) { Result::SingleObject.new(api_v5.read("packages/#{package_id}")) }
           command :browse, description: 'Browse package files', setup: :setup_package_id,
             arguments: PACKAGE_ID_ARG + [{name: :folder_path, mandatory: false, default: '/'}],
             action: ->(folder_path:, package_id:, **) { browse_folder("packages/#{package_id}/files/#{Api::Faspex.box_type(options.get_option(:box))}", recipient_query(package_id), folder_path: folder_path) }
@@ -515,18 +512,18 @@ module Aspera
           command :receive, description: 'Receive a package', setup: :setup_package_id, transfer_paths: :receive, arguments: PACKAGE_ID_ARG,
             action: ->(package_id:, **) { package_receive(package_id) }
           command(:file_processing, description: 'Show file processing status', setup: :setup_package_id, arguments: PACKAGE_ID_ARG, action: lambda do |package_id:, **|
-            result, count = @api_v5.list_entities_limit_offset_total_count(entity: "packages/#{package_id}/file_statuses", items_key: 'files')
+            result, count = api_v5.list_entities_limit_offset_total_count(entity: "packages/#{package_id}/file_statuses", items_key: 'files')
             Result::ObjectList.new(result, total: count)
           end)
         end
-        command :admin,          description: 'Administer Faspex 5',               setup: :setup_api_v5
-        command :user,           description: 'Manage current user',               setup: :setup_api_v5
-        command :shared_folders, description: 'Browse shared folders',             setup: :setup_api_v5
-        command :gateway,        description: 'Start Faspex 4 gateway emulation',  setup: :setup_api_v5,
+        command :admin,          description: 'Administer Faspex 5'
+        command :user,           description: 'Manage current user'
+        command :shared_folders, description: 'Browse shared folders'
+        command :gateway,        description: 'Start Faspex 4 gateway emulation',
           arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}}]
         command :postprocessing, description: 'Start Faspex 4 post-processing server',
           arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}}]
-        command :invitations,    description: 'Manage invitations', setup: :setup_api_v5
+        command :invitations,    description: 'Manage invitations'
 
         commands_under :invitations do
           command :create, description: 'Create an invitation',
@@ -535,37 +532,37 @@ module Aspera
             :resend, description: 'Resend an invitation',
             arguments: [{name: :invitation_id, type: :identifier}],
             action: lambda do |invitation_id:, **|
-              @api_v5.create("invitations/#{invitation_id}/resend", nil)
+              api_v5.create("invitations/#{invitation_id}/resend", nil)
               Result::Status.new('Invitation resent')
             end
           )
           crud_commands entity: 'invitations',
-            api:            :@api_v5,
+            api:            :api_v5,
             operations:     Operations::ALL - %i[create],
             items_key:      'invitations',
             display_fields: %w[id public recipient_type recipient_name email_address]
         end
 
         commands_under :user do
-          command :account, description: 'Show account information', action: ->(**) { Result::SingleObject.new(@api_v5.read('account', query_read_delete)) }
+          command :account, description: 'Show account information', action: ->(**) { Result::SingleObject.new(api_v5.read('account', query_read_delete)) }
           command :profile, description: 'Manage user profile'
         end
 
         commands_under %i[user profile] do
-          command :show, description: 'Show user profile', action: ->(**) { Result::SingleObject.new(@api_v5.read('account/preferences')) }
+          command :show, description: 'Show user profile', action: ->(**) { Result::SingleObject.new(api_v5.read('account/preferences')) }
           command(
             :modify,
             description: 'Modify user profile',
             arguments: [{name: :profile, type: Hash}],
             action: lambda do |profile:, **|
-              @api_v5.update('account/preferences', profile)
+              api_v5.update('account/preferences', profile)
               Result::Status.new('modified')
             end
           )
         end
 
         commands_under :shared_folders do
-          command :list,   description: 'List shared folders', action: ->(**) { Result::ObjectList.new(@api_v5.read('shared_folders')['shared_folders']) }
+          command :list,   description: 'List shared folders', action: ->(**) { Result::ObjectList.new(api_v5.read('shared_folders')['shared_folders']) }
           command :browse, description: 'Browse a shared folder',
             arguments: [{name: :shared_folder_id, type: :identifier, lookup: :lookup_shared_folder_id},
                         {name: :folder_path, mandatory: false, default: '/'}]
@@ -580,8 +577,8 @@ module Aspera
             :clean_deleted, description: 'Clean deleted packages',
             arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}}],
             action: lambda do |parameters: {}, **|
-              parameters = @api_v5.read('configuration').slice('days_before_deleting_package_records') if parameters.empty?
-              Result::SingleObject.new(@api_v5.create('internal/packages/clean_deleted', parameters))
+              parameters = api_v5.read('configuration').slice('days_before_deleting_package_records') if parameters.empty?
+              Result::SingleObject.new(api_v5.create('internal/packages/clean_deleted', parameters))
             end
           )
           Api::Faspex::ADMIN_RESOURCES.each do |res|
@@ -632,7 +629,7 @@ module Aspera
         # entity: :sf_entity is resolved at runtime from ctx (injected by setup_admin_nodes_shared_folders).
         commands_under %i[admin nodes shared_folders] do
           crud_commands entity: :sf_entity,
-            api: :@api_v5,
+            api: :api_v5,
             name: 'shared folder',
             lookup: :lookup_sf_id,
             items_key: 'shared_folders'
@@ -644,7 +641,7 @@ module Aspera
         # admin > nodes > shared_folders > user sub-tree (custom access users)
         # entity: :user_path is resolved at runtime from ctx (injected by setup_admin_nodes_shared_folders_user).
         commands_under %i[admin nodes shared_folders user] do
-          crud_commands entity: :user_path, api: :@api_v5, name: 'custom access user', lookup: :lookup_sf_user_id, items_key: 'users'
+          crud_commands entity: :user_path, api: :api_v5, name: 'custom access user', lookup: :lookup_sf_user_id, items_key: 'users'
         end
 
         # `members` and `saml_groups`
@@ -662,7 +659,7 @@ module Aspera
         # admin > shared_inboxes|workgroups > members|saml_groups|invite_external_collaborator:
         # res_id consumed via arguments:(:identifier) + lookup:, builds res_instance_path for all children
         %i[shared_inboxes workgroups].each do |res|
-          lookup_res_id = ->(field, value, **) { @api_v5.lookup_entity_by_field(entity: res.to_s, field: field, value: value, query: {'all': true})['id'] }
+          lookup_res_id = ->(field, value, **) { api_v5.lookup_entity_by_field(entity: res.to_s, field: field, value: value, query: {'all': true})['id'] }
           commands_under [:admin, res] do
             command :members, description: 'Manage members',
               arguments: [{name: :"#{RES_SINGULAR[res]}_id", type: :identifier, lookup: lookup_res_id}],
@@ -693,7 +690,7 @@ module Aspera
 
           commands_under [:admin, res, :saml_groups] do
             crud_commands entity: :saml_groups_path,
-              api: :@api_v5,
+              api: :api_v5,
               name: 'SAML group',
               operations: CRUD_NO_SHOW,
               lookup: :"lookup_#{res}_saml_groups_id",
@@ -702,24 +699,24 @@ module Aspera
         end
 
         commands_under %i[admin configuration] do
-          command :show, description: 'Show configuration', action: ->(**) { Result::SingleObject.new(@api_v5.read('configuration')) }
+          command :show, description: 'Show configuration', action: ->(**) { Result::SingleObject.new(api_v5.read('configuration')) }
           command :modify, description: 'Modify configuration',
             arguments: [{name: :configuration, type: Hash}],
-            action: ->(configuration:, **) { Result::SingleObject.new(@api_v5.update('configuration', configuration)) }
+            action: ->(configuration:, **) { Result::SingleObject.new(api_v5.update('configuration', configuration)) }
         end
 
         commands_under %i[admin smtp] do
-          command :show, description: 'Show SMTP configuration', action: ->(**) { Result::SingleObject.new(@api_v5.read('configuration/smtp')) }
+          command :show, description: 'Show SMTP configuration', action: ->(**) { Result::SingleObject.new(api_v5.read('configuration/smtp')) }
           command :create, description: 'Create SMTP configuration',
             arguments: [{name: :smtp, type: Hash}],
-            action: ->(smtp:, **) { Result::SingleObject.new(@api_v5.create('configuration/smtp', smtp)) }
+            action: ->(smtp:, **) { Result::SingleObject.new(api_v5.create('configuration/smtp', smtp)) }
           command :modify, description: 'Modify SMTP configuration',
             arguments: [{name: :smtp, type: Hash}],
-            action: ->(smtp:, **) { Result::SingleObject.new(@api_v5.update('configuration/smtp', smtp)) }
+            action: ->(smtp:, **) { Result::SingleObject.new(api_v5.update('configuration/smtp', smtp)) }
           command(
             :delete, description: 'Delete SMTP configuration',
             action: lambda do |**|
-              @api_v5.delete('configuration/smtp')
+              api_v5.delete('configuration/smtp')
               Result::Status.new('SMTP configuration deleted')
             end
           )
@@ -731,14 +728,14 @@ module Aspera
           command(
             :application, description: 'List application events',
             action: lambda do |**|
-              list, total = @api_v5.list_entities_limit_offset_total_count(entity: 'application_events', query: query_read_delete(schema: Schema::Registry.query_params(Schema::Registry::FASPEX, 'application_events')))
+              list, total = api_v5.list_entities_limit_offset_total_count(entity: 'application_events', query: query_read_delete(schema: Schema::Registry.query_params(Schema::Registry::FASPEX, 'application_events')))
               Result::ObjectList.new(list, total: total, fields: %w[event_type created_at application user.name])
             end
           )
           command(
             :webhook, description: 'List webhook events',
             action: lambda do |**|
-              list, total = @api_v5.list_entities_limit_offset_total_count(entity: 'all_webhooks_events', query: query_read_delete(schema: Schema::Registry.query_params(Schema::Registry::FASPEX, 'all_webhooks_events')), items_key: 'events')
+              list, total = api_v5.list_entities_limit_offset_total_count(entity: 'all_webhooks_events', query: query_read_delete(schema: Schema::Registry.query_params(Schema::Registry::FASPEX, 'all_webhooks_events')), items_key: 'events')
               Result::ObjectList.new(list, total: total)
             end
           )
@@ -763,7 +760,7 @@ module Aspera
 
         def action_admin_smtp_test(recipient:, **)
           recipient = {test_email_recipient: recipient} if recipient.is_a?(String)
-          creation = @api_v5.create('configuration/smtp/test', recipient)
+          creation = api_v5.create('configuration/smtp/test', recipient)
           result = wait_for_job(creation['job_id'])
           begin
             result['serialized_args'] = JSON.parse(result['serialized_args'])
@@ -775,14 +772,14 @@ module Aspera
 
         # admin > accounts > reset_password
         def action_admin_accounts_reset_password(account_id:, **)
-          @api_v5.create("accounts/#{account_id}/reset_password", {})
+          api_v5.create("accounts/#{account_id}/reset_password", {})
           Result::Status.new('password reset, user shall check email')
         end
 
         # admin > file_processing > next
         def action_admin_file_processing_next(**)
           args = res_exec_args(:file_processing)
-          result, count = @api_v5.list_entities_limit_offset_total_count(entity: args[:entity], operation: 'POST', items_key: 'files')
+          result, count = api_v5.list_entities_limit_offset_total_count(entity: args[:entity], operation: 'POST', items_key: 'files')
           Result::ObjectList.new(result, total: count)
         end
 
@@ -799,13 +796,13 @@ module Aspera
         # Lookup shared folder id by field/value within a node's shared_folders entity.
         # sf_entity is in ctx from setup_admin_nodes_shared_folders (Phase A of parent).
         def lookup_sf_id(field, value, sf_entity:, **)
-          @api_v5.lookup_entity_by_field(entity: sf_entity, items_key: 'shared_folders', field: field, value: value)['id']
+          api_v5.lookup_entity_by_field(entity: sf_entity, items_key: 'shared_folders', field: field, value: value)['id']
         end
 
         # Lookup custom access user id by field/value within a shared folder's users entity.
         # user_path is in ctx from setup_admin_nodes_shared_folders_user (Phase A of parent).
         def lookup_sf_user_id(field, value, user_path:, **)
-          @api_v5.lookup_entity_by_field(entity: user_path, items_key: 'users', field: field, value: value)['id']
+          api_v5.lookup_entity_by_field(entity: user_path, items_key: 'users', field: field, value: value)['id']
         end
 
         # admin > nodes > shared_folders > user — shared_folder_id: already in ctx via arguments: on the :user command
@@ -831,7 +828,7 @@ module Aspera
           users = [users] unless users.is_a?(Array)
           users.map do |user|
             if (m = Parser.percent_selector(user))
-              @api_v5.lookup_entity_by_field(entity: 'accounts', field: m[:field], value: m[:value], query: Rest.php_style({type: ACCOUNT_TYPES}))['id']
+              api_v5.lookup_entity_by_field(entity: 'accounts', field: m[:field], value: m[:value], query: Rest.php_style({type: ACCOUNT_TYPES}))['id']
             else
               user
             end
@@ -843,11 +840,11 @@ module Aspera
         %i[shared_inboxes workgroups].each do |res|
           define_method(:"lookup_#{res}_members_id") do |field, value, res_instance_path:, **|
             res_path = "#{res_instance_path}/members"
-            @api_v5.lookup_entity_by_field(entity: res_path, field: field, value: value, query: Rest.php_style({type: %w[user]}))['user_id']
+            api_v5.lookup_entity_by_field(entity: res_path, field: field, value: value, query: Rest.php_style({type: %w[user]}))['user_id']
           end
           define_method(:"lookup_#{res}_saml_groups_id") do |field, value, res_instance_path:, **|
             res_path = "#{res_instance_path}/saml_groups"
-            @api_v5.lookup_entity_by_field(entity: res_path, field: field, value: value, query: Rest.php_style({type: %w[user]}))['user_id']
+            api_v5.lookup_entity_by_field(entity: res_path, field: field, value: value, query: Rest.php_style({type: %w[user]}))['user_id']
           end
         end
 
@@ -855,21 +852,21 @@ module Aspera
         # (saml_groups CRUD is handled by crud_commands)
         %i[shared_inboxes workgroups].each do |res|
           define_action_method([:admin, res, :members, :list]) do |res_instance_path:, **|
-            entity_list(api: @api_v5, entity: "#{res_instance_path}/members", items_key: 'members')
+            entity_list(api: api_v5, entity: "#{res_instance_path}/members", items_key: 'members')
           end
 
           define_action_method([:admin, res, :members, :modify]) do |res_instance_path:, member_id:, member:, **|
-            entity_modify(api: @api_v5, entity: "#{res_instance_path}/members", id: member_id, data: member)
+            entity_modify(api: api_v5, entity: "#{res_instance_path}/members", id: member_id, data: member)
           end
 
           define_action_method([:admin, res, :members, :delete]) do |res_instance_path:, **kwargs|
-            entity_delete(api: @api_v5, entity: "#{res_instance_path}/members", id: kwargs[:member_id])
+            entity_delete(api: api_v5, entity: "#{res_instance_path}/members", id: kwargs[:member_id])
           end
 
           define_action_method([:admin, res, :members, :create]) do |users:, access:, res_instance_path:, **|
             res_path = "#{res_instance_path}/members"
             resolved = resolve_member_user_ids(users)
-            entity_create(api: @api_v5, entity: res_path, data: {user: resolved.map { |u| {id: u, access: access} }})
+            entity_create(api: api_v5, entity: res_path, data: {user: resolved.map { |u| {id: u, access: access} }})
           end
         end
 
@@ -877,30 +874,30 @@ module Aspera
         %i[shared_inboxes workgroups].each do |res|
           define_action_method([:admin, res, :invite_external_collaborator]) do |collaborator:, **kwargs|
             res_instance_path = "#{res}/#{kwargs[:"#{RES_SINGULAR[res]}_id"]}"
-            result = @api_v5.create("#{res_instance_path}/external_collaborator", collaborator)
+            result = api_v5.create("#{res_instance_path}/external_collaborator", collaborator)
             formatter.display_status(result['message'])
-            Result::SingleObject.new(@api_v5.lookup_entity_by_field(entity: "#{res_instance_path}/members", items_key: 'members', value: collaborator['email_address'], query: {}))
+            Result::SingleObject.new(api_v5.lookup_entity_by_field(entity: "#{res_instance_path}/members", items_key: 'members', value: collaborator['email_address'], query: {}))
           end
         end
 
-        # --- root setup ---
+        # --- API ---
 
-        # Build @api_v5 for all commands that need it (all except :health and :postprocessing).
-        # @return [Hash] empty ctx (state stored in @api_v5)
-        def setup_api_v5(**)
-          return {} if @api_v5
+        # Faspex 5 API, built from CLI options on first use.
+        # @return [Api::Faspex]
+        def api_v5
+          return @api_v5 if @api_v5
           @api_v5 = Api::Faspex.new(**Oauth.kwargs_from_options(options))
           # in case user wants to use HTTPGW tell transfer agent how to get address
           transfer.httpgw_url_cb = lambda { @api_v5.read('account')['gateway_url'] }
-          {}
+          @api_v5
         end
 
         # Setup for package sub-commands that need an id: with a public link to a package, the id comes from the link.
         # Leaf setup runs before argument resolution: the declared package_id argument is then not read.
         # @return [Hash] ctx key: package_id, or empty (package_id is read from the command line)
         def setup_package_id(**)
-          return {} unless @api_v5.pub_link_context&.key?('package_id')
-          {package_id: @api_v5.pub_link_context['package_id']}
+          return {} unless api_v5.pub_link_context&.key?('package_id')
+          {package_id: api_v5.pub_link_context['package_id']}
         end
 
         def action_packages_list(filter: nil, **)
@@ -916,7 +913,7 @@ module Aspera
           ids = package_id.is_a?(Array) ? package_id : [package_id]
           Aspera.assert_array_all(ids, String) { 'Package id(s)' }
           # API returns 204, empty on success
-          @api_v5.call(
+          api_v5.call(
             operation:    'DELETE',
             subpath:      'packages',
             content_type: Mime::JSON,
@@ -946,7 +943,7 @@ module Aspera
         # Lookup a shared folder id by field/value.
         # Called via lookup: :lookup_shared_folder_id on the shared_folders > browse command.
         def lookup_shared_folder_id(field, value, **)
-          all = @api_v5.read('shared_folders')['shared_folders']
+          all = api_v5.read('shared_folders')['shared_folders']
           matches = all.select { |i| i[field].eql?(value) }
           Aspera.assert(!matches.empty?) { "no match for #{field} = #{value}" }
           Aspera.assert(matches.length == 1) { "multiple matches for #{field} = #{value}" }
@@ -954,7 +951,7 @@ module Aspera
         end
 
         def action_shared_folders_browse(folder_path:, shared_folder_id:, **)
-          all_shared_folders = @api_v5.read('shared_folders')['shared_folders']
+          all_shared_folders = api_v5.read('shared_folders')['shared_folders']
           node = all_shared_folders.find { |i| i['id'].eql?(shared_folder_id) }
           Aspera.assert(!node.nil?) { "No such shared folder id #{shared_folder_id}" }
           browse_folder("nodes/#{node['node_id']}/shared_folders/#{shared_folder_id}/browse", {}, folder_path: folder_path)
@@ -965,7 +962,7 @@ module Aspera
         def action_invitations_create(invitation:, **)
           bulk_result(invitation, command: :create) do |params|
             endpoint = params.key?('recipient_name') ? 'public_invitations' : 'invitations'
-            @api_v5.create(endpoint, params)
+            api_v5.create(endpoint, params)
           end
         end
 
@@ -975,7 +972,7 @@ module Aspera
           uri = URI.parse(parameters.delete(:url) { WebServerSimple::DEFAULT_URL })
           server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
           Aspera.assert(parameters.except(*WebServerSimple::PARAMS).empty?) { "unexpected parameters: #{parameters.except(*WebServerSimple::PARAMS).keys}" }
-          server.mount(uri.path, Faspex4GWServlet, @api_v5, nil)
+          server.mount(uri.path, Faspex4GWServlet, api_v5, nil)
           server.start
           Result::Status.new('Gateway terminated')
         end

@@ -146,7 +146,6 @@ All plugins declare their command tree using a class-level DSL defined in `Base`
 | `define_action_method(path) { … }` | `define_method` with the conventional `action_<path>` name; used for homogeneous generated commands |
 | `option(name, description:, short:, allowed:, default:, handler:, deprecation:, schema:)` | Declare a plugin option (stored as `OptionSpec`, declared on the parser in `Base#initialize`). Raises if an ancestor already declares it. `handler:` Symbol: instance method (accessor); Hash `{o:, m:}`: other object; for a flag (`allowed: Type::NONE`) a Symbol or a lambda (same style rule as actions) is executed on the plugin instance when the flag is found |
 | `use_options(source)` | Include options declared by another plugin class or `OptionDeclarator` module |
-| `root_setup(method_name)` | Method called once before root dispatch; its `Hash` result seeds `ctx`. Used when root `condition:` methods depend on setup state (e.g. `server.rb`) |
 | `application_name(name)` | Human-readable application name shown in wizards |
 
 **Command declaration** (`CommandSpec` attributes):
@@ -161,7 +160,7 @@ All plugins declare their command tree using a class-level DSL defined in `Base`
 | `setup` | `Symbol \| nil` | Instance method called with `**ctx` after the node's `arguments` are resolved; returns a `Hash` merged into `ctx` for all descendants |
 | `aliases` | `Array<Symbol> \| nil` | Alternative names accepted for this command (e.g. `aliases: [:recv]`) |
 | `transfer_paths` | `:send \| :receive \| nil` | File-list resolution delegated to `TransferAgent` (reads what remains after declared `arguments`) |
-| `condition` | `Symbol \| nil` | Instance method returning `Boolean`; if `false`, command is excluded from dispatch but shown in help with an annotation |
+| `condition` | `Symbol \| nil` | Instance method returning `Boolean`; if `false`, command is excluded from dispatch but shown in help with an annotation. Not evaluated with `--help` |
 | `query_schema` | `String \| nil` | Schema path for `--query` help; the runner then hints `--query=help` |
 | `mount` | `Hash \| nil` | Expose a sub-tree of another plugin class under this node (see [Mounting another plugin's commands](#mounting-another-plugins-commands)) |
 
@@ -215,7 +214,7 @@ end
 
 **Dispatcher algorithm** (`Base#execute_action` → `dispatch_from_registry`):
 
-`execute_action` validates the registry once per class (`CommandRegistry#validate!`), runs `root_setup` if declared, then calls `dispatch_from_registry([], init_ctx)`.
+`execute_action` validates the registry once per class (`CommandRegistry#validate!`), then calls `dispatch_from_registry([])`.
 
 ```text
 dispatch_from_registry(current_path, ctx = {})
@@ -308,7 +307,8 @@ All forms receive the `ctx` hash as keyword arguments and behave identically at 
 | --- | --- |
 | Flat registry keyed by full path `Array<Symbol>` | Avoids recursive data structures; path lookup is O(1) |
 | `arguments:` on intermediate nodes | Parent instance ids are declared statically, so help shows them and dispatch resolves them before child selection |
-| `setup:` runs on the current node before dispatching | Derived context (API objects, entity paths) computed once for the whole sub-tree; no virtual nodes needed |
+| `setup:` runs on the current node before dispatching | Derived context (entity paths, sub-tree specific API or scope, e.g. `aoc automation`, `preview scan`) computed once for the whole sub-tree; no virtual nodes needed |
+| Main plugin API built by a lazy memoized accessor (e.g. `aoc_api`, `api_v5`, `api_node`), not in `initialize` nor by a `setup:` on each root command | Built on first use only: `--help` and `config commands` never need the URL or credentials; commands without authentication (e.g. `faspex5 health`) just do not call it |
 | `condition:` commands visible in help but excluded at runtime | Static documentation is complete; runtime filtering via a method |
 | `crud_commands` generates one leaf per verb | CRUD declarations stay DRY while each verb remains a real, introspectable `CommandSpec`; `api:` is resolved at runtime so the API object can be created lazily |
 | `mount:` instead of re-declaring another plugin's commands | The target sub-tree is declared once: dispatch, `--help`, completion and `config commands` see it entirely, and changes in the target need no change in the hosts |
