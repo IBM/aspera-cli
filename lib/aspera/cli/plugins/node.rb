@@ -106,11 +106,8 @@ module Aspera
         # Fields removed in result of search
         SEARCH_REMOVE_FIELDS = %w[basename permissions].freeze
 
-        # Actions in execute_command_gen3
-        COMMANDS_GEN3 = %i[search space mkdir mklink mkfile rename delete ls upload download cat sync transport spec]
-
         # DSL metadata for Gen3 root commands (description:, arguments:, transfer_paths:, aliases:).
-        # :sync and :access_keys are skipped (intermediate nodes declared separately).
+        # :access_keys is skipped (intermediate node declared separately), :sync is declared separately.
         # action: entries are in GEN3_NODE_ACTIONS, or implicit.
         COMMANDS_GEN3_SPEC = {
           search:      {description: 'Search for files',             arguments: [{name: :path, type: String}]},
@@ -135,14 +132,7 @@ module Aspera
           access_keys: {description: 'Manage access keys'}
         }.freeze
 
-        BASE_ACTIONS = (%i[api_details] + COMMANDS_GEN3).freeze
-
-        SPECIAL_ACTIONS = %i[health events info slash license].freeze
-
-        # commands for : `execute_simple_common`: actions used commonly when a node is involved
-        COMMON_ACTIONS = (%i[access_keys] + BASE_ACTIONS + SPECIAL_ACTIONS).freeze
-
-        private_constant :CENTRAL_SOAP_API_TEST, :SEARCH_REMOVE_FIELDS, :BASE_ACTIONS, :SPECIAL_ACTIONS, :COMMON_ACTIONS
+        private_constant :CENTRAL_SOAP_API_TEST, :SEARCH_REMOVE_FIELDS
 
         # Gen4 read commands also exposed on AoC packages (`aoc packages ls <id>`)
         NODE4_READ_ACTIONS = %i[bearer_token_node node_info ls find].freeze
@@ -172,7 +162,7 @@ module Aspera
 
         # Root commands exposed by `cos node` and `shares files` (mount: only:)
         COMMANDS_COS = %i[upload download info access_keys api_details transfer].freeze
-        COMMANDS_SHARES = (BASE_ACTIONS - %i[search]).freeze
+        COMMANDS_SHARES = %i[api_details space mkdir mklink mkfile rename delete ls upload download cat sync transport spec].freeze
         # `browse` display fields for gen4
         GEN4_LS_FIELDS = %w[name type recursive_size size modified_time access_level].freeze
 
@@ -353,7 +343,6 @@ module Aspera
         }.freeze
         private_constant :GEN3_NODE_ACTIONS
         COMMANDS_GEN3_SPEC.each do |cmd, spec|
-          next if cmd.eql?(:sync)        # intermediate node with sub-commands
           next if cmd.eql?(:access_keys) # intermediate node declared separately below
           action = GEN3_NODE_ACTIONS[cmd]
           command cmd, **spec, **(action ? {action: action} : {})
@@ -437,7 +426,6 @@ module Aspera
             arguments: [{name: :async_id, type: :identifier, lookup: :async_lookup}]
         end
         # ssync (/asyncs)
-        # command :ssync, description: 'Manage sync operations (/asyncs)'
         commands_under :ssync, description: 'synchronization (/asyncs)' do
           crud_commands entity: 'asyncs',
             name: 'sync session',
@@ -739,7 +727,6 @@ module Aspera
         end
 
         # access_keys > do - setup: resolve access key and root file id
-        # access_key_id is resolved by execute_leaf (via instance_arg in CommandSpec)
         # @return [Hash] context hash containing :do_root_file_id
         def setup_access_key_do(access_key_id:, **)
           @do_root_file_id = options.get_option(:root_id)

@@ -113,7 +113,6 @@ module Aspera
           options.parse_options!
         end
 
-        # DSL command declarations - replaces ACTIONS + execute_action
         command :preset, description: 'Manage configuration presets'
         commands_under :preset do
           command :list,     description: 'List all presets', action: ->(**) { Result::ValueList.new(presets.config_presets.keys, name: 'name') }

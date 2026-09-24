@@ -822,7 +822,6 @@ module Aspera
             command :list,    description: 'List workspaces', action: ->(**) { result_list('workspaces', fields: %w[id name]) }
             command :current, description: 'Show current workspace', action: ->(**) { Result::SingleObject.new(aoc_api.workspace_info) }
           end
-          # command :profile, description: 'User profile commands'
           commands_under :profile, description: "Manager user's profile" do
             command :show, description: 'Show user profile', action: ->(**) { Result::SingleObject.new(aoc_api.current_user_info(exception: true)) }
             command(
