@@ -471,13 +471,18 @@ module Aspera
         # Execute an action on admin resources
         # @param resource_type [Symbol] One of ADMIN_OBJECTS
         # Per-resource configuration for admin CRUD resources.
-        # Keys: path, list_fields, id_result, require_ws_id, create_schema, extra_ops, singleton, op_setup, op_mount
+        # Keys: path, list_fields, id_result, require_ws_id, create_schema, extra_ops, singleton, op_setup, op_mount, op_descriptions
         # op_setup: Hash of op => setup method name, used for ops that require consuming an instance identifier.
         #   For Operations::INSTANCE ops (show/modify/delete), use the auto-generated :setup_admin_<res>_instance.
         #   For extra_ops that are instance ops, specify explicitly (or rely on the auto-generated one).
         # op_mount: Hash of op => mount: of that op's node.
+        # op_descriptions: Hash of op => description, for ops other than standard ones.
         ADMIN_OBJECT_CONFIG = {
-          client:                    {extra_ops: %i[set_pub_key], extra_op_args: {set_pub_key: [{name: :private_key_pem, type: String}]}},
+          client:                    {
+            extra_ops:       %i[set_pub_key],
+            extra_op_args:   {set_pub_key: [{name: :private_key_pem, type: String}]},
+            op_descriptions: {set_pub_key: 'Set public key of client from a private key'}
+          },
           client_access_key:         {path: 'admin/client_access_keys'},
           client_registration_token: {path: 'admin/client_registration_tokens', list_fields: %w[id value data.client_subject_scopes data.name created_at], id_result: 'token'},
           configuration_policy:      {list_fields: nil},
@@ -489,19 +494,29 @@ module Aspera
           kms_profile:               {path: 'integrations/kms_profiles', create_schema: false},
           network_policy:            {list_fields: nil},
           node:                      {
-            list_fields:   %w[id name host access_key],
-            extra_ops:     %i[do bearer_token update_status],
-            extra_op_args: {bearer_token: [{name: :scope, mandatory: false, default: nil}]},
-            op_mount:      {do: NODE_GEN4_MOUNT.merge(instance: :admin_node_do_plugin)}
+            list_fields:     %w[id name host access_key],
+            extra_ops:       %i[do bearer_token update_status],
+            extra_op_args:   {bearer_token: [{name: :scope, mandatory: false, default: nil}]},
+            op_mount:        {do: NODE_GEN4_MOUNT.merge(instance: :admin_node_do_plugin)},
+            op_descriptions: {do: 'Execute command on node', bearer_token: 'Generate bearer token for node', update_status: 'Ask AoC to scan node and update its status'}
           },
           operation:                 {list_fields: %w[id type status created_at updated_at workspace_id user_id workspace_membership_id group_membership_id], ops: %i[list show modify]},
           organization:              {singleton: true},
           package:                   {},
           saml_configuration:        {create_schema: false},
-          self:                      {singleton: true},
+          self:                      {singleton: true, op_descriptions: {show: 'Show current user'}},
           short_link:                {list_fields: %w[id short_url data.url_token_data.purpose password_enabled password_protected updated_by_user_id updated_at]},
-          user:                      {list_fields: %w[id name email], extra_ops: %i[preferences notifications], op_setup: {preferences: :setup_admin_user_instance, notifications: :setup_admin_user_instance}},
-          workspace:                 {extra_ops: %i[shared_folder dropbox], op_setup: {shared_folder: :setup_admin_workspace_shared_folder, dropbox: :setup_admin_workspace_dropbox}},
+          user:                      {
+            list_fields:     %w[id name email],
+            extra_ops:       %i[preferences notifications],
+            op_setup:        {preferences: :setup_admin_user_instance, notifications: :setup_admin_user_instance},
+            op_descriptions: {preferences: 'Manage user preferences', notifications: 'Manage user notification preferences'}
+          },
+          workspace:                 {
+            extra_ops:       %i[shared_folder dropbox],
+            op_setup:        {shared_folder: :setup_admin_workspace_shared_folder, dropbox: :setup_admin_workspace_dropbox},
+            op_descriptions: {shared_folder: 'Manage shared folders of workspace', dropbox: 'Manage shared inboxes of workspace'}
+          },
           workspace_membership:      {list_fields: %w[id workspace_id member_type member_id]}
         }.freeze
         private_constant :ADMIN_OBJECT_CONFIG
@@ -589,7 +604,7 @@ module Aspera
             Result::ObjectList.new(no_auth_api.read('servers'))
           end
         )
-        command :bearer_token,      description: 'Display bearer token',
+        command :bearer_token,      description: 'Show bearer token',
           action: -> { Result::Text.new(aoc_api.oauth.authorization) }
         command :organization,      description: 'Show organization info',
           action: -> { Result::SingleObject.new(aoc_api.read('organization')) }
@@ -651,7 +666,8 @@ module Aspera
                   c = aoc_res_cfg(res)
                   merged = merged.merge(query_schema: Schema::Registry.query_params(c[:query_component], c[:path]))
                 end
-                description = Operations::ALL.include?(op) ? operation_description(op, entity_noun(res, singular: false)) : op.to_s.tr('_', ' ').capitalize
+                description = cfg.dig(:op_descriptions, op) ||
+                  (Operations::ALL.include?(op) ? operation_description(op, entity_noun(res, singular: false)) : op.to_s.tr('_', ' ').capitalize)
                 command op, description: description, **merged
               end
             end
@@ -686,8 +702,8 @@ module Aspera
         # admin > user > preferences|notifications sub-trees
         %i[preferences notifications].each do |pref|
           commands_under([:admin, :user, pref]) do
-            command :show,   description: "Show #{pref}"
-            command :modify, description: "Modify #{pref}",
+            command :show,   description: "Show user #{pref}"
+            command :modify, description: "Modify user #{pref}",
               arguments: [{name: pref, type: Hash}]
           end
         end

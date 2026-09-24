@@ -37,7 +37,7 @@ module Aspera
           }
         end
 
-        command :health, description: 'Check health of faspio Gateway'
+        command :health, description: 'Check faspio Gateway health'
 
         commands_under :bridges do
           crud_commands entity: 'bridges',

@@ -36,7 +36,7 @@ module Aspera
           }
         end
 
-        command(:health, description: 'Check health of HTTP Gateway', action: lambda do
+        command(:health, description: 'Check HTTP Gateway health', action: lambda do
           nagios = Nagios.new
           begin
             Api::Httpgw.new(url: options.get_option(:url, mandatory: true))

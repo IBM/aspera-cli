@@ -116,15 +116,15 @@ module Aspera
         command :preset, description: 'Manage configuration presets'
         commands_under :preset do
           command :list,     description: 'List all presets'
-          command :overview, description: 'Display all options from all presets'
+          command :overview, description: 'Show all options from all presets'
           command :lookup,   description: 'Find preset matching URL and username'
           command :secure,   description: 'Move secrets to vault',
             arguments: [{name: :config_name, type: String, mandatory: false}]
-          command :show,       description: 'Display a preset',
+          command :show,       description: 'Show a preset',
             arguments: [{name: :name, type: :identifier}]
           command :delete,     description: 'Delete a preset',
             arguments: [{name: :name, type: :identifier}]
-          command :get,        description: 'Get a single parameter from a preset',
+          command :get,        description: 'Show a single parameter of a preset',
             arguments: [{name: :name, type: :identifier}, {name: :param_name, type: String}]
           command :unset,      description: 'Remove a parameter from a preset',
             arguments: [{name: :name, type: :identifier}, {name: :param_name, type: String}]
@@ -135,7 +135,7 @@ module Aspera
             arguments: [{name: :name, type: :identifier}, {name: :preset, type: Hash}]
           command :update,     description: 'Update a preset with current option values',
             arguments: [{name: :name, type: :identifier}]
-          command :ask,        description: 'Interactively ask for option values',
+          command :ask,        description: 'Ask for option values interactively',
             arguments: [{name: :name, type: :identifier},
                         {name: :option_names, type: String, multiple: true, interactive: true}]
         end
@@ -156,11 +156,11 @@ module Aspera
             {name: :private_key_path, type: String},
             {name: :private_key_length, type: Integer, mandatory: false, default: OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH}
           ]
-        command :pubkey, description: 'Display the public key of an RSA private key',
+        command :pubkey, description: 'Show the public key of an RSA private key',
           arguments: [{name: :private_key_pem, type: String}],
           action: ->(private_key_pem:, **) { Result::Text.new(OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s) }
         command :remote_certificate, description: 'Retrieve the certificate chain of a remote HTTPS server'
-        command :echo, description: 'Display the value of a given argument',
+        command :echo, description: 'Show the value of a given argument',
           arguments: [{name: :value, type: nil}],
           action: ->(value:, **) { Result.auto(value) }
         command :download, description: 'Download a file from a URL',
@@ -175,14 +175,14 @@ module Aspera
         command :wizard, description: 'Run the setup wizard for an Aspera product (interactive)',
           arguments: [{name: :url, type: String}, {name: :plugin_name, mandatory: false, default: nil},
                       {name: :preset_name, mandatory: false, default: ''}]
-        command :coffee, description: 'Display a coffee image', action: -> { Result::Image.new(COFFEE_IMAGE_URL) }
-        command :image, description: 'Display an image',
+        command :coffee, description: 'Show a coffee image', action: -> { Result::Image.new(COFFEE_IMAGE_URL) }
+        command :image, description: 'Show an image',
           arguments: [{name: :image_uri, type: nil}],
           action: ->(image_uri:, **) { Result::Image.new(image_uri) }
         command :sync, description: 'Manage Aspera Sync operations'
-        command :gem, description: 'Display gem information'
-        command :folder, description: 'Display the configuration folder path', action: -> { Result::Text.new(context.main_folder) }
-        command :file, description: 'Display the configuration file path', action: -> { Result::Text.new(context.presets.config_file) }
+        command :gem, description: 'Show gem information'
+        command :folder, description: 'Show the configuration folder path', action: -> { Result::Text.new(context.main_folder) }
+        command :file, description: 'Show the configuration file path', action: -> { Result::Text.new(context.presets.config_file) }
         command(
           :email_test, description: 'Send a test email',
           action: lambda do
@@ -190,7 +190,7 @@ module Aspera
             Result::Nothing.new
           end
         )
-        command :smtp_settings, description: 'Display the current SMTP settings', action: -> { Result::SingleObject.new(context.mailer.email_settings) }
+        command :smtp_settings, description: 'Show the current SMTP settings', action: -> { Result::SingleObject.new(context.mailer.email_settings) }
         command(
           :proxy_check, description: 'Check the proxy returned by the PAC script for a given URL',
           arguments: [{name: :server_url, type: String}],
@@ -203,7 +203,7 @@ module Aspera
         command :initdemo, description: 'Initialize the demo server preset'
         command :vault, description: 'Manage secrets in the vault'
         commands_under :vault do
-          command :info,     description: 'Display vault information',
+          command :info,     description: 'Show vault information',
             action: ->(**) { Result::SingleObject.new(vault_required.info) }
           command :ids,      description: 'List secret labels in the vault',
             action: ->(**) { Result::ObjectList.new(vault_required.ids) }
@@ -225,16 +225,16 @@ module Aspera
         command :options, description: 'List all options available for a plugin',
           arguments: [{name: :plugin_name, type: String}]
         command :test, description: 'Internal test commands'
-        command :platform, description: 'Display the current platform/architecture', action: -> { Result::Text.new(Environment.instance.architecture) }
+        command :platform, description: 'Show the current platform/architecture', action: -> { Result::Text.new(Environment.instance.architecture) }
         command :completion, description: 'Generate shell completion scripts'
 
         # remote_certificate sub-commands
         commands_under :remote_certificate do
-          command :chain, description: 'Display the full certificate chain as PEM',
+          command :chain, description: 'Show the full certificate chain as PEM',
             arguments: [{name: :remote_url, type: String}]
-          command :only, description: 'Display only the server certificate as PEM',
+          command :only, description: 'Show only the server certificate as PEM',
             arguments: [{name: :remote_url, type: String}]
-          command :name, description: 'Display the CN of the server certificate',
+          command :name, description: 'Show the CN of the server certificate',
             arguments: [{name: :remote_url, type: String}]
         end
 
@@ -271,14 +271,14 @@ module Aspera
         # ascp sub-commands
         command :ascp, description: 'Manage FASP/ascp transfer engine'
         commands_under :ascp do
-          command :show,    description: 'Display ascp binary path'
-          command :info,    description: 'Display ascp and transfer spec information'
+          command :show,    description: 'Show ascp binary path'
+          command :info,    description: 'Show ascp and transfer spec information'
           command :install, description: 'Install the transfer SDK',
             arguments: [{name: :version, mandatory: false, default: nil}]
-          command :spec,    description: 'Display the transfer spec schema'
-          command :schema,  description: 'Display the transfer spec JSON schema',
+          command :spec,    description: 'Show the transfer spec schema'
+          command :schema,  description: 'Show the transfer spec JSON schema',
             arguments: [{name: :agent_name, mandatory: false, default: nil}]
-          command :errors,   description: 'Display FASP error codes'
+          command :errors,   description: 'Show FASP error codes'
           command :products, description: 'Manage installed Aspera products'
           commands_under :products do
             command :list, description: 'List installed Aspera products'
@@ -314,7 +314,7 @@ module Aspera
         # sync sub-commands
         commands_under :sync do
           command(
-            :spec, description: 'Display the sync configuration schema',
+            :spec, description: 'Show the sync configuration schema',
             action: lambda do
               builder = Schema::Documentation.new(TerminalFormatter, Sync::Operations::CONF_SCHEMA, include_option: true).build
               Result::ObjectList.new(builder.rows, fields: builder.columns)
@@ -329,9 +329,9 @@ module Aspera
 
         # gem sub-commands
         commands_under :gem do
-          command :path,    description: 'Display the gem source root path',    action: -> { Result::Text.new(self.class.gem_src_root) }
-          command :version, description: 'Display the gem version',             action: -> { Result::Text.new(Cli::VERSION) }
-          command :name,    description: 'Display the gem name',                action: -> { Result::Text.new(Info::GEM_NAME) }
+          command :path,    description: 'Show the gem source root path',    action: -> { Result::Text.new(self.class.gem_src_root) }
+          command :version, description: 'Show the gem version',             action: -> { Result::Text.new(Cli::VERSION) }
+          command :name,    description: 'Show the gem name',                action: -> { Result::Text.new(Info::GEM_NAME) }
         end
 
         # test sub-commands

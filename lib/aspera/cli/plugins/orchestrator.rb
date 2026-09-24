@@ -103,8 +103,8 @@ module Aspera
 
         # --- DSL ---
 
-        command :health,     description: 'Check Orchestrator API health',               setup: :setup_api
-        command :info,       description: 'Ping the remote Orchestrator instance',       setup: :setup_api, action: -> { Result::SingleObject.new(call_ao('remote_node_ping', format: 'xml', xml_arrays: false)) }
+        command :health,     description: 'Check Orchestrator API health', setup: :setup_api
+        command :info,       description: 'Check that Orchestrator responds (ping)', setup: :setup_api, action: -> { Result::SingleObject.new(call_ao('remote_node_ping', format: 'xml', xml_arrays: false)) }
         command :processes,  description: 'Show Orchestrator background process status', setup: :setup_api, action: -> { Result::ObjectList.new(call_ao('processes_status', format: 'xml')['process']) }
         command :monitors,   description: 'Show Orchestrator monitor snapshot',          setup: :setup_api, action: -> { Result::SingleObject.new(call_ao('monitor_snapshot')['monitor']) }
         command :plugins,    description: 'Show Orchestrator plugin versions',           setup: :setup_api, action: -> { Result::ObjectList.new(call_ao('plugin_version')['Plugin']) }
@@ -119,30 +119,30 @@ module Aspera
               fields: %w[id portable_id name published_status published_revision_id latest_revision_id last_modification]
             )
           end)
-          command :status,     description: 'Check running status of workflows',
+          command :status,     description: 'Show running status of a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
             action: ->(workflow_id:, **) { Result::ObjectList.new(call_ao(workflow_id.eql?(SpecialValues::ALL) ? 'workflows_status' : "workflows_status/#{workflow_id}")['workflows']['workflow']) }
-          command :inputs,     description: 'Fetch input specification for a workflow',
+          command :inputs,     description: 'Show input specification of a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
             action: ->(workflow_id:, **) { Result::SingleObject.new(call_ao("workflow_inputs_spec/#{workflow_id}")['workflow_inputs_spec']) }
-          command :details,    description: 'Check detailed running status of a workflow',
+          command :details,    description: 'Show detailed running status of a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
             action: ->(workflow_id:, **) { Result::ObjectList.new(call_ao("workflow_details/#{workflow_id}")['workflows']['workflow']['statuses']) }
-          command :start,      description: 'Initiate a work order (sync or async)',
+          command :start,      description: 'Start a workflow: create a work order (sync or async)',
             arguments: [{name: :workflow_id, type: :identifier}, {name: :parameters, type: Hash, mandatory: false, default: {}}]
           command :export,     description: 'Export a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
             action: ->(workflow_id:, **) { Result::Text.new(call_ao("export_workflow/#{workflow_id}", format: nil, http: true).body) }
-          command :workorders, description: 'Fetch all work orders from a workflow',
+          command :workorders, description: 'List work orders of a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
             action: ->(workflow_id:, **) { Result::ObjectList.new(call_ao("work_orders_list/#{workflow_id}")['work_orders']) }
-          command :outputs,    description: 'Fetch output specification for a workflow',
+          command :outputs,    description: 'Show output specification of a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
             action: ->(workflow_id:, **) { Result::ObjectList.new(call_ao("workflow_outputs_spec/#{workflow_id}")['workflow_outputs_spec']['output']) }
         end
 
         commands_under :workorders do
-          command :status, description: 'Check the status of a work order',
+          command :status, description: 'Show status of a work order',
             arguments: [{name: :workorder_id, type: :identifier}],
             action: ->(workorder_id:, **) { Result::SingleObject.new(call_ao("work_order_status/#{workorder_id}")['work_order']) }
           command :cancel, description: 'Cancel a work order',
@@ -151,13 +151,13 @@ module Aspera
           command :reset,  description: 'Reset a work order',
             arguments: [{name: :workorder_id, type: :identifier}],
             action: ->(workorder_id:, **) { Result::SingleObject.new(call_ao("work_order_reset/#{workorder_id}")['work_order']) }
-          command :output, description: 'Fetch output of a work order',
+          command :output, description: 'Show output of a work order',
             arguments: [{name: :workorder_id, type: :identifier}],
             action: ->(workorder_id:, **) { Result::ObjectList.new(call_ao("work_order_output/#{workorder_id}", format: 'xml')['variable']) }
         end
 
         commands_under :workstep do
-          command :status, description: 'Check the status of a work step',
+          command :status, description: 'Show status of a work step',
             arguments: [{name: :workstep_id, type: :identifier}],
             action: ->(workstep_id:, **) { Result::SingleObject.new(call_ao("work_step_status/#{workstep_id}")) }
           command :cancel, description: 'Cancel a work step',

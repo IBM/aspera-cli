@@ -30,6 +30,7 @@ Released: [Place date of release here]
 * `console`: `transfer current move_forwards|move_back` were calling a non-existent endpoint: replaced by `transfer queue <queue_id> move_forwards|move_back <transfer_id>`.
 * **general**: Help was failing when a schema enum contains `null`.
 * `aoc`: `packages shared_inboxes short_link` and `files short_link` `create|modify` were ignoring the provided `password` and `access_levels`.
+* `faspex5`: Command `admin file_processing next` was not available.
 
 ### Breaking Changes
 

@@ -398,7 +398,7 @@ module Aspera
           accounts:            {
             display_fields:        Formatter.all_but('user_profile_data_attributes'),
             extra_commands:        [:reset_password],
-            instance_arg_commands: {reset_password: {arguments: [{name: :account_id, type: :identifier, lookup: ->(field, value, **) { res_lookup_id(:accounts, field, value) }}]}},
+            instance_arg_commands: {reset_password: {description: 'Send password reset email to account', arguments: [{name: :account_id, type: :identifier, lookup: ->(field, value, **) { res_lookup_id(:accounts, field, value) }}]}},
             query_component:       Schema::Registry::FASPEX,
             body_component:        Schema::Registry::FASPEX
           },
@@ -407,9 +407,11 @@ module Aspera
           distribution_lists:  {entity: 'account/distribution_lists', delete_style: 'ids', query_component: Schema::Registry::FASPEX, body_component: Schema::Registry::FASPEX},
           email_notifications: {id_as_arg: 'type', query_component: Schema::Registry::FASPEX},
           file_processing:     {
-            commands:       %i[next modify],
-            body_component: Schema::Registry::FASPEX,
-            is_singleton:   true
+            commands:              %i[modify],
+            extra_commands:        %i[next],
+            instance_arg_commands: {next: {description: 'List next files to process'}},
+            body_component:        Schema::Registry::FASPEX,
+            is_singleton:          true
           },
           jobs:                {display_fields: %w[id job_name job_type status], query_component: Schema::Registry::FASPEX},
           metadata_profiles:   {entity: 'configuration/metadata_profiles', items_key: 'profiles', query_component: Schema::Registry::FASPEX, body_component: Schema::Registry::FASPEX},
@@ -417,8 +419,9 @@ module Aspera
             extra_commands:        %i[browse],
             instance_arg_commands: {
               browse: {
-                arguments: [{name: :node_id, type: :identifier, lookup: :lookup_node_id},
-                            {name: :folder_path, type: String, mandatory: false, default: '/'}]
+                description: 'Browse files of node',
+                arguments:   [{name: :node_id, type: :identifier, lookup: :lookup_node_id},
+                              {name: :folder_path, type: String, mandatory: false, default: '/'}]
               }
             },
             query_component:       Schema::Registry::FASPEX,
@@ -601,8 +604,7 @@ module Aspera
 
               # Extra commands (e.g. browse, reset_password, next)
               extra.each do |c|
-                ia = ia_cmds[c] || {}
-                command c, description: c.to_s.tr('_', ' ').capitalize, **ia
+                command c, description: c.to_s.tr('_', ' ').capitalize, **ia_cmds[c] || {}
               end
             end
           end

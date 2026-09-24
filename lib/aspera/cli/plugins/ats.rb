@@ -40,7 +40,7 @@ module Aspera
 
         # --- DSL ---
 
-        command :cluster,    description: 'Display general ATS cluster information (public API, no auth)'
+        command :cluster,    description: 'Show general ATS cluster information (public API, no auth)'
         command :access_key, description: 'Manage ATS access keys'
         command :api_key,    description: 'Manage credential to access ATS API', condition: :api_key_available?
         command :aws_trust_policy, description: 'Show AWS trust policy', action: lambda { Result::SingleObject.new(ats_api.read('aws/trustpolicy', {region: options.get_option(:region, mandatory: true)})) }
