@@ -959,6 +959,16 @@ cons_cur_list:
     - current
     - list
     - --query=@json:{"filter1":"transfer_name","comp1":"contain","val1":"aoc"}
+cons_endpoint_list:
+  args:
+    - console
+    - endpoint
+    - list
+cons_ssh_key_list:
+  args:
+    - console
+    - ssh_key
+    - list
 cons_cur_list_ex:
   args:
     - console

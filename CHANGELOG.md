@@ -9,6 +9,7 @@ Released: [Place date of release here]
 * `config`: Command `commands` accepts an optional plugin name to list only that plugin's commands.
 * `mcp`: Shorter server instructions and tool description, examples use presets and `@json:`.
 * `console`: Help of `transfer current change_rate|change_policy` and `transfer smart submit` shows the schema of the request body.
+* `console`: New commands: `transfer current submit`, `transfer smart pause`, `transfer queue <queue_id> list`, `endpoint list`, `ssh_key list`.
 
 ### Issues Fixed
 
@@ -22,12 +23,15 @@ Released: [Place date of release here]
 * `mcp`: Secrets (e.g. from `config preset show`) are now hidden in tool results.
 * `aoc`: Commands `user contacts show|create|modify|delete` were failing: they now take `<contact_id>` and `<data>` arguments.
 * `console`: `transfer current change_rate|change_policy` now take a mandatory `<data>` argument (request body), `transfer current rerun` uses `POST`.
+* `console`: `transfer current move_forwards|move_back` were calling a non-existent endpoint: replaced by `transfer queue <queue_id> move_forwards|move_back <transfer_id>`.
+* **general**: Help was failing when a schema enum contains `null`.
 
 ### Breaking Changes
 
 * `preview`: Renamed option `mimemagic` to `detect_mime`.
 * `server`: Commands `ls|rm|mkdir|du|md5sum` require at least one path, `mv|cp` take exactly `<source> <destination>`, `df|info` take no argument.
 * `console`: `transfer current change_rate|change_policy` require a `<data>` argument, instead of option `query`.
+* `console`: `transfer current move_forwards|move_back` moved to `transfer queue <queue_id> move_forwards|move_back <transfer_id>`.
 
 ## 4.27.2
 

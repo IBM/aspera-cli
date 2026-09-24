@@ -114,9 +114,9 @@ module Aspera
           end
           # Only keep lines that are usable in supported agents
           next if agents.empty?
-          item['description'].push("Allowed values: #{node['enum'].map { |v| @formatter.markdown_text("`#{v}`") }.join(', ')}.") if node.key?('enum')
-          item['description'].push("Default: #{@formatter.markdown_text("`#{node['default']}`")}.") if node.key?('default')
-          item['description'].push("Example: #{@formatter.markdown_text("`#{node['example']}`")}.") if node.key?('example')
+          item['description'].push("Allowed values: #{node['enum'].map { |v| value_text(v) }.join(', ')}.") if node.key?('enum')
+          item['description'].push("Default: #{value_text(node['default'])}.") if node.key?('default')
+          item['description'].push("Example: #{value_text(node['example'])}.") if node.key?('example')
           if @include_option
             envvar_prefix = ''
             cli_option =
@@ -138,6 +138,16 @@ module Aspera
           @sections.last[:rows].push(@formatter.check_row(item))
         end
         self
+      end
+
+      private
+
+      # Format a schema value (enum, default, example) as code
+      # @param value [Object] value from schema, `nil` for JSON `null`
+      # @return [String]
+      def value_text(value)
+        return @formatter.special_format('null') if value.nil?
+        @formatter.markdown_text("`#{value}`")
       end
     end
   end

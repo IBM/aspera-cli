@@ -75,14 +75,31 @@ module Aspera
 
         command :health,   description: 'Check Console API health', setup: :setup_api
         command :transfer, description: 'Manage transfers',         setup: :setup_api
+        command :endpoint, description: 'Manage endpoints',         setup: :setup_api
+        command :ssh_key,  description: 'Manage SSH keys',          setup: :setup_api
 
         commands_under :transfer do
           command :current, description: 'Manage current transfers'
           command :smart,   description: 'Manage smart transfers'
+          command :queue,   description: 'Manage transfers of a queue',
+            arguments: [{name: :queue_id, type: :identifier}]
+        end
+
+        commands_under :endpoint do
+          command :list, description: operation_description(:list, 'endpoint'),
+            action: ->(api_console:, **) { Result::ObjectList.new(api_console.read('endpoints')) }
+        end
+
+        commands_under :ssh_key do
+          command :list, description: operation_description(:list, 'SSH key'),
+            action: ->(api_console:, **) { Result::ObjectList.new(api_console.read('ssh_keys')) }
         end
 
         commands_under %i[transfer current] do
           command :list,          description: 'List current transfers'
+          command :submit,        description: 'Submit a simple transfer',
+            arguments: [{name: :data, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::CONSOLE, 'transfers.post')}],
+            action: ->(api_console:, data:, **) { Result::SingleObject.new(api_console.create('transfers', data)) }
           command :show,          description: 'Show a transfer',
             arguments: [{name: :transfer_id, type: :identifier}],
             action: ->(api_console:, transfer_id:, **) { Result::SingleObject.new(api_console.read("transfers/#{transfer_id}")) }
@@ -104,18 +121,30 @@ module Aspera
           command :change_policy, description: 'Change transfer policy',
             arguments: [{name: :transfer_id, type: :identifier},
                         {name: :data, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::CONSOLE, 'transfers/{id}/change_policy.put')}]
-          command :move_forwards, description: 'Move transfer forwards',
+        end
+
+        commands_under %i[transfer queue] do
+          command :list,          description: 'List transfers in queue, frontmost first',
+            action: ->(api_console:, queue_id:, **) { Result::ObjectList.new(api_console.read("queues/#{queue_id}/items")) }
+          command :move_forwards, description: 'Move transfer forwards in queue',
             arguments: [{name: :transfer_id, type: :identifier}]
-          command :move_back,     description: 'Move transfer backwards',
+          command :move_back,     description: 'Move transfer backwards in queue',
             arguments: [{name: :transfer_id, type: :identifier}]
+        end
+
+        # PUT queues/<queue_id>/items/<id>/<verb>
+        %i[move_forwards move_back].each do |verb|
+          define_action_method([:transfer, :queue, verb]) do |api_console:, queue_id:, transfer_id:, **|
+            Result::SingleObject.new(api_console.update("queues/#{queue_id}/items/#{transfer_id}/#{verb}", {}))
+          end
         end
 
         # Generate one handler per transfer/current action.
         # Convention: action_transfer_current_<verb>
         # All share the same REST pattern: PUT transfers/<id>/<verb>.
-        %i[start pause cancel resume move_forwards move_back].each do |verb|
+        %i[start pause cancel resume].each do |verb|
           define_action_method([:transfer, :current, verb]) do |api_console:, transfer_id:, **|
-            Result::SingleObject.new(api_console.update("transfers/#{transfer_id}/#{verb}", query_read_delete))
+            Result::SingleObject.new(api_console.update("transfers/#{transfer_id}/#{verb}", {}))
           end
         end
 
@@ -130,6 +159,9 @@ module Aspera
           command :list,   description: 'List smart transfers', action: ->(api_console:) { Result::ObjectList.new(api_console.read('smart_transfers')) }
           command :submit, description: 'Submit a smart transfer',
             arguments: [{name: :smart_id}, {name: :transfer_params, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::CONSOLE, 'smart_transfers/{id}.post')}]
+          command :pause,  description: 'Pause a smart transfer',
+            arguments: [{name: :smart_id}],
+            action: ->(api_console:, smart_id:, **) { Result::SingleObject.new(api_console.update("smart_transfers/#{smart_id}/pause", {})) }
         end
 
         # --- setup ---
