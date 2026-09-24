@@ -872,15 +872,16 @@ module Aspera
             arguments: [{name: :package_id, type: :identifier}]
           command :modify, description: 'Modify a package',
             arguments: [{name: :package_id, type: :identifier}, {name: :data, type: Hash}]
-          # Node Gen4 read-only actions on packages
-          command :bearer_token_node, description: 'Show bearer token for package node',
-            arguments: [{name: :package_id, type: :identifier}]
-          command :node_info,         description: 'Show node info for package',
-            arguments: [{name: :package_id, type: :identifier}]
-          command :ls,                description: 'List package contents', aliases: [:browse],
-            arguments: [{name: :package_id, type: :identifier}]
-          command :find,              description: 'Find files in package',
-            arguments: [{name: :package_id, type: :identifier}]
+          # Node Gen4 read-only actions on packages: package id, then the arguments of the Node command
+          package_id_arg = [{name: :package_id, type: :identifier}].freeze
+          {
+            bearer_token_node: {description: 'Show bearer token for package node'},
+            node_info:         {description: 'Show node info for package'},
+            ls:                {description: 'List package contents', aliases: [:browse]},
+            find:              {description: 'Find files in package'}
+          }.each do |action, attrs|
+            command action, **attrs, arguments: package_id_arg + Node::COMMANDS_GEN4_SPEC.fetch(action)[:arguments]
+          end
         end
 
         commands_under %i[packages shared_inboxes] do
@@ -1068,12 +1069,12 @@ module Aspera
         end
 
         # packages > bearer_token_node / node_info / ls / find
-        # (NODE4_READ_ACTIONS dispatched by full path: action_packages_bearer_token_node, etc.)
+        # Arguments (path:, filter:) are resolved here, the Node leaf receives them in ctx.
         Node::NODE4_READ_ACTIONS.each do |action|
-          define_action_method([:packages, action]) do |package_id:, **|
+          define_action_method([:packages, action]) do |package_id:, **ctx|
             package_info = aoc_api.read("packages/#{package_id}")
             node_plugin, node_ctx = nodegen4_plugin(package_info['node_id'], file_id: package_info['contents_file_id'], scope: Api::Node::Scope::USER)
-            node_plugin.dispatch_from_registry([:access_keys, :do, action], node_ctx, skip_setup: true)
+            node_plugin.dispatch_from_registry([:access_keys, :do, action], ctx.merge(node_ctx))
           end
         end
 

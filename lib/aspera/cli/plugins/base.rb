@@ -380,17 +380,16 @@ module Aspera
         # execute a leaf directly or consume the next argument and recurse (Phase B).
         # @param current_path [Array<Symbol>] path of the node currently being dispatched
         # @param ctx [Hash] accumulated context passed down from parent nodes
-        # @param skip_setup [Boolean] when true, skip Phase A (setup already done by caller)
         # @return [Object] result suitable for CLI output
-        def dispatch_from_registry(current_path, ctx = {}, skip_setup: false)
+        def dispatch_from_registry(current_path, ctx = {})
           registry = self.class.command_registry
           spec     = registry[current_path]
           is_leaf  = spec && registry.children_of(current_path).empty?
 
-          if @context.help_requested || skip_setup
+          if @context.help_requested
             # help_requested on an intermediate node: drain positional args without validation
             # so that dispatch_child can still consume the correct sub-command token
-            if !is_leaf && !skip_setup && spec&.arguments
+            if !is_leaf && spec&.arguments
               spec.arguments.each do |arg_spec|
                 next if ctx.key?(arg_spec.name)
                 options.get_next_argument(arg_spec.name.to_s, mandatory: false)

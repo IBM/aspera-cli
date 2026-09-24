@@ -205,11 +205,11 @@ end
 `execute_action` validates the registry once per class (`CommandRegistry#validate!`), runs `root_setup` if declared, then calls `dispatch_from_registry([], init_ctx)`.
 
 ```text
-dispatch_from_registry(current_path, ctx = {}, skip_setup: false)
+dispatch_from_registry(current_path, ctx = {})
   spec    = registry[current_path]
   is_leaf = spec has no children
 
-  # Phase A (skipped when --help or skip_setup: true)
+  # Phase A (skipped when --help)
   if !is_leaf
     resolve spec.arguments into ctx          # e.g. parent instance id (:identifier + lookup)
   ctx = ctx.merge(send(spec.setup, **ctx)) if spec.setup
@@ -294,7 +294,6 @@ All forms receive the `ctx` hash as keyword arguments and behave identically at 
 | `mount:` instead of re-declaring another plugin's commands | The target sub-tree is declared once: dispatch, `--help`, completion and `config commands` see it entirely, and changes in the target need no change in the hosts |
 | `transfer_paths: :send\|:receive` | The `--sources` mechanism in `TransferAgent` cannot be expressed as static arguments |
 | `define_action_method` for homogeneous command groups | Avoids repetitive action definitions for commands sharing the same body (e.g. `ADMIN_OBJECTS` in `aoc.rb`, `RESOURCE_CONFIG` in `faspex5.rb`) |
-| `skip_setup: true` on `dispatch_from_registry` | Allows a caller that already built the context to enter a node directly (e.g. `aoc packages ls <id>`, whose argument order does not fit a mount) |
 
 #### Entity identifier placement
 
