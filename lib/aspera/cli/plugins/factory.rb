@@ -30,7 +30,9 @@ module Aspera
         end
 
         # add a folder to the list of folders to look for plugins
+        # (absolute, as `require` resolves a relative path against $LOAD_PATH)
         def add_lookup_folder(folder)
+          folder = File.expand_path(folder)
           @lookup_folders.unshift(folder) unless @lookup_folders.include?(folder)
         end
 

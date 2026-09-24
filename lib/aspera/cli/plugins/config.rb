@@ -527,10 +527,7 @@ module Aspera
               module Cli
                 module Plugins
                   class #{plugin_name.snake_to_capital} < Base
-                    command :example, description: 'example command', action: :action_example
-                    def action_example
-                      Result::Status.new('You called plugin #{plugin_name}')
-                    end
+                    command :example, description: 'example command', action: ->(**) { Result::Status.new('You called plugin #{plugin_name}') }
                   end
                 end
               end
