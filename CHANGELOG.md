@@ -13,7 +13,7 @@ Released: [Place date of release here]
 * **general**: Identifier arguments are named after their entity (e.g. `<account_id>` instead of `<id>`, `<workflow_id>` instead of `<wf_id>`), path arguments are named `<path>`, `<paths...>` or `<folder> <source> <destination>`.
 * `mcp`: Shorter server instructions and tool description, examples use presets and `@json:`.
 * `console`: Help of `transfer current change_rate|change_policy` and `transfer smart submit` shows the schema of the request body.
-* `aoc`: `automation` commands cover the whole Automation API: new `workflows update_state|cancel_instances|delete_instances`, `instances cancel`, `steps`, `actions`, `permissions`. Help shows request body schemas and `--query=help` list parameters.
+* `aoc`: `automation` commands cover the whole Automation API: new `workflows update_state|cancel_instances|delete_instances`, `instances cancel`, `steps`, `actions`, `workflows permissions <workflow_id>`. Help shows request body schemas and `--query=help` list parameters.
 * `console`: New commands: `transfer current submit`, `transfer smart pause`, `transfer queue <queue_id> list`, `endpoint list`, `ssh_key list`, `admin email_server_update|nodeapi_credentials_update`.
 * `console`: `health` also checks the unauthenticated endpoint `health/up`.
 

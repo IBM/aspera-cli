@@ -717,12 +717,14 @@ module Aspera
           qs_path = query_component ? Schema::Registry.query_params(query_component, entity) : nil
           data, http = api.read(entity, query_read_delete(default: list_query, schema: qs_path), ret: :both)
           return Result::Empty.new if http.code == '204'
-          # TODO: not generic : which application is this for ?
-          if http['Content-Type'].start_with?('application/vnd.api+json')
-            Log.log.debug('is vnd.api')
+          if !data.is_a?(Hash)
+            # already the list
+          elsif items_key
+            data = data[items_key]
+          elsif http['Content-Type'].start_with?('application/vnd.api+json')
+            # JSON:API: list is under the entity name
             data = data[entity]
           end
-          data = data[items_key] if items_key
           case data
           when Hash then Result::SingleObject.new(data, fields: display_fields)
           when Array

@@ -947,13 +947,23 @@ module Aspera
                 @automation_api.delete("workflows/#{workflow_id}/delete_instances")
                 Result::Status.new('deleted')
               }
-            commands_under :action, description: 'Manage actions of workflow' do
-              command :list,   description: 'List actions of all steps of workflow',
-                arguments: [{name: :workflow_id, type: :identifier}]
-              command :create, description: 'Add a step with one action at the end of workflow',
-                arguments: [{name: :workflow_id, type: :identifier},
-                            {name: :action, type: Hash, mandatory: false, default: {}, schema: Schema::Registry.req_body(Schema::Registry::AUTOMATION, 'actions.post')}]
-            end
+            command :action, description: 'Manage actions of workflow',
+              arguments: [{name: :workflow_id, type: :identifier}]
+            command :permissions, description: 'Manage permissions of workflow',
+              arguments: [{name: :workflow_id, type: :identifier}]
+          end
+          # workflow_id is resolved by the parent command
+          commands_under %i[workflows action] do
+            command :list,   description: 'List actions of all steps of workflow'
+            command :create, description: 'Add a step with one action at the end of workflow',
+              arguments: [{name: :action, type: Hash, mandatory: false, default: {}, schema: Schema::Registry.req_body(Schema::Registry::AUTOMATION, 'actions.post')}]
+          end
+          commands_under %i[workflows permissions] do
+            command :list, description: 'List permissions of workflow',
+              query_schema: Schema::Registry.query_params(Schema::Registry::AUTOMATION, 'workflow_permissions')
+            command :create, description: 'Create a permission on workflow',
+              arguments: [{name: :workflow_permission, type: Hash, bulk: true, schema: Schema::Registry.req_body(Schema::Registry::AUTOMATION, 'workflow_permissions.post')}]
+            crud_commands(**AUTOMATION_CRUD, entity: 'workflow_permissions', name: 'workflow permission', operations: %i[modify delete])
           end
           commands_under :instances do
             crud_commands(
@@ -969,12 +979,6 @@ module Aspera
           end
           commands_under :actions do
             crud_commands(**AUTOMATION_CRUD, entity: 'actions', operations: %i[create show modify delete])
-          end
-          commands_under :permissions do
-            crud_commands(
-              **AUTOMATION_CRUD, entity: 'workflow_permissions', name: 'workflow permission', operations: %i[list create modify delete],
-              items_key: 'workflow_permissions', query_component: Schema::Registry::AUTOMATION
-            )
           end
         end
 
@@ -1503,6 +1507,21 @@ module Aspera
           new_action = @automation_api.create('actions', {'type' => 'manual'}.merge(action).merge('step_id' => step['id']))
           @automation_api.update("steps/#{step['id']}", {'action_order' => [new_action['id']]})
           Result::SingleObject.new(new_action)
+        end
+
+        # automation > workflows > permissions > list
+        # API requires query parameter workflow_id
+        def action_automation_workflows_permissions_list(workflow_id:, **)
+          schema = Schema::Registry.query_params(Schema::Registry::AUTOMATION, 'workflow_permissions')
+          query = (query_read_delete(schema: schema) || {}).merge('workflow_id' => workflow_id)
+          Result::ObjectList.new(@automation_api.read('workflow_permissions', query))
+        end
+
+        # automation > workflows > permissions > create
+        def action_automation_workflows_permissions_create(workflow_id:, workflow_permission:, **)
+          bulk_result(workflow_permission, command: :create) do |params|
+            @automation_api.create('workflow_permissions', params.merge('workflow_id' => workflow_id))
+          end
         end
 
         # admin > client > set_pub_key
