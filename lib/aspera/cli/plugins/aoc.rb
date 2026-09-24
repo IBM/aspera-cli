@@ -404,7 +404,9 @@ module Aspera
         TRANSFER_ARGS = [{name: :direction, allowed: %i[push pull]}, {name: :source_folder, type: String}].freeze
         # Mount of the Node plugin Gen4 commands (`node access_keys do <id> ...`), instance: set per mount point
         NODE_GEN4_MOUNT = {plugin: Node, at: %i[access_keys do]}.freeze
-        private_constant :TRANSFER_ARGS, :NODE_GEN4_MOUNT
+        # Package identifier argument, `%name:` selector (lookup method shared with `admin package`)
+        PACKAGE_ID_ARG = {name: :package_id, type: :identifier, lookup: :lookup_aoc_package_id}.freeze
+        private_constant :TRANSFER_ARGS, :NODE_GEN4_MOUNT, :PACKAGE_ID_ARG
 
         # Node API on a Gen4 node, and its root file id.
         # @param node_id [String]      Node identifier
@@ -613,7 +615,7 @@ module Aspera
         command :user,              description: 'User commands'
         # Node Gen4 read-only commands on packages: `packages <command> <package_id> ...`
         command :packages,          description: 'Package commands', setup: :setup_workspace_display,
-          mount: NODE_GEN4_MOUNT.merge(instance: :package_node_plugin, only: Node::NODE4_READ_ACTIONS, arguments: [{name: :package_id, type: :identifier}])
+          mount: NODE_GEN4_MOUNT.merge(instance: :package_node_plugin, only: Node::NODE4_READ_ACTIONS, arguments: [PACKAGE_ID_ARG])
         command :files,             description: 'Files commands (workspace-aware)', setup: :setup_workspace_display,
           mount: NODE_GEN4_MOUNT.merge(instance: :files_node_plugin)
         command :admin, description: 'Administration commands', setup: :setup_admin_scope
@@ -891,21 +893,22 @@ module Aspera
         end
 
         # packages sub-commands — instance commands consume package_id
+        # Not `crud_commands`: `list` has its own query and `once_only` persistency.
         commands_under :packages do
           command :shared_inboxes, description: 'Shared inbox commands'
           command :send, description: 'Send a package', transfer_paths: :send,
             arguments: [{name: :package, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::AOC, 'packages.post')}]
           command :receive, description: 'Receive packages', aliases: [:recv], transfer_paths: :receive,
-            arguments: [{name: :package_id, type: :identifier}]
+            arguments: [PACKAGE_ID_ARG]
           command :list, description: 'List packages'
           command :show, description: 'Show a package',
-            arguments: [{name: :package_id, type: :identifier}],
+            arguments: [PACKAGE_ID_ARG],
             action: ->(package_id:, **) { Result::SingleObject.new(aoc_api.read("packages/#{package_id}")) }
           command :delete, description: 'Delete packages',
-            arguments: [{name: :package_id, type: :identifier}]
+            arguments: [PACKAGE_ID_ARG.merge(bulk: true)]
           command(
             :modify, description: 'Modify a package',
-            arguments: [{name: :package_id, type: :identifier}, {name: :package, type: Hash}],
+            arguments: [PACKAGE_ID_ARG, {name: :package, type: Hash}],
             action: lambda do |package:, package_id:, **|
               aoc_api.update("packages/#{package_id}", package)
               Result::Status.new('modified')

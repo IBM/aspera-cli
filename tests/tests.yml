@@ -2703,6 +2703,15 @@ aoc_pack_list:
   args:
     - packages
     - list
+aoc_pack_show_name:
+  $comment: Percent selector on package name (package sent by aoc_pack_send_to_user)
+  depends_on:
+    - aoc_pack_send_to_user
+  template: awa_user_suite
+  args:
+    - packages
+    - show
+    - "%name:$(t.resolve :aoc_pack_send_to_user) $(TIMESTAMP_TEST_RUN)"
 aoc_pack_recv_id:
   depends_on:
     - aoc_pack_send_to_user

@@ -31,12 +31,12 @@ module Aspera
       when 0 then raise EntityNotFound, %Q{No such #{entity}: "#{value}"}
       else
         # multiple case insensitive partial matches, try case insensitive full match
-        # (anyway AoC does not allow creation of 2 entities with same case insensitive field value)
+        # (AoC does not allow 2 entities with same case insensitive name, except for some, e.g. packages)
         value_matches = matching_items.select { |i| i[field].casecmp?(value) }
         case value_matches.length
         when 1 then return value_matches.first
         when 0 then raise Error, "#{entity}: Multiple case insensitive partial match for: \"#{value}\" in #{matching_items.map { |i| i[field] }.join(', ')} but no case insensitive full match. Please be more specific or give exact #{field}."
-        else raise Error, "Two entities cannot have the same case insensitive #{field}: #{value_matches.map { |i| i[field] }}"
+        else raise Error, "#{entity}: Multiple entities with #{field}: \"#{value}\". Please use the identifier instead."
         end
       end
     end

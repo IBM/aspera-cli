@@ -317,7 +317,7 @@ class DocHelper
     ['$(TMP / "localhost.p12")', '.../localhost.p12'],
     ['$(remote_host)', 'app.example.com'],
     ['"my_password"', '"my_password_here"'],
-    ['$(name) $(TIMESTAMP_TEST_RUN)', 'package title'],
+    [/\$\((?:name|t\.resolve :[a-z0-9_]+)\) \$\(TIMESTAMP_TEST_RUN\)/, 'package title'],
     [/^--base=.*/, '--base=test'],
     [/^(--[a-z\-.]+=)?(@[a-z]+:)?(.*['"*! $\\?].*)$/, "\\1\\2'\\3'"]
   ]
