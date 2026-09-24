@@ -254,10 +254,12 @@ Body size is counted in lines (excluding `do`/`end` or `def`/`end`):
 
 | Action body | Form |
 | --- | --- |
-| 1 line | inline `action: ->(**){…}` (or `->(arg:, **){…}`) |
+| 1 line | inline `command :x, …, action: ->(**){…}` (or `->(arg:, **){…}`), without parentheses on `command` |
 | 2–3 lines | inline `command(:x, …, action: lambda do \|**\| … end)`, with parentheses on `command` |
 | 4 lines or more | named method `def action_<full_path>(**)`, no `action:` |
 | used by several commands | named method regardless of size |
+
+Parentheses on `command` are only needed for `lambda do…end` (see precedence rule below), and when rubocop requires them: a call with an explicit receiver (e.g. `base.command(...)` in a mixin) is not a macro.
 
 Exception: commands declared by a loop or from a table (e.g. `COMMANDS_GEN4_SPEC`, `define_action_method` in an `each`) have no `command(...)` call of their own to hold an inline action: they use a named method (or a block shared by the loop) regardless of size.
 
