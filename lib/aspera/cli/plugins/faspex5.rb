@@ -623,7 +623,7 @@ module Aspera
             lookup: :lookup_sf_id,
             items_key: 'shared_folders'
           command :user, description: 'Custom access users',
-            arguments: [{name: :sf_id, type: :identifier, lookup: :lookup_sf_id}],
+            arguments: [{name: :shared_folder_id, type: :identifier, lookup: :lookup_sf_id}],
             setup: :setup_admin_nodes_shared_folders_user
         end
 
@@ -795,9 +795,9 @@ module Aspera
           @api_v5.lookup_entity_by_field(entity: user_path, items_key: 'users', field: field, value: value)['id']
         end
 
-        # admin > nodes > shared_folders > user — sf_id: already in ctx via arguments: on the :user command
-        def setup_admin_nodes_shared_folders_user(sf_entity:, sf_id:, **)
-          {user_path: "#{sf_entity}/#{sf_id}/custom_access_users"}
+        # admin > nodes > shared_folders > user — shared_folder_id: already in ctx via arguments: on the :user command
+        def setup_admin_nodes_shared_folders_user(sf_entity:, shared_folder_id:, **)
+          {user_path: "#{sf_entity}/#{shared_folder_id}/custom_access_users"}
         end
 
         # admin > shared_inboxes|workgroups — res_id: already in ctx via arguments: on the :members|:saml_groups command

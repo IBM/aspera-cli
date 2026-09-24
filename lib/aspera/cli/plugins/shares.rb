@@ -210,7 +210,7 @@ module Aspera
               # ldap: add only
               commands_under :ldap do
                 command :add, description: "Add a LDAP #{entity_type}",
-                  arguments: [{name: :entity_name, type: String, bulk: true}]
+                  arguments: [{name: entity_type, type: String, bulk: true}]
               end
 
               # saml: import only
@@ -368,9 +368,9 @@ module Aspera
           end
 
           # ldap: add
-          define_action_method([:admin, entity_type, :ldap, :add]) do |entity_name:, **|
+          define_action_method([:admin, entity_type, :ldap, :add]) do |**kwargs|
             path = admin_entity_path(entity_type, :ldap)
-            bulk_result(entity_name, command: :add, id_result: entity_type.to_s) do |entity_name|
+            bulk_result(kwargs.fetch(entity_type), command: :add, id_result: entity_type.to_s) do |entity_name|
               @api_shares_admin.create(path, {entity_type => entity_name})
             end
           end

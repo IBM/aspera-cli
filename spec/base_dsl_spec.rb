@@ -582,16 +582,16 @@ module Aspera
           it 'adds ArgumentSpec for verbs appropriately' do
             klass = build_klass
             reg   = klass.command_registry
-            # Instance operations have :id as first argument
+            # Instance operations have identifier named after entity as first argument
             Base::Operations::INSTANCE.each do |verb|
               spec = reg[Array(verb)]
               expect(spec.arguments).not_to(be_nil)
-              expect(spec.arguments.first.name).to(eq(:id))
+              expect(spec.arguments.first.name).to(eq(:thing_id))
               expect(spec.arguments.first.type).to(eq(:identifier))
               expect(spec.arguments.first.lookup).to(eq(:lookup_thing_id))
             end
             # :modify also has body argument named after entity as second argument
-            expect(reg[[:modify]].arguments.map(&:name)).to(eq(%i[id thing]))
+            expect(reg[[:modify]].arguments.map(&:name)).to(eq(%i[thing_id thing]))
             # :create has body argument named after entity
             expect(reg[[:create]].arguments.map(&:name)).to(eq(%i[thing]))
             # :list has no arguments

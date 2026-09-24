@@ -661,11 +661,11 @@ module Aspera
         commands_under %i[admin workspace shared_folder] do
           command :list,   description: 'List shared folders'
           command :node,   description: 'Execute node command on shared folder',
-            arguments: [{name: :sf_id, type: :identifier}],
+            arguments: [{name: :shared_folder_id, type: :identifier}],
             setup: :setup_admin_workspace_shared_folder_node,
             mount: NODE_GEN4_MOUNT.merge(instance: :admin_workspace_shared_folder_node_plugin)
           command :member, description: 'Show folder members',
-            arguments: [{name: :sf_id, type: :identifier}],
+            arguments: [{name: :shared_folder_id, type: :identifier}],
             setup: :setup_admin_workspace_shared_folder_member
         end
         # admin > workspace > shared_folder > node: Gen4 commands are mounted, plus node-to-node transfer
@@ -758,10 +758,10 @@ module Aspera
           APP_TYPES.each do |app_type|
             command app_type, description: "Show or modify a #{app_type} instance"
             commands_under app_type do
-              command :show,   description: "Show a #{app_type} instance",
-                arguments: [{name: :"#{app_type}_id", type: :identifier}]
-              command :modify, description: "Modify a #{app_type} instance",
-                arguments: [{name: :"#{app_type}_id", type: :identifier}, {name: :instance, type: Hash}]
+              command :show,   description: "Show #{app_type} instance",
+                arguments: [{name: :instance_id, type: :identifier}]
+              command :modify, description: "Modify #{app_type} instance",
+                arguments: [{name: :instance_id, type: :identifier}, {name: :instance, type: Hash}]
             end
           end
         end
@@ -898,7 +898,7 @@ module Aspera
         # files sub-commands: Gen4 commands are mounted, plus AoC-specific commands
         commands_under :files do
           command :short_link, description: 'Manage file short link',
-            arguments: [{name: :folder_dest, type: String}, {name: :link_type, allowed: %i[public private]}],
+            arguments: [{name: :folder, type: String}, {name: :link_type, allowed: %i[public private]}],
             setup: :setup_files_short_link
           command :transfer, description: 'Transfer files (node-to-node)', arguments: TRANSFER_ARGS
         end
@@ -914,13 +914,13 @@ module Aspera
           commands_under :workflows do
             crud_commands api: :@automation_api, entity: 'workflows'
             command :launch, description: 'Launch a workflow',
-              arguments: [{name: :wf_id, type: :identifier}],
-              action: ->(wf_id:, **) { Result::SingleObject.new(@automation_api.create("workflows/#{wf_id}/launch", {})) }
+              arguments: [{name: :workflow_id, type: :identifier}],
+              action: ->(workflow_id:, **) { Result::SingleObject.new(@automation_api.create("workflows/#{workflow_id}/launch", {})) }
             commands_under :action, description: 'Add action to workflow (TODO)' do
               %i[list create show].each do |cmd|
                 command cmd,
                   description: "#{cmd.capitalize} action (TODO)",
-                  arguments:   [{name: :wf_id, type: :identifier}]
+                  arguments:   [{name: :workflow_id, type: :identifier}]
               end
             end
           end
@@ -1073,12 +1073,12 @@ module Aspera
         # setup: files > short_link
         # Resolves the target folder, consumes link_type argument, computes purposes.
         # @return [Hash] ctx keys: sl_shared_data, sl_link_type, sl_token_purpose, sl_short_link_purpose, sl_perm_block, sl_shared_apifid, sl_folder_dest
-        def setup_files_short_link(folder_dest:, link_type:, **)
+        def setup_files_short_link(folder:, link_type:, **)
           home_node_api = aoc_api.node_api_from(
             node_id: aoc_api.home[:node_id],
             **workspace_id_hash(name: true)
           )
-          shared_apifid = home_node_api.resolve_api_fid(aoc_api.home[:file_id], folder_dest)
+          shared_apifid = home_node_api.resolve_api_fid(aoc_api.home[:file_id], folder)
           shared_data = {
             node_id: shared_apifid.node_api.app_info.node_info['id'],
             file_id: shared_apifid.file_id
@@ -1094,7 +1094,7 @@ module Aspera
                 'access_levels' => Api::AoC.expand_access_levels(access_levels),
                 'tags'          => {
                   'url_token'        => true,
-                  'folder_name'      => File.basename(folder_dest),
+                  'folder_name'      => File.basename(folder),
                   'created_by_name'  => aoc_api.current_user_info['name'],
                   'created_by_email' => aoc_api.current_user_info['email'],
                   'access_key'       => shared_apifid.node_api.app_info.node_info['access_key'],
@@ -1243,12 +1243,12 @@ module Aspera
         # admin > application > instance > <type> > show|modify
         APP_TYPES.each do |app_type|
           define_action_method([:admin, :application, :instance, app_type, :show]) do |**kwargs|
-            app_id = kwargs[:"#{app_type}_id"]
+            app_id = kwargs[:instance_id]
             Result::SingleObject.new(aoc_api.read("admin/apps_new/#{app_type}/#{app_id}", query_read_delete))
           end
 
           define_action_method([:admin, :application, :instance, app_type, :modify]) do |instance:, **kwargs|
-            app_id = kwargs[:"#{app_type}_id"]
+            app_id = kwargs[:instance_id]
             aoc_api.update("admin/apps_new/#{app_type}/#{app_id}", instance)
             Result::Status.new('modified')
           end
@@ -1499,9 +1499,9 @@ module Aspera
           Result::ObjectList.new(shared_folders, fields: %w[id node_name node_id file_id file.path tags.aspera.files.workspace.share_as])
         end
 
-        # admin > workspace > shared_folder > node|member — sf_id: already in ctx via arguments:(:identifier)
-        def resolve_sf_item(shared_folders:, sf_id:, **)
-          sf_item = shared_folders.find { |i| i['id'].eql?(sf_id) }
+        # admin > workspace > shared_folder > node|member — shared_folder_id: already in ctx via arguments:(:identifier)
+        def resolve_sf_item(shared_folders:, shared_folder_id:, **)
+          sf_item = shared_folders.find { |i| i['id'].eql?(shared_folder_id) }
           Aspera.assert(sf_item, 'shared folder not found')
           {sf_item: sf_item}
         end
@@ -1558,13 +1558,13 @@ module Aspera
 
         # automation > workflows > action > * (TODO: not fully implemented)
         %i[list create show].each do |cmd|
-          define_action_method([:automation, :workflows, :action, cmd]) do |wf_id:, **|
+          define_action_method([:automation, :workflows, :action, cmd]) do |workflow_id:, **|
             Log.log.warn { "Not implemented: #{cmd}" }
-            step = @automation_api.create('steps', {'workflow_id' => wf_id})
-            @automation_api.update("workflows/#{wf_id}", {'step_order' => [step['id']]})
+            step = @automation_api.create('steps', {'workflow_id' => workflow_id})
+            @automation_api.update("workflows/#{workflow_id}", {'step_order' => [step['id']]})
             action = @automation_api.create('actions', {'step_id' => step['id'], 'type' => 'manual'})
             @automation_api.update("steps/#{step['id']}", {'action_order' => [action['id']]})
-            Result::SingleObject.new(@automation_api.read("workflows/#{wf_id}"))
+            Result::SingleObject.new(@automation_api.read("workflows/#{workflow_id}"))
           end
         end
 

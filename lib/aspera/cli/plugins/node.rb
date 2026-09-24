@@ -113,17 +113,17 @@ module Aspera
         # :sync and :access_keys are skipped (intermediate nodes declared separately).
         # action: entries are in GEN3_NODE_ACTIONS, or implicit.
         COMMANDS_GEN3_SPEC = {
-          search:      {description: 'Search for files',             arguments: [{name: :search_root, type: String}]},
-          space:       {description: 'Show space information',       arguments: [{name: :path_list, multiple: true}]},
-          mkdir:       {description: 'Create a folder (Gen3)',       arguments: [{name: :path_list, multiple: true}]},
+          search:      {description: 'Search for files',             arguments: [{name: :path, type: String}]},
+          space:       {description: 'Show space information',       arguments: [{name: :paths, multiple: true}]},
+          mkdir:       {description: 'Create a folder (Gen3)',       arguments: [{name: :paths, multiple: true}]},
           mklink:      {description: 'Create a symbolic link (Gen3)', arguments: [{name: :target, type: String}, {name: :link_path, type: String}]},
-          mkfile:      {description: 'Create a file (Gen3)', arguments: [{name: :file_path, type: String}, {name: :contents, mandatory: false, default: nil}]},
-          rename:      {description: 'Rename a file or folder (Gen3)', arguments: [{name: :path_base, type: String}, {name: :path_src, type: String}, {name: :path_dst, type: String}]},
+          mkfile:      {description: 'Create a file (Gen3)', arguments: [{name: :path, type: String}, {name: :contents, mandatory: false, default: nil}]},
+          rename:      {description: 'Rename a file or folder (Gen3)', arguments: [{name: :folder, type: String}, {name: :source, type: String}, {name: :destination, type: String}]},
           delete:      {description: 'Delete files or folders (Gen3)', arguments: [{name: :paths, multiple: true}]},
           ls:          {description: 'List files (Gen3)',            arguments: [{name: :path, type: String}], aliases: [:browse]},
           upload:      {description: 'Upload files (Gen3)',          transfer_paths: :send},
           download:    {description: 'Download files (Gen3)',        transfer_paths: :receive},
-          cat:         {description: 'Show file contents (Gen3)',    arguments: [{name: :remote_path, type: String}]},
+          cat:         {description: 'Show file contents (Gen3)',    arguments: [{name: :path, type: String}]},
           transport:   {description: 'Show transport parameters'},
           spec:        {description: 'Show transfer spec base'},
           api_details: {description: 'Show API details'},
@@ -156,7 +156,7 @@ module Aspera
           mklink:            {description: 'Create symbolic link',           arguments: SINGLE_PATH_ARG},
           mkfile:            {description: 'Create file',                    arguments: [{name: :path, type: String}, {name: :contents, mandatory: false, default: nil}]},
           rename:            {description: 'Rename entry',                   arguments: [{name: :source_path, type: String}, {name: :new_name, type: String}]},
-          delete:            {description: 'Delete entry',                   arguments: [{name: :paths, type: String, bulk: true}]},
+          delete:            {description: 'Delete entry',                   arguments: [{name: :path, type: String, bulk: true}]},
           upload:            {description: 'Upload files',                   transfer_paths: :send},
           download:          {description: 'Download files',                 transfer_paths: :receive},
           modify:            {description: 'Modify file',                    arguments: [{name: :path, type: String}, {name: :file, type: Hash, schema: 'node:components.schemas.files-id-put-request'}]},
@@ -401,14 +401,14 @@ module Aspera
         commands_under %i[access_keys do permission] do
           command :list,   description: 'List permissions on a file'
           command :show,   description: 'Show a permission',
-            arguments: [{name: :perm_id, type: :identifier}],
-            action: ->(apifid:, perm_id:, **) { Result::SingleObject.new(apifid.node_api.read("permissions/#{perm_id}")) }
+            arguments: [{name: :permission_id, type: :identifier}],
+            action: ->(apifid:, permission_id:, **) { Result::SingleObject.new(apifid.node_api.read("permissions/#{permission_id}")) }
           command :create, description: 'Create a permission',
             arguments: [{name: :permission, type: Hash, schema: 'node:components.schemas.permissions-post-request'}]
           command :modify, description: 'Modify a permission',
-            arguments: [{name: :perm_id, type: :identifier}, {name: :permission, type: Hash, schema: 'node:components.schemas.permissions-id-put-request'}]
+            arguments: [{name: :permission_id, type: :identifier}, {name: :permission, type: Hash, schema: 'node:components.schemas.permissions-id-put-request'}]
           command :delete, description: 'Delete permissions',
-            arguments: [{name: :perm_id, bulk: true}]
+            arguments: [{name: :permission_id, bulk: true}]
         end
         # async (legacy /async)
         commands_under :async, description: 'synchronization (legacy /async)' do
@@ -428,6 +428,8 @@ module Aspera
         # command :ssync, description: 'Manage sync operations (/asyncs)'
         commands_under :ssync, description: 'synchronization (/asyncs)' do
           crud_commands entity: 'asyncs',
+            name: 'sync session',
+            id_name: :ssync_id,
             api: :@api_node,
             operations: %i[create list show delete],
             items_key: 'ids',
@@ -548,8 +550,8 @@ module Aspera
           cli_result_from_paths_response(resp, 'file deleted')
         end
 
-        def action_search(search_root:, **)
-          parameters = {'path' => search_root}
+        def action_search(path:, **)
+          parameters = {'path' => path}
           other_options = options.get_option(:query)
           parameters.merge!(other_options) unless other_options.nil?
           resp = @api_node.create('files/search', parameters)
@@ -560,15 +562,15 @@ module Aspera
           Result::ObjectList.new(resp['items'], fields: fields)
         end
 
-        def action_space(path_list:, **)
-          path_list = Array(path_list)
-          resp = @api_node.create('space', {'paths' => path_list.map { |i| {path: i} }})
+        def action_space(paths:, **)
+          paths = Array(paths)
+          resp = @api_node.create('space', {'paths' => paths.map { |i| {path: i} }})
           Result::ObjectList.new(resp['paths'])
         end
 
-        def action_mkdir(path_list:, **)
-          path_list = Array(path_list)
-          resp = @api_node.create('files/create', {'paths' => path_list.map { |i| {type: :directory, path: i} }})
+        def action_mkdir(paths:, **)
+          paths = Array(paths)
+          resp = @api_node.create('files/create', {'paths' => paths.map { |i| {type: :directory, path: i} }})
           cli_result_from_paths_response(resp, 'folder created')
         end
 
@@ -577,15 +579,15 @@ module Aspera
           cli_result_from_paths_response(resp, 'link created')
         end
 
-        def action_mkfile(file_path:, contents:, **)
+        def action_mkfile(path:, contents:, **)
           contents64 = contents.nil? ? '' : Base64.strict_encode64(contents)
-          resp = @api_node.create('files/create', {'paths' => [{type: :file, path: file_path, contents: contents64}]})
+          resp = @api_node.create('files/create', {'paths' => [{type: :file, path: path, contents: contents64}]})
           cli_result_from_paths_response(resp, 'file created')
         end
 
-        def action_rename(path_base:, path_src:, path_dst:, **)
+        def action_rename(folder:, source:, destination:, **)
           # TODO: multiple ?
-          resp = @api_node.create('files/rename', {'paths' => [{'path' => path_base, 'source' => path_src, 'destination' => path_dst}]})
+          resp = @api_node.create('files/rename', {'paths' => [{'path' => folder, 'source' => source, 'destination' => destination}]})
           cli_result_from_paths_response(resp, 'entry moved')
         end
 
@@ -635,8 +637,8 @@ module Aspera
           Runner.result_transfer(transfer.start(transfer_spec))
         end
 
-        def action_cat(remote_path:, **)
-          http = @api_node.read("files/#{URI.encode_www_form_component(remote_path)}/contents", ret: :resp)
+        def action_cat(path:, **)
+          http = @api_node.read("files/#{URI.encode_www_form_component(path)}/contents", ret: :resp)
           Result::Text.new(http.body)
         end
 
@@ -673,8 +675,8 @@ module Aspera
           {}
         end
 
-        def action_access_keys_do_permission_modify(permission:, apifid:, perm_id:, **)
-          apifid.node_api.update("permissions/#{perm_id}", permission)
+        def action_access_keys_do_permission_modify(permission:, apifid:, permission_id:, **)
+          apifid.node_api.update("permissions/#{permission_id}", permission)
           Result::Status.new('Updated')
         end
 
@@ -760,8 +762,8 @@ module Aspera
         end
 
         # access_keys > do > delete
-        def action_access_keys_do_delete(paths:, do_root_file_id:, **)
-          bulk_result(paths, command: :delete, id_result: 'path') do |l_path|
+        def action_access_keys_do_delete(path:, do_root_file_id:, **)
+          bulk_result(path, command: :delete, id_result: 'path') do |l_path|
             apifid = if (m = Parser.percent_selector(l_path))
               Aspera.assert_values(m[:field], ['id'], type: BadIdentifier)
               Api::NodeFileId.new(@api_node, m[:value])
@@ -893,8 +895,8 @@ module Aspera
           Result::ObjectList.new(apifid.node_api.read_with_pages('permissions', list_query))
         end
 
-        def action_access_keys_do_permission_delete(perm_id:, apifid:, **)
-          bulk_result(perm_id, command: :delete) do |one_id|
+        def action_access_keys_do_permission_delete(permission_id:, apifid:, **)
+          bulk_result(permission_id, command: :delete) do |one_id|
             apifid.node_api.delete("permissions/#{one_id}")
             the_app = apifid.node_api.app_info
             the_app&.api&.permissions_send_event(event_data: {}, app_info: the_app, types: ['permission.deleted'])

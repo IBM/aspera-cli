@@ -91,7 +91,7 @@ module Aspera
           #
           # For each verb in operations:, registers one CommandSpec with:
           #   - description: operation_description(verb, name)
-          #   - arguments:   [{name: :id, type: :identifier, lookup: lookup}] for instance verbs
+          #   - arguments:   [{name: id_name, type: :identifier, lookup: lookup}] for instance verbs
           #                  (:show, :modify, :delete) when not a singleton; none for global verbs
           #                  body of :create and :modify is named after the entity (e.g. <access_key>), passed as data:
           #   - action:      calls entity_<verb>(api:, entity:, **shared_kwargs, **ctx)
@@ -105,14 +105,21 @@ module Aspera
           # @param operations [Array<Symbol>]  Verbs to expose; defaults to Operations::ALL
           # @param name       [String, nil]    Singular display name; defaults to last segment of entity (static only)
           # @param lookup     [Symbol, nil]    Instance method for percent-selector resolution
+          # @param id_name    [Symbol, nil]    Name of identifier argument; defaults to <name>_id, or id_as_arg field, or :id
           # @param kwargs     [Hash]           Shared params forwarded to every per-verb method
-          def crud_commands(api:, entity:, operations: nil, name: nil, lookup: nil, **kwargs)
+          def crud_commands(api:, entity:, operations: nil, name: nil, lookup: nil, id_name: nil, **kwargs)
             name       ||= entity_noun(entity, singular: !kwargs[:is_singleton]) unless entity.is_a?(Symbol)
             operations ||= Operations::ALL
             # Body argument is named after the entity, e.g. <access_key>, and passed as data: to entity_<verb>
             data_name = name ? name.downcase.tr(' ', '_').to_sym : :data
+            # Identifier argument is named after the entity, e.g. <access_key_id>, and passed as id: to entity_<verb>
+            id_name ||=
+              if kwargs[:id_as_arg].is_a?(String) then kwargs[:id_as_arg].to_sym
+              elsif name then :"#{data_name}_id"
+              else :id
+              end
             operations.each do |verb|
-              id_arg = ({name: :id, type: :identifier, lookup: lookup} if Operations::INSTANCE.include?(verb) && !kwargs[:is_singleton])
+              id_arg = ({name: id_name, type: :identifier, lookup: lookup} if Operations::INSTANCE.include?(verb) && !kwargs[:is_singleton])
               schema_val =
                 if kwargs[:body_component] && entity.is_a?(String)
                   case verb
@@ -142,6 +149,7 @@ module Aspera
                   end
                 resolved_entity = entity.is_a?(Symbol) ? ctx.fetch(entity) : entity
                 ctx = ctx.merge(data: ctx[data_name]) if ctx.key?(data_name)
+                ctx = ctx.merge(id: ctx[id_name]) if ctx.key?(id_name)
                 send(:"entity_#{verb}", api: resolved_api, entity: resolved_entity, **kwargs, **ctx)
               end
               cmd_attrs = {description: operation_description(verb, name || entity.inspect), action: action_proc}
