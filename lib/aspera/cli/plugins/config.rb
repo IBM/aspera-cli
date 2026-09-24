@@ -142,7 +142,7 @@ module Aspera
         end
         command(
           :open, description: 'Open the configuration file in the default editor',
-          action: lambda do
+          action: lambda do |**|
             Environment.instance.open_editor(context.presets.config_file.to_s)
             Result::Nothing.new
           end
@@ -176,22 +176,22 @@ module Aspera
         command :wizard, description: 'Run the setup wizard for an Aspera product (interactive)',
           arguments: [{name: :url, type: String}, {name: :plugin_name, mandatory: false, default: nil},
                       {name: :preset_name, mandatory: false, default: ''}]
-        command :coffee, description: 'Show a coffee image', action: -> { Result::Image.new(COFFEE_IMAGE_URL) }
+        command :coffee, description: 'Show a coffee image', action: ->(**) { Result::Image.new(COFFEE_IMAGE_URL) }
         command :image, description: 'Show an image',
           arguments: [{name: :image_uri, type: nil}],
           action: ->(image_uri:, **) { Result::Image.new(image_uri) }
         command :sync, description: 'Manage Aspera Sync operations'
         command :gem, description: 'Show gem information'
-        command :folder, description: 'Show the configuration folder path', action: -> { Result::Text.new(context.main_folder) }
-        command :file, description: 'Show the configuration file path', action: -> { Result::Text.new(context.presets.config_file) }
+        command :folder, description: 'Show the configuration folder path', action: ->(**) { Result::Text.new(context.main_folder) }
+        command :file, description: 'Show the configuration file path', action: ->(**) { Result::Text.new(context.presets.config_file) }
         command(
           :email_test, description: 'Send a test email',
-          action: lambda do
+          action: lambda do |**|
             context.mailer.send_email_template(email_template_default: EMAIL_TEST_TEMPLATE)
             Result::Nothing.new
           end
         )
-        command :smtp_settings, description: 'Show the current SMTP settings', action: -> { Result::SingleObject.new(context.mailer.email_settings) }
+        command :smtp_settings, description: 'Show the current SMTP settings', action: ->(**) { Result::SingleObject.new(context.mailer.email_settings) }
         command(
           :proxy_check, description: 'Check the proxy returned by the PAC script for a given URL',
           arguments: [{name: :server_url, type: String}],
@@ -200,7 +200,7 @@ module Aspera
             Result::ValueList.new(context.pac_executor.get_proxies(server_url), name: 'proxy')
           end
         )
-        command :check_update, description: 'Check if a newer version of the gem is available', action: -> { Result::SingleObject.new(check_gem_version) }
+        command :check_update, description: 'Check if a newer version of the gem is available', action: ->(**) { Result::SingleObject.new(check_gem_version) }
         command :initdemo, description: 'Initialize the demo server preset'
         command :vault, description: 'Manage secrets in the vault'
         commands_under :vault do
@@ -227,7 +227,7 @@ module Aspera
         command :options, description: 'List all options available for a plugin',
           arguments: [{name: :plugin_name, type: String}]
         command :test, description: 'Internal test commands'
-        command :platform, description: 'Show the current platform/architecture', action: -> { Result::Text.new(Environment.instance.architecture) }
+        command :platform, description: 'Show the current platform/architecture', action: ->(**) { Result::Text.new(Environment.instance.architecture) }
         command :completion, description: 'Generate shell completion scripts'
 
         # remote_certificate sub-commands
@@ -244,14 +244,14 @@ module Aspera
         commands_under :tokens do
           command(
             :flush, description: 'Delete all cached OAuth tokens',
-            action: lambda do
+            action: lambda do |**|
               require 'aspera/api/node'
               Result::ValueList.new(OAuth::Factory.instance.flush_tokens, name: 'file')
             end
           )
           command(
             :list, description: 'List all cached OAuth tokens',
-            action: lambda do
+            action: lambda do |**|
               require 'aspera/api/node'
               Result::ObjectList.new(OAuth::Factory.instance.persisted_tokens)
             end
@@ -317,7 +317,7 @@ module Aspera
         commands_under :sync do
           command(
             :spec, description: 'Show the sync configuration schema',
-            action: lambda do
+            action: lambda do |**|
               builder = Schema::Documentation.new(TerminalFormatter, Sync::Operations::CONF_SCHEMA, include_option: true).build
               Result::ObjectList.new(builder.rows, fields: builder.columns)
             end
@@ -331,9 +331,9 @@ module Aspera
 
         # gem sub-commands
         commands_under :gem do
-          command :path,    description: 'Show the gem source root path',    action: -> { Result::Text.new(self.class.gem_src_root) }
-          command :version, description: 'Show the gem version',             action: -> { Result::Text.new(Cli::VERSION) }
-          command :name,    description: 'Show the gem name',                action: -> { Result::Text.new(Info::GEM_NAME) }
+          command :path,    description: 'Show the gem source root path',    action: ->(**) { Result::Text.new(self.class.gem_src_root) }
+          command :version, description: 'Show the gem version',             action: ->(**) { Result::Text.new(Cli::VERSION) }
+          command :name,    description: 'Show the gem name',                action: ->(**) { Result::Text.new(Info::GEM_NAME) }
         end
 
         # test sub-commands
@@ -343,7 +343,7 @@ module Aspera
               {name: :exception_class_name, type: String},
               {name: :exception_text,       type: String}
             ]
-          command :web, description: 'Test web browser interaction', action: -> {}
+          command :web, description: 'Test web browser interaction', action: ->(**) {}
         end
 
         # completion sub-commands
@@ -448,7 +448,7 @@ module Aspera
           Result::SingleObject.new(data)
         end
 
-        def action_plugins_list
+        def action_plugins_list(**)
           result = Plugins::Factory.instance.plugin_list.map do |name|
             plugin_class = Plugins::Factory.instance.plugin_class(name)
             {
@@ -496,7 +496,7 @@ module Aspera
           @wizard.find(apps, preset_name: preset_name)
         end
 
-        def action_initdemo
+        def action_initdemo(**)
           cp = presets.config_presets
           if cp.key?(DEMO_PRESET)
             Log.log.warn { "Demo server preset already present: #{DEMO_PRESET}" }

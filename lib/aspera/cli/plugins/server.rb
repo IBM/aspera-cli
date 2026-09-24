@@ -174,7 +174,7 @@ module Aspera
         root_setup :setup_server
 
         command :health, description: 'Check transfer health'
-        command(:upload, description: 'Upload files to server', transfer_paths: :send, action: lambda do
+        command(:upload, description: 'Upload files to server', transfer_paths: :send, action: lambda do |**|
           @server_transfer_spec['direction'] = Transfer::Spec.transfer_type_to_direction(:upload)
           Runner.result_transfer(transfer.start(@server_transfer_spec))
         end)
@@ -182,7 +182,7 @@ module Aspera
           :download,
           description: 'Download files from server',
           transfer_paths: :receive,
-          action: lambda do
+          action: lambda do |**|
             @server_transfer_spec['direction'] = Transfer::Spec.transfer_type_to_direction(:download)
             Runner.result_transfer(transfer.start(@server_transfer_spec))
           end
@@ -234,7 +234,7 @@ module Aspera
           end
         end
 
-        define_action_method([:info]) do
+        define_action_method([:info]) do |**|
           execute_ascmd(:info, []) { |r| Result::SingleObject.new(r.stringify_keys) }
         end
 
@@ -261,7 +261,7 @@ module Aspera
 
         # --- health ---
 
-        def action_health_transfer
+        def action_health_transfer(**)
           nagios = Nagios.new
           probe_ts = @server_transfer_spec.merge({
             'direction'     => 'send',

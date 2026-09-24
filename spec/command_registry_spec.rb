@@ -145,6 +145,37 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
       expect { registry.validate! }.not_to(raise_error)
     end
 
+    context 'action arity' do
+      let(:plugin_class) { Class.new { def action_leaf(**) = nil; def action_fixed = nil } }
+
+      it 'passes for lambda and method actions accepting **' do
+        registry.register(spec(id: :lambda, action: ->(**) {}))
+        registry.register(spec(id: :leaf))
+        registry.register(spec(id: :proc, action: proc {}))
+        expect { registry.validate!(plugin_class: plugin_class) }.not_to(raise_error)
+      end
+
+      it 'raises for a lambda without **' do
+        registry.register(spec(id: :lambda, action: -> {}))
+        expect { registry.validate! }.to(raise_error(ArgumentError, /must accept any keyword/))
+      end
+
+      it 'raises for a lambda with only named keywords' do
+        registry.register(spec(id: :lambda, action: ->(api:) { api }))
+        expect { registry.validate! }.to(raise_error(ArgumentError, /must accept any keyword/))
+      end
+
+      it 'raises for an implicit method without **' do
+        registry.register(spec(id: :fixed))
+        expect { registry.validate!(plugin_class: plugin_class) }.to(raise_error(ArgumentError, /must accept any keyword/))
+      end
+
+      it 'raises for an explicit Symbol action without **' do
+        registry.register(spec(id: :other, action: :action_fixed))
+        expect { registry.validate!(plugin_class: plugin_class) }.to(raise_error(ArgumentError, /must accept any keyword/))
+      end
+    end
+
     context 'transfer_paths combined with arguments' do
       it 'does not raise when both transfer_paths and arguments are present' do
         args = [Aspera::Cli::ArgumentSpec.new(name: :path, type: String)]

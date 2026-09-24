@@ -177,7 +177,7 @@ module Aspera
         end
 
         commands_under %i[transfer smart] do
-          command :list,   description: 'List smart transfers', action: ->(api_console:) { Result::ObjectList.new(api_console.read('smart_transfers')) }
+          command :list,   description: 'List smart transfers', action: ->(api_console:, **) { Result::ObjectList.new(api_console.read('smart_transfers')) }
           command :submit, description: 'Submit a smart transfer',
             arguments: [{name: :smart_id}, {name: :transfer, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::CONSOLE, 'smart_transfers/{id}.post')}]
           command :pause,  description: 'Pause a smart transfer',
@@ -195,7 +195,7 @@ module Aspera
 
         # --- health ---
 
-        def action_health(api_console:)
+        def action_health(api_console:, **)
           nagios = Nagios.new
           begin
             # Unauthenticated, outside of the API prefix
@@ -215,7 +215,7 @@ module Aspera
 
         # --- transfer current ---
 
-        def action_transfer_current_list(api_console:)
+        def action_transfer_current_list(api_console:, **)
           query = query_read_delete(default: {})
           if query['from'].nil? && query['to'].nil?
             time_now = Time.now

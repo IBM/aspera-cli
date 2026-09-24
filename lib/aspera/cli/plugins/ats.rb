@@ -43,11 +43,11 @@ module Aspera
         command :cluster,    description: 'Show general ATS cluster information (public API, no auth)'
         command :access_key, description: 'Manage ATS access keys'
         command :api_key,    description: 'Manage credential to access ATS API', condition: :api_key_available?
-        command :aws_trust_policy, description: 'Show AWS trust policy', action: lambda { Result::SingleObject.new(ats_api.read('aws/trustpolicy', {region: options.get_option(:region, mandatory: true)})) }
+        command :aws_trust_policy, description: 'Show AWS trust policy', action: ->(**) { Result::SingleObject.new(ats_api.read('aws/trustpolicy', {region: options.get_option(:region, mandatory: true)})) }
 
         commands_under(:cluster) do
-          command :clouds, description: 'List cloud providers', action: lambda { Result::ObjectList.new(@ats_api_open.cloud_names.map { |k, v| CLOUD_TABLE.zip([k, v]).to_h }) }
-          command :list,   description: 'List ATS servers',     action: lambda { Result::ObjectList.new(@ats_api_open.all_servers, fields: %w[id cloud region]) }
+          command :clouds, description: 'List cloud providers', action: ->(**) { Result::ObjectList.new(@ats_api_open.cloud_names.map { |k, v| CLOUD_TABLE.zip([k, v]).to_h }) }
+          command :list,   description: 'List ATS servers',     action: ->(**) { Result::ObjectList.new(@ats_api_open.all_servers, fields: %w[id cloud region]) }
           command :show,   description: 'Show a specific server (or use options cloud and region)',
             arguments: [{name: :server_id, type: String, mandatory: false, default: nil}]
         end
@@ -55,7 +55,7 @@ module Aspera
         commands_under(:access_key) do
           command :create,      description: 'Create an access key',
             arguments: [{name: :access_key, type: Hash, mandatory: false, default: {}}]
-          command(:list,        description: 'List access keys', action: lambda do
+          command(:list,        description: 'List access keys', action: lambda do |**|
             res = ats_api.read('access_keys', query_read_delete(default: {'offset' => 0, 'max_results' => 1000}))
             Result::ObjectList.new(res['data'], fields: ['name', 'id', 'created.at', 'modified.at'])
           end)
@@ -76,7 +76,7 @@ module Aspera
         end
 
         commands_under(:api_key) do
-          command(:instances, description: 'List ATS instances in IBM Cloud', action: lambda do
+          command(:instances, description: 'List ATS instances in IBM Cloud', action: lambda do |**|
             instances = ats_api_v2_auth_ibm.read('instances')
             Log.log.warn { "more instances remaining: #{instances['remaining']}" } unless instances['remaining'].to_i.eql?(0)
             Result::ValueList.new(instances['data'], name: 'instance')
@@ -84,7 +84,7 @@ module Aspera
           command :create, description: 'Create an ATS API key',
             arguments: [{name: :api_key, type: Hash, mandatory: false, default: {}}],
             action: ->(api_key:, **) { Result::SingleObject.new(build_ats_ibm_api_with_instance.create('api_keys', api_key)) }
-          command :list,   description: 'List ATS API keys', action: lambda { Result::ValueList.new(build_ats_ibm_api_with_instance.read('api_keys', {'offset' => 0, 'max_results' => 1000})['data'], name: 'ats_id') }
+          command :list,   description: 'List ATS API keys', action: ->(**) { Result::ValueList.new(build_ats_ibm_api_with_instance.read('api_keys', {'offset' => 0, 'max_results' => 1000})['data'], name: 'ats_id') }
           command :show,   description: 'Show an ATS API key',
             arguments: [{name: :api_key_id, type: :identifier}],
             action: ->(api_key_id:, **) { Result::SingleObject.new(build_ats_ibm_api_with_instance.read("api_keys/#{api_key_id}")) }

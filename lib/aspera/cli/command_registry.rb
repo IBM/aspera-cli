@@ -196,25 +196,38 @@ module Aspera
             target_ids = mount.registry.children_of(mount.at).keys
             unknown = Array(mount.only) + Array(mount.except) - target_ids
             raise ArgumentError, "#{path.inspect}: mount only/except unknown in #{mount.plugin}: #{unknown.inspect}" unless unknown.empty?
-            instance_defined = plugin_class.nil? || plugin_class.method_defined?(mount.instance) || plugin_class.private_method_defined?(mount.instance)
+            instance_defined = plugin_class.nil? || instance_method?(plugin_class, mount.instance)
             raise ArgumentError, "#{path.inspect}: no method #{mount.instance} on #{plugin_class}" unless instance_defined
             next
           end
 
-          # Rule: leaf commands with no explicit action must have a matching instance method
-          next if spec.action # explicit action: skip
           next if @children_index[path]&.any? # intermediate node: skip
-          next unless plugin_class
-          implicit_method = CommandSpec.action_method(path)
-          unless plugin_class.method_defined?(implicit_method) || plugin_class.private_method_defined?(implicit_method)
-            raise ArgumentError,
-              "#{path.inspect}: no action: and no method #{implicit_method} on #{plugin_class}"
+          action = spec.action
+          if action.nil?
+            next unless plugin_class
+            # Rule: leaf commands with no explicit action must have a matching instance method
+            action = CommandSpec.action_method(path)
+            unless instance_method?(plugin_class, action)
+              raise ArgumentError,
+                "#{path.inspect}: no action: and no method #{action} on #{plugin_class}"
+            end
           end
+          action = plugin_class.instance_method(action) if action.is_a?(Symbol) && plugin_class && instance_method?(plugin_class, action)
+          # Rule: the action receives the whole dispatch context as keywords (setup results, arguments),
+          # so it must accept any keyword (`**`): a lambda or method with fixed arity would raise ArgumentError.
+          # A non-lambda Proc ignores extra keywords.
+          next if action.is_a?(Symbol) || (action.is_a?(Proc) && !action.lambda?)
+          raise ArgumentError, "#{path.inspect}: action must accept any keyword (**), parameters: #{action.parameters.inspect}" unless action.parameters.any? { |kind, _| kind.eql?(:keyrest) }
         end
         self
       end
 
       private
+
+      # @return [Boolean] true if plugin_class defines instance method name (public or private)
+      def instance_method?(plugin_class, name)
+        plugin_class.method_defined?(name) || plugin_class.private_method_defined?(name)
+      end
 
       # @param path [Array<Symbol>] non-empty path in this registry's namespace
       # @return [Array<ArgumentSpec>] arguments of the mount exposing the last segment of path, if any

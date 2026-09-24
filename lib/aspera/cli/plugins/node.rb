@@ -412,7 +412,7 @@ module Aspera
         end
         # async (legacy /async)
         commands_under :async, description: 'synchronization (legacy /async)' do
-          command :list,      description: 'List async sync IDs', action: -> { Result::ValueList.new(@api_node.read('async/list')['sync_ids']) }
+          command :list,      description: 'List async sync IDs', action: ->(**) { Result::ValueList.new(@api_node.read('async/list')['sync_ids']) }
           command :show,      description: 'Show async summary',
             arguments: [{name: :async_id, type: :identifier, lookup: :async_lookup}]
           command :delete,    description: 'Delete async',
@@ -459,7 +459,7 @@ module Aspera
         # stream
         command :stream, description: 'Manage stream operations'
         commands_under :stream do
-          command :list,   description: 'List streams', action: -> { Result::ObjectList.new(@api_node.read('ops/transfers', query_read_delete), fields: %w[id status]) }
+          command :list,   description: 'List streams', action: ->(**) { Result::ObjectList.new(@api_node.read('ops/transfers', query_read_delete), fields: %w[id status]) }
           command :create, description: 'Create a stream',
             arguments: [{name: :stream, type: Hash, schema: 'node:components.schemas.transferPostRequest'}],
             action: ->(stream:, **) { Result::SingleObject.new(@api_node.create('streams', stream)) }
@@ -490,7 +490,7 @@ module Aspera
         # service
         command :service, description: 'Manage services'
         commands_under :service do
-          command :list,   description: 'List services', action: -> { Result::ObjectList.new(@api_node.read('rund/services')['services']) }
+          command :list,   description: 'List services', action: ->(**) { Result::ObjectList.new(@api_node.read('rund/services')['services']) }
           command :create, description: 'Create a service',
             arguments: [{name: :service, type: Hash}]
           command :delete, description: 'Delete a service',
@@ -503,7 +503,7 @@ module Aspera
             arguments: [{name: :watch_folder, type: Hash}],
             action: ->(watch_folder:, **) { Result::Status.new("#{@api_node.create('v3/watchfolders', watch_folder)['id']} created") }
           command :list,   description: 'List watch folders',
-            action: -> { Result::ValueList.new(@api_node.read('v3/watchfolders', query_read_delete)['ids']) }
+            action: ->(**) { Result::ValueList.new(@api_node.read('v3/watchfolders', query_read_delete)['ids']) }
           command :show,   description: 'Show a watch folder',
             arguments: [{name: :watch_folder_id, type: :identifier}],
             action: ->(watch_folder_id:, **) { Result::SingleObject.new(@api_node.read("v3/watchfolders/#{watch_folder_id}")) }
@@ -533,7 +533,7 @@ module Aspera
         end
         # Standalone leaf commands
         command :asperabrowser, description: 'Open Aspera browser'
-        command :basic_token,   description: 'Generate basic auth token', action: -> { Result::Text.new(Rest.basic_authorization(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true))) }
+        command :basic_token,   description: 'Generate basic auth token', action: ->(**) { Result::Text.new(Rest.basic_authorization(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true))) }
         command :bearer_token, description: 'Generate bearer token',
           arguments: [{name: :private_key_pem, type: String}, {name: :token, type: Hash, schema: 'opts:components.schemas.NodeBearerTokenOptions'}]
         command :simulator,     description: 'Start node simulator',
@@ -610,7 +610,7 @@ module Aspera
           define_method(:"action_sync_#{dir}") { |path:, sync_info: {}, **| run_sync_transfer(dir, path: path, sync_info: sync_info, &sync_gen3_block) }
         end
 
-        def action_upload
+        def action_upload(**)
           # empty transfer spec for authorization request
           request_transfer_spec = {}
           request_transfer_spec[:paths] = [{destination: transfer.destination_folder(Transfer::Spec::DIRECTION_SEND)}]
@@ -624,7 +624,7 @@ module Aspera
           Runner.result_transfer(transfer.start(transfer_spec))
         end
 
-        def action_download
+        def action_download(**)
           # empty transfer spec for authorization request
           request_transfer_spec = {}
           request_transfer_spec[:paths] = transfer.ts_source_paths
@@ -642,7 +642,7 @@ module Aspera
           Result::Text.new(http.body)
         end
 
-        def action_health
+        def action_health(**)
           nagios = Nagios.new
           begin
             info = @api_node.read('info')
@@ -995,7 +995,7 @@ module Aspera
         end
 
         # transfer sub-commands
-        def action_transfer_list
+        def action_transfer_list(**)
           transfer_filter = query_read_delete(default: {}, schema: Schema::Registry.query_params(Schema::Registry::NODE, 'ops/transfers'))
           iteration_persistency = nil
           if options.get_option(:once_only, mandatory: true)
@@ -1017,7 +1017,7 @@ module Aspera
           Result::ObjectList.new(transfers_data, fields: %w[id status start_spec.direction start_spec.remote_user start_spec.remote_host start_spec.destination_path])
         end
 
-        def action_transfer_sessions
+        def action_transfer_sessions(**)
           transfers_data = @api_node.read('ops/transfers', query_read_delete(schema: Schema::Registry.query_params(Schema::Registry::NODE, 'ops/transfers')))
           sessions = transfers_data.flat_map { |t| t['sessions'] }
           sessions.each do |session|
@@ -1038,7 +1038,7 @@ module Aspera
           Result::Status.new('Modified')
         end
 
-        def action_transfer_bandwidth_average
+        def action_transfer_bandwidth_average(**)
           transfers_data = @api_node.read('ops/transfers', query_read_delete(schema: Schema::Registry.query_params(Schema::Registry::NODE, 'ops/transfers')))
           bandwidth_period = {}
           dir_info = %i[avg_kbps sessions].freeze
@@ -1114,7 +1114,7 @@ module Aspera
           Result::Status.new('updated')
         end
 
-        def action_asperabrowser
+        def action_asperabrowser(**)
           browse_params = {
             'nodeUser' => options.get_option(:username, mandatory: true),
             'nodePW'   => options.get_option(:password, mandatory: true),

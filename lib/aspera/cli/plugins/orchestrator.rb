@@ -104,16 +104,16 @@ module Aspera
         # --- DSL ---
 
         command :health,     description: 'Check Orchestrator API health', setup: :setup_api
-        command :info,       description: 'Check that Orchestrator responds (ping)', setup: :setup_api, action: -> { Result::SingleObject.new(call_ao('remote_node_ping', format: 'xml', xml_arrays: false)) }
-        command :processes,  description: 'Show Orchestrator background process status', setup: :setup_api, action: -> { Result::ObjectList.new(call_ao('processes_status', format: 'xml')['process']) }
-        command :monitors,   description: 'Show Orchestrator monitor snapshot',          setup: :setup_api, action: -> { Result::SingleObject.new(call_ao('monitor_snapshot')['monitor']) }
-        command :plugins,    description: 'Show Orchestrator plugin versions',           setup: :setup_api, action: -> { Result::ObjectList.new(call_ao('plugin_version')['Plugin']) }
+        command :info,       description: 'Check that Orchestrator responds (ping)', setup: :setup_api, action: ->(**) { Result::SingleObject.new(call_ao('remote_node_ping', format: 'xml', xml_arrays: false)) }
+        command :processes,  description: 'Show Orchestrator background process status', setup: :setup_api, action: ->(**) { Result::ObjectList.new(call_ao('processes_status', format: 'xml')['process']) }
+        command :monitors,   description: 'Show Orchestrator monitor snapshot',          setup: :setup_api, action: ->(**) { Result::SingleObject.new(call_ao('monitor_snapshot')['monitor']) }
+        command :plugins,    description: 'Show Orchestrator plugin versions',           setup: :setup_api, action: ->(**) { Result::ObjectList.new(call_ao('plugin_version')['Plugin']) }
         command :workflows,  description: 'Manage workflows',   setup: :setup_api
         command :workorders, description: 'Manage work orders', setup: :setup_api
         command :workstep,   description: 'Manage work steps',  setup: :setup_api
 
         commands_under :workflows do
-          command(:list, description: 'List all workflows', action: lambda do
+          command(:list, description: 'List all workflows', action: lambda do |**|
             Result::ObjectList.new(
               call_ao('workflows_list')['workflows']['workflow'],
               fields: %w[id portable_id name published_status published_revision_id latest_revision_id last_modification]
@@ -196,7 +196,7 @@ module Aspera
           {}
         end
 
-        def action_health
+        def action_health(**)
           nagios = Nagios.new
           begin
             info = call_ao('remote_node_ping', format: 'xml', xml_arrays: false)

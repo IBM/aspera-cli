@@ -113,7 +113,7 @@ module Aspera
         # --- DSL ---
 
         command :health,   description: 'Check Shares health'
-        command :info,     description: 'Show server information', action: -> { Result::SingleObject.new(basic_auth_api(NODE_API_PATH).read('info', headers: {'Content-Type'=>'application/json'})) }
+        command :info,     description: 'Show server information', action: ->(**) { Result::SingleObject.new(basic_auth_api(NODE_API_PATH).read('info', headers: {'Content-Type'=>'application/json'})) }
         command :files,    description: 'Browse and transfer files on Shares', aliases: [:repository],
           mount: {plugin: Node, instance: :shares_node_plugin, only: Node::COMMANDS_SHARES}
         command :admin,    description: 'Administer Shares', setup: :setup_admin
@@ -293,7 +293,7 @@ module Aspera
 
         # --- health ---
 
-        def action_health
+        def action_health(**)
           nagios = Nagios.new
           shares_url = options.get_option(:url, mandatory: true)
           health = self.class.health_check(shares_url)

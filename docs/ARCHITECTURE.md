@@ -252,11 +252,13 @@ Key properties of the `ctx` hash:
 
 | Condition | Preferred form |
 | --- | --- |
-| 1 statement, no args | `action: ->{…}` |
+| 1 statement, no args | `action: ->(**){…}` |
 | 1 statement, with args | `action: ->(arg:, **){…}` |
-| 2–3 statements, inline | `command(:x, …, action: lambda do … end)` |
-| > 3 statements | named method `def action_<full_path>` |
+| 2–3 statements, inline | `command(:x, …, action: lambda do \|**\| … end)` |
+| > 3 statements | named method `def action_<full_path>(**)` |
 | shared logic (called from multiple places) | named method regardless of size |
+
+An action always accepts any keyword (`**`): it receives the whole accumulated context, whose keys depend on setups and arguments of ancestors. `validate!` rejects a lambda or method without `**` (a non-lambda `proc` is not checked, as it ignores extra keywords).
 
 The 3-statement threshold is deliberately informal. The deciding factor is readability at the call site: if the action fits on one line without obscuring the `command(...)` declaration, an inline `->` is preferred. If the body needs local variables, loops, or `rescue`, a named method is clearer. Logic shared between several commands must always live in a named method, regardless of its size. The same convention applies to `lookup:`.
 
@@ -278,7 +280,7 @@ command :show, description: 'Show a package',
 # 2–3 statements: parentheses are mandatory
 command(
   :flush, description: 'Delete all cached OAuth tokens',
-  action: lambda do
+  action: lambda do |**|
     require 'aspera/api/node'
     Result::ValueList.new(OAuth::Factory.instance.flush_tokens, name: 'file')
   end
@@ -790,7 +792,7 @@ Analyzes API errors and provides:
 - Unit tests, fully self-contained, e.g.:
   - `base_dsl_spec.rb` — `Base` DSL dispatcher
   - `command_registry_spec.rb` — `CommandRegistry` validation rules
-  - `aoc_registry_spec.rb` — `Aoc.command_registry.validate!(plugin_class: Aoc)` consistency (every leaf has an action or a matching `action_*` method)
+  - `plugin_registry_spec.rb` — `validate!(plugin_class:)` consistency of every plugin registry (every leaf has an action or a matching `action_*` method, and every action accepts `**`)
   - `parser_spec.rb`, `option_declarator_spec.rb`, `preset_actions_spec.rb`, `runner_spec.rb`, `mcp_tool_spec.rb`
   - `async_transfer_store_spec.rb`, `transfer_agent_async_spec.rb`, `transfer_result_spec.rb`, `agent_transfer_status_spec.rb`
   - `rest_spec.rb`, `secret_hider_spec.rb`, `proxy_auto_config_spec.rb`, `schema_reader_spec.rb`, `string_ext_spec.rb`, `uri_reader_spec.rb`, …
