@@ -575,7 +575,7 @@ module Aspera
             Base::Operations::ALL.each do |verb|
               spec = reg[Array(verb)]
               expect(spec).not_to(be_nil)
-              expect(spec.description).to(eq("#{verb.capitalize} Things"))
+              expect(spec.description).to(eq(verb.eql?(:list) ? 'List things' : "#{verb.capitalize} thing"))
             end
           end
 

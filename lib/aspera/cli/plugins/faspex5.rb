@@ -581,7 +581,7 @@ module Aspera
             commands_under(res) do
               # List is handled with Faspex 5 pagination (item_list_with_total)
               unless is_singleton
-                list_kwargs = {description: 'List'}
+                list_kwargs = {description: operation_description(:list, entity_noun(entity_path))}
                 list_kwargs[:query_schema] = Schema::Registry.query_params(cfg[:query_component], entity_path) if cfg[:query_component]
                 command :list, **list_kwargs
               end
@@ -668,7 +668,7 @@ module Aspera
                 else
                   {}
                 end
-              command c, description: c.to_s.capitalize, **args
+              command c, description: operation_description(c, 'member'), **args
             end
           end
 

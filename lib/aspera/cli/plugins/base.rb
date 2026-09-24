@@ -56,10 +56,41 @@ module Aspera
             entity.to_s.split('/').last.tr('_', ' ').capitalize
           end
 
+          # Words displayed with specific case in descriptions
+          NOUN_WORDS = {'smtp' => 'SMTP', 'ldap' => 'LDAP', 'saml' => 'SAML', 'oauth' => 'OAuth', 'kms' => 'KMS', 'api' => 'API'}.freeze
+          private_constant :NOUN_WORDS
+
+          # Derive a lowercase noun from an entity path, singular unless told otherwise.
+          # e.g. 'access_keys' -> 'access key', 'data/smtp_server' -> 'SMTP server'
+          # @param entity   [String, Symbol] REST path or entity name
+          # @param singular [Boolean]        Singularize the last word
+          # @return [String]
+          def entity_noun(entity, singular: true)
+            words = entity.to_s.split('/').last.split('_').map { |w| NOUN_WORDS.fetch(w, w) }
+            words[-1] = words[-1].sub(/ies\z/, 'y').sub(/(ss|x|sh|ch)es\z/, '\1').sub(/(?<!s)s\z/, '') if singular
+            words.join(' ')
+          end
+
+          # Standard description of a CRUD operation on an entity.
+          # e.g. (:list, 'access key') -> 'List access keys', (:show, 'access key') -> 'Show access key'
+          # @param verb [Symbol] Operation
+          # @param noun [String] Singular noun of entity
+          # @return [String]
+          def operation_description(verb, noun)
+            return "#{verb.capitalize} #{noun}" unless verb.eql?(:list)
+            plural =
+              case noun
+              when /[^aeiou]y\z/ then noun.sub(/y\z/, 'ies')
+              when /(s|x|sh|ch)\z/ then "#{noun}es"
+              else "#{noun}s"
+              end
+            "List #{plural}"
+          end
+
           # DSL class method: declare CRUD commands for a REST entity.
           #
           # For each verb in operations:, registers one CommandSpec with:
-          #   - description: "#{verb.capitalize} #{name}"
+          #   - description: operation_description(verb, name)
           #   - arguments:   [{name: :id, type: :identifier, lookup: lookup}] for instance verbs
           #                  (:show, :modify, :delete) when not a singleton; none for global verbs
           #   - action:      calls entity_<verb>(api:, entity:, **shared_kwargs, **ctx)
@@ -71,11 +102,11 @@ module Aspera
           # @param api        [Symbol, String] Runtime API ref (:@ivar or method name) or literal string
           # @param entity     [String, Symbol] REST sub-path, or ctx key Symbol resolved at runtime
           # @param operations [Array<Symbol>]  Verbs to expose; defaults to Operations::ALL
-          # @param name       [String, nil]    Display name; defaults to last segment of entity (static only)
+          # @param name       [String, nil]    Singular display name; defaults to last segment of entity (static only)
           # @param lookup     [Symbol, nil]    Instance method for percent-selector resolution
           # @param kwargs     [Hash]           Shared params forwarded to every per-verb method
           def crud_commands(api:, entity:, operations: nil, name: nil, lookup: nil, **kwargs)
-            name       ||= entity_display_name(entity) unless entity.is_a?(Symbol)
+            name       ||= entity_noun(entity, singular: !kwargs[:is_singleton]) unless entity.is_a?(Symbol)
             operations ||= Operations::ALL
             operations.each do |verb|
               id_arg = ({name: :id, type: :identifier, lookup: lookup} if Operations::INSTANCE.include?(verb) && !kwargs[:is_singleton])
@@ -109,7 +140,7 @@ module Aspera
                 resolved_entity = entity.is_a?(Symbol) ? ctx.fetch(entity) : entity
                 send(:"entity_#{verb}", api: resolved_api, entity: resolved_entity, **kwargs, **ctx)
               end
-              cmd_attrs = {description: "#{verb.capitalize} #{name || entity.inspect}", action: action_proc}
+              cmd_attrs = {description: operation_description(verb, name || entity.inspect), action: action_proc}
               cmd_attrs[:arguments] = args if args
               command(verb, **cmd_attrs)
             end

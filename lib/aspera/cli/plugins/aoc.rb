@@ -147,20 +147,20 @@ module Aspera
           def register_short_link_commands(base, parent_path)
             base.commands_under(parent_path) do
               base.command(
-                :create, description: 'Create',
+                :create, description: base.operation_description(:create, 'short link'),
                 arguments: [{name: :custom_data, type: Hash, mandatory: false, default: {}}]
               )
               base.command(
-                :modify, description: 'Modify',
+                :modify, description: base.operation_description(:modify, 'short link'),
                 arguments: [{name: :short_link_id, type: :identifier}, {name: :custom_data, type: Hash, mandatory: false, default: {}}]
               )
-              base.command(:list, description: 'List short links')
+              base.command(:list, description: base.operation_description(:list, 'short link'))
               base.command(
-                :show, description: 'Show a short link',
+                :show, description: base.operation_description(:show, 'short link'),
                 arguments: [{name: :short_link_id, type: :identifier}]
               )
               base.command(
-                :delete, description: 'Delete a short link',
+                :delete, description: base.operation_description(:delete, 'short link'),
                 arguments: [{name: :short_link_id, type: :identifier}]
               )
             end
@@ -651,7 +651,8 @@ module Aspera
                   c = aoc_res_cfg(res)
                   merged = merged.merge(query_schema: Schema::Registry.query_params(c[:query_component], c[:path]))
                 end
-                command op, description: op.to_s.tr('_', ' ').capitalize, **merged
+                description = Operations::ALL.include?(op) ? operation_description(op, entity_noun(res, singular: false)) : op.to_s.tr('_', ' ').capitalize
+                command op, description: description, **merged
               end
             end
           end
@@ -799,11 +800,11 @@ module Aspera
           commands_under %i[contacts] do
             contact_id = {name: :contact_id, type: :identifier, lookup: :lookup_aoc_contact_id}
             contact_schema = aoc_res_cfg(:contact)[:schema]
-            command :list,   description: 'List contacts'
-            command :show,   description: 'Show a contact', arguments: [contact_id]
-            command :create, description: 'Create a contact', arguments: [{name: :data, type: Hash, bulk: true, schema: contact_schema}]
-            command :modify, description: 'Modify a contact', arguments: [contact_id, {name: :data, type: Hash, schema: contact_schema}]
-            command :delete, description: 'Delete a contact', arguments: [contact_id]
+            command :list,   description: operation_description(:list, 'contact')
+            command :show,   description: operation_description(:show, 'contact'), arguments: [contact_id]
+            command :create, description: operation_description(:create, 'contact'), arguments: [{name: :data, type: Hash, bulk: true, schema: contact_schema}]
+            command :modify, description: operation_description(:modify, 'contact'), arguments: [contact_id, {name: :data, type: Hash, schema: contact_schema}]
+            command :delete, description: operation_description(:delete, 'contact'), arguments: [contact_id]
           end
           command :settings, description: 'Manage client settings'
           commands_under %i[settings] do

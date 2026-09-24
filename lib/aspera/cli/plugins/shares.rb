@@ -150,7 +150,7 @@ module Aspera
               commands_under :all do
                 crud_commands entity: "data/#{entity_type}s",
                   api:            :@api_shares_admin,
-                  name:           "#{entity_type}s",
+                  name:           entity_type.to_s,
                   operations:     Operations::ALL - %i[create modify],
                   lookup:         lookup_method_all,
                   display_fields: user_fields && (user_fields + %w[directory_user])
@@ -191,7 +191,7 @@ module Aspera
                 lookup_method_local = :"lookup_shares_#{entity_type}_local_id"
                 crud_commands entity: "data/local_#{entity_type}s",
                   api:            :@api_shares_admin,
-                  name:           "local #{entity_type}s",
+                  name:           "local #{entity_type}",
                   lookup:         lookup_method_local,
                   display_fields: user_fields,
                   body_component: Schema::Registry::SHARES
