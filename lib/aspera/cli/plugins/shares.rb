@@ -108,7 +108,8 @@ module Aspera
 
         command :health,   description: 'Check Shares health'
         command :info,     description: 'Show server information', action: -> { Result::SingleObject.new(basic_auth_api(NODE_API_PATH).read('info', headers: {'Content-Type'=>'application/json'})) }
-        command :files,    description: 'Browse and transfer files on Shares', aliases: [:repository], setup: :setup_shares_node
+        command :files,    description: 'Browse and transfer files on Shares', aliases: [:repository],
+          mount: {plugin: Node, instance: :shares_node_plugin, only: Node::COMMANDS_SHARES}
         command :admin,    description: 'Administer Shares', setup: :setup_admin
 
         commands_under :admin do
@@ -259,11 +260,11 @@ module Aspera
 
         # --- setup ---
 
-        # Build the Shares node API plugin and inject into ctx.
-        # @return [Hash] context hash containing :shares_node_plugin
-        def setup_shares_node(**)
-          api_shares_node = basic_auth_api(NODE_API_PATH)
-          {shares_node_plugin: Node.new(context: context, api: api_shares_node)}
+        # files - mount target: Node plugin on the Shares node API.
+        # Api::Node (not plain Rest) so that Node commands using its helpers work (e.g. spec, transport).
+        # @return [Node]
+        def shares_node_plugin(**)
+          Node.new(context: context, api: Api::Node.new(**basic_auth_params(NODE_API_PATH)))
         end
 
         # Build the admin REST API and store in ivar.
@@ -296,44 +297,6 @@ module Aspera
             nagios.add_critical('API', health[:api].to_s)
           end
           Result::ObjectList.new(nagios.status_list)
-        end
-
-        # --- files sub-commands (restricted to COMMANDS_SHARES, delegated to Node) ---
-
-        commands_under :files do
-          Node::COMMANDS_SHARES.each do |cmd|
-            next if cmd.eql?(:sync) # intermediate node with sub-commands, declared separately below
-            spec = Node::COMMANDS_GEN3_SPEC[cmd] || {description: "Node #{cmd} command"}
-            command cmd, **spec
-          end
-          command :sync, description: 'Synchronize folders (Gen3)'
-          commands_under :sync do
-            Sync::Operations::DIRECTIONS.each do |dir|
-              command dir, description: "#{dir.capitalize}-sync (Gen3)", transfer_paths: :send, arguments: SyncActions::PATH_AND_INFO_ARGS
-            end
-            command :admin, description: 'Manage sync database (admin operations)'
-            SyncActions.register_sync_admin_commands(self, :admin)
-          end
-        end
-
-        # One handler per COMMANDS_SHARES command (except :sync which is an intermediate node).
-        Node::COMMANDS_SHARES.reject { |cmd| cmd.eql?(:sync) }.each do |cmd|
-          define_action_method([:files, cmd]) do |shares_node_plugin:, **ctx|
-            shares_node_plugin.dispatch_v3_command(cmd, **ctx)
-          end
-        end
-
-        # Handlers for files > sync > <direction>: delegate to Node's [:sync, dir] leaf.
-        Sync::Operations::DIRECTIONS.each do |dir|
-          define_action_method([:files, :sync, dir]) do |shares_node_plugin:, **ctx|
-            shares_node_plugin.dispatch_from_registry([:sync, dir], ctx, skip_setup: true)
-          end
-        end
-        # Handlers for files > sync > admin > <op>: delegate to Node's [:sync, :admin, op] leaf.
-        SyncActions::ADMIN_COMMANDS.each do |op|
-          define_action_method([:files, :sync, :admin, op]) do |shares_node_plugin:, **ctx|
-            shares_node_plugin.dispatch_from_registry([:sync, :admin, op], ctx, skip_setup: true)
-          end
         end
 
         private

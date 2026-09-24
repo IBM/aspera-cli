@@ -132,7 +132,7 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
   end
 
   # -----------------------------------------------------------------------
-  # validate! — delegates_to unknown path
+  # validate!
   # -----------------------------------------------------------------------
   describe '#validate!' do
     it 'passes when the registry is empty' do
@@ -143,42 +143,6 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
       registry.register(spec(id: :parent_cmd))
       registry.register(spec(id: :child_cmd, parent: :parent_cmd))
       expect { registry.validate! }.not_to(raise_error)
-    end
-
-    context 'delegates_to unknown path' do
-      it 'raises when delegates_to points to an unregistered path (Symbol)' do
-        registry.register(spec(id: :foo, delegates_to: :nonexistent))
-        expect { registry.validate! }.to(raise_error(ArgumentError, /delegates_to.*unknown path/))
-      end
-
-      it 'raises when delegates_to points to an unregistered path (Array)' do
-        registry.register(spec(id: :foo, delegates_to: %i[does not exist]))
-        expect { registry.validate! }.to(raise_error(ArgumentError, /delegates_to.*unknown path/))
-      end
-
-      it 'does not raise when delegates_to is an empty array (re-enter root)' do
-        registry.register(spec(id: :foo, delegates_to: []))
-        expect { registry.validate! }.not_to(raise_error)
-      end
-
-      it 'does not raise when delegates_to points to a known path' do
-        registry.register(spec(id: :target))
-        registry.register(spec(id: :foo, delegates_to: :target))
-        expect { registry.validate! }.not_to(raise_error)
-      end
-    end
-
-    context 'delegate_instance without delegates_to' do
-      it 'raises when delegate_instance is set but delegates_to is nil' do
-        registry.register(spec(id: :foo, delegate_instance: :build_node))
-        expect { registry.validate! }.to(raise_error(ArgumentError, /delegate_instance requires delegates_to/))
-      end
-
-      it 'does not raise when both delegate_instance and delegates_to are set' do
-        registry.register(spec(id: :target))
-        registry.register(spec(id: :foo, delegate_instance: :build_node, delegates_to: :target))
-        expect { registry.validate! }.not_to(raise_error)
-      end
     end
 
     context 'transfer_paths combined with arguments' do
@@ -197,6 +161,113 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
         args = [Aspera::Cli::ArgumentSpec.new(name: :path, type: String)]
         registry.register(spec(id: :cmd, arguments: args))
         expect { registry.validate! }.not_to(raise_error)
+      end
+    end
+  end
+
+  # -----------------------------------------------------------------------
+  # mount:
+  # -----------------------------------------------------------------------
+  describe 'mount:' do
+    # target tree: info, keys > (list, do > (ls, perm > list))
+    let(:target_registry) do
+      described_class.send(:new).tap do |r|
+        r.register(spec(id: :info, action: :x))
+        r.register(spec(id: :keys))
+        r.register(spec(id: :list, parent: :keys, action: :x))
+        r.register(spec(id: :do, parent: :keys))
+        r.register(spec(id: :ls, parent: %i[keys do], action: :x))
+        r.register(spec(id: :perm, parent: %i[keys do]))
+        r.register(spec(id: :list, parent: %i[keys do perm], action: :x))
+      end
+    end
+    let(:target_class) { double('TargetPlugin', command_registry: target_registry) }
+
+    def mount_host(**mount)
+      registry.register(spec(id: :files, mount: {plugin: target_class, instance: :build, **mount}))
+      registry
+    end
+
+    it 'coerces a Hash into a MountSpec with a frozen Array at:' do
+      m = spec(id: :files, mount: {plugin: target_class, instance: :build, at: :keys}).mount
+      expect(m).to(be_a(Aspera::Cli::MountSpec))
+      expect(m.at).to(eq([:keys]))
+    end
+
+    it 'exposes the children of the mount point' do
+      mount_host(at: %i[keys do])
+      expect(registry.children_of([:files]).keys).to(eq(%i[ls perm]))
+    end
+
+    it 'resolves deep paths into the target namespace' do
+      mount_host(at: %i[keys do])
+      expect(registry.resolve(%i[files perm list])).to(eq([target_registry, %i[keys do perm list]]))
+      expect(registry[%i[files perm list]]).to(be(target_registry[%i[keys do perm list]]))
+      expect(registry.children_of(%i[files perm]).keys).to(eq([:list]))
+    end
+
+    it 'reports local and mounted paths' do
+      mount_host(at: %i[keys do])
+      expect(registry.local?([:files])).to(be(true))
+      expect(registry.local?(%i[files ls])).to(be(false))
+      expect(registry.mount_of([:files])).to(be_a(Aspera::Cli::MountSpec))
+    end
+
+    it 'filters with only: and except:' do
+      mount_host(only: %i[info keys], except: %i[info])
+      expect(registry.children_of([:files]).keys).to(eq([:keys]))
+      expect(registry[%i[files info]]).to(be_nil)
+    end
+
+    it 'lets a host child override a mounted child with the same id' do
+      mount_host
+      registry.register(spec(id: :info, parent: :files, action: :mine))
+      expect(registry.children_of([:files]).keys).to(eq(%i[info keys]))
+      expect(registry[%i[files info]].action).to(eq(:mine))
+      expect(registry.local?(%i[files info])).to(be(true))
+    end
+
+    it 'lists leaf paths through the mount' do
+      registry.register(spec(id: :other, action: :x))
+      mount_host(at: [:keys])
+      expect(registry.leaf_paths).to(eq([[:other], %i[files list], %i[files do ls], %i[files do perm list]]))
+    end
+
+    it 'does not loop on a mount cycle' do
+      target_registry.register(spec(id: :again, parent: %i[keys do], mount: {plugin: target_class, instance: :build, at: %i[keys do]}))
+      mount_host(at: %i[keys do])
+      expect(registry.leaf_paths).to(eq([%i[files ls], %i[files perm list]]))
+    end
+
+    describe '#validate!' do
+      it 'accepts a valid mount without children or action' do
+        mount_host(at: [:keys], only: [:do])
+        expect { registry.validate! }.not_to(raise_error)
+      end
+
+      it 'raises when instance: is missing' do
+        registry.register(spec(id: :files, mount: {plugin: target_class}))
+        expect { registry.validate! }.to(raise_error(ArgumentError, /mount requires instance/))
+      end
+
+      it 'raises when combined with action:' do
+        registry.register(spec(id: :files, action: :x, mount: {plugin: target_class, instance: :build}))
+        expect { registry.validate! }.to(raise_error(ArgumentError, /exclusive/))
+      end
+
+      it 'raises when at: does not exist in the target' do
+        mount_host(at: [:nope])
+        expect { registry.validate! }.to(raise_error(ArgumentError, /not found/))
+      end
+
+      it 'raises on unknown only:/except: ids' do
+        mount_host(only: %i[info nope])
+        expect { registry.validate! }.to(raise_error(ArgumentError, /unknown.*nope/))
+      end
+
+      it 'raises when the instance method is missing on the plugin class' do
+        mount_host
+        expect { registry.validate!(plugin_class: Class.new) }.to(raise_error(ArgumentError, /no method build/))
       end
     end
   end

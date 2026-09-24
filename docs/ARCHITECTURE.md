@@ -17,7 +17,7 @@ The architecture diagram illustrates the layered structure of `ascli` and its in
 The foundation layer consists of the local execution environment:
 
 - **Operating System**: Cross-platform support (Linux, macOS, Windows)
-- **Ruby Runtime**: Ruby ≥ 3.1 interpreter
+- **Ruby Runtime**: Ruby ≥ 3.1 interpreter (CI tests 3.1 → 4.0 and JRuby)
 - **Ruby Gems**: Third-party dependencies managed via Bundler
 - **Transfer Agents**: Multiple FASP client implementations
   - `ascp` (client): The core FASP protocol implementation
@@ -38,14 +38,16 @@ The central green component in the diagram represents the Ruby gem that implemen
 The main executable script that:
 
 - Sets up UTF-8 encoding for internationalization
-- Pre-parses early options (`--log-level`, `--log-format`, `--logger`) before full initialization
+- Pre-parses early logging options before full initialization: `--log-level` / `--log.level`, `--log-format` / `--log.format`, `--logger` / `--log.type`
+- Loads optional code coverage (`aspera/coverage`)
 - Fixes the home directory on Windows via `Environment.instance.fix_home`
 - Delegates to the main CLI processor
 
 ```ruby
 #!/usr/bin/env ruby
-# Pre-parses --log-level, --log-format, --logger before full initialization
+# Pre-parses logging options before full initialization
 ARGV.each { |arg| ... }
+require 'aspera/coverage'
 require 'aspera/environment'
 require 'aspera/cli/runner'
 Aspera::Environment.instance.fix_home
@@ -59,27 +61,26 @@ Aspera::Cli::Runner.new(ARGV).run
 The `Runner` class orchestrates the full command lifecycle:
 
 - **`run`**: Main entry point — calls `run_with_result`, displays the result via `Formatter`, handles all exceptions, and exits with the appropriate status code.
-- **`run_with_result`**: Pure computation entry point — initializes all agents and options, resolves the target plugin, executes the action, and returns a `Result` object. Raises on error. Used by the MCP server to run commands in-process.
+- **`run_with_result`**: Pure computation entry point — initializes all agents and options, resolves the target plugin, executes the action, and returns a `Result` object. Raises on error. Used by the MCP server ([`mcp_tool.rb`](../lib/aspera/cli/mcp_tool.rb)) to run commands in-process.
 
-All shared objects (options manager, transfer agent, config plugin, formatter, preset manager, HTTP config, etc.) are held in a `Context` instance and passed to plugins by reference.
+All shared objects are held in a `Context` instance and passed to plugins by reference.
+Members: `options` (`Parser`), `transfer` (`TransferAgent`), `config` (`Plugins::Config`), `formatter`, `persistency`, `man_header`, `presets` (`PresetManager`), `http_config`, `main_folder`, `mailer` (`Mailer`), `secret_finder`, plus `progress_bar`, `pac_executor` and `help_requested`.
 
 #### CLI Options
 
-**File**: [`lib/aspera/cli/options.rb`](../lib/aspera/cli/options.rb)
+**Files**:
 
-The `Cli::Options` class handles:
-
-- **Option Parsing**: Custom command-line argument processing
-- **Extended Value Syntax**: Support for complex parameter types (JSON, YAML, Ruby expressions, `@preset:`, `@vault:`, `@args:`)
-- **Option Validation**: Type checking and value constraints
-- **Configuration Management**: Integration with persistent configuration
+- [`parser.rb`](../lib/aspera/cli/parser.rb) — `Cli::Parser`: command-line argument processing, `get_next_command`, `get_next_argument`, `instance_identifier`
+- [`option_declarator.rb`](../lib/aspera/cli/option_declarator.rb), [`option_registry.rb`](../lib/aspera/cli/option_registry.rb), [`option_value.rb`](../lib/aspera/cli/option_value.rb), [`option_types.rb`](../lib/aspera/cli/option_types.rb) — option declaration, storage and type validation
+- [`extended_value.rb`](../lib/aspera/cli/extended_value.rb) — Extended Value Syntax (`@json:`, `@yaml:`, `@ruby:`, `@preset:`, `@vault:`, `@args:`, …)
+- [`options.schema.yaml`](../lib/aspera/cli/options.schema.yaml) — schema for global options
 
 Key responsibilities:
 
-- Declare and validate CLI options
-- Support for boolean, string, integer, array, hash types
-- Handle sensitive data (passwords, secrets) with masking
-- Provide option inheritance and defaults
+- Declare and validate CLI options (boolean, string, integer, array, hash types)
+- Composite options with dot-notation sub-keys (e.g. `--out.format=json`, `--log.level=debug`)
+- Handle sensitive data (passwords, secrets) with masking ([`secret_hider.rb`](../lib/aspera/secret_hider.rb))
+- Provide option inheritance and defaults from presets
 
 #### Plugin System
 
@@ -89,8 +90,9 @@ The plugin architecture enables modular command implementation for different Asp
 
 **Base Plugin** ([`base.rb`](../lib/aspera/cli/plugins/base.rb)):
 
-- Defines standard CRUD operations: `create`, `list`, `modify`, `show`, `delete`
-- Provides bulk operation support
+- Provides the Command DSL (`command`, `commands_under`, `crud_commands`, `option`, …) and the dispatcher
+- Provides standard CRUD operations: `create`, `list`, `modify`, `show`, `delete` (`Base::Operations`)
+- Provides bulk operation support (`--bulk`, `--bfail`)
 - Implements resource identifier resolution (including percent-selector syntax)
 - Manages plugin context (options, transfer agent, config, formatter)
 
@@ -98,7 +100,6 @@ The plugin architecture enables modular command implementation for different Asp
 
 - [`aoc.rb`](../lib/aspera/cli/plugins/aoc.rb) - Aspera on Cloud
 - [`ats.rb`](../lib/aspera/cli/plugins/ats.rb) - Aspera Transfer Service
-- [`faspex.rb`](../lib/aspera/cli/plugins/faspex.rb) - Faspex 4
 - [`faspex5.rb`](../lib/aspera/cli/plugins/faspex5.rb) - Faspex 5
 - [`shares.rb`](../lib/aspera/cli/plugins/shares.rb) - Aspera Shares
 - [`node.rb`](../lib/aspera/cli/plugins/node.rb) - Node API
@@ -110,9 +111,11 @@ The plugin architecture enables modular command implementation for different Asp
 - [`faspio.rb`](../lib/aspera/cli/plugins/faspio.rb) - Fasp.io Gateway
 - [`alee.rb`](../lib/aspera/cli/plugins/alee.rb) - Aspera Line Enterprise Edition
 
+The Faspex 4 plugin was removed (end of support).
+
 **Utility Plugins** (registered commands but not product-specific):
 
-- [`config.rb`](../lib/aspera/cli/plugins/config.rb) - Configuration management (includes `AscpActions`, `PresetActions`, `GemChecker`, `VaultManager`, `SyncActions` mixins)
+- [`config.rb`](../lib/aspera/cli/plugins/config.rb) - Configuration management (includes `SyncActions`, `VaultManager`, `GemChecker`, `AscpActions`, `PresetActions`, `TransferActions` mixins)
 - [`preview.rb`](../lib/aspera/cli/plugins/preview.rb) - File preview generation
 - [`mcp.rb`](../lib/aspera/cli/plugins/mcp.rb) - Model Context Protocol server (exposes `ascli` to AI assistants)
 
@@ -120,143 +123,180 @@ The plugin architecture enables modular command implementation for different Asp
 
 - [`base.rb`](../lib/aspera/cli/plugins/base.rb) - Abstract base class for all plugins
 - [`basic_auth.rb`](../lib/aspera/cli/plugins/basic_auth.rb) - Abstract base class for plugins using basic authentication (url/username/password)
-- [`oauth.rb`](../lib/aspera/cli/plugins/oauth.rb) - OAuth token utility (not a product plugin)
-- [`factory.rb`](../lib/aspera/cli/plugins/factory.rb) - Plugin factory (singleton)
+- [`oauth.rb`](../lib/aspera/cli/plugins/oauth.rb) - Abstract base class for plugins using OAuth
+- [`factory.rb`](../lib/aspera/cli/plugins/factory.rb) - Plugin factory (singleton); discovers plugins by scanning the plugin folders
 
 #### Command DSL
 
-All plugins declare their command tree using a class-level DSL defined in `Base`. This
-replaced the former `ACTIONS` + `execute_action` `case/when` pattern, making the full
-command tree statically introspectable, self-documenting, and testable without execution.
+All plugins declare their command tree using a class-level DSL defined in `Base`, which makes the full command tree statically introspectable, self-documenting, and testable without execution.
 
 **Key files**:
 
 - [`lib/aspera/cli/command_spec.rb`](../lib/aspera/cli/command_spec.rb) — data classes: `CommandSpec`, `ArgumentSpec`, `OptionSpec`
-- [`lib/aspera/cli/command_registry.rb`](../lib/aspera/cli/command_registry.rb) — flat registry keyed by full path (`Array<Symbol>`)
+- [`lib/aspera/cli/command_registry.rb`](../lib/aspera/cli/command_registry.rb) — flat registry keyed by full path (`Array<Symbol>`), with `validate!`
+- [`lib/aspera/cli/plugins/base.rb`](../lib/aspera/cli/plugins/base.rb) — DSL class methods and dispatcher
 
-**Command declaration** (`Base.command`):
+**DSL class methods** (in `Base`):
+
+| Method | Purpose |
+| --- | --- |
+| `command(id, **kwargs)` | Register a `CommandSpec`; `parent:` defaults to the enclosing `commands_under` scope |
+| `commands_under(parent, description: nil) { … }` | Scope block setting the default parent for nested `command` calls. Re-entrant; `parent` is relative to the current scope. Auto-declares the parent node (`"Manage <name>"`) if not yet declared |
+| `crud_commands(api:, entity:, operations:, name:, lookup:, **kwargs)` | Declare one leaf command per CRUD verb for a REST entity (see below) |
+| `define_action_method(path) { … }` | `define_method` with the conventional `action_<path>` name; used for homogeneous generated commands |
+| `option(name, description:, short:, allowed:, default:, handler:, deprecation:, schema:)` | Declare a plugin option (stored as `OptionSpec`, declared on the parser in `Base#initialize`). Raises if an ancestor already declares it |
+| `use_options(source)` | Include options declared by another plugin class or `OptionDeclarator` module |
+| `root_setup(method_name)` | Method called once before root dispatch; its `Hash` result seeds `ctx`. Used when root `condition:` methods depend on setup state (e.g. `server.rb`) |
+| `application_name(name)` | Human-readable application name shown in wizards |
+
+**Command declaration** (`CommandSpec` attributes):
 
 | Parameter | Type | Meaning |
 | --- | --- | --- |
 | `id` | `Symbol` | Unique identifier within its parent's namespace |
-| `parent` | `Symbol \| Array<Symbol> \| nil` | Full path to parent; `nil` for root commands |
+| `parent` | `Symbol \| Array<Symbol> \| nil` | Full path to parent; `nil` for root commands (usually implied by `commands_under`) |
 | `description` | `String` | User-facing help text |
 | `options` | `Array<Symbol>` | Option names consumed by this command |
-| `arguments` | `Array<ArgumentSpec>` | Positional arguments in parse order |
-| `handler` | `Symbol \| Proc \| nil` | Handler for the leaf command. Three forms: **(1)** omitted → convention `action_<full_path_joined_by_underscores>` is called; **(2)** `Symbol` → named instance method (use when body > 3 statements, or when logic is shared); **(3)** `Proc` / lambda → inline handler (use when body ≤ 3 statements and not shared — prefer `->{ ... }` for zero or keyword-only args, `lambda do \|arg\| … end` for multi-line bodies) |
-| `setup` | `Symbol \| nil` | Instance method called with `**ctx` before dispatching to children **or** before invoking the leaf handler; returns a `Hash` merged into `ctx` and passed to all descendants |
-| `root_setup` | `Symbol \| nil` | Instance method called once before the root dispatch (class-level DSL method); used when state must exist before root command conditions are evaluated |
-| `delegates_to` | `Symbol \| Array<Symbol> \| nil` | Re-enter the command tree at this path (for delegation loops) |
-| `delegate_instance` | `Symbol \| nil` | Instance method returning a different plugin object; dispatcher calls `dispatch_from_registry` on that object |
-| `aliases` | `Hash{Symbol => Symbol}` | Accepted shortcuts resolving to declared sibling command names |
-| `entity_execute` | `Hash \| nil` | Shorthand that expands to `Base#entity_execute` (five standard CRUD verbs) |
-| `transfer_paths` | `:send \| :receive \| nil` | File-list resolution delegated to `TransferAgent`; mutually exclusive with `arguments:` |
-| `condition` | `Symbol \| nil` | Instance method returning `Boolean`; if `false`, command is hidden from dispatch but shown in help with an annotation |
+| `arguments` | `Array<ArgumentSpec \| Hash>` | Positional arguments in parse order. On an **intermediate** node they are resolved before child dispatch (e.g. parent instance id); on a **leaf** they are resolved just before the action |
+| `action` | `Symbol \| Proc \| nil` | Leaf action. **(1)** omitted → convention `action_<full_path_joined_by_underscores>`; **(2)** `Symbol` → named instance method; **(3)** `Proc` → inline, executed with `instance_exec` |
+| `setup` | `Symbol \| nil` | Instance method called with `**ctx` after the node's `arguments` are resolved; returns a `Hash` merged into `ctx` for all descendants |
+| `aliases` | `Array<Symbol> \| nil` | Alternative names accepted for this command (e.g. `aliases: [:recv]`) |
+| `transfer_paths` | `:send \| :receive \| nil` | File-list resolution delegated to `TransferAgent` (reads what remains after declared `arguments`) |
+| `condition` | `Symbol \| nil` | Instance method returning `Boolean`; if `false`, command is excluded from dispatch but shown in help with an annotation |
+| `query_schema` | `String \| nil` | Schema path for `--query` help; the runner then hints `--query=help` |
+| `mount` | `Hash \| nil` | Expose a sub-tree of another plugin class under this node (see [Mounting another plugin's commands](#mounting-another-plugins-commands)) |
 
-**`entity_command` helper** (`Base.entity_command`):
+**Argument declaration** (`ArgumentSpec`, usually given as a `Hash`):
 
-A higher-level DSL shorthand that wraps `command(id, …, entity_execute: {…})`. Use it to declare a CRUD command in a single line:
+| Parameter | Type | Meaning |
+| --- | --- | --- |
+| `name` | `Symbol` | Key in `ctx`, also used in help and error messages |
+| `description` | `String` | User-facing description |
+| `type` | `Class \| Array<Class> \| :identifier` | Validated type; `:identifier` resolves via `options.instance_identifier` (supports percent-selector) |
+| `mandatory` | `Boolean` | Default `true`; optional arguments must come after all mandatory ones |
+| `multiple` | `Boolean \| String` | `true`: consume all remaining; `String`: consume until the named marker |
+| `default` | `Object \| nil` | Default value when `mandatory: false` and no argument provided |
+| `schema` | `String \| nil` | JSON schema name for validation and `--help` introspection |
+| `bulk` | `Boolean` | Result is always an `Array`; with `--bulk=yes` the argument is read as an array |
+| `lookup` | `Symbol \| Proc \| nil` | Percent-selector resolver for `:identifier`: `send(lookup, field, value, **ctx)` or `instance_exec(field, value, **ctx, &lookup)` |
+| `allowed` | `Array<Symbol> \| nil` | Allowed values (accept list) |
+| `interactive` | `Boolean` | Prompt for the value when missing (sets `ask_missing_mandatory`) |
+
+Arguments already present in `ctx` (e.g. injected by a caller) are not read again.
+
+**`crud_commands` helper**:
+
+For each verb in `operations:` (default `Operations::ALL` = `create list modify show delete`) it registers a leaf command whose action calls `entity_<verb>(api:, entity:, **kwargs, **ctx)`:
+
+- `show` / `modify` / `delete` get an `{name: :id, type: :identifier, lookup: lookup}` argument (unless `is_singleton:`); `delete` is bulk-capable
+- `create` / `modify` get a `data` `Hash` argument; with `body_component:` its schema is taken from the OpenAPI registry
+- `api:` is resolved at runtime: `:@ivar` → instance variable, other `Symbol` → method call, `Proc` → `instance_exec`
+- `entity:` may be a `Symbol`, resolved at runtime from `ctx` (e.g. `:sf_entity` injected by a parent `setup:`)
+- other `**kwargs` (`display_fields:`, `items_key:`, `is_singleton:`, …) are forwarded to every `entity_<verb>`
 
 ```ruby
-entity_command :dropboxes, api: :@dropboxes_api, entity: 'admin/dropboxes'
-# equivalent to:
-command(:dropboxes, description: 'Manage dropboxes', entity_execute: {api: :@dropboxes_api, entity: 'admin/dropboxes'})
+commands_under :workflows do
+  crud_commands api: :@automation_api, entity: 'workflows'
+end
 ```
 
-| Parameter | Type | Meaning |
-| --- | --- | --- |
-| `id` | `Symbol` | Command identifier |
-| `api` | `Symbol` | Method name (`:method`) or instance variable (`:@ivar`) resolved at runtime to the REST API object |
-| `entity` | `String` | API sub-path (e.g. `'admin/dropboxes'`) |
-| `description` | `String \| nil` | User-facing help text; defaults to `"Manage <last segment of entity>"` when omitted |
-| `**kwargs` | `Hash` | Any extra `entity_execute` params forwarded verbatim (`display_fields:`, `command:`, `is_singleton:`, …) |
+**Dispatcher algorithm** (`Base#execute_action` → `dispatch_from_registry`):
 
-**Argument declaration** (`ArgumentSpec`):
-
-| Parameter | Type | Meaning |
-| --- | --- | --- |
-| `name` | `Symbol` | Name used in help and error messages |
-| `description` | `String` | User-facing description |
-| `type` | `Class \| Array<Class> \| :identifier` | Validated type; `:identifier` triggers `instance_identifier` |
-| `mandatory` | `Boolean` | Default `true`; optional arguments must come after all mandatory ones |
-| `multiple` | `Boolean` | If `true`, consume all remaining positional arguments |
-| `default` | `Object \| nil` | Default value when `mandatory: false` and no argument provided |
-| `schema` | `String \| nil` | JSON schema name for validation and help introspection |
-
-**Dispatcher algorithm** (`Base#dispatch_from_registry`):
-
-The dispatcher operates in two phases for each node:
-
-1. **Setup** — if the current node declares a `setup:` method, it is called first; its return value is merged into the context hash `ctx` and passed to all descendants.
-2. **Dispatch** — the next positional argument is consumed and matched against the node's children. `condition:` commands are excluded from runtime dispatch but included in help output.
+`execute_action` validates the registry once per class (`CommandRegistry#validate!`), runs `root_setup` if declared, then calls `dispatch_from_registry([], init_ctx)`.
 
 ```text
 dispatch_from_registry(current_path, ctx = {}, skip_setup: false)
-  # Phase A: setup on the current node (skipped when --help or skip_setup: true)
-  ctx = ctx.merge(send(spec.setup, **ctx)) if spec&.setup && !skip_setup
+  spec    = registry[current_path]
+  is_leaf = spec has no children
 
-  # Phase B: select child command
-  command = options.get_next_command(available_children, aliases: ...)
-  child   = available[command]
+  # Phase A (skipped when --help or skip_setup: true)
+  if !is_leaf
+    resolve spec.arguments into ctx          # e.g. parent instance id (:identifier + lookup)
+  ctx = ctx.merge(send(spec.setup, **ctx)) if spec.setup
 
-  # Delegation to another plugin instance
-  return target.dispatch_from_registry(child.delegates_to, {}) if child.delegate_instance
-
-  # Path delegation (loops)
-  return dispatch_from_registry(child.delegates_to, ctx) if child.delegates_to
-
-  # CRUD shorthand
-  return run_entity_execute(child.entity_execute, ctx) if child.entity_execute
-
-  if grandchildren.any?
-    # Intermediate node: recurse; child setup runs at top of next call
-    dispatch_from_registry(current_path + [command], ctx)
+  # Phase B
+  if is_leaf
+    dispatch_leaf:  raise HelpRequest if --help
+                    execute_leaf: resolve spec.arguments into ctx, invoke action_for(spec) with **ctx
   else
-    # Leaf: run child setup (if any), then execute handler
-    ctx = ctx.merge(send(child.setup, **ctx)) if child.setup
-    send(handler_for(child), **ctx)
-  end
-end
+    dispatch_child: raise HelpRequest if --help and no more args
+                    command = options.get_next_command(children not hidden by condition, aliases:)
+                    raise HelpRequest if --help and no more args
+                    if child is mounted and not --help
+                      return dispatch_mount(...)   # continue on the target plugin instance
+                    dispatch_from_registry(current_path + [command], ctx)
 ```
 
 Key properties of the `ctx` hash:
 
-- **Additive**: each `setup:` call enriches the accumulated context; descendants can rely on all ancestor setups.
-- **Intermediate node**: setup runs before child command selection (before `get_next_command`), so context is available for all children.
-- **Leaf node**: setup runs immediately before the handler, injecting extra context that the handler receives as keyword arguments.
-- `transfer_paths:` bypasses argument resolution entirely; `TransferAgent#ts_source_paths` handles the argument stream conditionally based on `--sources`.
+- **Additive**: each resolved argument and each `setup:` call enriches the accumulated context; descendants can rely on everything resolved by ancestors.
+- **Intermediate node**: arguments and setup are resolved before the child command is selected, so context is available to all children.
+- **Leaf node**: setup runs, then arguments are resolved, then the action receives `ctx` as keyword arguments.
+- `transfer_paths:` — `TransferAgent#ts_source_paths` reads the file list from what remains in the argument stream, depending on `--sources`.
 
-#### Handler style convention
+#### Action style convention
 
 | Condition | Preferred form |
 | --- | --- |
-| 1 statement, no args | `handler: ->{…}` |
-| 1 statement, with args | `handler: ->(arg:){…}` |
-| 2–3 statements, inline | `command(:x, …, handler: lambda do … end)` |
+| 1 statement, no args | `action: ->{…}` |
+| 1 statement, with args | `action: ->(arg:, **){…}` |
+| 2–3 statements, inline | `command(:x, …, action: lambda do … end)` |
 | > 3 statements | named method `def action_<full_path>` |
 | shared logic (called from multiple places) | named method regardless of size |
 
-The 3-statement threshold is deliberately informal. The deciding factor is readability at the call site: if the handler fits on one line without obscuring the `command(...)` declaration, an inline `->` is preferred. If the body needs local variables, loops, or `rescue`, a named method is clearer. Logic shared between several commands must always live in a named method, regardless of its size.
+The 3-statement threshold is deliberately informal. The deciding factor is readability at the call site: if the action fits on one line without obscuring the `command(...)` declaration, an inline `->` is preferred. If the body needs local variables, loops, or `rescue`, a named method is clearer. Logic shared between several commands must always live in a named method, regardless of its size. The same convention applies to `lookup:`.
 
-**Precedence rule**: `lambda do...end` has low binding priority — if `command` is called without parentheses, Ruby attaches the `do...end` to `command` instead of `lambda`, causing `tried to create Proc object without a block` at class load time. Always use `command(...)` with parentheses when the handler is a `lambda do...end`.
+**Precedence rule**: `lambda do...end` has low binding priority — if `command` is called without parentheses, Ruby attaches the `do...end` to `command` instead of `lambda`, causing `tried to create Proc object without a block` at class load time. Always use `command(...)` with parentheses when the action is a `lambda do...end`.
 
 **Do not** use `lambda{ }` (braces with `lambda` keyword): rubocop's `SpaceInsideBlockBraces` forbids inner spaces, making multi-line bodies unreadable. The codebase uses `->{}` for one-liners and `lambda do...end` for multi-line — no other form.
+
+Examples:
+
+```ruby
+# 1 line
+command :info, description: 'Show node info',
+  action: ->{Result::SingleObject.new(@api_node.read('info'))}
+
+command :show, description: 'Show a package',
+  arguments: [{name: :package_id, type: :identifier}],
+  action: ->(package_id:, **){Result::SingleObject.new(@api.read("packages/#{package_id}"))}
+
+# 2–3 statements: parentheses are mandatory
+command(
+  :flush, description: 'Delete all cached OAuth tokens',
+  action: lambda do
+    require 'aspera/api/node'
+    Result::ValueList.new(OAuth::Factory.instance.flush_tokens, name: 'file')
+  end
+)
+
+# > 3 statements: implicit named method
+commands_under :package do
+  command :receive, description: 'Receive a package'
+end
+
+def action_package_receive(**)
+  # many lines of logic...
+end
+```
+
+All forms receive the `ctx` hash as keyword arguments and behave identically at runtime.
 
 **Notable design decisions**:
 
 | Decision | Rationale |
 | --- | --- |
 | Flat registry keyed by full path `Array<Symbol>` | Avoids recursive data structures; path lookup is O(1) |
-| `setup:` runs on the current node before dispatching | Matches the imperative pattern; no virtual/synthetic nodes needed |
+| `arguments:` on intermediate nodes | Parent instance ids are declared statically, so help shows them and dispatch resolves them before child selection |
+| `setup:` runs on the current node before dispatching | Derived context (API objects, entity paths) computed once for the whole sub-tree; no virtual nodes needed |
 | `condition:` commands visible in help but excluded at runtime | Static documentation is complete; runtime filtering via a method |
-| `entity_execute:` shorthand | Keeps CRUD declarations DRY while preserving introspectability |
-| `entity_command` helper | One-liner alternative to `command(…, entity_execute: {…})` when no extra `command` parameters are needed; `api:` is resolved at runtime so the API object can be created lazily |
-| `delegate_instance:` separate from `delegates_to:` | The `node access_keys do v3` case needs a different API object, not just a different path |
-| `transfer_paths: :send\|:receive` instead of positional args | The `--sources` mechanism in `TransferAgent` is incompatible with static argument declaration |
-| `define_method` for homogeneous command groups | Avoids repetitive handler definitions for commands sharing the same one-line body (e.g. CRUD handlers generated from `ADMIN_OBJECTS.each` in `aoc.rb`, `RESOURCE_CONFIG.each` in `faspex5.rb`) |
-| `skip_setup: true` on `dispatch_from_registry` | Allows callers that already resolved the setup context (e.g. `execute_nodegen4_command` in `aoc.rb`) to bypass setup and inject `ctx` directly, avoiding double consumption of positional arguments |
+| `crud_commands` generates one leaf per verb | CRUD declarations stay DRY while each verb remains a real, introspectable `CommandSpec`; `api:` is resolved at runtime so the API object can be created lazily |
+| `mount:` instead of re-declaring another plugin's commands | The target sub-tree is declared once: dispatch, `--help`, completion and `config commands` see it entirely, and changes in the target need no change in the hosts |
+| `transfer_paths: :send\|:receive` | The `--sources` mechanism in `TransferAgent` cannot be expressed as static arguments |
+| `define_action_method` for homogeneous command groups | Avoids repetitive action definitions for commands sharing the same body (e.g. `ADMIN_OBJECTS` in `aoc.rb`, `RESOURCE_CONFIG` in `faspex5.rb`) |
+| `skip_setup: true` on `dispatch_from_registry` | Allows a caller that already built the context to enter a node directly (e.g. `aoc packages ls <id>`, whose argument order does not fit a mount) |
 
-#### Entity identifier placement — the `setup:` rule
+#### Entity identifier placement
 
 **Convention**: The CLI uses two distinct argument-order patterns depending on the depth of the command tree:
 
@@ -265,101 +305,106 @@ The 3-statement threshold is deliberately informal. The deciding factor is reada
 | **Leaf CRUD** | `<entity> <verb> <id>` | The id identifies the *target* of a terminal verb (`show`, `delete`, `modify`). The id comes **after** the verb. |
 | **Intermediate selector** | `<entity> <sub-tree> <id> <verb>` | The id selects a *parent instance* whose children will be further dispatched. The id comes **before** the sub-tree verb. |
 
-The second pattern requires placing the identifier consumption in a `setup:` method on the
-intermediate node — never in the leaf handlers themselves.
+The second pattern is declared with an `:identifier` argument **on the intermediate node** — never read inside the leaf actions. If children need derived values (entity path, API object), add a `setup:` on the same node; it runs after the argument is resolved.
 
-**Wrong** — identifier for an intermediate node consumed in the leaf handler (too late):
+**Wrong** — identifier for an intermediate node read in the leaf action (too late):
 
 ```ruby
 # BAD: forces the user to write: workspace dropbox list <id>
 # but the convention requires:  workspace dropbox <id> list
-def action_admin_workspace_dropbox_list
-  res_id = get_resource_id_from_args('workspaces')   # ← consumed AFTER command selection
-  Result::ObjectList.new(aoc_api.read('dropboxes', {'workspace_id' => res_id}))
+def action_admin_workspace_dropbox_list(**)
+  ws_id = options.instance_identifier   # ← consumed AFTER command selection
+  ...
 end
 ```
 
-**Correct** — identifier consumed in `setup:`, injected into ctx:
+**Correct** — identifier declared on the intermediate node, derived context from `setup:` (from `faspex5.rb`):
 
 ```ruby
-# GOOD: the user writes: workspace dropbox <id> list
-#   setup runs BEFORE child command selection, consuming <id> from the stream
-def setup_admin_workspace_dropbox(**)
-  {ws_res_id: get_resource_id_from_args('workspaces')}  # ← consumed BEFORE list/show/…
+commands_under %i[admin nodes] do
+  command :shared_folders, description: 'Manage shared folders',
+    arguments: [{name: :node_id, type: :identifier, lookup: :lookup_node_id}],
+    setup: :setup_admin_nodes_shared_folders
 end
 
-def action_admin_workspace_dropbox_list(ws_res_id:, **)
-  Result::ObjectList.new(aoc_api.read('dropboxes', {'workspace_id' => ws_res_id}))
+commands_under %i[admin nodes shared_folders] do
+  crud_commands entity: :sf_entity, api: :@api_v5, name: 'shared folder',
+    lookup: :lookup_sf_id, items_key: 'shared_folders'
 end
-```
 
-The `setup:` method is wired on the sub-command node in the DSL:
-
-```ruby
-# In ADMIN_OBJECT_CONFIG:
-workspace: {extra_ops: %i[shared_folder dropbox],
-            op_setup:  {dropbox: :setup_admin_workspace_dropbox}}
-
-# Generated by the ADMIN_OBJECTS loop:
-command(:dropbox, description: '…', setup: :setup_admin_workspace_dropbox)
-commands_under([:admin, :workspace, :dropbox]) do
-  command :list, description: '…'   # handler receives ws_res_id: from ctx
+# node_id: already in ctx from arguments: on :shared_folders
+def setup_admin_nodes_shared_folders(node_id:, **)
+  {sf_entity: "nodes/#{node_id}/shared_folders"}
 end
 ```
 
-**Rule**: any command node that has children **and** whose children all operate on the same
-parent instance **must** consume the parent identifier in a `setup:` method on that node,
-not inside each leaf handler. A leaf handler consuming an id for its own target resource
-(`show <id>`, `delete <id>`) is always correct — that is the standard CRUD pattern.
-
-**Quick test**: if the id selects *which* sub-tree to enter (further commands follow), it belongs
-in `setup:`. If the id identifies the *object* of the terminal operation (nothing follows), it
-belongs in the leaf handler or as a `handler:` argument.
+**Quick test**: if the id selects *which* sub-tree to enter (further commands follow), it belongs in the intermediate node's `arguments:`. If the id identifies the *object* of the terminal operation (nothing follows), it belongs in the leaf's `arguments:`.
 
 **Examples in the codebase**:
 
-| Setup method | Consumes | Injects into ctx |
+| Node | Argument | Setup → injects into ctx |
 | --- | --- | --- |
-| [`setup_admin_workspace_dropbox`](../lib/aspera/cli/plugins/aoc.rb) | workspace id | `ws_res_id:` |
-| [`setup_admin_workspace_shared_folder`](../lib/aspera/cli/plugins/aoc.rb) | workspace id | `ws_res_id:`, `shared_folders:` |
-| [`setup_admin_workspace_shared_folder_instance`](../lib/aspera/cli/plugins/aoc.rb) | shared folder id (from `shared_folders:`) | `sf_item:` |
-| [`setup_admin_user_instance`](../lib/aspera/cli/plugins/aoc.rb) | user id | `user_res_id:` |
-| [`setup_admin_nodes_shared_folders`](../lib/aspera/cli/plugins/faspex5.rb) | node id | `sf_entity:` |
-| [`setup_admin_nodes_shared_folders_user`](../lib/aspera/cli/plugins/faspex5.rb) | shared folder id | `user_path:` |
-| [`setup_access_key_do`](../lib/aspera/cli/plugins/node.rb) | access key id | `do_root_file_id:` |
-| [`setup_package_id`](../lib/aspera/cli/plugins/faspex5.rb) | package id | `package_id:` |
+| `aoc admin workspace dropbox` | `workspace_id` | [`setup_admin_workspace_dropbox`](../lib/aspera/cli/plugins/aoc.rb) → `ws_res_id:` |
+| `aoc admin workspace shared_folder` | `workspace_id` | [`setup_admin_workspace_shared_folder`](../lib/aspera/cli/plugins/aoc.rb) |
+| `faspex5 admin nodes shared_folders` | `node_id` | [`setup_admin_nodes_shared_folders`](../lib/aspera/cli/plugins/faspex5.rb) → `sf_entity:` |
+| `faspex5 admin nodes shared_folders user` | `sf_id` | [`setup_admin_nodes_shared_folders_user`](../lib/aspera/cli/plugins/faspex5.rb) → `user_path:` |
+| `node access_keys do` | `access_key_id` | [`setup_access_key_do`](../lib/aspera/cli/plugins/node.rb) → `do_root_file_id:` |
+| `ats access_key node` | `access_key_id` | [`setup_ak_node`](../lib/aspera/cli/plugins/ats.rb) → `ak_node_plugin:`, `ak_root_file_id:` |
 
 ---
 
-#### `dispatch_v3_command` — pre-consumed command entry point
+#### Mounting another plugin's commands
 
-Some callers (e.g. `shares`, `cos`, `faspex`, `:v3` delegation inside `node`) create a new `Node`
-instance and have **already consumed** the command symbol from the argument stream before
-calling into the Node plugin. `dispatch_v3_command(command)` handles this case: it validates
-that the symbol belongs to the node's known command set, then re-enters the DSL dispatcher via
-`dispatch_from_registry([command], {})` exactly as if the argument had been consumed normally.
+Several plugins expose commands of another plugin, typically `Node` (COS bucket, AoC files, ATS access key, Shares files).
+The `mount:` attribute of a command node exposes the children of a node of another plugin class, instead of re-declaring them:
 
-**Rule**: `dispatch_v3_command` must **never** call action methods directly (e.g. `send(:"action_#{command}")`).
-All execution must go through `dispatch_from_registry` so that setup hooks, context propagation,
-inline lambda handlers, and help generation work identically whether a command is reached from
-the top-level argument stream or via a delegated call.
+```ruby
+command :node, description: 'Execute COS node commands',
+  mount: {plugin: Node, instance: :cos_node_plugin, only: Node::COMMANDS_COS}
+
+def cos_node_plugin(**)
+  Node.new(context: context, api: Api::CosNode.new(...))
+end
+```
+
+| Key | Meaning |
+| --- | --- |
+| `plugin` | Target plugin class |
+| `at` | Path in the target registry whose children are mounted (default `[]`: root) |
+| `instance` | Host method called with `**ctx` (after the node's own `arguments:` and `setup:`), returning the target instance, or `[instance, seed_ctx]` |
+| `only` / `except` | Filter the mounted children |
+
+Semantics:
+
+- **Registry**: `CommandRegistry#[]`, `children_of`, `leaf_paths` follow mounts, with paths in the host namespace. Host children declared under the mount node are merged with the mounted ones and take precedence on an id conflict.
+- **Dispatch**: when a mounted child is selected, `dispatch_mount` calls `instance`, then `target.dispatch_from_registry(at + [command], seed_ctx)`. Arguments and setups **below** the mount point run normally in the target; those of `at` and its ancestors do not run: `seed_ctx` provides what they would have put in `ctx` (e.g. `do_root_file_id:` for `at: %i[access_keys do]`).
+- **Help**: with `--help`, the host keeps walking its mount-aware registry: the target is never instantiated (no API connection), and `condition:` of mounted commands is not evaluated.
+- **Validation**: `validate!` checks that `instance` exists, that `at` and the `only`/`except` ids exist in the target, and that the mount node has no `action:`.
+
+Mount points:
+
+| Host | Target |
+| --- | --- |
+| `cos node` | `Node` root, `only: COMMANDS_COS` |
+| `shares files` | `Node` root, `only: COMMANDS_SHARES` |
+| `ats access_key node <id>` | `Node` `access_keys do` |
+| `aoc files`, `aoc admin node do <id>`, `aoc admin workspace shared_folder <id> node <id>` | `Node` `access_keys do` (plus the AoC-specific `transfer`, and `short_link` for `files`) |
+| `aoc admin ats` | `Ats` root |
+| `node access_keys do <id> v3` | `Node` root (a mount on itself: `leaf_paths` does not expand a cycle twice) |
+
+`mount:` is the only cross-plugin delegation mechanism of the DSL.
 
 #### Legitimate residual uses of `get_next_command` and `case command`
 
-The goal of the Command DSL migration was to eliminate *plugin-level* imperative dispatch.
-A few occurrences remain in the **infrastructure** itself — they are intentional and must not
-be removed:
+Plugin-level imperative dispatch has been eliminated. The remaining occurrences are infrastructure and are intentional:
 
 | File | Location | Role |
-|------|----------|------|
-| [`options.rb`](../lib/aspera/cli/options.rb) | method definition | Infrastructure — defines `get_next_command` |
-| [`base.rb`](../lib/aspera/cli/plugins/base.rb) line ~286 | `dispatch_from_registry` | Infrastructure — the DSL dispatcher itself calls `get_next_command` |
-| [`base.rb`](../lib/aspera/cli/plugins/base.rb) line ~490 | `entity_execute` | Legitimate shorthand: `entity_command` without explicit `command:` reads the next CRUD verb from the stream |
-| [`runner.rb`](../lib/aspera/cli/runner.rb) line ~85 | top-level routing | Acceptable top-level plugin selector, not a per-plugin dispatch |
-| [`runner.rb`](../lib/aspera/cli/runner.rb) line ~88 | `case command` | Top-level routing switch, not a per-plugin dispatch |
-| [`aoc.rb`](../lib/aspera/cli/plugins/aoc.rb) line ~360 | `case command_repo` | Parameter already resolved before the `case`; no CLI read |
+| --- | --- | --- |
+| [`parser.rb`](../lib/aspera/cli/parser.rb) | `get_next_command` | Infrastructure — defines `get_next_command` |
+| [`base.rb`](../lib/aspera/cli/plugins/base.rb) | `dispatch_child` | Infrastructure — the DSL dispatcher itself calls `get_next_command` |
+| [`runner.rb`](../lib/aspera/cli/runner.rb) | `run_with_result` | Top-level plugin selector (`case command_sym`), not a per-plugin dispatch |
 
-All plugin files have zero uses of `get_next_command` or bare `case command` for dispatching.
+No plugin file uses `get_next_command` or a bare `case command` for dispatching.
 
 #### Transfer Agent Abstraction
 
@@ -372,28 +417,37 @@ The Transfer Agent provides a unified interface for initiating transfers across 
 - Abstract transfer initiation across multiple agent types
 - Manage transfer specifications (transfer_spec)
 - Handle file list sources (`@args`, `@ts`, arrays)
-- Coordinate transfer progress monitoring
+- Coordinate transfer progress monitoring ([`transfer_progress.rb`](../lib/aspera/cli/transfer_progress.rb))
 - Send transfer completion notifications
+- Track asynchronous transfers: jobs are persisted by `job_id` in [`async_transfer_store.rb`](../lib/aspera/cli/async_transfer_store.rb) and can be re-queried later
 
 **Agent Base Class** ([`lib/aspera/agent/base.rb`](../lib/aspera/agent/base.rb)):
 
 ```ruby
 class Base
+  # Optional: re-query a previously started transfer by id (desktop, node, connect, transferd, ...)
+  def self.transfer_status(transfer_id, agent_params)
+
   # Start a transfer asynchronously (must be implemented by subclass)
-  def start_transfer(transfer_spec)
+  def start_transfer(transfer_spec, token_regenerator: nil)
 
   # Wait for all transfers to complete and return per-session statuses (must be implemented)
   def wait_for_transfers_completion
 
-  # Wait for completion and validate statuses (public API)
+  # Wait for completion; returns Transfer::Result::Success or Transfer::Result::Error (public API)
   def wait_for_completion
+
+  # Job id of the last submitted transfer (in-process agents)
+  def last_job_id
 
   # Optional: release resources
   def shutdown
 end
 ```
 
-**Supported Agents**:
+Transfer outcomes are typed ([`transfer/result.rb`](../lib/aspera/transfer/result.rb)): `Transfer::Result::Success`, `Transfer::Result::Error`, `Transfer::Result::Async`.
+
+**Supported Agents** ([`lib/aspera/agent/`](../lib/aspera/agent/), created by `Agent::Factory`):
 
 - **Direct**: Direct `ascp` execution (default)
 - **Connect**: Aspera Connect browser plugin
@@ -415,38 +469,43 @@ A custom HTTP client implementation providing:
 - **Content Types**: JSON, form-encoded, multipart
 - **Error Handling**: Automatic retry logic, error analysis
 - **Progress Tracking**: File upload/download progress
-- **Session Management**: Connection pooling, SSL/TLS configuration
+- **Session Management**: Connection pooling, SSL/TLS configuration, proxy auto-config ([`proxy_auto_config.rb`](../lib/aspera/proxy_auto_config.rb))
 
-Features:
+Global HTTP settings are held in the `RestParameters` singleton. Paginated listing is handled by [`rest_list.rb`](../lib/aspera/rest_list.rb).
 
-- Automatic JSON parsing for API responses
-- Custom error classes for different HTTP status codes
-- Support for streaming large file transfers
-- Configurable retry policies for transient failures
+#### Product API Clients
 
-#### Node API Client
+**Directory**: [`lib/aspera/api/`](../lib/aspera/api/) — `aoc`, `ats`, `alee`, `cos_node`, `faspex`, `httpgw`, `node`
 
-**File**: [`lib/aspera/api/node.rb`](../lib/aspera/api/node.rb)
-
-Specialized client for Aspera Node API with:
+**Node API Client** ([`node.rb`](../lib/aspera/api/node.rb)):
 
 - **Access Key Management**: Gen4 access key support
 - **Bearer Token Generation**: JWT-based authentication
 - **File Operations**: Browse, upload, download, delete
 - **Permission Management**: Fine-grained access control
 - **Transfer Spec Generation**: Automatic transfer parameter creation
-- **Caching**: Optional Redis-based response caching
+- **Cache control**: optional request header to bypass the server-side (Redis) cache
+
+#### API Schemas
+
+**Directory**: [`lib/aspera/schema/`](../lib/aspera/schema/)
+
+OpenAPI definitions of the product APIs (AoC, Faspex 5, Node, Shares, faspio) and `Schema::Registry`, used to:
+
+- document request bodies of `create` / `modify` (`body_component:` in `crud_commands`)
+- document `--query` parameters (`query_schema:`, shown with `--query=help`)
 
 #### OAuth Implementation
 
 **Directory**: [`lib/aspera/oauth/`](../lib/aspera/oauth/)
 
-Modular OAuth 2.0 support:
+Modular OAuth 2.0 support, instantiated through `OAuth::Factory` (which also caches tokens):
 
 - **Generic OAuth** ([`generic.rb`](../lib/aspera/oauth/generic.rb)): Standard OAuth 2.0 flows
 - **JWT** ([`jwt.rb`](../lib/aspera/oauth/jwt.rb)): JSON Web Token authentication
-- **Web** ([`web.rb`](../lib/aspera/oauth/web.rb)): Browser-based OAuth flows
+- **Web** ([`web.rb`](../lib/aspera/oauth/web.rb)): Browser-based OAuth flows; the local callback server lives in [`lib/aspera/web_auth/`](../lib/aspera/web_auth/)
 - **URL JSON** ([`url_json.rb`](../lib/aspera/oauth/url_json.rb)): Token from URL
+- **Boot** ([`boot.rb`](../lib/aspera/oauth/boot.rb))
 
 ### FASP Transfer Layer
 
@@ -456,7 +515,7 @@ Modular OAuth 2.0 support:
 
 Singleton class managing `ascp` binary location and SDK resources:
 
-- **Product Detection**: Automatically finds installed Aspera products
+- **Product Detection**: Automatically finds installed Aspera products ([`lib/aspera/products/`](../lib/aspera/products/))
 - **SDK Installation**: Downloads and installs Transfer SDK
 - **Path Resolution**: Locates `ascp` executable and supporting files
 - **SSH Key Management**: Handles client SSH keys for authentication
@@ -466,12 +525,11 @@ Supported product detection:
 - Aspera Desktop Client
 - Aspera Connect
 - Aspera Transfer SDK (`transferd`)
-- Aspera for Desktop
 - Aspera HSTS/ATS installations
 
 #### Transfer Specification
 
-**File**: [`lib/aspera/transfer/spec.rb`](../lib/aspera/transfer/spec.rb)
+**File**: [`lib/aspera/transfer/spec.rb`](../lib/aspera/transfer/spec.rb) (schema: [`spec.schema.yaml`](../lib/aspera/transfer/spec.schema.yaml))
 
 Transfer specifications define all parameters for a FASP transfer:
 
@@ -483,6 +541,10 @@ Transfer specifications define all parameters for a FASP transfer:
 - Authentication credentials
 - Protocol options (UDP/TCP ports, SSH options)
 
+#### Async Sync
+
+**Directory**: [`lib/aspera/sync/`](../lib/aspera/sync/) — `async` (Aspera Sync) arguments, configuration schemas and database access, used by `SyncActions`.
+
 ### Remote Systems Layer
 
 The CLI communicates with various IBM Aspera components:
@@ -491,7 +553,7 @@ The CLI communicates with various IBM Aspera components:
 
 - **Aspera on Cloud (AoC)**: Cloud-based file sharing and collaboration
 - **Aspera Transfer Service (ATS)**: Managed transfer service
-- **Faspex**: Secure package exchange (v4 and v5)
+- **Faspex 5**: Secure package exchange
 - **Shares**: File sharing and synchronization
 - **Console**: Central management console
 - **Orchestrator**: Workflow automation
@@ -512,13 +574,14 @@ Communication via:
 
 - FASP protocol (TCP/UDP) for data transfer
 - Node API (HTTPS) for control operations
-- SSH for authentication and session management
+- SSH for authentication and session management (and `ascmd` file operations)
 
 #### Third-Party Integrations
 
 - **gRPC**: Transfer Daemon communication
+- **JSON-RPC**: Desktop client communication ([`lib/aspera/json_rpc/`](../lib/aspera/json_rpc/))
 - **MCP**: Model Context Protocol for AI assistant integration
-- **External Tools**: Integration with system utilities
+- **External Tools**: Integration with system utilities (e.g. ffmpeg, ImageMagick, LibreOffice for previews)
 
 ## Data Flow
 
@@ -527,37 +590,43 @@ Communication via:
 1. **Command Parsing**:
 
    ```text
-   User Input &rarr; bin/ascli &rarr; CLI Options &rarr; Option Parsing
+   User Input &rarr; bin/ascli &rarr; Runner &rarr; Parser (options + positional args)
    ```
 
 2. **Plugin Selection**:
 
    ```text
-   Command &rarr; Plugin Factory &rarr; Specific Plugin (e.g., aoc, faspex)
+   Command &rarr; Plugin Factory &rarr; Specific Plugin (e.g., aoc, faspex5)
    ```
 
-3. **API Communication**:
+3. **Command Dispatch**:
 
    ```text
-   Plugin &rarr; REST Client &rarr; Remote API &rarr; JSON Response
+   Plugin#execute_action &rarr; dispatch_from_registry &rarr; action (method or Proc)
    ```
 
-4. **Transfer Initiation**:
+4. **API Communication**:
 
    ```text
-   Plugin &rarr; Transfer Agent &rarr; Agent Selection &rarr; ascp/trSDK/Connect
+   Action &rarr; REST Client &rarr; Remote API &rarr; JSON Response
    ```
 
-5. **Transfer Execution**:
+5. **Transfer Initiation**:
+
+   ```text
+   Action &rarr; Transfer Agent &rarr; Agent Selection &rarr; ascp/trSDK/Connect/...
+   ```
+
+6. **Transfer Execution**:
 
    ```text
    Transfer Agent &rarr; FASP Protocol &rarr; Remote Server &rarr; Progress Updates
    ```
 
-6. **Result Formatting**:
+7. **Result Formatting**:
 
    ```text
-   Response Data &rarr; Formatter &rarr; Output (table/json/yaml/csv)
+   Result object &rarr; Formatter &rarr; Output (table/json/yaml/csv/...)
    ```
 
 ## Key Design Patterns
@@ -577,6 +646,7 @@ Used for creating instances based on configuration:
 - **Agent Factory**: Selects appropriate transfer agent
 - **OAuth Factory**: Creates authentication handlers
 - **Plugin Factory**: Instantiates product plugins
+- **Keychain Factory**: Selects the secret storage backend
 
 ### Singleton Pattern
 
@@ -597,54 +667,13 @@ Transfer agents implement a common interface with different strategies:
 
 ### Command DSL Pattern
 
-Each plugin declares its command tree at class level using the `command(...)` DSL method.
-The base class dispatcher (`dispatch_from_registry`) traverses the registry and calls the
-appropriate handler on the plugin instance.
-
-#### Convention: inline lambda vs. named method
-
-**1 line** — inline `->` directly on the `command` call (no parentheses needed):
-
-```ruby
-command :info, description: 'Show node info',
-  handler: ->{Result::SingleObject.new(@api_node.read('info'))}
-
-command :show, description: 'Show a package',
-  handler: ->(package_id:, **){Result::SingleObject.new(@api.read("packages/#{package_id}"))}
-```
-
-**2–3 statements, inline** — `lambda do...end` with `command(...)` parentheses (mandatory — see precedence rule above):
-
-```ruby
-command(
-  :flush, description: 'Delete all cached OAuth tokens',
-  handler: lambda do
-    require 'aspera/api/node'
-    Result::ValueList.new(OAuth::Factory.instance.flush_tokens, name: 'file')
-  end
-)
-```
-
-**> 3 statements** — named method, convention `action_<full_path_joined_by_underscores>`:
-
-```ruby
-command :package, description: 'Manage packages'
-commands_under(:package) do
-  command :receive, description: 'Receive a package'
-end
-
-def action_package_receive
-  # many lines of logic...
-end
-```
-
-All forms receive the `ctx` hash as keyword arguments and behave identically at runtime.
+Each plugin declares its command tree at class level (see [Command DSL](#command-dsl)); the base class dispatcher (`dispatch_from_registry`) traverses the registry and calls the appropriate action on the plugin instance.
 
 ### Mixin / Module Pattern
 
 Large classes are decomposed into focused mixins included by the host class:
 
-- `Config` plugin includes `AscpActions`, `PresetActions`, `GemChecker`, `Mailer`, `VaultManager`, `SyncActions`
+- `Config` plugin includes `SyncActions`, `VaultManager`, `GemChecker`, `AscpActions`, `PresetActions`, `TransferActions`
 - Each mixin owns a single responsibility and depends on `options`, `context`, and other accessors provided by the host
 
 ## Configuration Management
@@ -657,12 +686,12 @@ Stores:
 
 - Preset configurations for different environments
 - Default options and parameters
-- Authentication credentials (encrypted)
+- Authentication credentials (or references to the vault)
 - Transfer agent preferences
 
 ### Preset System
 
-Presets allow saving commonly used option combinations:
+Presets allow saving commonly used option combinations ([`preset_manager.rb`](../lib/aspera/cli/preset_manager.rb), [`preset_actions.rb`](../lib/aspera/cli/preset_actions.rb)):
 
 ```yaml
 presets:
@@ -672,13 +701,17 @@ presets:
     password: "@vault:aoc_password"
 ```
 
+- `config preset set` accepts dot-notation keys (deep-merged, with type coercion)
+- Keys starting with `_` (e.g. `_comment`) are ignored
+
 ### Secret Management
 
-Integration with secure storage:
+**Directory**: [`lib/aspera/keychain/`](../lib/aspera/keychain/) (selected by `Keychain::Factory`, managed by `VaultManager`)
 
-- **Keychain**: macOS Keychain integration
-- **Vault**: HashiCorp Vault support
-- **Encrypted Hash**: Built-in encryption
+- **file**: Built-in encrypted hash
+- **system**: macOS Keychain
+- **vault**: HashiCorp Vault
+- **1password**: 1Password (API or CLI)
 
 ## Error Handling
 
@@ -686,13 +719,16 @@ Integration with secure storage:
 
 ```text
 StandardError
+├── Aspera::Error (lib/aspera/assert.rb)
+│   ├── Aspera::EntityNotFound (resource not found — lib/aspera/rest.rb)
+│   └── Aspera::Ssh::Error
 ├── Aspera::Cli::Error (CLI base)
 │   ├── BadArgument
 │   ├── MissingArgument
 │   ├── NoSuchElement
 │   └── BadIdentifier
+├── Aspera::Cli::HelpRequest (control flow: --help reached in dispatch)
 ├── Aspera::RestCallError (HTTP call errors — lib/aspera/rest_call_error.rb)
-├── Aspera::Rest::EntityNotFound (resource not found — lib/aspera/rest.rb)
 └── Aspera::Transfer::Error (transfer failures — lib/aspera/transfer/error.rb)
 ```
 
@@ -725,6 +761,7 @@ Analyzes API errors and provides:
 - Transfer specification display
 - API call tracing
 - Progress monitoring
+- Secrets are masked in logs ([`secret_hider.rb`](../lib/aspera/secret_hider.rb))
 
 ## Testing Architecture
 
@@ -732,29 +769,34 @@ Analyzes API errors and provides:
 
 **Directory**: [`spec/`](../spec/)
 
-- `spec/aspera-cli_spec.rb` — integration / smoke tests (require a live server config via `build/lib/test_env.rb`)
-- `spec/base_dsl_spec.rb` — unit tests for the `Base` DSL dispatcher; fully self-contained (no server needed)
-- `spec/command_registry_spec.rb` — unit tests for `CommandRegistry` validation rules
-- `spec/aoc_registry_spec.rb` — validates that `Aoc.command_registry.validate!(plugin_class: Aoc)` is internally consistent (every leaf has a handler or a matching `action_*` method)
+- Unit tests, fully self-contained, e.g.:
+  - `base_dsl_spec.rb` — `Base` DSL dispatcher
+  - `command_registry_spec.rb` — `CommandRegistry` validation rules
+  - `aoc_registry_spec.rb` — `Aoc.command_registry.validate!(plugin_class: Aoc)` consistency (every leaf has an action or a matching `action_*` method)
+  - `parser_spec.rb`, `option_declarator_spec.rb`, `preset_actions_spec.rb`, `runner_spec.rb`, `mcp_tool_spec.rb`
+  - `async_transfer_store_spec.rb`, `transfer_agent_async_spec.rb`, `transfer_result_spec.rb`, `agent_transfer_status_spec.rb`
+  - `rest_spec.rb`, `secret_hider_spec.rb`, `proxy_auto_config_spec.rb`, `schema_reader_spec.rb`, `string_ext_spec.rb`, `uri_reader_spec.rb`, …
+- Integration tests requiring a live server (`integration_helper.rb`, e.g. `ascmd_ssh_integration_spec.rb`)
 
 ### CI/CD Integration
 
-GitHub Actions workflows:
+GitHub Actions workflows (`.github/workflows/`):
 
-- Multi-version Ruby testing (3.1, 3.2, 3.3, 3.4, JRuby)
-- Automated smoke tests
+- Multi-version Ruby testing (3.1, 3.2, 3.3, 3.4, 4.0, JRuby)
 - Code quality checks (RuboCop)
 - Security scanning (CodeQL)
+- Release, deploy, certificate renewal
 
 ## Extension Points
 
 ### Adding a New Plugin
 
-1. Create plugin file in `lib/aspera/cli/plugins/`
-2. Inherit from `Plugins::Base`
-3. Declare commands with the `command(...)` DSL at class level
-4. Implement `action_<path>` methods for each leaf command
-5. Register in plugin factory
+1. Create plugin file in `lib/aspera/cli/plugins/` (or in a plugin lookup folder)
+2. Inherit from `Plugins::Base` (or `BasicAuth` / `Oauth`)
+3. Declare options with `option(...)` and commands with `command(...)` / `commands_under` / `crud_commands` at class level
+4. Implement `action_<path>` methods for leaf commands without an inline `action:`
+
+The plugin factory discovers the plugin automatically; `CommandRegistry#validate!` checks the tree at first execution.
 
 ### Adding a New Transfer Agent
 
@@ -763,11 +805,12 @@ GitHub Actions workflows:
 3. Implement required methods:
    - `start_transfer`
    - `wait_for_transfers_completion`
+   - optionally `self.transfer_status` (async support) and `shutdown`
 4. Register in `Agent::Factory`
 
 ### Adding a New Output Format
 
-1. Extend `Formatter` class
+1. Extend `Formatter` class ([`formatter.rb`](../lib/aspera/cli/formatter.rb))
 2. Implement format-specific rendering
 3. Register format in formatter factory
 
@@ -783,7 +826,7 @@ GitHub Actions workflows:
 ### API Optimization
 
 - **Pagination**: Efficient handling of large result sets
-- **Caching**: Optional response caching
+- **Token Caching**: OAuth tokens cached on disk
 - **Connection Pooling**: Reuse HTTP connections
 - **Batch Operations**: Bulk create/delete operations
 
@@ -802,7 +845,7 @@ GitHub Actions workflows:
 - Encrypted configuration file
 - System keychain integration
 - Environment variables
-- Vault integration
+- Vault integration (HashiCorp Vault, 1Password)
 
 ### Secure Communication
 
@@ -826,14 +869,6 @@ GitHub Actions workflows:
 - FASP client (ascp or Transfer SDK)
 - Network connectivity
 - Sufficient disk space for transfers
-
-## Future Architecture Considerations
-
-From [`CONTRIBUTING.md`](../CONTRIBUTING.md#future-improvements):
-
-- Replace custom REST implementation with standard gems (`rest-client`)
-- Replace custom OAuth with standard gem (`oauth2`)
-- Explore Traveling Ruby for distribution
 
 ## References
 

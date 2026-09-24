@@ -67,19 +67,11 @@ module Aspera
             arguments: [{name: :access_key_id, type: :identifier}]
           command :node,        description: 'Execute node commands via ATS access key',
             arguments: [{name: :access_key_id, type: :identifier}],
-            setup: :setup_ak_node
+            mount: {plugin: Node, at: %i[access_keys do], instance: :ak_node_plugin}
           command :cluster,     description: 'Show cluster info for an access key',
             arguments: [{name: :access_key_id, type: :identifier}]
           command :entitlement, description: 'Show ATS entitlement for an access key',
             arguments: [{name: :access_key_id, type: :identifier}]
-        end
-
-        commands_under %i[access_key node] do
-          command :permission, description: 'Manage permissions'
-          command :sync,       description: 'Synchronize folders'
-          Node::COMMANDS_GEN4_SPEC.each do |cmd, spec|
-            command cmd, **spec
-          end
         end
 
         commands_under(:api_key) do
@@ -208,10 +200,10 @@ module Aspera
           return Result::SingleObject.new(api_bss.read('entitlement'))
         end
 
-        # Build the Node plugin for an ATS access key.
+        # access_key > node - mount target: Node plugin for an ATS access key.
         # access_key_id: is already in ctx via arguments: on the :node command.
-        # @return [Hash] context hash containing :ak_node_plugin and :ak_root_file_id
-        def setup_ak_node(access_key_id:, **)
+        # @return [Array(Node, Hash)] Node plugin and seed ctx for `access_keys do`
+        def ak_node_plugin(access_key_id:, **)
           ak_data = ats_api.read("access_keys/#{access_key_id}")
           server_data = @ats_api_open.all_servers.find { |i| i['id'].start_with?(ak_data['transfer_server_id']) }
           Aspera.assert(!server_data.nil?, type: Cli::Error) { 'no such server found' }
@@ -224,21 +216,7 @@ module Aspera
               password: context.secret_finder.lookup(url: node_url, username: access_key_id)
             }
           )
-          {
-            ak_node_plugin:  Node.new(context: context, api: api_node),
-            ak_root_file_id: ak_data['root_file_id']
-          }
-        end
-
-        # One handler per COMMANDS_GEN4 - delegates to the Node plugin's DSL registry.
-        # Pre-resolved arguments (e.g. path:) are forwarded via **ctx to avoid double token consumption.
-        Node::COMMANDS_GEN4.each do |cmd|
-          define_action_method([:access_key, :node, cmd]) do |ak_node_plugin:, ak_root_file_id:, **ctx|
-            # For permission: the handler consumes the path first then re-dispatches to sub-commands.
-            # Calling dispatch_from_registry with skip_setup would bypass path consumption and fail.
-            next ak_node_plugin.send(:"action_access_keys_do_#{cmd}", do_root_file_id: ak_root_file_id, **ctx) if cmd.eql?(:permission)
-            ak_node_plugin.dispatch_from_registry([:access_keys, :do, cmd], {do_root_file_id: ak_root_file_id, **ctx}, skip_setup: true)
-          end
+          [Node.new(context: context, api: api_node), {do_root_file_id: ak_data['root_file_id']}]
         end
 
         def action_api_key_instances

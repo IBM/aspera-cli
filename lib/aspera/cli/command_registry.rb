@@ -11,16 +11,53 @@ module Aspera
     #   register(spec)          - store a CommandSpec; raises on duplicate full_path
     #   register_option(spec)   - store an OptionSpec by name
     #   option_specs            - Hash{Symbol => OptionSpec} of all registered options
-    #   [](path)                - retrieve a CommandSpec by full path
-    #   children_of(path)       - Hash{Symbol => CommandSpec} of direct children (O(1))
-    #   all_paths               - Array of all registered full paths
+    #   [](path)                - retrieve a CommandSpec by full path (follows mounts)
+    #   children_of(path)       - Hash{Symbol => CommandSpec} of direct children (follows mounts)
+    #   resolve(path)           - [registry, path] owning the spec at path (follows mounts)
+    #   local?(path)            - true if path is owned by this registry (not reached through a mount)
+    #   mount_of(path)          - MountSpec of the local node at path, if any
+    #   leaf_paths              - Array of all leaf paths (follows mounts)
+    #   all_paths               - Array of all locally registered full paths
     #   any?                    - true if at least one spec has been registered
     #   validate!               - cross-spec consistency checks; raises on violation
+    #
+    # Paths are always expressed in this registry's namespace: a path going through a
+    # mounted node (see MountSpec) is translated to the target registry transparently.
+    # Specs returned for mounted paths are the target's specs (their full_path is in the
+    # target namespace).
     class CommandRegistry
       # @param path [Array<Symbol>] full path to look up
       # @return [CommandSpec, nil]
       def [](path)
-        @specs[Array(path)]
+        registry, local_path = resolve(path)
+        registry.equal?(self) ? @specs[local_path] : registry[local_path]
+      end
+
+      # Find the registry owning `path`, following mounts.
+      # A host child always takes precedence over a mounted child with the same id.
+      # @param path [Array<Symbol>] path in this registry's namespace
+      # @return [Array(CommandRegistry, Array<Symbol>)] owning registry and path in its namespace
+      def resolve(path)
+        path = Array(path)
+        path.each_index do |i|
+          prefix = path[0, i]
+          mount = @specs[prefix]&.mount
+          next if mount.nil? || @children_index[prefix]&.key?(path[i]) || !mount.accepts?(path[i])
+          return mount.registry.resolve(mount.at + path[i..])
+        end
+        [self, path]
+      end
+
+      # @param path [Array<Symbol>] path in this registry's namespace
+      # @return [Boolean] true if the node at path is declared in this registry (not mounted)
+      def local?(path)
+        resolve(path).first.equal?(self)
+      end
+
+      # @param path [Array<Symbol>] local path of a node
+      # @return [MountSpec, nil] the mount declared on that node
+      def mount_of(path)
+        @specs[Array(path)]&.mount
       end
 
       # Register a CommandSpec. Raises if the full_path is already registered.
@@ -40,14 +77,32 @@ module Aspera
 
       # Returns a Hash mapping each child id to its CommandSpec for all direct
       # children of `path`. Empty hash if no children are registered.
-      # O(1) lookup via the children index built in register().
+      # For a mount node: mounted children (filtered) followed by local children,
+      # local ones overriding mounted ones with the same id.
       # @param path [Array<Symbol>] parent path ([] for root-level commands)
       # @return [Hash{Symbol => CommandSpec}]
       def children_of(path)
-        @children_index[Array(path)] || {}
+        registry, local_path = resolve(path)
+        return registry.children_of(local_path) unless registry.equal?(self)
+        own = @children_index[local_path] || {}
+        mount = @specs[local_path]&.mount
+        return own if mount.nil?
+        mount.registry.children_of(mount.at).select { |id, _| mount.accepts?(id) }.merge(own)
       end
 
-      # @return [Array<Array<Symbol>>] all registered full paths
+      # All leaf paths, in tree order, following mounts.
+      # A mount cycle (a sub-tree mounting one of its ancestors) is not expanded twice.
+      # @return [Array<Array<Symbol>>]
+      def leaf_paths(path = [], chain = [])
+        children_of(path).keys.flat_map do |id|
+          child = path + [id]
+          key = subtree_key(child)
+          next [] if chain.include?(key)
+          children_of(child).empty? ? [child] : leaf_paths(child, chain + [key])
+        end
+      end
+
+      # @return [Array<Array<Symbol>>] all locally registered full paths
       def all_paths
         @specs.keys
       end
@@ -95,30 +150,22 @@ module Aspera
         @specs.each_value do |spec|
           path = spec.full_path
 
-          # Rule: delegates_to must point to a known path when present (non-empty array or symbol)
-          if spec.delegates_to
-            dt_path =
-              case spec.delegates_to
-              when Symbol then [spec.delegates_to]
-              when Array  then spec.delegates_to
-              end
-            # An empty array [] means re-enter the root - always valid
-            unless dt_path.empty? || @specs.key?(dt_path)
-              raise ArgumentError,
-                "#{path.inspect}: delegates_to #{dt_path.inspect} points to unknown path"
-            end
-          end
-
-          # Rule: delegate_instance requires delegates_to
-          if spec.delegate_instance && spec.delegates_to.nil?
-            raise ArgumentError,
-              "#{path.inspect}: delegate_instance requires delegates_to to be set"
+          if (mount = spec.mount)
+            # Rule: a mount needs an instance method, no action, and must point to existing target nodes
+            raise ArgumentError, "#{path.inspect}: mount requires instance:" if mount.instance.nil?
+            raise ArgumentError, "#{path.inspect}: mount and action: are exclusive" if spec.action
+            raise ArgumentError, "#{path.inspect}: mount at #{mount.at.inspect} not found in #{mount.plugin}" unless mount.at.empty? || mount.registry[mount.at]
+            target_ids = mount.registry.children_of(mount.at).keys
+            unknown = Array(mount.only) + Array(mount.except) - target_ids
+            raise ArgumentError, "#{path.inspect}: mount only/except unknown in #{mount.plugin}: #{unknown.inspect}" unless unknown.empty?
+            instance_defined = plugin_class.nil? || plugin_class.method_defined?(mount.instance) || plugin_class.private_method_defined?(mount.instance)
+            raise ArgumentError, "#{path.inspect}: no method #{mount.instance} on #{plugin_class}" unless instance_defined
+            next
           end
 
           # Rule: leaf commands with no explicit action must have a matching instance method
           next if spec.action # explicit action: skip
           next if @children_index[path]&.any? # intermediate node: skip
-          next if spec.delegates_to # delegated: skip
           next unless plugin_class
           implicit_method = CommandSpec.action_method(path)
           unless plugin_class.method_defined?(implicit_method) || plugin_class.private_method_defined?(implicit_method)
@@ -130,6 +177,14 @@ module Aspera
       end
 
       private
+
+      # Identity of the sub-tree exposed at path: the mount point for a mount node, else the owning node.
+      # @return [Array(Integer, Array<Symbol>)]
+      def subtree_key(path)
+        registry, local_path = resolve(path)
+        mount = registry.mount_of(local_path)
+        mount ? [mount.registry.object_id, mount.at] : [registry.object_id, local_path]
+      end
 
       def initialize
         # Keyed by Array<Symbol> full path

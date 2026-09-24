@@ -109,10 +109,9 @@ module Aspera
         # Actions in execute_command_gen3
         COMMANDS_GEN3 = %i[search space mkdir mklink mkfile rename delete ls upload download cat sync transport spec]
 
-        # Shared DSL metadata for Gen3 commands (description:, arguments:, transfer_paths:, aliases:).
-        # Consumed by commands_under(:files) in shares.rb and commands_under %i[source node]) in faspex.rb.
-        # :sync is excluded (intermediate node with sub-commands, handled separately).
-        # action: entries are node-specific and intentionally omitted.
+        # DSL metadata for Gen3 root commands (description:, arguments:, transfer_paths:, aliases:).
+        # :sync and :access_keys are skipped (intermediate nodes declared separately).
+        # action: entries are in GEN3_NODE_ACTIONS, or implicit.
         COMMANDS_GEN3_SPEC = {
           search:      {description: 'Search for files',             arguments: [{name: :search_root, type: String}]},
           space:       {description: 'Show space information',       arguments: [{name: :path_list, multiple: true}]},
@@ -145,15 +144,12 @@ module Aspera
 
         private_constant :CENTRAL_SOAP_API_TEST, :SEARCH_REMOVE_FIELDS, :BASE_ACTIONS, :SPECIAL_ACTIONS, :COMMON_ACTIONS
 
-        # used in aoc
+        # Gen4 read commands also exposed on AoC packages (`aoc packages ls <id>`)
         NODE4_READ_ACTIONS = %i[bearer_token_node node_info ls find].freeze
 
-        # commands for execute_command_gen4
-        COMMANDS_GEN4 = (%i[mkdir mklink mkfile rename delete upload download sync cat show modify permission thumbnail v3] + NODE4_READ_ACTIONS).freeze
-
-        # Shared DSL metadata for all Gen4 commands (description:, arguments:, transfer_paths:, aliases:).
-        # Consumed by commands_under %i[access_keys do]) in node.rb and by aoc.rb.
-        # :sync and :permission are excluded: they are intermediate nodes handled separately.
+        # DSL metadata for Gen4 commands under `access_keys do` (description:, arguments:, transfer_paths:, aliases:).
+        # Other plugins expose this sub-tree with `mount:` (aoc, ats).
+        # :sync, :permission and :v3 are excluded: they are intermediate nodes declared separately.
         SINGLE_PATH_ARG = [{name: :path, type: String}].freeze
         COMMANDS_GEN4_SPEC = {
           mkdir:             {description: 'Create folder',                  arguments: SINGLE_PATH_ARG},
@@ -170,12 +166,11 @@ module Aspera
           bearer_token_node: {description: 'Show bearer token for file node', arguments: SINGLE_PATH_ARG},
           node_info:         {description: 'Show node info for file',        arguments: SINGLE_PATH_ARG},
           ls:                {description: 'List files',                     arguments: SINGLE_PATH_ARG, aliases: [:browse]},
-          find:              {description: 'Find files',                     arguments: SINGLE_PATH_ARG + FILTER_ARGS},
-          v3:                {description: 'Legacy v3 commands on files'}
+          find:              {description: 'Find files',                     arguments: SINGLE_PATH_ARG + FILTER_ARGS}
         }.freeze
         private_constant :SINGLE_PATH_ARG
 
-        # commands supported in ATS for COS
+        # Root commands exposed by `cos node` and `shares files` (mount: only:)
         COMMANDS_COS = %i[upload download info access_keys api_details transfer].freeze
         COMMANDS_SHARES = (BASE_ACTIONS - %i[search]).freeze
         # `browse` display fields for gen4
@@ -304,9 +299,8 @@ module Aspera
           @api_node.resolve_api_fid(top_file_id, path)
         end
 
-        # Legacy helper: resolve a NodeFileId by reading path from the CLI argument stream.
-        # Used only by setup_access_key_do_permission and action_access_keys_do_permission
-        # (intermediate nodes whose path cannot yet be injected via execute_leaf).
+        # Resolve a NodeFileId by reading path from the CLI argument stream.
+        # Used by setup_access_key_do_permission (intermediate node: its path is read before child dispatch).
         def apifid_from_next_arg(top_file_id)
           file_path = options.instance_identifier(description: 'path or %id:<id> or %id:') do |attribute, value|
             Aspera.assert_values(attribute, ['id'], type: BadArgument) { 'file id' }
@@ -401,6 +395,7 @@ module Aspera
           COMMANDS_GEN4_SPEC.each do |cmd, spec|
             command cmd, **spec
           end
+          command :v3, description: 'Legacy v3 commands on files', mount: {plugin: self, instance: :v3_node_plugin}
           command :permission, description: 'Manage permissions', setup: :setup_access_key_do_permission
           command :sync, description: 'Synchronize folders'
           commands_under :sync do
@@ -721,9 +716,10 @@ module Aspera
 
         # access_keys > do > permission - setup: resolve apifid from CLI path argument
         # (path is read from CLI here as 'permission' is an intermediate node)
+        # do_root_file_id: comes from ctx (setup_access_key_do, or seed of a mount)
         # @return [Hash] context hash containing :apifid
-        def setup_access_key_do_permission(**)
-          {apifid: apifid_from_next_arg(@do_root_file_id)}
+        def setup_access_key_do_permission(do_root_file_id:, **)
+          {apifid: apifid_from_next_arg(do_root_file_id)}
         end
 
         # access_keys > do > ls
@@ -813,17 +809,10 @@ module Aspera
           Runner.result_transfer(transfer.start(apifid.node_api.transfer_spec_gen4(apifid.file_id, Transfer::Spec::DIRECTION_RECEIVE, {'paths'=>source_paths})))
         end
 
-        # access_keys > do > permission (intermediate node: re-enter DSL at permission sub-tree)
-        def action_access_keys_do_permission(do_root_file_id:, **)
-          apifid = apifid_from_next_arg(do_root_file_id)
-          dispatch_from_registry(%i[access_keys do permission], {apifid: apifid}, skip_setup: true)
-        end
-
-        # access_keys > do > v3
-        def action_access_keys_do_v3(do_root_file_id:, **)
-          # Build a fresh Node for the v3 root, then let the DSL dispatcher consume the next command.
-          v3_node = Node.new(context: context, api: @api_node.resolve_api_fid(do_root_file_id, '').node_api)
-          v3_node.execute_action
+        # access_keys > do > v3 - mount target: Node plugin on the node hosting the root file
+        # @return [Node]
+        def v3_node_plugin(do_root_file_id:, **)
+          Node.new(context: context, api: @api_node.resolve_api_fid(do_root_file_id, '').node_api)
         end
 
         # access_keys > do > node_info / bearer_token_node — shared helper builds the result hash
@@ -1234,21 +1223,6 @@ module Aspera
             break if interval.eql?(0.0)
             sleep([0.0, interval - (Time.now - timestamp)].max)
           end
-        end
-
-        # Dispatch a Gen3 command that has already been read from the argument stream.
-        # Used when a new Node instance is created by an external plugin (shares, faspex, cos, :v3)
-        # and the command symbol was already consumed before the Node was instantiated.
-        # Re-enters the DSL registry so Proc actions and intermediate nodes (sync, access_keys)
-        # are resolved normally.
-        # Pre-resolved CLI arguments (e.g. path:) can be forwarded via `ctx` to avoid
-        # re-consuming tokens that were already resolved by the calling plugin's DSL.
-        # @param command [Symbol] command already consumed from the argument stream
-        # @param ctx     [Hash]   pre-resolved context (keyword args forwarded to dispatch)
-        # @return [Object] CLI result
-        def dispatch_v3_command(command, **ctx)
-          Aspera.assert_values(command, COMMANDS_GEN3 + %i[health events info slash license api_details access_keys transfer]) { 'v3 command' }
-          dispatch_from_registry([command], ctx)
         end
 
         private

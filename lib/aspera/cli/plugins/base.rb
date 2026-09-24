@@ -365,12 +365,7 @@ module Aspera
         # Entry point for all DSL-based plugins.
         def execute_action
           @help_path = nil
-          # Validate the registry once per class (memoised by the ivar check).
-          # Passes the plugin class so implicit handler methods can be verified.
-          unless self.class.instance_variable_defined?(:@registry_validated)
-            self.class.command_registry.validate!(plugin_class: self.class)
-            self.class.instance_variable_set(:@registry_validated, true)
-          end
+          validate_registry
           # Run the root setup (if declared) before consuming any argument.
           # This ensures condition methods on root commands can read instance variables
           # populated by the setup (e.g. @connection_type in server.rb).
@@ -447,8 +442,8 @@ module Aspera
           execute_leaf(spec, ctx)
         end
 
-        # Phase B, child branch: consume the next command argument, resolve the matching
-        # child spec, handle delegation, and recurse or execute.
+        # Phase B, child branch: consume the next command argument, then either continue
+        # on a mounted plugin instance, or recurse into the child.
         # --help is intercepted at two points:
         #   1. Before get_next_command when no positional arg is pending: raises HelpRequest
         #      immediately so the subcommand list with descriptions is shown rather than a
@@ -461,7 +456,9 @@ module Aspera
         # @return [Object]
         def dispatch_child(current_path, registry, ctx)
           children  = registry.children_of(current_path)
-          available = children.reject { |_, c| c.condition && !send(c.condition) }
+          # condition: methods belong to the class declaring the spec: only evaluate local ones
+          # (mounted children are only walked here for --help, see below)
+          available = children.reject { |id, c| c.condition && registry.local?(current_path + [id]) && !send(c.condition) }
           aliases   = children.values.each_with_object({}) do |c, h|
             Array(c.aliases).each { |a| h[a] = c.id } if c.aliases
           end
@@ -474,7 +471,6 @@ module Aspera
           end
 
           command = options.get_next_command(available.keys, aliases: aliases.empty? ? nil : aliases)
-          child   = available[command]
 
           # Intercept --help after a command was consumed but no further args remain.
           # (e.g. `aoc files find -h`). When further args remain, keep recursing.
@@ -483,15 +479,37 @@ module Aspera
             raise Cli::HelpRequest, self
           end
 
-          # Instance delegation: hand off to a different plugin object
-          if child.delegate_instance
-            target = send(child.delegate_instance)
-            return target.dispatch_from_registry(Array(child.delegates_to), {})
-          end
-          return dispatch_from_registry(Array(child.delegates_to), ctx) if child.delegates_to
+          # Mounted child: continue on the target plugin instance, in its own namespace.
+          # For --help, keep walking the (mount-aware) registry of this class instead, so that
+          # no target instance (and thus no API connection) is needed.
+          child_path = current_path + [command]
+          return dispatch_mount(registry.mount_of(current_path), command, ctx) unless @context.help_requested || registry.local?(child_path)
 
           # Both intermediate and leaf: instance_arg + setup are handled by Phase A of the next call
-          dispatch_from_registry(current_path + [command], ctx)
+          dispatch_from_registry(child_path, ctx)
+        end
+
+        # Hand over dispatch of a mounted child to the target plugin instance.
+        # Setups of the mount point `at` and of its ancestors in the target are not executed:
+        # the seed ctx returned by the host's `instance` method replaces them.
+        # @param mount   [MountSpec]
+        # @param command [Symbol] mounted child id, already consumed
+        # @param ctx     [Hash]   host context, passed to the `instance` method
+        # @return [Object]
+        def dispatch_mount(mount, command, ctx)
+          target = send(mount.instance, **ctx)
+          target, seed = target if target.is_a?(Array)
+          Aspera.assert_type(target, mount.plugin)
+          target.validate_registry
+          target.dispatch_from_registry(mount.at + [command], seed || {})
+        end
+
+        # Validate the registry once per class (memoised by the ivar check).
+        # Passes the plugin class so implicit action methods can be verified.
+        def validate_registry
+          return if self.class.instance_variable_defined?(:@registry_validated)
+          self.class.command_registry.validate!(plugin_class: self.class)
+          self.class.instance_variable_set(:@registry_validated, true)
         end
 
         # Resolve the action for a leaf CommandSpec.
@@ -520,8 +538,8 @@ module Aspera
         end
 
         # Execute a leaf CommandSpec: resolve arguments and call action.
-        # Arguments already present in `ctx` (pre-resolved by a parent plugin, e.g. aoc.rb forwarding
-        # path: into execute_nodegen4_command) are skipped — the token has already been consumed.
+        # Arguments already present in `ctx` (e.g. provided by a caller or a mount seed) are skipped:
+        # they are not read again from the command line.
         # instance_arg (if any) is resolved here as an ArgumentSpec(type: :identifier) and merged
         # into ctx, exactly like any other keyword argument received by the action.
         # @param spec [CommandSpec] a leaf node (no children)
@@ -603,13 +621,14 @@ module Aspera
         # @param path [Array<Symbol>] starting path ([] for the full tree)
         # @return [Hash] { command_id => { description:, condition:, children: } }
         def generate_help(path = [])
-          self.class.command_registry.children_of(path).transform_values do |child_spec|
+          self.class.command_registry.children_of(path).to_h do |id, child_spec|
             annotation = child_spec.condition ? " [#{child_spec.condition}]" : ''
-            {
+            # path + [id], not child_spec.full_path: a mounted spec's full_path is in the target namespace
+            [id, {
               description: "#{child_spec.description}#{annotation}",
               condition:   child_spec.condition,
-              children:    generate_help(child_spec.full_path)
-            }
+              children:    generate_help(path + [id])
+            }]
           end
         end
 

@@ -12,6 +12,9 @@ Released: [Place date of release here]
 ### Issues Fixed
 
 * `faspex5`: Command `admin account show` was failing.
+* `shares`: Commands `files spec` and `files transport` were failing.
+* `aoc`, `ats`, `cos`, `node`: Help (`-h`), shell completion and `config commands` now show all sub-commands of commands executed on a node (`aoc files`, `aoc admin node do`, `aoc admin workspace shared_folder node`, `aoc admin ats`, `ats access_key node`, `cos node`, `node access_keys do v3`), e.g. `permission list`, `sync push`, not only the first level.
+* `aoc`: `admin node do <id> transfer` and `admin workspace shared_folder <id> node <id> transfer` were always failing: they now take the same `direction` and `source_folder` arguments as `files transfer`.
 * `mcp`: Secrets (e.g. from `config preset show`) are now hidden in tool results.
 
 ### Breaking Changes

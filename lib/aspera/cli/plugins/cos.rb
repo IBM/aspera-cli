@@ -11,13 +11,8 @@ module Aspera
       class Cos < Base
         application_name 'IBM Cloud Object Storage'
 
-        command :node, description: 'Execute COS node commands', setup: :setup_cos_node
-
-        commands_under :node do
-          Node::COMMANDS_COS.each do |cmd|
-            command cmd, description: "Node #{cmd} command"
-          end
-        end
+        command :node, description: 'Execute COS node commands',
+          mount: {plugin: Node, instance: :cos_node_plugin, only: Node::COMMANDS_COS}
 
         option :bucket,              description: 'Bucket name'
         option :endpoint,            description: 'Storage endpoint (URL)'
@@ -34,9 +29,9 @@ module Aspera
           options.parse_options!
         end
 
-        # Build the COS Node API and plugin from CLI options.
-        # @return [Hash] context hash containing :node_plugin
-        def setup_cos_node(**)
+        # node - mount target: build the COS Node API and plugin from CLI options.
+        # @return [Node] Node plugin instance on the COS bucket
+        def cos_node_plugin(**)
           # get service credentials, Hash, e.g. @json:@file:...
           service_credentials = options.get_option(:service_credentials)
           cos_node_params = {
@@ -53,14 +48,7 @@ module Aspera
             cos_node_params.merge!(Api::CosNode.parameters_from_svc_credentials(service_credentials, options.get_option(:region, mandatory: true)))
           end
           api_node = Api::CosNode.new(**cos_node_params)
-          {node_plugin: Node.new(context: context, api: api_node)}
-        end
-
-        # One handler per COMMANDS_COS command - delegates to the Node plugin's dispatch_v3_command.
-        Node::COMMANDS_COS.each do |cmd|
-          define_action_method([:node, cmd]) do |node_plugin:|
-            node_plugin.dispatch_v3_command(cmd)
-          end
+          Node.new(context: context, api: api_node)
         end
       end
     end

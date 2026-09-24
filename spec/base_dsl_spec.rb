@@ -343,40 +343,79 @@ module Aspera
         end
 
         # ------------------------------------------------------------------
-        # dispatch_from_registry — delegates_to:
+        # dispatch_from_registry — mount:
         # ------------------------------------------------------------------
 
-        describe '#dispatch_from_registry with delegates_to:' do
-          it 'jumps to the delegated path without consuming an extra argument' do
-            klass = Class.new(Base)
-            klass.command(:alias_cmd, description: 'Alias', delegates_to: :real_cmd)
-            klass.command(:real_cmd,  description: 'Real',  action: :handle_real)
-            klass.define_method(:handle_real) { Result::Status.new('real') }
-            # Only one get_next_command call for the alias, then none for real_cmd (leaf)
-            allow(options).to(receive(:get_next_command).with(%i[alias_cmd real_cmd], aliases: nil).and_return(:alias_cmd))
-            inst = klass.new(context: context)
-            expect(inst.dispatch_from_registry([])).to(be_a(Result::Status).and(have_attributes(data: 'real')))
+        describe '#dispatch_from_registry with mount:' do
+          # Target: keys > do (setup must NOT run through the mount) > (ls, perm (setup) > list)
+          let(:target_class) do
+            Class.new(Base).tap do |k|
+              k.command(:keys, description: 'Keys')
+              k.command(:do, parent: :keys, description: 'Do', setup: :setup_do)
+              k.command(:ls, parent: %i[keys do], description: 'List', action: ->(root:, **) { Result::Status.new("ls #{root}") })
+              k.command(:perm, parent: %i[keys do], description: 'Perm', setup: :setup_perm, condition: :never?)
+              k.command(:list, parent: %i[keys do perm], description: 'List perms', action: ->(root:, perm_setup:, **) { Result::Status.new("perm #{root} #{perm_setup}") })
+              k.define_method(:setup_do) { |**| raise 'setup of mount point must not run' }
+              k.define_method(:setup_perm) { |**| {perm_setup: 'done'} }
+              k.define_method(:never?) { raise 'condition of mounted command must not be evaluated on host' }
+            end
           end
-        end
 
-        # ------------------------------------------------------------------
-        # dispatch_from_registry — delegate_instance:
-        # ------------------------------------------------------------------
+          let(:host_class) do
+            tc = target_class
+            Class.new(Base).tap do |k|
+              k.command(:files, description: 'Files', setup: :setup_files, mount: {plugin: tc, at: %i[keys do], instance: :build_target})
+              k.command(:extra, parent: :files, description: 'Host command', action: ->(**) { Result::Status.new('extra') })
+              k.define_method(:setup_files) { |**| {host_value: 'h'} }
+              k.define_method(:build_target) { |host_value:, **| [tc.new(context: context), {root: "r-#{host_value}"}] }
+            end
+          end
 
-        describe '#dispatch_from_registry with delegate_instance:' do
-          it 'calls dispatch_from_registry on the returned object' do
-            target = double('OtherPlugin')
-            expect(target).to(receive(:dispatch_from_registry).with([:other_root], {}).and_return(Result::Status.new('delegated')))
+          it 'dispatches a mounted leaf on the target instance with the seed ctx' do
+            allow(options).to(receive(:get_next_command).with([:files], aliases: nil).and_return(:files))
+            allow(options).to(receive(:get_next_command).with(%i[ls perm extra], aliases: nil).and_return(:ls))
+            expect(host_class.new(context: context).dispatch_from_registry([])).to(have_attributes(data: 'ls r-h'))
+          end
 
-            klass = Class.new(Base)
-            klass.command(:other, description: 'Delegate', delegate_instance: :build_target, delegates_to: :other_root)
-            # register :other_root so validate! would pass (not strictly needed here)
-            klass.command(:other_root, description: 'Target root', action: :noop)
-            klass.define_method(:build_target) { target }
-            klass.define_method(:noop) { nil }
-            allow(options).to(receive(:get_next_command).with(%i[other other_root], aliases: nil).and_return(:other))
-            inst = klass.new(context: context)
-            expect(inst.dispatch_from_registry([])).to(be_a(Result::Status).and(have_attributes(data: 'delegated')))
+          it 'runs setups below the mount point in the target' do
+            target_class.define_method(:never?) { true }
+            allow(options).to(receive(:get_next_command).with([:files], aliases: nil).and_return(:files))
+            allow(options).to(receive(:get_next_command).with(%i[ls perm extra], aliases: nil).and_return(:perm))
+            allow(options).to(receive(:get_next_command).with([:list], aliases: nil).and_return(:list))
+            expect(host_class.new(context: context).dispatch_from_registry([])).to(have_attributes(data: 'perm r-h done'))
+          end
+
+          it 'dispatches host children locally' do
+            allow(options).to(receive(:get_next_command).with([:files], aliases: nil).and_return(:files))
+            allow(options).to(receive(:get_next_command).with(%i[ls perm extra], aliases: nil).and_return(:extra))
+            expect(host_class.new(context: context).dispatch_from_registry([])).to(have_attributes(data: 'extra'))
+          end
+
+          it 'accepts an instance method returning only the target' do
+            tc = target_class
+            host_class.define_method(:build_target) { |**| tc.new(context: context) }
+            tc.command(:info, description: 'Info', action: -> { Result::Status.new('info') })
+            host_class.command(:root, description: 'Root', mount: {plugin: tc, instance: :build_target})
+            allow(options).to(receive(:get_next_command).with(%i[files root], aliases: nil).and_return(:root))
+            allow(options).to(receive(:get_next_command).with(%i[keys info], aliases: nil).and_return(:info))
+            expect(host_class.new(context: context).dispatch_from_registry([])).to(have_attributes(data: 'info'))
+          end
+
+          it 'walks mounted help without instantiating the target' do
+            context.help_requested = true
+            host_class.define_method(:build_target) { |**| raise 'must not instantiate target for help' }
+            allow(options).to(receive(:command_or_arg_empty?).and_return(false, false, false, false, true))
+            allow(options).to(receive(:get_next_command).with([:files], aliases: nil).and_return(:files))
+            allow(options).to(receive(:get_next_command).with(%i[ls perm extra], aliases: nil).and_return(:perm))
+            inst = host_class.new(context: context)
+            expect { inst.dispatch_from_registry([]) }.to(raise_error(Cli::HelpRequest))
+            expect(inst.help_path).to(eq(%i[files perm]))
+          end
+
+          it 'includes mounted children in generate_help' do
+            help = host_class.new(context: context).generate_help
+            expect(help[:files][:children].keys).to(eq(%i[ls perm extra]))
+            expect(help[:files][:children][:perm][:children]).to(have_key(:list))
           end
         end
 

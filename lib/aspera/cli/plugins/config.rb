@@ -527,7 +527,7 @@ module Aspera
           commands = plugin_names.flat_map do |name|
             plugin_class = Plugins::Factory.instance.plugin_class(name)
             reg = plugin_class.command_registry
-            reg.all_paths.reject { |path| reg.children_of(path).any? }.map do |path|
+            reg.leaf_paths.map do |path|
               spec = reg[path]
               # Build syntax by interleaving each path segment with the arguments declared on that node
               tokens = [name.to_s]
