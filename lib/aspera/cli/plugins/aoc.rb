@@ -354,21 +354,6 @@ module Aspera
           return hash
         end
 
-        # Get resource identifier from command line, either directly specifying the `id` or from `name` (percent selector).
-        # @param resource_class_path [String] url path for resource
-        # @return [String] identifier
-        def get_resource_id_from_args(resource_class_path)
-          return options.instance_identifier do |field, value|
-            Aspera.assert_values(field, ['name'], type: BadArgument) { 'selector field' }
-            aoc_api.lookup_with_q(resource_class_path, value: value)['id']
-          end
-        end
-
-        # Get resource path from command line
-        def get_resource_path_from_args(resource_class_path)
-          return "#{resource_class_path}/#{get_resource_id_from_args(resource_class_path)}"
-        end
-
         # List all entities, given additional, default and user's queries
         # @param resource_class_path [String]     path to query on API
         # @param fields              [Array, nil] fields to display
@@ -897,7 +882,7 @@ module Aspera
             arguments: [{name: :dropbox_id, type: :identifier, lookup: :lookup_aoc_dropbox_id}],
             action: ->(dropbox_id:, **) { Result::SingleObject.new(aoc_api.read("dropboxes/#{dropbox_id}")) }
           command :short_link, description: 'Manage shared inbox short links',
-            arguments: [{name: :link_type, allowed: %i[public private]}],
+            arguments: [{name: :link_type, allowed: %i[public private]}, {name: :dropbox_id, type: :identifier, lookup: :lookup_aoc_dropbox_id}],
             setup: :setup_packages_short_link
         end
         # packages > shared_inboxes > short_link sub-commands
@@ -1133,10 +1118,9 @@ module Aspera
         end
 
         # setup: packages > shared_inboxes > short_link
-        # Reads dropbox_id, consumes link_type argument, computes purposes.
+        # link_type: and dropbox_id: resolved via arguments: on the node, computes purposes.
         # @return [Hash] ctx keys: sl_shared_data, sl_link_type, sl_token_purpose, sl_short_link_purpose
-        def setup_packages_short_link(link_type:, **)
-          dropbox_id = get_resource_id_from_args('dropboxes')
+        def setup_packages_short_link(link_type:, dropbox_id:, **)
           shared_data = {dropbox_id: dropbox_id, name: ''}
           token_purpose, short_link_purpose = short_link_purposes(shared_data, link_type)
           {
@@ -1360,7 +1344,7 @@ module Aspera
         end
 
         # Lookup methods for arguments:(:identifier) + lookup: on admin resources.
-        # One method per non-singleton resource; each delegates to get_resource_id_from_args.
+        # One method per non-singleton resource: percent selector searches with `q=<value>`.
         ADMIN_OBJECTS.reject { |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton) }.each do |res|
           define_method(:"lookup_aoc_#{res}_id") do |_field, value, **|
             aoc_api.lookup_with_q(aoc_res_path(res), value: value)['id']

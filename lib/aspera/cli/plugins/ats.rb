@@ -48,7 +48,8 @@ module Aspera
         commands_under(:cluster) do
           command :clouds, description: 'List cloud providers', action: lambda { Result::ObjectList.new(@ats_api_open.cloud_names.map { |k, v| CLOUD_TABLE.zip([k, v]).to_h }) }
           command :list,   description: 'List ATS servers',     action: lambda { Result::ObjectList.new(@ats_api_open.all_servers, fields: %w[id cloud region]) }
-          command :show,   description: 'Show a specific server'
+          command :show,   description: 'Show a specific server (or use options cloud and region)',
+            arguments: [{name: :server_id, type: String, mandatory: false, default: nil}]
         end
 
         commands_under(:access_key) do
@@ -138,11 +139,11 @@ module Aspera
           )
         end
 
-        def action_cluster_show
+        def action_cluster_show(server_id: nil, **)
           if options.get_option(:cloud) || options.get_option(:region)
             server_data = server_by_cloud_region
           else
-            server_id = options.instance_identifier
+            Aspera.assert(server_id, type: Cli::MissingArgument) { 'server_id (or options cloud and region)' }
             server_data = @ats_api_open.all_servers.find { |i| i['id'].eql?(server_id) }
             raise BadIdentifier.new('server', server_id) if server_data.nil?
           end

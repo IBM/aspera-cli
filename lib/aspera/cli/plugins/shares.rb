@@ -103,6 +103,12 @@ module Aspera
         SHARE_PERMISSIONS_OPS = %i[list show].freeze
         # group users: Rails only exposes index+show+update+destroy (no create)
         GROUP_USERS_OPS = (Operations::ALL - %i[create]).freeze
+        # Arguments of group users commands, by operation
+        GROUP_USERS_ARGS = {
+          show:   [{name: :user_id, type: :identifier}],
+          modify: [{name: :user_id, type: :identifier}, {name: :data, type: Hash}],
+          delete: [{name: :user_id, type: :identifier}]
+        }.freeze
 
         # --- DSL ---
 
@@ -138,13 +144,16 @@ module Aspera
               command :ldap,  description: "LDAP #{entity_type}s"
               command :saml,  description: "SAML #{entity_type}s"
 
+              user_fields = %w[id user_id username first_name last_name email] if entity_type.eql?(:user)
               # all: list/show/delete only (no create, no modify — users/groups/:all has no update route)
               lookup_method_all = :"lookup_shares_#{entity_type}_all_id"
               commands_under :all do
-                (Operations::ALL - %i[create modify]).each do |op|
-                  id_args = Operations::GLOBAL.include?(op) ? {} : {arguments: [{name: :"#{entity_type}_id", type: :identifier, lookup: lookup_method_all}]}
-                  command op, description: "#{op.capitalize} #{entity_type}s", **id_args
-                end
+                crud_commands entity: "data/#{entity_type}s",
+                  api:            :@api_shares_admin,
+                  name:           "#{entity_type}s",
+                  operations:     Operations::ALL - %i[create modify],
+                  lookup:         lookup_method_all,
+                  display_fields: user_fields && (user_fields + %w[directory_user])
                 USR_GRP_SETTINGS.each do |setting|
                   # share_permissions: Rails only exposes index+show (read-only)
                   setting_ops = setting.eql?(:share_permissions) ? SHARE_PERMISSIONS_OPS : %i[show modify]
@@ -153,15 +162,15 @@ module Aspera
                     arguments: [{name: :"#{entity_type}_id", type: :identifier, lookup: lookup_method_all}]
                   commands_under setting do
                     setting_ops.each do |op|
-                      # share_permissions > show needs a permission identifier (list does not)
-                      perm_id_arg = if setting.eql?(:share_permissions) && op.eql?(:show)
-                        [{name: :permission_id, type: :identifier, lookup: :lookup_share_id}]
-                      else
-                        []
-                      end
+                      # share_permissions > show needs a permission identifier (list does not), modify needs data
+                      op_args =
+                        case op
+                        when :show then setting.eql?(:share_permissions) ? [{name: :permission_id, type: :identifier, lookup: :lookup_share_id}] : nil
+                        when :modify then [{name: :data, type: Hash}]
+                        end
                       command op,
                         description: "#{op.capitalize} #{setting} for a #{entity_type}",
-                        arguments: perm_id_arg.empty? ? nil : perm_id_arg
+                        arguments: op_args
                     end
                   end
                 end
@@ -171,7 +180,7 @@ module Aspera
                     arguments: [{name: :group_id, type: :identifier, lookup: :lookup_shares_group_all_id}]
                   commands_under :users do
                     GROUP_USERS_OPS.each do |op|
-                      command op, description: "#{op.capitalize} users of a group"
+                      command op, description: "#{op.capitalize} users of a group", arguments: GROUP_USERS_ARGS[op]
                     end
                   end
                 end
@@ -180,17 +189,19 @@ module Aspera
               # local: full CRUD only — no nested settings (Rails does not nest transfer_settings/app_authorizations/share_permissions under local_users/local_groups)
               commands_under :local do
                 lookup_method_local = :"lookup_shares_#{entity_type}_local_id"
-                Operations::ALL.each do |op|
-                  id_args = Operations::GLOBAL.include?(op) ? {} : {arguments: [{name: :"#{entity_type}_id", type: :identifier, lookup: lookup_method_local}]}
-                  command op, description: "#{op.capitalize} #{entity_type}s", **id_args
-                end
+                crud_commands entity: "data/local_#{entity_type}s",
+                  api:            :@api_shares_admin,
+                  name:           "local #{entity_type}s",
+                  lookup:         lookup_method_local,
+                  display_fields: user_fields,
+                  body_component: Schema::Registry::SHARES
                 if entity_type.eql?(:group)
                   command :users,
                     description: 'Manage users of a group',
                     arguments: [{name: :group_id, type: :identifier, lookup: :lookup_shares_group_local_id}]
                   commands_under :users do
                     GROUP_USERS_OPS.each do |op|
-                      command op, description: "#{op.capitalize} users of a group"
+                      command op, description: "#{op.capitalize} users of a group", arguments: GROUP_USERS_ARGS[op]
                     end
                   end
                 end
@@ -246,7 +257,8 @@ module Aspera
         %i[user_permissions group_permissions].each do |perm_type|
           commands_under [:admin, :share, perm_type] do
             SHARE_PERMISSIONS_OPS.each do |op|
-              command op, description: "#{op.capitalize} #{perm_type}"
+              command op, description: "#{op.capitalize} #{perm_type}",
+                arguments: op.eql?(:show) ? [{name: :permission_id, type: :identifier}] : nil
             end
           end
         end
@@ -309,42 +321,25 @@ module Aspera
 
         # --- admin > user|group handlers ---
 
-        # Shared handler for list/show/delete/create/modify on user or group.
-        # @param entity_type [Symbol] :user or :group
-        # @param location    [Symbol] :all or :local
-        # @param op          [Symbol] CRUD operation
-        def action_admin_entity_crud(entity_type, location, op)
-          path = admin_entity_path(entity_type, location)
-          lookup = ->(f, v) { RestList.lookup_entity_generic(entity: entity_type, field: f, value: v) { @api_shares_admin.read(path) }['id'] }
-          display_fields = entity_type.eql?(:user) ? %w[id user_id username first_name last_name email] : nil
-          display_fields&.push('directory_user') if entity_type.eql?(:user) && location.eql?(:all)
-          # :all excludes :create; :local has a documented POST+PUT requestBody for both users and groups
-          body_component = location.eql?(:local) ? Schema::Registry::SHARES : nil
-          id = Operations::INSTANCE.include?(op) ? options.instance_identifier(&lookup) : nil
-          send(:"entity_#{op}", api: @api_shares_admin, entity: path, id: id, display_fields: display_fields, body_component: body_component)
-        end
-
         # Shared handler for USR_GRP_SETTINGS (transfer_settings, app_authorizations, share_permissions)
         # @param entity_type [Symbol] :user or :group
         # @param location    [Symbol] :all or :local
         # @param setting     [Symbol] one of USR_GRP_SETTINGS
         # @param op          [Symbol] CRUD operation
-        # entity_id: resolved via arguments:(:identifier) on each setting leaf command
-        def action_admin_entity_setting(entity_type, location, setting, op, entity_id:, permission_id: nil, **)
-          path = admin_entity_path(entity_type, location)
-          entity_path = "#{path}/#{entity_id}/#{setting}"
-          is_singleton = !setting.eql?(:share_permissions)
-          id = permission_id || (Operations::INSTANCE.include?(op) && !is_singleton ? options.instance_identifier { |f, v| lookup_share_id(f, v) } : nil)
-          send(:"entity_#{op}", api: @api_shares_admin, entity: entity_path, id: id, is_singleton: is_singleton)
+        # entity_id: resolved via arguments:(:identifier) on the setting node
+        # permission_id: (share_permissions show) and data: (modify) resolved via arguments: on the leaf
+        def action_admin_entity_setting(entity_type, location, setting, op, entity_id:, permission_id: nil, data: nil)
+          entity_path = "#{admin_entity_path(entity_type, location)}/#{entity_id}/#{setting}"
+          send(:"entity_#{op}", api: @api_shares_admin, entity: entity_path, id: permission_id, is_singleton: !setting.eql?(:share_permissions), data: data)
         end
 
         # Shared handler for :users (group only)
         # group_id: resolved by Phase A via arguments:(:identifier) on the :users node
-        def action_admin_entity_users(entity_type, location, op, group_id:, **)
+        # user_id: and data: resolved via arguments: on the leaf (GROUP_USERS_ARGS)
+        def action_admin_entity_users(entity_type, location, op, group_id:, user_id: nil, data: nil)
           path = admin_entity_path(entity_type, location)
           prefix = location.eql?(:all) ? '' : "#{location}_"
-          id = Operations::INSTANCE.include?(op) ? options.instance_identifier : nil
-          send(:"entity_#{op}", api: @api_shares_admin, entity: "#{path}/#{group_id}/#{prefix}users", id: id)
+          send(:"entity_#{op}", api: @api_shares_admin, entity: "#{path}/#{group_id}/#{prefix}users", id: user_id, data: data)
         end
 
         # Generate action_admin_<user|group>_<location>_<verb> for all combinations
@@ -352,19 +347,13 @@ module Aspera
           # all: list/show/delete only (no create, no modify — no update route on /users and /groups)
           # local: full CRUD only — no nested settings under local_users/local_groups
           ENTITY_LOCATIONS.each do |location|
-            ops = location.eql?(:all) ? (Operations::ALL - %i[create modify]) : Operations::ALL
-            ops.each do |op|
-              define_action_method([:admin, entity_type, location, op]) do
-                action_admin_entity_crud(entity_type, location, op)
-              end
-            end
             unless location.eql?(:local)
               USR_GRP_SETTINGS.each do |setting|
                 # share_permissions: Rails only exposes index+show (read-only)
                 setting_ops = setting.eql?(:share_permissions) ? SHARE_PERMISSIONS_OPS : %i[show modify]
                 setting_ops.each do |op|
                   define_action_method([:admin, entity_type, location, setting, op]) do |**kwargs|
-                    action_admin_entity_setting(entity_type, location, setting, op, entity_id: kwargs[:"#{entity_type}_id"], permission_id: kwargs[:permission_id])
+                    action_admin_entity_setting(entity_type, location, setting, op, entity_id: kwargs[:"#{entity_type}_id"], permission_id: kwargs[:permission_id], data: kwargs[:data])
                   end
                 end
               end
@@ -372,8 +361,8 @@ module Aspera
             next unless entity_type.eql?(:group)
             # group users: no create route (Rails only exposes index+show+update+destroy)
             GROUP_USERS_OPS.each do |op|
-              define_action_method([:admin, entity_type, location, :users, op]) do |group_id:, **|
-                action_admin_entity_users(entity_type, location, op, group_id: group_id)
+              define_action_method([:admin, entity_type, location, :users, op]) do |group_id:, user_id: nil, data: nil, **|
+                action_admin_entity_users(entity_type, location, op, group_id: group_id, user_id: user_id, data: data)
               end
             end
           end
@@ -403,12 +392,12 @@ module Aspera
 
         # Handlers for admin > share > user_permissions|group_permissions > op
         # share_id: resolved by Phase A via arguments:(:identifier, lookup: :lookup_share_id) on the perm_type node
+        # permission_id: resolved via arguments: on the show leaf
         # Rails only exposes index+show for share permissions (read-only)
         %i[user_permissions group_permissions].each do |perm_type|
           SHARE_PERMISSIONS_OPS.each do |op|
-            define_action_method([:admin, :share, perm_type, op]) do |share_id:, **|
-              id = Operations::INSTANCE.include?(op) ? options.instance_identifier : nil
-              send(:"entity_#{op}", api: @api_shares_admin, entity: "data/shares/#{share_id}/#{perm_type}", id: id)
+            define_action_method([:admin, :share, perm_type, op]) do |share_id:, permission_id: nil, **|
+              send(:"entity_#{op}", api: @api_shares_admin, entity: "data/shares/#{share_id}/#{perm_type}", id: permission_id)
             end
           end
         end

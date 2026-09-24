@@ -5,6 +5,7 @@
 require 'aspera/schema/registry'
 require 'aspera/cli/plugins/oauth'
 require 'aspera/cli/extended_value'
+require 'aspera/cli/formatter'
 require 'aspera/transfer/result'
 require 'aspera/cli/special_values'
 require 'aspera/cli/wizard'
@@ -489,6 +490,9 @@ module Aspera
         command :health,         description: 'Check Faspex 5 health'
         command :version,        description: 'Show Faspex 5 version',             setup: :setup_api_v5, action: -> { Result::SingleObject.new(@api_v5.read('version')) }
         command :bearer_token,   description: 'Show OAuth bearer token',           setup: :setup_api_v5, action: -> { Result::Text.new(@api_v5.oauth.authorization) }
+        # Package id argument; with a public link to a package, setup_package_id provides it instead
+        PACKAGE_ID_ARG = [{name: :package_id, type: :identifier}].freeze
+        private_constant :PACKAGE_ID_ARG
         command :packages, description: 'Manage packages', setup: :setup_api_v5
         commands_under :packages do
           command :list,   description: 'List packages',
@@ -496,18 +500,18 @@ module Aspera
           command :send,   description: 'Send a package', transfer_paths: :send,
             arguments: [{name: :data, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::FASPEX, 'packages.post')}],
             action: ->(data:, **) { package_send(data) }
-          command :show,   description: 'Show a package', setup: :setup_package_id,
+          command :show,   description: 'Show a package', setup: :setup_package_id, arguments: PACKAGE_ID_ARG,
             action: ->(package_id:, **) { Result::SingleObject.new(@api_v5.read("packages/#{package_id}")) }
           command :browse, description: 'Browse package files', setup: :setup_package_id,
-            arguments: [{name: :folder_path, type: String, mandatory: false, default: '/'}],
+            arguments: PACKAGE_ID_ARG + [{name: :folder_path, type: String, mandatory: false, default: '/'}],
             action: ->(folder_path:, package_id:, **) { browse_folder("packages/#{package_id}/files/#{Api::Faspex.box_type(options.get_option(:box))}", recipient_query(package_id), folder_path: folder_path) }
           command :status, description: 'Wait for package status', setup: :setup_package_id,
-            arguments: [{name: :status_list, type: Array, mandatory: false, default: nil}],
+            arguments: PACKAGE_ID_ARG + [{name: :status_list, type: Array, mandatory: false, default: nil}],
             action: ->(status_list:, package_id:, **) { Result::SingleObject.new(wait_package_status(package_id, status_list: status_list)) }
-          command :delete, description: 'Delete packages', setup: :setup_package_id
-          command :receive, description: 'Receive a package', setup: :setup_package_id, transfer_paths: :receive,
+          command :delete, description: 'Delete packages', setup: :setup_package_id, arguments: PACKAGE_ID_ARG
+          command :receive, description: 'Receive a package', setup: :setup_package_id, transfer_paths: :receive, arguments: PACKAGE_ID_ARG,
             action: ->(package_id:, **) { package_receive(package_id) }
-          command(:file_processing, description: 'Show file processing status', setup: :setup_package_id, action: lambda do |package_id:, **|
+          command(:file_processing, description: 'Show file processing status', setup: :setup_package_id, arguments: PACKAGE_ID_ARG, action: lambda do |package_id:, **|
             result, count = @api_v5.list_entities_limit_offset_total_count(entity: "packages/#{package_id}/file_statuses", items_key: 'files')
             Result::ObjectList.new(result, total: count)
           end)
@@ -877,11 +881,12 @@ module Aspera
           {}
         end
 
-        # Setup for package sub-commands that need an id: resolves package_id from pub_link or argument.
-        # @return [Hash] ctx key: package_id
+        # Setup for package sub-commands that need an id: with a public link to a package, the id comes from the link.
+        # Leaf setup runs before argument resolution: the declared package_id argument is then not read.
+        # @return [Hash] ctx key: package_id, or empty (package_id is read from the command line)
         def setup_package_id(**)
-          package_id = @api_v5.pub_link_context&.key?('package_id') ? @api_v5.pub_link_context['package_id'] : options.instance_identifier
-          {package_id: package_id}
+          return {} unless @api_v5.pub_link_context&.key?('package_id')
+          {package_id: @api_v5.pub_link_context['package_id']}
         end
 
         def action_packages_list(filter: nil, **)

@@ -13,6 +13,8 @@ Released: [Place date of release here]
 
 * `faspex5`: Command `admin account show` was failing.
 * `shares`: Commands `files spec` and `files transport` were failing.
+* `shares`: Commands `admin user|group all|local show|modify|delete <id>` were failing.
+* `aoc`, `ats`, `faspex5`, `shares`: Help now shows all positional arguments (e.g. `faspex5 packages show <package_id>`, `ats cluster show [<server_id>]`).
 * `aoc`, `ats`, `cos`, `node`: Help (`-h`), shell completion and `config commands` now show all sub-commands of commands executed on a node (`aoc files`, `aoc admin node do`, `aoc admin workspace shared_folder node`, `aoc admin ats`, `ats access_key node`, `cos node`, `node access_keys do v3`), e.g. `permission <path> list`, `sync push`, not only the first level.
 * `aoc`: Help of `packages ls|find|node_info|bearer_token_node` now shows the `<path>` argument.
 * `aoc`: `admin node do <id> transfer` and `admin workspace shared_folder <id> node <id> transfer` were always failing: they now take the same `direction` and `source_folder` arguments as `files transfer`.
