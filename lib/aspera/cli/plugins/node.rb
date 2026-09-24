@@ -299,16 +299,6 @@ module Aspera
           @api_node.resolve_api_fid(top_file_id, path)
         end
 
-        # Resolve a NodeFileId by reading path from the CLI argument stream.
-        # Used by setup_access_key_do_permission (intermediate node: its path is read before child dispatch).
-        def apifid_from_next_arg(top_file_id)
-          file_path = options.instance_identifier(description: 'path or %id:<id> or %id:') do |attribute, value|
-            Aspera.assert_values(attribute, ['id'], type: BadArgument) { 'file id' }
-            return Api::NodeFileId.new(@api_node, value.nil? || value.empty? ? top_file_id : value)
-          end
-          @api_node.resolve_api_fid(top_file_id, file_path)
-        end
-
         # Search /async by name
         # @param field [String] name of the field to search
         # @param value [String] value of the field to search
@@ -396,7 +386,9 @@ module Aspera
             command cmd, **spec
           end
           command :v3, description: 'Legacy v3 commands on files', mount: {plugin: self, instance: :v3_node_plugin}
-          command :permission, description: 'Manage permissions', setup: :setup_access_key_do_permission
+          command :permission, description: 'Manage permissions',
+            arguments: [{name: :path, type: String, description: 'Path, or %id:<file id>, or %id: for root'}],
+            setup: :setup_access_key_do_permission
           command :sync, description: 'Synchronize folders'
           commands_under :sync do
             Sync::Operations::DIRECTIONS.each do |dir|
@@ -714,12 +706,11 @@ module Aspera
           {do_root_file_id: @do_root_file_id}
         end
 
-        # access_keys > do > permission - setup: resolve apifid from CLI path argument
-        # (path is read from CLI here as 'permission' is an intermediate node)
+        # access_keys > do > permission - setup: resolve apifid from the path argument of the node
         # do_root_file_id: comes from ctx (setup_access_key_do, or seed of a mount)
         # @return [Hash] context hash containing :apifid
-        def setup_access_key_do_permission(do_root_file_id:, **)
-          {apifid: apifid_from_next_arg(do_root_file_id)}
+        def setup_access_key_do_permission(do_root_file_id:, path:, **)
+          {apifid: apifid_from_path(do_root_file_id, path)}
         end
 
         # access_keys > do > ls
