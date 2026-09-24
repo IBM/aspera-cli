@@ -558,7 +558,7 @@ module Aspera
           tokens = [name.to_s]
           path.each_index do |i|
             tokens << path[i].to_s
-            reg[path[0, i + 1]]&.arguments.to_a.each { |a| tokens << a.syntax }
+            reg.arguments_at(path[0, i + 1]).each { |a| tokens << a.syntax }
           end
           tokens.join(' ')
         end

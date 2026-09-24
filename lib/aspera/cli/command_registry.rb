@@ -18,6 +18,7 @@ module Aspera
     #   mount_of(path)          - MountSpec of the local node at path, if any
     #   mount_at(path)          - MountSpec of the node at path, if any (follows mounts)
     #   own_children_of(path)   - Hash{Symbol => CommandSpec} of direct children declared on the node, without mounted ones
+    #   arguments_at(path)      - Array of ArgumentSpec read by the node at path (mount arguments first)
     #   leaf_paths              - Array of all leaf paths (follows mounts, or stops at mount nodes)
     #   all_paths               - Array of all locally registered full paths
     #   any?                    - true if at least one spec has been registered
@@ -76,6 +77,15 @@ module Aspera
         registry, local_path = resolve(path)
         return registry.own_children_of(local_path) unless registry.equal?(self)
         @children_index[local_path] || {}
+      end
+
+      # Arguments read by the node at path, in order.
+      # For a child exposed by a mount, the mount's arguments come first (read by the host).
+      # @param path [Array<Symbol>] path in this registry's namespace
+      # @return [Array<ArgumentSpec>]
+      def arguments_at(path)
+        path = Array(path)
+        (path.empty? ? [] : mount_arguments(path)) + (self[path]&.arguments || [])
       end
 
       # Register a CommandSpec. Raises if the full_path is already registered.
@@ -179,6 +189,8 @@ module Aspera
           if (mount = spec.mount)
             # Rule: a mount needs an instance method, no action, and must point to existing target nodes
             raise ArgumentError, "#{path.inspect}: mount requires instance:" if mount.instance.nil?
+            # Mount arguments precede the arguments of the mounted command: they cannot be optional
+            raise ArgumentError, "#{path.inspect}: mount arguments must be mandatory" unless mount.arguments.all?(&:mandatory)
             raise ArgumentError, "#{path.inspect}: mount and action: are exclusive" if spec.action
             raise ArgumentError, "#{path.inspect}: mount at #{mount.at.inspect} not found in #{mount.plugin}" unless mount.at.empty? || mount.registry[mount.at]
             target_ids = mount.registry.children_of(mount.at).keys
@@ -203,6 +215,16 @@ module Aspera
       end
 
       private
+
+      # @param path [Array<Symbol>] non-empty path in this registry's namespace
+      # @return [Array<ArgumentSpec>] arguments of the mount exposing the last segment of path, if any
+      def mount_arguments(path)
+        registry, parent = resolve(path[0..-2])
+        return registry.send(:mount_arguments, parent + [path.last]) unless registry.equal?(self)
+        mount = @specs[parent]&.mount
+        return [] if mount.nil? || @children_index[parent]&.key?(path.last) || !mount.accepts?(path.last)
+        mount.arguments
+      end
 
       # Identity of the sub-tree exposed at path: the mount point for a mount node, else the owning node.
       # @return [Array(Integer, Array<Symbol>)]

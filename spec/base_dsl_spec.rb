@@ -401,6 +401,16 @@ module Aspera
             expect(host_class.new(context: context).dispatch_from_registry([])).to(have_attributes(data: 'info'))
           end
 
+          it 'reads the mount arguments after the mounted command and passes them to instance' do
+            tc = target_class
+            host_class.command(:pkg, description: 'Packages', mount: {plugin: tc, at: %i[keys do], instance: :build_pkg, arguments: [{name: :pkg_id, type: :identifier}]})
+            host_class.define_method(:build_pkg) { |pkg_id:, **| [tc.new(context: context), {root: "p-#{pkg_id}"}] }
+            allow(options).to(receive(:get_next_command).with(%i[files pkg], aliases: nil).and_return(:pkg))
+            allow(options).to(receive(:get_next_command).with(%i[ls perm], aliases: nil).and_return(:ls))
+            allow(options).to(receive(:instance_identifier).with(description: 'pkg_id').and_return('42'))
+            expect(host_class.new(context: context).dispatch_from_registry([])).to(have_attributes(data: 'ls p-42'))
+          end
+
           it 'walks mounted help without instantiating the target' do
             context.help_requested = true
             host_class.define_method(:build_target) { |**| raise 'must not instantiate target for help' }

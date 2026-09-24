@@ -94,16 +94,21 @@ module Aspera
     #                                             (it replaces what the setups of `at` and its ancestors would provide)
     # @!attribute only     [Array<Symbol>, nil]   Restrict mounted children to these ids
     # @!attribute except   [Array<Symbol>, nil]   Exclude these ids from mounted children
+    # @!attribute arguments [Array<ArgumentSpec>] Arguments read by the host after the mounted command, before its own
+    #                                             arguments; resolved values are passed to `instance`
+    #                                             (e.g. `packages ls <package_id> <path>`)
     MountSpec = Struct.new(
       :plugin,
       :at,
       :instance,
       :only,
       :except,
+      :arguments,
       keyword_init: true
     ) do
       def initialize(**kwargs)
         kwargs[:at] = Array(kwargs[:at]).freeze
+        kwargs[:arguments] = Array(kwargs[:arguments]).map { |a| a.is_a?(Hash) ? ArgumentSpec.new(**a) : a }.freeze
         super
       end
 

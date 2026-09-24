@@ -182,7 +182,7 @@ All plugins declare their command tree using a class-level DSL defined in `Base`
 | `allowed` | `Array<Symbol> \| nil` | Allowed values (accept list) |
 | `interactive` | `Boolean` | Prompt for the value when missing (sets `ask_missing_mandatory`) |
 
-Arguments already present in `ctx` are not read again from the command line: this is how a caller (e.g. a mount seed, or `aoc packages ls` calling `Node`) or a leaf `setup:` provides a value.
+Arguments already present in `ctx` are not read again from the command line: this is how a caller (e.g. a mount seed) or a leaf `setup:` provides a value.
 
 **Rule**: every positional argument is declared with `arguments:`, so that `--help`, completion and `config commands` show it. Plugins never read positional arguments themselves (`options.get_next_argument`, `options.instance_identifier`). When an argument may come from elsewhere, declare it anyway and let the leaf `setup:` inject it in `ctx`, since a leaf setup runs before its arguments are resolved:
 
@@ -387,13 +387,15 @@ end
 | `at` | Path in the target registry whose children are mounted (default `[]`: root) |
 | `instance` | Host method called with `**ctx` (after the node's own `arguments:` and `setup:`), returning the target instance, or `[instance, seed_ctx]` |
 | `only` / `except` | Filter the mounted children |
+| `arguments` | Arguments read by the host right after the mounted command, before the target's own arguments, and passed to `instance` in `ctx` (mandatory only) |
 
 Semantics:
 
 - **Registry**: `CommandRegistry#[]`, `children_of`, `leaf_paths` follow mounts, with paths in the host namespace. Host children declared under the mount node are merged with the mounted ones and take precedence on an id conflict.
-- **Dispatch**: when a mounted child is selected, `dispatch_mount` calls `instance`, then `target.dispatch_from_registry(at + [command], seed_ctx)`. Arguments and setups **below** the mount point run normally in the target; those of `at` and its ancestors do not run: `seed_ctx` provides what they would have put in `ctx` (e.g. `do_root_file_id:` for `at: %i[access_keys do]`).
+- **Dispatch**: when a mounted child is selected, `dispatch_mount` resolves the mount `arguments`, calls `instance`, then `target.dispatch_from_registry(at + [command], seed_ctx)`. Arguments and setups **below** the mount point run normally in the target; those of `at` and its ancestors do not run: `seed_ctx` provides what they would have put in `ctx` (e.g. `do_root_file_id:` for `at: %i[access_keys do]`).
+- **Arguments**: `CommandRegistry#arguments_at(path)` returns the mount `arguments` followed by the node's own, e.g. `aoc packages ls <package_id> <path>`: `--help` and `config commands` use it.
 - **Help**: with `--help`, the host keeps walking its mount-aware registry: the target is never instantiated (no API connection), and `condition:` of mounted commands is not evaluated.
-- **Validation**: `validate!` checks that `instance` exists, that `at` and the `only`/`except` ids exist in the target, and that the mount node has no `action:`.
+- **Validation**: `validate!` checks that `instance` exists, that `at` and the `only`/`except` ids exist in the target, that the mount node has no `action:`, and that mount `arguments` are mandatory.
 
 Mount points:
 
@@ -403,6 +405,7 @@ Mount points:
 | `shares files` | `Node` root, `only: COMMANDS_SHARES` |
 | `ats access_key node <id>` | `Node` `access_keys do` |
 | `aoc files`, `aoc admin node do <id>`, `aoc admin workspace shared_folder <id> node <id>` | `Node` `access_keys do` (plus the AoC-specific `transfer`, and `short_link` for `files`) |
+| `aoc packages` | `Node` `access_keys do`, `only: NODE4_READ_ACTIONS`, `arguments: <package_id>` |
 | `aoc admin ats` | `Ats` root |
 | `node access_keys do <id> v3` | `Node` root (a mount on itself: `leaf_paths` does not expand a cycle twice) |
 

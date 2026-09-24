@@ -433,8 +433,8 @@ module Aspera
           if @context.help_requested
             # help_requested on an intermediate node: drain positional args without validation
             # so that dispatch_child can still consume the correct sub-command token
-            if !is_leaf && spec&.arguments
-              spec.arguments.each do |arg_spec|
+            if !is_leaf
+              registry.arguments_at(current_path).each do |arg_spec|
                 next if ctx.key?(arg_spec.name)
                 options.get_next_argument(arg_spec.name.to_s, mandatory: false)
               end
@@ -442,24 +442,7 @@ module Aspera
           else
             # Phase A - for intermediate nodes only: resolve all ArgumentSpec declared on this node
             # before dispatching to children (leaf nodes resolve their arguments inside execute_leaf).
-            if !is_leaf
-              (spec&.arguments || []).each do |arg_spec|
-                next if ctx.key?(arg_spec.name)
-                if arg_spec.type.eql?(:identifier)
-                  lookup_cb = arg_spec.lookup
-                  res_id = if lookup_cb.nil?
-                    options.instance_identifier(description: arg_spec.name.to_s)
-                  elsif lookup_cb.is_a?(Symbol)
-                    options.instance_identifier(description: arg_spec.name.to_s) { |f, v| send(lookup_cb, f, v, **ctx) }
-                  else
-                    options.instance_identifier(description: arg_spec.name.to_s) { |f, v| instance_exec(f, v, **ctx, &lookup_cb) }
-                  end
-                  ctx = ctx.merge(arg_spec.name => res_id)
-                else
-                  ctx = ctx.merge(arg_spec.name => resolve_argument(arg_spec))
-                end
-              end
-            end
+            ctx = resolve_arguments(spec.arguments, ctx) if !is_leaf && spec&.arguments
             ctx = ctx.merge(send(spec.setup, **ctx)) if spec&.setup
           end
 
@@ -528,18 +511,20 @@ module Aspera
           child_path = current_path + [command]
           return dispatch_mount(registry.mount_of(current_path), command, ctx) unless @context.help_requested || registry.local?(child_path)
 
-          # Both intermediate and leaf: instance_arg + setup are handled by Phase A of the next call
+          # Both intermediate and leaf: arguments + setup are handled by Phase A of the next call
           dispatch_from_registry(child_path, ctx)
         end
 
         # Hand over dispatch of a mounted child to the target plugin instance.
         # Setups of the mount point `at` and of its ancestors in the target are not executed:
         # the seed ctx returned by the host's `instance` method replaces them.
+        # The mount's own arguments (if any) are read first, and passed to `instance` in ctx.
         # @param mount   [MountSpec]
         # @param command [Symbol] mounted child id, already consumed
         # @param ctx     [Hash]   host context, passed to the `instance` method
         # @return [Object]
         def dispatch_mount(mount, command, ctx)
+          ctx = resolve_arguments(mount.arguments, ctx)
           target = send(mount.instance, **ctx)
           target, seed = target if target.is_a?(Array)
           Aspera.assert_type(target, mount.plugin)
@@ -583,8 +568,6 @@ module Aspera
         # Execute a leaf CommandSpec: resolve arguments and call action.
         # Arguments already present in `ctx` (e.g. provided by a caller or a mount seed) are skipped:
         # they are not read again from the command line.
-        # instance_arg (if any) is resolved here as an ArgumentSpec(type: :identifier) and merged
-        # into ctx, exactly like any other keyword argument received by the action.
         # @param spec [CommandSpec] a leaf node (no children)
         # @param ctx  [Hash]        accumulated context (pre-resolved keys are not re-consumed)
         # @return [Object]
@@ -592,21 +575,30 @@ module Aspera
           a = action_for(spec)
           # Always resolve declared arguments (even when transfer_paths is set — those arguments
           # are consumed first; ts_source_paths then reads whatever remains in the queue).
-          (spec.arguments || []).each do |arg_spec|
-            next if ctx.key?(arg_spec.name)
-            if arg_spec.type.eql?(:identifier)
-              lookup_cb = arg_spec.lookup
-              block =
-                if lookup_cb.nil? then nil
-                elsif lookup_cb.is_a?(Symbol) then ->(f, v) { send(lookup_cb, f, v, **ctx) }
-                else ->(f, v) { instance_exec(f, v, **ctx, &lookup_cb) }
-                end
-              ctx = ctx.merge(arg_spec.name => resolve_argument(arg_spec, &block))
-            else
-              ctx = ctx.merge(arg_spec.name => resolve_argument(arg_spec))
-            end
-          end
+          ctx = resolve_arguments(spec.arguments, ctx) if spec.arguments
           invoke_action(a, [], ctx)
+        end
+
+        # Resolve positional arguments from the CLI argument stream, in order.
+        # Arguments already present in `ctx` are not read again.
+        # For type: :identifier, the percent-selector lookup receives the ctx accumulated so far.
+        # @param arg_specs [Array<ArgumentSpec>]
+        # @param ctx       [Hash] accumulated context
+        # @return [Hash] ctx merged with the resolved arguments
+        def resolve_arguments(arg_specs, ctx)
+          arg_specs.each do |arg_spec|
+            next if ctx.key?(arg_spec.name)
+            lookup_cb = arg_spec.lookup if arg_spec.type.eql?(:identifier)
+            current = ctx
+            block =
+              case lookup_cb
+              when nil    then nil
+              when Symbol then ->(f, v) { send(lookup_cb, f, v, **current) }
+              else ->(f, v) { instance_exec(f, v, **current, &lookup_cb) }
+              end
+            ctx = ctx.merge(arg_spec.name => resolve_argument(arg_spec, &block))
+          end
+          ctx
         end
 
         # Resolve a single positional argument from the CLI argument stream.

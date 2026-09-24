@@ -260,10 +260,41 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
       expect(registry.leaf_paths).to(eq([%i[files ls], %i[files perm list]]))
     end
 
+    describe '#arguments_at' do
+      let(:target_ls_args) { [{name: :path, type: String}] }
+
+      before do
+        target_registry.register(spec(id: :find, parent: %i[keys do], action: :x, arguments: target_ls_args))
+        registry.register(spec(id: :local, parent: :files, action: :x, arguments: [{name: :name}]))
+      end
+
+      it 'prepends the mount arguments to the arguments of a mounted command' do
+        mount_host(at: %i[keys do], arguments: [{name: :package_id, type: :identifier}])
+        expect(registry.arguments_at(%i[files find]).map(&:name)).to(eq(%i[package_id path]))
+      end
+
+      it 'does not apply the mount arguments to host children, nor below the mounted command' do
+        mount_host(at: %i[keys do], arguments: [{name: :package_id, type: :identifier}])
+        expect(registry.arguments_at(%i[files local]).map(&:name)).to(eq([:name]))
+        expect(registry.arguments_at(%i[files perm list])).to(eq([]))
+      end
+
+      it 'returns only the node arguments without mount arguments' do
+        mount_host(at: %i[keys do])
+        expect(registry.arguments_at(%i[files find]).map(&:name)).to(eq([:path]))
+        expect(registry.arguments_at([])).to(eq([]))
+      end
+    end
+
     describe '#validate!' do
       it 'accepts a valid mount without children or action' do
         mount_host(at: [:keys], only: [:do])
         expect { registry.validate! }.not_to(raise_error)
+      end
+
+      it 'raises when a mount argument is optional' do
+        mount_host(arguments: [{name: :package_id, mandatory: false}])
+        expect { registry.validate! }.to(raise_error(ArgumentError, /must be mandatory/))
       end
 
       it 'raises when instance: is missing' do

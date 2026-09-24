@@ -279,23 +279,11 @@ module Aspera
           registry = plugin.class.command_registry
           cmds     = registry.children_of(path)
           label    = plugin.class.name.split('::').last.downcase
-          # Build label with positional argument slots inserted after each intermediate node
+          # Build label with positional argument slots inserted after each command
           # e.g. [:access_keys, :do, :download] -> "node access_keys do <access_key_id> download"
-          path.each_with_index do |seg, i|
-            label += " #{seg}"
-            seg_path = path[0..i]
-            seg_spec = registry[seg_path]
-            if seg_spec && registry.children_of(seg_path).any? && seg_spec.arguments
-              seg_spec.arguments.each do |arg_spec|
-                label += " #{arg_spec.syntax}"
-              end
-            end
-          end
-          if cmds.none?
-            leaf_spec = registry[path]
-            leaf_spec&.arguments&.each do |arg_spec|
-              label += " #{arg_spec.syntax}"
-            end
+          path.each_index do |i|
+            label += " #{path[i]}"
+            registry.arguments_at(path[0..i]).each { |arg_spec| label += " #{arg_spec.syntax}" }
           end
           if cmds.any?
             # Intermediate node: show current command + description, then list subcommands
@@ -312,7 +300,7 @@ module Aspera
             spec = registry[path]
             lines << "\nCOMMAND: #{label}"
             lines << "    #{spec.description}" if spec&.description
-            display_args = spec&.arguments || []
+            display_args = registry.arguments_at(path)
             # transfer_paths commands use --sources for the file list; default is positional args (@args)
             if spec&.transfer_paths
               file_desc = if spec.transfer_paths == :receive
