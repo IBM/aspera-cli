@@ -7121,7 +7121,7 @@ mcp_bad_transport:
   tags:
     - must_fail
     - nodoc
-  expect: "Unknown transport: bad"
+  expect: "`/transport` is not one of: [\"stdio\", \"http\"]"
   args:
     - mcp
     - server
