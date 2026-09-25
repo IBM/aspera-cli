@@ -21,6 +21,7 @@ module Aspera
             config_presets[preset] ||= {}
             config_presets[preset][key] = value
           end
+          allow(d).to(receive(:global_preset?)) { |name| name.eql?('GLOBAL') }
         end
       end
 
@@ -129,6 +130,13 @@ module Aspera
             host.action_preset_secure(config_name: 'mypreset')
             expect(config_presets['mypreset']['password']).to(eq('@vault:mypreset0.password'))
             expect(vault_store['mypreset0']).to(include(password: 'newpass'))
+          end
+
+          it 'leaves secrets of the global preset in clear without opening the vault' do
+            config_presets['GLOBAL'] = {'secret' => 'abc'}
+            expect(host).not_to(receive(:vault))
+            host.action_preset_secure(config_name: 'GLOBAL')
+            expect(config_presets['GLOBAL']['secret']).to(eq('abc'))
           end
 
           it 'processes all presets when no config_name is given' do

@@ -200,6 +200,12 @@ module Aspera
         result
       end
 
+      # @return [Boolean] true if `preset_name` is declared as the global default preset (does not create it)
+      def global_preset?(preset_name)
+        defaults = @config_presets[Key::DEFAULTS]
+        defaults.is_a?(Hash) && defaults[CONF_GLOBAL_SYM.to_s].eql?(preset_name)
+      end
+
       # Set param in the global defaults preset
       def set_global_default(key, value)
         set_key(global_default_preset, key, value)

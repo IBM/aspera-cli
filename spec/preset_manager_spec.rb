@@ -111,6 +111,20 @@ RSpec.describe(Aspera::Cli::PresetManager) do
     end
   end
 
+  describe '#global_preset?' do
+    it 'identifies the declared global preset' do
+      pm = manager("config: {version: '1'}\ndefault: {config: mine}\nmine: {a: 1}\n")
+      expect(pm.global_preset?('mine')).to(be(true))
+      expect(pm.global_preset?('other')).to(be(false))
+    end
+
+    it 'does not declare the global preset' do
+      pm = manager
+      expect(pm.global_preset?('global_common_defaults')).to(be(false))
+      expect(pm.config_presets.keys).to(eq(['config']))
+    end
+  end
+
   describe '#lookup_preset' do
     it 'finds preset by canonical URL and username' do
       pm = manager("config: {version: '1'}\ns: {url: 'https://h:443/', username: u}\nt: text\n")
