@@ -423,7 +423,7 @@ module Aspera
         if !@ask_missing_mandatory
           message = "Missing #{default_prompt}"
           message = self.class.multi_choice_assert_msg(message, accept_list, aliases: aliases) if accept_list
-          message += "\n#{TerminalFormatter::HINT}Give `#{SchemaRequest::KEYWORD}` as argument to retrieve the schema of the missing argument." if schema
+          message += "\n#{TerminalFormatter.hint}Give `#{SchemaRequest::KEYWORD}` as argument to retrieve the schema of the missing argument." if schema
           raise Cli::MissingArgument, message
         end
         # Ask interactively

@@ -1751,7 +1751,7 @@ For example, to display a table with thick Unicode borders:
 > [!NOTE]
 > Other border styles exist, not limited to: `:unicode`, `:unicode_round`.
 
-By default, if the terminal is detected to support Unicode, then `border=unicode_round` is used.
+By default, if the terminal supports Unicode (see [`--out.utf8`](#option---outcolors-and---oututf8-terminal-rendering)), then `border=unicode_round` is used.
 
 A special parameter is defined: `str_lst_sep` (`String`), default is `\n`.
 It defines how lists of strings are displayed.
@@ -1933,6 +1933,24 @@ The option `--out.level` controls the level of output:
 - If value is `no` (default), then secrets are redacted from command results.
 - If value is `yes`, then secrets are shown in clear in results.
 - If `--out.level` is `data`, secrets are included to allow piping results.
+
+#### Option: `--out.colors` and `--out.utf8`: Terminal rendering
+
+By default, <%=tool%> detects the capabilities of the terminal:
+
+| Option         | Effect when `yes`                                             | Auto-detection (default)                                                       |
+|----------------|---------------------------------------------------------------|--------------------------------------------------------------------------------|
+| `--out.colors` | ANSI colors and styles in results, messages and logs          | `yes` if both `stdout` and `stderr` are terminals and `TERM` is not `dumb`, or if `CLICOLOR_FORCE=1` |
+| `--out.utf8`   | Unicode characters: table borders, check marks                | `yes` if `stdout` is a terminal and the locale is UTF-8                        |
+
+Set either option to `yes` or `no` to override detection, for example to keep colors when piping to `less -R`, or to get plain ASCII output in a terminal:
+
+```shell
+<%=cmd%> config preset overview --out.colors=no --out.utf8=no
+```
+
+> [!NOTE]
+> Logs issued before the option is processed (e.g. at startup) use the detected value.
 
 #### Option: `fields`: Selection of output object fields
 

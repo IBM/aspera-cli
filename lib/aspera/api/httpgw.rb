@@ -42,8 +42,6 @@ module Aspera
       API_V1 = 'v1'
       API_V2 = 'v2'
       THR_RECV = 'recv'
-      LOG_WS_SEND = 'ws: send: '.red
-      LOG_WS_RECV = "ws: #{THR_RECV}: ".green
       private_constant :MSG_RECV_DATA_RECEIVED_SIGNAL, :MSG_RECV_SLICE_UPLOAD_SIGNAL
 
       # Send message on http gw web socket
@@ -55,13 +53,13 @@ module Aspera
         else
           @shared_info[:count][:sent_general] += 1
         end
-        Log.dump("#{LOG_WS_SEND} #{msg_type}", level: :trace1) { payload.dup.tap { |d| d[:data] = "[data #{d[:data].length} bytes]" if d.key?(:data) } }
+        Log.dump("#{log_ws_send} #{msg_type}", level: :trace1) { payload.dup.tap { |d| d[:data] = "[data #{d[:data].length} bytes]" if d.key?(:data) } }
         ws_send(ws_type: :text, data: JSON.generate({msg_type => payload}))
       end
 
       # send data on http gw web socket
       def ws_send(ws_type:, data:)
-        Log.log.trace1 { "#{LOG_WS_SEND}sending: #{ws_type} (#{data&.length || 0} bytes)" }
+        Log.log.trace1 { "#{log_ws_send}sending: #{ws_type} (#{data&.length || 0} bytes)" }
         @shared_info[:count][:sent_general] += 1 if ws_type.eql?(:binary)
         frame_generator = ::WebSocket::Frame::Outgoing::Client.new(data: data, type: ws_type, version: @ws_handshake.version)
         @ws_io.write(frame_generator.to_s)
@@ -73,12 +71,12 @@ module Aspera
                 @shared_info[:read_exception].nil? &&
                 (((@shared_info[:count][:sent_general] - @shared_info[:count][:received_general]) > 1) ||
                   ((@shared_info[:count][:received_v2_delimiter] - @shared_info[:count][:sent_v2_delimiter]) > 1))
-              Log.log.trace1 { "#{LOG_WS_SEND}#{'timeout'.blue}: #{@shared_info[:count]}" } if !@shared_info[:cond_var].wait(@shared_info[:mutex], 2.0)
+              Log.log.trace1 { "#{log_ws_send}#{'timeout'.blue}: #{@shared_info[:count]}" } if !@shared_info[:cond_var].wait(@shared_info[:mutex], 2.0)
             end
           end
         end
         raise @shared_info[:read_exception] unless @shared_info[:read_exception].nil?
-        Log.log.trace2 { "#{LOG_WS_SEND}counts: #{@shared_info[:count]}" }
+        Log.log.trace2 { "#{log_ws_send}counts: #{@shared_info[:count]}" }
       end
 
       # Check header ourself and give precise error message, as websocket will only throw error without details
@@ -92,7 +90,7 @@ module Aspera
 
       # message processing for read thread
       def process_received_message(message)
-        Log.log.debug { "#{LOG_WS_RECV}message: [#{message}] (#{message.class})" }
+        Log.log.debug { "#{log_ws_recv}message: [#{message}] (#{message.class})" }
         if message.eql?(MSG_RECV_DATA_RECEIVED_SIGNAL)
           @shared_info[:mutex].synchronize do
             @shared_info[:count][:received_general] += 1
@@ -120,21 +118,21 @@ module Aspera
 
       # Main function of read thread
       def process_read_thread
-        Log.log.debug { "#{LOG_WS_RECV}read thread started" }
+        Log.log.debug { "#{log_ws_recv}read thread started" }
         frame_parser = ::WebSocket::Frame::Incoming::Client.new(version: @ws_handshake.version)
         until @ws_io.eof?
           begin
             # ready byte by byte until frame is ready
             # blocking read
             byte = @ws_io.read(1)
-            Log.log.trace2 { "#{LOG_WS_RECV}read: #{byte} (#{byte.class}) eof=#{@ws_io.eof?}" }
+            Log.log.trace2 { "#{log_ws_recv}read: #{byte} (#{byte.class}) eof=#{@ws_io.eof?}" }
             frame_parser << byte
             frame_ok = frame_parser.next
             next if frame_ok.nil?
             process_received_message(frame_ok.data.to_s)
-            Log.log.trace2 { "#{LOG_WS_RECV}counts: #{@shared_info[:count]}" }
+            Log.log.trace2 { "#{log_ws_recv}counts: #{@shared_info[:count]}" }
           rescue => e
-            Log.log.debug { "#{LOG_WS_RECV}Exception: #{e}" }
+            Log.log.debug { "#{log_ws_recv}Exception: #{e}" }
             @shared_info[:mutex].synchronize do
               @shared_info[:read_exception] = e
               @shared_info[:cond_var].signal
@@ -143,9 +141,9 @@ module Aspera
           end
         end
         Log.log.debug do
-          "#{LOG_WS_RECV}exception: #{@shared_info[:read_exception]},cls=#{@shared_info[:read_exception].class})"
+          "#{log_ws_recv}exception: #{@shared_info[:read_exception]},cls=#{@shared_info[:read_exception].class})"
         end unless @shared_info[:read_exception].nil?
-        Log.log.debug { "#{LOG_WS_RECV}read thread stopped (ws eof=#{@ws_io.eof?})" }
+        Log.log.debug { "#{log_ws_recv}read thread stopped (ws eof=#{@ws_io.eof?})" }
       end
 
       def upload(transfer_spec)
@@ -171,7 +169,7 @@ module Aspera
         # Get whole HTTP response header, Check and process
         # no need to check `finished?` or result of `<<` (true), as we give the whole header at once
         @ws_handshake << validated_ws_response_header(@ws_io.readuntil("\r\n\r\n"))
-        Log.log.debug { "#{LOG_WS_SEND}handshake success" }
+        Log.log.debug { "#{log_ws_send}handshake success" }
         # data shared between main thread and read thread
         @shared_info = {
           read_exception: nil, # error message if any in callback
@@ -225,7 +223,7 @@ module Aspera
                   # send once, before data, at beginning
                   ws_snd_json(MSG_SEND_SLICE_UPLOAD, slice_info) if slice_info[:slice].eql?(0)
                   ws_send(ws_type: :binary, data: slice_bin_data)
-                  Log.log.trace1 { "#{LOG_WS_SEND}buffer: file: #{file_index}, slice: #{slice_info[:slice]}/#{last_slice}" }
+                  Log.log.trace1 { "#{log_ws_send}buffer: file: #{file_index}, slice: #{slice_info[:slice]}/#{last_slice}" }
                   # send once, after data, at end
                   ws_snd_json(MSG_SEND_SLICE_UPLOAD, slice_info) if slice_info[:slice].eql?(last_slice)
                 end
@@ -342,6 +340,10 @@ module Aspera
       end
 
       private
+
+      # Log prefixes (evaluated on each call, as colors can be enabled or disabled by option)
+      def log_ws_send = 'ws: send: '.red
+      def log_ws_recv = "ws: #{THR_RECV}: ".green
 
       # compute total size of files to upload (for progress)
       # modify transfer spec to be suitable for HTTPGW

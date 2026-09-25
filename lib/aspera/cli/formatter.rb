@@ -40,7 +40,7 @@ module Aspera
 
       private_constant :FIELDS_LESS, :DISPLAY_FORMATS, :DISPLAY_LEVELS, :SINGLE_OBJECT_COLUMN_NAMES, :STR_LST_SEP_VERT
 
-      option :out,          description: 'Output rendering options (dot-notation: format, level, file, fields, select, table[.pivot], flat, secrets, img)', schema: Schema::Registry::OUT_OPTIONS
+      option :out,          description: 'Output rendering options (dot-notation: format, level, file, fields, select, table[.pivot], flat, secrets, colors, utf8, img)', schema: Schema::Registry::OUT_OPTIONS
       option :display,      description: 'Output only some information', allowed: DISPLAY_LEVELS, default: :data, deprecation: {last: '4.27.0', message: 'use --out.level'}
       option :format,       description: 'Output format (also: --out.format)', allowed: DISPLAY_FORMATS, default: :table
       option :output,       description: 'Destination for results', deprecation: {last: '4.27.0', message: 'use --out.file'}
@@ -100,6 +100,8 @@ module Aspera
         @options = {}
         # Last value of option `out`
         @out_dispatched = {}
+        # Colors auto-detected by Rainbow at load time, restored when `--out.colors` is reset
+        @colors_detected = Rainbow.enabled
         @spinner = nil
       end
 
@@ -182,7 +184,9 @@ module Aspera
             when :flat     then @parser.set_option(:flat_hash,    v, warn_deprecation: false)
             when :secrets  then @parser.set_option(:show_secrets, v, warn_deprecation: false)
             when :img      then @parser.set_option(:image,        v, warn_deprecation: false)
-            else Aspera.error_unexpected_value(k) { 'out sub-option (format, level, file, fields, select, table[.pivot], flat, secrets, img)' }
+            when :colors   then Rainbow.enabled = v.nil? ? @colors_detected : v
+            when :utf8     then Environment.unicode = v
+            else Aspera.error_unexpected_value(k) { 'out sub-option (format, level, file, fields, select, table[.pivot], flat, secrets, colors, utf8, img)' }
             end
           end
           return

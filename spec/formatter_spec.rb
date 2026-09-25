@@ -54,6 +54,43 @@ module Aspera
           expect { build_formatter(['--out.foo=bar']) }.to(raise_error(/out sub-option/))
         end
       end
+
+      describe 'option out colors and utf8' do
+        # Rainbow and Environment settings are global: restore them after each test
+        around do |example|
+          colors = Rainbow.enabled
+          example.run
+        ensure
+          Rainbow.enabled = colors
+          Environment.unicode = nil
+        end
+
+        it 'overrides colors detection' do
+          Rainbow.enabled = false
+          build_formatter(['--out.colors=yes'])
+          expect(Rainbow.enabled).to(be(true))
+          build_formatter(['--out.colors=no'])
+          expect(Rainbow.enabled).to(be(false))
+        end
+
+        it 'restores detected colors when reset' do
+          Rainbow.enabled = false
+          build_formatter(['--out.colors=yes', '--out.colors=@none:'])
+          expect(Rainbow.enabled).to(be(false))
+        end
+
+        it 'overrides Unicode detection' do
+          allow($stdout).to(receive(:tty?).and_return(false))
+          expect(Environment.terminal_supports_unicode?).to(be(false))
+          build_formatter(['--out.utf8=yes'])
+          expect(Environment.terminal_supports_unicode?).to(be(true))
+          expect(TerminalFormatter.tick(true)).to(include("\u2713"))
+          build_formatter(['--out.utf8=no'])
+          expect(Environment.terminal_supports_unicode?).to(be(false))
+          build_formatter(['--out.utf8=@none:'])
+          expect(Environment.terminal_supports_unicode?).to(be(false))
+        end
+      end
     end
   end
 end

@@ -6,10 +6,9 @@ require 'aspera/log'
 require 'aspera/ssh'
 require 'aspera/assert'
 require 'aspera/cli/info'
+require 'aspera/cli/terminal_formatter'
 require 'net/ssh'
 require 'openssl'
-require 'aspera/rainbow'
-using Rainbow
 
 module Aspera
   module Cli
@@ -147,7 +146,7 @@ module Aspera
               else Aspera.error_unexpected_value(m) { 'hint match' }
               end
               hint[:remediation].each do |r|
-                Log.log.info { "#{'HINT:'.bg(:green).white.blink.freeze} #{r}" }
+                Log.log.info { "#{TerminalFormatter.hint} #{r}" }
               end
             end
           end

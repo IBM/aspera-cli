@@ -728,5 +728,15 @@ components:
           type: boolean
           description: Show secrets in command output.
           default: false
+        colors:
+          type: boolean
+          description: >-
+            Use ANSI colors and styles in terminal output and logs.
+            Default is auto-detected: enabled if both stdout and stderr are terminals and `TERM` is not `dumb`, or if `CLICOLOR_FORCE=1`.
+        utf8:
+          type: boolean
+          description: >-
+            Use Unicode characters in terminal output (e.g. table borders, check marks).
+            Default is auto-detected: enabled if stdout is a terminal and the locale is UTF-8.
         img:
           $ref: "#/components/schemas/ImageOptions"

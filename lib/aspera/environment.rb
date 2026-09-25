@@ -203,12 +203,16 @@ module Aspera
         I18N_VARS.each { |var| ENV[var] = 'C' }
       end
 
+      # Override detection of Unicode support: `true` or `false`, or `nil` for auto-detection
+      attr_writer :unicode
+
       # @return [Boolean] true if we can display Unicode characters
       # Uses Encoding.locale_charmap for OS-independent detection.
       # Falls back to locale env vars for systems where charmap is not available.
       # https://www.gnu.org/software/libc/manual/html_node/Locale-Categories.html
       # https://pubs.opengroup.org/onlinepubs/7908799/xbd/envvar.html
       def terminal_supports_unicode?
+        return @unicode unless @unicode.nil?
         return false unless terminal?
         locale_charmap_utf8? || I18N_VARS.any? { |var| ENV[var]&.include?('UTF-8') }
       end

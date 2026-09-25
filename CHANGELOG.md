@@ -10,6 +10,7 @@ Released: [Place date of release here]
 * **general**: Values of options and arguments with a schema owned by `ascli` (e.g. `ts`, `transfer`, `out`, `http_options`) are validated: the error shows the path of the invalid element and the reason. New gem dependency: `json_schemer`.
 * **general**: Deprecation warnings, help and `config options` show the last version supporting a deprecated option and its replacement, e.g. `deprecated after 4.27.0: use --out.level`.
 * **general**: New Windows portable package `aspera-cli-<version>-windows-amd64-portable.zip` in GitHub releases: includes Ruby, gems and `ascp`, no installation nor administrator rights needed.
+* **general**: New options `--out.colors` and `--out.utf8` to enable or disable ANSI colors and Unicode characters in terminal output, instead of auto-detection.
 * `config`: `commands` accepts an optional plugin name and command path, and shows sub-trees provided by another plugin (e.g. `aoc files`) as a reference unless option `expand_mounts` is `yes`.
 * `aoc`: `automation` covers the whole Automation API: new `workflows update_state|cancel_instances|delete_instances|permissions`, `instances cancel`, `steps`, `actions`.
 * `console`: New commands `transfer current submit`, `transfer smart pause`, `transfer queue <queue_id> list|move_forwards|move_back`, `endpoint list`, `ssh_key list`, `admin email_server_update|nodeapi_credentials_update`. `health` also checks `health/up`. Help shows request body schemas.

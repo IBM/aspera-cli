@@ -232,25 +232,25 @@ module Aspera
       self.logger_type = @logger_type
     end
 
-    # Short (4-letters) levels with color
+    # Short (4-letters) levels with color (evaluated on each call, as colors can be enabled or disabled by option)
     LVL_COLOR = {
-      TRACE2:  short_levl(:TRACE2).faint,
-      TRACE1:  short_levl(:TRACE1).blue,
-      DEBUG:   short_levl(:DEBUG).cyan,
-      INFO:    short_levl(:INFO).green,
-      WARN:    short_levl(:WARN).bg(:yellow).black,
-      ERROR:   short_levl(:ERROR).bg(:red).blink,
-      FATAL:   short_levl(:FATAL).magenta,
-      UNKNOWN: short_levl(:UNKNOWN).blink
+      TRACE2:  -> { short_levl(:TRACE2).faint },
+      TRACE1:  -> { short_levl(:TRACE1).blue },
+      DEBUG:   -> { short_levl(:DEBUG).cyan },
+      INFO:    -> { short_levl(:INFO).green },
+      WARN:    -> { short_levl(:WARN).bg(:yellow).black },
+      ERROR:   -> { short_levl(:ERROR).bg(:red).blink },
+      FATAL:   -> { short_levl(:FATAL).magenta },
+      UNKNOWN: -> { short_levl(:UNKNOWN).blink }
     }.freeze
 
-    DEFAULT_FORMATTER = ->(s, _d, _p, m) { "#{LVL_COLOR[s]} #{m}\n" }
+    DEFAULT_FORMATTER = ->(s, _d, _p, m) { "#{LVL_COLOR[s]&.call} #{m}\n" }
 
     # pre-defined formatters
     FORMATTER_LAMBDAS = {
       standard: Logger::Formatter.new,
       default:  DEFAULT_FORMATTER,
-      caller:   ->(s, _d, _p, m) { "#{LVL_COLOR[s]} #{Log.caller_method}\n#{m}\n" }
+      caller:   ->(s, _d, _p, m) { "#{LVL_COLOR[s]&.call} #{Log.caller_method}\n#{m}\n" }
     }.freeze
 
     FORMATTERS = FORMATTER_LAMBDAS.keys

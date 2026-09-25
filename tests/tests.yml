@@ -5466,6 +5466,13 @@ conf_echo_json_multi_single:
     - echo
     - '@json:[{"user":{"id":1,"name":"foo"},"project":"bar"}]'
     - --out.table.pivot=single
+conf_echo_colors_utf8:
+  args:
+    - config
+    - echo
+    - '@json:{"empty":"","bool":true}'
+    - --out.colors=yes
+    - --out.utf8=yes
 conf_echo_picture_svg:
   args:
     - config

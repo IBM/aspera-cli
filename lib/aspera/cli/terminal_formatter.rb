@@ -13,8 +13,12 @@ module Aspera
     # @see FormatterInterface
     # @see MarkdownFormatter (in build/lib/doc_helper.rb)
     module TerminalFormatter
-      HINT = 'HINT:'.bg(:green).white.blink.freeze
       include FormatterInterface
+
+      # Prefix for hint messages (evaluated on each call, as colors can be enabled or disabled by option)
+      def hint
+        'HINT:'.bg(:green).white.blink
+      end
 
       # Format boolean with colored symbol (+/- or Y/ )
       def tick(yes)
@@ -61,7 +65,7 @@ module Aspera
         end
       end
 
-      module_function :tick, :special_format, :check_row, :markdown_text
+      module_function :hint, :tick, :special_format, :check_row, :markdown_text
     end
   end
 end
