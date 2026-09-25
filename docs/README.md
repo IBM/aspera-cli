@@ -145,8 +145,7 @@ This section walks you through your first interaction with `ascli` on Linux.
 
 ```shell
 mkdir -p $HOME/bin
-tar zxvf ascli.4.28.0.pre.linux-x86_64.tgz
-mv ascli.4.28.0.pre.linux-x86_64 $HOME/bin/ascli
+tar -C $HOME/bin -zxvf ascli-4.28.0.pre-linux-x86_64.tgz
 export PATH=$PATH:$HOME/bin
 ```
 
@@ -220,7 +219,7 @@ The steps below create a preset, set it as the default for the server plugin, br
 - Create a preset with your server's connection details:
 
 ```shell
-ascli config preset update <SERVER_PRESET_NAME> --url=ssh://demo.asperasoft.com:33001 --username=aspera --password=demoaspera
+ascli config preset update <SERVER_PRESET_NAME> --url=ssh://hsts.example.com:33001 --username=<USERNAME> --password=<PASSWORD>
 ```
 
 ```text
@@ -316,14 +315,13 @@ This executable includes the Ruby runtime and gems, but not the transfer SDK.
 #### Installing the single file executable
 
 > [!NOTE]
-> Replace the URL with the one for your platform.
+> Replace `<VERSION>` and `<PLATFORM>` with the values of the downloaded archive, for example: `linux-x86_64`.
+> The archive contains a single file: the executable `ascli`.
 > Installation of `ascp` is still required separately.
 > See [Install `ascp`](#installing-ascp-through-transferd).
 
 ```shell
 tar zxvf ascli-<VERSION>-<PLATFORM>.tgz
-mv ascli-<VERSION>-<PLATFORM> ascli
-chmod a+x ascli
 ./ascli config transferd install
 ```
 
@@ -1036,7 +1034,7 @@ podman run --rm --tty --interactive --entrypoint bash docker.io/martinlaurent/as
 Then, execute individual `ascli` commands such as:
 
 ```shell
-ascli config init
+ascli config initdemo
 ascli config preset overview
 ascli config ascp info
 ascli server ls /
@@ -1265,10 +1263,10 @@ gem install openssl -- --with-openssl-dir=$(openssl version -e|sed -n 's|ENGINES
 SSL certificates are validated using a certificate store.
 By default, it is the one of the system's `openssl` library.
 
-To display trusted certificate store locations:
+To display the default trusted certificate store locations:
 
 ```shell
-ascli --show-config --fields=cert_stores
+ascli config echo '@ruby:[OpenSSL::X509::DEFAULT_CERT_DIR,OpenSSL::X509::DEFAULT_CERT_FILE]'
 ```
 
 Certificates are checked against the [Ruby default certificate store](https://ruby-doc.org/stdlib-3.0.3/libdoc/openssl/rdoc/OpenSSL/X509/Store.html) `OpenSSL::X509::DEFAULT_CERT_FILE` and `OpenSSL::X509::DEFAULT_CERT_DIR`, which are typically the ones of `openssl` on Unix-like systems (Linux, macOS, and so on).
@@ -1558,12 +1556,15 @@ A [dot-path](#dot-path-notation) is a `String` where segments are separated by `
 For example, the path `a.b.0` means: key `a` → key `b` → first element of an array.
 
 When a **value** is assigned to the path (**write** with `=`), it is automatically converted to the simplest matching type: `Boolean`, `Integer`, `Float`, or `String`.
+Values `true` and `yes` are converted to `Boolean` `true`, and values `false` and `no` to `false`.
+For an option expecting a list of values that includes `yes` or `no` (e.g. `--out.table.pivot=no`), the `Boolean` is converted back to that value.
 
 > [!NOTE]
 > A value of `1` will be automatically converted to an `Integer`.
 > When a specific type is required for the value, the [Extended Value](#extended-value-syntax) syntax modifiers `@json:` or `@ruby:` can be used.
 > For example: `--opt.x=1` generates `{"x": 1}`.
 > To get a `String`: `--opt.x=@json:\"1\"` or `--opt.x=@ruby:%q{1}`.
+> Likewise, to get the `String` `yes`: `--opt.x=@json:\"yes\"`.
 
 Example: [dot-path](#dot-path-notation) to JSON output
 
@@ -1805,7 +1806,7 @@ For `format=table`, options are the ones described in gem [`terminal-table`](htt
 For example, to display a table with thick Unicode borders:
 
 ```shell
-ascli config preset over --out.table=@ruby:'{border: :unicode_thick_edge}'
+ascli config preset overview --out.table=@ruby:'{border: :unicode_thick_edge}'
 ```
 
 > [!NOTE]
@@ -1875,7 +1876,8 @@ For the same command, adding option `--out.flat=no`:
 #### Option: `--out.table.pivot`
 
 This option controls how result fields are displayed as columns or lines, when option `format` is set to `table`.
-Default is `no`.
+Values are `false` (default), `true` or `single`.
+On command line, `no` and `yes` can be used as well (converted to `Boolean`, see [dot-path](#dot-path-notation)), but a structured value (e.g. `--out=@json:'{"table":{"pivot":true}}'`) expects a `Boolean`.
 There are two types of results that are affected by this option:
 
 | Result          | Description                                 |
@@ -1892,7 +1894,7 @@ An item (object) is displayed in one of those 2 ways:
 
 The display of result is as follows:
 
-| Result          | `no`       | `yes`       | `single`                            |
+| Result          | `false`    | `true`      | `single`                            |
 |-----------------|------------|-------------|-------------------------------------|
 | `single_object` | Simple     | Simple      | Simple                              |
 | `object_list`   | Transposed | Simple<br/>(Multiple objects) | Simple if 1 object.<br/>transposed if 2+ objects. |
@@ -2339,6 +2341,22 @@ INFO Schema: option: ts
 
 This works for any `Hash` option or positional parameter that has a defined schema.
 
+#### Schema Validation
+
+The value of an option or **Command Parameter** with a schema defined by `ascli` (e.g. options `ts`, `transfer`, `out`, `http_options`, argument of `orchestrator workflows start`) is validated against it before the action.
+An invalid value is rejected with the path of the invalid element and the reason:
+
+```shell
+ascli config echo 1 --ts=@json:'{"direction":"sideways"}'
+```
+
+```text
+ERRR Argument: Option ts: value at `/direction` is not one of: ["send", "receive"] (use --ts=help for schema)
+```
+
+Option values are merged from several sources (presets, command line), so mandatory fields are not checked for options.
+Request bodies of product APIs (e.g. `create` and `modify` commands) are not validated by `ascli`: the API validates them.
+
 #### Testing Extended Value
 
 Two complementary commands help verify that a value is parsed as expected:
@@ -2381,11 +2399,11 @@ ERROR: Argument: unprocessed values: ["2", "3"]
 Adding `--show-config` to any command line performs a dry run and displays the resolved value of all options that would be used, without executing the command.
 
 To display a specific option, add `--fields=<option_name>`.
-Add `--flat=no` when the option holds a structured value (`Hash`, `Array`) to display it as-is rather than flattened into dot-path keys:
+Add `--out.flat=no` when the option holds a structured value (`Hash`, `Array`) to display it as-is rather than flattened into dot-path keys:
 
 ```shell
-ascli --opt=@json:'{"a":1,"b":"two"}' some_plugin --show-config --fields=opt --flat=no
-ascli --opt.a=1 --opt.b=two some_plugin --show-config --fields=opt --flat=no
+ascli --opt=@json:'{"a":1,"b":"two"}' some_plugin --show-config --fields=opt --out.flat=no
+ascli --opt.a=1 --opt.b=two some_plugin --show-config --fields=opt --out.flat=no
 ```
 
 Both lines above display the same resolved value for option `opt`.
@@ -2586,7 +2604,7 @@ ascli config preset set GLOBAL out.table.pivot single
 ascli config preset set GLOBAL out.level data
 ```
 
-The parameter value is **automatically coerced** to its natural type: integers, floats and booleans (`true`/`false`) are stored as native YAML types rather than strings.
+The parameter value is **automatically coerced** to its natural type: integers, floats and booleans (`true`/`yes`/`false`/`no`) are stored as native YAML types rather than strings.
 
 To **delete** a key from a preset, pass `@none:` as the value (evaluates to `nil`):
 
@@ -2597,7 +2615,7 @@ ascli config preset set GLOBAL out.table.pivot @none:
 A full terminal based overview of the configuration can be displayed using:
 
 ```shell
-ascli config preset over
+ascli config preset overview
 ```
 
 A list of [Option Preset](#option-preset) can be displayed using:
@@ -2634,7 +2652,7 @@ The former format for commands is still supported:
 
 ```shell
 ascli config preset set|delete|show|initialize|update <NAME>
-ascli config preset over
+ascli config preset overview
 ascli config preset list
 ```
 
@@ -3028,7 +3046,7 @@ only username/password and URL are required (either on command line, or from con
 Those can be usually provided on the command line:
 
 ```shell
-ascli shares repo browse / --url=https://10.25.0.6 --username=john --password=<PASSWORD>
+ascli shares files browse / --url=https://10.25.0.6 --username=john --password=<PASSWORD>
 ```
 
 This can also be provisioned in a configuration file:
@@ -3044,7 +3062,7 @@ ascli config preset set shares06 password <PASSWORD>
 This can also be done with one single command:
 
 ```shell
-ascli config preset init shares06 @json:'{"url":"https://10.25.0.6","username":"john","password":"<PASSWORD>"}'
+ascli config preset initialize shares06 @json:'{"url":"https://10.25.0.6","username":"john","password":"<PASSWORD>"}'
 ```
 
 Or:
@@ -3068,7 +3086,7 @@ ascli config preset overview
 - Execute a command on the **Shares'** application using default options
 
 ```shell
-ascli shares repo browse /
+ascli shares files browse /
 ```
 
 ### Secret Vault
@@ -3145,7 +3163,7 @@ vault server -dev -dev-root-token-id=dev-only-token
 | `vault` | `String` | Name or ID of the 1Password vault to use with the CLI (used when `source` is `cli`). Uses the default vault if omitted. |
 
 ```shell
---vault=@json:'{"type":"vault","url":"http://127.0.0.1:8200"}' --vault_password=dev-only-token
+--vault=@json:'{"type":"vault","url":"http://127.0.0.1:8200"}' --vault-password=dev-only-token
 ```
 
 #### Vault: System keychain
@@ -3199,7 +3217,7 @@ docker run -d --name op-connect \
 
 ```shell
 --vault=@json:'{"type":"1password","source":"api","url":"http://localhost:8080","vault_id":"<VAULT_ID>"}' \
---vault_password=<CONNECT_TOKEN>
+--vault-password=<CONNECT_TOKEN>
 ```
 
 > [!TIP]
@@ -3231,11 +3249,14 @@ No server to deploy — authentication is handled by the 1Password desktop app (
 
 Secrets can be manipulated using the `config vault` command:
 
-- `create`
-- `show`
-- `list`
-- `delete`
-- `import`
+- `info` : Show vault information
+- `ids` : List secret labels in the vault
+- `list` : List all secrets with full details
+- `show` : Show a secret by label (or id)
+- `create` : Add a new secret to the vault
+- `delete` : Delete a secret by label (or id)
+- `password` : Change the vault password
+- `import` : Import secrets from a JSON array (supports `--bulk`)
 
 To add a new password entry in the vault for label `<NAME>`:
 
@@ -3245,22 +3266,22 @@ ascli config vault create @: label=<NAME> password=@secret:password description=
 
 #### Vault: Migration between vaults
 
-To migrate all secrets from one vault backend to another (for example, from the encrypted file vault to 1Password), use `vault overview` piped into `vault import`.
+To migrate all secrets from one vault backend to another (for example, from the encrypted file vault to 1Password), use `vault list` piped into `vault import`.
 
 > [!NOTE]
-> Use `overview` (not `list`) as the source: `list` returns only labels, while `overview` returns the full secret details needed for import.
+> Use `list` (not `ids`) as the source: `ids` returns only labels, while `list` returns the full secret details needed for import.
 
 ```shell
-ascli config vault overview --format=json --out.level=data \
+ascli config vault list --format=json --out.level=data \
   --vault=@json:'{"type":"file","name":"<SOURCE_VAULT_FILE>"}' \
-  --vault_password=<SOURCE_PASSWORD> | \
-ascli config vault import @json:@stdin: --bulk \
+  --vault-password=<SOURCE_PASSWORD> | \
+ascli config vault import @json:@stdin: --bulk=yes \
   --vault=@json:'{"type":"1password","url":"<CONNECT_URL>","vault_id":"<VAULT_ID>"}' \
-  --vault_password=<CONNECT_TOKEN>
+  --vault-password=<CONNECT_TOKEN>
 ```
 
 > [!TIP]
-> Use `--out.level=data` on the `overview` command so that only the raw JSON array is written to stdout, with no table headers or status lines.
+> Use `--out.level=data` on the `list` command so that only the raw JSON array is written to stdout, with no table headers or status lines.
 
 The `import` command accepts a JSON array where each element is a vault secret object (same schema as `create`).
 `--bulk` makes each entry reported individually in the result table; omit it to get a single-line summary.
@@ -3516,19 +3537,19 @@ The default formatter is:
 - Display debugging log on `stdout`:
 
 ```shell
-ascli config pre over --log-level=debug --logger=stdout
+ascli config preset overview --log-level=debug --logger=stdout
 ```
 
 Or equivalently using dot-path notation:
 
 ```shell
-ascli config pre over --log.level=debug --log.type=stdout
+ascli config preset overview --log.level=debug --log.type=stdout
 ```
 
 - Log errors to `syslog`:
 
 ```shell
-ascli config pre over --log-level=error --logger=syslog
+ascli config preset overview --log-level=error --logger=syslog
 ```
 
 Or using the composite option in a preset:
@@ -3735,8 +3756,7 @@ It provides the following commands for `ascp` sub-command:
 #### Selection of `ascp` location for [`direct`](#agent-direct) agent
 
 Option: `sdk_folder` is used to specify the location of `ascp`.
-The default value is: `product:FIRST`.
-By default, `ascli` uses any found local product with `ascp`, including Transfer Daemon (SDK).
+By default, `ascli` uses `ascp` from the Transfer SDK installed in its configuration folder (see `config ascp install`).
 
 To override and use an alternate `ascp` path use option `sdk_folder` (`--sdk-folder=`)
 
@@ -3760,6 +3780,7 @@ If the path has spaces, read section: [Shell and Command line parsing](#command-
 A special value `product:<PRODUCT_NAME>` can be used for option `sdk_folder`.
 It specifies to use `ascp` from the given product name.
 A special value for product name is `FIRST`, which means: use the first product found in the internal list.
+In that case, other files (SSH keys, `aspera.conf`, `transferd`) are still taken from the default SDK folder.
 
 Locally installed Aspera products can be listed with:
 
@@ -4232,7 +4253,7 @@ Parameters provided in option `transfer` are:
 Example:
 
 ```shell
-ascli faspex5 packages recv 323 --transfer.url=https://asperagw.example.com:9443/aspera/http-gwy --transfer=httpgw
+ascli faspex5 packages receive 323 --transfer=httpgw --transfer.url=https://asperagw.example.com:9443/aspera/http-gwy
 ```
 
 > [!NOTE]
@@ -5147,13 +5168,13 @@ Key query parameters:
   Place only the bare filename(s) in the file list, and pass the `file:` URI as the source prefix so that the query parameters apply uniformly to every entry:
 
   ```shell
-  ascli server upload growing --to-folder=/Upload --ts.source_root='file:///?grow=120' --progress=no --transfer.quiet=false
+  ascli server upload growing --to-folder=/Upload --ts.source_root='file:///?grow=120' --progress-bar=no --transfer.quiet=false
   ```
 
 - **URI directly on the command line with `file_list=false`**
 
   ```shell
-  ascli server upload 'file:///./growing?grow=120' --to-folder=/Upload --transfer.file_list=false --transfer.quiet=false --progress=no
+  ascli server upload 'file:///./growing?grow=120' --to-folder=/Upload --transfer.file_list=false --transfer.quiet=false --progress-bar=no
   ```
 
 ### Usage
@@ -5193,16 +5214,16 @@ OPTIONS: global
     --interactive=yes|no           Use interactive input of missing params
     --ask-options=yes|no           Ask even optional options
     --out=HASH                     Output rendering options (dot-notation: format, level, file, fields, select, table[.pivot], flat, secrets, img)
-    --display=info|data|error      Output only some information (deprecated: use --out.level)
+    --display=info|data|error      Output only some information (deprecated after 4.27.0: use --out.level)
     --format=ENUM                  Output format (also: --out.format)
-    --output=VALUE                 Destination for results (deprecated: use --out.file)
+    --output=VALUE                 Destination for results (deprecated after 4.27.0: use --out.file)
     --fields=LIST                  Comma separated list of: fields, or ALL, or DEF (also: --out.fields)
     --select=HASH                  Select only some items in lists: column, value (also: --out.select)
-    --table-style=HASH             (Table) Display style (deprecated: use --out.table)
-    --flat-hash=yes|no             (Table) Display deep values as additional keys (deprecated: use --out.flat)
-    --multi-single=no|yes|single   (Table) Control how object list is displayed as single table, or multiple objects (deprecated: use --out.table.pivot)
-    --show-secrets=yes|no          Show secrets on command output (deprecated: use --out.secrets)
-    --image=HASH                   Options for displaying images and thumbnails in the terminal (deprecated: use --out.img)
+    --table-style=HASH             (Table) Display style (deprecated after 4.27.0: use --out.table)
+    --flat-hash=yes|no             (Table) Display deep values as additional keys (deprecated after 4.27.0: use --out.flat)
+    --multi-single=no|yes|single   (Table) Control how object list is displayed as single table, or multiple objects (deprecated after 4.27.0: use --out.table.pivot)
+    --show-secrets=yes|no          Show secrets on command output (deprecated after 4.27.0: use --out.secrets)
+    --image=HASH                   Options for displaying images and thumbnails in the terminal (deprecated after 4.27.0: use --out.img)
 -h, --help                         Show this message
     --show-config                  Display parameters used for the provided action
 -v, --version                      Display version
@@ -5257,7 +5278,7 @@ OPTIONS: global
     --sources=VALUE                How list of transferred files is provided (@args,@ts,Array)
     --src-type=list|pair           Type of file list
     --transfer=HASH                Transfer agent type, or agent parameters with optional agent key
-    --transfer-info=HASH           Parameters for transfer agent (deprecated: use --transfer instead)
+    --transfer-info=HASH           Parameters for transfer agent (deprecated after 4.26.2: use --transfer instead)
 
 PLUGINS
     alee            Aspera License Entitlement Engine
@@ -5311,7 +5332,7 @@ Each plugin usually represents commands sent to a specific application.
 Available plugins can be found using command:
 
 ```shell
-ascli config plugin list
+ascli config plugins list
 ```
 
 ```text
@@ -5339,7 +5360,7 @@ ascli --show-config --fields=plugin_folder
 You can create the skeleton of a new plugin like this:
 
 ```shell
-ascli config plugin create foo .
+ascli config plugins create foo .
 ```
 
 ```text
@@ -6041,7 +6062,7 @@ In that case, it is possible to list those shared folder by using a value for op
 Once client has been registered and [Option Preset](#option-preset) created: `ascli` can be used:
 
 ```shell
-ascli aoc files br /
+ascli aoc files browse /
 ```
 
 ```text
@@ -6051,7 +6072,7 @@ empty
 
 ### Calling AoC APIs from command line
 
-The command `ascli aoc bearer` can be used to generate an OAuth token suitable to call any AoC API.
+The command `ascli aoc bearer_token` can be used to generate an OAuth token suitable to call any AoC API.
 This can be useful when a command is not yet available.
 
 Example:
@@ -6139,17 +6160,15 @@ Resources are identified by a unique `id` and a unique `name` (case-insensitive)
 
 To execute an action on a specific resource, select it using one of those methods:
 
-- **recommended**: give ID directly on command line **after the action**: `aoc admin node show 123`
-- Give name on command line **after the action**: `aoc admin node show name abc`
-- Provide option `id` : `aoc admin node show 123`
-- Provide option `name` : `aoc admin node show %name:abc`
+- **recommended**: give the ID directly on the command line **after the action**: `aoc admin node show 123`
+- Give another unique field, such as the name, using the [percent selector](#percent-selector) **after the action**: `aoc admin node show %name:abc`
 
 #### Creating a resource
 
 New resources (users, groups, workspaces, and so on) can be created using a command like:
 
 ```shell
-ascli aoc admin create <RESOURCE_TYPE> @json:'{<...parameters...>}'
+ascli aoc admin <RESOURCE_TYPE> create @json:'{<...parameters...>}'
 ```
 
 Some API endpoints are described in [IBM API Hub](https://developer.ibm.com/apis/catalog?search=%22aspera%20on%20cloud%20api%22).
@@ -6194,7 +6213,7 @@ The secret is provided using the `secret` option.
 For example in a command like:
 
 ```shell
-ascli aoc admin node <NODE_ID> v3 info
+ascli aoc admin node do <NODE_ID> v3 info
 ```
 
 It is also possible to store secrets in the [secret vault](#secret-vault) and then automatically find the related secret using the [config finder](#configuration-finder).
@@ -6259,7 +6278,7 @@ To list the target folder content, add a `/` at the end of the path.
 Example:
 
 ```shell
-ascli aoc files br the_link
+ascli aoc files browse the_link
 ```
 
 ```text
@@ -6272,7 +6291,7 @@ Current Workspace: Default (default)
 ```
 
 ```shell
-ascli aoc files br the_link/
+ascli aoc files browse the_link/
 ```
 
 ```text
@@ -6376,7 +6395,7 @@ ascli aoc user settings modify <id> @json:'{"value":"..."}'
 Creation of a sub-access key is like creation of access key with the following difference: authentication to Node API is made with access key (master access key) and only the path parameter is provided: it is relative to the storage root of the master key. (id and secret are optional)
 
 ```shell
-ascli aoc admin resource node --name=_node_name_ v4 access_key create @: storage.path=/folder1
+ascli aoc admin node do %name:'<NODE_NAME>' v3 access_keys create @: storage.path=/folder1
 ```
 
 #### Example: Display transfer events (ops/transfer)
@@ -6398,7 +6417,7 @@ Examples of query:
 #### Example: Display node events (events)
 
 ```shell
-ascli aoc admin node v3 events
+ascli aoc admin node do <NODE_ID> v3 events
 ```
 
 #### Example: Display members of a workspace
@@ -6570,7 +6589,7 @@ Then, create two shared folders located in two regions, in your files home, in a
 Then, transfer between those:
 
 ```shell
-ascli -Paoc_show aoc files transfer --from-folder='IBM Cloud SJ' --to-folder='AWS Singapore' 100GB.file --ts=@json:'{"target_rate_kbps":"1000000","multi_session":10,"multi_session_threshold":1}'
+ascli -Paoc_sedemo aoc files transfer push 'IBM Cloud SJ' --to-folder='AWS Singapore' 100GB.file --ts=@json:'{"target_rate_kbps":1000000,"multi_session":10,"multi_session_threshold":1}'
 ```
 
 #### Example: Delete all registration keys
@@ -6621,7 +6640,7 @@ ascli aoc admin node do %name:'<NODE_NAME>' v3 access_keys show self --fields=to
 > Record the generated secret immediately; it cannot be retrieved later, only reset.
 
 ```shell
-ascli node access_key create @: id=<ACCESS_KEY_ID> secret=<SECRET> storage.type=local storage.path=/data/aoc token_verification_key=@file:mypubkey.pem
+ascli node access_keys create @: id=<ACCESS_KEY_ID> secret=<SECRET> storage.type=local storage.path=/data/aoc token_verification_key=@file:mypubkey.pem
 ```
 
 - Register the Node in AoC
@@ -6642,11 +6661,11 @@ ascli aoc admin node create @: url=https://aspera.example.com access_key=<ACCESS
 > If the node is configured for admin user, then add options: `--username=<ACCESS_KEY_ID> --password=<SECRET>`.
 
 ```shell
-ascli node access_key do self permission / create @: access_type=user access_id='F4 System'
+ascli node access_keys do self permission / create @: access_type=user access_id='F4 System'
 ```
 
 ```shell
-ascli node access_key do self permission / create @: access_type=user access_id=NODE_OWNER
+ascli node access_keys do self permission / create @: access_type=user access_id=NODE_OWNER
 ```
 
 - Optional next Steps
@@ -6685,7 +6704,7 @@ So, for example, the creation of a node using ATS in IBM Cloud looks like (see o
 The creation options are the ones of ATS API, refer to the [section on ATS](#ats-access-key-creation-parameters) for more details and examples.
 
 ```shell
-ascli aoc admin ats access_key create --cloud=softlayer --region=eu-de --params=@json:'{"storage":{"type":"ibm-s3","bucket":"mybucket","credentials":{"access_key_id":"mykey","secret_access_key":"mysecret"},"path":"/"}}'
+ascli aoc admin ats access_key create @json:'{"storage":{"type":"ibm-s3","bucket":"mybucket","credentials":{"access_key_id":"mykey","secret_access_key":"mysecret"},"path":"/"}}' --cloud=softlayer --region=eu-de
 ```
 
 Once executed, the access key `id` and `secret`, randomly generated by the Node API, is displayed.
@@ -6708,7 +6727,7 @@ Then use the returned address for the `url` key to create the AoC Node resource:
 ascli aoc admin node create @json:'{"name":"myname","access_key":"myaccesskeyid","ats_access_key":true,"ats_storage_type":"ibm-s3","url":"https://ats-sl-fra-all.aspera.io"}'
 ```
 
-Creation of a node with a self-managed node is similar, but the command `aoc admin ats access_key create` is replaced with `node access_key create` on the private node itself.
+Creation of a node with a self-managed node is similar, but the command `aoc admin ats access_key create` is replaced with `node access_keys create` on the private node itself.
 
 #### Example: Deactivate an application in a workspace
 
@@ -6731,7 +6750,7 @@ This is a two-steps procedure:
 2. Deactivate the application:
 
    ```shell
-   ascli aoc admin application instance modify packages <APP_ID> @: enabled=false inherit_organization_app_settings=false
+   ascli aoc admin application instance packages modify <APP_ID> @: enabled=false inherit_organization_app_settings=false
    ```
 
 ### List of files to transfer
@@ -6902,7 +6921,7 @@ To list the content of a package, use command `packages browse <PACKAGE_ID> <FOL
 Example:
 
 ```shell
-ascli aoc package browse xx5CnbeWng /
+ascli aoc packages browse xx5CnbeWng /
 ```
 
 Use command `find` to list recursively.
@@ -6910,7 +6929,7 @@ Use command `find` to list recursively.
 For advanced users, it is also possible to pipe node information for the package and use node operations:
 
 ```shell
-ascli aoc package node_info <PACKAGE_ID> / --format=json --out.secrets=yes --out.level=data | ascli node -N --preset=@json:@stdin: access_key do self browse /
+ascli aoc packages node_info <PACKAGE_ID> / --format=json --out.secrets=yes --out.level=data | ascli node -N --preset=@json:@stdin: access_keys do self browse /
 ```
 
 #### List packages
@@ -7095,8 +7114,8 @@ ascli aoc files short_link <PATH_TO_FOLDER> private create
 ascli aoc files short_link <PATH_TO_FOLDER> private list
 ascli aoc files short_link <PATH_TO_FOLDER> public create @json:'{...}'
 ascli aoc files short_link <PATH_TO_FOLDER> public list
-ascli aoc files short_link public delete <ID>
-ascli aoc files short_link public modify <ID> @json:'{...}'
+ascli aoc files short_link <PATH_TO_FOLDER> public delete <ID>
+ascli aoc files short_link <PATH_TO_FOLDER> public modify <ID> @json:'{...}'
 ```
 
 Only `public` short links can be modified.
@@ -7561,7 +7580,8 @@ ascli config preset update <PRESET_NAME> --ats-key=ats_XXXXXXXXXXXXXXXXXXXXXXXX 
 
 ### ATS Access key creation parameters
 
-When creating an ATS access key, the option `params` must contain an [Extended Value](#extended-value-syntax) with the creation parameters.
+When creating an ATS access key, the creation parameters are provided as a positional argument of `access_key create`, as a `Hash` [Extended Value](#extended-value-syntax).
+If key `transfer_server_id` is not provided, the transfer server is selected with options `cloud` and `region`.
 Those are directly the parameters expected by the [ATS API](https://developer.ibm.com/apis/catalog?search=%22Aspera%20ATS%20API%22).
 
 ### Misc. Examples
@@ -7569,19 +7589,19 @@ Those are directly the parameters expected by the [ATS API](https://developer.ib
 Example: create access key on IBM Cloud (Softlayer):
 
 ```shell
-ascli ats access_key create --cloud=softlayer --region=ams --params=@json:'{"storage":{"type":"softlayer_swift","container":"_container_name_","credentials":{"api_key":"<SECRET>","username":"_name_:_usr_name_"},"path":"/"},"id":"_optional_id_","name":"_optional_name_"}'
+ascli ats access_key create @json:'{"storage":{"type":"softlayer_swift","container":"_container_name_","credentials":{"api_key":"<SECRET>","username":"_name_:_usr_name_"},"path":"/"},"id":"_optional_id_","name":"_optional_name_"}' --cloud=softlayer --region=ams
 ```
 
 Example: create access key on AWS:
 
 ```shell
-ascli ats access_key create --cloud=aws --region=eu-west-1 --params=@json:'{"id":"<ACCESS_KEY>","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"_access_key_id_here_","secret_access_key":"<SECRET>"},"path":"/laurent"}}'
+ascli ats access_key create @json:'{"id":"<ACCESS_KEY>","name":"laurent key AWS","storage":{"type":"aws_s3","bucket":"my-bucket","credentials":{"access_key_id":"_access_key_id_here_","secret_access_key":"<SECRET>"},"path":"/laurent"}}' --cloud=aws --region=eu-west-1
 ```
 
 Example: create access key on Azure SAS:
 
 ```shell
-ascli ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"<ACCESS_KEY>","name":"laurent key azure","storage":{"type":"azure_sas","credentials":{"shared_access_signature":"https://containername.blob.core.windows.net/blobname?sr=c&..."},"path":"/"}}'
+ascli ats access_key create @json:'{"id":"<ACCESS_KEY>","name":"laurent key azure","storage":{"type":"azure_sas","credentials":{"shared_access_signature":"https://containername.blob.core.windows.net/blobname?sr=c&..."},"path":"/"}}' --cloud=azure --region=eastus
 ```
 
 > [!NOTE]
@@ -7590,13 +7610,13 @@ ascli ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":
 Example: create access key on Azure:
 
 ```shell
-ascli ats access_key create --cloud=azure --region=eastus --params=@json:'{"id":"<ACCESS_KEY>","name":"laurent key azure","storage":{"type":"azure","credentials":{"account":"myaccount","key":"<ACCESS_KEY>","storage_endpoint":"myblob"},"path":"/"}}'
+ascli ats access_key create @json:'{"id":"<ACCESS_KEY>","name":"laurent key azure","storage":{"type":"azure","credentials":{"account":"myaccount","key":"<ACCESS_KEY>","storage_endpoint":"myblob"},"path":"/"}}' --cloud=azure --region=eastus
 ```
 
 Delete all access keys:
 
 ```shell
-ascli ats access_key list --field=id --format=csv | ascli ats access_key delete @lines:@stdin: --bulk=yes
+ascli ats access_key list --fields=id --format=csv | ascli ats access_key delete @lines:@stdin: --bulk=yes
 ```
 
 The parameters provided to ATS for access key creation are the ones of [ATS API](https://developer.ibm.com/apis/catalog?search=%22aspera%20ats%22) for the `POST /access_keys` endpoint.
@@ -7822,7 +7842,7 @@ When using an access key, the so-called **gen4/access key** API is also supporte
 Example:
 
 - `ascli node browse /` : list files with **gen3/node user** API
-- `ascli node access_key do self browse /` : list files with **gen4/access key** API
+- `ascli node access_keys do self browse /` : list files with **gen4/access key** API
 
 #### Browse
 
@@ -8028,7 +8048,7 @@ ascli node central file list --validator=ascli @json:'{"file_transfer_filter":{"
 To update the status of the file, use the following command:
 
 ```shell
-ascli node central file update --validator=ascli @json:'{"files":[{"session_uuid": "1a74444c-...","file_id": "084fb181-...","status": "completed"}]}'
+ascli node central file modify --validator=ascli @json:'{"files":[{"session_uuid": "1a74444c-...","file_id": "084fb181-...","status": "completed"}]}'
 ```
 
 ```text
@@ -8065,7 +8085,7 @@ gem install rmagick rainbow
 For example, it is possible to display the preview of a file, if it exists, using an access key on node:
 
 ```shell
-ascli node access_key do self thumbnail /preview_samples/Aspera.mpg
+ascli node access_keys do self thumbnail /preview_samples/Aspera.mpg
 ```
 
 Previews are mainly used in AoC, this also works with AoC:
@@ -8083,7 +8103,7 @@ ascli aoc files thumbnail /preview_samples/Aspera.mpg
 ### Creating an access key
 
 ```shell
-ascli node access_key create @json:'{"id":"<ACCESS_KEY>","secret":"<SECRET>","storage":{"type":"local","path":"/data/mydir"}}'
+ascli node access_keys create @json:'{"id":"<ACCESS_KEY>","secret":"<SECRET>","storage":{"type":"local","path":"/data/mydir"}}'
 ```
 
 > [!TIP]
@@ -8101,7 +8121,7 @@ For example, an access key can be modified or created with the following options
 The list of supported options can be displayed using command:
 
 ```shell
-ascli node info --field=@ruby:'/^access_key_configuration_capabilities.*/'
+ascli node info --fields=@ruby:'/^access_key_configuration_capabilities.*/'
 ```
 
 ### Generating and using a bearer token
@@ -8177,7 +8197,7 @@ ascli config genkey $my_private_pem
 The corresponding public key shall be placed as an attribute of the **access key** (done with `PUT /access_keys/<ID>`):
 
 ```shell
-ascli node access_key set_bearer_key self @file:$my_private_pem
+ascli node access_keys set_bearer_key self @file:$my_private_pem
 ```
 
 > [!NOTE]
@@ -8188,7 +8208,7 @@ ascli node access_key set_bearer_key self @file:$my_private_pem
 Alternatively, use the following equivalent command, as `ascli` kindly extracts the public key with extension `.pub`:
 
 ```shell
-ascli node access_key modify %id:self @ruby:'{token_verification_key: File.read("'$my_private_pem'.pub")}'
+ascli node access_keys modify %id:self @ruby:'{token_verification_key: File.read("'$my_private_pem'.pub")}'
 ```
 
 #### Bearer token: Configuration for user
@@ -8196,7 +8216,7 @@ ascli node access_key modify %id:self @ruby:'{token_verification_key: File.read(
 - Select a folder for which to grant access to a user, and get its identifier:
 
   ```shell
-  my_folder_id=$(ascli node access_key do self show / --fields=id)
+  my_folder_id=$(ascli node access_keys do self show / --fields=id)
   ```
 
 > [!NOTE]
@@ -8215,7 +8235,7 @@ ascli node access_key modify %id:self @ruby:'{token_verification_key: File.read(
 - Grant this user access to the selected folder:
 
   ```shell
-  ascli node access_key do self permission %id:$my_folder_id create @json:'{"access_type":"user","access_id":"'$my_user_id'"}'
+  ascli node access_keys do self permission %id:$my_folder_id create @json:'{"access_type":"user","access_id":"'$my_user_id'"}'
   ```
 
 - Create a Bearer token for the user:
@@ -8240,7 +8260,7 @@ Assume the role of the user, with the following information:
 To use this information:
 
 ```shell
-ascli node -N --url=https://... --password="Bearer $(cat bearer.txt)" --root-id=$my_folder_id access_key do self br /
+ascli node -N --url=https://... --password="Bearer $(cat bearer.txt)" --root-id=$my_folder_id access_keys do self browse /
 ```
 
 ### Tested commands for `node`
@@ -8360,7 +8380,7 @@ Identify the region and the endpoint URL will be `https://otlp-[region]-saas.ins
 For convenience, those parameters can be provided in a preset, for example, named `otel_default`.
 
 ```shell
-ascli config preset init otel_default @json:'{"url":"https://otlp-orange-saas.instana.io:4318","key":"*********","interval":1.1}'
+ascli config preset initialize otel_default @json:'{"url":"https://otlp-orange-saas.instana.io:4318","key":"*********","interval":1.1}'
 ```
 
 Then it is invoked like this (assuming a default node is configured):
@@ -8874,26 +8894,26 @@ To keep the content encrypted, use option: `--ts=@json:'{"content_protection":nu
 If you are a regular user, to list work groups you belong to:
 
 ```shell
-ascli faspex5 admin workgroup list
+ascli faspex5 admin workgroups list
 ```
 
 If you are admin or manager, add option: `--query=@json:'{"all":true}'`, this will list items you manage, even if you do not belong to them.
 Example:
 
 ```shell
-ascli faspex5 admin shared list --query=@json:'{"all":true}' --fields=id,name
+ascli faspex5 admin shared_inboxes list --query=@json:'{"all":true}' --fields=id,name
 ```
 
 Shared inbox members can also be listed, added, removed, and external users can be invited to a shared inbox.
 
 ```shell
-ascli faspex5 admin shared_inboxes invite '%name:the shared inbox' john@example.com
+ascli faspex5 admin shared_inboxes invite_external_collaborator '%name:the shared inbox' john@example.com
 ```
 
 It is equivalent to:
 
 ```shell
-ascli faspex5 admin shared_inboxes invite '%name:the shared inbox' @json:'{"email_address":"john@example.com"}'
+ascli faspex5 admin shared_inboxes invite_external_collaborator '%name:the shared inbox' @json:'{"email_address":"john@example.com"}'
 ```
 
 Other payload parameters are possible for `invite` in this last `Hash` **Command Parameter**:
@@ -8911,7 +8931,7 @@ ascli faspex5 admin metadata_profiles create @json:'{"name":"the profile","defau
 ### Faspex 5: Create a Shared inbox with specific metadata profile
 
 ```shell
-ascli faspex5 admin shared create @json:'{"name":"the shared inbox","metadata_profile_id":1}'
+ascli faspex5 admin shared_inboxes create @json:'{"name":"the shared inbox","metadata_profile_id":1}'
 ```
 
 ### Faspex 5: List content in Shared folder and send package from remote source
@@ -8933,7 +8953,7 @@ ascli faspex5 shared_folders list --fields=id,name
 ```
 
 ```shell
-ascli faspex5 shared_folders br %name:'Server Files' /folder
+ascli faspex5 shared_folders browse %name:'Server Files' /folder
 ```
 
 ```shell
@@ -9132,17 +9152,19 @@ Example: Create a Node: Attributes are like API:
 | `timeout`    |          | `30s`   |
 | `open_timeout` |        | `10s`   |
 
-Example: Create a share and add a user to it.
+Example: Create a share and list user permissions on it.
 
 ```shell
 ascli shares admin share create @json:'{"node_id":1,"name":"test1","directory":"test1","create_directory":true}'
 
-share_id=$(ascli shares admin share list --select=@json:'{"name":"test1"}' --fields=id)
+share_id=$(ascli shares admin share list --select=@json:'{"name":"test1"}' --fields=id --out.level=data)
 
-user_id=$(ascli shares admin user all list --select=@json:'{"username":"username1"}' --fields=id)
-
-ascli shares admin share user_permissions $share_id create @json:'{"user_id":'$user_id',"browse_permission":true, "download_permission":true, "mkdir_permission":true,"delete_permission":true,"rename_permission":true,"content_availability_permission":true,"manage_permission":true}'
+ascli shares admin share user_permissions $share_id list
 ```
+
+> [!NOTE]
+> The Shares API provides read-only access to share permissions (`user_permissions`, `group_permissions`): only `list` and `show` are available.
+> Permissions are granted in the Shares web UI.
 
 ### Tested commands for `shares`
 
@@ -9211,6 +9233,36 @@ transfer smart sub my_smart_id @: source.paths.0=my_smart_file source_type=user_
 
 ## Plugin: `orchestrator`: IBM Aspera Orchestrator
 
+### Start a workflow
+
+Command `workflows start` creates a work order:
+
+```shell
+ascli orchestrator workflows start <WORKFLOW_ID> [<PARAMETERS>] [<EXECUTION>]
+```
+
+- `parameters`: `Hash` of external parameters of the workflow (optional).
+- `execution`: `Hash` controlling the execution of the work order (optional):
+
+  | Key           | Type      | Description |
+  |---------------|-----------|-------------|
+  | `synchronous` | `Boolean` | Wait for completion of the work order (default: `false`). |
+  | `step`        | `String`  | Name of the work step providing the result. |
+  | `variable`    | `String`  | Name of the output variable of `step` returned as result. |
+
+  `step` and `variable` must be provided together, and imply `synchronous`.
+
+By default, the call is asynchronous and returns the work order information.
+
+Example: Start workflow `1234` with parameter `Param`, wait for completion and display the value of output `Complete_status_message` of step `ResultStep`:
+
+```shell
+ascli orchestrator workflows start 1234 @json:'{"Param":"world !"}' @json:'{"step":"ResultStep","variable":"Complete_status_message"}'
+```
+
+> [!NOTE]
+> Options `synchronous` and `result` (`--result=<WORK_STEP>:<VARIABLE>`) are deprecated: use `execution` instead.
+
 ### Tested commands for `orchestrator`
 
 > [!NOTE]
@@ -9228,7 +9280,7 @@ workflow inputs my_workflow_id
 workflow list
 workflow outputs my_workflow_id
 workflow start my_workflow_id @: 'Param=world !'
-workflow start my_workflow_id @: 'Param=world !' --result=ResultStep:Complete_status_message
+workflow start my_workflow_id @: 'Param=world !' END @: step=ResultStep variable=Complete_status_message
 workflow status ALL
 workflow status my_workflow_id
 workflow workorders my_workflow_id
@@ -10664,7 +10716,7 @@ ascli config preset set smtp_google password <PASSWORD>
 or
 
 ```shell
-ascli config preset init smtp_google @json:'{"server":"smtp.google.com","username":"john@gmail.com","password":"<PASSWORD>"}'
+ascli config preset initialize smtp_google @json:'{"server":"smtp.google.com","username":"john@gmail.com","password":"<PASSWORD>"}'
 ```
 
 or
@@ -10700,8 +10752,8 @@ Check settings with `smtp_settings` command.
 Send test email with `email_test`.
 
 ```shell
-ascli config --smtp=@preset:smtp_google smtp
-ascli config --smtp=@preset:smtp_google email --notify-to=sample.dest@example.com
+ascli config smtp_settings --smtp=@preset:smtp_google
+ascli config email_test --smtp=@preset:smtp_google --notify-to=sample.dest@example.com
 ```
 
 #### Notifications for transfer status
