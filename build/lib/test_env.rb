@@ -12,38 +12,45 @@ module TestEnv
   # Environment variable name that contains the URL to fetch test configuration
   # The configuration typically includes server URLs, credentials, and other test parameters
   ENV_VAR_REF_CONF = 'ASPERA_CLI_TEST_CONF_URL'
-  # Allowed keys in test definitions: See tests/README.md for detailed documentation
-  ALLOWED_KEYS = %i{command args tags depends_on description pre post env $comment stdin expect template instantiate vars}.freeze
+  # Allowed keys in test definitions (regular tests and template members, without `template`): See tests/README.md for detailed documentation
+  ALLOWED_KEYS = %i{command args tags depends_on description pre post env $comment stdin expect vars}.freeze
+  # Allowed keys in template instance definitions (entries with `instantiate`)
+  INSTANCE_KEYS = %i{instantiate args tags vars description $comment}.freeze
 
   # Execution context for a running test case, injected as `t` in every eval binding.
   #
-  # Holds the current test's full name and its optional instance prefix (set when the
-  # test was generated from a template instantiation, e.g. `aoc_test` → `aocwa_user_suite`).
+  # Holds the current test's full name and, for a test generated from a template instance,
+  # the instance name and the names of the template members (siblings).
   #
   # All file-based helpers operate on test-case names → state files under PATH_TMP_STATES.
-  # When called without argument they target the current test; when called with a bare
-  # sibling name from `tests.yml` they qualify it with the instance prefix first:
+  # When called without argument they target the current test; when called with the name
+  # of a sibling template member, they qualify it with the instance name. Other names are
+  # used unchanged:
   #
-  #   t.out_file                        # PATH_TMP_STATES/aoc_test.current_test.out
-  #   t.out_file('other_test')          # PATH_TMP_STATES/aoc_test.other_test.out
-  #   t.saved_output('other_test')   # reads  aoc_test.other_test.out
-  #   t.stop_process('background')      # kills  aoc_test.background
+  #   t.out_file                        # PATH_TMP_STATES/aoc_user_suite.current_test.out
+  #   t.out_file('sibling_test')        # PATH_TMP_STATES/aoc_user_suite.sibling_test.out
+  #   t.saved_output('sibling_test')    # reads  aoc_user_suite.sibling_test.out
+  #   t.saved_output('regular_test')    # reads  regular_test.out
+  #   t.stop_process('background')      # kills  aoc_user_suite.background (if sibling)
   class Context
-    # @param name   [String] fully-qualified name of the current test case
-    # @param prefix [String, nil] instance prefix for cross-references, or nil
-    def initialize(name, prefix)
-      @name   = name
-      @prefix = prefix
+    # @param name     [String] fully-qualified name of the current test case
+    # @param prefix   [String, nil] instance name for cross-references, or nil
+    # @param siblings [Array<String>] names of template members qualified with prefix
+    def initialize(name, prefix = nil, siblings = [])
+      @name     = name
+      @prefix   = prefix
+      @siblings = siblings
     end
 
     # Resolve a test-case name to its fully-qualified form.
     # When called without argument (nil sentinel), returns the current test name unchanged.
-    # When called with a bare sibling name from tests.yml, prepends the instance prefix.
-    # @param name [String, Symbol, nil] bare sibling name, or nil to mean the current test
+    # When called with a sibling template member name, prepends the instance name.
+    # @param name [String, Symbol, nil] test name, or nil to mean the current test
     # @return [String] fully-qualified test-case name
     def resolve(name)
       return @name if name.nil?
-      @prefix ? "#{@prefix}.#{name}" : name.to_s
+      name = name.to_s
+      @siblings.include?(name) ? "#{@prefix}.#{name}" : name
     end
 
     # @return [Pathname] .out file for the current test (no arg) or a named sibling
@@ -114,8 +121,8 @@ module TestEnv
   #
   # This step validates supported keys and applies per-definition defaults, but it
   # intentionally does not derive the plugin tag from the first command yet.
-  # Plugin/tag derivation is deferred until after template instantiation in
-  # [`descriptions()`](build/lib/test_env.rb:60).
+  # Plugin/tag derivation is done on all tests in [`descriptions()`](build/lib/test_env.rb).
+  # Template members are normalized once instantiated, i.e. with the instance arguments.
   #
   # @param name [String] Test definition name as found in the YAML file
   # @param properties [Hash] Mutable raw test definition properties
@@ -136,66 +143,69 @@ module TestEnv
     properties
   end
 
+  # Generate the tests of one template instance.
+  #
+  # Each member of the template gives a test `<instance>.<member>`, with the instance
+  # arguments prepended, the instance name and tags added, and the instance vars merged.
+  # References to sibling members in `depends_on` are qualified with the instance name.
+  #
+  # @param instance_name [String] Name of the `instantiate` entry
+  # @param instance [Hash] Properties of the `instantiate` entry
+  # @param templates [Hash{String=>Hash{String=>Hash}}] Template members by template name
+  # @return [Hash{String=>Hash}] Generated test definitions indexed by test name
+  def instantiate(instance_name, instance, templates)
+    unsupported_keys = instance.keys - INSTANCE_KEYS
+    raise "Unsupported key(s): #{unsupported_keys} in #{instance_name}" unless unsupported_keys.empty?
+    members = templates.fetch(instance[:instantiate]) { raise "Unknown template: #{instance[:instantiate]} in #{instance_name}" }
+    siblings = members.keys
+    members.to_h do |member_name, member|
+      test_name = "#{instance_name}.#{member_name}"
+      context = Context.new(test_name, instance_name, siblings)
+      properties = Marshal.load(Marshal.dump(member))
+      properties[:args] = (instance[:args] || []) + (properties[:args] || [])
+      properties[:tags] = [instance_name, *properties[:tags], *instance[:tags]].map(&:to_sym).uniq
+      properties[:vars] = (properties[:vars] || {}).merge(instance[:vars]) if instance.key?(:vars)
+      properties[:depends_on] = properties[:depends_on].map { |dependency| context.resolve(dependency) } if properties.key?(:depends_on)
+      normalize_test(test_name, properties)
+      properties[:instance_prefix] = instance_name
+      properties[:siblings] = siblings
+      [test_name, properties]
+    end
+  end
+
   # Load test definitions, expand template instances, and finalize derived tags.
   #
-  # Loading is performed in three steps:
-  # - normalize each raw YAML entry
-  # - keep template members and template instances in separate hashes
-  # - build executable tests named `<instance>.<template>` for each instantiated template
-  #
-  # Templates and instance declarations are not returned as executable tests.
-  # Only the generated tests and regular tests are included in the final result.
+  # An entry with `template` is a member of that template and is not executable by itself.
+  # An entry with `instantiate` is replaced, at its position, by the tests generated from
+  # the members of that template. So execution order is the order of `tests.yml`.
   #
   # @return [Hash{String=>Hash}] Executable test definitions indexed by final test name
   def descriptions
-    tests = Aspera::Yaml.safe_load(Paths::TEST_DEFS.read)
+    entries = Aspera::Yaml.safe_load(Paths::TEST_DEFS.read).transform_values(&:symbolize_keys)
     templates = {}
-    instances = {}
-    normalized_tests = {}
-    tests.each do |name, properties|
-      normalize_test(name, properties)
-      if properties.key?(:template)
-        templates[properties[:template]] ||= {}
-        templates[properties[:template]][name] = properties
-      elsif properties.key?(:instantiate)
-        instances[name] = properties
+    entries.each do |name, properties|
+      next unless properties.key?(:template)
+      raise "Template member cannot instantiate a template: #{name}" if properties.key?(:instantiate)
+      (templates[properties[:template]] ||= {})[name] = properties.except(:template)
+    end
+    unused = templates.keys - entries.values.filter_map { |properties| properties[:instantiate] }
+    raise "Template(s) never instantiated: #{unused.join(', ')}" unless unused.empty?
+    tests = {}
+    entries.each do |name, properties|
+      next if properties.key?(:template)
+      if properties.key?(:instantiate)
+        tests.merge!(instantiate(name, properties, templates))
       else
-        normalized_tests[name] = properties
+        tests[name] = normalize_test(name, properties)
       end
     end
-    instances.each do |instance_name, instance_properties|
-      template_name = instance_properties[:instantiate]
-      raise "Unknown template suite: #{template_name} in #{instance_name}" unless templates.key?(template_name)
-      template_names = templates[template_name].keys
-      templates[template_name].each do |template_test_name, template_properties|
-        test_name = "#{instance_name}.#{template_test_name}"
-        generated_properties = Marshal.load(Marshal.dump(template_properties))
-        generated_properties.delete(:template)
-        generated_properties.delete(:instantiate)
-        generated_properties[:tags].unshift(instance_name.to_sym) unless generated_properties[:tags].include?(instance_name.to_sym)
-        # Inherit extra tags declared on the instantiate entry (excluding instance_name already added)
-        extra_tags = (instance_properties[:tags] || []).map(&:to_sym) - [instance_name.to_sym]
-        extra_tags.each do |tag|
-          generated_properties[:tags].push(tag) unless generated_properties[:tags].include?(tag)
-        end
-        generated_properties[:args] = instance_properties[:args] + generated_properties[:args]
-        generated_properties[:vars] = instance_properties[:vars] if instance_properties.key?(:vars)
-        if generated_properties.key?(:depends_on)
-          generated_properties[:depends_on] = generated_properties[:depends_on].map do |dependency|
-            template_names.include?(dependency) ? "#{instance_name}.#{dependency}" : dependency
-          end
-        end
-        generated_properties[:instance_prefix] = instance_name
-        normalized_tests[test_name] = generated_properties
-      end
-    end
-    normalized_tests.each_value do |properties|
+    tests.each_value do |properties|
       plugin_sym = properties[:args].find { |s| !s.start_with?('-', '@') }&.to_sym
       raise "Plugin name must match #{PLUGIN_NAME_PATTERN}: #{plugin_sym}" unless plugin_sym.nil? || plugin_sym.to_s.match?(PLUGIN_NAME_PATTERN)
       properties[:plugin] = plugin_sym unless plugin_sym.nil?
       properties[:tags].unshift(plugin_sym) unless plugin_sym.nil? || properties[:tags].include?(plugin_sym)
     end
-    normalized_tests
+    tests
   end
-  module_function :configuration, :normalize_test, :descriptions
+  module_function :configuration, :normalize_test, :instantiate, :descriptions
 end

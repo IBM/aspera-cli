@@ -36,16 +36,18 @@ The following keys are supported in each test entry:
 |---------------|----------|--------------------------------------------------|
 | `description` | `String` | Human-readable description.                      |
 | `$comment`    | `String` | Internal comment (e.g. for maintainers).         |
-| `tags`        | `Array`  | Group tests or enable special behavior. For `instanciate` entries, inherited by all generated test cases (in addition to the instance name tag added automatically). |
+| `tags`        | `Array`  | Group tests or enable special behavior.          |
 | `depends_on`  | `Array`  | Test case names that must run before this one.   |
 | `command`     | `String` | Executable name (default: `ascli`).              |
 | `args`        | `Array`  | Command-line arguments.                          |
 | `env`         | `Hash`   | Environment variables for this test.             |
-| `vars`        | `Hash`   | Ruby variables injected into `$(...)` expressions, `pre`, and `post`. For `instantiate` entries, propagated to all generated tests. |
+| `vars`        | `Hash`   | Ruby variables for `$(...)`, `pre` and `post`.   |
 | `pre`         | `String` | Ruby code to run before the test.                |
 | `post`        | `String` | Ruby code to run after the test.                 |
 | `stdin`       | `String` | Standard input to the command.                   |
 | `expect`      | `String` | Expected stdout (or stderr for must_fail).       |
+| `template`    | `String` | Member of this template (see below).             |
+| `instantiate` | `String` | Instance of this template (see below).           |
 
 Some tags have special meaning; others are only for grouping (e.g. to skip or select tests).
 
@@ -66,9 +68,28 @@ Values inside `$(...)` in YAML strings are evaluated as Ruby expressions.
 Constants and helpers are defined in `rakelib/test.rake` and are available in `pre`/`post` and in `$(...)`.
 
 A `t` variable (a `TestEnv::Context` instance) is always available in `pre`/`post` and `$(...)` expressions.
-For template members, `t.saved_output('name')` and `t.stop_process('name')` automatically prepend the
-instance prefix so that sibling outputs are resolved correctly (e.g. `aoc_test.name.out`).
-For non-instantiated tests, `t` delegates to the global helpers unchanged.
+Its methods take an optional test case name (default: current test): `saved_output`, `stop_process`, `check_process`, `out_file`, `err_file`, `pid_file`, `resolve`.
+
+### Test templates
+
+Templates run the same set of tests on several systems (e.g. AoC and AoC for Enterprise).
+
+An entry with `template: <template name>` is a member of that template.
+It is not executed by itself.
+An entry with `instantiate: <template name>` is an instance of that template.
+It is replaced, at its position in `tests.yml`, by one test named `<instance>.<member>` per member of the template.
+So, as for other tests, the execution order is the order in `tests.yml`.
+
+For each generated test:
+
+- `args`: the instance's `args` are placed before the member's `args`.
+- `tags`: the instance name and the instance's `tags` are added to the member's `tags`.
+- `vars`: the instance's `vars` are merged into the member's `vars` (the instance's value wins).
+- `depends_on`: names of sibling members are replaced with `<instance>.<member>`, other names are unchanged.
+- `t`: the same rule applies to names given to `t` methods, e.g. in instance `aoc_user_suite`, `t.saved_output(:awa_bearer)` reads the output of `aoc_user_suite.awa_bearer`.
+
+An instance entry accepts only `instantiate`, `args`, `tags`, `vars`, `description` and `$comment`.
+A template that is never instantiated, or an unknown template, is an error.
 
 ## Running Tests
 

@@ -289,7 +289,7 @@ namespace TEST_CASE_NS do
       log.info("[RUN]  #{name} [#{info[:tags].join(' ')}]")
       log.info("[EXEC] #{info[:args]&.join(' ')}")
       exec_binding = binding
-      t = TestEnv::Context.new(name, info[:instance_prefix])
+      t = TestEnv::Context.new(name, info[:instance_prefix], info.fetch(:siblings, []))
       (info[:vars] || {}).each { |k, v| exec_binding.local_variable_set(k.to_sym, v) }
       if info[:pre]
         Aspera.assert_type(info[:pre], String)
