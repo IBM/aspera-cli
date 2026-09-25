@@ -543,6 +543,8 @@ OpenAPI definitions of the product APIs (AoC, AoC Automation, Faspex 5, Node, Sh
 - document request bodies of `create` / `modify` (`body_component:` in `crud_commands`)
 - document `--query` parameters (`query_schema:`, shown with `--query=help`)
 
+`Schema::Validator` validates values of options and arguments against their `schema:` (gem `json_schemer`), only for schemas owned by ascli (`Registry::OWNED`: options, transfer spec, sync, async tables): vendor API schemas are validated by the API. Option values are partial (merged from presets and command line): `required` is not enforced, and a `oneOf` whose `discriminator` property is absent is not checked.
+
 #### OAuth Implementation
 
 **Directory**: [`lib/aspera/oauth/`](../lib/aspera/oauth/)

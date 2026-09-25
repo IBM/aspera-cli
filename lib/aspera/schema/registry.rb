@@ -18,6 +18,12 @@ module Aspera
           LOCATIONS.key?(sym)
         end
 
+        # @param name_path [String] schema path, e.g. `opts:components.schemas.HttpOptions`
+        # @return [Boolean] `true` if schema is owned by ascli (not a vendor API)
+        def owned?(name_path)
+          OWNED.include?(name_path.split(':', 2).first.to_sym)
+        end
+
         # Split a component string into registry key and optional path prefix.
         # Syntax: 'key' or 'key+/prefix' (e.g. 'shares+/api/v1')
         # @param component [String] registry key with optional '+/prefix'
@@ -61,6 +67,9 @@ module Aspera
         shares:       'aspera/schema/IBM_Aspera_Shares.yaml',
         async_tables: 'aspera/schema/async_tables.yaml'
       }
+
+      # Schemas owned by ascli: values are validated against them (vendor API schemas are validated by the API)
+      OWNED = %i[spec args conf opts async_tables].freeze
 
       OPTIONS = 'opts'
       TRANSFER_SPEC = 'spec'

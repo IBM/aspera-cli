@@ -18,6 +18,7 @@ Released: [Place date of release here]
 * `console`: `health` also checks the unauthenticated endpoint `health/up`.
 * **general**: New Windows portable package `aspera-cli-<version>-windows-amd64-portable.zip` in GitHub releases: extract and run, it includes Ruby, gems and the Transfer SDK (`ascp`), no installation nor administrator rights needed.
 * `orchestrator`: `workflows start <workflow_id> [<parameters>] [<execution>]` takes an optional `Hash` argument `execution` with keys `synchronous`, `step` and `variable` (`workflows start <workflow_id> @json:'{}' help` shows the schema). Options `synchronous` and `result` are deprecated.
+* **general**: Values of options and arguments with a schema owned by `ascli` (e.g. `ts`, `transfer`, `out`, `http_options`) are validated against it: the error shows the path of the invalid element and the reason. New gem dependency: `json_schemer`. In a structured value, `out.table.pivot` is `false`, `true` or `single` (`no` and `yes` remain accepted on command line, e.g. `--out.table.pivot=yes`).
 * **general**: Deprecation warnings and help of deprecated options show the last version supporting them without deprecation, e.g. `deprecated after 4.27.0: use --out.level`. `config options` shows it in column `deprecated`, and the replacement in column `replacement`.
 
 ### Issues Fixed

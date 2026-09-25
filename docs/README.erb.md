@@ -1830,7 +1830,8 @@ For the same command, adding option `--out.flat=no`:
 #### Option: `--out.table.pivot`
 
 This option controls how result fields are displayed as columns or lines, when option `format` is set to `table`.
-Default is `no`.
+Values are `false` (default), `true` or `single`.
+On command line, `no` and `yes` can be used as well (converted to `Boolean`, see [dot-path](#dot-path-notation)), but a structured value (e.g. `--out=@json:'{"table":{"pivot":true}}'`) expects a `Boolean`.
 There are two types of results that are affected by this option:
 
 | Result          | Description                                 |
@@ -1847,7 +1848,7 @@ An item (object) is displayed in one of those 2 ways:
 
 The display of result is as follows:
 
-| Result          | `no`       | `yes`       | `single`                            |
+| Result          | `false`    | `true`      | `single`                            |
 |-----------------|------------|-------------|-------------------------------------|
 | `single_object` | Simple     | Simple      | Simple                              |
 | `object_list`   | Transposed | Simple<%=br%>(Multiple objects) | Simple if 1 object.<%=br%>transposed if 2+ objects. |
@@ -2293,6 +2294,22 @@ INFO Schema: option: ts
 ```
 
 This works for any `Hash` option or positional parameter that has a defined schema.
+
+#### Schema Validation
+
+The value of an option or **Command Parameter** with a schema defined by <%=tool%> (e.g. options `ts`, `transfer`, `out`, `http_options`, argument of `orchestrator workflows start`) is validated against it before the action.
+An invalid value is rejected with the path of the invalid element and the reason:
+
+```shell
+<%=cmd%> config echo 1 --ts=@json:'{"direction":"sideways"}'
+```
+
+```text
+ERRR Argument: Option ts: value at `/direction` is not one of: ["send", "receive"] (use --ts=help for schema)
+```
+
+Option values are merged from several sources (presets, command line), so mandatory fields are not checked for options.
+Request bodies of product APIs (e.g. `create` and `modify` commands) are not validated by <%=tool%>: the API validates them.
 
 #### Testing Extended Value
 

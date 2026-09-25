@@ -9,6 +9,7 @@ require 'aspera/cli/option_types'
 require 'aspera/cli/option_registry'
 require 'aspera/cli/command_line'
 require 'aspera/cli/prompt'
+require 'aspera/schema/validator'
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/dot_container'
@@ -533,14 +534,17 @@ module Aspera
       # @param value      [Object]        the value to validate
       # @param validation [Array<Class>]  accepted types
       # @param descr      [String]        argument description (for error messages)
-      # @param schema     [String, nil]   schema path for SchemaRequest
+      # @param schema     [String, nil]   schema path for SchemaRequest and validation
       # @raise [SchemaRequest] when the value is 'help' and validation includes Hash.
       # @raise [BadArgument] when the value's type is not in the validation list.
+      # @raise [BadArgument] when the value does not match its schema.
       def validate_argument(value, validation:, descr:, schema:)
         raise SchemaRequest.new(:argument, descr, schema) if validation.include?(Hash) && value.eql?(SchemaRequest::KEYWORD)
         raise BadArgument,
           "Argument #{descr} is a #{value.class} but must be #{'one of: ' if validation.length > 1}#{validation.map(&:name).join(', ')}" \
           unless validation.any? { |t| value.is_a?(t) }
+        errors = Schema::Validator.instance.errors(value, schema) if schema && (value.is_a?(Hash) || value.is_a?(Array))
+        raise BadArgument, "Argument #{descr}: #{errors.join('; ')} (give `#{SchemaRequest::KEYWORD}` as argument for schema)" unless errors.nil? || errors.empty?
       end
 
       # @param opt [OptionValue] option descriptor

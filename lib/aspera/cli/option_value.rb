@@ -5,6 +5,7 @@ require 'aspera/cli/extended_value'
 require 'aspera/cli/deprecation'
 require 'aspera/secret_hider'
 require 'aspera/schema/registry'
+require 'aspera/schema/validator'
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/rainbow'
@@ -149,11 +150,22 @@ module Aspera
           end
           new_value = new_value.is_a?(Hash) ? current_value.deep_merge(new_value) : current_value + new_value if mergeable
         end
+        validate_schema(new_value) unless %i[code default].include?(source)
         store(new_value, source)
         nil
       end
 
       private
+
+      # Validate a structured value against the schema of the option.
+      # Value may be partial: completed by other sources or defaults, so `required` is not enforced.
+      # @param value [Object] value to validate
+      # @raise [BadArgument] if value does not match schema
+      def validate_schema(value)
+        return unless @schema && (value.is_a?(Hash) || value.is_a?(Array))
+        errors = Schema::Validator.instance.errors(value, @schema, partial: true)
+        raise BadArgument, "Option #{@option}: #{errors.join('; ')} (use --#{@option.to_s.tr('_', '-')}=#{SchemaRequest::KEYWORD} for schema)" unless errors.empty?
+      end
 
       # Derive the `allowed:` value from the schema when not explicitly provided.
       # Returns `allowed` unchanged when the schema provides no usable type information.

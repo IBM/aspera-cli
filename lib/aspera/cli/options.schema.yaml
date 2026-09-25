@@ -690,10 +690,9 @@ components:
       description: Terminal table rendering options.
       properties:
         pivot:
-          type: string
-          description: Control how an object list is displayed (no/yes/single).
-          enum: ['no', 'yes', 'single']
-          default: 'no'
+          description: Control how an object list is displayed (false/true/single).
+          enum: [false, true, single]
+          default: false
     OutOptions:
       type: object
       description: Output rendering options (dot-notation sub-properties).
