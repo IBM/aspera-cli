@@ -178,6 +178,12 @@ module Aspera
             h.action_preset_update(name: 'p1')
             expect(config_presets['p1']['password']).to(eq('mypass'))
           end
+
+          it 'does not declare the global preset' do
+            expect(presets_double).not_to(receive(:global_default_preset))
+            h = host_with_options({'password' => 'mypass'})
+            h.action_preset_update(name: 'p1')
+          end
         end
 
         context 'with vault' do
@@ -193,6 +199,20 @@ module Aspera
             h.action_preset_update(name: 'p1')
             expect(config_presets['p1']['username']).to(eq('bob'))
           end
+        end
+      end
+
+      # -----------------------------------------------------------------------
+      # action_preset_delete — default declarations
+      # -----------------------------------------------------------------------
+      describe '#action_preset_delete' do
+        it 'removes default declarations referring to the deleted preset' do
+          config_presets['p1'] = {'url' => 'https://example.com'}
+          config_presets['p2'] = {}
+          config_presets['default'] = {'aoc' => 'p1', 'node' => 'p1', 'server' => 'p2'}
+          host.action_preset_delete(name: 'p1')
+          expect(config_presets.key?('p1')).to(be(false))
+          expect(config_presets['default']).to(eq({'server' => 'p2'}))
         end
       end
 

@@ -194,6 +194,8 @@ module Aspera
         if result.nil?
           result = Key::GLOBAL
           set_key(Key::DEFAULTS, CONF_GLOBAL_SYM, result)
+          # A default declaration requires the preset to exist
+          @config_presets[result] ||= {}
         end
         result
       end

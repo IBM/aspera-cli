@@ -29,6 +29,7 @@ Released: [Place date of release here]
 * `node`: `telemetry` with `interval` `0` was rejected instead of sending a single measure.
 * `config`: Option `sdk_folder` with value `product:<name>` was taken as a folder path.
 * `config`: `transferd install` was failing when the download server sends a `Content-Disposition` header.
+* `config`: On a new configuration, `preset update|set|ask` with a password, and `preset show|get|unset|delete GLOBAL`, declared a global preset without creating it: all following commands were failing. `preset delete` also removes default declarations referring to the deleted preset.
 * **general**: Temporary files (e.g. `ascp` file list) could be deleted before use, causing random transfer failures: `failed to open input file list` (since 4.27.1).
 * **general**: Option `cert_stores` was adding to the system default locations instead of replacing them, as documented (use `DEF` to include the default).
 * **general**: Dot-path options: `--log.secrets=yes` was failing, indexes on an `Array` option were duplicating values, `--show-config` was showing internal values for some options.

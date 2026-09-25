@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/assert'
+require 'aspera/cli/preset_manager'
 
 module Aspera
   module Cli
@@ -58,9 +59,9 @@ module Aspera
       # @param option_name [String] option key to inspect
       def secure_preset_option(preset, preset_name, option_name)
         return unless SECRET_KEYWORDS.any? { |kw| option_name.end_with?(kw) }
+        return if vault.nil?
         # Never auto-secure the global preset: it holds vault credentials themselves
         return if preset_name.eql?(presets.global_default_preset)
-        return if vault.nil?
         value = preset[option_name]
         # Already a vault reference or nil — nothing to do
         return if value.nil? || value.to_s.start_with?('@vault:')
@@ -89,6 +90,12 @@ module Aspera
         cp = presets.config_presets
         raise "no such preset: #{name}" unless cp.key?(name)
         cp.delete(name)
+        # Remove default declarations referring to the deleted preset
+        defaults = cp[PresetManager::Key::DEFAULTS]
+        defaults&.select { |_, preset_name| preset_name.eql?(name) }&.each_key do |plugin|
+          defaults.delete(plugin)
+          Log.log.info { "Removed: #{PresetManager::Key::DEFAULTS}: #{plugin}" }
+        end
         Result::Status.new("Deleted: #{name}")
       end
 
