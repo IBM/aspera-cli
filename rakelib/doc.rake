@@ -89,8 +89,13 @@ namespace :doc do
     DocHelper.new([Paths::MD_MANUAL] + DOC_FILES).check_links_manual
   end
 
+  desc 'Check internal links (#anchor) in manual, for GitHub and PDF (requires pandoc)'
+  task check_anchors: Paths::MD_MANUAL do
+    check_markdown_anchors(Paths::MD_MANUAL)
+  end
+
   desc 'Generate PDF Manual'
-  task pdf: Paths::PDF_MANUAL
+  task pdf: [:check_anchors, Paths::PDF_MANUAL]
 
   desc 'Generate PDF Manual'
   task md: Paths::MD_MANUAL
@@ -99,7 +104,7 @@ namespace :doc do
   task prep: [Paths::TMPL_CONF_FILE, Paths::TSPEC_JSON_SCHEMA, Paths::MD_MANUAL]
 
   desc 'Generate All Docs'
-  task build: [:prep, Paths::PDF_MANUAL]
+  task build: [:prep, :check_anchors, Paths::PDF_MANUAL]
 
   # UML Diagram : requires tools: graphviz and gem xumlidot
   # on mac: `gem install xumlidot pry` and `brew install graphviz`

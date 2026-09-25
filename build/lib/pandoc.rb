@@ -1,7 +1,9 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+require 'json'
 require 'pathname'
+require 'set'
 require_relative 'paths'
 require_relative 'build_tools'
 
@@ -89,6 +91,44 @@ def convert_img_for_pandoc(content)
     alt = attrs[/alt=["']([^"']*)["']/, 1] || ''
     "![#{alt}](#{src})"
   end
+end
+
+# Collect heading identifiers and internal link targets (`#anchor`) of a Markdown file, as parsed by pandoc
+# @param md     [Pathname] Path to Markdown file
+# @param reader [String]   Pandoc input format, e.g. `gfm` or `markdown_mmd`
+# @return [Array(Set<String>, Array<String>)] heading identifiers, and internal link targets (without `#`)
+def pandoc_anchors(md, reader)
+  ast = JSON.parse(run('pandoc', "--from=#{reader}", '--to=json', md, mode: :capture).first)
+  ids = Set.new
+  links = []
+  walk = lambda do |node|
+    case node
+    when Array then node.each { |i| walk.call(i) }
+    when Hash
+      case node['t']
+      when 'Header' then ids << node['c'][1][0]
+      when 'Link' then links << node['c'][2][0].delete_prefix('#') if node['c'][2][0].start_with?('#')
+      end
+      node.each_value { |v| walk.call(v) }
+    end
+  end
+  walk.call(ast['blocks'])
+  [ids, links]
+end
+
+# Check that internal links (`#anchor`) of a Markdown file match a heading, both on GitHub and in the PDF.
+# GitHub and the pandoc reader used for PDF generate heading identifiers differently (e.g. `.` is kept by pandoc).
+# @param md [Pathname] Path to Markdown file
+# @raise [RuntimeError] if a link has no matching heading
+def check_markdown_anchors(md)
+  pdf_reader = YAML.load_file(PATH_PANDOC_ROOT / 'defaults_common.yaml')['from']
+  errors = ['gfm', pdf_reader].flat_map do |reader|
+    ids, links = pandoc_anchors(md, reader)
+    links.uniq.reject { |l| ids.include?(l) }.map { |l| "#{reader}: no heading for link: ##{l}" }
+  end
+  errors.each { |e| log.error(e) }
+  raise "#{md}: #{errors.length} broken internal link(s)" unless errors.empty?
+  log.info { "#{md}: internal links OK" }
 end
 
 # Generate PDF from Markdown using pandoc templates

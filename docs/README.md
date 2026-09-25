@@ -223,8 +223,8 @@ ascli config preset update <SERVER_PRESET_NAME> --url=ssh://hsts.example.com:330
 ```
 
 ```text
+INFO Saving config file: /home/john/.aspera/ascli/config.yaml
 Updated: <SERVER_PRESET_NAME>
-Saving config file.
 ```
 
 - Set the preset as the default for the server plugin:
@@ -234,8 +234,8 @@ ascli config preset set default server <SERVER_PRESET_NAME>
 ```
 
 ```text
-Updated: default: server <- <SERVER_PRESET_NAME>
-Saving config file.
+INFO Updated: default: server <- <SERVER_PRESET_NAME>
+INFO Saving config file: /home/john/.aspera/ascli/config.yaml
 ```
 
 - Once your preset is set, follow the same browse and download steps as in [Option A](#option-a---test-with-the-aspera-demo-server).
@@ -1672,8 +1672,8 @@ Example:
 ascli config echo -- --sample
 ```
 
-```shell
-"--sample"
+```text
+--sample
 ```
 
 > [!NOTE]
@@ -1799,7 +1799,7 @@ ascli config preset overview --out.table=@ruby:'{border: :unicode_thick_edge}'
 > [!NOTE]
 > Other border styles exist, not limited to: `:unicode`, `:unicode_round`.
 
-By default, if the terminal is detected to support Unicode, then `border=unicode_round` is used.
+By default, if the terminal supports Unicode (see [`--out.utf8`](#terminal-rendering-colors-and-utf-8)), then `border=unicode_round` is used.
 
 A special parameter is defined: `str_lst_sep` (`String`), default is `\n`.
 It defines how lists of strings are displayed.
@@ -1981,6 +1981,24 @@ The option `--out.level` controls the level of output:
 - If value is `no` (default), then secrets are redacted from command results.
 - If value is `yes`, then secrets are shown in clear in results.
 - If `--out.level` is `data`, secrets are included to allow piping results.
+
+#### Terminal rendering: Colors and UTF-8
+
+By default, `ascli` detects the capabilities of the terminal:
+
+| Option         | Effect when `yes`                                             | Auto-detection (default)                                                       |
+|----------------|---------------------------------------------------------------|--------------------------------------------------------------------------------|
+| `--out.colors` | ANSI colors and styles in results, messages and logs          | `yes` if both `stdout` and `stderr` are terminals and `TERM` is not `dumb`, or if `CLICOLOR_FORCE=1` |
+| `--out.utf8`   | Unicode characters: table borders, check marks                | `yes` if `stdout` is a terminal and the locale is UTF-8                        |
+
+Set either option to `yes` or `no` to override detection, for example to keep colors when piping to `less -R`, or to get plain ASCII output in a terminal:
+
+```shell
+ascli config preset overview --out.colors=no --out.utf8=no
+```
+
+> [!NOTE]
+> Logs issued before the option is processed (e.g. at startup) use the detected value.
 
 #### Option: `fields`: Selection of output object fields
 
@@ -2274,8 +2292,8 @@ ascli aoc packages send
 ```
 
 ```text
-ERRR Missing argument: parameters for send (Hash)
-HINT Give `help` as argument to retrieve the schema of the missing argument.
+ERRR Missing: Missing argument: package (Hash)
+HINT:Give `help` as argument to retrieve the schema of the missing argument.
 ```
 
 Following the hint and passing `help` as the argument displays the schema:
@@ -2285,22 +2303,22 @@ ascli aoc packages send help
 ```
 
 ```text
-INFO Schema: argument: parameters for send (Hash)
-+------------------------------------------------+---------+-------------------------------------------------------------------------------------------------------------------------+
-| name                                           | type    | description                                                                                                             |
-+------------------------------------------------+---------+-------------------------------------------------------------------------------------------------------------------------+
-| bcc_recipients                                 | array   | <empty string>                                                                                                          |
-| bcc_recipients[].id                            | string  | The ID of the recipient.                                                                                                |
-| bcc_recipients[].type                          | string  | The entity type of the recipient.                                                                                       |
-|                                                |         | Allowed values: user, group.                                                                                            |
-| name                                           | string  | Package name. Required for POST. Optional for PUT.                                                                      |
-| note                                           | string  | The sender's message to recipients to include with the package. Maximum characters: 65535.                              |
-| recipients                                     | array   | <empty string>                                                                                                          |
-| recipients[].id                                | string  | The ID of the recipient.                                                                                                |
-| recipients[].type                              | string  | The entity type of the recipient.                                                                                       |
-|                                                |         | Allowed values: user, group.                                                                                            |
+INFO Schema: argument: package (Hash)
+╭───────────────────────┬────────┬──────────┬────────────────────────────────────────────────────────────────────────────────────────────╮
+│ name                  │ type   │ required │ description                                                                                │
+╞═══════════════════════╪════════╪══════════╪════════════════════════════════════════════════════════════════════════════════════════════╡
+│ bcc_recipients        │ array  │ false    │ <empty string>                                                                             │
+│ bcc_recipients[].id   │ string │ true     │ The ID of the recipient.                                                                   │
+│ bcc_recipients[].type │ enum   │ false    │ The entity type of the recipient.                                                          │
+│                       │        │          │ Allowed: user, group                                                                       │
+│ name                  │ string │ true     │ Package name. Required for POST. Optional for PUT.                                         │
+│ note                  │ string │ false    │ The sender's message to recipients to include with the package. Maximum characters: 65535. │
+│ recipients            │ array  │ false    │ <empty string>                                                                             │
+│ recipients[].id       │ string │ true     │ The ID of the recipient.                                                                   │
+│ recipients[].type     │ enum   │ false    │ The entity type of the recipient.                                                          │
+│                       │        │          │ Allowed: user, group                                                                       │
 ...
-+------------------------------------------------+---------+-------------------------------------------------------------------------------------------------------------------------+
+╰───────────────────────┴────────┴──────────┴────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
 The same applies to options: display the schema of the transfer-spec option `ts`:
@@ -2311,19 +2329,15 @@ ascli --ts=help
 
 ```text
 INFO Schema: option: ts
-╭────────────────────────────────┬─────────┬──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ name                           │ type    │ description                                                                                                              │
-╞════════════════════════════════╪═════════╪══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╡
-│ apply_local_docroot            │ boolean │ Apply local docroot to source paths.                                                                                     │
-│                                │         │ (A, T)                                                                                                                   │
-│ authentication                 │ string  │ Set to token for SSH bypass keys, else password asked if not provided.                                                   │
-│                                │         │ (C)                                                                                                                      │
-│ cipher                         │ string  │ In transit encryption algorithms.                                                                                        │
-│                                │         │ Allowed values: none, aes-128, aes-192, aes-256, aes-128-cfb, aes-192-cfb, aes-256-cfb, aes-128-gcm, aes-192-gcm,        │
-│                                │         │ aes-256-gcm.                                                                                                             │
-│                                │         │ Default: none.                                                                                                           │
+╭─────────────────────┬─────────┬──────────┬────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ name                │ type    │ required │ description                                                                                                            │
+╞═════════════════════╪═════════╪══════════╪════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╡
+│ apply_local_docroot │ boolean │ false    │ Apply local docroot to source paths.                                                                                   │
+│ cipher              │ enum    │ false    │ In transit encryption algorithms.                                                                                      │
+│                     │         │          │ Allowed: none, aes-128, aes-192, aes-256, aes-128-cfb, aes-192-cfb, aes-256-cfb, aes-128-gcm, aes-192-gcm, aes-256-gcm │
+│ authentication      │ string  │ false    │ Set to `token` for SSH bypass keys, else password asked if not provided.                                               │
 ...
-╰────────────────────────────────┴─────────┴──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╰─────────────────────┴─────────┴──────────┴────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
 This works for any `Hash` option or positional parameter that has a defined schema.
@@ -2339,6 +2353,7 @@ ascli config echo 1 --ts=@json:'{"direction":"sideways"}'
 
 ```text
 ERRR Argument: Option ts: value at `/direction` is not one of: ["send", "receive"] (use --ts=help for schema)
+Use option -h to get help.
 ```
 
 Option values are merged from several sources (presets, command line), so mandatory fields are not checked for options.
@@ -2376,9 +2391,9 @@ Example: the shell parses three arguments (`1`, `2`, `3`), but `config echo` onl
 ascli config echo 1 2 3
 ```
 
-```ruby
-"1"
-ERROR: Argument: unprocessed values: ["2", "3"]
+```text
+1
+ERRR Argument: unprocessed values: ["2", "3"]
 ```
 
 **Checking an option value with `--show-config`**:
@@ -2794,6 +2809,7 @@ echo @csvt:@stdin:
 echo @env:USER
 echo @json:'[{"user":{"id":1,"name":"foo"},"project":"bar"}]' --out.table.pivot=single
 echo @json:'[{"user":{"id":1,"name":"foo"},"project":"bar"}]' --out.table.pivot=yes
+echo @json:'{"empty":"","bool":true}' --out.colors=yes --out.utf8=yes
 echo @lines:@stdin:
 echo @list:,1,2,3
 echo @secret:
@@ -3671,7 +3687,7 @@ ascli config proxy_check --fpac='function FindProxyForURL(url, host) {return "PR
 ```
 
 ```text
-PROXY proxy.example.com:3128;DIRECT
+proxy://proxy.example.com:3128
 ```
 
 ```shell
@@ -3679,7 +3695,7 @@ ascli config proxy_check --fpac=@file:./proxy.pac http://www.example.com
 ```
 
 ```text
-PROXY proxy.example.com:8080
+proxy://proxy.example.com:8080
 ```
 
 ```shell
@@ -3687,7 +3703,7 @@ ascli config proxy_check --fpac=@uri:http://server/proxy.pac http://www.example.
 ```
 
 ```text
-PROXY proxy.example.com:8080
+proxy://proxy.example.com:8080
 ```
 
 If the proxy found with the PAC requires credentials, then use option `proxy_credentials` with username and password provided as an `Array`:
@@ -3758,8 +3774,8 @@ ascli config preset set GLOBAL sdk_folder <INSTALL_DIR>
 ```
 
 ```text
-Updated: global_common_defaults: sdk_folder <- <INSTALL_DIR>
-Saving config file.
+INFO Updated: global_common_defaults: sdk_folder <- <INSTALL_DIR>
+INFO Saving config file: /home/john/.aspera/ascli/config.yaml
 ```
 
 If the path has spaces, read section: [Shell and Command line parsing](#command-line-parsing-special-characters).
@@ -3793,9 +3809,9 @@ ascli config preset set GLOBAL sdk_folder 'product:IBM Aspera Connect'
 ```
 
 ```text
-Updated: default: config <- global_common_defaults
-Updated: global_common_defaults: sdk_folder <- product:IBM Aspera Connect
-Saving config file.
+INFO Updated: default: config <- global_common_defaults
+INFO Updated: global_common_defaults: sdk_folder <- product:IBM Aspera Connect
+INFO Saving config file: /home/john/.aspera/ascli/config.yaml
 ```
 
 To show the path of currently used `ascp`:
@@ -5198,7 +5214,7 @@ ARGS
 OPTIONS: global
     --interactive=yes|no           Use interactive input of missing params
     --ask-options=yes|no           Ask even optional options
-    --out=HASH                     Output rendering options (dot-notation: format, level, file, fields, select, table[.pivot], flat, secrets, img)
+    --out=HASH                     Output rendering options (dot-notation: format, level, file, fields, select, table[.pivot], flat, secrets, colors, utf8, img)
     --display=info|data|error      Output only some information (deprecated after 4.27.0: use --out.level)
     --format=ENUM                  Output format (also: --out.format)
     --output=VALUE                 Destination for results (deprecated after 4.27.0: use --out.file)
@@ -5321,13 +5337,13 @@ ascli config plugins list
 ```
 
 ```text
-+--------------+--------+--------+-------------------------------------------------------+
-| plugin       | detect | wizard | path                                                  |
-+--------------+--------+--------+-------------------------------------------------------+
-| shares       | Y      | Y      | .../aspera-cli/lib/aspera/cli/plugins/shares.rb       |
-| node         | Y      | Y      | .../aspera-cli/lib/aspera/cli/plugins/node.rb         |
+╭────────┬────────┬────────┬─────────────────────────────────────────────────╮
+│ plugin │ detect │ wizard │ path                                            │
+╞════════╪════════╪════════╪═════════════════════════════════════════════════╡
+│ shares │ ✓      │ ✓      │ .../aspera-cli/lib/aspera/cli/plugins/shares.rb │
+│ node   │ ✓      │ ✓      │ .../aspera-cli/lib/aspera/cli/plugins/node.rb   │
 ...
-+--------------+--------+--------+-------------------------------------------------------+
+╰────────┴────────┴────────┴─────────────────────────────────────────────────╯
 ```
 
 Most plugins will take the URL option: `url` to identify their location.
@@ -6180,7 +6196,7 @@ ascli aoc admin group create @json:'{"wrong":"param"}'
 If the command returns an error, for example:
 
 ```text
-ERROR: Rest: found unpermitted parameter: :wrong
+ERRR Rest: found unpermitted parameter: :wrong
 code: unpermitted_parameters
 request_id: 2a487dbc-bc5c-41ab-86c8-3b9972dfd4c4
 api.ibmaspera.com 422 Unprocessable Entity
@@ -6268,11 +6284,11 @@ ascli aoc files browse the_link
 
 ```text
 Current Workspace: Default (default)
-+------------+------+----------------+------+----------------------+--------------+
-| name       | type | recursive_size | size | modified_time        | access_level |
-+------------+------+----------------+------+----------------------+--------------+
-| the_link   | link |                |      | 2021-04-28T09:17:14Z | edit         |
-+------------+------+----------------+------+----------------------+--------------+
+╭──────────┬──────┬────────────────┬──────┬──────────────────────┬──────────────╮
+│ name     │ type │ recursive_size │ size │ modified_time        │ access_level │
+╞══════════╪══════╪════════════════╪══════╪══════════════════════╪══════════════╡
+│ the_link │ link │                │      │ 2021-04-28T09:17:14Z │ edit         │
+╰──────────┴──────┴────────────────┴──────┴──────────────────────┴──────────────╯
 ```
 
 ```shell
@@ -6281,11 +6297,11 @@ ascli aoc files browse the_link/
 
 ```text
 Current Workspace: Default (default)
-+-------------+------+----------------+------+----------------------+--------------+
-| name        | type | recursive_size | size | modified_time        | access_level |
-+-------------+------+----------------+------+----------------------+--------------+
-| file_inside | file |                |      | 2021-04-26T09:00:00Z | edit         |
-+-------------+------+----------------+------+----------------------+--------------+
+╭─────────────┬──────┬────────────────┬──────┬──────────────────────┬──────────────╮
+│ name        │ type │ recursive_size │ size │ modified_time        │ access_level │
+╞═════════════╪══════╪════════════════╪══════╪══════════════════════╪══════════════╡
+│ file_inside │ file │                │      │ 2021-04-26T09:00:00Z │ edit         │
+╰─────────────┴──────┴────────────────┴──────┴──────────────────────┴──────────────╯
 ```
 
 #### Example: Bulk creation of users
@@ -6295,12 +6311,12 @@ ascli aoc admin user create --bulk=yes @json:'[{"email":"dummyuser1@example.com"
 ```
 
 ```text
-+-------+---------+
-|  id   | status  |
-+-------+---------+
-| 98398 | created |
-| 98399 | created |
-+-------+---------+
+╭───────┬─────────╮
+│ id    │ status  │
+╞═══════╪═════════╡
+│ 98398 │ created │
+│ 98399 │ created │
+╰───────┴─────────╯
 ```
 
 #### Example: Find with filter and delete
@@ -6310,12 +6326,12 @@ ascli aoc admin user list --query.q=dummyuser --fields=id,email
 ```
 
 ```text
-+-------+------------------------+
-|  id   |         email          |
-+-------+------------------------+
-| 98398 | dummyuser1@example.com |
-| 98399 | dummyuser2@example.com |
-+-------+------------------------+
+╭───────┬────────────────────────╮
+│ id    │ email                  │
+╞═══════╪════════════════════════╡
+│ 98398 │ dummyuser1@example.com │
+│ 98399 │ dummyuser2@example.com │
+╰───────┴────────────────────────╯
 ```
 
 ```shell
@@ -6323,12 +6339,12 @@ ascli aoc admin user list --query.q=dummyuser --fields=id --out.level=data --for
 ```
 
 ```text
-+-------+---------+
-|  id   | status  |
-+-------+---------+
-| 98398 | deleted |
-| 98399 | deleted |
-+-------+---------+
+╭───────┬─────────╮
+│ id    │ status  │
+╞═══════╪═════════╡
+│ 98398 │ deleted │
+│ 98399 │ deleted │
+╰───────┴─────────╯
 ```
 
 #### Example: Find deactivated users for more than 2 years
@@ -6412,16 +6428,16 @@ ascli aoc admin workspace_membership list --fields=member_type,manager,member.em
 ```
 
 ```text
-+-------------+---------+----------------------------------+
-| member_type | manager |           member.email           |
-+-------------+---------+----------------------------------+
-| user        | true    | john.curtis@email.com            |
-| user        | false   | someuser@example.com             |
-| user        | false   | jean.dupont@me.com               |
-| user        | false   | another.user@example.com         |
-| group       | false   |                                  |
-| user        | false   | aspera.user@gmail.com            |
-+-------------+---------+----------------------------------+
+╭─────────────┬─────────┬──────────────────────────╮
+│ member_type │ manager │ member.email             │
+╞═════════════╪═════════╪══════════════════════════╡
+│ user        │ true    │ john.curtis@email.com    │
+│ user        │ false   │ someuser@example.com     │
+│ user        │ false   │ jean.dupont@me.com       │
+│ user        │ false   │ another.user@example.com │
+│ group       │ false   │                          │
+│ user        │ false   │ aspera.user@gmail.com    │
+╰─────────────┴─────────┴──────────────────────────╯
 ```
 
 Other query parameters:
@@ -6477,12 +6493,12 @@ ascli aoc admin user list --fields=email --query=@json:'{"q":"last_login_at:<201
 ```
 
 ```text
-+-------------------------------+
-|             email             |
-+-------------------------------+
-| John.curtis@acme.com          |
-| Jean.Dupont@tropfort.com      |
-+-------------------------------+
+╭──────────────────────────╮
+│ email                    │
+╞══════════════════════════╡
+│ John.curtis@acme.com     │
+│ Jean.Dupont@tropfort.com │
+╰──────────────────────────╯
 ```
 
 #### Example: List **Limited** users
@@ -6562,14 +6578,14 @@ ascli aoc admin client_registration_token list --fields=id --format=csv|ascli ao
 ```
 
 ```text
-+-----+---------+
-| id  | status  |
-+-----+---------+
-| 99  | deleted |
-| 100 | deleted |
-| 101 | deleted |
-| 102 | deleted |
-+-----+---------+
+╭─────┬─────────╮
+│ id  │ status  │
+╞═════╪═════════╡
+│ 99  │ deleted │
+│ 100 │ deleted │
+│ 101 │ deleted │
+│ 102 │ deleted │
+╰─────┴─────────╯
 ```
 
 #### Example: Create a tethered Node
@@ -6789,14 +6805,14 @@ ascli aoc files browse /src_folder
 ```
 
 ```text
-+---------------+--------+----------------+--------------+----------------------+--------------+
-| name          | type   | recursive_size | size         | modified_time        | access_level |
-+---------------+--------+----------------+--------------+----------------------+--------------+
-| sample_video  | link   |                |              | 2020-11-29T22:49:09Z | edit         |
-| 100G          | file   |                | 107374182400 | 2021-04-21T18:19:25Z | edit         |
-| 10M.dat       | file   |                | 10485760     | 2021-05-18T08:22:39Z | edit         |
-| Test.pdf      | file   |                | 1265103      | 2022-06-16T12:49:55Z | edit         |
-+---------------+--------+----------------+--------------+----------------------+--------------+
+╭──────────────┬──────┬────────────────┬──────────────┬──────────────────────┬──────────────╮
+│ name         │ type │ recursive_size │ size         │ modified_time        │ access_level │
+╞══════════════╪══════╪════════════════╪══════════════╪══════════════════════╪══════════════╡
+│ sample_video │ link │                │              │ 2020-11-29T22:49:09Z │ edit         │
+│ 100G         │ file │                │ 107374182400 │ 2021-04-21T18:19:25Z │ edit         │
+│ 10M.dat      │ file │                │ 10485760     │ 2021-05-18T08:22:39Z │ edit         │
+│ Test.pdf     │ file │                │ 1265103      │ 2022-06-16T12:49:55Z │ edit         │
+╰──────────────┴──────┴────────────────┴──────────────┴──────────────────────┴──────────────╯
 ```
 
 To send a package with the file `10M.dat` from subfolder /src_folder:
@@ -7517,11 +7533,7 @@ ascli ats api_key instances
 ```
 
 ```text
-+--------------------------------------+
-| instance                             |
-+--------------------------------------+
-| aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee |
-+--------------------------------------+
+aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
 ```
 
 ```shell
@@ -7529,16 +7541,16 @@ ascli config preset update <PRESET_NAME> --instance=aaaaaaaa-bbbb-cccc-dddd-eeee
 ```
 
 ```shell
-ascli ats api_key create
+ascli ats api_key create --out.secrets=yes
 ```
 
 ```text
-+--------+----------------------------------------------+
-| field  | value                                        |
-+--------+----------------------------------------------+
-| id     | ats_XXXXXXXXXXXXXXXXXXXXXXXX                 |
-| secret | YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY |
-+--------+----------------------------------------------+
+╭────────┬──────────────────────────────────────────────╮
+│ field  │ value                                        │
+╞════════╪══════════════════════════════════════════════╡
+│ id     │ ats_XXXXXXXXXXXXXXXXXXXXXXXX                 │
+│ secret │ YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY │
+╰────────┴──────────────────────────────────────────────╯
 ```
 
 ```shell
@@ -8005,11 +8017,11 @@ ascli node central file list --validator=ascli @json:'{"file_transfer_filter":{"
 ```
 
 ```text
-+--------------+--------------+------------+--------------------------------------+
-| session_uuid |    file_id   |   status   |              path                    |
-+--------------+--------------+------------+--------------------------------------+
-| 1a74444c-... | 084fb181-... | validating | /home/xfer.../PKG - <TITLE>/200KB.1 |
-+--------------+--------------+------------+--------------------------------------+
+╭──────────────┬──────────────┬────────────┬─────────────────────────────────────╮
+│ session_uuid │ file_id      │ status     │ path                                │
+╞══════════════╪══════════════╪════════════╪═════════════════════════════════════╡
+│ 1a74444c-... │ 084fb181-... │ validating │ /home/xfer.../PKG - <TITLE>/200KB.1 │
+╰──────────────┴──────────────┴────────────┴─────────────────────────────────────╯
 ```
 
 To update the status of the file, use the following command:
@@ -8396,12 +8408,12 @@ If multiple applications are detected, the wizard asks which one to use (this st
 
 ```text
 Multiple applications detected:
-+---------+-------------------------------------------+-------------+
-| product | url                                       | version     |
-+---------+-------------------------------------------+-------------+
-| faspex5 | https://faspex5.example.com/aspera/faspex | F5.0.6      |
-| server  | ssh://faspex5.example.com:22              | OpenSSH_8.3 |
-+---------+-------------------------------------------+-------------+
+╭─────────┬───────────────────────────────────────────┬─────────────╮
+│ product │ url                                       │ version     │
+╞═════════╪═══════════════════════════════════════════╪═════════════╡
+│ faspex5 │ https://faspex5.example.com/aspera/faspex │ F5.0.6      │
+│ server  │ ssh://faspex5.example.com:22              │ OpenSSH_8.3 │
+╰─────────┴───────────────────────────────────────────┴─────────────╯
 product> faspex5
 ```
 

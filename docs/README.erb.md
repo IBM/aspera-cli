@@ -222,8 +222,8 @@ The steps below create a preset, set it as the default for the server plugin, br
 ```
 
 ```text
+INFO Saving config file: /home/john/.aspera/<%=cmd%>/config.yaml
 Updated: <%=ph :server_preset_name%>
-Saving config file.
 ```
 
 - Set the preset as the default for the server plugin:
@@ -233,8 +233,8 @@ Saving config file.
 ```
 
 ```text
-Updated: default: server <- <%=ph :server_preset_name%>
-Saving config file.
+INFO Updated: default: server <- <%=ph :server_preset_name%>
+INFO Saving config file: /home/john/.aspera/<%=cmd%>/config.yaml
 ```
 
 - Once your preset is set, follow the same browse and download steps as in [Option A](#option-a---test-with-the-aspera-demo-server).
@@ -1624,8 +1624,8 @@ Example:
 <%=cmd%> config echo -- --sample
 ```
 
-```shell
-"--sample"
+```text
+--sample
 ```
 
 > [!NOTE]
@@ -1751,7 +1751,7 @@ For example, to display a table with thick Unicode borders:
 > [!NOTE]
 > Other border styles exist, not limited to: `:unicode`, `:unicode_round`.
 
-By default, if the terminal supports Unicode (see [`--out.utf8`](#option---outcolors-and---oututf8-terminal-rendering)), then `border=unicode_round` is used.
+By default, if the terminal supports Unicode (see [`--out.utf8`](#terminal-rendering-colors-and-utf-8)), then `border=unicode_round` is used.
 
 A special parameter is defined: `str_lst_sep` (`String`), default is `\n`.
 It defines how lists of strings are displayed.
@@ -1934,7 +1934,7 @@ The option `--out.level` controls the level of output:
 - If value is `yes`, then secrets are shown in clear in results.
 - If `--out.level` is `data`, secrets are included to allow piping results.
 
-#### Option: `--out.colors` and `--out.utf8`: Terminal rendering
+#### Terminal rendering: Colors and UTF-8
 
 By default, <%=tool%> detects the capabilities of the terminal:
 
@@ -2244,8 +2244,8 @@ When a mandatory `Hash` argument is missing, <%=tool%> automatically hints to us
 ```
 
 ```text
-ERRR Missing argument: parameters for send (Hash)
-HINT Give `help` as argument to retrieve the schema of the missing argument.
+ERRR Missing: Missing argument: package (Hash)
+HINT:Give `help` as argument to retrieve the schema of the missing argument.
 ```
 
 Following the hint and passing `help` as the argument displays the schema:
@@ -2255,22 +2255,22 @@ Following the hint and passing `help` as the argument displays the schema:
 ```
 
 ```text
-INFO Schema: argument: parameters for send (Hash)
-+------------------------------------------------+---------+-------------------------------------------------------------------------------------------------------------------------+
-| name                                           | type    | description                                                                                                             |
-+------------------------------------------------+---------+-------------------------------------------------------------------------------------------------------------------------+
-| bcc_recipients                                 | array   | <empty string>                                                                                                          |
-| bcc_recipients[].id                            | string  | The ID of the recipient.                                                                                                |
-| bcc_recipients[].type                          | string  | The entity type of the recipient.                                                                                       |
-|                                                |         | Allowed values: user, group.                                                                                            |
-| name                                           | string  | Package name. Required for POST. Optional for PUT.                                                                      |
-| note                                           | string  | The sender's message to recipients to include with the package. Maximum characters: 65535.                              |
-| recipients                                     | array   | <empty string>                                                                                                          |
-| recipients[].id                                | string  | The ID of the recipient.                                                                                                |
-| recipients[].type                              | string  | The entity type of the recipient.                                                                                       |
-|                                                |         | Allowed values: user, group.                                                                                            |
+INFO Schema: argument: package (Hash)
+╭───────────────────────┬────────┬──────────┬────────────────────────────────────────────────────────────────────────────────────────────╮
+│ name                  │ type   │ required │ description                                                                                │
+╞═══════════════════════╪════════╪══════════╪════════════════════════════════════════════════════════════════════════════════════════════╡
+│ bcc_recipients        │ array  │ false    │ <empty string>                                                                             │
+│ bcc_recipients[].id   │ string │ true     │ The ID of the recipient.                                                                   │
+│ bcc_recipients[].type │ enum   │ false    │ The entity type of the recipient.                                                          │
+│                       │        │          │ Allowed: user, group                                                                       │
+│ name                  │ string │ true     │ Package name. Required for POST. Optional for PUT.                                         │
+│ note                  │ string │ false    │ The sender's message to recipients to include with the package. Maximum characters: 65535. │
+│ recipients            │ array  │ false    │ <empty string>                                                                             │
+│ recipients[].id       │ string │ true     │ The ID of the recipient.                                                                   │
+│ recipients[].type     │ enum   │ false    │ The entity type of the recipient.                                                          │
+│                       │        │          │ Allowed: user, group                                                                       │
 ...
-+------------------------------------------------+---------+-------------------------------------------------------------------------------------------------------------------------+
+╰───────────────────────┴────────┴──────────┴────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
 The same applies to options: display the schema of the transfer-spec option `ts`:
@@ -2281,19 +2281,15 @@ The same applies to options: display the schema of the transfer-spec option `ts`
 
 ```text
 INFO Schema: option: ts
-╭────────────────────────────────┬─────────┬──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ name                           │ type    │ description                                                                                                              │
-╞════════════════════════════════╪═════════╪══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╡
-│ apply_local_docroot            │ boolean │ Apply local docroot to source paths.                                                                                     │
-│                                │         │ (A, T)                                                                                                                   │
-│ authentication                 │ string  │ Set to token for SSH bypass keys, else password asked if not provided.                                                   │
-│                                │         │ (C)                                                                                                                      │
-│ cipher                         │ string  │ In transit encryption algorithms.                                                                                        │
-│                                │         │ Allowed values: none, aes-128, aes-192, aes-256, aes-128-cfb, aes-192-cfb, aes-256-cfb, aes-128-gcm, aes-192-gcm,        │
-│                                │         │ aes-256-gcm.                                                                                                             │
-│                                │         │ Default: none.                                                                                                           │
+╭─────────────────────┬─────────┬──────────┬────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ name                │ type    │ required │ description                                                                                                            │
+╞═════════════════════╪═════════╪══════════╪════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╡
+│ apply_local_docroot │ boolean │ false    │ Apply local docroot to source paths.                                                                                   │
+│ cipher              │ enum    │ false    │ In transit encryption algorithms.                                                                                      │
+│                     │         │          │ Allowed: none, aes-128, aes-192, aes-256, aes-128-cfb, aes-192-cfb, aes-256-cfb, aes-128-gcm, aes-192-gcm, aes-256-gcm │
+│ authentication      │ string  │ false    │ Set to `token` for SSH bypass keys, else password asked if not provided.                                               │
 ...
-╰────────────────────────────────┴─────────┴──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╰─────────────────────┴─────────┴──────────┴────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
 This works for any `Hash` option or positional parameter that has a defined schema.
@@ -2309,6 +2305,7 @@ An invalid value is rejected with the path of the invalid element and the reason
 
 ```text
 ERRR Argument: Option ts: value at `/direction` is not one of: ["send", "receive"] (use --ts=help for schema)
+Use option -h to get help.
 ```
 
 Option values are merged from several sources (presets, command line), so mandatory fields are not checked for options.
@@ -2346,9 +2343,9 @@ Example: the shell parses three arguments (`1`, `2`, `3`), but `config echo` onl
 <%=cmd%> config echo 1 2 3
 ```
 
-```ruby
-"1"
-ERROR: Argument: unprocessed values: ["2", "3"]
+```text
+1
+ERRR Argument: unprocessed values: ["2", "3"]
 ```
 
 **Checking an option value with `--show-config`**:
@@ -3471,7 +3468,7 @@ Example, using command line option:
 ```
 
 ```text
-PROXY proxy.example.com:3128;DIRECT
+proxy://proxy.example.com:3128
 ```
 
 ```shell
@@ -3479,7 +3476,7 @@ PROXY proxy.example.com:3128;DIRECT
 ```
 
 ```text
-PROXY proxy.example.com:8080
+proxy://proxy.example.com:8080
 ```
 
 ```shell
@@ -3487,7 +3484,7 @@ PROXY proxy.example.com:8080
 ```
 
 ```text
-PROXY proxy.example.com:8080
+proxy://proxy.example.com:8080
 ```
 
 If the proxy found with the PAC requires credentials, then use option `proxy_credentials` with username and password provided as an `Array`:
@@ -3558,8 +3555,8 @@ Using a POSIX shell:
 ```
 
 ```text
-Updated: global_common_defaults: sdk_folder <- <%=ph :install_dir%>
-Saving config file.
+INFO Updated: global_common_defaults: sdk_folder <- <%=ph :install_dir%>
+INFO Saving config file: /home/john/.aspera/<%=cmd%>/config.yaml
 ```
 
 If the path has spaces, read section: [Shell and Command line parsing](#command-line-parsing-special-characters).
@@ -3593,9 +3590,9 @@ To permanently use the `ascp` of a product:
 ```
 
 ```text
-Updated: default: config <- global_common_defaults
-Updated: global_common_defaults: sdk_folder <- product:IBM Aspera Connect
-Saving config file.
+INFO Updated: default: config <- global_common_defaults
+INFO Updated: global_common_defaults: sdk_folder <- product:IBM Aspera Connect
+INFO Saving config file: /home/john/.aspera/<%=cmd%>/config.yaml
 ```
 
 To show the path of currently used `ascp`:
@@ -4878,13 +4875,13 @@ Available plugins can be found using command:
 ```
 
 ```text
-+--------------+--------+--------+-------------------------------------------------------+
-| plugin       | detect | wizard | path                                                  |
-+--------------+--------+--------+-------------------------------------------------------+
-| shares       | Y      | Y      | .../aspera-cli/lib/aspera/cli/plugins/shares.rb       |
-| node         | Y      | Y      | .../aspera-cli/lib/aspera/cli/plugins/node.rb         |
+╭────────┬────────┬────────┬─────────────────────────────────────────────────╮
+│ plugin │ detect │ wizard │ path                                            │
+╞════════╪════════╪════════╪═════════════════════════════════════════════════╡
+│ shares │ ✓      │ ✓      │ .../aspera-cli/lib/aspera/cli/plugins/shares.rb │
+│ node   │ ✓      │ ✓      │ .../aspera-cli/lib/aspera/cli/plugins/node.rb   │
 ...
-+--------------+--------+--------+-------------------------------------------------------+
+╰────────┴────────┴────────┴─────────────────────────────────────────────────╯
 ```
 
 Most plugins will take the URL option: `url` to identify their location.
@@ -5737,7 +5734,7 @@ And then craft your command:
 If the command returns an error, for example:
 
 ```text
-ERROR: Rest: found unpermitted parameter: :wrong
+ERRR Rest: found unpermitted parameter: :wrong
 code: unpermitted_parameters
 request_id: 2a487dbc-bc5c-41ab-86c8-3b9972dfd4c4
 api.ibmaspera.com 422 Unprocessable Entity
@@ -5825,11 +5822,11 @@ Example:
 
 ```text
 Current Workspace: Default (default)
-+------------+------+----------------+------+----------------------+--------------+
-| name       | type | recursive_size | size | modified_time        | access_level |
-+------------+------+----------------+------+----------------------+--------------+
-| the_link   | link |                |      | 2021-04-28T09:17:14Z | edit         |
-+------------+------+----------------+------+----------------------+--------------+
+╭──────────┬──────┬────────────────┬──────┬──────────────────────┬──────────────╮
+│ name     │ type │ recursive_size │ size │ modified_time        │ access_level │
+╞══════════╪══════╪════════════════╪══════╪══════════════════════╪══════════════╡
+│ the_link │ link │                │      │ 2021-04-28T09:17:14Z │ edit         │
+╰──────────┴──────┴────────────────┴──────┴──────────────────────┴──────────────╯
 ```
 
 ```shell
@@ -5838,11 +5835,11 @@ Current Workspace: Default (default)
 
 ```text
 Current Workspace: Default (default)
-+-------------+------+----------------+------+----------------------+--------------+
-| name        | type | recursive_size | size | modified_time        | access_level |
-+-------------+------+----------------+------+----------------------+--------------+
-| file_inside | file |                |      | 2021-04-26T09:00:00Z | edit         |
-+-------------+------+----------------+------+----------------------+--------------+
+╭─────────────┬──────┬────────────────┬──────┬──────────────────────┬──────────────╮
+│ name        │ type │ recursive_size │ size │ modified_time        │ access_level │
+╞═════════════╪══════╪════════════════╪══════╪══════════════════════╪══════════════╡
+│ file_inside │ file │                │      │ 2021-04-26T09:00:00Z │ edit         │
+╰─────────────┴──────┴────────────────┴──────┴──────────────────────┴──────────────╯
 ```
 
 #### Example: Bulk creation of users
@@ -5852,12 +5849,12 @@ Current Workspace: Default (default)
 ```
 
 ```text
-+-------+---------+
-|  id   | status  |
-+-------+---------+
-| 98398 | created |
-| 98399 | created |
-+-------+---------+
+╭───────┬─────────╮
+│ id    │ status  │
+╞═══════╪═════════╡
+│ 98398 │ created │
+│ 98399 │ created │
+╰───────┴─────────╯
 ```
 
 #### Example: Find with filter and delete
@@ -5867,12 +5864,12 @@ Current Workspace: Default (default)
 ```
 
 ```text
-+-------+------------------------+
-|  id   |         email          |
-+-------+------------------------+
-| 98398 | dummyuser1@example.com |
-| 98399 | dummyuser2@example.com |
-+-------+------------------------+
+╭───────┬────────────────────────╮
+│ id    │ email                  │
+╞═══════╪════════════════════════╡
+│ 98398 │ dummyuser1@example.com │
+│ 98399 │ dummyuser2@example.com │
+╰───────┴────────────────────────╯
 ```
 
 ```shell
@@ -5880,12 +5877,12 @@ Current Workspace: Default (default)
 ```
 
 ```text
-+-------+---------+
-|  id   | status  |
-+-------+---------+
-| 98398 | deleted |
-| 98399 | deleted |
-+-------+---------+
+╭───────┬─────────╮
+│ id    │ status  │
+╞═══════╪═════════╡
+│ 98398 │ deleted │
+│ 98399 │ deleted │
+╰───────┴─────────╯
 ```
 
 #### Example: Find deactivated users for more than 2 years
@@ -5969,16 +5966,16 @@ Examples of query:
 ```
 
 ```text
-+-------------+---------+----------------------------------+
-| member_type | manager |           member.email           |
-+-------------+---------+----------------------------------+
-| user        | true    | john.curtis@email.com            |
-| user        | false   | someuser@example.com             |
-| user        | false   | jean.dupont@me.com               |
-| user        | false   | another.user@example.com         |
-| group       | false   |                                  |
-| user        | false   | aspera.user@gmail.com            |
-+-------------+---------+----------------------------------+
+╭─────────────┬─────────┬──────────────────────────╮
+│ member_type │ manager │ member.email             │
+╞═════════════╪═════════╪══════════════════════════╡
+│ user        │ true    │ john.curtis@email.com    │
+│ user        │ false   │ someuser@example.com     │
+│ user        │ false   │ jean.dupont@me.com       │
+│ user        │ false   │ another.user@example.com │
+│ group       │ false   │                          │
+│ user        │ false   │ aspera.user@gmail.com    │
+╰─────────────┴─────────┴──────────────────────────╯
 ```
 
 Other query parameters:
@@ -6034,12 +6031,12 @@ e- Add members to second workspace
 ```
 
 ```text
-+-------------------------------+
-|             email             |
-+-------------------------------+
-| John.curtis@acme.com          |
-| Jean.Dupont@tropfort.com      |
-+-------------------------------+
+╭──────────────────────────╮
+│ email                    │
+╞══════════════════════════╡
+│ John.curtis@acme.com     │
+│ Jean.Dupont@tropfort.com │
+╰──────────────────────────╯
 ```
 
 #### Example: List **Limited** users
@@ -6119,14 +6116,14 @@ Then, transfer between those:
 ```
 
 ```text
-+-----+---------+
-| id  | status  |
-+-----+---------+
-| 99  | deleted |
-| 100 | deleted |
-| 101 | deleted |
-| 102 | deleted |
-+-----+---------+
+╭─────┬─────────╮
+│ id  │ status  │
+╞═════╪═════════╡
+│ 99  │ deleted │
+│ 100 │ deleted │
+│ 101 │ deleted │
+│ 102 │ deleted │
+╰─────┴─────────╯
 ```
 
 #### Example: Create a tethered Node
@@ -6346,14 +6343,14 @@ Find files in Files app:
 ```
 
 ```text
-+---------------+--------+----------------+--------------+----------------------+--------------+
-| name          | type   | recursive_size | size         | modified_time        | access_level |
-+---------------+--------+----------------+--------------+----------------------+--------------+
-| sample_video  | link   |                |              | 2020-11-29T22:49:09Z | edit         |
-| 100G          | file   |                | 107374182400 | 2021-04-21T18:19:25Z | edit         |
-| 10M.dat       | file   |                | 10485760     | 2021-05-18T08:22:39Z | edit         |
-| Test.pdf      | file   |                | 1265103      | 2022-06-16T12:49:55Z | edit         |
-+---------------+--------+----------------+--------------+----------------------+--------------+
+╭──────────────┬──────┬────────────────┬──────────────┬──────────────────────┬──────────────╮
+│ name         │ type │ recursive_size │ size         │ modified_time        │ access_level │
+╞══════════════╪══════╪════════════════╪══════════════╪══════════════════════╪══════════════╡
+│ sample_video │ link │                │              │ 2020-11-29T22:49:09Z │ edit         │
+│ 100G         │ file │                │ 107374182400 │ 2021-04-21T18:19:25Z │ edit         │
+│ 10M.dat      │ file │                │ 10485760     │ 2021-05-18T08:22:39Z │ edit         │
+│ Test.pdf     │ file │                │ 1265103      │ 2022-06-16T12:49:55Z │ edit         │
+╰──────────────┴──────┴────────────────┴──────────────┴──────────────────────┴──────────────╯
 ```
 
 To send a package with the file `10M.dat` from subfolder /src_folder:
@@ -6919,11 +6916,7 @@ Execute:
 ```
 
 ```text
-+--------------------------------------+
-| instance                             |
-+--------------------------------------+
-| aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee |
-+--------------------------------------+
+aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
 ```
 
 ```shell
@@ -6931,16 +6924,16 @@ Execute:
 ```
 
 ```shell
-<%=cmd%> ats api_key create
+<%=cmd%> ats api_key create --out.secrets=yes
 ```
 
 ```text
-+--------+----------------------------------------------+
-| field  | value                                        |
-+--------+----------------------------------------------+
-| id     | ats_XXXXXXXXXXXXXXXXXXXXXXXX                 |
-| secret | YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY |
-+--------+----------------------------------------------+
+╭────────┬──────────────────────────────────────────────╮
+│ field  │ value                                        │
+╞════════╪══════════════════════════════════════════════╡
+│ id     │ ats_XXXXXXXXXXXXXXXXXXXXXXXX                 │
+│ secret │ YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY │
+╰────────┴──────────────────────────────────────────────╯
 ```
 
 ```shell
@@ -7345,11 +7338,11 @@ The following command lists one file that requires validation and assigns it to 
 ```
 
 ```text
-+--------------+--------------+------------+--------------------------------------+
-| session_uuid |    file_id   |   status   |              path                    |
-+--------------+--------------+------------+--------------------------------------+
-| 1a74444c-... | 084fb181-... | validating | /home/xfer.../PKG - <%=ph :title%>/200KB.1 |
-+--------------+--------------+------------+--------------------------------------+
+╭──────────────┬──────────────┬────────────┬─────────────────────────────────────╮
+│ session_uuid │ file_id      │ status     │ path                                │
+╞══════════════╪══════════════╪════════════╪═════════════════════════════════════╡
+│ 1a74444c-... │ 084fb181-... │ validating │ /home/xfer.../PKG - <%=ph :title%>/200KB.1 │
+╰──────────────┴──────────────┴────────────┴─────────────────────────────────────╯
 ```
 
 To update the status of the file, use the following command:
@@ -7644,12 +7637,12 @@ If multiple applications are detected, the wizard asks which one to use (this st
 
 ```text
 Multiple applications detected:
-+---------+-------------------------------------------+-------------+
-| product | url                                       | version     |
-+---------+-------------------------------------------+-------------+
-| faspex5 | https://faspex5.example.com/aspera/faspex | F5.0.6      |
-| server  | ssh://faspex5.example.com:22              | OpenSSH_8.3 |
-+---------+-------------------------------------------+-------------+
+╭─────────┬───────────────────────────────────────────┬─────────────╮
+│ product │ url                                       │ version     │
+╞═════════╪═══════════════════════════════════════════╪═════════════╡
+│ faspex5 │ https://faspex5.example.com/aspera/faspex │ F5.0.6      │
+│ server  │ ssh://faspex5.example.com:22              │ OpenSSH_8.3 │
+╰─────────┴───────────────────────────────────────────┴─────────────╯
 product> faspex5
 ```
 
