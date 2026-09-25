@@ -3835,7 +3835,10 @@ orch_wf_start_with_result:
     - "@preset:orch.workflow_id"
     - "@:"
     - Param=world !
-    - --result=ResultStep:Complete_status_message
+    - END
+    - "@:"
+    - step=ResultStep
+    - variable=Complete_status_message
 orch_plugins:
   args:
     - orchestrator

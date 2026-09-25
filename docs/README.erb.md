@@ -8315,6 +8315,36 @@ In addition, it is possible to place a single `query` parameter in the request t
 
 ## Plugin: `orchestrator`: IBM Aspera Orchestrator
 
+### Start a workflow
+
+Command `workflows start` creates a work order:
+
+```shell
+<%=cmd%> orchestrator workflows start <%=ph :workflow_id%> [<%=ph :parameters%>] [<%=ph :execution%>]
+```
+
+- `parameters`: `Hash` of external parameters of the workflow (optional).
+- `execution`: `Hash` controlling the execution of the work order (optional):
+
+  | Key           | Type      | Description |
+  |---------------|-----------|-------------|
+  | `synchronous` | `Boolean` | Wait for completion of the work order (default: `false`). |
+  | `step`        | `String`  | Name of the work step providing the result. |
+  | `variable`    | `String`  | Name of the output variable of `step` returned as result. |
+
+  `step` and `variable` must be provided together, and imply `synchronous`.
+
+By default, the call is asynchronous and returns the work order information.
+
+Example: Start workflow `1234` with parameter `Param`, wait for completion and display the value of output `Complete_status_message` of step `ResultStep`:
+
+```shell
+<%=cmd%> orchestrator workflows start 1234 @json:'{"Param":"world !"}' @json:'{"step":"ResultStep","variable":"Complete_status_message"}'
+```
+
+> [!NOTE]
+> Options `synchronous` and `result` (`--result=<%=ph :work_step%>:<%=ph :variable%>`) are deprecated: use `execution` instead.
+
 <%=include_commands_for_plugin(:orchestrator)%>
 
 ## Plugin: `cos`: IBM Cloud Object Storage

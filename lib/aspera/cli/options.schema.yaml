@@ -661,6 +661,30 @@ components:
             Value sent in the `x-instana-host` header.
             Defaults to the local machine's hostname.
           example: hsts-prod-01
+    OrchestratorWorkflowStart:
+      type: object
+      description: >-
+        Execution of the work order created by `orchestrator workflows start`.
+        By default, the call is asynchronous and returns the work order information.
+        A synchronous call returns the value of the output variable, if specified.
+      additionalProperties: false
+      properties:
+        synchronous:
+          type: boolean
+          description: Wait for completion of the work order.
+          default: false
+        step:
+          type: string
+          description: >-
+            Name of the work step providing the result.
+            Requires `variable`, and implies `synchronous`.
+          example: ResultStep
+        variable:
+          type: string
+          description: >-
+            Name of the output variable of `step` returned as result.
+            Requires `step`, and implies `synchronous`.
+          example: Complete_status_message
     TableOptions:
       type: object
       description: Terminal table rendering options.

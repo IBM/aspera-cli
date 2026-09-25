@@ -17,6 +17,7 @@ Released: [Place date of release here]
 * `console`: New commands: `transfer current submit`, `transfer smart pause`, `transfer queue <queue_id> list`, `endpoint list`, `ssh_key list`, `admin email_server_update|nodeapi_credentials_update`.
 * `console`: `health` also checks the unauthenticated endpoint `health/up`.
 * **general**: New Windows portable package `aspera-cli-<version>-windows-amd64-portable.zip` in GitHub releases: extract and run, it includes Ruby, gems and the Transfer SDK (`ascp`), no installation nor administrator rights needed.
+* `orchestrator`: `workflows start <workflow_id> [<parameters>] [<execution>]` takes an optional `Hash` argument `execution` with keys `synchronous`, `step` and `variable` (`workflows start <workflow_id> @json:'{}' help` shows the schema). Options `synchronous` and `result` are deprecated.
 
 ### Issues Fixed
 

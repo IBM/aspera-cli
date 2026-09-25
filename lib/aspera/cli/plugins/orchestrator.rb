@@ -56,8 +56,8 @@ module Aspera
           }
         end
 
-        option :result,      description: "Specify result value as: 'work_step:parameter'"
-        option :synchronous, description: 'Wait for completion', allowed: Type::BOOLEAN, default: false
+        option :result,      description: "Specify result value as: 'work_step:parameter'", deprecation: 'use keys `step` and `variable` of argument `execution` of `workflows start`'
+        option :synchronous, description: 'Wait for completion', allowed: Type::BOOLEAN, deprecation: 'use key `synchronous` of argument `execution` of `workflows start`'
         option :ret_style,   description: 'How return type is requested in api', allowed: %i[header arg ext], default: :arg
         option :auth_style,  description: 'Authentication type', allowed: %i[arg_pass head_basic apikey], default: :head_basic
 
@@ -118,7 +118,11 @@ module Aspera
             arguments: [{name: :workflow_id, type: :identifier}],
             action: ->(workflow_id:, **) { Result::ObjectList.new(call_ao("workflow_details/#{workflow_id}")['workflows']['workflow']['statuses']) }
           command :start,      description: 'Start a workflow: create a work order (sync or async)',
-            arguments: [{name: :workflow_id, type: :identifier}, {name: :parameters, type: Hash, mandatory: false, default: {}}]
+            arguments: [
+              {name: :workflow_id, type: :identifier},
+              {name: :parameters, type: Hash, mandatory: false, default: {}},
+              {name: :execution, type: Hash, mandatory: false, default: {}, schema: 'opts:components.schemas.OrchestratorWorkflowStart'}
+            ]
           command :export,     description: 'Export a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
             action: ->(workflow_id:, **) { Result::Text.new(call_ao("export_workflow/#{workflow_id}", format: nil, http: true).body) }
@@ -205,21 +209,34 @@ module Aspera
           )
         end
 
-        def action_workflows_start(workflow_id:, parameters:, **)
+        # Keys of argument `execution` of `workflows start`
+        WORKFLOW_START_KEYS = %w[synchronous step variable].freeze
+        private_constant :WORKFLOW_START_KEYS
+
+        def action_workflows_start(workflow_id:, parameters:, execution:, **)
+          execution = execution.transform_keys(&:to_s)
+          unknown = execution.keys - WORKFLOW_START_KEYS
+          Aspera.assert(unknown.empty?, type: Cli::BadArgument) { "Unknown keys in execution: #{unknown.join(', ')}, expected: #{WORKFLOW_START_KEYS.join(', ')}" }
+          # Deprecated options, used when key not provided
+          execution['synchronous'] = options.get_option(:synchronous) unless execution.key?('synchronous')
+          result_location = options.get_option(:result)
+          unless result_location.nil? || execution.key?('step') || execution.key?('variable')
+            fields = result_location.split(':')
+            Aspera.assert(fields.length == 2, type: Cli::BadArgument) { "Expects: work_step:result_name : #{result_location}" }
+            execution['step'], execution['variable'] = fields
+          end
           call_params = {format: :json}
           # get external parameters if any
           parameters.each do |name, value|
             call_params["external_parameters[#{name}]"] = value
           end
-          # synchronous call ?
-          call_params['synchronous'] = true if options.get_option(:synchronous, mandatory: true)
+          Aspera.assert_type(execution['synchronous'], NilClass, *BoolValue::TYPES, type: Cli::BadArgument) { 'synchronous' }
+          call_params['synchronous'] = true if execution['synchronous'].eql?(true)
           # expected result for synchro call ?
-          result_location = options.get_option(:result)
-          unless result_location.nil?
-            fields = result_location.split(':')
-            Aspera.assert(fields.length == 2, type: Cli::BadArgument) { "Expects: work_step:result_name : #{result_location}" }
-            call_params['explicit_output_step'] = fields[0]
-            call_params['explicit_output_variable'] = fields[1]
+          if execution.key?('step') || execution.key?('variable')
+            Aspera.assert(execution['step'].is_a?(String) && execution['variable'].is_a?(String), type: Cli::BadArgument) { 'Both step and variable are required' }
+            call_params['explicit_output_step'] = execution['step']
+            call_params['explicit_output_variable'] = execution['variable']
             # implicitly, call is synchronous
             call_params['synchronous'] = true
           end
