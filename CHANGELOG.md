@@ -40,10 +40,15 @@ Released: [Place date of release here]
 * **general**: `--query=help` was not showing query parameters defined by reference (`$ref`) in the OpenAPI schema.
 * **general**: Temporary files (e.g. `ascp` file list, WSS certificate) could be deleted before use, causing random transfer failures: `failed to open input file list` (since 4.27.1).
 * `config`: `transferd install` was failing when the download server sends a `Content-Disposition` header.
+* **general**: Option `cert_stores` was adding the locations to the system default ones instead of replacing them, as documented (use `DEF` to include the default).
+* **general**: Option `log.secrets` with dot-path (e.g. `--log.secrets=yes`) was failing.
+* **general**: Dot-path indexes on an `Array` option (e.g. `--ignore-certificate.0=x --ignore-certificate.1=y`) were duplicating values.
+* **general**: `--show-config` shows the values given for options `preset`, `plugin_folder`, `ts`, `cert_stores`, `node_api` and `log`, instead of internal values (e.g. `write-only option` for `preset`).
 
 ### Breaking Changes
 
 * `preview`: Renamed option `mimemagic` to `detect_mime`.
+* **general**: In dot-path values (e.g. `--ts.x=yes`, `@: x=no`, `config preset set`), `yes` and `no` are converted to `Boolean`, like `true` and `false`: use `@json:"yes"` to get a `String`.
 * `server`: Commands `ls|rm|mkdir|du|md5sum|mv|cp` require at least one path, `df|info` take no argument. `mv|cp` take `<source> <destination>` pairs, or only sources with option `to_folder`.
 * `console`: `transfer current change_rate|change_policy` require a `<data>` argument, instead of option `query`.
 * `console`: `transfer current move_forwards|move_back` moved to `transfer queue <queue_id> move_forwards|move_back <transfer_id>`.

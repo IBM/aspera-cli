@@ -39,7 +39,7 @@ module Aspera
       # rendered Ruby 3.4+ symbol key: `k: "v"`
       /(?<begin>\b\w*(?:#{ALL_SECRETS.join('|')})\w*: *")(?:[^"\\]|\\.)+(?<end>")/i,
       # logged data
-      /(?<begin>(?:#{NON_ENV_SECRETS.join('|')})[ =:]+)[^ "]#{SECRET_LENGTH}(?<end>$)/i,
+      /(?<begin>(?:#{NON_ENV_SECRETS.join('|')})[ =:]+)[^ "\n]#{SECRET_LENGTH}(?<end>$)/i,
       # cred in http dump
       /(?<begin>(?:#{HTTP_SECRETS.join('|')}): )[^\\]+(?<end>\\)/i
     ].freeze

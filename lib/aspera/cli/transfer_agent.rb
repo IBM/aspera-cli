@@ -32,9 +32,15 @@ module Aspera
         <%=ts.to_yaml%>
       END_OF_TEMPLATE
       CP4I_REMOTE_HOST_LB = 'N/A'
+      # Transfer spec parameters overridden by option `ts`
+      TS_DEFAULTS = {
+        'create_dir'    => true,
+        'resume_policy' => 'sparse_csum'
+      }.freeze
       private_constant :FILE_LIST_FROM_TRANSFER_SPEC,
         :FILE_LIST_OPTIONS,
-        :DEFAULT_TRANSFER_NOTIFY_TEMPLATE
+        :DEFAULT_TRANSFER_NOTIFY_TEMPLATE,
+        :TS_DEFAULTS
 
       extend OptionDeclarator
 
@@ -42,7 +48,7 @@ module Aspera
       option :to_folder,     description: 'Destination folder for transferred files'
       option :sources,       description: "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})",               default: FILE_LIST_FROM_ARGS
       option :src_type,      description: 'Type of file list',                                                                        allowed: %i[list pair], default: :list
-      option :transfer,      description: 'Transfer agent type, or agent parameters with optional agent key',                         allowed: [Hash, String], schema: Schema::Registry::TRANSFER_AGENT_OPTIONS
+      option :transfer,      description: 'Transfer agent type, or agent parameters with optional agent key',                         allowed: [Hash, String], shorthand: 'agent', schema: Schema::Registry::TRANSFER_AGENT_OPTIONS
       option :transfer_info, description: 'Parameters for transfer agent',                                                            deprecation: 'use --transfer instead', schema: Schema::Registry::TRANSFER_AGENT_OPTIONS
 
       # @param context [Context] Application context
@@ -51,12 +57,7 @@ module Aspera
         Aspera.assert_type(context.options, Parser) { 'context.options' }
         @context = context
         # Command line can override transfer spec
-        @user_transfer_spec = {
-          'create_dir'    => true,
-          'resume_policy' => 'sparse_csum'
-        }
-        # options for transfer agent (agent type + agent-specific parameters)
-        @transfer_options = {}
+        @user_transfer_spec = TS_DEFAULTS.dup
         # the currently selected transfer agent
         @agent = nil
         # source/destination pair, like "paths" of transfer spec
@@ -64,9 +65,7 @@ module Aspera
         # HTTPGW URL provided by webapp
         @httpgw_url_lambda = nil
         self.class.declare_options(@context.options)
-        @context.options.set_handler(:ts,            object: self, method: :user_transfer_spec)
-        @context.options.set_handler(:transfer,      object: self, method: :option_transfer)
-        @context.options.set_handler(:transfer_info, object: self, method: :transfer_options)
+        @context.options.set_handler(:ts, method(:user_transfer_spec=))
         @context.options.parse_options!
         @notification_cb = nil
         if !@context.options.get_option(:notify_to).nil?
@@ -80,22 +79,17 @@ module Aspera
         end
       end
 
-      attr_accessor :user_transfer_spec, :transfer_options
+      attr_reader :user_transfer_spec
 
-      # Composite option handler for :transfer
-      # String value: shorthand for agent type, stored as {'agent' => value}
-      # Hash value:   merged into @transfer_options (may include 'agent' key)
-      def option_transfer(_option_sym, operation, value = nil)
-        Aspera.assert_values(operation, %i[set get])
-        case operation
-        when :set
-          value = {'agent' => value} if value.is_a?(String)
-          Aspera.assert_type(value, Hash)
-          @transfer_options = @transfer_options.deep_merge(value)
-        when :get
-          return @transfer_options
-        end
-        nil
+      # Handler of option `ts`: values override defaults
+      # @param value [Hash] transfer spec parameters
+      def user_transfer_spec=(value)
+        @user_transfer_spec = TS_DEFAULTS.merge(value)
+      end
+
+      # @return [Hash] agent type (key `agent`) and agent parameters, from options `transfer` and deprecated `transfer_info`
+      def transfer_options
+        @context.options.get_option(:transfer_info).deep_merge(@context.options.get_option(:transfer))
       end
 
       def agent_instance=(instance)
@@ -106,10 +100,10 @@ module Aspera
       def agent_instance
         return @agent unless @agent.nil?
         # agent type: from composite option 'agent' key, default :direct
-        raw_type = @transfer_options['agent'] || :direct
+        raw_type = transfer_options['agent'] || :direct
         agent_type = Parser.get_from_list(raw_type.to_s, 'transfer agent', Agent::Factory::ALL.keys)
         # set keys as symbols, strip internal keys not forwarded to the agent constructor
-        agent_options = @transfer_options.except('agent', 'asynchronous').symbolize_keys
+        agent_options = transfer_options.except('agent', 'asynchronous').symbolize_keys
         agent_options[:progress] = @context.progress_bar
         agent_options[:config_dir] = @context.main_folder
         # special cases
@@ -210,8 +204,8 @@ module Aspera
           when FILE_LIST_FROM_TRANSFER_SPEC
             Log.log.debug('assume list provided in transfer spec')
             special_case_direct_with_list =
-              (@transfer_options['agent'] || :direct).to_sym.eql?(:direct) &&
-              Transfer::Parameters.ascp_args_file_list?(@transfer_options['ascp_args'])
+              (transfer_options['agent'] || :direct).to_sym.eql?(:direct) &&
+              Transfer::Parameters.ascp_args_file_list?(transfer_options['ascp_args'])
             Aspera.assert(!@transfer_paths.nil? || special_case_direct_with_list, type: Cli::BadArgument) { 'transfer spec on command line must have sources' }
             # can be nil
             @transfer_paths
@@ -264,13 +258,13 @@ module Aspera
         # create transfer agent
         agent_instance.start_transfer(transfer_spec, token_regenerator: rest_token)
         # --- async mode ---
-        if @transfer_options['asynchronous']
-          agent_type = (@transfer_options['agent'] || 'direct').to_s
+        if transfer_options['asynchronous']
+          agent_type = (transfer_options['agent'] || 'direct').to_s
           # In-process agents (direct, httpgw) expose last_job_id directly.
           # Remote-daemon agents do not override last_job_id (returns nil): generate a UUID.
           job_id = agent_instance.last_job_id || SecureRandom.uuid
           # Base agent_params from transfer options (strip internal keys)
-          agent_params = @transfer_options.except('agent', 'asynchronous')
+          agent_params = transfer_options.except('agent', 'asynchronous')
           # For daemon agents: capture any runtime-resolved connection detail
           case agent_type
           when 'desktop'

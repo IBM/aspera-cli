@@ -88,12 +88,13 @@ module Aspera
         end
 
         # Using dotted hash notation, convert value to bool, int, float or extended value
+        # `true` and `yes` are converted to `true`, `false` and `no` to `false`
         # @param value [String] The value to convert to appropriate type
         # @return [Boolean, Integer, Float, String, Array, Hash] the converted value
         def smart_convert(value)
           case value
-          when 'true'  then true
-          when 'false' then false
+          when 'true', BoolValue::YES_SYM.to_s then true
+          when 'false', BoolValue::NO_SYM.to_s then false
           else
             Integer(value, exception: false) ||
               Float(value, exception: false) ||
@@ -126,8 +127,8 @@ module Aspera
         end
         Log.dump(:env, @pending_values)
         @command_line = CommandLine.new(argv || [])
-        declare(:interactive, description: 'Use interactive input of missing params', allowed: Type::BOOLEAN, handler: {o: self, m: :ask_missing_mandatory})
-        declare(:ask_options, description: 'Ask even optional options', allowed: Type::BOOLEAN, handler: {o: self, m: :ask_missing_optional})
+        declare(:interactive, description: 'Use interactive input of missing params', allowed: Type::BOOLEAN, default: false, handler: method(:ask_missing_mandatory=))
+        declare(:ask_options, description: 'Ask even optional options', allowed: Type::BOOLEAN, default: false, handler: method(:ask_missing_optional=))
       end
 
       # Declare an option
@@ -141,19 +142,18 @@ module Aspera
       #   - Use `allowed: [Hash, String]` when the option additionally accepts a plain String shorthand;
       #     the schema then documents the Hash form and `=help` still shows it.
       # @param default       [Object] default value
-      # @param handler       [Hash]   handler for option value: keys: :o(object) and :m(method). For a flag (`Type::NONE`): method called without argument when the flag is found
+      # @param handler       [#call]  Called with the new value each time the value is set (e.g. a `Method`, or a lambda).
+      #   For a flag (`Type::NONE`): called without argument when the flag is found
+      # @param shorthand     [String] For a `Hash` option: a `String` value is stored as `{shorthand => value}`
       # @param deprecation   [String] deprecation
       # @param schema        [String] schema path documenting the Hash form of this option
       # @param block [Proc] Block to execute when option is found
-      def declare(option_symbol, description: nil, short: nil, allowed: nil, default: nil, handler: nil, deprecation: nil, schema: nil, &block)
+      def declare(option_symbol, description: nil, short: nil, allowed: nil, default: nil, handler: nil, shorthand: nil, deprecation: nil, schema: nil, &block)
         Aspera.assert_type(option_symbol, Symbol)
         Aspera.assert(!@registry.declared?(option_symbol)) { "#{option_symbol} already declared" }
-        Aspera.assert_type(handler, Hash) if handler
-        Aspera.assert(handler.keys.sort.eql?(%i[m o]), 'handler must have keys :m and :o') if handler
         if handler && allowed.eql?(Type::NONE)
           Aspera.assert(block.nil?) { "#{option_symbol}: flag with both handler and block" }
-          flag_handler = handler
-          block = -> { flag_handler[:o].send(flag_handler[:m]) }
+          block = handler
           handler = nil
         end
         # An abbreviation already used on command line must stay unambiguous
@@ -168,6 +168,7 @@ module Aspera
             description: description,
             allowed:     allowed,
             handler:     handler,
+            shorthand:   shorthand,
             deprecation: deprecation,
             schema:      schema
           ),
@@ -180,7 +181,7 @@ module Aspera
         Aspera.assert(!['hash', 'extended value'].any? { |s| description.downcase.include?(s) }) { "#{option_symbol} shall use :allowed instead of hash/extended value in option description" }
         set_option(option_symbol, default, source: :default, warn_deprecation: false) unless default.nil?
         if option.flag?
-          Aspera.assert_type(block, Proc) { "missing execution block for #{option_symbol}" }
+          Aspera.assert(block.respond_to?(:call)) { "missing execution block for #{option_symbol}" }
           option.block = block
         end
         @parse_needed = true
@@ -266,8 +267,7 @@ module Aspera
         @registry.fetch(option_symbol)
       end
 
-      # Get an option value by name
-      # either return value or calls handler, can return nil
+      # Get an option value by name, can return nil
       # ask interactively if requested/required
       # @param option_symbol [Symbol] name of the option to retrieve
       # @param mandatory [Boolean] if true, raise error if option not set
@@ -293,7 +293,7 @@ module Aspera
         result
       end
 
-      # Set an option value by name, either store value or call handler
+      # Set an option value by name: store value and call handler
       # String is given to extended value
       # @param option_symbol [Symbol] option name
       # @param value  [String] Value to set
@@ -311,16 +311,14 @@ module Aspera
         option_def(option_symbol).clear
       end
 
-      # Bind (or re-bind) a runtime handler to an already-declared option.
-      # Called from plugin initialize() for Category C handlers whose target object
-      # (e.g. @gen_options) is created after class-load time.
+      # Bind (or re-bind) a handler to an already-declared option, for a target object created after declaration.
+      # The handler is called with the current value, if any.
       # @param option_symbol [Symbol] name of the already-declared option
-      # @param object [Object] the target object for get/set delegation
-      # @param method [Symbol] accessor method name on object
+      # @param handler       [#call]  called with the new value each time the value is set (e.g. a `Method`)
       # @return [nil]
-      def set_handler(option_symbol, object:, method:)
+      def set_handler(option_symbol, handler)
         Aspera.assert_type(option_symbol, Symbol)
-        option_def(option_symbol).bind_handler(o: object, m: method)
+        option_def(option_symbol).bind_handler(handler)
       end
 
       # Adds each of the keys of specified hash as an option.
@@ -400,7 +398,7 @@ module Aspera
       # Apply values of options declared so far: from presets, env vars and command line.
       # Can be called any number of times: tokens of options not declared yet are kept for a later call.
       # Called automatically on read of option or argument, but must be called explicitly
-      # when values are read through handlers.
+      # when values set by handlers are used.
       def parse_options!
         Log.log.trace1('parse_options!'.red)
         @parse_needed = false
@@ -579,9 +577,27 @@ module Aspera
         else
           value = @command_line.consume(tok, takes_value: true)
           @command_line.with_current_option(tok) do
-            value = DotContainer.dotted_to_container(tok.dot_path, Parser.smart_convert(value), option.value(log: false)) unless tok.dot_path.nil?
-            option.assign_value(value, source: :cmdline)
+            if tok.dot_path.nil?
+              option.assign_value(value, source: :cmdline)
+            else
+              # Fill a copy of the current value: the current value is not modified in place (handler already received it),
+              # and the result is complete (e.g. `--opt.0=a --opt.1=b`): not merged again
+              current = copy_containers(option.value(log: false))
+              value = DotContainer.dotted_to_container(tok.dot_path, Parser.smart_convert(value), current)
+              option.assign_value(value, source: :cmdline, merge: false)
+            end
           end
+        end
+      end
+
+      # Copy nested `Hash` and `Array` containers, keep other values as-is (e.g. a `Proc` cannot be marshalled)
+      # @param value [Object] value to copy
+      # @return [Object] copy
+      def copy_containers(value)
+        case value
+        when Hash then value.transform_values { |v| copy_containers(v) }
+        when Array then value.map { |v| copy_containers(v) }
+        else value
         end
       end
 

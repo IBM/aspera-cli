@@ -51,12 +51,12 @@ module Aspera
       # @param options [Aspera::Cli::Parser]
       # @return [nil]
       def bind_options(options)
-        options.set_handler(:insecure,           object: self, method: :insecure)
-        options.set_handler(:ignore_certificate, object: self, method: :ignore_cert_host_port)
-        options.set_handler(:warn_insecure,      object: self, method: :warn_insecure)
-        options.set_handler(:cert_stores,        object: self, method: :trusted_cert_locations)
-        options.set_handler(:http_options,       object: self, method: :http_options)
-        options.set_handler(:http_proxy,         object: self, method: :http_proxy)
+        options.set_handler(:insecure,           method(:insecure=))
+        options.set_handler(:ignore_certificate, method(:ignore_cert_host_port=))
+        options.set_handler(:warn_insecure,      method(:warn_insecure=))
+        options.set_handler(:cert_stores,        method(:trusted_cert_locations=))
+        options.set_handler(:http_options,       method(:http_options=))
+        options.set_handler(:http_proxy,         method(:http_proxy=))
       end
 
       # Setter for http_options: dispatch each key to its target singleton immediately.
@@ -90,10 +90,6 @@ module Aspera
       # Proxy
       # ------------------------------------------------------------------
 
-      def http_proxy
-        ENV['http_proxy']
-      end
-
       def http_proxy=(value)
         URI.parse(value)
         ENV['http_proxy'] = value
@@ -103,11 +99,12 @@ module Aspera
       # Per-URL certificate ignore list
       # ------------------------------------------------------------------
 
+      # @param url_list [Array<String>, nil] URLs for which certificate is not validated
       def ignore_cert_host_port=(url_list)
-        url_list.each do |url|
+        @ignore_cert_host_port = (url_list || []).map do |url|
           uri = URI.parse(url)
           Aspera.assert(uri.scheme.eql?('https')) { "Expecting https scheme: #{url}" }
-          @ignore_cert_host_port.push([uri.host, uri.port].freeze)
+          [uri.host, uri.port].freeze
         end
       end
 
@@ -134,13 +131,16 @@ module Aspera
       # Add files, folders or the default OS locations to the cert store.
       # @param path_list [Array<String>] list of file/folder paths to add to the certificate store
       # @return [nil]
+      # Replace the certificate store with the given locations
+      # @param path_list [Array<String>] files or folders, or `DEF` for system default; empty: system default
       def trusted_cert_locations=(path_list)
         Aspera.assert_type(path_list, Array) { 'cert locations' }
-        if @certificate_store.nil?
-          Log.log.debug('Creating SSL Cert store')
-          @certificate_store = OpenSSL::X509::Store.new
-          @certificate_paths = []
-        end
+        # Empty: lazily initialized with system default
+        @certificate_store = @certificate_paths = nil
+        return if path_list.empty?
+        Log.log.debug('Creating SSL Cert store')
+        @certificate_store = OpenSSL::X509::Store.new
+        @certificate_paths = []
         path_list.each do |path|
           Aspera.assert_type(path, String) { 'Expecting a String for certificate location' }
           paths_to_add = [path]

@@ -98,6 +98,8 @@ module Aspera
       # initialize the formatter
       def initialize
         @options = {}
+        # Last value of option `out`
+        @out_dispatched = {}
         @spinner = nil
       end
 
@@ -149,65 +151,59 @@ module Aspera
       def bind_options(options)
         @parser = options
         %i[out display format output fields select table_style flat_hash multi_single show_secrets image].each do |opt|
-          options.set_handler(opt, object: self, method: :option_handler)
+          options.set_handler(opt, ->(value) { option_handler(opt, value) })
         end
         nil
       end
 
-      # Getter/setter handler called by the option manager for all formatter options
-      # @param option_symbol [Symbol]       Option name (one of :out, :format, :output, :display, :fields, :select, :table_style, :flat_hash, :multi_single, :show_secrets, :image)
-      # @param operation     [Symbol]       :get or :set
-      # @param value         [Object, nil]  Value to set (only used when operation is :set)
-      # @return [Object, nil] Current option value when operation is :get; nil otherwise
-      def option_handler(option_symbol, operation, value = nil)
-        Aspera.assert_values(operation, %i[set get])
-        case operation
-        when :set
-          # --out is a composite hash: dispatch each sub-key through the parser (validation included)
-          if option_symbol.eql?(:out)
-            Aspera.assert_type(value, Hash)
-            value.each do |k, v|
-              case k.to_sym
-              when :format   then @parser.set_option(:format,       v, warn_deprecation: false)
-              when :level    then @parser.set_option(:display,      v, warn_deprecation: false)
-              when :file     then @parser.set_option(:output,       v, warn_deprecation: false)
-              when :fields   then @parser.set_option(:fields,       v, warn_deprecation: false)
-              when :select   then @parser.set_option(:select,       v, warn_deprecation: false)
-              when :table
-                Aspera.assert_type(v, Hash)
-                table_hash = v.transform_keys(&:to_sym)
-                @parser.set_option(:multi_single, table_hash.delete(:pivot).to_s, warn_deprecation: false) if table_hash.key?(:pivot)
-                @parser.set_option(:table_style,  table_hash, warn_deprecation: false) unless table_hash.empty?
-              when :flat     then @parser.set_option(:flat_hash,    v, warn_deprecation: false)
-              when :secrets  then @parser.set_option(:show_secrets, v, warn_deprecation: false)
-              when :img      then @parser.set_option(:image,        v, warn_deprecation: false)
-              else Aspera.error_unexpected_value(k) { 'out sub-option (format, level, file, fields, select, table[.pivot], flat, secrets, img)' }
-              end
+      # Handler called by the option manager for all formatter options
+      # @param option_symbol [Symbol]      Option name (one of :out, :format, :output, :display, :fields, :select, :table_style, :flat_hash, :multi_single, :show_secrets, :image)
+      # @param value         [Object, nil] New value
+      # @return [nil]
+      def option_handler(option_symbol, value)
+        # --out is a composite hash: dispatch each sub-key through the parser (validation included)
+        if option_symbol.eql?(:out)
+          Aspera.assert_type(value, Hash)
+          # Value is merged with previous values: dispatch only changes
+          changed = value.reject { |k, v| @out_dispatched[k].eql?(v) }
+          @out_dispatched = value
+          changed.each do |k, v|
+            case k.to_sym
+            when :format   then @parser.set_option(:format,       v, warn_deprecation: false)
+            when :level    then @parser.set_option(:display,      v, warn_deprecation: false)
+            when :file     then @parser.set_option(:output,       v, warn_deprecation: false)
+            when :fields   then @parser.set_option(:fields,       v, warn_deprecation: false)
+            when :select   then @parser.set_option(:select,       v, warn_deprecation: false)
+            when :table
+              Aspera.assert_type(v, Hash)
+              table_hash = v.transform_keys(&:to_sym)
+              @parser.set_option(:multi_single, table_hash.delete(:pivot), warn_deprecation: false) if table_hash.key?(:pivot)
+              @parser.set_option(:table_style,  table_hash, warn_deprecation: false) unless table_hash.empty?
+            when :flat     then @parser.set_option(:flat_hash,    v, warn_deprecation: false)
+            when :secrets  then @parser.set_option(:show_secrets, v, warn_deprecation: false)
+            when :img      then @parser.set_option(:image,        v, warn_deprecation: false)
+            else Aspera.error_unexpected_value(k) { 'out sub-option (format, level, file, fields, select, table[.pivot], flat, secrets, img)' }
             end
-            return
           end
-          @options[option_symbol] = value
-          # special handling of some options
-          case option_symbol
-          when :format
-            @options[:display] = value.eql?(:table) ? :info : :data
-          when :output
-            $stdout = if value.eql?('-')
-              STDOUT # rubocop:disable Style/GlobalStdStream
-            else
-              File.open(value, 'w')
-            end
-          when :image
-            # get list if key arguments of method
-            allowed_options = Preview::Terminal.method(:build).parameters.select { |i| i[0].eql?(:key) }.map { |i| i[1] }
-            # check that only supported options are given
-            unknown_options = value.keys.map(&:to_sym) - allowed_options
-            Aspera.assert(unknown_options.empty?) { "Invalid parameter(s) for option image: #{unknown_options.join(', ')}, use #{allowed_options.join(', ')}" }
+          return
+        end
+        @options[option_symbol] = value
+        # special handling of some options
+        case option_symbol
+        when :format
+          @options[:display] = value.eql?(:table) ? :info : :data
+        when :output
+          $stdout = if value.eql?('-')
+            STDOUT # rubocop:disable Style/GlobalStdStream
+          else
+            File.open(value, 'w')
           end
-        when :get
-          return if option_symbol.eql?(:out)
-          return @options[option_symbol]
-        else Aspera.error_unreachable_line
+        when :image
+          # get list if key arguments of method
+          allowed_options = Preview::Terminal.method(:build).parameters.select { |i| i[0].eql?(:key) }.map { |i| i[1] }
+          # check that only supported options are given
+          unknown_options = value.keys.map(&:to_sym) - allowed_options
+          Aspera.assert(unknown_options.empty?) { "Invalid parameter(s) for option image: #{unknown_options.join(', ')}, use #{allowed_options.join(', ')}" }
         end
         nil
       end

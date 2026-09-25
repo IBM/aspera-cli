@@ -88,16 +88,13 @@ module Aspera
         setup_rest_and_transfer_runtime
       end
 
-      # Public accessor used as option handler for :config_file
-      attr_accessor :config_file_option
-
       private
 
       # Declare + parse :home option: sets context.main_folder
       def setup_main_folder
         @context.options.declare(
           :home, description: 'Home folder for tool',
-          handler: {o: @context, m: :main_folder},
+          handler: @context.method(:main_folder=),
           default: default_app_main_folder(app_name: Info::CMD_NAME)
         )
         @context.options.parse_options!
@@ -115,11 +112,10 @@ module Aspera
       def setup_config_file
         @context.options.declare(
           :config_file, description: 'Path to YAML file with preset configuration',
-          handler: {o: self, m: :config_file_option},
           default: File.join(@context.main_folder, DEFAULT_CONFIG_FILENAME)
         )
         @context.options.parse_options!
-        @context.presets = PresetManager.new(config_file: @config_file_option)
+        @context.presets = PresetManager.new(config_file: @context.options.get_option(:config_file))
         @context.http_config = Http.new
       end
 

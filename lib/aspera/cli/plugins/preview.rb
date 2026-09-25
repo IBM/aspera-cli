@@ -48,21 +48,19 @@ module Aspera
           :LOG_LIMITER_SEC,
           :REMOTE_ACCESS
 
-        attr_accessor :option_skip_types, :option_previews_folder, :option_folder_reset_cache, :option_skip_folders, :option_overwrite
-
-        # DSL option declarations (Pattern 1 and Pattern 2 - handler: Symbol resolved to self)
+        # DSL option declarations
         option :skip_format,        description: 'Skip this preview format',                                                                                                      allowed: Aspera::Preview::Generator::PREVIEW_FORMATS
         # TODO: use the same option as in `node` plugin
-        option :folder_reset_cache, description: 'Force detection of generated preview by refresh cache',                                                                         allowed: %i[no header read], handler: :option_folder_reset_cache, default: :no
-        option :skip_types,         description: 'Skip generation for those types of files',                                                                                      allowed: Type::SYMBOL_ARRAY + Aspera::Preview::FileTypes::CONVERSION_TYPES, handler: :option_skip_types
-        option :previews_folder,    description: 'Preview folder in storage root',                                                                                                handler: :option_previews_folder, default: DEFAULT_PREVIEWS_FOLDER
-        option :skip_folders,       description: 'List of folder to skip',                                                                                                        allowed: Type::STRING_ARRAY, handler: :option_skip_folders
+        option :folder_reset_cache, description: 'Force detection of generated preview by refresh cache',                                                                         allowed: %i[no header read], default: :no
+        option :skip_types,         description: 'Skip generation for those types of files',                                                                                      allowed: Type::SYMBOL_ARRAY + Aspera::Preview::FileTypes::CONVERSION_TYPES
+        option :previews_folder,    description: 'Preview folder in storage root',                                                                                                default: DEFAULT_PREVIEWS_FOLDER
+        option :skip_folders,       description: 'List of folder to skip',                                                                                                        allowed: Type::STRING_ARRAY
         option :base,               description: 'Basename of output for for test'
         option :filter,             description: 'File name filter: String (glob), Regexp, or Proc', allowed: [String, Regexp, Proc, NilClass]
         option :detect_mime,        description: 'Detect Mime type by analyzing file', allowed: Type::BOOLEAN, default: false
-        option :overwrite,          description: 'When to overwrite result file', allowed: %i[always never mtime], handler: :option_overwrite, default: :mtime
+        option :overwrite,          description: 'When to overwrite result file', allowed: %i[always never mtime], default: :mtime
         option :root_url,           description: "How to read and write files on storage (#{REMOTE_ACCESS}, or #{UriReader.file_url('<folder>')})", default: REMOTE_ACCESS
-        # Generator-specific options (Category C - bound to @gen_options via set_handler in initialize)
+        # Generator-specific options (bound to @gen_options in initialize)
         Aspera::Preview::Options::DESCRIPTIONS.each do |opt|
           values = if opt.key?(:values)
             opt[:values]
@@ -81,12 +79,18 @@ module Aspera
           # Optional callback used to filter entries before generation.
           @filter_block = nil
           @access_remote = true
-          # Bind generator-specific options to @gen_options (Category C: set_handler after object creation)
+          # Bind generator-specific options to @gen_options
           Aspera::Preview::Options::DESCRIPTIONS.each do |opt|
-            options.set_handler(opt[:name], object: @gen_options, method: opt[:name])
+            options.set_handler(opt[:name], @gen_options.method(:"#{opt[:name]}="))
           end
           # Values set through handlers are used below
           options.parse_options!
+          @option_skip_types = options.get_option(:skip_types)
+          @option_previews_folder = options.get_option(:previews_folder)
+          @option_folder_reset_cache = options.get_option(:folder_reset_cache)
+          # Modified during scan
+          @option_skip_folders = options.get_option(:skip_folders).dup
+          @option_overwrite = options.get_option(:overwrite)
           # Tell which tool we will use for office docs
           Aspera::Preview::Utils.office_tool = @gen_options.office_conversion
           Api::Node.api_options[:cache] = !@option_folder_reset_cache.eql?(:header)

@@ -22,8 +22,7 @@ module Aspera
 
       # Set the SDK directory, checking default and former locations
       def set_sdk_dir
-        sdk_dir = Products::Transferd.sdk_directory rescue nil
-        if sdk_dir.nil?
+        if options.get_option(:sdk_folder).nil?
           @sdk_default_location = true
           Log.log.debug('SDK folder is not set, checking default')
           sdk_dir = self.class.default_app_main_folder(app_name: TRANSFERD_APP_NAME)
@@ -35,7 +34,7 @@ module Aspera
             sdk_dir = former_sdk_folder if Dir.exist?(former_sdk_folder)
           end
           Log.log.debug { "Using: #{sdk_dir}" }
-          Products::Transferd.sdk_directory = sdk_dir
+          options.set_option(:sdk_folder, sdk_dir, source: :default)
         end
       end
 

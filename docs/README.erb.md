@@ -1217,10 +1217,10 @@ gem install openssl -- --with-openssl-dir=$(openssl version -e|sed -n 's|ENGINES
 SSL certificates are validated using a certificate store.
 By default, it is the one of the system's `openssl` library.
 
-To display trusted certificate store locations:
+To display the default trusted certificate store locations:
 
 ```shell
-<%=cmd%> --show-config --fields=cert_stores
+<%=cmd%> config echo '@ruby:[OpenSSL::X509::DEFAULT_CERT_DIR,OpenSSL::X509::DEFAULT_CERT_FILE]'
 ```
 
 Certificates are checked against the [Ruby default certificate store](https://ruby-doc.org/stdlib-3.0.3/libdoc/openssl/rdoc/OpenSSL/X509/Store.html) `OpenSSL::X509::DEFAULT_CERT_FILE` and `OpenSSL::X509::DEFAULT_CERT_DIR`, which are typically the ones of `openssl` on Unix-like systems (Linux, macOS, and so on).
@@ -1510,12 +1510,15 @@ A [dot-path](#dot-path-notation) is a `String` where segments are separated by `
 For example, the path `a.b.0` means: key `a` → key `b` → first element of an array.
 
 When a **value** is assigned to the path (**write** with `=`), it is automatically converted to the simplest matching type: `Boolean`, `Integer`, `Float`, or `String`.
+Values `true` and `yes` are converted to `Boolean` `true`, and values `false` and `no` to `false`.
+For an option expecting a list of values that includes `yes` or `no` (e.g. `--out.table.pivot=no`), the `Boolean` is converted back to that value.
 
 > [!NOTE]
 > A value of `1` will be automatically converted to an `Integer`.
 > When a specific type is required for the value, the [Extended Value](#extended-value-syntax) syntax modifiers `@json:` or `@ruby:` can be used.
 > For example: `--opt.x=1` generates `{"x": 1}`.
 > To get a `String`: `--opt.x=@json:\"1\"` or `--opt.x=@ruby:%q{1}`.
+> Likewise, to get the `String` `yes`: `--opt.x=@json:\"yes\"`.
 
 Example: [dot-path](#dot-path-notation) to JSON output
 
@@ -2538,7 +2541,7 @@ If an intermediate hash already exists, the new value is **deep-merged** into it
 <%=cmd%> config preset set GLOBAL out.level data
 ```
 
-The parameter value is **automatically coerced** to its natural type: integers, floats and booleans (`true`/`false`) are stored as native YAML types rather than strings.
+The parameter value is **automatically coerced** to its natural type: integers, floats and booleans (`true`/`yes`/`false`/`no`) are stored as native YAML types rather than strings.
 
 To **delete** a key from a preset, pass `@none:` as the value (evaluates to `nil`):
 

@@ -4826,6 +4826,82 @@ conf_ssl_options:
     - --cert-stores=@ruby:[OpenSSL::X509::DEFAULT_CERT_DIR,OpenSSL::X509::DEFAULT_CERT_FILE]
     - --http-options.ssl_options=@list:,CIPHER_SERVER_PREFERENCE,-NETSCAPE_CA_DN_BUG
     - --insecure=yes
+conf_cert_stores_replace:
+  description: Option `cert-stores` replaces the system default store.
+  tags:
+    - must_fail
+    - nodoc
+  pre: (TMP / 'empty_cert_store').mkpath
+  expect: certificate verify failed
+  args:
+    - config
+    - echo
+    - "@uri:https://example.com"
+    - --cert-stores=@list:,$(TMP / 'empty_cert_store')
+conf_opt_transfer_shorthand:
+  description: Option `transfer` with agent type as String, and dotted parameters.
+  tags:
+    - save_output
+    - nodoc
+  args:
+    - --show-config
+    - --transfer.url=https://example.com
+    - --transfer=node
+    - --format=json
+  post: |
+    value = JSON.parse(t.saved_output)['transfer']
+    raise "unexpected: #{value}" unless value.slice('agent', 'url').eql?({'agent' => 'node', 'url' => 'https://example.com'})
+conf_opt_ts_preset_merge:
+  description: Option `ts` from preset (Hash) merged with command line.
+  tags:
+    - save_output
+    - nodoc
+  args:
+    - --show-config
+    - --preset=@json:{"ts":{"cookie":"x","target_rate_kbps":10}}
+    - --ts.target_rate_kbps=1000
+    - --format=json
+  post: |
+    value = JSON.parse(t.saved_output)['ts']
+    raise "unexpected: #{value}" unless value.slice('cookie', 'target_rate_kbps').eql?({'cookie' => 'x', 'target_rate_kbps' => 1000})
+conf_opt_dotted_array:
+  description: Array option set with successive dotted indexes.
+  tags:
+    - save_output
+    - nodoc
+  args:
+    - --show-config
+    - --ignore-certificate.0=https://a.example.com
+    - --ignore-certificate.1=https://b.example.com
+    - --format=json
+  post: |
+    value = JSON.parse(t.saved_output)['ignore_certificate']
+    # Default preset may provide more values: indexes replace its first values
+    raise "unexpected: #{value}" unless value.first(2).eql?(%w[https://a.example.com https://b.example.com]) && value.uniq.eql?(value)
+conf_opt_log_secrets:
+  description: Option `log` with dotted boolean value.
+  tags:
+    - nodoc
+  expect: "true"
+  args:
+    - config
+    - echo
+    - "@ruby:Aspera::SecretHider.instance.log_secrets.to_s"
+    - --log.secrets=yes
+    - --log.level=info
+    - --format=text
+conf_opt_out_merge:
+  description: Option `out` does not override later individual options.
+  tags:
+    - nodoc
+  expect: "---\na: 1"
+  args:
+    - config
+    - echo
+    - '@json:{"a":1}'
+    - --out.format=json
+    - --format=yaml
+    - --out.level=data
 conf_vault_macos:
   tags:
     - vault

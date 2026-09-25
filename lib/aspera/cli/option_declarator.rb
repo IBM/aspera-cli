@@ -21,13 +21,14 @@ module Aspera
       # @param short       [String, nil]             Single-character short form (without leading '-')
       # @param allowed     [Object, nil]             Allowed values (see OptionValue)
       # @param default     [Object, nil]             Default value
-      # @param handler     [Symbol, Proc, Hash, nil] Handler (see OptionSpec)
+      # @param handler     [Symbol, Proc, #call, nil] Handler (see OptionSpec)
+      # @param shorthand   [String, nil]             For a `Hash` option: a `String` value is stored as `{shorthand => value}`
       # @param deprecation [String, nil]             Deprecation message forwarded to options.declare
       # @param schema      [String, nil]             Schema reference (e.g. "opts:components.schemas.Foo");
       #                                              when description: is nil, the schema title or first description line is used
       def option(name, description: nil,
         short: nil, allowed: nil, default: nil,
-        handler: nil, deprecation: nil, schema: nil)
+        handler: nil, shorthand: nil, deprecation: nil, schema: nil)
         register_option_spec(
           OptionSpec.new(
             name:        name,
@@ -36,6 +37,7 @@ module Aspera
             allowed:     allowed,
             default:     default,
             handler:     handler,
+            shorthand:   shorthand,
             deprecation: deprecation,
             schema:      schema
           )

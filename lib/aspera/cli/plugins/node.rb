@@ -76,9 +76,9 @@ module Aspera
         option :validator,        description: 'Identifier of validator (optional for central)'
         option :asperabrowserurl, description: 'URL for simple aspera web ui', default: 'https://asperabrowser.mybluemix.net'
         option :node_api,         description: 'Gen4: standard_ports: Use standard FASP ports (true) or get from node API (false). cache: Set to false to force actual file system read',
-          allowed: Hash, handler: {o: Api::Node, m: :api_options}
+          allowed: Hash, handler: Api::Node.method(:api_options=)
         option :root_id,          description: 'Gen4: File id of top folder when using access key (override AK root id)'
-        option :dynamic_key,      description: 'Private key PEM to use for dynamic key auth', handler: {o: Api::Node, m: :use_dynamic_key}
+        option :dynamic_key,      description: 'Private key PEM to use for dynamic key auth', handler: Api::Node.method(:use_dynamic_key=)
 
         # @param wizard  [Wizard] The wizard object
         # @param app_url [String] Tested URL

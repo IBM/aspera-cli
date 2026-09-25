@@ -228,29 +228,19 @@ module Aspera
         Result::Text.new(usage_text(plugin: plugin))
       end
 
-      # Composite option handler for the `log` option (dot-notation sub-properties).
-      # Supported sub-properties: `level`, `type`, `format`
-      # @param _option_sym [Symbol] Option name (unused, always :log)
-      # @param operation   [Symbol] `:set` or `:get`
-      # @param value       [Hash,nil] Hash of sub-properties to set (only for `:set`)
-      def option_log(_option_sym, operation, value = nil)
-        Aspera.assert_values(operation, %i[set get])
-        case operation
-        when :set
-          Aspera.assert_type(value, Hash)
-          value.each do |k, v|
-            case k.to_sym
-            when :level   then Log.instance.level = v.to_sym
-            when :type    then Log.instance.logger_type = v.to_sym
-            when :format  then Log.instance.formatter = v
-            when :secrets then SecretHider.instance.log_secrets = BoolValue.true?(v)
-            else Aspera.error_unexpected_value(k) { 'log sub-option (level, type, format, secrets)' }
-            end
+      # Handler of the `log` option (dot-notation sub-properties): `level`, `type`, `format`, `secrets`
+      # @param value [Hash] sub-properties to set
+      def option_log=(value)
+        Aspera.assert_type(value, Hash)
+        value.each do |k, v|
+          case k.to_sym
+          when :level   then Log.instance.level = v.to_sym
+          when :type    then Log.instance.logger_type = v.to_sym
+          when :format  then Log.instance.formatter = v
+          when :secrets then SecretHider.instance.log_secrets = Parser.get_from_list(v.to_s, 'log secrets', BoolValue::ALL)
+          else Aspera.error_unexpected_value(k) { 'log sub-option (level, type, format, secrets)' }
           end
-        when :get
-          return {level: Log.instance.level, type: Log.instance.logger_type, format: Log.instance.formatter, secrets: SecretHider.instance.log_secrets}
         end
-        nil
       end
 
       private
@@ -381,7 +371,7 @@ module Aspera
         @context.config = Plugins::Config.new(context: @context)
         @context.man_header = true
         # Sync cache_tokens from Config into the OAuth persist_mgr (now that option is parsed)
-        OAuth::Factory.instance.persist_mgr = @context.persistency if @context.config.option_cache_tokens
+        OAuth::Factory.instance.persist_mgr = @context.persistency if @context.options.get_option(:cache_tokens)
         # Email service: depends on options declared by Config
         @context.mailer = Mailer.new(@context.options, @context.main_folder)
         # Secret finder: depends on options (:secret) and presets, both set by Bootstrapper
@@ -442,26 +432,27 @@ module Aspera
         @context.options.declare(:version, description: 'Display version', allowed: Type::NONE, short: 'v') { @context.formatter.display_message(:data, Cli::VERSION); Process.exit(0) } # rubocop:disable Style/Semicolon
         @context.options.declare(
           :ui, description: 'Method to start browser',
-          allowed: USER_INTERFACES,
-          handler: {o: Environment.instance, m: :url_method}
+          allowed: USER_INTERFACES, default: Environment.instance.url_method,
+          handler: Environment.instance.method(:url_method=)
         )
         @context.options.declare(
           :invalid_characters, description: 'Replacement character and invalid filename characters',
-          handler: {o: Environment.instance, m: :file_illegal_characters}
+          default: Environment.instance.file_illegal_characters,
+          handler: Environment.instance.method(:file_illegal_characters=)
         )
-        @context.options.declare(:log_level, description: 'Log level', allowed: Log::LEVELS, handler: {o: Log.instance, m: :level})
-        @context.options.declare(:log_format, description: 'Log formatter', allowed: [Proc, Logger::Formatter, String], handler: {o: Log.instance, m: :formatter})
-        @context.options.declare(:logger, description: 'Logging method', allowed: Log::LOG_TYPES, handler: {o: Log.instance, m: :logger_type})
-        @context.options.declare(:log, description: 'Logging options (dot-notation: level, type, format, secrets)', handler: {o: self, m: :option_log}, schema: Schema::Registry::LOG_OPTIONS)
+        @context.options.declare(:log_level, description: 'Log level', allowed: Log::LEVELS, default: Log.instance.level, handler: Log.instance.method(:level=))
+        @context.options.declare(:log_format, description: 'Log formatter', allowed: [Proc, Logger::Formatter, String], handler: Log.instance.method(:formatter=))
+        @context.options.declare(:logger, description: 'Logging method', allowed: Log::LOG_TYPES, handler: Log.instance.method(:logger_type=))
+        @context.options.declare(:log, description: 'Logging options (dot-notation: level, type, format, secrets)', handler: method(:option_log=), schema: Schema::Registry::LOG_OPTIONS)
         @context.options.declare(:lock_port, description: 'Prevent dual execution of a command, e.g. in cron', allowed: Type::INTEGER)
         @context.options.declare(:once_only, description: 'Process only new items (some commands)', allowed: Type::BOOLEAN, default: false)
-        @context.options.declare(:log_secrets, description: 'Show passwords in logs', allowed: Type::BOOLEAN, handler: {o: SecretHider.instance, m: :log_secrets})
-        @context.options.declare(:clean_temp, description: 'Cleanup temporary files on exit', allowed: Type::BOOLEAN, handler: {o: TempFileManager.instance, m: :cleanup_on_exit})
-        @context.options.declare(:temp_folder, description: 'Temporary folder', handler: {o: TempFileManager.instance, m: :global_temp})
+        @context.options.declare(:log_secrets, description: 'Show passwords in logs', allowed: Type::BOOLEAN, default: SecretHider.instance.log_secrets, handler: SecretHider.instance.method(:log_secrets=))
+        @context.options.declare(:clean_temp, description: 'Cleanup temporary files on exit', allowed: Type::BOOLEAN, default: TempFileManager.instance.cleanup_on_exit, handler: TempFileManager.instance.method(:cleanup_on_exit=))
+        @context.options.declare(:temp_folder, description: 'Temporary folder', default: TempFileManager.instance.global_temp, handler: TempFileManager.instance.method(:global_temp=))
         @context.options.declare(:pid_file, description: 'Write process identifier to file, delete on exit')
         @context.options.declare(
           :parser, description: 'Default parser for structured parameters and options',
-          handler: {o: ExtendedValue.instance, m: :default_decoder},
+          handler: ExtendedValue.instance.method(:default_decoder=),
           allowed: ExtendedValue::DEFAULT_DECODERS,
           default: ExtendedValue::DEFAULT_DECODERS.first
         )

@@ -32,7 +32,7 @@ module Aspera
       FALSE_VALUES = [NO_SYM, false].freeze
       # Values meaning `true`
       TRUE_VALUES = [YES_SYM, true].freeze
-      private_constant :YES_SYM, :NO_SYM, :FALSE_VALUES, :TRUE_VALUES
+      private_constant :FALSE_VALUES, :TRUE_VALUES
       # Boolean values
       # @return [Array<true, false, :yes, :no>]
       ALL = (TRUE_VALUES + FALSE_VALUES).freeze

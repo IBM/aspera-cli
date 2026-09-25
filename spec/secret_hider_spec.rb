@@ -73,6 +73,10 @@ RSpec.describe(Aspera::SecretHider) do
     it 'hides all secrets with all: true' do
       expect(hider.hide_secrets_in_string('{"password":"secret123"}', all: true)).not_to(include('secret123'))
     end
+
+    it 'keeps end of line and following lines after a logged secret' do
+      expect(hider.hide_secrets_in_string("a --secret=abcdefg\nnext\n", all: true)).to(eq("a --secret=🔑\nnext\n"))
+    end
   end
 
   describe '#secret?' do

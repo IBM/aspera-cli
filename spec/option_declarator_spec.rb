@@ -71,10 +71,31 @@ RSpec.describe(Aspera::Cli::OptionDeclarator) do
       expect(target.instance_variable_get(:@flag_found)).to(be(true))
     end
 
-    it 'rejects a Proc handler on an option with value' do
-      expect do
-        dummy_class.option(:opt_c, description: 'Option C', handler: -> {})
-      end.to(raise_error(ArgumentError, /only supported for a flag/))
+    it 'executes a value handler on the target with the new value' do
+      value_class = Class.new do
+        extend Aspera::Cli::OptionDeclarator
+
+        option :val, description: 'Value', handler: ->(v) { @received = v }
+      end
+      parser = Aspera::Cli::Parser.new('test', ['--val=abc'])
+      target = Object.new
+      value_class.declare_options(parser, target: target)
+      parser.parse_options!
+      expect(target.instance_variable_get(:@received)).to(eq('abc'))
+      expect(parser.get_option(:val)).to(eq('abc'))
+    end
+
+    it 'calls a Symbol handler method of the target' do
+      value_class = Class.new do
+        extend Aspera::Cli::OptionDeclarator
+
+        option :val, description: 'Value', handler: :load_val
+      end
+      parser = Aspera::Cli::Parser.new('test', ['--val=abc'])
+      target = Struct.new(:received) { def load_val(v) = self.received = v }.new
+      value_class.declare_options(parser, target: target)
+      parser.parse_options!
+      expect(target.received).to(eq('abc'))
     end
   end
 end

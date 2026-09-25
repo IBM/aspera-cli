@@ -58,12 +58,11 @@ module Aspera
             received = nil
             target = Object.new
             target.define_singleton_method(:my_preset=) { |v| received = v }
-            target.define_singleton_method(:my_preset) { received }
 
             opts = build_parser(['-Pmypreset'])
             opts.declare(
               :my_preset, description: 'Load preset', short: 'P',
-              handler: {o: target, m: :my_preset}
+              handler: target.method(:my_preset=)
             )
             opts.parse_options!
             expect(received).to(eq('mypreset'))
@@ -73,12 +72,11 @@ module Aspera
             received = nil
             target = Object.new
             target.define_singleton_method(:my_preset=) { |v| received = v }
-            target.define_singleton_method(:my_preset) { received }
 
             opts = build_parser(['-P', 'mypreset'])
             opts.declare(
               :my_preset, description: 'Load preset', short: 'P',
-              handler: {o: target, m: :my_preset}
+              handler: target.method(:my_preset=)
             )
             opts.parse_options!
             expect(received).to(eq('mypreset'))
@@ -166,6 +164,29 @@ module Aspera
             opts.parse_options!
             expect(opts.get_option(:custom)).to(eq({'field' => 42}))
             expect(opts.final_errors).to(be_empty)
+          end
+
+          it 'fills an array nested in a Hash with successive indexes' do
+            opts = build_parser(['--custom.fld.0=name', '--custom.fld.1=id', '--custom.opt=true'])
+            opts.declare(:custom, description: 'Custom object', allowed: [Hash, NilClass])
+            opts.parse_options!
+            expect(opts.get_option(:custom)).to(eq({'fld' => %w[name id], 'opt' => true}))
+          end
+
+          it 'fills an Array option with successive indexes' do
+            opts = build_parser(['--list.0=a', '--list.1=b'])
+            opts.declare(:list, description: 'List', allowed: Array)
+            opts.parse_options!
+            expect(opts.get_option(:list)).to(eq(%w[a b]))
+          end
+
+          it 'keeps a Proc in the current value' do
+            format = ->(s) { s }
+            opts = build_parser(['--custom.level=debug'])
+            opts.declare(:custom, description: 'Custom object', allowed: Hash)
+            opts.set_option(:custom, {'format' => format})
+            opts.parse_options!
+            expect(opts.get_option(:custom)).to(eq({'format' => format, 'level' => 'debug'}))
           end
         end
       end
@@ -270,7 +291,7 @@ module Aspera
         it 'calls handler method of a flag' do
           opts = build_parser(['-N'])
           target = Struct.new(:called) { def flag_found = self.called = true }.new(false)
-          opts.declare(:no_default, description: 'No default', short: 'N', allowed: Type::NONE, handler: {o: target, m: :flag_found})
+          opts.declare(:no_default, description: 'No default', short: 'N', allowed: Type::NONE, handler: target.method(:flag_found))
           opts.parse_options!
           expect(target.called).to(be(true))
         end
@@ -373,6 +394,35 @@ module Aspera
           opts.declare(:count, description: 'Count', allowed: [Integer, NilClass])
           expect(opts.get_option(:count)).to(be_nil)
         end
+
+        it 'accepts a boolean for an enum including yes and no' do
+          opts = build_parser([])
+          opts.declare(:reset, description: 'Reset', allowed: %i[no header read])
+          opts.set_option(:reset, false)
+          expect(opts.get_option(:reset)).to(eq(:no))
+        end
+
+        it 'rejects a boolean for an enum without yes and no' do
+          opts = build_parser([])
+          opts.declare(:level, description: 'Level', allowed: %i[debug info])
+          expect { opts.set_option(:level, true) }.to(raise_error(BadArgument, /unknown value/))
+        end
+      end
+
+      describe '.smart_convert' do
+        it 'converts true, yes, false and no to Boolean' do
+          expect(%w[true yes false no].map { |v| Parser.smart_convert(v) }).to(eq([true, true, false, false]))
+        end
+
+        it 'converts numbers, and keeps other strings' do
+          expect(%w[1 1.5 yess].map { |v| Parser.smart_convert(v) }).to(eq([1, 1.5, 'yess']))
+        end
+
+        it 'converts a dotted option value' do
+          opts = build_parser(['--custom.a=yes', '--custom.b=no'])
+          opts.declare(:custom, description: 'Custom object', allowed: Hash)
+          expect(opts.get_option(:custom)).to(eq({'a' => true, 'b' => false}))
+        end
       end
 
       describe 'misc' do
@@ -382,21 +432,47 @@ module Aspera
           expect(Parser.get_from_list('no', 'b', BoolValue::ALL)).to(be(false))
         end
 
-        it 'does not read a handler getter when assigning a scalar (getter may fail when unset)' do
-          target = Object.new
-          target.define_singleton_method(:path) { @path || raise('not initialized') }
-          target.define_singleton_method(:path=) { |v| @path = v }
+        it 'stores the value and calls the handler with it' do
+          target = Struct.new(:path).new
           opts = build_parser([])
-          opts.declare(:path, description: 'Path', handler: {o: target, m: :path})
+          opts.declare(:path, description: 'Path', handler: target.method(:path=))
           opts.add_option_preset({path: '/a'}, 'test')
           opts.parse_options!
           expect(target.path).to(eq('/a'))
+          expect(opts.get_option(:path)).to(eq('/a'))
         end
 
-        it 'clears an option stored by a handler' do
+        it 'calls the handler with the merged value of a Hash option' do
+          received = []
+          opts = build_parser(['--opt.b=2'])
+          opts.declare(:opt, description: 'Opt', allowed: Hash, handler: ->(v) { received.push(v) })
+          opts.add_option_preset({opt: {'a' => 1}}, 'test')
+          opts.parse_options!
+          expect(received.last).to(eq({'a' => 1, 'b' => 2}))
+          # Previous value is not modified in place by dot notation
+          expect(received[-2]).to(eq({'a' => 1}))
+        end
+
+        it 'calls a handler bound after declaration with the current value' do
+          target = Struct.new(:val).new
+          opts = build_parser(['--val=x'])
+          opts.declare(:val, description: 'Val')
+          opts.parse_options!
+          opts.set_handler(:val, target.method(:val=))
+          expect(target.val).to(eq('x'))
+        end
+
+        it 'stores a String as a Hash with shorthand' do
+          opts = build_parser(['--transfer.url=u', '--transfer=node'])
+          opts.declare(:transfer, description: 'Transfer', allowed: [Hash, String], shorthand: 'agent')
+          opts.parse_options!
+          expect(opts.get_option(:transfer)).to(eq({'url' => 'u', 'agent' => 'node'}))
+        end
+
+        it 'clears an option and calls its handler' do
           target = Struct.new(:val).new('x')
           opts = build_parser([])
-          opts.declare(:val, description: 'Val', handler: {o: target, m: :val})
+          opts.declare(:val, description: 'Val', handler: target.method(:val=))
           opts.clear_option(:val)
           expect(opts.get_option(:val)).to(be_nil)
           expect(target.val).to(be_nil)

@@ -34,7 +34,8 @@ module Aspera
       # @param option [Symbol] Name of option
       # @param description [String, nil] Description for help; if nil, derived from schema
       # @param allowed [nil,Class,Array<Class>,Array<Symbol>] Allowed values
-      # @param handler [Hash, nil] Accessor: keys: :o(object) and :m(method); nil for local storage
+      # @param handler [#call, nil] Called with the new value each time the value is set
+      # @param shorthand [String, nil] For a `Hash` option: a `String` value is stored as `{shorthand => value}`
       # @param deprecation [String] Deprecation message
       # @param schema [String] Declaration of schema
       # `allowed`:
@@ -42,7 +43,7 @@ module Aspera
       # - `Class` The single allowed Class
       # - `Array<Class>` Multiple allowed classes
       # - `Array<Symbol>` List of allowed values
-      def initialize(option:, description: nil, allowed: Type::STRING, handler: nil, deprecation: nil, schema: nil)
+      def initialize(option:, description: nil, allowed: Type::STRING, handler: nil, shorthand: nil, deprecation: nil, schema: nil)
         Log.log.trace1 { "option: #{option}, allowed: #{allowed}" }
         @option = option
         @description = description
@@ -53,12 +54,10 @@ module Aspera
         @sensitive = SecretHider.instance.secret?(@option, '')
         @deprecation = deprecation
         @schema = schema
+        @shorthand = shorthand
         @source = nil
-        # Local storage, until a handler is bound
-        @local_value = nil
-        @handler_bound = false
-        @getter = -> { @local_value }
-        @setter = ->(v) { @local_value = v }
+        @value = nil
+        @handler = nil
         bind_handler(handler) unless handler.nil?
         @types = nil
         @values = nil
@@ -67,31 +66,16 @@ module Aspera
         apply_allowed(allowed) unless allowed.nil?
       end
 
-      # Wire (or re-wire) the getter/setter delegation for this option.
-      # Safe to call after construction - used by Parser#set_handler to bind a composed
-      # instance variable that did not exist at class-load time (Category C handlers).
-      # @param handler [Hash] Accessor hash with keys :o (object) and :m (method symbol)
+      # Set the handler called with the new value each time the value is set.
+      # Safe to call after construction: used by `Parser#set_handler` for a target object created after declaration.
+      # The handler is called with the current value, if any.
+      # @param handler [#call] e.g. a `Method` or a lambda
       # @return [nil]
       def bind_handler(handler)
-        Aspera.assert_type(handler, Hash) { 'handler' }
-        object = handler[:o]
-        method = handler[:m]
-        Aspera.assert(object.respond_to?(method)) { "#{object} does not respond to #{method}" }
-        # Value already stored locally (default, preset) is transferred to the handler
-        pending_value = @handler_bound ? nil : @local_value
-        writer = :"#{method}="
-        if object.respond_to?(writer)
-          # attr_accessor-style: m / m=
-          @getter = -> { object.send(method) }
-          @setter = ->(v) { object.send(writer, v) }
-        else
-          # generic: m(option, :get/:set, value)
-          @getter = -> { object.send(method, @option, :get) }
-          @setter = ->(v) { object.send(method, @option, :set, v) }
-        end
-        @handler_bound = true
-        Log.log.trace1 { "bind_handler: #{@option}: #{object.class}.#{method}".green }
-        assign_value(pending_value, source: @source || :code, warn_deprecation: false) unless pending_value.nil?
+        Aspera.assert(handler.respond_to?(:call)) { "#{@option}: handler must respond to call" }
+        @handler = handler
+        Log.log.trace1 { "bind_handler: #{@option}".green }
+        @handler.call(@value) unless @value.nil?
         nil
       end
 
@@ -114,17 +98,15 @@ module Aspera
       # Reset stored value to nil
       # @return [nil]
       def clear
-        @setter.call(nil)
-        @source = nil
+        store(nil, nil)
       end
 
       # Get current option value
       # @param log [Boolean] whether to log the value retrieval
       # @return [Object] current value
       def value(log: true)
-        current_value = @getter.call
-        Log.log.trace1 { "#{@option} -> (#{current_value.class})#{current_value}" } if log
-        current_value
+        Log.log.trace1 { "#{@option} -> (#{@value.class})#{@value}" } if log
+        @value
       end
 
       # Assign value to option.
@@ -133,9 +115,10 @@ module Aspera
       # @param value [String, Object] Value to assign to option
       # @param source [Symbol] `OptionSource` of value
       # @param warn_deprecation [Boolean] Emit deprecation warning (false for internal transfers)
+      # @param merge [Boolean] Merge `Hash` and `Array` with current value (false: value is already complete)
       # @return [nil]
       # @raise [SchemaRequest] if value is `help` and schema is known
-      def assign_value(value, source:, warn_deprecation: true)
+      def assign_value(value, source:, warn_deprecation: true, merge: true)
         # Value from a source with lower priority than current value: only fills containers
         lower = !@source.nil? && OptionSource.priority(source) < OptionSource.priority(@source)
         if lower && ![Hash, Array].include?(@types&.first)
@@ -151,11 +134,11 @@ module Aspera
           return
         end
         new_value = coerce(ExtendedValue.instance.evaluate(value, context: "option: #{@option}", allowed: @types))
+        new_value = {@shorthand => new_value} if @shorthand && new_value.is_a?(String)
         Log.log.trace1 { "#{source}: #{@option} <- (#{new_value.class})#{new_value}" }
         Aspera.assert_type(new_value, *@types, type: BadArgument) { "Option #{@option}" } if @types
-        # Read current value only to merge containers: some handler getters fail when not set yet
-        if new_value.is_a?(Hash) || new_value.is_a?(Array)
-          current_value = value(log: false)
+        if merge && (new_value.is_a?(Hash) || new_value.is_a?(Array))
+          current_value = @value
           mergeable = current_value.is_a?(new_value.is_a?(Hash) ? Hash : Array) && !current_value.empty?
           if lower
             # Current value has priority: merge new value under it, unless explicitly emptied
@@ -237,7 +220,7 @@ module Aspera
         end
         # Containers start empty, unless nil is allowed
         default = {Array => [], Hash => {}}[@types.first]
-        store(default, :default) if !default.nil? && !@types.include?(NilClass) && value(log: false).nil?
+        store(default, :default) if !default.nil? && !@types.include?(NilClass) && @value.nil?
       end
 
       # Convert value from command line, env or preset (String) to the type of option
@@ -246,6 +229,8 @@ module Aspera
       def coerce(value)
         case @kind
         when :enum
+          # Boolean from dot-path value, e.g. `no` for `%i[no header read]`
+          value = (value ? BoolValue::YES_SYM : BoolValue::NO_SYM).to_s if BoolValue::TYPES.include?(value.class)
           value.is_a?(String) ? Parser.get_from_list(value, @option, @values) : value
         when :boolean
           BoolValue.true?(value.is_a?(String) ? Parser.get_from_list(value, @option, BoolValue::ALL) : value)
@@ -264,10 +249,11 @@ module Aspera
       end
 
       # @param new_value [Object] value to store
-      # @param source [Symbol] `OptionSource` of value
+      # @param source [Symbol, nil] `OptionSource` of value
       def store(new_value, source)
-        @setter.call(new_value)
+        @value = new_value
         @source = source
+        @handler&.call(new_value)
       end
     end
   end

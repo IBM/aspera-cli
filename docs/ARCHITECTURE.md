@@ -64,7 +64,20 @@ The `Runner` class orchestrates the full command lifecycle:
 - **`run_with_result`**: Pure computation entry point — initializes all agents and options, resolves the target plugin, executes the action, and returns a `Result` object. Raises on error. Used by the MCP server ([`mcp_tool.rb`](../lib/aspera/cli/mcp_tool.rb)) to run commands in-process.
 
 All shared objects are held in a `Context` instance and passed to plugins by reference.
-Members: `options` (`Parser`), `transfer` (`TransferAgent`), `config` (`Plugins::Config`), `formatter`, `persistency`, `man_header`, `presets` (`PresetManager`), `http_config`, `main_folder`, `mailer` (`Mailer`), `secret_finder`, plus `progress_bar`, `pac_executor` and `help_requested`.
+Members: `options` (`Parser`), `transfer` (`TransferAgent`), `config` (`Plugins::Config`), `formatter`, `persistency`, `man_header`, `presets` (`PresetManager`), `http_config` (`Http`), `main_folder`, `mailer` (`Mailer`), `secret_finder`, plus `progress_bar`, `pac_executor` and `help_requested`.
+
+`Runner#init_agents_and_options` builds the context in this order:
+
+1. `Formatter` and `Parser`, then global options
+2. [`Bootstrapper`](../lib/aspera/cli/bootstrapper.rb) (`run`): one-time setup of shared services, before any plugin is instantiated:
+   - `main_folder` (option `home`), `persistency`, `presets` (config file), `http_config`, `progress_bar`
+   - plugin lookup folders
+   - `@preset:` and `@vault:` extended-value handlers
+   - global singletons: `RestParameters`, `OAuth::Factory`, SSL, `Transfer::Parameters`, `RestErrorAnalyzer`
+   - PAC proxy executor (option `fpac`)
+3. `Plugins::Config` (only a CLI plugin: option declaration and command handlers), then `Mailer`, `SecretFinder` and `TransferAgent`
+
+`Context#validate` checks that all mandatory members are set.
 
 #### CLI Options
 
@@ -81,6 +94,8 @@ Key responsibilities:
 - Composite options with dot-notation sub-keys (e.g. `--out.format=json`, `--log.level=debug`)
 - Handle sensitive data (passwords, secrets) with masking ([`secret_hider.rb`](../lib/aspera/secret_hider.rb))
 - Provide option inheritance and defaults from presets
+
+Options are declared with the `option` DSL of [`OptionDeclarator`](../lib/aspera/cli/option_declarator.rb), not only by plugins: `Formatter`, `TransferAgent`, `Http` and `Wizard` `extend OptionDeclarator` and declare their options on the parser with `declare_options` (plugins include it through `Base`).
 
 #### Plugin System
 
@@ -144,7 +159,7 @@ All plugins declare their command tree using a class-level DSL defined in `Base`
 | `commands_under(parent, description: nil) { … }` | Scope block setting the default parent for nested `command` calls. Re-entrant; `parent` is relative to the current scope. Auto-declares the parent node (`"Manage <name>"`) if not yet declared |
 | `crud_commands(api:, entity:, operations:, name:, lookup:, **kwargs)` | Declare one leaf command per CRUD verb for a REST entity (see below) |
 | `define_action_method(path) { … }` | `define_method` with the conventional `action_<path>` name; used for homogeneous generated commands |
-| `option(name, description:, short:, allowed:, default:, handler:, deprecation:, schema:)` | Declare a plugin option (stored as `OptionSpec`, declared on the parser in `Base#initialize`). Raises if an ancestor already declares it. `handler:` Symbol: instance method (accessor); Hash `{o:, m:}`: other object; for a flag (`allowed: Type::NONE`) a Symbol or a lambda (same style rule as actions) is executed on the plugin instance when the flag is found |
+| `option(name, description:, short:, allowed:, default:, handler:, shorthand:, deprecation:, schema:)` | Declare a plugin option (stored as `OptionSpec`, declared on the parser in `Base#initialize`). Raises if an ancestor already declares it. The option always stores its value (read with `get_option`, shown by `--show-config`, merged for `Hash`/`Array`). `handler:` is only needed to push the value to another object: called with the new (merged) value each time it is set, or without argument when a flag (`allowed: Type::NONE`) is found. Symbol: instance method; lambda: executed on the plugin instance (same style rule as actions); other: object responding to `call`, e.g. `Log.instance.method(:level=)`. A handler bound later with `Parser#set_handler` is called with the current value. `shorthand:` for a `Hash` option: a `String` value is stored as `{shorthand => value}` (e.g. `--transfer=node`) |
 | `use_options(source)` | Include options declared by another plugin class or `OptionDeclarator` module |
 | `application_name(name)` | Human-readable application name shown in wizards |
 
@@ -427,6 +442,7 @@ Plugin-level imperative dispatch and argument reads have been eliminated. The re
 | [`base.rb`](../lib/aspera/cli/plugins/base.rb) | `dispatch_child` | Infrastructure — the DSL dispatcher itself calls `get_next_command` |
 | [`runner.rb`](../lib/aspera/cli/runner.rb) | `run_with_result` | Top-level plugin selector (`case command_sym`), not a per-plugin dispatch |
 | [`base.rb`](../lib/aspera/cli/plugins/base.rb) | `dispatch_from_registry`, `execute_leaf`, `resolve_argument` | Infrastructure — resolution of declared `arguments:` |
+| [`transfer_agent.rb`](../lib/aspera/cli/transfer_agent.rb) | `ts_source_paths` | Infrastructure — source file list of `transfer_paths:` commands (depends on `--sources`) |
 
 No plugin file uses `get_next_command`, `get_next_argument` or `instance_identifier`.
 
@@ -452,11 +468,9 @@ class Base
   # Optional: re-query a previously started transfer by id (desktop, node, connect, transferd, ...)
   def self.transfer_status(transfer_id, agent_params)
 
-  # Start a transfer asynchronously (must be implemented by subclass)
-  def start_transfer(transfer_spec, token_regenerator: nil)
-
-  # Wait for all transfers to complete and return per-session statuses (must be implemented)
-  def wait_for_transfers_completion
+  # Not defined in Base, each subclass must implement:
+  #   start_transfer(transfer_spec, token_regenerator: nil)  start a transfer asynchronously
+  #   wait_for_transfers_completion                          wait and return per-session statuses
 
   # Wait for completion; returns Transfer::Result::Success or Transfer::Result::Error (public API)
   def wait_for_completion
@@ -495,7 +509,7 @@ A custom HTTP client implementation providing:
 - **Progress Tracking**: File upload/download progress
 - **Session Management**: Connection pooling, SSL/TLS configuration, proxy auto-config ([`proxy_auto_config.rb`](../lib/aspera/proxy_auto_config.rb))
 
-Global HTTP settings are held in the `RestParameters` singleton. Paginated listing is handled by [`rest_list.rb`](../lib/aspera/rest_list.rb).
+Global HTTP settings are held in the `RestParameters` singleton. The CLI HTTP/S and TLS options (`insecure`, `ignore_certificate`, `cert_stores`, `http_options`, `http_proxy`, …) are declared and applied by [`Cli::Http`](../lib/aspera/cli/http.rb) (`Context#http_config`). Paginated listing is handled by [`rest_list.rb`](../lib/aspera/rest_list.rb).
 
 #### Product API Clients
 
@@ -514,7 +528,7 @@ Global HTTP settings are held in the `RestParameters` singleton. Paginated listi
 
 **Directory**: [`lib/aspera/schema/`](../lib/aspera/schema/)
 
-OpenAPI definitions of the product APIs (AoC, Faspex 5, Node, Shares, faspio) and `Schema::Registry`, used to:
+OpenAPI definitions of the product APIs (AoC, AoC Automation, Faspex 5, Node, Shares, Console, faspio), `async` database tables (`async_tables.yaml`) and `Schema::Registry`, used to:
 
 - document request bodies of `create` / `modify` (`body_component:` in `crud_commands`)
 - document `--query` parameters (`query_schema:`, shown with `--query=help`)
@@ -744,15 +758,20 @@ presets:
 ```text
 StandardError
 ├── Aspera::Error (lib/aspera/assert.rb)
+│   ├── Aspera::ParameterError
+│   ├── Aspera::InternalError
+│   ├── Aspera::AssertError
 │   ├── Aspera::EntityNotFound (resource not found — lib/aspera/rest.rb)
 │   └── Aspera::Ssh::Error
-├── Aspera::Cli::Error (CLI base)
+├── Aspera::Cli::Error (CLI base — lib/aspera/cli/error.rb)
 │   ├── BadArgument
 │   ├── MissingArgument
 │   ├── NoSuchElement
-│   └── BadIdentifier
+│   ├── BadIdentifier
+│   └── SchemaRequest (control flow: `help` given as option or argument value — lib/aspera/cli/option_types.rb)
 ├── Aspera::Cli::HelpRequest (control flow: --help reached in dispatch)
 ├── Aspera::RestCallError (HTTP call errors — lib/aspera/rest_call_error.rb)
+├── Aspera::Ascmd::Error (ascmd errors — lib/aspera/ascmd.rb)
 └── Aspera::Transfer::Error (transfer failures — lib/aspera/transfer/error.rb)
 ```
 
@@ -797,9 +816,9 @@ Analyzes API errors and provides:
   - `base_dsl_spec.rb` — `Base` DSL dispatcher
   - `command_registry_spec.rb` — `CommandRegistry` validation rules
   - `plugin_registry_spec.rb` — `validate!(plugin_class:)` consistency of every plugin registry (every leaf has an action or a matching `action_*` method, and every action accepts `**`)
-  - `parser_spec.rb`, `option_declarator_spec.rb`, `preset_actions_spec.rb`, `runner_spec.rb`, `mcp_tool_spec.rb`
-  - `async_transfer_store_spec.rb`, `transfer_agent_async_spec.rb`, `transfer_result_spec.rb`, `agent_transfer_status_spec.rb`
-  - `rest_spec.rb`, `secret_hider_spec.rb`, `proxy_auto_config_spec.rb`, `schema_reader_spec.rb`, `string_ext_spec.rb`, `uri_reader_spec.rb`, …
+  - `parser_spec.rb`, `option_declarator_spec.rb`, `preset_actions_spec.rb`, `runner_spec.rb`, `mcp_tool_spec.rb`, `formatter_spec.rb`, `http_spec.rb`
+  - `async_transfer_store_spec.rb`, `transfer_agent_async_spec.rb`, `transfer_agent_options_spec.rb`, `transfer_result_spec.rb`, `agent_transfer_status_spec.rb`
+  - `rest_spec.rb`, `secret_hider_spec.rb`, `proxy_auto_config_spec.rb`, `schema_reader_spec.rb`, `string_ext_spec.rb`, `uri_reader_spec.rb`, `temp_file_manager_spec.rb`, `assert_spec.rb`, `environment_spec.rb`, `version_spec.rb`, …
 - Integration tests requiring a live server (`integration_helper.rb`, e.g. `ascmd_ssh_integration_spec.rb`)
 
 ### CI/CD Integration
@@ -834,9 +853,8 @@ The plugin factory discovers the plugin automatically; `CommandRegistry#validate
 
 ### Adding a New Output Format
 
-1. Extend `Formatter` class ([`formatter.rb`](../lib/aspera/cli/formatter.rb))
-2. Implement format-specific rendering
-3. Register format in formatter factory
+1. Add the format to `DISPLAY_FORMATS` in [`formatter.rb`](../lib/aspera/cli/formatter.rb) (allowed values of option `format`)
+2. Implement the format-specific rendering in `Formatter#display_results`
 
 ## Performance Considerations
 
@@ -884,8 +902,10 @@ The plugin factory discovers the plugin automatically; `CommandRegistry#validate
 
 1. **Ruby Gem**: `gem install aspera-cli`
 2. **Single Executable**: Standalone binary
-3. **Container**: Docker image
-4. **Package Managers**: Homebrew, Chocolatey
+3. **Windows portable package**: ZIP archive with Ruby, gems and Transfer SDK (extract and run, no installation)
+4. **Windows installer**
+5. **Container**: Docker image
+6. **Package Managers**: Chocolatey
 
 ### Runtime Requirements
 

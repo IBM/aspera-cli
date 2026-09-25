@@ -29,13 +29,14 @@ module Aspera
         ta = described_class.allocate
 
         ta.instance_variable_set(:@user_transfer_spec, {'create_dir' => true, 'resume_policy' => 'sparse_csum'})
-        ta.instance_variable_set(:@transfer_options, {'agent' => agent_type}.merge(extra_transfer_options))
         ta.instance_variable_set(:@transfer_paths, [{'source' => '/src/file.txt'}])
         ta.instance_variable_set(:@notification_cb, nil)
         ta.instance_variable_set(:@httpgw_url_lambda, nil)
 
         options_double = double('Options')
         allow(options_double).to(receive(:get_option).and_return(nil))
+        allow(options_double).to(receive(:get_option).with(:transfer_info).and_return({}))
+        allow(options_double).to(receive(:get_option).with(:transfer).and_return({'agent' => agent_type}.merge(extra_transfer_options)))
         context_double = double('Context', persistency: persistency, main_folder: tmpdir, options: options_double)
         ta.instance_variable_set(:@context, context_double)
 
