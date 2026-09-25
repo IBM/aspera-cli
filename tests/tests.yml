@@ -4808,6 +4808,15 @@ conf_options_aoc:
     - config
     - options
     - aoc
+conf_options_replacement:
+  description: Show the replacement of a deprecated option, using field selection
+  expect: use --out.level
+  args:
+    - config
+    - options
+    - server
+    - --select=@json:{"option":"--display"}
+    - --fields=replacement
 conf_options_unknown:
   description: Error when plugin name does not exist
   tags:
@@ -5231,6 +5240,21 @@ conf_query_help_aoc:
     - user
     - list
     - --query=help
+conf_completion_words:
+  description: List sub-commands, as called by completion scripts
+  expect: |-
+    words
+    bash
+    zsh
+    fish
+  tags:
+    - nodoc
+  args:
+    - config
+    - completion
+    - words
+    - config
+    - completion
 conf_completion_bash:
   tags:
     - nodoc
@@ -5238,6 +5262,20 @@ conf_completion_bash:
     - config
     - completion
     - bash
+conf_completion_zsh:
+  tags:
+    - nodoc
+  args:
+    - config
+    - completion
+    - zsh
+conf_completion_fish:
+  tags:
+    - nodoc
+  args:
+    - config
+    - completion
+    - fish
 conf_coffee_default:
   args:
     - config

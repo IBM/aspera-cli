@@ -18,10 +18,13 @@ PANDOC_DEPS = [
   'defaults_pdf.yaml',
   'defaults_html.yaml',
   'break_replace.lua',
+  'code_break.lua',
   'find_admonition.lua',
   'gfm_admonition.css',
   'gfm_admonition.lua',
   'pdf_after_body.tex',
+  'pdf_cover_bottom.png',
+  'pdf_cover_top.png',
   'pdf_in_header.tex'
 ].map { |f| (PATH_PANDOC_ROOT / f).to_s }.freeze
 

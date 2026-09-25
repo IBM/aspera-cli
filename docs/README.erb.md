@@ -1349,6 +1349,8 @@ Command line arguments that are not options are referred to as **Positional Argu
 
 For example:
 
+<%# check_commands: skip -%>
+
 ```shell
 <%=cmd%> plugin command verb --option-name=VAL1 VAL2
 ```
@@ -1358,6 +1360,7 @@ For example:
 
 Enumeration values (positional arguments and option names/values) support prefix matching.
 See [Enumerations](#enumerations) for details.
+<%# check_commands: skip -%>
 For example `<%=cmd%> config pre ov --for=c` is the same as `<%=cmd%> config preset overview --format=csv`.
 
 The value of **Options** and **Command Parameters** is evaluated with the [Extended Value](#extended-value-syntax) syntax.
@@ -1463,6 +1466,8 @@ The following are enumerations:
 **Prefix matching**: You can use a unique prefix instead of the full value, provided it uniquely identifies the value in that context.
 
 Examples:
+
+<%# check_commands: skip -%>
 
 - Positional: `<%=cmd%> config pre ov --for=c` is the same as `<%=cmd%> config preset overview --format=csv`
 - Option name: `--log-l=debug` is the same as `--log-level=debug`
@@ -2355,6 +2360,8 @@ Adding `--show-config` to any command line performs a dry run and displays the r
 To display a specific option, add `--fields=<option_name>`.
 Add `--out.flat=no` when the option holds a structured value (`Hash`, `Array`) to display it as-is rather than flattened into dot-path keys:
 
+<%# check_commands: skip -%>
+
 ```shell
 <%=cmd%> --opt=@json:'{"a":1,"b":"two"}' some_plugin --show-config --fields=opt --out.flat=no
 <%=cmd%> --opt.a=1 --opt.b=two some_plugin --show-config --fields=opt --out.flat=no
@@ -2764,73 +2771,50 @@ Example: Define options using a `Hash`:
 #### Shell Completion
 
 <%=tool%> supports shell tab-completion for **Bash**, **Zsh**, and **Fish**.
-Ready-made completion scripts are provided in the [`etc/`](<%=link_repo('etc')%>) folder of the GitHub repository (they are not included in the gem).
+The command `<%=cmd%> config completion <shell>` displays the completion script for the given shell.
 
-All scripts call `<%=cmd%> config completion bash [words...]` internally to query available sub-commands at any depth.
-
-##### Bash
-
-Download the script:
+To activate completion, add the line for your shell to its startup file:
 
 ```bash
-curl -sLo ~/.<%=cmd%>_completion.bash https://raw.githubusercontent.com/IBM/aspera-cli/main/etc/bash_autocomplete
+# Bash, in ~/.bashrc
+eval "$(<%=cmd%> config completion bash)"
 ```
-
-Then, source it in your shell profile (for example, `~/.bashrc` or `~/.bash_profile`):
-
-```bash
-source ~/.<%=cmd%>_completion.bash
-```
-
-Or, copy it to the system completion directory:
-
-```bash
-cp ~/.<%=cmd%>_completion.bash /etc/bash_completion.d/<%=cmd%>
-```
-
-##### Zsh
-
-Download the script to a folder on your `$fpath` and rebuild the completion cache:
 
 ```zsh
-mkdir -p ~/.zsh/completions
-curl -sLo ~/.zsh/completions/_<%=cmd%> https://raw.githubusercontent.com/IBM/aspera-cli/main/etc/zsh_autocomplete
-# Add to ~/.zshrc if not already present:
-#   fpath=(~/.zsh/completions $fpath)
-#   autoload -Uz compinit && compinit
-exec zsh
+# Zsh, in ~/.zshrc, after compinit
+eval "$(<%=cmd%> config completion zsh)"
+```
+
+```fish
+# Fish, in ~/.config/fish/config.fish
+<%=cmd%> config completion fish | source
+```
+
+The startup file then executes <%=tool%> each time a shell starts.
+Alternatively, save the script once in the completion folder of the shell (and save it again after an upgrade of <%=tool%>):
+
+```bash
+# Bash, with package bash-completion
+<%=cmd%> config completion bash > ~/.local/share/bash-completion/completions/<%=cmd%>
+# Zsh (the folder must be in $fpath before compinit)
+<%=cmd%> config completion zsh > ~/.zsh/completions/_<%=cmd%>
+# Fish
+<%=cmd%> config completion fish > ~/.config/fish/completions/<%=cmd%>.fish
 ```
 
 Once active, press `Tab` to complete commands at any depth:
 
-```zsh
+```bash
 <%=cmd%> <Tab>               # lists all plugins: aoc, server, node, ...
 <%=cmd%> server <Tab>        # lists server sub-commands: upload, download, ls, ...
 <%=cmd%> aoc admin <Tab>     # lists aoc admin sub-commands: user, node, ...
 ```
 
-##### Fish
-
-Download the completion script to Fish's completions directory:
-
-```fish
-curl -sLo ~/.config/fish/completions/<%=cmd%>.fish https://raw.githubusercontent.com/IBM/aspera-cli/main/etc/fish_autocomplete
-```
-
-No further configuration is needed - Fish loads files from `~/.config/fish/completions/` automatically.
-
-Once active, press `Tab` to complete commands at any depth:
-
-```fish
-<%=cmd%> <Tab>               # lists all plugins: aoc, server, node, ...
-<%=cmd%> server <Tab>        # lists server sub-commands: upload, download, ls, ...
-<%=cmd%> aoc admin <Tab>     # lists aoc admin sub-commands: user, node, ...
-```
-
-This sub-command can also be used directly to inspect available commands:
+The scripts call `<%=cmd%> config completion words [<word>...]`, which lists the words that can follow the given ones.
+It can also be used directly to inspect available commands:
 
 ```bash
-<%=cmd%> config completion bash aoc admin
+<%=cmd%> config completion words aoc admin
 ```
 
 #### Wizard
@@ -4805,11 +4789,11 @@ See [HSTS `ascp` command reference](https://www.ibm.com/docs/en/ahts/4.4.x?topic
 
 Key query parameters:
 
-| Parameter      | Description |
-|----------------|-------------|
-| `grow`         | **(Required)** Wait time in seconds after last file change before the transfer is declared complete. Default wait time is 10 s if set to a non-numeric string. |
-| `wait_start`   | How the wait time is measured: `mtime` (default, file modification time) or `null_read` (first zero-byte read). |
-| `confirm_stop` | Set to `true` to let an external program signal completion by setting `mtime < current_time - wait_time`. Ignored when `wait_start=null_read`. |
+| Parameter      | Description                                                          |
+|----------------|----------------------------------------------------------------------|
+| `grow`         | **(Required)** Wait time in seconds after last file change before the transfer is declared complete.<%=br%>Default wait time is 10 s if set to a non-numeric string. |
+| `wait_start`   | How the wait time is measured:<%=br%>- `mtime` (default) file modification time<%=br%>- `null_read` first zero-byte read. |
+| `confirm_stop` | Set to `true` to let an external program signal completion by setting:<%=br%>`mtime < current_time - wait_time`.<%=br%>Ignored when `wait_start=null_read`. |
 
 > [!NOTE]
 > `ascp` requires that all sources in a single transfer session share the same PVCL URI scheme.
@@ -4905,6 +4889,8 @@ You can create the skeleton of a new plugin like this:
 ```text
 Created ./foo.rb
 ```
+
+<%# check_commands: skip -%>
 
 ```shell
 <%=cmd%> --plugin-folder=. foo
@@ -9448,6 +9434,8 @@ or
 ```
 
 or
+
+<%# check_commands: skip -%>
 
 ```shell
 <%=cmd%> config preset update smtp_google --server=smtp.google.com --username=john@gmail.com --password=<%=ph :password%>

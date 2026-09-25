@@ -19,8 +19,9 @@ fontsize=\small
 }
 % https://ctan.org/pkg/graphicx
 \usepackage{graphicx}
-% Ensure inkscape is used to preserve aspect ratio.
-\usepackage[inkscape]{svg}
+% SVG converted with inkscape (default), preserves aspect ratio.
+% No option: pandoc already loads it when the document has SVG images.
+\usepackage{svg}
 % https://ctan.org/pkg/eso-pic
 \usepackage{eso-pic}
 \AddToShipoutPictureBG*{
@@ -31,18 +32,16 @@ fontsize=\small
     \includegraphics[width=\paperwidth]{pdf_cover_bottom.png}
   }
 }
-% Underlining and emphasis
-% https://ctan.org/pkg/ulem
-\usepackage{ulem}
+% Underline and highlight that can be nested, hyphenated and broken across lines (LuaLaTeX only)
+% https://ctan.org/pkg/lua-ul
+\usepackage{luacolor}
+\usepackage{lua-ul}
 % underline bold text
-\renewcommand{\textbf}[1]{\uline{#1}}
-% place code in lightgray box
+\RenewDocumentCommand{\textbf}{m}{\underLine{#1}}
+% Place inline code on lightgray background (unlike \colorbox, can break across lines).
+\LuaULSetHighLightColor{lightgray}
 \let\oldtexttt\texttt
-\renewcommand{\texttt}[1]{
-  \colorbox{lightgray}{\oldtexttt{#1}}
-}
-% Tight box around code.
-\fboxsep1pt
+\RenewDocumentCommand{\texttt}{m}{\highLight{\oldtexttt{#1}}}
 % Black border for quotes.
 \usepackage{framed}
 \renewenvironment{quote}
@@ -55,6 +54,14 @@ fontsize=\small
 \tcbuselibrary{skins, breakable}
 % Font Awesome 5 for icons in admonitions
 \usepackage{fontawesome5}
+% Wider section numbers in table of contents (e.g. 4.32.10), for classes with chapters.
+\makeatletter
+\ifdefined\chapter
+  \renewcommand*\l@section{\@dottedtocline{1}{1.5em}{2.8em}}
+  \renewcommand*\l@subsection{\@dottedtocline{2}{4.3em}{3.8em}}
+  \renewcommand*\l@subsubsection{\@dottedtocline{3}{8.1em}{4.8em}}
+\fi
+\makeatother
 % Page header and footers
 \usepackage{fancyhdr}
 % Tables

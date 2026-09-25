@@ -407,6 +407,16 @@ module Aspera
           opts.declare(:level, description: 'Level', allowed: %i[debug info])
           expect { opts.set_option(:level, true) }.to(raise_error(BadArgument, /unknown value/))
         end
+
+        it 'shows allowed values, or types when not plain String' do
+          opts = build_parser([])
+          opts.declare(:text, description: 'Text')
+          opts.declare(:level, description: 'Level', allowed: %i[debug info])
+          opts.declare(:count, description: 'Count', allowed: [Integer, NilClass])
+          opts.declare(:params, description: 'Params', allowed: [Hash, String])
+          info = opts.declared_options.slice(:text, :level, :count, :params).transform_values(&:allowed_info)
+          expect(info).to(eq(text: nil, level: 'debug|info', count: 'Integer', params: 'Hash|String'))
+        end
       end
 
       describe '.smart_convert' do

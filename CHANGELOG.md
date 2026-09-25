@@ -11,6 +11,8 @@ Released: [Place date of release here]
 * **general**: Deprecation warnings, help and `config options` show the last version supporting a deprecated option and its replacement, e.g. `deprecated after 4.27.0: use --out.level`.
 * **general**: New Windows portable package `aspera-cli-<version>-windows-amd64-portable.zip` in GitHub releases: includes Ruby, gems and `ascp`, no installation nor administrator rights needed.
 * **general**: New options `--out.colors` and `--out.utf8` to enable or disable ANSI colors and Unicode characters in terminal output, instead of auto-detection.
+* `config`: `completion bash|zsh|fish` displays the completion script of the shell, included in the gem: activate with `eval "$(ascli config completion bash)"` (see manual).
+* `config`: `options` shows in column `allowed` the expected type of options without a list of values when not plain text, e.g. `Hash`, `Integer`, `Hash|String`.
 * `config`: `commands` accepts an optional plugin name and command path, and shows sub-trees provided by another plugin (e.g. `aoc files`) as a reference unless option `expand_mounts` is `yes`.
 * `aoc`: `automation` covers the whole Automation API: new `workflows update_state|cancel_instances|delete_instances|permissions`, `instances cancel`, `steps`, `actions`.
 * `console`: New commands `transfer current submit`, `transfer smart pause`, `transfer queue <queue_id> list|move_forwards|move_back`, `endpoint list`, `ssh_key list`, `admin email_server_update|nodeapi_credentials_update`. `health` also checks `health/up`. Help shows request body schemas.
@@ -30,6 +32,7 @@ Released: [Place date of release here]
 * `config`: Option `sdk_folder` with value `product:<name>` was taken as a folder path.
 * `config`: `transferd install` was failing when the download server sends a `Content-Disposition` header.
 * `config`: On a new configuration, `preset update|set|ask` with a password, and `preset show|get|unset|delete GLOBAL`, declared a global preset without creating it: all following commands were failing. `preset delete` also removes default declarations referring to the deleted preset.
+* `config`: `options` returned empty rows with option `fields` or `select`.
 * **general**: Temporary files (e.g. `ascp` file list) could be deleted before use, causing random transfer failures: `failed to open input file list` (since 4.27.1).
 * **general**: Option `cert_stores` was adding to the system default locations instead of replacing them, as documented (use `DEF` to include the default).
 * **general**: Dot-path options: `--log.secrets=yes` was failing, indexes on an `Array` option were duplicating values, `--show-config` was showing internal values for some options.
@@ -45,6 +48,7 @@ Released: [Place date of release here]
 * `console`: `transfer current change_rate|change_policy` require a `<data>` argument instead of option `query`. `transfer current move_forwards|move_back` moved to `transfer queue <queue_id> move_forwards|move_back <transfer_id>`.
 * `aoc`: `automation workflows action show` replaced by `automation actions show`, `automation instances modify` replaced by `automation instances cancel`.
 * `orchestrator`: Options `synchronous` and `result` are deprecated, use argument `execution` of `workflows start`.
+* `config`: `completion bash <words>` renamed `completion words <words>`: `completion bash` now displays the completion script. Scripts previously downloaded from folder `etc/` shall be replaced (see manual).
 
 ## 4.27.2
 

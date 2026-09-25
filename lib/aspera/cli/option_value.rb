@@ -90,6 +90,14 @@ module Aspera
         first_line.end_with?('.') ? first_line[0..-2] : first_line
       end
 
+      # @return [String, nil] allowed values, or expected types when not plain `String`, e.g. `Hash|String`
+      def allowed_info
+        return @values.join('|') if @values&.any?
+        types = @types&.reject { |t| t.eql?(NilClass) }
+        return if types.nil? || types.empty? || types.eql?(Type::STRING)
+        types.map(&:name).join('|')
+      end
+
       # @return [Boolean] `true` if option takes no value
       def flag? = @kind.eql?(:flag)
 

@@ -5,6 +5,7 @@ require 'digest'
 require_relative '../build/lib/build_tools'
 require_relative '../build/lib/pandoc'
 require_relative '../build/lib/doc_helper'
+require_relative '../build/lib/doc_command_checker'
 require_relative '../build/lib/test_env'
 require_relative '../build/lib/asperaconf'
 include BuildTools
@@ -34,10 +35,13 @@ ensure
 end
 
 # Declare a PDF build rule
-def pdf_rule(pdf, md = nil)
+# Also depends on companion files of the Markdown file: `.<md name>.pdf.*` (pandoc defaults, LaTeX)
+# @param extra [Array] Additional dependencies, e.g. images
+def pdf_rule(pdf, md = nil, extra: [])
   # pdf = File.expand_path(pdf)
   md ||= pdf.sub(/\.pdf$/, '.md')
-  file(pdf => [md] + PANDOC_DEPS) do
+  companions = Pathname(md).dirname.glob(".#{Pathname(md).basename}.pdf.*")
+  file(pdf => [md, Paths::BUILD / 'lib' / 'pandoc.rb'] + PANDOC_DEPS + companions + extra) do
     markdown_to_pdf(md: md, pdf: pdf)
   end
 end
@@ -60,7 +64,7 @@ namespace :doc do
     pdf_rule(t.name, t.source)
   end
 
-  pdf_rule(Paths::PDF_MANUAL, Paths::MD_MANUAL)
+  pdf_rule(Paths::PDF_MANUAL, Paths::MD_MANUAL, extra: [Paths::MASCOT_SVG])
 
   file Paths::TMPL_CONF_FILE => [Paths::BUILD_TOOLS, Paths::CONF_SIGNATURE] do
     config = TestEnv.configuration
@@ -89,6 +93,11 @@ namespace :doc do
     DocHelper.new([Paths::MD_MANUAL] + DOC_FILES).check_links_manual
   end
 
+  desc 'Check commands and options of examples in manual'
+  task :check_commands do
+    DocCommandChecker.new(template: Paths::MD_ERB, ascli: Paths::COMMAND).check
+  end
+
   desc 'Check internal links (#anchor) in manual, for GitHub and PDF (requires pandoc)'
   task check_anchors: Paths::MD_MANUAL do
     check_markdown_anchors(Paths::MD_MANUAL)
@@ -97,8 +106,8 @@ namespace :doc do
   desc 'Generate PDF Manual'
   task pdf: [:check_anchors, Paths::PDF_MANUAL]
 
-  desc 'Generate PDF Manual'
-  task md: Paths::MD_MANUAL
+  desc 'Generate Markdown Manual'
+  task md: [:check_commands, Paths::MD_MANUAL]
 
   desc 'Generate docs except PDF'
   task prep: [Paths::TMPL_CONF_FILE, Paths::TSPEC_JSON_SCHEMA, Paths::MD_MANUAL]

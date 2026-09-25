@@ -441,7 +441,7 @@ class DocHelper
     Aspera::Log.log.info { "Generating: #{@paths[:outfile]}" }
     tmp_file = [@paths[:outfile], 'tmp'].join('.')
     File.open(tmp_file, 'w') do |f|
-      f.puts(ERB.new(File.read(@paths[:template]).sub("-->\n", "-->\n<!-- markdownlint-disable MD033 -->\n")).result(binding))
+      f.puts(ERB.new(File.read(@paths[:template]).sub("-->\n", "-->\n<!-- markdownlint-disable MD033 -->\n"), trim_mode: '-').result(binding))
     end
     Aspera::Log.log.warn("Undocumented plugins: #{@undocumented_plugins}") unless @undocumented_plugins.empty?
     # check that all test commands are included in the doc

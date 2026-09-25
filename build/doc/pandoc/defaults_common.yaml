@@ -9,6 +9,7 @@ resource-path:
   - ${.}
   - ..
 filters:
+  - ${.}/code_break.lua
   - ${.}/find_admonition.lua
   - ${.}/gfm_admonition.lua
   - ${.}/break_replace.lua

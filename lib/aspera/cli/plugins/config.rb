@@ -82,7 +82,10 @@ module Aspera
         end
 
         DEFAULT_CHECK_NEW_VERSION_DAYS = 7
-        private_constant :DEFAULT_CHECK_NEW_VERSION_DAYS
+        # Shells with a completion script in COMPLETION_FOLDER
+        COMPLETION_SHELLS = %i[bash zsh fish].freeze
+        COMPLETION_FOLDER = File.expand_path('../completion', __dir__)
+        private_constant :DEFAULT_CHECK_NEW_VERSION_DAYS, :COMPLETION_SHELLS, :COMPLETION_FOLDER
 
         option :preset,             description: 'Load the named option preset from current config file',             short: 'P', on_set: :load_preset
         option :version_check_days, description: 'Period in days to check new version (zero to disable)',             allowed: Type::INTEGER, default: DEFAULT_CHECK_NEW_VERSION_DAYS
@@ -258,7 +261,7 @@ module Aspera
           arguments: [{name: :plugin_name}]
         command :test, description: 'Internal test commands'
         command :platform, description: 'Show the current platform/architecture', action: ->(**) { Result::Text.new(Environment.instance.architecture) }
-        command :completion, description: 'Generate shell completion scripts'
+        command :completion, description: 'Shell completion: activation scripts and next words'
 
         # remote_certificate sub-commands
         commands_under :remote_certificate do
@@ -426,8 +429,12 @@ module Aspera
 
         # completion sub-commands
         commands_under :completion do
-          command :bash, description: 'Generate bash completion script',
+          command :words, description: 'List words that can follow the given words (used by completion scripts)',
             arguments: [{name: :words, multiple: true, mandatory: false}]
+          COMPLETION_SHELLS.each do |shell|
+            command shell, description: "Generate #{shell} completion script, to evaluate in shell",
+              action: ->(**) { completion_script(shell) }
+          end
         end
 
         attr_reader :gem_url
@@ -604,18 +611,18 @@ module Aspera
           Plugins::Factory.instance.create(plugin_name.to_sym, context: context)
           rows = context.options.declared_options.map do |sym, opt|
             row = {
-              option:      "--#{sym.to_s.tr('_', '-')}",
-              description: opt.description.to_s
+              'option'      => "--#{sym.to_s.tr('_', '-')}",
+              'description' => opt.description.to_s
             }
-            row[:allowed]    = opt.values.join('|') if opt.values&.any?
-            row[:deprecated] = opt.deprecation.last if opt.deprecation
-            row[:replacement] = opt.deprecation.message if opt.deprecation
+            row['allowed']     = opt.allowed_info unless opt.allowed_info.nil?
+            row['deprecated']  = opt.deprecation.last if opt.deprecation
+            row['replacement'] = opt.deprecation.message if opt.deprecation
             row
           end
           Result::ObjectList.new(rows, fields: %w[option description allowed deprecated replacement])
         end
 
-        def action_completion_bash(words: nil, **)
+        def action_completion_words(words: nil, **)
           if words.nil? || words.empty?
             # Level 0: propose plugin names
             Plugins::Factory.instance.plugin_list.each { |p| puts p }
@@ -630,6 +637,14 @@ module Aspera
             path = words[1..].map(&:to_sym)
             plugin_class.command_registry.children_of(path).each_key { |k| puts k }
           end
+          Process.exit(0)
+        end
+
+        # Display the completion script for the given shell.
+        # Raw output, not formatted, so that it can be evaluated by the shell.
+        # @param shell [Symbol] One of `COMPLETION_SHELLS`
+        def completion_script(shell)
+          $stdout.write(File.read(File.join(COMPLETION_FOLDER, "#{Info::CMD_NAME}.#{shell}")))
           Process.exit(0)
         end
 
