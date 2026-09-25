@@ -403,7 +403,7 @@ class DocHelper
           next if link_url.start_with?('https://cloud.ibm.com/')
           if link_url.start_with?('https://', 'http://')
             Aspera::Log.log.info("Checking: #{link_url}")
-            Aspera::Rest.new(base_url: link_url, redirect_max: 5).call(operation: 'GET')
+            Aspera::Rest::Client.new(base_url: link_url, redirect_max: 5).call(operation: 'GET')
             next
           end
           file_path = Pathname.new(link_url)

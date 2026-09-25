@@ -565,7 +565,7 @@ module Aspera
         # ------------------------------------------------------------------
 
         describe 'crud_commands' do
-          let(:api_obj) { instance_double(Rest, 'api') }
+          let(:api_obj) { instance_double(Rest::Client, 'api') }
 
           def build_klass(extra_kwargs = {})
             ao = api_obj
@@ -649,7 +649,7 @@ module Aspera
         end
 
         describe 'per-verb entity methods' do
-          let(:api_obj) { instance_double(Rest, 'api') }
+          let(:api_obj) { instance_double(Rest::Client, 'api') }
 
           before do
             allow(options).to(receive(:get_option).with(:query, schema: nil).and_return(nil))

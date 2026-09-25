@@ -72,7 +72,7 @@ module Aspera
             base_url = "#{base_url}.#{Api::AoC::SAAS_DOMAIN_PROD}" unless base_url.include?('.')
             # AoC is only https
             return unless base_url.start_with?('https://')
-            location = Rest.new(base_url: base_url, redirect_max: 0).call(operation: 'GET', subpath: 'auth/ping', exception: false, ret: :resp)['Location']
+            location = Rest::Client.new(base_url: base_url, redirect_max: 0).call(operation: 'GET', subpath: 'auth/ping', exception: false, ret: :resp)['Location']
             return if location.nil?
             redirect_uri = URI.parse(location)
             od = Api::AoC.split_org_domain(URI.parse(base_url))
@@ -189,7 +189,7 @@ module Aspera
           pub_link_info = Api::AoC.link_info(app_url)
           # public link case
           if pub_link_info.key?(:token)
-            pub_api = Rest.new(base_url: "https://#{URI.parse(pub_link_info[:url]).host}/api/v1")
+            pub_api = Rest::Client.new(base_url: "https://#{URI.parse(pub_link_info[:url]).host}/api/v1")
             pub_info = pub_api.read('env/url_token_check', {token: pub_link_info[:token]})
             preset_value = {
               link: app_url
@@ -296,7 +296,7 @@ module Aspera
 
         # Create an API object with the options from CLI, but with a different subpath
         # @param base_path [String] Base path for APIs.
-        # @return [Api::AoC] API object for AoC (is Rest)
+        # @return [Api::AoC] API object for AoC (is Rest::Client)
         def api_from_options(base_path)
           # Get all existing OAuth kwargs from `options`.
           api = Api::AoC.new(
@@ -321,7 +321,7 @@ module Aspera
         end
 
         # AoC Rest object
-        # @return [Api::AoC] API object for AoC (is Rest)
+        # @return [Api::AoC] API object for AoC (is Rest::Client)
         def aoc_api
           if @cache_api_aoc.nil?
             @cache_api_aoc = api_from_options(Api::AoC::API_V1)
@@ -397,7 +397,7 @@ module Aspera
           PACKAGE_RECEIVED_BASE_QUERY.each { |k, v| query[k] = v unless query.key?(k) }
           resolve_dropbox_name_default_ws_id(query)
           # Extract `max` before paging so callers can apply it after post-API filtering
-          max_items = query.delete(RestList::MAX_ITEMS)&.to_i
+          max_items = query.delete(Rest::List::MAX_ITEMS)&.to_i
           return aoc_api.read_with_paging('packages', query.compact), max_items
         end
 
@@ -538,7 +538,7 @@ module Aspera
 
         # Build analytics REST API (shared by action_admin_analytics_*)
         def build_analytics_api
-          Rest.new(**aoc_api.params.deep_merge({
+          Rest::Client.new(**aoc_api.params.deep_merge({
             base_url: "#{aoc_api.base_url.gsub('/api/v1', '')}/analytics/v2",
             auth:     {params: {scope: Api::AoC::Scope::ADMIN_USER}}
           }))
@@ -1040,7 +1040,7 @@ module Aspera
         def setup_automation_api(**)
           change_api_scope(Api::AoC::Scope::ADMIN_USER)
           Log.log.warn('BETA: work under progress')
-          @automation_api = Rest.new(**aoc_api.params, base_url: aoc_api.base_url.gsub('/api/', '/automation/'))
+          @automation_api = Rest::Client.new(**aoc_api.params, base_url: aoc_api.base_url.gsub('/api/', '/automation/'))
           {}
         end
 
@@ -1537,7 +1537,7 @@ module Aspera
         # Mount target of `admin ats`.
         # @return [Ats] configured Ats plugin instance
         def build_ats_plugin(**)
-          ats_api = Rest.new(**aoc_api.params.deep_merge({
+          ats_api = Rest::Client.new(**aoc_api.params.deep_merge({
             base_url: "#{aoc_api.base_url}/admin/ats/pub/v1",
             auth:     {params: {scope: Api::AoC::Scope::ADMIN_USER}}
           }))

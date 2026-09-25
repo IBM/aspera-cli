@@ -3,7 +3,7 @@
 require 'aspera/assert'
 require 'aspera/rest'
 require 'aspera/oauth/base'
-require 'aspera/rest_list'
+require 'aspera/rest/list'
 require 'digest'
 
 module Aspera
@@ -59,8 +59,8 @@ module Aspera
   OAuth::Factory.instance.register_token_creator(FaspexPubLink)
   module Api
     # Aspera Faspex 5 API Client
-    class Faspex < Aspera::Rest
-      include RestList
+    class Faspex < Aspera::Rest::Client
+      include Rest::List
 
       # endpoint for authentication API
       PATH_AUTH = 'auth'
@@ -168,7 +168,7 @@ module Aspera
           case auth
           when :public_link
             # Get URL of final redirect of provided public link
-            final_url = Rest.new(base_url: url, redirect_max: 3).call(operation: 'GET', ret: :resp).uri.to_s
+            final_url = Rest::Client.new(base_url: url, redirect_max: 3).call(operation: 'GET', ret: :resp).uri.to_s
             Log.dump(:final_url, final_url, level: :trace1)
             # Get context from query
             encoded_context = Rest.query_to_h(URI.parse(final_url).query)['context']
@@ -180,7 +180,7 @@ module Aspera
             base_url = final_url.gsub(%r{/public/.*}, '').gsub(/\?.*/, '')
             # Get web UI client_id and redirect_uri
             # TODO: change this for something more reliable
-            config = JSON.parse(Rest.new(base_url: "#{base_url}/config.js", redirect_max: 3).call(operation: 'GET').sub(/^[^=]+=/, '').gsub(/([a-z_]+):/, '"\1":').delete("\n ").tr("'", '"')).symbolize_keys
+            config = JSON.parse(Rest::Client.new(base_url: "#{base_url}/config.js", redirect_max: 3).call(operation: 'GET').sub(/^[^=]+=/, '').gsub(/([a-z_]+):/, '"\1":').delete("\n ").tr("'", '"')).symbolize_keys
             Log.dump(:config_js, config)
             {
               base_url: "#{base_url}/#{root}",

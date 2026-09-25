@@ -12,7 +12,7 @@ require 'aspera/id_generator'
 require 'aspera/api/node'
 require 'aspera/oauth'
 require 'aspera/node_simulator'
-require 'aspera/rest_list'
+require 'aspera/rest/list'
 require 'aspera/assert'
 require 'base64'
 require 'zlib'
@@ -47,7 +47,7 @@ module Aspera
             error = nil
             urls.each do |base_url|
               next unless base_url.match?(%r{^https?://})
-              api = Rest.new(base_url: base_url)
+              api = Rest::Client.new(base_url: base_url)
               test_endpoint = 'ping'
               http = api.read(test_endpoint, ret: :resp)
               next unless http.body.eql?('')
@@ -166,15 +166,15 @@ module Aspera
         # `browse` display fields for gen4
         GEN4_LS_FIELDS = %w[name type recursive_size size modified_time access_level].freeze
 
-        # @param api [Rest] an existing API object for the Node API
+        # @param api [Rest::Client] an existing API object for the Node API
         def initialize(context:, api: nil)
           super(context: context)
-          # Api::Node or Rest (Shares), when provided by the host plugin
+          # Api::Node or Rest::Client (Shares), when provided by the host plugin
           @api_node = api
         end
 
         # Node API: provided by the host plugin, or built from CLI options on first use.
-        # @return [Api::Node, Rest]
+        # @return [Api::Node, Rest::Client]
         def api_node
           @api_node ||=
             if OAuth::Factory.bearer_auth?(options.get_option(:password, mandatory: true))
@@ -204,7 +204,7 @@ module Aspera
           # not a URL query: merged into the POST body of files/browse
           query = options.get_option(:query) || {}
           # special parameter: max number of entries in result
-          max_items = query.delete(RestList::MAX_ITEMS)
+          max_items = query.delete(Rest::List::MAX_ITEMS)
           # special parameter: recursive browsing
           recursive = query.delete('recursive')
           # special parameter: only return one entry for the path, even if folder
@@ -240,13 +240,13 @@ module Aspera
               break if all_items.count >= total_count
               offset += items.count
               query['skip'] = offset
-              RestParameters.instance.spinner_cb.call(all_items.count)
+              Rest::Parameters.instance.spinner_cb.call(all_items.count)
             end
             query.delete('skip')
           end
           return Result::ObjectList.new(all_items)
         ensure
-          RestParameters.instance.spinner_cb.call(action: :success)
+          Rest::Parameters.instance.spinner_cb.call(action: :success)
         end
 
         # Create async transfer spec request from direction and folders
@@ -1151,7 +1151,7 @@ module Aspera
           parameters[:hostname] = Socket.gethostname unless parameters.key?(:hostname)
           interval = parameters[:interval].to_f
           Aspera.assert(interval >= 0, type: Cli::BadArgument) { 'Interval must be a positive number in seconds, or 0 for single shot' }
-          otel_api = Rest.new(
+          otel_api = Rest::Client.new(
             base_url: "#{parameters[:url]}/v1",
             headers: {
               # 'Authorization'  => "apiToken #{parameters[:key]}",

@@ -68,7 +68,7 @@ module BuildTools
   def download_proto_file(tmp_proto_folder)
     require 'aspera/ascp/installation'
     require 'aspera/cli/transfer_progress'
-    Aspera::RestParameters.instance.progress_bar = Aspera::Cli::TransferProgress.new
+    Aspera::Rest::Parameters.instance.progress_bar = Aspera::Cli::TransferProgress.new
     # Retrieve `transfer.proto` from the web
     Aspera::Ascp::Installation.instance.download_sdk(folder: tmp_proto_folder, backup: false) { |name| name.end_with?('.proto') ? '/' : nil }
   end
@@ -109,4 +109,4 @@ end
 # Log control for rake
 Aspera::Log.instance.level = ENV.fetch('LOG_LEVEL', 'info').to_sym
 Aspera::SecretHider.instance.log_secrets = BuildTools.env_var_true?('LOG_SECRETS')
-# Aspera::RestParameters.instance.session_cb = lambda{ |http_session| http_session.set_debug_output(Aspera::LineLogger.new(:trace2)) if Aspera::Log.instance.logger.trace2?}
+# Aspera::Rest::Parameters.instance.session_cb = lambda{ |http_session| http_session.set_debug_output(Aspera::LineLogger.new(:trace2)) if Aspera::Log.instance.logger.trace2?}

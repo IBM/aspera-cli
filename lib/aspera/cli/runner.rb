@@ -166,7 +166,7 @@ module Aspera
         rescue Cli::SchemaRequest => e;             exception_info = {e: e, t: 'Schema'}
         rescue Cli::Error => e;                     exception_info = {e: e, t: 'Tool', usage: true}
         rescue Transfer::Error => e;                exception_info = {e: e, t: 'Transfer'}
-        rescue RestCallError => e;                  exception_info = {e: e, t: 'Rest'}
+        rescue Rest::CallError => e;                exception_info = {e: e, t: 'Rest'}
         rescue SocketError => e;                    exception_info = {e: e, t: 'Network'}
         rescue StandardError => e;                  exception_info = {e: e, t: "Other(#{e.class.name})", debug: true}
         rescue Interrupt => e;                      exception_info = {e: e, t: 'Interruption', debug: true}

@@ -22,7 +22,7 @@ module Aspera
             error = nil
             urls.each do |base_url|
               next unless base_url.start_with?('https://')
-              api = Rest.new(base_url: base_url, redirect_max: 2)
+              api = Rest::Client.new(base_url: base_url, redirect_max: 2)
               test_endpoint = 'login'
               http = api.call(
                 operation: 'GET',
@@ -193,7 +193,7 @@ module Aspera
         # --- API ---
 
         # Console REST API, built from CLI options on first use.
-        # @return [Rest]
+        # @return [Rest::Client]
         def api_console
           @api_console ||= basic_auth_api('api')
         end
@@ -204,7 +204,7 @@ module Aspera
           nagios = Nagios.new
           begin
             # Unauthenticated, outside of the API prefix
-            Rest.new(base_url: options.get_option(:url, mandatory: true)).read('health/up')
+            Rest::Client.new(base_url: options.get_option(:url, mandatory: true)).read('health/up')
             nagios.add_ok('console process', 'up')
           rescue StandardError => e
             nagios.add_critical('console process', e.to_s)

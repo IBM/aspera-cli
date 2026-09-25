@@ -53,7 +53,7 @@ module Aspera
 
       # Base URL for CDN of Connect
       def cdn_api
-        Rest.new(base_url: CDN_BASE_URL)
+        Rest::Client.new(base_url: CDN_BASE_URL)
       end
 
       # Retrieve structure from cloud (CDN) with all versions available

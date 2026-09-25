@@ -25,7 +25,7 @@ module Aspera
             error = nil
             urls.each do |base_url|
               next unless base_url.match?(%r{^https?://})
-              api = Rest.new(base_url: base_url)
+              api = Rest::Client.new(base_url: base_url)
               data, http = api.read(TEST_ENDPOINT, query: {format: :json}, ret: :both)
               next unless data['remote_orchestrator_info']
               url = http.uri.to_s
@@ -157,7 +157,7 @@ module Aspera
         # --- API ---
 
         # Orchestrator REST API, built from CLI options on first use.
-        # @return [Rest]
+        # @return [Rest::Client]
         def api_orch
           return @api_orch if @api_orch
           auth_params =
@@ -179,7 +179,7 @@ module Aspera
             when :apikey
               Aspera.error_not_implemented
             end
-          @api_orch = Rest.new(
+          @api_orch = Rest::Client.new(
             base_url: options.get_option(:url, mandatory: true),
             auth: auth_params
           )

@@ -31,8 +31,8 @@ module Aspera
     #   - populate context.persistency, context.presets, context.http_config, context.progress_bar
     #   - register plugin lookup folders
     #   - register @preset / @vault extended-value handlers
-    #   - configure global singletons: RestParameters, OAuth::Factory, SSL, Transfer::Parameters,
-    #     RestErrorAnalyzer
+    #   - configure global singletons: Rest::Parameters, OAuth::Factory, SSL, Transfer::Parameters,
+    #     Rest::ErrorAnalyzer
     #   - set up the PAC proxy executor (option :fpac)
     class Bootstrapper
       # Folder name inside $HOME for all Aspera tool data (~/.aspera)
@@ -161,18 +161,18 @@ module Aspera
         end
       end
 
-      # Configure global singletons: RestParameters, SSL, Transfer, RestErrorAnalyzer.
+      # Configure global singletons: Rest::Parameters, SSL, Transfer, Rest::ErrorAnalyzer.
       # OAuth persist_mgr is NOT set here: it depends on :cache_tokens which is parsed later
       # by Config#initialize. Runner sets it after Config.new.
       def setup_rest_and_transfer_runtime
-        RestParameters.instance.user_agent    = Info::CMD_NAME
-        RestParameters.instance.progress_bar  = @context.progress_bar
-        RestParameters.instance.session_cb    = ->(http_session) { @context.http_config.update_session(http_session) }
-        RestParameters.instance.spinner_cb    = ->(title = nil, action: :spin) { @context.formatter.long_operation(title, action: action) }
+        Rest::Parameters.instance.user_agent    = Info::CMD_NAME
+        Rest::Parameters.instance.progress_bar  = @context.progress_bar
+        Rest::Parameters.instance.session_cb    = ->(http_session) { @context.http_config.update_session(http_session) }
+        Rest::Parameters.instance.spinner_cb    = ->(title = nil, action: :spin) { @context.formatter.long_operation(title, action: action) }
         OAuth::Web.additional_info = "#{Info::CMD_NAME} v#{Cli::VERSION}"
         Transfer::Parameters.file_list_folder = File.join(@context.main_folder, FILE_LIST_FOLDER_NAME)
-        RestErrorAnalyzer.instance.log_file   = File.join(@context.main_folder, REST_EXCEPTIONS_LOG_FILENAME)
-        RestErrorsAspera.register_handlers
+        Rest::ErrorAnalyzer.instance.log_file = File.join(@context.main_folder, REST_EXCEPTIONS_LOG_FILENAME)
+        Rest::AsperaErrors.register_handlers
       end
 
       # @return [String] ~/.aspera

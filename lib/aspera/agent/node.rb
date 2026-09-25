@@ -24,7 +24,7 @@ module Aspera
           else
             rest_params[:auth] = {type: :basic, username: agent_params['username'], password: agent_params['password']}
           end
-          node_api = Rest.new(**rest_params)
+          node_api = Rest::Client.new(**rest_params)
           data = node_api.read("ops/transfers/#{transfer_id}") || {'status' => 'unknown'}
           normalize_status(data)
         end
@@ -71,7 +71,7 @@ module Aspera
             password: password
           }
         end
-        @node_api = Rest.new(**rest_params)
+        @node_api = Rest::Client.new(**rest_params)
         # TODO: currently only supports one transfer. This is bad shortcut. but ok for CLI.
         @transfer_id = nil
       end
@@ -149,7 +149,7 @@ module Aspera
 
       # used internally to ensure node api is set before using.
       def node_api_
-        Aspera.assert(!@node_api.nil?, 'Before using this object, set the node_api attribute to a Aspera::Rest object')
+        Aspera.assert(!@node_api.nil?, 'Before using this object, set the node_api attribute to a Aspera::Rest::Client object')
         return @node_api
       end
     end

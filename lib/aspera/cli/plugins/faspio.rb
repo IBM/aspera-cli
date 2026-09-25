@@ -13,7 +13,7 @@ module Aspera
         class << self
           # @return [Hash,NilClass]
           def detect(base_url)
-            api = Rest.new(base_url: base_url)
+            api = Rest::Client.new(base_url: base_url)
             data, http = api.read('ping', ret: :both)
             server_type = http['Server']
             return unless data.is_a?(Hash) && data.empty?
@@ -51,7 +51,7 @@ module Aspera
         option :passphrase,  description: 'OAuth JWT RSA private key passphrase'
 
         # Build the REST API object based on the configured auth type.
-        # @return [Rest]
+        # @return [Rest::Client]
         def build_api
           base_url = options.get_option(:url, mandatory: true)
           case options.get_option(:auth, mandatory: true)
@@ -59,7 +59,7 @@ module Aspera
             basic_auth_api
           when :jwt
             app_client_id = options.get_option(:client_id, mandatory: true)
-            Rest.new(
+            Rest::Client.new(
               base_url: base_url,
               auth:     {
                 type:            :oauth2,

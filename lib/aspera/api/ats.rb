@@ -6,7 +6,7 @@ require 'aspera/rest'
 module Aspera
   module Api
     # Aspera Transfer Service API client without authentication
-    class Ats < Aspera::Rest
+    class Ats < Aspera::Rest::Client
       SERVICE_BASE_URL = 'https://ats.aspera.io'
       # currently supported clouds
       # Note to Aspera: shall be an API call

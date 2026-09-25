@@ -310,7 +310,7 @@ module Aspera
         if UriReader.file?(url)
           archive_io.write(File.binread(UriReader.file_path(url)))
         else
-          Rest.new(base_url: url, redirect_max: 3).call(operation: 'GET', save_to: archive_io)
+          Rest::Client.new(base_url: url, redirect_max: 3).call(operation: 'GET', save_to: archive_io)
           archive_io.rewind
         end
         extract_archive_files(url, archive_io) do |entry_name, entry_stream, link_target|

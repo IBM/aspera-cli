@@ -40,8 +40,8 @@ COSMO_RUBY_URL = 'https://github.com/Largo/cosmoruby/releases/latest/download/ru
 # @return [Pathname] path to the downloaded `ruby.com`
 def download_cosmo_ruby(into)
   cosmo_ruby_path = into / 'ruby.com'
-  Aspera::RestParameters.instance.progress_bar = Aspera::Cli::TransferProgress.new
-  Aspera::Rest.new(base_url: File.dirname(COSMO_RUBY_URL), redirect_max: 5)
+  Aspera::Rest::Parameters.instance.progress_bar = Aspera::Cli::TransferProgress.new
+  Aspera::Rest::Client.new(base_url: File.dirname(COSMO_RUBY_URL), redirect_max: 5)
     .read(File.basename(COSMO_RUBY_URL), save_to: cosmo_ruby_path)
   cosmo_ruby_path.chmod(0o755)
   cosmo_ruby_path

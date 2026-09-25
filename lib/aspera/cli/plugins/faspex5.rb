@@ -38,7 +38,7 @@ module Aspera
             urls.each do |base_url|
               # Faspex is always HTTPS
               next unless base_url.start_with?('https://')
-              api = Rest.new(base_url: base_url, redirect_max: 1)
+              api = Rest::Client.new(base_url: base_url, redirect_max: 1)
               response = api.read(Api::Faspex::PATH_API_DETECT, ret: :resp)
               next unless response.code.start_with?('2') && response.body.strip.empty?
               # end is at -1, and subtract 1 for "/"
@@ -157,10 +157,10 @@ module Aspera
           loop do
             result = api_v5.read("jobs/#{job_id}", {type: :formatted})
             break unless Api::Faspex::JOB_RUNNING.include?(result['status'])
-            RestParameters.instance.spinner_cb.call(result['status'])
+            Rest::Parameters.instance.spinner_cb.call(result['status'])
             sleep(0.5)
           end
-          RestParameters.instance.spinner_cb.call(action: :success)
+          Rest::Parameters.instance.spinner_cb.call(action: :success)
           return result
         end
 
@@ -187,7 +187,7 @@ module Aspera
           user_query = query_read_delete(schema: Schema::Registry.query_params(Schema::Registry::FASPEX, 'packages'))
           merged_query = user_query.nil? ? query.dup : query.merge(user_query)
           # Extract `max` before the API call so callers can apply it after post-API filtering
-          max_items = merged_query.delete(RestList::MAX_ITEMS)&.to_i
+          max_items = merged_query.delete(Rest::List::MAX_ITEMS)&.to_i
           list, total = api_v5.list_entities_limit_offset_total_count(entity: entity, query: merged_query)
           return list.select(&filter), max_items, total
         end
@@ -337,7 +337,7 @@ module Aspera
           Aspera.assert_type(filters, Hash)
           filters['basenames'] ||= []
           Aspera.assert_type(filters, Hash) { 'filters' }
-          max_items = query.delete(RestList::MAX_ITEMS)
+          max_items = query.delete(Rest::List::MAX_ITEMS)
           recursive = query.delete('recursive')
           use_paging = query.delete('paging') { true }
           if use_paging
@@ -376,11 +376,11 @@ module Aspera
                 break if data['item_count'].eql?(0)
                 query['offset'] += data['item_count']
               end
-              RestParameters.instance.spinner_cb.call(all_items.count)
+              Rest::Parameters.instance.spinner_cb.call(all_items.count)
             end
             query.delete('iteration_token')
           end
-          RestParameters.instance.spinner_cb.call(action: :success)
+          Rest::Parameters.instance.spinner_cb.call(action: :success)
           return Result::ObjectList.new(all_items, total: total_count)
         end
 
@@ -919,7 +919,7 @@ module Aspera
         def action_health(**)
           nagios = Nagios.new
           begin
-            data, http = Rest.new(base_url: options.get_option(:url, mandatory: true))
+            data, http = Rest::Client.new(base_url: options.get_option(:url, mandatory: true))
               .read('health', ret: :both)
             data.each do |k, v|
               nagios.add_ok(k, v.to_s)

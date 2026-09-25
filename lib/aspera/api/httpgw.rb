@@ -31,7 +31,7 @@ module Aspera
     #   1     JSON.slice_upload   File start          "end_slice_upload"  sent_v2_delimiter
     #   2..   Binary              File binary chunks  "end upload"        sent_general
     #   last  JSON.slice_upload   File end            "end_slice_upload"  sent_v2_delimiter
-    class Httpgw < Aspera::Rest
+    class Httpgw < Aspera::Rest::Client
       DEFAULT_BASE_PATH = '/aspera/http-gwy'
       INFO_ENDPOINT = 'info'
       MSG_SEND_TRANSFER_SPEC = 'transfer_spec'
@@ -86,7 +86,7 @@ module Aspera
       # @return [String] Response Header
       def validated_ws_response_header(header)
         first_line = header.split("\r\n").first
-        raise RestCallError.new({messages: ["Unexpected: #{first_line}", 'Expected: 101 Switching Protocols']}) unless first_line.split(/\s+/, 3)[1].eql?('101')
+        raise Rest::CallError.new({messages: ["Unexpected: #{first_line}", 'Expected: 101 Switching Protocols']}) unless first_line.split(/\s+/, 3)[1].eql?('101')
         header
       end
 

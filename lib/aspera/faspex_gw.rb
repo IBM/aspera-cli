@@ -11,7 +11,7 @@ module Aspera
   class Faspex4GWServlet < WEBrick::HTTPServlet::AbstractServlet
     AOC_API = 'Aspera::Api::AoC'
     FX_API = 'Aspera::Api::Faspex'
-    # @param app_api     [Rest]   API object
+    # @param app_api     [Rest::Client]   API object
     # @param app_context [String] workspace id (aoc only)
     def initialize(server, app_api, app_context)
       Aspera.assert_values(app_api.class.name, [AOC_API, FX_API])

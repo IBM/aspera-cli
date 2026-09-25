@@ -129,7 +129,7 @@ module Aspera
         # require api key only if needed
         def ats_api
           return @ats_api_auth unless @ats_api_auth.nil?
-          @ats_api_auth = Rest.new(
+          @ats_api_auth = Rest::Client.new(
             base_url: "#{Api::Ats::SERVICE_BASE_URL}/pub/v1",
             auth:     {
               type:     :basic,
@@ -140,7 +140,7 @@ module Aspera
         end
 
         def ats_api_v2_auth_ibm(rest_add_headers = {})
-          return Rest.new(
+          return Rest::Client.new(
             base_url: "#{Api::Ats::SERVICE_BASE_URL}/v2",
             headers:  rest_add_headers,
             auth:     {
@@ -237,7 +237,7 @@ module Aspera
 
         def action_access_key_cluster(access_key_id:, **)
           ats_url = ats_api.base_url
-          api_ak_auth = Rest.new(
+          api_ak_auth = Rest::Client.new(
             base_url: ats_url,
             auth:     {
               type:     :basic,

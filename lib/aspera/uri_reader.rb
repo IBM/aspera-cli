@@ -70,7 +70,7 @@ module Aspera
         uri = URI.parse(uri_to_read)
         case uri.scheme
         when 'http', 'https'
-          return Rest.new(base_url: uri_to_read, redirect_max: 5).read(nil, headers: {'Accept' => '*/*'})
+          return Rest::Client.new(base_url: uri_to_read, redirect_max: 5).read(nil, headers: {'Accept' => '*/*'})
         when 'data'
           metadata, encoded_data = uri.opaque.split(',', 2)
           if metadata.end_with?(';base64')
@@ -105,7 +105,7 @@ module Aspera
           # download to temp file
           # auto-delete on exit
           temp_file = TempFileManager.instance.new_file_path_global(suffix: File.basename(url))
-          Aspera::Rest.new(base_url: url, redirect_max: 3).call(operation: 'GET', save_to: temp_file)
+          Aspera::Rest::Client.new(base_url: url, redirect_max: 3).call(operation: 'GET', save_to: temp_file)
           return temp_file
         end
       end

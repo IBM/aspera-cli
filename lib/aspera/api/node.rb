@@ -35,7 +35,7 @@ module Aspera
 
     # Aspera Node API client
     # with gen4 extensions (access keys)
-    class Node < Rest
+    class Node < Rest::Client
       # Format of node scope : node.<access key>:<scope>
       module Scope
         # Node sub-scopes
@@ -238,7 +238,7 @@ module Aspera
         end
         Log.log.warn { "Cannot resolve link with node id #{node_id}, no resolver" }
         return
-      rescue RestCallError => e
+      rescue Rest::CallError => e
         Log.log.warn { "Cannot resolve link with node id #{node_id}: #{e.message}" }
         return
       end
@@ -292,7 +292,7 @@ module Aspera
             query['page'] = 0
           end
           loop do
-            RestParameters.instance.spinner_cb.call(folder_items.count)
+            Rest::Parameters.instance.spinner_cb.call(folder_items.count)
             data, http = read("files/#{file_id}/files", query, headers: headers, ret: :both)
             folder_items.concat(data)
             if use_v4
@@ -309,7 +309,7 @@ module Aspera
           Log.log.warn { "#{path || file_id}: #{e.class} #{e.message}" }
           Log.log.debug { (['Backtrace:'] + e.backtrace).join("\n") }
         ensure
-          RestParameters.instance.spinner_cb.call(folder_items.count, action: :success)
+          Rest::Parameters.instance.spinner_cb.call(folder_items.count, action: :success)
         end
         folder_items
       end
@@ -532,7 +532,7 @@ module Aspera
 
       # Executes `GET` call in loop using `iteration_token` (`/ops/transfers`)
       # @param iteration [Array]   a single element array with the iteration token or nil
-      # @param call_args [Hash]    additional arguments to pass to `Rest.call`
+      # @param call_args [Hash]    additional arguments to pass to `Rest::Client#call`
       # @return [Array] list of items returned by the API call
       def read_with_paging(subpath, query = nil, iteration: nil, **call_args)
         Aspera.assert_type(iteration, Array, NilClass) { 'iteration' }
@@ -540,7 +540,7 @@ module Aspera
         Aspera.assert(!call_args.key?(:query), ':query must not be in call_args (use query parameter)')
         query = {} if query.nil?
         query[:iteration_token] = iteration[0] unless iteration.nil? || iteration[0].nil?
-        max = query.delete(RestList::MAX_ITEMS)
+        max = query.delete(Rest::List::MAX_ITEMS)
         # Return empty list immediately if max is 0
         return [] if max&.zero?
         item_list = []
@@ -556,7 +556,7 @@ module Aspera
             break
           end
           # Update progress spinner
-          RestParameters.instance.spinner_cb.call(item_list.length)
+          Rest::Parameters.instance.spinner_cb.call(item_list.length)
           # Parse Link header according to RFC 8288 to extract next iteration token
           next_url = LinkHeader.parse(http['Link']).find_href(rel: 'next')
           next_iteration_token = nil
@@ -577,7 +577,7 @@ module Aspera
           query[:iteration_token] = next_iteration_token
         end
         # Signal completion
-        RestParameters.instance.spinner_cb.call(action: :success)
+        Rest::Parameters.instance.spinner_cb.call(action: :success)
         # save iteration token if needed
         iteration[0] = query[:iteration_token] unless iteration.nil?
         item_list
@@ -587,7 +587,7 @@ module Aspera
       #
       # @param subpath [String] API Path
       # @param query [Hash, nil] Optional query parameters for the API request
-      # @param kwargs [Hash] Other parameters for Rest.read
+      # @param kwargs [Hash] Other parameters for Rest::Client#read
       #
       # @return [Array<Hash>] List of folder entries (files, folders, links)
       def read_with_pages(subpath, query = nil, **kwargs)
@@ -597,7 +597,7 @@ module Aspera
         query['page'] ||= 1
         suffix = nil
         loop do
-          RestParameters.instance.spinner_cb.call("#{items.count}#{suffix}")
+          Rest::Parameters.instance.spinner_cb.call("#{items.count}#{suffix}")
           data, http = read(subpath, query, **kwargs, ret: :both)
           items.concat(data)
           break if data.length < query['per_page']
@@ -608,7 +608,7 @@ module Aspera
         Log.log.warn { "#{e.class} #{e.message}" }
         Log.log.debug { (['Backtrace:'] + e.backtrace).join("\n") }
       ensure
-        RestParameters.instance.spinner_cb.call(items.count, action: :success)
+        Rest::Parameters.instance.spinner_cb.call(items.count, action: :success)
         return items # rubocop:disable Lint/EnsureReturn
       end
 

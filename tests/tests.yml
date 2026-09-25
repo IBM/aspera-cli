@@ -5700,7 +5700,7 @@ conf_hint:
     - config
     - test
     - throw
-    - Aspera::RestCallError
+    - Aspera::Rest::CallError
     - Signature has expired
 conf_hint_a:
   description: Transfer error with host key mismatch hint
@@ -6875,9 +6875,9 @@ f5_fxgw_test:
     - --delivery-info=@json:{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}
     - faux:///test1?1m
   post: |
-    Aspera::RestParameters.instance.session_cb = ->(s){s.verify_mode = OpenSSL::SSL::VERIFY_NONE}
-    Aspera::Rest.new(base_url: 'https://localhost:12346/aspera/faspex').call(operation: 'POST', subpath: 'send', content_type: Aspera::Mime::TEXT, body: 'bad', exception:false, ret: :resp)
-    Aspera::Rest.new(base_url: 'https://localhost:12346/aspera/faspex').call(operation: 'POST', subpath: 'bad', content_type: Aspera::Mime::TEXT, body: 'bad', exception:false, ret: :resp)
+    Aspera::Rest::Parameters.instance.session_cb = ->(s){s.verify_mode = OpenSSL::SSL::VERIFY_NONE}
+    Aspera::Rest::Client.new(base_url: 'https://localhost:12346/aspera/faspex').call(operation: 'POST', subpath: 'send', content_type: Aspera::Mime::TEXT, body: 'bad', exception:false, ret: :resp)
+    Aspera::Rest::Client.new(base_url: 'https://localhost:12346/aspera/faspex').call(operation: 'POST', subpath: 'bad', content_type: Aspera::Mime::TEXT, body: 'bad', exception:false, ret: :resp)
     t.stop_process :f5_fxgw_start
 f5_postproc_pid:
   tags:
@@ -6899,9 +6899,9 @@ f5_postproc_test:
     - '@json:@extend:{"title":"test_webhook_ascli","recipients":["@preset:f5_misc.shared_box_name@"]}'
     - faux:///test1?1m
   post: |
-    Aspera::RestParameters.instance.session_cb = ->(s){s.verify_mode = OpenSSL::SSL::VERIFY_NONE}
-    Aspera::Rest.new(base_url: 'https://localhost:8553/asclihook').create('post_proc_test.sh', {faspex_pkg_directory: '/package test - 61ae5292-d8ef-496e-8b15-8cdc0379fc4a.aspera-package/PKG - package test',faspex_pkg_name:'Test files',faspex_pkg_note:'',faspex_pkg_id:506,faspex_pkg_delivery_id:506,faspex_recipient_list:'aspera-recipient-test@ibm.com',faspex_recipient_count:1,faspex_sender_id:30,faspex_sender_name:'aspera-sender-test@ibm.com',faspex_sender_email:'aspera-sender-test@ibm.com',faspex_pkg_total_bytes:4633,faspex_pkg_total_files:1,faspex_pkg_uuid:'61ae5299-d8ea-496e-8b15-8cdc0379fc4a',faspex_metadata_fields: '{\"_pkg_uuid\":\"61ae5292-d8ef-496e-8b15-8cdc0379fc4a\",\"_pkg_name\":\"Test files\",\"_created_utc\":\"2022-1209T17:47:03.545Z\"}',faspex_recipient_0:'aspera-sender-test@ibm.com'}, exception:false, ret: :resp)
-    Aspera::Rest.new(base_url: 'https://localhost:8553').create('wrong', {}, exception:false, ret: :resp)
+    Aspera::Rest::Parameters.instance.session_cb = ->(s){s.verify_mode = OpenSSL::SSL::VERIFY_NONE}
+    Aspera::Rest::Client.new(base_url: 'https://localhost:8553/asclihook').create('post_proc_test.sh', {faspex_pkg_directory: '/package test - 61ae5292-d8ef-496e-8b15-8cdc0379fc4a.aspera-package/PKG - package test',faspex_pkg_name:'Test files',faspex_pkg_note:'',faspex_pkg_id:506,faspex_pkg_delivery_id:506,faspex_recipient_list:'aspera-recipient-test@ibm.com',faspex_recipient_count:1,faspex_sender_id:30,faspex_sender_name:'aspera-sender-test@ibm.com',faspex_sender_email:'aspera-sender-test@ibm.com',faspex_pkg_total_bytes:4633,faspex_pkg_total_files:1,faspex_pkg_uuid:'61ae5299-d8ea-496e-8b15-8cdc0379fc4a',faspex_metadata_fields: '{\"_pkg_uuid\":\"61ae5292-d8ef-496e-8b15-8cdc0379fc4a\",\"_pkg_name\":\"Test files\",\"_created_utc\":\"2022-1209T17:47:03.545Z\"}',faspex_recipient_0:'aspera-sender-test@ibm.com'}, exception:false, ret: :resp)
+    Aspera::Rest::Client.new(base_url: 'https://localhost:8553').create('wrong', {}, exception:false, ret: :resp)
     sleep 20
     t.stop_process :f5_postproc_pid
 f5_postproc_test_with_key:
@@ -7092,7 +7092,7 @@ mcp_http_server:
   post: |
     sleep 1
     require 'aspera/rest'
-    mcp_api = Aspera::Rest.new(base_url: 'http://127.0.0.1:13777', headers: {'Accept' => 'application/json, text/event-stream'})
+    mcp_api = Aspera::Rest::Client.new(base_url: 'http://127.0.0.1:13777', headers: {'Accept' => 'application/json, text/event-stream'})
     init_resp = mcp_api.call(operation: 'POST', subpath: 'mcp', content_type: Aspera::Mime::JSON, body: {jsonrpc: '2.0', id: 1, method: 'initialize', params: {protocolVersion: '2024-11-05', capabilities: {}, clientInfo: {name: 'test', version: '0'}}}, exception: false, ret: :resp)
     session_id = init_resp['mcp-session-id']
     call_resp = mcp_api.call(operation: 'POST', subpath: 'mcp', content_type: Aspera::Mime::JSON, headers: {'Mcp-Session-Id' => session_id}, body: {jsonrpc: '2.0', id: 2, method: 'tools/call', params: {name: 'execute_ascli_command', arguments: {args: ['config', 'gem', 'version']}}}, exception: false, ret: :resp)
@@ -7123,7 +7123,7 @@ mcp_http_tools_list:
   post: |
     sleep 1
     require 'aspera/rest'
-    mcp_api = Aspera::Rest.new(base_url: 'http://127.0.0.1:13778', headers: {'Accept' => 'application/json, text/event-stream'})
+    mcp_api = Aspera::Rest::Client.new(base_url: 'http://127.0.0.1:13778', headers: {'Accept' => 'application/json, text/event-stream'})
     init_resp = mcp_api.call(operation: 'POST', subpath: 'mcp', content_type: Aspera::Mime::JSON, body: {jsonrpc: '2.0', id: 1, method: 'initialize', params: {protocolVersion: '2024-11-05', capabilities: {}, clientInfo: {name: 'test', version: '0'}}}, exception: false, ret: :resp)
     session_id = init_resp['mcp-session-id']
     list_resp = mcp_api.call(operation: 'POST', subpath: 'mcp', content_type: Aspera::Mime::JSON, headers: {'Mcp-Session-Id' => session_id}, body: {jsonrpc: '2.0', id: 2, method: 'tools/list', params: {}}, exception: false, ret: :resp)

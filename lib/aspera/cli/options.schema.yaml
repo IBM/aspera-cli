@@ -323,7 +323,7 @@ components:
         HTTP/S connection parameters for REST calls (not `ascp` WSS).
 
         Keys are dispatched at startup to three targets:
-        `RestParameters` (`user_agent`, `download_partial_suffix`, `retry_*`),
+        `Rest::Parameters` (`user_agent`, `download_partial_suffix`, `retry_*`),
         `SSL` (`ssl_options`), and `OAuth` (`token_cache_max_age`, `token_refresh_threshold`).
         Any remaining key is forwarded as a setter to the `Net::HTTP` session
         (e.g. `ca_file`, `verify_mode`) — the list below covers the common ones.

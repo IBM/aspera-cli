@@ -23,9 +23,9 @@ module Aspera
         # agent_params must contain 'app_id'; the Connect URL is auto-discovered.
         # @return [Hash] normalized status hash
         def transfer_status(transfer_id, agent_params)
-          connect_api = Rest.new(
+          connect_api = Rest::Client.new(
             base_url: "#{connect_api_url}/v5/connect",
-            headers:  {'Origin' => RestParameters.instance.user_agent}
+            headers:  {'Origin' => Rest::Parameters.instance.user_agent}
           )
           tr_info = connect_api.create("transfers/info/#{transfer_id}", {'aspera_connect_settings' => {'app_id' => agent_params['app_id']}})
           transfer = tr_info['transfer_info']
@@ -74,9 +74,9 @@ module Aspera
           # raise exception if connect not started and file does not exist
           connect_url = self.class.connect_api_url
           Log.log.debug { "found: #{connect_url}" }
-          @connect_api = Rest.new(
+          @connect_api = Rest::Client.new(
             base_url: "#{connect_url}/v5/connect", # could use v6 also now
-            headers: {'Origin' => RestParameters.instance.user_agent}
+            headers: {'Origin' => Rest::Parameters.instance.user_agent}
           )
           connect_info = @connect_api.read('info/version')
           Log.log.debug('Connect was reached') if method_index > 0

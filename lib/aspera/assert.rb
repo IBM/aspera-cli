@@ -17,6 +17,10 @@ module Aspera
   class AssertError < Error
   end
 
+  # Raised when a looked up entity is not found
+  class EntityNotFound < Error
+  end
+
   class << self
     # Replaces `raise` in assertion
     # Allows sending exception, or just error log, when type is `:error`

@@ -20,7 +20,7 @@ require 'aspera/products/other'
 require_relative '../build/lib/build_tools'
 include BuildTools
 
-Aspera::RestParameters.instance.progress_bar = Aspera::Cli::TransferProgress.new
+Aspera::Rest::Parameters.instance.progress_bar = Aspera::Cli::TransferProgress.new
 
 RUBY_RELEASES_BASE_URL = 'https://github.com/oneclick/rubyinstaller2/releases'
 MS_VC_BASE_URL         = 'https://aka.ms/vc14'
@@ -76,7 +76,7 @@ end
 # @param dest [Pathname] Destination file path
 # @return [Pathname] Destination file path
 def download_file(url, dest)
-  Aspera::Rest.new(base_url: url.sub(%r{/[^/]+$}, ''), redirect_max: 5)
+  Aspera::Rest::Client.new(base_url: url.sub(%r{/[^/]+$}, ''), redirect_max: 5)
     .read(url.sub(%r{^.+/}, ''), save_to: dest)
   dest
 end

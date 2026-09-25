@@ -2,14 +2,14 @@
 
 require 'spec_helper'
 require 'aspera/rest'
-require 'aspera/rest_list'
+require 'aspera/rest/list'
 require 'aspera/cli/error'
 
-RSpec.describe(Aspera::RestList) do
+RSpec.describe(Aspera::Rest::List) do
   # Minimal API returning a fixed list for `read`
   let(:api_class) do
     Class.new do
-      include Aspera::RestList
+      include Aspera::Rest::List
 
       def initialize(items)
         @items = items

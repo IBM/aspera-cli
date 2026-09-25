@@ -14,8 +14,8 @@ require 'aspera/json_rpc/client'
 
 RSpec.describe('Aspera::Agent::Node.transfer_status') do
   before do
-    rest_double = instance_double('Aspera::Rest')
-    allow(Aspera::Rest).to(receive(:new).and_return(rest_double))
+    rest_double = instance_double('Aspera::Rest::Client')
+    allow(Aspera::Rest::Client).to(receive(:new).and_return(rest_double))
     allow(rest_double).to(receive(:read)) do |path|
       case path
       when %r{ops/transfers/tid-running}

@@ -28,7 +28,7 @@ module Aspera
           ]
         },
         {
-          exception:   Aspera::RestCallError,
+          exception:   Aspera::Rest::CallError,
           match:       /Signature has expired/,
           remediation: [
             'There is too much time difference between your computer and the server',
@@ -72,7 +72,7 @@ module Aspera
           ]
         },
         {
-          exception:   Aspera::RestCallError,
+          exception:   Aspera::Rest::CallError,
           match:       /Invalid subject\./,
           remediation: [
             'It seems that this user name is not registered on the server',
@@ -104,7 +104,7 @@ module Aspera
           ]
         },
         {
-          exception:   Aspera::RestCallError,
+          exception:   Aspera::Rest::CallError,
           match:       /Server is not configured for this request/,
           remediation: [
             'Transfer user shall have those parameters in aspera.conf set to: token',
@@ -112,14 +112,14 @@ module Aspera
           ]
         },
         {
-          exception:   Aspera::RestCallError,
+          exception:   Aspera::Rest::CallError,
           match:       /invalid_grant/,
           remediation: [
             'Check your public key in your AoC user profile.'
           ]
         },
         {
-          exception:   Aspera::RestCallError,
+          exception:   Aspera::Rest::CallError,
           match:       /Please configure ACLs for this URI/,
           remediation: [
             'server must have: asnodeadmin -mu <node user> --acl-add=internal --internal'

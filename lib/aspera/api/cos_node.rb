@@ -22,7 +22,7 @@ module Aspera
             Aspera.assert(service_credentials.key?(field)) { "service_credentials must have a field: #{field}" }
           end
           # read endpoints from service provided in service credentials
-          endpoints = Aspera::Rest.new(base_url: service_credentials['endpoints']).read('')
+          endpoints = Aspera::Rest::Client.new(base_url: service_credentials['endpoints']).read('')
           Log.dump(:endpoints, endpoints)
           endpoint = endpoints.dig('service-endpoints', 'regional', bucket_region, 'public', bucket_region)
           Aspera.assert(!endpoint.nil?) { "no such region: #{bucket_region}" }
@@ -40,7 +40,7 @@ module Aspera
         endpoint = "https://#{endpoint}" unless endpoint.start_with?('http')
         @auth_url = auth_url
         @api_key = api_key
-        s3_api = Aspera::Rest.new(
+        s3_api = Aspera::Rest::Client.new(
           base_url:       endpoint,
           not_auth_codes: %w[401 403], # error codes when not authorized
           headers:        {'ibm-service-instance-id' => instance_id},

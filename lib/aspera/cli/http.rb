@@ -60,7 +60,7 @@ module Aspera
       end
 
       # Setter for http_options: dispatch each key to its target singleton immediately.
-      # Keys matching RestParameters setters go to RestParameters, 'ssl_options' goes to SSL,
+      # Keys matching Rest::Parameters setters go to Rest::Parameters, 'ssl_options' goes to SSL,
       # keys matching OAuth::Factory.instance.parameters go to OAuth, and the rest are kept
       # in @http_options for Net::HTTP session configuration in update_session.
       # This runs on every assignment (JSON hash, dotted notation, preset merge) so timing
@@ -72,8 +72,8 @@ module Aspera
         kept = {}
         new_options.each do |k, v|
           method = "#{k}=".to_sym
-          if RestParameters.instance.respond_to?(method)
-            RestParameters.instance.send(method, v)
+          if Rest::Parameters.instance.respond_to?(method)
+            Rest::Parameters.instance.send(method, v)
           elsif k.to_s.eql?('ssl_options')
             Aspera::SSL.option_list = v
           elsif OAuth::Factory.instance.parameters.key?(k.to_sym)

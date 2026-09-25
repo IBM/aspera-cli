@@ -16,7 +16,7 @@ module Aspera
       def initialize(url:, token:, vault_id:)
         super()
         @vault_id = vault_id
-        @api = Rest.new(
+        @api = Rest::Client.new(
           base_url: url,
           headers:  {'Authorization' => "Bearer #{token}"}
         )

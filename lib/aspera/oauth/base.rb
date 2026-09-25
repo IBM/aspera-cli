@@ -34,7 +34,7 @@ module Aspera
         Aspera.assert_type(params, Hash)
         Aspera.assert_type(cache_ids, Array)
         # This is the OAuth API
-        @api = Rest.new(**rest_params)
+        @api = Rest::Client.new(**rest_params)
         @params = params.dup.freeze
         @path_token = path_token
         @token_field = token_field
@@ -63,7 +63,7 @@ module Aspera
       # Helper method to create token as per RFC
       # @param other_params [Hash] Additional parameter to base parameters
       # @return [Net::HTTPResponse] Raw HTTP response with token
-      # @raise [RestCallError] If not 2XX code
+      # @raise [Rest::CallError] If not 2XX code
       def create_token_base(include_secret: false, **other_params)
         Log.log.debug { 'Generating a new token'.bg(:green) }
         creation_params = base_parameters(include_secret: include_secret, **other_params)

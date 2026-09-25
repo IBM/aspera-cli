@@ -73,7 +73,7 @@ Members: `options` (`Parser`), `transfer` (`TransferAgent`), `config` (`Plugins:
    - `main_folder` (option `home`), `persistency`, `presets` (config file), `http_config`, `progress_bar`
    - plugin lookup folders
    - `@preset:` and `@vault:` extended-value handlers
-   - global singletons: `RestParameters`, `OAuth::Factory`, SSL, `Transfer::Parameters`, `RestErrorAnalyzer`
+   - global singletons: `Rest::Parameters`, `OAuth::Factory`, SSL, `Transfer::Parameters`, `Rest::ErrorAnalyzer`
    - PAC proxy executor (option `fpac`)
 3. `Plugins::Config` (only a CLI plugin: option declaration and command handlers), then `Mailer`, `SecretFinder` and `TransferAgent`
 
@@ -498,9 +498,19 @@ Transfer outcomes are typed ([`transfer/result.rb`](../lib/aspera/transfer/resul
 
 #### REST Client
 
-**File**: [`lib/aspera/rest.rb`](../lib/aspera/rest.rb)
+**Folder**: [`lib/aspera/rest/`](../lib/aspera/rest/) (all loaded by [`lib/aspera/rest.rb`](../lib/aspera/rest.rb))
 
-A custom HTTP client implementation providing:
+| File | Content |
+|---|---|
+| [`client.rb`](../lib/aspera/rest/client.rb) | `Rest::Client`: the HTTP client |
+| [`parameters.rb`](../lib/aspera/rest/parameters.rb) | `Rest::Parameters`: global settings (singleton) |
+| [`util.rb`](../lib/aspera/rest/util.rb) | `Rest.build_uri`, `Rest.php_style`, `Rest.query_to_h`, `Rest.parse_header`, `Rest.basic_authorization`, `Rest.start_http_session`, … |
+| [`call_error.rb`](../lib/aspera/rest/call_error.rb) | `Rest::CallError`: raised on HTTP call errors |
+| [`error_analyzer.rb`](../lib/aspera/rest/error_analyzer.rb) | `Rest::ErrorAnalyzer`: extracts error messages from responses (singleton) |
+| [`aspera_errors.rb`](../lib/aspera/rest/aspera_errors.rb) | `Rest::AsperaErrors`: error handlers for Aspera APIs |
+| [`list.rb`](../lib/aspera/rest/list.rb) | `Rest::List`: paginated listing and lookup, included in API clients |
+
+`Rest::Client` is a custom HTTP client implementation providing:
 
 - **HTTP Methods**: GET, POST, PUT, PATCH, DELETE, CANCEL
 - **Authentication**: Basic, Bearer token, OAuth 2.0
@@ -509,7 +519,7 @@ A custom HTTP client implementation providing:
 - **Progress Tracking**: File upload/download progress
 - **Session Management**: Connection pooling, SSL/TLS configuration, proxy auto-config ([`proxy_auto_config.rb`](../lib/aspera/proxy_auto_config.rb))
 
-Global HTTP settings are held in the `RestParameters` singleton. The CLI HTTP/S and TLS options (`insecure`, `ignore_certificate`, `cert_stores`, `http_options`, `http_proxy`, …) are declared and applied by [`Cli::Http`](../lib/aspera/cli/http.rb) (`Context#http_config`). Paginated listing is handled by [`rest_list.rb`](../lib/aspera/rest_list.rb).
+Global HTTP settings are held in the `Rest::Parameters` singleton. The CLI HTTP/S and TLS options (`insecure`, `ignore_certificate`, `cert_stores`, `http_options`, `http_proxy`, …) are declared and applied by [`Cli::Http`](../lib/aspera/cli/http.rb) (`Context#http_config`). Paginated listing is handled by `Rest::List`.
 
 #### Product API Clients
 
@@ -691,7 +701,7 @@ Used for creating instances based on configuration:
 Used for global configuration and state:
 
 - **Installation**: ASCP binary location
-- **RestParameters**: HTTP client settings
+- **Rest::Parameters**: HTTP client settings
 - **Log**: Logging configuration
 
 ### Strategy Pattern
@@ -761,7 +771,7 @@ StandardError
 │   ├── Aspera::ParameterError
 │   ├── Aspera::InternalError
 │   ├── Aspera::AssertError
-│   ├── Aspera::EntityNotFound (resource not found — lib/aspera/rest.rb)
+│   ├── Aspera::EntityNotFound (resource not found — lib/aspera/assert.rb)
 │   └── Aspera::Ssh::Error
 ├── Aspera::Cli::Error (CLI base — lib/aspera/cli/error.rb)
 │   ├── BadArgument
@@ -770,14 +780,14 @@ StandardError
 │   ├── BadIdentifier
 │   └── SchemaRequest (control flow: `help` given as option or argument value — lib/aspera/cli/option_types.rb)
 ├── Aspera::Cli::HelpRequest (control flow: --help reached in dispatch)
-├── Aspera::RestCallError (HTTP call errors — lib/aspera/rest_call_error.rb)
+├── Aspera::Rest::CallError (HTTP call errors — lib/aspera/rest/call_error.rb)
 ├── Aspera::Ascmd::Error (ascmd errors — lib/aspera/ascmd.rb)
 └── Aspera::Transfer::Error (transfer failures — lib/aspera/transfer/error.rb)
 ```
 
 ### Error Analysis
 
-**File**: [`lib/aspera/rest_error_analyzer.rb`](../lib/aspera/rest_error_analyzer.rb)
+**File**: [`lib/aspera/rest/error_analyzer.rb`](../lib/aspera/rest/error_analyzer.rb)
 
 Analyzes API errors and provides:
 
@@ -818,7 +828,7 @@ Analyzes API errors and provides:
   - `plugin_registry_spec.rb` — `validate!(plugin_class:)` consistency of every plugin registry (every leaf has an action or a matching `action_*` method, and every action accepts `**`)
   - `parser_spec.rb`, `option_declarator_spec.rb`, `preset_actions_spec.rb`, `runner_spec.rb`, `mcp_tool_spec.rb`, `formatter_spec.rb`, `http_spec.rb`
   - `async_transfer_store_spec.rb`, `transfer_agent_async_spec.rb`, `transfer_agent_options_spec.rb`, `transfer_result_spec.rb`, `agent_transfer_status_spec.rb`
-  - `rest_spec.rb`, `secret_hider_spec.rb`, `proxy_auto_config_spec.rb`, `schema_reader_spec.rb`, `string_ext_spec.rb`, `uri_reader_spec.rb`, `temp_file_manager_spec.rb`, `assert_spec.rb`, `environment_spec.rb`, `version_spec.rb`, …
+  - `rest/client_spec.rb`, `secret_hider_spec.rb`, `proxy_auto_config_spec.rb`, `schema_reader_spec.rb`, `string_ext_spec.rb`, `uri_reader_spec.rb`, `temp_file_manager_spec.rb`, `assert_spec.rb`, `environment_spec.rb`, `version_spec.rb`, …
 - Integration tests requiring a live server (`integration_helper.rb`, e.g. `ascmd_ssh_integration_spec.rb`)
 
 ### CI/CD Integration

@@ -3,7 +3,7 @@
 require 'aspera/cli/plugins/basic_auth'
 require 'aspera/cli/plugins/node'
 require 'aspera/assert'
-require 'aspera/rest_list'
+require 'aspera/rest/list'
 
 module Aspera
   module Cli
@@ -23,7 +23,7 @@ module Aspera
             result[:version] =
               begin
                 version = nil
-                login_page = Rest
+                login_page = Rest::Client
                   .new(base_url: url, redirect_max: 2)
                   .read('', headers: {'Accept'=>'text/html'})
                 Aspera.assert(login_page.include?('aspera-Shares')) { 'not Shares' }
@@ -39,7 +39,7 @@ module Aspera
               end
             result[:ping] =
               begin
-                Rest
+                Rest::Client
                   .new(base_url: "#{url}/#{NODE_API_PATH}")
                   .read('ping', headers: {'Content-Type' => Mime::JSON})
                 'ping ok'
@@ -48,7 +48,7 @@ module Aspera
               end
             result[:api] =
               begin
-                data, resp = Rest
+                data, resp = Rest::Client
                   .new(base_url: "#{url}/#{NODE_API_PATH}", redirect_max: 1)
                   .read('info', exception: false, ret: :both)
                 # shall fail: shares requires auth, but we check error message
@@ -233,7 +233,7 @@ module Aspera
             lookup_method = :"lookup_shares_#{entity_type}_#{location}_id"
             define_method(lookup_method) do |field, value, **|
               path = admin_entity_path(entity_type, location)
-              RestList.lookup_entity_generic(entity: entity_type, field: field, value: value) { @api_shares_admin.read(path) }['id']
+              Rest::List.lookup_entity_generic(entity: entity_type, field: field, value: value) { @api_shares_admin.read(path) }['id']
             end
             private lookup_method
           end
@@ -273,7 +273,7 @@ module Aspera
         # --- setup ---
 
         # files - mount target: Node plugin on the Shares node API.
-        # Api::Node (not plain Rest) so that Node commands using its helpers work (e.g. spec, transport).
+        # Api::Node (not plain Rest::Client) so that Node commands using its helpers work (e.g. spec, transport).
         # @return [Node]
         def shares_node_plugin(**)
           Node.new(context: context, api: Api::Node.new(**basic_auth_params(NODE_API_PATH)))
@@ -288,7 +288,7 @@ module Aspera
 
         # Lookup a share id by field/value using the admin API.
         def lookup_share_id(field, value, **)
-          RestList.lookup_entity_generic(entity: 'share', field: field, value: value) { @api_shares_admin.read('data/shares') }['id']
+          Rest::List.lookup_entity_generic(entity: 'share', field: field, value: value) { @api_shares_admin.read('data/shares') }['id']
         end
 
         # --- health ---

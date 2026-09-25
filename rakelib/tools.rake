@@ -113,7 +113,7 @@ namespace :tools do
     # Only plain "X.Y.Z" entries are considered stable (no -preview, -rc, etc.).
     versions_url = 'https://raw.githubusercontent.com/ruby/setup-ruby/refs/heads/master/ruby-builder-versions.json'
     log.info("Fetching Ruby versions from: #{versions_url}")
-    raw = Aspera::Rest.new(base_url: versions_url, redirect_max: 3).read(nil)
+    raw = Aspera::Rest::Client.new(base_url: versions_url, redirect_max: 3).read(nil)
     data = raw.is_a?(String) ? JSON.parse(raw) : raw
 
     # All stable CRuby releases as [major, minor, patch] integer tuples.

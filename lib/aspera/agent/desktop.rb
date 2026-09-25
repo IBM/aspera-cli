@@ -24,7 +24,7 @@ module Aspera
         # @return [Hash] normalized status hash
         def transfer_status(transfer_id, agent_params)
           app_id = agent_params['application_id']
-          client = Aspera::JsonRpc::Client.new(Aspera::Rest.new(base_url: desktop_api_url))
+          client = Aspera::JsonRpc::Client.new(Aspera::Rest::Client.new(base_url: desktop_api_url))
           raw = client.get_transfer(app_id: app_id, transfer_id: transfer_id)
           normalize_status(raw['status'], bytes: raw['bytes_written'].to_i, error: raw['error_desc'])
         end
@@ -70,7 +70,7 @@ module Aspera
         begin
           # curl 'http://127.0.0.1:33024/' -X POST -H 'content-type: application/json' --data-raw '{"jsonrpc":"2.0","params":[],"id":999999,"method":"rpc.discover"}'
           # https://playground.open-rpc.org/?schemaUrl=http://127.0.0.1:33024
-          @client_app_api = Aspera::JsonRpc::Client.new(Aspera::Rest.new(base_url: aspera_client_api_url))
+          @client_app_api = Aspera::JsonRpc::Client.new(Aspera::Rest::Client.new(base_url: aspera_client_api_url))
           client_info = @client_app_api.get_info
           Log.dump(:client_version, client_info)
           Log.log.debug('Client was reached') if method_index > 0

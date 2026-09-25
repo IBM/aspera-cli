@@ -19,9 +19,9 @@ RSpec.describe(Aspera::Rest) do
   end
 
   it 'returns a copy of creation parameters' do
-    api = Aspera::Rest.new(base_url: 'https://localhost', headers: {'X-A' => 'a'})
+    api = Aspera::Rest::Client.new(base_url: 'https://localhost', headers: {'X-A' => 'a'})
     api.params[:headers]['X-B'] = 'b'
-    expect(api.headers).to(eq({'X-A' => 'a', 'User-Agent' => Aspera::RestParameters.instance.user_agent}))
+    expect(api.headers).to(eq({'X-A' => 'a', 'User-Agent' => Aspera::Rest::Parameters.instance.user_agent}))
   end
 
   it 'parses php query' do
@@ -59,7 +59,7 @@ RSpec.describe(Aspera::Rest) do
         res.body = content
       end
       @thread = Thread.new { @server.start }
-      @api = Aspera::Rest.new(base_url: "http://127.0.0.1:#{@server.config[:Port]}")
+      @api = Aspera::Rest::Client.new(base_url: "http://127.0.0.1:#{@server.config[:Port]}")
     end
 
     after(:all) do
@@ -138,7 +138,7 @@ RSpec.describe(Aspera::Rest) do
     before do
       @servers = []
       @threads = []
-      @params = Aspera::RestParameters.instance
+      @params = Aspera::Rest::Parameters.instance
       @saved = %i[retry_max retry_sleep retry_on_error retry_on_timeout].to_h { |k| [k, @params.send(k)] }
       @params.retry_sleep = 0
     end
@@ -161,7 +161,7 @@ RSpec.describe(Aspera::Rest) do
       end
 
       def api
-        rest = Aspera::Rest.new(base_url: @url, auth: {type: :oauth2})
+        rest = Aspera::Rest::Client.new(base_url: @url, auth: {type: :oauth2})
         rest.instance_variable_set(:@oauth, oauth)
         rest
       end
@@ -175,21 +175,21 @@ RSpec.describe(Aspera::Rest) do
 
       it 'generates new token if refresh fails' do
         allow(oauth).to(receive(:authorization).with(no_args).and_return('Bearer old'))
-        allow(oauth).to(receive(:authorization).with(refresh: true).and_raise(Aspera::RestCallError, 'refresh'))
+        allow(oauth).to(receive(:authorization).with(refresh: true).and_raise(Aspera::Rest::CallError, 'refresh'))
         allow(oauth).to(receive(:authorization).with(cache: false).and_return('Bearer new'))
         expect(api.read('api')).to(eq({}))
       end
 
       it 'raises original error if no new token can be obtained' do
         allow(oauth).to(receive(:authorization).with(no_args).and_return('Bearer old'))
-        allow(oauth).to(receive(:authorization).with(refresh: true).and_raise(Aspera::RestCallError, 'refresh'))
-        allow(oauth).to(receive(:authorization).with(cache: false).and_raise(Aspera::RestCallError, 'generate'))
-        expect { api.read('api') }.to(raise_error(Aspera::RestCallError) { |e| expect(e.response.code).to(eq('401')) })
+        allow(oauth).to(receive(:authorization).with(refresh: true).and_raise(Aspera::Rest::CallError, 'refresh'))
+        allow(oauth).to(receive(:authorization).with(cache: false).and_raise(Aspera::Rest::CallError, 'generate'))
+        expect { api.read('api') }.to(raise_error(Aspera::Rest::CallError) { |e| expect(e.response.code).to(eq('401')) })
       end
 
       it 'renews token only once' do
         allow(oauth).to(receive(:authorization).and_return('Bearer old'))
-        expect { api.read('api') }.to(raise_error(Aspera::RestCallError))
+        expect { api.read('api') }.to(raise_error(Aspera::Rest::CallError))
         expect(oauth).to(have_received(:authorization).with(refresh: true).once)
       end
     end
@@ -207,7 +207,7 @@ RSpec.describe(Aspera::Rest) do
       end
 
       def api(**kwargs)
-        Aspera::Rest.new(base_url: @url, redirect_max: 1, headers: {'X-Base' => 'base'}, **kwargs)
+        Aspera::Rest::Client.new(base_url: @url, redirect_max: 1, headers: {'X-Base' => 'base'}, **kwargs)
       end
 
       it 'follows relative redirect on same port' do
@@ -278,39 +278,39 @@ RSpec.describe(Aspera::Rest) do
       it 'retries connection timeout if retry_on_timeout' do
         @params.retry_on_timeout = true
         fail_once(Net::OpenTimeout)
-        expect(Aspera::Rest.new(base_url: @url).read('echo')['query']).to(be_nil)
+        expect(Aspera::Rest::Client.new(base_url: @url).read('echo')['query']).to(be_nil)
       end
 
       it 'does not retry connection timeout if not retry_on_timeout' do
         @params.retry_on_timeout = false
         fail_once(Net::OpenTimeout)
-        expect { Aspera::Rest.new(base_url: @url).read('echo') }.to(raise_error(Net::OpenTimeout))
+        expect { Aspera::Rest::Client.new(base_url: @url).read('echo') }.to(raise_error(Net::OpenTimeout))
       end
 
       it 'retries connection reset if retry_on_error' do
         @params.retry_on_error = true
         fail_once(Errno::ECONNRESET)
-        expect(Aspera::Rest.new(base_url: @url).read('echo')['query']).to(be_nil)
+        expect(Aspera::Rest::Client.new(base_url: @url).read('echo')['query']).to(be_nil)
       end
 
       it 'does not retry connection reset if not retry_on_error' do
         @params.retry_on_error = false
         fail_once(Errno::ECONNRESET)
-        expect { Aspera::Rest.new(base_url: @url).read('echo') }.to(raise_error(Errno::ECONNRESET))
+        expect { Aspera::Rest::Client.new(base_url: @url).read('echo') }.to(raise_error(Errno::ECONNRESET))
       end
 
       it 'keeps php style query on retry' do
         @params.retry_on_error = true
         fail_once(Errno::ECONNRESET)
         query = Aspera::Rest.php_style({'a' => %w[1 2]})
-        expect(Aspera::Rest.new(base_url: @url).read('echo', query)['query']).to(eq('a[]=1&a[]=2'))
+        expect(Aspera::Rest::Client.new(base_url: @url).read('echo', query)['query']).to(eq('a[]=1&a[]=2'))
       end
 
       it 'does not retry more than retry_max' do
         @params.retry_on_error = true
         @params.retry_max = 0
         fail_once(Errno::ECONNRESET)
-        expect { Aspera::Rest.new(base_url: @url).read('echo') }.to(raise_error(Errno::ECONNRESET))
+        expect { Aspera::Rest::Client.new(base_url: @url).read('echo') }.to(raise_error(Errno::ECONNRESET))
       end
     end
   end

@@ -604,7 +604,7 @@ module Aspera
         # NOT read from the CLI queue inside the method.
 
         # List all instances of an entity.
-        # @param api             [Aspera::Rest]  REST API object
+        # @param api             [Aspera::Rest::Client]  REST API object
         # @param entity          [String]        API sub-path
         # @param display_fields  [Array, nil]    Fields to display
         # @param items_key       [String, nil]   Sub-key in response containing the array
@@ -632,7 +632,7 @@ module Aspera
         end
 
         # Show one instance of an entity.
-        # @param api            [Aspera::Rest]    REST API object
+        # @param api            [Aspera::Rest::Client]    REST API object
         # @param entity         [String]          API sub-path
         # @param id             [String, nil]     Resource identifier; nil when is_singleton: true
         # @param display_fields [Array, nil]      Fields to display
@@ -644,7 +644,7 @@ module Aspera
         end
 
         # Create one or more instances of an entity (supports bulk).
-        # @param api            [Aspera::Rest]      REST API object
+        # @param api            [Aspera::Rest::Client]      REST API object
         # @param entity         [String]            API sub-path
         # @param data           [Hash, Array<Hash>] Entity data (Array with bulk), from the command's declared `data` argument
         # @param display_fields [Array, nil]        Fields to display
@@ -656,7 +656,7 @@ module Aspera
         end
 
         # Modify an existing instance of an entity.
-        # @param api            [Aspera::Rest]    REST API object
+        # @param api            [Aspera::Rest::Client]    REST API object
         # @param entity         [String]          API sub-path
         # @param id             [String, nil]     Resource identifier; nil when is_singleton: true
         # @param is_singleton   [Boolean]         When true, entity is the full path (no id appended)
@@ -669,7 +669,7 @@ module Aspera
         end
 
         # Delete one or more instances of an entity (supports bulk).
-        # @param api             [Aspera::Rest]    REST API object
+        # @param api             [Aspera::Rest::Client]    REST API object
         # @param entity          [String]          API sub-path
         # @param id              [String, Array, nil] Resource identifier(s)
         # @param id_as_arg       [Boolean, String] When set, id is appended as ?<id_as_arg>=<id>

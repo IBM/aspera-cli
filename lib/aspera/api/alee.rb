@@ -4,7 +4,7 @@ require 'aspera/api/aoc'
 module Aspera
   module Api
     # Aspera License Entitlement Engine API client
-    class Alee < Aspera::Rest
+    class Alee < Aspera::Rest::Client
       def initialize(entitlement_id, customer_id, api_domain: AoC::SAAS_DOMAIN_PROD, version: 'v1')
         super(
           base_url: "https://api.#{api_domain}/metering/#{version}",

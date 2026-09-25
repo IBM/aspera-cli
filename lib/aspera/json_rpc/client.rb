@@ -2,19 +2,19 @@
 
 # cspell:ignore blankslate jsonrpc
 
-require 'aspera/rest_error_analyzer'
+require 'aspera/rest/error_analyzer'
 require 'aspera/assert'
 require 'aspera/json_rpc/version'
 require 'blankslate'
 
-Aspera::RestErrorAnalyzer.instance.add_simple_handler(name: 'JSON RPC', path: %w[error message], always: true)
+Aspera::Rest::ErrorAnalyzer.instance.add_simple_handler(name: 'JSON RPC', path: %w[error message], always: true)
 
 module Aspera
   module JsonRpc
-    # JSON-RPC 2.0 client over an Aspera::Rest HTTP endpoint.
+    # JSON-RPC 2.0 client over an Aspera::Rest::Client HTTP endpoint.
     # Methods are dispatched dynamically via method_missing.
     # Example:
-    #   client = JsonRpc::Client.new(Rest.new(base_url: 'http://127.0.0.1:33024'))
+    #   client = JsonRpc::Client.new(Rest::Client.new(base_url: 'http://127.0.0.1:33024'))
     #   client.get_info
     #   client.start_transfer(app_id: '...', transfer_spec: {...})
     class Client < BlankSlate
@@ -22,7 +22,7 @@ module Aspera
       reveal :inspect
       reveal :to_s
 
-      # @param api       [Rest]   Aspera REST object pointing at the JSON-RPC endpoint
+      # @param api       [Rest::Client]   Aspera REST object pointing at the JSON-RPC endpoint
       # @param namespace [String, nil] optional method prefix, e.g. "myns."
       def initialize(api, namespace = nil)
         super()

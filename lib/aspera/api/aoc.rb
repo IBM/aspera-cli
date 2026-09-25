@@ -7,7 +7,7 @@ require 'aspera/hash_ext'
 require 'aspera/data_repository'
 require 'aspera/transfer/spec'
 require 'aspera/api/node'
-require 'aspera/rest_list'
+require 'aspera/rest/list'
 require 'base64'
 require 'aspera/rainbow'
 using Rainbow
@@ -17,8 +17,8 @@ module Aspera
     # information relative to Files or Packages App
 
     # Aspera on Cloud API client
-    class AoC < Rest
-      include RestList
+    class AoC < Rest::Client
+      include Rest::List
 
       module AppType
         FILES = 'files'
@@ -142,7 +142,7 @@ module Aspera
         # @param url [String] URL of AoC public link
         # @return [Hash{Symbol => String, Hash}] Information about public link, or nil if not a public link
         def link_info(url)
-          final_uri = Rest.new(base_url: url, redirect_max: MAX_AOC_URL_REDIRECT).call(operation: 'GET', ret: :resp).uri
+          final_uri = Rest::Client.new(base_url: url, redirect_max: MAX_AOC_URL_REDIRECT).call(operation: 'GET', ret: :resp).uri
           Log.dump(:final_uri, final_uri, level: :trace1)
           org_domain = split_org_domain(final_uri)
           if (m = final_uri.path.match(%r{/oauth2/([^/]+)/login$}))
@@ -204,8 +204,8 @@ module Aspera
           Aspera.assert(block_given?, 'block required for call_paging')
           # set default large page if user does not specify own parameters. AoC Caps to 1000 anyway
           query['per_page'] = 1000 unless query.key?('per_page')
-          max_items = query.delete(RestList::MAX_ITEMS)
-          max_pages = query.delete(RestList::MAX_PAGES)
+          max_items = query.delete(Rest::List::MAX_ITEMS)
+          max_pages = query.delete(Rest::List::MAX_PAGES)
           item_list = []
           total_count = nil
           current_page = query['page']
@@ -227,9 +227,9 @@ module Aspera
             break if !max_items.nil? && item_list.count >= max_items
             break if !max_pages.nil? && page_count >= max_pages
             break if total_count&.<=(item_list.count)
-            RestParameters.instance.spinner_cb.call("#{item_list.count} / #{total_count}") unless total_count.eql?(item_list.count.to_s)
+            Rest::Parameters.instance.spinner_cb.call("#{item_list.count} / #{total_count}") unless total_count.eql?(item_list.count.to_s)
           end
-          RestParameters.instance.spinner_cb.call(action: :success)
+          Rest::Parameters.instance.spinner_cb.call(action: :success)
           item_list = item_list[0..max_items - 1] if !max_items.nil? && item_list.count > max_items
           return {items: item_list, total: total_count}
         end
@@ -396,7 +396,7 @@ module Aspera
         @cache_user_info =
           begin
             read('self')
-          rescue Aspera::RestCallError => e
+          rescue Aspera::Rest::CallError => e
             raise if exception || e.message.include?('invalid_grant')
             Log.log.debug { "Ignoring error: (#{e.class}) #{e}" }
             {}

@@ -116,7 +116,7 @@ module Aspera
           events_filter['iteration_token'] = iteration_persistency.data.first unless iteration_persistency.nil?
           begin
             events = @api_node.read('events', events_filter)
-          rescue RestCallError => e
+          rescue Rest::CallError => e
             if e.message.include?('Invalid iteration_token')
               Log.log.warn { "Retrying without iteration token: #{e}" }
               events_filter.delete('iteration_token')

@@ -51,6 +51,7 @@ Released: [Place date of release here]
 
 ### Breaking Changes
 
+* **library**: REST classes moved to namespace `Aspera::Rest` (folder `lib/aspera/rest/`, `require 'aspera/rest'` loads all): `Rest` (class) is `Rest::Client`, `RestParameters` is `Rest::Parameters`, `RestCallError` is `Rest::CallError`, `RestErrorAnalyzer` is `Rest::ErrorAnalyzer`, `RestErrorsAspera` is `Rest::AsperaErrors`, `RestList` is `Rest::List`. Helpers (`Rest.build_uri`, `Rest.php_style`, ...) are unchanged.
 * `preview`: Renamed option `mimemagic` to `detect_mime`.
 * **general**: In dot-path values (e.g. `--ts.x=yes`, `@: x=no`, `config preset set`), `yes` and `no` are converted to `Boolean`, like `true` and `false`: use `@json:"yes"` to get a `String`.
 * `server`: Commands `ls|rm|mkdir|du|md5sum|mv|cp` require at least one path, `df|info` take no argument. `mv|cp` take `<source> <destination>` pairs, or only sources with option `to_folder`.
