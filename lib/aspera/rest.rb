@@ -360,17 +360,17 @@ module Aspera
       Aspera.assert_type(subpath, String)
       # We must have a way to check return code
       Aspera.assert(exception || !ret.eql?(:data), 'ret: :data requires exception handler')
-      headers, query = prepare_call(headers, query)
+      req_headers, req_query = prepare_call(headers, query)
       result_http = nil
       result_data = nil
-      # initialize with number of initial retries allowed, nil gives zero
-      tries_remain_redirect = @redirect_max
+      # number of tries on error (first call included)
+      error_tries = 1 + RestParameters.instance.retry_max
+      # OAuth token is renewed only once, independently of error retries
+      token_renewed = false
       # start a block to be able to retry the actual HTTP request in case of OAuth token expiration
       begin
-        Log.log.debug("send request (retries=#{tries_remain_redirect})")
-        req = build_request(operation, subpath, query, content_type, body, headers)
-        # we try the call, and will retry on some error types
-        error_tries ||= 1 + RestParameters.instance.retry_max
+        Log.log.debug("send request (redirects=#{@redirect_max})")
+        req = build_request(operation, subpath, req_query, content_type, body, req_headers)
         result_mime = nil
         file_saved = false
         # make http request (pipelined)
@@ -393,57 +393,47 @@ module Aspera
           FileUtils.mkdir_p(File.dirname(save_to))
           File.write(save_to, result_http.body, binmode: true)
         end
+      rescue *NETWORK_ERRORS => e
+        # the request was not sent (connection) or its result is unknown (other)
+        do_retry = e.is_a?(Net::OpenTimeout) ? RestParameters.instance.retry_on_timeout : RestParameters.instance.retry_on_error
+        raise unless do_retry && (error_tries -= 1).positive?
+        Log.log.warn { "#{e.class}: #{e.message}: retrying" }
+        retry_sleep
+        retry
       rescue RestCallError => e
+        # not authorized: OAuth token expired
+        if !token_renewed && @not_auth_codes.include?(result_http.code.to_s) && @auth_params[:type].eql?(:oauth2)
+          token_renewed = true
+          new_authorization = renew_oauth_authorization
+          unless new_authorization.nil?
+            Log.log.debug('using new token')
+            req_headers['Authorization'] = new_authorization
+            retry
+          end
+        end
         do_retry = false
         # AoC have some timeout , like Connect to platform.bss.asperasoft.com:443 ...
-        do_retry ||= true if e.response.body.include?('failed: connect timed out') && RestParameters.instance.retry_on_timeout
+        do_retry ||= true if e.response.body&.include?('failed: connect timed out') && RestParameters.instance.retry_on_timeout
         # AoC sometimes not available
         do_retry ||= true if RestParameters.instance.retry_on_unavailable && UNAVAILABLE_CODES.include?(result_http.code.to_s)
         # possibility to retry anything if it fails
         do_retry ||= true if RestParameters.instance.retry_on_error
-        # not authorized: oauth token expired
-        if @not_auth_codes.include?(result_http.code.to_s) && @auth_params[:type].eql?(:oauth2)
-          begin
-            # try to use refresh token
-            req['Authorization'] = oauth.authorization(refresh: true)
-          rescue RestCallError => e_tok
-            e = e_tok
-            Log.log.error('refresh failed'.bg(:red))
-            # regenerate a brand new token
-            req['Authorization'] = oauth.authorization(cache: false)
-          end
-          Log.log.debug('using new token')
-          do_retry ||= true
-        end
         if do_retry && (error_tries -= 1).positive?
-          sleep(RestParameters.instance.retry_sleep) unless RestParameters.instance.retry_sleep.eql?(0)
+          retry_sleep
           retry
         end
         # redirect ? (any code beginning with 3)
-        if e.response.is_a?(Net::HTTPRedirection) && tries_remain_redirect.positive?
-          tries_remain_redirect -= 1
-          current_uri = URI.parse(@base_url)
-          new_url = e.response['Location']
-          # special case: relative redirect
-          if URI.parse(new_url).host.nil?
-            # we don't manage relative redirects with non-absolute path
-            Aspera.assert(new_url.start_with?('/')) { "redirect location is relative: #{new_url}, but does not start with /." }
-            new_url = "#{current_uri.scheme}://#{current_uri.host}#{new_url}"
-          end
-          # forwards the request to the new location
-          return self.class.new(
-            base_url: new_url,
-            redirect_max: tries_remain_redirect
-          ).call(
-            operation: operation,
-            subpath: new_url.end_with?('/') ? '/' : nil,
-            query: query,
-            body: body,
+        if e.response.is_a?(Net::HTTPRedirection) && @redirect_max.positive?
+          return redirect_call(
+            req.uri,
+            e.response['Location'],
+            operation:    operation,
+            body:         body,
             content_type: content_type,
-            save_to: save_to,
-            exception: exception,
-            headers: headers,
-            ret: ret
+            save_to:      save_to,
+            exception:    exception,
+            headers:      headers,
+            ret:          ret
           )
         end
         # raise exception if could not retry and not return error in result
@@ -459,6 +449,54 @@ module Aspera
     end
 
     private
+
+    def retry_sleep
+      sleep(RestParameters.instance.retry_sleep) unless RestParameters.instance.retry_sleep.eql?(0)
+    end
+
+    # Renew OAuth token: use refresh token, or generate a new one
+    # @return [String, nil] New value for header `Authorization`, or `nil` if no new token could be obtained
+    def renew_oauth_authorization
+      oauth.authorization(refresh: true)
+    rescue StandardError => e
+      Log.log.error("refresh failed: #{e.message}".bg(:red))
+      begin
+        oauth.authorization(cache: false)
+      rescue StandardError => e
+        Log.log.error("new token failed: #{e.message}".bg(:red))
+        nil
+      end
+    end
+
+    # Forward the call to the location of a redirect response.
+    # Same server: same API parameters (auth, headers). Other server: credentials are not forwarded.
+    # @param request_uri [URI]       URI of the redirected request
+    # @param location    [String]    Header `Location` of redirect response (absolute or relative)
+    # @param headers     [Hash, nil] Headers of the call
+    # @param call_args   [Hash]      Other arguments of `call`
+    def redirect_call(request_uri, location, headers:, **call_args)
+      Aspera.assert(!location.nil?) { 'redirect response without Location' }
+      new_uri = URI.join(request_uri.to_s, location)
+      # query of `Location` is used as call query, so that auth query is added
+      query = new_uri.query
+      new_uri.query = nil
+      new_uri.fragment = nil
+      new_url = new_uri.to_s
+      Log.log.debug { "redirect to #{new_url}" }
+      rest_params = params.merge(base_url: new_url, redirect_max: @redirect_max - 1)
+      unless [new_uri.scheme, new_uri.host, new_uri.port].eql?([request_uri.scheme, request_uri.host, request_uri.port])
+        Log.log.debug { "redirect to other server: #{new_uri.host}, credentials not forwarded" }
+        rest_params[:auth] = {type: :none}
+        rest_params[:headers] = without_credentials(@headers)
+        headers = without_credentials(headers) unless headers.nil?
+      end
+      Rest.new(**rest_params).call(subpath: new_url.end_with?('/') ? '/' : nil, query: query, headers: headers, **call_args)
+    end
+
+    # @return [Hash] Headers without credentials
+    def without_credentials(headers)
+      headers.reject { |k, _| CREDENTIAL_HEADERS.include?(k.to_s.downcase) }
+    end
 
     def prepare_call(headers, query)
       if headers.nil?
@@ -478,10 +516,13 @@ module Aspera
       when :oauth2
         headers['Authorization'] = oauth.authorization unless headers.key?('Authorization')
       when :url
-        query ||= {}
-        @auth_params[:url_query].each do |key, value|
-          query[key] = value
-        end
+        query =
+          case query
+          when nil then @auth_params[:url_query].dup
+          when Hash then query.merge(@auth_params[:url_query])
+          when String then [query, URI.encode_www_form(@auth_params[:url_query])].join('&')
+          else Aspera.error_unexpected_value(query.class) { 'query type with url auth' }
+          end
       else Aspera.error_unexpected_value(@auth_params[:type])
       end
       [headers, query]
@@ -624,7 +665,14 @@ module Aspera
     end
 
     UNAVAILABLE_CODES = ['503']
+    # Network errors that can be retried
+    NETWORK_ERRORS = [
+      Net::OpenTimeout, Net::ReadTimeout, Net::WriteTimeout,
+      Errno::ECONNRESET, Errno::ECONNREFUSED, Errno::EPIPE, EOFError, OpenSSL::SSL::SSLError
+    ].freeze
+    # Headers not forwarded on redirect to another server (lower case)
+    CREDENTIAL_HEADERS = %w[authorization cookie].freeze
 
-    private_constant :UNAVAILABLE_CODES
+    private_constant :UNAVAILABLE_CODES, :NETWORK_ERRORS, :CREDENTIAL_HEADERS
   end
 end
