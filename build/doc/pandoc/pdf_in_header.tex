@@ -40,7 +40,8 @@ fontsize=\small
 \RenewDocumentCommand{\textbf}{m}{\underLine{#1}}
 % Place inline code on lightgray background (unlike \colorbox, can break across lines).
 \LuaULSetHighLightColor{lightgray}
-\let\oldtexttt\texttt
+% Not \let: robust command, its inner macro is overwritten by \RenewDocumentCommand in LaTeX 2023.
+\NewCommandCopy\oldtexttt\texttt
 \RenewDocumentCommand{\texttt}{m}{\highLight{\oldtexttt{#1}}}
 % Black border for quotes.
 \usepackage{framed}

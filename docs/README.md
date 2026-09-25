@@ -5138,7 +5138,7 @@ Key query parameters:
 |----------------|----------------------------------------------------------------------|
 | `grow`         | **(Required)** Wait time in seconds after last file change before the transfer is declared complete.<br/>Default wait time is 10 s if set to a non-numeric string. |
 | `wait_start`   | How the wait time is measured:<br/>- `mtime` (default) file modification time<br/>- `null_read` first zero-byte read. |
-| `confirm_stop` | Set to `true` to let an external program signal completion by setting `mtime < current_time - wait_time`. Ignored when `wait_start=null_read`. |
+| `confirm_stop` | Set to `true` to let an external program signal completion by setting:<br/>`mtime < current_time - wait_time`.<br/>Ignored when `wait_start=null_read`. |
 
 > [!NOTE]
 > `ascp` requires that all sources in a single transfer session share the same PVCL URI scheme.
