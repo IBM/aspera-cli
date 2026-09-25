@@ -4,6 +4,7 @@
 if ENV.key?('ENABLE_COVERAGE')
   require 'simplecov'
   require 'securerandom'
+  require 'fileutils'
   # compute development top folder based on this source location
   development_root = File.dirname(File.realpath(__FILE__), 3)
   coverage_dir = 'tmp/coverage'

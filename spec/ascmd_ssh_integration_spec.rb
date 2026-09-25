@@ -5,7 +5,6 @@ require 'integration_helper'
 require 'aspera/log'
 # Aspera::Log.instance.level = :debug
 # Aspera::Log.instance.logger_type = :stderr
-require 'aspera/coverage'
 require 'aspera/ascmd'
 require 'aspera/ssh'
 require 'uri'
