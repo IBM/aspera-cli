@@ -22,7 +22,7 @@ module Aspera
       # Validate a value against a schema.
       # @param value   [Object]  value to validate
       # @param path    [String]  schema path, e.g. `opts:components.schemas.HttpOptions`
-      # @param partial [Boolean] `true`: value may be incomplete, `required` is not enforced
+      # @param partial [Boolean] `true`: value may be incomplete, `required` is not enforced, `null` values (removal) are ignored
       # @return [Array<String>] error messages, empty if valid or schema not validated
       def errors(value, path, partial: false)
         return [] unless path.is_a?(String) && Registry.owned?(path)
@@ -31,6 +31,7 @@ module Aspera
         schema = schema.ref("#/#{dotted.split('.').map { |s| s.gsub('~', '~0').gsub('/', '~1') }.join('/')}") if dotted
         # JSON view of value: symbol keys and values become strings
         data = JSON.parse(JSON.generate(value))
+        data = without_null(data) if partial
         schema.validate(data).filter_map { |error| message(error, partial) }
       end
 
@@ -60,6 +61,16 @@ module Aspera
         case node
         when Hash then node.each_with_object({}) { |(k, v), h| h[k] = without_required(v) unless k.eql?('required') && v.is_a?(Array) }
         when Array then node.map { |e| without_required(e) }
+        else node
+        end
+      end
+
+      # @param node [Object] JSON value
+      # @return [Object] copy of node without Hash entries whose value is `null` (entry removal requested by user)
+      def without_null(node)
+        case node
+        when Hash then node.each_with_object({}) { |(k, v), h| h[k] = without_null(v) unless v.nil? }
+        when Array then node.map { |e| without_null(e) }
         else node
         end
       end

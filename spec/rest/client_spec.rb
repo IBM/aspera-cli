@@ -139,8 +139,10 @@ RSpec.describe(Aspera::Rest) do
       @servers = []
       @threads = []
       @params = Aspera::Rest::Parameters.instance
-      @saved = %i[retry_max retry_sleep retry_on_error retry_on_timeout].to_h { |k| [k, @params.send(k)] }
+      @saved = %i[retry_max retry_sleep retry_on_error retry_on_timeout session_cb].to_h { |k| [k, @params.send(k)] }
       @params.retry_sleep = 0
+      # Fail fast instead of hanging on default 60s timeouts
+      @params.session_cb = ->(http) { http.open_timeout = http.read_timeout = http.write_timeout = 5 }
     end
 
     after do

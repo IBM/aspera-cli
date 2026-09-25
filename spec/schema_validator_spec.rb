@@ -31,6 +31,12 @@ RSpec.describe(Aspera::Schema::Validator) do
     expect(validator.errors({}, telemetry, partial: true)).to(be_empty)
   end
 
+  it 'ignores null values (removal) in partial value' do
+    ts = Aspera::Schema::Registry::TRANSFER_SPEC
+    expect(validator.errors({'wss_enabled' => nil, 'wss_port' => nil}, ts, partial: true)).to(be_empty)
+    expect(validator.errors({'wss_enabled' => nil}, ts)).not_to(be_empty)
+  end
+
   it 'accepts symbol keys and values' do
     expect(validator.errors({agent: :node, url: 'https://x'}, agent_options, partial: true)).to(be_empty)
   end
