@@ -20,8 +20,11 @@ using Rainbow
 
 # Cancel method for HTTP
 class Net::HTTP::Cancel < Net::HTTPRequest # rubocop:disable Style/ClassAndModuleChildren
+  # HTTP method name
   METHOD = 'CANCEL'
+  # No request body
   REQUEST_HAS_BODY  = false
+  # No response body
   RESPONSE_HAS_BODY = false
 end
 
@@ -29,10 +32,6 @@ module Aspera
   # Global settings for Rest object
   # For example to remove certificate verification globally:
   # `RestParameters.instance.session_cb = lambda{|http|http.verify_mode=OpenSSL::SSL::VERIFY_NONE}`
-  # @param user_agent [String] HTTP request header: 'User-Agent'
-  # @param download_partial_suffix [String] suffix for partial download
-  # @param session_cb [lambda] lambda called on new HTTP session. Takes the Net::HTTP as arg. Used to change parameters on creation.
-  # @param progress_bar [Object] progress bar object called for file transfer
   #
   # @!method self.instance
   #   Returns the singleton instance of RestParameters
@@ -40,10 +39,30 @@ module Aspera
   class RestParameters
     include Singleton
 
-    attr_accessor :user_agent, :download_partial_suffix, :retry_on_error, :retry_on_timeout, :retry_on_unavailable, :retry_max, :retry_sleep, :session_cb, :progress_bar, :spinner_cb
+    # @return [String] HTTP request header: `User-Agent`
+    attr_accessor :user_agent
+    # @return [String] Suffix of file being downloaded, removed when download is complete
+    attr_accessor :download_partial_suffix
+    # @return [Boolean] Retry on any error (network or HTTP)
+    attr_accessor :retry_on_error
+    # @return [Boolean] Retry on connection timeout
+    attr_accessor :retry_on_timeout
+    # @return [Boolean] Retry on HTTP code 503 (service unavailable)
+    attr_accessor :retry_on_unavailable
+    # @return [Integer] Maximum number of retries on error (first call not included)
+    attr_accessor :retry_max
+    # @return [Integer] Seconds to wait before retry
+    attr_accessor :retry_sleep
+    # @return [Proc, nil] Called on new HTTP session, with the `Net::HTTP` as argument, e.g. to set timeouts or certificate verification
+    attr_accessor :session_cb
+    # @return [Object, nil] Progress bar, receives `event` calls during download
+    attr_accessor :progress_bar
+    # @return [Proc, nil] Called with `(title = nil, action: :spin)` to display progress of long operations
+    attr_accessor :spinner_cb
 
     private
 
+    # Set default values
     def initialize
       @user_agent = 'RubyAsperaRest'
       @download_partial_suffix = '.http_partial'
@@ -58,17 +77,22 @@ module Aspera
     end
   end
 
+  # Raised when a looked up entity is not found
   class EntityNotFound < Error
   end
 
+  # MIME types used in `Content-Type` and `Accept`
   module Mime
+    # JSON body
     JSON = 'application/json'
+    # URL encoded form body
     WWW = 'application/x-www-form-urlencoded'
+    # Plain text body
     TEXT = 'text/plain'
-    # Check if a MIME type is JSON, including parameters, e.g. application/json; charset=utf-8
-    def json?(mime)
-      JSON_LIST.include?(mime)
-    end
+    # Check if a media type is JSON
+    # @param mime [String] Media type, without parameters (see `Rest.parse_header`)
+    # @return [Boolean] `true` if JSON
+    def json?(mime) = JSON_LIST.include?(mime)
     module_function :json?
     # Content-Type that are JSON
     JSON_LIST = [JSON, 'application/vnd.api+json', 'application/x-javascript'].freeze
@@ -84,7 +108,7 @@ module Aspera
       # @param user [String] Username
       # @param pass [String] Password
       # @return [String] Basic auth token
-      def basic_authorization(user, pass); return "Basic #{Base64.strict_encode64("#{user}:#{pass}")}"; end
+      def basic_authorization(user, pass) = "Basic #{Base64.strict_encode64("#{user}:#{pass}")}"
 
       # Indicate that the given Hash query uses php style for array parameters
       # @param query [Hash] A key can have Array value and result will use PHP format: a[]=1&a[]=2
@@ -128,8 +152,9 @@ module Aspera
       # @return [Array<Array>] Array of [key, value] pairs suitable for URI.encode_www_form
       def h_to_query_array(query)
         Aspera.assert_type(query, Hash)
-        suffix = query.delete(:x_array_php_style) ? '[]' : nil
+        suffix = query[:x_array_php_style] ? '[]' : nil
         query.each_with_object([]) do |(k, v), query_array|
+          next if k.eql?(:x_array_php_style)
           case v
           when Array
             v.each do |e|
@@ -192,7 +217,10 @@ module Aspera
         return result
       end
 
-      # @return [String] PEM certificates of remote server
+      # Get certificate chain of remote server
+      # @param url       [String]  URL of server
+      # @param as_string [Boolean] `true` to return PEM string, `false` for certificate objects
+      # @return [String, Array<OpenSSL::X509::Certificate>] Certificates of remote server
       def remote_certificate_chain(url, as_string: true)
         result = []
         # initiate a session to retrieve remote certificate
@@ -239,11 +267,9 @@ module Aspera
 
     private
 
-    # create and start keep alive connection on demand
-    def http_session
-      @http_session = self.class.start_http_session(@base_url) if @http_session.nil?
-      return @http_session
-    end
+    # Create and start keep alive connection on demand
+    # @return [Net::HTTP] Started HTTP session
+    def http_session = @http_session ||= self.class.start_http_session(@base_url)
 
     public
 
@@ -256,14 +282,15 @@ module Aspera
     # Base common headers of API
     attr_reader :headers
 
-    # @return [Hash] creation parameters
+    # Parameters to create a copy of this object, e.g. `Rest.new(**api.params)`
+    # @return [Hash] Creation parameters (copy)
     def params
       return {
-        base_url:       @base_url,       # String
-        auth:           @auth_params,    # Hash
-        not_auth_codes: @not_auth_codes, # Array
-        redirect_max:   @redirect_max,   # Integer
-        headers:        @headers         # Hash
+        base_url:       @base_url,           # String
+        auth:           @auth_params.dup,    # Hash
+        not_auth_codes: @not_auth_codes.dup, # Array
+        redirect_max:   @redirect_max,       # Integer
+        headers:        @headers.dup         # Hash
       }
     end
 
@@ -311,6 +338,7 @@ module Aspera
       @oauth = nil
     end
 
+    # OAuth object used for authorization, when auth type is `:oauth2`
     # @return [OAuth::Base] the OAuth object (create, or cached if already created)
     def oauth
       if @oauth.nil?
@@ -379,7 +407,7 @@ module Aspera
           result_mime = self.class.parse_header(result_http['Content-Type'] || Mime::TEXT)[:type]
           Log.log.debug { "response: code=#{result_http.code}, mime=#{result_mime}, content-type=#{response['Content-Type']}" }
           # JSON data needs to be parsed, in case it contains an error code
-          file_saved = save_response(response, result_http, result_mime, save_to)
+          file_saved = save_response(response, result_mime, save_to)
         end
         Log.log.debug { "result: code=#{result_http.code} mime=#{result_mime}" }
         # sometimes there is a UTF8 char (e.g. (c) )
@@ -394,9 +422,7 @@ module Aspera
           File.write(save_to, result_http.body, binmode: true)
         end
       rescue *NETWORK_ERRORS => e
-        # the request was not sent (connection) or its result is unknown (other)
-        do_retry = e.is_a?(Net::OpenTimeout) ? RestParameters.instance.retry_on_timeout : RestParameters.instance.retry_on_error
-        raise unless do_retry && (error_tries -= 1).positive?
+        raise unless retry_error?(e) && (error_tries -= 1).positive?
         Log.log.warn { "#{e.class}: #{e.message}: retrying" }
         retry_sleep
         retry
@@ -411,14 +437,7 @@ module Aspera
             retry
           end
         end
-        do_retry = false
-        # AoC have some timeout , like Connect to platform.bss.asperasoft.com:443 ...
-        do_retry ||= true if e.response.body&.include?('failed: connect timed out') && RestParameters.instance.retry_on_timeout
-        # AoC sometimes not available
-        do_retry ||= true if RestParameters.instance.retry_on_unavailable && UNAVAILABLE_CODES.include?(result_http.code.to_s)
-        # possibility to retry anything if it fails
-        do_retry ||= true if RestParameters.instance.retry_on_error
-        if do_retry && (error_tries -= 1).positive?
+        if retry_error?(e) && (error_tries -= 1).positive?
           retry_sleep
           retry
         end
@@ -450,6 +469,26 @@ module Aspera
 
     private
 
+    # Decide if an error is retried, according to RestParameters
+    # @param error [Exception] Network error or RestCallError
+    # @return [Boolean] `true` if the request shall be retried
+    def retry_error?(error)
+      settings = RestParameters.instance
+      # the request was not sent (connection) or its result is unknown (other)
+      return error.is_a?(Net::OpenTimeout) ? settings.retry_on_timeout : settings.retry_on_error unless error.is_a?(RestCallError)
+      response = error.response
+      # a redirect is followed, not retried
+      return false if response.is_a?(Net::HTTPRedirection)
+      # AoC have some timeout , like Connect to platform.bss.asperasoft.com:443 ...
+      (settings.retry_on_timeout && response.body&.include?('failed: connect timed out')) ||
+        # AoC sometimes not available
+        (settings.retry_on_unavailable && UNAVAILABLE_CODES.include?(response.code.to_s)) ||
+        # possibility to retry anything if it fails
+        settings.retry_on_error
+    end
+
+    # Wait before retry, according to RestParameters
+    # @return [void]
     def retry_sleep
       sleep(RestParameters.instance.retry_sleep) unless RestParameters.instance.retry_sleep.eql?(0)
     end
@@ -474,6 +513,7 @@ module Aspera
     # @param location    [String]    Header `Location` of redirect response (absolute or relative)
     # @param headers     [Hash, nil] Headers of the call
     # @param call_args   [Hash]      Other arguments of `call`
+    # @return [Object] Result of `call` on new location
     def redirect_call(request_uri, location, headers:, **call_args)
       Aspera.assert(!location.nil?) { 'redirect response without Location' }
       new_uri = URI.join(request_uri.to_s, location)
@@ -493,20 +533,16 @@ module Aspera
       Rest.new(**rest_params).call(subpath: new_url.end_with?('/') ? '/' : nil, query: query, headers: headers, **call_args)
     end
 
+    # @param headers [Hash] HTTP headers
     # @return [Hash] Headers without credentials
-    def without_credentials(headers)
-      headers.reject { |k, _| CREDENTIAL_HEADERS.include?(k.to_s.downcase) }
-    end
+    def without_credentials(headers) = headers.reject { |k, _| CREDENTIAL_HEADERS.include?(k.to_s.downcase) }
 
+    # Add base headers and authentication to call parameters
+    # @param headers [Hash, nil]              Headers of call
+    # @param query   [Hash, String, Array, nil] Query of call
+    # @return [Array(Hash, Object)] Headers and query for the request
     def prepare_call(headers, query)
-      if headers.nil?
-        headers = @headers.clone
-      else
-        h = headers
-        headers = @headers.clone
-        headers.merge!(h)
-      end
-      Aspera.assert_type(headers, Hash)
+      headers = @headers.merge(headers || {})
       case @auth_params[:type]
       when :none
         # no auth
@@ -528,6 +564,14 @@ module Aspera
       [headers, query]
     end
 
+    # Build HTTP request, including body and basic authentication
+    # @param operation    [String]                  HTTP operation (GET, POST, ...)
+    # @param subpath      [String]                  Subpath of REST API
+    # @param query        [Hash, String, Array, nil] Query of request
+    # @param content_type [String, nil]             One of Mime::JSON, Mime::WWW, Mime::TEXT, or `nil` for no body
+    # @param body         [Hash, String, nil]       Body of request, serialized according to `content_type`
+    # @param headers      [Hash]                    Headers of request
+    # @return [Net::HTTPRequest] The request
     def build_request(operation, subpath, query, content_type, body, headers)
       # TODO: shall we percent encode subpath (spaces) test with access key delete with space in id
       # URI.escape()
@@ -563,10 +607,15 @@ module Aspera
       req
     end
 
-    def save_response(response, result_http, result_mime, save_to)
-      return false unless !save_to.nil? && result_http.code.to_s.start_with?('2') && !Mime.json?(result_mime)
+    # Save response body to file or stream, if successful and not JSON (streamed download with progress)
+    # @param response    [Net::HTTPResponse]   Response, body not read yet
+    # @param result_mime [String]              Media type of response
+    # @param save_to     [String, IO, nil]     File path or IO object
+    # @return [Boolean] `true` if body was saved
+    def save_response(response, result_mime, save_to)
+      return false unless !save_to.nil? && response.code.to_s.start_with?('2') && !Mime.json?(result_mime)
 
-      total_size = result_http['Content-Length']&.to_i
+      total_size = response['Content-Length']&.to_i
       Log.log.debug('before write file')
       target_file = save_to
       # override user's path to path in header (only for file path, not for stream)
@@ -586,7 +635,7 @@ module Aspera
       limiter = TimerLimiter.new(0.5)
       if target_file.respond_to?(:write)
         # IO object: stream directly into it
-        result_http.read_body do |fragment|
+        response.read_body do |fragment|
           target_file.write(fragment)
           written_size += fragment.length
           RestParameters.instance.progress_bar&.event(:transfer, session_id: session_id, info: written_size) if limiter.trigger?
@@ -596,7 +645,7 @@ module Aspera
         target_file_tmp = "#{target_file}#{RestParameters.instance.download_partial_suffix}"
         FileUtils.mkdir_p(File.dirname(target_file_tmp))
         File.open(target_file_tmp, 'wb') do |file|
-          result_http.read_body do |fragment|
+          response.read_body do |fragment|
             file.write(fragment)
             written_size += fragment.length
             RestParameters.instance.progress_bar&.event(:transfer, session_id: session_id, info: written_size) if limiter.trigger?
@@ -609,6 +658,10 @@ module Aspera
       true
     end
 
+    # Parse response body, according to media type
+    # @param result_http [Net::HTTPResponse] Response
+    # @param result_mime [String]            Media type of response
+    # @return [Hash, Array, String, nil] Parsed JSON, or raw body
     def parse_response(result_http, result_mime)
       result_data = result_http.body
       Log.dump(:result_data_raw, result_data, level: :trace1)
@@ -622,48 +675,59 @@ module Aspera
 
     public
 
-    #
-    # CRUD simplified methods here
-    # If specific elements are needed, then use the full `call` method
-    #
+    # @!group CRUD
+    # Simplified methods accepting JSON, and sending JSON body.
+    # If specific elements are needed, then use the full `call` method.
 
-    # Create: `POST`
-    def create(subpath, params, **kwargs)
-      kwargs[:headers] ||= {}
-      kwargs[:headers]['Accept'] = Mime::JSON unless kwargs[:headers].key?('Accept')
-      kwargs[:content_type] = Mime::JSON unless kwargs.key?(:content_type)
-      return call(operation: 'POST', subpath: subpath, body: params, **kwargs)
+    # `POST` JSON body
+    # @param subpath [String]  Subpath of REST API
+    # @param params  [Hash]    Body
+    # @param kwargs  [Hash]    Other arguments of `call`
+    # @return [Object] Result of `call`
+    def create(subpath, params, **kwargs) = call(operation: 'POST', subpath: subpath, body: params, **json_call_args(kwargs, body: true))
+
+    # `GET`
+    # @param subpath [String]    Subpath of REST API
+    # @param query   [Hash, nil] Query
+    # @param kwargs  [Hash]      Other arguments of `call`
+    # @return [Object] Result of `call`
+    def read(subpath, query = nil, **kwargs) = call(operation: 'GET', subpath: subpath, query: query, **json_call_args(kwargs))
+
+    # `PUT` JSON body
+    # @param subpath [String] Subpath of REST API
+    # @param params  [Hash]   Body
+    # @param kwargs  [Hash]   Other arguments of `call`
+    # @return [Object] Result of `call`
+    def update(subpath, params, **kwargs) = call(operation: 'PUT', subpath: subpath, body: params, **json_call_args(kwargs, body: true))
+
+    # `DELETE`
+    # @param subpath [String]    Subpath of REST API
+    # @param params  [Hash, nil] Query
+    # @param kwargs  [Hash]      Other arguments of `call`
+    # @return [Object] Result of `call`
+    def delete(subpath, params = nil, **kwargs) = call(operation: 'DELETE', subpath: subpath, query: params, **json_call_args(kwargs))
+
+    # `CANCEL`
+    # @param subpath [String] Subpath of REST API
+    # @param kwargs  [Hash]   Other arguments of `call`
+    # @return [Object] Result of `call`
+    def cancel(subpath, **kwargs) = call(operation: 'CANCEL', subpath: subpath, **json_call_args(kwargs))
+
+    # @!endgroup
+
+    private
+
+    # Defaults of CRUD methods: accept JSON, and send JSON body. Caller's arguments are not modified.
+    # @param kwargs [Hash]    Arguments of `call`
+    # @param body   [Boolean] `true` if a body is sent
+    # @return [Hash] Arguments of `call`
+    def json_call_args(kwargs, body: false)
+      args = kwargs.merge(headers: {'Accept' => Mime::JSON}.merge(kwargs[:headers] || {}))
+      args[:content_type] = Mime::JSON if body && !kwargs.key?(:content_type)
+      args
     end
 
-    # Read: `GET`
-    def read(subpath, query = nil, **kwargs)
-      kwargs[:headers] ||= {}
-      kwargs[:headers]['Accept'] = Mime::JSON unless kwargs[:headers].key?('Accept')
-      return call(operation: 'GET', subpath: subpath, query: query, **kwargs)
-    end
-
-    # Update: `PUT`
-    def update(subpath, params, **kwargs)
-      kwargs[:headers] ||= {}
-      kwargs[:headers]['Accept'] = Mime::JSON unless kwargs[:headers].key?('Accept')
-      kwargs[:content_type] = Mime::JSON unless kwargs.key?(:content_type)
-      return call(operation: 'PUT', subpath: subpath, body: params, **kwargs)
-    end
-
-    # Delete: `DELETE`
-    def delete(subpath, params = nil, **kwargs)
-      kwargs[:headers] ||= {}
-      kwargs[:headers]['Accept'] = Mime::JSON unless kwargs[:headers].key?('Accept')
-      return call(operation: 'DELETE', subpath: subpath, query: params, **kwargs)
-    end
-
-    # Cancel: `CANCEL`
-    def cancel(subpath, **kwargs)
-      kwargs[:headers] ||= {}
-      kwargs[:headers]['Accept'] = Mime::JSON unless kwargs[:headers].key?('Accept')
-      return call(operation: 'CANCEL', subpath: subpath, **kwargs)
-    end
-
+    # HTTP codes of service unavailable
     UNAVAILABLE_CODES = ['503']
     # Network errors that can be retried
     NETWORK_ERRORS = [

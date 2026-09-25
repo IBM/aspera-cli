@@ -726,8 +726,7 @@ module Aspera
 
         # watch_folder setup: inject required API header (avoids "Unable to convert 2016_09_14 configuration")
         def setup_watch_folder(**)
-          api_node.params[:headers] ||= {}
-          api_node.params[:headers]['X-aspera-WF-version'] = '2017_10_23'
+          api_node.headers['X-aspera-WF-version'] = '2017_10_23'
           {}
         end
 

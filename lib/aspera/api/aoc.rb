@@ -498,8 +498,8 @@ module Aspera
           }
         else
           # OAuth bearer token
-          node_params[:auth] = auth_params.clone
-          node_params[:auth][:params] ||= {}
+          # copy nested params, so that auth params of this API are not modified
+          node_params[:auth] = auth_params.merge(params: auth_params[:params]&.dup || {})
           node_params[:auth][:params][:scope] = Node::Scope.join(access_key: node_info['access_key'], scope: scope)
           node_params[:auth][:params][:owner_access] = true if scope.eql?(Node::Scope::ADMIN)
           # Special header required for bearer token only

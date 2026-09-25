@@ -12,6 +12,18 @@ RSpec.describe(Aspera::Rest) do
     expect(Aspera::Rest.build_uri('https://locahost', 'q=e&p=1').to_s).to(eq('https://locahost?q=e&p=1'))
   end
 
+  it 'builds php style query without modifying caller query' do
+    query = Aspera::Rest.php_style({'a' => %w[1 2]})
+    2.times { expect(Aspera::Rest.build_uri('https://localhost', query).query).to(eq('a[]=1&a[]=2')) }
+    expect(query).to(eq({'a' => %w[1 2], x_array_php_style: true}))
+  end
+
+  it 'returns a copy of creation parameters' do
+    api = Aspera::Rest.new(base_url: 'https://localhost', headers: {'X-A' => 'a'})
+    api.params[:headers]['X-B'] = 'b'
+    expect(api.headers).to(eq({'X-A' => 'a', 'User-Agent' => Aspera::RestParameters.instance.user_agent}))
+  end
+
   it 'parses php query' do
     expect(Aspera::Rest.query_to_h('q[]=1&q[]=2')).to(eq({'q' => %w[1 2]}))
     expect(Aspera::Rest.query_to_h('q=1&q=2')).to(eq({'q' => %w[1 2]}))
@@ -215,6 +227,21 @@ RSpec.describe(Aspera::Rest) do
         expect(api(auth: {type: :url, url_query: {'k' => 'v'}}).read('other')['query']).to(eq('r=3'))
       end
 
+      it 'follows redirect without retry, even if retry_on_error' do
+        @params.retry_on_error = true
+        @params.retry_max = 2
+        rest = api
+        allow(rest).to(receive(:retry_sleep).and_call_original)
+        expect(rest.read('relative')['query']).to(eq('r=1'))
+        expect(rest).not_to(have_received(:retry_sleep))
+      end
+
+      it 'does not modify headers of caller' do
+        headers = {'X-Call' => 'c'}
+        api.read('echo', nil, headers: headers)
+        expect(headers).to(eq({'X-Call' => 'c'}))
+      end
+
       it 'does not modify query of caller' do
         query = {'q' => '1'}
         api(auth: {type: :url, url_query: {'k' => 'v'}}).read('echo', query)
@@ -261,6 +288,13 @@ RSpec.describe(Aspera::Rest) do
         @params.retry_on_error = false
         fail_once(Errno::ECONNRESET)
         expect { Aspera::Rest.new(base_url: @url).read('echo') }.to(raise_error(Errno::ECONNRESET))
+      end
+
+      it 'keeps php style query on retry' do
+        @params.retry_on_error = true
+        fail_once(Errno::ECONNRESET)
+        query = Aspera::Rest.php_style({'a' => %w[1 2]})
+        expect(Aspera::Rest.new(base_url: @url).read('echo', query)['query']).to(eq('a[]=1&a[]=2'))
       end
 
       it 'does not retry more than retry_max' do
