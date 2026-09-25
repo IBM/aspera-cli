@@ -2,6 +2,7 @@
 
 require 'aspera/cli/option_types'
 require 'aspera/cli/extended_value'
+require 'aspera/cli/deprecation'
 require 'aspera/secret_hider'
 require 'aspera/schema/registry'
 require 'aspera/log'
@@ -36,7 +37,7 @@ module Aspera
       # @param allowed [nil,Class,Array<Class>,Array<Symbol>] Allowed values
       # @param on_set [#call, nil] Called with the new value each time the value is set
       # @param shorthand [String, nil] For a `Hash` option: a `String` value is stored as `{shorthand => value}`
-      # @param deprecation [String] Deprecation message
+      # @param deprecation [Hash, Deprecation, nil] Deprecation: `{last:, message:}`, see `Deprecation`
       # @param schema [String] Declaration of schema
       # `allowed`:
       # - `nil` No validation, so just a string
@@ -52,7 +53,7 @@ module Aspera
         @block = nil
         # by default passwords and secrets are sensitive, else specify when declaring the option
         @sensitive = SecretHider.instance.secret?(@option, '')
-        @deprecation = deprecation
+        @deprecation = Deprecation.create(deprecation)
         @schema = schema
         @shorthand = shorthand
         @source = nil
@@ -125,7 +126,7 @@ module Aspera
           Log.log.debug { "#{source}: #{@option}: ignored, already set from #{@source}" }
           return
         end
-        Aspera.assert(!@deprecation, type: :warn) { "Option #{@option} is deprecated: #{@deprecation}" } if warn_deprecation
+        Aspera.assert(!@deprecation, type: :warn) { "Option #{@option} is #{@deprecation}" } if warn_deprecation
         if schema_request?(value)
           return if lower
           raise SchemaRequest.new(:option, @option, @schema) unless @schema.nil?

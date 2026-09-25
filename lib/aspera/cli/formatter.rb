@@ -41,16 +41,16 @@ module Aspera
       private_constant :FIELDS_LESS, :DISPLAY_FORMATS, :DISPLAY_LEVELS, :SINGLE_OBJECT_COLUMN_NAMES, :STR_LST_SEP_VERT
 
       option :out,          description: 'Output rendering options (dot-notation: format, level, file, fields, select, table[.pivot], flat, secrets, img)', schema: Schema::Registry::OUT_OPTIONS
-      option :display,      description: 'Output only some information', allowed: DISPLAY_LEVELS, default: :data, deprecation: 'use --out.level'
+      option :display,      description: 'Output only some information', allowed: DISPLAY_LEVELS, default: :data, deprecation: {last: '4.27.0', message: 'use --out.level'}
       option :format,       description: 'Output format (also: --out.format)', allowed: DISPLAY_FORMATS, default: :table
-      option :output,       description: 'Destination for results', deprecation: 'use --out.file'
+      option :output,       description: 'Destination for results', deprecation: {last: '4.27.0', message: 'use --out.file'}
       option :fields,       description: "Comma separated list of: fields, or #{SpecialValues::ALL}, or #{SpecialValues::DEF} (also: --out.fields)", allowed: [String, Array, Regexp, Proc], default: SpecialValues::DEF
       option :select,       description: 'Select only some items in lists: column, value (also: --out.select)', allowed: [Hash, Proc]
-      option :table_style,  description: '(Table) Display style',                                                                             allowed: [Hash], deprecation: 'use --out.table'
-      option :flat_hash,    description: '(Table) Display deep values as additional keys',                                                    allowed: Type::BOOLEAN, default: true,                    deprecation: 'use --out.flat'
-      option :multi_single, description: '(Table) Control how object list is displayed as single table, or multiple objects',                 allowed: %i[no yes single], default: :no,                 deprecation: 'use --out.table.pivot'
-      option :show_secrets, description: 'Show secrets on command output',                                                                    allowed: Type::BOOLEAN, default: false,                   deprecation: 'use --out.secrets'
-      option :image,        schema: Schema::Registry::IMAGE_OPTIONS, deprecation: 'use --out.img'
+      option :table_style,  description: '(Table) Display style',                                                                             allowed: [Hash], deprecation: {last: '4.27.0', message: 'use --out.table'}
+      option :flat_hash,    description: '(Table) Display deep values as additional keys',                                                    allowed: Type::BOOLEAN, default: true,                    deprecation: {last: '4.27.0', message: 'use --out.flat'}
+      option :multi_single, description: '(Table) Control how object list is displayed as single table, or multiple objects',                 allowed: %i[no yes single], default: :no,                 deprecation: {last: '4.27.0', message: 'use --out.table.pivot'}
+      option :show_secrets, description: 'Show secrets on command output',                                                                    allowed: Type::BOOLEAN, default: false,                   deprecation: {last: '4.27.0', message: 'use --out.secrets'}
+      option :image,        schema: Schema::Registry::IMAGE_OPTIONS, deprecation: {last: '4.27.0', message: 'use --out.img'}
 
       class << self
         # Replace special values with a readable version on terminal

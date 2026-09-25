@@ -23,7 +23,7 @@ module Aspera
       # @param default     [Object, nil]             Default value
       # @param on_set     [Symbol, Proc, #call, nil] `on_set` callback (see OptionSpec)
       # @param shorthand   [String, nil]             For a `Hash` option: a `String` value is stored as `{shorthand => value}`
-      # @param deprecation [String, nil]             Deprecation message forwarded to options.declare
+      # @param deprecation [Hash, nil]               Deprecation `{last:, message:}` forwarded to options.declare (see `Deprecation`)
       # @param schema      [String, nil]             Schema reference (e.g. "opts:components.schemas.Foo");
       #                                              when description: is nil, the schema title or first description line is used
       def option(name, description: nil,

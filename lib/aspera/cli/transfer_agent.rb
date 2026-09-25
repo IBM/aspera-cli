@@ -49,7 +49,7 @@ module Aspera
       option :sources,       description: "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})",               default: FILE_LIST_FROM_ARGS
       option :src_type,      description: 'Type of file list',                                                                        allowed: %i[list pair], default: :list
       option :transfer,      description: 'Transfer agent type, or agent parameters with optional agent key',                         allowed: [Hash, String], shorthand: 'agent', schema: Schema::Registry::TRANSFER_AGENT_OPTIONS
-      option :transfer_info, description: 'Parameters for transfer agent',                                                            deprecation: 'use --transfer instead', schema: Schema::Registry::TRANSFER_AGENT_OPTIONS
+      option :transfer_info, description: 'Parameters for transfer agent',                                                            deprecation: {last: '4.26.2', message: 'use --transfer instead'}, schema: Schema::Registry::TRANSFER_AGENT_OPTIONS
 
       # @param context [Context] Application context
       def initialize(context)

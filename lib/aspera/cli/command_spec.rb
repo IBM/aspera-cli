@@ -75,7 +75,7 @@ module Aspera
     #   - other:  object responding to `call`, e.g. `Log.instance.method(:level=)`
     #   - nil:    no callback, the value is read with `get_option`
     # @!attribute shorthand   [String, nil]          For a `Hash` option: a `String` value is stored as `{shorthand => value}`
-    # @!attribute deprecation [String, nil]          Forwarded to options.declare as deprecation:
+    # @!attribute deprecation [Hash, nil]            Forwarded to options.declare as deprecation: `{last:, message:}`
     # @!attribute schema      [String, nil]          JSON schema name; also derives description when nil
     OptionSpec = Struct.new(
       :name,

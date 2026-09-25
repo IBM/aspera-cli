@@ -145,7 +145,7 @@ module Aspera
       # @param on_set       [#call]  Called with the new value each time the value is set (e.g. a `Method`, or a lambda).
       #   For a flag (`Type::NONE`): called without argument when the flag is found
       # @param shorthand     [String] For a `Hash` option: a `String` value is stored as `{shorthand => value}`
-      # @param deprecation   [String] deprecation
+      # @param deprecation   [Hash, nil] deprecation: `{last:, message:}`, see `Deprecation`
       # @param schema        [String] schema path documenting the Hash form of this option
       # @param block [Proc] Block to execute when option is found
       def declare(option_symbol, description: nil, short: nil, allowed: nil, default: nil, on_set: nil, shorthand: nil, deprecation: nil, schema: nil, &block)
@@ -471,7 +471,7 @@ module Aspera
           end
           short_part = opt.short ? "-#{opt.short}, " : '    '
           flag = "#{short_part}#{symbol_to_option(sym, option_display_value(opt))}"
-          desc = opt.deprecation ? "#{opt.description} (deprecated: #{opt.deprecation})" : opt.description
+          desc = opt.deprecation ? "#{opt.description} (#{opt.deprecation})" : opt.description
           rows << [flag, desc]
         end
         table = Terminal::Table.new(rows: rows, style: {border: HELP_BORDER, padding_left: 0, padding_right: 2})

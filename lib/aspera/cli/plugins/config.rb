@@ -608,10 +608,11 @@ module Aspera
               description: opt.description.to_s
             }
             row[:allowed]    = opt.values.join('|') if opt.values&.any?
-            row[:deprecated] = opt.deprecation      if opt.deprecation
+            row[:deprecated] = opt.deprecation.last if opt.deprecation
+            row[:replacement] = opt.deprecation.message if opt.deprecation
             row
           end
-          Result::ObjectList.new(rows, fields: %w[option description allowed deprecated])
+          Result::ObjectList.new(rows, fields: %w[option description allowed deprecated replacement])
         end
 
         def action_completion_bash(words: nil, **)

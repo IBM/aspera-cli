@@ -557,6 +557,12 @@ module Aspera
           expect(help).to(include('--list-opt=LIST'))
           expect(help).to(include('--str-opt=VALUE'))
         end
+
+        it 'displays the deprecation with its version' do
+          opts = build_parser([])
+          opts.declare(:old_opt, description: 'Old option', deprecation: {last: '4.27.0', message: 'use --new-opt'})
+          expect(opts.help_text).to(include('Old option (deprecated after 4.27.0: use --new-opt)'))
+        end
       end
     end
   end
