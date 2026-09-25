@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'aspera/mime'
 require 'aspera/rest_errors_aspera'
 require 'aspera/rest_error_analyzer'
 require 'aspera/log'
@@ -79,24 +80,6 @@ module Aspera
 
   # Raised when a looked up entity is not found
   class EntityNotFound < Error
-  end
-
-  # MIME types used in `Content-Type` and `Accept`
-  module Mime
-    # JSON body
-    JSON = 'application/json'
-    # URL encoded form body
-    WWW = 'application/x-www-form-urlencoded'
-    # Plain text body
-    TEXT = 'text/plain'
-    # Check if a media type is JSON
-    # @param mime [String] Media type, without parameters (see `Rest.parse_header`)
-    # @return [Boolean] `true` if JSON
-    def json?(mime) = JSON_LIST.include?(mime)
-    module_function :json?
-    # Content-Type that are JSON
-    JSON_LIST = [JSON, 'application/vnd.api+json', 'application/x-javascript'].freeze
-    private_constant :JSON_LIST
   end
 
   # Make HTTP calls, equivalent to rest-client

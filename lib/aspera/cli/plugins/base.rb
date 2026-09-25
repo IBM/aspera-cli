@@ -618,7 +618,7 @@ module Aspera
             # already the list
           elsif items_key
             data = data[items_key]
-          elsif http['Content-Type'].start_with?('application/vnd.api+json')
+          elsif http['Content-Type'].start_with?(Mime::JSON_API)
             # JSON:API: list is under the entity name
             data = data[entity]
           end

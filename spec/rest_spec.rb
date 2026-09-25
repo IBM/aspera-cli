@@ -33,6 +33,15 @@ RSpec.describe(Aspera::Rest) do
     expect(Aspera::Rest.parse_header('application/json; charset=utf-8; version="1.0"')).to(eq({type: 'application/json', parameters: {charset: 'utf-8', version: '1.0'}}))
   end
 
+  it 'detects JSON media types' do
+    %w[application/json application/vnd.api+json application/problem+json application/x-javascript].each do |mime|
+      expect(Aspera::Mime.json?(mime)).to(be(true), mime)
+    end
+    %w[text/plain application/octet-stream application/jsonx text/html].each do |mime|
+      expect(Aspera::Mime.json?(mime)).to(be(false), mime)
+    end
+  end
+
   describe 'save_to' do
     # Large enough to be received in several fragments
     content = Random.new(42).bytes(1024 * 1024)

@@ -6,6 +6,7 @@ require 'English'
 require 'webrick'
 require 'aspera/log'
 require 'aspera/assert'
+require 'aspera/mime'
 
 module Aspera
   # Start a Faspex-4 style post-processing script using Faspex-5 webhook

@@ -3,6 +3,7 @@
 require 'aspera/oauth/factory'
 require 'aspera/log'
 require 'aspera/assert'
+require 'aspera/mime'
 require 'date'
 require 'aspera/rainbow'
 using Rainbow

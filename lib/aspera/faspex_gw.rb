@@ -2,6 +2,7 @@
 
 require 'aspera/log'
 require 'aspera/assert'
+require 'aspera/mime'
 require 'webrick'
 require 'json'
 

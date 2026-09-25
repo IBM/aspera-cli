@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/assert'
+require 'aspera/mime'
 require 'aspera/ascp/installation'
 require 'aspera/agent/direct'
 require 'aspera/log'
