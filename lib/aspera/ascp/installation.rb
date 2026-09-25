@@ -42,6 +42,14 @@ module Aspera
       # policy for product selection
       FIRST_FOUND = 'FIRST'
 
+      class << self
+        # @param value [String, nil] value of option `sdk_folder`
+        # @return [Boolean] true if value selects a product instead of a folder
+        def product_selector?(value)
+          value.is_a?(String) && value.start_with?(USE_PRODUCT_PREFIX)
+        end
+      end
+
       # Loads YAML from cloud with locations of SDK archives for all platforms
       # @return [Hash] location structure
       def sdk_locations
@@ -55,30 +63,25 @@ module Aspera
         end
       end
 
-      # Set `ascp` executable "location"
+      # Set `ascp` executable "location" (option `sdk_folder`)
       # It can be:
-      # - Full path to folder where `ascp` executable is located
-      # - "product:PRODUCT_NAME" to use ascp from named product
+      # - Full path to folder where `ascp` executable is located, also used as SDK folder (keys, conf)
+      # - "product:PRODUCT_NAME" to use ascp from named product, SDK folder stays the default one
       # - "product:FIRST" to use ascp from first found product
+      # @param ascp_location [String] folder or product selector
+      # @return [nil]
       def sdk_folder=(ascp_location)
         Aspera.assert_type(ascp_location, String) { 'ascp_location' }
         Aspera.assert(!ascp_location.empty?, 'ascp location cannot be empty: check your config file')
-        folder =
-          if ascp_location.start_with?(USE_PRODUCT_PREFIX)
-            product_name = ascp_location.delete_prefix(USE_PRODUCT_PREFIX)
-            if product_name.eql?(FIRST_FOUND)
-              pl = installed_products.first
-              Aspera.assert(!pl.nil?) { "No Aspera transfer module or SDK found.\nRefer to the manual or install SDK with command:\nascli conf transferd install" }
-            else
-              pl = installed_products.find { |i| i[:name].eql?(product_name) }
-              Aspera.assert(!pl.nil?) { "No such product installed: #{product_name}" }
-            end
-            File.dirname(pl[:ascp_path])
-          else
-            ascp_location.include?('/ascp') ? File.dirname(ascp_location) : ascp_location
-          end
-        Log.log.debug { "ascp_folder=#{folder}" }
-        Products::Transferd.sdk_directory = folder
+        @ascp_folder = nil
+        if self.class.product_selector?(ascp_location)
+          # Resolved on first use: product scan requires the SDK folder, which is set later
+          @ascp_product = ascp_location.delete_prefix(USE_PRODUCT_PREFIX)
+          Log.log.debug { "ascp_product=#{@ascp_product}" }
+        else
+          @ascp_product = nil
+          Products::Transferd.sdk_directory = ascp_location.include?('/ascp') ? File.dirname(ascp_location) : ascp_location
+        end
         nil
       end
 
@@ -114,8 +117,9 @@ module Aspera
         case file_type
         when *EXE_FILES
           file_is_required = file_type.eql?(:ascp)
-          file = Products::Transferd.transferd_path
-          file = File.join(File.dirname(file), Environment.instance.exe_file(file_type.to_s)) unless file_type.eql?(:transferd)
+          file = sdk_exe_path(file_type)
+          # transferd always comes from SDK
+          file = File.join(product_ascp_folder, File.basename(file)) unless @ascp_product.nil? || file_type.eql?(:transferd)
         when :ssh_private_dsa, :ssh_private_rsa
           # assume last 3 letters are type
           type = file_type.to_s[-3..].to_sym
@@ -385,10 +389,13 @@ module Aspera
         folder = Products::Transferd.sdk_directory
         download_sdk(folder: folder, url: url, version: version)
         # Ensure necessary files are there, or generate them, restrict file access on SDK executables
+        # (executables of SDK, even if `ascp` of another product is selected)
         SDK_FILES.each do |file_id_sym|
-          file_path = path(file_id_sym)
-          if file_path && EXE_FILES.include?(file_id_sym)
+          if EXE_FILES.include?(file_id_sym)
+            file_path = sdk_exe_path(file_id_sym)
             Environment.restrict_file_access(file_path, mode: 0o755) if File.exist?(file_path)
+          else
+            path(file_id_sym)
           end
         end
         # Generate meta data XML file in SDK if needed, based on actual binaries versions
@@ -399,8 +406,8 @@ module Aspera
           sdk_name = meta_data.scan(%r{<name>(.*?)</name>}).flatten.first || 'unknown'
           sdk_version = meta_data.scan(%r{<version>(.*?)</version>}).flatten.first || 'unknown'
         else
-          sdk_ascp_version = get_ascp_version(path(:ascp))
-          transferd_version = get_exe_version(path(:transferd), 'version')
+          sdk_ascp_version = get_ascp_version(sdk_exe_path(:ascp))
+          transferd_version = get_exe_version(sdk_exe_path(:transferd), 'version')
           sdk_name = 'IBM Aspera Transfer SDK'
           sdk_version = transferd_version || sdk_ascp_version
           File.write(meta_data_file, "<product><name>#{sdk_name}</name><version>#{sdk_version}</version></product>")
@@ -435,6 +442,34 @@ module Aspera
         # cache for installed products found
         @found_products = nil
         @transferd_urls = TRANSFERD_ARCHIVE_LOCATION_URL
+        # product selected with option `sdk_folder`, or nil to use SDK folder
+        @ascp_product = nil
+        # cache for folder of `ascp` of selected product
+        @ascp_folder = nil
+      end
+
+      # @param file_type [Symbol] one of EXE_FILES
+      # @return [String] path to executable in SDK folder
+      def sdk_exe_path(file_type)
+        file = Products::Transferd.transferd_path
+        file = File.join(File.dirname(file), Environment.instance.exe_file(file_type.to_s)) unless file_type.eql?(:transferd)
+        return file
+      end
+
+      # @return [String] folder of `ascp` of product selected with option `sdk_folder`
+      def product_ascp_folder
+        if @ascp_folder.nil?
+          if @ascp_product.eql?(FIRST_FOUND)
+            pl = installed_products.first
+            Aspera.assert(!pl.nil?) { "No Aspera transfer module or SDK found.\nRefer to the manual or install SDK with command:\nascli config ascp install" }
+          else
+            pl = installed_products.find { |i| i[:name].eql?(@ascp_product) }
+            Aspera.assert(!pl.nil?) { "No such product installed: #{@ascp_product}" }
+          end
+          @ascp_folder = File.dirname(pl[:ascp_path])
+          Log.log.debug { "ascp_folder=#{@ascp_folder}" }
+        end
+        return @ascp_folder
       end
 
       public

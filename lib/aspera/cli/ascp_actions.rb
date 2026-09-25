@@ -21,19 +21,25 @@ module Aspera
       private_constant :AGENT_SCHEMA_KEY
 
       # Set the SDK directory, checking default and former locations
+      # If a product is selected for `ascp`, the SDK directory is still needed (keys, conf, transferd)
       def set_sdk_dir
-        if options.get_option(:sdk_folder).nil?
-          @sdk_default_location = true
-          Log.log.debug('SDK folder is not set, checking default')
-          sdk_dir = self.class.default_app_main_folder(app_name: TRANSFERD_APP_NAME)
-          Log.log.debug { "Checking: #{sdk_dir}" }
-          if !Dir.exist?(sdk_dir)
-            Log.log.debug { "No such folder: #{sdk_dir}" }
-            former_sdk_folder = File.join(self.class.default_app_main_folder(app_name: Info::CMD_NAME), TRANSFERD_APP_NAME)
-            Log.log.debug { "Checking: #{former_sdk_folder}" }
-            sdk_dir = former_sdk_folder if Dir.exist?(former_sdk_folder)
-          end
-          Log.log.debug { "Using: #{sdk_dir}" }
+        sdk_folder = options.get_option(:sdk_folder)
+        product_selected = Ascp::Installation.product_selector?(sdk_folder)
+        return unless sdk_folder.nil? || product_selected
+        @sdk_default_location = true
+        Log.log.debug('SDK folder is not set, checking default')
+        sdk_dir = self.class.default_app_main_folder(app_name: TRANSFERD_APP_NAME)
+        Log.log.debug { "Checking: #{sdk_dir}" }
+        if !Dir.exist?(sdk_dir)
+          Log.log.debug { "No such folder: #{sdk_dir}" }
+          former_sdk_folder = File.join(self.class.default_app_main_folder(app_name: Info::CMD_NAME), TRANSFERD_APP_NAME)
+          Log.log.debug { "Checking: #{former_sdk_folder}" }
+          sdk_dir = former_sdk_folder if Dir.exist?(former_sdk_folder)
+        end
+        Log.log.debug { "Using: #{sdk_dir}" }
+        if product_selected
+          Products::Transferd.sdk_directory = sdk_dir
+        else
           options.set_option(:sdk_folder, sdk_dir, source: :default)
         end
       end

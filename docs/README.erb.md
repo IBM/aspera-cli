@@ -3520,8 +3520,7 @@ It provides the following commands for `ascp` sub-command:
 #### Selection of `ascp` location for [`direct`](#agent-direct) agent
 
 Option: `sdk_folder` is used to specify the location of `ascp`.
-The default value is: `product:FIRST`.
-By default, <%=tool%> uses any found local product with `ascp`, including Transfer Daemon (SDK).
+By default, <%=tool%> uses `ascp` from the Transfer SDK installed in its configuration folder (see `config ascp install`).
 
 To override and use an alternate `ascp` path use option `sdk_folder` (`--sdk-folder=`)
 
@@ -3545,6 +3544,7 @@ If the path has spaces, read section: [Shell and Command line parsing](#command-
 A special value `product:<%=ph :product_name%>` can be used for option `sdk_folder`.
 It specifies to use `ascp` from the given product name.
 A special value for product name is `FIRST`, which means: use the first product found in the internal list.
+In that case, other files (SSH keys, `aspera.conf`, `transferd`) are still taken from the default SDK folder.
 
 Locally installed Aspera products can be listed with:
 

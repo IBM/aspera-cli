@@ -1151,7 +1151,7 @@ module Aspera
           parameters[:interval] = 10 unless parameters.key?(:interval)
           parameters[:hostname] = Socket.gethostname unless parameters.key?(:hostname)
           interval = parameters[:interval].to_f
-          Aspera.assert(interval > 0, type: Cli::BadArgument) { 'Interval must be a positive number in seconds' }
+          Aspera.assert(interval >= 0, type: Cli::BadArgument) { 'Interval must be a positive number in seconds, or 0 for single shot' }
           otel_api = Rest.new(
             base_url: "#{parameters[:url]}/v1",
             headers: {

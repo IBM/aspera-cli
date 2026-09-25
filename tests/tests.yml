@@ -4402,6 +4402,14 @@ conf_ascp_products_list:
     - ascp
     - products
     - list
+conf_ascp_show_product:
+  tags:
+    - nodoc
+  args:
+    - config
+    - ascp
+    - show
+    - --sdk-folder=product:FIRST
 conf_ascp_prod:
   tags:
     - tmp_conf
