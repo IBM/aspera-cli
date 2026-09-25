@@ -232,7 +232,7 @@ module Aspera
           # Declare all options of `option_sources` onto a Parser instance.
           # Skips options already declared on the parser: it is shared across all plugins in a run.
           # @param options [Aspera::Cli::Parser]
-          # @param target  [Base, nil] plugin instance for Symbol and Proc handlers; nil: such handlers are not bound
+          # @param target  [Base, nil] plugin instance for Symbol and Proc `on_set` callbacks; nil: such callbacks are not bound
           # @param parse   [Boolean] whether to call parse_options! after declaring
           def declare_options(options, target: nil, parse: false)
             option_sources.each do |src|

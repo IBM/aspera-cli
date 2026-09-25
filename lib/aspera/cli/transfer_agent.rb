@@ -65,7 +65,7 @@ module Aspera
         # HTTPGW URL provided by webapp
         @httpgw_url_lambda = nil
         self.class.declare_options(@context.options)
-        @context.options.set_handler(:ts, method(:user_transfer_spec=))
+        @context.options.on_set(:ts, method(:user_transfer_spec=))
         @context.options.parse_options!
         @notification_cb = nil
         if !@context.options.get_option(:notify_to).nil?
@@ -81,7 +81,7 @@ module Aspera
 
       attr_reader :user_transfer_spec
 
-      # Handler of option `ts`: values override defaults
+      # `on_set` callback of option `ts`: values override defaults
       # @param value [Hash] transfer spec parameters
       def user_transfer_spec=(value)
         @user_transfer_spec = TS_DEFAULTS.merge(value)

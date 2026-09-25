@@ -144,19 +144,19 @@ module Aspera
         end
       end
 
-      # Bind all formatter options to this instance using set_handler.
+      # Bind all formatter options to this instance using `on_set`.
       # Called from Runner after Formatter.new.
       # @param options [Aspera::Cli::Parser]
       # @return [nil]
       def bind_options(options)
         @parser = options
         %i[out display format output fields select table_style flat_hash multi_single show_secrets image].each do |opt|
-          options.set_handler(opt, ->(value) { option_handler(opt, value) })
+          options.on_set(opt, ->(value) { option_handler(opt, value) })
         end
         nil
       end
 
-      # Handler called by the option manager for all formatter options
+      # `on_set` callback called by the option manager for all formatter options
       # @param option_symbol [Symbol]      Option name (one of :out, :format, :output, :display, :fields, :select, :table_style, :flat_hash, :multi_single, :show_secrets, :image)
       # @param value         [Object, nil] New value
       # @return [nil]

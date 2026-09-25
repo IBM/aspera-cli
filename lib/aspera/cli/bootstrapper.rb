@@ -94,7 +94,7 @@ module Aspera
       def setup_main_folder
         @context.options.declare(
           :home, description: 'Home folder for tool',
-          handler: @context.method(:main_folder=),
+          on_set: @context.method(:main_folder=),
           default: default_app_main_folder(app_name: Info::CMD_NAME)
         )
         @context.options.parse_options!

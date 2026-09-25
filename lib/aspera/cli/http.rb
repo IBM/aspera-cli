@@ -46,17 +46,17 @@ module Aspera
       attr_accessor :insecure, :warn_insecure
       attr_reader   :ignore_cert_host_port, :http_options
 
-      # Bind all HTTP options to this instance using set_handler.
+      # Bind all HTTP options to this instance using `on_set`.
       # Called from Config#initialize immediately after Http.new.
       # @param options [Aspera::Cli::Parser]
       # @return [nil]
       def bind_options(options)
-        options.set_handler(:insecure,           method(:insecure=))
-        options.set_handler(:ignore_certificate, method(:ignore_cert_host_port=))
-        options.set_handler(:warn_insecure,      method(:warn_insecure=))
-        options.set_handler(:cert_stores,        method(:trusted_cert_locations=))
-        options.set_handler(:http_options,       method(:http_options=))
-        options.set_handler(:http_proxy,         method(:http_proxy=))
+        options.on_set(:insecure,           method(:insecure=))
+        options.on_set(:ignore_certificate, method(:ignore_cert_host_port=))
+        options.on_set(:warn_insecure,      method(:warn_insecure=))
+        options.on_set(:cert_stores,        method(:trusted_cert_locations=))
+        options.on_set(:http_options,       method(:http_options=))
+        options.on_set(:http_proxy,         method(:http_proxy=))
       end
 
       # Setter for http_options: dispatch each key to its target singleton immediately.

@@ -84,18 +84,18 @@ module Aspera
         DEFAULT_CHECK_NEW_VERSION_DAYS = 7
         private_constant :DEFAULT_CHECK_NEW_VERSION_DAYS
 
-        option :preset,             description: 'Load the named option preset from current config file',             short: 'P', handler: :load_preset
+        option :preset,             description: 'Load the named option preset from current config file',             short: 'P', on_set: :load_preset
         option :version_check_days, description: 'Period in days to check new version (zero to disable)',             allowed: Type::INTEGER, default: DEFAULT_CHECK_NEW_VERSION_DAYS
-        option :plugin_folder,      description: 'Folder where to find additional plugins',                           handler: :add_plugin_folders
+        option :plugin_folder,      description: 'Folder where to find additional plugins',                           on_set: :add_plugin_folders
         option :sdk_url,            description: 'Ascp: URL to get Aspera Transfer Executables',                      default: SpecialValues::DEF
-        option :locations_url,      description: 'Ascp: URL to get download locations of Aspera Transfer Daemon',    default: Ascp::Installation.instance.transferd_urls, handler: Ascp::Installation.instance.method(:transferd_urls=)
-        option :sdk_folder,         description: 'Ascp: Path to folder with ascp (or product with "product:")',      handler: Ascp::Installation.instance.method(:sdk_folder=)
+        option :locations_url,      description: 'Ascp: URL to get download locations of Aspera Transfer Daemon',    default: Ascp::Installation.instance.transferd_urls, on_set: Ascp::Installation.instance.method(:transferd_urls=)
+        option :sdk_folder,         description: 'Ascp: Path to folder with ascp (or product with "product:")',      on_set: Ascp::Installation.instance.method(:sdk_folder=)
         option :smtp,               schema: Schema::Registry::SMTP_OPTIONS
         option :notify_to,          description: 'Email: Recipient for notification of transfers'
         option :notify_template,    description: 'Email: ERB template for notification of transfers'
         option :cache_tokens,       description: 'Save and reuse OAuth tokens', allowed: Type::BOOLEAN, default: true
         option :expand_mounts,      description: 'Commands: list commands of sub-trees provided by another plugin', allowed: Type::BOOLEAN, default: false
-        option :no_default,         description: 'Do not load default configuration for plugin', allowed: Type::NONE, short: 'N', handler: -> { presets.use_plugin_defaults = false }
+        option :no_default,         description: 'Do not load default configuration for plugin', allowed: Type::NONE, short: 'N', on_set: -> { presets.use_plugin_defaults = false }
 
         def initialize(**_)
           super
@@ -106,7 +106,7 @@ module Aspera
           # HTTP options: declare metadata (class method), then bind to the instance
           Http.declare_options(options)
           context.http_config.bind_options(options)
-          # Values set through handlers are used below (sdk_folder)
+          # Values set through `on_set` callbacks are used below (sdk_folder)
           options.parse_options!
           set_sdk_dir
         end
@@ -432,7 +432,7 @@ module Aspera
 
         attr_reader :gem_url
 
-        # Handler of option `plugin_folder`
+        # `on_set` callback of option `plugin_folder`
         # @param value [String, Array<String>] folder(s) where to find plugins
         def add_plugin_folders(value)
           value = [value] unless value.is_a?(Array)
@@ -440,7 +440,7 @@ module Aspera
           value.each { |f| Plugins::Factory.instance.add_lookup_folder(f) }
         end
 
-        # Handler of option `preset`
+        # `on_set` callback of option `preset`
         # @param value [String, Hash] preset name, or set of option values
         def load_preset(value)
           case value

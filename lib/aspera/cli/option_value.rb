@@ -34,7 +34,7 @@ module Aspera
       # @param option [Symbol] Name of option
       # @param description [String, nil] Description for help; if nil, derived from schema
       # @param allowed [nil,Class,Array<Class>,Array<Symbol>] Allowed values
-      # @param handler [#call, nil] Called with the new value each time the value is set
+      # @param on_set [#call, nil] Called with the new value each time the value is set
       # @param shorthand [String, nil] For a `Hash` option: a `String` value is stored as `{shorthand => value}`
       # @param deprecation [String] Deprecation message
       # @param schema [String] Declaration of schema
@@ -43,7 +43,7 @@ module Aspera
       # - `Class` The single allowed Class
       # - `Array<Class>` Multiple allowed classes
       # - `Array<Symbol>` List of allowed values
-      def initialize(option:, description: nil, allowed: Type::STRING, handler: nil, shorthand: nil, deprecation: nil, schema: nil)
+      def initialize(option:, description: nil, allowed: Type::STRING, on_set: nil, shorthand: nil, deprecation: nil, schema: nil)
         Log.log.trace1 { "option: #{option}, allowed: #{allowed}" }
         @option = option
         @description = description
@@ -57,8 +57,8 @@ module Aspera
         @shorthand = shorthand
         @source = nil
         @value = nil
-        @handler = nil
-        bind_handler(handler) unless handler.nil?
+        @on_set = nil
+        bind_on_set(on_set) unless on_set.nil?
         @types = nil
         @values = nil
         @kind = :other
@@ -66,16 +66,16 @@ module Aspera
         apply_allowed(allowed) unless allowed.nil?
       end
 
-      # Set the handler called with the new value each time the value is set.
-      # Safe to call after construction: used by `Parser#set_handler` for a target object created after declaration.
-      # The handler is called with the current value, if any.
-      # @param handler [#call] e.g. a `Method` or a lambda
+      # Set the `on_set` callback, called with the new value each time the value is set.
+      # Safe to call after construction: used by `Parser#on_set` for a target object created after declaration.
+      # The callback is called with the current value, if any.
+      # @param callback [#call] e.g. a `Method` or a lambda
       # @return [nil]
-      def bind_handler(handler)
-        Aspera.assert(handler.respond_to?(:call)) { "#{@option}: handler must respond to call" }
-        @handler = handler
-        Log.log.trace1 { "bind_handler: #{@option}".green }
-        @handler.call(@value) unless @value.nil?
+      def bind_on_set(callback)
+        Aspera.assert(callback.respond_to?(:call)) { "#{@option}: on_set callback must respond to call" }
+        @on_set = callback
+        Log.log.trace1 { "bind_on_set: #{@option}".green }
+        @on_set.call(@value) unless @value.nil?
         nil
       end
 
@@ -253,7 +253,7 @@ module Aspera
       def store(new_value, source)
         @value = new_value
         @source = source
-        @handler&.call(new_value)
+        @on_set&.call(new_value)
       end
     end
   end

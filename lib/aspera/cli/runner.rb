@@ -228,7 +228,7 @@ module Aspera
         Result::Text.new(usage_text(plugin: plugin))
       end
 
-      # Handler of the `log` option (dot-notation sub-properties): `level`, `type`, `format`, `secrets`
+      # `on_set` callback of the `log` option (dot-notation sub-properties): `level`, `type`, `format`, `secrets`
       # @param value [Hash] sub-properties to set
       def option_log=(value)
         Aspera.assert_type(value, Hash)
@@ -433,26 +433,26 @@ module Aspera
         @context.options.declare(
           :ui, description: 'Method to start browser',
           allowed: USER_INTERFACES, default: Environment.instance.url_method,
-          handler: Environment.instance.method(:url_method=)
+          on_set: Environment.instance.method(:url_method=)
         )
         @context.options.declare(
           :invalid_characters, description: 'Replacement character and invalid filename characters',
           default: Environment.instance.file_illegal_characters,
-          handler: Environment.instance.method(:file_illegal_characters=)
+          on_set: Environment.instance.method(:file_illegal_characters=)
         )
-        @context.options.declare(:log_level, description: 'Log level', allowed: Log::LEVELS, default: Log.instance.level, handler: Log.instance.method(:level=))
-        @context.options.declare(:log_format, description: 'Log formatter', allowed: [Proc, Logger::Formatter, String], handler: Log.instance.method(:formatter=))
-        @context.options.declare(:logger, description: 'Logging method', allowed: Log::LOG_TYPES, handler: Log.instance.method(:logger_type=))
-        @context.options.declare(:log, description: 'Logging options (dot-notation: level, type, format, secrets)', handler: method(:option_log=), schema: Schema::Registry::LOG_OPTIONS)
+        @context.options.declare(:log_level, description: 'Log level', allowed: Log::LEVELS, default: Log.instance.level, on_set: Log.instance.method(:level=))
+        @context.options.declare(:log_format, description: 'Log formatter', allowed: [Proc, Logger::Formatter, String], on_set: Log.instance.method(:formatter=))
+        @context.options.declare(:logger, description: 'Logging method', allowed: Log::LOG_TYPES, on_set: Log.instance.method(:logger_type=))
+        @context.options.declare(:log, description: 'Logging options (dot-notation: level, type, format, secrets)', on_set: method(:option_log=), schema: Schema::Registry::LOG_OPTIONS)
         @context.options.declare(:lock_port, description: 'Prevent dual execution of a command, e.g. in cron', allowed: Type::INTEGER)
         @context.options.declare(:once_only, description: 'Process only new items (some commands)', allowed: Type::BOOLEAN, default: false)
-        @context.options.declare(:log_secrets, description: 'Show passwords in logs', allowed: Type::BOOLEAN, default: SecretHider.instance.log_secrets, handler: SecretHider.instance.method(:log_secrets=))
-        @context.options.declare(:clean_temp, description: 'Cleanup temporary files on exit', allowed: Type::BOOLEAN, default: TempFileManager.instance.cleanup_on_exit, handler: TempFileManager.instance.method(:cleanup_on_exit=))
-        @context.options.declare(:temp_folder, description: 'Temporary folder', default: TempFileManager.instance.global_temp, handler: TempFileManager.instance.method(:global_temp=))
+        @context.options.declare(:log_secrets, description: 'Show passwords in logs', allowed: Type::BOOLEAN, default: SecretHider.instance.log_secrets, on_set: SecretHider.instance.method(:log_secrets=))
+        @context.options.declare(:clean_temp, description: 'Cleanup temporary files on exit', allowed: Type::BOOLEAN, default: TempFileManager.instance.cleanup_on_exit, on_set: TempFileManager.instance.method(:cleanup_on_exit=))
+        @context.options.declare(:temp_folder, description: 'Temporary folder', default: TempFileManager.instance.global_temp, on_set: TempFileManager.instance.method(:global_temp=))
         @context.options.declare(:pid_file, description: 'Write process identifier to file, delete on exit')
         @context.options.declare(
           :parser, description: 'Default parser for structured parameters and options',
-          handler: ExtendedValue.instance.method(:default_decoder=),
+          on_set: ExtendedValue.instance.method(:default_decoder=),
           allowed: ExtendedValue::DEFAULT_DECODERS,
           default: ExtendedValue::DEFAULT_DECODERS.first
         )

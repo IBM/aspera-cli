@@ -54,16 +54,16 @@ RSpec.describe(Aspera::Cli::OptionDeclarator) do
     end
   end
 
-  describe 'Proc handler' do
+  describe 'Proc on_set' do
     let(:flag_class) do
       Class.new do
         extend Aspera::Cli::OptionDeclarator
 
-        option :flag, description: 'Flag', allowed: Aspera::Cli::Type::NONE, short: 'F', handler: -> { @flag_found = true }
+        option :flag, description: 'Flag', allowed: Aspera::Cli::Type::NONE, short: 'F', on_set: -> { @flag_found = true }
       end
     end
 
-    it 'executes a flag handler on the target' do
+    it 'executes a flag on_set callback on the target' do
       parser = Aspera::Cli::Parser.new('test', ['-F'])
       target = Object.new
       flag_class.declare_options(parser, target: target)
@@ -71,11 +71,11 @@ RSpec.describe(Aspera::Cli::OptionDeclarator) do
       expect(target.instance_variable_get(:@flag_found)).to(be(true))
     end
 
-    it 'executes a value handler on the target with the new value' do
+    it 'executes a value on_set callback on the target with the new value' do
       value_class = Class.new do
         extend Aspera::Cli::OptionDeclarator
 
-        option :val, description: 'Value', handler: ->(v) { @received = v }
+        option :val, description: 'Value', on_set: ->(v) { @received = v }
       end
       parser = Aspera::Cli::Parser.new('test', ['--val=abc'])
       target = Object.new
@@ -85,11 +85,11 @@ RSpec.describe(Aspera::Cli::OptionDeclarator) do
       expect(parser.get_option(:val)).to(eq('abc'))
     end
 
-    it 'calls a Symbol handler method of the target' do
+    it 'calls a Symbol on_set method of the target' do
       value_class = Class.new do
         extend Aspera::Cli::OptionDeclarator
 
-        option :val, description: 'Value', handler: :load_val
+        option :val, description: 'Value', on_set: :load_val
       end
       parser = Aspera::Cli::Parser.new('test', ['--val=abc'])
       target = Struct.new(:received) { def load_val(v) = self.received = v }.new

@@ -21,14 +21,14 @@ module Aspera
       # @param short       [String, nil]             Single-character short form (without leading '-')
       # @param allowed     [Object, nil]             Allowed values (see OptionValue)
       # @param default     [Object, nil]             Default value
-      # @param handler     [Symbol, Proc, #call, nil] Handler (see OptionSpec)
+      # @param on_set     [Symbol, Proc, #call, nil] `on_set` callback (see OptionSpec)
       # @param shorthand   [String, nil]             For a `Hash` option: a `String` value is stored as `{shorthand => value}`
       # @param deprecation [String, nil]             Deprecation message forwarded to options.declare
       # @param schema      [String, nil]             Schema reference (e.g. "opts:components.schemas.Foo");
       #                                              when description: is nil, the schema title or first description line is used
       def option(name, description: nil,
         short: nil, allowed: nil, default: nil,
-        handler: nil, shorthand: nil, deprecation: nil, schema: nil)
+        on_set: nil, shorthand: nil, deprecation: nil, schema: nil)
         register_option_spec(
           OptionSpec.new(
             name:        name,
@@ -36,7 +36,7 @@ module Aspera
             short:       short,
             allowed:     allowed,
             default:     default,
-            handler:     handler,
+            on_set:      on_set,
             shorthand:   shorthand,
             deprecation: deprecation,
             schema:      schema
@@ -56,7 +56,7 @@ module Aspera
       # Skips options already declared on the parser.
       #
       # @param parser [Aspera::Cli::Parser]
-      # @param target [Object, nil] default target object for Symbol and Proc handlers (defaults to self)
+      # @param target [Object, nil] default target object for Symbol and Proc `on_set` callbacks (defaults to self)
       # @return [void]
       def declare_options(parser, target: self)
         option_specs.each_value do |spec|

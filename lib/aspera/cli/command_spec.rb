@@ -68,12 +68,12 @@ module Aspera
     # @!attribute allowed     [Array, nil]           Allowed values (forwarded to options.declare)
     # @!attribute default     [Object, nil]          Default value
     # @!attribute short       [String, nil]          Single-character short form (e.g. 'x')
-    # @!attribute handler     [Symbol, Proc, #call, nil] Called with the new value each time the value is set
+    # @!attribute on_set     [Symbol, Proc, #call, nil] Called with the new value each time the value is set
     #   (for a flag: called without argument when the flag is found)
     #   - Symbol: method of the plugin instance
     #   - Proc:   executed with instance_exec on the plugin instance
     #   - other:  object responding to `call`, e.g. `Log.instance.method(:level=)`
-    #   - nil:    no handler, the value is read with `get_option`
+    #   - nil:    no callback, the value is read with `get_option`
     # @!attribute shorthand   [String, nil]          For a `Hash` option: a `String` value is stored as `{shorthand => value}`
     # @!attribute deprecation [String, nil]          Forwarded to options.declare as deprecation:
     # @!attribute schema      [String, nil]          JSON schema name; also derives description when nil
@@ -83,15 +83,15 @@ module Aspera
       :allowed,
       :default,
       :short,
-      :handler,
+      :on_set,
       :shorthand,
       :deprecation,
       :schema,
       keyword_init: true
     ) do
-      # Declare this option on a parser, resolving the handler.
+      # Declare this option on a parser, resolving the `on_set` callback.
       # @param parser [Parser] Parser to declare the option on
-      # @param target [Object, nil] Object for Symbol and Proc handlers (plugin instance); nil: such handlers are not bound
+      # @param target [Object, nil] Object for Symbol and Proc `on_set` callbacks (plugin instance); nil: such callbacks are not bound
       # @return [void]
       def declare_on(parser, target: nil)
         parser.declare(
@@ -100,7 +100,7 @@ module Aspera
           short:       short,
           allowed:     allowed,
           default:     default,
-          handler:     resolved_handler(target),
+          on_set:      resolved_on_set(target),
           shorthand:   shorthand,
           deprecation: deprecation,
           schema:      schema
@@ -109,16 +109,16 @@ module Aspera
 
       private
 
-      # @param target [Object, nil] Object for Symbol and Proc handlers
-      # @return [#call, nil] handler for `Parser#declare`
-      def resolved_handler(target)
-        case handler
-        when Symbol then target&.method(handler)
+      # @param target [Object, nil] Object for Symbol and Proc `on_set` callbacks
+      # @return [#call, nil] `on_set` callback for `Parser#declare`
+      def resolved_on_set(target)
+        case on_set
+        when Symbol then target&.method(on_set)
         when Proc
           return if target.nil?
-          proc_handler = handler
-          ->(*value) { target.instance_exec(*value, &proc_handler) }
-        else handler
+          proc_on_set = on_set
+          ->(*value) { target.instance_exec(*value, &proc_on_set) }
+        else on_set
         end
       end
     end

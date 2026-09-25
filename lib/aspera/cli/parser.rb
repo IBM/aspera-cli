@@ -127,8 +127,8 @@ module Aspera
         end
         Log.dump(:env, @pending_values)
         @command_line = CommandLine.new(argv || [])
-        declare(:interactive, description: 'Use interactive input of missing params', allowed: Type::BOOLEAN, default: false, handler: method(:ask_missing_mandatory=))
-        declare(:ask_options, description: 'Ask even optional options', allowed: Type::BOOLEAN, default: false, handler: method(:ask_missing_optional=))
+        declare(:interactive, description: 'Use interactive input of missing params', allowed: Type::BOOLEAN, default: false, on_set: method(:ask_missing_mandatory=))
+        declare(:ask_options, description: 'Ask even optional options', allowed: Type::BOOLEAN, default: false, on_set: method(:ask_missing_optional=))
       end
 
       # Declare an option
@@ -142,19 +142,19 @@ module Aspera
       #   - Use `allowed: [Hash, String]` when the option additionally accepts a plain String shorthand;
       #     the schema then documents the Hash form and `=help` still shows it.
       # @param default       [Object] default value
-      # @param handler       [#call]  Called with the new value each time the value is set (e.g. a `Method`, or a lambda).
+      # @param on_set       [#call]  Called with the new value each time the value is set (e.g. a `Method`, or a lambda).
       #   For a flag (`Type::NONE`): called without argument when the flag is found
       # @param shorthand     [String] For a `Hash` option: a `String` value is stored as `{shorthand => value}`
       # @param deprecation   [String] deprecation
       # @param schema        [String] schema path documenting the Hash form of this option
       # @param block [Proc] Block to execute when option is found
-      def declare(option_symbol, description: nil, short: nil, allowed: nil, default: nil, handler: nil, shorthand: nil, deprecation: nil, schema: nil, &block)
+      def declare(option_symbol, description: nil, short: nil, allowed: nil, default: nil, on_set: nil, shorthand: nil, deprecation: nil, schema: nil, &block)
         Aspera.assert_type(option_symbol, Symbol)
         Aspera.assert(!@registry.declared?(option_symbol)) { "#{option_symbol} already declared" }
-        if handler && allowed.eql?(Type::NONE)
-          Aspera.assert(block.nil?) { "#{option_symbol}: flag with both handler and block" }
-          block = handler
-          handler = nil
+        if on_set && allowed.eql?(Type::NONE)
+          Aspera.assert(block.nil?) { "#{option_symbol}: flag with both on_set and block" }
+          block = on_set
+          on_set = nil
         end
         # An abbreviation already used on command line must stay unambiguous
         @command_line.abbreviated_option_tokens.each do |tok|
@@ -167,7 +167,7 @@ module Aspera
             option:      option_symbol,
             description: description,
             allowed:     allowed,
-            handler:     handler,
+            on_set:      on_set,
             shorthand:   shorthand,
             deprecation: deprecation,
             schema:      schema
@@ -293,7 +293,7 @@ module Aspera
         result
       end
 
-      # Set an option value by name: store value and call handler
+      # Set an option value by name: store value and call the `on_set` callback
       # String is given to extended value
       # @param option_symbol [Symbol] option name
       # @param value  [String] Value to set
@@ -311,14 +311,14 @@ module Aspera
         option_def(option_symbol).clear
       end
 
-      # Bind (or re-bind) a handler to an already-declared option, for a target object created after declaration.
-      # The handler is called with the current value, if any.
+      # Bind (or re-bind) an `on_set` callback to an already-declared option, for a target object created after declaration.
+      # The callback is called with the current value, if any.
       # @param option_symbol [Symbol] name of the already-declared option
-      # @param handler       [#call]  called with the new value each time the value is set (e.g. a `Method`)
+      # @param callback      [#call]  called with the new value each time the value is set (e.g. a `Method`)
       # @return [nil]
-      def set_handler(option_symbol, handler)
+      def on_set(option_symbol, callback)
         Aspera.assert_type(option_symbol, Symbol)
-        option_def(option_symbol).bind_handler(handler)
+        option_def(option_symbol).bind_on_set(callback)
       end
 
       # Adds each of the keys of specified hash as an option.
@@ -398,7 +398,7 @@ module Aspera
       # Apply values of options declared so far: from presets, env vars and command line.
       # Can be called any number of times: tokens of options not declared yet are kept for a later call.
       # Called automatically on read of option or argument, but must be called explicitly
-      # when values set by handlers are used.
+      # when values set by `on_set` callbacks are used.
       def parse_options!
         Log.log.trace1('parse_options!'.red)
         @parse_needed = false
@@ -580,7 +580,7 @@ module Aspera
             if tok.dot_path.nil?
               option.assign_value(value, source: :cmdline)
             else
-              # Fill a copy of the current value: the current value is not modified in place (handler already received it),
+              # Fill a copy of the current value: the current value is not modified in place (`on_set` callback already received it),
               # and the result is complete (e.g. `--opt.0=a --opt.1=b`): not merged again
               current = copy_containers(option.value(log: false))
               value = DotContainer.dotted_to_container(tok.dot_path, Parser.smart_convert(value), current)

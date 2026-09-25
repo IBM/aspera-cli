@@ -81,9 +81,9 @@ module Aspera
           @access_remote = true
           # Bind generator-specific options to @gen_options
           Aspera::Preview::Options::DESCRIPTIONS.each do |opt|
-            options.set_handler(opt[:name], @gen_options.method(:"#{opt[:name]}="))
+            options.on_set(opt[:name], @gen_options.method(:"#{opt[:name]}="))
           end
-          # Values set through handlers are used below
+          # Values set through `on_set` callbacks are used below
           options.parse_options!
           @option_skip_types = options.get_option(:skip_types)
           @option_previews_folder = options.get_option(:previews_folder)

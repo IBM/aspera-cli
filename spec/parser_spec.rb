@@ -53,8 +53,8 @@ module Aspera
           expect(opts.get_next_argument('arg')).to(eq('myarg'))
         end
 
-        context 'with a handler (like --preset / -P)' do
-          it 'passes the glued value to the handler when using -Pvalue syntax' do
+        context 'with an on_set callback (like --preset / -P)' do
+          it 'passes the glued value to the on_set callback when using -Pvalue syntax' do
             received = nil
             target = Object.new
             target.define_singleton_method(:my_preset=) { |v| received = v }
@@ -62,13 +62,13 @@ module Aspera
             opts = build_parser(['-Pmypreset'])
             opts.declare(
               :my_preset, description: 'Load preset', short: 'P',
-              handler: target.method(:my_preset=)
+              on_set: target.method(:my_preset=)
             )
             opts.parse_options!
             expect(received).to(eq('mypreset'))
           end
 
-          it 'passes the space-separated value to the handler when using -P value syntax' do
+          it 'passes the space-separated value to the on_set callback when using -P value syntax' do
             received = nil
             target = Object.new
             target.define_singleton_method(:my_preset=) { |v| received = v }
@@ -76,7 +76,7 @@ module Aspera
             opts = build_parser(['-P', 'mypreset'])
             opts.declare(
               :my_preset, description: 'Load preset', short: 'P',
-              handler: target.method(:my_preset=)
+              on_set: target.method(:my_preset=)
             )
             opts.parse_options!
             expect(received).to(eq('mypreset'))
@@ -288,10 +288,10 @@ module Aspera
           expect(called).to(eq(%i[help no_default]))
         end
 
-        it 'calls handler method of a flag' do
+        it 'calls on_set method of a flag' do
           opts = build_parser(['-N'])
           target = Struct.new(:called) { def flag_found = self.called = true }.new(false)
-          opts.declare(:no_default, description: 'No default', short: 'N', allowed: Type::NONE, handler: target.method(:flag_found))
+          opts.declare(:no_default, description: 'No default', short: 'N', allowed: Type::NONE, on_set: target.method(:flag_found))
           opts.parse_options!
           expect(target.called).to(be(true))
         end
@@ -432,20 +432,20 @@ module Aspera
           expect(Parser.get_from_list('no', 'b', BoolValue::ALL)).to(be(false))
         end
 
-        it 'stores the value and calls the handler with it' do
+        it 'stores the value and calls the on_set callback with it' do
           target = Struct.new(:path).new
           opts = build_parser([])
-          opts.declare(:path, description: 'Path', handler: target.method(:path=))
+          opts.declare(:path, description: 'Path', on_set: target.method(:path=))
           opts.add_option_preset({path: '/a'}, 'test')
           opts.parse_options!
           expect(target.path).to(eq('/a'))
           expect(opts.get_option(:path)).to(eq('/a'))
         end
 
-        it 'calls the handler with the merged value of a Hash option' do
+        it 'calls the on_set callback with the merged value of a Hash option' do
           received = []
           opts = build_parser(['--opt.b=2'])
-          opts.declare(:opt, description: 'Opt', allowed: Hash, handler: ->(v) { received.push(v) })
+          opts.declare(:opt, description: 'Opt', allowed: Hash, on_set: ->(v) { received.push(v) })
           opts.add_option_preset({opt: {'a' => 1}}, 'test')
           opts.parse_options!
           expect(received.last).to(eq({'a' => 1, 'b' => 2}))
@@ -453,12 +453,12 @@ module Aspera
           expect(received[-2]).to(eq({'a' => 1}))
         end
 
-        it 'calls a handler bound after declaration with the current value' do
+        it 'calls an on_set callback bound after declaration with the current value' do
           target = Struct.new(:val).new
           opts = build_parser(['--val=x'])
           opts.declare(:val, description: 'Val')
           opts.parse_options!
-          opts.set_handler(:val, target.method(:val=))
+          opts.on_set(:val, target.method(:val=))
           expect(target.val).to(eq('x'))
         end
 
@@ -469,10 +469,10 @@ module Aspera
           expect(opts.get_option(:transfer)).to(eq({'url' => 'u', 'agent' => 'node'}))
         end
 
-        it 'clears an option and calls its handler' do
+        it 'clears an option and calls its on_set callback' do
           target = Struct.new(:val).new('x')
           opts = build_parser([])
-          opts.declare(:val, description: 'Val', handler: target.method(:val=))
+          opts.declare(:val, description: 'Val', on_set: target.method(:val=))
           opts.clear_option(:val)
           expect(opts.get_option(:val)).to(be_nil)
           expect(target.val).to(be_nil)
