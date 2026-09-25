@@ -6,61 +6,43 @@ Released: [Place date of release here]
 
 ### New Features
 
-* `config`: Command `commands` accepts an optional plugin name and command path to list only the commands under that path.
-* `config`: Command `commands` lists a sub-tree provided by another plugin (e.g. `aoc files`, `ats access_key node`) as a single line with a reference, unless option `expand_mounts` is `yes`.
-* **general**: Help and `config commands` show the type of arguments that are not plain text, e.g. `<account:Hash>`.
-* **general**: Hash arguments are named after their content (e.g. `faspex5 admin accounts create <account:Hash>`) instead of `data`, `params`, `properties`...
-* **general**: Identifier arguments are named after their entity (e.g. `<account_id>` instead of `<id>`, `<workflow_id>` instead of `<wf_id>`), path arguments are named `<path>`, `<paths...>` or `<folder> <source> <destination>`.
-* `mcp`: Shorter server instructions and tool description, examples use presets and `@json:`.
-* `console`: Help of `transfer current change_rate|change_policy` and `transfer smart submit` shows the schema of the request body.
-* `aoc`: `automation` commands cover the whole Automation API: new `workflows update_state|cancel_instances|delete_instances`, `instances cancel`, `steps`, `actions`, `workflows permissions <workflow_id>`. Help shows request body schemas and `--query=help` list parameters.
-* `console`: New commands: `transfer current submit`, `transfer smart pause`, `transfer queue <queue_id> list`, `endpoint list`, `ssh_key list`, `admin email_server_update|nodeapi_credentials_update`.
-* `console`: `health` also checks the unauthenticated endpoint `health/up`.
-* **general**: New Windows portable package `aspera-cli-<version>-windows-amd64-portable.zip` in GitHub releases: extract and run, it includes Ruby, gems and the Transfer SDK (`ascp`), no installation nor administrator rights needed.
-* `orchestrator`: `workflows start <workflow_id> [<parameters>] [<execution>]` takes an optional `Hash` argument `execution` with keys `synchronous`, `step` and `variable` (`workflows start <workflow_id> @json:'{}' help` shows the schema). Options `synchronous` and `result` are deprecated.
-* **general**: Values of options and arguments with a schema owned by `ascli` (e.g. `ts`, `transfer`, `out`, `http_options`) are validated against it: the error shows the path of the invalid element and the reason. New gem dependency: `json_schemer`. In a structured value, `out.table.pivot` is `false`, `true` or `single` (`no` and `yes` remain accepted on command line, e.g. `--out.table.pivot=yes`).
-* **general**: Deprecation warnings and help of deprecated options show the last version supporting them without deprecation, e.g. `deprecated after 4.27.0: use --out.level`. `config options` shows it in column `deprecated`, and the replacement in column `replacement`.
+* **general**: Help and `config commands` show all positional arguments with meaningful names and their type when not plain text, e.g. `<account:Hash>`, `<account_id>`, `<path>`, `<source> <destination>`.
+* **general**: Values of options and arguments with a schema owned by `ascli` (e.g. `ts`, `transfer`, `out`, `http_options`) are validated: the error shows the path of the invalid element and the reason. New gem dependency: `json_schemer`.
+* **general**: Deprecation warnings, help and `config options` show the last version supporting a deprecated option and its replacement, e.g. `deprecated after 4.27.0: use --out.level`.
+* **general**: New Windows portable package `aspera-cli-<version>-windows-amd64-portable.zip` in GitHub releases: includes Ruby, gems and `ascp`, no installation nor administrator rights needed.
+* `config`: `commands` accepts an optional plugin name and command path, and shows sub-trees provided by another plugin (e.g. `aoc files`) as a reference unless option `expand_mounts` is `yes`.
+* `aoc`: `automation` covers the whole Automation API: new `workflows update_state|cancel_instances|delete_instances|permissions`, `instances cancel`, `steps`, `actions`.
+* `console`: New commands `transfer current submit`, `transfer smart pause`, `transfer queue <queue_id> list|move_forwards|move_back`, `endpoint list`, `ssh_key list`, `admin email_server_update|nodeapi_credentials_update`. `health` also checks `health/up`. Help shows request body schemas.
+* `orchestrator`: `workflows start <workflow_id> [<parameters>] [<execution>]` takes an optional `Hash` argument `execution` (`synchronous`, `step`, `variable`).
 
 ### Issues Fixed
 
-* `faspex5`: Command `admin account show` was failing.
-* `shares`: Commands `files spec` and `files transport` were failing.
-* `shares`: Commands `admin user|group all|local show|modify|delete <id>` were failing.
-* `aoc`, `ats`, `faspex5`, `shares`: Help now shows all positional arguments (e.g. `faspex5 packages show <package_id>`, `ats cluster show [<server_id>]`).
-* `aoc`, `ats`, `cos`, `node`: Help (`-h`), shell completion and `config commands` now show all sub-commands of commands executed on a node (`aoc files`, `aoc admin node do`, `aoc admin workspace shared_folder node`, `aoc admin ats`, `ats access_key node`, `cos node`, `node access_keys do v3`), e.g. `permission <path> list`, `sync push`, not only the first level.
-* `aoc`: Help of `packages ls|find|node_info|bearer_token_node` now shows the `<path>` argument.
-* `aoc`: `admin node do <id> transfer` and `admin workspace shared_folder <id> node <id> transfer` were always failing: they now take the same `direction` and `source_folder` arguments as `files transfer`.
+* `aoc`, `ats`, `cos`, `node`, `faspex5`, `shares`: Help, shell completion and `config commands` now show all positional arguments and all sub-commands of commands executed on a node (e.g. `aoc files permission <path> list`).
+* `aoc`: `automation` commands were failing or misbehaving (`workflows list`, `workflows action`, `instances`).
+* `aoc`: `admin node do <id> transfer` and `admin workspace shared_folder <id> node <id> transfer` were always failing: they now take the same arguments as `files transfer`.
+* `aoc`: `user contacts show|create|modify|delete` were failing.
+* `aoc`: `short_link create|modify` were ignoring the provided `password` and `access_levels`.
+* `faspex5`: `admin account show` was failing, `admin file_processing next` was not available.
+* `shares`: `files spec|transport` and `admin user|group all|local show|modify|delete <id>` were failing.
 * `mcp`: Secrets (e.g. from `config preset show`) are now hidden in tool results.
 * `node`: `telemetry` with `interval` `0` was rejected instead of sending a single measure.
-* `config`: Option `sdk_folder` with value `product:<name>` was taken as a folder path instead of selecting the `ascp` of the installed product.
-* **general**: Log format `caller` showed `???` instead of the calling method with Ruby < 3.4.
-* **general**: The error for a missing default preset suggested obsolete commands (`config id`), it now suggests `config preset initialize` and `config preset unset`.
-* `aoc`: Commands `user contacts show|create|modify|delete` were failing: they now take `<contact_id>` and `<data>` arguments.
-* `console`: `transfer current change_rate|change_policy` now take a mandatory `<data>` argument (request body), `transfer current rerun` uses `POST`.
-* `console`: `transfer current move_forwards|move_back` were calling a non-existent endpoint: replaced by `transfer queue <queue_id> move_forwards|move_back <transfer_id>`.
-* **general**: Help was failing when a schema enum contains `null`.
-* `aoc`: `packages shared_inboxes short_link` and `files short_link` `create|modify` were ignoring the provided `password` and `access_levels`.
-* `faspex5`: Command `admin file_processing next` was not available.
-* `aoc`: `automation workflows action list|show` were creating a step and an action, `create` was removing existing steps: `list` now lists actions, `create [<action>]` appends a step.
-* `aoc`: `automation instances` was using the AoC API instead of the Automation API.
-* `aoc`: `automation workflows list` was returning the paginated object instead of the list of workflows.
-* **general**: `--query=help` was not showing query parameters defined by reference (`$ref`) in the OpenAPI schema.
-* **general**: Temporary files (e.g. `ascp` file list, WSS certificate) could be deleted before use, causing random transfer failures: `failed to open input file list` (since 4.27.1).
+* `config`: Option `sdk_folder` with value `product:<name>` was taken as a folder path.
 * `config`: `transferd install` was failing when the download server sends a `Content-Disposition` header.
-* **general**: Option `cert_stores` was adding the locations to the system default ones instead of replacing them, as documented (use `DEF` to include the default).
-* **general**: Option `log.secrets` with dot-path (e.g. `--log.secrets=yes`) was failing.
-* **general**: Dot-path indexes on an `Array` option (e.g. `--ignore-certificate.0=x --ignore-certificate.1=y`) were duplicating values.
-* **general**: `--show-config` shows the values given for options `preset`, `plugin_folder`, `ts`, `cert_stores`, `node_api` and `log`, instead of internal values (e.g. `write-only option` for `preset`).
+* **general**: Temporary files (e.g. `ascp` file list) could be deleted before use, causing random transfer failures: `failed to open input file list` (since 4.27.1).
+* **general**: Option `cert_stores` was adding to the system default locations instead of replacing them, as documented (use `DEF` to include the default).
+* **general**: Dot-path options: `--log.secrets=yes` was failing, indexes on an `Array` option were duplicating values, `--show-config` was showing internal values for some options.
+* **general**: Help was failing when a schema enum contains `null`, `--query=help` was missing parameters defined by `$ref`.
+* **general**: Log format `caller` showed `???` with Ruby < 3.4.
+* **general**: The error for a missing default preset now suggests `config preset initialize` instead of obsolete commands.
 
 ### Breaking Changes
 
-* **library**: REST classes moved to namespace `Aspera::Rest` (folder `lib/aspera/rest/`, `require 'aspera/rest'` loads all): `Rest` (class) is `Rest::Client`, `RestParameters` is `Rest::Parameters`, `RestCallError` is `Rest::CallError`, `RestErrorAnalyzer` is `Rest::ErrorAnalyzer`, `RestErrorsAspera` is `Rest::AsperaErrors`, `RestList` is `Rest::List`. Helpers (`Rest.build_uri`, `Rest.php_style`, ...) are unchanged.
+* **general**: In dot-path values (e.g. `--ts.x=yes`, `config preset set`), `yes` and `no` are converted to `Boolean`: use `@json:"yes"` to get a `String`. In a structured value, `out.table.pivot` is `false`, `true` or `single`.
 * `preview`: Renamed option `mimemagic` to `detect_mime`.
-* **general**: In dot-path values (e.g. `--ts.x=yes`, `@: x=no`, `config preset set`), `yes` and `no` are converted to `Boolean`, like `true` and `false`: use `@json:"yes"` to get a `String`.
-* `server`: Commands `ls|rm|mkdir|du|md5sum|mv|cp` require at least one path, `df|info` take no argument. `mv|cp` take `<source> <destination>` pairs, or only sources with option `to_folder`.
-* `console`: `transfer current change_rate|change_policy` require a `<data>` argument, instead of option `query`.
-* `console`: `transfer current move_forwards|move_back` moved to `transfer queue <queue_id> move_forwards|move_back <transfer_id>`.
+* `server`: `ls|rm|mkdir|du|md5sum|mv|cp` require at least one path, `df|info` take no argument. `mv|cp` take `<source> <destination>` pairs, or only sources with option `to_folder`.
+* `console`: `transfer current change_rate|change_policy` require a `<data>` argument instead of option `query`. `transfer current move_forwards|move_back` moved to `transfer queue <queue_id> move_forwards|move_back <transfer_id>`.
 * `aoc`: `automation workflows action show` replaced by `automation actions show`, `automation instances modify` replaced by `automation instances cancel`.
+* `orchestrator`: Options `synchronous` and `result` are deprecated, use argument `execution` of `workflows start`.
 
 ## 4.27.2
 
