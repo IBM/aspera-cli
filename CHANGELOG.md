@@ -30,6 +30,8 @@ Released: [Place date of release here]
 * `mcp`: Secrets (e.g. from `config preset show`) are now hidden in tool results.
 * `node`: `telemetry` with `interval` `0` was rejected instead of sending a single measure.
 * `config`: Option `sdk_folder` with value `product:<name>` was taken as a folder path instead of selecting the `ascp` of the installed product.
+* **general**: Log format `caller` showed `???` instead of the calling method with Ruby < 3.4.
+* **general**: The error for a missing default preset suggested obsolete commands (`config id`), it now suggests `config preset initialize` and `config preset unset`.
 * `aoc`: Commands `user contacts show|create|modify|delete` were failing: they now take `<contact_id>` and `<data>` arguments.
 * `console`: `transfer current change_rate|change_policy` now take a mandatory `<data>` argument (request body), `transfer current rerun` uses `POST`.
 * `console`: `transfer current move_forwards|move_back` were calling a non-existent endpoint: replaced by `transfer queue <queue_id> move_forwards|move_back <transfer_id>`.

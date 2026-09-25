@@ -119,13 +119,13 @@ module Aspera
 
       # Returns the last 2 containers (module/class) and method caller
       def caller_method
-        stack = caller
-        i = stack.rindex { |line| line.include?('Logger') }
-        frame = stack[i + 1] if i && stack[i + 1]
+        locations = caller_locations
+        # Outermost frame of logging code: Ruby logger, or this file (level methods, dump)
+        i = locations.rindex { |loc| loc.path.end_with?('/logger.rb') || loc.path.eql?(__FILE__) }
+        frame = locations[i + 1] if i
         return '???' unless frame
-        # Extract the "Class::Module::Method" or "Class#method" part
-        full = frame[/'([^']+)'/, 1]
-        return '???' unless full
+        # "Class::Module#method" (Ruby >= 3.4) or "method" (Ruby < 3.4)
+        full = frame.label
         # Split into class/module and method parts
         parts = full.split(/(::|#)/)
         # Reconstruct keeping only last two class/module names + separator + method
@@ -139,6 +139,7 @@ module Aspera
         end
         class_parts = classes.split('::')
         selected_classes = class_parts.last(2).join('::')
+        return method if selected_classes.empty?
         "#{selected_classes}.#{method}"
       end
     end

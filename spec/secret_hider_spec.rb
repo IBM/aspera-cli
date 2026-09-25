@@ -27,7 +27,8 @@ RSpec.describe(Aspera::SecretHider) do
     end
 
     it 'hides Ruby 3.4+ inspect with symbol keys' do
-      expect(log({user: 'john', password: 'secret123'}.inspect)).to(eq('{user: "john", password: "🔑"}'))
+      # literal: `inspect` of Ruby < 3.4 gives legacy format
+      expect(log('{user: "john", password: "secret123"}')).to(eq('{user: "john", password: "🔑"}'))
     end
 
     it 'hides legacy Ruby inspect' do

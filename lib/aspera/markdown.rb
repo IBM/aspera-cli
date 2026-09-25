@@ -82,6 +82,8 @@ module Aspera
         col_widths = table.transpose.map do |col|
           [col.flat_map { |c| c.to_s.delete('`').split(HTML_BREAK).map(&:size) }.max, COL_WIDTH].min
         end
+        # do not modify caller's table
+        table = table.dup
         headings = table.shift
         table.unshift(col_widths.map { |col_width| '-' * col_width })
         table.unshift(headings)

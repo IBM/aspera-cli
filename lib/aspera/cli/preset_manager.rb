@@ -115,8 +115,8 @@ module Aspera
           Log.log.error do
             "Default config name [#{default_name}] specified for plugin [#{plugin_name_sym}], but it does not exist in config file.\n" \
               "Please fix: either create preset:\n" \
-              "#{Info::CMD_NAME} config id #{default_name} init @json:'{}'\n" \
-              "or remove default:\n#{Info::CMD_NAME} config id default remove #{plugin_name_sym}"
+              "#{Info::CMD_NAME} config preset initialize #{default_name} @json:'{}'\n" \
+              "or remove default:\n#{Info::CMD_NAME} config preset unset #{Key::DEFAULTS} #{plugin_name_sym}"
           end
           raise Cli::Error, "No such preset: #{default_name}"
         end
