@@ -6,6 +6,8 @@ Released: [Place date of release here]
 
 ### New Features
 
+* `aoc`: `short_link list` supports `--query=help`, help of `short_link create|modify` shows the request body.
+
 ### Issues Fixed
 
 * `preview`: Generator options with a numeric value given on command line (e.g. `--thumb-vid-fraction=0.3`, `--blend-pauseframes=2`) were failing.

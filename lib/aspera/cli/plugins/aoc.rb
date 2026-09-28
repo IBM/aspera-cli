@@ -140,6 +140,17 @@ module Aspera
             }
           end
 
+          # Optional `Hash` argument of short link create and modify, merged into the request body
+          # @param endpoint [String] endpoint of the request body schema, e.g. `short_links.post`
+          # @return [Hash] argument declaration
+          def short_link_argument(endpoint)
+            {
+              name: :short_link, type: Hash, mandatory: false, default: {},
+              description: 'Merged into the request body, and: `password` (link password), `access_levels` (shared folder only)',
+              schema: Schema::Registry.req_body(Schema::Registry::AOC, endpoint)
+            }
+          end
+
           # DSL class method: declare the 5 short link leaf commands under the given node.
           # The node itself is declared by the caller, with its arguments and setup.
           # @param parent [Symbol, Array<Symbol>] path relative to current scope, e.g. :short_link
@@ -147,16 +158,16 @@ module Aspera
             commands_under(parent) do
               command(
                 :create, description: operation_description(:create, 'short link'),
-                arguments: [{name: :short_link, type: Hash, mandatory: false, default: {}}],
+                arguments: [short_link_argument('short_links.post')],
                 action: ->(short_link: {}, **ctx) { short_link_create(short_link, **ctx) }
               )
               command(
                 :modify, description: operation_description(:modify, 'short link'),
-                arguments: [{name: :short_link_id, type: :identifier}, {name: :short_link, type: Hash, mandatory: false, default: {}}],
+                arguments: [{name: :short_link_id, type: :identifier}, short_link_argument('short_links/{id}.put')],
                 action: ->(short_link: {}, **ctx) { short_link_modify(short_link, **short_link_fetch_list(**ctx), **ctx) }
               )
               command(
-                :list, description: operation_description(:list, 'short link'),
+                :list, description: operation_description(:list, 'short link'), query_schema: SHORT_LINK_QUERY_SCHEMA,
                 action: ->(**ctx) { short_link_list(**short_link_fetch_list(**ctx)) }
               )
               command(
@@ -537,6 +548,8 @@ module Aspera
 
         # Purpose of a short link, by link type (the purpose of its URL token depends on the shared resource)
         SHORT_LINK_PURPOSES = {public: 'token_auth_redirection', private: 'shared_folder_auth_link'}.freeze
+        # Query parameters of short link list
+        SHORT_LINK_QUERY_SCHEMA = Schema::Registry.query_params(Schema::Registry::AOC, 'short_links')
 
         # Build the list_params hash used by delete/list/show/modify short link operations.
         # @return [Hash]
@@ -546,9 +559,10 @@ module Aspera
           else
             {url_token_data: {data: shared_data, purpose: token_purpose}}
           end
-          list_params = {json_query: query.to_json, purpose: short_link_purpose, sort: '-created_at'}
+          # String keys: the user's `--query` overrides them
+          list_params = {'json_query' => query.to_json, 'purpose' => short_link_purpose, 'sort' => '-created_at'}
           # `edit_access` requires `file_id` and `node_id`: shared folder links only
-          list_params[:edit_access] = true if ctx.key?(:shared_apifid)
+          list_params['edit_access'] = true if ctx.key?(:shared_apifid)
           list_params
         end
 
@@ -1229,7 +1243,7 @@ module Aspera
           ws_shared_data = workspace_id_hash(shared_data.dup)
           list_params = short_link_list_params(shared_data: ws_shared_data, **ctx)
           {
-            short_list:     aoc_api.read_with_paging('short_links', list_params.merge(query_read_delete(default: {})).compact),
+            short_list:     aoc_api.read_with_paging('short_links', list_params.merge(query_read_delete(default: {}, schema: SHORT_LINK_QUERY_SCHEMA)).compact),
             ws_shared_data: ws_shared_data
           }
         end

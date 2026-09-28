@@ -116,15 +116,12 @@ module Aspera
           # Yield current property to block
           yield(property_schema, name, property_full_name)
 
-          # Recursively process nested structures
-          case node['type']
-          when 'object'
-            property_schema.each_property("#{property_full_name}.", on_variant: on_variant, &block) if node['properties']
-          when 'array'
-            if node['items']
-              array_item_schema = property_schema.dig('items')
-              array_item_schema.each_property("#{property_full_name}[].", on_variant: on_variant, &block) if array_item_schema.current['properties']
-            end
+          # Recursively process nested structures (`type` is a list for a nullable value, e.g. `[array, 'null']`)
+          types = Array(node['type'])
+          property_schema.each_property("#{property_full_name}.", on_variant: on_variant, &block) if types.include?('object') && node['properties']
+          if types.include?('array') && node['items']
+            array_item_schema = property_schema.dig('items')
+            array_item_schema.each_property("#{property_full_name}[].", on_variant: on_variant, &block) if array_item_schema.current['properties']
           end
           # allOf without explicit type: object — recurse to merge all branches
           property_schema.each_property("#{property_full_name}.", on_variant: on_variant, &block) if node['allOf']
@@ -180,15 +177,12 @@ module Aspera
           row['default'] = node['default'] if node.key?('default')
           row['enum']    = node['enum']    if node.key?('enum')
           rows << row
-          # Recurse into nested object or array-of-objects
-          case node['type']
-          when 'object'
-            collect_rows(rows, prop_reader, "#{full_name}.") if node['properties']
-          when 'array'
-            if node['items']
-              item_reader = prop_reader.dig('items')
-              collect_rows(rows, item_reader, "#{full_name}[].") if item_reader.current['properties']
-            end
+          # Recurse into nested object or array-of-objects (`type` is a list for a nullable value)
+          types = Array(node['type'])
+          collect_rows(rows, prop_reader, "#{full_name}.") if types.include?('object') && node['properties']
+          if types.include?('array') && node['items']
+            item_reader = prop_reader.dig('items')
+            collect_rows(rows, item_reader, "#{full_name}[].") if item_reader.current['properties']
           end
           collect_rows(rows, prop_reader, "#{full_name}.") if node['allOf']
         end

@@ -5006,7 +5006,53 @@ paths:
     get:
       operationId: get_short_links
       summary: Get Short Links
-      description: List short links visible to the current caller.
+      description: List short links of a shared resource (shared folder or shared inbox) visible to the current caller.
+      parameters:
+        - name: json_query
+          in: query
+          description: >-
+            JSON-encoded shared resource of the links. Public link: `{"url_token_data":{"data":<resource>,"purpose":<token purpose>}}`
+            (see `short_link_url_token_data`). Private link: `{"node_id":..,"file_id":..,"workspace_id":..}`
+          schema:
+            type: string
+        - name: purpose
+          in: query
+          description: Purpose of the short links (see `short_link_purpose`)
+          schema:
+            type: string
+            enum:
+              - token_auth_redirection
+              - shared_folder_auth_link
+        - name: edit_access
+          in: query
+          description: Check edit access on the shared folder given by `node_id` and `file_id` in `json_query` (shared folder links only, rejected for shared inbox links)
+          schema:
+            type: boolean
+        - name: admin
+          in: query
+          description: Act as organization administrator (sent by the web UI for an administrator)
+          schema:
+            type: boolean
+        - name: embed
+          in: query
+          description: Embed related resources (e.g. `updated_by_user`)
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sort order (e.g. `-created_at`)
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
       responses:
         '200':
           description: OK
@@ -5021,14 +5067,19 @@ paths:
     post:
       operationId: add_short_link
       summary: Create a Short Link
-      description: Create a short link.
+      description: Create a short link to a shared folder or a shared inbox.
+      parameters:
+        - name: admin
+          in: query
+          description: Act as organization administrator (sent by the web UI for an administrator)
+          schema:
+            type: boolean
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/short_link_create_params'
       responses:
         '201':
           description: Created
@@ -5042,7 +5093,7 @@ paths:
     put:
       operationId: update_short_link
       summary: Update a Short Link
-      description: Update a short link.
+      description: Update a short link (expiration, password).
       parameters:
         - name: id
           in: path
@@ -5050,13 +5101,17 @@ paths:
           schema:
             type: string
           description: Unique identifier of the resource.
+        - name: admin
+          in: query
+          description: Act as organization administrator (sent by the web UI for an administrator)
+          schema:
+            type: boolean
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/short_link_update_params'
       responses:
         '200':
           description: OK
@@ -5077,6 +5132,21 @@ paths:
           schema:
             type: string
           description: Unique identifier of the resource.
+        - name: json_query
+          in: query
+          description: JSON-encoded shared folder of the link, with `edit_access` (shared folder links only)
+          schema:
+            type: string
+        - name: edit_access
+          in: query
+          description: Check edit access on the shared folder given by `node_id` and `file_id` in `json_query` (shared folder links only, rejected for shared inbox links)
+          schema:
+            type: boolean
+        - name: admin
+          in: query
+          description: Act as organization administrator (sent by the web UI for an administrator)
+          schema:
+            type: boolean
       responses:
         '204':
           description: No Content
@@ -5862,8 +5932,9 @@ components:
           description: Human-readable error description providing additional context about the error
           example: invalid URL token
         state:
-          type: string
-          nullable: true
+          type:
+            - string
+            - 'null'
           description: >-
             State parameter from the authorization request, if present. Used to maintain state between request and
             callback.
@@ -8593,8 +8664,9 @@ components:
           examples:
             - false
         bcc_recipients:
-          type: array
-          nullable: true
+          type:
+            - array
+            - 'null'
           items:
             $ref: '#/components/schemas/senders_recipients_object'
         content_retention_duration:
@@ -8615,8 +8687,9 @@ components:
           examples:
             - 604800
         download_notification_recipients:
-          type: array
-          nullable: true
+          type:
+            - array
+            - 'null'
           items:
             $ref: '#/components/schemas/senders_recipients_object'
         draft:
@@ -8662,7 +8735,6 @@ components:
             - false
         recipients:
           type: array
-          nullable: false
           items:
             $ref: '#/components/schemas/senders_recipients_object'
         sent:
@@ -8693,7 +8765,6 @@ components:
             - 3
         upload_notification_recipients:
           type: array
-          nullable: false
           items:
             $ref: '#/components/schemas/senders_recipients_object'
         workspace_id:
@@ -8729,7 +8800,6 @@ components:
             - true
         bcc_recipients:
           type: array
-          nullable: false
           items:
             $ref: '#/components/schemas/senders_recipients_object'
         bytes_transferred:
@@ -9174,14 +9244,13 @@ components:
           type: boolean
           description: Whether the short link has expired.
         expires_at:
-          type: string
+          type:
+            - string
+            - 'null'
           format: date-time
-          nullable: true
           description: Expiry date-time, or null if the link does not expire.
         data:
-          type: object
-          description: Arbitrary metadata associated with the short link.
-          additionalProperties: true
+          $ref: '#/components/schemas/short_link_data'
         updated_by_user_id:
           type: string
           description: ID of the user who last updated the short link.
@@ -9193,6 +9262,115 @@ components:
           type: string
           format: date-time
           description: Time at which the short link was last updated.
+    short_link_purpose:
+      type: string
+      description: >-
+        Purpose of a short link: `token_auth_redirection` for a public link (URL token, shared folder or shared inbox),
+        `shared_folder_auth_link` for a private link (authentication required, shared folder only)
+      enum:
+        - token_auth_redirection
+        - shared_folder_auth_link
+    short_link_url_token_data:
+      type: object
+      description: URL token of a public short link
+      properties:
+        data:
+          type: object
+          description: >-
+            Shared resource: shared inbox (`dropbox_id`, `name`) or shared folder (`node_id`, `file_id`), and `workspace_id`
+          properties:
+            workspace_id:
+              type: string
+              description: Workspace of the shared resource
+            dropbox_id:
+              type: string
+              description: Shared inbox (token purpose `send_package_to_dropbox`)
+            name:
+              type: string
+              description: Empty string for a shared inbox
+            node_id:
+              type: string
+              description: Node of the shared folder (token purpose `view_shared_file`)
+            file_id:
+              type: string
+              description: File identifier of the shared folder on the node
+          additionalProperties: true
+        purpose:
+          type: string
+          description: Purpose of the URL token, depends on the shared resource
+          enum:
+            - send_package_to_dropbox
+            - view_shared_file
+        password:
+          type: string
+          description: Password to follow the link (write only, with `password_enabled`)
+        expires_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: Expiry date-time of the URL token
+    short_link_data:
+      type: object
+      description: >-
+        Public link (purpose `token_auth_redirection`): `aoc` and `url_token_data`.
+        Private link (purpose `shared_folder_auth_link`): the shared folder (`node_id`, `file_id`, `workspace_id`)
+      properties:
+        aoc:
+          type: boolean
+          description: Link to an Aspera on Cloud resource (public link)
+        url_token_data:
+          $ref: '#/components/schemas/short_link_url_token_data'
+      additionalProperties: true
+    short_link_create_params:
+      type: object
+      description: Short link creation
+      required:
+        - purpose
+        - data
+      properties:
+        purpose:
+          $ref: '#/components/schemas/short_link_purpose'
+        data:
+          $ref: '#/components/schemas/short_link_data'
+        password_enabled:
+          type: boolean
+          description: Password required to follow the link (password in `data.url_token_data.password`)
+        expires_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: Expiry date-time, or null if the link does not expire
+        user_selected_name:
+          type:
+            - string
+            - 'null'
+          description: Name of the link chosen by the user
+    short_link_update_params:
+      type: object
+      description: >-
+        Short link modification. Shared inbox link: `data.url_token_data.data` is `{"dropbox_id":..}`.
+        Shared folder link: also `edit_access` and `json_query`
+      properties:
+        password_enabled:
+          type: boolean
+          description: Password required to follow the link (password in `data.url_token_data.password`)
+        expires_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: Expiry date-time, or null if the link does not expire
+        data:
+          $ref: '#/components/schemas/short_link_data'
+        edit_access:
+          type: boolean
+          description: Check edit access on the shared folder given in `json_query` (shared folder links only)
+        json_query:
+          type: object
+          description: Shared folder of the link (`node_id`, `file_id`), with `edit_access`
+          additionalProperties: true
     transfer_report_response:
       type: object
       description: >
@@ -9280,8 +9458,9 @@ components:
           type: boolean
           description: Whether Trend Micro antivirus scanning is enabled.
         user_limit:
-          type: integer
-          nullable: true
+          type:
+            - integer
+            - 'null'
           description: Maximum number of users allowed. Null means unlimited.
         watermarking_enabled:
           type: boolean
@@ -9552,33 +9731,39 @@ components:
       properties:
         autofill_shared_inbox_sending:
           description: Whether to automatically fill the shared inbox when sending packages
-          type: boolean
-          nullable: true
+          type:
+            - boolean
+            - 'null'
           example: true
         default_aoc_app:
           description: The default Aspera on Cloud application to display on login (e.g., "packages", "files", "activity")
-          type: string
-          nullable: true
+          type:
+            - string
+            - 'null'
           example: packages
         default_language:
           description: The user's preferred language for the UI (e.g., "en-us", "fr-fr", "de-de")
-          type: string
-          nullable: true
+          type:
+            - string
+            - 'null'
           example: en-us
         first_connect_transfer:
           description: Whether this is the user's first time connecting for a transfer (used for onboarding)
-          type: boolean
-          nullable: true
+          type:
+            - boolean
+            - 'null'
           example: true
         first_connect_download:
           description: Whether this is the user's first time connecting for a download (used for onboarding)
-          type: boolean
-          nullable: true
+          type:
+            - boolean
+            - 'null'
           example: true
         pinned_dropbox_ids:
           description: Array of dropbox IDs that the user has pinned for quick access
-          type: array
-          nullable: true
+          type:
+            - array
+            - 'null'
           items:
             type: integer
           example:
@@ -9587,8 +9772,9 @@ components:
             - 3
         pinned_workspace_ids:
           description: Array of workspace IDs that the user has pinned for quick access
-          type: array
-          nullable: true
+          type:
+            - array
+            - 'null'
           items:
             type: integer
           example:
@@ -9596,34 +9782,40 @@ components:
             - 20
         auto_workflow_view:
           description: The default view mode for automation workflows
-          type: string
-          nullable: true
+          type:
+            - string
+            - 'null'
           example: ''
         grid_view_workspaces:
           description: The view mode for workspaces display (e.g., "list", "grid")
-          type: string
-          nullable: true
+          type:
+            - string
+            - 'null'
           example: list
         last_read_coming_soon:
           description: Timestamp of the last time the user viewed the "Coming Soon" announcements
-          type: string
-          nullable: true
+          type:
+            - string
+            - 'null'
           example: 03/19/2021_1
         last_read_whats_new:
           description: Timestamp of the last time the user viewed the "What's New" announcements
-          type: string
-          nullable: true
+          type:
+            - string
+            - 'null'
           example: 03/30/2021_1
         recent_transfers:
           description: Object storing information about recent transfers for quick access
-          type: object
-          nullable: true
+          type:
+            - object
+            - 'null'
           additionalProperties: true
           example: {}
         help_recent:
           description: Array of recently accessed help topics for quick reference
-          type: array
-          nullable: true
+          type:
+            - array
+            - 'null'
           items:
             type: string
           example:
@@ -9631,8 +9823,9 @@ components:
             - creating_a_new_workspace
         tableDataStore:
           description: JSON string containing table configuration and sizing preferences for various UI tables
-          type: string
-          nullable: true
+          type:
+            - string
+            - 'null'
           example: '[{"id":"files-table"},{"id":"user-list","tableSizing":"{\"displayUserStatus\":198}"}]'
       additionalProperties: true
       example:
@@ -9652,73 +9845,86 @@ components:
       properties:
         autofill_shared_inbox_sending:
           description: Whether to automatically fill the shared inbox when sending packages
-          type: boolean
-          nullable: true
+          type:
+            - boolean
+            - 'null'
           example: true
         default_aoc_app:
           description: The default Aspera on Cloud application to display on login
-          type: string
-          nullable: true
+          type:
+            - string
+            - 'null'
           example: packages
         default_language:
           description: The user's preferred language for the UI
-          type: string
-          nullable: true
+          type:
+            - string
+            - 'null'
           example: en-us
         first_connect_transfer:
           description: Whether this is the user's first time connecting for a transfer
-          type: boolean
-          nullable: true
+          type:
+            - boolean
+            - 'null'
           example: null
         first_connect_download:
           description: Whether this is the user's first time connecting for a download
-          type: boolean
-          nullable: true
+          type:
+            - boolean
+            - 'null'
           example: null
         pinned_dropbox_ids:
           description: Array of pinned dropbox IDs
-          type: array
-          nullable: true
+          type:
+            - array
+            - 'null'
           items:
             type: integer
           example: null
         pinned_workspace_ids:
           description: Array of pinned workspace IDs
-          type: array
-          nullable: true
+          type:
+            - array
+            - 'null'
           items:
             type: integer
           example: []
         auto_workflow_view:
           description: Default view mode for automation workflows
-          type: string
-          nullable: true
+          type:
+            - string
+            - 'null'
           example: ''
         grid_view_workspaces:
           description: View mode for workspaces display
-          type: string
-          nullable: true
+          type:
+            - string
+            - 'null'
           example: list
         last_read_coming_soon:
           description: Last viewed "Coming Soon" timestamp
-          type: string
-          nullable: true
+          type:
+            - string
+            - 'null'
           example: 03/19/2021_1
         last_read_whats_new:
           description: Last viewed "What's New" timestamp
-          type: string
-          nullable: true
+          type:
+            - string
+            - 'null'
           example: 03/30/2021_1
         recent_transfers:
           description: Recent transfers information
-          type: object
-          nullable: true
+          type:
+            - object
+            - 'null'
           additionalProperties: true
           example: {}
         help_recent:
           description: Recently accessed help topics
-          type: array
-          nullable: true
+          type:
+            - array
+            - 'null'
           items:
             type: string
           example:
@@ -9727,8 +9933,9 @@ components:
             - attach_azure_blob_storage
         tableDataStore:
           description: Table configuration and sizing preferences (JSON string)
-          type: string
-          nullable: true
+          type:
+            - string
+            - 'null'
           example: '[{"id":"files-table"},{"id":"user-list","tableSizing":"{\"displayUserStatus\":198}"}]'
       additionalProperties: true
       example:
@@ -10741,9 +10948,10 @@ components:
             - true
         aggressiveness:
           description: Transfer aggressiveness factor (0.0 to 1.0). Null means use node default.
-          type: number
+          type:
+            - number
+            - 'null'
           format: float
-          nullable: true
           examples:
             - 0.15
         cipher:
@@ -10757,14 +10965,16 @@ components:
             - aes-128
         content_protection_secret:
           description: Secret used for content protection (server-side encryption at rest). Null if not set.
-          type: string
-          nullable: true
+          type:
+            - string
+            - 'null'
           examples:
             - aspera-1
         default_target_rate_kbps:
           description: Default target transfer rate in kbps. Null means no limit.
-          type: integer
-          nullable: true
+          type:
+            - integer
+            - 'null'
           examples:
             - 150000
         enable_iteration_token_pagination:
@@ -10816,9 +11026,10 @@ components:
             - true
         aggressiveness:
           description: Transfer aggressiveness factor (0.0 to 1.0). Null means use node default.
-          type: number
+          type:
+            - number
+            - 'null'
           format: float
-          nullable: true
           examples:
             - 0.15
         cipher:
@@ -10832,14 +11043,16 @@ components:
             - aes-128
         content_protection_secret:
           description: Secret used for content protection (server-side encryption at rest). Null if not set.
-          type: string
-          nullable: true
+          type:
+            - string
+            - 'null'
           examples:
             - aspera-1
         default_target_rate_kbps:
           description: Default target transfer rate in kbps. Null means no limit.
-          type: integer
-          nullable: true
+          type:
+            - integer
+            - 'null'
           examples:
             - 150000
         enable_iteration_token_pagination:

@@ -179,6 +179,16 @@ RSpec.describe(Aspera::Schema::Reader) do
       no_disc.each_property(on_variant: ->(_variant, property, value) { values << [property, value] }) { |*_| nil }
       expect(values).to(eq([[nil, nil], [nil, nil]]))
     end
+
+    it 'traverses nullable objects and arrays (type list)' do
+      nullable = described_class.new({
+        'properties' => {
+          'owner' => {'type' => %w[object null], 'properties' => {'name' => {'type' => 'string'}}},
+          'items' => {'type' => %w[array null], 'items' => {'properties' => {'id' => {'type' => 'string'}}}}
+        }
+      })
+      expect(full_names(nullable)).to(eq(%w[owner owner.name items items[].id]))
+    end
   end
 
   describe '#to_rows' do
@@ -199,6 +209,18 @@ RSpec.describe(Aspera::Schema::Reader) do
         {'name' => 'owner', 'type' => 'object', 'required' => false, 'description' => ''},
         {'name' => 'owner.name', 'type' => 'string', 'required' => false, 'description' => '', 'default' => 'me'},
         {'name' => 'tags', 'type' => 'Array[string]', 'required' => false, 'description' => '', 'enum' => %w[a b]}
+      ]))
+    end
+
+    it 'recurses into nullable objects and arrays (type list)' do
+      nullable_rows = described_class.new({
+        'properties' => {
+          'owner' => {'type' => %w[object null], 'properties' => {'name' => {'type' => 'string'}}},
+          'items' => {'type' => %w[array null], 'items' => {'properties' => {'id' => {'type' => 'string'}}}}
+        }
+      }).to_rows
+      expect(nullable_rows.map { |row| [row['name'], row['type']] }).to(eq([
+        ['owner', 'object, null'], ['owner.name', 'string'], ['items', 'array, null'], ['items[].id', 'string']
       ]))
     end
   end
