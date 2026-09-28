@@ -1132,8 +1132,11 @@ module Aspera
           require 'aspera/node_simulator'
           parameters = parameters.symbolize_keys
           uri = URI.parse(parameters.delete(:url) { WebServerSimple::DEFAULT_URL })
+          config = parameters.except(*WebServerSimple::PARAMS)
+          Aspera.assert(config[:username].nil? == config[:password].nil?, type: Cli::BadArgument) { 'Parameters username and password must be set together' }
+          Log.log.warn('No username and password: simulator accepts requests without authentication') if config[:username].nil?
           server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
-          server.mount(uri.path, NodeSimulatorServlet, parameters.except(*WebServerSimple::PARAMS), NodeSimulator.new)
+          server.mount(uri.path, NodeSimulatorServlet, config, NodeSimulator.new)
           server.start
           return Result::Status.new('Simulator terminated')
         end

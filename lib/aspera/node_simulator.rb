@@ -11,6 +11,7 @@ require 'aspera/secret_hider'
 require 'aspera/string_ext'
 require 'aspera/log'
 require 'webrick'
+require 'openssl'
 require 'json'
 
 module Aspera
@@ -277,20 +278,42 @@ module Aspera
     PATH_TRANSFERS = '/ops/transfers'
     PATH_ONE_TRANSFER = %r{/ops/transfers/(.+)$}
     PATH_BROWSE = '/files/browse'
-    # @param credentials [Hash]
-    # @param simulator   [NodeSimulator]
-    def initialize(server, credentials, simulator)
+    REALM = 'Aspera Node Simulator'
+    # @param config    [Hash] `browse_root`, `username` and `password` (Basic authentication expected from clients, optional)
+    # @param simulator [NodeSimulator]
+    def initialize(server, config, simulator)
       super(server)
-      @credentials = credentials
       @simulator = simulator
-      # Resolve once at startup; default to current working directory
-      @browse_root = File.realpath(credentials[:browse_root] || Dir.pwd)
+      # default to current working directory
+      @browse_root = File.realpath(config[:browse_root] || Dir.pwd)
+      @expected_auth = "#{config[:username]}:#{config[:password]}" unless config[:username].nil?
+    end
+
+    # Check authentication, dispatch to `do_<verb>`, and send errors in Node API format
+    def service(request, response)
+      unless authorized?(request)
+        response['WWW-Authenticate'] = %Q(Basic realm="#{REALM}")
+        return set_error(request, response, 401, 'Invalid or missing credentials')
+      end
+      super
+    rescue WEBrick::HTTPStatus::Error => e
+      set_error(request, response, e.code, e.message)
+    rescue JSON::ParserError, AssertError, Transfer::Error => e
+      set_error(request, response, 400, e.message)
+    rescue Errno::ENOENT => e
+      set_error(request, response, 404, e.message)
+    rescue StandardError => e
+      Log.log.error { "#{request.request_method} #{request.path}: #{e.class}: #{e.message}" }
+      set_error(request, response, 500, e.message)
     end
 
     require 'json'
     require 'time'
 
-    def folder_to_structure(folder_path)
+    # @param folder_path [String]  folder to list, within `browse_root`
+    # @param skip        [Integer] number of items to skip (paging)
+    # @param count       [Integer] max number of items returned (paging)
+    def folder_to_structure(folder_path, skip: 0, count: nil)
       # Resolve and confine to browse_root (prevents path traversal via client-supplied path)
       resolved = File.realpath(folder_path)
       Aspera.assert(resolved.start_with?("#{@browse_root}/") || resolved.eql?(@browse_root)) { 'Browse path traversal attempt detected' }
@@ -349,6 +372,11 @@ module Aspera
         structure['items'] << item
       end
 
+      # stable order for paging
+      all_items = structure['items'].sort_by { |item| item['basename'] }
+      structure['items'] = all_items.drop(skip).first(count || all_items.length)
+      structure['item_count'] = structure['items'].length
+      structure['total_count'] = all_items.length
       structure
     end
 
@@ -358,10 +386,9 @@ module Aspera
         set_json_response(request, response, @simulator.transfer(@simulator.start(JSON.parse(request.body))))
       when PATH_BROWSE
         req = JSON.parse(request.body)
-        # req['count']
-        set_json_response(request, response, folder_to_structure(req['path'] || @browse_root))
+        set_json_response(request, response, folder_to_structure(req['path'] || @browse_root, skip: req['skip'].to_i, count: req['count']&.to_i))
       else
-        set_json_response(request, response, [{error: 'Bad request'}], code: 400)
+        set_error(request, response, 404, "Unknown path: #{request.path}")
       end
     end
 
@@ -372,7 +399,7 @@ module Aspera
         set_json_response(request, response, {
           application:                           'node',
           current_time:                          Time.now.utc.iso8601(0),
-          version:                               info['sdk_ascp_version'].gsub(/ .*$/, ''),
+          version:                               info['ascp_version'].to_s.sub(/ .*$/, ''),
           license_expiration_date:               info['expiration_date'],
           license_max_rate:                      info['maximum_bandwidth'],
           os:                                    %x(uname -srv).chomp,
@@ -440,13 +467,28 @@ module Aspera
       when PATH_ONE_TRANSFER
         transfer = @simulator.transfer(request.path.match(PATH_ONE_TRANSFER)[1])
         if transfer.nil?
-          set_json_response(request, response, [{error: 'Unknown transfer'}], code: 404)
+          set_error(request, response, 404, 'Unknown transfer')
         else
           set_json_response(request, response, transfer)
         end
       else
-        set_json_response(request, response, [{error: 'Unknown request'}], code: 400)
+        set_error(request, response, 404, "Unknown path: #{request.path}")
       end
+    end
+
+    private
+
+    # Set error body in Node API format
+    def set_error(request, response, code, message)
+      set_json_response(request, response, {error: {code: code, reason: WEBrick::HTTPStatus.reason_phrase(code), user_message: message}}, code: code)
+    end
+
+    # @return [Boolean] `true` if the request has the expected Basic credentials, or if none are expected
+    def authorized?(request)
+      return true if @expected_auth.nil?
+      scheme, value = request['Authorization'].to_s.split(' ', 2)
+      # constant time comparison
+      scheme.to_s.casecmp?('Basic') && OpenSSL.secure_compare(value.to_s.unpack1('m'), @expected_auth)
     end
 
     def set_json_response(request, response, json, code: 200)

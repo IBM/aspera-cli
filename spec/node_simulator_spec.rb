@@ -4,9 +4,12 @@
 # Tests for NodeSimulator: mapping of transferd messages to Node API, and transfer store.
 # transferd is replaced by a fake gRPC client — no daemon required.
 # Test values are the ones seen on real transfers (time stamps in milliseconds).
+# Tests for NodeSimulatorServlet: HTTP server on a free port, with a fake backend.
 
 require 'bundler/setup'
 require 'aspera/node_simulator'
+require 'net/http'
+require 'tmpdir'
 
 module Aspera
   # Test data and helpers
@@ -27,6 +30,26 @@ module Aspera
         @requests.push(request)
         raise @error if @error
         @responses.each(&block)
+      end
+    end
+
+    # Backend of the servlet, with one known transfer
+    class FakeSimulator
+      def initialize(start_error: nil)
+        @start_error = start_error
+      end
+
+      def start(_transfer_spec)
+        raise @start_error if @start_error
+        TRANSFER_ID
+      end
+
+      def transfer(id)
+        {'id' => TRANSFER_ID, 'status' => 'running'} if id.eql?(TRANSFER_ID)
+      end
+
+      def transfers
+        [transfer(TRANSFER_ID)]
       end
     end
 
@@ -278,6 +301,120 @@ module Aspera
           id = simulator.start(transfer_spec)
           expect(wait_status(simulator, id, 'failed')['error_desc']).to(include('daemon died'))
         end
+      end
+    end
+
+    RSpec.describe(NodeSimulatorServlet) do
+      let(:browse_root) { File.realpath(Dir.mktmpdir('node_simulator_spec')) }
+      let(:basic_sim) { "Basic #{['sim:sim'].pack('m0')}" }
+
+      after do
+        @server&.shutdown
+        FileUtils.rm_rf(browse_root)
+      end
+
+      # Start a server on a free port
+      def start_server(config = {}, simulator: FakeSimulator.new)
+        @server = WEBrick::HTTPServer.new(BindAddress: '127.0.0.1', Port: 0, Logger: WEBrick::Log.new([]), AccessLog: [])
+        @server.mount('/', described_class, {browse_root: browse_root}.merge(config), simulator)
+        Thread.new { @server.start }
+      end
+
+      # @return [Array] HTTP code, header `WWW-Authenticate`, parsed body
+      def call(verb, path, body: nil, headers: {})
+        request = Net::HTTPGenericRequest.new(verb, !body.nil?, true, path, headers)
+        request.body = body
+        response = Net::HTTP.new('127.0.0.1', @server.config[:Port]).request(request)
+        [response.code.to_i, response['WWW-Authenticate'], JSON.parse(response.body)]
+      end
+
+      def expect_error(result, code, message = nil)
+        expect(result[0]).to(eq(code))
+        expect(result[2]['error']).to(include('code' => code, 'reason' => WEBrick::HTTPStatus.reason_phrase(code)))
+        expect(result[2]['error']['user_message']).to(match(message)) unless message.nil?
+      end
+
+      context 'with credentials' do
+        before { start_server({username: 'sim', password: 'sim'}) }
+
+        it 'rejects a request without credentials' do
+          result = call('GET', '/ops/transfers')
+          expect_error(result, 401)
+          expect(result[1]).to(eq('Basic realm="Aspera Node Simulator"'))
+        end
+
+        it 'rejects a wrong password' do
+          expect_error(call('GET', '/ops/transfers', headers: {'Authorization' => "Basic #{['sim:bad'].pack('m0')}"}), 401)
+        end
+
+        it 'rejects a bearer token' do
+          expect_error(call('GET', '/ops/transfers', headers: {'Authorization' => 'Bearer abcdef', 'X-Aspera-AccessKey' => 'ak'}), 401)
+        end
+
+        it 'accepts the expected credentials' do
+          code, _, body = call('GET', '/ops/transfers', headers: {'Authorization' => basic_sim})
+          expect(code).to(eq(200))
+          expect(body.map { |transfer| transfer['id'] }).to(eq([TRANSFER_ID]))
+        end
+      end
+
+      context 'without credentials' do
+        before { start_server }
+
+        it 'accepts a request without credentials' do
+          code, _, body = call('GET', "/ops/transfers/#{TRANSFER_ID}")
+          expect(code).to(eq(200))
+          expect(body['status']).to(eq('running'))
+        end
+
+        it 'starts a transfer' do
+          code, _, body = call('POST', '/ops/transfers', body: '{"direction":"send"}')
+          expect(code).to(eq(200))
+          expect(body['id']).to(eq(TRANSFER_ID))
+        end
+
+        it 'returns 404 for an unknown path' do
+          expect_error(call('GET', '/unknown'), 404, %r{/unknown})
+          expect_error(call('POST', '/unknown', body: '{}'), 404)
+        end
+
+        it 'returns 404 for an unknown transfer' do
+          expect_error(call('GET', '/ops/transfers/unknown'), 404, 'Unknown transfer')
+        end
+
+        it 'returns 400 for invalid JSON' do
+          expect_error(call('POST', '/ops/transfers', body: 'not json'), 400)
+        end
+
+        it 'returns 405 for an unsupported verb' do
+          expect_error(call('DELETE', '/ops/transfers'), 405)
+        end
+
+        it 'confines browse to the root' do
+          expect_error(call('POST', '/files/browse', body: '{"path":"/"}'), 400, /traversal/)
+          expect_error(call('POST', '/files/browse', body: '{"path":"/nonexistent_folder_xyz"}'), 404)
+          code, _, body = call('POST', '/files/browse', body: {path: browse_root}.to_json)
+          expect(code).to(eq(200))
+          expect(body['self']['path']).to(eq(browse_root))
+        end
+
+        it 'pages browse results' do
+          %w[c a d b].each { |name| File.write(File.join(browse_root, name), name) }
+          code, _, body = call('POST', '/files/browse', body: {path: browse_root, skip: 1, count: 2}.to_json)
+          expect(code).to(eq(200))
+          expect(body['items'].map { |item| item['basename'] }).to(eq(%w[b c]))
+          expect(body).to(include('item_count' => 2, 'total_count' => 4))
+        end
+      end
+
+      it 'returns 400 when the transfer is refused' do
+        start_server(simulator: FakeSimulator.new(start_error: Transfer::Error.new('invalid transfer spec')))
+        expect_error(call('POST', '/ops/transfers', body: '{}'), 400, 'invalid transfer spec')
+      end
+
+      it 'returns 500 when transferd fails' do
+        start_server(simulator: FakeSimulator.new(start_error: GRPC::Unavailable.new('daemon down')))
+        expect_error(call('POST', '/ops/transfers', body: '{}'), 500, /daemon down/)
       end
     end
   end

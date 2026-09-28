@@ -631,6 +631,17 @@ components:
             Requests for paths outside this directory are rejected.
             Defaults to the current working directory.
           example: /data/aspera
+        username:
+          type: string
+          description: >-
+            Username expected from clients in HTTP Basic authentication.
+            Set together with `password`.
+            When not set, requests are accepted without authentication.
+          example: node_user
+        password:
+          type: string
+          description: Password expected from clients in HTTP Basic authentication, for the above `username`.
+          example: my_password
     NodeTelemetryOptions:
       type: object
       description: >-
