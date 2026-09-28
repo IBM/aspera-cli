@@ -187,8 +187,7 @@ module Aspera
           Sync::Operations::DIRECTIONS.each do |dir|
             command dir, description: "#{dir.capitalize}-sync with server", transfer_paths: :send, arguments: SyncActions::PATH_AND_INFO_ARGS
           end
-          command :admin, description: 'Manage sync database (admin operations)'
-          SyncActions.register_sync_admin_commands(self, :admin)
+          sync_admin_commands :admin
         end
 
         commands_under :health do

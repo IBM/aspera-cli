@@ -17,55 +17,56 @@ module Aspera
         (23..24).map { |i| "P(#{i})" }).freeze
       # Positional arguments shared by sync transfer commands (push/pull/bidi) and sync admin commands.
       PATH_AND_INFO_ARGS = [{name: :path}, {name: :sync_info, type: Hash, mandatory: false, default: {}}].freeze
-      # Names of the leaf commands registered under any `sync admin` node.
-      ADMIN_COMMANDS = %i[find status meta counters file_info overview query].freeze
       # When a plugin class includes SyncActions, register the :sql option
-      # in that class's DSL registry so Base#initialize auto-declares it.
+      # in that class's DSL registry so Base#initialize auto-declares it,
+      # and add the class-level DSL methods of ClassMethods.
       class << self
         def included(base)
           base.option(:sql, description: 'SQL suffix appended to sqlite3 queries for admin subcommands (e.g. WHERE clause)')
+          base.extend(ClassMethods)
         end
+      end
 
-        # DSL helper: register the 7 `sync admin` leaf commands under the given parent path.
-        # Called at class-load time from any plugin that includes SyncActions.
-        # @param base        [Class]          the plugin class (receiver of DSL methods)
-        # @param admin_path  [Symbol, Array<Symbol>]  path relative to current scope, e.g. :admin
-        def register_sync_admin_commands(base, admin_path)
-          base.commands_under(admin_path) do
-            base.command(
+      # Class-level DSL methods added to the plugin class that includes SyncActions.
+      module ClassMethods
+        # DSL class method: declare the `sync admin` node and its 7 leaf commands.
+        # @param parent [Symbol, Array<Symbol>] path relative to current scope, e.g. :admin
+        def sync_admin_commands(parent)
+          commands_under(parent, description: 'Manage sync database (admin operations)') do
+            command(
               :find, description: 'Find sync database files', arguments: [{name: :path}],
               action: lambda do |path:, **|
                 dbs = Sync::Operations.list_db_files(path)
                 Result::ObjectList.new(dbs.keys.map { |n| {name: n, path: dbs[n]} })
               end
             )
-            base.command(
+            command(
               :status, description: 'Show sync session status', arguments: PATH_AND_INFO_ARGS,
               action: ->(path:, sync_info: {}, **) { Result::SingleObject.new(Sync::Operations.admin_status(async_info_from_args(path: path, sync_info: sync_info))) }
             )
-            base.command(
+            command(
               :meta, description: 'Show sync session metadata', arguments: PATH_AND_INFO_ARGS,
               action: lambda do |path:, sync_info: {}, **|
                 require 'aspera/sync/database'
                 Result::SingleObject.new(db_from_args(path: path, sync_info: sync_info).meta(options.get_option(:sql)))
               end
             )
-            base.command(
+            command(
               :counters, description: 'Show sync counters', arguments: PATH_AND_INFO_ARGS,
               action: lambda do |path:, sync_info: {}, **|
                 require 'aspera/sync/database'
                 Result::SingleObject.new(db_from_args(path: path, sync_info: sync_info).counters(options.get_option(:sql)))
               end
             )
-            base.command(:file_info, description: 'Show per-file sync state', arguments: PATH_AND_INFO_ARGS, action: :action_sync_admin_file_info)
-            base.command(
+            command(:file_info, description: 'Show per-file sync state', arguments: PATH_AND_INFO_ARGS, action: :action_sync_admin_file_info)
+            command(
               :overview, description: 'Show sync database overview', arguments: PATH_AND_INFO_ARGS,
               action: lambda do |path:, sync_info: {}, **|
                 require 'aspera/sync/database'
                 Result::ObjectList.new(db_from_args(path: path, sync_info: sync_info).overview, fields: %w[table name type])
               end
             )
-            base.command(
+            command(
               :query, description: 'Execute a raw SQL query', arguments: PATH_AND_INFO_ARGS,
               action: lambda do |path:, sync_info: {}, **|
                 require 'aspera/sync/database'

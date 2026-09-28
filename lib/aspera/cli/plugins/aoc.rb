@@ -140,44 +140,35 @@ module Aspera
             }
           end
 
-          # DSL helper: register the 5 short_link leaf commands under the given parent path
-          # and define the corresponding action methods on `base`.
-          # @param base        [Class]         the plugin class
-          # @param parent_path [Array<Symbol>] full path ending with :short_link
-          def register_short_link_commands(base, parent_path)
-            base.commands_under(parent_path) do
-              base.command(
-                :create, description: base.operation_description(:create, 'short link'),
-                arguments: [{name: :short_link, type: Hash, mandatory: false, default: {}}]
+          # DSL class method: declare the 5 short link leaf commands under the given node.
+          # The node itself is declared by the caller, with its arguments and setup.
+          # @param parent [Symbol, Array<Symbol>] path relative to current scope, e.g. :short_link
+          def short_link_commands(parent)
+            commands_under(parent) do
+              command(
+                :create, description: operation_description(:create, 'short link'),
+                arguments: [{name: :short_link, type: Hash, mandatory: false, default: {}}],
+                action: ->(short_link: {}, **ctx) { short_link_create(short_link, **ctx) }
               )
-              base.command(
-                :modify, description: base.operation_description(:modify, 'short link'),
-                arguments: [{name: :short_link_id, type: :identifier}, {name: :short_link, type: Hash, mandatory: false, default: {}}]
+              command(
+                :modify, description: operation_description(:modify, 'short link'),
+                arguments: [{name: :short_link_id, type: :identifier}, {name: :short_link, type: Hash, mandatory: false, default: {}}],
+                action: ->(short_link: {}, **ctx) { short_link_modify(short_link, **short_link_fetch_list(**ctx), **ctx) }
               )
-              base.command(:list, description: base.operation_description(:list, 'short link'))
-              base.command(
-                :show, description: base.operation_description(:show, 'short link'),
-                arguments: [{name: :short_link_id, type: :identifier}]
+              command(
+                :list, description: operation_description(:list, 'short link'),
+                action: ->(**ctx) { short_link_list(**short_link_fetch_list(**ctx)) }
               )
-              base.command(
-                :delete, description: base.operation_description(:delete, 'short link'),
-                arguments: [{name: :short_link_id, type: :identifier}]
+              command(
+                :show, description: operation_description(:show, 'short link'),
+                arguments: [{name: :short_link_id, type: :identifier}],
+                action: ->(**ctx) { short_link_show(**short_link_fetch_list(**ctx), **ctx) }
               )
-            end
-            base.define_action_method(parent_path + [:create]) do |short_link: {}, **ctx|
-              short_link_create(short_link, **ctx)
-            end
-            base.define_action_method(parent_path + [:list]) do |**ctx|
-              short_link_list(**short_link_fetch_list(**ctx))
-            end
-            base.define_action_method(parent_path + [:show]) do |**ctx|
-              short_link_show(**short_link_fetch_list(**ctx), **ctx)
-            end
-            base.define_action_method(parent_path + [:delete]) do |**ctx|
-              short_link_delete(**short_link_fetch_list(**ctx), **ctx)
-            end
-            base.define_action_method(parent_path + [:modify]) do |short_link: {}, **ctx|
-              short_link_modify(short_link, **short_link_fetch_list(**ctx), **ctx)
+              command(
+                :delete, description: operation_description(:delete, 'short link'),
+                arguments: [{name: :short_link_id, type: :identifier}],
+                action: ->(**ctx) { short_link_delete(**short_link_fetch_list(**ctx), **ctx) }
+              )
             end
           end
         end
@@ -928,20 +919,18 @@ module Aspera
           command :short_link, description: 'Manage shared inbox short links',
             arguments: [{name: :link_type, allowed: %i[public private]}, {name: :dropbox_id, type: :identifier, lookup: :lookup_aoc_dropbox_id}],
             setup: :setup_packages_short_link
+          short_link_commands :short_link
         end
-        # packages > shared_inboxes > short_link sub-commands
-        register_short_link_commands(self, %i[packages shared_inboxes short_link])
 
         # files sub-commands: Gen4 commands are mounted, plus AoC-specific commands
         commands_under :files do
           command :short_link, description: 'Manage file short link',
             arguments: [{name: :folder}, {name: :link_type, allowed: %i[public private]}],
             setup: :setup_files_short_link
+          short_link_commands :short_link
           command :transfer, description: 'Transfer files (node-to-node)', arguments: TRANSFER_ARGS,
             action: ->(direction:, source_folder:, **) { nodegen4_transfer(aoc_api.home[:node_id], file_id: aoc_api.home[:file_id], scope: Api::Node::Scope::USER, direction: direction, source_folder: source_folder) }
         end
-        # files > short_link sub-commands
-        register_short_link_commands(self, %i[files short_link])
 
         # automation sub-commands
         # Automation API: a workflow has ordered steps (step_order), a step has ordered actions (action_order)

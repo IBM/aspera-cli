@@ -272,7 +272,7 @@ Body size is counted in lines (excluding `do`/`end` or `def`/`end`):
 | 4 lines or more | named method `def action_<full_path>(**)`, no `action:` |
 | used by several commands | named method regardless of size |
 
-Parentheses on `command` are only needed for `lambda do…end` (see precedence rule below), and when rubocop requires them: a call with an explicit receiver (e.g. `base.command(...)` in a mixin) is not a macro.
+Parentheses on `command` are only needed for `lambda do…end` (see precedence rule below), and when rubocop requires them: a call inside a method body (e.g. `command(...)` in a DSL class method such as `sync_admin_commands`) is not a macro.
 
 Exception: commands declared by a loop or from a table (e.g. `COMMANDS_GEN4_SPEC`, `define_action_method` in an `each`) have no `command(...)` call of their own to hold an inline action: they use a named method (or a block shared by the loop) regardless of size.
 
@@ -726,6 +726,7 @@ Large classes are decomposed into focused mixins included by the host class:
 
 - `Config` plugin includes `SyncActions`, `VaultManager`, `GemChecker`, `AscpActions`, `PresetActions`, `TransferActions`
 - Each mixin owns a single responsibility and depends on `options`, `context`, and other accessors provided by the host
+- A mixin that declares commands adds class-level DSL methods with `extend` in its `included` hook (e.g. `SyncActions::ClassMethods#sync_admin_commands`), called inside `commands_under` like the other DSL methods
 
 ## Configuration Management
 

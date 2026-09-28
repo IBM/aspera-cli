@@ -356,8 +356,7 @@ module Aspera
           Sync::Operations::DIRECTIONS.each do |dir|
             command dir, description: "#{dir.capitalize}-sync (Gen3)", transfer_paths: :send, arguments: SyncActions::PATH_AND_INFO_ARGS
           end
-          command :admin, description: 'Manage sync database (admin operations)'
-          SyncActions.register_sync_admin_commands(self, :admin)
+          sync_admin_commands :admin
         end
         # access_keys sub-tree
         command :access_keys, description: 'Manage access keys'
@@ -387,8 +386,7 @@ module Aspera
             Sync::Operations::DIRECTIONS.each do |dir|
               command dir, description: "#{dir.capitalize}-sync", transfer_paths: :send, arguments: SyncActions::PATH_AND_INFO_ARGS
             end
-            command :admin, description: 'Manage sync database (admin operations)'
-            SyncActions.register_sync_admin_commands(self, :admin)
+            sync_admin_commands :admin
           end
         end
         commands_under %i[access_keys do permission] do
