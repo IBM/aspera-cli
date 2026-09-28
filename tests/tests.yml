@@ -1406,6 +1406,84 @@ nd_xfer_sessions_after:
     - node
     - transfer
     - sessions
+node_simulator_start:
+  description: Start the Node API simulator in background, transfers are executed by transferd.
+  tags:
+    - noblock
+    - grpc
+  args:
+    - node
+    - simulator
+    - '@json:{"url":"http://localhost:12348","username":"sim","password":"sim"}'
+  post: |
+    require 'socket'
+    require 'timeout'
+    # transferd is started before the web server listens
+    Timeout.timeout(30) do
+      TCPSocket.new('localhost', 12348).close
+    rescue Errno::ECONNREFUSED
+      sleep(1)
+      retry
+    end
+node_simulator_bad_auth:
+  description: The simulator rejects wrong credentials.
+  tags:
+    - must_fail
+    - nodoc
+    - grpc
+  expect: Invalid or missing credentials
+  depends_on:
+    - node_simulator_start
+  args:
+    - node
+    - --url=http://localhost:12348
+    - --username=sim
+    - --password=bad
+    - transfer
+    - list
+node_simulator_info:
+  tags:
+    - nodoc
+    - grpc
+  depends_on:
+    - node_simulator_start
+  args:
+    - node
+    - --url=http://localhost:12348
+    - --username=sim
+    - --password=sim
+    - info
+serv_upload_via_simulator:
+  description: Upload to the server, the transfer is executed by the simulator.
+  tags:
+    - grpc
+  depends_on:
+    - node_simulator_start
+  args:
+    - server
+    - upload
+    - $(PATH_TST_ASC_LCL)
+    - --to-folder=@preset:server.upload_folder
+    - --transfer.agent=node
+    - --transfer.url=http://localhost:12348
+    - --transfer.username=sim
+    - --transfer.password=sim
+node_simulator_transfer_list:
+  description: The transfer started by the simulator is completed.
+  tags:
+    - grpc
+  expect: completed
+  depends_on:
+    - serv_upload_via_simulator
+  args:
+    - node
+    - --url=http://localhost:12348
+    - --username=sim
+    - --password=sim
+    - transfer
+    - list
+    - --fields=status
+  post: t.stop_process :node_simulator_start
 nd_basic_token:
   args:
     - node
