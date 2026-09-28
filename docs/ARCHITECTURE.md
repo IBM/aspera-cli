@@ -97,6 +97,8 @@ Key responsibilities:
 
 Options are declared with the `option` DSL of [`OptionDeclarator`](../lib/aspera/cli/option_declarator.rb), not only by plugins: `Formatter`, `TransferAgent`, `Http` and `Wizard` `extend OptionDeclarator` (plugins include it through `Base`). `Formatter` and `TransferAgent` declare their options on the parser with `declare_options(parser, target: self)`, so that `on_set:` callbacks are methods of that instance. `Config` includes the options of `Wizard` and `Http` with `use_options` (for `Http`, `target:` gives the object of the `on_set:` callbacks: `Context#http_config`).
 
+Global and bootstrap options (`Runner#declare_global_options`, `Bootstrapper`, `Parser#initialize`) are intentionally declared with `options.declare`, not with the `option` DSL: their defaults are read at runtime (current state of `Log`, `TempFileManager`, `SecretHider` and `Environment` singletons, `config_file` under the `home` folder, `home` after `Environment#fix_home`), and each bootstrap phase parses its options right before using them.
+
 #### Plugin System
 
 **Directory**: [`lib/aspera/cli/plugins/`](../lib/aspera/cli/plugins/)
