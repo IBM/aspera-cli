@@ -8,6 +8,8 @@ Released: [Place date of release here]
 
 ### Issues Fixed
 
+* `preview`: Generator options with a numeric value given on command line (e.g. `--thumb-vid-fraction=0.3`, `--blend-pauseframes=2`) were failing.
+
 ### Breaking Changes
 
 ## 4.27.3

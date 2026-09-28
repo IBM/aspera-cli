@@ -54,7 +54,7 @@ module Aspera
     end
 
     # Type specifiers for the `allowed:` parameter of option declarations.
-    # Public API: STRING_ARRAY, SYMBOL_ARRAY, INTEGER, BOOLEAN, NONE.
+    # Public API: STRING_ARRAY, SYMBOL_ARRAY, INTEGER, FLOAT, BOOLEAN, NONE.
     # Internal (do not pass as `allowed:`):
     #   ENUM   - derived internally when `allowed:` is an Array<Symbol> (enum list)
     #   STRING - the implicit default; equivalent to omitting `allowed:` entirely
@@ -65,6 +65,8 @@ module Aspera
       SYMBOL_ARRAY = [Array, Symbol].freeze
       # Option value is coerced to Integer
       INTEGER = [Integer].freeze
+      # Option value is coerced to Float
+      FLOAT = [Float].freeze
       # Option value is a Boolean
       BOOLEAN = BoolValue::TYPES
       # Option has no value — it is a flag switch (e.g. `-N`, `--help`)

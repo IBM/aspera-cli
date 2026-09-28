@@ -58,6 +58,7 @@ module Aspera
         args:         'aspera/sync/args.schema.yaml',
         conf:         'aspera/sync/conf.schema.yaml',
         opts:         'aspera/cli/options.schema.yaml',
+        preview:      'aspera/preview/options.schema.yaml',
         aoc:          'aspera/schema/IBM Aspera on Cloud API-0.2.6-enhanced.yaml',
         automation:   'aspera/schema/IBM Aspera on Cloud Automation API-1.0.5-enhanced.yaml',
         faspex:       'aspera/schema/IBM Aspera Faspex API-5.0-enhanced.yaml',
@@ -69,12 +70,13 @@ module Aspera
       }
 
       # Schemas owned by ascli: values are validated against them (vendor API schemas are validated by the API)
-      OWNED = %i[spec args conf opts async_tables].freeze
+      OWNED = %i[spec args conf opts preview async_tables].freeze
 
       OPTIONS = 'opts'
       TRANSFER_SPEC = 'spec'
       SYNC_CONF = 'conf'
       SYNC_ARGS = 'args'
+      PREVIEW_OPTIONS = 'preview'
       AOC = 'aoc'
       AUTOMATION = 'automation'
       FASPEX = 'faspex'

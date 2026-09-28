@@ -4,9 +4,9 @@
 # spellchecker:ignore soffice pauseframes libx264 trunc bufsize muxer apng libmp3lame maxrate posterize movflags faststart
 # spellchecker:ignore palettegen paletteuse pointsize bordercolor repage lanczos unoconv optipng reencode conv transframes
 
-require 'aspera/preview/options'
 require 'aspera/preview/utils'
 require 'aspera/preview/file_types'
+require 'aspera/schema/registry'
 require 'aspera/log'
 require 'aspera/assert'
 
@@ -19,6 +19,9 @@ module Aspera
 
       # List of valid ffmpeg option keys for reencode configuration.
       FFMPEG_OPTIONS_LIST = %w[in out].freeze
+
+      # Generator options, members defined in `options.schema.yaml`.
+      Options = Struct.new(*Schema::Registry.instance.reader(Schema::Registry::PREVIEW_OPTIONS).current['properties'].keys.map(&:to_sym))
 
       # CLI needs to know conversion type to know if need skip it.
       # One of CONVERSION_TYPES.

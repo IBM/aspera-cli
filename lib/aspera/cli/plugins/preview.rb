@@ -3,11 +3,11 @@
 # cspell:ignore trevents
 require 'aspera/cli/plugins/basic_auth'
 require 'aspera/preview/generator'
-require 'aspera/preview/options'
 require 'aspera/preview/utils'
 require 'aspera/preview/file_types'
 require 'aspera/preview/terminal'
 require 'aspera/transfer/spec'
+require 'aspera/schema/registry'
 require 'aspera/persistency_action_once'
 require 'aspera/temp_file_manager'
 require 'aspera/api/node'
@@ -60,29 +60,30 @@ module Aspera
         option :detect_mime,        description: 'Detect Mime type by analyzing file', allowed: Type::BOOLEAN, default: false
         option :overwrite,          description: 'When to overwrite result file', allowed: %i[always never mtime], default: :mtime
         option :root_url,           description: "How to read and write files on storage (#{REMOTE_ACCESS}, or #{UriReader.file_url('<folder>')})", default: REMOTE_ACCESS
-        # Generator-specific options (bound to @gen_options in initialize)
-        Aspera::Preview::Options::DESCRIPTIONS.each do |opt|
-          values = if opt.key?(:values)
-            opt[:values]
-          elsif BoolValue.symbol?(opt[:default])
-            BoolValue::TYPES
-          end
-          option(opt[:name], description: opt[:description].capitalize, allowed: values, default: opt[:default])
+        # Generator options, defined in schema: values set in @gen_options
+        Schema::Registry.instance.reader(Schema::Registry::PREVIEW_OPTIONS).current['properties'].each do |name, property|
+          key = name.to_sym
+          option(
+            key,
+            description: property['description'].lines.first.strip.delete_suffix('.'),
+            allowed:     property.key?('enum') ? property['enum'].map(&:to_sym) : {'integer' => Type::INTEGER, 'number' => Type::FLOAT, 'boolean' => Type::BOOLEAN}[property['type']],
+            default:     property['default'],
+            # `Hash` value: validated with schema
+            schema:      ("#{Schema::Registry::PREVIEW_OPTIONS}:properties.#{name}" if property['type'].eql?('object')),
+            on_set:      ->(value) { @gen_options[key] = value }
+          )
         end
 
         def initialize(**_)
+          # Generator options, see `options.schema.yaml`
+          # Created before `super`, which declares options: values are set through `on_set`.
+          @gen_options = Aspera::Preview::Generator::Options.new
           super
-          # Generator configuration populated from CLI options.
-          @gen_options = Aspera::Preview::Options.new
           # Used to rate-limit periodic progress logging and checkpoint persistence.
           @periodic = TimerLimiter.new(LOG_LIMITER_SEC)
           # Optional callback used to filter entries before generation.
           @filter_block = nil
           @access_remote = true
-          # Bind generator-specific options to @gen_options
-          Aspera::Preview::Options::DESCRIPTIONS.each do |opt|
-            options.on_set(opt[:name], @gen_options.method(:"#{opt[:name]}="))
-          end
           # Values set through `on_set` callbacks are used below
           options.parse_options!
           @option_skip_types = options.get_option(:skip_types)

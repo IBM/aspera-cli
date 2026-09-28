@@ -19,7 +19,7 @@ module Aspera
       attr_reader :option
       # [Array<Class>, nil] List of allowed types, `nil` for no validation
       attr_reader :types
-      # [Symbol] How values are converted: :flag, :boolean, :integer, :enum, :enum_list, :string_list, :other
+      # [Symbol] How values are converted: :flag, :boolean, :integer, :float, :enum, :enum_list, :string_list, :other
       attr_reader :kind
       # [Symbol, nil] `OptionSource` of current value, `nil` if never set
       attr_reader :source
@@ -232,6 +232,7 @@ module Aspera
           @kind =
             if allowed.sort_by(&:name).eql?(Type::BOOLEAN) then :boolean
             elsif allowed.eql?(Type::INTEGER) then :integer
+            elsif allowed.eql?(Type::FLOAT) then :float
             elsif allowed.eql?(Type::STRING_ARRAY) then :string_list
             else :other
             end
@@ -257,6 +258,8 @@ module Aspera
           BoolValue.true?(value.is_a?(String) ? Parser.get_from_list(value, @option, BoolValue::ALL) : value)
         when :integer
           value.nil? ? value : Integer(value)
+        when :float
+          value.nil? ? value : Float(value)
         when :string_list
           value.is_a?(String) ? [value] : value
         when :enum_list

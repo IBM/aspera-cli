@@ -51,6 +51,8 @@ module Aspera
       option :multi_single, description: '(Table) Control how object list is displayed as single table, or multiple objects',                 allowed: %i[no yes single], default: :no,                 deprecation: {last: '4.27.0', message: 'use --out.table.pivot'}
       option :show_secrets, description: 'Show secrets on command output',                                                                    allowed: Type::BOOLEAN, default: false,                   deprecation: {last: '4.27.0', message: 'use --out.secrets'}
       option :image,        schema: Schema::Registry::IMAGE_OPTIONS, deprecation: {last: '4.27.0', message: 'use --out.img'}
+      # All formatter options are handled by `option_handler`, executed on the formatter instance
+      option_specs.each_value { |spec| spec.on_set = ->(value) { option_handler(spec.name, value) } }
 
       class << self
         # Replace special values with a readable version on terminal
@@ -146,15 +148,14 @@ module Aspera
         end
       end
 
-      # Bind all formatter options to this instance using `on_set`.
+      # Declare formatter options on the parser, with `on_set` callbacks executed on this instance.
       # Called from Runner after Formatter.new.
-      # @param options [Aspera::Cli::Parser]
+      # @param parser [Aspera::Cli::Parser]
       # @return [nil]
-      def bind_options(options)
-        @parser = options
-        %i[out display format output fields select table_style flat_hash multi_single show_secrets image].each do |opt|
-          options.on_set(opt, ->(value) { option_handler(opt, value) })
-        end
+      def declare_options(parser)
+        # Used by `option_handler` to dispatch `--out` sub-options
+        @parser = parser
+        self.class.declare_options(parser, target: self)
         nil
       end
 

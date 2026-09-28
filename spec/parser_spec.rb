@@ -240,6 +240,21 @@ module Aspera
           expect(opts.get_option(:name)).to(eq('-'))
         end
 
+        it 'converts a float option value' do
+          opts = build_parser(['--ratio=0.25', '--whole=@json:2'])
+          opts.declare(:ratio, description: 'Ratio', allowed: Type::FLOAT)
+          opts.declare(:whole, description: 'Whole', allowed: Type::FLOAT)
+          opts.parse_options!
+          expect(opts.get_option(:ratio)).to(eq(0.25))
+          expect(opts.get_option(:whole)).to(eql(2.0))
+        end
+
+        it 'raises for an invalid float option value' do
+          opts = build_parser(['--ratio=abc'])
+          opts.declare(:ratio, description: 'Ratio', allowed: Type::FLOAT)
+          expect { opts.parse_options! }.to(raise_error(ArgumentError, /Float/))
+        end
+
         it 'raises BadArgument for a flag given a value' do
           opts = build_parser(['--flag=x'])
           opts.declare(:flag, description: 'Flag', allowed: Type::NONE) { nil }
@@ -556,6 +571,7 @@ module Aspera
           opts.declare(:bool_opt, description: 'Boolean option', allowed: Type::BOOLEAN)
           opts.declare(:enum_opt, description: 'Enum option', allowed: %i[alpha beta])
           opts.declare(:int_opt, description: 'Integer option', allowed: Type::INTEGER)
+          opts.declare(:float_opt, description: 'Float option', allowed: Type::FLOAT)
           opts.declare(:object_opt, description: 'Object option', allowed: Hash)
           opts.declare(:list_opt, description: 'List option', allowed: Type::STRING_ARRAY)
           opts.declare(:str_opt, description: 'String option')
@@ -563,6 +579,7 @@ module Aspera
           expect(help).to(include('--bool-opt=yes|no'))
           expect(help).to(include('--enum-opt=alpha|beta'))
           expect(help).to(include('--int-opt=INT'))
+          expect(help).to(include('--float-opt=FLOAT'))
           expect(help).to(include('--object-opt=HASH'))
           expect(help).to(include('--list-opt=LIST'))
           expect(help).to(include('--str-opt=VALUE'))

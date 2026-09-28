@@ -348,9 +348,7 @@ module Aspera
         # Create command line manager with arguments
         @context.options = Parser.new(Info::CMD_NAME, @argv)
         ExtendedValue.instance.on(EXTEND_ARGS) { |v| @context.options.args_as_extended(v) }
-        # Formatter: declare metadata (class method), then bind to the instance
-        Formatter.declare_options(@context.options)
-        @context.formatter.bind_options(@context.options)
+        @context.formatter.declare_options(@context.options)
         # Compare $0 with expected name
         current_prog_name = File.basename($PROGRAM_NAME)
         Aspera.assert(current_prog_name.eql?(Info::CMD_NAME), type: :warn) { "Please use '#{Info::CMD_NAME}' instead of '#{current_prog_name}'" }

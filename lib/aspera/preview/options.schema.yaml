@@ -1,0 +1,119 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://github.com/IBM/aspera-cli/tree/main/lib/aspera/preview/options.schema.yaml
+title: Preview generator options
+description: >-
+  Options of the preview generator: tools and parameters used to generate PNG thumbnails and MP4 video previews.
+$comment: >-
+  Used to declare the options of the `preview` plugin: values of `enum` properties are `Symbol`.
+  Scaling uses `ffmpeg` scale filter arguments, see: https://trac.ffmpeg.org/wiki/Scaling
+  (`iw`/`ih`: input width/height, `-x`: keep aspect ratio, with a value multiple of `x`).
+type: object
+additionalProperties: false
+properties:
+  office_conversion:
+    description: 'PNG thumbnail of office document: conversion tool.'
+    type: string
+    enum: [soffice, unoconv]
+    default: soffice
+  max_size:
+    description: 'Maximum size (in bytes) of a preview file: a warning is logged if exceeded.'
+    type: integer
+    minimum: 1
+    default: 16777216
+  thumb_vid_scale:
+    description: 'PNG thumbnail of video: frame size, as `ffmpeg` scale filter argument.'
+    type: string
+    default: '-1:min(ih,100)'
+  thumb_vid_fraction:
+    description: 'PNG thumbnail of video (`fixed`): position of the snapshot, as a fraction of the video duration.'
+    type: number
+    minimum: 0
+    maximum: 1
+    default: 0.1
+  thumb_img_size:
+    description: 'PNG thumbnail of image, PDF, office document or text: size (in pixels).'
+    type: integer
+    minimum: 1
+    default: 800
+  thumb_text_font:
+    description: 'PNG thumbnail of text: font name, as listed by `magick identify -list font`.'
+    type: string
+    default: Courier
+  video_conversion:
+    description: >-
+      MP4 video preview: generation method.
+      `reencode`: re-encode the beginning of the video,
+      `blend`: key frames with transitions,
+      `clips`: concatenation of short clips.
+    type: string
+    enum: [reencode, blend, clips]
+    default: reencode
+  video_png_conv:
+    description: >-
+      PNG thumbnail of video: generation method.
+      `fixed`: single frame,
+      `animated`: animated PNG.
+    type: string
+    enum: [fixed, animated]
+    default: fixed
+  video_scale:
+    description: 'MP4 video preview: frame size, as `ffmpeg` scale filter argument.'
+    type: string
+    default: 'min(iw,360):-2'
+  video_start_sec:
+    description: 'Video: start offset (in seconds) of MP4 video preview and of `animated` PNG thumbnail.'
+    type: integer
+    minimum: 0
+    default: 10
+  video_codec:
+    description: >-
+      MP4 video preview (`reencode`): `ffmpeg` video codec, e.g. `libx264`, `h264_videotoolbox`, `h264_nvenc`.
+      Default: first available H.264 encoder.
+    type: string
+  reencode_ffmpeg:
+    description: >-
+      MP4 video preview (`reencode`): `ffmpeg` options replacing the default ones.
+    type: object
+    additionalProperties: false
+    properties:
+      in:
+        description: Input options.
+        type: array
+        items:
+          type: [string, number]
+      out:
+        description: Output options.
+        type: array
+        items:
+          type: [string, number]
+    default: {}
+  blend_keyframes:
+    description: 'MP4 video preview (`blend`): number of key frames.'
+    type: integer
+    minimum: 1
+    default: 30
+  blend_pauseframes:
+    description: 'MP4 video preview (`blend`): number of pause frames (repetitions of each key frame).'
+    type: integer
+    minimum: 0
+    default: 3
+  blend_transframes:
+    description: 'MP4 video preview (`blend`): number of transition frames between key frames.'
+    type: integer
+    minimum: 0
+    default: 5
+  blend_fps:
+    description: 'MP4 video preview (`blend`): frames per second.'
+    type: integer
+    minimum: 1
+    default: 15
+  clips_count:
+    description: 'MP4 video preview (`clips`): number of clips.'
+    type: integer
+    minimum: 1
+    default: 5
+  clips_length:
+    description: 'Video: length (in seconds) of each clip of MP4 video preview (`clips`), and of `animated` PNG thumbnail.'
+    type: integer
+    minimum: 1
+    default: 5

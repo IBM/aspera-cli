@@ -554,6 +554,7 @@ module Aspera
         when :flag    then nil
         when :boolean then 'yes|no'
         when :integer then 'INT'
+        when :float   then 'FLOAT'
         when :enum
           opt.values&.any? && opt.values.length <= 4 ? opt.values.join('|') : 'ENUM'
         else

@@ -8668,9 +8668,11 @@ This shall list the contents of the storage root of the access key.
 
 ### Options for generated files
 
-When generating preview files, some options are provided by default.
-Some values for the options can be modified on command line.
-For video preview, the whole set of options can be overridden with option `reencode_ffmpeg`: it is a `Hash` with two keys: `in` and `out`, each is an `Array` of strings with the native options to `ffmpeg`.
+When generating preview files, the following options can be modified on command line (or in a preset):
+
+<%=schema_to_table(Aspera::Schema::Registry::PREVIEW_OPTIONS)%>
+
+For video preview with method `reencode`, the whole set of `ffmpeg` options can be overridden with option `reencode_ffmpeg`: it is a `Hash` with two keys: `in` and `out`, each is an `Array` with the native options to `ffmpeg`.
 
 ### Execution
 

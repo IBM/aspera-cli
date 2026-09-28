@@ -12,8 +12,7 @@ module Aspera
       def build_formatter(argv, preset: nil)
         parser = Parser.new('test', argv)
         formatter = described_class.new
-        described_class.declare_options(parser)
-        formatter.bind_options(parser)
+        formatter.declare_options(parser)
         parser.add_option_preset(preset, 'test') unless preset.nil?
         parser.parse_options!
         formatter
