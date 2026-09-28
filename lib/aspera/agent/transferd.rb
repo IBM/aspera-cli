@@ -140,6 +140,8 @@ module Aspera
 
       # Actual endpoint the daemon is listening on (resolved after connect, e.g. when port 0 was used)
       attr_reader :daemon_endpoint
+      # gRPC client of the daemon
+      attr_reader :transfer_client
 
       # :reek:UnusedParameters token_regenerator
       def start_transfer(transfer_spec, token_regenerator: nil)
