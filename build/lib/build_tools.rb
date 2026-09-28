@@ -20,7 +20,7 @@ module BuildTools
   # Execute the command line (not in shell)
   # @see `Aspera::Environment#secure_execute`
   def run(*cmd, **kwargs)
-    log.info("Executing: #{cmd.map { |i| Aspera::Environment.shell_escape_pretty(i.to_s.sub(%r{^.*/bin/ascli}, 'ascli')) }.join(' ')}")
+    log.info("Executing: #{cmd.map { |i| Aspera::Environment.shell_escape_pretty(i.to_s) }.join(' ').sub(%r{^ruby -w [^ ]+ [^ ]+/bin/ascli }, 'ascli ')}")
     Aspera::Environment.secure_execute(*cmd, **kwargs)
   end
 
