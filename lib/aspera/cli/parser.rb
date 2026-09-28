@@ -400,6 +400,18 @@ module Aspera
         Log.log.trace1 { "unprocessed options: #{@command_line.pending_options}" }
       end
 
+      # Execute the block with interactive input of missing mandatory options and arguments, as with `--interactive=yes`.
+      # The previous state is restored afterwards, so that interactive input does not leak to the rest of the command.
+      # @param enabled [Boolean] `false`: execute the block with current state
+      # @return [Object] result of the block
+      def with_interactive(enabled: true)
+        previous = @ask_missing_mandatory
+        @ask_missing_mandatory = true if enabled
+        yield
+      ensure
+        @ask_missing_mandatory = previous
+      end
+
       # Prompt user for missing option or argument, or raise if not interactive
       # @param descr        [String] option name, or argument description
       # @param multiple     [Boolean, String] `true` if multiple values expected

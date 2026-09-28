@@ -23,7 +23,7 @@ module Aspera
     #                                                     Proc/lambda → called via instance_exec(field, value, **ctx, &lookup).
     #                                                     Style: use Symbol for named methods; ->(){} for 1-liners; lambda do…end for 2–3 statements.
     # @!attribute allowed     [Array<Symbol>, nil]        Allowed Symbol values; when set, type is forced to Symbol and accept_list is applied
-    # @!attribute interactive [Boolean]                   When true, sets ask_missing_mandatory before resolving so interactive prompting is triggered when no CLI args are provided
+    # @!attribute interactive [Boolean]                   When true, prompts for this argument (only) when no CLI args are provided
     ArgumentSpec = Struct.new(
       :name,
       :description,

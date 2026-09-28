@@ -7,6 +7,7 @@
 require 'aspera/cli/command_registry'
 require 'aspera/cli/command_spec'
 require 'aspera/cli/context'
+require 'aspera/cli/parser'
 require 'aspera/cli/plugins/base'
 
 module Aspera
@@ -24,6 +25,7 @@ module Aspera
             allow(o).to(receive(:get_next_command)) { raise 'get_next_command not stubbed' }
             allow(o).to(receive(:get_next_argument)) { raise 'get_next_argument not stubbed' }
             allow(o).to(receive(:instance_identifier)) { raise 'instance_identifier not stubbed' }
+            allow(o).to(receive(:with_interactive)) { |**, &blk| blk.call }
             # DSL auto-declare stubs: Base#initialize calls these for every OptionSpec
             # found in the ancestor chain (query, bulk, bfail on Base itself).
             allow(o).to(receive(:option_declared?)).and_return(false)
@@ -487,6 +489,30 @@ module Aspera
             allow(options).to(receive(:get_next_argument).with('files', mandatory: true, multiple: true, validation: String, accept_list: nil, default: nil, schema: nil).and_return(%w[a b]))
             arg_spec = ArgumentSpec.new(name: :files, type: String, multiple: true)
             expect(plugin.resolve_argument(arg_spec)).to(eq(%w[a b]))
+          end
+
+          context 'with interactive: true' do
+            let(:options) { Parser.new('test', argv) }
+            let(:arg_spec) { ArgumentSpec.new(name: :url, interactive: true) }
+
+            context 'when the argument is on the command line' do
+              let(:argv) { ['https://example.com'] }
+
+              it 'does not leave interactive input enabled' do
+                expect(plugin.resolve_argument(arg_spec)).to(eq('https://example.com'))
+                expect(options.ask_missing_mandatory).to(be(false))
+              end
+            end
+
+            context 'when the argument is missing' do
+              let(:argv) { [] }
+
+              it 'prompts for this argument only' do
+                allow(options).to(receive(:prompt_user_input).and_return('https://example.com'))
+                expect(plugin.resolve_argument(arg_spec)).to(eq('https://example.com'))
+                expect(options.ask_missing_mandatory).to(be(false))
+              end
+            end
           end
         end
 

@@ -582,6 +582,34 @@ module Aspera
           expect(opts.help_text).to(include('Old option (deprecated after 4.27.0: use --new-opt)'))
         end
       end
+
+      describe '#with_interactive' do
+        it 'prompts for missing mandatory options in the block only' do
+          opts = build_parser([])
+          opts.declare(:username, description: 'User name')
+          allow(opts).to(receive(:prompt_user_input).and_return('john'))
+          expect(opts.with_interactive { opts.get_option(:username, mandatory: true) }).to(eq('john'))
+          expect(opts.ask_missing_mandatory).to(be(false))
+        end
+
+        it 'restores the previous state when the block raises' do
+          opts = build_parser([])
+          expect { opts.with_interactive { raise 'boom' } }.to(raise_error('boom'))
+          expect(opts.ask_missing_mandatory).to(be(false))
+        end
+
+        it 'keeps interactive input enabled by --interactive' do
+          opts = build_parser([])
+          opts.ask_missing_mandatory = true
+          opts.with_interactive { nil }
+          expect(opts.ask_missing_mandatory).to(be(true))
+        end
+
+        it 'does not change state when not enabled' do
+          opts = build_parser([])
+          expect(opts.with_interactive(enabled: false) { opts.ask_missing_mandatory }).to(be(false))
+        end
+      end
     end
   end
 end

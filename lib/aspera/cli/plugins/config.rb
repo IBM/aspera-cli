@@ -186,7 +186,8 @@ module Aspera
                       {name: :preset_name, mandatory: false, default: ''}],
           action: lambda do |url:, plugin_name: nil, preset_name: '', **|
             apps = @wizard.identify_plugins_for_url(url: url, plugin_name: plugin_name).freeze
-            @wizard.find(apps, preset_name: preset_name)
+            # The product wizard prompts for missing mandatory options (username, password, ...)
+            options.with_interactive { @wizard.find(apps, preset_name: preset_name) }
           end
         )
         command :coffee, description: 'Show a coffee image', action: ->(**) { Result::Image.new(COFFEE_IMAGE_URL) }

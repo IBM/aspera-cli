@@ -154,10 +154,12 @@ module Aspera
         cp = presets.config_presets
         cp[name] ||= {}
         # Option names are only known at runtime: cannot be declared as interactive arguments
-        option_names.each do |option_name|
-          option_value = options.get_interactive(option_name)
-          cp[name][option_name] = option_value
-          secure_preset_option(cp[name], name, option_name)
+        options.with_interactive do
+          option_names.each do |option_name|
+            option_value = options.get_interactive(option_name)
+            cp[name][option_name] = option_value
+            secure_preset_option(cp[name], name, option_name)
+          end
         end
         Result::Status.new("Updated: #{name}")
       end

@@ -193,7 +193,7 @@ All plugins declare their command tree using a class-level DSL defined in `Base`
 | `bulk` | `Boolean` | Result is always an `Array`; with `--bulk=yes` the argument is read as an array |
 | `lookup` | `Symbol \| Proc \| nil` | Percent-selector resolver for `:identifier`: `send(lookup, field, value, **ctx)` or `instance_exec(field, value, **ctx, &lookup)` |
 | `allowed` | `Array<Symbol> \| nil` | Allowed values (accept list) |
-| `interactive` | `Boolean` | Prompt for the value when missing (sets `ask_missing_mandatory`) |
+| `interactive` | `Boolean` | Prompt for the value when missing, for this argument only (`options.with_interactive`): an action that prompts for other values uses `options.with_interactive` explicitly |
 
 Arguments already present in `ctx` are not read again from the command line: this is how a caller (e.g. a mount seed) or a leaf `setup:` provides a value.
 
