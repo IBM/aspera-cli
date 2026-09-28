@@ -61,7 +61,7 @@ TEMPORIZE_CREATE = 10
 TEMPORIZE_FILE = 30
 # ------------------
 
-# give warning and stop on first warning in this gem
+# Give warning and stop on first warning in this gem
 RUBY_WRAPPER = ['ruby', '-w', TST / 'warning_exit_wrapper.rb'].freeze
 # Copy of the main configuration file to be used in tests
 PATH_CONF_FILE = PATH_CLI_HOME / 'config.yaml'
