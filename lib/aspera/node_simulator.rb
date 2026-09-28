@@ -31,6 +31,8 @@ module Aspera
     }.freeze
     # transferd statuses after which no event is received
     TERMINAL = %i[COMPLETED FAILED CANCELED ORPHANED].freeze
+    # Node API statuses of active transfers and sessions
+    ACTIVE = %w[waiting running].freeze
     # transferd session status (lowercase) → Node API, others are only lowercased
     SESSION_STATUS = {'draft' => 'waiting'}.freeze
     # transferd file status (lowercase) → Node API, others are only lowercased
@@ -73,7 +75,7 @@ module Aspera
     MAX_MSEC = 10**14
     # Max wait for the first event of a new transfer
     START_TIMEOUT_SEC = 10
-    private_constant :STATUS, :TERMINAL, :SESSION_STATUS, :FILE_STATUS,
+    private_constant :STATUS, :TERMINAL, :ACTIVE, :SESSION_STATUS, :FILE_STATUS,
       :TRANSFER_OVERRIDES, :SESSION_OVERRIDES, :FILE_OVERRIDES, :TRANSFER_FIELDS, :SESSION_FIELDS, :FILE_FIELDS,
       :SOURCE_STATISTICS, :PRECALC, :MAX_MSEC, :START_TIMEOUT_SEC
 
@@ -109,6 +111,8 @@ module Aspera
         file = response.fileInfo
         entry[:files][file.fileId] = file unless file.nil? || file.fileId.empty?
         entry[:error] = response.error.description unless response.error.nil? || response.error.description.empty?
+        # session information keeps the initial rates, the ascp management message has the current ones
+        entry[:rates][session.sessionId] = management_rates(response.message) if response.transferEvent.eql?(:RATE_MODIFICATION) && entry[:sessions].key?(session&.sessionId)
       end
 
       # @param id    [String] transfer id
@@ -118,7 +122,7 @@ module Aspera
         info = message_to_hash(entry[:info] || ::Transferd::Api::TransferInfo.new, TRANSFER_OVERRIDES)
         terminal = TERMINAL.include?(entry[:status])
         retry_timeout = xfer_retry(entry[:start_spec])
-        sessions = entry[:sessions].values.map { |session| session_to_node(session, retry_timeout: retry_timeout) }
+        sessions = entry[:sessions].map { |session_id, session| session_to_node(session, retry_timeout: retry_timeout).merge(entry[:rates].fetch(session_id, {})) }
         error_desc = info['error_desc'].strip
         error_desc = entry[:error].to_s if error_desc.empty?
         precalc = PRECALC.keys.to_h { |field| [field, sessions.sum { |session| session['precalc'][field] }] }
@@ -160,7 +164,7 @@ module Aspera
           'source_statistics' => SOURCE_STATISTICS.transform_values { |field| source[field] },
           'precalc'           => precalc.merge(
             'enabled' => session.precalc.casecmp?('yes'),
-            'status'  => precalc_status(precalc['bytes_expected'], !%w[waiting running].include?(status))
+            'status'  => precalc_status(precalc['bytes_expected'], !ACTIVE.include?(status))
           )
         )
       end
@@ -177,6 +181,15 @@ module Aspera
       end
 
       private
+
+      # @param message [String] ascp management message of event `RATE_MODIFICATION` (JSON)
+      # @return [Hash] Node API session rates found in the message
+      def management_rates(message)
+        management = JSON.parse(message)
+        {'target_rate_kbps' => management['Rate'], 'min_rate_kbps' => management['MinRate']}.compact.transform_values(&:to_i)
+      rescue JSON::ParserError
+        {}
+      end
 
       # @return [String] `ready` when the size is known, else `pending`
       def precalc_status(bytes_expected, terminal)
@@ -195,7 +208,7 @@ module Aspera
     def initialize(transfer_client: nil)
       # the daemon is stopped at exit by the agent
       @transfer_client = transfer_client || Agent::Transferd.new.transfer_client
-      # transfer id → store entry: `start_spec` (secrets hidden), last `status`, last `info`, `sessions` by id, `files` by id, `error`
+      # transfer id → store entry: `start_spec` (secrets hidden), last `status`, last `info`, `sessions` by id, `files` by id, current `rates` by session id, `error`
       @transfers = {}
       # WEBrick serves each request in a thread, monitoring runs in threads
       @mutex = Mutex.new
@@ -227,18 +240,52 @@ module Aspera
     def transfer(id)
       entry = @mutex.synchronize do
         found = @transfers[id]
-        found&.merge(sessions: found[:sessions].dup, files: found[:files].dup)
+        found&.merge(sessions: found[:sessions].dup, files: found[:files].dup, rates: found[:rates].dup)
       end
       return if entry.nil?
       self.class.transfer_to_node(id, entry)
     end
 
+    # @param active_only [Boolean, nil] `true`: only waiting or running, `false`: only terminated, `nil`: all
+    # @param direction   [String, nil]  `send` or `receive`
+    # @param count       [Integer, nil] max number of transfers, oldest first
     # @return [Array<Hash>] Node API transfers
-    def transfers
-      @mutex.synchronize { @transfers.keys }.map { |id| transfer(id) }
+    def transfers(active_only: nil, direction: nil, count: nil)
+      result = @mutex.synchronize { @transfers.keys }.map { |id| transfer(id) }
+      result.select! { |transfer| ACTIVE.include?(transfer['status']).eql?(active_only) } unless active_only.nil?
+      result.select! { |transfer| transfer['start_spec']['direction'].eql?(direction) } unless direction.nil?
+      count.nil? ? result : result.first(count)
+    end
+
+    # Stop a transfer: its status becomes `canceled` when transferd notifies it
+    # @param id [String] transfer id
+    # @return [Boolean] `false` if unknown
+    def cancel(id)
+      return false unless known?(id)
+      response = @transfer_client.stop_transfer(::Transferd::Api::StopTransferRequest.new(transferId: [id]))
+      Log.dump(:stop_response, response.to_h, level: :trace2)
+      result = response.stopResult.find { |info| info.transferId.eql?(id) }
+      Aspera.assert(result&.stopped, type: Transfer::Error) { result&.error&.description || 'Transfer not stopped by transferd' }
+      true
+    end
+
+    # @param id      [String] transfer id
+    # @param changes [Hash]   new values of transfer spec fields: `target_rate_kbps`, `min_rate_kbps`, `rate_policy`
+    # @return [Boolean] `false` if unknown
+    def modify(id, changes)
+      return false unless known?(id)
+      response = @transfer_client.modify_transfer(::Transferd::Api::TransferModificationRequest.new(transferId: id, transferSpec: changes.to_json))
+      Log.dump(:modify_response, response.to_h, level: :trace2)
+      Aspera.assert(response.error.nil? || response.error.description.empty?, type: Transfer::Error) { response.error.description }
+      true
     end
 
     private
+
+    # @return [Boolean] `true` if the transfer was started by the simulator
+    def known?(id)
+      @mutex.synchronize { @transfers.key?(id) }
+    end
 
     # Start the transfer and update the store with its events, until terminated.
     # Runs in a thread.
@@ -255,7 +302,7 @@ module Aspera
           id = response.transferId
         end
         @mutex.synchronize do
-          entry = (@transfers[id] ||= {start_spec: start_spec, sessions: {}, files: {}})
+          entry = (@transfers[id] ||= {start_spec: start_spec, sessions: {}, files: {}, rates: {}})
           self.class.update_entry(entry, response)
         end
         first_event.push(id) if new_transfer
@@ -279,6 +326,10 @@ module Aspera
     PATH_ONE_TRANSFER = %r{/ops/transfers/(.+)$}
     PATH_BROWSE = '/files/browse'
     REALM = 'Aspera Node Simulator'
+    # `PUT` values of `status` that cancel the transfer (pause and resume are not supported)
+    CANCEL_STATUSES = %w[canceled cancelled stopped].freeze
+    # `PUT` fields modified by transferd
+    MODIFIABLE = %w[target_rate_kbps min_rate_kbps rate_policy].freeze
     # @param config    [Hash] `browse_root`, `username` and `password` (Basic authentication expected from clients, optional)
     # @param simulator [NodeSimulator]
     def initialize(server, config, simulator)
@@ -463,7 +514,11 @@ module Aspera
           ]
         })
       when PATH_TRANSFERS
-        set_json_response(request, response, @simulator.transfers)
+        set_json_response(request, response, @simulator.transfers(
+          active_only: query_boolean(request, 'active_only'),
+          direction:   request.query['direction']&.to_s,
+          count:       query_positive(request, 'count')
+        ))
       when PATH_ONE_TRANSFER
         transfer = @simulator.transfer(request.path.match(PATH_ONE_TRANSFER)[1])
         if transfer.nil?
@@ -476,7 +531,56 @@ module Aspera
       end
     end
 
+    # Modify a transfer, or cancel it with `status`
+    def do_PUT(request, response)
+      id = transfer_id(request)
+      changes = JSON.parse(request.body.to_s)
+      raise WEBrick::HTTPStatus::BadRequest, 'Body must be a JSON object' unless changes.is_a?(Hash)
+      status = changes.delete('status')
+      if status.nil?
+        unsupported = changes.keys - MODIFIABLE
+        raise WEBrick::HTTPStatus::BadRequest, "Cannot modify: #{unsupported.join(', ')}" unless unsupported.empty?
+        raise WEBrick::HTTPStatus::BadRequest, 'Nothing to modify' if changes.empty?
+        found = @simulator.modify(id, changes)
+      else
+        raise WEBrick::HTTPStatus::BadRequest, "Unsupported status: #{status}" unless CANCEL_STATUSES.include?(status)
+        found = @simulator.cancel(id)
+      end
+      return set_error(request, response, 404, 'Unknown transfer') unless found
+      set_json_response(request, response, @simulator.transfer(id))
+    end
+
+    # Node API cancels a transfer with HTTP verb `CANCEL`
+    def do_CANCEL(request, response)
+      return set_error(request, response, 404, 'Unknown transfer') unless @simulator.cancel(transfer_id(request))
+      response.status = 204
+    end
+
     private
+
+    # @return [String] transfer id from the path of the request
+    def transfer_id(request)
+      match = request.path.match(PATH_ONE_TRANSFER)
+      raise WEBrick::HTTPStatus::NotFound, "Unknown path: #{request.path}" if match.nil?
+      match[1]
+    end
+
+    # @return [Boolean, nil] value of a boolean query parameter, `nil` if absent
+    def query_boolean(request, name)
+      value = request.query[name]&.to_s
+      return if value.nil?
+      raise WEBrick::HTTPStatus::BadRequest, "Query #{name} must be true or false: #{value}" unless %w[true false].include?(value)
+      value.eql?('true')
+    end
+
+    # @return [Integer, nil] value of a positive integer query parameter, `nil` if absent
+    def query_positive(request, name)
+      value = request.query[name]&.to_s
+      return if value.nil?
+      number = Integer(value, exception: false)
+      raise WEBrick::HTTPStatus::BadRequest, "Query #{name} must be a positive integer: #{value}" unless number&.positive?
+      number
+    end
 
     # Set error body in Node API format
     def set_error(request, response, code, message)

@@ -16,27 +16,46 @@ module Aspera
   module NodeSimulatorTest
     API = ::Transferd::Api
 
-    # Yields the given responses like `Transferd::Api::TransferService::Stub#start_transfer_with_monitor`
+    # Replaces `Transferd::Api::TransferService::Stub`
     class FakeTransferClient
-      attr_reader :requests
+      attr_reader :requests, :stop_requests, :modify_requests
 
-      def initialize(responses, error: nil)
-        @responses = responses
+      # @param sequences [Array<Array>] responses streamed for each started transfer, the last sequence is repeated
+      def initialize(*sequences, error: nil, stop_response: nil, modify_response: nil)
+        @sequences = sequences
         @error = error
+        @stop_response = stop_response
+        @modify_response = modify_response
         @requests = []
+        @stop_requests = []
+        @modify_requests = []
       end
 
       def start_transfer_with_monitor(request, &block)
         @requests.push(request)
         raise @error if @error
-        @responses.each(&block)
+        (@sequences[@requests.length - 1] || @sequences.last).each(&block)
+      end
+
+      def stop_transfer(request)
+        @stop_requests.push(request)
+        @stop_response || API::StopTransferResponse.new(stopResult: request.transferId.map { |id| API::StopInfo.new(transferId: id, stopped: true) })
+      end
+
+      def modify_transfer(request)
+        @modify_requests.push(request)
+        @modify_response || API::TransferModificationResponse.new(transferId: request.transferId, status: :RUNNING)
       end
     end
 
     # Backend of the servlet, with one known transfer
     class FakeSimulator
+      # calls to `transfers`, `cancel` and `modify`
+      attr_reader :calls
+
       def initialize(start_error: nil)
         @start_error = start_error
+        @calls = []
       end
 
       def start(_transfer_spec)
@@ -48,8 +67,19 @@ module Aspera
         {'id' => TRANSFER_ID, 'status' => 'running'} if id.eql?(TRANSFER_ID)
       end
 
-      def transfers
+      def transfers(**filters)
+        @calls.push([:transfers, filters])
         [transfer(TRANSFER_ID)]
+      end
+
+      def cancel(id)
+        @calls.push([:cancel, id])
+        id.eql?(TRANSFER_ID)
+      end
+
+      def modify(id, changes)
+        @calls.push([:modify, id, changes])
+        id.eql?(TRANSFER_ID)
       end
     end
 
@@ -94,7 +124,7 @@ module Aspera
     SUCCESS_EVENTS = [QUEUED_EVENT, RUNNING_EVENT, PROGRESS_EVENT, ARG_STOP_EVENT, COMPLETED_EVENT].freeze
 
     def entry_after(events, start_spec = {})
-      {start_spec: start_spec, sessions: {}, files: {}}.tap { |entry| events.each { |event| NodeSimulator.update_entry(entry, event) } }
+      {start_spec: start_spec, sessions: {}, files: {}, rates: {}}.tap { |entry| events.each { |event| NodeSimulator.update_entry(entry, event) } }
     end
 
     RSpec.describe(NodeSimulator) do
@@ -237,6 +267,16 @@ module Aspera
           transfer = node_transfer([QUEUED_EVENT], {'tags' => {'aspera' => {'xfer_retry' => 150}}})
           expect(transfer['sessions'].first['retry_timeout']).to(eq(150))
         end
+
+        it 'takes current rates from rate modification, not from session information' do
+          session = {status: 'Running', targetRateKbps: 1000}
+          modified = transfer_response(:RUNNING, :RATE_MODIFICATION, session: session).tap { |event| event.message = '{"Adaptive":"Adaptive","MinRate":100,"Rate":"600"}' }
+          progress = transfer_response(:RUNNING, :PROGRESS, session: session)
+          invalid = transfer_response(:RUNNING, :RATE_MODIFICATION, session: session).tap { |event| event.message = 'not json' }
+          expect(node_transfer([RUNNING_EVENT, progress])['sessions'].first).to(include('target_rate_kbps' => 1000, 'min_rate_kbps' => 0))
+          expect(node_transfer([RUNNING_EVENT, modified, progress])['sessions'].first).to(include('target_rate_kbps' => 600, 'min_rate_kbps' => 100))
+          expect(node_transfer([RUNNING_EVENT, invalid, progress])['sessions'].first).to(include('target_rate_kbps' => 1000))
+        end
       end
 
       describe 'transfer store' do
@@ -302,11 +342,88 @@ module Aspera
           expect(wait_status(simulator, id, 'failed')['error_desc']).to(include('daemon died'))
         end
       end
+
+      describe '#transfers filters' do
+        # transfers in start order: completed upload, running upload, waiting download
+        let(:simulator) do
+          client = FakeTransferClient.new(
+            [transfer_response(:COMPLETED, :SESSION_STOP, transfer_id: 'done_send')],
+            [transfer_response(:RUNNING, :PROGRESS, transfer_id: 'run_send')],
+            [transfer_response(:QUEUED, :CONNECTING, transfer_id: 'wait_receive')]
+          )
+          described_class.new(transfer_client: client).tap do |simulator|
+            %w[send send receive].each { |direction| simulator.start({'direction' => direction}) }
+          end
+        end
+
+        def ids(**filters)
+          simulator.transfers(**filters).map { |transfer| transfer['id'] }
+        end
+
+        it 'returns all transfers, oldest first' do
+          expect(ids).to(eq(%w[done_send run_send wait_receive]))
+        end
+
+        it 'filters active or terminated transfers' do
+          expect(ids(active_only: true)).to(eq(%w[run_send wait_receive]))
+          expect(ids(active_only: false)).to(eq(%w[done_send]))
+        end
+
+        it 'filters on direction' do
+          expect(ids(direction: 'receive')).to(eq(%w[wait_receive]))
+          expect(ids(direction: 'send', active_only: true)).to(eq(%w[run_send]))
+        end
+
+        it 'limits the number of transfers' do
+          expect(ids(count: 2)).to(eq(%w[done_send run_send]))
+        end
+      end
+
+      describe '#cancel and #modify' do
+        def started(client)
+          described_class.new(transfer_client: client).tap { |simulator| simulator.start({'direction' => 'send'}) }
+        end
+
+        it 'stops the transfer' do
+          client = FakeTransferClient.new([RUNNING_EVENT])
+          expect(started(client).cancel(TRANSFER_ID)).to(be(true))
+          expect(client.stop_requests.map { |request| request.transferId.to_a }).to(eq([[TRANSFER_ID]]))
+        end
+
+        it 'raises when transferd does not stop the transfer' do
+          refused = API::StopTransferResponse.new(stopResult: [API::StopInfo.new(transferId: TRANSFER_ID, stopped: false, error: API::Error.new(description: 'already ended'))])
+          simulator = started(FakeTransferClient.new([RUNNING_EVENT], stop_response: refused))
+          expect { simulator.cancel(TRANSFER_ID) }.to(raise_error(Transfer::Error, 'already ended'))
+        end
+
+        it 'modifies the transfer spec' do
+          client = FakeTransferClient.new([RUNNING_EVENT])
+          expect(started(client).modify(TRANSFER_ID, {'target_rate_kbps' => 1000})).to(be(true))
+          request = client.modify_requests.first
+          expect(request.transferId).to(eq(TRANSFER_ID))
+          expect(JSON.parse(request.transferSpec)).to(eq('target_rate_kbps' => 1000))
+        end
+
+        it 'raises when transferd refuses the modification' do
+          refused = API::TransferModificationResponse.new(transferId: TRANSFER_ID, status: :FAILED, error: API::Error.new(description: 'invalid rate policy'))
+          simulator = started(FakeTransferClient.new([RUNNING_EVENT], modify_response: refused))
+          expect { simulator.modify(TRANSFER_ID, {'rate_policy' => 'bad'}) }.to(raise_error(Transfer::Error, 'invalid rate policy'))
+        end
+
+        it 'does not call transferd for an unknown transfer' do
+          client = FakeTransferClient.new([RUNNING_EVENT])
+          simulator = started(client)
+          expect(simulator.cancel('unknown')).to(be(false))
+          expect(simulator.modify('unknown', {'target_rate_kbps' => 1000})).to(be(false))
+          expect(client.stop_requests + client.modify_requests).to(be_empty)
+        end
+      end
     end
 
     RSpec.describe(NodeSimulatorServlet) do
       let(:browse_root) { File.realpath(Dir.mktmpdir('node_simulator_spec')) }
       let(:basic_sim) { "Basic #{['sim:sim'].pack('m0')}" }
+      let(:fake_simulator) { FakeSimulator.new }
 
       after do
         @server&.shutdown
@@ -314,18 +431,18 @@ module Aspera
       end
 
       # Start a server on a free port
-      def start_server(config = {}, simulator: FakeSimulator.new)
+      def start_server(config = {}, simulator: fake_simulator)
         @server = WEBrick::HTTPServer.new(BindAddress: '127.0.0.1', Port: 0, Logger: WEBrick::Log.new([]), AccessLog: [])
         @server.mount('/', described_class, {browse_root: browse_root}.merge(config), simulator)
         Thread.new { @server.start }
       end
 
-      # @return [Array] HTTP code, header `WWW-Authenticate`, parsed body
+      # @return [Array] HTTP code, header `WWW-Authenticate`, parsed body (`nil` if none)
       def call(verb, path, body: nil, headers: {})
         request = Net::HTTPGenericRequest.new(verb, !body.nil?, true, path, headers)
         request.body = body
         response = Net::HTTP.new('127.0.0.1', @server.config[:Port]).request(request)
-        [response.code.to_i, response['WWW-Authenticate'], JSON.parse(response.body)]
+        [response.code.to_i, response['WWW-Authenticate'], response.body.to_s.empty? ? nil : JSON.parse(response.body)]
       end
 
       def expect_error(result, code, message = nil)
@@ -388,6 +505,63 @@ module Aspera
 
         it 'returns 405 for an unsupported verb' do
           expect_error(call('DELETE', '/ops/transfers'), 405)
+        end
+
+        it 'passes list filters to the backend' do
+          code, _, body = call('GET', '/ops/transfers?active_only=true&direction=send&count=5')
+          expect(code).to(eq(200))
+          expect(body.length).to(eq(1))
+          call('GET', '/ops/transfers?active_only=false')
+          call('GET', '/ops/transfers')
+          expect(fake_simulator.calls).to(eq([
+            [:transfers, {active_only: true, direction: 'send', count: 5}],
+            [:transfers, {active_only: false, direction: nil, count: nil}],
+            [:transfers, {active_only: nil, direction: nil, count: nil}]
+          ]))
+        end
+
+        it 'returns 400 for invalid list filters' do
+          expect_error(call('GET', '/ops/transfers?active_only=yes'), 400, /active_only/)
+          expect_error(call('GET', '/ops/transfers?count=0'), 400, /count/)
+          expect_error(call('GET', '/ops/transfers?count=abc'), 400, /count/)
+        end
+
+        it 'cancels a transfer' do
+          code, _, body = call('CANCEL', "/ops/transfers/#{TRANSFER_ID}")
+          expect(code).to(eq(204))
+          expect(body).to(be_nil)
+          expect(fake_simulator.calls).to(eq([[:cancel, TRANSFER_ID]]))
+        end
+
+        it 'returns 404 when canceling an unknown transfer or path' do
+          expect_error(call('CANCEL', '/ops/transfers/unknown'), 404, 'Unknown transfer')
+          expect_error(call('CANCEL', '/ops/transfers'), 404, /Unknown path/)
+        end
+
+        it 'modifies a transfer' do
+          code, _, body = call('PUT', "/ops/transfers/#{TRANSFER_ID}", body: '{"target_rate_kbps":1000,"rate_policy":"fair"}')
+          expect(code).to(eq(200))
+          expect(body['id']).to(eq(TRANSFER_ID))
+          expect(fake_simulator.calls).to(eq([[:modify, TRANSFER_ID, {'target_rate_kbps' => 1000, 'rate_policy' => 'fair'}]]))
+        end
+
+        it 'cancels a transfer with status' do
+          code, _, body = call('PUT', "/ops/transfers/#{TRANSFER_ID}", body: '{"status":"cancelled"}')
+          expect(code).to(eq(200))
+          expect(body['id']).to(eq(TRANSFER_ID))
+          expect(fake_simulator.calls).to(eq([[:cancel, TRANSFER_ID]]))
+        end
+
+        it 'returns 400 for unsupported modifications' do
+          expect_error(call('PUT', "/ops/transfers/#{TRANSFER_ID}", body: '{"status":"paused"}'), 400, /paused/)
+          expect_error(call('PUT', "/ops/transfers/#{TRANSFER_ID}", body: '{"cipher":"none"}'), 400, /cipher/)
+          expect_error(call('PUT', "/ops/transfers/#{TRANSFER_ID}", body: '{}'), 400, /Nothing/)
+          expect_error(call('PUT', "/ops/transfers/#{TRANSFER_ID}", body: '[]'), 400, /object/)
+          expect(fake_simulator.calls).to(be_empty)
+        end
+
+        it 'returns 404 when modifying an unknown transfer' do
+          expect_error(call('PUT', '/ops/transfers/unknown', body: '{"target_rate_kbps":1000}'), 404, 'Unknown transfer')
         end
 
         it 'confines browse to the root' do

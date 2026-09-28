@@ -13,8 +13,8 @@ AllCops:
 Naming/MethodName:
   Enabled: true
   AllowedPatterns:
-    - do_POST
-    - do_GET
+    # WEBrick servlet handlers: do_<HTTP verb>
+    - "^do_[A-Z]+$"
 Naming/FileName:
   Exclude:
     - "**/*.gemspec"
