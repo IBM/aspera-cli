@@ -2678,6 +2678,69 @@ aoc_short_link_priv_list:
     - /testdst
     - private
     - list
+aoc_shared_inbox_short_link_create:
+  tags:
+    - save_output
+  template: awa_user_suite
+  args:
+    - packages
+    - shared_inboxes
+    - short_link
+    - public
+    - "%name:@preset:awa.shared_inbox_name"
+    - create
+    - --fields=id
+aoc_shared_inbox_short_link_list:
+  depends_on:
+    - aoc_shared_inbox_short_link_create
+  template: awa_user_suite
+  args:
+    - packages
+    - shared_inboxes
+    - short_link
+    - public
+    - "%name:@preset:awa.shared_inbox_name"
+    - list
+aoc_shared_inbox_short_link_show:
+  depends_on:
+    - aoc_shared_inbox_short_link_create
+  template: awa_user_suite
+  args:
+    - packages
+    - shared_inboxes
+    - short_link
+    - public
+    - "%name:@preset:awa.shared_inbox_name"
+    - show
+    - $(t.saved_output :aoc_shared_inbox_short_link_create)
+aoc_shared_inbox_short_link_modify:
+  depends_on:
+    - aoc_shared_inbox_short_link_create
+  template: awa_user_suite
+  args:
+    - packages
+    - shared_inboxes
+    - short_link
+    - public
+    - "%name:@preset:awa.shared_inbox_name"
+    - modify
+    - $(t.saved_output :aoc_shared_inbox_short_link_create)
+    - "@:"
+    - password=@preset:aoc.public_link_password
+aoc_shared_inbox_short_link_delete:
+  depends_on:
+    - aoc_shared_inbox_short_link_list
+    - aoc_shared_inbox_short_link_show
+    - aoc_shared_inbox_short_link_modify
+  template: awa_user_suite
+  args:
+    - packages
+    - shared_inboxes
+    - short_link
+    - public
+    - "%name:@preset:awa.shared_inbox_name"
+    - delete
+    - $(t.saved_output :aoc_shared_inbox_short_link_create)
 aoc_pack_send_to_user:
   $comment: Send package to normal user (self-send so aoc_pack_recv_id can find it with the same account).
   template: awa_user_suite

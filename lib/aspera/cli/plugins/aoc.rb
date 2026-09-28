@@ -24,7 +24,7 @@ using Rainbow
 module Aspera
   module Cli
     module Plugins
-      class Aoc < Oauth # rubocop:disable Metrics/ClassLength
+      class Aoc < Oauth
         # default redirect for AoC web auth
         REDIRECT_LOCALHOST = 'http://localhost:12345'
         # admin objects that can be manipulated
@@ -535,37 +535,21 @@ module Aspera
           }))
         end
 
-        # Compute short-link purposes from shared_data keys and link_type.
-        # @param shared_data [Hash] :dropbox_id + :name or :file_id + :node_id
-        # @param link_type [Symbol] :public or :private
-        # @return [Array(String,String)] [token_purpose, short_link_purpose]
-        def short_link_purposes(shared_data, link_type)
-          if shared_data.keys.sort == %i[dropbox_id name]
-            token_purpose = 'send_package_to_dropbox'
-            short_link_purpose = link_type.eql?(:public) ? 'send_package_to_dropbox' : 'shared_folder_auth_link'
-          elsif shared_data.keys.sort == %i[file_id node_id]
-            token_purpose = 'view_shared_file'
-            short_link_purpose = link_type.eql?(:public) ? 'token_auth_redirection' : 'shared_folder_auth_link'
-          else
-            Aspera.error_unexpected_value(shared_data.keys)
-          end
-          [token_purpose, short_link_purpose]
-        end
+        # Purpose of a short link, by link type (the purpose of its URL token depends on the shared resource)
+        SHORT_LINK_PURPOSES = {public: 'token_auth_redirection', private: 'shared_folder_auth_link'}.freeze
 
         # Build the list_params hash used by delete/list/show/modify short link operations.
         # @return [Hash]
-        def short_link_list_params(shared_data:, link_type:, token_purpose:, short_link_purpose:, **)
+        def short_link_list_params(shared_data:, link_type:, token_purpose:, short_link_purpose:, **ctx)
           query = if link_type.eql?(:private)
             shared_data
           else
             {url_token_data: {data: shared_data, purpose: token_purpose}}
           end
-          {
-            json_query:  query.to_json,
-            purpose:     short_link_purpose,
-            edit_access: true,
-            sort:        '-created_at'
-          }
+          list_params = {json_query: query.to_json, purpose: short_link_purpose, sort: '-created_at'}
+          # `edit_access` requires `file_id` and `node_id`: shared folder links only
+          list_params[:edit_access] = true if ctx.key?(:shared_apifid)
+          list_params
         end
 
         # @return [PersistencyActionOnce, nil] persistency object if option `once_only` is used.
@@ -917,7 +901,7 @@ module Aspera
             arguments: [{name: :dropbox_id, type: :identifier, lookup: :lookup_aoc_dropbox_id}],
             action: ->(dropbox_id:, **) { Result::SingleObject.new(aoc_api.read("dropboxes/#{dropbox_id}")) }
           command :short_link, description: 'Manage shared inbox short links',
-            arguments: [{name: :link_type, allowed: %i[public private]}, {name: :dropbox_id, type: :identifier, lookup: :lookup_aoc_dropbox_id}],
+            arguments: [{name: :link_type, allowed: %i[public]}, {name: :dropbox_id, type: :identifier, lookup: :lookup_aoc_dropbox_id}],
             setup: :setup_packages_short_link
           short_link_commands :short_link
         end
@@ -1145,7 +1129,7 @@ module Aspera
         end
 
         # setup: files > short_link
-        # Resolves the target folder, computes purposes.
+        # Resolves the target folder, sets purposes.
         # @return [Hash] ctx keys: shared_data, token_purpose, short_link_purpose, shared_apifid
         def setup_files_short_link(folder:, link_type:, **)
           home_node_api = aoc_api.node_api_from(
@@ -1157,11 +1141,10 @@ module Aspera
             node_id: shared_apifid.node_api.app_info.node_info['id'],
             file_id: shared_apifid.file_id
           }
-          token_purpose, short_link_purpose = short_link_purposes(shared_data, link_type)
           {
             shared_data:        shared_data,
-            token_purpose:      token_purpose,
-            short_link_purpose: short_link_purpose,
+            token_purpose:      'view_shared_file',
+            short_link_purpose: SHORT_LINK_PURPOSES[link_type],
             shared_apifid:      shared_apifid
           }
         end
@@ -1203,15 +1186,13 @@ module Aspera
         end
 
         # setup: packages > shared_inboxes > short_link
-        # link_type: and dropbox_id: resolved via arguments: on the node, computes purposes.
+        # link_type: and dropbox_id: resolved via arguments: on the node, sets purposes.
         # @return [Hash] ctx keys: shared_data, token_purpose, short_link_purpose
         def setup_packages_short_link(link_type:, dropbox_id:, **)
-          shared_data = {dropbox_id: dropbox_id, name: ''}
-          token_purpose, short_link_purpose = short_link_purposes(shared_data, link_type)
           {
-            shared_data:        shared_data,
-            token_purpose:      token_purpose,
-            short_link_purpose: short_link_purpose
+            shared_data:        {dropbox_id: dropbox_id, name: ''},
+            token_purpose:      'send_package_to_dropbox',
+            short_link_purpose: SHORT_LINK_PURPOSES[link_type]
           }
         end
 
@@ -1261,7 +1242,8 @@ module Aspera
             raise BadIdentifier.new('Short link', one_id) if found.nil?
             short_link_permission(:delete, found['resource_id'], nil, **ctx) if ctx.key?(:shared_apifid)
           end
-          aoc_api.delete("short_links/#{one_id}", {edit_access: true, json_query: ws_shared_data.to_json})
+          # `edit_access` requires `file_id` and `node_id`: shared folder links only
+          aoc_api.delete("short_links/#{one_id}", ({edit_access: true, json_query: ws_shared_data.to_json} if ctx.key?(:shared_apifid)))
           Result::Status.new('deleted')
         end
 
@@ -1282,12 +1264,14 @@ module Aspera
         def short_link_modify(custom_data = {}, shared_data:, short_list:, link_type:, short_link_id: nil, **ctx)
           Aspera.assert_values(link_type, [:public], type: Cli::BadArgument) { 'link_type' }
           one_id = short_link_id
-          node_file = shared_data.slice(:node_id, :file_id)
-          modify_payload = {edit_access: true, json_query: node_file}
+          # Identifies the shared resource: `node_id` and `file_id`, or `dropbox_id`
+          token_data = shared_data.except(:name)
+          # `edit_access` requires `file_id` and `node_id`: shared folder links only
+          modify_payload = ctx.key?(:shared_apifid) ? {edit_access: true, json_query: token_data} : {}
           custom_data = custom_data.dup
           if (pass = custom_data.delete('password'))
             modify_payload[:password_enabled] = true
-            modify_payload[:data] = {url_token_data: {password: pass, data: node_file}}
+            modify_payload[:data] = {url_token_data: {password: pass, data: token_data}}
           else
             modify_payload[:password_enabled] = false
           end
