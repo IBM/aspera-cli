@@ -12,7 +12,9 @@ require 'aspera/string_ext'
 require 'aspera/log'
 require 'webrick'
 require 'openssl'
+require 'securerandom'
 require 'json'
+require 'time'
 
 module Aspera
   # Node API transfers executed by transferd.
@@ -75,9 +77,69 @@ module Aspera
     MAX_MSEC = 10**14
     # Max wait for the first event of a new transfer
     START_TIMEOUT_SEC = 10
+    # Node API node information not provided by transferd
+    INFO_STATIC = {
+      'aej_status'                            => 'disconnected',
+      'async_reporting'                       => 'no',
+      'transfer_activity_reporting'           => 'no',
+      'transfer_user'                         => 'xfer',
+      # paths of transfer specs are used as is
+      'docroot'                               => '',
+      'acls'                                  => ['impersonation'],
+      'access_key_configuration_capabilities' => {
+        'transfer' => %w[
+          cipher
+          policy
+          target_rate_cap_kbps
+          target_rate_kbps
+          preserve_timestamps
+          content_protection_secret
+          aggressiveness
+          token_encryption_key
+          byok_enabled
+          bandwidth_flow_network_rc_module
+          file_checksum_type
+        ],
+        'server'   => %w[
+          activity_event_logging
+          activity_file_event_logging
+          recursive_counts
+          aej_logging
+          wss_enabled
+          activity_transfer_ignore_skipped_files
+          activity_files_max
+          access_key_credentials_encryption_type
+          discovery
+          auto_delete
+          allow
+          deny
+        ]
+      },
+      'capabilities'                          => [
+        {'name' => 'sync', 'value' => true},
+        {'name' => 'watchfolder', 'value' => true},
+        {'name' => 'symbolic_links', 'value' => true},
+        {'name' => 'move_file', 'value' => true},
+        {'name' => 'move_directory', 'value' => true},
+        {'name' => 'filelock', 'value' => false},
+        {'name' => 'ssh_fingerprint', 'value' => false},
+        {'name' => 'aej_version', 'value' => '1.0'},
+        {'name' => 'page', 'value' => true},
+        {'name' => 'file_id_version', 'value' => '2.0'},
+        {'name' => 'auto_delete', 'value' => false}
+      ],
+      'settings'                              => [
+        {'name' => 'content_protection_required', 'value' => false},
+        {'name' => 'content_protection_strong_pass_required', 'value' => false},
+        {'name' => 'filelock_restriction', 'value' => 'none'},
+        {'name' => 'ssh_fingerprint', 'value' => nil},
+        {'name' => 'wss_enabled', 'value' => false},
+        {'name' => 'wss_port', 'value' => 443}
+      ]
+    }.freeze
     private_constant :STATUS, :TERMINAL, :ACTIVE, :SESSION_STATUS, :FILE_STATUS,
       :TRANSFER_OVERRIDES, :SESSION_OVERRIDES, :FILE_OVERRIDES, :TRANSFER_FIELDS, :SESSION_FIELDS, :FILE_FIELDS,
-      :SOURCE_STATISTICS, :PRECALC, :MAX_MSEC, :START_TIMEOUT_SEC
+      :SOURCE_STATISTICS, :PRECALC, :MAX_MSEC, :START_TIMEOUT_SEC, :INFO_STATIC
 
     class << self
       # @param status [Symbol] transferd `TransferStatus`
@@ -115,14 +177,15 @@ module Aspera
         entry[:rates][session.sessionId] = management_rates(response.message) if response.transferEvent.eql?(:RATE_MODIFICATION) && entry[:sessions].key?(session&.sessionId)
       end
 
-      # @param id    [String] transfer id
-      # @param entry [Hash]   store entry
+      # @param id      [String] transfer id
+      # @param entry   [Hash]   store entry
+      # @param node_id [String] node id of the simulator
       # @return [Hash] Node API transfer (`transferResponseSessionSpec`)
-      def transfer_to_node(id, entry)
+      def transfer_to_node(id, entry, node_id: '')
         info = message_to_hash(entry[:info] || ::Transferd::Api::TransferInfo.new, TRANSFER_OVERRIDES)
         terminal = TERMINAL.include?(entry[:status])
         retry_timeout = xfer_retry(entry[:start_spec])
-        sessions = entry[:sessions].map { |session_id, session| session_to_node(session, retry_timeout: retry_timeout).merge(entry[:rates].fetch(session_id, {})) }
+        sessions = entry[:sessions].map { |session_id, session| session_to_node(session, retry_timeout: retry_timeout, node_id: node_id).merge(entry[:rates].fetch(session_id, {})) }
         error_desc = info['error_desc'].strip
         error_desc = entry[:error].to_s if error_desc.empty?
         precalc = PRECALC.keys.to_h { |field| [field, sessions.sum { |session| session['precalc'][field] }] }
@@ -146,14 +209,17 @@ module Aspera
 
       # @param session       [Transferd::Api::SessionTransferInformation]
       # @param retry_timeout [Integer] from the transfer spec
+      # @param node_id       [String]  node id of the simulator
       # @return [Hash] Node API session (`transferResponseSessions`)
-      def session_to_node(session, retry_timeout: 0)
+      def session_to_node(session, retry_timeout: 0, node_id: '')
         source = message_to_hash(session, SESSION_OVERRIDES)
         status = session.status.downcase
         status = SESSION_STATUS.fetch(status, status)
         result = source.slice(*SESSION_FIELDS)
         # transferd provides the address of the remote side only: the server
         result['server_ip_address'] = source['remote_address'] if result['server_ip_address'].empty?
+        # transferd provides the node id of the remote side only: the local side is the simulator
+        result['client_node_id'] = node_id if result['client_node_id'].empty?
         precalc = PRECALC.transform_values { |field| source[field] }
         result.merge(
           'status'            => status,
@@ -178,6 +244,26 @@ module Aspera
         terminal = !result['status'].eql?('running') && result['start_time_usec'].positive?
         result['end_time_usec'] = terminal ? result['start_time_usec'] + result['elapsed_usec'] : 0
         result
+      end
+
+      # @param info       [Transferd::Api::InstanceInfo]
+      # @param node_id    [String] node id of the simulator
+      # @param cluster_id [String] cluster id of the simulator
+      # @return [Hash] Node API node information (`info-get-200`)
+      def info_to_node(info, node_id:, cluster_id:)
+        ascp = info.asperaInfo.find { |binary| binary.asperaBinary.eql?('ascp') } || ::Transferd::Api::AsperaInfo.new
+        license = info.licenseInfo || ::Transferd::Api::LicenseInfo.new
+        {
+          'application'             => 'node',
+          # without build id
+          'version'                 => ascp.asperaVersion.sub(/ .*$/, ''),
+          'current_time'            => Time.now.utc.iso8601(0),
+          'license_expiration_date' => license.license[%r{<expiration_date>([^<]*)</expiration_date>}, 1].to_s,
+          'license_max_rate'        => license.maxRate,
+          'os'                      => ascp.operatingSystem,
+          'node_id'                 => node_id,
+          'cluster_id'              => cluster_id
+        }.merge(INFO_STATIC)
       end
 
       private
@@ -212,6 +298,17 @@ module Aspera
       @transfers = {}
       # WEBrick serves each request in a thread, monitoring runs in threads
       @mutex = Mutex.new
+      # identifiers of the simulated node, in node information and in sessions
+      @node_id = SecureRandom.uuid
+      @cluster_id = SecureRandom.uuid
+    end
+
+    # @return [Hash] Node API node information, from transferd
+    def info
+      response = @transfer_client.get_info(::Transferd::Api::InstanceInfoRequest.new)
+      Log.dump(:get_info_response, response.to_h, level: :trace2)
+      Aspera.assert(response.error.nil? || response.error.description.empty?, type: RuntimeError) { response.error.description }
+      self.class.info_to_node(response.info || ::Transferd::Api::InstanceInfo.new, node_id: @node_id, cluster_id: @cluster_id)
     end
 
     # Start a transfer, and monitor it in a thread until terminated
@@ -243,7 +340,7 @@ module Aspera
         found&.merge(sessions: found[:sessions].dup, files: found[:files].dup, rates: found[:rates].dup)
       end
       return if entry.nil?
-      self.class.transfer_to_node(id, entry)
+      self.class.transfer_to_node(id, entry, node_id: @node_id)
     end
 
     # @param active_only [Boolean, nil] `true`: only waiting or running, `false`: only terminated, `nil`: all
@@ -358,9 +455,6 @@ module Aspera
       set_error(request, response, 500, e.message)
     end
 
-    require 'json'
-    require 'time'
-
     # @param folder_path [String]  folder to list, within `browse_root`
     # @param skip        [Integer] number of items to skip (paging)
     # @param count       [Integer] max number of items returned (paging)
@@ -446,73 +540,7 @@ module Aspera
     def do_GET(request, response)
       case request.path
       when '/info'
-        info = Ascp::Installation.instance.ascp_info
-        set_json_response(request, response, {
-          application:                           'node',
-          current_time:                          Time.now.utc.iso8601(0),
-          version:                               info['ascp_version'].to_s.sub(/ .*$/, ''),
-          license_expiration_date:               info['expiration_date'],
-          license_max_rate:                      info['maximum_bandwidth'],
-          os:                                    %x(uname -srv).chomp,
-          aej_status:                            'disconnected',
-          async_reporting:                       'no',
-          transfer_activity_reporting:           'no',
-          transfer_user:                         'xfer',
-          docroot:                               'file:////data/aoc/eudemo-sedemo',
-          node_id:                               '2bbdcc39-f789-4d47-8163-6767fc14f421',
-          cluster_id:                            '6dae2844-d1a9-47a5-916d-9b3eac3ea466',
-          acls:                                  ['impersonation'],
-          access_key_configuration_capabilities: {
-            transfer: %w[
-              cipher
-              policy
-              target_rate_cap_kbps
-              target_rate_kbps
-              preserve_timestamps
-              content_protection_secret
-              aggressiveness
-              token_encryption_key
-              byok_enabled
-              bandwidth_flow_network_rc_module
-              file_checksum_type
-            ],
-            server:   %w[
-              activity_event_logging
-              activity_file_event_logging
-              recursive_counts
-              aej_logging
-              wss_enabled
-              activity_transfer_ignore_skipped_files
-              activity_files_max
-              access_key_credentials_encryption_type
-              discovery
-              auto_delete
-              allow
-              deny
-            ]
-          },
-          capabilities:                          [
-            {name:  'sync', value: true},
-            {name:  'watchfolder', value: true},
-            {name:  'symbolic_links', value: true},
-            {name:  'move_file', value: true},
-            {name:  'move_directory', value: true},
-            {name:  'filelock', value: false},
-            {name:  'ssh_fingerprint', value: false},
-            {name:  'aej_version', value: '1.0'},
-            {name:  'page', value: true},
-            {name:  'file_id_version', value: '2.0'},
-            {name:  'auto_delete', value: false}
-          ],
-          settings:                              [
-            {name:  'content_protection_required', value: false},
-            {name:  'content_protection_strong_pass_required', value: false},
-            {name:  'filelock_restriction', value: 'none'},
-            {name:  'ssh_fingerprint', value: nil},
-            {name:  'wss_enabled', value: false},
-            {name:  'wss_port', value: 443}
-          ]
-        })
+        set_json_response(request, response, @simulator.info)
       when PATH_TRANSFERS
         set_json_response(request, response, @simulator.transfers(
           active_only: query_boolean(request, 'active_only'),

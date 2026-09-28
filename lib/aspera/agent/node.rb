@@ -38,6 +38,9 @@ module Aspera
             result['ended_at'] = Time.now.utc.iso8601
           when 'failed'
             result.merge!('status' => 'failed', 'ended_at' => Time.now.utc.iso8601, 'error' => data['error_desc'].to_s)
+          when 'canceled'
+            result['status'] = 'cancelled'
+            result['ended_at'] = Time.now.utc.iso8601
           else
             result['status'] = 'running'
           end
@@ -109,7 +112,7 @@ module Aspera
           # status is empty sometimes with status 200...
           transfer_data = node_api_.read("ops/transfers/#{@transfer_id}") || {'status' => 'unknown'} rescue {'status' => 'waiting(api error)'}
           case transfer_data['status']
-          when 'waiting', 'partially_completed', 'unknown', 'waiting(read error)', 'waiting(api error)'
+          when 'waiting', 'partially_completed', 'paused', 'unknown', 'waiting(read error)', 'waiting(api error)'
             notify_progress(:sessions_init, info: transfer_data['status'])
           when 'running'
             if !session_started
@@ -131,11 +134,11 @@ module Aspera
             notify_progress(:session_end, session_id: @transfer_id)
             notify_progress(:end)
             break
-          when 'failed'
+          when 'failed', 'canceled'
             notify_progress(:session_end, session_id: @transfer_id)
             notify_progress(:end)
             # Bug in HSTS ? transfer is marked failed, but there is no reason
-            break if transfer_data['error_code'].eql?(0) && transfer_data['error_desc'].empty?
+            break if transfer_data['status'].eql?('failed') && transfer_data['error_code'].eql?(0) && transfer_data['error_desc'].empty?
             raise Transfer::Error, "status: #{transfer_data['status']}. code: #{transfer_data['error_code']}. description: #{transfer_data['error_desc']}"
           else Aspera.error_unexpected_value(transfer_data['status']) { "transfer_data -> #{transfer_data}" }
           end

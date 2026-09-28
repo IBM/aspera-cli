@@ -21,11 +21,12 @@ module Aspera
       attr_reader :requests, :stop_requests, :modify_requests
 
       # @param sequences [Array<Array>] responses streamed for each started transfer, the last sequence is repeated
-      def initialize(*sequences, error: nil, stop_response: nil, modify_response: nil)
+      def initialize(*sequences, error: nil, stop_response: nil, modify_response: nil, info_response: INFO_RESPONSE)
         @sequences = sequences
         @error = error
         @stop_response = stop_response
         @modify_response = modify_response
+        @info_response = info_response
         @requests = []
         @stop_requests = []
         @modify_requests = []
@@ -46,6 +47,10 @@ module Aspera
         @modify_requests.push(request)
         @modify_response || API::TransferModificationResponse.new(transferId: request.transferId, status: :RUNNING)
       end
+
+      def get_info(_request)
+        @info_response
+      end
     end
 
     # Backend of the servlet, with one known transfer
@@ -56,6 +61,10 @@ module Aspera
       def initialize(start_error: nil)
         @start_error = start_error
         @calls = []
+      end
+
+      def info
+        {'application' => 'node', 'version' => '4.4.8.2592'}
       end
 
       def start(_transfer_spec)
@@ -122,6 +131,22 @@ module Aspera
       }
     )
     SUCCESS_EVENTS = [QUEUED_EVENT, RUNNING_EVENT, PROGRESS_EVENT, ARG_STOP_EVENT, COMPLETED_EVENT].freeze
+
+    # `GetInfo` of transferd (license shortened, expiration date added)
+    INFO_RESPONSE = API::InstanceInfoResponse.new(
+      apiVersion: '1',
+      info:       API::InstanceInfo.new(
+        managementPort: 59_205,
+        asperaInfo:     [
+          API::AsperaInfo.new(asperaBinary: 'ascp', asperaVersion: '4.4.8.2592 6a5e6bf', operatingSystem: 'MacOSX'),
+          API::AsperaInfo.new(asperaBinary: 'async', asperaVersion: '4.4.8.2592 6a5e6bf', operatingSystem: 'MacOSX')
+        ],
+        licenseInfo:    API::LicenseInfo.new(
+          maxRate: 'unlimited', accountNumber: '1', licenseNumber: '53',
+          license: "<license version=\"1\">\r\n  <maximum_bandwidth>unlimited</maximum_bandwidth>\r\n  <expiration_date>2027-06-30</expiration_date>\r\n</license>"
+        )
+      )
+    )
 
     def entry_after(events, start_spec = {})
       {start_spec: start_spec, sessions: {}, files: {}, rates: {}}.tap { |entry| events.each { |event| NodeSimulator.update_entry(entry, event) } }
@@ -202,6 +227,37 @@ module Aspera
           draft = described_class.session_to_node(QUEUED_EVENT.sessionInfo)
           expect(draft['status']).to(eq('waiting'))
           expect(draft['precalc']).to(include('enabled' => false, 'status' => 'pending'))
+        end
+
+        it 'uses the node id of the simulator as client node id' do
+          expect(described_class.session_to_node(RUNNING_EVENT.sessionInfo, node_id: 'sim-node')).to(include('client_node_id' => 'sim-node', 'server_node_id' => 'f6b762bd'))
+          provided = API::SessionTransferInformation.new(sessionId: SESSION_ID, status: 'Running', clientNodeId: 'transferd-node')
+          expect(described_class.session_to_node(provided, node_id: 'sim-node')['client_node_id']).to(eq('transferd-node'))
+        end
+      end
+
+      describe '.info_to_node' do
+        let(:info) { described_class.info_to_node(INFO_RESPONSE.info, node_id: 'sim-node', cluster_id: 'sim-cluster') }
+
+        it 'maps ascp version and license' do
+          expect(info).to(include(
+            'application' => 'node', 'version' => '4.4.8.2592', 'os' => 'MacOSX',
+            'license_max_rate' => 'unlimited', 'license_expiration_date' => '2027-06-30',
+            'node_id' => 'sim-node', 'cluster_id' => 'sim-cluster'
+          ))
+          expect(Time.iso8601(info['current_time'])).to(be_within(5).of(Time.now))
+        end
+
+        it 'adds static capabilities and settings' do
+          expect(info['capabilities']).to(include({'name' => 'page', 'value' => true}))
+          expect(info['settings']).to(include({'name' => 'wss_enabled', 'value' => false}))
+          expect(info['access_key_configuration_capabilities']['transfer']).to(include('target_rate_kbps'))
+        end
+
+        it 'accepts missing ascp and license' do
+          expect(described_class.info_to_node(API::InstanceInfo.new, node_id: 'n', cluster_id: 'c')).to(include(
+            'version' => '', 'os' => '', 'license_max_rate' => '', 'license_expiration_date' => ''
+          ))
         end
       end
 
@@ -418,6 +474,23 @@ module Aspera
           expect(client.stop_requests + client.modify_requests).to(be_empty)
         end
       end
+
+      describe '#info' do
+        it 'keeps the same node id, also in sessions' do
+          simulator = described_class.new(transfer_client: FakeTransferClient.new([RUNNING_EVENT]))
+          node_id = simulator.info['node_id']
+          expect(node_id).to(match(/\A\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z/))
+          expect(simulator.info).to(include('node_id' => node_id, 'version' => '4.4.8.2592'))
+          simulator.start({'direction' => 'send'})
+          expect(simulator.transfer(TRANSFER_ID)['sessions'].first['client_node_id']).to(eq(node_id))
+        end
+
+        it 'raises when transferd returns an error' do
+          failed = API::InstanceInfoResponse.new(error: API::Error.new(code: 1, description: 'no ascp'))
+          simulator = described_class.new(transfer_client: FakeTransferClient.new([], info_response: failed))
+          expect { simulator.info }.to(raise_error(RuntimeError, 'no ascp'))
+        end
+      end
     end
 
     RSpec.describe(NodeSimulatorServlet) do
@@ -482,6 +555,12 @@ module Aspera
           code, _, body = call('GET', "/ops/transfers/#{TRANSFER_ID}")
           expect(code).to(eq(200))
           expect(body['status']).to(eq('running'))
+        end
+
+        it 'returns node information' do
+          code, _, body = call('GET', '/info')
+          expect(code).to(eq(200))
+          expect(body).to(eq('application' => 'node', 'version' => '4.4.8.2592'))
         end
 
         it 'starts a transfer' do

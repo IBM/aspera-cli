@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
-# Tests for Agent::Xxx.transfer_status class methods (async re-query interface).
+# Tests for Agent::Xxx.transfer_status class methods (async re-query interface),
+# and for the status loop of Agent::Node.
 # All external I/O (REST, JSON-RPC, gRPC) is doubled — no real daemons required.
 
 require 'bundler/setup'
@@ -24,6 +25,10 @@ RSpec.describe('Aspera::Agent::Node.transfer_status') do
         {'status' => 'completed', 'bytes_transferred' => 4096, 'error_desc' => ''}
       when %r{ops/transfers/tid-failed}
         {'status' => 'failed', 'bytes_transferred' => 0, 'error_desc' => 'disk full'}
+      when %r{ops/transfers/tid-canceled}
+        {'status' => 'canceled', 'bytes_transferred' => 512, 'error_code' => 28, 'error_desc' => 'User aborted session'}
+      when %r{ops/transfers/tid-paused}
+        {'status' => 'paused', 'bytes_transferred' => 256, 'error_desc' => ''}
       end
     end
   end
@@ -48,6 +53,47 @@ RSpec.describe('Aspera::Agent::Node.transfer_status') do
     expect(result['status']).to(eq('failed'))
     expect(result['error']).to(eq('disk full'))
     expect(result['ended_at']).not_to(be_nil)
+  end
+
+  it 'returns cancelled status with ended_at' do
+    result = Aspera::Agent::Node.transfer_status('tid-canceled', params)
+    expect(result['status']).to(eq('cancelled'))
+    expect(result['ended_at']).not_to(be_nil)
+    expect(result['bytes_transferred']).to(eq(512))
+  end
+
+  it 'returns running status when paused' do
+    result = Aspera::Agent::Node.transfer_status('tid-paused', params)
+    expect(result['status']).to(eq('running'))
+    expect(result['ended_at']).to(be_nil)
+  end
+end
+
+RSpec.describe('Aspera::Agent::Node#wait_for_transfers_completion') do
+  let(:events) { [] }
+  let(:progress) { double('progress').tap { |recorder| allow(recorder).to(receive(:event)) { |type, **| events.push(type) } } }
+
+  # @param statuses [Array<Hash>] transfer read at each poll
+  def agent_reading(*statuses)
+    rest_double = instance_double('Aspera::Rest::Client')
+    allow(Aspera::Rest::Client).to(receive(:new).and_return(rest_double))
+    allow(rest_double).to(receive(:read).and_return(*statuses))
+    Aspera::Agent::Node.new(url: 'https://node.example.com', username: 'u', password: 'p', progress: progress).tap { |agent| allow(agent).to(receive(:sleep)) }
+  end
+
+  it 'raises when the transfer is canceled' do
+    agent = agent_reading(
+      {'status' => 'running', 'bytes_transferred' => 1024, 'error_desc' => ''},
+      {'status' => 'canceled', 'bytes_transferred' => 1024, 'error_code' => 28, 'error_desc' => 'User aborted session'}
+    )
+    expect { agent.wait_for_transfers_completion }.to(raise_error(Aspera::Transfer::Error, /status: canceled.*User aborted session/))
+    expect(events.last(2)).to(eq(%i[session_end end]))
+  end
+
+  it 'waits while the transfer is paused' do
+    agent = agent_reading({'status' => 'paused', 'bytes_transferred' => 0, 'error_desc' => ''}, {'status' => 'completed', 'bytes_transferred' => 1024})
+    expect(agent.wait_for_transfers_completion).to(eq([]))
+    expect(events).to(eq(%i[sessions_init session_end end]))
   end
 end
 
