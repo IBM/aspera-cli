@@ -165,19 +165,19 @@ module Aspera
               )
             end
             base.define_action_method(parent_path + [:create]) do |short_link: {}, **ctx|
-              sl_exec_create(short_link, **ctx)
+              short_link_create(short_link, **ctx)
             end
             base.define_action_method(parent_path + [:list]) do |**ctx|
-              sl_exec_list(**sl_fetch_list(**ctx))
+              short_link_list(**short_link_fetch_list(**ctx))
             end
             base.define_action_method(parent_path + [:show]) do |**ctx|
-              sl_exec_show(**sl_fetch_list(**ctx))
+              short_link_show(**short_link_fetch_list(**ctx))
             end
             base.define_action_method(parent_path + [:delete]) do |**ctx|
-              sl_exec_delete(**sl_fetch_list(**ctx), **ctx)
+              short_link_delete(**short_link_fetch_list(**ctx), **ctx)
             end
             base.define_action_method(parent_path + [:modify]) do |short_link: {}, **ctx|
-              sl_exec_modify(short_link, **sl_fetch_list(**ctx), **ctx)
+              short_link_modify(short_link, **short_link_fetch_list(**ctx), **ctx)
             end
           end
         end
@@ -1156,8 +1156,8 @@ module Aspera
         end
 
         # setup: files > short_link
-        # Resolves the target folder, consumes link_type argument, computes purposes.
-        # @return [Hash] ctx keys: sl_shared_data, sl_link_type, sl_token_purpose, sl_short_link_purpose, sl_perm_block, sl_shared_apifid, sl_folder_dest
+        # Resolves the target folder, computes purposes.
+        # @return [Hash] ctx keys: shared_data, token_purpose, short_link_purpose, shared_apifid
         def setup_files_short_link(folder:, link_type:, **)
           home_node_api = aoc_api.node_api_from(
             node_id: aoc_api.home[:node_id],
@@ -1169,76 +1169,77 @@ module Aspera
             file_id: shared_apifid.file_id
           }
           token_purpose, short_link_purpose = short_link_purposes(shared_data, link_type)
-          perm_block = lambda do |op, id, access_levels|
-            case op
-            when :create
-              perm_data = {
-                'file_id'       => shared_apifid.file_id,
-                'access_id'     => id,
-                'access_type'   => 'user',
-                'access_levels' => Api::AoC.expand_access_levels(access_levels),
-                'tags'          => {
-                  'url_token'        => true,
-                  'folder_name'      => File.basename(folder),
-                  'created_by_name'  => aoc_api.current_user_info['name'],
-                  'created_by_email' => aoc_api.current_user_info['email'],
-                  'access_key'       => shared_apifid.node_api.app_info.node_info['access_key'],
-                  'node'             => shared_apifid.node_api.app_info.node_info['name'],
-                  **workspace_id_hash(string: true, name: true)
-                }
-              }
-              created_data = shared_apifid.node_api.create('permissions', perm_data)
-              aoc_api.permissions_send_event(event_data: created_data, app_info: shared_apifid.node_api.app_info)
-            when :update
-              found = shared_apifid.node_api.read('permissions', {file_id: shared_apifid.file_id, inherited: false, access_type: 'user', access_id: id}).find { |i| i['access_id'].eql?(id) }
-              Aspera.assert(!found.nil?, type: Error) { "Short link not found: #{id}" }
-              shared_apifid.node_api.update("permissions/#{found['id']}", {access_levels: Api::AoC.expand_access_levels(access_levels)})
-            when :delete
-              found = shared_apifid.node_api.read('permissions', {file_id: shared_apifid.file_id, inherited: false, access_type: 'user', access_id: id}).first
-              Aspera.assert(!found.nil?, type: Error) { "Short link not found: #{id}" }
-              shared_apifid.node_api.delete("permissions/#{found['id']}")
-            else Aspera.error_unexpected_value(op)
-            end
-          end
           {
-            sl_shared_data:        shared_data,
-            sl_link_type:          link_type,
-            sl_token_purpose:      token_purpose,
-            sl_short_link_purpose: short_link_purpose,
-            sl_perm_block:         perm_block
+            shared_data:        shared_data,
+            token_purpose:      token_purpose,
+            short_link_purpose: short_link_purpose,
+            shared_apifid:      shared_apifid
           }
+        end
+
+        # Node permission of a public short link on the shared folder (files > short_link only)
+        # @param op            [Symbol]             :create, :update or :delete
+        # @param id            [String]             Short link resource id: access_id of the permission
+        # @param access_levels [String, Array, nil] Access levels for :create and :update
+        def short_link_permission(op, id, access_levels, shared_apifid:, folder:, **)
+          case op
+          when :create
+            perm_data = {
+              'file_id'       => shared_apifid.file_id,
+              'access_id'     => id,
+              'access_type'   => 'user',
+              'access_levels' => Api::AoC.expand_access_levels(access_levels),
+              'tags'          => {
+                'url_token'        => true,
+                'folder_name'      => File.basename(folder),
+                'created_by_name'  => aoc_api.current_user_info['name'],
+                'created_by_email' => aoc_api.current_user_info['email'],
+                'access_key'       => shared_apifid.node_api.app_info.node_info['access_key'],
+                'node'             => shared_apifid.node_api.app_info.node_info['name'],
+                **workspace_id_hash(string: true, name: true)
+              }
+            }
+            created_data = shared_apifid.node_api.create('permissions', perm_data)
+            aoc_api.permissions_send_event(event_data: created_data, app_info: shared_apifid.node_api.app_info)
+          when :update
+            found = shared_apifid.node_api.read('permissions', {file_id: shared_apifid.file_id, inherited: false, access_type: 'user', access_id: id}).find { |i| i['access_id'].eql?(id) }
+            Aspera.assert(!found.nil?, type: Error) { "Short link not found: #{id}" }
+            shared_apifid.node_api.update("permissions/#{found['id']}", {access_levels: Api::AoC.expand_access_levels(access_levels)})
+          when :delete
+            found = shared_apifid.node_api.read('permissions', {file_id: shared_apifid.file_id, inherited: false, access_type: 'user', access_id: id}).first
+            Aspera.assert(!found.nil?, type: Error) { "Short link not found: #{id}" }
+            shared_apifid.node_api.delete("permissions/#{found['id']}")
+          else Aspera.error_unexpected_value(op)
+          end
         end
 
         # setup: packages > shared_inboxes > short_link
         # link_type: and dropbox_id: resolved via arguments: on the node, computes purposes.
-        # @return [Hash] ctx keys: sl_shared_data, sl_link_type, sl_token_purpose, sl_short_link_purpose
+        # @return [Hash] ctx keys: shared_data, token_purpose, short_link_purpose
         def setup_packages_short_link(link_type:, dropbox_id:, **)
           shared_data = {dropbox_id: dropbox_id, name: ''}
           token_purpose, short_link_purpose = short_link_purposes(shared_data, link_type)
           {
-            sl_shared_data:        shared_data,
-            sl_link_type:          link_type,
-            sl_token_purpose:      token_purpose,
-            sl_short_link_purpose: short_link_purpose,
-            sl_perm_block:         nil
+            shared_data:        shared_data,
+            token_purpose:      token_purpose,
+            short_link_purpose: short_link_purpose
           }
         end
 
         # Shared implementation for short_link > create
-        def sl_exec_create(custom_data = {}, sl_shared_data:, sl_link_type:, sl_token_purpose:, sl_short_link_purpose:, sl_perm_block:, **)
-          shared_data = sl_shared_data.dup
-          workspace_id_hash(shared_data)
-          create_payload = {purpose: sl_short_link_purpose, user_selected_name: nil}
-          case sl_link_type
+        def short_link_create(custom_data = {}, shared_data:, link_type:, token_purpose:, short_link_purpose:, **ctx)
+          ws_shared_data = workspace_id_hash(shared_data.dup)
+          create_payload = {purpose: short_link_purpose, user_selected_name: nil}
+          case link_type
           when :private
-            create_payload[:data] = shared_data
+            create_payload[:data] = ws_shared_data
           when :public
             create_payload[:expires_at]       = nil
             create_payload[:password_enabled] = false
-            shared_data[:name] = ''
+            ws_shared_data[:name] = ''
             create_payload[:data] = {
               aoc:            true,
-              url_token_data: {data: shared_data, purpose: sl_token_purpose}
+              url_token_data: {data: ws_shared_data, purpose: token_purpose}
             }
           end
           custom_data = custom_data.dup
@@ -1249,54 +1250,50 @@ module Aspera
           end
           create_payload.deep_merge!(custom_data)
           result_create_short_link = aoc_api.create('short_links', create_payload)
-          sl_perm_block&.call(:create, result_create_short_link['resource_id'], access_levels) if sl_link_type.eql?(:public)
+          short_link_permission(:create, result_create_short_link['resource_id'], access_levels, **ctx) if link_type.eql?(:public) && ctx.key?(:shared_apifid)
           Result::SingleObject.new(result_create_short_link)
         end
 
         # Shared implementation for short_link > delete|list|show|modify: fetch the short_list
-        def sl_fetch_list(sl_shared_data:, sl_link_type:, sl_token_purpose:, sl_short_link_purpose:, **)
-          shared_data = sl_shared_data.dup
-          workspace_id_hash(shared_data)
-          list_params = short_link_list_params(
-            shared_data: shared_data, link_type: sl_link_type,
-            token_purpose: sl_token_purpose, short_link_purpose: sl_short_link_purpose
-          )
+        def short_link_fetch_list(shared_data:, **ctx)
+          ws_shared_data = workspace_id_hash(shared_data.dup)
+          list_params = short_link_list_params(shared_data: ws_shared_data, **ctx)
           {
-            sl_short_list:     aoc_api.read_with_paging('short_links', list_params.merge(query_read_delete(default: {})).compact),
-            sl_shared_data_ws: shared_data
+            short_list:     aoc_api.read_with_paging('short_links', list_params.merge(query_read_delete(default: {})).compact),
+            ws_shared_data: ws_shared_data
           }
         end
 
         # Shared implementation for short_link > delete
-        def sl_exec_delete(sl_shared_data_ws:, sl_short_list:, sl_link_type:, sl_perm_block:, short_link_id: nil, **)
+        def short_link_delete(ws_shared_data:, short_list:, link_type:, short_link_id: nil, **ctx)
           one_id = short_link_id
-          if sl_link_type.eql?(:public)
-            found = sl_short_list[:items].find { |item| item['id'].eql?(one_id) }
+          if link_type.eql?(:public)
+            found = short_list[:items].find { |item| item['id'].eql?(one_id) }
             raise BadIdentifier.new('Short link', one_id) if found.nil?
-            sl_perm_block&.call(:delete, found['resource_id'], nil)
+            short_link_permission(:delete, found['resource_id'], nil, **ctx) if ctx.key?(:shared_apifid)
           end
-          aoc_api.delete("short_links/#{one_id}", {edit_access: true, json_query: sl_shared_data_ws.to_json})
+          aoc_api.delete("short_links/#{one_id}", {edit_access: true, json_query: ws_shared_data.to_json})
           Result::Status.new('deleted')
         end
 
         # Shared implementation for short_link > list
-        def sl_exec_list(sl_short_list:, **)
-          Result::ObjectList.new(sl_short_list[:items], fields: Formatter.all_but('data'), total: sl_short_list[:total])
+        def short_link_list(short_list:, **)
+          Result::ObjectList.new(short_list[:items], fields: Formatter.all_but('data'), total: short_list[:total])
         end
 
         # Shared implementation for short_link > show
-        def sl_exec_show(sl_short_list:, short_link_id: nil, **)
+        def short_link_show(short_list:, short_link_id: nil, **)
           one_id = short_link_id
-          found = sl_short_list[:items].find { |item| item['id'].eql?(one_id) }
+          found = short_list[:items].find { |item| item['id'].eql?(one_id) }
           raise BadIdentifier.new('Short link', one_id) if found.nil?
           Result::SingleObject.new(found, fields: Formatter.all_but('data'))
         end
 
         # Shared implementation for short_link > modify
-        def sl_exec_modify(custom_data = {}, sl_shared_data:, sl_short_list:, sl_link_type:, sl_perm_block:, short_link_id: nil, **)
-          Aspera.assert_values(sl_link_type, [:public], type: Cli::BadArgument) { 'link_type' }
+        def short_link_modify(custom_data = {}, shared_data:, short_list:, link_type:, short_link_id: nil, **ctx)
+          Aspera.assert_values(link_type, [:public], type: Cli::BadArgument) { 'link_type' }
           one_id = short_link_id
-          node_file = sl_shared_data.slice(:node_id, :file_id)
+          node_file = shared_data.slice(:node_id, :file_id)
           modify_payload = {edit_access: true, json_query: node_file}
           custom_data = custom_data.dup
           if (pass = custom_data.delete('password'))
@@ -1306,9 +1303,9 @@ module Aspera
             modify_payload[:password_enabled] = false
           end
           if custom_data.delete('access_levels')
-            found = sl_short_list[:items].find { |item| item['id'].eql?(one_id) }
+            found = short_list[:items].find { |item| item['id'].eql?(one_id) }
             raise BadIdentifier.new('Short link', one_id) if found.nil?
-            sl_perm_block&.call(:update, found['resource_id'], nil)
+            short_link_permission(:update, found['resource_id'], nil, **ctx) if ctx.key?(:shared_apifid)
           end
           modify_payload.deep_merge!(custom_data)
           aoc_api.update("short_links/#{one_id}", modify_payload)

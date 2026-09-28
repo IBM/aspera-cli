@@ -384,7 +384,7 @@ end
 | `faspex5 admin nodes shared_folders user` | `sf_id` | [`setup_admin_nodes_shared_folders_user`](../lib/aspera/cli/plugins/faspex5.rb) → `user_path:` |
 | `node access_keys do` | `access_key_id` | [`setup_access_key_do`](../lib/aspera/cli/plugins/node.rb) → `do_root_file_id:` |
 | `node access_keys do <id> permission` | `path` | [`setup_access_key_do_permission`](../lib/aspera/cli/plugins/node.rb) → `apifid:` |
-| `aoc packages shared_inboxes short_link` | `link_type`, `dropbox_id` | [`setup_packages_short_link`](../lib/aspera/cli/plugins/aoc.rb) → `sl_shared_data:`, … |
+| `aoc packages shared_inboxes short_link` | `link_type`, `dropbox_id` | [`setup_packages_short_link`](../lib/aspera/cli/plugins/aoc.rb) → `shared_data:`, … |
 
 ---
 
