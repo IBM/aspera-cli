@@ -171,7 +171,7 @@ module Aspera
               short_link_list(**short_link_fetch_list(**ctx))
             end
             base.define_action_method(parent_path + [:show]) do |**ctx|
-              short_link_show(**short_link_fetch_list(**ctx))
+              short_link_show(**short_link_fetch_list(**ctx), **ctx)
             end
             base.define_action_method(parent_path + [:delete]) do |**ctx|
               short_link_delete(**short_link_fetch_list(**ctx), **ctx)
@@ -1302,10 +1302,10 @@ module Aspera
           else
             modify_payload[:password_enabled] = false
           end
-          if custom_data.delete('access_levels')
+          if (access_levels = custom_data.delete('access_levels'))
             found = short_list[:items].find { |item| item['id'].eql?(one_id) }
             raise BadIdentifier.new('Short link', one_id) if found.nil?
-            short_link_permission(:update, found['resource_id'], nil, **ctx) if ctx.key?(:shared_apifid)
+            short_link_permission(:update, found['resource_id'], access_levels, **ctx) if ctx.key?(:shared_apifid)
           end
           modify_payload.deep_merge!(custom_data)
           aoc_api.update("short_links/#{one_id}", modify_payload)

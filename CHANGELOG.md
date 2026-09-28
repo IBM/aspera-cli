@@ -9,6 +9,8 @@ Released: [Place date of release here]
 ### Issues Fixed
 
 * `preview`: Generator options with a numeric value given on command line (e.g. `--thumb-vid-fraction=0.3`, `--blend-pauseframes=2`) were failing.
+* `aoc`: `short_link show` always failed with `not found`.
+* `aoc`: `files short_link public modify` with `access_levels` set full access (`edit`) instead of the given levels.
 
 ### Breaking Changes
 
