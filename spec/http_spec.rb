@@ -26,8 +26,7 @@ module Aspera
       def build_http(argv)
         parser = Parser.new('test', argv)
         http = described_class.new
-        described_class.declare_options(parser)
-        http.bind_options(parser)
+        described_class.declare_options(parser, target: http)
         parser.parse_options!
         http
       end

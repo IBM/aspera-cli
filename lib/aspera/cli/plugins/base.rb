@@ -26,16 +26,18 @@ module Aspera
         class << self
           include OptionDeclarator
 
-          # Option sources added with `use_options`.
-          # @return [Array<Class, Module>]
+          # Option sources added with `use_options`, with their `on_set` target.
+          # @return [Hash{Class, Module => Proc, nil}]
           def used_option_sources
-            @used_option_sources ||= []
+            @used_option_sources ||= {}
           end
 
           # Include options from another plugin or OptionDeclarator module.
           # @param source [Class, Module]
-          def use_options(source)
-            used_option_sources << source unless used_option_sources.include?(source)
+          # @param target [Proc, nil] Executed on the plugin instance, returns the object for Symbol and Proc `on_set` callbacks
+          #                           of `source` (e.g. `-> { http_config }`); nil: the plugin instance
+          def use_options(source, target: nil)
+            used_option_sources[source] = target unless used_option_sources.key?(source)
           end
 
           # Per-class DSL registry (not inherited: each subclass gets its own instance).
@@ -218,15 +220,15 @@ module Aspera
 
           # Classes and modules whose options apply to this plugin:
           # this class, its plugin ancestors and sources added via `use_options`.
-          # @return [Array<Class, Module>] each responds to `option_specs`
+          # @return [Hash{Class, Module => Proc, nil}] key responds to `option_specs`, value: `on_set` target (see `use_options`)
           def option_sources
-            sources = []
+            sources = {}
             ancestors.each do |klass|
               next unless klass.is_a?(Class) && klass <= Base
-              sources << klass if klass.instance_variable_defined?(:@command_registry)
-              sources.concat(klass.used_option_sources)
+              sources[klass] = nil if klass.instance_variable_defined?(:@command_registry) && !sources.key?(klass)
+              klass.used_option_sources.each { |src, src_target| sources[src] = src_target unless sources.key?(src) }
             end
-            sources.uniq
+            sources
           end
 
           # Declare all options of `option_sources` onto a Parser instance.
@@ -235,9 +237,10 @@ module Aspera
           # @param target  [Base, nil] plugin instance for Symbol and Proc `on_set` callbacks; nil: such callbacks are not bound
           # @param parse   [Boolean] whether to call parse_options! after declaring
           def declare_options(options, target: nil, parse: false)
-            option_sources.each do |src|
+            option_sources.each do |src, src_target|
+              src_target = src_target.nil? ? target : target&.instance_exec(&src_target)
               src.option_specs.each_value do |spec|
-                spec.declare_on(options, target: target) unless options.option_declared?(spec.name)
+                spec.declare_on(options, target: src_target) unless options.option_declared?(spec.name)
               end
             end
             options.parse_options! if parse

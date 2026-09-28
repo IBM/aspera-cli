@@ -8,6 +8,7 @@ require 'aspera/cli/extended_value'
 require 'aspera/cli/special_values'
 require 'aspera/cli/version'
 require 'aspera/cli/formatter'
+require 'aspera/cli/http'
 require 'aspera/cli/info'
 require 'aspera/cli/wizard'
 require 'aspera/cli/sync_actions'
@@ -99,16 +100,15 @@ module Aspera
         option :cache_tokens,       description: 'Save and reuse OAuth tokens', allowed: Type::BOOLEAN, default: true
         option :expand_mounts,      description: 'Commands: list commands of sub-trees provided by another plugin', allowed: Type::BOOLEAN, default: false
         option :no_default,         description: 'Do not load default configuration for plugin', allowed: Type::NONE, short: 'N', on_set: -> { presets.use_plugin_defaults = false }
+        use_options Wizard
+        # `on_set` callbacks of HTTP options are methods of `http_config`
+        use_options Http, target: -> { http_config }
 
         def initialize(**_)
           super
           @vault_instance = nil
           @sdk_default_location = false
-          # Declare wizard options (Wizard#initialize calls options.declare internally)
           @wizard = Wizard.new(self, context.main_folder)
-          # HTTP options: declare metadata (class method), then bind to the instance
-          Http.declare_options(options)
-          context.http_config.bind_options(options)
           # Values set through `on_set` callbacks are used below (sdk_folder)
           options.parse_options!
           set_sdk_dir

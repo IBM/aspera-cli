@@ -26,12 +26,13 @@ module Aspera
 
       private_constant :CERT_EXT, :SELF_SIGNED_CERT
 
-      option :insecure,           description: 'HTTP/S: Do not validate any certificate',                   allowed: Type::BOOLEAN, default: false
-      option :ignore_certificate, description: 'HTTP/S: Do not validate certificate for these URLs',        allowed: [Array, NilClass]
-      option :warn_insecure,      description: 'HTTP/S: Issue a warning if certificate is ignored',         allowed: Type::BOOLEAN, default: true
-      option :cert_stores,        description: 'HTTP/S: List of folder with trusted certificates',          allowed: Type::STRING_ARRAY
-      option :http_options,       schema: Schema::Registry::HTTP_OPTIONS
-      option :http_proxy,         description: 'HTTP/S: URL for proxy with optional credentials'
+      # `on_set` callbacks are methods of the instance given as `target:` to `declare_options`
+      option :insecure,           description: 'HTTP/S: Do not validate any certificate',                   allowed: Type::BOOLEAN, default: false, on_set: :insecure=
+      option :ignore_certificate, description: 'HTTP/S: Do not validate certificate for these URLs',        allowed: [Array, NilClass],             on_set: :ignore_cert_host_port=
+      option :warn_insecure,      description: 'HTTP/S: Issue a warning if certificate is ignored',         allowed: Type::BOOLEAN, default: true,  on_set: :warn_insecure=
+      option :cert_stores,        description: 'HTTP/S: List of folder with trusted certificates',          allowed: Type::STRING_ARRAY,            on_set: :trusted_cert_locations=
+      option :http_options,       schema: Schema::Registry::HTTP_OPTIONS,                                                                           on_set: :http_options=
+      option :http_proxy,         description: 'HTTP/S: URL for proxy with optional credentials',                                                   on_set: :http_proxy=
 
       def initialize
         @insecure              = false
@@ -45,19 +46,6 @@ module Aspera
 
       attr_accessor :insecure, :warn_insecure
       attr_reader   :ignore_cert_host_port, :http_options
-
-      # Bind all HTTP options to this instance using `on_set`.
-      # Called from Config#initialize immediately after Http.new.
-      # @param options [Aspera::Cli::Parser]
-      # @return [nil]
-      def bind_options(options)
-        options.on_set(:insecure,           method(:insecure=))
-        options.on_set(:ignore_certificate, method(:ignore_cert_host_port=))
-        options.on_set(:warn_insecure,      method(:warn_insecure=))
-        options.on_set(:cert_stores,        method(:trusted_cert_locations=))
-        options.on_set(:http_options,       method(:http_options=))
-        options.on_set(:http_proxy,         method(:http_proxy=))
-      end
 
       # Setter for http_options: dispatch each key to its target singleton immediately.
       # Keys matching Rest::Parameters setters go to Rest::Parameters, 'ssl_options' goes to SSL,

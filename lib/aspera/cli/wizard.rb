@@ -17,6 +17,7 @@ module Aspera
       DEFAULT_PRIV_KEY_FILENAME = 'my_private_key.pem' # pragma: allowlist secret
       private_constant :WIZARD_RESULT_KEYS, :DEFAULT_PRIV_KEY_FILENAME
 
+      # Declared by the `config` plugin (`use_options Wizard`)
       option :override, description: 'Wizard: override existing value',                                          allowed: Type::BOOLEAN, default: false
       option :default,  description: 'Wizard: set as default configuration for specified plugin (also: update)', allowed: Type::BOOLEAN, default: true
       option :key_path, description: 'Wizard: path to private key for JWT'
@@ -24,7 +25,6 @@ module Aspera
       def initialize(parent, main_folder)
         @parent = parent
         @main_folder = main_folder
-        self.class.declare_options(options)
       end
 
       # @return [Boolean] false if in test mode to avoid interactive input

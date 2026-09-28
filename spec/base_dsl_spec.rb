@@ -162,6 +162,21 @@ module Aspera
             target_klass.new(context: context)
             expect(options).to(have_received(:declare).with(:mod_opt, hash_including(description: 'From module')))
           end
+
+          it 'binds on_set callbacks of a source to the given target' do
+            holder = Struct.new(:val).new
+            source_mod = Module.new do
+              extend OptionDeclarator
+
+              option(:held_opt, description: 'Held', on_set: :val=)
+            end
+            target_klass = Class.new(Base) do
+              use_options source_mod, target: -> { holder_object }
+              define_method(:holder_object) { holder }
+            end
+            target_klass.new(context: context)
+            expect(options).to(have_received(:declare).with(:held_opt, hash_including(on_set: holder.method(:val=))))
+          end
         end
 
         describe '.declare_options' do

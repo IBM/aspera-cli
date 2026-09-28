@@ -44,7 +44,7 @@ module Aspera
 
       extend OptionDeclarator
 
-      option :ts,            description: 'Override transfer spec values', schema: Schema::Registry::TRANSFER_SPEC
+      option :ts,            description: 'Override transfer spec values', schema: Schema::Registry::TRANSFER_SPEC, on_set: :user_transfer_spec=
       option :to_folder,     description: 'Destination folder for transferred files'
       option :sources,       description: "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})",               default: FILE_LIST_FROM_ARGS
       option :src_type,      description: 'Type of file list',                                                                        allowed: %i[list pair], default: :list
@@ -64,8 +64,8 @@ module Aspera
         @transfer_paths = nil
         # HTTPGW URL provided by webapp
         @httpgw_url_lambda = nil
-        self.class.declare_options(@context.options)
-        @context.options.on_set(:ts, method(:user_transfer_spec=))
+        # Instance variables used by `on_set` callbacks are set above
+        self.class.declare_options(@context.options, target: self)
         @context.options.parse_options!
         @notification_cb = nil
         if !@context.options.get_option(:notify_to).nil?

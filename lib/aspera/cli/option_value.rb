@@ -8,8 +8,6 @@ require 'aspera/schema/registry'
 require 'aspera/schema/validator'
 require 'aspera/log'
 require 'aspera/assert'
-require 'aspera/rainbow'
-using Rainbow
 
 module Aspera
   module Cli
@@ -59,26 +57,13 @@ module Aspera
         @shorthand = shorthand
         @source = nil
         @value = nil
-        @on_set = nil
-        bind_on_set(on_set) unless on_set.nil?
+        Aspera.assert(on_set.nil? || on_set.respond_to?(:call)) { "#{@option}: on_set callback must respond to call" }
+        @on_set = on_set
         @types = nil
         @values = nil
         @kind = :other
         allowed = infer_allowed_from_schema(schema, allowed) if schema
         apply_allowed(allowed) unless allowed.nil?
-      end
-
-      # Set the `on_set` callback, called with the new value each time the value is set.
-      # Safe to call after construction: used by `Parser#on_set` for a target object created after declaration.
-      # The callback is called with the current value, if any.
-      # @param callback [#call] e.g. a `Method` or a lambda
-      # @return [nil]
-      def bind_on_set(callback)
-        Aspera.assert(callback.respond_to?(:call)) { "#{@option}: on_set callback must respond to call" }
-        @on_set = callback
-        Log.log.trace1 { "bind_on_set: #{@option}".green }
-        @on_set.call(@value) unless @value.nil?
-        nil
       end
 
       # @return [String] description of the option: explicit one, or first line of schema description

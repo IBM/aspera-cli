@@ -312,16 +312,6 @@ module Aspera
         option_def(option_symbol).clear
       end
 
-      # Bind (or re-bind) an `on_set` callback to an already-declared option, for a target object created after declaration.
-      # The callback is called with the current value, if any.
-      # @param option_symbol [Symbol] name of the already-declared option
-      # @param callback      [#call]  called with the new value each time the value is set (e.g. a `Method`)
-      # @return [nil]
-      def on_set(option_symbol, callback)
-        Aspera.assert_type(option_symbol, Symbol)
-        option_def(option_symbol).bind_on_set(callback)
-      end
-
       # Adds each of the keys of specified hash as an option.
       # Values are applied by the next parse, and never override a value from env or command line.
       # @param preset_hash [Hash]    Options to add

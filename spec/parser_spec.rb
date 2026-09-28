@@ -478,15 +478,6 @@ module Aspera
           expect(received[-2]).to(eq({'a' => 1}))
         end
 
-        it 'calls an on_set callback bound after declaration with the current value' do
-          target = Struct.new(:val).new
-          opts = build_parser(['--val=x'])
-          opts.declare(:val, description: 'Val')
-          opts.parse_options!
-          opts.on_set(:val, target.method(:val=))
-          expect(target.val).to(eq('x'))
-        end
-
         it 'stores a String as a Hash with shorthand' do
           opts = build_parser(['--transfer.url=u', '--transfer=node'])
           opts.declare(:transfer, description: 'Transfer', allowed: [Hash, String], shorthand: 'agent')
