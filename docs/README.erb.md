@@ -7589,6 +7589,70 @@ In Instana, create a custom Dashboard to visualize the OTel data:
 - Data Source: Infrastructure and Platforms
 - Metric: search `transfer`
 
+### Node simulator
+
+> [!NOTE]
+> This is not a feature for production.
+> It's provided for testing only.
+
+The command `simulator` starts a local web server that answers a subset of the Node API, and executes transfers with the Transfer Daemon (`transferd`).
+It allows testing, without HSTS, the [Node API agent](#agent-node-api) (`--transfer.agent=node`) and the `node` commands `info`, `browse`, `transfer list|show|modify|cancel`.
+
+The Transfer Daemon and the gem `grpc` must be installed (see [Agent: Transfer Daemon](#agent-transfer-daemon)).
+The simulator starts its own `transferd`, and stops it on exit.
+
+It takes an optional `Hash` argument with the following parameters:
+
+<%=schema_to_table('opts:components.schemas.NodeSimulatorOptions')%>
+
+For details on `url` and HTTPS, see [Web service](#web-service).
+
+Like on a real node, the files of the simulator are in its `docroot`: paths of `browse`, and local paths of transfers, are relative to it.
+Local paths are the sources of an upload (`send`), and the destination of a download (`receive`).
+Paths leading out of the `docroot` are rejected.
+
+Start the simulator, it runs until interrupted:
+
+```shell
+<%=cmd%> node simulator @json:'{"url":"http://localhost:12348","username":"sim","password":"sim","docroot":"/data"}'
+```
+
+Then, in another terminal, use it as a node, for example, to list the files in `/data`:
+
+```shell
+<%=cmd%> node --url=http://localhost:12348 --username=sim --password=sim browse /
+```
+
+Or as the transfer agent, for example, to upload the file `/data/my_file.dat` to a transfer server:
+
+```shell
+<%=cmd%> server upload /my_file.dat --transfer.agent=node --transfer.url=http://localhost:12348 --transfer.username=sim --transfer.password=sim
+```
+
+The transfer is executed by `transferd`, and its status is available on the simulator:
+
+```shell
+<%=cmd%> node --url=http://localhost:12348 --username=sim --password=sim transfer list
+```
+
+Supported endpoints:
+
+| Verb     | Path                  | Action                                                                                            |
+|----------|-----------------------|---------------------------------------------------------------------------------------------------|
+| `GET`    | `/info`               | Node information, version and license from `transferd`.                                           |
+| `GET`    | `/ops/transfers`      | List transfers. Query parameters: `active_only`, `direction`, `count`.                            |
+| `POST`   | `/ops/transfers`      | Start a transfer with `transferd`.                                                                |
+| `GET`    | `/ops/transfers/{id}` | Transfer information, with sessions and files.                                                    |
+| `PUT`    | `/ops/transfers/{id}` | Modify `target_rate_kbps`, `min_rate_kbps` or `rate_policy`, or cancel with `status`: `canceled`. |
+| `CANCEL` | `/ops/transfers/{id}` | Cancel a transfer.                                                                                |
+| `POST`   | `/files/browse`       | List a folder of the `docroot`.                                                                   |
+
+Limitations:
+
+- Only transfers started through the simulator are known. They are kept in memory, and lost when the simulator stops.
+- Only Basic authentication is supported: when `username` and `password` are set, bearer tokens and access keys are rejected. When they are not set, all requests are accepted.
+- Not supported: `files/upload_setup` and `files/download_setup` (so, `node upload|download` on the simulator), `ops/transfers/bandwidth`, pause and resume of transfers, query parameters `iteration_token` and `tag`.
+
 ## Plugin: `faspex5`: IBM Aspera Faspex v5
 
 Faspex 5 is IBM Aspera's newer self-managed application.

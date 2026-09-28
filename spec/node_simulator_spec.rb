@@ -237,13 +237,13 @@ module Aspera
       end
 
       describe '.info_to_node' do
-        let(:info) { described_class.info_to_node(INFO_RESPONSE.info, node_id: 'sim-node', cluster_id: 'sim-cluster') }
+        let(:info) { described_class.info_to_node(INFO_RESPONSE.info, node_id: 'sim-node', cluster_id: 'sim-cluster', docroot: '/data/aspera') }
 
         it 'maps ascp version and license' do
           expect(info).to(include(
             'application' => 'node', 'version' => '4.4.8.2592', 'os' => 'MacOSX',
             'license_max_rate' => 'unlimited', 'license_expiration_date' => '2027-06-30',
-            'node_id' => 'sim-node', 'cluster_id' => 'sim-cluster'
+            'node_id' => 'sim-node', 'cluster_id' => 'sim-cluster', 'docroot' => 'file:////data/aspera'
           ))
           expect(Time.iso8601(info['current_time'])).to(be_within(5).of(Time.now))
         end
@@ -255,7 +255,7 @@ module Aspera
         end
 
         it 'accepts missing ascp and license' do
-          expect(described_class.info_to_node(API::InstanceInfo.new, node_id: 'n', cluster_id: 'c')).to(include(
+          expect(described_class.info_to_node(API::InstanceInfo.new, node_id: 'n', cluster_id: 'c', docroot: '/')).to(include(
             'version' => '', 'os' => '', 'license_max_rate' => '', 'license_expiration_date' => ''
           ))
         end
@@ -490,23 +490,93 @@ module Aspera
           simulator = described_class.new(transfer_client: FakeTransferClient.new([], info_response: failed))
           expect { simulator.info }.to(raise_error(RuntimeError, 'no ascp'))
         end
+
+        it 'shows the docroot' do
+          simulator = described_class.new(docroot: '/', transfer_client: FakeTransferClient.new([]))
+          expect(simulator.info['docroot']).to(eq('file:////'))
+        end
+      end
+
+      describe 'docroot' do
+        let(:docroot) { File.realpath(Dir.mktmpdir('node_simulator_spec')) }
+        let(:client) { FakeTransferClient.new(SUCCESS_EVENTS) }
+        let(:simulator) { described_class.new(docroot: docroot, transfer_client: client) }
+
+        before do
+          FileUtils.mkdir_p(File.join(docroot, 'folder'))
+          File.write(File.join(docroot, 'folder', 'file'), 'data')
+        end
+
+        after { FileUtils.rm_rf(docroot) }
+
+        # @return [Hash] transfer spec sent to transferd
+        def sent(transfer_spec)
+          simulator.start(transfer_spec)
+          JSON.parse(client.requests.last.transferSpec)
+        end
+
+        it 'browses with paths relative to the docroot' do
+          body = simulator.browse('folder')
+          expect(body['self']).to(include('path' => '/folder', 'basename' => 'folder'))
+          expect(body['items'].map { |item| item['path'] }).to(eq(['/folder/file']))
+          expect(simulator.browse('/')['items'].map { |item| item['path'] }).to(eq(['/folder']))
+        end
+
+        it 'confines browse to the docroot' do
+          expect { simulator.browse('/folder/../..') }.to(raise_error(AssertError, /outside docroot/))
+          File.symlink(Dir.tmpdir, File.join(docroot, 'link'))
+          expect { simulator.browse('/link') }.to(raise_error(AssertError, /outside docroot/))
+          expect { simulator.browse('/folder/file') }.to(raise_error(AssertError, /Not a folder/))
+          expect { simulator.browse('/missing') }.to(raise_error(Errno::ENOENT))
+        end
+
+        it 'resolves sources of an upload, keeps them in the start spec' do
+          spec = sent({'direction' => 'send', 'paths' => [{'source' => '/folder/file'}, {'source' => 'folder'}]})
+          expect(spec['paths']).to(eq([{'source' => File.join(docroot, 'folder/file')}, {'source' => File.join(docroot, 'folder')}]))
+          expect(simulator.transfer(TRANSFER_ID)['start_spec']['paths']).to(eq([{'source' => '/folder/file'}, {'source' => 'folder'}]))
+        end
+
+        it 'resolves the source root of an upload' do
+          spec = sent({'direction' => 'send', 'source_root' => '/folder', 'paths' => [{'source' => 'file'}]})
+          expect(spec).to(include('source_root' => File.join(docroot, 'folder'), 'paths' => [{'source' => 'file'}]))
+        end
+
+        it 'resolves the destination of a download, default docroot' do
+          spec = sent({'direction' => 'receive', 'destination_root' => '/folder', 'paths' => [{'source' => '/remote/file'}]})
+          expect(spec).to(include('destination_root' => File.join(docroot, 'folder'), 'paths' => [{'source' => '/remote/file'}]))
+          expect(sent({'direction' => 'receive', 'paths' => [{'source' => 'file'}]})['destination_root']).to(eq(docroot))
+        end
+
+        it 'shows paths of local files relative to the docroot' do
+          local = transfer_response(:RUNNING, :FILE_START, file: {fileId: 'local', path: File.join(docroot, 'folder/file')})
+          remote = transfer_response(:RUNNING, :FILE_START, file: {fileId: 'remote', path: '/remote/file'})
+          simulator = described_class.new(docroot: docroot, transfer_client: FakeTransferClient.new([local, remote]))
+          simulator.start({'direction' => 'send'})
+          Timeout.timeout(2) { sleep(0.01) until simulator.transfer(TRANSFER_ID)['files'].length.eql?(2) }
+          expect(simulator.transfer(TRANSFER_ID)['files'].map { |file| file['path'] }).to(eq(['/folder/file', '/remote/file']))
+        end
+
+        it 'refuses local paths outside the docroot' do
+          expect { simulator.start({'direction' => 'send', 'paths' => [{'source' => '/../file'}]}) }.to(raise_error(AssertError, /outside docroot/))
+          expect { simulator.start({'direction' => 'send', 'source_root' => '/folder', 'paths' => [{'source' => '../../file'}]}) }.to(raise_error(AssertError, /outside docroot/))
+          expect { simulator.start({'direction' => 'receive', 'destination_root' => '/', 'paths' => [{'source' => 'a', 'destination' => '../a'}]}) }.to(raise_error(AssertError, /outside docroot/))
+          expect(client.requests).to(be_empty)
+        end
       end
     end
 
     RSpec.describe(NodeSimulatorServlet) do
-      let(:browse_root) { File.realpath(Dir.mktmpdir('node_simulator_spec')) }
       let(:basic_sim) { "Basic #{['sim:sim'].pack('m0')}" }
       let(:fake_simulator) { FakeSimulator.new }
 
       after do
         @server&.shutdown
-        FileUtils.rm_rf(browse_root)
       end
 
       # Start a server on a free port
       def start_server(config = {}, simulator: fake_simulator)
         @server = WEBrick::HTTPServer.new(BindAddress: '127.0.0.1', Port: 0, Logger: WEBrick::Log.new([]), AccessLog: [])
-        @server.mount('/', described_class, {browse_root: browse_root}.merge(config), simulator)
+        @server.mount('/', described_class, config, simulator)
         Thread.new { @server.start }
       end
 
@@ -642,21 +712,29 @@ module Aspera
         it 'returns 404 when modifying an unknown transfer' do
           expect_error(call('PUT', '/ops/transfers/unknown', body: '{"target_rate_kbps":1000}'), 404, 'Unknown transfer')
         end
+      end
 
-        it 'confines browse to the root' do
-          expect_error(call('POST', '/files/browse', body: '{"path":"/"}'), 400, /traversal/)
-          expect_error(call('POST', '/files/browse', body: '{"path":"/nonexistent_folder_xyz"}'), 404)
-          code, _, body = call('POST', '/files/browse', body: {path: browse_root}.to_json)
-          expect(code).to(eq(200))
-          expect(body['self']['path']).to(eq(browse_root))
+      context 'with browse' do
+        let(:docroot) { File.realpath(Dir.mktmpdir('node_simulator_spec')) }
+
+        before do
+          %w[c a d b].each { |name| File.write(File.join(docroot, name), name) }
+          start_server(simulator: NodeSimulator.new(docroot: docroot, transfer_client: FakeTransferClient.new([])))
         end
 
-        it 'pages browse results' do
-          %w[c a d b].each { |name| File.write(File.join(browse_root, name), name) }
-          code, _, body = call('POST', '/files/browse', body: {path: browse_root, skip: 1, count: 2}.to_json)
+        after { FileUtils.rm_rf(docroot) }
+
+        it 'lists the docroot by default, with pages' do
+          code, _, body = call('POST', '/files/browse', body: {skip: 1, count: 2}.to_json)
           expect(code).to(eq(200))
-          expect(body['items'].map { |item| item['basename'] }).to(eq(%w[b c]))
+          expect(body['self']['path']).to(eq('/'))
+          expect(body['items'].map { |item| item['path'] }).to(eq(%w[/b /c]))
           expect(body).to(include('item_count' => 2, 'total_count' => 4))
+        end
+
+        it 'returns 400 outside the docroot, 404 for a missing folder' do
+          expect_error(call('POST', '/files/browse', body: '{"path":"/../.."}'), 400, /outside docroot/)
+          expect_error(call('POST', '/files/browse', body: '{"path":"/nonexistent_folder_xyz"}'), 404)
         end
       end
 

@@ -1414,7 +1414,7 @@ node_simulator_start:
   args:
     - node
     - simulator
-    - '@json:{"url":"http://localhost:12348","username":"sim","password":"sim"}'
+    - '@json:{"url":"http://localhost:12348","username":"sim","password":"sim","docroot":"$(TMP)"}'
   post: |
     require 'socket'
     require 'timeout'
@@ -1453,8 +1453,25 @@ node_simulator_info:
     - --username=sim
     - --password=sim
     - info
+node_simulator_browse:
+  description: Paths of the simulator are relative to its docroot.
+  tags:
+    - grpc
+  expect: /data_file.bin
+  depends_on:
+    - node_simulator_start
+  args:
+    - node
+    - --url=http://localhost:12348
+    - --username=sim
+    - --password=sim
+    - browse
+    - /
+    - --fields=path
+    - --format=csv
+    - '--select=@json:{"basename":"$(FILENAME_ASCII)"}'
 serv_upload_via_simulator:
-  description: Upload to the server, the transfer is executed by the simulator.
+  description: Upload to the server a file of the simulator docroot, the transfer is executed by the simulator.
   tags:
     - grpc
   depends_on:
@@ -1462,7 +1479,7 @@ serv_upload_via_simulator:
   args:
     - server
     - upload
-    - $(PATH_TST_ASC_LCL)
+    - /$(FILENAME_ASCII)
     - --to-folder=@preset:server.upload_folder
     - --transfer.agent=node
     - --transfer.url=http://localhost:12348

@@ -315,6 +315,7 @@ class DocHelper
     ['$(PATH_SCRIPTS)', '/path/to/scripts'],
     ['$(path_file_pair_list)', 'file_pair_list.txt'],
     ['$(TMP / "localhost.p12")', '.../localhost.p12'],
+    ['"docroot":"$(TMP)"', '"docroot":"/data"'],
     ['$(remote_host)', 'app.example.com'],
     ['"my_password"', '"my_password_here"'],
     [/\$\((?:name|t\.resolve :[a-z0-9_]+)\) \$\(TIMESTAMP_TEST_RUN\)/, 'package title'],

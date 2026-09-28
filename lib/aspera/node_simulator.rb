@@ -83,8 +83,6 @@ module Aspera
       'async_reporting'                       => 'no',
       'transfer_activity_reporting'           => 'no',
       'transfer_user'                         => 'xfer',
-      # paths of transfer specs are used as is
-      'docroot'                               => '',
       'acls'                                  => ['impersonation'],
       'access_key_configuration_capabilities' => {
         'transfer' => %w[
@@ -249,8 +247,9 @@ module Aspera
       # @param info       [Transferd::Api::InstanceInfo]
       # @param node_id    [String] node id of the simulator
       # @param cluster_id [String] cluster id of the simulator
+      # @param docroot    [String] real path of the docroot
       # @return [Hash] Node API node information (`info-get-200`)
-      def info_to_node(info, node_id:, cluster_id:)
+      def info_to_node(info, node_id:, cluster_id:, docroot:)
         ascp = info.asperaInfo.find { |binary| binary.asperaBinary.eql?('ascp') } || ::Transferd::Api::AsperaInfo.new
         license = info.licenseInfo || ::Transferd::Api::LicenseInfo.new
         {
@@ -262,7 +261,8 @@ module Aspera
           'license_max_rate'        => license.maxRate,
           'os'                      => ascp.operatingSystem,
           'node_id'                 => node_id,
-          'cluster_id'              => cluster_id
+          'cluster_id'              => cluster_id,
+          'docroot'                 => "file:///#{docroot}"
         }.merge(INFO_STATIC)
       end
 
@@ -290,8 +290,11 @@ module Aspera
       end
     end
 
+    # @param docroot         [String, nil] folder of the node files, default: current folder
     # @param transfer_client [Transferd::Api::TransferService::Stub, nil] gRPC client, default: start a transferd daemon
-    def initialize(transfer_client: nil)
+    def initialize(docroot: nil, transfer_client: nil)
+      # paths of browse and local paths of transfers are relative to it
+      @docroot = File.realpath(docroot || Dir.pwd)
       # the daemon is stopped at exit by the agent
       @transfer_client = transfer_client || Agent::Transferd.new.transfer_client
       # transfer id → store entry: `start_spec` (secrets hidden), last `status`, last `info`, `sessions` by id, `files` by id, current `rates` by session id, `error`
@@ -308,22 +311,93 @@ module Aspera
       response = @transfer_client.get_info(::Transferd::Api::InstanceInfoRequest.new)
       Log.dump(:get_info_response, response.to_h, level: :trace2)
       Aspera.assert(response.error.nil? || response.error.description.empty?, type: RuntimeError) { response.error.description }
-      self.class.info_to_node(response.info || ::Transferd::Api::InstanceInfo.new, node_id: @node_id, cluster_id: @cluster_id)
+      self.class.info_to_node(response.info || ::Transferd::Api::InstanceInfo.new, node_id: @node_id, cluster_id: @cluster_id, docroot: @docroot)
+    end
+
+    # @param path  [String]  folder to list, relative to the docroot
+    # @param skip  [Integer] number of items to skip (paging)
+    # @param count [Integer] max number of items returned (paging)
+    # @return [Hash] Node API folder content, paths relative to the docroot
+    def browse(path, skip: 0, count: nil)
+      folder_path = real_path(path)
+      # symbolic links shall not lead out of the docroot
+      Aspera.assert(in_docroot?(File.realpath(folder_path))) { "Path outside docroot: #{path}" }
+      Aspera.assert(File.directory?(folder_path)) { "Not a folder: #{path}" }
+      folder_virtual = virtual_path(folder_path)
+
+      # Build self structure
+      folder_stat = File.stat(folder_path)
+      structure = {
+        'self'  => {
+          'path'        => folder_virtual,
+          'basename'    => File.basename(folder_path),
+          'type'        => 'directory',
+          'size'        => folder_stat.size,
+          'mtime'       => folder_stat.mtime.utc.iso8601,
+          'permissions' => [
+            {'name' => 'view'},
+            {'name' => 'edit'},
+            {'name' => 'delete'}
+          ]
+        },
+        'items' => []
+      }
+
+      # Iterate over folder contents
+      Dir.foreach(folder_path) do |entry|
+        next if entry == '.' || entry == '..' # Skip current and parent directory
+
+        item_path = File.join(folder_path, entry)
+        item_type = File.ftype(item_path) rescue 'unknown' # Get the type of file
+        item_stat = File.lstat(item_path) # Use lstat to handle symbolic links correctly
+
+        item = {
+          'path'        => File.join(folder_virtual, entry),
+          'basename'    => entry,
+          'type'        => item_type,
+          'size'        => item_stat.size,
+          'mtime'       => item_stat.mtime.utc.iso8601,
+          'permissions' => [
+            {'name' => 'view'},
+            {'name' => 'edit'},
+            {'name' => 'delete'}
+          ]
+        }
+
+        # Add additional details for specific types
+        case item_type
+        when 'file'
+          item['partial_file'] = false
+        when 'link'
+          item['target'] = File.readlink(item_path) rescue nil # Add the target of the symlink
+        when 'unknown'
+          item['note'] = 'File type could not be determined'
+        end
+
+        structure['items'] << item
+      end
+
+      # stable order for paging
+      all_items = structure['items'].sort_by { |item| item['basename'] }
+      structure['items'] = all_items.drop(skip).first(count || all_items.length)
+      structure['item_count'] = structure['items'].length
+      structure['total_count'] = all_items.length
+      structure
     end
 
     # Start a transfer, and monitor it in a thread until terminated
-    # @param transfer_spec [Hash] transfer spec
+    # @param transfer_spec [Hash] transfer spec, local paths relative to the docroot (modified)
     # @return [String] transfer id
     def start(transfer_spec)
       Transfer::Spec.fix_transferd_resume_policy(transfer_spec)
+      # deep copy, returned in transfer `start_spec`
+      start_spec = SecretHider.instance.deep_remove_secret(JSON.parse(transfer_spec.to_json))
+      Log.dump(:start_spec, start_spec)
       request = ::Transferd::Api::TransferRequest.new(
         transferType: ::Transferd::Api::TransferType::FILE_REGULAR,
         config:       ::Transferd::Api::TransferConfig.new,
-        transferSpec: transfer_spec.to_json
+        transferSpec: apply_docroot(transfer_spec).to_json
       )
-      # deep copy, returned in transfer `start_spec`
-      start_spec = SecretHider.instance.deep_remove_secret(JSON.parse(request.transferSpec))
-      Log.dump(:start_spec, start_spec)
       first_event = Thread::Queue.new
       Thread.new { monitor(request, start_spec, first_event) }
       result = first_event.pop(timeout: START_TIMEOUT_SEC)
@@ -340,7 +414,10 @@ module Aspera
         found&.merge(sessions: found[:sessions].dup, files: found[:files].dup, rates: found[:rates].dup)
       end
       return if entry.nil?
-      self.class.transfer_to_node(id, entry, node_id: @node_id)
+      result = self.class.transfer_to_node(id, entry, node_id: @node_id)
+      # transferd gives real paths of local files
+      result['files'].each { |file| file['path'] = virtual_path(file['path']) if in_docroot?(file['path']) }
+      result
     end
 
     # @param active_only [Boolean, nil] `true`: only waiting or running, `false`: only terminated, `nil`: all
@@ -382,6 +459,45 @@ module Aspera
     # @return [Boolean] `true` if the transfer was started by the simulator
     def known?(id)
       @mutex.synchronize { @transfers.key?(id) }
+    end
+
+    # @param path [String] path relative to the docroot, leading `/` optional
+    # @return [String] real path, within the docroot
+    def real_path(path)
+      # `./` prevents expansion of `~`
+      real = File.expand_path("./#{path.to_s.sub(%r{\A/+}, '')}", @docroot)
+      Aspera.assert(in_docroot?(real)) { "Path outside docroot: #{path}" }
+      real
+    end
+
+    # @param real [String] real path within the docroot
+    # @return [String] path relative to the docroot, with leading `/`
+    def virtual_path(real)
+      "/#{real.delete_prefix(@docroot).delete_prefix('/')}"
+    end
+
+    # @param real [String] real path
+    # @return [Boolean] `true` if the path is the docroot or inside it
+    def in_docroot?(real)
+      real.eql?(@docroot) || real.start_with?(@docroot.end_with?('/') ? @docroot : "#{@docroot}/")
+    end
+
+    # Local paths of the transfer spec (sources for `send`, destination for `receive`) are relative to the docroot
+    # @param transfer_spec [Hash] modified: local paths are replaced with real paths
+    # @return [Hash] the transfer spec
+    def apply_docroot(transfer_spec)
+      receive = transfer_spec['direction'].eql?(Transfer::Spec::DIRECTION_RECEIVE)
+      root_field, path_field = receive ? %w[destination_root destination] : %w[source_root source]
+      # a download without destination goes to the docroot
+      root = transfer_spec[root_field] || ('/' if receive)
+      if root.nil?
+        transfer_spec['paths']&.each { |item| item[path_field] = real_path(item[path_field]) if item.key?(path_field) }
+      else
+        transfer_spec[root_field] = real_path(root)
+        # paths are relative to the root: they shall not lead out of the docroot
+        transfer_spec['paths']&.each { |item| real_path(File.join(root, item[path_field])) if item.key?(path_field) }
+      end
+      transfer_spec
     end
 
     # Start the transfer and update the store with its events, until terminated.
@@ -427,13 +543,11 @@ module Aspera
     CANCEL_STATUSES = %w[canceled cancelled stopped].freeze
     # `PUT` fields modified by transferd
     MODIFIABLE = %w[target_rate_kbps min_rate_kbps rate_policy].freeze
-    # @param config    [Hash] `browse_root`, `username` and `password` (Basic authentication expected from clients, optional)
+    # @param config    [Hash] `username` and `password` (Basic authentication expected from clients, optional)
     # @param simulator [NodeSimulator]
     def initialize(server, config, simulator)
       super(server)
       @simulator = simulator
-      # default to current working directory
-      @browse_root = File.realpath(config[:browse_root] || Dir.pwd)
       @expected_auth = "#{config[:username]}:#{config[:password]}" unless config[:username].nil?
     end
 
@@ -455,83 +569,13 @@ module Aspera
       set_error(request, response, 500, e.message)
     end
 
-    # @param folder_path [String]  folder to list, within `browse_root`
-    # @param skip        [Integer] number of items to skip (paging)
-    # @param count       [Integer] max number of items returned (paging)
-    def folder_to_structure(folder_path, skip: 0, count: nil)
-      # Resolve and confine to browse_root (prevents path traversal via client-supplied path)
-      resolved = File.realpath(folder_path)
-      Aspera.assert(resolved.start_with?("#{@browse_root}/") || resolved.eql?(@browse_root)) { 'Browse path traversal attempt detected' }
-      Aspera.assert(Dir.exist?(resolved)) { "Path does not exist or is not a directory: #{resolved}" }
-      folder_path = resolved
-
-      # Build self structure
-      folder_stat = File.stat(folder_path)
-      structure = {
-        'self'  => {
-          'path'        => folder_path,
-          'basename'    => File.basename(folder_path),
-          'type'        => 'directory',
-          'size'        => folder_stat.size,
-          'mtime'       => folder_stat.mtime.utc.iso8601,
-          'permissions' => [
-            {'name' => 'view'},
-            {'name' => 'edit'},
-            {'name' => 'delete'}
-          ]
-        },
-        'items' => []
-      }
-
-      # Iterate over folder contents
-      Dir.foreach(folder_path) do |entry|
-        next if entry == '.' || entry == '..' # Skip current and parent directory
-
-        item_path = File.join(folder_path, entry)
-        item_type = File.ftype(item_path) rescue 'unknown' # Get the type of file
-        item_stat = File.lstat(item_path) # Use lstat to handle symbolic links correctly
-
-        item = {
-          'path'        => item_path,
-          'basename'    => entry,
-          'type'        => item_type,
-          'size'        => item_stat.size,
-          'mtime'       => item_stat.mtime.utc.iso8601,
-          'permissions' => [
-            {'name' => 'view'},
-            {'name' => 'edit'},
-            {'name' => 'delete'}
-          ]
-        }
-
-        # Add additional details for specific types
-        case item_type
-        when 'file'
-          item['partial_file'] = false
-        when 'link'
-          item['target'] = File.readlink(item_path) rescue nil # Add the target of the symlink
-        when 'unknown'
-          item['note'] = 'File type could not be determined'
-        end
-
-        structure['items'] << item
-      end
-
-      # stable order for paging
-      all_items = structure['items'].sort_by { |item| item['basename'] }
-      structure['items'] = all_items.drop(skip).first(count || all_items.length)
-      structure['item_count'] = structure['items'].length
-      structure['total_count'] = all_items.length
-      structure
-    end
-
     def do_POST(request, response)
       case request.path
       when PATH_TRANSFERS
         set_json_response(request, response, @simulator.transfer(@simulator.start(JSON.parse(request.body))))
       when PATH_BROWSE
         req = JSON.parse(request.body)
-        set_json_response(request, response, folder_to_structure(req['path'] || @browse_root, skip: req['skip'].to_i, count: req['count']&.to_i))
+        set_json_response(request, response, @simulator.browse(req['path'] || '/', skip: req['skip'].to_i, count: req['count']&.to_i))
       else
         set_error(request, response, 404, "Unknown path: #{request.path}")
       end
