@@ -159,7 +159,7 @@ module Aspera
         end
 
         Sync::Operations::DIRECTIONS.each do |dir|
-          define_method(:"action_sync_#{dir}") { |path:, sync_info: {}, **| run_sync_transfer(dir, path: path, sync_info: sync_info) { server_transfer_spec } }
+          define_action_method([:sync, dir]) { |path:, sync_info: {}, **| run_sync_transfer(dir, path: path, sync_info: sync_info) { server_transfer_spec } }
         end
 
         # --- DSL ---

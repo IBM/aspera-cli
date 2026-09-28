@@ -376,8 +376,6 @@ module Aspera
         @context.secret_finder = SecretFinder.new(@context.options, @context.presets)
         # The TransferAgent plugin may use the @preset parser
         @context.transfer = TransferAgent.new(@context)
-        # Add commands for config plugin after all options have been added
-        @context.config.add_manual_header(false)
         @context.validate
         # Set banner when all environment is created so that additional extended value modifiers are known, e.g. @preset
       end

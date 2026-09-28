@@ -328,7 +328,7 @@ module Aspera
         # @param op          [Symbol] CRUD operation
         # entity_id: resolved via arguments:(:identifier) on the setting node
         # permission_id: (share_permissions show) and data: (modify) resolved via arguments: on the leaf
-        def action_admin_entity_setting(entity_type, location, setting, op, entity_id:, permission_id: nil, data: nil)
+        def admin_entity_setting(entity_type, location, setting, op, entity_id:, permission_id: nil, data: nil)
           entity_path = "#{admin_entity_path(entity_type, location)}/#{entity_id}/#{setting}"
           send(:"entity_#{op}", api: @api_shares_admin, entity: entity_path, id: permission_id, is_singleton: !setting.eql?(:share_permissions), data: data)
         end
@@ -336,7 +336,7 @@ module Aspera
         # Shared handler for :users (group only)
         # group_id: resolved by Phase A via arguments:(:identifier) on the :users node
         # user_id: and data: resolved via arguments: on the leaf (GROUP_USERS_ARGS)
-        def action_admin_entity_users(entity_type, location, op, group_id:, user_id: nil, data: nil)
+        def admin_entity_users(entity_type, location, op, group_id:, user_id: nil, data: nil)
           path = admin_entity_path(entity_type, location)
           prefix = location.eql?(:all) ? '' : "#{location}_"
           send(:"entity_#{op}", api: @api_shares_admin, entity: "#{path}/#{group_id}/#{prefix}users", id: user_id, data: data)
@@ -353,7 +353,7 @@ module Aspera
                 setting_ops = setting.eql?(:share_permissions) ? SHARE_PERMISSIONS_OPS : %i[show modify]
                 setting_ops.each do |op|
                   define_action_method([:admin, entity_type, location, setting, op]) do |**kwargs|
-                    action_admin_entity_setting(entity_type, location, setting, op, entity_id: kwargs[:"#{entity_type}_id"], permission_id: kwargs[:permission_id], data: kwargs[setting])
+                    admin_entity_setting(entity_type, location, setting, op, entity_id: kwargs[:"#{entity_type}_id"], permission_id: kwargs[:permission_id], data: kwargs[setting])
                   end
                 end
               end
@@ -362,7 +362,7 @@ module Aspera
             # group users: no create route (Rails only exposes index+show+update+destroy)
             GROUP_USERS_OPS.each do |op|
               define_action_method([:admin, entity_type, location, :users, op]) do |group_id:, user_id: nil, user: nil, **|
-                action_admin_entity_users(entity_type, location, op, group_id: group_id, user_id: user_id, data: user)
+                admin_entity_users(entity_type, location, op, group_id: group_id, user_id: user_id, data: user)
               end
             end
           end

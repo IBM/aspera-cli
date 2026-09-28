@@ -443,6 +443,7 @@ Plugin-level imperative dispatch and argument reads have been eliminated. The re
 | [`runner.rb`](../lib/aspera/cli/runner.rb) | `run_with_result` | Top-level plugin selector (`case command_sym`), not a per-plugin dispatch |
 | [`base.rb`](../lib/aspera/cli/plugins/base.rb) | `dispatch_from_registry`, `execute_leaf`, `resolve_argument` | Infrastructure — resolution of declared `arguments:` |
 | [`transfer_agent.rb`](../lib/aspera/cli/transfer_agent.rb) | `ts_source_paths` | Infrastructure — source file list of `transfer_paths:` commands (depends on `--sources`) |
+| [`preset_actions.rb`](../lib/aspera/cli/preset_actions.rb) | `action_preset_ask` | `options.get_interactive(option_name)`: option names are only known at runtime, cannot be declared as interactive arguments |
 
 No plugin file uses `get_next_command`, `get_next_argument` or `instance_identifier`.
 

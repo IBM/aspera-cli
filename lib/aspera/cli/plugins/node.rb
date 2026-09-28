@@ -663,7 +663,7 @@ module Aspera
         end
 
         Sync::Operations::DIRECTIONS.each do |dir|
-          define_method(:"action_sync_#{dir}") { |path:, sync_info: {}, **| run_sync_transfer(dir, path: path, sync_info: sync_info, &sync_gen3_block) }
+          define_action_method([:sync, dir]) { |path:, sync_info: {}, **| run_sync_transfer(dir, path: path, sync_info: sync_info, &sync_gen3_block) }
         end
 
         def action_upload(**)
@@ -824,7 +824,7 @@ module Aspera
         end
 
         Sync::Operations::DIRECTIONS.each do |dir|
-          define_method(:"action_access_keys_do_sync_#{dir}") do |path:, sync_info: {}, do_root_file_id:, **|
+          define_action_method([:access_keys, :do, :sync, dir]) do |path:, sync_info: {}, do_root_file_id:, **|
             run_sync_transfer(dir, path: path, sync_info: sync_info, &sync_gen4_block(do_root_file_id))
           end
         end

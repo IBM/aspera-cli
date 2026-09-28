@@ -315,11 +315,6 @@ module Aspera
         # @return [Aspera::Cli::TransferProgress, nil]
         def progress_bar; @context.progress_bar; end
 
-        def add_manual_header(_has_options = true)
-          # No-op: the group is set at the start of initialize.
-          # Kept for compatibility with Config, which calls add_manual_header(false) from Runner.
-        end
-
         # Entry point for all DSL-based plugins.
         def execute_action
           @help_path = nil

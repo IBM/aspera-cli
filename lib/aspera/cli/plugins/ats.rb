@@ -229,12 +229,6 @@ module Aspera
           [Node.new(context: context, api: api_node), {do_root_file_id: ak_data['root_file_id']}]
         end
 
-        def action_api_key_instances
-          instances = ats_api_v2_auth_ibm.read('instances')
-          Log.log.warn { "more instances remaining: #{instances['remaining']}" } unless instances['remaining'].to_i.eql?(0)
-          Result::ValueList.new(instances['data'], name: 'instance')
-        end
-
         def action_access_key_cluster(access_key_id:, **)
           ats_url = ats_api.base_url
           api_ak_auth = Rest::Client.new(
