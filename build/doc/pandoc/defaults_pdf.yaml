@@ -9,6 +9,13 @@ variables:
   monofont: "IBM Plex Mono"
   urlcolor: blue
   geometry: margin=12mm
+  # Fonts for characters missing in IBM Plex, e.g. 🔑 (secrets masked in ascli logs): macOS, then Linux
+  mainfontfallback:
+    - "Apple Color Emoji:mode=harf"
+    - "Noto Color Emoji:mode=harf"
+  monofontfallback:
+    - "Apple Color Emoji:mode=harf"
+    - "Noto Color Emoji:mode=harf"
 include-in-header:
   - pdf_in_header.tex
 include-after-body:
