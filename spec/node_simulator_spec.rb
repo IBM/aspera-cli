@@ -237,25 +237,25 @@ module Aspera
       end
 
       describe '.info_to_node' do
-        let(:info) { described_class.info_to_node(INFO_RESPONSE.info, node_id: 'sim-node', cluster_id: 'sim-cluster', docroot: '/data/aspera') }
+        let(:info) { described_class.info_to_node(INFO_RESPONSE.info, node_id: 'sim-node', cluster_id: 'sim-cluster', docroot: '/data/aspera', transfer_user: 'sim-user') }
 
         it 'maps ascp version and license' do
           expect(info).to(include(
             'application' => 'node', 'version' => '4.4.8.2592', 'os' => 'MacOSX',
             'license_max_rate' => 'unlimited', 'license_expiration_date' => '2027-06-30',
-            'node_id' => 'sim-node', 'cluster_id' => 'sim-cluster', 'docroot' => 'file:////data/aspera'
+            'node_id' => 'sim-node', 'cluster_id' => 'sim-cluster', 'docroot' => 'file:////data/aspera', 'transfer_user' => 'sim-user'
           ))
           expect(Time.iso8601(info['current_time'])).to(be_within(5).of(Time.now))
         end
 
-        it 'adds static capabilities and settings' do
-          expect(info['capabilities']).to(include({'name' => 'page', 'value' => true}))
+        it 'advertises no capability, adds static settings' do
+          expect(info['capabilities'].map { |capability| capability['value'] }).to(all(be(false)))
           expect(info['settings']).to(include({'name' => 'wss_enabled', 'value' => false}))
-          expect(info['access_key_configuration_capabilities']['transfer']).to(include('target_rate_kbps'))
+          expect(info['access_key_configuration_capabilities']).to(eq('transfer' => [], 'server' => []))
         end
 
         it 'accepts missing ascp and license' do
-          expect(described_class.info_to_node(API::InstanceInfo.new, node_id: 'n', cluster_id: 'c', docroot: '/')).to(include(
+          expect(described_class.info_to_node(API::InstanceInfo.new, node_id: 'n', cluster_id: 'c', docroot: '/', transfer_user: 'u')).to(include(
             'version' => '', 'os' => '', 'license_max_rate' => '', 'license_expiration_date' => ''
           ))
         end
@@ -491,9 +491,9 @@ module Aspera
           expect { simulator.info }.to(raise_error(RuntimeError, 'no ascp'))
         end
 
-        it 'shows the docroot' do
+        it 'shows the docroot and the user executing transfers' do
           simulator = described_class.new(docroot: '/', transfer_client: FakeTransferClient.new([]))
-          expect(simulator.info['docroot']).to(eq('file:////'))
+          expect(simulator.info).to(include('docroot' => 'file:////', 'transfer_user' => Etc.getpwuid(Process.euid).name))
         end
       end
 
@@ -520,6 +520,19 @@ module Aspera
           expect(body['self']).to(include('path' => '/folder', 'basename' => 'folder'))
           expect(body['items'].map { |item| item['path'] }).to(eq(['/folder/file']))
           expect(simulator.browse('/')['items'].map { |item| item['path'] }).to(eq(['/folder']))
+        end
+
+        it 'browses with Node API types, sizes and permissions' do
+          File.symlink('folder/file', File.join(docroot, 'link'))
+          File.symlink('/', File.join(docroot, 'outside'))
+          File.symlink('missing', File.join(docroot, 'dangling'))
+          body = simulator.browse('/')
+          expect(body['self']).to(include('size' => 0, 'permissions' => [{'name' => 'view'}, {'name' => 'edit'}]))
+          items = body['items'].to_h { |item| [item['basename'], item] }
+          expect(items['folder']).to(include('type' => 'directory', 'size' => 0, 'permissions' => [{'name' => 'view'}, {'name' => 'edit'}, {'name' => 'delete'}]))
+          expect(items['link']).to(include('type' => 'symbolic_link', 'target' => {'path' => '/folder/file', 'basename' => 'file', 'type' => 'file', 'size' => 4}))
+          expect(items['outside']['target']).to(eq('path' => '/', 'basename' => '/'))
+          expect(items['dangling']['target']).to(eq('path' => 'missing', 'basename' => 'missing'))
         end
 
         it 'confines browse to the docroot' do

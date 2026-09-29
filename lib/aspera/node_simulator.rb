@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# cspell:ignore precalc noxfer
+# cspell:ignore precalc noxfer euid
 require 'aspera/assert'
 require 'aspera/mime'
 require 'aspera/ascp/installation'
@@ -12,6 +12,7 @@ require 'aspera/string_ext'
 require 'aspera/log'
 require 'webrick'
 require 'openssl'
+require 'etc'
 require 'securerandom'
 require 'json'
 require 'time'
@@ -77,53 +78,25 @@ module Aspera
     MAX_MSEC = 10**14
     # Max wait for the first event of a new transfer
     START_TIMEOUT_SEC = 10
+    # `File.ftype` → Node API item type, others are unchanged
+    FILE_TYPES = {'link' => 'symbolic_link'}.freeze
     # Node API node information not provided by transferd
+    # The simulator has no access key, AEJ, watch folder, sync, file id API (gen4), `files/page` or file operations
     INFO_STATIC = {
       'aej_status'                            => 'disconnected',
       'async_reporting'                       => 'no',
       'transfer_activity_reporting'           => 'no',
-      'transfer_user'                         => 'xfer',
-      'acls'                                  => ['impersonation'],
-      'access_key_configuration_capabilities' => {
-        'transfer' => %w[
-          cipher
-          policy
-          target_rate_cap_kbps
-          target_rate_kbps
-          preserve_timestamps
-          content_protection_secret
-          aggressiveness
-          token_encryption_key
-          byok_enabled
-          bandwidth_flow_network_rc_module
-          file_checksum_type
-        ],
-        'server'   => %w[
-          activity_event_logging
-          activity_file_event_logging
-          recursive_counts
-          aej_logging
-          wss_enabled
-          activity_transfer_ignore_skipped_files
-          activity_files_max
-          access_key_credentials_encryption_type
-          discovery
-          auto_delete
-          allow
-          deny
-        ]
-      },
+      'acls'                                  => [],
+      'access_key_configuration_capabilities' => {'transfer' => [], 'server' => []},
       'capabilities'                          => [
-        {'name' => 'sync', 'value' => true},
-        {'name' => 'watchfolder', 'value' => true},
-        {'name' => 'symbolic_links', 'value' => true},
-        {'name' => 'move_file', 'value' => true},
-        {'name' => 'move_directory', 'value' => true},
+        {'name' => 'sync', 'value' => false},
+        {'name' => 'watchfolder', 'value' => false},
+        {'name' => 'symbolic_links', 'value' => false},
+        {'name' => 'move_file', 'value' => false},
+        {'name' => 'move_directory', 'value' => false},
         {'name' => 'filelock', 'value' => false},
         {'name' => 'ssh_fingerprint', 'value' => false},
-        {'name' => 'aej_version', 'value' => '1.0'},
-        {'name' => 'page', 'value' => true},
-        {'name' => 'file_id_version', 'value' => '2.0'},
+        {'name' => 'page', 'value' => false},
         {'name' => 'auto_delete', 'value' => false}
       ],
       'settings'                              => [
@@ -137,7 +110,7 @@ module Aspera
     }.freeze
     private_constant :STATUS, :TERMINAL, :ACTIVE, :SESSION_STATUS, :FILE_STATUS,
       :TRANSFER_OVERRIDES, :SESSION_OVERRIDES, :FILE_OVERRIDES, :TRANSFER_FIELDS, :SESSION_FIELDS, :FILE_FIELDS,
-      :SOURCE_STATISTICS, :PRECALC, :MAX_MSEC, :START_TIMEOUT_SEC, :INFO_STATIC
+      :SOURCE_STATISTICS, :PRECALC, :MAX_MSEC, :START_TIMEOUT_SEC, :FILE_TYPES, :INFO_STATIC
 
     class << self
       # @param status [Symbol] transferd `TransferStatus`
@@ -244,12 +217,13 @@ module Aspera
         result
       end
 
-      # @param info       [Transferd::Api::InstanceInfo]
-      # @param node_id    [String] node id of the simulator
-      # @param cluster_id [String] cluster id of the simulator
-      # @param docroot    [String] real path of the docroot
+      # @param info          [Transferd::Api::InstanceInfo]
+      # @param node_id       [String] node id of the simulator
+      # @param cluster_id    [String] cluster id of the simulator
+      # @param docroot       [String] real path of the docroot
+      # @param transfer_user [String] system user executing transfers
       # @return [Hash] Node API node information (`info-get-200`)
-      def info_to_node(info, node_id:, cluster_id:, docroot:)
+      def info_to_node(info, node_id:, cluster_id:, docroot:, transfer_user:)
         ascp = info.asperaInfo.find { |binary| binary.asperaBinary.eql?('ascp') } || ::Transferd::Api::AsperaInfo.new
         license = info.licenseInfo || ::Transferd::Api::LicenseInfo.new
         {
@@ -262,6 +236,7 @@ module Aspera
           'os'                      => ascp.operatingSystem,
           'node_id'                 => node_id,
           'cluster_id'              => cluster_id,
+          'transfer_user'           => transfer_user,
           'docroot'                 => "file:///#{docroot}"
         }.merge(INFO_STATIC)
       end
@@ -304,6 +279,8 @@ module Aspera
       # identifiers of the simulated node, in node information and in sessions
       @node_id = SecureRandom.uuid
       @cluster_id = SecureRandom.uuid
+      # transferd runs as the user of the simulator
+      @transfer_user = Etc.getpwuid(Process.euid)&.name || Etc.getlogin.to_s
     end
 
     # @return [Hash] Node API node information, from transferd
@@ -311,7 +288,7 @@ module Aspera
       response = @transfer_client.get_info(::Transferd::Api::InstanceInfoRequest.new)
       Log.dump(:get_info_response, response.to_h, level: :trace2)
       Aspera.assert(response.error.nil? || response.error.description.empty?, type: RuntimeError) { response.error.description }
-      self.class.info_to_node(response.info || ::Transferd::Api::InstanceInfo.new, node_id: @node_id, cluster_id: @cluster_id, docroot: @docroot)
+      self.class.info_to_node(response.info || ::Transferd::Api::InstanceInfo.new, node_id: @node_id, cluster_id: @cluster_id, docroot: @docroot, transfer_user: @transfer_user)
     end
 
     # @param path  [String]  folder to list, relative to the docroot
@@ -332,13 +309,10 @@ module Aspera
           'path'        => folder_virtual,
           'basename'    => File.basename(folder_path),
           'type'        => 'directory',
-          'size'        => folder_stat.size,
+          # Node API reports 0 for folders
+          'size'        => 0,
           'mtime'       => folder_stat.mtime.utc.iso8601,
-          'permissions' => [
-            {'name' => 'view'},
-            {'name' => 'edit'},
-            {'name' => 'delete'}
-          ]
+          'permissions' => permissions(folder_path)
         },
         'items' => []
       }
@@ -349,27 +323,24 @@ module Aspera
 
         item_path = File.join(folder_path, entry)
         item_type = File.ftype(item_path) rescue 'unknown' # Get the type of file
+        item_type = FILE_TYPES.fetch(item_type, item_type)
         item_stat = File.lstat(item_path) # Use lstat to handle symbolic links correctly
 
         item = {
           'path'        => File.join(folder_virtual, entry),
           'basename'    => entry,
           'type'        => item_type,
-          'size'        => item_stat.size,
+          'size'        => item_type.eql?('directory') ? 0 : item_stat.size,
           'mtime'       => item_stat.mtime.utc.iso8601,
-          'permissions' => [
-            {'name' => 'view'},
-            {'name' => 'edit'},
-            {'name' => 'delete'}
-          ]
+          'permissions' => permissions(item_path)
         }
 
         # Add additional details for specific types
         case item_type
         when 'file'
           item['partial_file'] = false
-        when 'link'
-          item['target'] = File.readlink(item_path) rescue nil # Add the target of the symlink
+        when 'symbolic_link'
+          item['target'] = link_target(item_path)
         when 'unknown'
           item['note'] = 'File type could not be determined'
         end
@@ -480,6 +451,34 @@ module Aspera
     # @return [Boolean] `true` if the path is the docroot or inside it
     def in_docroot?(real)
       real.eql?(@docroot) || real.start_with?(@docroot.end_with?('/') ? @docroot : "#{@docroot}/")
+    end
+
+    # @param real [String] real path within the docroot
+    # @return [Array<Hash>] Node API permissions, from the access of the simulator on the item
+    def permissions(real)
+      names = []
+      names.push('view') if File.readable?(real)
+      names.push('edit') if File.writable?(real)
+      # the docroot itself cannot be deleted
+      names.push('delete') if !real.eql?(@docroot) && File.writable?(File.dirname(real))
+      names.map { |name| {'name' => name} }
+    end
+
+    # @param link [String] real path of a symbolic link within the docroot
+    # @return [Hash] Node API target of the link: only the content of the link if it is dangling or leads out of the docroot
+    def link_target(link)
+      target = File.realpath(link) rescue nil
+      unless target && in_docroot?(target)
+        content = File.readlink(link)
+        return {'path' => content, 'basename' => File.basename(content)}
+      end
+      stat = File.stat(target)
+      {
+        'path'     => virtual_path(target),
+        'basename' => File.basename(target),
+        'type'     => File.ftype(target),
+        'size'     => stat.directory? ? 0 : stat.size
+      }
     end
 
     # Local paths of the transfer spec (sources for `send`, destination for `receive`) are relative to the docroot
