@@ -7,7 +7,13 @@
 # Tests for NodeSimulatorServlet: HTTP server on a free port, with a fake backend.
 
 require 'bundler/setup'
-require 'aspera/node_simulator'
+begin
+  require 'aspera/node_simulator'
+rescue LoadError => e
+  # optional gem grpc not installed (e.g. BUNDLE_WITHOUT=optional, or JRuby)
+  RSpec.describe('Aspera::NodeSimulator') { it('requires gem grpc') { skip(e.message) } }
+  return
+end
 require 'net/http'
 require 'tmpdir'
 
