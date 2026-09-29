@@ -7,7 +7,7 @@ Released: [Place date of release here]
 ### New Features
 
 * `aoc`: `short_link list` supports `--query=help`, help of `short_link create|modify` shows the request body.
-* `node`: `simulator` executes transfers with the Transfer Daemon (`transferd`) and returns their real status, sessions and files. It supports `transfer modify|cancel`, filters of `transfer list` (`active_only`, `direction`, `count`), and HTTP Basic authentication with parameters `username` and `password`. Like on a real node, paths of `browse` and local paths of transfers are relative to parameter `docroot`. `/info` shows version and license from `transferd`. Documented in the manual.
+* `node`: `simulator` executes transfers with `transferd`, and supports more of the Node API. See the manual.
 
 ### Issues Fixed
 
@@ -15,13 +15,12 @@ Released: [Place date of release here]
 * `aoc`: `short_link show` always failed with `not found`.
 * `aoc`: `files short_link public modify` with `access_levels` set full access (`edit`) instead of the given levels.
 * `aoc`: `packages shared_inboxes short_link public` commands were failing (wrong short link purpose, parameters of shared folder links). Link type `private` is removed: AoC supports it only for shared folders.
-* `node`: With `simulator`, a transfer with `--transfer.agent=node` never ended (status was hardcoded), `info` and `browse` were failing, and errors were not in Node API format.
 * **general**: Agent `node` was failing when the transfer was canceled or paused on the node.
 
 ### Breaking Changes
 
-* `node`: `simulator` requires the Transfer Daemon (`transferd`) and the gem `grpc`, instead of `ascp`.
-* `node`: `simulator` parameter `browse_root` is renamed `docroot`: paths of `browse` are relative to it, and it also applies to local paths of transfers.
+* `node`: `simulator` requires `transferd` and the gem `grpc`, instead of `ascp`.
+* `node`: `simulator` parameter `browse_root` is renamed `docroot`.
 
 ## 4.27.3
 

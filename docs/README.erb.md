@@ -7649,7 +7649,7 @@ Supported endpoints:
 
 Limitations:
 
-- Only transfers started through the simulator are known. They are kept in memory, and lost when the simulator stops.
+- Only transfers started through the simulator are known. They are kept in memory, and lost when the simulator stops. Ended transfers are removed from the list after `retention_sec` (default: one day).
 - Only Basic authentication is supported: when `username` and `password` are set, bearer tokens and access keys are rejected. When they are not set, all requests are accepted.
 - Not supported: `files/upload_setup` and `files/download_setup` (so, `node upload|download` on the simulator), `ops/transfers/bandwidth`, pause and resume of transfers, query parameters `iteration_token` and `tag`.
 

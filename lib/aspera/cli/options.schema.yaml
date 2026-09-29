@@ -633,6 +633,11 @@ components:
             Paths of `/files/browse` and local paths of transfers (sources of `send`, destination of `receive`) are relative to it, and confined in it.
             Defaults to the current working directory.
           example: /data/aspera
+        retention_sec:
+          type: integer
+          minimum: 1
+          description: Time in seconds a transfer stays in the list of transfers after it ended (completed, failed or canceled, and no more retried).
+          default: 86400
         username:
           type: string
           description: >-

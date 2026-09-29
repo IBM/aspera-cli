@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# cspell:ignore precalc noxfer euid
+# cspell:ignore precalc noxfer euid gettime
 require 'aspera/assert'
 require 'aspera/mime'
 require 'aspera/ascp/installation'
@@ -277,14 +277,18 @@ module Aspera
     end
 
     # Create a simulator, start a transferd daemon if no client is given
-    # @param docroot         [String, nil] folder of the node files, default: current folder
+    # @param docroot         [String, nil]  folder of the node files, default: current folder
     # @param transfer_client [Transferd::Api::TransferService::Stub, nil] gRPC client, default: start a transferd daemon
-    def initialize(docroot: nil, transfer_client: nil)
+    # @param retention_sec   [Integer]      time a transfer is kept after it ended (CLI default in schema)
+    def initialize(retention_sec:, docroot: nil, transfer_client: nil)
+      Aspera.assert(retention_sec.is_a?(Integer) && retention_sec.positive?) { "retention_sec must be a positive integer: #{retention_sec.inspect}" }
       # paths of browse and local paths of transfers are relative to it
       @docroot = File.realpath(docroot || Dir.pwd)
       # the daemon is stopped at exit by the agent
       @transfer_client = transfer_client || Agent::Transferd.new.transfer_client
-      # transfer id → store entry: `start_spec` (secrets hidden), last `status`, last `info`, `sessions` by id, `files` by id, current `rates` by session id, `error`
+      @retention_sec = retention_sec
+      # transfer id → store entry: `start_spec` (secrets hidden), last `status`, last `info`, `sessions` by id, `files` by id, current `rates` by session id, `error`,
+      # `ended` (monotonic time of the end), accessed with `store`
       @transfers = {}
       # WEBrick serves each request in a thread, monitoring runs in threads
       @mutex = Mutex.new
@@ -395,8 +399,8 @@ module Aspera
     # @param id [String] transfer id
     # @return [Hash, nil] Node API transfer, `nil` if unknown
     def transfer(id)
-      entry = @mutex.synchronize do
-        found = @transfers[id]
+      entry = store do |transfers|
+        found = transfers[id]
         found&.merge(sessions: found[:sessions].dup, files: found[:files].dup, rates: found[:rates].dup)
       end
       return if entry.nil?
@@ -412,7 +416,8 @@ module Aspera
     # @param count       [Integer, nil] max number of transfers, oldest first
     # @return [Array<Hash>] Node API transfers
     def transfers(active_only: nil, direction: nil, count: nil)
-      result = @mutex.synchronize { @transfers.keys }.map { |id| transfer(id) }
+      # a transfer may expire between the two calls
+      result = store(&:keys).filter_map { |id| transfer(id) }
       result.select! { |transfer| ACTIVE.include?(transfer['status']).eql?(active_only) } unless active_only.nil?
       result.select! { |transfer| transfer['start_spec']['direction'].eql?(direction) } unless direction.nil?
       count.nil? ? result : result.first(count)
@@ -448,7 +453,23 @@ module Aspera
     # @param id [String] transfer id
     # @return [Boolean] `true` if the transfer was started by the simulator
     def known?(id)
-      @mutex.synchronize { @transfers.key?(id) }
+      store { |transfers| transfers.key?(id) }
+    end
+
+    # Lock the store, and remove the transfers ended for longer than the retention time
+    # @yieldparam transfers [Hash] transfer id → store entry
+    # @return [Object] result of the block
+    def store
+      @mutex.synchronize do
+        now = monotonic_time
+        @transfers.delete_if { |_, entry| entry.key?(:ended) && now - entry[:ended] >= @retention_sec }
+        yield(@transfers)
+      end
+    end
+
+    # @return [Float] current time in seconds, for durations
+    def monotonic_time
+      Process.clock_gettime(Process::CLOCK_MONOTONIC)
     end
 
     # Convert a Node API path to a real path
@@ -537,9 +558,11 @@ module Aspera
           Aspera.assert(!response.transferId.empty?, type: Transfer::Error) { response.error&.description || 'No transfer id from transferd' }
           id = response.transferId
         end
-        @mutex.synchronize do
-          entry = (@transfers[id] ||= {start_spec: start_spec, sessions: {}, files: {}, rates: {}})
+        store do |transfers|
+          entry = (transfers[id] ||= {start_spec: start_spec, sessions: {}, files: {}, rates: {}})
           self.class.update_entry(entry, response)
+          # no more event, and so no more retry: retention starts
+          entry[:ended] = monotonic_time if TERMINAL.include?(entry[:status])
         end
         first_event.push(id) if new_transfer
         break if TERMINAL.include?(response.status)
@@ -550,7 +573,7 @@ module Aspera
         first_event.push(e)
       else
         Log.log.error { "Transfer #{id}: #{e.message}" }
-        @mutex.synchronize { @transfers[id].merge!(status: :FAILED, error: e.message) }
+        store { |transfers| transfers[id].merge!(status: :FAILED, error: e.message, ended: monotonic_time) }
       end
     end
   end

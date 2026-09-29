@@ -589,7 +589,7 @@ module Aspera
           end
         )
         command :simulator,     description: 'Start node simulator',
-          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: 'opts:components.schemas.NodeSimulatorOptions'}]
+          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: Schema::Registry::NODE_SIMULATOR_OPTIONS}]
         command :telemetry,     description: 'Report telemetry to external system',
           arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: 'opts:components.schemas.NodeTelemetryOptions'}]
 
@@ -1130,14 +1130,19 @@ module Aspera
 
         def action_simulator(parameters: {}, **)
           require 'aspera/node_simulator'
-          parameters = parameters.symbolize_keys
-          uri = URI.parse(parameters.delete(:url) { WebServerSimple::DEFAULT_URL })
+          # missing parameters take the default of the schema
+          defaults = Schema::Registry.instance.reader(Schema::Registry::NODE_SIMULATOR_OPTIONS).current['properties'].each_with_object({}) do |(name, property), result|
+            result[name.to_sym] = property['default'] if property.key?('default')
+          end
+          parameters = defaults.merge(parameters.symbolize_keys)
+          uri = URI.parse(parameters.delete(:url))
           config = parameters.except(*WebServerSimple::PARAMS)
           docroot = config.delete(:docroot)
+          retention_sec = config.delete(:retention_sec)
           Aspera.assert(config[:username].nil? == config[:password].nil?, type: Cli::BadArgument) { 'Parameters username and password must be set together' }
           Log.log.warn('No username and password: simulator accepts requests without authentication') if config[:username].nil?
           server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
-          server.mount(uri.path, NodeSimulatorServlet, config, NodeSimulator.new(docroot: docroot))
+          server.mount(uri.path, NodeSimulatorServlet, config, NodeSimulator.new(docroot: docroot, retention_sec: retention_sec))
           server.start
           return Result::Status.new('Simulator terminated')
         end

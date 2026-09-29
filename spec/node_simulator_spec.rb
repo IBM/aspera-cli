@@ -97,6 +97,8 @@ module Aspera
     FILE_ID = 'bc8fc988-175afb21-583dd464-dc2c4518-7c777e58'
     START_MSEC = 1_790_595_422_000
     START_USEC = START_MSEC * 1000
+    # retention of ended transfers, longer than tests
+    RETENTION_SEC = 3600
 
     extend self
 
@@ -345,7 +347,7 @@ module Aspera
 
         it 'starts a transfer and follows its status until completion' do
           client = FakeTransferClient.new(SUCCESS_EVENTS)
-          simulator = described_class.new(transfer_client: client)
+          simulator = described_class.new(retention_sec: RETENTION_SEC, transfer_client: client)
           id = simulator.start(transfer_spec)
           expect(id).to(eq(TRANSFER_ID))
           transfer = wait_status(simulator, id, 'completed')
@@ -355,7 +357,7 @@ module Aspera
 
         it 'sends the transfer spec to transferd, returns it without secrets' do
           client = FakeTransferClient.new(SUCCESS_EVENTS)
-          simulator = described_class.new(transfer_client: client)
+          simulator = described_class.new(retention_sec: RETENTION_SEC, transfer_client: client)
           id = simulator.start(transfer_spec)
           sent = JSON.parse(client.requests.first.transferSpec)
           expect(sent['remote_password']).to(eq('secret_value'))
@@ -366,24 +368,24 @@ module Aspera
         end
 
         it 'returns nil for an unknown transfer' do
-          simulator = described_class.new(transfer_client: FakeTransferClient.new([]))
+          simulator = described_class.new(retention_sec: RETENTION_SEC, transfer_client: FakeTransferClient.new([]))
           expect(simulator.transfer('unknown')).to(be_nil)
           expect(simulator.transfers).to(eq([]))
         end
 
         it 'raises when transferd fails before the first event' do
-          simulator = described_class.new(transfer_client: FakeTransferClient.new([], error: GRPC::Unavailable.new('down')))
+          simulator = described_class.new(retention_sec: RETENTION_SEC, transfer_client: FakeTransferClient.new([], error: GRPC::Unavailable.new('down')))
           expect { simulator.start(transfer_spec) }.to(raise_error(GRPC::Unavailable))
         end
 
         it 'raises when transferd closes the stream without event' do
-          simulator = described_class.new(transfer_client: FakeTransferClient.new([]))
+          simulator = described_class.new(retention_sec: RETENTION_SEC, transfer_client: FakeTransferClient.new([]))
           expect { simulator.start(transfer_spec) }.to(raise_error(Transfer::Error, /without event/))
         end
 
         it 'raises when the first event has no transfer id' do
           failed = transfer_response(:FAILED, :UNKNOWN_EVENT, transfer_id: '', error: API::Error.new(code: 1, description: 'invalid transfer spec'))
-          simulator = described_class.new(transfer_client: FakeTransferClient.new([failed]))
+          simulator = described_class.new(retention_sec: RETENTION_SEC, transfer_client: FakeTransferClient.new([failed]))
           expect { simulator.start(transfer_spec) }.to(raise_error(Transfer::Error, 'invalid transfer spec'))
         end
 
@@ -393,7 +395,7 @@ module Aspera
             super
             raise GRPC::Unavailable, 'daemon died'
           end
-          simulator = described_class.new(transfer_client: client)
+          simulator = described_class.new(retention_sec: RETENTION_SEC, transfer_client: client)
           id = simulator.start(transfer_spec)
           expect(wait_status(simulator, id, 'failed')['error_desc']).to(include('daemon died'))
         end
@@ -407,7 +409,7 @@ module Aspera
             [transfer_response(:RUNNING, :PROGRESS, transfer_id: 'run_send')],
             [transfer_response(:QUEUED, :CONNECTING, transfer_id: 'wait_receive')]
           )
-          described_class.new(transfer_client: client).tap do |simulator|
+          described_class.new(retention_sec: RETENTION_SEC, transfer_client: client).tap do |simulator|
             %w[send send receive].each { |direction| simulator.start({'direction' => direction}) }
           end
         end
@@ -435,9 +437,59 @@ module Aspera
         end
       end
 
+      describe 'retention' do
+        # @return [NodeSimulator] retention 60 s, with a completed and a running transfer, ended at time 1000
+        def started
+          client = FakeTransferClient.new(
+            [transfer_response(:COMPLETED, :SESSION_STOP, transfer_id: 'done')],
+            [transfer_response(:RUNNING, :PROGRESS, transfer_id: 'run')]
+          )
+          described_class.new(transfer_client: client, retention_sec: 60).tap do |simulator|
+            allow(simulator).to(receive(:monotonic_time).and_return(1000.0))
+            2.times { simulator.start({'direction' => 'send'}) }
+          end
+        end
+
+        # @return [Array<String>] ids of transfers listed at the given time
+        def ids_at(simulator, time)
+          allow(simulator).to(receive(:monotonic_time).and_return(time))
+          simulator.transfers.map { |transfer| transfer['id'] }
+        end
+
+        it 'keeps an ended transfer during the retention time' do
+          expect(ids_at(started, 1059.0)).to(eq(%w[done run]))
+        end
+
+        it 'removes an ended transfer after the retention time, keeps active ones' do
+          simulator = started
+          expect(ids_at(simulator, 1060.0)).to(eq(%w[run]))
+          expect(simulator.transfer('done')).to(be_nil)
+          expect(simulator.cancel('done')).to(be(false))
+        end
+
+        it 'starts the retention time when the stream breaks' do
+          client = FakeTransferClient.new([QUEUED_EVENT])
+          def client.start_transfer_with_monitor(request, &block)
+            super
+            raise GRPC::Unavailable, 'daemon died'
+          end
+          simulator = described_class.new(transfer_client: client, retention_sec: 60)
+          allow(simulator).to(receive(:monotonic_time).and_return(1000.0))
+          id = simulator.start({'direction' => 'send'})
+          Timeout.timeout(2) { sleep(0.01) until simulator.transfer(id)['status'].eql?('failed') }
+          expect(ids_at(simulator, 1060.0)).to(be_empty)
+        end
+
+        it 'refuses a retention time that is not a positive integer' do
+          [nil, 0, -1, '60', 1.5].each do |value|
+            expect { described_class.new(transfer_client: FakeTransferClient.new([]), retention_sec: value) }.to(raise_error(AssertError, /positive integer/))
+          end
+        end
+      end
+
       describe '#cancel and #modify' do
         def started(client)
-          described_class.new(transfer_client: client).tap { |simulator| simulator.start({'direction' => 'send'}) }
+          described_class.new(retention_sec: RETENTION_SEC, transfer_client: client).tap { |simulator| simulator.start({'direction' => 'send'}) }
         end
 
         it 'stops the transfer' do
@@ -477,7 +529,7 @@ module Aspera
 
       describe '#info' do
         it 'keeps the same node id, also in sessions' do
-          simulator = described_class.new(transfer_client: FakeTransferClient.new([RUNNING_EVENT]))
+          simulator = described_class.new(retention_sec: RETENTION_SEC, transfer_client: FakeTransferClient.new([RUNNING_EVENT]))
           node_id = simulator.info['node_id']
           expect(node_id).to(match(/\A\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z/))
           expect(simulator.info).to(include('node_id' => node_id, 'version' => '4.4.8.2592'))
@@ -487,12 +539,12 @@ module Aspera
 
         it 'raises when transferd returns an error' do
           failed = API::InstanceInfoResponse.new(error: API::Error.new(code: 1, description: 'no ascp'))
-          simulator = described_class.new(transfer_client: FakeTransferClient.new([], info_response: failed))
+          simulator = described_class.new(retention_sec: RETENTION_SEC, transfer_client: FakeTransferClient.new([], info_response: failed))
           expect { simulator.info }.to(raise_error(RuntimeError, 'no ascp'))
         end
 
         it 'shows the docroot and the user executing transfers' do
-          simulator = described_class.new(docroot: '/', transfer_client: FakeTransferClient.new([]))
+          simulator = described_class.new(retention_sec: RETENTION_SEC, docroot: '/', transfer_client: FakeTransferClient.new([]))
           expect(simulator.info).to(include('docroot' => 'file:////', 'transfer_user' => Etc.getpwuid(Process.euid).name))
         end
       end
@@ -500,7 +552,7 @@ module Aspera
       describe 'docroot' do
         let(:docroot) { File.realpath(Dir.mktmpdir('node_simulator_spec')) }
         let(:client) { FakeTransferClient.new(SUCCESS_EVENTS) }
-        let(:simulator) { described_class.new(docroot: docroot, transfer_client: client) }
+        let(:simulator) { described_class.new(retention_sec: RETENTION_SEC, docroot: docroot, transfer_client: client) }
 
         before do
           FileUtils.mkdir_p(File.join(docroot, 'folder'))
@@ -563,7 +615,7 @@ module Aspera
         it 'shows paths of local files relative to the docroot' do
           local = transfer_response(:RUNNING, :FILE_START, file: {fileId: 'local', path: File.join(docroot, 'folder/file')})
           remote = transfer_response(:RUNNING, :FILE_START, file: {fileId: 'remote', path: '/remote/file'})
-          simulator = described_class.new(docroot: docroot, transfer_client: FakeTransferClient.new([local, remote]))
+          simulator = described_class.new(retention_sec: RETENTION_SEC, docroot: docroot, transfer_client: FakeTransferClient.new([local, remote]))
           simulator.start({'direction' => 'send'})
           Timeout.timeout(2) { sleep(0.01) until simulator.transfer(TRANSFER_ID)['files'].length.eql?(2) }
           expect(simulator.transfer(TRANSFER_ID)['files'].map { |file| file['path'] }).to(eq(['/folder/file', '/remote/file']))
@@ -732,7 +784,7 @@ module Aspera
 
         before do
           %w[c a d b].each { |name| File.write(File.join(docroot, name), name) }
-          start_server(simulator: NodeSimulator.new(docroot: docroot, transfer_client: FakeTransferClient.new([])))
+          start_server(simulator: NodeSimulator.new(retention_sec: RETENTION_SEC, docroot: docroot, transfer_client: FakeTransferClient.new([])))
         end
 
         after { FileUtils.rm_rf(docroot) }
