@@ -113,12 +113,14 @@ module Aspera
       :SOURCE_STATISTICS, :PRECALC, :MAX_MSEC, :START_TIMEOUT_SEC, :FILE_TYPES, :INFO_STATIC
 
     class << self
+      # Convert a transferd transfer status to a Node API status
       # @param status [Symbol] transferd `TransferStatus`
       # @return [String] Node API transfer status
       def node_status(status)
         STATUS.fetch(status, 'waiting')
       end
 
+      # Convert a transferd message to a hash with Node API field names
       # @param message   [Google::Protobuf::AbstractMessage] transferd message
       # @param overrides [Hash] field name → Node API name (`nil`: ignored)
       # @return [Hash] all fields (including default values), keys in snake case, time stamps in microseconds
@@ -148,6 +150,7 @@ module Aspera
         entry[:rates][session.sessionId] = management_rates(response.message) if response.transferEvent.eql?(:RATE_MODIFICATION) && entry[:sessions].key?(session&.sessionId)
       end
 
+      # Build a Node API transfer from a store entry
       # @param id      [String] transfer id
       # @param entry   [Hash]   store entry
       # @param node_id [String] node id of the simulator
@@ -178,6 +181,7 @@ module Aspera
         )
       end
 
+      # Convert a transferd session to a Node API session
       # @param session       [Transferd::Api::SessionTransferInformation]
       # @param retry_timeout [Integer] from the transfer spec
       # @param node_id       [String]  node id of the simulator
@@ -206,6 +210,7 @@ module Aspera
         )
       end
 
+      # Convert a transferd file to a Node API file
       # @param file [Transferd::Api::FileTransferInformation]
       # @return [Hash] Node API file (`fileMetadata`)
       def file_to_node(file)
@@ -217,6 +222,7 @@ module Aspera
         result
       end
 
+      # Build Node API node information from transferd instance information
       # @param info          [Transferd::Api::InstanceInfo]
       # @param node_id       [String] node id of the simulator
       # @param cluster_id    [String] cluster id of the simulator
@@ -243,6 +249,7 @@ module Aspera
 
       private
 
+      # Extract the current rates from an ascp management message
       # @param message [String] ascp management message of event `RATE_MODIFICATION` (JSON)
       # @return [Hash] Node API session rates found in the message
       def management_rates(message)
@@ -252,11 +259,15 @@ module Aspera
         {}
       end
 
+      # Compute the status of the pre-calculation of the transfer size
+      # @param bytes_expected [Integer] size of the transfer, 0 if not known yet
+      # @param terminal       [Boolean] `true` if the transfer or session has ended
       # @return [String] `ready` when the size is known, else `pending`
       def precalc_status(bytes_expected, terminal)
         bytes_expected.positive? || terminal ? 'ready' : 'pending'
       end
 
+      # Get the retry timeout from the tags of the transfer spec
       # @param start_spec [Hash] transfer spec
       # @return [Integer] retry timeout set by `Agent::Node`, or 0
       def xfer_retry(start_spec)
@@ -265,6 +276,7 @@ module Aspera
       end
     end
 
+    # Create a simulator, start a transferd daemon if no client is given
     # @param docroot         [String, nil] folder of the node files, default: current folder
     # @param transfer_client [Transferd::Api::TransferService::Stub, nil] gRPC client, default: start a transferd daemon
     def initialize(docroot: nil, transfer_client: nil)
@@ -283,6 +295,7 @@ module Aspera
       @transfer_user = Etc.getpwuid(Process.euid)&.name || Etc.getlogin.to_s
     end
 
+    # Get the node information
     # @return [Hash] Node API node information, from transferd
     def info
       response = @transfer_client.get_info(::Transferd::Api::InstanceInfoRequest.new)
@@ -291,6 +304,7 @@ module Aspera
       self.class.info_to_node(response.info || ::Transferd::Api::InstanceInfo.new, node_id: @node_id, cluster_id: @cluster_id, docroot: @docroot, transfer_user: @transfer_user)
     end
 
+    # List a folder of the docroot
     # @param path  [String]  folder to list, relative to the docroot
     # @param skip  [Integer] number of items to skip (paging)
     # @param count [Integer] max number of items returned (paging)
@@ -377,6 +391,7 @@ module Aspera
       return result
     end
 
+    # Get a transfer started by the simulator
     # @param id [String] transfer id
     # @return [Hash, nil] Node API transfer, `nil` if unknown
     def transfer(id)
@@ -391,6 +406,7 @@ module Aspera
       result
     end
 
+    # List the transfers started by the simulator
     # @param active_only [Boolean, nil] `true`: only waiting or running, `false`: only terminated, `nil`: all
     # @param direction   [String, nil]  `send` or `receive`
     # @param count       [Integer, nil] max number of transfers, oldest first
@@ -414,6 +430,7 @@ module Aspera
       true
     end
 
+    # Modify the rates or the policy of a transfer
     # @param id      [String] transfer id
     # @param changes [Hash]   new values of transfer spec fields: `target_rate_kbps`, `min_rate_kbps`, `rate_policy`
     # @return [Boolean] `false` if unknown
@@ -427,11 +444,14 @@ module Aspera
 
     private
 
+    # Check if a transfer is known
+    # @param id [String] transfer id
     # @return [Boolean] `true` if the transfer was started by the simulator
     def known?(id)
       @mutex.synchronize { @transfers.key?(id) }
     end
 
+    # Convert a Node API path to a real path
     # @param path [String] path relative to the docroot, leading `/` optional
     # @return [String] real path, within the docroot
     def real_path(path)
@@ -441,18 +461,21 @@ module Aspera
       real
     end
 
+    # Convert a real path to a Node API path
     # @param real [String] real path within the docroot
     # @return [String] path relative to the docroot, with leading `/`
     def virtual_path(real)
       "/#{real.delete_prefix(@docroot).delete_prefix('/')}"
     end
 
+    # Check if a real path is within the docroot
     # @param real [String] real path
     # @return [Boolean] `true` if the path is the docroot or inside it
     def in_docroot?(real)
       real.eql?(@docroot) || real.start_with?(@docroot.end_with?('/') ? @docroot : "#{@docroot}/")
     end
 
+    # Get the Node API permissions of an item
     # @param real [String] real path within the docroot
     # @return [Array<Hash>] Node API permissions, from the access of the simulator on the item
     def permissions(real)
@@ -464,6 +487,7 @@ module Aspera
       names.map { |name| {'name' => name} }
     end
 
+    # Get the Node API target of a symbolic link
     # @param link [String] real path of a symbolic link within the docroot
     # @return [Hash] Node API target of the link: only the content of the link if it is dangling or leads out of the docroot
     def link_target(link)
@@ -542,6 +566,8 @@ module Aspera
     CANCEL_STATUSES = %w[canceled cancelled stopped].freeze
     # `PUT` fields modified by transferd
     MODIFIABLE = %w[target_rate_kbps min_rate_kbps rate_policy].freeze
+    # Create the servlet, with optional Basic authentication
+    # @param server    [WEBrick::HTTPServer]
     # @param config    [Hash] `username` and `password` (Basic authentication expected from clients, optional)
     # @param simulator [NodeSimulator]
     def initialize(server, config, simulator)
@@ -551,6 +577,8 @@ module Aspera
     end
 
     # Check authentication, dispatch to `do_<verb>`, and send errors in Node API format
+    # @param request  [WEBrick::HTTPRequest]
+    # @param response [WEBrick::HTTPResponse]
     def service(request, response)
       unless authorized?(request)
         response['WWW-Authenticate'] = %Q(Basic realm="#{REALM}")
@@ -568,6 +596,9 @@ module Aspera
       set_error(request, response, 500, e.message)
     end
 
+    # Start a transfer, or list a folder
+    # @param request  [WEBrick::HTTPRequest]
+    # @param response [WEBrick::HTTPResponse]
     def do_POST(request, response)
       case request.path
       when PATH_TRANSFERS
@@ -580,6 +611,9 @@ module Aspera
       end
     end
 
+    # Get the node information, the list of transfers, or one transfer
+    # @param request  [WEBrick::HTTPRequest]
+    # @param response [WEBrick::HTTPResponse]
     def do_GET(request, response)
       case request.path
       when '/info'
@@ -603,6 +637,8 @@ module Aspera
     end
 
     # Modify a transfer, or cancel it with `status`
+    # @param request  [WEBrick::HTTPRequest]
+    # @param response [WEBrick::HTTPResponse]
     def do_PUT(request, response)
       id = transfer_id(request)
       changes = JSON.parse(request.body.to_s)
@@ -622,6 +658,8 @@ module Aspera
     end
 
     # Node API cancels a transfer with HTTP verb `CANCEL`
+    # @param request  [WEBrick::HTTPRequest]
+    # @param response [WEBrick::HTTPResponse]
     def do_CANCEL(request, response)
       return set_error(request, response, 404, 'Unknown transfer') unless @simulator.cancel(transfer_id(request))
       response.status = 204
@@ -629,14 +667,21 @@ module Aspera
 
     private
 
-    # @return [String] transfer id from the path of the request
+    # Extract the transfer id from the path of the request
+    # @param request [WEBrick::HTTPRequest]
+    # @return [String] transfer id
+    # @raise [WEBrick::HTTPStatus::NotFound] if the path is not the one of a transfer
     def transfer_id(request)
       match = request.path.match(PATH_ONE_TRANSFER)
       raise WEBrick::HTTPStatus::NotFound, "Unknown path: #{request.path}" if match.nil?
       match[1]
     end
 
-    # @return [Boolean, nil] value of a boolean query parameter, `nil` if absent
+    # Read a boolean query parameter
+    # @param request [WEBrick::HTTPRequest]
+    # @param name    [String] name of the query parameter
+    # @return [Boolean, nil] value, `nil` if absent
+    # @raise [WEBrick::HTTPStatus::BadRequest] if the value is not `true` or `false`
     def query_boolean(request, name)
       value = request.query[name]&.to_s
       return if value.nil?
@@ -644,7 +689,11 @@ module Aspera
       value.eql?('true')
     end
 
-    # @return [Integer, nil] value of a positive integer query parameter, `nil` if absent
+    # Read a positive integer query parameter
+    # @param request [WEBrick::HTTPRequest]
+    # @param name    [String] name of the query parameter
+    # @return [Integer, nil] value, `nil` if absent
+    # @raise [WEBrick::HTTPStatus::BadRequest] if the value is not a positive integer
     def query_positive(request, name)
       value = request.query[name]&.to_s
       return if value.nil?
@@ -654,10 +703,16 @@ module Aspera
     end
 
     # Set error body in Node API format
+    # @param request  [WEBrick::HTTPRequest]
+    # @param response [WEBrick::HTTPResponse]
+    # @param code     [Integer] HTTP status code
+    # @param message  [String]  message for the user
     def set_error(request, response, code, message)
       set_json_response(request, response, {error: {code: code, reason: WEBrick::HTTPStatus.reason_phrase(code), user_message: message}}, code: code)
     end
 
+    # Check the Basic credentials of the request
+    # @param request [WEBrick::HTTPRequest]
     # @return [Boolean] `true` if the request has the expected Basic credentials, or if none are expected
     def authorized?(request)
       return true if @expected_auth.nil?
@@ -666,6 +721,11 @@ module Aspera
       scheme.to_s.casecmp?('Basic') && OpenSSL.secure_compare(value.to_s.unpack1('m'), @expected_auth)
     end
 
+    # Set the status and the JSON body of the response
+    # @param request  [WEBrick::HTTPRequest] for the log
+    # @param response [WEBrick::HTTPResponse]
+    # @param json     [Hash, Array] body of the response
+    # @param code     [Integer] HTTP status code
     def set_json_response(request, response, json, code: 200)
       response.status = code
       response['Content-Type'] = Mime::JSON
