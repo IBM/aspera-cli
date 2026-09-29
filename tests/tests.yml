@@ -2708,8 +2708,8 @@ aoc_files_pub_browse_pass:
     - files
     - browse
     - /
-    - --url=@preset:aoc.public_link_folder_pass
-    - --password=@preset:aoc.public_link_password
+    - --url=@preset:aoc.public_link_folder_with_pass
+    - --password=@preset:aoc.public_link_folder_password
 aoc_files_pub_upload:
   args:
     - -N
@@ -2725,7 +2725,7 @@ aoc_lnk_priv:
     - files
     - browse
     - /
-    - --url=@preset:$(awa_type).private_link
+    - --url=@preset:$(awa_type).private_link_shared_folder
 aoc_short_link_priv_create:
   template: awa_user_suite
   args:
@@ -2821,7 +2821,7 @@ aoc_shared_inbox_short_link_modify:
     - modify
     - $(t.saved_output :aoc_shared_inbox_short_link_create)
     - "@:"
-    - password=@preset:aoc.public_link_password
+    - password=@preset:aoc.public_link_folder_password
 aoc_shared_inbox_short_link_delete:
   depends_on:
     - aoc_shared_inbox_short_link_list

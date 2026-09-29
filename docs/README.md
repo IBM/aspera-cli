@@ -5243,9 +5243,6 @@ OPTIONS: global
     --cache-tokens=yes|no          Save and reuse OAuth tokens
     --expand-mounts=yes|no         Commands: list commands of sub-trees provided by another plugin
 -N, --no-default                   Do not load default configuration for plugin
-    --query=HASH                   Additional filter for for some commands (list/delete)
-    --bulk=yes|no                  Bulk operation (only some)
-    --bfail=yes|no                 Bulk operation error handling
     --override=yes|no              Wizard: override existing value
     --default=yes|no               Wizard: set as default configuration for specified plugin (also: update)
     --key-path=VALUE               Wizard: path to private key for JWT
@@ -5255,6 +5252,9 @@ OPTIONS: global
     --cert-stores=LIST             HTTP/S: List of folder with trusted certificates
     --http-options=HASH            HTTP/S connection parameters for REST calls (not `ascp` WSS)
     --http-proxy=VALUE             HTTP/S: URL for proxy with optional credentials
+    --query=HASH                   Additional filter for for some commands (list/delete)
+    --bulk=yes|no                  Bulk operation (only some)
+    --bfail=yes|no                 Bulk operation error handling
     --ts=HASH                      Override transfer spec values
     --to-folder=VALUE              Destination folder for transferred files
     --sources=VALUE                How list of transferred files is provided (@args,@ts,Array)
@@ -7386,9 +7386,9 @@ bearer_token --out.level=data
 files bearer /
 files bearer_token_node / --cache-tokens=no
 files browse /
-files browse / --url=my_private_link
+files browse / --url=my_private_link_shared_folder
 files browse / --url=my_public_link_folder_no_pass
-files browse / --url=my_public_link_folder_pass --password=my_public_link_password
+files browse / --url=my_public_link_folder_with_pass --password=my_public_link_folder_password
 files browse my_remote_file
 files browse my_remote_folder
 files browse my_remote_folder/
@@ -7440,6 +7440,11 @@ packages send @: 'name=package title' END test_file.bin --url=my_public_link_sen
 packages send @: 'name=package title' recipients.0=my_username 'note=some notes' END test_file.bin
 packages send @json:'{"name":"package title","recipients":["my_email_external"]}' --new-user-option.package_contact=true test_file.bin
 packages shared_inboxes list
+packages shared_inboxes short_link public %name:my_shared_inbox_name create --fields=id
+packages shared_inboxes short_link public %name:my_shared_inbox_name delete <aoc_shared_inbox_short_link_create>
+packages shared_inboxes short_link public %name:my_shared_inbox_name list
+packages shared_inboxes short_link public %name:my_shared_inbox_name modify <aoc_shared_inbox_short_link_create> @: password=my_public_link_folder_password
+packages shared_inboxes short_link public %name:my_shared_inbox_name show <aoc_shared_inbox_short_link_create>
 packages shared_inboxes show %name:my_shared_inbox_name
 packages show '%name:package title'
 remind --username=my_user_email --url=https://aoc.example.com/path
@@ -7669,6 +7674,7 @@ upload --src-type=pair --sources=@json:'["test_file.bin","my_inside_folder/other
 upload --src-type=pair test_file.bin my_inside_folder/other_name_2 --notify-to=my_email_external '--transfer.ascp_args=@list: -l 100m'
 upload --src-type=pair test_file.bin my_upload_folder/other_name_5 --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":"-1","exclude_older_than":"-10000","fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum"}'
 upload --to-folder=my_upload_folder/target_hot --lock-port=50101 --transfer.ascp_args=@list:,--remove-after-transfer,--remove-empty-directories,--exclude-newer-than=-8,--src-base,hot_folder hot_folder
+upload /test_file.bin --to-folder=my_upload_folder --transfer.agent=node --transfer.url=http://localhost:12348 --transfer.username=sim --transfer.password=sim
 upload test_file.bin --to-folder=my_inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}' --transfer=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress-bar=yes
 ```
 
@@ -8230,6 +8236,8 @@ ascli node -N --url=https://... --password="Bearer $(cat bearer.txt)" --root-id=
 > Add `ascli node` in front of the following commands:
 
 ```shell
+--url=http://localhost:12348 --username=sim --password=sim browse / --fields=path --format=csv --select=@json:'{"basename":"test_file.bin"}'
+--url=http://localhost:12348 --username=sim --password=sim transfer list --fields=status
 --url=https://tst.example.com/path --password='Bearer <nd_bearer_token>' --root-id=<id> access_key do self browse /
 access_key create @json:'{"id":"my_username","secret":"my_password_here","storage":{"type":"local","path":"/"}}'
 access_key delete my_username
@@ -8285,6 +8293,7 @@ search / --query.sort=mtime
 service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
 service delete service1
 service list
+simulator @json:'{"url":"http://localhost:12348","username":"sim","password":"sim","docroot":"/data"}'
 slash
 space /
 spec
@@ -8355,6 +8364,78 @@ In Instana, create a custom Dashboard to visualize the OTel data:
 - Add Widget: Histogram
 - Data Source: Infrastructure and Platforms
 - Metric: search `transfer`
+
+### Node simulator
+
+> [!NOTE]
+> This is not a feature for production.
+> It's provided for testing only.
+
+The command `simulator` starts a local web server that answers a subset of the Node API, and executes transfers with the Transfer Daemon (`transferd`).
+It allows testing, without HSTS, the [Node API agent](#agent-node-api) (`--transfer.agent=node`) and the `node` commands `info`, `browse`, `transfer list|show|modify|cancel`.
+
+The Transfer Daemon and the gem `grpc` must be installed (see [Agent: Transfer Daemon](#agent-transfer-daemon)).
+The simulator starts its own `transferd`, and stops it on exit.
+
+It takes an optional `Hash` argument with the following parameters:
+
+| Field | Type | Description |
+|----------|--------|----------------------------------------------------------------------------------|
+| `cert` | `String` | Path to the TLS certificate file. Accepted formats: PEM (`.pem`) or PKCS12 (`.p12` / `.pfx`).<br/>Example: `/path/to/cert.pem`. |
+| `chain` | `String` | Path to the PEM certificate chain file (appended as extra chain certificates).<br/>Example: `/path/to/chain.pem`. |
+| `docroot` | `String` | Local folder of the node files. Paths of `/files/browse` and local paths of transfers (sources of `send`, destination of `receive`) are relative to it, and confined in it. Defaults to the current working directory.<br/>Example: `/data/aspera`. |
+| `key` | `String` | Path to the PEM private key file, or the PKCS12 passphrase when `cert` is a `.p12`/`.pfx` file.<br/>Example: `/path/to/key.pem`. |
+| `password` | `String` | Password expected from clients in HTTP Basic authentication, for the above `username`.<br/>Example: `my_password`. |
+| `url` | `String` | Address and port the simulator listens on. Use `https://` with `cert`/`key` for TLS.<br/>Default: `http://localhost:8080`. |
+| `username` | `String` | Username expected from clients in HTTP Basic authentication. Set together with `password`. When not set, requests are accepted without authentication.<br/>Example: `node_user`. |
+
+For details on `url` and HTTPS, see [Web service](#web-service).
+
+Like on a real node, the files of the simulator are in its `docroot`: paths of `browse`, and local paths of transfers, are relative to it.
+Local paths are the sources of an upload (`send`), and the destination of a download (`receive`).
+Paths leading out of the `docroot` are rejected.
+
+Start the simulator, it runs until interrupted:
+
+```shell
+ascli node simulator @json:'{"url":"http://localhost:12348","username":"sim","password":"sim","docroot":"/data"}'
+```
+
+Then, in another terminal, use it as a node, for example, to list the files in `/data`:
+
+```shell
+ascli node --url=http://localhost:12348 --username=sim --password=sim browse /
+```
+
+Or as the transfer agent, for example, to upload the file `/data/my_file.dat` to a transfer server:
+
+```shell
+ascli server upload /my_file.dat --transfer.agent=node --transfer.url=http://localhost:12348 --transfer.username=sim --transfer.password=sim
+```
+
+The transfer is executed by `transferd`, and its status is available on the simulator:
+
+```shell
+ascli node --url=http://localhost:12348 --username=sim --password=sim transfer list
+```
+
+Supported endpoints:
+
+| Verb     | Path                  | Action                                                                                            |
+|----------|-----------------------|---------------------------------------------------------------------------------------------------|
+| `GET`    | `/info`               | Node information, version and license from `transferd`.                                           |
+| `GET`    | `/ops/transfers`      | List transfers. Query parameters: `active_only`, `direction`, `count`.                            |
+| `POST`   | `/ops/transfers`      | Start a transfer with `transferd`.                                                                |
+| `GET`    | `/ops/transfers/{id}` | Transfer information, with sessions and files.                                                    |
+| `PUT`    | `/ops/transfers/{id}` | Modify `target_rate_kbps`, `min_rate_kbps` or `rate_policy`, or cancel with `status`: `canceled`. |
+| `CANCEL` | `/ops/transfers/{id}` | Cancel a transfer.                                                                                |
+| `POST`   | `/files/browse`       | List a folder of the `docroot`.                                                                   |
+
+Limitations:
+
+- Only transfers started through the simulator are known. They are kept in memory, and lost when the simulator stops.
+- Only Basic authentication is supported: when `username` and `password` are set, bearer tokens and access keys are rejected. When they are not set, all requests are accepted.
+- Not supported: `files/upload_setup` and `files/download_setup` (so, `node upload|download` on the simulator), `ops/transfers/bandwidth`, pause and resume of transfers, query parameters `iteration_token` and `tag`.
 
 ## Plugin: `faspex5`: IBM Aspera Faspex v5
 
@@ -9630,9 +9711,32 @@ This shall list the contents of the storage root of the access key.
 
 ### Options for generated files
 
-When generating preview files, some options are provided by default.
-Some values for the options can be modified on command line.
-For video preview, the whole set of options can be overridden with option `reencode_ffmpeg`: it is a `Hash` with two keys: `in` and `out`, each is an `Array` of strings with the native options to `ffmpeg`.
+When generating preview files, the following options can be modified on command line (or in a preset):
+
+| Field | Type | Description |
+|---------------------|---------|----------------------------------------------------------------------------------|
+| `blend_fps` | `Integer` | MP4 video preview (`blend`): frames per second.<br/>Default: `15`. |
+| `blend_keyframes` | `Integer` | MP4 video preview (`blend`): number of key frames.<br/>Default: `30`. |
+| `blend_pauseframes` | `Integer` | MP4 video preview (`blend`): number of pause frames (repetitions of each key frame).<br/>Default: `3`. |
+| `blend_transframes` | `Integer` | MP4 video preview (`blend`): number of transition frames between key frames.<br/>Default: `5`. |
+| `clips_count` | `Integer` | MP4 video preview (`clips`): number of clips.<br/>Default: `5`. |
+| `clips_length` | `Integer` | Video: length (in seconds) of each clip of MP4 video preview (`clips`), and of `animated` PNG thumbnail.<br/>Default: `5`. |
+| `max_size` | `Integer` | Maximum size (in bytes) of a preview file: a warning is logged if exceeded.<br/>Default: `16777216`. |
+| `office_conversion` | `String` | PNG thumbnail of office document: conversion tool.<br/>Allowed values: `soffice`, `unoconv`.<br/>Default: `soffice`. |
+| `reencode_ffmpeg.in` | `Array` | Input options. |
+| `reencode_ffmpeg.out` | `Array` | Output options. |
+| `reencode_ffmpeg` | `Hash` | MP4 video preview (`reencode`): `ffmpeg` options replacing the default ones.<br/>Default: `{}`. |
+| `thumb_img_size` | `Integer` | PNG thumbnail of image, PDF, office document or text: size (in pixels).<br/>Default: `800`. |
+| `thumb_text_font` | `String` | PNG thumbnail of text: font name, as listed by `magick identify -list font`.<br/>Default: `Courier`. |
+| `thumb_vid_fraction` | `Number` | PNG thumbnail of video (`fixed`): position of the snapshot, as a fraction of the video duration.<br/>Default: `0.1`. |
+| `thumb_vid_scale` | `String` | PNG thumbnail of video: frame size, as `ffmpeg` scale filter argument.<br/>Default: `-1:min(ih,100)`. |
+| `video_codec` | `String` | MP4 video preview (`reencode`): `ffmpeg` video codec, e.g. `libx264`, `h264_videotoolbox`, `h264_nvenc`. Default: first available H.264 encoder. |
+| `video_conversion` | `String` | MP4 video preview: generation method. `reencode`: re-encode the beginning of the video, `blend`: key frames with transitions, `clips`: concatenation of short clips.<br/>Allowed values: `reencode`, `blend`, `clips`.<br/>Default: `reencode`. |
+| `video_png_conv` | `String` | PNG thumbnail of video: generation method. `fixed`: single frame, `animated`: animated PNG.<br/>Allowed values: `fixed`, `animated`.<br/>Default: `fixed`. |
+| `video_scale` | `String` | MP4 video preview: frame size, as `ffmpeg` scale filter argument.<br/>Default: `min(iw,360):-2`. |
+| `video_start_sec` | `Integer` | Video: start offset (in seconds) of MP4 video preview and of `animated` PNG thumbnail.<br/>Default: `10`. |
+
+For video preview with method `reencode`, the whole set of `ffmpeg` options can be overridden with option `reencode_ffmpeg`: it is a `Hash` with two keys: `in` and `out`, each is an `Array` with the native options to `ffmpeg`.
 
 ### Execution
 
