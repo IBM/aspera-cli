@@ -206,8 +206,24 @@ namespace :windowszip do
     [path_ruby_dir / 'share' / 'doc', path_ruby_dir / 'share' / 'ri', path_ruby_dir / 'include', *path_ruby_dir.glob('lib/ruby/gems/*/cache')].each(&:rmtree)
 
     log.info('Installing gems')
-    # Native gem `json` cannot be built here: use the default gem provided by Ruby
-    gem_files = path_download_dir.glob('*.gem').reject { |f| f.basename.to_s.start_with?('json-') }
+    # Gems with native extensions cannot be built here for Windows: use the ones provided by Ruby (default and bundled gems)
+    ruby_gem_versions = path_ruby_dir.glob('lib/ruby/gems/*/specifications/{,default/}*.gemspec').to_h do |f|
+      spec = Gem::Specification.load(f.to_s)
+      [spec.name, spec.version]
+    end
+    gem_specs = path_download_dir.glob('*.gem').to_h { |f| [f, Gem::Package.new(f.to_s).spec] }
+    native_specs, gem_specs = gem_specs.partition { |_, spec| spec.extensions.any? }.map(&:to_h)
+    native_specs.each_value do |native|
+      provided = ruby_gem_versions[native.name]
+      raise "Native gem #{native.name} is not provided by Ruby #{ruby_version}: cannot be built here" if provided.nil?
+      gem_specs.each_value do |spec|
+        spec.runtime_dependencies.select { |dep| dep.name.eql?(native.name) }.each do |dep|
+          raise "#{spec.name} requires #{dep}, Ruby #{ruby_version} provides #{provided}" unless dep.requirement.satisfied_by?(provided)
+        end
+      end
+      log.info("Native gem #{native.name}: using version #{provided} provided by Ruby")
+    end
+    gem_files = gem_specs.keys
     path_gems_dir = path_package_dir / 'gems'
     run('gem', 'install', '--local', '--no-document', '--ignore-dependencies', '--install-dir', path_gems_dir, '--bindir', path_gems_dir / 'bin', *gem_files)
     (path_gems_dir / 'cache').rmtree

@@ -17,6 +17,7 @@ Released: [Place date of release here]
 * `aoc`: `packages shared_inboxes short_link public` commands were failing (wrong short link purpose, parameters of shared folder links). Link type `private` is removed: AoC supports it only for shared folders.
 * **general**: Agent `node` was failing when the transfer was canceled or paused on the node.
 * **general**: When the default CA certificate locations of Ruby's OpenSSL do not exist (e.g. single executable built on another Linux distribution), the system CA bundle is used.
+* **general**: Windows portable package displayed `Ignoring bigdecimal-... because its extensions are not built` at each start.
 
 ### Breaking Changes
 

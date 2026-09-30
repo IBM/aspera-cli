@@ -181,12 +181,14 @@ jobs:
         with:
           name: ${{ needs.windows.outputs.archive }}
 
+      # --version: output must be only the version, no warning (e.g. about gems)
       # config ascp info: fails if the ascp of the package does not run
       - name: Check package runs on Windows
         run: |
           $PSNativeCommandUseErrorActionPreference = $true
           Expand-Archive -Path $env:ARCHIVE -DestinationPath portable
-          .\portable\ascli.cmd --version
+          $output = (.\portable\ascli.cmd --version 2>&1) -join "`n"
+          if ($output -ne $env:VERSION) { throw "Unexpected output of --version:`n$output" }
           .\portable\ascli.cmd config ascp info --fields=ascp_version
 
       - name: Upload to GitHub release
