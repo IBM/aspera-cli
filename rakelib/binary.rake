@@ -83,7 +83,7 @@ end
 # @param suffix  [String, nil] optional suffix after the architecture
 # @return path to the built .tgz archive for a given version
 def built_tgz_path(version, suffix: nil)
-  Paths::RELEASE / "#{[Aspera::Cli::Info::CMD_NAME, version, Aspera::Environment.instance.architecture, suffix].compact.join('-')}.tgz"
+  Paths::RELEASE / "#{[Aspera::Cli::Info::GEM_NAME, version, Aspera::Environment.instance.architecture, suffix].compact.join('-')}.tgz"
 end
 
 # The executable requires a glibc at least as recent as the one of the build system

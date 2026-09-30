@@ -137,14 +137,14 @@ end
 # @param gem_version [String] Version of gem
 # @return [Pathname] Path to Windows portable package
 def windows_portable_zip(gem_version)
-  Paths::RELEASE / "#{Aspera::Cli::Info::GEM_NAME}-#{gem_version}-windows-amd64-portable.zip"
+  Paths::RELEASE / "#{Aspera::Cli::Info::GEM_NAME}-#{gem_version}-#{SDK_PLATFORM}-portable.zip"
 end
 
 namespace :windowszip do
   desc 'Create installation archive for Windows'
   task :build, [:version] do |_t, args|
     gem_version_build = args[:version] || build_version
-    target_zip_file = "aspera-cli-#{gem_version_build}-windows-amd64-installer.zip"
+    target_zip_file = "#{Aspera::Cli::Info::GEM_NAME}-#{gem_version_build}-#{SDK_PLATFORM}-installer.zip"
     path_build_dir       = Paths::TMP / 'build_win_zip'
     path_resources_dir   = path_build_dir / ARCHIVE_FOLDER_NAME
     path_build_dir.rmtree

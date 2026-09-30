@@ -22,6 +22,7 @@ Released: [Place date of release here]
 
 * `node`: `simulator` requires `transferd` and the gem `grpc`, instead of `ascp`.
 * `node`: `simulator` parameter `browse_root` is renamed `docroot`.
+* **general**: Release archives are named `aspera-cli-<version>-<os>-<cpu>...`: single executable `aspera-cli-<version>-linux-x86_64-glibc<version>.tgz` (was `ascli-...`), Windows portable `aspera-cli-<version>-windows-x86_64-portable.zip` (was `windows-amd64`).
 
 ## 4.27.3
 

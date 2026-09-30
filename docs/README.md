@@ -322,7 +322,7 @@ This executable includes the Ruby runtime and gems, but not the transfer SDK.
 > See [Install `ascp`](#installing-ascp-through-transferd).
 
 ```shell
-tar zxvf ascli-<VERSION>-<PLATFORM>.tgz
+tar zxvf aspera-cli-<VERSION>-<PLATFORM>.tgz
 ./ascli config transferd install
 ```
 
@@ -359,7 +359,7 @@ The required GLIBC version for `ascp` can be found in the [Release Notes of HSTS
 
 ### Windows: Portable package
 
-A ready-to-use ZIP archive for Windows (x64) is available in the [Releases](https://github.com/IBM/aspera-cli/releases): `aspera-cli-<VERSION>-windows-amd64-portable.zip`.
+A ready-to-use ZIP archive for Windows (x64) is available in the [Releases](https://github.com/IBM/aspera-cli/releases): `aspera-cli-<VERSION>-windows-x86_64-portable.zip`.
 
 It contains the Ruby runtime, the aspera-cli gem with its dependencies, and the Aspera Transfer SDK (`ascp`).
 No installation step, no administrator rights, and no internet access are required.
