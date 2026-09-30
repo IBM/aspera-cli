@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require 'rake'
+require 'etc'
 require 'fileutils'
 require 'pathname'
 require 'bundler'
@@ -75,9 +76,20 @@ def ocran_exe_path(staging_dir)
   dirs.first / 'exe' / 'ocran'
 end
 
+# @param version [String] version of the gem
+# @param suffix  [String, nil] optional suffix after the architecture
 # @return path to the built .tgz archive for a given version
-def built_tgz_path(version)
-  Paths::RELEASE / "#{Aspera::Cli::Info::CMD_NAME}-#{version}-#{Aspera::Environment.instance.architecture}.tgz"
+def built_tgz_path(version, suffix: nil)
+  Paths::RELEASE / "#{[Aspera::Cli::Info::CMD_NAME, version, Aspera::Environment.instance.architecture, suffix].compact.join('-')}.tgz"
+end
+
+# The executable requires a glibc at least as recent as the one of the build system
+# @return [String, nil] e.g. `glibc2.28`, or nil if not glibc (e.g. macOS, musl)
+def glibc_suffix
+  version = Etc.confstr(Etc::CS_GNU_LIBC_VERSION).to_s[/\Aglibc (\S+)\z/, 1]
+  "glibc#{version}" unless version.nil?
+rescue NameError, SystemCallError
+  nil
 end
 
 namespace :binary do
@@ -160,7 +172,7 @@ namespace :binary do
     log.info("Build finished: #{path_tgz_target}")
   end
 
-  desc 'Build the single executable using Ocran (alternative to :build, same .tgz output). ' \
+  desc 'Build the single executable using Ocran (alternative to :build, .tgz output, with glibc version on Linux). ' \
     'Pass "cosmo" as 2nd arg to produce a single binary that runs unmodified on Linux/macOS/Windows'
   task :ocran, [:version, :cosmo] do |_t, args|
     use_cosmo_ruby = args[:cosmo].eql?('cosmo')
@@ -245,9 +257,9 @@ namespace :binary do
       }
     )
 
-    # Package artifact into the same .tgz archive as binary:build
+    # Package artifact into a .tgz archive as binary:build, with the glibc version (not needed for CosmoRuby)
     cli_exec_path.chmod(0o755)
-    path_tgz_target = built_tgz_path(gem_version_build)
+    path_tgz_target = built_tgz_path(gem_version_build, suffix: (glibc_suffix unless use_cosmo_ruby))
     Dir.chdir(PATH_WORKDIR_OCRAN) do
       run('tar', 'czf', path_tgz_target.to_s, Aspera::Cli::Info::CMD_NAME)
     end
