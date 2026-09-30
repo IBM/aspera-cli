@@ -136,7 +136,7 @@ module Aspera
           if path.eql?(SpecialValues::DEF)
             @certificate_store.set_default_paths
             paths_to_add = [OpenSSL::X509::DEFAULT_CERT_DIR]
-            paths_to_add.push(OpenSSL::X509::DEFAULT_CERT_FILE) unless defined?(JRUBY_VERSION)
+            paths_to_add.push(ENV.fetch(OpenSSL::X509::DEFAULT_CERT_FILE_ENV, OpenSSL::X509::DEFAULT_CERT_FILE)) unless defined?(JRUBY_VERSION)
             paths_to_add.select! { |f| File.exist?(f) }
           elsif File.file?(path)
             @certificate_store.add_file(path)

@@ -5,6 +5,7 @@ require 'aspera/log'
 require 'aspera/assert'
 require 'rbconfig'
 require 'singleton'
+require 'openssl'
 require 'open3'
 require 'English'
 require 'shellwords'
@@ -49,6 +50,14 @@ module Aspera
     RB_EXT = '.rb'
 
     PROCESS_MODES = %i[execute background capture].freeze
+
+    # System CA certificate bundles, used when the default locations of Ruby's OpenSSL do not exist
+    CA_BUNDLE_FILES = [
+      '/etc/ssl/certs/ca-certificates.crt', # Debian, Ubuntu, Alpine, Arch
+      '/etc/pki/tls/certs/ca-bundle.crt',   # RHEL, Fedora
+      '/etc/ssl/ca-bundle.pem',             # SUSE
+      '/etc/ssl/cert.pem'                   # macOS, BSD
+    ].freeze
 
     class << self
       def ruby_version
@@ -297,6 +306,23 @@ module Aspera
       ENV['HOME'] = ENV.fetch('USERPROFILE', nil)
       Log.log.debug { "Windows: set HOME to USERPROFILE: #{Dir.home}" }
       nil
+    end
+
+    # When Ruby's OpenSSL was built on another system (e.g. single executable built on RHEL, used on Ubuntu),
+    # its default CA locations may not exist: use the system CA bundle instead.
+    # @return [String, nil] CA bundle file used, or nil if no change
+    def fix_ca_certificates
+      return if defined?(JRUBY_VERSION)
+      return if [OpenSSL::X509::DEFAULT_CERT_FILE_ENV, OpenSSL::X509::DEFAULT_CERT_DIR_ENV].any? { |var| ENV.key?(var) }
+      return if File.exist?(OpenSSL::X509::DEFAULT_CERT_FILE) || Dir.exist?(OpenSSL::X509::DEFAULT_CERT_DIR)
+      ca_file = CA_BUNDLE_FILES.find { |file| File.file?(file) }
+      return if ca_file.nil?
+      # Used by OpenSSL for new default stores, and by child processes
+      ENV[OpenSSL::X509::DEFAULT_CERT_FILE_ENV] = ca_file
+      # Default store of SSL contexts is initialized when openssl is loaded
+      OpenSSL::SSL::SSLContext::DEFAULT_CERT_STORE.add_file(ca_file)
+      Log.log.debug { "Using system CA certificates: #{ca_file}" }
+      ca_file
     end
 
     def graphical?

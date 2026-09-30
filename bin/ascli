@@ -34,4 +34,5 @@ end
 require 'aspera/environment'
 require 'aspera/cli/runner'
 Aspera::Environment.instance.fix_home
+Aspera::Environment.instance.fix_ca_certificates
 Aspera::Cli::Runner.new(ARGV).run

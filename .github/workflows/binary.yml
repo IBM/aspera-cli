@@ -1,0 +1,107 @@
+# Workflow to build the single executable `ascli` for Linux (rake binary:ocran) and attach it to a GitHub release
+# Triggered when a release is published, or manually via GitHub Actions UI
+# Built in a RHEL 8 container: Ocran bundles all shared libraries except glibc,
+# so the executable runs on any Linux with glibc >= 2.28 (RHEL 8 and later)
+name: Linux Binary for Release
+
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to build (e.g., x.y.z). Its GitHub release must exist, with the .gem attached"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build on RHEL 8
+    runs-on: ubuntu-latest
+    container: registry.access.redhat.com/ubi8/ubi:latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      BUNDLE_WITHOUT: optional:development:special
+      # Ruby embedded in the executable, compiled against RHEL 8 libraries
+      RUBY_BUILD_VERSION: "4.0.7"
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      archive: ${{ steps.build.outputs.archive }}
+    steps:
+      - name: Determine version
+        id: version
+        env:
+          VERSION: ${{ inputs.version || github.event.release.tag_name }}
+        run: echo "version=${VERSION#v}" >> "$GITHUB_OUTPUT"
+
+      # xz: LZMA compressor used by Ocran (without it, Ocran produces a corrupted executable)
+      - name: Install build tools and libraries
+        run: |
+          dnf install -y --setopt=install_weak_deps=False git gcc make xz openssl-devel libyaml-devel zlib-devel libffi-devel gmp-devel
+          dnf clean all
+
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Build Ruby ${{ env.RUBY_BUILD_VERSION }} from source
+        run: |
+          curl -fsSL "https://cache.ruby-lang.org/pub/ruby/${RUBY_BUILD_VERSION%.*}/ruby-${RUBY_BUILD_VERSION}.tar.gz" | tar -xz -C /tmp
+          cd "/tmp/ruby-${RUBY_BUILD_VERSION}"
+          # Ocran bundles libruby.so: requires a shared library
+          ./configure --prefix=/opt/ruby --enable-shared --disable-install-doc
+          make -j"$(nproc)"
+          make install
+          echo /opt/ruby/bin >> "$GITHUB_PATH"
+
+      - name: Install gems
+        run: bundle install
+
+      - name: Build executable
+        id: build
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # Gem attached to the release: it may not be published on rubygems.org yet
+          export GEM_FILE="$PWD/tmp/aspera-cli-${VERSION}.gem"
+          mkdir -p tmp
+          curl -fsSL -o "$GEM_FILE" "https://github.com/${{ github.repository }}/releases/download/v${VERSION}/aspera-cli-${VERSION}.gem"
+          bundle exec rake binary:ocran"[${VERSION}]"
+          echo "archive=$(cd pkg && ls ascli-"${VERSION}"-*.tgz)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload executable
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.build.outputs.archive }}
+          path: pkg/${{ steps.build.outputs.archive }}
+          if-no-files-found: error
+
+  release:
+    name: Attach to Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.build.outputs.version }}
+      ARCHIVE: ${{ needs.build.outputs.archive }}
+    steps:
+      - name: Download executable
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ needs.build.outputs.archive }}
+
+      - name: Check executable runs on a recent Linux
+        run: |
+          tar -xzf "${ARCHIVE}" ascli
+          ./ascli --version
+
+      - name: Upload to GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "v${VERSION}" "${ARCHIVE}" --clobber --repo "${{ github.repository }}"

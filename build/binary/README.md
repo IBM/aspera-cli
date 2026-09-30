@@ -29,6 +29,19 @@ To build a given version:
 bundle exec rake binary:build'[4.23.0]'
 ```
 
+## Ocran
+
+Alternative build with [`ocran`](https://github.com/largo/ocran), same `.tgz` output:
+
+```bash
+bundle exec rake binary:ocran'[4.27.3]'
+```
+
+On Linux, the executable bundles all shared libraries except `glibc`: it runs on systems with a `glibc` at least as recent as the build system's.
+
+The GitHub action [`binary.yml`](../../.github/workflows/binary.yml) builds it in a RHEL 8 container (`glibc` 2.28), and attaches it to the GitHub release.
+It runs when a release is published, or manually with a version.
+
 ## History
 
 Initially, `rubyc` (gem [`ruby-packer`](https://github.com/pmq20/ruby-packer) and [you54f's version](https://github.com/you54f/ruby-packer)) was used to build a single executable.

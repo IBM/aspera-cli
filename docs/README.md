@@ -1267,6 +1267,7 @@ ascli config echo '@ruby:[OpenSSL::X509::DEFAULT_CERT_DIR,OpenSSL::X509::DEFAULT
 
 Certificates are checked against the [Ruby default certificate store](https://ruby-doc.org/stdlib-3.0.3/libdoc/openssl/rdoc/OpenSSL/X509/Store.html) `OpenSSL::X509::DEFAULT_CERT_FILE` and `OpenSSL::X509::DEFAULT_CERT_DIR`, which are typically the ones of `openssl` on Unix-like systems (Linux, macOS, and so on).
 Ruby's default values can be overridden using env vars: `SSL_CERT_FILE` and `SSL_CERT_DIR`.
+If neither these env vars are set nor the default locations exist (for example, a single executable built on another Linux distribution), `ascli` sets `SSL_CERT_FILE` to the first system CA bundle found: `/etc/ssl/certs/ca-certificates.crt`, `/etc/pki/tls/certs/ca-bundle.crt`, `/etc/ssl/ca-bundle.pem`, `/etc/ssl/cert.pem`.
 
 To get certificate validation, the CA certificate bundle must be up-to-date.
 Check this repository on how to update the system's CA certificate bundle: [https://github.com/millermatt/osca](https://github.com/millermatt/osca).
@@ -8380,12 +8381,13 @@ The simulator starts its own `transferd`, and stops it on exit.
 It takes an optional `Hash` argument with the following parameters:
 
 | Field | Type | Description |
-|----------|--------|----------------------------------------------------------------------------------|
+|---------------|---------|----------------------------------------------------------------------------------|
 | `cert` | `String` | Path to the TLS certificate file. Accepted formats: PEM (`.pem`) or PKCS12 (`.p12` / `.pfx`).<br/>Example: `/path/to/cert.pem`. |
 | `chain` | `String` | Path to the PEM certificate chain file (appended as extra chain certificates).<br/>Example: `/path/to/chain.pem`. |
 | `docroot` | `String` | Local folder of the node files. Paths of `/files/browse` and local paths of transfers (sources of `send`, destination of `receive`) are relative to it, and confined in it. Defaults to the current working directory.<br/>Example: `/data/aspera`. |
 | `key` | `String` | Path to the PEM private key file, or the PKCS12 passphrase when `cert` is a `.p12`/`.pfx` file.<br/>Example: `/path/to/key.pem`. |
 | `password` | `String` | Password expected from clients in HTTP Basic authentication, for the above `username`.<br/>Example: `my_password`. |
+| `retention_sec` | `Integer` | Time in seconds a transfer stays in the list of transfers after it ended (completed, failed or canceled, and no more retried).<br/>Default: `86400`. |
 | `url` | `String` | Address and port the simulator listens on. Use `https://` with `cert`/`key` for TLS.<br/>Default: `http://localhost:8080`. |
 | `username` | `String` | Username expected from clients in HTTP Basic authentication. Set together with `password`. When not set, requests are accepted without authentication.<br/>Example: `node_user`. |
 
@@ -8433,7 +8435,7 @@ Supported endpoints:
 
 Limitations:
 
-- Only transfers started through the simulator are known. They are kept in memory, and lost when the simulator stops.
+- Only transfers started through the simulator are known. They are kept in memory, and lost when the simulator stops. Ended transfers are removed from the list after `retention_sec` (default: one day).
 - Only Basic authentication is supported: when `username` and `password` are set, bearer tokens and access keys are rejected. When they are not set, all requests are accepted.
 - Not supported: `files/upload_setup` and `files/download_setup` (so, `node upload|download` on the simulator), `ops/transfers/bandwidth`, pause and resume of transfers, query parameters `iteration_token` and `tag`.
 
