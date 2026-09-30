@@ -315,8 +315,8 @@ This executable includes the Ruby runtime and gems, but not the transfer SDK.
 #### Installing the single file executable
 
 > [!NOTE]
-> Replace `<%=ph :version%>` and `<%=ph :platform%>` with the values of the downloaded archive, for example: `linux-x86_64`.
-> The archive contains a single file: the executable `<%=cmd%>`.
+> Replace `<%=ph :version%>` and `<%=ph :platform%>` with the values of the downloaded archive, for example: `linux-x86_64-glibc2.28`.
+> The archive contains the executable `<%=cmd%>` and its `README.<%=cmd%>.md`.
 > Installation of `ascp` is still required separately.
 > See [Install `ascp`](#installing-ascp-through-transferd).
 
@@ -328,7 +328,7 @@ tar zxvf <%=cmd%>-<%=ph :version%>-<%=ph :platform%>.tgz
 #### Linux: Checking the GLIBC version
 
 > [!WARNING]
-> On Linux, the executable requires a minimum GLIBC version, specified in the executable name on the download site.
+> On Linux, the executable requires a minimum GLIBC version, specified in the archive name on the download site (for example: `glibc2.28`).
 > If the minimum version is not met, then executables (`ascp`, `transferd`) will exit with error.
 
 On Linux, you can check your system's GLIBC version on this site: [repology.org](https://repology.org/project/glibc/versions), or check your GLIBC version with `ldd`:

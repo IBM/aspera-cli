@@ -74,6 +74,11 @@ jobs:
           bundle exec rake binary:ocran"[${VERSION}]"
           echo "archive=$(cd pkg && ls ascli-"${VERSION}"-*.tgz)" >> "$GITHUB_OUTPUT"
 
+      - name: Check executable runs on RHEL 8
+        run: |
+          tar -xzf "pkg/${{ steps.build.outputs.archive }}" -C /tmp ascli
+          /tmp/ascli --version
+
       - name: Upload executable
         uses: actions/upload-artifact@v7
         with:

@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require 'rake'
+require 'erb'
 require 'etc'
 require 'fileutils'
 require 'pathname'
@@ -28,6 +29,8 @@ TBK_ROOT_DIRNAME = 'root'
 OCRAN_VERSION = '1.4.5'
 # Path to the ocran binary
 PATH_WORKDIR_OCRAN = Paths::TMP / 'ocran'
+# Template of the README placed in the archive with the executable
+PATH_README_TEMPLATE = Paths::BUILD / 'binary' / 'README.ascli.erb.md'
 # Gems that are only `require`d lazily (inside methods, not at load time), so Ocran's
 # default dependency detection never sees them loaded and would otherwise omit them.
 OCRAN_LAZY_GEMS = %w[websocket vault marcel jwt execjs rubyzip unicode-emoji unicode-display_width openssl].freeze
@@ -48,8 +51,8 @@ def download_cosmo_ruby(into)
   cosmo_ruby_path
 end
 
-def install_gem(name, into)
-  run('gem', 'install', name, '--no-document', '--install-dir', into)
+def install_gem(name, into, *options)
+  run('gem', 'install', name, '--no-document', '--install-dir', into, *options)
 end
 
 # Path to Ocran's own exe/ocran script (as opposed to its RubyGems bin stub), once
@@ -84,10 +87,9 @@ def built_tgz_path(version, suffix: nil)
 end
 
 # The executable requires a glibc at least as recent as the one of the build system
-# @return [String, nil] e.g. `glibc2.28`, or nil if not glibc (e.g. macOS, musl)
-def glibc_suffix
-  version = Etc.confstr(Etc::CS_GNU_LIBC_VERSION).to_s[/\Aglibc (\S+)\z/, 1]
-  "glibc#{version}" unless version.nil?
+# @return [String, nil] e.g. `2.28`, or nil if not glibc (e.g. macOS, musl)
+def glibc_version
+  Etc.confstr(Etc::CS_GNU_LIBC_VERSION).to_s[/\Aglibc (\S+)\z/, 1]
 rescue NameError, SystemCallError
   nil
 end
@@ -197,7 +199,10 @@ namespace :binary do
     # under `bundle exec`, RubyGems only sees the gems locked in this project's
     # Gemfile.lock, so a gem installed elsewhere afterwards stays invisible to
     # Gem::Specification lookups in this process.
-    install_gem("ocran:#{OCRAN_VERSION}", PATH_WORKDIR_OCRAN)
+    # On Linux, the source gem (platform `ruby`) is used, so that the stub is compiled here and requires the
+    # same glibc as the bundled Ruby: the pre-compiled gem (x86_64-linux) ships a stub requiring glibc 2.34.
+    ocran_install_options = Aspera::Environment.instance.os.eql?(Aspera::Environment::OS_LINUX) ? %w[--platform ruby] : []
+    install_gem("ocran:#{OCRAN_VERSION}", PATH_WORKDIR_OCRAN, *ocran_install_options)
 
     # Options appended to the ocran command line
     ocran_extra_options = []
@@ -259,9 +264,21 @@ namespace :binary do
 
     # Package artifact into a .tgz archive as binary:build, with the glibc version (not needed for CosmoRuby)
     cli_exec_path.chmod(0o755)
-    path_tgz_target = built_tgz_path(gem_version_build, suffix: (glibc_suffix unless use_cosmo_ruby))
+    glibc = glibc_version unless use_cosmo_ruby
+    path_tgz_target = built_tgz_path(gem_version_build, suffix: ("glibc#{glibc}" if glibc))
+    readme_name = "README.#{Aspera::Cli::Info::CMD_NAME}.md"
+    (PATH_WORKDIR_OCRAN / readme_name).write(ERB.new(PATH_README_TEMPLATE.read, trim_mode: '-').result_with_hash(
+      cmd:      Aspera::Cli::Info::CMD_NAME,
+      version:  gem_version_build,
+      platform: Aspera::Environment.instance.architecture,
+      glibc:    glibc,
+      archive:  path_tgz_target.basename,
+      readme:   readme_name,
+      doc_url:  Aspera::Cli::Info::DOC_URL,
+      src_url:  Aspera::Cli::Info::SRC_URL
+    ))
     Dir.chdir(PATH_WORKDIR_OCRAN) do
-      run('tar', 'czf', path_tgz_target.to_s, Aspera::Cli::Info::CMD_NAME)
+      run('tar', 'czf', path_tgz_target.to_s, Aspera::Cli::Info::CMD_NAME, readme_name)
     end
     cli_exec_path.delete
     log.info("Build finished: #{path_tgz_target}")
