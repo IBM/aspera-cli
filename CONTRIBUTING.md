@@ -375,8 +375,11 @@ The automated workflow performs the following:
 3. Commits the changes
 4. Creates and pushes the release tag
 5. Triggers the `deploy` workflow to publish to [rubygems.org](https://rubygems.org/gems/aspera-cli)
-6. Increments `version.rb` to the next development version.
-7. Commits and pushes the version bump to `main`.
+6. Creates the GitHub release with the PDF manual, the gem and the gem pack
+7. Triggers the `packages` workflow (`.github/workflows/packages.yml`), which builds and tests the Linux single executable and the Windows portable package, and attaches them to the release.
+   It can also be run manually for an existing release.
+8. Increments `version.rb` to the next development version.
+9. Commits and pushes the version bump to `main`.
 
 ### Manual Release Process (Alternative)
 

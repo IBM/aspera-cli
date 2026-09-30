@@ -1,0 +1,195 @@
+# Workflow to build packages, test them, and attach them to a GitHub release
+# Triggered when a release is published, or manually via GitHub Actions UI
+# Packages are built from the .gem attached to the release: it may not be published on rubygems.org yet
+# - Linux: single executable `ascli` (rake binary:ocran), built in a RHEL 8 container:
+#   Ocran bundles all shared libraries except glibc, so the executable runs on any Linux with glibc >= 2.28 (RHEL 8 and later)
+# - Windows: portable package (rake windowszip:portable), built on Linux, tested on Windows
+name: Release Packages
+
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to build (e.g., x.y.z). Its GitHub release must exist, with the .gem attached"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  BUNDLE_WITHOUT: optional:development:special
+
+jobs:
+  version:
+    name: Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Determine version
+        id: version
+        env:
+          VERSION: ${{ inputs.version || github.event.release.tag_name }}
+        run: echo "version=${VERSION#v}" >> "$GITHUB_OUTPUT"
+
+  linux:
+    name: Linux executable, build on RHEL 8
+    needs: version
+    runs-on: ubuntu-latest
+    container: registry.access.redhat.com/ubi8/ubi:latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      # Ruby embedded in the executable, compiled against RHEL 8 libraries
+      RUBY_BUILD_VERSION: "4.0.7"
+    outputs:
+      archive: ${{ steps.build.outputs.archive }}
+    steps:
+      # xz: LZMA compressor used by Ocran (without it, Ocran produces a corrupted executable)
+      - name: Install build tools and libraries
+        run: |
+          dnf install -y --setopt=install_weak_deps=False git gcc make xz openssl-devel libyaml-devel zlib-devel libffi-devel gmp-devel
+          dnf clean all
+
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Build Ruby ${{ env.RUBY_BUILD_VERSION }} from source
+        run: |
+          curl -fsSL "https://cache.ruby-lang.org/pub/ruby/${RUBY_BUILD_VERSION%.*}/ruby-${RUBY_BUILD_VERSION}.tar.gz" | tar -xz -C /tmp
+          cd "/tmp/ruby-${RUBY_BUILD_VERSION}"
+          # Ocran bundles libruby.so: requires a shared library
+          ./configure --prefix=/opt/ruby --enable-shared --disable-install-doc
+          make -j"$(nproc)"
+          make install
+          echo /opt/ruby/bin >> "$GITHUB_PATH"
+
+      - name: Install gems
+        run: bundle install
+
+      - name: Build executable
+        id: build
+        run: |
+          export GEM_FILE="$PWD/tmp/aspera-cli-${VERSION}.gem"
+          mkdir -p tmp
+          curl -fsSL -o "$GEM_FILE" "https://github.com/${{ github.repository }}/releases/download/v${VERSION}/aspera-cli-${VERSION}.gem"
+          bundle exec rake binary:ocran"[${VERSION}]"
+          echo "archive=$(cd pkg && ls aspera-cli-"${VERSION}"-*.tgz)" >> "$GITHUB_OUTPUT"
+
+      - name: Check executable runs on RHEL 8
+        run: |
+          tar -xzf "pkg/${{ steps.build.outputs.archive }}" -C /tmp ascli
+          /tmp/ascli --version
+
+      - name: Upload executable
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.build.outputs.archive }}
+          path: pkg/${{ steps.build.outputs.archive }}
+          if-no-files-found: error
+
+  linux-release:
+    name: Linux executable, test and attach
+    needs:
+      - version
+      - linux
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      ARCHIVE: ${{ needs.linux.outputs.archive }}
+    steps:
+      - name: Download executable
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ needs.linux.outputs.archive }}
+
+      - name: Check executable runs on a recent Linux
+        run: |
+          tar -xzf "${ARCHIVE}" ascli
+          ./ascli --version
+
+      - name: Upload to GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "v${VERSION}" "${ARCHIVE}" --clobber --repo "${{ github.repository }}"
+
+  windows:
+    name: Windows portable, build
+    needs: version
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    outputs:
+      archive: ${{ steps.build.outputs.archive }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "4.0.7"
+          bundler-cache: true
+
+      # 7zip: to extract the RubyInstaller archive
+      - name: Install packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y 7zip
+
+      - name: Build package
+        id: build
+        run: |
+          # The task uses the gem placed in pkg/, if present
+          mkdir -p pkg
+          curl -fsSL -o "pkg/aspera-cli-${VERSION}.gem" "https://github.com/${{ github.repository }}/releases/download/v${VERSION}/aspera-cli-${VERSION}.gem"
+          bundle exec rake windowszip:portable"[${VERSION}]"
+          echo "archive=$(cd pkg && ls aspera-cli-"${VERSION}"-*-portable.zip)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload package
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.build.outputs.archive }}
+          path: pkg/${{ steps.build.outputs.archive }}
+          if-no-files-found: error
+
+  windows-release:
+    name: Windows portable, test and attach
+    needs:
+      - version
+      - windows
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      ARCHIVE: ${{ needs.windows.outputs.archive }}
+    steps:
+      - name: Download package
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ needs.windows.outputs.archive }}
+
+      # config ascp info: fails if the ascp of the package does not run
+      - name: Check package runs on Windows
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          Expand-Archive -Path $env:ARCHIVE -DestinationPath portable
+          .\portable\ascli.cmd --version
+          .\portable\ascli.cmd config ascp info --fields=ascp_version
+
+      - name: Upload to GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "v$env:VERSION" $env:ARCHIVE --clobber --repo "${{ github.repository }}"

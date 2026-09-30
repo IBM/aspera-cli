@@ -155,8 +155,6 @@ namespace :release do
     Rake::Task[dry_run? ? 'unsigned' : 'signed'].invoke
     # Build gem pack
     Rake::Task['release:gem_pack'].invoke
-    # Build Windows portable package (from gem built above)
-    Rake::Task['windowszip:portable'].invoke(versions[:release])
 
     # Commit, Tag, Push release: CHANGELOG.md README.md version.rb
     drun('git', 'add', '-A')
@@ -164,7 +162,7 @@ namespace :release do
     drun('git', 'tag', '-a', versions[:release_tag], '-m', "Version #{versions[:release]}")
     drun('git', 'push', 'origin', versions[:release_tag])
 
-    # GitHub release
+    # GitHub release: publishing it triggers workflow `packages.yml`, which attaches Linux and Windows packages
     drun(
       'gh',
       'release', 'create', versions[:release_tag],
@@ -172,8 +170,7 @@ namespace :release do
       '--notes-file', release_notes_path,
       Paths::PDF_MANUAL,
       gem_file(versions[:release]),
-      Paths::GEM_PACK,
-      windows_portable_zip(versions[:release])
+      Paths::GEM_PACK
     )
 
     # Prepare next development cycle

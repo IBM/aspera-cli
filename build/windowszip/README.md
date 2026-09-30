@@ -31,6 +31,9 @@ rake windowszip:portable'[x.y.z]'
 
 Built on macOS or Linux. To extract the RubyInstaller `.7z` archive, one of these tools is required: `7zz` (Linux package `7zip`), `7z` (Linux package `p7zip`), or `bsdtar` (built-in on macOS, Linux package `libarchive-tools`).
 
+The GitHub action [`packages.yml`](../../.github/workflows/packages.yml) builds it on Linux, tests it on Windows, and attaches it to the GitHub release.
+It runs when a release is published, or manually with a version.
+
 Package content:
 
 - `ruby`: RubyInstaller portable archive (without devkit), extracted, without documentation (`share/doc`, `share/ri`), C headers (`include`) and gem cache

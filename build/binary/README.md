@@ -41,7 +41,7 @@ On Linux, the executable bundles all shared libraries except `glibc`: it runs on
 So, the archive name includes the `glibc` version of the build system, e.g. `aspera-cli-4.27.3-linux-x86_64-glibc2.28.tgz`.
 The archive also contains a `README.ascli.md` for users, generated from [`README.ascli.erb.md`](README.ascli.erb.md).
 
-The GitHub action [`binary.yml`](../../.github/workflows/binary.yml) builds it in a RHEL 8 container (`glibc` 2.28), and attaches it to the GitHub release.
+The GitHub action [`packages.yml`](../../.github/workflows/packages.yml) builds it in a RHEL 8 container (`glibc` 2.28), and attaches it to the GitHub release.
 It runs when a release is published, or manually with a version.
 
 ## History
