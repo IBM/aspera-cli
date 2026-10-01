@@ -25,7 +25,8 @@ PANDOC_DEPS = [
   'pdf_after_body.tex',
   'pdf_cover_bottom.png',
   'pdf_cover_top.png',
-  'pdf_in_header.tex'
+  'pdf_in_header.tex',
+  'table_widths.lua'
 ].map { |f| (PATH_PANDOC_ROOT / f).to_s }.freeze
 
 # Extract pandoc defaults from markdown comment, else return nil

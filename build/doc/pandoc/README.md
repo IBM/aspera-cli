@@ -41,3 +41,30 @@ metadata:
 PANDOC_DEFAULTS_END
 -->
 ```
+
+## Tables
+
+- A `<br/>` in a table cell breaks the line (`break_replace.lua`).
+- PDF column widths: for a pipe table wider than 72 characters, pandoc takes relative widths from the dashes of the
+  separator row. With equal dashes (`| --- | --- |`), `table_widths.lua` computes the widths from the cell contents:
+  each column gets at least its longest word, the rest is shared by text length. To set the widths yourself, tune the
+  dashes, e.g. `| ---- | ------------------ |`.
+- Short (MultiMarkdown) subscripts are disabled: `~600 ms` or `~/.ssh` stay as typed, `H~2~O` is still a subscript.
+
+## Diagrams (draw.io)
+
+`drawio.mak` exports each tab of a draw.io file to an image named after the tab, next to the file, with draw.io
+desktop (`../../lib/drawio.rb`). An image is exported again only when older than the draw.io file. The
+"Text is not SVG - cannot display" link that draw.io appends to SVG files is removed, as librsvg (used for the PDF)
+would display it.
+
+```makefile
+include $(DIR_PANDOC)/pandoc.mak
+DRAWIO_FILE = images/diagrams.drawio
+include $(DIR_PANDOC)/drawio.mak
+all: diagrams README.pdf
+README.pdf: $(DRAWIO_IMAGES)
+```
+
+Optional variables, set before the `include`: `DRAWIO_FORMAT` (default: `svg`), `DRAWIO_OPTIONS` (draw.io CLI
+options, default: `--scale 2`).

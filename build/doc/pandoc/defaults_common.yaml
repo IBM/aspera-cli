@@ -1,7 +1,8 @@
 # Pandoc options : see https://pandoc.org/MANUAL.html
 #verbosity: INFO
 #we do not use `gfm` because it does not format tables well in pdf output
-from: markdown_mmd
+# no short (MultiMarkdown) subscripts: `~600 ms` or `~/.ssh` would become subscripts; `H~2~O` still works
+from: markdown_mmd-short_subsuperscripts
 toc: true
 number-sections: true
 shift-heading-level-by: -1
@@ -13,3 +14,4 @@ filters:
   - ${.}/find_admonition.lua
   - ${.}/gfm_admonition.lua
   - ${.}/break_replace.lua
+  - ${.}/table_widths.lua
