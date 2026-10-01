@@ -138,6 +138,7 @@ module Aspera
           SENT_MAILBOX_TYPES.include?(box) || box == 'ALL' ? :sent : :received
         end
       end
+      # @return [Hash, nil] public link context decoded from URL (keys: resource, type, id, passcode, package_id, email), or nil if not a public link
       attr_reader :pub_link_context
 
       # @param url            [String] Faspex URL, can be a public link
@@ -163,6 +164,7 @@ module Aspera
         passphrase: nil
       )
         auth = :public_link if self.class.public_link?(url)
+        # @type [Hash, nil]
         @pub_link_context = nil
         super(**
           case auth
