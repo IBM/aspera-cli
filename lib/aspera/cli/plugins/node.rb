@@ -652,7 +652,7 @@ module Aspera
             transfer_spec = api_node.create(
               'files/sync_setup',
               {transfer_requests: [{transfer_request: request_transfer_spec}]}
-            )['transfer_specs'].first['transfer_spec']
+            )['transfer_specs'].first&.fetch('transfer_spec')
             transfer_spec.delete_if { |_k, v| v.nil? }
             Log.dump(:ts, transfer_spec)
             transfer_spec
@@ -671,7 +671,7 @@ module Aspera
           api_node.add_tspec_info(request_transfer_spec) if api_node.respond_to?(:add_tspec_info)
           Api::Node.add_public_key(request_transfer_spec)
           setup_payload = {transfer_requests: [{transfer_request: request_transfer_spec}]}
-          transfer_spec = api_node.create('files/upload_setup', setup_payload)['transfer_specs'].first['transfer_spec']
+          transfer_spec = api_node.create('files/upload_setup', setup_payload)['transfer_specs'].first&.fetch('transfer_spec')
           Api::Node.add_private_key(transfer_spec)
           transfer_spec.delete('paths')
           Runner.result_transfer(transfer.start(transfer_spec))
@@ -685,7 +685,7 @@ module Aspera
           api_node.add_tspec_info(request_transfer_spec) if api_node.respond_to?(:add_tspec_info)
           Api::Node.add_public_key(request_transfer_spec)
           setup_payload = {transfer_requests: [{transfer_request: request_transfer_spec}]}
-          transfer_spec = api_node.create('files/download_setup', setup_payload)['transfer_specs'].first['transfer_spec']
+          transfer_spec = api_node.create('files/download_setup', setup_payload)['transfer_specs'].first&.fetch('transfer_spec')
           Api::Node.add_private_key(transfer_spec)
           Runner.result_transfer(transfer.start(transfer_spec))
         end
@@ -1012,7 +1012,7 @@ module Aspera
 
         def action_async_counters(async_id:, **)
           Integer(async_id)
-          resp = api_node.create('async/counters', {'syncs' => [async_id]})['sync_counters'].first[async_id].last
+          resp = api_node.create('async/counters', {'syncs' => [async_id]})['sync_counters'].first&.[](async_id)&.last
           return Result::Empty.new if resp.nil?
           Result::SingleObject.new(resp)
         end

@@ -457,7 +457,7 @@ module Aspera
         create(
           'files/download_setup',
           {transfer_requests: [{transfer_request: {paths: [{source: '/'}]}}]}
-        )['transfer_specs'].first['transfer_spec']
+        )['transfer_specs'].first&.fetch('transfer_spec')
       end
 
       # Get generic part of transfer spec with transport parameters only

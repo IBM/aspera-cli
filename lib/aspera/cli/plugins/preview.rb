@@ -439,7 +439,7 @@ module Aspera
           Log.log.debug { "root: #{node_info['docroot']}" }
           # Default storage url to local file if not provided
           option_root_url = options.get_option(:root_url, mandatory: true)
-          option_root_url = UriReader.file_url(@access_key_self['storage']['path']) if option_root_url.eql?(REMOTE_ACCESS) && @access_key_self['storage']['type'].eql?('local')
+          option_root_url = UriReader.file_url(@access_key_self['storage']['path']) if option_root_url.eql?(REMOTE_ACCESS) && @access_key_self['storage']&.fetch('type').eql?('local')
           @access_remote = !UriReader.file?(option_root_url)
           Log.log.debug { "remote: #{@access_remote}" }
           # TODO: can the `previews` folder parameter be read from Node API ?

@@ -259,7 +259,7 @@ module Aspera
 
       def download(transfer_spec)
         transfer_spec['source_root'] ||= '/'
-        default_file_name = transfer_spec['paths'].first['source']
+        default_file_name = transfer_spec['paths'].first&.fetch('source')
         source_is_folder = %w[. /].include?(default_file_name)
         default_file_name = 'http_download' if source_is_folder
         transfer_spec['zip_required'] ||= source_is_folder || transfer_spec['paths'].length > 1

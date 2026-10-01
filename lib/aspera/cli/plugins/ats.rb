@@ -249,7 +249,7 @@ module Aspera
         def build_ats_ibm_api_with_instance
           instance = options.get_option(:instance)
           if instance.nil?
-            instance = ats_api_v2_auth_ibm.read('instances')['data'].first
+            instance = ats_api_v2_auth_ibm.read('instances')['data']&.first
             formatter.display_status("using first instance: #{instance}")
           end
           ats_api_v2_auth_ibm({'X-ATS-Service-Instance-Id' => instance})

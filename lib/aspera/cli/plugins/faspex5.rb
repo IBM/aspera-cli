@@ -197,8 +197,11 @@ module Aspera
         def recipient_query(package_id)
           package_info = api_v5.read("packages/#{package_id}")
           base_query = {}
-          base_query['recipient_workgroup_id'] = package_info['recipients'].first['id'] if WORKGROUP_TYPES.include?(package_info['recipients'].first['recipient_type'])
-          base_query['recipient_user_id'] = package_info['recipients'].first['id'] if package_info['recipients'].first['recipient_type'].eql?('user')
+          first_recipient = package_info['recipients']&.first
+          if first_recipient
+            base_query['recipient_workgroup_id'] = first_recipient['id'] if WORKGROUP_TYPES.include?(first_recipient['recipient_type'])
+            base_query['recipient_user_id'] = first_recipient['id'] if first_recipient['recipient_type'].eql?('user')
+          end
           base_query
         end
 
@@ -229,7 +232,7 @@ module Aspera
             # TODO: if packages have same name, they will overwrite ?
             packages, max_items = list_packages_with_filter(query: {'status' => 'completed'}) # no filter: all completed packages
             Log.dump(:package_ids, level: :trace1) { packages.map { |p| p['id'] } }
-            Log.dump(:skip_ids, skip_ids_persistency.data, level: :trace1)
+            Log.dump(:skip_ids, skip_ids_persistency&.data, level: :trace1)
             packages.reject! { |p| skip_ids_persistency.data.include?(p['id']) } if skip_ids_persistency
             # Apply `max` after once_only filtering so we get the N first not-yet-downloaded packages
             packages = packages[0, max_items] if max_items
