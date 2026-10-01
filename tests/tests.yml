@@ -4944,6 +4944,20 @@ conf_commands_path_unknown:
     - commands
     - aoc
     - no_such_command_xyz
+conf_commands_path_with_args:
+  description: Positional arguments given in the command path are skipped
+  tags:
+    - nodoc
+  expect: faspex5 packages receive <package_id>
+  args:
+    - config
+    - commands
+    - faspex5
+    - packages
+    - receive
+    - ALL
+    - --format=csv
+    - --fields=syntax
 conf_commands_unknown:
   description: Error when plugin name does not exist
   tags:

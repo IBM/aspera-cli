@@ -569,12 +569,12 @@ module Aspera
             Aspera.assert_values(plugin_name.to_sym, plugin_names, type: Cli::BadArgument)
             plugin_names = [plugin_name.to_sym]
           end
-          prefix = Array(command_path).map(&:to_sym)
-          Aspera.assert(prefix.empty? || plugin_names.length.eql?(1), type: Cli::BadArgument) { 'command path requires a plugin name' }
+          words = Array(command_path).map(&:to_sym)
+          Aspera.assert(words.empty? || plugin_names.length.eql?(1), type: Cli::BadArgument) { 'command path requires a plugin name' }
           expand_mounts = options.get_option(:expand_mounts)
           commands = plugin_names.flat_map do |name|
             reg = Plugins::Factory.instance.plugin_class(name).command_registry
-            Aspera.assert(prefix.empty? || reg[prefix], type: Cli::BadArgument) { "no such command: #{name} #{prefix.join(' ')}" }
+            prefix = listed_command_path(name, reg, words)
             paths = prefix.empty? || reg.children_of(prefix).any? ? reg.leaf_paths(prefix, expand_mounts: expand_mounts) : [prefix]
             paths.map do |path|
               mount = expand_mounts ? nil : reg.mount_at(path)
@@ -590,6 +590,34 @@ module Aspera
             end
           end
           Result::ObjectList.new(commands, fields: %w[syntax description])
+        end
+
+        # Command path to list, from words that may include positional arguments, as on a command line.
+        # e.g. `faspex5 packages receive ALL` lists `faspex5 packages receive`.
+        # @param name  [Symbol]          plugin name
+        # @param reg   [CommandRegistry] registry of plugin
+        # @param words [Array<Symbol>]   sub-commands, possibly mixed with their arguments
+        # @return [Array<Symbol>] command path
+        # @raise [Cli::BadArgument] if a word is neither a sub-command nor an expected argument
+        def listed_command_path(name, reg, words)
+          path = []
+          # Number of positional arguments still accepted by the node at path
+          args_left = 0
+          words.each do |word|
+            children = reg.children_of(path)
+            # Words after a leaf command are its arguments
+            break if children.empty?
+            if children.key?(word)
+              path += [word]
+              arguments = reg.arguments_at(path)
+              args_left = arguments.any?(&:multiple) ? Float::INFINITY : arguments.length
+            elsif args_left.positive?
+              args_left -= 1
+            else
+              raise Cli::BadArgument, Parser.multi_choice_assert_msg("no such command: #{[name, *path, word].join(' ')}", children.keys)
+            end
+          end
+          path
         end
 
         # Build syntax by interleaving each path segment with the arguments declared on that node
