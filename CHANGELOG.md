@@ -13,6 +13,7 @@ Released: [Place date of release here]
 
 * `preview`: Generator options with a numeric value given on command line (e.g. `--thumb-vid-fraction=0.3`, `--blend-pauseframes=2`) were failing.
 * `aoc`: `short_link show` always failed with `not found`.
+* `faspex5`: `packages receive` with a public link now works with a list of files, and ALL.
 * `aoc`: `files short_link public modify` with `access_levels` set full access (`edit`) instead of the given levels.
 * `aoc`: `packages shared_inboxes short_link public` commands were failing (wrong short link purpose, parameters of shared folder links). Link type `private` is removed: AoC supports it only for shared folders.
 * **general**: Agent `node` was failing when the transfer was canceled or paused on the node.

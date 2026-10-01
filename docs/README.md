@@ -8690,7 +8690,10 @@ packages list --box=outbox --fields=DEF,sender.email,recipients.0.recipient_type
 packages list --query=@json:'{"mailbox":"inbox","status":"completed"}'
 packages receive --box=my_shared_box_name <id> --to-folder=.
 packages receive --box=my_workgroup --group-type=workgroups <id> --to-folder=.
+packages receive --url=my_public_link_recv_f5_user --to-folder=.
+packages receive --url=my_public_link_recv_f5_user ALL --to-folder=.
 packages receive <id> --to-folder=. --ts.content_protection_password=my_secret_here
+packages receive <id> my_shared_folder_file_name --to-folder=. --ts.content_protection_password=my_secret_here
 packages receive ALL --once-only=yes --to-folder=. --query.max=5
 packages receive INIT --once-only=yes
 packages send --url=my_public_link_send_f5_user @json:'{"title":"test title"}' test_file.bin

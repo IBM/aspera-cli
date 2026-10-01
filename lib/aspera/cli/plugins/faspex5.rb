@@ -195,6 +195,8 @@ module Aspera
         # Build query to get package recipients based on package info in case of shared inbox or workgroup recipient
         # @param package_id [String] the package id to get info from
         def recipient_query(package_id)
+          # With a public link, the recipient context is already encoded in the auth token: no extra query params needed
+          return {} if api_v5.pub_link_context
           package_info = api_v5.read("packages/#{package_id}")
           base_query = {}
           first_recipient = package_info['recipients']&.first
@@ -247,7 +249,7 @@ module Aspera
           result_transfer = []
           param_file_list = {}
           begin
-            param_file_list['paths'] = transfer.ts_source_paths
+            param_file_list['paths'] = transfer.ts_source_paths.map { |p| {'path' => p['source']} }
           rescue Cli::MissingArgument
             # paths is optional
           end

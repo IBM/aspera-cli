@@ -483,14 +483,19 @@ module Aspera
         end
 
         # Resolve positional arguments from the CLI argument stream, in order.
-        # Arguments already present in `ctx` are not read again.
+        # Arguments already present in `ctx` (e.g. injected by a setup method) are not re-read,
+        # but the corresponding CLI argument is still consumed so it does not leak into subsequent reads.
         # For type: :identifier, the percent-selector lookup receives the ctx accumulated so far.
         # @param arg_specs [Array<ArgumentSpec>]
         # @param ctx       [Hash] accumulated context
         # @return [Hash] ctx merged with the resolved arguments
         def resolve_arguments(arg_specs, ctx)
           arg_specs.each do |arg_spec|
-            next if ctx.key?(arg_spec.name)
+            if ctx.key?(arg_spec.name)
+              # Already provided by setup: consume the CLI token so it is not mistaken for a later argument
+              options.get_next_argument(arg_spec.name.to_s, mandatory: false)
+              next
+            end
             lookup_cb = arg_spec.lookup if arg_spec.type.eql?(:identifier)
             current = ctx
             block =

@@ -6502,6 +6502,17 @@ f5_pack_recv:
     - $(t.saved_output :f5_pack_id)
     - --to-folder=$(TMP)
     - --ts.content_protection_password=my_secret_here
+f5_pack_recv_file:
+  depends_on:
+    - f5_pack_id
+  args:
+    - faspex5
+    - packages
+    - receive
+    - $(t.saved_output :f5_pack_id)
+    - "@preset:f5_misc.shared_folder_file_name"
+    - --to-folder=$(TMP)
+    - --ts.content_protection_password=my_secret_here
 f5_pack_recv_all:
   depends_on:
     - f5_pack_id
@@ -6594,6 +6605,23 @@ f5_pack_user_public:
     - --url=@preset:f5_misc.public_link_send_f5_user
     - '@json:@extend:{"title":"test title"}'
     - $(PATH_TST_ASC_LCL)
+f5_pack_recv_public_link_all:
+  args:
+    - -N
+    - faspex5
+    - packages
+    - receive
+    - --url=@preset:f5_misc.public_link_recv_f5_user
+    - ALL
+    - --to-folder=$(TMP)
+f5_pack_recv_public_link_simple:
+  args:
+    - -N
+    - faspex5
+    - packages
+    - receive
+    - --url=@preset:f5_misc.public_link_recv_f5_user
+    - --to-folder=$(TMP)
 f5_pack_wrkgrp:
   args:
     - faspex5
