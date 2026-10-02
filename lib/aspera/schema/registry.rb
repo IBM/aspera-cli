@@ -66,6 +66,7 @@ module Aspera
         console:      'aspera/schema/IBM Aspera Console-enhanced.yaml',
         node:         'aspera/schema/IBM Aspera Node API-4.4.6.yaml',
         shares:       'aspera/schema/IBM_Aspera_Shares.yaml',
+        orchestrator: 'aspera/schema/IBM Aspera Orchestrator API-v1.yaml',
         async_tables: 'aspera/schema/async_tables.yaml'
       }
 
@@ -83,6 +84,7 @@ module Aspera
       FASPIO = 'faspio'
       CONSOLE = 'console'
       NODE = 'node'
+      ORCHESTRATOR = 'orchestrator'
       SHARES = 'shares+/api/v1'
       ASYNC_TABLES = 'async_tables'
       LOG_OPTIONS             = "#{OPTIONS}:components.schemas.LogOptions"

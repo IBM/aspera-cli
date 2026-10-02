@@ -3959,6 +3959,22 @@ orch_wf_list:
     - orchestrator
     - workflow
     - list
+orch_wf_list_token:
+  tags:
+    - flaky
+  args:
+    - orchestrator
+    - --auth_style=token
+    - workflow
+    - list
+orch_wf_list_query:
+  tags:
+    - flaky
+  args:
+    - orchestrator
+    - --auth_style=query
+    - workflow
+    - list
 orch_wf_sta:
   args:
     - orchestrator

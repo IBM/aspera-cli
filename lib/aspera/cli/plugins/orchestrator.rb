@@ -59,7 +59,8 @@ module Aspera
         option :result,      description: "Specify result value as: 'work_step:parameter'", deprecation: {last: '4.27.2', message: 'use keys `step` and `variable` of argument `execution` of `workflows start`'}
         option :synchronous, description: 'Wait for completion', allowed: Type::BOOLEAN, deprecation: {last: '4.27.2', message: 'use key `synchronous` of argument `execution` of `workflows start`'}
         option :ret_style,   description: 'How return type is requested in api', allowed: %i[header arg ext], default: :arg
-        option :auth_style,  description: 'Authentication type', allowed: %i[arg_pass head_basic apikey], default: :head_basic
+        option :apikey,      description: 'API key'
+        option :auth_style,  description: 'Authentication style', allowed: %i[basic query token arg_pass head_basic], default: :token
 
         # Call orchestrator API, it's a bit special
         # @param endpoint   [String]  the endpoint to call
@@ -164,28 +165,67 @@ module Aspera
         # @return [Rest::Client]
         def api_orch
           return @api_orch if @api_orch
+          base_url = options.get_option(:url, mandatory: true)
+          style = options.get_option(:auth_style, mandatory: true)
+          apikey = options.get_option(:apikey)
+
           auth_params =
-            case options.get_option(:auth_style, mandatory: true)
-            when :arg_pass
-              {
-                type:      :url,
-                url_query: {
-                  'login'    => options.get_option(:username, mandatory: true),
-                  'password' => options.get_option(:password, mandatory: true)
+            if apikey
+              case style
+              when :query, :arg_pass
+                {
+                  type:      :url,
+                  url_query: {'apikey' => apikey}
                 }
-              }
-            when :head_basic
-              {
-                type:     :basic,
-                username: options.get_option(:username, mandatory: true),
-                password: options.get_option(:password, mandatory: true)
-              }
-            when :apikey
-              Aspera.error_not_implemented
+              when :token
+                {
+                  type:         :oauth2,
+                  grant_method: :json_credentials,
+                  base_url:     base_url,
+                  path_token:   'api/login',
+                  token_field:  'token',
+                  json:         {apikey: apikey}
+                }
+              when :basic, :head_basic
+                Aspera.error_unexpected_value(style) { 'basic auth style cannot be used with apikey, use --auth_style=token or --auth_style=query' }
+              else Aspera.error_unexpected_value(style)
+              end
+            else
+              username = options.get_option(:username, mandatory: true)
+              password = options.get_option(:password, mandatory: true)
+              case style
+              when :basic, :head_basic
+                {
+                  type:     :basic,
+                  username: username,
+                  password: password
+                }
+              when :query, :arg_pass
+                {
+                  type:      :url,
+                  url_query: {
+                    'login'    => username,
+                    'password' => password
+                  }
+                }
+              when :token
+                {
+                  type:         :oauth2,
+                  grant_method: :json_credentials,
+                  base_url:     base_url,
+                  path_token:   'api/login',
+                  token_field:  'token',
+                  json:         {
+                    username: username,
+                    password: password
+                  }
+                }
+              else Aspera.error_unexpected_value(style)
+              end
             end
           @api_orch = Rest::Client.new(
-            base_url: options.get_option(:url, mandatory: true),
-            auth: auth_params
+            base_url: base_url,
+            auth:     auth_params
           )
         end
 

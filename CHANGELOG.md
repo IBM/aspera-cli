@@ -6,6 +6,7 @@ Released: [Place date of release here]
 
 ### New Features
 
+* `orchestrator`: Add JWT-based bearer token authentication (default) and API key support via options `--auth_style` (`token`, `basic`, `query`) and `--apikey`.
 * `aoc`: `short_link list` supports `--query=help`, help of `short_link create|modify` shows the request body.
 * `node`: `simulator` executes transfers with `transferd`, and supports more of the Node API. See the manual.
 

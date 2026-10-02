@@ -9281,6 +9281,18 @@ transfer smart sub my_smart_id @: source.paths.0=my_smart_file source_type=user_
 
 ## Plugin: `orchestrator`: IBM Aspera Orchestrator
 
+### Authentication
+
+The Orchestrator plugin supports different credentials and authentication styles configured via `--auth_style`:
+
+- **Username / Password** (`--username` and `--password`):
+  - `--auth_style=token` (default): Exchanges credentials for a JWT Bearer token via `/api/login`.
+  - `--auth_style=basic`: Standard HTTP Basic Authentication.
+  - `--auth_style=query`: Passes credentials in URL query parameters (`?login=...&password=...`).
+- **API Key** (`--apikey`):
+  - `--auth_style=token` (default): Exchanges the API key for a JWT Bearer token via `/api/login`.
+  - `--auth_style=query`: Passes the API key in URL query parameter (`?apikey=...`).
+
 ### Start a workflow
 
 Command `workflows start` creates a work order:
@@ -9317,6 +9329,8 @@ ascli orchestrator workflows start 1234 @json:'{"Param":"world !"}' @json:'{"ste
 > Add `ascli orchestrator` in front of the following commands:
 
 ```shell
+--auth_style=query workflow list
+--auth_style=token workflow list
 health
 info
 monitors
