@@ -28,6 +28,29 @@ Released: [Place date of release here]
 * `node`: `simulator` parameter `browse_root` is renamed `docroot`.
 * **general**: Release archives are named `aspera-cli-<version>-<os>-<cpu>...`: single executable `aspera-cli-<version>-linux-x86_64-glibc<version>.tgz` (was `ascli-...`), Windows portable `aspera-cli-<version>-windows-x86_64-portable.zip` (was `windows-amd64`).
 
+### Server Versions
+
+| Plugin | Product | Version |
+|--------------|--------------------|------------------|
+| `aoc` | Aspera on Cloud | SaaS |
+| `console` | IBM Aspera Console | 3.4.4 |
+| `faspex5` | Faspex v5 | F5.0.17 |
+| `httpgw` | HTTP Gateway | 2.3.4 |
+| `node` | HSTS Node API | 4.4.8.2596 |
+| `orchestrator` | Orchestrator | 4.1.6.2036-00000 |
+| `shares` | IBM Aspera Shares | 1.9.14 |
+
+### Transfer Agent Versions
+
+| Agent | Product | Version |
+|-----------|--------------------------------|---------|
+| `connect` | IBM Aspera Connect Client | 4.2.14 |
+| `desktop` | IBM Aspera Desktop Client | 4.4.3 |
+| `direct` | IBM Aspera Transfer SDK (ascp) | 1.1.9 |
+| `httpgw` | IBM Aspera HTTP Gateway Agent | 1.3.0 |
+| `node` | IBM Aspera Node API Agent | 4.4.3 |
+| `transferd` | IBM Aspera transferd daemon | 1.1.9 |
+
 ## 4.27.3
 
 Released: 2026-09-25

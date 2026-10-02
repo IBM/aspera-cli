@@ -1,0 +1,42 @@
+# Tested server and transfer agent versions against this version of ascli
+servers:
+- plugin: aoc
+  product: Aspera on Cloud
+  version: SaaS
+- plugin: console
+  product: IBM Aspera Console
+  version: 3.4.4
+- plugin: faspex5
+  product: Faspex v5
+  version: F5.0.17
+- plugin: httpgw
+  product: HTTP Gateway
+  version: 2.3.4
+- plugin: node
+  product: HSTS Node API
+  version: 4.4.8.2596
+- plugin: orchestrator
+  product: Orchestrator
+  version: 4.1.6.2036-00000
+- plugin: shares
+  product: IBM Aspera Shares
+  version: 1.9.14
+agents:
+- agent: connect
+  product: IBM Aspera Connect Client
+  version: 4.2.14
+- agent: desktop
+  product: IBM Aspera Desktop Client
+  version: 4.4.3
+- agent: direct
+  product: IBM Aspera Transfer SDK (ascp)
+  version: 1.1.9
+- agent: httpgw
+  product: IBM Aspera HTTP Gateway Agent
+  version: 1.3.0
+- agent: node
+  product: IBM Aspera Node API Agent
+  version: 4.4.3
+- agent: transferd
+  product: IBM Aspera transferd daemon
+  version: 1.1.9

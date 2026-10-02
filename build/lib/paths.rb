@@ -29,6 +29,7 @@ module Paths
   GEM_PACK = RELEASE / 'gempack.zip'
   # Command-line test suite configuration.
   TEST_DEFS = TST / 'tests.yml'
+  SERVERS_TESTED = TST / 'servers_tested.yaml'
   CHANGELOG_FILE = TOP / 'CHANGELOG.md'
   VERSION_FILE = TOP / 'lib/aspera/cli/version.rb'
   DOCKERFILE_TEMPLATE = BUILD / 'container/Dockerfile.tmpl.erb'
