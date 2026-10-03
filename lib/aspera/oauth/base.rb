@@ -83,7 +83,7 @@ module Aspera
       # @return [String] The bearer token
       def token(cache: true, refresh: false)
         # Get token info from cache (or nil), decoded with date and expiration status
-        token_info = Factory.instance.get_token_info(@token_cache_id) if cache
+        token_info = Factory.instance.get_token_info(@token_cache_id, token_field: @token_field) if cache
         token_data = nil
         unless token_info.nil?
           token_data = token_info[:data]
@@ -130,6 +130,7 @@ module Aspera
           json_data = create_token.body
           token_data = JSON.parse(json_data)
           Factory.instance.persist_mgr.put(@token_cache_id, json_data)
+          Factory.instance.get_token_info(@token_cache_id, token_field: @token_field)
         end
         Aspera.assert(token_data.key?(@token_field)) { "API error: No such field in answer: #{@token_field}" } unless token_data.nil?
         # Ok we shall have a token here

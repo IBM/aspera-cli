@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/oauth/base'
+require 'digest'
 
 module Aspera
   module OAuth
@@ -12,7 +13,8 @@ module Aspera
         json:,
         **generic_params
       )
-        super(**generic_params, cache_ids: json.values)
+        cache_id = json[:username] || Digest::SHA256.hexdigest(json[:apikey] || json.to_s)[0..23]
+        super(**generic_params, cache_ids: [cache_id])
         @body = json
       end
 

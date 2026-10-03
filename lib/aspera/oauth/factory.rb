@@ -121,7 +121,8 @@ module Aspera
         data.each.map do |k, v|
           info = {id: k}
           begin; info.merge!(JSON.parse(v)); rescue StandardError; nil; end
-          d = decode_token(info.delete(TOKEN_FIELD))
+          token_val = info.delete(TOKEN_FIELD) || info.delete('token')
+          d = decode_token(token_val)
           info.merge(d) if d
           info
         end
@@ -129,13 +130,15 @@ module Aspera
 
       # Get token information from cache
       # @param id [String] identifier of token
+      # @param token_field [String, nil] Field containing the token, or nil to auto-detect
       # @return [Hash] token internal information , including Date object for `expiration_date`
-      def get_token_info(id)
+      def get_token_info(id, token_field: nil)
         token_raw_string = persist_mgr.get(id)
         return if token_raw_string.nil?
         token_data = JSON.parse(token_raw_string)
         Aspera.assert_type(token_data, Hash)
-        decoded_token = decode_token(token_data[TOKEN_FIELD])
+        token_value = token_data[token_field] || token_data[TOKEN_FIELD] || token_data['token']
+        decoded_token = decode_token(token_value)
         info = {data: token_data}
         if decoded_token.is_a?(Hash)
           info[:decoded] = decoded_token

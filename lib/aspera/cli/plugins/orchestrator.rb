@@ -62,15 +62,14 @@ module Aspera
         option :apikey,      description: 'API key'
         option :auth_style,  description: 'Authentication style', allowed: %i[basic query token arg_pass head_basic], default: :token
 
-        # Call orchestrator API, it's a bit special
+        # Call orchestrator GET API (handles ret_style negotiation and XML parsing)
         # @param endpoint   [String]  the endpoint to call
         # @param ret_style  [Symbol]  the return style, :header, :arg, :ext(extension)
         # @param format     [String]  the format to request, 'json', 'xml', nil
-        # @param args       [Hash]    the arguments to pass
+        # @param args       [Hash]    the arguments to pass (query parameters)
         # @param xml_arrays [Boolean] if true, force arrays in xml parsing
         # @param http       [Boolean] if true, returns the HttpResponse, else
         def call_ao(endpoint, ret_style: nil, format: 'json', args: nil, xml_arrays: true, http: false)
-          # calls are all GET
           call_args = {operation: 'GET', subpath: "api/#{endpoint}", ret: :both, query: {}}
           ret_style = options.get_option(:ret_style, mandatory: true) if ret_style.nil?
           call_args[:query].merge!(args) unless args.nil?
@@ -100,12 +99,17 @@ module Aspera
 
         command :health,     description: 'Check Orchestrator API health'
         command :info,       description: 'Check that Orchestrator responds (ping)', action: ->(**) { Result::SingleObject.new(call_ao('remote_node_ping', format: 'xml', xml_arrays: false)) }
-        command :processes,  description: 'Show Orchestrator background process status', action: ->(**) { Result::ObjectList.new(call_ao('processes_status', format: 'xml')['process']) }
+        command :processes,  description: 'Show Orchestrator background process status', action: ->(**) { Result::ObjectList.new(call_ao('processes_status', format: 'xml')['node'].flat_map { |n| n['process'] }) }
         command :monitors,   description: 'Show Orchestrator monitor snapshot', action: ->(**) { Result::SingleObject.new(call_ao('monitor_snapshot')['monitor']) }
-        command :plugins,    description: 'Show Orchestrator plugin versions', action: ->(**) { Result::ObjectList.new(call_ao('plugin_version')['Plugin']) }
-        command :workflows,  description: 'Manage workflows'
         command :workorders, description: 'Manage work orders'
         command :workstep,   description: 'Manage work steps'
+
+        commands_under :plugins do
+          command :list,       description: 'Show Orchestrator plugin versions', action: ->(**) { Result::ObjectList.new(call_ao('plugin_version')['Plugin']) }
+          command :reload_set, description: 'Reload a set of plugins',
+            arguments: [{name: :plugin_set, type: Hash, schema: 'opts:components.schemas.OrchestratorReloadPluginSet'}],
+            action: ->(plugin_set:, **) { Result::SingleObject.new(api_orch.create('api/reload_plugin_set', plugin_set.transform_keys(&:to_sym))) }
+        end
 
         commands_under :workflows do
           command :list, description: 'List all workflows'
@@ -121,9 +125,18 @@ module Aspera
           command :start,      description: 'Start a workflow: create a work order (sync or async)',
             arguments: [
               {name: :workflow_id, type: :identifier},
-              {name: :parameters, type: Hash, mandatory: false, default: {}},
+              {name: :parameters, type: Hash, mandatory: false, default: {}, schema: 'opts:components.schemas.OrchestratorInitiateParameters'},
               {name: :execution, type: Hash, mandatory: false, default: {}, schema: 'opts:components.schemas.OrchestratorWorkflowStart'}
             ]
+          command :import,     description: 'Import a workflow',
+            arguments: [{name: :workflow, type: Hash, schema: 'opts:components.schemas.OrchestratorImportWorkflow'}],
+            action: ->(workflow:, **) { Result::SingleObject.new(api_orch.create('api/import_workflow', workflow.transform_keys(&:to_sym))) }
+          command :publish,    description: 'Publish a workflow',
+            arguments: [{name: :workflow_id, type: :identifier}],
+            action: ->(workflow_id:, **) { Result::SingleObject.new(api_orch.create('api/publish_workflow', {workflow_id: workflow_id.to_i})) }
+          command :import_with_constraints, description: 'Import a workflow with constraint resolution',
+            arguments: [{name: :payload, type: Hash, schema: 'opts:components.schemas.OrchestratorImportWithConstraints'}],
+            action: ->(payload:, **) { Result::SingleObject.new(api_orch.create('api/import_with_constraints', payload.transform_keys(&:to_sym))) }
           command :export,     description: 'Export a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
             action: ->(workflow_id:, **) { Result::Text.new(call_ao("export_workflow/#{workflow_id}", format: nil, http: true).body) }
@@ -265,23 +278,22 @@ module Aspera
             Aspera.assert(fields.length == 2, type: Cli::BadArgument) { "Expects: work_step:result_name : #{result_location}" }
             execution['step'], execution['variable'] = fields
           end
-          call_params = {format: :json}
-          # get external parameters if any
-          parameters.each do |name, value|
-            call_params["external_parameters[#{name}]"] = value
-          end
+          # POST /api/initiate with JSON body {workflow_id:, parameters:}
+          json_body = {workflow_id: workflow_id.to_i, parameters: parameters}
+          # control params passed as query string (not part of the spec requestBody)
+          query_params = {}
           Aspera.assert_type(execution['synchronous'], NilClass, *BoolValue::TYPES, type: Cli::BadArgument) { 'synchronous' }
-          call_params['synchronous'] = true if execution['synchronous'].eql?(true)
+          query_params[:synchronous] = true if execution['synchronous'].eql?(true)
           # expected result for synchro call ?
           if execution.key?('step') || execution.key?('variable')
             Aspera.assert(execution['step'].is_a?(String) && execution['variable'].is_a?(String), type: Cli::BadArgument) { 'Both step and variable are required' }
-            call_params['explicit_output_step'] = execution['step']
-            call_params['explicit_output_variable'] = execution['variable']
+            query_params[:explicit_output_step] = execution['step']
+            query_params[:explicit_output_variable] = execution['variable']
             # implicitly, call is synchronous
-            call_params['synchronous'] = true
+            query_params[:synchronous] = true
           end
-          result_data = call_ao("initiate/#{workflow_id}", args: call_params)
-          call_params['synchronous'] ? Result::Text.new(result_data) : Result::SingleObject.new(result_data)
+          result_data = api_orch.create('api/initiate', json_body, query: query_params.empty? ? nil : query_params)
+          query_params[:synchronous] ? Result::Text.new(result_data) : Result::SingleObject.new(result_data)
         end
       end
     end

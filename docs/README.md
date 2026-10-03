@@ -9334,7 +9334,7 @@ ascli orchestrator workflows start 1234 @json:'{"Param":"world !"}' @json:'{"ste
 health
 info
 monitors
-plugins
+plugins list
 processes
 workflow details my_workflow_id
 workflow export my_workflow_id

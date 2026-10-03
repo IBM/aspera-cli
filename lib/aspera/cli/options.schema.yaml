@@ -703,6 +703,61 @@ components:
             Name of the output variable of `step` returned as result.
             Requires `step`, and implies `synchronous`.
           example: Complete_status_message
+    OrchestratorInitiateParameters:
+      type: object
+      description: >-
+        Input parameters for the workflow (key-value pairs).
+        Valid keys are defined by the workflow's input specification.
+        Use `orchestrator workflows inputs WORKFLOW_ID` to discover required parameters.
+      additionalProperties: true
+    OrchestratorImportWorkflow:
+      type: object
+      description: Workflow definition to import into Orchestrator.
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Workflow name.
+          example: My Workflow
+        description:
+          type: string
+          description: Workflow description.
+          example: This is a sample workflow
+        workflow_data:
+          type: object
+          description: Complete workflow definition.
+    OrchestratorImportWithConstraints:
+      type: object
+      description: Workflow definition to import with constraint resolution mappings.
+      required:
+        - workflow_data
+        - constraints
+      properties:
+        workflow_data:
+          type: object
+          description: Complete workflow definition to import.
+        constraints:
+          type: object
+          description: Constraint resolution mappings for conflicting resources.
+          example:
+            resource_pools: {}
+            queues: {}
+            monitors: {}
+    OrchestratorReloadPluginSet:
+      type: object
+      description: Set of plugins to reload.
+      required:
+        - plugin_names
+      properties:
+        plugin_names:
+          type: array
+          description: List of plugin names to reload.
+          items:
+            type: string
+          example:
+            - soap_requests
+            - frameio_operations
     TableOptions:
       type: object
       description: Terminal table rendering options.

@@ -77,6 +77,20 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
       expect(client.auth_params[:json]).to(eq(apikey: 'mykey123'))
     end
 
+    it 'does not include passwords or apikey in token cache id' do
+      parse_argv(%w[--url=https://orch.example.com --username=admin --password=my_secret_password --auth_style=token])
+      client = orchestrator.api_orch
+      token_cache_id = client.oauth.instance_variable_get(:@token_cache_id)
+      expect(token_cache_id).not_to(include('my_secret_password'))
+      expect(token_cache_id).to(include('admin'))
+
+      orchestrator.instance_variable_set(:@api_orch, nil)
+      parse_argv(%w[--url=https://orch.example.com --apikey=my_super_secret_key --auth_style=token])
+      client2 = orchestrator.api_orch
+      token_cache_id2 = client2.oauth.instance_variable_get(:@token_cache_id)
+      expect(token_cache_id2).not_to(include('my_super_secret_key'))
+    end
+
     it 'raises error when using basic auth_style with apikey' do
       parse_argv(%w[--url=https://orch.example.com --apikey=mykey123 --auth_style=basic])
       expect { orchestrator.api_orch }.to(raise_error(Aspera::InternalError, /basic auth style cannot be used with apikey/))
