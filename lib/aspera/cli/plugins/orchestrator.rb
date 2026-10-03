@@ -56,22 +56,21 @@ module Aspera
           }
         end
 
+        option :apikey,      description: 'API key'
+        option :ret_style,   description: 'Method to specify the expected response format in API calls', allowed: %i[header arg ext], default: :arg
+        option :auth_style,  description: 'Authentication style', allowed: %i[basic query token arg_pass head_basic], default: :token
         option :result,      description: "Specify result value as: 'work_step:parameter'", deprecation: {last: '4.27.2', message: 'use keys `step` and `variable` of argument `execution` of `workflows start`'}
         option :synchronous, description: 'Wait for completion', allowed: Type::BOOLEAN, deprecation: {last: '4.27.2', message: 'use key `synchronous` of argument `execution` of `workflows start`'}
-        option :ret_style,   description: 'How return type is requested in api', allowed: %i[header arg ext], default: :arg
-        option :apikey,      description: 'API key'
-        option :auth_style,  description: 'Authentication style', allowed: %i[basic query token arg_pass head_basic], default: :token
 
         # Call orchestrator GET API (handles ret_style negotiation and XML parsing)
         # @param endpoint   [String]  the endpoint to call
-        # @param ret_style  [Symbol]  the return style, :header, :arg, :ext(extension)
         # @param format     [String]  the format to request, 'json', 'xml', nil
         # @param args       [Hash]    the arguments to pass (query parameters)
         # @param xml_arrays [Boolean] if true, force arrays in xml parsing
         # @param http       [Boolean] if true, returns the HttpResponse, else
-        def call_ao(endpoint, ret_style: nil, format: 'json', args: nil, xml_arrays: true, http: false)
+        def call_ao(endpoint, format: 'json', args: nil, xml_arrays: true, http: false)
           call_args = {operation: 'GET', subpath: "api/#{endpoint}", ret: :both, query: {}}
-          ret_style = options.get_option(:ret_style, mandatory: true) if ret_style.nil?
+          ret_style = options.get_option(:ret_style, mandatory: true)
           call_args[:query].merge!(args) unless args.nil?
           unless format.nil?
             case ret_style

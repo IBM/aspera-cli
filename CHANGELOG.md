@@ -12,7 +12,6 @@ Released: [Place date of release here]
 
 ### Issues Fixed
 
-* `orchestrator`: Command `plugins` is now `plugins list`.
 * `preview`: Generator options with a numeric value given on command line (e.g. `--thumb-vid-fraction=0.3`, `--blend-pauseframes=2`) were failing.
 * `aoc`: `short_link show` always failed with `not found`.
 * `faspex5`: `packages receive` with a public link now works with a list of files, and ALL.
@@ -28,6 +27,8 @@ Released: [Place date of release here]
 * `node`: `simulator` requires `transferd` and the gem `grpc`, instead of `ascp`.
 * `node`: `simulator` parameter `browse_root` is renamed `docroot`.
 * **general**: Release archives are named `aspera-cli-<version>-<os>-<cpu>...`: single executable `aspera-cli-<version>-linux-x86_64-glibc<version>.tgz` (was `ascli-...`), Windows portable `aspera-cli-<version>-windows-x86_64-portable.zip` (was `windows-amd64`).
+* `orchestrator`: Command `plugins` is now `plugins list`.
+* `orchestrator`: Default authentication is now JWT token.
 
 ### Server Versions
 
