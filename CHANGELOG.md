@@ -21,6 +21,7 @@ Released: [Place date of release here]
 * **general**: Agent `node` was failing when the transfer was canceled or paused on the node.
 * **general**: When the default CA certificate locations of Ruby's OpenSSL do not exist (e.g. single executable built on another Linux distribution), the system CA bundle is used.
 * **general**: Windows portable package displayed `Ignoring bigdecimal-... because its extensions are not built` at each start.
+* **general**: Fixed #265 #266: Linux single executable of 4.27.3 ran every command as `config commands <command>`: e.g. `config transferd install` only displayed its syntax, and `faspex5 packages receive ALL` failed with `no such command`.
 
 ### Breaking Changes
 

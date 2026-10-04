@@ -82,10 +82,12 @@ jobs:
           bundle exec rake binary:ocran"[${VERSION}]"
           echo "archive=$(cd pkg && ls aspera-cli-"${VERSION}"-*.tgz)" >> "$GITHUB_OUTPUT"
 
+      # config echo: output must be the argument, i.e. no argument added by the executable
       - name: Check executable runs on RHEL 8
         run: |
           tar -xzf "pkg/${{ steps.build.outputs.archive }}" -C /tmp ascli
           /tmp/ascli --version
+          test "$(/tmp/ascli config echo ok --format=text)" = ok
 
       - name: Upload executable
         uses: actions/upload-artifact@v7
@@ -111,10 +113,12 @@ jobs:
         with:
           name: ${{ needs.linux.outputs.archive }}
 
+      # config echo: output must be the argument, i.e. no argument added by the executable
       - name: Check executable runs on a recent Linux
         run: |
           tar -xzf "${ARCHIVE}" ascli
           ./ascli --version
+          test "$(./ascli config echo ok --format=text)" = ok
 
       - name: Upload to GitHub release
         env:

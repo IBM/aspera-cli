@@ -211,6 +211,22 @@ namespace :binary do
       ocran_extra_options += ['--cosmo-ruby', download_cosmo_ruby(PATH_WORKDIR_OCRAN).to_s]
     end
 
+    log.info('Creating entry script')
+    # Used instead of the RubyGems bin stub. Ocran's dependency detection loads the script in its own process, where
+    # `Ocran` is defined: list all commands then, so that all plugins and their gems are loaded.
+    # Script arguments given to Ocran after `--` cannot be used for that: Ocran embeds them in the executable, before
+    # the user's arguments, so `ascli <args>` would run `ascli config commands <args>`.
+    # Named like the command, as `ascli` checks its program name.
+    entry_script_path = PATH_WORKDIR_OCRAN / 'entry' / Aspera::Cli::Info::CMD_NAME
+    entry_script_path.dirname.mkpath
+    entry_script_path.write(<<~RUBY)
+      #!/usr/bin/env ruby
+      # frozen_string_literal: true
+
+      ARGV.replace(%w[config commands]) if defined?(Ocran)
+      load Gem.activate_bin_path('#{Aspera::Cli::Info::GEM_NAME}', '#{Aspera::Cli::Info::CMD_NAME}')
+    RUBY
+
     log.info('Building executable with OCRAN')
     cli_exec_path = PATH_WORKDIR_OCRAN / Aspera::Cli::Info::CMD_NAME
     # Only expose the staging area as a gem path: unlike running the `ocran`
@@ -243,10 +259,7 @@ namespace :binary do
       "--gem-full=#{gem_full_list}",
       *ocran_extra_options,
       '--output', cli_exec_path,
-      PATH_WORKDIR_OCRAN / 'bin' / Aspera::Cli::Info::CMD_NAME,
-      '--',
-      'config',
-      'commands',
+      entry_script_path,
       env: {
         'GEM_PATH'        => ocran_gem_path,
         'GEM_HOME'        => ocran_gem_path,
