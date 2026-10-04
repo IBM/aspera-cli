@@ -4094,24 +4094,43 @@ orch_workorder_output:
     - workorder
     - output
     - $(t.saved_output :orch_workorder_id)
-orch_workstep_status:
-  $comment: TODO get some workstep id
+orch_wf_start_sleep:
   tags:
-    - flaky
+    - save_output
+  post: sleep 3
+  args:
+    - orchestrator
+    - workflow
+    - start
+    - "@preset:orch.sleep_workflow_id"
+    - --fields=work_order.id
+orch_workstep_id:
+  tags:
+    - save_output
+  depends_on:
+    - orch_wf_start_sleep
+  args:
+    - orchestrator
+    - workorder
+    - status
+    - $(t.saved_output :orch_wf_start_sleep)
+    - --fields=status_details
+orch_workstep_status:
+  depends_on:
+    - orch_workstep_id
   args:
     - orchestrator
     - workstep
     - status
-    - 1
+    - $((t.saved_output :orch_workstep_id).match(/\((\d+)\)/)[1])
 orch_workstep_cancel:
-  $comment: TODO get some workstep id
-  tags:
-    - flaky
+  depends_on:
+    - orch_workstep_id
   args:
     - orchestrator
     - workstep
     - cancel
-    - 1
+    - $((t.saved_output :orch_workstep_id).match(/\((\d+)\)/)[1])
 ats_aws_trust_policy:
   args:
     - ats
