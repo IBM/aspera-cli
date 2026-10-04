@@ -83,11 +83,15 @@ jobs:
           echo "archive=$(cd pkg && ls aspera-cli-"${VERSION}"-*.tgz)" >> "$GITHUB_OUTPUT"
 
       # config echo: output must be the argument, i.e. no argument added by the executable
+      # config transferd install: extraction of the SDK .tar.gz uses lazily loaded files, that must be in the executable
+      # config ascp info: fails if the installed ascp does not run
       - name: Check executable runs on RHEL 8
         run: |
           tar -xzf "pkg/${{ steps.build.outputs.archive }}" -C /tmp ascli
           /tmp/ascli --version
           test "$(/tmp/ascli config echo ok --format=text)" = ok
+          /tmp/ascli config transferd install
+          /tmp/ascli config ascp info --fields=ascp_version
 
       - name: Upload executable
         uses: actions/upload-artifact@v7

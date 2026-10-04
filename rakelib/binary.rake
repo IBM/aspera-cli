@@ -34,6 +34,9 @@ PATH_README_TEMPLATE = Paths::BUILD / 'binary' / 'README.ascli.erb.md'
 # Gems that are only `require`d lazily (inside methods, not at load time), so Ocran's
 # default dependency detection never sees them loaded and would otherwise omit them.
 OCRAN_LAZY_GEMS = %w[websocket vault marcel jwt execjs rubyzip unicode-emoji unicode-display_width openssl].freeze
+# Standard library files (not in a gem) that are only `require`d lazily: loaded during the dependency detection run.
+# `rubygems/package`: extraction of the SDK `.tar.gz` (`config transferd install` on Linux)
+OCRAN_LAZY_FEATURES = %w[rubygems/package].freeze
 # Latest CosmoRuby release: a self-contained cosmopolitan Ruby (APE) usable with
 # `ocran --cosmo-ruby`, needed for single-file executables that run unmodified
 # on Linux, macOS and Windows.
@@ -213,7 +216,8 @@ namespace :binary do
 
     log.info('Creating entry script')
     # Used instead of the RubyGems bin stub. Ocran's dependency detection loads the script in its own process, where
-    # `Ocran` is defined: list all commands then, so that all plugins and their gems are loaded.
+    # `Ocran` is defined: load lazy standard library files, and list all commands, so that all plugins and their gems
+    # are loaded.
     # Script arguments given to Ocran after `--` cannot be used for that: Ocran embeds them in the executable, before
     # the user's arguments, so `ascli <args>` would run `ascli config commands <args>`.
     # Named like the command, as `ascli` checks its program name.
@@ -223,7 +227,10 @@ namespace :binary do
       #!/usr/bin/env ruby
       # frozen_string_literal: true
 
-      ARGV.replace(%w[config commands]) if defined?(Ocran)
+      if defined?(Ocran)
+        #{OCRAN_LAZY_FEATURES.inspect}.each { |feature| require feature }
+        ARGV.replace(%w[config commands])
+      end
       load Gem.activate_bin_path('#{Aspera::Cli::Info::GEM_NAME}', '#{Aspera::Cli::Info::CMD_NAME}')
     RUBY
 
