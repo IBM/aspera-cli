@@ -315,7 +315,7 @@ This executable includes the Ruby runtime and gems, but not the transfer SDK.
 #### Installing the single file executable
 
 > [!NOTE]
-> Replace `<%=ph :version%>` and `<%=ph :platform%>` with the values of the downloaded archive, for example: `linux-x86_64-glibc2.28`.
+> Replace `<%=ph :version%>` and `<%=ph :platform%>` with the values of the downloaded archive, for example: `linux-x86_64-glibc2.28-ocran`.
 > The archive contains the executable `<%=cmd%>` and its `README.<%=cmd%>.md`.
 > Installation of `ascp` is still required separately.
 > See [Install `ascp`](#installing-ascp-through-transferd).

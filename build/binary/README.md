@@ -38,7 +38,7 @@ bundle exec rake binary:ocran'[4.27.3]'
 ```
 
 On Linux, the executable bundles all shared libraries except `glibc`: it runs on systems with a `glibc` at least as recent as the build system's.
-So, the archive name includes the `glibc` version of the build system, e.g. `aspera-cli-4.27.3-linux-x86_64-glibc2.28.tgz`.
+So, the archive name includes the `glibc` version of the build system, and the packaging tool, e.g. `aspera-cli-4.27.3-linux-x86_64-glibc2.28-ocran.tgz`.
 The archive also contains a `README.ascli.md` for users, generated from [`README.ascli.erb.md`](README.ascli.erb.md).
 
 The GitHub action [`packages.yml`](../../.github/workflows/packages.yml) builds it in a RHEL 8 container (`glibc` 2.28), and attaches it to the GitHub release.

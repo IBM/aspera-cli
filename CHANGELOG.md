@@ -22,13 +22,13 @@ Released: [Place date of release here]
 * **general**: When the default CA certificate locations of Ruby's OpenSSL do not exist (e.g. single executable built on another Linux distribution), the system CA bundle is used.
 * **general**: Windows portable package displayed `Ignoring bigdecimal-... because its extensions are not built` at each start.
 * **general**: Fixed #265 #266: Linux single executable of 4.27.3 ran every command as `config commands <command>`: e.g. `config transferd install` only displayed its syntax, and `faspex5 packages receive ALL` failed with `no such command`.
-* **general**: Linux single executable: `config transferd install` failed with `cannot load such file -- rubygems/package`.
+* **general**: Linux single executable: commands could fail with `cannot load such file` (e.g. `config transferd install`: `rubygems/package`): it now includes the whole Ruby standard library and all files of gems.
 
 ### Breaking Changes
 
 * `node`: `simulator` requires `transferd` and the gem `grpc`, instead of `ascp`.
 * `node`: `simulator` parameter `browse_root` is renamed `docroot`.
-* **general**: Release archives are named `aspera-cli-<version>-<os>-<cpu>...`: single executable `aspera-cli-<version>-linux-x86_64-glibc<version>.tgz` (was `ascli-...`), Windows portable `aspera-cli-<version>-windows-x86_64-portable.zip` (was `windows-amd64`).
+* **general**: Release archives are named `aspera-cli-<version>-<os>-<cpu>...`: single executable `aspera-cli-<version>-linux-x86_64-glibc<version>-ocran.tgz` (was `ascli-...`), Windows portable `aspera-cli-<version>-windows-x86_64-portable.zip` (was `windows-amd64`).
 * `orchestrator`: Command `plugins` is now `plugins list`.
 * `orchestrator`: Default authentication is now JWT token.
 

@@ -316,7 +316,7 @@ This executable includes the Ruby runtime and gems, but not the transfer SDK.
 #### Installing the single file executable
 
 > [!NOTE]
-> Replace `<VERSION>` and `<PLATFORM>` with the values of the downloaded archive, for example: `linux-x86_64-glibc2.28`.
+> Replace `<VERSION>` and `<PLATFORM>` with the values of the downloaded archive, for example: `linux-x86_64-glibc2.28-ocran`.
 > The archive contains the executable `ascli` and its `README.ascli.md`.
 > Installation of `ascp` is still required separately.
 > See [Install `ascp`](#installing-ascp-through-transferd).
@@ -9341,6 +9341,7 @@ workflow export my_workflow_id
 workflow inputs my_workflow_id
 workflow list
 workflow outputs my_workflow_id
+workflow start my_sleep_workflow_id --fields=work_order.id
 workflow start my_workflow_id @: 'Param=world !'
 workflow start my_workflow_id @: 'Param=world !' END @: step=ResultStep variable=Complete_status_message
 workflow status ALL
@@ -9351,8 +9352,9 @@ workorder cancel <id>
 workorder output <id>
 workorder reset <id>
 workorder status <id>
-workstep cancel 1
-workstep status 1
+workorder status <orch_wf_start_sleep> --fields=status_details
+workstep cancel <id>
+workstep status <id>
 ```
 
 ## Plugin: `cos`: IBM Cloud Object Storage

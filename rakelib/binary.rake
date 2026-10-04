@@ -31,12 +31,6 @@ OCRAN_VERSION = '1.4.5'
 PATH_WORKDIR_OCRAN = Paths::TMP / 'ocran'
 # Template of the README placed in the archive with the executable
 PATH_README_TEMPLATE = Paths::BUILD / 'binary' / 'README.ascli.erb.md'
-# Gems that are only `require`d lazily (inside methods, not at load time), so Ocran's
-# default dependency detection never sees them loaded and would otherwise omit them.
-OCRAN_LAZY_GEMS = %w[websocket vault marcel jwt execjs rubyzip unicode-emoji unicode-display_width openssl].freeze
-# Standard library files (not in a gem) that are only `require`d lazily: loaded during the dependency detection run.
-# `rubygems/package`: extraction of the SDK `.tar.gz` (`config transferd install` on Linux)
-OCRAN_LAZY_FEATURES = %w[rubygems/package].freeze
 # Latest CosmoRuby release: a self-contained cosmopolitan Ruby (APE) usable with
 # `ocran --cosmo-ruby`, needed for single-file executables that run unmodified
 # on Linux, macOS and Windows.
@@ -216,8 +210,8 @@ namespace :binary do
 
     log.info('Creating entry script')
     # Used instead of the RubyGems bin stub. Ocran's dependency detection loads the script in its own process, where
-    # `Ocran` is defined: load lazy standard library files, and list all commands, so that all plugins and their gems
-    # are loaded.
+    # `Ocran` is defined: list all commands then, so that all plugins are loaded, with the native extensions they use,
+    # and Ocran detects the shared libraries these need.
     # Script arguments given to Ocran after `--` cannot be used for that: Ocran embeds them in the executable, before
     # the user's arguments, so `ascli <args>` would run `ascli config commands <args>`.
     # Named like the command, as `ascli` checks its program name.
@@ -227,10 +221,7 @@ namespace :binary do
       #!/usr/bin/env ruby
       # frozen_string_literal: true
 
-      if defined?(Ocran)
-        #{OCRAN_LAZY_FEATURES.inspect}.each { |feature| require feature }
-        ARGV.replace(%w[config commands])
-      end
+      ARGV.replace(%w[config commands]) if defined?(Ocran)
       load Gem.activate_bin_path('#{Aspera::Cli::Info::GEM_NAME}', '#{Aspera::Cli::Info::CMD_NAME}')
     RUBY
 
@@ -249,10 +240,11 @@ namespace :binary do
     # Gem.path always includes Gem.dir -- so the host's default gem directory
     # would leak back in regardless of GEM_PATH.
     ocran_gem_path = PATH_WORKDIR_OCRAN.to_s
-    # `aspera-cli` plugins and some of its gems (websocket, vault, marcel, jwt, execjs,
-    # rubyzip) are only `require`d lazily, so Ocran's dependency detection never sees
-    # them: force them in entirely with --gem-full.
-    gem_full_list = ([Aspera::Cli::Info::GEM_NAME] + OCRAN_LAZY_GEMS).join(',')
+    # By default, Ocran includes only the files loaded during the dependency detection run (plus a guess for gems).
+    # `aspera-cli` and its gems load some files only when used (e.g. `rubygems/package` for the SDK `.tar.gz`), so
+    # include everything, as a gem installation would provide:
+    # --add-all-core: the whole standard library, --gem-full: all files of all gems (all dependencies of `aspera-cli`
+    # are activated, so included).
     # Invoke Ocran's exe/ocran script directly with `ruby`, instead of running the
     # `ocran` executable (a RubyGems bin stub): the bin stub uses
     # Gem.activate_and_load_bin_path, which activates Ocran's own runtime
@@ -263,7 +255,8 @@ namespace :binary do
     run(
       'ruby',
       ocran_exe_path(PATH_WORKDIR_OCRAN),
-      "--gem-full=#{gem_full_list}",
+      '--add-all-core',
+      '--gem-full',
       *ocran_extra_options,
       '--output', cli_exec_path,
       entry_script_path,
@@ -282,10 +275,11 @@ namespace :binary do
       }
     )
 
-    # Package artifact into a .tgz archive as binary:build, with the glibc version (not needed for CosmoRuby)
+    # Package artifact into a .tgz archive as binary:build, with the glibc version (not needed for CosmoRuby), and the
+    # packaging tool, e.g. `aspera-cli-4.27.3-linux-x86_64-glibc2.28-ocran.tgz`
     cli_exec_path.chmod(0o755)
     glibc = glibc_version unless use_cosmo_ruby
-    path_tgz_target = built_tgz_path(gem_version_build, suffix: ("glibc#{glibc}" if glibc))
+    path_tgz_target = built_tgz_path(gem_version_build, suffix: [("glibc#{glibc}" if glibc), 'ocran'].compact.join('-'))
     readme_name = "README.#{Aspera::Cli::Info::CMD_NAME}.md"
     (PATH_WORKDIR_OCRAN / readme_name).write(ERB.new(PATH_README_TEMPLATE.read, trim_mode: '-').result_with_hash(
       cmd:      Aspera::Cli::Info::CMD_NAME,
