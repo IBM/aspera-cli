@@ -439,6 +439,7 @@ module Aspera
         # TODO: Remove next 2 lines when bug in async node api is fixed. (Aspera/core/issues/4490)
         node_api_bug = result_data&.index('}HTTP/1.1 400 Bad Request') if result_data.is_a?(String)
         result_data = result_data[0..node_api_bug] if node_api_bug
+        result_mime = 'application/xml' if result_data.is_a?(String) && result_data.start_with?('<?xml')
         result_data = JSON.parse(result_data) if Mime.json?(result_mime) && !result_data.nil? && !result_data.empty?
         Log.dump(:result_data, result_data)
         result_data

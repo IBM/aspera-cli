@@ -56,31 +56,33 @@ module Aspera
           }
         end
 
-        option :apikey,      description: 'API key'
-        option :ret_style,   description: 'Method to specify the expected response format in API calls', allowed: %i[header arg ext], default: :arg
-        option :auth_style,  description: 'Authentication style', allowed: %i[basic query token arg_pass head_basic], default: :token
+        option :apikey,      description: 'API key (exclusive with username/password)'
+        option :auth_style,  description: 'Authentication style', allowed: %i[basic query token], default: :token
+        option :ret_style,   description: 'Method to specify the expected response format ("Accept")', allowed: %i[header query path], default: :query
         option :result,      description: "Specify result value as: 'work_step:parameter'", deprecation: {last: '4.27.2', message: 'use keys `step` and `variable` of argument `execution` of `workflows start`'}
         option :synchronous, description: 'Wait for completion', allowed: Type::BOOLEAN, deprecation: {last: '4.27.2', message: 'use key `synchronous` of argument `execution` of `workflows start`'}
 
-        # Call orchestrator GET API (handles ret_style negotiation and XML parsing)
+        # Call orchestrator API (handles ret_style negotiation and XML parsing)
         # @param endpoint   [String]  the endpoint to call
+        # @param body       [Hash]    the body to pass (JSON); also implies POST
         # @param format     [String]  the format to request, 'json', 'xml', nil
-        # @param args       [Hash]    the arguments to pass (query parameters)
+        # @param query      [Hash]    the arguments to pass as query parameters
         # @param xml_arrays [Boolean] if true, force arrays in xml parsing
         # @param http       [Boolean] if true, returns the HttpResponse, else
-        def call_ao(endpoint, format: 'json', args: nil, xml_arrays: true, http: false)
-          call_args = {operation: 'GET', subpath: "api/#{endpoint}", ret: :both, query: {}}
+        def call_ao(endpoint, body: nil, format: 'json', query: nil, xml_arrays: true, http: false)
+          call_args = {operation: body.nil? ? 'GET' : 'POST', subpath: "api/#{endpoint}", ret: :both, query: {}}
+          call_args.merge!(body: body, content_type: Mime::JSON) unless body.nil?
           ret_style = options.get_option(:ret_style, mandatory: true)
-          call_args[:query].merge!(args) unless args.nil?
+          call_args[:query].merge!(query) unless query.nil?
           unless format.nil?
             case ret_style
             when :header
               call_args[:headers] = {'Accept' => "application/#{format}"}
-            when :arg
+            when :query
               call_args[:query][:format] = format
-            when :ext
+            when :path
               call_args[:subpath] = "#{call_args[:subpath]}.#{format}"
-            else Aspera.error_unexpected_value(ret_style)
+            else Aspera.error_unexpected_value(ret_style) { 'ret_style' }
             end
           end
           add_query = query_read_delete
@@ -107,7 +109,7 @@ module Aspera
           command :list,       description: 'Show Orchestrator plugin versions', action: ->(**) { Result::ObjectList.new(call_ao('plugin_version')['Plugin']) }
           command :reload_set, description: 'Reload a set of plugins',
             arguments: [{name: :plugin_set, type: Hash, schema: 'opts:components.schemas.OrchestratorReloadPluginSet'}],
-            action: ->(plugin_set:, **) { Result::SingleObject.new(api_orch.create('api/reload_plugin_set', plugin_set.transform_keys(&:to_sym))) }
+            action: ->(plugin_set:, **) { Result::SingleObject.new(call_ao('reload_plugin_set', body: plugin_set.transform_keys(&:to_sym))) }
         end
 
         commands_under :workflows do
@@ -129,13 +131,13 @@ module Aspera
             ]
           command :import,     description: 'Import a workflow',
             arguments: [{name: :workflow, type: Hash, schema: 'opts:components.schemas.OrchestratorImportWorkflow'}],
-            action: ->(workflow:, **) { Result::SingleObject.new(api_orch.create('api/import_workflow', workflow.transform_keys(&:to_sym))) }
+            action: ->(workflow:, **) { Result::SingleObject.new(call_ao('import_workflow', body: workflow.transform_keys(&:to_sym))) }
           command :publish,    description: 'Publish a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
-            action: ->(workflow_id:, **) { Result::SingleObject.new(api_orch.create('api/publish_workflow', {workflow_id: workflow_id.to_i})) }
+            action: ->(workflow_id:, **) { Result::SingleObject.new(call_ao('publish_workflow', body: {workflow_id: workflow_id.to_i})) }
           command :import_with_constraints, description: 'Import a workflow with constraint resolution',
             arguments: [{name: :payload, type: Hash, schema: 'opts:components.schemas.OrchestratorImportWithConstraints'}],
-            action: ->(payload:, **) { Result::SingleObject.new(api_orch.create('api/import_with_constraints', payload.transform_keys(&:to_sym))) }
+            action: ->(payload:, **) { Result::SingleObject.new(call_ao('import_with_constraints', body: payload.transform_keys(&:to_sym))) }
           command :export,     description: 'Export a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
             action: ->(workflow_id:, **) { Result::Text.new(call_ao("export_workflow/#{workflow_id}", format: nil, http: true).body) }
@@ -180,60 +182,36 @@ module Aspera
           base_url = options.get_option(:url, mandatory: true)
           style = options.get_option(:auth_style, mandatory: true)
           apikey = options.get_option(:apikey)
+          username = options.get_option(:username)
+          password = options.get_option(:password)
+          Aspera.assert(apikey.nil? || (username.nil? && password.nil?), type: Cli::BadArgument) { 'apikey and username/password are mutually exclusive' }
+          Aspera.assert(!apikey.nil? || (!username.nil? && !password.nil?), type: Cli::BadArgument) { 'provide either apikey or username and password' }
 
           auth_params =
-            if apikey
-              case style
-              when :query, :arg_pass
-                {
-                  type:      :url,
-                  url_query: {'apikey' => apikey}
-                }
-              when :token
-                {
-                  type:         :oauth2,
-                  grant_method: :json_credentials,
-                  base_url:     base_url,
-                  path_token:   'api/login',
-                  token_field:  'token',
-                  json:         {apikey: apikey}
-                }
-              when :basic, :head_basic
-                Aspera.error_unexpected_value(style) { 'basic auth style cannot be used with apikey, use --auth_style=token or --auth_style=query' }
-              else Aspera.error_unexpected_value(style)
+            case style
+            when :basic
+              Aspera.assert(apikey.nil?, type: Cli::BadArgument) { 'basic auth style cannot be used with apikey, use token or query' }
+              {
+                type:     :basic,
+                username: username,
+                password: password
+              }
+            when :query
+              if apikey
+                {type: :url, url_query: {'apikey' => apikey}}
+              else
+                {type: :url, url_query: {'login' => username, 'password' => password}}
               end
-            else
-              username = options.get_option(:username, mandatory: true)
-              password = options.get_option(:password, mandatory: true)
-              case style
-              when :basic, :head_basic
-                {
-                  type:     :basic,
-                  username: username,
-                  password: password
-                }
-              when :query, :arg_pass
-                {
-                  type:      :url,
-                  url_query: {
-                    'login'    => username,
-                    'password' => password
-                  }
-                }
-              when :token
-                {
-                  type:         :oauth2,
-                  grant_method: :json_credentials,
-                  base_url:     base_url,
-                  path_token:   'api/login',
-                  token_field:  'token',
-                  json:         {
-                    username: username,
-                    password: password
-                  }
-                }
-              else Aspera.error_unexpected_value(style)
-              end
+            when :token
+              {
+                type:         :oauth2,
+                grant_method: :json_credentials,
+                base_url:     base_url,
+                path_token:   'api/login',
+                token_field:  'token',
+                json:         apikey ? {apikey: apikey} : {username: username, password: password}
+              }
+            else Aspera.error_unexpected_value(style)
             end
           @api_orch = Rest::Client.new(
             base_url: base_url,
@@ -277,8 +255,8 @@ module Aspera
             Aspera.assert(fields.length == 2, type: Cli::BadArgument) { "Expects: work_step:result_name : #{result_location}" }
             execution['step'], execution['variable'] = fields
           end
-          # POST /api/initiate with JSON body {workflow_id:, parameters:}
-          json_body = {workflow_id: workflow_id.to_i, parameters: parameters}
+          # POST /api/initiate with JSON body {workflow_id:, external_parameters:}
+          json_body = {workflow_id: workflow_id.to_i, external_parameters: parameters}
           # control params passed as query string (not part of the spec requestBody)
           query_params = {}
           Aspera.assert_type(execution['synchronous'], NilClass, *BoolValue::TYPES, type: Cli::BadArgument) { 'synchronous' }
@@ -291,7 +269,7 @@ module Aspera
             # implicitly, call is synchronous
             query_params[:synchronous] = true
           end
-          result_data = api_orch.create('api/initiate', json_body, query: query_params.empty? ? nil : query_params)
+          result_data = call_ao('initiate', body: json_body, query: query_params.empty? ? nil : query_params)
           query_params[:synchronous] ? Result::Text.new(result_data) : Result::SingleObject.new(result_data)
         end
       end

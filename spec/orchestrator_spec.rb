@@ -93,7 +93,7 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
 
     it 'raises error when using basic auth_style with apikey' do
       parse_argv(%w[--url=https://orch.example.com --apikey=mykey123 --auth_style=basic])
-      expect { orchestrator.api_orch }.to(raise_error(Aspera::InternalError, /basic auth style cannot be used with apikey/))
+      expect { orchestrator.api_orch }.to(raise_error(Aspera::Cli::BadArgument, /basic auth style cannot be used with apikey/))
     end
   end
 end

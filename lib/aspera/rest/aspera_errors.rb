@@ -2,6 +2,7 @@
 
 require 'aspera/rest/error_analyzer'
 require 'aspera/log'
+require 'xmlsimple'
 
 module Aspera
   module Rest
@@ -45,6 +46,17 @@ module Aspera
           ErrorAnalyzer.instance.add_handler('Orchestrator') do |type, context|
             next if context[:response].code.start_with?('2')
             data = context[:data]
+            if data.is_a?(String) && data.start_with?('<?xml')
+              parsed = XmlSimple.xml_in(data, {'ForceArray' => false}) rescue nil
+              if parsed.is_a?(Hash) && parsed['content'].is_a?(String)
+                ErrorAnalyzer.add_error(context, type, parsed['content'].gsub(/\A"|"\z/, ''))
+                parsed.each do |k, v|
+                  next if k.eql?('content')
+                  ErrorAnalyzer.add_error(context, "#{type}(sub)", "#{k}: #{v}") if [String, Integer].include?(v.class)
+                end
+              end
+              next
+            end
             next unless data.is_a?(Hash)
             work_order = data['work_order']
             next unless work_order.is_a?(Hash)
