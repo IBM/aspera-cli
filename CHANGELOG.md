@@ -8,7 +8,7 @@ Released: [Place date of release here]
 
 * `orchestrator`: Add JWT-based bearer token authentication (default) and API key support via options `--auth_style` (`token`, `basic`, `query`) and `--apikey`.
 * `aoc`: `short_link list` supports `--query=help`, help of `short_link create|modify` shows the request body.
-* `node`: `simulator` executes transfers with `transferd`, and supports more of the Node API. See the manual.
+* `node`: `emulator` executes transfers with `transferd`, and supports more of the Node API. See the manual.
 * **general**: Linux portable package `aspera-cli-<version>-linux-x86_64-glibc<version>-portable.tgz`: Ruby, gems and Transfer SDK, extract and run, like the Windows portable package.
 * `shares`: `admin share user_permissions|group_permissions` support `create`, `modify` and `delete` (identified by user or group id, e.g. `%username:john@example.com`).
 * `config`: `commands` accepts aliases in the command path (e.g. `config commands server browse`).
@@ -17,7 +17,7 @@ Released: [Place date of release here]
 
 * `preview`: Generator options with a numeric value given on command line (e.g. `--thumb-vid-fraction=0.3`, `--blend-pauseframes=2`) were failing.
 * `aoc`: `short_link show` always failed with `not found`.
-* `faspex5`: `packages receive` with a public link now works with a list of files, and ALL.
+* `faspex5`: `packages receive` with a public link now works with a list of files, and `ALL`.
 * `config`: `commands` failed with `no such command` when the command path included positional arguments (e.g. `faspex5 packages receive ALL`): arguments are now skipped, and an unknown command shows the list of sub-commands.
 * `aoc`: `files short_link public modify` with `access_levels` set full access (`edit`) instead of the given levels.
 * `aoc`: `packages shared_inboxes short_link public` commands were failing (wrong short link purpose, parameters of shared folder links). Link type `private` is removed: AoC supports it only for shared folders.
@@ -27,8 +27,8 @@ Released: [Place date of release here]
 * **general**: Fixed #265 #266: Linux single executable of 4.27.3 ran every command as `config commands <command>`: e.g. `config transferd install` only displayed its syntax, and `faspex5 packages receive ALL` failed with `no such command`.
 * `config`: `transferd install` with `--sdk-url=file:///...tar.gz` (local SDK archive, Linux) failed with `not in gzip format`.
 * **general**: Linux single executable: commands could fail with `cannot load such file` (e.g. `config transferd install`: `rubygems/package`): it now includes the whole Ruby standard library and all files of gems.
-* **general**: Progress bar: stayed at 0% when the total size was not known (the transferred size is now shown), rate was underestimated (it included connection time: now averaged over the last 5 seconds, in decimal `Mbps` like `ascp`), a resumed session doubled the total size or failed the transfer, a second HTTP download accumulated the first one, multi-session state was shared between sessions in agent `direct`. Errors in the progress bar no longer fail the transfer.
-* **general**: Progress bar: a failed transfer was displayed as completed (the bar now stops at the reached progress, with `failed`), log lines were mixed with the progress bar (they are now displayed above it), files already at destination (whole or partially, when resumed) were not counted in progress, multi-session progress exceeded the total size (agent `direct`), agent `httpgw` did not terminate the progress bar.
+* **general**: **Progress bar**: stayed at 0% when the total size was not known (the transferred size is now shown), rate was underestimated (it included connection time: now averaged over the last 5 seconds, in decimal `Mbps` like `ascp`), a resumed session doubled the total size or failed the transfer, a second HTTP download accumulated the first one, multi-session state was shared between sessions in agent `direct`. Errors in the progress bar no longer fail the transfer.
+* **general**: **Progress bar**: a failed transfer was displayed as completed (the bar now stops at the reached progress, with `failed`), log lines were mixed with the progress bar (they are now displayed above it), files already at destination (whole or partially, when resumed) were not counted in progress, multi-session progress exceeded the total size (agent `direct`), agent `httpgw` did not terminate the progress bar.
 * **general**: Agent `direct`: when `ascp` ended without final status (e.g. killed), `ascli` failed with `wrong number of arguments`: the transfer is now resumed.
 * `shares`: Help of `admin share create|modify` showed fields `path` and `description`, rejected by Shares (error 500): fields are `directory` and `create_directory`. Same for `description` in `admin group local create|modify`.
 * `aoc`: `admin user preferences|notifications show|modify` failed with `undefined method 'setup_admin_user_instance'`.
@@ -44,7 +44,6 @@ Released: [Place date of release here]
 * `faspex5`: `admin shared_inboxes|workgroups saml_groups modify|delete` with a percent selector (e.g. `%name:my_group`) failed with `assertion failed`.
 * `faspex5`: Lists were read endlessly if the server returned an empty page before the total count, and failed without total count.
 * `config`: `vault` of type `file` without `name` failed with `no implicit conversion of nil into String` (default name: `vault.bin`).
-* **general**: Ruby library: list operations with paging (e.g. `Api::Node`, `Api::AoC`, `Api::Faspex`) failed outside of `ascli`, which sets a progress callback.
 * **general**: Interactive prompts were displayed on `stdout`, mixed with results (e.g. when redirected to a file): they are now displayed on `stderr`.
 * **general**: Security: the encrypted vault file was readable by other users, and files with secrets (configuration, persistency, generated private key) were readable by other users until access was restricted, just after creation: they are now created with restricted access.
 * **general**: Security: secrets of transfer agent parameters (e.g. `password` of agent `node`) were saved in clear with asynchronous transfers: `config transfer status` now takes them from the current `transfer` option.
@@ -52,8 +51,9 @@ Released: [Place date of release here]
 ### Breaking Changes
 
 * **general**: With `--format=json`, `jsonpp`, `yaml` or `ruby`, the output is always valid in this format: a status is a string (e.g. `"complete"`), an empty list is `[]`, and no result is `null` (were displayed as plain text, e.g. `complete`, `empty`, `nothing`).
-* `node`: `simulator` requires `transferd` and the gem `grpc`, instead of `ascp`.
-* `node`: `simulator` parameter `browse_root` is renamed `docroot`.
+* `node`: `emulator` requires `transferd` and the gem `grpc`, instead of `ascp`.
+* `node`: `simulator` is not renamed and is an alias of `emulator`.
+* `node`: `emulator` parameter `browse_root` is renamed `docroot`.
 * **general**: Release archives are named `aspera-cli-<version>-<os>-<cpu>...`: single executable `aspera-cli-<version>-linux-x86_64-glibc<version>-ocran.tgz` (was `ascli-...`), Windows portable `aspera-cli-<version>-windows-x86_64-portable.zip` (was `windows-amd64`).
 * `orchestrator`: Command `plugins` is now `plugins list`.
 * `orchestrator`: Default authentication is now JWT token.
