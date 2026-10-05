@@ -3384,6 +3384,24 @@ aoc_adm_user_modify:
     - "@extend:%name:@preset:awa.user_email@"
     - "@:"
     - deactivated=false
+aoc_adm_user_preferences_show:
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - user
+    - preferences
+    - "@extend:%name:@preset:awa.user_email@"
+    - show
+aoc_adm_user_notifications_show:
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - user
+    - notifications
+    - "@extend:%name:@preset:awa.user_email@"
+    - show
 aoc_adm_group_list:
   args:
     - --preset=aoc_admin

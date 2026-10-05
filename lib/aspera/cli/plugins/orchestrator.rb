@@ -52,7 +52,7 @@ module Aspera
               username: options.get_option(:username, mandatory: true),
               password: options.get_option(:password, mandatory: true)
             },
-            test_args:    'workflow list'
+            test_args:    'workflows list'
           }
         end
 

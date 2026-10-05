@@ -176,6 +176,85 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
       end
     end
 
+    context 'methods referenced by Symbol' do
+      let(:plugin_class) { Class.new { def setup_ok(**) = {}; def lookup_ok(*, **) = nil } } # rubocop:disable Style/Semicolon
+      let(:leaf_action) { ->(**) {} }
+
+      it 'passes when setup:, condition: and lookup: methods exist' do
+        args = [{name: :id, type: :identifier, lookup: :lookup_ok}]
+        registry.register(spec(id: :leaf, action: leaf_action, setup: :setup_ok, condition: :setup_ok, arguments: args))
+        expect { registry.validate!(plugin_class: plugin_class) }.not_to(raise_error)
+      end
+
+      it 'raises for a missing setup: method' do
+        registry.register(spec(id: :leaf, action: leaf_action, setup: :nope))
+        expect { registry.validate!(plugin_class: plugin_class) }.to(raise_error(ArgumentError, /no method nope .* for setup:/))
+      end
+
+      it 'raises for a missing condition: method' do
+        registry.register(spec(id: :leaf, action: leaf_action, condition: :nope))
+        expect { registry.validate!(plugin_class: plugin_class) }.to(raise_error(ArgumentError, /no method nope .* for condition:/))
+      end
+
+      it 'raises for a missing lookup: method' do
+        registry.register(spec(id: :leaf, action: leaf_action, arguments: [{name: :id, type: :identifier, lookup: :nope}]))
+        expect { registry.validate!(plugin_class: plugin_class) }.to(raise_error(ArgumentError, /no method nope .* for lookup:/))
+      end
+
+      it 'does not check methods without plugin_class' do
+        registry.register(spec(id: :leaf, action: leaf_action, setup: :nope))
+        expect { registry.validate! }.not_to(raise_error)
+      end
+    end
+
+    context 'arguments' do
+      let(:leaf_action) { ->(**) {} }
+
+      it 'raises for lookup: on an argument that is not an identifier' do
+        registry.register(spec(id: :leaf, action: leaf_action, arguments: [{name: :id, lookup: :lookup_ok}]))
+        expect { registry.validate! }.to(raise_error(ArgumentError, /requires type: :identifier/))
+      end
+
+      it 'raises for a mandatory argument after an optional one' do
+        registry.register(spec(id: :leaf, action: leaf_action, arguments: [{name: :a, mandatory: false}, {name: :b}]))
+        expect { registry.validate! }.to(raise_error(ArgumentError, /argument b: mandatory after optional a/))
+      end
+
+      it 'raises for an argument after one taking all remaining arguments' do
+        registry.register(spec(id: :leaf, action: leaf_action, arguments: [{name: :a, multiple: true}, {name: :b, mandatory: false}]))
+        expect { registry.validate! }.to(raise_error(ArgumentError, /argument b: after a/))
+      end
+
+      it 'accepts an argument after one read until a marker' do
+        registry.register(spec(id: :leaf, action: leaf_action, arguments: [{name: :a, multiple: '--'}, {name: :b}]))
+        expect { registry.validate! }.not_to(raise_error)
+      end
+    end
+
+    context 'aliases' do
+      let(:leaf_action) { ->(**) {} }
+
+      it 'raises for an alias equal to a sibling command' do
+        registry.register(spec(id: :ls, action: leaf_action, aliases: [:list]))
+        registry.register(spec(id: :list, action: leaf_action))
+        expect { registry.validate! }.to(raise_error(ArgumentError, /alias conflicts .*:list/))
+      end
+
+      it 'raises for an alias of two sibling commands' do
+        registry.register(spec(id: :ls, action: leaf_action, aliases: [:browse]))
+        registry.register(spec(id: :find, action: leaf_action, aliases: [:browse]))
+        expect { registry.validate! }.to(raise_error(ArgumentError, /alias conflicts .*:browse/))
+      end
+
+      it 'accepts the same alias under different parents' do
+        registry.register(spec(id: :a))
+        registry.register(spec(id: :b))
+        registry.register(spec(id: :ls, parent: :a, action: leaf_action, aliases: [:browse]))
+        registry.register(spec(id: :ls, parent: :b, action: leaf_action, aliases: [:browse]))
+        expect { registry.validate! }.not_to(raise_error)
+      end
+    end
+
     context 'transfer_paths combined with arguments' do
       it 'does not raise when both transfer_paths and arguments are present' do
         args = [Aspera::Cli::ArgumentSpec.new(name: :path, type: String)]
@@ -193,6 +272,31 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
         registry.register(spec(id: :cmd, arguments: args))
         expect { registry.validate! }.not_to(raise_error)
       end
+    end
+  end
+
+  # -----------------------------------------------------------------------
+  # command_path
+  # -----------------------------------------------------------------------
+  describe '#command_path' do
+    before do
+      registry.register(spec(id: :packages))
+      registry.register(spec(id: :receive, parent: :packages, action: :x, aliases: [:recv], arguments: [{name: :package_id}]))
+      registry.register(spec(id: :do, parent: :packages, arguments: [{name: :id}]))
+      registry.register(spec(id: :ls, parent: %i[packages do], action: :x))
+    end
+
+    it 'follows sub-commands and aliases, and stops at a leaf' do
+      expect(registry.command_path(%i[packages recv ALL extra])).to(eq([%i[packages receive], nil]))
+    end
+
+    it 'skips the arguments of intermediate nodes' do
+      expect(registry.command_path(%i[packages do 42 ls])).to(eq([%i[packages do ls], nil]))
+    end
+
+    it 'returns the first word that is neither a command nor an expected argument' do
+      expect(registry.command_path(%i[packages nope])).to(eq([%i[packages], :nope]))
+      expect(registry.command_path(%i[packages do 42 43])).to(eq([%i[packages do], :'43']))
     end
   end
 

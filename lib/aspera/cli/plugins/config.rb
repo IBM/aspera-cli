@@ -596,27 +596,12 @@ module Aspera
         # e.g. `faspex5 packages receive ALL` lists `faspex5 packages receive`.
         # @param name  [Symbol]          plugin name
         # @param reg   [CommandRegistry] registry of plugin
-        # @param words [Array<Symbol>]   sub-commands, possibly mixed with their arguments
+        # @param words [Array<Symbol>]   sub-commands (or aliases), possibly mixed with their arguments
         # @return [Array<Symbol>] command path
         # @raise [Cli::BadArgument] if a word is neither a sub-command nor an expected argument
         def listed_command_path(name, reg, words)
-          path = []
-          # Number of positional arguments still accepted by the node at path
-          args_left = 0
-          words.each do |word|
-            children = reg.children_of(path)
-            # Words after a leaf command are its arguments
-            break if children.empty?
-            if children.key?(word)
-              path += [word]
-              arguments = reg.arguments_at(path)
-              args_left = arguments.any?(&:multiple) ? Float::INFINITY : arguments.length
-            elsif args_left.positive?
-              args_left -= 1
-            else
-              raise Cli::BadArgument, Parser.multi_choice_assert_msg("no such command: #{[name, *path, word].join(' ')}", children.keys)
-            end
-          end
+          path, unknown = reg.command_path(words)
+          raise Cli::BadArgument, Parser.multi_choice_assert_msg("no such command: #{[name, *path, unknown].join(' ')}", reg.children_of(path).keys) unless unknown.nil?
           path
         end
 

@@ -342,6 +342,14 @@ module Aspera
             inst = conditional_class.new(context: context)
             expect(inst.dispatch_from_registry([])).to(be_a(Result::Status).and(have_attributes(data: 'ssh')))
           end
+
+          it 'does not accept aliases of excluded commands' do
+            conditional_class.command(:ssh_alias, description: 'SSH only, with alias', action: :handle_ssh, condition: :ssh_available?, aliases: [:remote])
+            conditional_class.define_method(:ssh_available?) { false }
+            allow(options).to(receive(:get_next_command).with([:always], aliases: nil).and_return(:always))
+            inst = conditional_class.new(context: context)
+            expect(inst.dispatch_from_registry([])).to(be_a(Result::Status).and(have_attributes(data: 'always')))
+          end
         end
 
         # ------------------------------------------------------------------
@@ -489,6 +497,20 @@ module Aspera
             allow(options).to(receive(:get_next_argument).with('files', mandatory: true, multiple: true, validation: String, accept_list: nil, default: nil, schema: nil).and_return(%w[a b]))
             arg_spec = ArgumentSpec.new(name: :files, type: String, multiple: true)
             expect(plugin.resolve_argument(arg_spec)).to(eq(%w[a b]))
+          end
+
+          context 'with --bulk=yes' do
+            let(:options) { Parser.new('test', %w[group G1 delete U1 U2 --bulk=yes]) }
+
+            it 'reads a list only for arguments declared bulk' do
+              klass = Class.new(Base)
+              klass.command(:group, description: 'Group', arguments: [{name: :group_id, type: :identifier}])
+              klass.command(
+                :delete, parent: :group, description: 'Delete users', arguments: [{name: :user_id, type: :identifier, bulk: true}],
+                action: ->(group_id:, user_id:, **) { Result::SingleObject.new({group_id => user_id}) }
+              )
+              expect(klass.new(context: context).execute_action.data).to(eq({'G1' => %w[U1 U2]}))
+            end
           end
 
           context 'with interactive: true' do

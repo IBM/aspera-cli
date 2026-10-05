@@ -63,7 +63,7 @@ module Aspera
               username: options.get_option(:username, mandatory: true),
               password: options.get_option(:password, mandatory: true)
             },
-            test_args:    'transfer list'
+            test_args:    'transfer current list'
           }
         end
 

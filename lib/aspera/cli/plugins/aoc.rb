@@ -476,13 +476,10 @@ module Aspera
           )))
         end
 
-        # Execute an action on admin resources
-        # @param resource_type [Symbol] One of ADMIN_OBJECTS
         # Per-resource configuration for admin CRUD resources.
         # Keys: path, list_fields, id_result, require_ws_id, create_schema, extra_ops, singleton, op_setup, op_mount, op_descriptions
-        # op_setup: Hash of op => setup method name, used for ops that require consuming an instance identifier.
-        #   For Operations::INSTANCE ops (show/modify/delete), use the auto-generated :setup_admin_<res>_instance.
-        #   For extra_ops that are instance ops, specify explicitly (or rely on the auto-generated one).
+        # Ops other than `create` and `list` read the identifier `<res>_id` (argument of the op node).
+        # op_setup: Hash of op => setup method name, for ops that need context derived from the identifier.
         # op_mount: Hash of op => mount: of that op's node.
         # op_descriptions: Hash of op => description, for ops other than standard ones.
         ADMIN_OBJECT_CONFIG = {
@@ -517,7 +514,6 @@ module Aspera
           user:                      {
             list_fields:     %w[id name email],
             extra_ops:       %i[preferences notifications],
-            op_setup:        {preferences: :setup_admin_user_instance, notifications: :setup_admin_user_instance},
             op_descriptions: {preferences: 'Manage user preferences', notifications: 'Manage user notification preferences'}
           },
           workspace:                 {
@@ -1528,9 +1524,6 @@ module Aspera
           Ats.new(context: context, api: ats_api)
         end
 
-        # admin > node > do | bearer_token — setup reuses the generic instance setup
-        # (setup_admin_node_instance is auto-generated above, providing res_id:)
-
         # admin > node > do - mount target: Gen4 commands on the node, admin scope
         def admin_node_do_plugin(node_id:, **)
           nodegen4_plugin(node_id, scope: Api::Node::Scope::ADMIN)
@@ -1601,7 +1594,7 @@ module Aspera
         end
 
         # admin > user > preferences|notifications > show|modify
-        # (setup_admin_user_instance is auto-generated, providing res_id:)
+        # (user_id: argument of the preferences|notifications node)
         %i[preferences notifications].each do |pref|
           pref_path = pref.eql?(:preferences) ? 'user_interaction_preferences' : 'notification_preferences'
           define_action_method([:admin, :user, pref, :show]) do |user_id:, **|

@@ -11,6 +11,7 @@ Released: [Place date of release here]
 * `node`: `simulator` executes transfers with `transferd`, and supports more of the Node API. See the manual.
 * **general**: Linux portable package `aspera-cli-<version>-linux-x86_64-glibc<version>-portable.tgz`: Ruby, gems and Transfer SDK, extract and run, like the Windows portable package.
 * `shares`: `admin share user_permissions|group_permissions` support `create`, `modify` and `delete` (identified by user or group id, e.g. `%username:john@example.com`).
+* `config`: `commands` accepts aliases in the command path (e.g. `config commands server browse`).
 
 ### Issues Fixed
 
@@ -30,6 +31,10 @@ Released: [Place date of release here]
 * **general**: Progress bar: a failed transfer was displayed as completed (the bar now stops at the reached progress, with `failed`), log lines were mixed with the progress bar (they are now displayed above it), files already at destination (whole or partially, when resumed) were not counted in progress, multi-session progress exceeded the total size (agent `direct`), agent `httpgw` did not terminate the progress bar.
 * **general**: Agent `direct`: when `ascp` ended without final status (e.g. killed), `ascli` failed with `wrong number of arguments`: the transfer is now resumed.
 * `shares`: Help of `admin share create|modify` showed fields `path` and `description`, rejected by Shares (error 500): fields are `directory` and `create_directory`. Same for `description` in `admin group local create|modify`.
+* `aoc`: `admin user preferences|notifications show|modify` failed with `undefined method 'setup_admin_user_instance'`.
+* **general**: With `--bulk=yes`, commands under a node with an identifier (e.g. `node access_keys do <id> delete`, `faspex5 admin nodes shared_folders <id> delete`, `shares admin share user_permissions <id> delete`) failed with `Missing argument: command`: only arguments supporting bulk operations are read as a list.
+* `server`: Aliases `browse`, `delete` and `rename` executed `ls`, `rm` and `mv` even when `ascmd` is not available.
+* `config`: `wizard` displayed a test command that does not exist for `faspio`, `orchestrator`, `console` and `server`.
 
 ### Breaking Changes
 

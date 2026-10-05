@@ -228,14 +228,15 @@ module Aspera
 
       # Resource identifier as positional parameter
       #
-      # @param description [String] description of the identifier
-      # @param block       [Proc] block to search for identifier based on attribute value
-      # @return [String, Array<String>] identifier or list of IDs (if `bulk` option is set)
+      # @param description [String]  description of the identifier
+      # @param multiple    [Boolean] `true`: read a list of IDs (bulk operation)
+      # @param block       [Proc]    block to search for identifier based on attribute value
+      # @return [String, Array<String>] identifier or list of IDs (if `multiple`)
       # @yieldparam field [String] The field name from percent selector
       # @yieldparam value [String] The value from percent selector
       # @yieldreturn [String] Resolved identifier
-      def instance_identifier(description: 'identifier', &block)
-        res_id = get_next_argument(description, multiple: get_option(:bulk))
+      def instance_identifier(description: 'identifier', multiple: false, &block)
+        res_id = get_next_argument(description, multiple: multiple)
         # Can be an Array
         if res_id.is_a?(String) && (m = Parser.percent_selector(res_id))
           Aspera.assert(block_given?, type: Cli::BadArgument) { "Percent syntax for #{description} not supported in this context" }

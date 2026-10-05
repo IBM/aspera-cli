@@ -33,7 +33,7 @@ module Aspera
             preset_value: {
               url: app_url
             },
-            test_args:    'info'
+            test_args:    'bridges list'
           }
         end
 

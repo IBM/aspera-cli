@@ -388,7 +388,8 @@ module Aspera
           # (mounted children are only walked here for --help, see below).
           # With --help, conditions are not evaluated: they may need the API, which is not built for help.
           available = children.reject { |id, c| c.condition && !@context.help_requested && registry.local?(current_path + [id]) && !send(c.condition) }
-          aliases   = children.values.each_with_object({}) do |c, h|
+          # Aliases of available commands only: an alias must not bypass the condition of its command
+          aliases   = available.values.each_with_object({}) do |c, h|
             Array(c.aliases).each { |a| h[a] = c.id } if c.aliases
           end
 
@@ -511,6 +512,7 @@ module Aspera
 
         # Resolve a single positional argument from the CLI argument stream.
         # When arg_spec.bulk is true, always returns an Array (normalized to [value] when non-bulk).
+        # Only such arguments are read as a list with `--bulk=yes`: others (e.g. the id of a parent node) are single values.
         # For type: :identifier, an optional block provides the percent-selector lookup.
         # @param arg_spec [ArgumentSpec]
         # @yieldparam field [String]  field name from a percent-selector (%field:value)
@@ -521,7 +523,7 @@ module Aspera
           if arg_spec.bulk
             is_bulk = options.get_option(:bulk)
             if arg_spec.type.eql?(:identifier)
-              val = options.instance_identifier(description: arg_spec.name.to_s, &block)
+              val = options.instance_identifier(description: arg_spec.name.to_s, multiple: is_bulk, &block)
             else
               val = options.get_next_argument(
                 arg_spec.name.to_s,

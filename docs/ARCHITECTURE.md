@@ -175,7 +175,7 @@ All plugins declare their command tree using a class-level DSL defined in `Base`
 | `arguments` | `Array<ArgumentSpec \| Hash>` | Positional arguments in parse order. On an **intermediate** node they are resolved before child dispatch (e.g. parent instance id); on a **leaf** they are resolved just before the action |
 | `action` | `Symbol \| Proc \| nil` | Leaf action. **(1)** omitted → convention `action_<full_path_joined_by_underscores>`; **(2)** `Symbol` → named instance method; **(3)** `Proc` → inline, executed with `instance_exec` |
 | `setup` | `Symbol \| nil` | Instance method called with `**ctx` after the node's `arguments` are resolved; returns a `Hash` merged into `ctx` for all descendants |
-| `aliases` | `Array<Symbol> \| nil` | Alternative names accepted for this command (e.g. `aliases: [:recv]`) |
+| `aliases` | `Array<Symbol> \| nil` | Alternative names accepted for this command (e.g. `aliases: [:recv]`), not accepted when the command is excluded by `condition:` |
 | `transfer_paths` | `:send \| :receive \| nil` | File-list resolution delegated to `TransferAgent` (reads what remains after declared `arguments`) |
 | `condition` | `Symbol \| nil` | Instance method returning `Boolean`; if `false`, command is excluded from dispatch but shown in help with an annotation. Not evaluated with `--help` |
 | `query_schema` | `String \| nil` | Schema path for `--query` help; the runner then hints `--query=help` |
@@ -192,7 +192,7 @@ All plugins declare their command tree using a class-level DSL defined in `Base`
 | `multiple` | `Boolean \| String` | `true`: consume all remaining; `String`: consume until the named marker |
 | `default` | `Object \| nil` | Default value when `mandatory: false` and no argument provided |
 | `schema` | `String \| nil` | JSON schema name for validation and `--help` introspection |
-| `bulk` | `Boolean` | Result is always an `Array`; with `--bulk=yes` the argument is read as an array |
+| `bulk` | `Boolean` | Result is always an `Array`; with `--bulk=yes` the argument is read as an array. Other arguments (e.g. the id of a parent node) are single values with `--bulk=yes` |
 | `lookup` | `Symbol \| Proc \| nil` | Percent-selector resolver for `:identifier`: `send(lookup, field, value, **ctx)` or `instance_exec(field, value, **ctx, &lookup)` |
 | `allowed` | `Array<Symbol> \| nil` | Allowed values (accept list) |
 | `interactive` | `Boolean` | Prompt for the value when missing, for this argument only (`options.with_interactive`): an action that prompts for other values uses `options.with_interactive` explicitly |
@@ -212,6 +212,17 @@ def setup_package_id(**)
   {package_id: @api_v5.pub_link_context['package_id']}
 end
 ```
+
+**Static validation**: `CommandRegistry#validate!` is run for every plugin by [`plugin_registry_spec.rb`](../spec/plugin_registry_spec.rb), and once per class at first dispatch. It checks that:
+
+- the parent of each `commands_under` is declared
+- each leaf has an action (explicit, or method `action_<path>`) accepting any keyword (`**`)
+- the methods named by `setup:`, `condition:`, `lookup:` and mount `instance:` exist
+- arguments are readable: no mandatory argument after an optional one, no argument after a `multiple: true` one, `lookup:` only with `type: :identifier`
+- an alias designates a single command, and does not hide a sibling command
+- mounts are consistent (see [Mounting another plugin's commands](#mounting-another-plugins-commands))
+
+The spec also checks that the test command displayed by the wizard of each plugin (`test_args`) is a leaf command of the plugin (`CommandRegistry#command_path`).
 
 **`crud_commands` helper**:
 

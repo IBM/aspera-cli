@@ -20,6 +20,7 @@ module Aspera
     #   own_children_of(path)   - Hash{Symbol => CommandSpec} of direct children declared on the node, without mounted ones
     #   arguments_at(path)      - Array of ArgumentSpec read by the node at path (mount arguments first)
     #   leaf_paths              - Array of all leaf paths (follows mounts, or stops at mount nodes)
+    #   command_path(words)     - command path designated by command line words (aliases, arguments)
     #   all_paths               - Array of all locally registered full paths
     #   any?                    - true if at least one spec has been registered
     #   validate!               - cross-spec consistency checks; raises on violation
@@ -138,6 +139,33 @@ module Aspera
         end
       end
 
+      # Command path designated by words of a command line: sub-commands (or their aliases),
+      # each possibly followed by its positional arguments, e.g. `packages receive ALL` designates `packages receive`.
+      # Words after a leaf command are its arguments.
+      # @param words [Array<Symbol>] words following the plugin name
+      # @return [Array(Array<Symbol>, Symbol)] command path, and the first word that is neither a sub-command
+      #   nor an expected argument (`nil` if none)
+      def command_path(words)
+        path = []
+        # Number of positional arguments still accepted by the node at path
+        args_left = 0
+        words.each do |word|
+          children = children_of(path)
+          break if children.empty?
+          id = children.key?(word) ? word : children.find { |_, c| Array(c.aliases).include?(word) }&.first
+          if id
+            path += [id]
+            arguments = arguments_at(path)
+            args_left = arguments.any?(&:multiple) ? Float::INFINITY : arguments.length
+          elsif args_left.positive?
+            args_left -= 1
+          else
+            return [path, word]
+          end
+        end
+        [path, nil]
+      end
+
       # @return [Array<Array<Symbol>>] all locally registered full paths
       def all_paths
         @specs.keys
@@ -168,29 +196,42 @@ module Aspera
       end
 
       # Cross-spec consistency checks.
-      # @param plugin_class [Class, nil] when given, also verify that implicit action methods exist
+      # @param plugin_class [Class, nil] when given, also verify that methods referenced by Symbol
+      #   (implicit and explicit actions, `setup:`, `condition:`, `lookup:`, mount `instance:`) exist
       # @raise [ArgumentError] on any violation
       # @return [self]
       def validate!(plugin_class: nil)
-        # Rule: every non-root parent path that appears in the children index must have
-        # a registered CommandSpec. A missing parent means commands_under(:x) was used
-        # without a matching command :x declaration.
-        @children_index.each_key do |parent_path|
-          next if parent_path.empty? # root is never a CommandSpec
-          unless @specs.key?(parent_path)
+        @children_index.each do |parent_path, children|
+          # Rule: every non-root parent path that appears in the children index must have
+          # a registered CommandSpec. A missing parent means commands_under(:x) was used
+          # without a matching command :x declaration.
+          unless parent_path.empty? || @specs.key?(parent_path)
             raise ArgumentError,
               "commands_under(#{parent_path.map(&:inspect).join(', ')}) used but #{parent_path.last.inspect} has no command declaration"
           end
+          # Rule: an alias designates a single command, and does not hide a sibling command
+          aliases = children.values.flat_map { |c| Array(c.aliases) }
+          conflicts = aliases.select { |a| children.key?(a) || aliases.count(a) > 1 }.uniq
+          raise ArgumentError, "#{parent_path.inspect}: alias conflicts with a sibling command or alias: #{conflicts.inspect}" unless conflicts.empty?
         end
 
         @specs.each_value do |spec|
           path = spec.full_path
+
+          validate_arguments(path, spec.arguments, plugin_class)
+          # Rule: methods called on the plugin instance exist
+          if plugin_class
+            {setup: spec.setup, condition: spec.condition}.each do |attribute, method_name|
+              raise ArgumentError, "#{path.inspect}: no method #{method_name} on #{plugin_class} for #{attribute}:" unless method_name.nil? || instance_method?(plugin_class, method_name)
+            end
+          end
 
           if (mount = spec.mount)
             # Rule: a mount needs an instance method, no action, and must point to existing target nodes
             raise ArgumentError, "#{path.inspect}: mount requires instance:" if mount.instance.nil?
             # Mount arguments precede the arguments of the mounted command: they cannot be optional
             raise ArgumentError, "#{path.inspect}: mount arguments must be mandatory" unless mount.arguments.all?(&:mandatory)
+            validate_arguments(path, mount.arguments, plugin_class)
             raise ArgumentError, "#{path.inspect}: mount and action: are exclusive" if spec.action
             raise ArgumentError, "#{path.inspect}: mount at #{mount.at.inspect} not found in #{mount.plugin}" unless mount.at.empty? || mount.registry[mount.at]
             target_ids = mount.registry.children_of(mount.at).keys
@@ -227,6 +268,27 @@ module Aspera
       # @return [Boolean] true if plugin_class defines instance method name (public or private)
       def instance_method?(plugin_class, name)
         plugin_class.method_defined?(name) || plugin_class.private_method_defined?(name)
+      end
+
+      # Consistency of the positional arguments of a node, in reading order.
+      # @param path         [Array<Symbol>]       node path, for error messages
+      # @param arg_specs    [Array<ArgumentSpec>] arguments of the node (or of its mount)
+      # @param plugin_class [Class, nil]          when given, verify that `lookup:` methods exist
+      # @raise [ArgumentError] on any violation
+      def validate_arguments(path, arg_specs, plugin_class)
+        previous = nil
+        Array(arg_specs).each do |arg|
+          where = "#{path.inspect}: argument #{arg.name}"
+          # Rule: an argument following an optional one, or one that takes all remaining arguments, is never read reliably
+          raise ArgumentError, "#{where}: mandatory after optional #{previous.name}" if previous && arg.mandatory && !previous.mandatory
+          raise ArgumentError, "#{where}: after #{previous.name}, which takes all remaining arguments" if previous&.multiple.eql?(true)
+          unless arg.lookup.nil?
+            # Rule: the percent-selector lookup is only used for identifiers
+            raise ArgumentError, "#{where}: lookup: requires type: :identifier" unless arg.type.eql?(:identifier)
+            raise ArgumentError, "#{where}: no method #{arg.lookup} on #{plugin_class} for lookup:" if arg.lookup.is_a?(Symbol) && plugin_class && !instance_method?(plugin_class, arg.lookup)
+          end
+          previous = arg
+        end
       end
 
       # @param path [Array<Symbol>] non-empty path in this registry's namespace

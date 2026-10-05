@@ -7415,6 +7415,8 @@ admin subscription usage
 admin subscription usage MONTH
 admin user list
 admin user modify %name:my_user_email @: deactivated=false
+admin user notifications %name:my_user_email show
+admin user preferences %name:my_user_email show
 admin workspace dropbox %name:my_other_workspace list
 admin workspace list
 admin workspace shared_folder %name:my_other_workspace list
