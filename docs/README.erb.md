@@ -3755,18 +3755,16 @@ Sleep between iterations is given by the following formula where `iter_index` is
 min( sleep_max, sleep_initial * sleep_factor ^ iter_index )
 ```
 
-To display the native progress bar of `ascp`, use:
+By default, if the output is a terminal, the native progress bar of `ascp` is displayed, unless option `progress_bar` is set.
+For multi-session transfers, the progress bar of <%=tool%> is used instead, as it aggregates all sessions.
+
+To display the progress bar of <%=tool%> instead, use:
 
 ```shell
---progress-bar=no --transfer.quiet=false
+--progress-bar=yes
 ```
 
-To skip usage of management port (which disables custom progress bar), set option `monitor` to `false`.
-In that case, use the native progress bar:
-
-```shell
---transfer.monitor=false --transfer.quiet=false
-```
+To skip usage of management port (which disables the progress bar of <%=tool%>), set option `monitor` to `false`.
 
 By default, Ruby's root CA store is used to validate any HTTPS endpoint used by `ascp` (for example, WSS).
 To use a custom certificate store, use the `trusted_certs` option of direct agent's option `transfer`.
@@ -4420,6 +4418,8 @@ Example: parameter to download a Faspex package and decrypt on the fly
 File transfer operations are monitored, and a progress bar is displayed on the terminal if option `progress_bar` (`Bool`) is set to `yes` (default if the output is a terminal).
 
 The same progress bar is used for any type of transfer: using `ascp`, server to server, using HTTPS, and so on.
+
+If option `progress_bar` is not set, transfers with agent `direct` display the native progress bar of `ascp` instead (see [`direct`](#agent-direct)).
 
 ### Scheduler
 

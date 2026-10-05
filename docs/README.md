@@ -3969,7 +3969,7 @@ The `transfer` option accepts the following optional parameters to control multi
 | `file_list` | `Bool` | If `true`, source paths are written to a temp file passed to `ascp` via `--file-list` or `--file-pair-list`.<br/>If `false`, source paths are placed directly on the `ascp` command line.<br/>Default: `true`. |
 | `monitor` | `Bool` | Enable use of the `ascp` management port for transfer monitoring.<br/>Default: `true`. |
 | `multi_incr_udp` | `Bool` | Multi session - Increment UDP port for each session.<br/>If `true`, each session uses a different UDP port starting at `fasp_port` (default: 33001).<br/>If `false`, all sessions use the same `fasp_port` (or `ascp` default).<br/>Default: `true` on Windows, `false` on other platforms. |
-| `quiet` | `Bool` | Suppress the `ascp` progress bar display.<br/>Default: `true`. |
+| `quiet` | `Bool` | Suppress the `ascp` progress bar display.<br/>If not set: `false` if the output is a terminal and option `progress_bar` is not set, else `true`. For multi-session transfers, the progress bar of option `progress_bar` is used instead. |
 | `resume.iter_max` | `Integer` | Maximum number of retry attempts on error.<br/>Default: `7`. |
 | `resume.sleep_factor` | `Integer` | Multiplier applied to sleep duration between consecutive retry attempts.<br/>Default: `2`. |
 | `resume.sleep_initial` | `Integer` | Initial sleep duration (in seconds) before first retry.<br/>Default: `2`. |
@@ -3987,18 +3987,16 @@ Sleep between iterations is given by the following formula where `iter_index` is
 min( sleep_max, sleep_initial * sleep_factor ^ iter_index )
 ```
 
-To display the native progress bar of `ascp`, use:
+By default, if the output is a terminal, the native progress bar of `ascp` is displayed, unless option `progress_bar` is set.
+For multi-session transfers, the progress bar of `ascli` is used instead, as it aggregates all sessions.
+
+To display the progress bar of `ascli` instead, use:
 
 ```shell
---progress-bar=no --transfer.quiet=false
+--progress-bar=yes
 ```
 
-To skip usage of management port (which disables custom progress bar), set option `monitor` to `false`.
-In that case, use the native progress bar:
-
-```shell
---transfer.monitor=false --transfer.quiet=false
-```
+To skip usage of management port (which disables the progress bar of `ascli`), set option `monitor` to `false`.
 
 By default, Ruby's root CA store is used to validate any HTTPS endpoint used by `ascp` (for example, WSS).
 To use a custom certificate store, use the `trusted_certs` option of direct agent's option `transfer`.
@@ -4765,6 +4763,8 @@ Example: parameter to download a Faspex package and decrypt on the fly
 File transfer operations are monitored, and a progress bar is displayed on the terminal if option `progress_bar` (`Bool`) is set to `yes` (default if the output is a terminal).
 
 The same progress bar is used for any type of transfer: using `ascp`, server to server, using HTTPS, and so on.
+
+If option `progress_bar` is not set, transfers with agent `direct` display the native progress bar of `ascp` instead (see [`direct`](#agent-direct)).
 
 ### Scheduler
 

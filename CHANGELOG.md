@@ -33,6 +33,7 @@ Released: [Place date of release here]
 * **general**: Release archives are named `aspera-cli-<version>-<os>-<cpu>...`: single executable `aspera-cli-<version>-linux-x86_64-glibc<version>-ocran.tgz` (was `ascli-...`), Windows portable `aspera-cli-<version>-windows-x86_64-portable.zip` (was `windows-amd64`).
 * `orchestrator`: Command `plugins` is now `plugins list`.
 * `orchestrator`: Default authentication is now JWT token.
+* **general**: Agent `direct`: if the output is a terminal, the native progress bar of `ascp` is displayed by default, instead of the progress bar of `ascli` (still used for multi-session transfers). Option `progress_bar` set explicitly, or `transfer` parameter `quiet`, keeps the selected progress bar.
 
 ### Server Versions
 

@@ -102,8 +102,11 @@ components:
           default: true
         quiet:
           type: boolean
-          description: Suppress the `ascp` progress bar display.
-          default: true
+          description: >-
+            Suppress the `ascp` progress bar display.
+
+            If not set: `false` if the output is a terminal and option `progress_bar` is not set, else `true`.
+            For multi-session transfers, the progress bar of option `progress_bar` is used instead.
         file_list:
           type: boolean
           description: >-
