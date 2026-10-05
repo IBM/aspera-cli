@@ -6694,7 +6694,7 @@ f5_pack_user_public:
     - faspex5
     - packages
     - send
-    - --url=@preset:f5_misc.public_link_send_f5_user
+    - --url=@preset:f5_misc.public_link_send_to_user
     - '@json:@extend:{"title":"test title"}'
     - $(PATH_TST_ASC_LCL)
 f5_pack_recv_public_link_all:
@@ -6724,6 +6724,7 @@ f5_pack_browse_public_link:
     - /
 f5_pack_browse_public_link_wrong_folder:
   description: With a public link, the folder argument is used (it was ignored).
+  expect: "Rest: An error occurred in browsing directory on the HSTS node."
   tags:
     - must_fail
     - nodoc
