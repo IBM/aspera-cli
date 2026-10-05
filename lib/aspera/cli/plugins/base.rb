@@ -6,6 +6,7 @@ require 'aspera/assert'
 require 'aspera/cli/result'
 require 'aspera/cli/command_registry'
 require 'aspera/cli/option_declarator'
+require 'aspera/cli/special_values'
 require 'aspera/schema/registry'
 
 module Aspera
@@ -484,8 +485,9 @@ module Aspera
         end
 
         # Resolve positional arguments from the CLI argument stream, in order.
-        # Arguments already present in `ctx` (e.g. injected by a setup method) are not re-read,
-        # but the corresponding CLI argument is still consumed so it does not leak into subsequent reads.
+        # Arguments already present in `ctx` (e.g. injected by a setup method) are not read from the command line.
+        # If the next CLI argument is that same value, or `ALL`, it is skipped, so that it is not mistaken for a later argument
+        # (e.g. `faspex5 packages receive ALL` with a public link to a package).
         # For type: :identifier, the percent-selector lookup receives the ctx accumulated so far.
         # @param arg_specs [Array<ArgumentSpec>]
         # @param ctx       [Hash] accumulated context
@@ -493,8 +495,7 @@ module Aspera
         def resolve_arguments(arg_specs, ctx)
           arg_specs.each do |arg_spec|
             if ctx.key?(arg_spec.name)
-              # Already provided by setup: consume the CLI token so it is not mistaken for a later argument
-              options.get_next_argument(arg_spec.name.to_s, mandatory: false)
+              options.get_next_argument(arg_spec.name.to_s, mandatory: false) if options.next_argument_in?([ctx[arg_spec.name].to_s, SpecialValues::ALL])
               next
             end
             lookup_cb = arg_spec.lookup if arg_spec.type.eql?(:identifier)

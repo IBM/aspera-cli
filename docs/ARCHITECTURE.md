@@ -197,7 +197,7 @@ All plugins declare their command tree using a class-level DSL defined in `Base`
 | `allowed` | `Array<Symbol> \| nil` | Allowed values (accept list) |
 | `interactive` | `Boolean` | Prompt for the value when missing, for this argument only (`options.with_interactive`): an action that prompts for other values uses `options.with_interactive` explicitly |
 
-Arguments already present in `ctx` are not read again from the command line: this is how a caller (e.g. a mount seed) or a leaf `setup:` provides a value.
+Arguments already present in `ctx` are not read from the command line: this is how a caller (e.g. a mount seed) or a leaf `setup:` provides a value. If the next argument on the command line is that same value, or `ALL`, it is skipped (e.g. `faspex5 packages receive ALL` with a public link to a package): other arguments are left for the following declared arguments, or for `transfer_paths:`.
 
 **Rule**: every positional argument is declared with `arguments:`, so that `--help`, completion and `config commands` show it. Plugins never read positional arguments themselves (`options.get_next_argument`, `options.instance_identifier`). When an argument may come from elsewhere, declare it anyway and let the leaf `setup:` inject it in `ctx`, since a leaf setup runs before its arguments are resolved:
 

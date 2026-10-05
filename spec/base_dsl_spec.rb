@@ -513,6 +513,35 @@ module Aspera
             end
           end
 
+          context 'when an argument is provided by setup:' do
+            let(:options) { Parser.new('test', argv) }
+            let(:klass) do
+              Class.new(Base) do
+                command(
+                  :browse, description: 'Browse a package', setup: :setup_pkg,
+                  arguments: [{name: :pkg_id, type: :identifier}, {name: :folder, mandatory: false, default: '/'}],
+                  action: ->(pkg_id:, folder:, **) { Result::SingleObject.new({pkg_id => folder}) }
+                )
+                def setup_pkg(**) = {pkg_id: 'p1'}
+              end
+            end
+
+            {
+              %w[browse /sub]    => {'p1' => '/sub'},
+              %w[browse p1 /sub] => {'p1' => '/sub'},
+              %w[browse ALL]     => {'p1' => '/'}
+            }.each do |args, expected|
+              context "with arguments: #{args.join(' ')}" do
+                let(:argv) { args }
+
+                it 'does not read it, and skips the same value or ALL' do
+                  expect(klass.new(context: context).execute_action.data).to(eq(expected))
+                  expect(options.final_errors).to(be_empty)
+                end
+              end
+            end
+          end
+
           context 'with interactive: true' do
             let(:options) { Parser.new('test', argv) }
             let(:arg_spec) { ArgumentSpec.new(name: :url, interactive: true) }

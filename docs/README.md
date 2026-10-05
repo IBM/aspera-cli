@@ -8727,6 +8727,7 @@ gateway @: url=https://localhost:12346/aspera/faspex
 health --url=https://f5.example.com/path
 invitation list
 invitations create @: email_address=aspera.user1+u@gmail.com
+packages browse --url=my_public_link_recv_f5_user /
 packages browse <id> --query.recursive=true
 packages delete <id>
 packages list --box=ALL

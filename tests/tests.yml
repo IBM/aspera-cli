@@ -6701,6 +6701,26 @@ f5_pack_recv_public_link_simple:
     - receive
     - --url=@preset:f5_misc.public_link_recv_f5_user
     - --to-folder=$(TMP)
+f5_pack_browse_public_link:
+  args:
+    - -N
+    - faspex5
+    - packages
+    - browse
+    - --url=@preset:f5_misc.public_link_recv_f5_user
+    - /
+f5_pack_browse_public_link_wrong_folder:
+  description: With a public link, the folder argument is used (it was ignored).
+  tags:
+    - must_fail
+    - nodoc
+  args:
+    - -N
+    - faspex5
+    - packages
+    - browse
+    - --url=@preset:f5_misc.public_link_recv_f5_user
+    - /not_a_folder_in_package
 f5_pack_wrkgrp:
   args:
     - faspex5

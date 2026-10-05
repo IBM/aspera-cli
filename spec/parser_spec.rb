@@ -457,6 +457,14 @@ module Aspera
           expect(Parser.get_from_list('no', 'b', BoolValue::ALL)).to(be(false))
         end
 
+        it 'checks the next argument without consuming it' do
+          opts = build_parser(%w[a b])
+          expect(opts.next_argument_in?(%w[a x])).to(be(true))
+          expect(opts.next_argument_in?(%w[b])).to(be(false))
+          expect(opts.get_next_argument('first')).to(eq('a'))
+          expect(build_parser([]).next_argument_in?(%w[a])).to(be(false))
+        end
+
         it 'stores the value and calls the on_set callback with it' do
           target = Struct.new(:path).new
           opts = build_parser([])

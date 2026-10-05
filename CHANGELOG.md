@@ -35,6 +35,7 @@ Released: [Place date of release here]
 * **general**: With `--bulk=yes`, commands under a node with an identifier (e.g. `node access_keys do <id> delete`, `faspex5 admin nodes shared_folders <id> delete`, `shares admin share user_permissions <id> delete`) failed with `Missing argument: command`: only arguments supporting bulk operations are read as a list.
 * `server`: Aliases `browse`, `delete` and `rename` executed `ls`, `rm` and `mv` even when `ascmd` is not available.
 * `config`: `wizard` displayed a test command that does not exist for `faspio`, `orchestrator`, `console` and `server`.
+* `faspex5`: With a public link to a package, the first argument of `packages browse`, `status` and `receive` was ignored (e.g. the folder of `browse`, the first file of `receive`).
 
 ### Breaking Changes
 
