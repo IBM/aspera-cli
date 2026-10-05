@@ -169,6 +169,14 @@ jobs:
           bundle exec rake linuxtgz:portable"[${VERSION}]"
           echo "archive=$(cd pkg && ls aspera-cli-"${VERSION}"-*-portable.tgz)" >> "$GITHUB_OUTPUT"
 
+      # Uploaded before checks: available for analysis if a check fails (not attached to the release)
+      - name: Upload package
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.build.outputs.archive }}
+          path: pkg/${{ steps.build.outputs.archive }}
+          if-no-files-found: error
+
       # --version: output must be only the version, no warning (e.g. about gems)
       # config echo: output must be the argument
       # config ascp info: fails if the ascp of the package does not run
@@ -177,17 +185,12 @@ jobs:
         run: |
           tar -xzf "pkg/${{ steps.build.outputs.archive }}" -C /tmp
           ascli="/tmp/$(basename "${{ steps.build.outputs.archive }}" .tgz)/ascli"
-          test "$("$ascli" --version 2>&1)" = "${VERSION}"
-          test "$("$ascli" config echo ok --format=text)" = ok
+          output=$("$ascli" --version 2>&1) || true
+          [ "$output" = "${VERSION}" ] || { echo "Unexpected output of --version: $output"; exit 1; }
+          output=$("$ascli" config echo ok --format=text 2>&1) || true
+          [ "$(echo "$output" | tail -n1)" = ok ] || { echo "Unexpected output of config echo: $output"; exit 1; }
           "$ascli" config ascp info --fields=ascp_version
           "$ascli" config transferd list --fields=version > /dev/null
-
-      - name: Upload package
-        uses: actions/upload-artifact@v7
-        with:
-          name: ${{ steps.build.outputs.archive }}
-          path: pkg/${{ steps.build.outputs.archive }}
-          if-no-files-found: error
 
   linux-portable-release:
     name: Linux portable, test and attach
@@ -213,8 +216,10 @@ jobs:
         run: |
           tar -xzf "${ARCHIVE}"
           ascli="./$(basename "${ARCHIVE}" .tgz)/ascli"
-          test "$("$ascli" --version 2>&1)" = "${VERSION}"
-          test "$("$ascli" config echo ok --format=text)" = ok
+          output=$("$ascli" --version 2>&1) || true
+          [ "$output" = "${VERSION}" ] || { echo "Unexpected output of --version: $output"; exit 1; }
+          output=$("$ascli" config echo ok --format=text 2>&1) || true
+          [ "$(echo "$output" | tail -n1)" = ok ] || { echo "Unexpected output of config echo: $output"; exit 1; }
           "$ascli" config ascp info --fields=ascp_version
 
       - name: Upload to GitHub release
