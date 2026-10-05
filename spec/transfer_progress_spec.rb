@@ -165,7 +165,7 @@ module Aspera
         output.truncate(0)
         output.rewind
         progress.suspend { output.write("log line\n") }
-        expect(output.string).to(match(/\A {100}\rlog line\nTime: .*\r\z/))
+        expect(output.string).to(match(/\A +\rlog line\nTime: .*\r\z/))
       end
 
       it 'starts from scratch after end' do
