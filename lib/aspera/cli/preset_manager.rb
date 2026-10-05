@@ -59,30 +59,38 @@ module Aspera
 
       # Read and validate the YAML config file.
       # Sets @config_presets and @checksum_on_disk.
+      # A file that cannot be read (YAML error, duplicate keys, access) is left untouched: it shall be fixed.
+      # A file with an unexpected structure is renamed for manual conversion, and a new one is created next time.
       def read_config_file
         Log.log.debug { "config file is: #{@config_file}".red }
         if File.exist?(@config_file)
           Log.log.debug { "loading #{@config_file}" }
-          @config_presets   = Yaml.safe_load(File.read(@config_file))
+          begin
+            @config_presets = Yaml.safe_load(File.read(@config_file))
+          rescue Psych::SyntaxError
+            Log.log.error { "YAML error in config file: #{@config_file}" }
+            raise
+          rescue StandardError => e
+            raise Cli::Error, "Config file #{@config_file}: #{e.message}"
+          end
           @checksum_on_disk = checksum
         else
           Log.log.warn { "No config file found. New configuration file: #{@config_file}" }
           @config_presets = {Key::CONFIG => {Key::VERSION => 'new file'}}
           # @checksum_on_disk remains nil: will be saved on first write
         end
-        validate_config_presets!
-      rescue Psych::SyntaxError => e
-        Log.log.error('YAML error in config file')
-        raise e
-      rescue StandardError => e
-        Log.log.debug { "-> #{e.class.name} : #{e}" }
-        if File.exist?(@config_file)
-          new_name = "#{@config_file}.pre#{Cli::VERSION}.manual_conversion_needed"
-          File.rename(@config_file, new_name)
-          Log.log.warn { "Renamed config file to #{new_name}." }
-          Log.log.warn('Manual Conversion is required. Next time, a new empty file will be created.')
+        begin
+          validate_config_presets!
+        rescue StandardError => e
+          Log.log.debug { "-> #{e.class.name} : #{e}" }
+          if File.exist?(@config_file)
+            new_name = "#{@config_file}.pre#{Cli::VERSION}.manual_conversion_needed"
+            File.rename(@config_file, new_name)
+            Log.log.warn { "Renamed config file to #{new_name}." }
+            Log.log.warn('Manual Conversion is required. Next time, a new empty file will be created.')
+          end
+          raise Cli::Error, e.to_s
         end
-        raise Cli::Error, e.to_s
       end
 
       # Save to disk only if content changed since last load/save.

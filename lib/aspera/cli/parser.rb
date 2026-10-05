@@ -97,7 +97,7 @@ module Aspera
           when 'true', BoolValue::YES_SYM.to_s then true
           when 'false', BoolValue::NO_SYM.to_s then false
           else
-            Integer(value, exception: false) ||
+            Integer(value, 10, exception: false) ||
               Float(value, exception: false) ||
               ExtendedValue.instance.evaluate(value, context: 'dotted expression')
           end
@@ -538,7 +538,7 @@ module Aspera
         # if value comes from JSON/YAML, it may come as Integer
         return value.to_s if value.is_a?(Integer) && validation.eql?(Type::STRING)
         return value unless value.is_a?(String) && validation.eql?(Type::INTEGER)
-        Integer(value, exception: false).tap { |i| raise Cli::BadArgument, "Invalid integer: #{value}" if i.nil? }
+        Integer(value, 10, exception: false).tap { |i| raise Cli::BadArgument, "Invalid integer: #{value}" if i.nil? }
       end
 
       # Validate a single argument value.

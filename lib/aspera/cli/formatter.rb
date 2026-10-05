@@ -196,7 +196,8 @@ module Aspera
         # special handling of some options
         case option_symbol
         when :format
-          @options[:display] = value.eql?(:table) ? :info : :data
+          # The default output level depends on the format, unless the level is set explicitly (e.g. `--out.level`)
+          @options[:display] = value.eql?(:table) ? :info : :data if @parser.nil? || @parser.option_def(:display).source.eql?(:default)
         when :output
           $stdout = if value.eql?('-')
             STDOUT # rubocop:disable Style/GlobalStdStream

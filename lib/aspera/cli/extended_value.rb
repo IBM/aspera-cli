@@ -77,7 +77,7 @@ module Aspera
           case mode
           when '' then $stdin.read
           when 'bin' then $stdin.binmode.read
-          when 'chomp' then $stdin.chomp
+          when 'chomp' then $stdin.read.chomp
           else raise BadArgument, "`stdin` supports only: '', 'bin' or 'chomp'"
           end
         end
@@ -118,10 +118,11 @@ module Aspera
       end
 
       # Update the Regex to match an extended value based on @handlers
+      # Anchored on the whole value (`\A`, `\z`), not on lines: a multi-line value is extended only if it starts with a modifier.
       def update_regex
         handler_regex = "#{MARKER_START}(#{modifiers.join('|')})#{MARKER_END}"
-        @regex_single = Regexp.new("^#{handler_regex}(.*)$", Regexp::MULTILINE)
-        @regex_extend = Regexp.new("^(.*)#{handler_regex}([^#{MARKER_IN_END}]*)#{MARKER_IN_END}(.*)$", Regexp::MULTILINE)
+        @regex_single = Regexp.new("\\A#{handler_regex}(.*)\\z", Regexp::MULTILINE)
+        @regex_extend = Regexp.new("\\A(.*)#{handler_regex}([^#{MARKER_IN_END}]*)#{MARKER_IN_END}(.*)\\z", Regexp::MULTILINE)
       end
 
       public

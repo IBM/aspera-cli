@@ -36,9 +36,15 @@ Released: [Place date of release here]
 * `server`: Aliases `browse`, `delete` and `rename` executed `ls`, `rm` and `mv` even when `ascmd` is not available.
 * `config`: `wizard` displayed a test command that does not exist for `faspio`, `orchestrator`, `console` and `server`.
 * `faspex5`: With a public link to a package, the first argument of `packages browse`, `status` and `receive` was ignored (e.g. the folder of `browse`, the first file of `receive`).
+* **general**: A multi-line value was evaluated as an extended value when any of its lines, not only the first one, started with a decoder (e.g. `@ruby:`): such a value is now taken as is.
+* **general**: `@stdin:chomp` was failing.
+* **general**: A configuration file with an error to fix (e.g. duplicate keys) was renamed `*.manual_conversion_needed`, and a new empty configuration file was created on next execution: the file is now left untouched, and the error is displayed.
+* **general**: `--out.level` was overridden by `--format` given after it, or in the same `--out` value: e.g. `--out.level=info --format=json` displayed secrets.
+* **general**: Integers with a leading zero were rejected in options (e.g. `--version-check-days=08`) and arguments, or read as octal in dotted values (e.g. `--query.page=010`). An invalid number in an option now gives the name of the option.
 
 ### Breaking Changes
 
+* **general**: With `--format=json`, `jsonpp`, `yaml` or `ruby`, the output is always valid in this format: a status is a string (e.g. `"complete"`), an empty list is `[]`, and no result is `null` (were displayed as plain text, e.g. `complete`, `empty`, `nothing`).
 * `node`: `simulator` requires `transferd` and the gem `grpc`, instead of `ascp`.
 * `node`: `simulator` parameter `browse_root` is renamed `docroot`.
 * **general**: Release archives are named `aspera-cli-<version>-<os>-<cpu>...`: single executable `aspera-cli-<version>-linux-x86_64-glibc<version>-ocran.tgz` (was `ascli-...`), Windows portable `aspera-cli-<version>-windows-x86_64-portable.zip` (was `windows-amd64`).

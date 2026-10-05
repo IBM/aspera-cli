@@ -2,8 +2,10 @@
 
 # Unit tests for Aspera::Cli::Formatter option handling — no server, no config file needed.
 
+require 'stringio'
 require 'aspera/cli/parser'
 require 'aspera/cli/formatter'
+require 'aspera/cli/result'
 
 module Aspera
   module Cli
@@ -30,6 +32,21 @@ module Aspera
           # `--format` is not overridden by the previous `--out.format` when `--out.level` is added
           formatter = build_formatter(['--out.format=json', '--format=yaml', '--out.level=info'])
           expect(formatter.format_type).to(eq(:yaml))
+        end
+
+        it 'sets the default output level from the format' do
+          expect(build_formatter([]).instance_variable_get(:@options)[:display]).to(eq(:info))
+          expect(build_formatter(['--format=json']).instance_variable_get(:@options)[:display]).to(eq(:data))
+        end
+
+        it 'keeps an explicit output level, whatever the order of options' do
+          [
+            ['--out.level=error', '--format=json'],
+            ['--format=json', '--out.level=error'],
+            ['--out=@json:{"level":"error","format":"json"}']
+          ].each do |argv|
+            expect(build_formatter(argv).instance_variable_get(:@options)[:display]).to(eq(:error), argv.join(' '))
+          end
         end
 
         it 'gives priority to command line over preset' do
@@ -88,6 +105,35 @@ module Aspera
           expect(Environment.terminal_supports_unicode?).to(be(false))
           build_formatter(['--out.utf8=@none:'])
           expect(Environment.terminal_supports_unicode?).to(be(false))
+        end
+      end
+
+      describe 'structured formats' do
+        # @return [String] standard output of the display of result
+        def output_of(result, format)
+          formatter = build_formatter(["--format=#{format}"])
+          saved = $stdout
+          $stdout = StringIO.new
+          formatter.display_results(result)
+          $stdout.string
+        ensure
+          $stdout = saved
+        end
+
+        {
+          Result::Status.new('modified') => 'modified',
+          Result::Empty.new              => [],
+          Result::Nothing.new            => nil,
+          Result::Null.new               => nil
+        }.each do |result, expected|
+          it "renders #{result.class.name.split('::').last} as valid JSON and YAML" do
+            expect(JSON.parse(output_of(result, :json))).to(eq(expected))
+            expect(YAML.safe_load(output_of(result, :yaml))).to(eq(expected))
+          end
+
+          it "renders #{result.class.name.split('::').last} as text" do
+            expect(output_of(result, :text).chomp).to(eq(result.data.to_s))
+          end
         end
       end
     end

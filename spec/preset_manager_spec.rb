@@ -37,6 +37,13 @@ RSpec.describe(Aspera::Cli::PresetManager) do
       expect(Dir.children(@dir).first).to(match(/manual_conversion_needed$/))
     end
 
+    it 'raises on duplicate keys and keeps the config file' do
+      content = "config: {version: '1'}\nmy_preset:\n  url: a\n  url: b\n"
+      expect { manager(content) }.to(raise_error(Aspera::Cli::Error, /config.yaml: .*Duplicate keys: my_preset.url/))
+      expect(Dir.children(@dir)).to(eq(['config.yaml']))
+      expect(File.read(config_file)).to(eq(content))
+    end
+
     it 'saves only when changed' do
       pm = manager
       expect(pm.save_if_needed).to(be(true))

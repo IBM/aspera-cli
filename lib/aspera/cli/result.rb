@@ -43,10 +43,7 @@ module Aspera
         case formatter.format_type
         when :nagios then Nagios.process(@data)
         when :text   then formatter.display_message(:data, @data.to_s)
-        when :ruby   then formatter.display_message(:data, PP.pp(filtered_data, +''))
-        when :json   then formatter.display_message(:data, JSON.generate(filtered_data))
-        when :jsonpp then formatter.display_message(:data, JSON.pretty_generate(filtered_data))
-        when :yaml   then formatter.display_message(:data, YAML.dump(filtered_data))
+        when *STRUCTURED_FORMATS then display_structured(formatter, filtered_data)
         when :image
           if @data.nil?
             formatter.display_message(:data, formatter.special_format('null (no image)'))
@@ -81,6 +78,27 @@ module Aspera
         else Aspera.error_unexpected_value(formatter.format_type) { 'format' }
         end
       end
+
+      # Formats rendering the data structure itself
+      STRUCTURED_FORMATS = %i[ruby json jsonpp yaml].freeze
+
+      private
+
+      # Display a value in one of STRUCTURED_FORMATS
+      # @param formatter [Formatter] The formatter to use
+      # @param value     [Object]    Value to render
+      # @return [nil]
+      def display_structured(formatter, value)
+        text =
+          case formatter.format_type
+          when :ruby   then PP.pp(value, +'')
+          when :json   then JSON.generate(value)
+          when :jsonpp then JSON.pretty_generate(value)
+          when :yaml   then YAML.dump(value)
+          else Aspera.error_unexpected_value(formatter.format_type) { 'structured format' }
+          end
+        formatter.display_message(:data, text)
+      end
     end
 
     # Special result types - each has its own class
@@ -96,8 +114,11 @@ module Aspera
 
         def format(formatter)
           case formatter.format_type
-          when :text, :nagios, :ruby, :json, :jsonpp, :yaml
+          when :text, :nagios
             formatter.display_message(:data, @data.to_s)
+          when *STRUCTURED_FORMATS
+            # An empty list, or no value
+            display_structured(formatter, @data.eql?(:empty) ? [] : nil)
           when :table, :csv
             if @data.eql?(:nothing)
               Log.log.debug('no result expected')
@@ -132,8 +153,10 @@ module Aspera
         def format(formatter)
           data = formatter.hide_secrets? ? formatter.hide_secrets_in_string(@data) : @data
           case formatter.format_type
-          when :text, :nagios, :ruby, :json, :jsonpp, :yaml
+          when :text, :nagios
             formatter.display_message(:data, data)
+          when *STRUCTURED_FORMATS
+            display_structured(formatter, data)
           when :table, :csv
             formatter.display_message(:info, data)
           else
@@ -161,14 +184,8 @@ module Aspera
           case formatter.format_type
           when :text, :nagios
             formatter.display_message(:data, data.to_s)
-          when :ruby
-            formatter.display_message(:data, PP.pp(data, +''))
-          when :json
-            formatter.display_message(:data, JSON.generate(data))
-          when :jsonpp
-            formatter.display_message(:data, JSON.pretty_generate(data))
-          when :yaml
-            formatter.display_message(:data, YAML.dump(data))
+          when *STRUCTURED_FORMATS
+            display_structured(formatter, data)
           when :table, :csv
             formatter.display_message(:data, data)
           else
@@ -271,14 +288,8 @@ module Aspera
             formatter.display_table(@data.map { |i| {@name => i} }, [@name])
           when :text
             formatter.display_message(:data, @data.join("\n"))
-          when :ruby
-            formatter.display_message(:data, PP.pp(@data, +''))
-          when :json
-            formatter.display_message(:data, JSON.generate(@data))
-          when :jsonpp
-            formatter.display_message(:data, JSON.pretty_generate(@data))
-          when :yaml
-            formatter.display_message(:data, YAML.dump(@data))
+          when *STRUCTURED_FORMATS
+            display_structured(formatter, @data)
           else
             super
           end

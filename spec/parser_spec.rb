@@ -252,7 +252,23 @@ module Aspera
         it 'raises for an invalid float option value' do
           opts = build_parser(['--ratio=abc'])
           opts.declare(:ratio, description: 'Ratio', allowed: Type::FLOAT)
-          expect { opts.parse_options! }.to(raise_error(ArgumentError, /Float/))
+          expect { opts.parse_options! }.to(raise_error(BadArgument, /ratio: invalid number: abc/))
+        end
+
+        it 'converts a decimal integer option value, also with leading zero' do
+          opts = build_parser(['--count=08'])
+          opts.declare(:count, description: 'Count', allowed: Type::INTEGER)
+          expect(opts.get_option(:count)).to(eq(8))
+        end
+
+        it 'raises for an invalid integer option value' do
+          opts = build_parser(['--count=abc'])
+          opts.declare(:count, description: 'Count', allowed: Type::INTEGER)
+          expect { opts.parse_options! }.to(raise_error(BadArgument, /count: invalid integer: abc/))
+        end
+
+        it 'converts a decimal integer argument, also with leading zero' do
+          expect(build_parser(['08']).get_next_argument('count', validation: Type::INTEGER)).to(eq(8))
         end
 
         it 'raises BadArgument for a flag given a value' do
@@ -441,6 +457,10 @@ module Aspera
 
         it 'converts numbers, and keeps other strings' do
           expect(%w[1 1.5 yess].map { |v| Parser.smart_convert(v) }).to(eq([1, 1.5, 'yess']))
+        end
+
+        it 'converts integers in base 10, also with leading zero' do
+          expect(%w[010 08].map { |v| Parser.smart_convert(v) }).to(eq([10, 8]))
         end
 
         it 'converts a dotted option value' do

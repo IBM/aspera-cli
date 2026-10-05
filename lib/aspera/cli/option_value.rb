@@ -242,9 +242,18 @@ module Aspera
         when :boolean
           BoolValue.true?(value.is_a?(String) ? Parser.get_from_list(value, @option, BoolValue::ALL) : value)
         when :integer
-          value.nil? ? value : Integer(value)
+          # Decimal, also with leading zeros (e.g. `08`)
+          if value.is_a?(String)
+            Integer(value, 10, exception: false).tap { |i| raise BadArgument, "Option #{@option}: invalid integer: #{value}" if i.nil? }
+          else
+            value.nil? ? value : Integer(value)
+          end
         when :float
-          value.nil? ? value : Float(value)
+          if value.is_a?(String)
+            Float(value, exception: false).tap { |f| raise BadArgument, "Option #{@option}: invalid number: #{value}" if f.nil? }
+          else
+            value.nil? ? value : Float(value)
+          end
         when :string_list
           value.is_a?(String) ? [value] : value
         when :enum_list

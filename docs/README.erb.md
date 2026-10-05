@@ -1730,6 +1730,8 @@ Depending on action, the output will contain:
 | `status`        | A message. |
 | `other_struct`  | A complex structure that cannot be displayed as an array. |
 
+With a structured format (`json`, `jsonpp`, `yaml`, `ruby`), the output is always valid in this format: a status is a string, an empty list is `[]`, and no result is `null`.
+
 #### Enhanced display of special values
 
 Special values are highlighted as follows in `format=table`:
