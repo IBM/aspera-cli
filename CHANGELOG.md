@@ -10,6 +10,7 @@ Released: [Place date of release here]
 * `aoc`: `short_link list` supports `--query=help`, help of `short_link create|modify` shows the request body.
 * `node`: `simulator` executes transfers with `transferd`, and supports more of the Node API. See the manual.
 * **general**: Linux portable package `aspera-cli-<version>-linux-x86_64-glibc<version>-portable.tgz`: Ruby, gems and Transfer SDK, extract and run, like the Windows portable package.
+* `shares`: `admin share user_permissions|group_permissions` support `create`, `modify` and `delete` (identified by user or group id, e.g. `%username:john@example.com`).
 
 ### Issues Fixed
 
@@ -28,6 +29,7 @@ Released: [Place date of release here]
 * **general**: Progress bar: stayed at 0% when the total size was not known (the transferred size is now shown), rate was underestimated (it included connection time: now averaged over the last 5 seconds, in decimal `Mbps` like `ascp`), a resumed session doubled the total size or failed the transfer, a second HTTP download accumulated the first one, multi-session state was shared between sessions in agent `direct`. Errors in the progress bar no longer fail the transfer.
 * **general**: Progress bar: a failed transfer was displayed as completed (the bar now stops at the reached progress, with `failed`), log lines were mixed with the progress bar (they are now displayed above it), files already at destination (whole or partially, when resumed) were not counted in progress, multi-session progress exceeded the total size (agent `direct`), agent `httpgw` did not terminate the progress bar.
 * **general**: Agent `direct`: when `ascp` ended without final status (e.g. killed), `ascli` failed with `wrong number of arguments`: the transfer is now resumed.
+* `shares`: Help of `admin share create|modify` showed fields `path` and `description`, rejected by Shares (error 500): fields are `directory` and `create_directory`. Same for `description` in `admin group local create|modify`.
 
 ### Breaking Changes
 

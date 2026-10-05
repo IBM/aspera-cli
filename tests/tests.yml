@@ -207,6 +207,17 @@ shares_admin_share_user_perm_list:
     - user_permissions
     - "%name:@preset:shares.share"
     - list
+shares_admin_share_user_perm_modify:
+  args:
+    - --preset=shares_admin
+    - shares
+    - admin
+    - share
+    - user_permissions
+    - "%name:@preset:shares.share"
+    - modify
+    - "%username:@preset:shares_user.username"
+    - '@json:{"browse_permission":true}'
 shares_admin_xfer_settings:
   args:
     - --preset=shares_admin

@@ -247,19 +247,22 @@ module Aspera
             lookup:         :lookup_share_id
           command :user_permissions,
             description: 'Manage user permissions on a share',
-            arguments: [{name: :share_id, type: :identifier, lookup: :lookup_share_id}]
+            arguments: [{name: :share_id, type: :identifier, lookup: :lookup_share_id}],
+            setup: :setup_share_permissions
           command :group_permissions,
             description: 'Manage group permissions on a share',
-            arguments: [{name: :share_id, type: :identifier, lookup: :lookup_share_id}]
+            arguments: [{name: :share_id, type: :identifier, lookup: :lookup_share_id}],
+            setup: :setup_share_permissions
         end
 
-        # share user_permissions and group_permissions: Rails only exposes index+show (read-only)
-        %i[user_permissions group_permissions].each do |perm_type|
+        # share user_permissions and group_permissions: full CRUD, identified by the user or group id
+        {user_permissions: :user, group_permissions: :group}.each do |perm_type, entity_type|
           commands_under [:admin, :share, perm_type] do
-            SHARE_PERMISSIONS_OPS.each do |op|
-              command op, description: "#{op.capitalize} #{entity_noun(perm_type, singular: false)}",
-                arguments: op.eql?(:show) ? [{name: :permission_id, type: :identifier}] : nil
-            end
+            crud_commands entity: :"share_#{perm_type}",
+              api:     :@api_shares_admin,
+              name:    entity_noun(perm_type),
+              id_name: :"#{entity_type}_id",
+              lookup:  :"lookup_shares_#{entity_type}_all_id"
           end
         end
 
@@ -284,6 +287,12 @@ module Aspera
         def setup_admin(**)
           @api_shares_admin = basic_auth_api(ADMIN_API_PATH)
           {}
+        end
+
+        # share_id: resolved by Phase A via arguments:(:identifier, lookup: :lookup_share_id) on the perm_type node
+        # @return [Hash] ctx with API path of user and group permissions of the share
+        def setup_share_permissions(share_id:, **)
+          %i[user_permissions group_permissions].to_h { |perm_type| [:"share_#{perm_type}", "data/shares/#{share_id}/#{perm_type}"] }
         end
 
         # Lookup a share id by field/value using the admin API.
@@ -386,18 +395,6 @@ module Aspera
                 Aspera.assert_values(p, SAML_IMPORT_ALLOWED) { 'SAML field' }
               end
               @api_shares_admin.create("#{path}/import", entity_parameters)
-            end
-          end
-        end
-
-        # Handlers for admin > share > user_permissions|group_permissions > op
-        # share_id: resolved by Phase A via arguments:(:identifier, lookup: :lookup_share_id) on the perm_type node
-        # permission_id: resolved via arguments: on the show leaf
-        # Rails only exposes index+show for share permissions (read-only)
-        %i[user_permissions group_permissions].each do |perm_type|
-          SHARE_PERMISSIONS_OPS.each do |op|
-            define_action_method([:admin, :share, perm_type, op]) do |share_id:, permission_id: nil, **|
-              send(:"entity_#{op}", api: @api_shares_admin, entity: "data/shares/#{share_id}/#{perm_type}", id: permission_id)
             end
           end
         end

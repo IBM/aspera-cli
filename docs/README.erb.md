@@ -8376,19 +8376,24 @@ Example: Create a Node: Attributes are like API:
 | `timeout`    |          | `30s`   |
 | `open_timeout` |        | `10s`   |
 
-Example: Create a share and list user permissions on it.
+Example: Create a share, grant access to a user and list user permissions on it.
 
 ```shell
 <%=cmd%> shares admin share create @json:'{"node_id":1,"name":"test1","directory":"test1","create_directory":true}'
 
-share_id=$(<%=cmd%> shares admin share list --select=@json:'{"name":"test1"}' --fields=id --out.level=data)
+user_id=$(<%=cmd%> shares admin user all show %username:john@example.com --fields=id --out.level=data)
 
-<%=cmd%> shares admin share user_permissions $share_id list
+<%=cmd%> shares admin share user_permissions %name:test1 create @json:'{"user_id":'$user_id',"browse_permission":true,"download_permission":true,"upload_permission":true}'
+
+<%=cmd%> shares admin share user_permissions %name:test1 list
 ```
 
+Share permissions (`user_permissions`, `group_permissions`) are identified by the user or group identifier: e.g. `show %username:john@example.com`.
+Permissions not specified on creation take their default value.
+Available permissions: `browse_permission`, `download_permission`, `upload_permission`, `mkdir_permission`, `delete_permission`, `rename_permission`, `content_availability_permission`, `manage_permission`.
+
 > [!NOTE]
-> The Shares API provides read-only access to share permissions (`user_permissions`, `group_permissions`): only `list` and `show` are available.
-> Permissions are granted in the Shares web UI.
+> Permissions of a user or group on all shares (`user all share_permissions`, `group all share_permissions`) are read-only: only `list` and `show` are available.
 
 <%=include_commands_for_plugin(:shares)%>
 

@@ -9244,19 +9244,24 @@ Example: Create a Node: Attributes are like API:
 | `timeout`    |          | `30s`   |
 | `open_timeout` |        | `10s`   |
 
-Example: Create a share and list user permissions on it.
+Example: Create a share, grant access to a user and list user permissions on it.
 
 ```shell
 ascli shares admin share create @json:'{"node_id":1,"name":"test1","directory":"test1","create_directory":true}'
 
-share_id=$(ascli shares admin share list --select=@json:'{"name":"test1"}' --fields=id --out.level=data)
+user_id=$(ascli shares admin user all show %username:john@example.com --fields=id --out.level=data)
 
-ascli shares admin share user_permissions $share_id list
+ascli shares admin share user_permissions %name:test1 create @json:'{"user_id":'$user_id',"browse_permission":true,"download_permission":true,"upload_permission":true}'
+
+ascli shares admin share user_permissions %name:test1 list
 ```
 
+Share permissions (`user_permissions`, `group_permissions`) are identified by the user or group identifier: e.g. `show %username:john@example.com`.
+Permissions not specified on creation take their default value.
+Available permissions: `browse_permission`, `download_permission`, `upload_permission`, `mkdir_permission`, `delete_permission`, `rename_permission`, `content_availability_permission`, `manage_permission`.
+
 > [!NOTE]
-> The Shares API provides read-only access to share permissions (`user_permissions`, `group_permissions`): only `list` and `show` are available.
-> Permissions are granted in the Shares web UI.
+> Permissions of a user or group on all shares (`user all share_permissions`, `group all share_permissions`) are read-only: only `list` and `show` are available.
 
 ### Tested commands for `shares`
 
@@ -9268,6 +9273,7 @@ admin group all list
 admin node list
 admin share list --fields=DEF,-status,status_message
 admin share user_permissions %name:my_share list
+admin share user_permissions %name:my_share modify %username:my_username @json:'{"browse_permission":true}'
 admin transfer_settings modify @: min_connect_version=3.6.1
 admin transfer_settings show --format=json
 admin user all app_authorizations %username:my_username modify @: app_login=true

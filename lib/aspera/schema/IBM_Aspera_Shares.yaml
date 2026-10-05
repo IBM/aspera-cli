@@ -2930,21 +2930,25 @@ components:
         name:
           type: string
           minLength: 1
-        description:
-          type: string
         node_id:
           type: integer
-        path:
+        directory:
           type: string
+          description: Path of share folder on node
+        create_directory:
+          type: boolean
+          description: Create the share folder on node
     ShareUpdate:
       type: object
       properties:
         name:
           type: string
-        description:
+        node_id:
+          type: integer
+          description: Admin only
+        directory:
           type: string
-        path:
-          type: string
+          description: Path of share folder on node (admin only)
     # Node Schemas
     Node:
       type: object
@@ -3206,9 +3210,10 @@ components:
         name:
           type: string
           example: engineers
-        description:
-          type: string
-          nullable: true
+        group_id:
+          type: integer
+          format: int32
+          description: Identifier in groups from all sources
         created_at:
           type: string
           format: date-time
@@ -3224,16 +3229,12 @@ components:
         name:
           type: string
           example: engineers
-        description:
-          type: string
     LocalGroupUpdate:
       type: object
       properties:
         name:
           type: string
           example: engineers
-        description:
-          type: string
     LdapConfig:
       type: object
       properties:
