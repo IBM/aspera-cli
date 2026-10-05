@@ -225,6 +225,28 @@ module Aspera
       end
 
       # -----------------------------------------------------------------------
+      # GLOBAL keyword: global default preset, created only by actions writing in it
+      # -----------------------------------------------------------------------
+      describe 'GLOBAL preset name' do
+        before { config_presets['GLOBAL'] = {'url' => 'https://example.com'} }
+
+        it 'does not create the global preset when reading it' do
+          host.action_preset_show(name: 'GLOBAL')
+          host.action_preset_get(name: 'GLOBAL', param_name: 'url')
+          expect(presets_double).to(have_received(:global_default_preset).with(create: false).twice)
+        end
+
+        it 'creates the global preset when writing in it' do
+          host.action_preset_set(name: 'GLOBAL', param_name: 'format', param_value: 'json')
+          expect(presets_double).to(have_received(:global_default_preset).with(create: true))
+        end
+
+        it 'raises BadArgument for an unknown preset' do
+          expect { host.action_preset_show(name: 'nope') }.to(raise_error(BadArgument, /no such preset: nope/))
+        end
+      end
+
+      # -----------------------------------------------------------------------
       # action_preset_set — automatic vault migration
       # -----------------------------------------------------------------------
       describe '#action_preset_set' do

@@ -110,6 +110,12 @@ RSpec.describe(Aspera::Cli::PresetManager) do
       expect(manager.plugin_default_name(:config)).to(eq('global_common_defaults'))
     end
 
+    it 'does not declare nor create the global preset when only reading' do
+      pm = manager
+      expect(pm.global_default_preset(create: false)).to(eq('global_common_defaults'))
+      expect(pm.config_presets.keys).to(eq(['config']))
+    end
+
     it 'returns the declared global preset without modification' do
       pm = manager("config: {version: '1'}\ndefault: {config: mine}\nmine: {a: 1}\n")
       expect(pm.global_default_preset).to(eq('mine'))
@@ -129,6 +135,24 @@ RSpec.describe(Aspera::Cli::PresetManager) do
       pm = manager
       expect(pm.global_preset?('global_common_defaults')).to(be(false))
       expect(pm.config_presets.keys).to(eq(['config']))
+    end
+  end
+
+  describe '#by_name' do
+    let(:pm) { manager("config: {version: '1'}\nmy.server: {url: a}\nmine: {url: b, sub: {c: 1}}\n") }
+
+    it 'finds a preset whose name contains a dot, also with dot-notation' do
+      expect(pm.by_name('my.server')).to(eq({'url' => 'a'}))
+      expect(pm.by_name('my.server.url')).to(eq('a'))
+    end
+
+    it 'digs into a preset with dot-notation' do
+      expect(pm.by_name('mine.url')).to(eq('b'))
+      expect(pm.by_name('mine.sub.c')).to(eq(1))
+    end
+
+    it 'raises for an unknown preset' do
+      expect { pm.by_name('mine.nope') }.to(raise_error(Aspera::Cli::Error, /Unknown config preset/))
     end
   end
 

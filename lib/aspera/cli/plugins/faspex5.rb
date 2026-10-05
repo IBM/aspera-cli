@@ -16,6 +16,8 @@ require 'aspera/nagios'
 require 'aspera/environment'
 require 'aspera/assert'
 require 'securerandom'
+require 'digest'
+require 'json'
 require 'aspera/rainbow'
 using Rainbow
 
@@ -207,6 +209,13 @@ module Aspera
           base_query
         end
 
+        # @return [String] user part of the persistency id of received packages:
+        #   the username, or for a public link (no username), a digest of the link context (unique per link)
+        def persistency_user_id
+          return options.get_option(:username, mandatory: true) if api_v5.pub_link_context.nil?
+          Digest::SHA256.hexdigest(JSON.generate(api_v5.pub_link_context))[0, 16]
+        end
+
         def package_receive(package_ids)
           # prepare persistency if needed
           skip_ids_persistency = nil
@@ -218,7 +227,7 @@ module Aspera
               id:      IdGenerator.from_list(
                 'faspex_recv',
                 options.get_option(:url, mandatory: true),
-                options.get_option(:username, mandatory: true),
+                persistency_user_id,
                 options.get_option(:box, mandatory: true)
               )
             )
@@ -245,6 +254,8 @@ module Aspera
             Aspera.assert_array_all(package_ids, String) { 'Package id(s)' }
             # packages = package_ids.map{|pkg_id|api_v5.read("packages/#{pkg_id}")}
             packages = package_ids.map { |pkg_id| {'id'=>pkg_id} }
+            # The package of a public link is received only once, like with `ALL`
+            packages.reject! { |p| skip_ids_persistency.data.include?(p['id']) } if skip_ids_persistency && api_v5.pub_link_context
           end
           result_transfer = []
           param_file_list = {}

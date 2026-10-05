@@ -52,6 +52,14 @@ module Aspera
 
       SECRET_KEYWORDS = %w[password secret].freeze
 
+      # @param name   [String]  preset name, or `GLOBAL` for the global default preset
+      # @param create [Boolean] `true` for an action writing in the preset: the global default preset is declared and created if needed
+      # @return [String] preset name
+      def preset_name(name, create: false)
+        return name unless name.eql?(GLOBAL_DEFAULT_KEYWORD)
+        presets.global_default_preset(create: create)
+      end
+
       # If `option_name` ends with a secret keyword and the vault is configured,
       # move the clear-text value into the vault and replace it with a @vault: reference.
       # @param preset      [Hash]   the preset hash (modified in place)
@@ -82,16 +90,16 @@ module Aspera
       public
 
       def action_preset_show(name:, **)
-        name = presets.global_default_preset if name.eql?(GLOBAL_DEFAULT_KEYWORD)
+        name = preset_name(name)
         cp = presets.config_presets
-        raise "no such preset: #{name}" unless cp.key?(name)
+        raise Cli::BadArgument, "no such preset: #{name}" unless cp.key?(name)
         Result::SingleObject.new(PresetManager.deep_clone(cp[name]))
       end
 
       def action_preset_delete(name:, **)
-        name = presets.global_default_preset if name.eql?(GLOBAL_DEFAULT_KEYWORD)
+        name = preset_name(name)
         cp = presets.config_presets
-        raise "no such preset: #{name}" unless cp.key?(name)
+        raise Cli::BadArgument, "no such preset: #{name}" unless cp.key?(name)
         cp.delete(name)
         # Remove default declarations referring to the deleted preset
         defaults = cp[PresetManager::Key::DEFAULTS]
@@ -103,11 +111,11 @@ module Aspera
       end
 
       def action_preset_get(name:, param_name:, **)
-        name = presets.global_default_preset if name.eql?(GLOBAL_DEFAULT_KEYWORD)
+        name = preset_name(name)
         cp = presets.config_presets
-        raise "no such preset: #{name}" unless cp.key?(name)
+        raise Cli::BadArgument, "no such preset: #{name}" unless cp.key?(name)
         value = cp[name][param_name]
-        raise "no such option in preset #{name} : #{param_name}" if value.nil?
+        raise Cli::BadArgument, "no such option in preset #{name}: #{param_name}" if value.nil?
         case value
         when Numeric, String then return Result::Text.new(ExtendedValue.instance.evaluate(value.to_s, context: 'preset'))
         end
@@ -115,15 +123,15 @@ module Aspera
       end
 
       def action_preset_unset(name:, param_name:, **)
-        name = presets.global_default_preset if name.eql?(GLOBAL_DEFAULT_KEYWORD)
+        name = preset_name(name)
         cp = presets.config_presets
-        raise "no such preset: #{name}" unless cp.key?(name)
+        raise Cli::BadArgument, "no such preset: #{name}" unless cp.key?(name)
         cp[name].delete(param_name)
         Result::Status.new("Removed: #{name}: #{param_name}")
       end
 
       def action_preset_set(name:, param_name:, param_value:, **)
-        name = presets.global_default_preset if name.eql?(GLOBAL_DEFAULT_KEYWORD)
+        name = preset_name(name, create: true)
         param_name = Parser.option_line_to_name(param_name)
         presets.set_key(name, param_name, Parser.smart_convert(param_value))
         secure_preset_option(presets.config_presets[name], name, param_name)
@@ -131,15 +139,15 @@ module Aspera
       end
 
       def action_preset_initialize(name:, preset:, **)
-        name = presets.global_default_preset if name.eql?(GLOBAL_DEFAULT_KEYWORD)
+        name = preset_name(name, create: true)
         cp = presets.config_presets
         Log.log.warn { "configuration already exists: #{name}, overwriting" } if cp.key?(name)
         cp[name] = preset
-        Result::Status.new("Modified: #{@option_config_file}")
+        Result::Status.new("Initialized: #{name}")
       end
 
       def action_preset_update(name:, **)
-        name = presets.global_default_preset if name.eql?(GLOBAL_DEFAULT_KEYWORD)
+        name = preset_name(name, create: true)
         unprocessed_options = options.unprocessed_options_with_value
         Log.dump(:opts, unprocessed_options)
         cp = presets.config_presets
@@ -150,7 +158,7 @@ module Aspera
       end
 
       def action_preset_ask(name:, option_names:, **)
-        name = presets.global_default_preset if name.eql?(GLOBAL_DEFAULT_KEYWORD)
+        name = preset_name(name, create: true)
         cp = presets.config_presets
         cp[name] ||= {}
         # Option names are only known at runtime: cannot be declared as interactive arguments

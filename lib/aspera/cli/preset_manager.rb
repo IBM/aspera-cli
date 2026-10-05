@@ -140,7 +140,11 @@ module Aspera
         Aspera.assert(!include_path.include?(config_name), type: Cli::Error) { 'loop in include' }
         include_path = include_path.clone
         current = @config_presets
-        config_name.split(PRESET_DIG_SEPARATOR).each do |name|
+        # A preset name may contain a dot (e.g. a host name): the longest name of an existing preset is used
+        parts = config_name.split(PRESET_DIG_SEPARATOR)
+        count = parts.length.downto(1).find { |n| @config_presets.key?(parts.first(n).join(PRESET_DIG_SEPARATOR)) } || 1
+        names = [parts.first(count).join(PRESET_DIG_SEPARATOR)] + parts.drop(count)
+        names.each do |name|
           Aspera.assert_type(current, Hash, type: Cli::Error) { "sub key: #{include_path}" }
           include_path.push(name)
           current = current[name]
@@ -196,14 +200,17 @@ module Aspera
         nil
       end
 
-      # @return [String] name of the global default preset, creating it if needed
-      def global_default_preset
+      # @param create [Boolean] `true`: declare and create the global default preset if needed (to write in it)
+      # @return [String] name of the global default preset
+      def global_default_preset(create: true)
         result = plugin_default_name(CONF_GLOBAL_SYM)
         if result.nil?
           result = Key::GLOBAL
-          set_key(Key::DEFAULTS, CONF_GLOBAL_SYM, result)
-          # A default declaration requires the preset to exist
-          @config_presets[result] ||= {}
+          if create
+            set_key(Key::DEFAULTS, CONF_GLOBAL_SYM, result)
+            # A default declaration requires the preset to exist
+            @config_presets[result] ||= {}
+          end
         end
         result
       end

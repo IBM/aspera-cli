@@ -99,9 +99,8 @@ module Aspera
           @preview_formats_to_generate = Aspera::Preview::Generator::PREVIEW_FORMATS.clone
           skip = options.get_option(:skip_format)
           @preview_formats_to_generate.delete(skip) if skip
+          # Created by `tools_cleanup`, only for commands that use it
           @tmp_folder = File.join(TempFileManager.instance.global_temp, "#{TMP_DIR_PREFIX}.#{SecureRandom.uuid}")
-          FileUtils.mkdir_p(@tmp_folder)
-          Log.log.debug { "tmpdir: #{@tmp_folder}" }
         end
 
         # Process legacy transfer events and trigger preview generation for completed downloads.
@@ -507,10 +506,12 @@ module Aspera
         private
 
         # Check tools and set option flag.
-        # Clean up the temporary folder after each command.
+        # Create the temporary folder for the command, and clean it up after.
         def tools_cleanup
           Aspera::Preview::FileTypes.instance.detect_mime = options.get_option(:detect_mime, mandatory: true)
           Aspera::Preview::Utils.check_tools(@option_skip_types)
+          FileUtils.mkdir_p(@tmp_folder)
+          Log.log.debug { "tmpdir: #{@tmp_folder}" }
           yield
         ensure
           Log.log.debug { "cleaning up temp folder #{@tmp_folder}" }
