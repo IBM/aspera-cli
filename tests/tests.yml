@@ -6697,75 +6697,33 @@ f5_pack_user_public:
     - --url=@preset:f5_misc.public_link_send_f5_user
     - '@json:@extend:{"title":"test title"}'
     - $(PATH_TST_ASC_LCL)
-f5_pub_link_recv_send:
-  description: Send a package to an external user to generate a public download link.
-  tags:
-    - save_output
-    - nodoc
-  args:
-    - faspex5
-    - packages
-    - send
-    - "@:"
-    - title=public link recv test
-    - recipients.0.name=@preset:misc.email_external
-    - recipients.0.recipient_type=external
-    - END
-    - $(PATH_TST_ASC_LCL)
-    - --fields=id
-    - --out.level=data
-f5_pub_link_recv_context:
-  description: Retrieve pkg_download_context from the sent package and save it.
-  depends_on:
-    - f5_pub_link_recv_send
-  tags:
-    - save_output
-    - wait_value
-    - nodoc
-  args:
-    - faspex5
-    - packages
-    - show
-    - $(t.saved_output :f5_pub_link_recv_send)
-    - --query=@json:{"get_package_download_link":true}
-    - --fields=pkg_download_context
-    - --format=csv
-    - --out.level=data
 f5_pack_recv_public_link_all:
-  depends_on:
-    - f5_pub_link_recv_context
   args:
     - -N
     - faspex5
     - packages
     - receive
-    - --url=$(conf_data('f5_user.url') + '/public/package?context=' + t.saved_output(:f5_pub_link_recv_context))
+    - --url=@preset:f5_misc.public_link_recv_fr_user
     - ALL
     - --to-folder=$(TMP)
 f5_pack_recv_public_link_simple:
-  depends_on:
-    - f5_pub_link_recv_context
   args:
     - -N
     - faspex5
     - packages
     - receive
-    - --url=$(conf_data('f5_user.url') + '/public/package?context=' + t.saved_output(:f5_pub_link_recv_context))
+    - --url=@preset:f5_misc.public_link_recv_fr_user
     - --to-folder=$(TMP)
 f5_pack_browse_public_link:
-  depends_on:
-    - f5_pub_link_recv_context
   args:
     - -N
     - faspex5
     - packages
     - browse
-    - --url=$(conf_data('f5_user.url') + '/public/package?context=' + t.saved_output(:f5_pub_link_recv_context))
+    - --url=@preset:f5_misc.public_link_recv_fr_user
     - /
 f5_pack_browse_public_link_wrong_folder:
   description: With a public link, the folder argument is used (it was ignored).
-  depends_on:
-    - f5_pub_link_recv_context
   tags:
     - must_fail
     - nodoc
@@ -6774,7 +6732,7 @@ f5_pack_browse_public_link_wrong_folder:
     - faspex5
     - packages
     - browse
-    - --url=$(conf_data('f5_user.url') + '/public/package?context=' + t.saved_output(:f5_pub_link_recv_context))
+    - --url=@preset:f5_misc.public_link_recv_fr_user
     - /not_a_folder_in_package
 f5_pack_wrkgrp:
   args:

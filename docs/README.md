@@ -8731,7 +8731,7 @@ gateway @: url=https://localhost:12346/aspera/faspex
 health --url=https://f5.example.com/path
 invitation list
 invitations create @: email_address=aspera.user1+u@gmail.com
-packages browse --url='$(conf_data('f5_user.url') + '/public/package?context=' + t.saved_output(:f5_pub_link_recv_context))' /
+packages browse --url=my_public_link_recv_fr_user /
 packages browse <id> --query.recursive=true
 packages delete <id>
 packages list --box=ALL
@@ -8741,8 +8741,8 @@ packages list --box=outbox --fields=DEF,sender.email,recipients.0.recipient_type
 packages list --query=@json:'{"mailbox":"inbox","status":"completed"}'
 packages receive --box=my_shared_box_name <id> --to-folder=.
 packages receive --box=my_workgroup --group-type=workgroups <id> --to-folder=.
-packages receive --url='$(conf_data('f5_user.url') + '/public/package?context=' + t.saved_output(:f5_pub_link_recv_context))' --to-folder=.
-packages receive --url='$(conf_data('f5_user.url') + '/public/package?context=' + t.saved_output(:f5_pub_link_recv_context))' ALL --to-folder=.
+packages receive --url=my_public_link_recv_fr_user --to-folder=.
+packages receive --url=my_public_link_recv_fr_user ALL --to-folder=.
 packages receive <id> --to-folder=. --ts.content_protection_password=my_secret_here
 packages receive <id> <f5_pack_first_file> --to-folder=. --ts.content_protection_password=my_secret_here
 packages receive ALL --once-only=yes --to-folder=. --query.max=5

@@ -3840,12 +3840,6 @@ paths:
           required: false
           schema:
             type: boolean
-        - name: get_package_download_link
-          in: query
-          description: Specifies whether to return the package download context to download the package as an external user.
-          required: false
-          schema:
-            type: boolean
       responses:
         '200':
           description: ' - OK - Successful response'
@@ -30208,13 +30202,6 @@ components:
             - eyJyZXNvdXJjZSI6InBhY2thZ2VzIiwidHlwZSI6ImV4dGVybmFsX3ZpZXdfcGFja2FnZSIsImlkIjoiMzAiLCJwYXNzY29kZSI6IjA2MzBkZDIzLTA3YTAtNGExYi04N2IzLWM3YjZkMGViNjE5NiIsInBhY2thZ2VfaWQiOiIzMCJ9
           maxLength: 255
           minLength: 1
-        pkg_download_context:
-          description: The package download context value used for navigating to the package download view for external users. Only included in responses when `get_package_download_link` is set to `true` and the package in question was not sent to a shared inbox or workgroup.
-          type: string
-          examples:
-            - eyJyZXNvdXJjZSI6InBhY2thZ2VzIiwidHlwZSI6ImV4dGVybmFsX3ZpZXdfcGFja2FnZSIsImlkIjoiMzAiLCJwYXNzY29kZSI6IjA2MzBkZDIzLTA3YTAtNGExYi04N2IzLWM3YjZkMGViNjE5NiIsInBhY2thZ2VfaWQiOiIzMCJ9
-          maxLength: 255
-          minLength: 1
     PutPackage:
       description: Update a package
       type: object
@@ -32774,13 +32761,6 @@ components:
                 type: boolean
               pkg_status_context:
                 description: The package status context value used for navigating to package status view. Only included in responses when `get_package_status_link` is set to `true` and the requester is the package sender.
-                type: string
-                examples:
-                  - eyJyZXNvdXJjZSI6InBhY2thZ2VzIiwidHlwZSI6ImV4dGVybmFsX3ZpZXdfcGFja2FnZSIsImlkIjoiMzAiLCJwYXNzY29kZSI6IjA2MzBkZDIzLTA3YTAtNGExYi04N2IzLWM3YjZkMGViNjE5NiIsInBhY2thZ2VfaWQiOiIzMCJ9
-                maxLength: 255
-                minLength: 1
-              pkg_download_context:
-                description: The package download context value used for navigating to the package download view for external users. Only included in responses when `get_package_download_link` is set to `true` and the package in question was not sent to a shared inbox or workgroup.
                 type: string
                 examples:
                   - eyJyZXNvdXJjZSI6InBhY2thZ2VzIiwidHlwZSI6ImV4dGVybmFsX3ZpZXdfcGFja2FnZSIsImlkIjoiMzAiLCJwYXNzY29kZSI6IjA2MzBkZDIzLTA3YTAtNGExYi04N2IzLWM3YjZkMGViNjE5NiIsInBhY2thZ2VfaWQiOiIzMCJ9
