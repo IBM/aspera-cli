@@ -4764,6 +4764,10 @@ File transfer operations are monitored, and a progress bar is displayed on the t
 
 The same progress bar is used for any type of transfer: using `ascp`, server to server, using HTTPS, and so on.
 
+It shows the elapsed time, the percentage, the rate in megabits per second (`Mbps`, 1,000,000 bits per second, averaged over the last 5 seconds) and the estimated remaining time.
+As long as the total size is not known (for example, when the job size is not pre-calculated), the transferred size is shown instead of the percentage.
+For multi-session transfers, sessions are aggregated, and the number of running sessions is shown in brackets.
+
 If option `progress_bar` is not set, transfers with agent `direct` display the native progress bar of `ascp` instead (see [`direct`](#agent-direct)).
 
 ### Scheduler

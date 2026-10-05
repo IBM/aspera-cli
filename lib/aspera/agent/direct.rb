@@ -107,8 +107,6 @@ module Aspera
         @sessions = []
         # mutex protects global data accessed by threads
         @mutex = Mutex.new
-        @pre_calc_sent = false
-        @pre_calc_last_size = nil
         # `true` when native `ascp` progress bar is used instead of `progress` (`quiet` is `nil`)
         @native_progress = false
         # Check on all management messages if that file exists, and if so, read commands from it
@@ -169,6 +167,9 @@ module Aspera
           error:             nil,               # exception if failed
           io:                nil,               # management port server socket
           token_regenerator: token_regenerator, # regenerate bearer token with oauth
+          progress_id:       nil,               # session identifier for progress, one per `ascp` process, same on resume
+          size_sent:         false,             # `true` when total size was notified (PreTransferBytes)
+          last_size:         nil,               # last notified transferred size
           # env vars and args for ascp (from transfer spec)
           exec_spec:         Transfer::Parameters.new(transfer_spec, **@tr_opts, quiet: quiet).ascp_args
         }
@@ -352,7 +353,7 @@ module Aspera
             # store session identifier
             session[:id] = event['SessionId'] if event['Type'].eql?('INIT')
             @management_cb&.call(event)
-            process_progress(event)
+            process_progress(session, event)
             next unless File.exist?(@command_file)
             begin
               commands = JSON.parse(File.read(@command_file))
@@ -428,27 +429,29 @@ module Aspera
       end
 
       # Notify progress to callback
-      # @param event [Hash] management port event
-      def process_progress(event)
-        session_id = event['SessionId']
+      # @param session [Hash] This session information, progress state is stored in it
+      # @param event   [Hash] management port event
+      def process_progress(session, event)
+        # Not the `ascp` session id: must be the same when session is resumed
+        progress_id = session[:progress_id] ||= SecureRandom.uuid
         case event['Type']
         when 'INIT'
-          @pre_calc_sent = false
-          @pre_calc_last_size = nil
-          notify_progress(:session_start, session_id: session_id)
+          session[:size_sent] = false
+          session[:last_size] = nil
+          notify_progress(:session_start, session_id: progress_id)
         when 'NOTIFICATION' # sent from remote
           if event.key?('PreTransferBytes')
-            @pre_calc_sent = true
-            notify_progress(:session_size, session_id: session_id, info: event['PreTransferBytes'])
+            session[:size_sent] = true
+            notify_progress(:session_size, session_id: progress_id, info: event['PreTransferBytes'])
           end
         when 'STATS' # during transfer
-          @pre_calc_last_size = event['TransferBytes'].to_i + event['StartByte'].to_i
-          notify_progress(:transfer, session_id: session_id, info: @pre_calc_last_size)
+          session[:last_size] = event['TransferBytes'].to_i + event['StartByte'].to_i
+          notify_progress(:transfer, session_id: progress_id, info: session[:last_size])
         when 'DONE', 'ERROR' # end of session
           total_size = event['TransferBytes'].to_i + event['StartByte'].to_i
-          notify_progress(:session_size, session_id: session_id, info: total_size) if !@pre_calc_sent && !total_size.zero?
-          notify_progress(:transfer, session_id: session_id, info: total_size) if @pre_calc_last_size != total_size
-          notify_progress(:session_end, session_id: session_id)
+          notify_progress(:session_size, session_id: progress_id, info: total_size) if !session[:size_sent] && !total_size.zero?
+          notify_progress(:transfer, session_id: progress_id, info: total_size) if session[:last_size] != total_size
+          notify_progress(:session_end, session_id: progress_id)
           # cspell:disable
         when 'SESSION'
         when 'ARGSTOP'

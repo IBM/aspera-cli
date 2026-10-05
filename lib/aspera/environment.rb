@@ -12,7 +12,7 @@ require 'shellwords'
 require 'aspera/rainbow'
 using Rainbow
 
-# cspell:words MEBI mswin bccwin
+# cspell:words mswin bccwin
 
 module Aspera
   # detect OS, architecture, and specific stuff
@@ -37,8 +37,6 @@ module Aspera
     CPU_LIST = [CPU_X86_64, CPU_ARM64, CPU_PPC64, CPU_PPC64LE, CPU_S390].freeze
 
     BITS_PER_BYTE = 8
-    MEBI = 1024 * 1024
-    BYTES_PER_MEBIBIT = MEBI / BITS_PER_BYTE
 
     I18N_VARS = %w(LC_ALL LC_CTYPE LANG).freeze
 

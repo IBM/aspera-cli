@@ -25,6 +25,7 @@ Released: [Place date of release here]
 * **general**: Fixed #265 #266: Linux single executable of 4.27.3 ran every command as `config commands <command>`: e.g. `config transferd install` only displayed its syntax, and `faspex5 packages receive ALL` failed with `no such command`.
 * `config`: `transferd install` with `--sdk-url=file:///...tar.gz` (local SDK archive, Linux) failed with `not in gzip format`.
 * **general**: Linux single executable: commands could fail with `cannot load such file` (e.g. `config transferd install`: `rubygems/package`): it now includes the whole Ruby standard library and all files of gems.
+* **general**: Progress bar: stayed at 0% when the total size was not known (the transferred size is now shown), rate was underestimated (it included connection time: now averaged over the last 5 seconds, in decimal `Mbps` like `ascp`), a resumed session doubled the total size or failed the transfer, a second HTTP download accumulated the first one, multi-session state was shared between sessions in agent `direct`. Errors in the progress bar no longer fail the transfer.
 
 ### Breaking Changes
 
