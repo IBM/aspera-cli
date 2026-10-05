@@ -321,7 +321,8 @@ module Aspera
             )
             # well, we asked a TS for connect, but we actually want a generic one
             transfer_spec.delete('authentication')
-            return Runner.result_transfer(transfer.start(transfer_spec))
+            Runner.result_transfer(transfer.start(transfer_spec))
+            return Result::SingleObject.new(package)
           else
             # send from remote shared folder
             if (m = Parser.percent_selector(shared_folder))

@@ -18,6 +18,7 @@ Released: [Place date of release here]
 * `preview`: Generator options with a numeric value given on command line (e.g. `--thumb-vid-fraction=0.3`, `--blend-pauseframes=2`) were failing.
 * `aoc`: `short_link show` always failed with `not found`.
 * `faspex5`: `packages receive` with a public link now works with a list of files, and `ALL`.
+* `faspex5`: `packages send` now returns the package information (like `aoc`).
 * `config`: `commands` failed with `no such command` when the command path included positional arguments (e.g. `faspex5 packages receive ALL`): arguments are now skipped, and an unknown command shows the list of sub-commands.
 * `aoc`: `files short_link public modify` with `access_levels` set full access (`edit`) instead of the given levels.
 * `aoc`: `packages shared_inboxes short_link public` commands were failing (wrong short link purpose, parameters of shared folder links). Link type `private` is removed: AoC supports it only for shared folders.
