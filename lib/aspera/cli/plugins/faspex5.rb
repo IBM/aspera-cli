@@ -509,7 +509,7 @@ module Aspera
             arguments: [{name: :package, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::FASPEX, 'packages.post')}],
             action: ->(package:, **) { package_send(package) }
           command :show,   description: 'Show a package', setup: :setup_package_id, arguments: PACKAGE_ID_ARG,
-            action: ->(package_id:, **) { Result::SingleObject.new(api_v5.read("packages/#{package_id}")) }
+            action: ->(package_id:, **) { Result::SingleObject.new(api_v5.read("packages/#{package_id}", query_read_delete)) }
           command :browse, description: 'Browse package files', setup: :setup_package_id,
             arguments: PACKAGE_ID_ARG + [{name: :folder_path, mandatory: false, default: '/'}],
             action: ->(folder_path:, package_id:, **) { browse_folder("packages/#{package_id}/files/#{Api::Faspex.box_type(options.get_option(:box))}", recipient_query(package_id), folder_path: folder_path) }

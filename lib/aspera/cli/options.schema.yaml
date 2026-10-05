@@ -598,20 +598,20 @@ components:
             Token expiry timestamp in ISO 8601 format (`YYYY-MM-DDTHH:MM:SSZ`).
             Computed automatically from `_validity` when absent.
           example: "2030-01-01T00:00:00Z"
-    NodeSimulatorOptions:
+    NodeEmulatorOptions:
       type: object
       description: >-
-        Configuration for the embedded Node API simulator (`node simulator`), for testing without HSTS.
-        The simulator starts a local web server that answers a subset of the Node API:
+        Configuration for the embedded Node API emulator (`node emulator`), for testing without HSTS.
+        The emulator starts a local web server that answers a subset of the Node API:
         `/info`, `/ops/transfers` (list, start), `/ops/transfers/{id}` (show, modify, cancel) and `/files/browse`.
-        Transfers are executed by the Transfer Daemon (`transferd`), started by the simulator.
+        Transfers are executed by the Transfer Daemon (`transferd`), started by the emulator.
         Clients authenticate with HTTP Basic when `username` and `password` are set.
       additionalProperties: false
       properties:
         url:
           type: string
           description: >-
-            Address and port the simulator listens on.
+            Address and port the emulator listens on.
             Use `https://` with `cert`/`key` for TLS.
           default: http://localhost:8080
         cert:

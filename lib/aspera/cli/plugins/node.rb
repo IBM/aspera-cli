@@ -588,8 +588,9 @@ module Aspera
             Result::Text.new(Api::Node.bearer_token(payload: token, access_key: access_key, private_key: private_key))
           end
         )
-        command :simulator,     description: 'Start node simulator',
-          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: Schema::Registry::NODE_SIMULATOR_OPTIONS}]
+        command :emulator,      description: 'Start node emulator',
+          aliases: [:simulator],
+          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: Schema::Registry::NODE_EMULATOR_OPTIONS}]
         command :telemetry,     description: 'Report telemetry to external system',
           arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: 'opts:components.schemas.NodeTelemetryOptions'}]
 
@@ -1128,10 +1129,10 @@ module Aspera
           return Result::Status.new('done')
         end
 
-        def action_simulator(parameters: {}, **)
+        def action_emulator(parameters: {}, **)
           require 'aspera/node_simulator'
           # missing parameters take the default of the schema
-          defaults = Schema::Registry.instance.reader(Schema::Registry::NODE_SIMULATOR_OPTIONS).current['properties'].each_with_object({}) do |(name, property), result|
+          defaults = Schema::Registry.instance.reader(Schema::Registry::NODE_EMULATOR_OPTIONS).current['properties'].each_with_object({}) do |(name, property), result|
             result[name.to_sym] = property['default'] if property.key?('default')
           end
           parameters = defaults.merge(parameters.symbolize_keys)

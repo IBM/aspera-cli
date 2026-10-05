@@ -1415,14 +1415,14 @@ nd_xfer_sessions_after:
     - node
     - transfer
     - sessions
-node_simulator_start:
-  description: Start the Node API simulator in background, transfers are executed by transferd.
+node_emulator_start:
+  description: Start the Node API emulator in background, transfers are executed by transferd.
   tags:
     - noblock
     - grpc
   args:
     - node
-    - simulator
+    - emulator
     - '@json:{"url":"http://localhost:12348","username":"sim","password":"sim","docroot":"$(TMP)"}'
   post: |
     require 'socket'
@@ -1434,15 +1434,15 @@ node_simulator_start:
       sleep(1)
       retry
     end
-node_simulator_bad_auth:
-  description: The simulator rejects wrong credentials.
+node_emulator_bad_auth:
+  description: The emulator rejects wrong credentials.
   tags:
     - must_fail
     - nodoc
     - grpc
   expect: Invalid or missing credentials
   depends_on:
-    - node_simulator_start
+    - node_emulator_start
   args:
     - node
     - --url=http://localhost:12348
@@ -1450,25 +1450,25 @@ node_simulator_bad_auth:
     - --password=bad
     - transfer
     - list
-node_simulator_info:
+node_emulator_info:
   tags:
     - nodoc
     - grpc
   depends_on:
-    - node_simulator_start
+    - node_emulator_start
   args:
     - node
     - --url=http://localhost:12348
     - --username=sim
     - --password=sim
     - info
-node_simulator_browse:
-  description: Paths of the simulator are relative to its docroot.
+node_emulator_browse:
+  description: Paths of the emulator are relative to its docroot.
   tags:
     - grpc
   expect: /data_file.bin
   depends_on:
-    - node_simulator_start
+    - node_emulator_start
   args:
     - node
     - --url=http://localhost:12348
@@ -1479,12 +1479,12 @@ node_simulator_browse:
     - --fields=path
     - --format=csv
     - '--select=@json:{"basename":"$(FILENAME_ASCII)"}'
-serv_upload_via_simulator:
-  description: Upload to the server a file of the simulator docroot, the transfer is executed by the simulator.
+serv_upload_via_emulator:
+  description: Upload to the server a file of the emulator docroot, the transfer is executed by the emulator.
   tags:
     - grpc
   depends_on:
-    - node_simulator_start
+    - node_emulator_start
   args:
     - server
     - upload
@@ -1494,13 +1494,13 @@ serv_upload_via_simulator:
     - --transfer.url=http://localhost:12348
     - --transfer.username=sim
     - --transfer.password=sim
-node_simulator_transfer_list:
-  description: The transfer started by the simulator is completed.
+node_emulator_transfer_list:
+  description: The transfer started by the emulator is completed.
   tags:
     - grpc
   expect: completed
   depends_on:
-    - serv_upload_via_simulator
+    - serv_upload_via_emulator
   args:
     - node
     - --url=http://localhost:12348
@@ -1509,7 +1509,7 @@ node_simulator_transfer_list:
     - transfer
     - list
     - --fields=status
-  post: t.stop_process :node_simulator_start
+  post: t.stop_process :node_emulator_start
 nd_basic_token:
   args:
     - node
@@ -6697,33 +6697,75 @@ f5_pack_user_public:
     - --url=@preset:f5_misc.public_link_send_f5_user
     - '@json:@extend:{"title":"test title"}'
     - $(PATH_TST_ASC_LCL)
+f5_pub_link_recv_send:
+  description: Send a package to an external user to generate a public download link.
+  tags:
+    - save_output
+    - nodoc
+  args:
+    - faspex5
+    - packages
+    - send
+    - "@:"
+    - title=public link recv test
+    - recipients.0.name=@preset:misc.email_external
+    - recipients.0.recipient_type=external
+    - END
+    - $(PATH_TST_ASC_LCL)
+    - --fields=id
+    - --out.level=data
+f5_pub_link_recv_context:
+  description: Retrieve pkg_download_context from the sent package and save it.
+  depends_on:
+    - f5_pub_link_recv_send
+  tags:
+    - save_output
+    - wait_value
+    - nodoc
+  args:
+    - faspex5
+    - packages
+    - show
+    - $(t.saved_output :f5_pub_link_recv_send)
+    - --query=@json:{"get_package_download_link":true}
+    - --fields=pkg_download_context
+    - --format=csv
+    - --out.level=data
 f5_pack_recv_public_link_all:
+  depends_on:
+    - f5_pub_link_recv_context
   args:
     - -N
     - faspex5
     - packages
     - receive
-    - --url=@preset:f5_misc.public_link_recv_f5_user
+    - --url=$(conf_data('f5_user.url') + '/public/package?context=' + t.saved_output(:f5_pub_link_recv_context))
     - ALL
     - --to-folder=$(TMP)
 f5_pack_recv_public_link_simple:
+  depends_on:
+    - f5_pub_link_recv_context
   args:
     - -N
     - faspex5
     - packages
     - receive
-    - --url=@preset:f5_misc.public_link_recv_f5_user
+    - --url=$(conf_data('f5_user.url') + '/public/package?context=' + t.saved_output(:f5_pub_link_recv_context))
     - --to-folder=$(TMP)
 f5_pack_browse_public_link:
+  depends_on:
+    - f5_pub_link_recv_context
   args:
     - -N
     - faspex5
     - packages
     - browse
-    - --url=@preset:f5_misc.public_link_recv_f5_user
+    - --url=$(conf_data('f5_user.url') + '/public/package?context=' + t.saved_output(:f5_pub_link_recv_context))
     - /
 f5_pack_browse_public_link_wrong_folder:
   description: With a public link, the folder argument is used (it was ignored).
+  depends_on:
+    - f5_pub_link_recv_context
   tags:
     - must_fail
     - nodoc
@@ -6732,7 +6774,7 @@ f5_pack_browse_public_link_wrong_folder:
     - faspex5
     - packages
     - browse
-    - --url=@preset:f5_misc.public_link_recv_f5_user
+    - --url=$(conf_data('f5_user.url') + '/public/package?context=' + t.saved_output(:f5_pub_link_recv_context))
     - /not_a_folder_in_package
 f5_pack_wrkgrp:
   args:

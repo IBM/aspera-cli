@@ -8333,6 +8333,7 @@ central session list
 delete @list:,my_upload_folder/a_folder,my_upload_folder/tdlink,my_upload_folder/a_file
 delete my_upload_folder/test_file.bin
 download my_upload_folder/test_file.bin --to-folder=.
+emulator @json:'{"url":"http://localhost:12348","username":"sim","password":"sim","docroot":"/data"}'
 health
 info --fpac='function FindProxyForURL(url,host){return "DIRECT"}'
 license
@@ -8344,7 +8345,6 @@ search / --query.sort=mtime
 service create @json:'{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
 service delete service1
 service list
-simulator @json:'{"url":"http://localhost:12348","username":"sim","password":"sim","docroot":"/data"}'
 slash
 space /
 spec
@@ -8416,17 +8416,17 @@ In Instana, create a custom Dashboard to visualize the OTel data:
 - Data Source: Infrastructure and Platforms
 - Metric: search `transfer`
 
-### Node simulator
+### Node emulator
 
 > [!NOTE]
 > This is not a feature for production.
 > It's provided for testing only.
 
-The command `simulator` starts a local web server that answers a subset of the Node API, and executes transfers with the Transfer Daemon (`transferd`).
+The command `emulator` starts a local web server that answers a subset of the Node API, and executes transfers with the Transfer Daemon (`transferd`).
 It allows testing, without HSTS, the [Node API agent](#agent-node-api) (`--transfer.agent=node`) and the `node` commands `info`, `browse`, `transfer list|show|modify|cancel`.
 
 The Transfer Daemon and the gem `grpc` must be installed (see [Agent: Transfer Daemon](#agent-transfer-daemon)).
-The simulator starts its own `transferd`, and stops it on exit.
+The emulator starts its own `transferd`, and stops it on exit.
 
 It takes an optional `Hash` argument with the following parameters:
 
@@ -8438,19 +8438,19 @@ It takes an optional `Hash` argument with the following parameters:
 | `key` | `String` | Path to the PEM private key file, or the PKCS12 passphrase when `cert` is a `.p12`/`.pfx` file.<br/>Example: `/path/to/key.pem`. |
 | `password` | `String` | Password expected from clients in HTTP Basic authentication, for the above `username`.<br/>Example: `my_password`. |
 | `retention_sec` | `Integer` | Time in seconds a transfer stays in the list of transfers after it ended (completed, failed or canceled, and no more retried).<br/>Default: `86400`. |
-| `url` | `String` | Address and port the simulator listens on. Use `https://` with `cert`/`key` for TLS.<br/>Default: `http://localhost:8080`. |
+| `url` | `String` | Address and port the emulator listens on. Use `https://` with `cert`/`key` for TLS.<br/>Default: `http://localhost:8080`. |
 | `username` | `String` | Username expected from clients in HTTP Basic authentication. Set together with `password`. When not set, requests are accepted without authentication.<br/>Example: `node_user`. |
 
 For details on `url` and HTTPS, see [Web service](#web-service).
 
-Like on a real node, the files of the simulator are in its `docroot`: paths of `browse`, and local paths of transfers, are relative to it.
+Like on a real node, the files of the emulator are in its `docroot`: paths of `browse`, and local paths of transfers, are relative to it.
 Local paths are the sources of an upload (`send`), and the destination of a download (`receive`).
 Paths leading out of the `docroot` are rejected.
 
-Start the simulator, it runs until interrupted:
+Start the emulator, it runs until interrupted:
 
 ```shell
-ascli node simulator @json:'{"url":"http://localhost:12348","username":"sim","password":"sim","docroot":"/data"}'
+ascli node emulator @json:'{"url":"http://localhost:12348","username":"sim","password":"sim","docroot":"/data"}'
 ```
 
 Then, in another terminal, use it as a node, for example, to list the files in `/data`:
@@ -8465,7 +8465,7 @@ Or as the transfer agent, for example, to upload the file `/data/my_file.dat` to
 ascli server upload /my_file.dat --transfer.agent=node --transfer.url=http://localhost:12348 --transfer.username=sim --transfer.password=sim
 ```
 
-The transfer is executed by `transferd`, and its status is available on the simulator:
+The transfer is executed by `transferd`, and its status is available on the emulator:
 
 ```shell
 ascli node --url=http://localhost:12348 --username=sim --password=sim transfer list
@@ -8485,9 +8485,9 @@ Supported endpoints:
 
 Limitations:
 
-- Only transfers started through the simulator are known. They are kept in memory, and lost when the simulator stops. Ended transfers are removed from the list after `retention_sec` (default: one day).
+- Only transfers started through the emulator are known. They are kept in memory, and lost when the emulator stops. Ended transfers are removed from the list after `retention_sec` (default: one day).
 - Only Basic authentication is supported: when `username` and `password` are set, bearer tokens and access keys are rejected. When they are not set, all requests are accepted.
-- Not supported: `files/upload_setup` and `files/download_setup` (so, `node upload|download` on the simulator), `ops/transfers/bandwidth`, pause and resume of transfers, query parameters `iteration_token` and `tag`.
+- Not supported: `files/upload_setup` and `files/download_setup` (so, `node upload|download` on the emulator), `ops/transfers/bandwidth`, pause and resume of transfers, query parameters `iteration_token` and `tag`.
 
 ## Plugin: `faspex5`: IBM Aspera Faspex v5
 
@@ -8731,7 +8731,7 @@ gateway @: url=https://localhost:12346/aspera/faspex
 health --url=https://f5.example.com/path
 invitation list
 invitations create @: email_address=aspera.user1+u@gmail.com
-packages browse --url=my_public_link_recv_f5_user /
+packages browse --url='$(conf_data('f5_user.url') + '/public/package?context=' + t.saved_output(:f5_pub_link_recv_context))' /
 packages browse <id> --query.recursive=true
 packages delete <id>
 packages list --box=ALL
@@ -8741,8 +8741,8 @@ packages list --box=outbox --fields=DEF,sender.email,recipients.0.recipient_type
 packages list --query=@json:'{"mailbox":"inbox","status":"completed"}'
 packages receive --box=my_shared_box_name <id> --to-folder=.
 packages receive --box=my_workgroup --group-type=workgroups <id> --to-folder=.
-packages receive --url=my_public_link_recv_f5_user --to-folder=.
-packages receive --url=my_public_link_recv_f5_user ALL --to-folder=.
+packages receive --url='$(conf_data('f5_user.url') + '/public/package?context=' + t.saved_output(:f5_pub_link_recv_context))' --to-folder=.
+packages receive --url='$(conf_data('f5_user.url') + '/public/package?context=' + t.saved_output(:f5_pub_link_recv_context))' ALL --to-folder=.
 packages receive <id> --to-folder=. --ts.content_protection_password=my_secret_here
 packages receive <id> <f5_pack_first_file> --to-folder=. --ts.content_protection_password=my_secret_here
 packages receive ALL --once-only=yes --to-folder=. --query.max=5
