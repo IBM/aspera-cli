@@ -288,7 +288,8 @@ module Aspera
           fields.push('%B', '%j%%')
         end
         fields.push(self.class.format_bytes(current), self.class.format_rate(average_rate)) unless @sessions.empty?
-        @title = 'failed' unless success
+        # Last status (e.g. `running`) is no more relevant
+        @title = success ? nil : 'failed'
         # Final line may be shorter (no bar)
         @progress_bar.clear
         update_format(title_text(final: true), fields)

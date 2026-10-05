@@ -587,7 +587,6 @@ serv_upload_pair_sources:
     - --src-type=pair
     - --sources=@json:@extend:["$(PATH_TST_ASC_LCL)","@preset:server.inside_folder@/other_name_3"]
     - --transfer.quiet=false
-    - --progress=no
 serv_upload_transferd:
   tags:
     - grpc
@@ -911,7 +910,6 @@ serv_upload_progress_quiet:
     - --to-folder=@preset:server.upload_folder
     - --ts=@json:{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}
     - --transfer.quiet=false
-    - --progress=no
 serv_upload_progress:
   tags:
     - nodoc

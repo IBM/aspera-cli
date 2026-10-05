@@ -4850,13 +4850,13 @@ Key query parameters:
   Place only the bare filename(s) in the file list, and pass the `file:` URI as the source prefix so that the query parameters apply uniformly to every entry:
 
   ```shell
-  <%=cmd%> server upload growing --to-folder=/Upload --ts.source_root='file:///?grow=120' --progress-bar=no --transfer.quiet=false
+  <%=cmd%> server upload growing --to-folder=/Upload --ts.source_root='file:///?grow=120' --transfer.quiet=false
   ```
 
 - **URI directly on the command line with `file_list=false`**
 
   ```shell
-  <%=cmd%> server upload 'file:///./growing?grow=120' --to-folder=/Upload --transfer.file_list=false --transfer.quiet=false --progress-bar=no
+  <%=cmd%> server upload 'file:///./growing?grow=120' --to-folder=/Upload --transfer.file_list=false --transfer.quiet=false
   ```
 
 ### Usage

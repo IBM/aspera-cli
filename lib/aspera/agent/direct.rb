@@ -165,7 +165,8 @@ module Aspera
           progress_id:       nil,               # session identifier for progress, one per `ascp` process, same on resume
           size_sent:         false,             # `true` when total size was notified (PreTransferBytes)
           last_size:         nil,               # last notified transferred size
-          skipped:           0,                 # size of files already at destination
+          skipped:           0,                 # size of whole files already at destination
+          last_skipped:      nil,               # last notified size not transferred (already at destination)
           # env vars and args for ascp (from transfer spec)
           exec_spec:         Transfer::Parameters.new(transfer_spec, **@tr_opts).ascp_args
         }
@@ -431,6 +432,7 @@ module Aspera
           session[:size_sent] = false
           session[:last_size] = nil
           session[:skipped] = 0
+          session[:last_skipped] = nil
           notify_progress(:session_start, session_id: progress_id)
         when 'NOTIFICATION' # sent from remote
           if event.key?('PreTransferBytes')
@@ -438,22 +440,17 @@ module Aspera
             notify_progress(:session_size, session_id: progress_id, info: event['PreTransferBytes'])
           end
         when 'STATS' # during transfer
-          # Note: `StartByte` is not added: in multi-session, it is the offset of the part of file transferred by this session
-          session[:last_size] = event['TransferBytes'].to_i
-          notify_progress(:transfer, session_id: progress_id, info: session[:last_size])
+          notify_transferred(session, event)
         when 'STOP' # one file is completed
           size = event['Size'].to_i
-          # File already at destination (resume): not transferred.
+          # Whole file already at destination (resume): not transferred, and not in `FileBytes`.
           # Note: in multi-session, each session notifies all such files: progress bar limits progress to size of session.
-          if size.positive? && event['StartByte'].to_i.eql?(size)
-            session[:skipped] += size
-            notify_progress(:skip, session_id: progress_id, info: session[:skipped])
-          end
+          session[:skipped] += size if size.positive? && event['StartByte'].to_i.eql?(size)
+          notify_transferred(session, event)
         when 'DONE', 'ERROR' # end of session
-          transferred = event['TransferBytes'].to_i
-          total_size = transferred + session[:skipped]
+          notify_transferred(session, event)
+          total_size = session[:last_size] + session[:last_skipped]
           notify_progress(:session_size, session_id: progress_id, info: total_size) if !session[:size_sent] && !total_size.zero?
-          notify_progress(:transfer, session_id: progress_id, info: transferred) if session[:last_size] != transferred
           notify_progress(:session_end, session_id: progress_id)
           # cspell:disable
         when 'SESSION'
@@ -464,6 +461,23 @@ module Aspera
         else
           Log.log.debug { "Unknown event type for progress: #{event['Type']}" }
         end
+      end
+
+      # Notify transferred size, and size not transferred because already at destination (resume), if changed
+      # @param session [Hash] This session information, progress state is stored in it
+      # @param event   [Hash] management port event, with `TransferBytes` and `FileBytes`
+      def notify_transferred(session, event)
+        transferred = event['TransferBytes'].to_i
+        # `FileBytes` also includes the part of files already at destination.
+        # Note: `StartByte` is not used: in multi-session, it is the offset of the part of file transferred by the session.
+        skipped = session[:skipped] + [event['FileBytes'].to_i - transferred, 0].max
+        if session[:last_skipped] != skipped
+          session[:last_skipped] = skipped
+          notify_progress(:skip, session_id: session[:progress_id], info: skipped)
+        end
+        return if session[:last_size].eql?(transferred)
+        session[:last_size] = transferred
+        notify_progress(:transfer, session_id: session[:progress_id], info: transferred)
       end
     end
   end

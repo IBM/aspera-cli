@@ -5195,13 +5195,13 @@ Key query parameters:
   Place only the bare filename(s) in the file list, and pass the `file:` URI as the source prefix so that the query parameters apply uniformly to every entry:
 
   ```shell
-  ascli server upload growing --to-folder=/Upload --ts.source_root='file:///?grow=120' --progress-bar=no --transfer.quiet=false
+  ascli server upload growing --to-folder=/Upload --ts.source_root='file:///?grow=120' --transfer.quiet=false
   ```
 
 - **URI directly on the command line with `file_list=false`**
 
   ```shell
-  ascli server upload 'file:///./growing?grow=120' --to-folder=/Upload --transfer.file_list=false --transfer.quiet=false --progress-bar=no
+  ascli server upload 'file:///./growing?grow=120' --to-folder=/Upload --transfer.file_list=false --transfer.quiet=false
   ```
 
 ### Usage
@@ -7715,7 +7715,7 @@ upload 'faux:///test.bin?1k' --to-folder=my_upload_folder
 upload --sources=@ts --transfer.ascp_args=@list:,--file-list,file_list.txt --to-folder=my_inside_folder
 upload --sources=@ts --transfer.ascp_args=@list:,--file-pair-list,file_pair_list.txt
 upload --sources=@ts --ts=@json:'{"paths":[{"source":"test_file.bin","destination":"my_inside_folder/other_name_4"}]}' --transfer.agent=transferd
-upload --src-type=pair --sources=@json:'["test_file.bin","my_inside_folder/other_name_3"]' --transfer.quiet=false --progress=no
+upload --src-type=pair --sources=@json:'["test_file.bin","my_inside_folder/other_name_3"]' --transfer.quiet=false
 upload --src-type=pair test_file.bin my_inside_folder/other_name_2 --notify-to=my_email_external '--transfer.ascp_args=@list: -l 100m'
 upload --src-type=pair test_file.bin my_upload_folder/other_name_5 --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":"-1","exclude_older_than":"-10000","fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum"}'
 upload --to-folder=my_upload_folder/target_hot --lock-port=50101 --transfer.ascp_args=@list:,--remove-after-transfer,--remove-empty-directories,--exclude-newer-than=-8,--src-base,hot_folder hot_folder

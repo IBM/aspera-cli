@@ -190,6 +190,8 @@ module Aspera
         progress.event(:session_end, session_id: 'a')
         expect(lines.last).to(start_with('[1] '))
         progress.event(:session_end, session_id: 'b')
+        # status of transfer is not displayed at end
+        progress.event(:sessions_init, info: 'running')
         progress.event(:end)
         expect(lines.last).to(match(/^Time: .* 100% 100.0 MB /))
       end
