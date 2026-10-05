@@ -3969,7 +3969,7 @@ The `transfer` option accepts the following optional parameters to control multi
 | `file_list` | `Bool` | If `true`, source paths are written to a temp file passed to `ascp` via `--file-list` or `--file-pair-list`.<br/>If `false`, source paths are placed directly on the `ascp` command line.<br/>Default: `true`. |
 | `monitor` | `Bool` | Enable use of the `ascp` management port for transfer monitoring.<br/>Default: `true`. |
 | `multi_incr_udp` | `Bool` | Multi session - Increment UDP port for each session.<br/>If `true`, each session uses a different UDP port starting at `fasp_port` (default: 33001).<br/>If `false`, all sessions use the same `fasp_port` (or `ascp` default).<br/>Default: `true` on Windows, `false` on other platforms. |
-| `quiet` | `Bool` | Suppress the `ascp` progress bar display.<br/>If not set: `false` if the output is a terminal and option `progress_bar` is not set, else `true`. For multi-session transfers, the progress bar of option `progress_bar` is used instead. |
+| `quiet` | `Bool` | Suppress the `ascp` progress bar display.<br/>If `false`, the progress bar of option `progress_bar` is not displayed, unless that option is set.<br/>Default: `true`. |
 | `resume.iter_max` | `Integer` | Maximum number of retry attempts on error.<br/>Default: `7`. |
 | `resume.sleep_factor` | `Integer` | Multiplier applied to sleep duration between consecutive retry attempts.<br/>Default: `2`. |
 | `resume.sleep_initial` | `Integer` | Initial sleep duration (in seconds) before first retry.<br/>Default: `2`. |
@@ -3987,14 +3987,16 @@ Sleep between iterations is given by the following formula where `iter_index` is
 min( sleep_max, sleep_initial * sleep_factor ^ iter_index )
 ```
 
-By default, if the output is a terminal, the native progress bar of `ascp` is displayed, unless option `progress_bar` is set.
-For multi-session transfers, the progress bar of `ascli` is used instead, as it aggregates all sessions.
+By default, the progress bar of `ascli` is displayed (see [Transfer progress bar](#transfer-progress-bar)): it aggregates all sessions of a multi-session transfer.
 
-To display the progress bar of `ascli` instead, use:
+To display the native progress bar of `ascp` instead, set parameter `quiet` to `false`:
 
 ```shell
---progress-bar=yes
+--transfer.quiet=false
 ```
+
+In that case, the progress bar of `ascli` is not displayed, unless option `progress_bar` is set.
+For multi-session transfers, each `ascp` process displays its own progress bar.
 
 To skip usage of management port (which disables the progress bar of `ascli`), set option `monitor` to `false`.
 
@@ -4760,7 +4762,8 @@ Example: parameter to download a Faspex package and decrypt on the fly
 
 ### Transfer progress bar
 
-File transfer operations are monitored, and a progress bar is displayed on the terminal if option `progress_bar` (`Bool`) is set to `yes` (default if the output is a terminal).
+File transfer operations are monitored, and a progress bar is displayed on the standard error if option `progress_bar` (`Bool`) is set to `yes` (default if the standard error is a terminal).
+So, the progress bar is displayed even if the output of the command is redirected to a file.
 
 The same progress bar is used for any type of transfer: using `ascp`, server to server, using HTTPS, and so on.
 
@@ -4771,7 +4774,7 @@ Files already at destination (resumed transfer) count in the progress, but not i
 If the transfer fails, the progress bar stops at the reached progress, and shows `failed`.
 Log lines are displayed above the progress bar.
 
-If option `progress_bar` is not set, transfers with agent `direct` display the native progress bar of `ascp` instead (see [`direct`](#agent-direct)).
+Agent `direct` can display the native progress bar of `ascp` instead (see [`direct`](#agent-direct)).
 
 ### Scheduler
 

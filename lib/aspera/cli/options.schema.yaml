@@ -105,8 +105,8 @@ components:
           description: >-
             Suppress the `ascp` progress bar display.
 
-            If not set: `false` if the output is a terminal and option `progress_bar` is not set, else `true`.
-            For multi-session transfers, the progress bar of option `progress_bar` is used instead.
+            If `false`, the progress bar of option `progress_bar` is not displayed, unless that option is set.
+          default: true
         file_list:
           type: boolean
           description: >-

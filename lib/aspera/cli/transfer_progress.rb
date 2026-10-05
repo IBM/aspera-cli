@@ -55,8 +55,8 @@ module Aspera
         end
       end
 
-      # @param output [IO] Where the progress bar is displayed
-      def initialize(output: $stdout)
+      # @param output [IO] Where the progress bar is displayed: not on `$stdout`, which may be redirected for command output
+      def initialize(output: $stderr)
         @output = output
         # Re-entrant, see `suspend`
         @mutex = Monitor.new

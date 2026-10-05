@@ -3755,14 +3755,16 @@ Sleep between iterations is given by the following formula where `iter_index` is
 min( sleep_max, sleep_initial * sleep_factor ^ iter_index )
 ```
 
-By default, if the output is a terminal, the native progress bar of `ascp` is displayed, unless option `progress_bar` is set.
-For multi-session transfers, the progress bar of <%=tool%> is used instead, as it aggregates all sessions.
+By default, the progress bar of <%=tool%> is displayed (see [Transfer progress bar](#transfer-progress-bar)): it aggregates all sessions of a multi-session transfer.
 
-To display the progress bar of <%=tool%> instead, use:
+To display the native progress bar of `ascp` instead, set parameter `quiet` to `false`:
 
 ```shell
---progress-bar=yes
+--transfer.quiet=false
 ```
+
+In that case, the progress bar of <%=tool%> is not displayed, unless option `progress_bar` is set.
+For multi-session transfers, each `ascp` process displays its own progress bar.
 
 To skip usage of management port (which disables the progress bar of <%=tool%>), set option `monitor` to `false`.
 
@@ -4415,7 +4417,8 @@ Example: parameter to download a Faspex package and decrypt on the fly
 
 ### Transfer progress bar
 
-File transfer operations are monitored, and a progress bar is displayed on the terminal if option `progress_bar` (`Bool`) is set to `yes` (default if the output is a terminal).
+File transfer operations are monitored, and a progress bar is displayed on the standard error if option `progress_bar` (`Bool`) is set to `yes` (default if the standard error is a terminal).
+So, the progress bar is displayed even if the output of the command is redirected to a file.
 
 The same progress bar is used for any type of transfer: using `ascp`, server to server, using HTTPS, and so on.
 
@@ -4426,7 +4429,7 @@ Files already at destination (resumed transfer) count in the progress, but not i
 If the transfer fails, the progress bar stops at the reached progress, and shows `failed`.
 Log lines are displayed above the progress bar.
 
-If option `progress_bar` is not set, transfers with agent `direct` display the native progress bar of `ascp` instead (see [`direct`](#agent-direct)).
+Agent `direct` can display the native progress bar of `ascp` instead (see [`direct`](#agent-direct)).
 
 ### Scheduler
 

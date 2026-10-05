@@ -56,7 +56,7 @@ module Aspera
       #
       # @param ascp_args         [Array]   (Args) Optional Additional arguments to ascp
       # @param wss               [Boolean] (Args) `true`: if both SSH and wss in ts: prefer wss
-      # @param quiet             [Boolean, nil] (Args) `true`: no native `ascp` progress bar. `nil`: native `ascp` progress bar instead of `progress`, except for multi-session
+      # @param quiet             [Boolean] (Args) By default no native `ascp` progress bar
       # @param file_list         [Boolean] (Args) true: provide file list in a file, else on command line.
       # @param client_ssh_key    [String]  (Args) Client SSH key option (from CLIENT_SSH_KEY_OPTIONS)
       # @param trusted_certs     [Array<String>] (Args) (WSS) Optional list of files with trusted certificates (stores)
@@ -107,8 +107,6 @@ module Aspera
         @sessions = []
         # mutex protects global data accessed by threads
         @mutex = Mutex.new
-        # `true` when native `ascp` progress bar is used instead of `progress` (`quiet` is `nil`)
-        @native_progress = false
         # Check on all management messages if that file exists, and if so, read commands from it
         @command_file = File.join(config_dir || '.', "send_#{$PROCESS_ID}")
       end
@@ -154,9 +152,6 @@ module Aspera
             # override if specified, else use default value
           end
         end
-        # Several `ascp` processes would mix their native progress bars: use `progress`, which aggregates sessions (requires management port)
-        @native_progress = @tr_opts[:quiet].nil? && (multi_session_info.nil? || !@monitor)
-        quiet = @tr_opts[:quiet].nil? ? !@native_progress : @tr_opts[:quiet]
 
         # generic session information
         session = {
@@ -172,7 +167,7 @@ module Aspera
           last_size:         nil,               # last notified transferred size
           skipped:           0,                 # size of files already at destination
           # env vars and args for ascp (from transfer spec)
-          exec_spec:         Transfer::Parameters.new(transfer_spec, **@tr_opts, quiet: quiet).ascp_args
+          exec_spec:         Transfer::Parameters.new(transfer_spec, **@tr_opts).ascp_args
         }
 
         if multi_session_info.nil?
@@ -379,7 +374,9 @@ module Aspera
               env['ASPERA_SCP_TOKEN'] = session[:token_regenerator].refreshed_transfer_token
             end
             raise Transfer::Error.new(last_event['Description'], code: last_event['Code'].to_i)
-          else Aspera.error_unexpected_value(last_event['Type'], :error) { 'last event type' }
+          else
+            # e.g. process was killed: like a lost connection (code 16), so that transfer is resumed
+            raise Transfer::Error.new("#{exec} ended without final status (last event: #{last_event['Type']})", code: 16)
           end
         rescue SystemCallError => e
           # Process.spawn failed, or socket error
@@ -422,11 +419,6 @@ module Aspera
 
       # [Array<Hash>] List of sessions, one per `ascp` process
       attr_reader :sessions
-
-      # No notification when native `ascp` progress bar is displayed
-      def notify_progress(*pos_args, **kw_args)
-        super unless @native_progress
-      end
 
       # Notify progress to callback
       # @param session [Hash] This session information, progress state is stored in it

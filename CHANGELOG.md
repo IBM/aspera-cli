@@ -27,6 +27,7 @@ Released: [Place date of release here]
 * **general**: Linux single executable: commands could fail with `cannot load such file` (e.g. `config transferd install`: `rubygems/package`): it now includes the whole Ruby standard library and all files of gems.
 * **general**: Progress bar: stayed at 0% when the total size was not known (the transferred size is now shown), rate was underestimated (it included connection time: now averaged over the last 5 seconds, in decimal `Mbps` like `ascp`), a resumed session doubled the total size or failed the transfer, a second HTTP download accumulated the first one, multi-session state was shared between sessions in agent `direct`. Errors in the progress bar no longer fail the transfer.
 * **general**: Progress bar: a failed transfer was displayed as completed (the bar now stops at the reached progress, with `failed`), log lines were mixed with the progress bar (they are now displayed above it), files already at destination were not counted in progress, multi-session progress exceeded the total size (agent `direct`), agent `httpgw` did not terminate the progress bar.
+* **general**: Agent `direct`: when `ascp` ended without final status (e.g. killed), `ascli` failed with `wrong number of arguments`: the transfer is now resumed.
 
 ### Breaking Changes
 
@@ -35,7 +36,7 @@ Released: [Place date of release here]
 * **general**: Release archives are named `aspera-cli-<version>-<os>-<cpu>...`: single executable `aspera-cli-<version>-linux-x86_64-glibc<version>-ocran.tgz` (was `ascli-...`), Windows portable `aspera-cli-<version>-windows-x86_64-portable.zip` (was `windows-amd64`).
 * `orchestrator`: Command `plugins` is now `plugins list`.
 * `orchestrator`: Default authentication is now JWT token.
-* **general**: Agent `direct`: if the output is a terminal, the native progress bar of `ascp` is displayed by default, instead of the progress bar of `ascli` (still used for multi-session transfers). Option `progress_bar` set explicitly, or `transfer` parameter `quiet`, keeps the selected progress bar.
+* **general**: The progress bar is displayed on standard error (was standard output), by default if standard error is a terminal: it is displayed even if the output of the command is redirected to a file. Agent `direct`: if `transfer` parameter `quiet` is `false` (native progress bar of `ascp`), the progress bar of `ascli` is not displayed, unless option `progress_bar` is set.
 
 ### Server Versions
 

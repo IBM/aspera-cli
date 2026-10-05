@@ -115,14 +115,10 @@ module Aspera
             agent_options.merge!(@context.presets.by_name(param_set_name).symbolize_keys)
           end
         when :direct
-          # option `progress_bar` not set by user: on terminal, native `ascp` progress bar (`quiet`: `nil`, see `Agent::Direct`)
-          progress_bar_default = @context.options.option_def(:progress_bar).source.eql?(:default)
-          if !agent_options.key?(:quiet)
-            agent_options[:quiet] = progress_bar_default && !agent_options[:progress].nil? ? nil : true
-          elsif progress_bar_default && !agent_options[:quiet]
-            # native `ascp` progress bar requested: no other progress bar
-            agent_options[:progress] = nil
-          end
+          # By default, no native `ascp` progress bar
+          agent_options[:quiet] = true unless agent_options.key?(:quiet)
+          # Native `ascp` progress bar requested: no other progress bar, unless option `progress_bar` is set
+          agent_options[:progress] = nil if !agent_options[:quiet] && @context.options.option_def(:progress_bar).source.eql?(:default)
           agent_options[:check_ignore_cb] = ->(host, port) { @context.http_config.ignore_cert?(host, port) }
           # JRuby
           agent_options[:trusted_certs] = @context.http_config.trusted_cert_locations unless agent_options.key?(:trusted_certs)
