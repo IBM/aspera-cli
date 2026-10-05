@@ -1,8 +1,8 @@
 # Changes (Release notes)
 
-## 4.28.0.pre
+## 4.27.4
 
-Released: [Place date of release here]
+Released: 2026-10-05
 
 ### New Features
 
@@ -63,7 +63,7 @@ Released: [Place date of release here]
 ### Server Versions
 
 | Plugin | Product | Version |
-| -------------- | -------------------- | ------------------ |
+|--------------|--------------------|------------------|
 | `aoc` | Aspera on Cloud | SaaS |
 | `console` | IBM Aspera Console | 3.4.4 |
 | `faspex5` | Faspex v5 | F5.0.17 |
@@ -75,7 +75,7 @@ Released: [Place date of release here]
 ### Transfer Agent Versions
 
 | Agent | Product | Version |
-| ----------- | -------------------------------- | --------- |
+|-----------|--------------------------------|---------|
 | `connect` | IBM Aspera Connect Client | 4.2.14 |
 | `desktop` | IBM Aspera Desktop Client | 4.4.3 |
 | `direct` | IBM Aspera Transfer SDK (ascp) | 1.1.9 |
