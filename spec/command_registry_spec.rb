@@ -146,7 +146,7 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
     end
 
     context 'action arity' do
-      let(:plugin_class) { Class.new { def action_leaf(**) = nil; def action_fixed = nil } }
+      let(:plugin_class) { Class.new { def action_leaf(**) = nil; def action_fixed = nil } } # rubocop:disable Style/Semicolon
 
       it 'passes for lambda and method actions accepting **' do
         registry.register(spec(id: :lambda, action: ->(**) {}))

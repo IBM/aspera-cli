@@ -71,7 +71,7 @@ module Aspera
         # @param http       [Boolean] if true, returns the HttpResponse, else
         def call_ao(endpoint, body: nil, format: 'json', query: nil, xml_arrays: true, http: false)
           call_args = {operation: body.nil? ? 'GET' : 'POST', subpath: "api/#{endpoint}", ret: :both, query: {}}
-          call_args.merge!(body: body, content_type: Mime::JSON) unless body.nil?
+          call_args.merge!(body: body, content_type: Mime::JSON) unless body.nil? # rubocop:disable Performance/RedundantMerge
           ret_style = options.get_option(:ret_style, mandatory: true)
           call_args[:query].merge!(query) unless query.nil?
           unless format.nil?
