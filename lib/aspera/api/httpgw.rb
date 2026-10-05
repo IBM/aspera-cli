@@ -254,7 +254,6 @@ module Aspera
         # session no more used
         @ws_io = nil
         http_session&.finish
-        @notify_cb&.call(:end)
       end
 
       def download(transfer_spec)

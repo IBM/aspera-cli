@@ -64,6 +64,9 @@ module Aspera
 
       it 'shows transferred bytes and rate when total size is unknown' do
         progress.event(:session_start, session_id: 's1')
+        # data starts to flow
+        tick(2)
+        progress.event(:transfer, session_id: 's1', info: 0)
         tick(1)
         progress.event(:transfer, session_id: 's1', info: mb(10))
         expect(lines.last).to(match(/ 10\.0 MB +80 Mbps$/))
@@ -82,6 +85,9 @@ module Aspera
         tick(10)
         progress.event(:session_start, session_id: 's1')
         progress.event(:session_size, session_id: 's1', info: mb(100))
+        # connection time is not included in rate
+        tick(5)
+        progress.event(:transfer, session_id: 's1', info: 0)
         tick(1)
         progress.event(:transfer, session_id: 's1', info: mb(10))
         expect(lines.last).to(match(/^Time: \S+ =+ +10% +80 Mbps ETA: 00:00:09$/))
@@ -95,6 +101,7 @@ module Aspera
 
       it 'does not show rate on a too short period' do
         progress.event(:session_start, session_id: 's1')
+        progress.event(:transfer, session_id: 's1', info: 0)
         tick(0.01)
         progress.event(:transfer, session_id: 's1', info: mb(1))
         expect(lines.last).to(match(/ 1\.0 MB +-- Mbps$/))
@@ -107,9 +114,58 @@ module Aspera
         progress.event(:session_end, session_id: 's1')
         expect { progress.event(:session_start, session_id: 's1') }.not_to(raise_error)
         progress.event(:session_size, session_id: 's1', info: mb(100))
+        # restarted session notifies again its progress from zero
         progress.event(:transfer, session_id: 's1', info: mb(10))
         expect(lines.last).to(match(/ 30% /))
+        progress.event(:skip, session_id: 's1', info: mb(25))
+        progress.event(:transfer, session_id: 's1', info: mb(15))
+        expect(lines.last).to(match(/ 40% /))
         expect(lines.join).not_to(include('['))
+      end
+
+      it 'counts skipped bytes in progress, but not in rate' do
+        progress.event(:session_start, session_id: 's1')
+        progress.event(:session_size, session_id: 's1', info: mb(100))
+        progress.event(:skip, session_id: 's1', info: mb(50))
+        progress.event(:transfer, session_id: 's1', info: 0)
+        tick(1)
+        progress.event(:transfer, session_id: 's1', info: mb(10))
+        expect(lines.last).to(match(/ 60% +80 Mbps ETA: 00:00:04$/))
+      end
+
+      it 'limits progress of a session to its size' do
+        # In multi-session, each session notifies all skipped files
+        %w[a b].each do |id|
+          progress.event(:session_start, session_id: id)
+          progress.event(:session_size, session_id: id, info: mb(6))
+          progress.event(:skip, session_id: id, info: mb(12))
+        end
+        expect(lines.last).to(match(/ 100% /))
+      end
+
+      it 'does not complete progress when transfer failed' do
+        progress.event(:session_start, session_id: 's1')
+        progress.event(:session_size, session_id: 's1', info: mb(100))
+        progress.event(:transfer, session_id: 's1', info: mb(30))
+        progress.event(:session_end, session_id: 's1')
+        progress.event(:end, info: false)
+        expect(lines.last).to(match(/^failed Time: .* 30% 30.0 MB /))
+        expect(output.string).to(end_with("\n"))
+      end
+
+      it 'shows failure before start of session' do
+        progress.event(:sessions_init, info: 'starting')
+        progress.event(:end, info: false)
+        expect(lines.last).to(eq('failed Time: 00:00:00'))
+      end
+
+      it 'clears the progress bar to display a log line' do
+        expect(progress.suspend { :no_bar }).to(eq(:no_bar))
+        progress.event(:session_start, session_id: 's1')
+        output.truncate(0)
+        output.rewind
+        progress.suspend { output.write("log line\n") }
+        expect(output.string).to(match(/\A {100}\rlog line\nTime: .*\r\z/))
       end
 
       it 'starts from scratch after end' do

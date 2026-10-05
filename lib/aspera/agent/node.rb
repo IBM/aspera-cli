@@ -132,11 +132,9 @@ module Aspera
           when 'completed'
             notify_progress(:transfer, session_id: @transfer_id, info: bytes_expected) if bytes_expected
             notify_progress(:session_end, session_id: @transfer_id)
-            notify_progress(:end)
             break
           when 'failed', 'canceled'
             notify_progress(:session_end, session_id: @transfer_id)
-            notify_progress(:end)
             # Bug in HSTS ? transfer is marked failed, but there is no reason
             break if transfer_data['status'].eql?('failed') && transfer_data['error_code'].eql?(0) && transfer_data['error_desc'].empty?
             raise Transfer::Error, "status: #{transfer_data['status']}. code: #{transfer_data['error_code']}. description: #{transfer_data['error_desc']}"

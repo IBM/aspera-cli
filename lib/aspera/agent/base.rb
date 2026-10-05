@@ -23,14 +23,19 @@ module Aspera
       end
 
       # Wait for all sessions to terminate and return a typed Transfer::Result.
+      # Notifies the end of transfer to the progress bar (agents do not).
       # @return [Transfer::Result::Success, Transfer::Result::Error]
       def wait_for_completion
+        success = false
         statuses = wait_for_transfers_completion
-        @progress&.reset
         Aspera.assert_type(statuses, Array)
         Aspera.assert(statuses.none? { |i| !i.eql?(:success) && !i.is_a?(StandardError) }) { "bad statuses content: #{statuses}" }
         errors = statuses.reject { |i| i.eql?(:success) }
-        return errors.empty? ? Transfer::Result.success : Transfer::Result.error(errors.first)
+        success = errors.empty?
+        return success ? Transfer::Result.success : Transfer::Result.error(errors.first)
+      ensure
+        # Also when the agent raises an exception
+        notify_progress(:end, info: success)
       end
 
       # Return the job_id of the last transfer submitted by this agent.

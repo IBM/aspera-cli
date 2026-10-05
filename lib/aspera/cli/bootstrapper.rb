@@ -142,6 +142,8 @@ module Aspera
         @context.options.declare(:progress_bar, description: 'Display progress bar', allowed: Type::BOOLEAN, default: Environment.terminal?)
         @context.options.parse_options!
         @context.progress_bar = TransferProgress.new if @context.options.get_option(:progress_bar)
+        # Log lines do not overwrite the progress bar
+        Log.instance.status_line = @context.progress_bar
       end
 
       # Declare + parse :fpac / :proxy_credentials: sets up PAC executor

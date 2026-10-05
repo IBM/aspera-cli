@@ -160,19 +160,15 @@ module Aspera
                 end
               when 'completed'
                 notify_progress(:session_end, session_id: @transfer_id)
-                notify_progress(:end)
                 break
               when 'failed'
                 notify_progress(:session_end, session_id: @transfer_id)
-                notify_progress(:end)
                 raise Transfer::Error, transfer['error_desc']
               when 'cancelled'
                 notify_progress(:session_end, session_id: @transfer_id)
-                notify_progress(:end)
                 raise Transfer::Error, 'Transfer cancelled by user'
               else
                 notify_progress(:session_end, session_id: @transfer_id)
-                notify_progress(:end)
                 raise Transfer::Error, "unknown status: #{transfer['status']}: #{transfer['error_desc']}"
               end
             end

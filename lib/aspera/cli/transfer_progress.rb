@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'monitor'
 require 'aspera/environment'
 require 'aspera/log'
 require 'aspera/assert'
@@ -57,7 +58,8 @@ module Aspera
       # @param output [IO] Where the progress bar is displayed
       def initialize(output: $stdout)
         @output = output
-        @mutex = Mutex.new
+        # Re-entrant, see `suspend`
+        @mutex = Monitor.new
         reset_state
       end
 
@@ -66,8 +68,16 @@ module Aspera
         @mutex.synchronize { reset_state }
       end
 
-      # Called by user of progress bar with a status on a transfer session
-      # @param type       [Symbol]      One of: sessions_init, session_start, session_size, transfer, session_end and end
+      # Called by user of progress bar with a status on a transfer session.
+      # Event types:
+      # - `sessions_init` : `info` is a status message, displayed until a session starts
+      # - `session_start` : a session starts, or restarts (same `session_id`)
+      # - `session_size`  : `info` is the total size of the session
+      # - `transfer`      : `info` is the number of bytes transferred by the session
+      # - `skip`          : `info` is the number of bytes of the session already at destination (not transferred)
+      # - `session_end`   : a session ends
+      # - `end`           : all sessions are finished, `info` is `false` if the transfer failed
+      # @param type       [Symbol]      Event type
       # @param session_id [String, nil] Unique identifier of a transfer session, same when the session is restarted
       # @param info       [Object, nil] Optional specific additional info for the given event type
       def event(type, session_id: nil, info: nil)
@@ -76,6 +86,25 @@ module Aspera
       rescue StandardError => e
         Log.log.warn { "Progress bar: #{e.class}: #{e.message}" } unless @error_logged
         @error_logged = true
+      end
+
+      # Execute the block with the progress bar cleared, and then display it again.
+      # Used to write log lines on the terminal.
+      # Does not wait if the progress bar is being updated by another thread (no deadlock with a logger lock).
+      def suspend
+        return yield unless @mutex.try_enter
+        begin
+          return yield if @progress_bar.nil? || !@output.tty?
+          @progress_bar.clear
+          @output.flush
+          begin
+            yield
+          ensure
+            @progress_bar.refresh(force: true)
+          end
+        ensure
+          @mutex.exit
+        end
       end
 
       private
@@ -88,9 +117,11 @@ module Aspera
         @title = nil
         # Format currently set on the progress bar
         @format = nil
+        # [Integer] Bytes actually transferred, by all sessions, including previous runs of restarted sessions
+        @transferred = 0
         # [Array<Array(Float, Integer)>] (time, transferred bytes) on the rate window
         @samples = []
-        # [Array(Float, Integer), nil] First sample, for average rate
+        # [Array(Float, Integer), nil] First sample (data starts to flow, not session start), for average rate
         @start = nil
         @error_logged = false
       end
@@ -107,9 +138,7 @@ module Aspera
           @title = info
         when :session_start
           Aspera.assert(info.nil?, 'info must be nil for :session_start event')
-          # A restarted session keeps its size and transferred bytes
-          session(session_id)[:running] = true
-          @start ||= add_sample
+          start_session(session_id)
           # Remove last pre-start message if any
           @title = nil
         when :session_size
@@ -117,19 +146,22 @@ module Aspera
         when :transfer
           unless info.nil?
             current_session = session(session_id)
-            # Do not go back: a restarted session sends again bytes already notified
-            current_session[:current] = [current_session[:current], info.to_i].max
+            transferred = info.to_i
+            @transferred += transferred - current_session[:transferred] if transferred > current_session[:transferred]
+            current_session[:transferred] = transferred
             add_sample
           end
+        when :skip
+          session(session_id)[:skipped] = info.to_i unless info.nil?
         when :session_end
           Aspera.assert(info.nil?, 'info must be nil for :session_end event')
           # A session may be too short and finish before it has been started
           @sessions[session_id][:running] = false if @sessions.key?(session_id)
         when :end
           Aspera.assert(session_id.nil?, 'session_id must be nil for :end event')
-          Aspera.assert(info.nil?, 'info must be nil for :end event')
+          Aspera.assert_values(info, [nil, true, false]) { ':end event info' }
           begin
-            finish
+            finish(success: !info.eql?(false))
           ensure
             reset_state
           end
@@ -144,21 +176,43 @@ module Aspera
       def session(session_id)
         Aspera.assert_type(session_id, String)
         @sessions[session_id] ||= {
-          size:    nil, # Total size of session, `nil` if unknown
-          current: 0,   # Transferred bytes
-          running: true
+          size:        nil, # Total size of session, `nil` if unknown
+          transferred: 0,   # Bytes transferred
+          skipped:     0,   # Bytes already at destination
+          floor:       0,   # Progress reached before restart of session
+          running:     true
         }
       end
 
-      # @return [Integer] Transferred bytes of all sessions
+      # Start a session, or restart it: a restarted session notifies again its progress from zero
+      # @param session_id [String] Session identifier
+      def start_session(session_id)
+        restarted = @sessions.key?(session_id)
+        current_session = session(session_id)
+        if restarted
+          current_session[:floor] = done_bytes(current_session)
+          current_session[:transferred] = 0
+          current_session[:skipped] = 0
+        end
+        current_session[:running] = true
+      end
+
+      # @param session [Hash] Session information
+      # @return [Integer] Bytes processed by the session (transferred or skipped), not more than its size
+      def done_bytes(session)
+        done = [session[:floor], session[:transferred] + session[:skipped]].max
+        session[:size].nil? ? done : [done, session[:size]].min
+      end
+
+      # @return [Integer] Bytes processed by all sessions
       def current_bytes
-        @sessions.each_value.sum { |s| s[:current] }
+        @sessions.each_value.sum { |s| done_bytes(s) }
       end
 
       # @return [Integer, nil] Total size of all sessions, `nil` if unknown for one of them
       def total_bytes
         return if @sessions.empty? || @sessions.each_value.any? { |s| s[:size].nil? }
-        [@sessions.each_value.sum { |s| s[:size] }, current_bytes].max
+        @sessions.each_value.sum { |s| s[:size] }
       end
 
       # @return [Float] Monotonic time in seconds
@@ -169,7 +223,8 @@ module Aspera
       # Record transferred bytes for rate computation
       # @return [Array(Float, Integer)] The new sample
       def add_sample
-        sample = [now, current_bytes]
+        sample = [now, @transferred]
+        @start ||= sample
         @samples.push(sample)
         # Keep one sample older than the window
         @samples.shift while @samples.length > 2 && @samples[1].first <= sample.first - RATE_WINDOW_SEC
@@ -184,12 +239,13 @@ module Aspera
         (@samples.last.last - @samples.first.last) / elapsed
       end
 
-      # @return [Float, nil] Average rate since first session start, in bytes per second, `nil` if unknown
+      # @return [Float, nil] Average rate between first and last sample, in bytes per second, `nil` if unknown
       def average_rate
         return if @start.nil?
-        elapsed = now - @start.first
+        last = @samples.last
+        elapsed = last.first - @start.first
         return unless elapsed.positive?
-        (current_bytes - @start.last) / elapsed
+        (last.last - @start.last) / elapsed
       end
 
       # Update the progress bar with current state
@@ -217,20 +273,31 @@ module Aspera
       end
 
       # Display final state of the progress bar
-      def finish
+      # @param success [Boolean] `false` if the transfer failed: progress is not completed
+      def finish(success:)
         return if @progress_bar.nil?
         current = current_bytes
-        total = [total_bytes || current, current].max
-        update_bar(total, total)
-        fields = ['%a', '%B', '%j%%']
-        fields.push(self.class.format_bytes(total), self.class.format_rate(average_rate)) unless @sessions.empty?
+        total = total_bytes
+        if success
+          total ||= current
+          current = total
+        end
+        fields = ['%a']
+        unless total.nil?
+          update_bar(total, current)
+          fields.push('%B', '%j%%')
+        end
+        fields.push(self.class.format_bytes(current), self.class.format_rate(average_rate)) unless @sessions.empty?
+        @title = 'failed' unless success
+        # Final line may be shorter (no bar)
+        @progress_bar.clear
         update_format(title_text(final: true), fields)
-        @progress_bar.finish
+        success ? @progress_bar.finish : @progress_bar.stop
       end
 
       # Set total and progress of the bar, in an order accepted by `ruby-progressbar`
       # @param total   [Integer, nil] Total size, `nil` if unknown
-      # @param current [Integer]      Transferred bytes
+      # @param current [Integer]      Processed bytes
       def update_bar(total, current)
         if total.nil?
           # Unknown total: progress of the bar is used for animation only

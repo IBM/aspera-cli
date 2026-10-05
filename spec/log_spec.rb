@@ -93,6 +93,40 @@ RSpec.describe(Aspera::Log) do
     expect { log.logger_type = :bad }.to(raise_error(Aspera::InternalError))
   end
 
+  describe 'status line' do
+    let(:terminal) { StringIO.new.tap { |io| io.define_singleton_method(:tty?) { true } } }
+    let(:status_line) { double('status_line') }
+
+    around do |example|
+      saved_stderr = $stderr
+      $stderr = terminal
+      example.run
+    ensure
+      $stderr = saved_stderr
+      log.status_line = nil
+    end
+
+    it 'is suspended while a log line is written on a terminal' do
+      log.logger_type = :stderr
+      log.status_line = status_line
+      expect(status_line).to(receive(:suspend)) do |&block|
+        terminal.write('[cleared]')
+        block.call
+      end
+      log.logger.warn('message')
+      expect(terminal.string).to(match(/^\[cleared\].*message\n$/))
+    end
+
+    it 'is not suspended when output is not a terminal' do
+      terminal.define_singleton_method(:tty?) { false }
+      log.logger_type = :stderr
+      log.status_line = status_line
+      expect(status_line).not_to(receive(:suspend))
+      log.logger.warn('message')
+      expect(terminal.string).to(include('message'))
+    end
+  end
+
   describe '.caller_method' do
     # Named class to get a meaningful caller
     module LogSpecOuter

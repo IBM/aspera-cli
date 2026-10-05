@@ -143,7 +143,7 @@ module Aspera
             end
             if status_list.include?(status['upload_status'])
               progress_bar&.event(:session_end, session_id: id)
-              progress_bar&.event(:end)
+              progress_bar&.event(:end, info: !status['upload_status'].eql?('failed'))
               return status
             end
             sleep(1.0)

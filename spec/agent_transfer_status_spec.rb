@@ -7,6 +7,7 @@
 require 'bundler/setup'
 require 'aspera/rest'
 require 'aspera/oauth'
+require 'aspera/transfer/error'
 require 'aspera/agent/node'
 require 'aspera/agent/desktop'
 require 'aspera/json_rpc/client'
@@ -71,7 +72,8 @@ end
 
 RSpec.describe('Aspera::Agent::Node#wait_for_transfers_completion') do
   let(:events) { [] }
-  let(:progress) { double('progress').tap { |recorder| allow(recorder).to(receive(:event)) { |type, **| events.push(type) } } }
+  # Records event types, and `info` of `:end`
+  let(:progress) { double('progress').tap { |recorder| allow(recorder).to(receive(:event)) { |type, info: nil, **| events.push(type.eql?(:end) ? [type, info] : type) } } }
 
   # @param statuses [Array<Hash>] transfer read at each poll
   def agent_reading(*statuses)
@@ -86,14 +88,14 @@ RSpec.describe('Aspera::Agent::Node#wait_for_transfers_completion') do
       {'status' => 'running', 'bytes_transferred' => 1024, 'error_desc' => ''},
       {'status' => 'canceled', 'bytes_transferred' => 1024, 'error_code' => 28, 'error_desc' => 'User aborted session'}
     )
-    expect { agent.wait_for_transfers_completion }.to(raise_error(Aspera::Transfer::Error, /status: canceled.*User aborted session/))
-    expect(events.last(2)).to(eq(%i[session_end end]))
+    expect { agent.wait_for_completion }.to(raise_error(Aspera::Transfer::Error, /status: canceled.*User aborted session/))
+    expect(events.last(2)).to(eq([:session_end, [:end, false]]))
   end
 
   it 'waits while the transfer is paused' do
     agent = agent_reading({'status' => 'paused', 'bytes_transferred' => 0, 'error_desc' => ''}, {'status' => 'completed', 'bytes_transferred' => 1024})
-    expect(agent.wait_for_transfers_completion).to(eq([]))
-    expect(events).to(eq(%i[sessions_init session_end end]))
+    expect(agent.wait_for_completion).to(be_a(Aspera::Transfer::Result::Success))
+    expect(events).to(eq([:sessions_init, :session_end, [:end, true]]))
   end
 end
 

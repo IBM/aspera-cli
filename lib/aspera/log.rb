@@ -68,6 +68,26 @@ module Aspera
     # Where logs are sent to
     LOG_TYPES = %i[stderr stdout syslog].freeze
 
+    # Logger device for a terminal: the status line (e.g. progress bar) is suspended while a log line is written
+    class TerminalDevice
+      # @param io [IO] Output stream
+      def initialize(io)
+        @io = io
+      end
+
+      # Called by `Logger`
+      # @param message [String] Formatted log line
+      def write(message)
+        status_line = Log.instance.status_line if @io.tty?
+        return @io.write(message) if status_line.nil?
+        status_line.suspend { @io.write(message) }
+      end
+
+      # Standard streams are not closed
+      def close; end
+    end
+    private_constant :TerminalDevice
+
     # Levels are :trace2,:trace1,:debug,:info,:warn,:error,fatal,:unknown
     LEVELS = Logger::Severity.constants.sort { |a, b| Logger::Severity.const_get(a) <=> Logger::Severity.const_get(b) }.map { |c| c.downcase.to_sym }.freeze
 
@@ -146,6 +166,8 @@ module Aspera
 
     attr_reader :logger_type, :logger
     attr_accessor :dump_format
+    # [#suspend, nil] Object displaying a status line on the terminal (e.g. progress bar), see TerminalDevice
+    attr_accessor :status_line
 
     # Set the program name used in log output
     # @param value [String] Program name
@@ -197,9 +219,9 @@ module Aspera
       current_severity_integer = @logger&.level || ENV['AS_LOG_LEVEL']&.to_i || Logger::Severity::INFO
       case new_log_type
       when :stderr
-        @logger = Logger.new($stderr, progname: @program_name, formatter: DEFAULT_FORMATTER)
+        @logger = Logger.new(TerminalDevice.new($stderr), progname: @program_name, formatter: DEFAULT_FORMATTER)
       when :stdout
-        @logger = Logger.new($stdout, progname: @program_name, formatter: DEFAULT_FORMATTER)
+        @logger = Logger.new(TerminalDevice.new($stdout), progname: @program_name, formatter: DEFAULT_FORMATTER)
       when :syslog
         require 'syslog/logger'
         # The syslog class automatically creates methods from the severity names.
@@ -225,6 +247,7 @@ module Aspera
 
     def initialize
       @logger = nil
+      @status_line = nil
       @program_name = 'aspera'
       @dump_format = :json
       @logger_type = :stderr

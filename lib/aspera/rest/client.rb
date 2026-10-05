@@ -401,31 +401,39 @@ module Aspera
         Log.log.debug { "saving to: #{target_file}" }
         written_size = 0
         session_id = SecureRandom.uuid.freeze
-        Parameters.instance.progress_bar&.event(:session_start, session_id: session_id)
-        Parameters.instance.progress_bar&.event(:session_size, session_id: session_id, info: total_size) if total_size
+        progress = Parameters.instance.progress_bar
+        progress&.event(:session_start, session_id: session_id)
+        progress&.event(:session_size, session_id: session_id, info: total_size) if total_size
         limiter = TimerLimiter.new(0.5)
-        if target_file.respond_to?(:write)
-          # IO object: stream directly into it
-          response.read_body do |fragment|
-            target_file.write(fragment)
-            written_size += fragment.length
-            Parameters.instance.progress_bar&.event(:transfer, session_id: session_id, info: written_size) if limiter.trigger?
-          end
-        else
-          # file path: download to partial name first, then rename atomically
-          target_file_tmp = "#{target_file}#{Parameters.instance.download_partial_suffix}"
-          FileUtils.mkdir_p(File.dirname(target_file_tmp))
-          File.open(target_file_tmp, 'wb') do |file|
+        success = false
+        begin
+          if target_file.respond_to?(:write)
+            # IO object: stream directly into it
             response.read_body do |fragment|
-              file.write(fragment)
+              target_file.write(fragment)
               written_size += fragment.length
-              Parameters.instance.progress_bar&.event(:transfer, session_id: session_id, info: written_size) if limiter.trigger?
+              progress&.event(:transfer, session_id: session_id, info: written_size) if limiter.trigger?
             end
+          else
+            # file path: download to partial name first, then rename atomically
+            target_file_tmp = "#{target_file}#{Parameters.instance.download_partial_suffix}"
+            FileUtils.mkdir_p(File.dirname(target_file_tmp))
+            File.open(target_file_tmp, 'wb') do |file|
+              response.read_body do |fragment|
+                file.write(fragment)
+                written_size += fragment.length
+                progress&.event(:transfer, session_id: session_id, info: written_size) if limiter.trigger?
+              end
+            end
+            File.rename(target_file_tmp, target_file)
           end
-          File.rename(target_file_tmp, target_file)
+          success = true
+        ensure
+          # Last progress may have been skipped by limiter
+          progress&.event(:transfer, session_id: session_id, info: written_size)
+          progress&.event(:session_end, session_id: session_id)
+          progress&.event(:end, info: success)
         end
-        Parameters.instance.progress_bar&.event(:session_end, session_id: session_id)
-        Parameters.instance.progress_bar&.event(:end)
         true
       end
 

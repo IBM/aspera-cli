@@ -4422,6 +4422,9 @@ The same progress bar is used for any type of transfer: using `ascp`, server to 
 It shows the elapsed time, the percentage, the rate in megabits per second (`Mbps`, 1,000,000 bits per second, averaged over the last 5 seconds) and the estimated remaining time.
 As long as the total size is not known (for example, when the job size is not pre-calculated), the transferred size is shown instead of the percentage.
 For multi-session transfers, sessions are aggregated, and the number of running sessions is shown in brackets.
+Files already at destination (resumed transfer) count in the progress, but not in the rate.
+If the transfer fails, the progress bar stops at the reached progress, and shows `failed`.
+Log lines are displayed above the progress bar.
 
 If option `progress_bar` is not set, transfers with agent `direct` display the native progress bar of `ascp` instead (see [`direct`](#agent-direct)).
 
