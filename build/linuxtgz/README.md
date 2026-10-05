@@ -17,6 +17,7 @@ The gem `pkg/aspera-cli-<version>.gem` is used if present (e.g. during release, 
 
 Built on Linux, for the architecture of the build system.
 Ruby is built from source, so the build system needs: `gcc`, `make`, [`patchelf`](https://github.com/NixOS/patchelf), and development files of `openssl`, `libyaml`, `zlib` and `libffi`.
+Do not use `patchelf` 0.18.0: on binaries aligned on 2 MiB (e.g. RHEL 8), it adds misaligned segments, and `glibc` 2.28 fails with `ELF load command address/offset not properly aligned`.
 
 The package runs on systems with a `glibc` at least as recent as the one of the build system: its version is in the archive name, e.g. `aspera-cli-4.28.0-linux-x86_64-glibc2.28-portable.tgz`.
 

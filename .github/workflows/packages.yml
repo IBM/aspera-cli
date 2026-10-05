@@ -140,7 +140,8 @@ jobs:
         shell: bash
     env:
       VERSION: ${{ needs.version.outputs.version }}
-      PATCHELF_VERSION: "0.18.0"
+      # 0.18.0 adds LOAD segments misaligned for p_align 2 MiB (RHEL 8 binaries): rejected by glibc 2.28
+      PATCHELF_VERSION: "0.19.2"
     outputs:
       archive: ${{ steps.build.outputs.archive }}
     steps:
