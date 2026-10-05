@@ -3,7 +3,6 @@
 
 require 'rake'
 require 'erb'
-require 'etc'
 require 'fileutils'
 require 'pathname'
 require 'bundler'
@@ -81,14 +80,6 @@ end
 # @return path to the built .tgz archive for a given version
 def built_tgz_path(version, suffix: nil)
   Paths::RELEASE / "#{[Aspera::Cli::Info::GEM_NAME, version, Aspera::Environment.instance.architecture, suffix].compact.join('-')}.tgz"
-end
-
-# The executable requires a glibc at least as recent as the one of the build system
-# @return [String, nil] e.g. `2.28`, or nil if not glibc (e.g. macOS, musl)
-def glibc_version
-  Etc.confstr(Etc::CS_GNU_LIBC_VERSION).to_s[/\Aglibc (\S+)\z/, 1]
-rescue NameError, SystemCallError
-  nil
 end
 
 namespace :binary do

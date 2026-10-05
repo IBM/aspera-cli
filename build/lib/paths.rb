@@ -35,6 +35,7 @@ module Paths
   DOCKERFILE_TEMPLATE = BUILD / 'container/Dockerfile.tmpl.erb'
   OVERRIDE_VERSION_FILE = TMP / 'container_beta_version.txt'
   WIN_ZIP_SRC = BUILD / 'windowszip'
+  LINUX_TGZ_SRC = BUILD / 'linuxtgz'
   CONF_SIGNATURE = DOC / 'conf_signature.txt'
   TMPL_CONF_FILE = DOC / 'test_env.conf'
   TSPEC_JSON_SCHEMA = DOC / 'spec.schema.json'

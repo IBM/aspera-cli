@@ -3,6 +3,7 @@
 # Packages are built from the .gem attached to the release: it may not be published on rubygems.org yet
 # - Linux: single executable `ascli` (rake binary:ocran), built in a RHEL 8 container:
 #   Ocran bundles all shared libraries except glibc, so the executable runs on any Linux with glibc >= 2.28 (RHEL 8 and later)
+# - Linux: portable package (rake linuxtgz:portable), built in a RHEL 8 container, with the same shared libraries
 # - Windows: portable package (rake windowszip:portable), built on Linux, tested on Windows
 name: Release Packages
 
@@ -123,6 +124,97 @@ jobs:
           tar -xzf "${ARCHIVE}" ascli
           ./ascli --version
           test "$(./ascli config echo ok --format=text)" = ok
+
+      - name: Upload to GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "v${VERSION}" "${ARCHIVE}" --clobber --repo "${{ github.repository }}"
+
+  linux-portable:
+    name: Linux portable, build on RHEL 8
+    needs: version
+    runs-on: ubuntu-latest
+    container: registry.access.redhat.com/ubi8/ubi:latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      PATCHELF_VERSION: "0.18.0"
+    outputs:
+      archive: ${{ steps.build.outputs.archive }}
+    steps:
+      # Ruby 3.3 runs rake: the Ruby of the package is built from source by the task
+      - name: Install build tools and libraries
+        run: |
+          dnf install -y --setopt=install_weak_deps=False git gcc make openssl-devel libyaml-devel zlib-devel libffi-devel
+          dnf module install -y ruby:3.3
+          dnf install -y --setopt=install_weak_deps=False ruby-devel rubygem-bundler
+          dnf clean all
+          curl -fsSL "https://github.com/NixOS/patchelf/releases/download/${PATCHELF_VERSION}/patchelf-${PATCHELF_VERSION}-x86_64.tar.gz" | tar -xz -C /usr/local ./bin/patchelf
+
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install gems
+        run: bundle install
+
+      - name: Build package
+        id: build
+        run: |
+          # The task uses the gem placed in pkg/, if present
+          mkdir -p pkg
+          curl -fsSL -o "pkg/aspera-cli-${VERSION}.gem" "https://github.com/${{ github.repository }}/releases/download/v${VERSION}/aspera-cli-${VERSION}.gem"
+          bundle exec rake linuxtgz:portable"[${VERSION}]"
+          echo "archive=$(cd pkg && ls aspera-cli-"${VERSION}"-*-portable.tgz)" >> "$GITHUB_OUTPUT"
+
+      # --version: output must be only the version, no warning (e.g. about gems)
+      # config echo: output must be the argument
+      # config ascp info: fails if the ascp of the package does not run
+      # config transferd list: HTTPS request, with the bundled OpenSSL
+      - name: Check package runs on RHEL 8
+        run: |
+          tar -xzf "pkg/${{ steps.build.outputs.archive }}" -C /tmp
+          ascli="/tmp/$(basename "${{ steps.build.outputs.archive }}" .tgz)/ascli"
+          test "$("$ascli" --version 2>&1)" = "${VERSION}"
+          test "$("$ascli" config echo ok --format=text)" = ok
+          "$ascli" config ascp info --fields=ascp_version
+          "$ascli" config transferd list --fields=version > /dev/null
+
+      - name: Upload package
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.build.outputs.archive }}
+          path: pkg/${{ steps.build.outputs.archive }}
+          if-no-files-found: error
+
+  linux-portable-release:
+    name: Linux portable, test and attach
+    needs:
+      - version
+      - linux-portable
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      ARCHIVE: ${{ needs.linux-portable.outputs.archive }}
+    steps:
+      - name: Download package
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ needs.linux-portable.outputs.archive }}
+
+      # --version: output must be only the version, no warning (e.g. about gems)
+      # config echo: output must be the argument
+      # config ascp info: fails if the ascp of the package does not run
+      - name: Check package runs on a recent Linux
+        run: |
+          tar -xzf "${ARCHIVE}"
+          ascli="./$(basename "${ARCHIVE}" .tgz)/ascli"
+          test "$("$ascli" --version 2>&1)" = "${VERSION}"
+          test "$("$ascli" config echo ok --format=text)" = ok
+          "$ascli" config ascp info --fields=ascp_version
 
       - name: Upload to GitHub release
         env:

@@ -1,0 +1,15 @@
+#!/bin/sh
+# ====================================================
+# Aspera CLI launcher (portable package)
+# Uses the Ruby, gems and SDK located next to this script
+# A symbolic link to this script can be placed in a folder of the PATH
+# ====================================================
+ASCLI_ROOT=$(dirname "$(readlink -f "$0")")
+# Only the gems of the package, not the ones or settings of another Ruby installation
+export GEM_HOME="$ASCLI_ROOT/gems"
+export GEM_PATH="$GEM_HOME"
+unset RUBYLIB RUBYOPT BUNDLE_GEMFILE BUNDLE_BIN_PATH BUNDLER_SETUP
+if [ -z "$ASCLI_SDK_FOLDER" ]; then
+  export ASCLI_SDK_FOLDER="$ASCLI_ROOT/sdk"
+fi
+exec "$ASCLI_ROOT/ruby/bin/ruby" "$GEM_HOME/bin/ascli" "$@"

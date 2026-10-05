@@ -10,12 +10,7 @@ require 'aspera/cli/info'
 require 'aspera/cli/version'
 require 'fileutils'
 require 'rubygems/package'
-require 'zlib'
 require 'aspera/cli/transfer_progress'
-require 'aspera/ascp/installation'
-require 'aspera/uri_reader'
-require 'aspera/products/transferd'
-require 'aspera/products/other'
 
 require_relative '../build/lib/build_tools'
 include BuildTools
@@ -54,58 +49,6 @@ def zip_directory(source_folder, zip_path)
   nil
 end
 
-# Read a file from a gem package
-# @param gem_path [Pathname] Path to .gem file
-# @param file     [String]   Path of file inside gem
-# @return [String] File content
-def gem_file_content(gem_path, file)
-  gem_path.open('rb') do |io|
-    Gem::Package::TarReader.new(io).seek('data.tar.gz') do |data|
-      Zlib::GzipReader.wrap(data) do |gz|
-        Gem::Package::TarReader.new(gz).seek(file) do |entry|
-          return entry.read
-        end
-      end
-    end
-  end
-  raise "#{file} not found in #{gem_path}"
-end
-
-# Download a file
-# @param url  [String]   URL of file
-# @param dest [Pathname] Destination file path
-# @return [Pathname] Destination file path
-def download_file(url, dest)
-  Aspera::Rest::Client.new(base_url: url.sub(%r{/[^/]+$}, ''), redirect_max: 5)
-    .read(url.sub(%r{^.+/}, ''), save_to: dest)
-  dest
-end
-
-# Versions of SDK and Ruby tested with the packaged gem version
-# @param gem_file    [Pathname] Path to aspera-cli .gem file
-# @param gem_version [String]   Version of gem
-# @return [Array(String, String)] SDK version, RubyInstaller version
-def windows_package_versions(gem_file, gem_version)
-  info_rb = gem_file_content(gem_file, 'lib/aspera/cli/info.rb')
-  sdk_version = info_rb[/SDK_VERSION = '([^']+)'/, 1] || raise("SDK_VERSION not found in gem #{gem_version}")
-  ruby_version = info_rb[/WINDOWS_RUBY_INSTALLER_VERSION = '([^']+)'/, 1]
-  if ruby_version.nil?
-    ruby_version = Aspera::Cli::Info::WINDOWS_RUBY_INSTALLER_VERSION
-    log.warn("WINDOWS_RUBY_INSTALLER_VERSION not found in gem #{gem_version}, using current: #{ruby_version}")
-  end
-  return sdk_version, ruby_version
-end
-
-# Download the Windows Transfer SDK archive
-# @param sdk_version [String]   SDK version
-# @param folder      [Pathname] Destination folder
-# @return [Pathname] Path to SDK archive
-def download_windows_sdk(sdk_version, folder)
-  log.info("Getting Aspera SDK #{sdk_version} for #{SDK_PLATFORM}")
-  sdk_url = Aspera::Ascp::Installation.instance.sdk_url_for_platform(platform: SDK_PLATFORM, version: sdk_version)
-  download_file(sdk_url, folder / sdk_url.sub(%r{^.+/}, ''))
-end
-
 # Tools to extract a 7z archive, in order of preference: executable name => arguments for archive and destination folder
 SEVEN_ZIP_EXTRACTORS = {
   '7zz'    => ->(archive, folder) { ['x', '-y', "-o#{folder}", archive] }, # Linux: package 7zip
@@ -122,16 +65,6 @@ def extract_7z(archive, folder)
   end
   raise "No tool found to extract 7z archive, install one of: #{SEVEN_ZIP_EXTRACTORS.keys.join(', ')}" if exe.nil?
   run(exe, *SEVEN_ZIP_EXTRACTORS[exe].call(archive.to_s, folder.to_s))
-end
-
-# Gem to package: locally built gem file if present (e.g. during release, before it is published), else from rubygems.org
-# @param gem_version [String] Version of gem
-# @return [String] Local gem file path, or gem name and version
-def windows_gem_location(gem_version)
-  local_gem = Paths::RELEASE / "#{Aspera::Cli::Info::GEM_NAME}-#{gem_version}.gem"
-  location = local_gem.exist? ? local_gem.to_s : "#{Aspera::Cli::Info::GEM_NAME}:#{gem_version}"
-  log.info("Using gem: #{location}")
-  location
 end
 
 # @param gem_version [String] Version of gem
@@ -154,11 +87,11 @@ namespace :windowszip do
     log.info("Building in #{path_build_dir}")
 
     log.info('Getting gem dependencies')
-    get_dependency_gems(windows_gem_location(gem_version_build), path_resources_dir)
+    get_dependency_gems(package_gem_location(gem_version_build), path_resources_dir)
 
-    sdk_version, install_ruby_version = windows_package_versions(path_resources_dir / "#{Aspera::Cli::Info::GEM_NAME}-#{gem_version_build}.gem", gem_version_build)
+    sdk_version, install_ruby_version = package_versions(path_resources_dir / "#{Aspera::Cli::Info::GEM_NAME}-#{gem_version_build}.gem", gem_version_build)
     ruby_installer_exe = "rubyinstaller-devkit-#{install_ruby_version}-x64.exe"
-    sdk_file = download_windows_sdk(sdk_version, path_resources_dir).basename.to_s
+    sdk_file = download_sdk_archive(sdk_version, SDK_PLATFORM, path_resources_dir).basename.to_s
 
     log.info("Getting Ruby #{install_ruby_version}")
     download_file("#{RUBY_RELEASES_BASE_URL}/download/RubyInstaller-#{install_ruby_version}/#{ruby_installer_exe}", path_resources_dir / ruby_installer_exe)
@@ -193,8 +126,8 @@ namespace :windowszip do
     log.info("Building in #{path_build_dir}")
 
     log.info('Getting gem dependencies')
-    get_dependency_gems(windows_gem_location(gem_version_build), path_download_dir)
-    sdk_version, ruby_version = windows_package_versions(path_download_dir / "#{Aspera::Cli::Info::GEM_NAME}-#{gem_version_build}.gem", gem_version_build)
+    get_dependency_gems(package_gem_location(gem_version_build), path_download_dir)
+    sdk_version, ruby_version = package_versions(path_download_dir / "#{Aspera::Cli::Info::GEM_NAME}-#{gem_version_build}.gem", gem_version_build)
 
     log.info("Getting Ruby #{ruby_version}")
     ruby_archive_base = "rubyinstaller-#{ruby_version}-x64"
@@ -228,15 +161,7 @@ namespace :windowszip do
     run('gem', 'install', '--local', '--no-document', '--ignore-dependencies', '--install-dir', path_gems_dir, '--bindir', path_gems_dir / 'bin', *gem_files)
     (path_gems_dir / 'cache').rmtree
 
-    sdk_archive = download_windows_sdk(sdk_version, path_download_dir)
-    path_sdk_dir = path_package_dir / 'sdk'
-    Aspera::Ascp::Installation.instance.download_sdk(folder: path_sdk_dir.to_s, url: Aspera::UriReader.file_url(sdk_archive.to_s), backup: false)
-    # Generate files that ascli would create on first use, so that folder `sdk` can be read-only
-    # Fallback certificate is not generated: its private key must be unique per installation
-    Aspera::Products::Transferd.sdk_directory = path_sdk_dir.to_s
-    %i[aspera_license aspera_conf ssh_private_dsa ssh_private_rsa].each { |file_id| Aspera::Ascp::Installation.instance.path(file_id) }
-    # Same as generated by `ascli conf ascp install` (which gets version from binaries, cannot be executed here)
-    (path_sdk_dir / Aspera::Products::Other::INFO_META_FILE).write("<product><name>IBM Aspera Transfer SDK</name><version>#{sdk_version}</version></product>")
+    install_package_sdk(download_sdk_archive(sdk_version, SDK_PLATFORM, path_download_dir), sdk_version, path_package_dir / 'sdk')
 
     log.info('Adding launcher and README')
     WIN_PORTABLE_SRC.each_child { |f| FileUtils.cp(f, path_package_dir) }

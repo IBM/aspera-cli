@@ -311,8 +311,8 @@ module Aspera
           archive_io.write(File.binread(UriReader.file_path(url)))
         else
           Rest::Client.new(base_url: url, redirect_max: 3).call(operation: 'GET', save_to: archive_io)
-          archive_io.rewind
         end
+        archive_io.rewind
         extract_archive_files(url, archive_io) do |entry_name, entry_stream, link_target|
           dest_folder = if block_given?
             yield(entry_name)

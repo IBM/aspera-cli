@@ -293,6 +293,9 @@ There are several ways to install <%=tool%>:
 - As a [single file executable](#single-file-executable)
 
   This method is simple, but only a limited number of platforms are supported.
+- On Linux, as a [portable package](#linux-portable-package)
+
+  This method is simple on Linux: extract and run, without root access. It includes Ruby, gems and `ascp`.
 - On Windows, as a [portable package](#windows-portable-package)
 
   This method is the simplest on Windows: extract and run. It includes Ruby, gems and `ascp`.
@@ -355,6 +358,37 @@ objdump -p /bin/bash | sed -n 's/^.*GLIBC_//p' | sort -V | tail -n1
 > If `objdump` is not available, then use `strings` or `grep -z 'GLIBC_'|tr \\0 \\n`
 
 The required GLIBC version for `ascp` can be found in the [Release Notes of HSTS](https://www.ibm.com/docs/en/ahts) or [on this page](https://eudemo.asperademo.com/download/sdk.html).
+
+### Linux: Portable package
+
+A ready-to-use archive for Linux (x86_64) is available in the [Releases](https://github.com/IBM/aspera-cli/releases): `<%=gemspec.name%>-<%=ph :version%>-linux-x86_64-glibc2.28-portable.tgz`.
+
+It contains the Ruby runtime with the shared libraries it needs, the <%=gemspec.name%> gem with its dependencies, and the Aspera Transfer SDK (`ascp`).
+No installation step, no root access, and no internet access are required.
+The GLIBC of the system must be at least the version in the archive name, see [Checking the GLIBC version](#linux-checking-the-glibc-version).
+
+1. Extract the archive, for example in `~/.local/share`, and check that <%=tool%> runs:
+
+   ```shell
+   tar -xzf <%=gemspec.name%>-<%=ph :version%>-linux-x86_64-glibc2.28-portable.tgz -C ~/.local/share
+   ~/.local/share/<%=gemspec.name%>-<%=ph :version%>-linux-x86_64-glibc2.28-portable/<%=cmd%> -v
+   ```
+
+2. Optionally, place a symbolic link to the launcher in a folder of the `PATH`.
+   Then, <%=tool%> can be used from any folder:
+
+   ```shell
+   ln -s ~/.local/share/<%=gemspec.name%>-<%=ph :version%>-linux-x86_64-glibc2.28-portable/<%=cmd%> ~/.local/bin/<%=cmd%>
+   <%=cmd%> -v
+   ```
+
+> [!NOTE]
+> The launcher `<%=cmd%>` uses the `ascp` located in folder `sdk` of the package, unless environment variable `ASCLI_SDK_FOLDER` is set.
+> So, `<%=cmd%> config transferd install` is not needed.
+
+The configuration is stored in the [main folder](#main-configuration-and-persistency-folder), like for other installation methods.
+To upgrade, extract the new version, and update the symbolic link.
+To uninstall, delete the folder, and the symbolic link if it was created.
 
 ### Windows: Portable package
 
