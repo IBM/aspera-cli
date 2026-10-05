@@ -1141,11 +1141,11 @@ module Aspera
           docroot = config.delete(:docroot)
           retention_sec = config.delete(:retention_sec)
           Aspera.assert(config[:username].nil? == config[:password].nil?, type: Cli::BadArgument) { 'Parameters username and password must be set together' }
-          Log.log.warn('No username and password: simulator accepts requests without authentication') if config[:username].nil?
+          Log.log.warn('No username and password: emulator accepts requests without authentication') if config[:username].nil?
           server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
           server.mount(uri.path, NodeSimulatorServlet, config, NodeSimulator.new(docroot: docroot, retention_sec: retention_sec))
           server.start
-          return Result::Status.new('Simulator terminated')
+          return Result::Status.new('Emulator terminated')
         end
 
         def action_telemetry(parameters: {}, **)

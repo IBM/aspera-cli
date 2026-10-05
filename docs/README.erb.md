@@ -7652,7 +7652,7 @@ The emulator starts its own `transferd`, and stops it on exit.
 
 It takes an optional `Hash` argument with the following parameters:
 
-<%=schema_to_table('opts:components.schemas.NodeSimulatorOptions')%>
+<%=schema_to_table('opts:components.schemas.NodeEmulatorOptions')%>
 
 For details on `url` and HTTPS, see [Web service](#web-service).
 
