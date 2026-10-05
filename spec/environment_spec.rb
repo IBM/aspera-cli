@@ -109,4 +109,17 @@ RSpec.describe(Aspera::Environment) do
       expect(ENV).not_to(have_key(OpenSSL::X509::DEFAULT_CERT_FILE_ENV))
     end
   end
+
+  describe '.write_file_restricted' do
+    it 'creates the file with restricted access, not only after writing' do
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'secret')
+        # Only the mode at creation is checked
+        allow(described_class).to(receive(:restrict_file_access))
+        described_class.write_file_restricted(path) { 'secret' }
+        expect(File.read(path)).to(eq('secret'))
+        expect(File.stat(path).mode & 0o777).to(eq(0o600)) unless Gem.win_platform?
+      end
+    end
+  end
 end

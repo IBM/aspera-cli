@@ -7006,6 +7006,21 @@ f5_adm_sbx_delete:
     - "@extend:%name:@preset:f5_misc.shared_box_name@"
     - delete
     - "%name:john@example.com"
+f5_adm_sbx_saml_lookup:
+  description: SAML group of shared inbox looked up by name (fails before any deletion).
+  tags:
+    - must_fail
+    - nodoc
+  expect: "group_name=no_such_saml_group: not found"
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - shared_inboxes
+    - saml_groups
+    - "@extend:%name:@preset:f5_misc.shared_box_name@"
+    - delete
+    - "%name:no_such_saml_group"
 f5_adm_evt_app:
   description: Retrieve successful login in the last hour.
   args:

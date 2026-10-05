@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/oauth/base'
+require 'aspera/environment'
 require 'aspera/assert'
 require 'securerandom'
 require 'openssl'
@@ -17,10 +18,8 @@ module Aspera
       class << self
         def generate_rsa_private_key(path:, length: DEFAULT_PRIV_KEY_LENGTH)
           priv_key = OpenSSL::PKey::RSA.new(length)
-          File.write(path, priv_key.to_s)
-          File.write("#{path}.pub", priv_key.public_key.to_s)
-          Environment.restrict_file_access(path)
-          Environment.restrict_file_access("#{path}.pub")
+          Environment.write_file_restricted(path, force: true) { priv_key.to_s }
+          Environment.write_file_restricted("#{path}.pub", force: true) { priv_key.public_key.to_s }
           nil
         end
       end

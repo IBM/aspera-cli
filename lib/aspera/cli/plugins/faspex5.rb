@@ -838,9 +838,11 @@ module Aspera
             res_path = "#{res_instance_path}/members"
             api_v5.lookup_entity_by_field(entity: res_path, field: field, value: value, query: Rest.php_style({type: %w[user]}))['user_id']
           end
-          define_method(:"lookup_#{res}_saml_groups_id") do |field, value, res_instance_path:, **|
-            res_path = "#{res_instance_path}/saml_groups"
-            api_v5.lookup_entity_by_field(entity: res_path, field: field, value: value, query: Rest.php_style({type: %w[user]}))['user_id']
+          # Like members (`user_id`), a SAML group of the resource is identified by `group_id`; its name is `group_name`
+          define_method(:"lookup_#{res}_saml_groups_id") do |field, value, saml_groups_path:, **|
+            field = 'group_name' if field.eql?('name')
+            query = field.eql?('group_name') ? {'q' => value} : {}
+            api_v5.lookup_entity_by_field(entity: saml_groups_path, field: field, value: value, items_key: 'groups', query: query)['group_id']
           end
         end
 

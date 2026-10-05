@@ -70,9 +70,11 @@ module Aspera
         Log.dump(:query, query)
         result = []
         offset = 0
-        max_items = query.delete(MAX_ITEMS)
-        remain_pages = query.delete(MAX_PAGES)
-        # Merge default parameters, by default 100 per page
+        # Special parameters are not sent to the API (the caller's query is not modified)
+        query = query.dup
+        max_items = query.delete(MAX_ITEMS)&.to_i
+        remain_pages = query.delete(MAX_PAGES)&.to_i
+        # Merge default parameters
         query = {'limit'=> PER_PAGE_DEFAULT}.merge(query)
         total_count = nil
         call_args = {
@@ -84,18 +86,22 @@ module Aspera
         loop do
           query['offset'] = offset
           page_result = call(**call_args)
-          Aspera.assert_type(page_result[items_key], Array)
-          result.concat(page_result[items_key])
+          page_items = page_result[items_key]
+          Aspera.assert_type(page_items, Array)
+          result.concat(page_items)
           # Reach the limit set by user ?
           if !max_items.nil? && (result.length >= max_items)
             result = result.slice(0, max_items)
             break
           end
           total_count ||= page_result['total_count']
-          break if result.length >= total_count
+          # An empty page ends the list, even if the total count is not reached (e.g. items deleted meanwhile)
+          break if page_items.empty?
+          # Without total count, a partial page is the last one
+          break if total_count.nil? ? page_items.length < query['limit'].to_i : result.length >= total_count
           remain_pages -= 1 unless remain_pages.nil?
-          break if remain_pages == 0
-          offset += page_result[items_key].length
+          break if !remain_pages.nil? && remain_pages <= 0
+          offset += page_items.length
           Parameters.instance.spinner_cb.call("#{result.length} / #{total_count || '?'}")
         end
         Parameters.instance.spinner_cb.call(action: :success)

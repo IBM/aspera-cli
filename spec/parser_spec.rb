@@ -2,6 +2,7 @@
 
 # Unit tests for Aspera::Cli::Parser — no server, no config file needed.
 
+require 'stringio'
 require 'aspera/cli/parser'
 
 module Aspera
@@ -618,6 +619,23 @@ module Aspera
           allow(opts).to(receive(:prompt_user_input).and_return('john'))
           expect(opts.with_interactive { opts.get_option(:username, mandatory: true) }).to(eq('john'))
           expect(opts.ask_missing_mandatory).to(be(false))
+        end
+
+        it 'displays the prompt on stderr, not on stdout' do
+          opts = build_parser([])
+          opts.declare(:username, description: 'User name')
+          saved = [$stdin, $stdout, $stderr]
+          $stdin = StringIO.new("john\n")
+          $stdout = StringIO.new
+          $stderr = StringIO.new
+          value = opts.with_interactive { opts.get_option(:username, mandatory: true) }
+          out, err = $stdout.string, $stderr.string # rubocop:disable Style/ParallelAssignment
+          $stdin, $stdout, $stderr = saved
+          expect(value).to(eq('john'))
+          expect(out).to(be_empty)
+          expect(err).to(include('username> '))
+        ensure
+          $stdin, $stdout, $stderr = saved
         end
 
         it 'restores the previous state when the block raises' do

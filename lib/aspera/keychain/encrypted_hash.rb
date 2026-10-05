@@ -181,7 +181,7 @@ module Aspera
           'kdf'     => @kdf_params,
           'data'    => @cipher.encrypt(YAML.dump(@all_secrets))
         }
-        File.write(@path, YAML.dump(vault_info))
+        Environment.write_file_restricted(@path, force: true) { YAML.dump(vault_info) }
       end
     end
   end

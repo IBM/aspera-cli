@@ -41,6 +41,13 @@ Released: [Place date of release here]
 * **general**: A configuration file with an error to fix (e.g. duplicate keys) was renamed `*.manual_conversion_needed`, and a new empty configuration file was created on next execution: the file is now left untouched, and the error is displayed.
 * **general**: `--out.level` was overridden by `--format` given after it, or in the same `--out` value: e.g. `--out.level=info --format=json` displayed secrets.
 * **general**: Integers with a leading zero were rejected in options (e.g. `--version-check-days=08`) and arguments, or read as octal in dotted values (e.g. `--query.page=010`). An invalid number in an option now gives the name of the option.
+* `faspex5`: `admin shared_inboxes|workgroups saml_groups modify|delete` with a percent selector (e.g. `%name:my_group`) failed with `assertion failed`.
+* `faspex5`: Lists were read endlessly if the server returned an empty page before the total count, and failed without total count.
+* `config`: `vault` of type `file` without `name` failed with `no implicit conversion of nil into String` (default name: `vault.bin`).
+* **general**: Ruby library: list operations with paging (e.g. `Api::Node`, `Api::AoC`, `Api::Faspex`) failed outside of `ascli`, which sets a progress callback.
+* **general**: Interactive prompts were displayed on `stdout`, mixed with results (e.g. when redirected to a file): they are now displayed on `stderr`.
+* **general**: Security: the encrypted vault file was readable by other users, and files with secrets (configuration, persistency, generated private key) were readable by other users until access was restricted, just after creation: they are now created with restricted access.
+* **general**: Security: secrets of transfer agent parameters (e.g. `password` of agent `node`) were saved in clear with asynchronous transfers: `config transfer status` now takes them from the current `transfer` option.
 
 ### Breaking Changes
 

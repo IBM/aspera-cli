@@ -172,8 +172,8 @@ module Aspera
         if force || !File.exist?(path)
           # Windows may give error
           File.unlink(path) rescue nil
-          # content provided by block
-          File.write(path, yield)
+          # content provided by block, file created with restricted access: never readable by others, even briefly
+          File.write(path, yield, perm: mode || 0o600)
           restrict_file_access(path, mode: mode)
         end
         return path

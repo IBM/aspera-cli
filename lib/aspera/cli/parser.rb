@@ -439,7 +439,7 @@ module Aspera
         end
         # Ask interactively
         result = []
-        puts(' (one per line, end with empty line)') if multiple
+        $stderr.puts(' (one per line, end with empty line)') if multiple # rubocop:disable Style/StderrPuts
         loop do
           prompt = default_prompt
           prompt = "#{accept_list.join(' ')}\n#{default_prompt}" if accept_list

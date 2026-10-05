@@ -3945,6 +3945,8 @@ For `direct` and `httpgw`, the transfer runs as a Ruby thread inside the `ascli`
 The `job_id` is persisted on disk but the live thread state is only available as long as the same process is running.
 If the process is restarted, `config transfer status` returns `unknown` for those jobs.
 
+Parameters of the agent are persisted, except secrets (e.g. `password` of agent `node`): `config transfer status` takes them from the current `transfer` option, if it is for the same agent (e.g. same option on command line, or in a preset).
+
 > [!NOTE]
 > **`asynchronous` and MCP** - When `ascli` is used as an MCP server, an AI assistant calling
 > a transfer command may time out or cancel the request and retry, causing duplicate transfers.

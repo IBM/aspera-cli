@@ -32,7 +32,7 @@ module Aspera
       attr_accessor :session_cb
       # @return [Object, nil] Progress bar, receives `event` calls during download
       attr_accessor :progress_bar
-      # @return [Proc, nil] Called with `(title = nil, action: :spin)` to display progress of long operations
+      # @return [Proc] Called with `(title = nil, action: :spin)` to display progress of long operations (default: no display)
       attr_accessor :spinner_cb
 
       private
@@ -48,7 +48,7 @@ module Aspera
         @retry_sleep = 4
         @session_cb = nil
         @progress_bar = nil
-        @spinner_cb = nil
+        @spinner_cb = ->(_title = nil, action: :spin) {}
       end
     end
   end

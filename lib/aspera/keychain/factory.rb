@@ -18,7 +18,8 @@ module Aspera
           Aspera.assert_values(vault_type, LIST.map(&:to_s)) { 'vault.type' }
           case vault_type
           when 'file'
-            info[:file] = info.delete(:name) || 'vault.bin' if info.key?(:name)
+            # `name` (or `file`), default: `vault.bin`
+            info[:file] = info.delete(:name) || info[:file] || 'vault.bin'
             info[:file] = File.join(folder, info[:file]) unless File.absolute_path?(info[:file])
             Aspera.assert(!password.nil?, 'please provide password')
             info[:password] = password

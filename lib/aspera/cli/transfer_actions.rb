@@ -15,7 +15,8 @@ module Aspera
     #
     # Architecture:
     #   - remote-daemon agents (desktop, node, connect, transferd): transfer_id + agent_params
-    #     are persisted in AsyncTransferStore; status is re-queried via Agent::Xxx.transfer_status
+    #     are persisted in AsyncTransferStore (without secrets, taken from current options);
+    #     status is re-queried via Agent::Xxx.transfer_status
     #   - direct agent: transfers live in Ruby threads - store is the agent's @sessions;
     #     status is not persistable across process restarts (returns an informational message)
     module TransferActions
@@ -25,10 +26,12 @@ module Aspera
         store = async_transfer_store
         entry = store.read(job_id)
         Aspera.assert(!entry.nil?, type: Cli::BadArgument) { "Unknown job_id: #{job_id}" }
+        # Secrets are not persisted: take them from current transfer options (e.g. `--transfer`), for the same agent type
+        agent_params = current_agent_params(entry['agent_type']).merge(entry['agent_params'] || {})
         # Inject the in-process agent reference (direct/httpgw) if still alive in this process.
         ref = store.agent_ref(job_id)
-        entry['agent_params']['_agent_ref'] = ref if ref
-        live = query_live_status(entry)
+        agent_params['_agent_ref'] = ref if ref
+        live = query_live_status(entry.merge('agent_params' => agent_params))
         if live
           entry.merge!(live)
           store.write(job_id, entry)
@@ -52,6 +55,14 @@ module Aspera
       end
 
       private
+
+      # @param agent_type [String] agent of the async transfer
+      # @return [Hash] agent parameters from current transfer options (e.g. `--transfer`), if for the same agent type
+      def current_agent_params(agent_type)
+        current = context.transfer.transfer_options
+        return {} unless (current['agent'] || 'direct').to_s.eql?(agent_type)
+        current.except('agent', 'asynchronous')
+      end
 
       # Lazy accessor - requires context.persistency (available in all Base sub-classes).
       # Delegate to the TransferAgent's store so that the in-memory agent-ref

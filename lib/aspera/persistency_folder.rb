@@ -44,9 +44,7 @@ module Aspera
       Aspera.assert_type(value, String)
       persist_filepath = id_to_filepath(object_id)
       Log.log.debug { "persistency saving: #{persist_filepath}" }
-      FileUtils.rm_f(persist_filepath)
-      File.write(persist_filepath, value)
-      Environment.restrict_file_access(persist_filepath)
+      Environment.write_file_restricted(persist_filepath, force: true) { value }
       @cache[object_id] = value
       nil
     end

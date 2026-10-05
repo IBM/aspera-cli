@@ -41,6 +41,12 @@ module Aspera
           expect(result['status']).to(eq('running'))
         end
 
+        it 'does not persist secrets of agent parameters' do
+          store.write(job_id, entry)
+          expect(store.read(job_id)['agent_params']).to(eq({'url' => 'https://node.example.com', 'username' => 'u'}))
+          expect(File.read(Dir.glob(File.join(tmpdir, '*')).first)).not_to(include('password'))
+        end
+
         it 'returns nil for an unknown job_id' do
           expect(store.read('does-not-exist')).to(be_nil)
         end
