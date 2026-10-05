@@ -19,8 +19,8 @@ require 'time'
 
 module Aspera
   # Node API transfers executed by transferd.
-  # Only transfers started through the simulator are known (kept in memory).
-  class NodeSimulator
+  # Only transfers started through the emulator are known (kept in memory).
+  class NodeEmulator
     # transferd status → Node API transfer status
     STATUS = {
       UNKNOWN_STATUS: 'waiting',
@@ -81,7 +81,7 @@ module Aspera
     # `File.ftype` → Node API item type, others are unchanged
     FILE_TYPES = {'link' => 'symbolic_link'}.freeze
     # Node API node information not provided by transferd
-    # The simulator has no access key, AEJ, watch folder, sync, file id API (gen4), `files/page` or file operations
+    # The emulator has no access key, AEJ, watch folder, sync, file id API (gen4), `files/page` or file operations
     INFO_STATIC = {
       'aej_status'                            => 'disconnected',
       'async_reporting'                       => 'no',
@@ -153,7 +153,7 @@ module Aspera
       # Build a Node API transfer from a store entry
       # @param id      [String] transfer id
       # @param entry   [Hash]   store entry
-      # @param node_id [String] node id of the simulator
+      # @param node_id [String] node id of the emulator
       # @return [Hash] Node API transfer (`transferResponseSessionSpec`)
       def transfer_to_node(id, entry, node_id: '')
         info = message_to_hash(entry[:info] || ::Transferd::Api::TransferInfo.new, TRANSFER_OVERRIDES)
@@ -184,7 +184,7 @@ module Aspera
       # Convert a transferd session to a Node API session
       # @param session       [Transferd::Api::SessionTransferInformation]
       # @param retry_timeout [Integer] from the transfer spec
-      # @param node_id       [String]  node id of the simulator
+      # @param node_id       [String]  node id of the emulator
       # @return [Hash] Node API session (`transferResponseSessions`)
       def session_to_node(session, retry_timeout: 0, node_id: '')
         source = message_to_hash(session, SESSION_OVERRIDES)
@@ -193,7 +193,7 @@ module Aspera
         result = source.slice(*SESSION_FIELDS)
         # transferd provides the address of the remote side only: the server
         result['server_ip_address'] = source['remote_address'] if result['server_ip_address'].empty?
-        # transferd provides the node id of the remote side only: the local side is the simulator
+        # transferd provides the node id of the remote side only: the local side is the emulator
         result['client_node_id'] = node_id if result['client_node_id'].empty?
         precalc = PRECALC.transform_values { |field| source[field] }
         result.merge(
@@ -224,8 +224,8 @@ module Aspera
 
       # Build Node API node information from transferd instance information
       # @param info          [Transferd::Api::InstanceInfo]
-      # @param node_id       [String] node id of the simulator
-      # @param cluster_id    [String] cluster id of the simulator
+      # @param node_id       [String] node id of the emulator
+      # @param cluster_id    [String] cluster id of the emulator
       # @param docroot       [String] real path of the docroot
       # @param transfer_user [String] system user executing transfers
       # @return [Hash] Node API node information (`info-get-200`)
@@ -276,7 +276,7 @@ module Aspera
       end
     end
 
-    # Create a simulator, start a transferd daemon if no client is given
+    # Create an emulator, start a transferd daemon if no client is given
     # @param docroot         [String, nil]  folder of the node files, default: current folder
     # @param transfer_client [Transferd::Api::TransferService::Stub, nil] gRPC client, default: start a transferd daemon
     # @param retention_sec   [Integer]      time a transfer is kept after it ended (CLI default in schema)
@@ -295,7 +295,7 @@ module Aspera
       # identifiers of the simulated node, in node information and in sessions
       @node_id = SecureRandom.uuid
       @cluster_id = SecureRandom.uuid
-      # transferd runs as the user of the simulator
+      # transferd runs as the user of the emulator
       @transfer_user = Etc.getpwuid(Process.euid)&.name || Etc.getlogin.to_s
     end
 
@@ -395,7 +395,7 @@ module Aspera
       return result
     end
 
-    # Get a transfer started by the simulator
+    # Get a transfer started by the emulator
     # @param id [String] transfer id
     # @return [Hash, nil] Node API transfer, `nil` if unknown
     def transfer(id)
@@ -410,7 +410,7 @@ module Aspera
       result
     end
 
-    # List the transfers started by the simulator
+    # List the transfers started by the emulator
     # @param active_only [Boolean, nil] `true`: only waiting or running, `false`: only terminated, `nil`: all
     # @param direction   [String, nil]  `send` or `receive`
     # @param count       [Integer, nil] max number of transfers, oldest first
@@ -451,7 +451,7 @@ module Aspera
 
     # Check if a transfer is known
     # @param id [String] transfer id
-    # @return [Boolean] `true` if the transfer was started by the simulator
+    # @return [Boolean] `true` if the transfer was started by the emulator
     def known?(id)
       store { |transfers| transfers.key?(id) }
     end
@@ -498,7 +498,7 @@ module Aspera
 
     # Get the Node API permissions of an item
     # @param real [String] real path within the docroot
-    # @return [Array<Hash>] Node API permissions, from the access of the simulator on the item
+    # @return [Array<Hash>] Node API permissions, from the access of the emulator on the item
     def permissions(real)
       names = []
       names.push('view') if File.readable?(real)
@@ -578,13 +578,13 @@ module Aspera
     end
   end
 
-  # Answers a subset of the Node API, transfers are delegated to a NodeSimulator
+  # Answers a subset of the Node API, transfers are delegated to a NodeEmulator
   # a new instance is created for each request
-  class NodeSimulatorServlet < WEBrick::HTTPServlet::AbstractServlet
+  class NodeEmulatorServlet < WEBrick::HTTPServlet::AbstractServlet
     PATH_TRANSFERS = '/ops/transfers'
     PATH_ONE_TRANSFER = %r{/ops/transfers/(.+)$}
     PATH_BROWSE = '/files/browse'
-    REALM = 'Aspera Node Simulator'
+    REALM = 'Aspera Node Emulator'
     # `PUT` values of `status` that cancel the transfer (pause and resume are not supported)
     CANCEL_STATUSES = %w[canceled cancelled stopped].freeze
     # `PUT` fields modified by transferd
@@ -592,7 +592,7 @@ module Aspera
     # Create the servlet, with optional Basic authentication
     # @param server    [WEBrick::HTTPServer]
     # @param config    [Hash] `username` and `password` (Basic authentication expected from clients, optional)
-    # @param simulator [NodeSimulator]
+    # @param simulator [NodeEmulator]
     def initialize(server, config, simulator)
       super(server)
       @simulator = simulator

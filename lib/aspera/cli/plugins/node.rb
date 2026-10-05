@@ -1130,7 +1130,7 @@ module Aspera
         end
 
         def action_emulator(parameters: {}, **)
-          require 'aspera/node_simulator'
+          require 'aspera/node_emulator'
           # missing parameters take the default of the schema
           defaults = Schema::Registry.instance.reader(Schema::Registry::NODE_EMULATOR_OPTIONS).current['properties'].each_with_object({}) do |(name, property), result|
             result[name.to_sym] = property['default'] if property.key?('default')
@@ -1143,7 +1143,7 @@ module Aspera
           Aspera.assert(config[:username].nil? == config[:password].nil?, type: Cli::BadArgument) { 'Parameters username and password must be set together' }
           Log.log.warn('No username and password: emulator accepts requests without authentication') if config[:username].nil?
           server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
-          server.mount(uri.path, NodeSimulatorServlet, config, NodeSimulator.new(docroot: docroot, retention_sec: retention_sec))
+          server.mount(uri.path, NodeEmulatorServlet, config, NodeEmulator.new(docroot: docroot, retention_sec: retention_sec))
           server.start
           return Result::Status.new('Emulator terminated')
         end

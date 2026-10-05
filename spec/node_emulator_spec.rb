@@ -1,17 +1,17 @@
 # frozen_string_literal: true
 
 # cspell:ignore precalc noxfer
-# Tests for NodeSimulator: mapping of transferd messages to Node API, and transfer store.
+# Tests for NodeEmulator: mapping of transferd messages to Node API, and transfer store.
 # transferd is replaced by a fake gRPC client — no daemon required.
 # Test values are the ones seen on real transfers (time stamps in milliseconds).
-# Tests for NodeSimulatorServlet: HTTP server on a free port, with a fake backend.
+# Tests for NodeEmulatorServlet: HTTP server on a free port, with a fake backend.
 
 require 'bundler/setup'
 begin
-  require 'aspera/node_simulator'
+  require 'aspera/node_emulator'
 rescue LoadError => e
   # optional gem grpc not installed (e.g. BUNDLE_WITHOUT=optional, or JRuby)
-  RSpec.describe('Aspera::NodeSimulator') { it('requires gem grpc') { skip(e.message) } }
+  RSpec.describe('Aspera::NodeEmulator') { it('requires gem grpc') { skip(e.message) } }
   return
 end
 require 'net/http'
@@ -19,7 +19,7 @@ require 'tmpdir'
 
 module Aspera
   # Test data and helpers
-  module NodeSimulatorTest
+  module NodeEmulatorTest
     API = ::Transferd::Api
 
     # Replaces `Transferd::Api::TransferService::Stub`
@@ -157,11 +157,11 @@ module Aspera
     )
 
     def entry_after(events, start_spec = {})
-      {start_spec: start_spec, sessions: {}, files: {}, rates: {}}.tap { |entry| events.each { |event| NodeSimulator.update_entry(entry, event) } }
+      {start_spec: start_spec, sessions: {}, files: {}, rates: {}}.tap { |entry| events.each { |event| NodeEmulator.update_entry(entry, event) } }
     end
 
-    RSpec.describe(NodeSimulator) do
-      include NodeSimulatorTest
+    RSpec.describe(NodeEmulator) do
+      include NodeEmulatorTest
 
       describe '.node_status' do
         {
@@ -444,7 +444,7 @@ module Aspera
       end
 
       describe 'retention' do
-        # @return [NodeSimulator] retention 60 s, with a completed and a running transfer, ended at time 1000
+        # @return [NodeEmulator] retention 60 s, with a completed and a running transfer, ended at time 1000
         def started
           client = FakeTransferClient.new(
             [transfer_response(:COMPLETED, :SESSION_STOP, transfer_id: 'done')],
@@ -556,7 +556,7 @@ module Aspera
       end
 
       describe 'docroot' do
-        let(:docroot) { File.realpath(Dir.mktmpdir('node_simulator_spec')) }
+        let(:docroot) { File.realpath(Dir.mktmpdir('node_emulator_spec')) }
         let(:client) { FakeTransferClient.new(SUCCESS_EVENTS) }
         let(:simulator) { described_class.new(retention_sec: RETENTION_SEC, docroot: docroot, transfer_client: client) }
 
@@ -636,7 +636,7 @@ module Aspera
       end
     end
 
-    RSpec.describe(NodeSimulatorServlet) do
+    RSpec.describe(NodeEmulatorServlet) do
       let(:basic_sim) { "Basic #{['sim:sim'].pack('m0')}" }
       let(:fake_simulator) { FakeSimulator.new }
 
@@ -671,7 +671,7 @@ module Aspera
         it 'rejects a request without credentials' do
           result = call('GET', '/ops/transfers')
           expect_error(result, 401)
-          expect(result[1]).to(eq('Basic realm="Aspera Node Simulator"'))
+          expect(result[1]).to(eq('Basic realm="Aspera Node Emulator"'))
         end
 
         it 'rejects a wrong password' do
@@ -786,11 +786,11 @@ module Aspera
       end
 
       context 'with browse' do
-        let(:docroot) { File.realpath(Dir.mktmpdir('node_simulator_spec')) }
+        let(:docroot) { File.realpath(Dir.mktmpdir('node_emulator_spec')) }
 
         before do
           %w[c a d b].each { |name| File.write(File.join(docroot, name), name) }
-          start_server(simulator: NodeSimulator.new(retention_sec: RETENTION_SEC, docroot: docroot, transfer_client: FakeTransferClient.new([])))
+          start_server(simulator: NodeEmulator.new(retention_sec: RETENTION_SEC, docroot: docroot, transfer_client: FakeTransferClient.new([])))
         end
 
         after { FileUtils.rm_rf(docroot) }
