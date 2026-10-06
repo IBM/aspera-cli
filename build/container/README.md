@@ -17,7 +17,15 @@ The repository can be displayed with:
 bundle exec rake container:repo
 ```
 
-## Image build
+## Automated build
+
+The GitHub action [`packages.yml`](../../.github/workflows/packages.yml) builds the image from the `.gem` attached to the GitHub release, tests it, and pushes it to the image registry.
+It runs when a release is published, or manually with a version.
+Tag `latest` is pushed only if the version is the latest GitHub release.
+
+The registry credentials are repository secrets: `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` (Docker Hub access token with write permission).
+
+## Manual image build
 
 To build the image for a released version:
 
@@ -78,7 +86,7 @@ bundle exec rake container:push
 
 The task `container:build` takes two optional arguments:
 
-- `source`: `local` (use local gem file) or `remote` (download from <rubygems.org>)
+- `source`: `local` (use local gem file `pkg/aspera-cli-<version>.gem` if present, else build it from sources) or `remote` (download from <rubygems.org>)
 - `version`: Version number
 
 Example: Build using local version and sources

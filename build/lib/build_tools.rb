@@ -185,6 +185,7 @@ module BuildTools
   # Change version to build
   def use_specific_version(version)
     Aspera.assert(!version.to_s.empty?) { 'Version argument is required for beta task' }
+    OVERRIDE_VERSION_FILE.dirname.mkpath
     OVERRIDE_VERSION_FILE.write(version)
     log.info("Version set to: #{BuildTools.build_version}")
   end

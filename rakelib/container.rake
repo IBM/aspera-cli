@@ -42,7 +42,8 @@ namespace :container do
     arg_gem = if source.equal?(:remote)
       "#{Aspera::Cli::Info::GEM_NAME}:#{gem_version}"
     else
-      Rake::Task['unsigned'].invoke
+      # Gem file placed in pkg/ (e.g. downloaded from GitHub release), else built from sources
+      Rake::Task['unsigned'].invoke unless built_gem_file.exist?
       built_gem_file.relative_path_from(docker_context).to_s
     end
     docker_file = TMP / 'Dockerfile'
@@ -58,8 +59,10 @@ namespace :container do
   desc 'Test the container'
   task :test do
     image_tag = tag(build_version)
-    run(CONTAINER_TOOL, 'run', '--tty', '--interactive', '--rm', image_tag, '-v')
-    run(CONTAINER_TOOL, 'run', '--tty', '--interactive', '--rm', image_tag, 'config', 'ascp', 'info')
+    # No terminal: also runs in CI
+    version = run(CONTAINER_TOOL, 'run', '--rm', image_tag, '-v', mode: :capture).first.strip
+    raise "Unexpected version: #{version}, expected: #{build_version}" unless version.eql?(build_version)
+    run(CONTAINER_TOOL, 'run', '--rm', image_tag, 'config', 'ascp', 'info')
   end
 
   desc 'Push only the version tag'

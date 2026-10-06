@@ -5,6 +5,7 @@
 #   Ocran bundles all shared libraries except glibc, so the executable runs on any Linux with glibc >= 2.28 (RHEL 8 and later)
 # - Linux: portable package (rake linuxtgz:portable), built in a RHEL 8 container, with the same shared libraries
 # - Windows: portable package (rake windowszip:portable), built on Linux, tested on Windows
+# - Container image (rake container:build), built on Linux, tested, and pushed to Docker Hub (tag `latest` only for the latest release)
 name: Release Packages
 
 on:
@@ -302,3 +303,43 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release upload "v$env:VERSION" $env:ARCHIVE --clobber --repo "${{ github.repository }}"
+
+  container:
+    name: Container image, build, test and push
+    needs: version
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "4.0.7"
+          bundler-cache: true
+
+      - name: Build image
+        run: |
+          # The task uses the gem placed in pkg/, if present
+          mkdir -p pkg
+          curl -fsSL -o "pkg/aspera-cli-${VERSION}.gem" "https://github.com/${{ github.repository }}/releases/download/v${VERSION}/aspera-cli-${VERSION}.gem"
+          bundle exec rake container:build"[local,${VERSION}]"
+
+      # -v: output must be the version
+      # config ascp info: fails if the installed ascp does not run
+      - name: Test image
+        run: bundle exec rake container:test
+
+      # Tag latest only if this version is the latest release (not for a manual build of an older version)
+      - name: Push image
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          echo "${DOCKERHUB_TOKEN}" | podman login docker.io --username "${DOCKERHUB_USERNAME}" --password-stdin
+          latest=$(gh release view --repo "${{ github.repository }}" --json tagName --jq .tagName)
+          if [ "${latest}" = "v${VERSION}" ]; then task=container:push; else task=container:push_version; fi
+          bundle exec rake "${task}"
