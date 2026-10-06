@@ -32764,8 +32764,6 @@ components:
                 type: string
                 examples:
                   - eyJyZXNvdXJjZSI6InBhY2thZ2VzIiwidHlwZSI6ImV4dGVybmFsX3ZpZXdfcGFja2FnZSIsImlkIjoiMzAiLCJwYXNzY29kZSI6IjA2MzBkZDIzLTA3YTAtNGExYi04N2IzLWM3YjZkMGViNjE5NiIsInBhY2thZ2VfaWQiOiIzMCJ9
-                maxLength: 255
-                minLength: 1
               relays_count:
                 description: Package relays count
                 type: object
