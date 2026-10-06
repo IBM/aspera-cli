@@ -8461,6 +8461,20 @@ Example: Start workflow `1234` with parameter `Param`, wait for completion and d
 > [!NOTE]
 > Options `synchronous` and `result` (`--result=<%=ph :work_step%>:<%=ph :variable%>`) are deprecated: use `execution` instead.
 
+### Import a workflow
+
+Command `workflows export` displays a workflow in Orchestrator's export format (YAML).
+Command `workflows import` creates a new workflow from such a file, and displays it, including its new `id`.
+The imported workflow is a draft: publish it with `workflows publish` before starting it.
+
+Example: Copy workflow `1234` to another Orchestrator, where the imported workflow gets `id` `5678`:
+
+```shell
+<%=cmd%> orchestrator workflows export 1234 --out.file=my_workflow.yml
+<%=cmd%> orchestrator workflows import my_workflow.yml --preset=other_orchestrator --out.fields=id
+<%=cmd%> orchestrator workflows publish 5678 --preset=other_orchestrator
+```
+
 <%=include_commands_for_plugin(:orchestrator)%>
 
 ## Plugin: `cos`: IBM Cloud Object Storage

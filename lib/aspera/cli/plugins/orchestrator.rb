@@ -63,25 +63,28 @@ module Aspera
         option :synchronous, description: 'Wait for completion', allowed: Type::BOOLEAN, deprecation: {last: '4.27.2', message: 'use key `synchronous` of argument `execution` of `workflows start`'}
 
         # Call orchestrator API (handles ret_style negotiation and XML parsing)
-        # @param endpoint   [String]  the endpoint to call
-        # @param body       [Hash]    the body to pass (JSON); also implies POST
-        # @param format     [String]  the format to request, 'json', 'xml', nil
-        # @param query      [Hash]    the arguments to pass as query parameters
-        # @param xml_arrays [Boolean] if true, force arrays in xml parsing
-        # @param http       [Boolean] if true, returns the HttpResponse, else
-        def call_ao(endpoint, body: nil, format: 'json', query: nil, xml_arrays: true, http: false)
+        # @param endpoint     [String]      the endpoint to call
+        # @param body         [Hash, Array] the body to pass; also implies POST
+        # @param content_type [String]      the body type (Mime::JSON or Mime::MULTIPART)
+        # @param accept       [String]      the response type to request (Mime::JSON or Mime::XML), or nil
+        # @param query        [Hash]        the arguments to pass as query parameters
+        # @param xml_opts     [Hash]        options of `XmlSimple.xml_in` to parse an XML response
+        # @param http         [Boolean]     if true, returns the HttpResponse, else
+        def call_ao(endpoint, body: nil, content_type: Mime::JSON, accept: Mime::JSON, query: nil, xml_opts: {}, http: false)
           call_args = {operation: body.nil? ? 'GET' : 'POST', subpath: "api/#{endpoint}", ret: :both, query: {}}
-          call_args.merge!(body: body, content_type: Mime::JSON) unless body.nil? # rubocop:disable Performance/RedundantMerge
+          call_args.merge!(body: body, content_type: content_type) unless body.nil? # rubocop:disable Performance/RedundantMerge
           ret_style = options.get_option(:ret_style, mandatory: true)
           call_args[:query].merge!(query) unless query.nil?
-          unless format.nil?
+          unless accept.nil?
+            # 'json' or 'xml'
+            short_type = accept.split('/').last
             case ret_style
             when :header
-              call_args[:headers] = {'Accept' => "application/#{format}"}
+              call_args[:headers] = {'Accept' => accept}
             when :query
-              call_args[:query][:format] = format
+              call_args[:query][:format] = short_type
             when :path
-              call_args[:subpath] = "#{call_args[:subpath]}.#{format}"
+              call_args[:subpath] = "#{call_args[:subpath]}.#{short_type}"
             else Aspera.error_unexpected_value(ret_style) { 'ret_style' }
             end
           end
@@ -89,7 +92,7 @@ module Aspera
           call_args[:query].merge!(add_query.symbolize_keys) unless add_query.nil?
           data, resp = api_orch.call(**call_args)
           return resp if http
-          result = format.eql?('xml') ? XmlSimple.xml_in(resp.body, {'ForceArray' => xml_arrays}) : data
+          result = accept.eql?(Mime::XML) ? XmlSimple.xml_in(resp.body, xml_opts) : data
           Log.dump(:data, result)
           return result
         end
@@ -99,8 +102,8 @@ module Aspera
         # --- DSL ---
 
         command :health,     description: 'Check Orchestrator API health'
-        command :info,       description: 'Check that Orchestrator responds (ping)', action: ->(**) { Result::SingleObject.new(call_ao('remote_node_ping', format: 'xml', xml_arrays: false)) }
-        command :processes,  description: 'Show Orchestrator background process status', action: ->(**) { Result::ObjectList.new(call_ao('processes_status', format: 'xml')['node'].flat_map { |n| n['process'] }) }
+        command :info,       description: 'Check that Orchestrator responds (ping)', action: ->(**) { Result::SingleObject.new(call_ao('remote_node_ping', accept: Mime::XML, xml_opts: {'ForceArray' => false})) }
+        command :processes,  description: 'Show Orchestrator background process status', action: ->(**) { Result::ObjectList.new(call_ao('processes_status', accept: Mime::XML, xml_opts: {'ForceArray' => %w[node process]})['node'].flat_map { |n| n['process'] }) }
         command :monitors,   description: 'Show Orchestrator monitor snapshot', action: ->(**) { Result::SingleObject.new(call_ao('monitor_snapshot')['monitor']) }
         command :workorders, description: 'Manage work orders'
         command :workstep,   description: 'Manage work steps'
@@ -129,18 +132,17 @@ module Aspera
               {name: :parameters, type: Hash, mandatory: false, default: {}, schema: 'opts:components.schemas.OrchestratorInitiateParameters'},
               {name: :execution, type: Hash, mandatory: false, default: {}, schema: 'opts:components.schemas.OrchestratorWorkflowStart'}
             ]
-          command :import,     description: 'Import a workflow',
-            arguments: [{name: :workflow, type: Hash, schema: 'opts:components.schemas.OrchestratorImportWorkflow'}],
-            action: ->(workflow:, **) { Result::SingleObject.new(call_ao('import_workflow', body: workflow.transform_keys(&:to_sym))) }
+          command :import,     description: 'Import a workflow from a file created by `workflows export`',
+            arguments: [{name: :file_path}]
           command :publish,    description: 'Publish a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
-            action: ->(workflow_id:, **) { Result::SingleObject.new(call_ao('publish_workflow', body: {workflow_id: workflow_id.to_i})) }
+            action: ->(workflow_id:, **) { Result::Status.new(call_ao('publish_workflow', body: {id: workflow_id}).eql?(true) ? 'published' : 'not published') }
           command :import_with_constraints, description: 'Import a workflow with constraint resolution',
             arguments: [{name: :payload, type: Hash, schema: 'opts:components.schemas.OrchestratorImportWithConstraints'}],
             action: ->(payload:, **) { Result::SingleObject.new(call_ao('import_with_constraints', body: payload.transform_keys(&:to_sym))) }
           command :export,     description: 'Export a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
-            action: ->(workflow_id:, **) { Result::Text.new(call_ao("export_workflow/#{workflow_id}", format: nil, http: true).body) }
+            action: ->(workflow_id:, **) { Result::Text.new(call_ao("export_workflow/#{workflow_id}", accept: nil, http: true).body) }
           command :workorders, description: 'List work orders of a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
             action: ->(workflow_id:, **) { Result::ObjectList.new(call_ao("work_orders_list/#{workflow_id}")['work_orders']) }
@@ -161,7 +163,7 @@ module Aspera
             action: ->(workorder_id:, **) { Result::SingleObject.new(call_ao("work_order_reset/#{workorder_id}")['work_order']) }
           command :output, description: 'Show output of a work order',
             arguments: [{name: :workorder_id, type: :identifier}],
-            action: ->(workorder_id:, **) { Result::ObjectList.new(call_ao("work_order_output/#{workorder_id}", format: 'xml')['variable']) }
+            action: ->(workorder_id:, **) { Result::ObjectList.new(call_ao("work_order_output/#{workorder_id}", accept: Mime::XML, xml_opts: {'ForceArray' => %w[variable], 'SuppressEmpty' => nil})['variable']) }
         end
 
         commands_under :workstep do
@@ -222,7 +224,7 @@ module Aspera
         def action_health(**)
           nagios = Nagios.new
           begin
-            info = call_ao('remote_node_ping', format: 'xml', xml_arrays: false)
+            info = call_ao('remote_node_ping', accept: Mime::XML, xml_opts: {'ForceArray' => false})
             nagios.add_ok('api', 'accessible')
             nagios.check_product_version('api', 'orchestrator', info['orchestrator-version'])
           rescue StandardError => e
@@ -237,6 +239,16 @@ module Aspera
             call_ao('workflows_list')['workflows']['workflow'],
             fields: %w[id portable_id name published_status published_revision_id latest_revision_id last_modification]
           )
+        end
+
+        # The file is uploaded as a multipart form
+        def action_workflows_import(file_path:, **)
+          file_name = File.basename(file_path)
+          form = [
+            ['import_file', File.binread(file_path), {filename: file_name}],
+            ['import_file_name', file_name]
+          ]
+          Result::SingleObject.new(call_ao('import_workflow', body: form, content_type: Mime::MULTIPART)['workflow'])
         end
 
         # Keys of argument `execution` of `workflows start`

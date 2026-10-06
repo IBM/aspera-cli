@@ -9382,6 +9382,20 @@ ascli orchestrator workflows start 1234 @json:'{"Param":"world !"}' @json:'{"ste
 > [!NOTE]
 > Options `synchronous` and `result` (`--result=<WORK_STEP>:<VARIABLE>`) are deprecated: use `execution` instead.
 
+### Import a workflow
+
+Command `workflows export` displays a workflow in Orchestrator's export format (YAML).
+Command `workflows import` creates a new workflow from such a file, and displays it, including its new `id`.
+The imported workflow is a draft: publish it with `workflows publish` before starting it.
+
+Example: Copy workflow `1234` to another Orchestrator, where the imported workflow gets `id` `5678`:
+
+```shell
+ascli orchestrator workflows export 1234 --out.file=my_workflow.yml
+ascli orchestrator workflows import my_workflow.yml --preset=other_orchestrator --out.fields=id
+ascli orchestrator workflows publish 5678 --preset=other_orchestrator
+```
+
 ### Tested commands for `orchestrator`
 
 > [!NOTE]

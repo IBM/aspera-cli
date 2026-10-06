@@ -315,5 +315,22 @@ RSpec.describe(Aspera::Rest) do
         expect { Aspera::Rest::Client.new(base_url: @url).read('echo') }.to(raise_error(Errno::ECONNRESET))
       end
     end
+
+    describe 'multipart' do
+      it 'sends fields and file parts' do
+        url = start_server('/upload' => lambda do |req, res|
+          res['Content-Type'] = 'application/json'
+          res.body = JSON.generate({
+            'type'     => req.content_type.split(';').first,
+            'file'     => req.query['file'].to_s,
+            'filename' => req.query['file'].filename,
+            'name'     => req.query['name'].to_s
+          })
+        end)
+        form = [['file', "a: 1\n", {filename: 'a.yml'}], ['name', 'a.yml']]
+        expect(Aspera::Rest::Client.new(base_url: url).create('upload', form, content_type: Aspera::Mime::MULTIPART))
+          .to(eq({'type' => 'multipart/form-data', 'file' => "a: 1\n", 'filename' => 'a.yml', 'name' => 'a.yml'}))
+      end
+    end
   end
 end

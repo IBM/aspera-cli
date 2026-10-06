@@ -96,4 +96,37 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
       expect { orchestrator.api_orch }.to(raise_error(Aspera::Cli::BadArgument, /basic auth style cannot be used with apikey/))
     end
   end
+
+  describe '#call_ao' do
+    it 'parses an XML response with the given XmlSimple options' do
+      xml = '<?xml version="1.0"?><work_order_output>' \
+        '<variable id="1"><value_type>string</value_type><value>x</value></variable>' \
+        '<variable id="2"><value_type>string</value_type><value></value></variable>' \
+        '</work_order_output>'
+      api = instance_double(Aspera::Rest::Client, call: [nil, instance_double(Net::HTTPResponse, body: xml)])
+      allow(orchestrator).to(receive(:api_orch).and_return(api))
+      result = orchestrator.send(:call_ao, 'work_order_output/1', accept: Aspera::Mime::XML, xml_opts: {'ForceArray' => %w[variable], 'SuppressEmpty' => nil})
+      expect(result['variable']).to(eq([
+        {'id' => '1', 'value_type' => 'string', 'value' => 'x'},
+        {'id' => '2', 'value_type' => 'string', 'value' => nil}
+      ]))
+    end
+  end
+
+  describe '#action_workflows_import' do
+    it 'uploads the file as a multipart form' do
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'wf.yml')
+        File.write(path, "---\n")
+        allow(orchestrator).to(receive(:call_ao).and_return({'workflow' => {'id' => 1}}))
+        result = orchestrator.action_workflows_import(file_path: path)
+        expect(orchestrator).to(have_received(:call_ao).with(
+          'import_workflow',
+          body:         [['import_file', "---\n", {filename: 'wf.yml'}], ['import_file_name', 'wf.yml']],
+          content_type: Aspera::Mime::MULTIPART
+        ))
+        expect(result.data).to(eq({'id' => 1}))
+      end
+    end
+  end
 end

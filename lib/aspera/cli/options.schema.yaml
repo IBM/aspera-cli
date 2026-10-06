@@ -713,23 +713,6 @@ components:
         Valid keys are defined by the workflow's input specification.
         Use `orchestrator workflows inputs WORKFLOW_ID` to discover required parameters.
       additionalProperties: true
-    OrchestratorImportWorkflow:
-      type: object
-      description: Workflow definition to import into Orchestrator.
-      required:
-        - name
-      properties:
-        name:
-          type: string
-          description: Workflow name.
-          example: My Workflow
-        description:
-          type: string
-          description: Workflow description.
-          example: This is a sample workflow
-        workflow_data:
-          type: object
-          description: Complete workflow definition.
     OrchestratorImportWithConstraints:
       type: object
       description: Workflow definition to import with constraint resolution mappings.

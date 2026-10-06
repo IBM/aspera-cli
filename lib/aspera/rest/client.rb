@@ -125,7 +125,7 @@ module Aspera
       # @param subpath      [String] subpath of REST API
       # @param query        [Hash{String,Symbol => Object}] URL parameters
       # @param content_type [String, nil] Type of body parameters (one of MIME_*) and serialization, else use headers
-      # @param body         [Hash, String, nil] Body parameters
+      # @param body         [Hash, Array, String, nil] Body parameters (see `build_request`)
       # @param headers      [Hash{String => String}] Additional headers (override Content-Type)
       # @param save_to      [String, Pathname, IO, nil] File path or IO object to save response body; progress bar is used when set
       # @param exception    [Boolean] Whether to raise an exception on HTTP error
@@ -338,8 +338,9 @@ module Aspera
       # @param operation    [String]                  HTTP operation (GET, POST, ...)
       # @param subpath      [String]                  Subpath of REST API
       # @param query        [Hash, String, Array, nil] Query of request
-      # @param content_type [String, nil]             One of Mime::JSON, Mime::WWW, Mime::TEXT, or `nil` for no body
-      # @param body         [Hash, String, nil]       Body of request, serialized according to `content_type`
+      # @param content_type [String, nil]             One of Mime::JSON, Mime::WWW, Mime::TEXT, Mime::MULTIPART, or `nil` for no body
+      # @param body         [Hash, Array, String, nil] Body of request, serialized according to `content_type`
+      #   For Mime::MULTIPART: Hash `name => value`, or Array of `[name, value, opts]` with opts `filename`, `content_type` for a file part
       # @param headers      [Hash]                    Headers of request
       # @return [Net::HTTPRequest] The request
       def build_request(operation, subpath, query, content_type, body, headers)
@@ -365,6 +366,9 @@ module Aspera
         when Mime::TEXT
           req.body = body
           req['Content-Type'] = Mime::TEXT
+        when Mime::MULTIPART
+          # values are kept in the request: re-sent on retry
+          req.set_form(body.to_a, Mime::MULTIPART)
         else Aspera.error_unexpected_value(content_type) { 'body type' }
         end
         # set headers

@@ -9,6 +9,10 @@ module Aspera
     WWW = 'application/x-www-form-urlencoded'
     # Plain text body
     TEXT = 'text/plain'
+    # XML body
+    XML = 'application/xml'
+    # Multipart form body (file upload)
+    MULTIPART = 'multipart/form-data'
     # JSON:API body (https://jsonapi.org)
     JSON_API = 'application/vnd.api+json'
     # Check if a media type is JSON: `application/json` or structured syntax suffix `+json` (RFC 6839)

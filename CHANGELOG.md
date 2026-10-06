@@ -10,8 +10,13 @@ Released: [Place date of release here]
 
 * **global**: Removed gem dependency on `blankslate` (JSON-RPC client of agent `desktop`).
 * `mcp`: REST error messages were repeated once more at each tool call of the session: error handlers are now registered on load.
+* `orchestrator`: `workflows import` uploads the workflow file as a multipart form, as expected by Orchestrator, and displays the imported workflow.
+* `orchestrator`: `workflows publish` sends the workflow `id` expected by Orchestrator (also accepts the portable ID), and displays `published`.
 
 ### Breaking Changes
+
+* `orchestrator`: `workflows import` takes the path of a file created by `workflows export`, instead of a `Hash` (rejected by Orchestrator).
+* `orchestrator`: `workorders output` displays fields of variables as plain values instead of single-element arrays (e.g. `"value":"x"` instead of `"value":["x"]`), and an empty value as `null`.
 
 ## 4.27.5
 
