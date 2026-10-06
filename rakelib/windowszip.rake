@@ -89,7 +89,7 @@ namespace :windowszip do
     log.info('Getting gem dependencies')
     get_dependency_gems(package_gem_location(gem_version_build), path_resources_dir)
 
-    sdk_version, install_ruby_version = package_versions(path_resources_dir / "#{Aspera::Cli::Info::GEM_NAME}-#{gem_version_build}.gem", gem_version_build)
+    sdk_version, _, install_ruby_version = package_versions(path_resources_dir / "#{Aspera::Cli::Info::GEM_NAME}-#{gem_version_build}.gem", gem_version_build)
     ruby_installer_exe = "rubyinstaller-devkit-#{install_ruby_version}-x64.exe"
     sdk_file = download_sdk_archive(sdk_version, SDK_PLATFORM, path_resources_dir).basename.to_s
 
@@ -127,7 +127,7 @@ namespace :windowszip do
 
     log.info('Getting gem dependencies')
     get_dependency_gems(package_gem_location(gem_version_build), path_download_dir)
-    sdk_version, ruby_version = package_versions(path_download_dir / "#{Aspera::Cli::Info::GEM_NAME}-#{gem_version_build}.gem", gem_version_build)
+    sdk_version, _, ruby_version = package_versions(path_download_dir / "#{Aspera::Cli::Info::GEM_NAME}-#{gem_version_build}.gem", gem_version_build)
 
     log.info("Getting Ruby #{ruby_version}")
     ruby_archive_base = "rubyinstaller-#{ruby_version}-x64"

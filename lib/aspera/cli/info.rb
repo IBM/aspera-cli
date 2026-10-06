@@ -17,9 +17,12 @@ module Aspera
       RUBY_FUTURE_MINIMUM_VERSION = '3.2'
       # Version with which this version of CLI was tested
       SDK_VERSION = '1.1.9'
-      # RubyInstaller version packaged in the Windows installer zip (release tag without `RubyInstaller-` prefix)
+      # Ruby version with which this version of CLI was tested, packaged in container image and portable packages
+      RUBY_TESTED_VERSION = '4.0.7'
+      # Suffix of the RubyInstaller release of `RUBY_TESTED_VERSION`, packaged in the Windows zip
+      # (release tag: `RubyInstaller-<Ruby version><suffix>`)
       # https://github.com/oneclick/rubyinstaller2/releases
-      WINDOWS_RUBY_INSTALLER_VERSION = '4.0.7-1'
+      WINDOWS_RUBY_INSTALLER_EXT = '-1'
     end
   end
 end

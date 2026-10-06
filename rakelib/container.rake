@@ -48,8 +48,9 @@ namespace :container do
     docker_file = TMP / 'Dockerfile'
     docker_file.write(process_template(
       Paths::DOCKERFILE_TEMPLATE,
-      arg_gem: arg_gem,
-      arg_opt: optional_gems
+      arg_gem:  arg_gem,
+      arg_opt:  optional_gems,
+      arg_ruby: Aspera::Cli::Info::RUBY_TESTED_VERSION
     ))
     run(CONTAINER_TOOL, 'build', '--squash', '--tag', tag(gem_version), '--tag', tag(:latest), '--file', docker_file, docker_context)
   end

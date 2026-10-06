@@ -106,16 +106,23 @@ module BuildTools
   # Versions of SDK and Ruby tested with the packaged gem version
   # @param gem_file    [Pathname] Path to aspera-cli .gem file
   # @param gem_version [String]   Version of gem
-  # @return [Array(String, String)] SDK version, RubyInstaller version (e.g. `4.0.7-1`)
+  # @return [Array(String, String, String)] SDK version, Ruby version (e.g. `4.0.7`), RubyInstaller version (e.g. `4.0.7-1`)
   def package_versions(gem_file, gem_version)
     info_rb = gem_file_content(gem_file, 'lib/aspera/cli/info.rb')
     sdk_version = info_rb[/SDK_VERSION = '([^']+)'/, 1] || raise("SDK_VERSION not found in gem #{gem_version}")
-    ruby_version = info_rb[/WINDOWS_RUBY_INSTALLER_VERSION = '([^']+)'/, 1]
+    ruby_version = info_rb[/RUBY_TESTED_VERSION = '([^']+)'/, 1]
+    installer_ext = info_rb[/WINDOWS_RUBY_INSTALLER_EXT = '([^']+)'/, 1]
     if ruby_version.nil?
-      ruby_version = Aspera::Cli::Info::WINDOWS_RUBY_INSTALLER_VERSION
-      log.warn("WINDOWS_RUBY_INSTALLER_VERSION not found in gem #{gem_version}, using current: #{ruby_version}")
+      # Gems 4.27.x: RubyInstaller version only, e.g. `4.0.7-1`
+      installer_version = info_rb[/WINDOWS_RUBY_INSTALLER_VERSION = '([^']+)'/, 1]
+      ruby_version, installer_ext = installer_version&.match(/\A(.+)(-\d+)\z/)&.captures
     end
-    return sdk_version, ruby_version
+    if ruby_version.nil?
+      ruby_version = Aspera::Cli::Info::RUBY_TESTED_VERSION
+      installer_ext = Aspera::Cli::Info::WINDOWS_RUBY_INSTALLER_EXT
+      log.warn("Ruby version not found in gem #{gem_version}, using current: #{ruby_version}")
+    end
+    return sdk_version, ruby_version, "#{ruby_version}#{installer_ext}"
   end
 
   # Download the Transfer SDK archive

@@ -3,10 +3,9 @@
 # Processing is done in Makefile to avoid syntax error in Dockerfile
 # @param arg_gem specify a gemfile or a gem version
 # @param arg_opt specify list of optional gems
-# Review the version of Ruby to be used periodically from :
-# https://hub.docker.com/_/ruby
+# @param arg_ruby specify the version of Ruby, i.e. tag of image https://hub.docker.com/_/ruby
 # "-slim" image not used because rmagick requires native compilation
-FROM docker.io/ruby:4.0.6
+FROM docker.io/ruby:<%=arg_ruby%>
 #erb: if arg_gem.end_with?('.gem')
 # For beta, gem is file, then copy it.
 COPY <%=arg_gem%> .

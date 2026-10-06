@@ -79,9 +79,7 @@ namespace :linuxtgz do
     log.info("Building in #{path_build_dir}")
 
     gem_file = package_gem_file(gem_version_build, path_download_dir)
-    sdk_version, ruby_installer_version = package_versions(gem_file, gem_version_build)
-    # Same Ruby version as the Windows package: RubyInstaller version without its package number
-    ruby_version = ruby_installer_version.sub(/-\d+\z/, '')
+    sdk_version, ruby_version = package_versions(gem_file, gem_version_build)
 
     log.info("Building Ruby #{ruby_version}")
     ruby_source = download_file("#{RUBY_SOURCE_BASE_URL}/#{ruby_version[/\A\d+\.\d+/]}/ruby-#{ruby_version}.tar.gz", path_download_dir / "ruby-#{ruby_version}.tar.gz")

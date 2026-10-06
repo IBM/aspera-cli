@@ -44,8 +44,12 @@ Files in folder `portable` (launcher `ascli.cmd`, `add_to_path.cmd`, `README.md`
 
 ## Ruby version
 
-The version of Ruby packaged in the zip is the one specified by `WINDOWS_RUBY_INSTALLER_VERSION` in `Aspera::Cli::Info` of the packaged gem version (if not present, the one of the current folder is used).
-Review it periodically from the [RubyInstaller releases](https://github.com/oneclick/rubyinstaller2/releases): value is the release tag without the `RubyInstaller-` prefix, e.g. `4.0.7-1`.
+The version of Ruby packaged in the zip is specified in `Aspera::Cli::Info` of the packaged gem version (if not present, the one of the current folder is used):
+
+- `RUBY_TESTED_VERSION`: Ruby version, e.g. `4.0.7`, same for all packages
+- `WINDOWS_RUBY_INSTALLER_EXT`: suffix of the RubyInstaller release, e.g. `-1`
+
+Review them periodically from the [RubyInstaller releases](https://github.com/oneclick/rubyinstaller2/releases): the release tag is `RubyInstaller-<Ruby version><suffix>`, e.g. `RubyInstaller-4.0.7-1`.
 
 ## Aspera SDK version
 
