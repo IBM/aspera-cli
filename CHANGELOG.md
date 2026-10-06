@@ -9,6 +9,7 @@ Released: [Place date of release here]
 ### Issues Fixed
 
 * **global**: Removed gem dependency on `blankslate` (JSON-RPC client of agent `desktop`).
+* `mcp`: REST error messages were repeated once more at each tool call of the session: error handlers are now registered on load.
 
 ### Breaking Changes
 

@@ -174,7 +174,6 @@ module Aspera
         OAuth::Web.additional_info = "#{Info::CMD_NAME} v#{Cli::VERSION}"
         Transfer::Parameters.file_list_folder = File.join(@context.main_folder, FILE_LIST_FOLDER_NAME)
         Rest::ErrorAnalyzer.instance.log_file = File.join(@context.main_folder, REST_EXCEPTIONS_LOG_FILENAME)
-        Rest::AsperaErrors.register_handlers
       end
 
       # @return [String] ~/.aspera

@@ -521,7 +521,7 @@ Transfer outcomes are typed ([`transfer/result.rb`](../lib/aspera/transfer/resul
 | [`util.rb`](../lib/aspera/rest/util.rb) | `Rest.build_uri`, `Rest.php_style`, `Rest.query_to_h`, `Rest.parse_header`, `Rest.basic_authorization`, `Rest.start_http_session`, … |
 | [`call_error.rb`](../lib/aspera/rest/call_error.rb) | `Rest::CallError`: raised on HTTP call errors |
 | [`error_analyzer.rb`](../lib/aspera/rest/error_analyzer.rb) | `Rest::ErrorAnalyzer`: extracts error messages from responses (singleton) |
-| [`aspera_errors.rb`](../lib/aspera/rest/aspera_errors.rb) | `Rest::AsperaErrors`: error handlers for Aspera APIs |
+| [`aspera_errors.rb`](../lib/aspera/rest/aspera_errors.rb) | Error handlers for Aspera APIs, registered on require |
 | [`list.rb`](../lib/aspera/rest/list.rb) | `Rest::List`: paginated listing and lookup, included in API clients |
 
 `Rest::Client` is a custom HTTP client implementation providing:

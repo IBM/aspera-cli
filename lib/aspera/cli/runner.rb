@@ -6,6 +6,7 @@ require 'aspera/cli/parser'
 require 'aspera/cli/formatter'
 require 'aspera/cli/plugins/factory'
 require 'aspera/cli/bootstrapper'
+require 'aspera/rest/aspera_errors' # registers error handlers of Aspera REST APIs
 require 'aspera/cli/plugins/config'
 require 'aspera/cli/mailer'
 require 'aspera/cli/secret_finder'
