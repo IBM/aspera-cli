@@ -76,12 +76,17 @@ module Aspera
           expect(http.ignore_cert?('b.example.com', 8443)).to(be(false))
         end
 
-        it 'replaces previous URLs, and accepts nil' do
+        it 'accepts a single URL' do
+          http = build_http(['--ignore-certificate=https://a.example.com:8443', '--warn-insecure=no'])
+          expect(http.ignore_cert?('a.example.com', 8443)).to(be(true))
+        end
+
+        it 'replaces previous URLs, and accepts empty list' do
           http = described_class.new
           http.ignore_cert_host_port = ['https://a.example.com']
           http.ignore_cert_host_port = ['https://b.example.com']
           expect(http.ignore_cert_host_port).to(eq([['b.example.com', 443]]))
-          http.ignore_cert_host_port = nil
+          http.ignore_cert_host_port = []
           expect(http.ignore_cert_host_port).to(eq([]))
         end
 

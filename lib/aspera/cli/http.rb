@@ -28,7 +28,7 @@ module Aspera
 
       # `on_set` callbacks are methods of the instance given as `target:` to `declare_options`
       option :insecure,           description: 'HTTP/S: Do not validate any certificate',                   allowed: Type::BOOLEAN, default: false, on_set: :insecure=
-      option :ignore_certificate, description: 'HTTP/S: Do not validate certificate for these URLs',        allowed: [Array, NilClass],             on_set: :ignore_cert_host_port=
+      option :ignore_certificate, description: 'HTTP/S: Do not validate certificate for these URLs',        allowed: Type::STRING_ARRAY,            on_set: :ignore_cert_host_port=
       option :warn_insecure,      description: 'HTTP/S: Issue a warning if certificate is ignored',         allowed: Type::BOOLEAN, default: true,  on_set: :warn_insecure=
       option :cert_stores,        description: 'HTTP/S: List of folder with trusted certificates',          allowed: Type::STRING_ARRAY,            on_set: :trusted_cert_locations=
       option :http_options,       schema: Schema::Registry::HTTP_OPTIONS,                                                                           on_set: :http_options=
@@ -87,9 +87,10 @@ module Aspera
       # Per-URL certificate ignore list
       # ------------------------------------------------------------------
 
-      # @param url_list [Array<String>, nil] URLs for which certificate is not validated
+      # @param url_list [Array<String>] URLs for which certificate is not validated
       def ignore_cert_host_port=(url_list)
-        @ignore_cert_host_port = (url_list || []).map do |url|
+        Aspera.assert_type(url_list, Array) { 'ignore certificate URLs' }
+        @ignore_cert_host_port = url_list.map do |url|
           uri = URI.parse(url)
           Aspera.assert(uri.scheme.eql?('https')) { "Expecting https scheme: #{url}" }
           [uri.host, uri.port].freeze
