@@ -40,10 +40,8 @@ info:
     - Queue & Task management
     - Plugin and resource management
 servers:
-- url: https://159.8.70.244/aspera/orchestrator
-  description: 'Configured host: 159.8.70.244'
-- url: https://fsff/aspera/orchestrator
-  description: 'Configured host: fsff'
+- url: https://158.176.9.141/aspera/orchestrator
+  description: 'Configured host: 158.176.9.141'
 - url: https://orchestrator.aspera-emea.com/aspera/orchestrator
   description: 'Configured host: orchestrator.aspera-emea.com'
 paths:
@@ -287,38 +285,43 @@ paths:
       requestBody:
         required: true
         content:
-          application/xml:
-            schema:
-              type: string
-              description: Workflow definition in XML format
-              example: |
-                <?xml version="1.0"?>
-                <workflow>
-                  <name>My Workflow</name>
-                  <description>Workflow description</description>
-                </workflow>
-          application/json:
+          multipart/form-data:
             schema:
               type: object
               required:
-              - name
+              - import_file
+              - import_file_name
               properties:
-                name:
+                import_file:
                   type: string
-                  description: Workflow name
-                  example: My Workflow
-                description:
+                  format: binary
+                  description: The workflow file to import (.wkf or .yml)
+                import_file_name:
                   type: string
-                  description: Workflow description
-                  example: This is a sample workflow
-                workflow_data:
-                  type: object
-                  description: Complete workflow definition
+                  description: File name including extension (.wkf or .yml)
+                  example: my_workflow.wkf
+                folder_id:
+                  type: integer
+                  description: Optional folder ID to import into
+                link_to_subworkflows:
+                  type: boolean
+                  description: Link to existing sub-workflows instead of importing them
+                  default: false
+                publish_workflow:
+                  type: boolean
+                  description: Publish the workflow after import
+                  default: false
+                format:
+                  type: string
+                  enum:
+                  - xml
+                  - json
+                  default: xml
       responses:
         '200':
           description: Workflow imported successfully
         '400':
-          description: Invalid workflow data
+          description: Invalid workflow data or missing parameters
         '401':
           "$ref": "#/components/responses/UnauthorizedError"
   "/api/find_constraints":
@@ -377,19 +380,23 @@ paths:
       - Workflows
       security:
       - bearerAuth: []
-      requestBody:
+      parameters:
+      - name: id
+        in: query
         required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-              - workflow_id
-              properties:
-                workflow_id:
-                  type: integer
-                  description: ID of the workflow to publish
-                  example: 123
+        schema:
+          type: string
+        description: Workflow ID or portable ID
+        example: '123'
+      - name: format
+        in: query
+        schema:
+          type: string
+          enum:
+          - xml
+          - json
+          default: xml
+        description: Response format
       responses:
         '200':
           description: Workflow published successfully
@@ -463,16 +470,22 @@ paths:
                       example: 75
         '401':
           "$ref": "#/components/responses/UnauthorizedError"
-  "/api/work_order_status":
+  "/api/work_order_status/{id}":
     get:
       summary: Get work order status
+      description: |
+        Returns the status of a work order and its work steps.
+
+        If the work order includes sub-workflows, only the sub-workflow status is displayed, not the steps within the sub-workflow.
+
+        **Response format:** defaults to XML. To receive JSON, use the `.json` extension (e.g. `/api/work_order_status/123.json`) or append `?format=json`.
       tags:
       - Work Orders
       security:
       - bearerAuth: []
       parameters:
       - name: id
-        in: query
+        in: path
         required: true
         schema:
           type: integer
@@ -484,7 +497,8 @@ paths:
           enum:
           - xml
           - json
-          default: json
+          default: xml
+        description: Response format. Defaults to xml.
       responses:
         '200':
           description: Work order status
@@ -578,8 +592,22 @@ paths:
       description: |
         Starts a new work order for the specified workflow.
 
-        **Important:** The `parameters` object should contain workflow-specific input values.
+        Runtime input values must be passed under the `external_parameters` key.
         To discover what parameters a workflow accepts, call `/api/workflow_inputs_spec?id={workflow_id}` first.
+
+        **Response format:** defaults to XML. To receive JSON, append `?format=json` to the URL or use the `.json` extension (e.g. `/api/initiate.json`).
+
+        Error responses follow the same format as success responses (XML or JSON depending on the requested format).
+      parameters:
+      - name: format
+        in: query
+        schema:
+          type: string
+          enum:
+          - xml
+          - json
+          default: xml
+        description: Response format. Defaults to xml. Can also be set via URL extension (e.g. /api/initiate.json).
       tags:
       - Work Orders
       security:
@@ -597,7 +625,7 @@ paths:
                   type: integer
                   description: ID of the workflow to execute
                   example: 123
-                parameters:
+                external_parameters:
                   type: object
                   description: |
                     Input parameters for the workflow (key-value pairs).
@@ -1289,40 +1317,88 @@ paths:
           description: Remote node not found
   "/api/test_step":
     get:
-      summary: Test a workflow step
+      summary: Launch test cases for a workflow step
+      description: |
+        Launches test cases against a workflow and returns a **Test_run_id** UUID.
+        Pass that UUID to `/api/test_step_status` to poll for results.
       tags:
       - Testing
       security:
       - bearerAuth: []
       parameters:
-      - name: step_id
+      - name: id
         in: query
         required: true
         schema:
-          type: integer
+          type: string
+        description: Workflow ID or portable ID to test
+        example: my_workflow
+      - name: step
+        in: query
+        schema:
+          type: string
+        description: Comma-separated step name(s) to test. Omit to test all steps.
+        example: Get file size
+      - name: case
+        in: query
+        schema:
+          type: string
+        description: Test case name to run. Omit to run all cases for the step.
+        example: File doesnt exist
+      - name: synchronous
+        in: query
+        schema:
+          type: boolean
+          default: false
+        description: Wait for all test cases to complete before returning
+      - name: format
+        in: query
+        schema:
+          type: string
+          enum:
+          - xml
+          - json
+          default: xml
+        description: Response format
       responses:
         '200':
-          description: Test initiated
+          description: Test run launched. Response contains `Test_run_id` UUID to use with `/api/test_step_status`.
         '401':
           "$ref": "#/components/responses/UnauthorizedError"
   "/api/test_step_status":
     get:
       summary: Get test step status
+      description: |
+        Poll the status of a test run previously launched by `/api/test_step`.
+        The `id` parameter must be the **Test_run_id UUID** returned by that call â€” not a numeric workflow or step ID.
       tags:
       - Testing
       security:
       - bearerAuth: []
       parameters:
-      - name: test_id
+      - name: id
         in: query
         required: true
         schema:
-          type: integer
+          type: string
+        description: Test run UUID returned by /api/test_step (e.g. 935e0080-97f5-0135-26f8-34363bc6aedc)
+        example: 935e0080-97f5-0135-26f8-34363bc6aedc
+      - name: format
+        in: query
+        schema:
+          type: string
+          enum:
+          - xml
+          - json
+          default: xml
+        description: Response format
       responses:
         '200':
           description: Test status
         '401':
           "$ref": "#/components/responses/UnauthorizedError"
+        '404':
+          description: No test run found for the given UUID
   "/api/work_order_stats":
     get:
       summary: Get work order statistics
