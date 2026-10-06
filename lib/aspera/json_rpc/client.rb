@@ -3,11 +3,13 @@
 # cspell:ignore blankslate jsonrpc
 
 require 'aspera/rest/error_analyzer'
+require 'aspera/rest/call_error'
 require 'aspera/assert'
 require 'aspera/json_rpc/version'
 require 'blankslate'
 
-Aspera::Rest::ErrorAnalyzer.instance.add_simple_handler(name: 'JSON RPC', path: %w[error message], always: true)
+# Error in non-2XX response. Error in 2XX response is raised by the client.
+Aspera::Rest::ErrorAnalyzer.instance.add_simple_handler(name: 'JSON RPC', path: %w[error message])
 
 module Aspera
   module JsonRpc
@@ -36,26 +38,26 @@ module Aspera
       end
 
       # Dispatch any Ruby method call as a JSON-RPC request
+      # @return [Object] `result` of response
+      # @raise [Rest::CallError] on JSON-RPC error, or invalid response
       def method_missing(method, *args, &block)
         args = args.first if args.size == 1 && args.first.is_a?(Hash)
+        id = @request_id += 1
         data = @api.create('', {
           jsonrpc: VERSION,
           method:  "#{@namespace}#{method}",
           params:  args,
-          id:      @request_id += 1
+          id:      id
         })
-        Aspera.assert_type(data, Hash) { 'response' }
-        Aspera.assert(data['jsonrpc'] == VERSION, 'bad version in response')
-        Aspera.assert(data.key?('id'), 'missing id in response')
-        Aspera.assert(!(data.key?('error') && data.key?('result')), 'both error and response')
-        Aspera.assert(
-          !data.key?('error') ||
-          data['error'].is_a?(Hash) &&
-          data['error']['code'].is_a?(Integer) &&
-          data['error']['message'].is_a?(String),
-          'bad error response'
-        )
-        return data['result']
+        Aspera.assert_type(data, Hash, type: Rest::CallError) { 'JSON-RPC response' }
+        Aspera.assert(data['jsonrpc'] == VERSION, type: Rest::CallError) { "JSON-RPC: bad version in response: #{data['jsonrpc']}" }
+        Aspera.assert(data.key?('result') ^ data.key?('error'), type: Rest::CallError) { 'JSON-RPC: response must have either result or error' }
+        # id is null if server could not read it from request
+        Aspera.assert(data['id'] == id || (data.key?('error') && data['id'].nil?), type: Rest::CallError) { "JSON-RPC: bad id in response: #{data['id']}, expected #{id}" }
+        return data['result'] if data.key?('result')
+        error = data['error']
+        Aspera.assert(error.is_a?(Hash) && error['code'].is_a?(Integer) && error['message'].is_a?(String), type: Rest::CallError) { "JSON-RPC: bad error in response: #{error}" }
+        raise Rest::CallError, "#{error['message']} (code: #{error['code']})"
       end
     end
   end
