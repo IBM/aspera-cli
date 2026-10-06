@@ -51,24 +51,25 @@ module Aspera
       end
 
       # Loads YAML from cloud with locations of SDK archives for all platforms
-      # Tries each URL in `@transferd_urls` in order, falling back on network errors.
-      # @return [Hash] location structure
+      # Tries each URL of option `locations_url` (default if empty) in order, until one provides a valid list.
+      # All but the last URL are read with a short timeout and no retry, so that fallback is quick.
+      # @return [Array<Hash>] location structure
       def sdk_locations
-        urls = Array(@transferd_urls)
-        last_error = nil
-        urls.each do |location_url|
+        Aspera.assert_type(@transferd_urls, Array) { 'locations_url' }
+        location_urls = @transferd_urls.empty? ? TRANSFERD_ARCHIVE_LOCATION_URLS : @transferd_urls
+        location_urls.each_with_index do |location_url, index|
+          last = index.eql?(location_urls.length - 1)
           Log.log.debug { "Retrieving SDK locations from #{location_url}" }
           begin
-            transferd_locations = UriReader.read(location_url)
-            return Yaml.safe_load(transferd_locations)
-          rescue Psych::SyntaxError
-            raise "Error when parsing yaml data from: #{location_url}"
-          rescue => e
-            last_error = e
-            Log.log.warn("Failed to retrieve SDK locations from #{location_url}: #{e.message}, trying next...")
+            transferd_locations = last ? UriReader.read(location_url) : read_fail_fast(location_url)
+            locations = Yaml.safe_load(transferd_locations)
+            Aspera.assert_type(locations, Array) { "SDK locations from #{location_url}" }
+            return locations
+          rescue StandardError => e
+            raise if last
+            Log.log.warn { "Failed to retrieve SDK locations from #{location_url}: #{e.message}, trying next" }
           end
         end
-        raise last_error || 'No SDK location URL configured'
       end
 
       # Set `ascp` executable "location" (option `sdk_folder`)
@@ -423,6 +424,7 @@ module Aspera
         return sdk_name, sdk_version, folder
       end
 
+      # @return [Array<String>] URLs of SDK locations, tried in order
       attr_accessor :transferd_urls
 
       private
@@ -447,17 +449,39 @@ module Aspera
         'https://ibm.biz/sdk_location',
         'https://raw.githubusercontent.com/IBM/aspera-cli/refs/heads/main/docs/sdk_location.yaml'
       ].freeze
+      # Timeout in seconds when another location URL remains to be tried
+      LOCATION_FAIL_FAST_TIMEOUT = 10
       # filename for ascp with optional extension (Windows)
-      private_constant :DEFAULT_ASPERA_CONF, :EXE_FILES, :SDK_FILES, :TRANSFERD_ARCHIVE_LOCATION_URLS
+      private_constant :DEFAULT_ASPERA_CONF, :EXE_FILES, :SDK_FILES, :TRANSFERD_ARCHIVE_LOCATION_URLS, :LOCATION_FAIL_FAST_TIMEOUT
 
       def initialize
         # cache for installed products found
         @found_products = nil
+        # URLs of SDK locations, tried in order
         @transferd_urls = TRANSFERD_ARCHIVE_LOCATION_URLS
         # product selected with option `sdk_folder`, or nil to use SDK folder
         @ascp_product = nil
         # cache for folder of `ascp` of selected product
         @ascp_folder = nil
+      end
+
+      # Read URL with a short timeout and no retry (temporarily changes global HTTP parameters)
+      # @param url [String] URL to read
+      # @return [String] content
+      def read_fail_fast(url)
+        parameters = Rest::Parameters.instance
+        session_cb = parameters.session_cb
+        retry_max = parameters.retry_max
+        parameters.retry_max = 0
+        parameters.session_cb = lambda do |http_session|
+          session_cb&.call(http_session)
+          http_session.open_timeout = [http_session.open_timeout, LOCATION_FAIL_FAST_TIMEOUT].compact.min
+          http_session.read_timeout = [http_session.read_timeout, LOCATION_FAIL_FAST_TIMEOUT].compact.min
+        end
+        UriReader.read(url)
+      ensure
+        parameters.session_cb = session_cb
+        parameters.retry_max = retry_max
       end
 
       # @param file_type [Symbol] one of EXE_FILES

@@ -809,7 +809,9 @@ The installation of the transfer binaries follows those steps:
 
 - **Select the SDK package to use**. Check the `sdk_url` option:
   - If the value is **not** the default value (`DEF`), it directly specifies the archive URL to download.
-  - If the value is `DEF`, <%=tool%> downloads the YAML file from the URL specified by the `locations_url` option (default: <https://ibm.biz/sdk_location>).
+  - If the value is `DEF`, <%=tool%> downloads the YAML file from the URLs specified by the `locations_url` option.
+    - URLs are tried in order until one succeeds. All but the last are tried with a short timeout and no retry.
+      By default: <https://ibm.biz/sdk_location>, then its target on GitHub.
     - This YAML file lists supported architectures (OS, CPU) and Aspera Transfer Daemon versions with their associated package URLs.
     - The SDK version is selected as follows: if an additional **positional parameter** is provided it specifies the version; if the special value `LATEST` is given the latest available version is used; otherwise the version tested with this release of <%=tool%> is used.
     - The package URL matching the current system architecture is then used.
@@ -820,7 +822,7 @@ The installation of the transfer binaries follows those steps:
 | Option          | Default | Description                                            |
 |-----------------|---------|--------------------------------------------------------|
 | `sdk_url`       | `DEF`   | URL to download the Aspera Transfer Daemon archive.<%=br%>`DEF` means: select from available archives. |
-| `locations_url` | `https://ibm.biz/sdk_location` | URL to get download URLs of Aspera Transfer Daemon from IBM official repository. |
+| `locations_url` | `https://ibm.biz/sdk_location`<%=br%>`https://raw.githubusercontent.com/IBM/aspera-cli/refs/heads/main/docs/sdk_location.yaml` | List of URLs to get download URLs of Aspera Transfer Daemon from IBM official repository, tried in order.<%=br%>A list given in options replaces the default list. |
 | `sdk_folder`    | `$HOME/.aspera/sdk` | Folder where the SDK archive is extracted. |
 
 Transfer Daemon versions available from `locations_url` can be listed with: `<%=cmd%> config transferd list`

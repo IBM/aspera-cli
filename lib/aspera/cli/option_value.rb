@@ -134,7 +134,9 @@ module Aspera
         Aspera.assert_type(new_value, *@types, type: BadArgument) { "Option #{@option}" } if @types
         if merge && (new_value.is_a?(Hash) || new_value.is_a?(Array))
           current_value = @value
-          mergeable = current_value.is_a?(new_value.is_a?(Hash) ? Hash : Array) && !current_value.empty?
+          # An `Array` default value is replaced, not appended to
+          mergeable = current_value.is_a?(new_value.is_a?(Hash) ? Hash : Array) && !current_value.empty? &&
+            !(new_value.is_a?(Array) && [source, @source].include?(:default))
           if lower
             # Current value has priority: merge new value under it, unless explicitly emptied
             return unless mergeable
