@@ -8,6 +8,8 @@ Released: [Place date of release here]
 
 ### Issues Fixed
 
+* **global**: Removed gem dependency on `blankslate` (JSON-RPC client of agent `desktop`).
+
 ### Breaking Changes
 
 ## 4.27.5

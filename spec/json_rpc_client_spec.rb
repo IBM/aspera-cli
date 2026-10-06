@@ -88,6 +88,14 @@ RSpec.describe(Aspera::JsonRpc::Client) do
     end
   end
 
+  it 'does not send implicit conversions as requests' do
+    rpc = client
+    expect([rpc].flatten.first.equal?(rpc)).to(be(true))
+    expect(Array(rpc).first.equal?(rpc)).to(be(true))
+    expect(rpc.to_s).to(match(%r{\A#<Aspera::JsonRpc::Client http://127\.0\.0\.1:\d+>\z}))
+    expect(@state[:requests]).to(be_empty)
+  end
+
   it 'does not raise on error message in 2XX response of other API' do
     reply { {'error' => {'message' => 'not a failure'}} }
     expect(@api.create('', {})).to(eq({'error' => {'message' => 'not a failure'}}))
