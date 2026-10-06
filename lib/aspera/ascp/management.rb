@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/assert'
+require 'aspera/log'
 require 'aspera/string_ext'
 
 module Aspera
@@ -8,16 +9,17 @@ module Aspera
     # processing of ascp management port events
     # Reference: `mgmtmess.c`
     class Management
+      # cspell:ignore asmgmt faspmgmt
       # References:
-      # https://www.google.com/search?q=FASP+error+codes
       # https://www.ibm.com/support/pages/error-code-reference-tables
-      # mgmtmess.c : as_mgmt_err_is_retryable
+      # `asmgmt_err.h` : codes, mnemonics and messages
+      # `mgmtmess.c` : `faspmgmt_err_name_str` (additional info) and `as_mgmt_err_is_retryable`
       # Note that the fact that an error is retry-able is not internally defined by protocol, it's client-side responsibility
       # rubocop:disable-next Layout/FirstHashElementLineBreak
       ERRORS = {
         # id   retry-able    mnemo/code                        message                                              additional info
         0  => {r: false, c: 'UNKNOWN',                     m: 'unknown',                                        a: 'unknown'},
-        1  => {r: false, c: 'FASP_PROTO',                  m: 'Generic fasp(tm) protocol error',                a: 'fasp(tm) error'},
+        1  => {r: false, c: 'FASP_PROTO',                  m: 'Generic fasp(tm) protocol error',                a: 'FASP error'},
         2  => {r: false, c: 'ASCP',                        m: 'Generic SCP error',                              a: 'ASCP error'},
         3  => {r: false, c: 'AMBIGUOUS_TARGET',            m: 'Target incorrectly specified',                   a: 'Ambiguous target'},
         4  => {r: false, c: 'NO_SUCH_FILE',                m: 'No such file or directory',                      a: 'No such file or directory'},
@@ -29,13 +31,13 @@ module Aspera
         10 => {r: false, c: 'LIC_RATE_EXCEEDED',           m: 'Rate exceeds the cap imposed by license',        a: 'Rate exceeds cap imposed by license'},
         11 => {r: false, c: 'INTERNAL_ERROR',              m: 'Internal error (unexpected error)',              a: 'Internal error'},
         12 => {r: true,  c: 'TRANSFER_ERROR',              m: 'Error establishing control connection',
-                                                                a: 'Error establishing SSH connection (check SSH port and firewall)'},
+                                                           a: 'Error establishing SSH connection (check SSH port and firewall)'},
         13 => {r: true,  c: 'TRANSFER_TIMEOUT',            m: 'Timeout establishing control connection',
-                                                                a: 'Timeout establishing SSH connection (check SSH port and firewall)'},
+                                                           a: 'Timeout establishing SSH connection (check SSH port and firewall)'},
         14 => {r: true,  c: 'CONNECTION_ERROR',            m: 'Error establishing data connection',
-                                                                a: 'Error establishing UDP connection (check UDP port and firewall)'},
+                                                           a: 'Error establishing UDP connection (check UDP port and firewall)'},
         15 => {r: true,  c: 'CONNECTION_TIMEOUT',          m: 'Timeout establishing data connection',
-                                                                a: 'Timeout establishing UDP connection (check UDP port and firewall)'},
+                                                           a: 'Timeout establishing UDP connection (check UDP port and firewall)'},
         16 => {r: true,  c: 'CONNECTION_LOST',             m: 'Connection lost',                                a: 'Connection lost'},
         17 => {r: true,  c: 'RCVR_SEND_ERROR',             m: 'Receiver fails to send feedback',                a: 'Network failure (receiver can\'t send feedback)'},
         18 => {r: true,  c: 'RCVR_RECV_ERROR',             m: 'Receiver fails to receive data packets',         a: 'Network failure (receiver can\'t receive UDP data)'},
@@ -67,34 +69,37 @@ module Aspera
         44 => {r: true,  c: 'PMTU_BRTT_ERROR',             m: 'UDP session initiation fatal error',             a: 'UDP session initiation fatal error'},
         45 => {r: true,  c: 'BWMEAS_ERROR',                m: 'Bandwidth measurement fatal error',              a: 'Bandwidth measurement fatal error'},
         46 => {r: false, c: 'VLINK_ERROR',                 m: 'Virtual link error',                             a: 'Virtual link error'},
-        47 => {r: false, c: 'CONNECTION_ERROR_HTTP',       m: 'Error establishing HTTP connection',
-                                                            a: 'Error establishing HTTP connection (check HTTP port and firewall)'},
-        48 => {r: false, c: 'FILE_ENCRYPTION_ERROR',       m: 'File encryption error, e.g. corrupt file',
-                                                            a: 'File encryption/decryption error, e.g. corrupt file'},
-        49 => {r: false, c: 'FILE_DECRYPTION_PASS',        m: 'File encryption/decryption error, e.g. corrupt file', a: 'File decryption error, bad passphrase'},
-        50 => {r: false, c: 'BAD_CONFIGURATION',           m: 'Aspera.conf contains invalid data and was rejected',  a: 'Invalid configuration'},
+        47 => {r: true,  c: 'CONNECTION_ERROR_HTTP',       m: 'Error establishing HTTP connection',
+                                                           a: 'Error establishing HTTP connection (check HTTP port and firewall)'},
+        48 => {r: false, c: 'FILE_ENCRYPTION_ERROR',       m: 'File encryption error, e.g. corrupt file',       a: 'File encryption/decryption error, e.g. corrupt file'},
+        49 => {r: false, c: 'FILE_DECRYPTION_PASS',        m: 'File decryption bad passphrase',                 a: 'File decryption error, bad passphrase'},
+        50 => {r: false, c: 'BAD_CONFIGURATION',           m: 'Aspera.conf contains invalid data and was rejected', a: 'Invalid configuration'},
         51 => {r: false, c: 'INSECURE_CONNECTION',         m: 'Remote-host key check failure',                  a: 'Remote host is not who we expected'},
         52 => {r: false, c: 'START_VALIDATION_FAILED',     m: 'File start validation failed',                   a: 'File start validation failed'},
         53 => {r: false, c: 'STOP_VALIDATION_FAILED',      m: 'File stop validation failed',                    a: 'File stop validation failed'},
         54 => {r: false, c: 'THRESHOLD_VALIDATION_FAILED', m: 'File threshold validation failed',               a: 'File threshold validation failed'},
         55 => {r: false, c: 'FILEPATH_TOO_LONG',           m: 'File path/name too long for underlying file system', a: 'File path exceeds underlying file system limit'},
         56 => {r: false, c: 'ILLEGAL_CHARS_IN_PATH',       m: 'Windows path contains illegal characters',
-                                                                a: 'Path being written to Windows file system contains illegal characters'},
-        57 => {r: false, c: 'CHUNK_MUST_MATCH_ALIGNMENT',  m: 'Chunk size/start must be aligned with storage',  a: 'Chunk size/start must be aligned with storage'},
-        58 => {r: false, c: 'VALIDATION_SESSION_ABORT',    m: 'Session aborted to due to validation error',     a: 'Session aborted to due validation error'},
+                                                           a: 'Path being written to Windows file system contains illegal characters'},
+        57 => {r: false, c: 'CHUNK_MUST_MATCH_ALIGNMENT',  m: 'Chunk size/start must be aligned with storage',
+                                                           a: 'Data size must match storage chunk size and alignment requirements'},
+        58 => {r: false, c: 'VALIDATION_SESSION_ABORT',    m: 'Session aborted due to validation error(s)',     a: 'Session aborted due to validation error(s)'},
         59 => {r: false, c: 'REMOTE_STORAGE_ERROR',        m: 'Remote storage errored',                         a: 'Remote storage errored'},
-        60 => {r: false, c: 'LUA_SCRIPT_ABORTED_SESSION',  m: 'Session aborted due to Lua script abort',        a: 'Session aborted due to Lua script abort'},
+        60 => {r: false, c: 'LUA_SCRIPT_ABORTED_SESSION',  m: 'Session aborted due to Lua script abort',        a: 'Session aborted'},
         61 => {r: true,  c: 'SSEAR_RETRYABLE',             m: 'Transfer failed because of a retryable Encryption at Rest error',
-                                                                a: 'Transfer failed because of a retryable Encryption at Rest error'},
-        62 => {r: false, c: 'SSEAR_FATAL',                 m: 'Transfer failed because of a fatal Encryption at Rest error',
-                                                                a: 'Transfer failed because of a fatal Encryption at Rest error'},
-        63 => {r: false, c: 'LINK_LOOP',                   m: 'Path refers to a symbolic link loop',            a: 'Path refers to a symbolic link loop'},
-        64 => {r: false, c: 'CANNOT_RENAME_PARTIAL_FILES', m: 'Can\'t rename a partial file',                   a: 'Can\'t rename a partial file.'},
-        65 => {r: false, c: 'CIPHER_NON_COMPAT_FIPS',      m: 'Can\'t use this cipher with FIPS mode enabled',  a: 'Can\'t use this cipher with FIPS mode enabled'},
-        66 => {r: false, c: 'PEER_REQUIRES_FIPS',          m: 'Peer rejects cipher due to FIPS mode enabled on peer',
-                                                                a: 'Peer rejects cipher due to FIPS mode enabled on peer'}
+                                                           a: 'Server-side Encryption At Rest unavailable'},
+        62 => {r: false, c: 'SSEAR_FATAL',                 m: 'Transfer failed because of a fatal Encryption at Rest error', a: 'Server-side Encryption At Rest failed'},
+        63 => {r: false, c: 'LINK_LOOP',                   m: 'Path refers to a symbolic link loop',            a: 'Symbolic link loop'},
+        64 => {r: false, c: 'CANNOT_RENAME_PARTIAL',       m: 'Can\'t rename a partial file',                   a: 'Cannot rename partial file'},
+        65 => {r: false, c: 'CIPHER_NON_COMPAT_FIPS',      m: 'Can\'t use this cipher with FIPS mode enabled',  a: 'Cypher not supported in FIPS mode'},
+        66 => {r: false, c: 'PEER_REQUIRES_FIPS',          m: 'Peer rejects cipher due to FIPS mode enabled on peer', a: 'Peer requires FIPS be enabled'},
+        67 => {r: false, c: 'UPLOAD_IN_PROGRESS',          m: 'Conflict between two transfers',                 a: 'File upload already in progress'},
+        68 => {r: false, c: 'MIN_VERSION_CHECK',           m: 'Minimum version check failed',                   a: 'Failed to start due to minimum version check'},
+        69 => {r: true,  c: 'MAX_ASCP',                    m: 'Maximum ascp processes on a node exceeded',
+                                                           a: 'Failed to start session maximum transfer sessions exceeded'}
       }.freeze
       # cspell: disable
+      # Same as `as_mgmt_cmd_name_str` (`NOTIFICATION` is twice there too)
       OPERATIONS = %w[
         NOP
         START
@@ -117,8 +122,9 @@ module Aspera
         CLOSE
         SKIP
         ARGSTOP
-      ]
+      ].freeze
 
+      # Same as `as_mgmt_arg_name_str`
       PARAMETERS = %w[
         Type
         File
@@ -241,7 +247,7 @@ module Aspera
         FilesEncrypt
         FilesDecrypt
         DatagramSize
-        PrepostCommand
+        Stalled
         XoptFlags
         VLinkVersion
         PeerVLinkVersion
@@ -273,23 +279,36 @@ module Aspera
         PostTransferValidation
         OverwritePolicyCap
         ExtraCreatePolicy
-      ]
+        FipsModeEnabled
+      ].freeze
       # Management port start message
       PROT_VERSION = '2'
       MGT_HEADER = "FASPMGR #{PROT_VERSION}"
       # empty line is separator to end event information
       MGT_FRAME_SEPARATOR = ''
       # fields description for JSON generation
-      # cspell: disable
-      INTEGER_FIELDS = %w[Bytescont FaspFileArgIndex StartByte Rate MinRate Port Priority RateCap MinRateCap TCPPort CreatePolicy TimePolicy
+      # Integer fields may also be a percentage (e.g. `Rate: 50%`): kept as String
+      INTEGER_FIELDS = %w[Bytescont FaspFileArgIndex StartByte EndByte Rate MinRate Port Priority RateCap MinRateCap PriorityCap TCPPort CreatePolicy TimePolicy
                           DatagramSize XoptFlags VLinkVersion PeerVLinkVersion DSPipelineDepth PeerDSPipelineDepth ReadBlockSize WriteBlockSize
-                          ClusterNumNodes ClusterNodeId Size Written Loss FileBytes PreTransferBytes TransferBytes PMTU Elapsedusec ArgScansAttempted
-                          ArgScansCompleted PathScansAttempted FileScansCompleted TransfersAttempted TransfersPassed Delay].freeze
+                          ClusterNumNodes ClusterNodeId Size Written Loss FileBytes PreTransferBytes PartialPreTransferBytes TransferBytes PMTU Elapsedusec Delay
+                          Code RetryTimeout XferRetry MoveRangeLow MoveRangeHigh
+                          PreTransferFiles PreTransferDirs PreTransferSpecial PreTransferFailed PreTransferExcluded
+                          ArgScansAttempted ArgScansCompleted PathScansAttempted PathScansFailed PathScansIrregular PathScansExcluded
+                          DirScansCompleted FileScansCompleted DirCreatesAttempted DirCreatesFailed DirCreatesPassed
+                          TransfersAttempted TransfersFailed TransfersPassed TransfersSkipped
+                          ArgTransfersAttempted ArgTransfersFailed ArgTransfersPassed ArgTransfersSkipped].freeze
       BOOLEAN_FIELDS = %w[Encryption Remote RateLock MinRateLock PolicyLock FilesEncrypt FilesDecrypt VLinkLocalEnabled VLinkRemoteEnabled
-                          MoveRange Keepalive TestLogin UseProxy Precalc RTTAutocorrect].freeze
+                          MoveRange Keepalive TestLogin UseProxy Precalc RTTAutocorrect Stalled PostTransferValidation FipsModeEnabled].freeze
       BOOLEAN_TRUE = 'Yes'
+      INTEGER_VALUE = /\A-?\d+\z/
+      # Fields with path values, escaped on management port (`as_mgmt_escape_path`)
+      PATH_FIELDS = %w[Source Destination File].freeze
+      # Characters escaped in path values: `ESC` followed by the replacement
+      PATH_ESCAPE = "\e"
+      PATH_ESCAPES = {"\n" => 'n', "\r" => 'r', PATH_ESCAPE => PATH_ESCAPE}.freeze
 
-      private_constant :OPERATIONS, :PARAMETERS, :MGT_HEADER, :MGT_FRAME_SEPARATOR, :INTEGER_FIELDS, :BOOLEAN_FIELDS, :BOOLEAN_TRUE
+      private_constant :OPERATIONS, :PARAMETERS, :MGT_HEADER, :MGT_FRAME_SEPARATOR, :INTEGER_FIELDS, :BOOLEAN_FIELDS, :BOOLEAN_TRUE, :INTEGER_VALUE,
+        :PATH_FIELDS, :PATH_ESCAPE, :PATH_ESCAPES
       # cspell: enable
 
       class << self
@@ -305,7 +324,7 @@ module Aspera
         # Translate snake case event name to native
         # @param name [String] Field name
         def field_snake_to_native(name)
-          field = name.delete('_')
+          field = name.to_s.delete('_')
           result = PARAMETERS.find { |w| w.casecmp?(field) }
           Aspera.assert(!result.nil?) { "No such field: #{name}" }
           result
@@ -315,7 +334,7 @@ module Aspera
         def event_native_to_snake(event)
           event.each_with_object({}) do |(key, value), h|
             h[field_native_to_snake(key)] =
-              if INTEGER_FIELDS.include?(key) then value.to_i
+              if INTEGER_FIELDS.include?(key) && INTEGER_VALUE.match?(value) then value.to_i
               elsif BOOLEAN_FIELDS.include?(key) then value.eql?(BOOLEAN_TRUE)
               else
                 value
@@ -323,12 +342,36 @@ module Aspera
           end
         end
 
+        # Escape path value for management port: line breaks and escape char
+        # @param value [String] Path
+        # @return [String] Escaped path
+        def escape_path(value)
+          value.gsub(/[\n\r\e]/) { |char| "#{PATH_ESCAPE}#{PATH_ESCAPES[char]}" }
+        end
+
+        # Reverse of `escape_path`
+        # @param value [String] Escaped path
+        # @return [String] Path
+        def unescape_path(value)
+          value.gsub(/\e([nr\e])/) { PATH_ESCAPES.key(Regexp.last_match(1)) }
+        end
+
         # Build command to send on management port
+        # Frame: header, one line per field, empty line (last empty element adds the final line break)
         # @param data [Hash] keys are snake case: e.g. {'type'=>'START','source'=>_path_,'destination'=>_path_}
         # @return [String] frame to send on management port
         def command_to_stream(data)
           data
-            .map { |key, value| "#{field_snake_to_native(key)}: #{value}" }
+            .map do |key, value|
+              name = field_snake_to_native(key)
+              value = value.to_s
+              if PATH_FIELDS.include?(name)
+                value = escape_path(value)
+              else
+                Aspera.assert(!value.match?(/[\r\n]/)) { "mgt port: line break in value of #{name}" }
+              end
+              "#{name}: #{value}"
+            end
             .unshift(MGT_HEADER)
             .push(MGT_FRAME_SEPARATOR, '')
             .join("\n")
@@ -347,21 +390,24 @@ module Aspera
       # @param line [String] line of mgt port event
       # @return [Hash] event hash or nil if event is not yet complete
       def process_line(line)
-        # Log.log.debug{"line=[#{line}]"}
         case line
         when MGT_HEADER
           # begin event
+          Log.log.warn { "mgt port: incomplete event discarded: #{@event_build}" } unless @event_build.nil?
           @event_build = {}
-        when /^([^:]+): (.*)$/
-          Aspera.assert_type(@event_build, Hash) { 'mgt port: unexpected line: data without header' }
-          # event field
-          @event_build[Regexp.last_match(1)] = Regexp.last_match(2)
         when MGT_FRAME_SEPARATOR
           Aspera.assert_type(@event_build, Hash) { 'mgt port: unexpected line: end frame without header' }
           @last_event = @event_build
           @event_build = nil
           return @last_event
-        else Aspera.error_unexpected_value(line) { 'mgt port' }
+        else
+          # event field: name up to first colon, optional single space (as `as_mgmt_buffered_read_msg`)
+          name, value = line.split(':', 2)
+          Aspera.error_unexpected_value(line) { 'mgt port' } if value.nil?
+          Aspera.assert_type(@event_build, Hash) { 'mgt port: unexpected line: data without header' }
+          value = value.delete_prefix(' ')
+          value = self.class.unescape_path(value) if PATH_FIELDS.include?(name)
+          @event_build[name] = value
         end
         return
       end

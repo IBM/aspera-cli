@@ -3,7 +3,6 @@
 require 'bundler/setup'
 require 'tmpdir'
 require 'aspera/environment'
-require 'aspera/ascp/management'
 
 RSpec.describe(Aspera::Environment) do
   it 'works for OSes' do
@@ -45,22 +44,6 @@ RSpec.describe(Aspera::Environment) do
     RbConfig::CONFIG['host_cpu'] = 'arm'
     Aspera::Environment.instance.initialize_fields
     expect(Aspera::Environment.instance.cpu).to(eq(Aspera::Environment::CPU_ARM64))
-  end
-
-  it 'works for event' do
-    event = {
-      'Bytescont'         => '1',
-      'Elapsedusec'       => '10',
-      'Encryption'        => 'Yes',
-      'ExtraCreatePolicy' => 'none'
-    }
-    newevent = Aspera::Ascp::Management.event_native_to_snake(event)
-    expect(newevent).to(eq({
-      'bytes_cont'          => 1,
-      'elapsed_usec'        => 10,
-      'encryption'          => true,
-      'extra_create_policy' => 'none'
-    }))
   end
 
   describe 'fix_ca_certificates' do
