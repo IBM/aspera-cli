@@ -8904,7 +8904,7 @@ The preview generator supports rendering of those file categories:
 - `office`
 - `video`
 
-To avoid generation for some categories, specify a list using option `skip_types`.
+To avoid generation for some categories, specify a list using option `skip_types`, for example, `--skip-types=office` or `--skip-types=@list:,office,video`.
 
 Each category has a specific rendering method to produce the PNG thumbnail.
 
