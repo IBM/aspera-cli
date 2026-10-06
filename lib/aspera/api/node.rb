@@ -617,8 +617,8 @@ module Aspera
       # Method called in loop for each entry for `resolve_api_fid`
       # @return [Boolean] `true` to continue digging, `false` to stop processing: set state[:result] if found
       def process_api_fid(entry, path, state)
-        # Stop digging here if not in right path
-        return false unless entry['name'].eql?(state[:path].first)
+        # Stop digging here if already found, or if not the next path element directly under the consumed path (not a sibling)
+        return false if state[:path].empty? || !path.eql?(File.join(PATH_SEPARATOR, *state[:consumed], state[:path].first))
         # Ok it matches, so we remove the match, and continue digging
         state[:consumed].push(state[:path].shift)
         path_fully_consumed = state[:path].empty?

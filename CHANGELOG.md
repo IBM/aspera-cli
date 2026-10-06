@@ -8,6 +8,8 @@ Released: [Place date of release here]
 
 ### Issues Fixed
 
+* `node`, `aoc`: Fixed #268: Resolution of a remote path could match an entry in the wrong folder: after a path element matched, the next element could be matched by a sibling in the same folder instead of a child (e.g. `browse /a/b/c` listed `/a/c` if `/a/b/c` did not exist): such a path now fails with `Entry not found`. Affects all commands taking a remote path (`browse`, `upload`, `download`, `sync`, `delete`, `mkdir`, `rename`, ...), also in `aoc files` and `preview`.
+
 ### Breaking Changes
 
 ## 4.27.4
