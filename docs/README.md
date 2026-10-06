@@ -9396,6 +9396,17 @@ ascli orchestrator workflows import my_workflow.yml --preset=other_orchestrator 
 ascli orchestrator workflows publish 5678 --preset=other_orchestrator
 ```
 
+Command `workflows import` always creates a new workflow.
+Command `workflows import_with_constraints` imports a workflow file already present on the Orchestrator host, either as a new workflow or as a new revision of an existing workflow (`add_as_revision`), and resolves conflicts with existing global templates, sub-workflows and remote nodes.
+Command `workflows import` stores each uploaded file in folder `<run_dir>/workflows/import/` of the Orchestrator host.
+
+Example: Add the file uploaded by a previous `workflows import` as a new revision of workflow `1234`, and publish it:
+
+```shell
+ascli orchestrator workflows import_with_constraints @json:'{"filename":"/opt/aspera/orchestrator/var/run/orchestrator/workflows/import/my_workflow.yml","add_as_revision":1234}'
+ascli orchestrator workflows publish 1234
+```
+
 ### Tested commands for `orchestrator`
 
 > [!NOTE]

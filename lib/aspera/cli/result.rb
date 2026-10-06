@@ -81,6 +81,8 @@ module Aspera
 
       # Formats rendering the data structure itself
       STRUCTURED_FORMATS = %i[ruby json jsonpp yaml].freeze
+      # Types of a single value result (Text), or of items of a value list
+      SCALAR_TYPES = [String, Integer, Float, Symbol, TrueClass, FalseClass].freeze
 
       private
 
@@ -175,7 +177,7 @@ module Aspera
       # Text result
       class Text < Result
         def initialize(data)
-          Aspera.assert_type(data, String, Integer, Symbol, type: ArgumentError) { 'text result data' }
+          Aspera.assert_type(data, *SCALAR_TYPES, type: ArgumentError) { 'text result data' }
           super(data: data)
         end
 
@@ -351,12 +353,11 @@ module Aspera
             all_types = data.map(&:class).uniq
             return ObjectList.new(data) if all_types.eql?([Hash])
 
-            scalar_types = [String, Integer, Symbol]
-            unsupported_types = all_types - scalar_types
+            unsupported_types = all_types - SCALAR_TYPES
             return ValueList.new(data, name: 'list') if unsupported_types.empty?
 
             Aspera.error_unexpected_value(unsupported_types) { 'list item types' }
-          when String, Integer, Symbol
+          when *SCALAR_TYPES
             Text.new(data)
           else
             Aspera.error_unexpected_value(data.class.name) { 'result type' }

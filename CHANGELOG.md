@@ -9,13 +9,18 @@ Released: [Place date of release here]
 ### Issues Fixed
 
 * **global**: Removed gem dependency on `blankslate` (JSON-RPC client of agent `desktop`).
+* **global**: A boolean or decimal result, or a list containing such values (for example `config echo @json:true`), failed with an internal error.
 * `mcp`: REST error messages were repeated once more at each tool call of the session: error handlers are now registered on load.
 * `orchestrator`: `workflows import` uploads the workflow file as a multipart form, as expected by Orchestrator, and displays the imported workflow.
 * `orchestrator`: `workflows publish` sends the workflow `id` expected by Orchestrator (also accepts the portable ID), and displays `published`.
+* `orchestrator`: `workflows import` reports an error when Orchestrator imports nothing: plugins that cannot be enabled, or dependencies not included in the file.
+* `orchestrator`: `workflows import_with_constraints` sends the ordered list expected by Orchestrator, and displays the imported workflow.
+* `orchestrator`: `workflows start` with `synchronous` and without `step` and `variable` failed to display the work order.
 
 ### Breaking Changes
 
 * `orchestrator`: `workflows import` takes the path of a file created by `workflows export`, instead of a `Hash` (rejected by Orchestrator).
+* `orchestrator`: `workflows import_with_constraints` takes keys `filename`, `add_as_revision`, `subwf_constraints`, `action_template_constraints`, `remote_node_constraints`, `auto_enable_missing_plugins`, instead of `workflow_data` and `constraints` (rejected by Orchestrator).
 * `orchestrator`: `workorders output` displays fields of variables as plain values instead of single-element arrays (e.g. `"value":"x"` instead of `"value":["x"]`), and an empty value as `null`.
 
 ## 4.27.5

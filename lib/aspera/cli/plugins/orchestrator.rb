@@ -137,9 +137,8 @@ module Aspera
           command :publish,    description: 'Publish a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
             action: ->(workflow_id:, **) { Result::Status.new(call_ao('publish_workflow', body: {id: workflow_id}).eql?(true) ? 'published' : 'not published') }
-          command :import_with_constraints, description: 'Import a workflow with constraint resolution',
-            arguments: [{name: :payload, type: Hash, schema: 'opts:components.schemas.OrchestratorImportWithConstraints'}],
-            action: ->(payload:, **) { Result::SingleObject.new(call_ao('import_with_constraints', body: payload.transform_keys(&:to_sym))) }
+          command :import_with_constraints, description: 'Import a workflow file present on the Orchestrator host, with resolution of conflicts',
+            arguments: [{name: :payload, type: Hash, schema: 'opts:components.schemas.OrchestratorImportWithConstraints'}]
           command :export,     description: 'Export a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
             action: ->(workflow_id:, **) { Result::Text.new(call_ao("export_workflow/#{workflow_id}", accept: nil, http: true).body) }
@@ -248,7 +247,35 @@ module Aspera
             ['import_file', File.binread(file_path), {filename: file_name}],
             ['import_file_name', file_name]
           ]
-          Result::SingleObject.new(call_ao('import_workflow', body: form, content_type: Mime::MULTIPART)['workflow'])
+          result = call_ao('import_workflow', body: form, content_type: Mime::MULTIPART)
+          # Other responses: nothing was imported
+          if result.key?('plugins')
+            raise Cli::Error, "Plugins could not be enabled: #{Array(result['plugins']).join(', ')}" \
+              "#{" (missing dependencies: #{Array(result['missing_deps']).join(', ')})" unless Array(result['missing_deps']).empty?}"
+          end
+          if result.key?('dependencies')
+            dependencies = result['dependencies'].values.flatten.filter_map { |d| "#{d['entity']} #{d['id_value']}" if d.is_a?(Hash) }
+            raise Cli::Error, "Workflow dependencies are not included in the file (export with dependencies to a .wkf file): #{dependencies.uniq.join(', ')}"
+          end
+          Result::SingleObject.new(result['workflow'])
+        end
+
+        # Items of the array expected by `import_with_constraints`, in this order: argument key => API key
+        IMPORT_CONSTRAINT_ITEMS = {
+          'filename'                    => 'filename',
+          'add_as_revision'             => 'add as revision',
+          'subwf_constraints'           => 'subwf constraints',
+          'action_template_constraints' => 'action template constraints',
+          'remote_node_constraints'     => 'remote node constraints',
+          'auto_enable_missing_plugins' => 'Auto-enable missing plugins?'
+        }.freeze
+        private_constant :IMPORT_CONSTRAINT_ITEMS
+
+        # The API expects an array of single-key objects, in a fixed order
+        def action_workflows_import_with_constraints(payload:, **)
+          payload = payload.transform_keys(&:to_s)
+          body = IMPORT_CONSTRAINT_ITEMS.map { |key, api_key| {api_key => payload.fetch(key) { key.end_with?('_constraints') ? {} : nil }} }
+          Result::SingleObject.new(call_ao('import_with_constraints', body: body)['workflow'])
         end
 
         # Keys of argument `execution` of `workflows start`
@@ -281,8 +308,8 @@ module Aspera
             # implicitly, call is synchronous
             query_params[:synchronous] = true
           end
-          result_data = call_ao('initiate', body: json_body, query: query_params.empty? ? nil : query_params)
-          query_params[:synchronous] ? Result::Text.new(result_data) : Result::SingleObject.new(result_data)
+          # Work order information, or value of the explicit output (any JSON value)
+          Result.auto(call_ao('initiate', body: json_body, query: query_params.empty? ? nil : query_params))
         end
       end
     end

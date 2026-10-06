@@ -715,21 +715,55 @@ components:
       additionalProperties: true
     OrchestratorImportWithConstraints:
       type: object
-      description: Workflow definition to import with constraint resolution mappings.
+      description: >-
+        Import of a workflow file present on the Orchestrator host, as a new workflow or as a new revision of an existing workflow.
+        `orchestrator workflows import` stores each uploaded file in `<run_dir>/workflows/import/`.
+        Conflicts with existing global templates, sub-workflows and remote nodes are resolved by name.
+      additionalProperties: false
       required:
-        - workflow_data
-        - constraints
+        - filename
       properties:
-        workflow_data:
+        filename:
+          type: string
+          description: Path of the workflow file (`.yml` or `.wkf`) on the Orchestrator host.
+          example: /opt/aspera/orchestrator/var/run/orchestrator/workflows/import/my_workflow.yml
+        add_as_revision:
+          type: integer
+          description: >-
+            ID of an existing workflow: the file is imported as a new revision of this workflow (to be published).
+            If not set, a new workflow is created.
+          example: 123
+        subwf_constraints:
           type: object
-          description: Complete workflow definition to import.
-        constraints:
+          description: 'Resolution for each sub-workflow, by name: `Map to the Existing Sub-Workflow`, `Create a new Sub-Workflow with a unique name`, or `Add a new revision to the existing Sub-Workflow`.'
+          additionalProperties:
+            type: string
+            enum:
+              - Map to the Existing Sub-Workflow
+              - Create a new Sub-Workflow with a unique name
+              - Add a new revision to the existing Sub-Workflow
+        action_template_constraints:
           type: object
-          description: Constraint resolution mappings for conflicting resources.
-          example:
-            resource_pools: {}
-            queues: {}
-            monitors: {}
+          description: 'Resolution for each global action template, by name: `Map to the existing Global Template`, `Create a new Global Template with a different name`, or `Override the existing Global Template with this new template`.'
+          additionalProperties:
+            type: string
+            enum:
+              - Map to the existing Global Template
+              - Create a new Global Template with a different name
+              - Override the existing Global Template with this new template
+        remote_node_constraints:
+          type: object
+          description: 'Resolution for each remote node, by name: `Map to the existing Remote Node`, `Create a new Remote Node with a different name`, or `Override the Existing Remote Node with this importing node`.'
+          additionalProperties:
+            type: string
+            enum:
+              - Map to the existing Remote Node
+              - Create a new Remote Node with a different name
+              - Override the Existing Remote Node with this importing node
+        auto_enable_missing_plugins:
+          type: boolean
+          description: Enable the plugins used by the workflow that are not enabled.
+          default: false
     OrchestratorReloadPluginSet:
       type: object
       description: Set of plugins to reload.

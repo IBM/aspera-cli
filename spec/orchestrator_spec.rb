@@ -128,5 +128,57 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
         expect(result.data).to(eq({'id' => 1}))
       end
     end
+
+    it 'raises an error when plugins cannot be enabled' do
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'wf.yml')
+        File.write(path, "---\n")
+        allow(orchestrator).to(receive(:call_ao).and_return({'plugins' => ['Missing'], 'missing_deps' => ['gem_x']}))
+        expect { orchestrator.action_workflows_import(file_path: path) }
+          .to(raise_error(Aspera::Cli::Error, 'Plugins could not be enabled: Missing (missing dependencies: gem_x)'))
+      end
+    end
+
+    it 'raises an error when dependencies are not packed' do
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'wf.yml')
+        File.write(path, "---\n")
+        dependencies = {'SubWorkflow__1' => [{'entity' => 'Workflow', 'id_key' => 'id', 'id_value' => 12}]}
+        allow(orchestrator).to(receive(:call_ao).and_return({'dependencies' => dependencies, 'file' => path, 'workflow' => {}}))
+        expect { orchestrator.action_workflows_import(file_path: path) }
+          .to(raise_error(Aspera::Cli::Error, /not included in the file.*: Workflow 12$/))
+      end
+    end
+  end
+
+  describe '#action_workflows_import_with_constraints' do
+    it 'sends the ordered array expected by the API' do
+      allow(orchestrator).to(receive(:call_ao).and_return({'workflow' => {'id' => 239}}))
+      result = orchestrator.action_workflows_import_with_constraints(payload: {'filename' => '/tmp/wf.yml', 'add_as_revision' => 239})
+      expect(orchestrator).to(have_received(:call_ao).with('import_with_constraints', body: [
+        {'filename' => '/tmp/wf.yml'},
+        {'add as revision' => 239},
+        {'subwf constraints' => {}},
+        {'action template constraints' => {}},
+        {'remote node constraints' => {}},
+        {'Auto-enable missing plugins?' => nil}
+      ]))
+      expect(result.data).to(eq({'id' => 239}))
+    end
+  end
+
+  describe '#action_workflows_start' do
+    {
+      'work order information'   => [{'work_order' => {'id' => 1}}, Aspera::Cli::Result::SingleObject],
+      'explicit output (string)' => ['HELLO', Aspera::Cli::Result::Text],
+      'explicit output (flag)'   => [true, Aspera::Cli::Result::Text]
+    }.each do |label, (response, result_class)|
+      it "returns #{label}" do
+        allow(orchestrator).to(receive(:call_ao).and_return(response))
+        result = orchestrator.action_workflows_start(workflow_id: '1', parameters: {}, execution: {'synchronous' => true})
+        expect(result).to(be_a(result_class))
+        expect(result.data).to(eq(response))
+      end
+    end
   end
 end
