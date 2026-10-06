@@ -51,16 +51,24 @@ module Aspera
       end
 
       # Loads YAML from cloud with locations of SDK archives for all platforms
+      # Tries each URL in `@transferd_urls` in order, falling back on network errors.
       # @return [Hash] location structure
       def sdk_locations
-        location_url = @transferd_urls
-        transferd_locations = UriReader.read(location_url)
-        Log.log.debug { "Retrieving SDK locations from #{location_url}" }
-        begin
-          return Yaml.safe_load(transferd_locations)
-        rescue Psych::SyntaxError
-          raise "Error when parsing yaml data from: #{location_url}"
+        urls = Array(@transferd_urls)
+        last_error = nil
+        urls.each do |location_url|
+          Log.log.debug { "Retrieving SDK locations from #{location_url}" }
+          begin
+            transferd_locations = UriReader.read(location_url)
+            return Yaml.safe_load(transferd_locations)
+          rescue Psych::SyntaxError
+            raise "Error when parsing yaml data from: #{location_url}"
+          rescue => e
+            last_error = e
+            Log.log.warn("Failed to retrieve SDK locations from #{location_url}: #{e.message}, trying next...")
+          end
         end
+        raise last_error || 'No SDK location URL configured'
       end
 
       # Set `ascp` executable "location" (option `sdk_folder`)
@@ -434,14 +442,18 @@ module Aspera
       EXE_FILES = %i[ascp ascp4 async transferd].freeze
       # IDs of files present in SDK
       SDK_FILES = (EXE_FILES + %i[ssh_private_dsa ssh_private_rsa aspera_license aspera_conf fallback_certificate fallback_private_key]).freeze
-      TRANSFERD_ARCHIVE_LOCATION_URL = 'https://ibm.biz/sdk_location'
+      # Primary URL (ibm.biz short link) with fallback to the canonical GitHub raw source
+      TRANSFERD_ARCHIVE_LOCATION_URLS = [
+        'https://ibm.biz/sdk_location',
+        'https://raw.githubusercontent.com/IBM/aspera-cli/refs/heads/main/docs/sdk_location.yaml'
+      ].freeze
       # filename for ascp with optional extension (Windows)
-      private_constant :DEFAULT_ASPERA_CONF, :EXE_FILES, :SDK_FILES, :TRANSFERD_ARCHIVE_LOCATION_URL
+      private_constant :DEFAULT_ASPERA_CONF, :EXE_FILES, :SDK_FILES, :TRANSFERD_ARCHIVE_LOCATION_URLS
 
       def initialize
         # cache for installed products found
         @found_products = nil
-        @transferd_urls = TRANSFERD_ARCHIVE_LOCATION_URL
+        @transferd_urls = TRANSFERD_ARCHIVE_LOCATION_URLS
         # product selected with option `sdk_folder`, or nil to use SDK folder
         @ascp_product = nil
         # cache for folder of `ascp` of selected product

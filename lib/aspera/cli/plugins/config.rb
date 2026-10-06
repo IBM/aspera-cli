@@ -92,7 +92,7 @@ module Aspera
         option :version_check_days, description: 'Period in days to check new version (zero to disable)',             allowed: Type::INTEGER, default: DEFAULT_CHECK_NEW_VERSION_DAYS
         option :plugin_folder,      description: 'Folder where to find additional plugins',                           on_set: :add_plugin_folders
         option :sdk_url,            description: 'Ascp: URL to get Aspera Transfer Executables',                      default: SpecialValues::DEF
-        option :locations_url,      description: 'Ascp: URL to get download locations of Aspera Transfer Daemon',    default: Ascp::Installation.instance.transferd_urls, on_set: Ascp::Installation.instance.method(:transferd_urls=)
+        option :locations_url,      description: 'Ascp: URL or list of URLs to get download locations of Aspera Transfer Daemon (tried in order)', default: Ascp::Installation.instance.transferd_urls, on_set: Ascp::Installation.instance.method(:transferd_urls=)
         option :sdk_folder,         description: 'Ascp: Path to folder with ascp (or product with "product:")',      on_set: Ascp::Installation.instance.method(:sdk_folder=)
         option :smtp,               schema: Schema::Registry::SMTP_OPTIONS
         option :notify_to,          description: 'Email: Recipient for notification of transfers'
