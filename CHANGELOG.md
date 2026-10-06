@@ -1,8 +1,8 @@
 # Changes (Release notes)
 
-## 4.28.0.pre
+## 4.27.5
 
-Released: [Place date of release here]
+Released: 2026-10-06
 
 ### New Features
 
@@ -11,6 +11,29 @@ Released: [Place date of release here]
 * `node`, `aoc`: Fixed #268: Resolution of a remote path could match an entry in the wrong folder: after a path element matched, the next element could be matched by a sibling in the same folder instead of a child (e.g. `browse /a/b/c` listed `/a/c` if `/a/b/c` did not exist): such a path now fails with `Entry not found`. Affects all commands taking a remote path (`browse`, `upload`, `download`, `sync`, `delete`, `mkdir`, `rename`, ...), also in `aoc files` and `preview`.
 
 ### Breaking Changes
+
+### Server Versions
+
+| Plugin | Product | Version |
+|--------------|--------------------|------------------|
+| `aoc` | Aspera on Cloud | SaaS |
+| `console` | IBM Aspera Console | 3.4.4 |
+| `faspex5` | Faspex v5 | F5.0.17 |
+| `httpgw` | HTTP Gateway | 2.3.4 |
+| `node` | HSTS Node API | 4.4.8.2596 |
+| `orchestrator` | Orchestrator | 4.1.6.2036-00000 |
+| `shares` | IBM Aspera Shares | 1.9.14 |
+
+### Transfer Agent Versions
+
+| Agent | Product | Version |
+|-----------|--------------------------------|---------|
+| `connect` | IBM Aspera Connect Client | 4.2.14 |
+| `desktop` | IBM Aspera Desktop Client | 4.4.3 |
+| `direct` | IBM Aspera Transfer SDK (ascp) | 1.1.9 |
+| `httpgw` | IBM Aspera HTTP Gateway Agent | 1.3.0 |
+| `node` | IBM Aspera Node API Agent | 4.4.3 |
+| `transferd` | IBM Aspera transferd daemon | 1.1.9 |
 
 ## 4.27.4
 
