@@ -42,6 +42,7 @@ module Aspera
 
       def set(options)
         validate_set(options)
+        Aspera.assert(resolve_id(options[:label], exception: false).nil?) { "secret #{options[:label]} already exist, delete first" }
         @api.create("v1/vaults/#{@vault_id}/items", build_item(options))
         nil
       end
@@ -72,14 +73,16 @@ module Aspera
         fields = []
         fields << {'id' => FIELD_USERNAME, 'type' => 'STRING',    'value' => options[:username]}    if options[:username]
         fields << {'id' => FIELD_PASSWORD, 'type' => 'CONCEALED', 'value' => options[:password]}    if options[:password]
-        fields << {'id' => FIELD_URL,      'type' => 'URL',       'value' => options[:url]}         if options[:url]
         fields << {'id' => FIELD_NOTES_ID, 'type' => 'STRING',    'value' => options[:description]} if options[:description]
-        {
+        item = {
           'title'    => options[:label],
           'category' => ITEM_CATEGORY.upcase,
           'vault'    => {'id' => @vault_id},
           'fields'   => fields
         }
+        # Website of the item
+        item['urls'] = [{'href' => options[:url], 'primary' => true}] if options[:url]
+        item
       end
     end
   end

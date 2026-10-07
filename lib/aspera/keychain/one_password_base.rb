@@ -18,16 +18,21 @@ module Aspera
       private
 
       # Convert a 1Password item JSON object to a keychain secret Hash.
-      # Accepts both API Connect items (field keyed by 'id') and CLI items
-      # (field keyed by 'id' falling back to 'label').
+      # Same JSON schema for API Connect and CLI items.
+      # Built-in fields are found by `id`, custom fields (generated `id`) by `label`.
+      # URL is the website of the item, or a custom field `url` (created by previous versions).
       def item_to_secret(item)
-        fields = Array(item['fields']).to_h { |f| [f['id'] || f['label'], f['value']] }
-        secret = {label: item['title']}
-        secret[:username]    = fields[FIELD_USERNAME] unless fields[FIELD_USERNAME].nil?
-        secret[:password]    = fields[FIELD_PASSWORD] unless fields[FIELD_PASSWORD].nil?
-        secret[:url]         = fields[FIELD_URL]      unless fields[FIELD_URL].nil?
-        secret[:description] = fields[FIELD_NOTES_ID] unless fields[FIELD_NOTES_ID].nil?
-        return secret
+        fields = Array(item['fields'])
+        by_id = fields.to_h { |f| [f['id'], f['value']] }
+        by_label = fields.to_h { |f| [f['label'], f['value']] }
+        urls = Array(item['urls'])
+        values = {
+          username:    by_id[FIELD_USERNAME] || by_label[FIELD_USERNAME],
+          password:    by_id[FIELD_PASSWORD] || by_label[FIELD_PASSWORD],
+          url:         (urls.find { |u| u['primary'] } || urls.first)&.[]('href') || by_id[FIELD_URL] || by_label[FIELD_URL],
+          description: by_id[FIELD_NOTES_ID] || by_label[FIELD_NOTES_ID]
+        }
+        return {label: item['title']}.merge(values.compact)
       end
     end
   end

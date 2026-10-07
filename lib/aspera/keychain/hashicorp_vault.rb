@@ -32,7 +32,8 @@ module Aspera
       def all
         metadata_path = STORE_PATH.sub('/data/', '/metadata/')
         return Vault.logical.list(metadata_path).filter_map do |label|
-          get(label: label).merge(label: label)
+          # KV v2: deleted secrets are still listed in metadata
+          get(label: label, exception: false)&.merge(label: label)
         end
       end
 
@@ -41,6 +42,7 @@ module Aspera
       def set(options)
         validate_set(options)
         label = options.fetch(:label)
+        assert_new_label(label)
         data = {
           username:    options[:username],
           password:    options[:password],
@@ -51,12 +53,13 @@ module Aspera
       end
 
       def get(label:, exception: true)
-        secret = Vault.logical.read(path(label))
-        if secret.nil?
+        # KV v2: a deleted secret may have metadata but no data
+        data = Vault.logical.read(path(label))&.data&.[](:data)
+        if data.nil?
           raise "Secret '#{label}' not found" if exception
           return
         end
-        return secret.data[:data]
+        return data
       end
 
       def delete(label:)

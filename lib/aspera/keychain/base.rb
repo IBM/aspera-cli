@@ -20,6 +20,11 @@ module Aspera
         end
         Aspera.assert(options.key?(:label), 'label is required')
       end
+
+      # Labels are unique: `set` does not overwrite an existing secret
+      def assert_new_label(label)
+        Aspera.assert(get(label: label, exception: false).nil?) { "secret #{label} already exist, delete first" }
+      end
     end
   end
 end

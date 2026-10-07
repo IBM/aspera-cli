@@ -37,8 +37,11 @@ module Aspera
           password: :w,
           getpass:  :g
         }.freeze
+        # Exit code of `security` when the item is not found
+        EXIT_ITEM_NOT_FOUND = 44
         class << self
-          def execute(command, options = nil, supported = nil, last_opt = nil)
+          # @return [Array(String, String, Process::Status)] stdout, stderr, status
+          def execute(command, options = nil, supported = nil, last_opt = nil, exception: true)
             url = options&.delete(:url)
             if !url.nil?
               uri = URI.parse(url)
@@ -54,10 +57,11 @@ module Aspera
               Aspera.assert(supported.key?(k)) { "unknown option: #{k}" }
               next if v.nil?
               command_args.push("-#{supported[k]}")
-              command_args.push(v.shellescape) unless v.empty?
+              # No shell is involved: value is passed as is
+              command_args.push(v.to_s) unless v.to_s.empty?
             end
             command_args.push(last_opt) unless last_opt.nil?
-            Environment.secure_execute(*command_args, mode: :capture).first
+            Environment.secure_execute(*command_args, mode: :capture, exception: exception)
           end
 
           def key_chains(output)
@@ -65,16 +69,16 @@ module Aspera
           end
 
           def default
-            key_chains(execute('default-keychain')).first
+            key_chains(execute('default-keychain').first).first
           end
 
           def login
-            key_chains(execute('login-keychain')).first
+            key_chains(execute('login-keychain').first).first
           end
 
           def list(options = {})
             Aspera.assert_values(options[:domain], DOMAINS, type: ParameterError) { 'domain' } unless options[:domain].nil?
-            key_chains(execute('list-keychains', options, LIST_OPTIONS))
+            key_chains(execute('list-keychains', options, LIST_OPTIONS).first)
           end
 
           def by_name(name)
@@ -98,11 +102,15 @@ module Aspera
           missing = (operation.eql?(:add) ? %i[account service password] : %i[label]) - options.keys
           Aspera.assert(missing.empty?) { "missing options: #{missing}" }
           options[:getpass] = '' if operation.eql?(:find)
-          output = self.class.execute("#{operation}-#{pass_type}-password", options, ADD_PASS_OPTIONS, @path)
-          raise output.gsub(/^.*: /, '') if output.start_with?('security: ')
+          stdout, stderr, status = self.class.execute("#{operation}-#{pass_type}-password", options, ADD_PASS_OPTIONS, @path, exception: false)
+          unless status.success?
+            return if operation.eql?(:find) && status.exitstatus.eql?(EXIT_ITEM_NOT_FOUND)
+            raise Error, stderr.strip.gsub(/^.*: /, '')
+          end
           return unless operation.eql?(:find)
           attributes = {}
-          output.split("\n").each do |line|
+          # Attributes are on stdout, password (option -g) is on stderr
+          "#{stdout}\n#{stderr}".split("\n").each do |line|
             case line
             when /^keychain: "(.+)"/
               # ignore
@@ -124,6 +132,10 @@ module Aspera
     end
 
     class MacosSystem < Base
+      # Account is mandatory in keychain: used when no username is provided
+      NO_ACCOUNT = 'none'
+      private_constant :NO_ACCOUNT
+
       def initialize(name: nil)
         super()
         @keychain_name = name.nil? ? 'default keychain' : name
@@ -146,7 +158,7 @@ module Aspera
         validate_set(options)
         @keychain.password(
           :add, :generic, service: options[:label],
-          account: options[:username] || 'none', password: options[:password], comment: options[:description]
+          account: options[:username] || NO_ACCOUNT, password: options[:password], comment: options[:description]
         )
       end
 
@@ -158,9 +170,10 @@ module Aspera
         end
         return {
           label:       label,
+          username:    (info['acct'] unless info['acct'].eql?(NO_ACCOUNT)),
           password:    info['password'],
           description: info['icmt'] # cspell: disable-line
-        }
+        }.compact
       end
 
       def delete(label:)

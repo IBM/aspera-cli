@@ -18,12 +18,21 @@ Released: [Place date of release here]
 * `orchestrator`: `workflows import` reports an error when Orchestrator imports nothing: plugins that cannot be enabled, or dependencies not included in the file.
 * `orchestrator`: `workflows import_with_constraints` sends the ordered list expected by Orchestrator, and displays the imported workflow.
 * `orchestrator`: `workflows start` with `synchronous` and without `step` and `variable` failed to display the work order.
+* `config vault`: `system` (macOS): the password of a secret was not returned, values with special characters were stored escaped, and a missing secret failed `preset secure`.
+* `config vault`: `1password` (`cli`): a missing secret failed `preset secure`.
+* `config vault`: `vault` (HashiCorp): `list` failed after a secret was deleted.
+* `config vault`: `file`: `password` did not migrate a vault created by version 4.26.0 or earlier to the new key derivation (PBKDF2).
+* `config vault`: `@vault:` failed with a secret label containing dots (for example, a preset name secured with `preset secure`).
+* `config vault`: `system` (macOS): `show` and `@vault:` return the `username`.
+* `config vault`: `1password`: `url` is read from the website of the item (also for items created in 1Password).
 
 ### Breaking Changes
 
 * `orchestrator`: `workflows import` takes the path of a file created by `workflows export`, instead of a `Hash` (rejected by Orchestrator).
 * `orchestrator`: `workflows import_with_constraints` takes keys `filename`, `add_as_revision`, `subwf_constraints`, `action_template_constraints`, `remote_node_constraints`, `auto_enable_missing_plugins`, instead of `workflow_data` and `constraints` (rejected by Orchestrator).
 * `orchestrator`: `workorders output` displays fields of variables as plain values instead of single-element arrays (e.g. `"value":"x"` instead of `"value":["x"]`), and an empty value as `null`.
+* `config vault`: `create` fails if a secret with the same label exists, for `vault` and `1password` (as for `file`). `delete` fails if the secret does not exist, for `file`.
+* `config vault`: `1password`: `url` is stored as the website of the item instead of a custom field.
 
 ## 4.27.5
 

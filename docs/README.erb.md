@@ -3001,7 +3001,8 @@ vault server -dev -dev-root-token-id=dev-only-token
 > [!WARNING]
 > **macOS only**
 
-It is possible to manage secrets in macOS keychain (only read supported currently).
+It is possible to manage secrets in macOS keychain.
+Commands `list`, `ids` and `delete` are not supported: use the **Keychain Access** app.
 
 ```shell
 --vault=@json:'{"type":"system","name":"<%=cmd%>"}'

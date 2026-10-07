@@ -82,7 +82,7 @@ module Aspera
       def set(options)
         validate_set(options)
         label = options.delete(:label)
-        Aspera.assert(!@all_secrets.key?(label)) { "secret #{label} already exist, delete first" }
+        assert_new_label(label)
         @all_secrets[label] = options.symbolize_keys
         save
       end
@@ -95,12 +95,15 @@ module Aspera
       end
 
       def delete(label:)
+        Aspera.assert(@all_secrets.key?(label)) { "Label not found: #{label}" }
         @all_secrets.delete(label)
         save
       end
 
       def change_password(password)
         # Generate new KDF params so a password change also re-salts the vault
+        # (and migrates a legacy vault to PBKDF2)
+        @legacy_key = false
         @kdf_params = nil
         @cipher = cipher(password)
         save

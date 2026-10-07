@@ -3169,7 +3169,7 @@ vault server -dev -dev-root-token-id=dev-only-token
 | `type` | `String` | Vault type selector.<br/>Allowed values: `vault`. |
 | `url` | `String` | URL of the HashiCorp Vault server.<br/>Example: `http://127.0.0.1:8200`. |
 | **type** | `String` | `system`: macOS system keychain secret store. |
-| `name` | `String` | Name of the keychain to use. |
+| `name` | `String` | Name of the keychain to use (file `<name>.keychain-db` in the keychain search list).<br/>Default: `ascli`. |
 | `type` | `String` | Vault type selector.<br/>Allowed values: `system`. |
 | **type** | `String` | `file`: Encrypted file secret store. |
 | `name` | `String` | Path to the encrypted vault file. Relative paths are resolved from the configuration folder.<br/>Default: `vault.bin`. |
@@ -3192,7 +3192,8 @@ vault server -dev -dev-root-token-id=dev-only-token
 > [!WARNING]
 > **macOS only**
 
-It is possible to manage secrets in macOS keychain (only read supported currently).
+It is possible to manage secrets in macOS keychain.
+Commands `list`, `ids` and `delete` are not supported: use the **Keychain Access** app.
 
 ```shell
 --vault=@json:'{"type":"system","name":"ascli"}'

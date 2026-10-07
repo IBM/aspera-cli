@@ -42,10 +42,11 @@ module Aspera
 
       def set(options)
         validate_set(options)
+        assert_new_label(options[:label])
         args = ['item', 'create', '--category', ITEM_CATEGORY, "--title=#{options[:label]}"]
+        args << "--url=#{options[:url]}"                            if options[:url]
         args << "#{FIELD_USERNAME}=#{options[:username]}"           if options[:username]
         args << "#{FIELD_PASSWORD}[password]=#{options[:password]}" if options[:password]
-        args << "#{FIELD_URL}[url]=#{options[:url]}"                if options[:url]
         args << "#{FIELD_NOTES_ID}=#{options[:description]}"        if options[:description]
         op_run(*args)
         nil
@@ -53,7 +54,7 @@ module Aspera
 
       def get(label:, id: nil, exception: true)
         identifier = id || label
-        stdout, _stderr, status = op_capture('item', 'get', identifier, '--format=json')
+        stdout, _stderr, status = op_capture('item', 'get', identifier, '--format=json', exception: false)
         if !status.success?
           raise "Secret '#{label}' not found" if exception
           return

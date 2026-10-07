@@ -301,6 +301,25 @@ module Aspera
             expect { includer.vault_required }.to(raise_error(Aspera::Cli::BadArgument, /vault/))
           end
         end
+
+        describe '#vault_value' do
+          let(:includer) do
+            Class.new do
+              include VaultManager
+
+              attr_accessor :vault
+            end.new.tap { |i| i.vault = vault_double }
+          end
+
+          it 'accepts a label containing dots' do
+            vault_store['my.preset'] = {label: 'my.preset', password: 'my_secret'}
+            expect(includer.vault_value('my.preset.password')).to(eq('my_secret'))
+          end
+
+          it 'raises BadArgument without parameter' do
+            expect { includer.vault_value('my_preset') }.to(raise_error(Aspera::Cli::BadArgument, /<name>.<param>/))
+          end
+        end
       end
     end
   end

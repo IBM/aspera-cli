@@ -419,7 +419,8 @@ components:
           enum: [system]
         name:
           type: string
-          description: Name of the keychain to use.
+          description: Name of the keychain to use (file `<name>.keychain-db` in the keychain search list).
+          default: ascli
     VaultOnePasswordOptions:
       type: object
       description: 1Password secret store (Connect REST API or CLI).
