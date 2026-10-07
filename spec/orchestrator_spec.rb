@@ -4,6 +4,7 @@ require_relative 'spec_helper'
 require 'aspera/cli/plugins/orchestrator'
 require 'aspera/cli/parser'
 require 'aspera/cli/context'
+require 'aspera/cli/transfer_agent'
 
 RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
   let(:parser) { Aspera::Cli::Parser.new('orchestrator') }
@@ -147,6 +148,28 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
         allow(orchestrator).to(receive(:call_ao).and_return({'dependencies' => dependencies, 'file' => path, 'workflow' => {}}))
         expect { orchestrator.action_workflows_import(file_path: path) }
           .to(raise_error(Aspera::Cli::Error, /not included in the file.*: Workflow 12$/))
+      end
+    end
+  end
+
+  describe '#action_workflows_export' do
+    it 'displays the workflow file without dependencies' do
+      allow(orchestrator).to(receive(:call_ao).and_return(instance_double(Net::HTTPResponse, body: "---\n")))
+      result = orchestrator.action_workflows_export(workflow_id: '1', export: {})
+      expect(orchestrator).to(have_received(:call_ao).with('export_workflow/1', accept: nil, query: nil, http: true))
+      expect(result).to(be_a(Aspera::Cli::Result::Text))
+      expect(result.data).to(eq("---\n"))
+    end
+
+    it 'saves the package with dependencies in the destination folder' do
+      Dir.mktmpdir do |dir|
+        resp = instance_double(Net::HTTPResponse, body: 'binary')
+        allow(resp).to(receive(:[]).with('Content-Disposition').and_return('attachment; filename="Workflow_wf_v9.wkf"'))
+        allow(orchestrator).to(receive_messages(call_ao: resp, transfer: instance_double(Aspera::Cli::TransferAgent, destination_folder: dir)))
+        result = orchestrator.action_workflows_export(workflow_id: '1', export: {'dependencies' => true})
+        expect(orchestrator).to(have_received(:call_ao).with('export_workflow/1', accept: nil, query: {export_with_dependencies: true}, http: true))
+        expect(File.binread(File.join(dir, 'Workflow_wf_v9.wkf'))).to(eq('binary'))
+        expect(result.data).to(eq("Saved to: #{File.join(dir, 'Workflow_wf_v9.wkf')}"))
       end
     end
   end

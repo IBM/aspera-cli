@@ -6,6 +6,8 @@ Released: [Place date of release here]
 
 ### New Features
 
+* `orchestrator`: `workflows export` with option `dependencies` saves a package (`.wkf`) with the sub-workflows and remote nodes used by the workflow, in the folder given by option `to_folder`.
+
 ### Issues Fixed
 
 * **global**: Removed gem dependency on `blankslate` (JSON-RPC client of agent `desktop`).

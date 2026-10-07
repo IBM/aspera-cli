@@ -5,6 +5,7 @@ require 'aspera/cli/special_values'
 require 'aspera/nagios'
 require 'aspera/log'
 require 'aspera/assert'
+require 'aspera/transfer/spec'
 require 'xmlsimple'
 
 module Aspera
@@ -139,9 +140,11 @@ module Aspera
             action: ->(workflow_id:, **) { Result::Status.new(call_ao('publish_workflow', body: {id: workflow_id}).eql?(true) ? 'published' : 'not published') }
           command :import_with_constraints, description: 'Import a workflow file present on the Orchestrator host, with resolution of conflicts',
             arguments: [{name: :payload, type: Hash, schema: 'opts:components.schemas.OrchestratorImportWithConstraints'}]
-          command :export,     description: 'Export a workflow',
-            arguments: [{name: :workflow_id, type: :identifier}],
-            action: ->(workflow_id:, **) { Result::Text.new(call_ao("export_workflow/#{workflow_id}", accept: nil, http: true).body) }
+          command :export,     description: 'Export a workflow: display it, or save it with its dependencies',
+            arguments: [
+              {name: :workflow_id, type: :identifier},
+              {name: :export, type: Hash, mandatory: false, default: {}, schema: 'opts:components.schemas.OrchestratorWorkflowExport'}
+            ]
           command :workorders, description: 'List work orders of a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
             action: ->(workflow_id:, **) { Result::ObjectList.new(call_ao("work_orders_list/#{workflow_id}")['work_orders']) }
@@ -238,6 +241,20 @@ module Aspera
             call_ao('workflows_list')['workflows']['workflow'],
             fields: %w[id portable_id name published_status published_revision_id latest_revision_id last_modification]
           )
+        end
+
+        # Without dependencies, the workflow file (YAML) is displayed.
+        # With dependencies, the package (binary) is saved in the destination folder.
+        def action_workflows_export(workflow_id:, export:, **)
+          dependencies = export.transform_keys(&:to_s)['dependencies'].eql?(true)
+          # Orchestrator exports dependencies for any value of the parameter
+          resp = call_ao("export_workflow/#{workflow_id}", accept: nil, query: dependencies ? {export_with_dependencies: true} : nil, http: true)
+          return Result::Text.new(resp.body) unless dependencies
+          disposition = resp['Content-Disposition']
+          file_name = disposition && Rest.parse_header(disposition)[:parameters][:filename]
+          file_path = File.join(transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE), File.basename(file_name || "Workflow_#{workflow_id}.wkf"))
+          File.binwrite(file_path, resp.body)
+          Result::Status.new("Saved to: #{file_path}")
         end
 
         # The file is uploaded as a multipart form

@@ -713,6 +713,17 @@ components:
         Valid keys are defined by the workflow's input specification.
         Use `orchestrator workflows inputs WORKFLOW_ID` to discover required parameters.
       additionalProperties: true
+    OrchestratorWorkflowExport:
+      type: object
+      description: Options of `orchestrator workflows export`.
+      additionalProperties: false
+      properties:
+        dependencies:
+          type: boolean
+          description: >-
+            Export the sub-workflows and remote nodes used by the workflow in a package (`.wkf`),
+            saved in the folder given by option `to_folder` (default: current folder), instead of displaying the workflow.
+          default: false
     OrchestratorImportWithConstraints:
       type: object
       description: >-

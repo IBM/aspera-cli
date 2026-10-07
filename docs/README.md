@@ -9340,6 +9340,8 @@ transfer smart sub my_smart_id @: source.paths.0=my_smart_file source_type=user_
 
 ## Plugin: `orchestrator`: IBM Aspera Orchestrator
 
+To write workflow files without the designer, refer to the [Workflow Authoring Guide](https://github.com/laurent-martin/aspera-orchestrator-plugins-doc/blob/main/docs/workflow-authoring-guide.md): file format, graph, execution, examples and REST API.
+
 ### Authentication
 
 The Orchestrator plugin supports different credentials and authentication styles configured via `--auth_style`:
@@ -9385,6 +9387,7 @@ ascli orchestrator workflows start 1234 @json:'{"Param":"world !"}' @json:'{"ste
 ### Import a workflow
 
 Command `workflows export` displays a workflow in Orchestrator's export format (YAML).
+With option `dependencies`, it saves instead a package (`.wkf`) that also contains the sub-workflows and remote nodes used by the workflow, in the folder given by option `to_folder` (default: current folder).
 Command `workflows import` creates a new workflow from such a file, and displays it, including its new `id`.
 The imported workflow is a draft: publish it with `workflows publish` before starting it.
 
@@ -9394,6 +9397,13 @@ Example: Copy workflow `1234` to another Orchestrator, where the imported workfl
 ascli orchestrator workflows export 1234 --out.file=my_workflow.yml
 ascli orchestrator workflows import my_workflow.yml --preset=other_orchestrator --out.fields=id
 ascli orchestrator workflows publish 5678 --preset=other_orchestrator
+```
+
+Example: Save workflow `1234` with its dependencies in folder `/tmp`, and import the package:
+
+```shell
+ascli orchestrator workflows export 1234 @json:'{"dependencies":true}' --to-folder=/tmp
+ascli orchestrator workflows import /tmp/Workflow_my_workflow_v100.wkf
 ```
 
 Command `workflows import` always creates a new workflow.
