@@ -5173,47 +5173,157 @@ ascli server upload "faux:///mydir?file=testfile&count=1000&size=1" --to-folder=
 
 ### `file:` for growing files
 
-The built-in `file` PVCL adapter allows referencing a local file using a URI-style path with optional query parameters.
-This is particularly useful for transferring **growing files** - files that are still being written at the time of transfer (for example, live recordings, log files, streaming output).
+A growing file is a file that another program is still writing during the transfer, for example a live recording, a log file, or a stream capture.
+The built-in `file` PVCL adapter of `ascp` transfers such a file: `ascp` sends the data as the file grows, and completes the transfer when the file stops changing.
+This is a feature of `ascp`, not `ascli`.
 
-The source parameter syntax is:
+For more information, see the [HSTS `ascp` command reference](https://www.ibm.com/docs/en/ahts/4.4.x?topic=line-ascp-command-reference).
+
+#### Syntax of the `file:` URI
+
+To transfer a growing file, specify the source file as a `file:` URI that contains the `grow` parameter:
 
 ```shell
-file:///<PATH>?grow=<WAIT_TIME>[&wait_start=[mtime|null_read]][&confirm_stop=[true|false]]
+file:///<PATH>?grow=<WAIT_TIME>[&<PARAMETER>=<VALUE>...]
 ```
 
-A transfer is considered complete when the source file has not changed for `wait_time` seconds.
-See [HSTS `ascp` command reference](https://www.ibm.com/docs/en/ahts/4.4.x?topic=line-ascp-command-reference) for full details.
+The path of the file follows the prefix `file:///`:
 
-> [!NOTE]
-> The source file must reside on a **native file system**.
+| Path     | Example URI                        | File                             |
+|----------|------------------------------------|----------------------------------|
+| Relative | `file:///live.log?grow=60`         | `live.log` in the current folder |
+| Absolute | `file:////var/log/app.log?grow=60` | `/var/log/app.log`               |
 
-Key query parameters:
+An absolute path starts with `/`, so the URI of an absolute path contains four slashes.
 
-| Parameter      | Description                                                          |
-|----------------|----------------------------------------------------------------------|
-| `grow`         | **(Required)** Wait time in seconds after last file change before the transfer is declared complete.<br/>Default wait time is 10 s if set to a non-numeric string. |
-| `wait_start`   | How the wait time is measured:<br/>- `mtime` (default) file modification time<br/>- `null_read` first zero-byte read. |
-| `confirm_stop` | Set to `true` to let an external program signal completion by setting:<br/>`mtime < current_time - wait_time`.<br/>Ignored when `wait_start=null_read`. |
+The URI supports the following parameters:
 
-> [!NOTE]
-> `ascp` requires that all sources in a single transfer session share the same PVCL URI scheme.
-> This means the `file:` URI (with its query parameters) must be specified either directly on the command line, or uniformly as a source prefix - it cannot be mixed with plain paths in a file list.
-> So, use one of the following methods:
+| Parameter       | Description |
+|-----------------|-------------|
+| `grow`          | Wait time, in seconds: the transfer completes when the file does not change during this time.<br/>Required.<br/>If the value is not a number, for example `grow=default`, the wait time is 10 seconds. |
+| `wait_start`    | Start of the wait time:<br/>- `mtime`: the last modification time of the file.<br/>- `null_read`: the time when `ascp` reaches the end of the file, that is, when a read of the file returns no data.<br/>Default: `mtime` |
+| `confirm_stop`  | If `true`, the program that writes the file confirms the end of the file. See [Confirming the end of a growing file](#confirming-the-end-of-a-growing-file).<br/>Ignored if `wait_start` is `null_read`.<br/>Default: `false` |
+| `max_grow_size` | Maximum size of the file, in bytes.<br/>Accepts the suffixes `k`, `m`, `g`, `t`, `p`, and `e` (powers of 1024).<br/>Default: 2<sup>63</sup> - 1 bytes, or the maximum file size of the file system if lower. |
 
-- **File list with `source_root` transfer spec** (preferred)
+> [!IMPORTANT]
+> The growing file must be on a native file system, that is, a file system that the operating system accesses directly.
 
-  Place only the bare filename(s) in the file list, and pass the `file:` URI as the source prefix so that the query parameters apply uniformly to every entry:
+> [!TIP]
+> On the command line, enclose the URI in single quotes: the characters `?` and `&` have a special meaning for the shell.
+
+#### Completion of the transfer
+
+`ascp` sends the data as the program writes it.
+When `ascp` has sent all the data that the file contains, it starts to count the wait time.
+If the file grows during the wait time, `ascp` sends the new data and starts to count the wait time again.
+When the wait time ends without a change to the file, the transfer completes.
+
+As a result:
+
+- The command completes after the wait time that follows the last write.
+  For example, with `grow=120`, the command completes about 2 minutes after the program stops writing.
+- If the program pauses for longer than the wait time, the transfer completes before the end of the file, and the destination file is incomplete.
+  Set a wait time that is longer than the longest pause of the program.
+
+To complete the transfer without waiting, use `confirm_stop`.
+
+#### Confirming the end of a growing file
+
+With `confirm_stop=true`, the program that writes the file signals the end of the file, so the transfer does not wait.
+
+1. Start the transfer with `confirm_stop=true` and a wait time that is longer than the longest pause of the program:
+
+   ```shell
+   ascli server upload live.log --ts.source_root='file:///?grow=600&confirm_stop=true' --to-folder=/Upload
+   ```
+
+2. When the program finishes writing the file, set the modification time of the file to a time earlier than the wait time.
+   For example:
+
+   ```shell
+   touch -t 200001010000 live.log
+   ```
+
+   The transfer completes immediately.
+
+> [!IMPORTANT]
+> With `confirm_stop=true`, if the wait time ends before the program sets the modification time, `ascp` considers the file invalid and the transfer fails.
+
+To report an error in the file, with or without `confirm_stop`, the program sets the modification time of the file to 0, that is, `1970-01-01 00:00:00 UTC`.
+`ascp` then fails the transfer of the file.
+For example:
+
+```shell
+TZ=UTC touch -t 197001010000 live.log
+```
+
+#### Uploading a growing file
+
+`ascp` activates the growing file mode only if it finds the `grow` parameter in one of the following locations:
+
+- The first source on its command line.
+- The source prefix: `ascp` option `--source-prefix`, set by transfer spec parameter `source_root`.
+- The docroot of the transfer user, on the server.
+
+`ascp` does not look for the `grow` parameter in a file list.
+By default, the [`direct`](#agent-direct) agent provides the sources to `ascp` in a file list.
+As a result, if you specify a `file:` URI as a source with the default options, the transfer fails with the error `Session initiation failed, fail to set pvcl`.
+
+Use one of the following methods.
+The examples use the [`direct`](#agent-direct) agent.
+
+- **Set the URI as source prefix** (recommended)
+
+  Set transfer spec parameter `source_root` to a `file:` URI that contains the folder of the files and the parameters.
+  Specify the sources as paths relative to this folder.
+  `ascp` inserts each source path before the parameters: for example, `file:////var/log?grow=120` and `app.log` give `file:////var/log/app.log?grow=120`.
+  All the files of the transfer use the same parameters.
+
+  To upload `live.log` from the current folder:
 
   ```shell
-  ascli server upload growing --to-folder=/Upload --ts.source_root='file:///?grow=120' --transfer.quiet=false
+  ascli server upload live.log --ts.source_root='file:///?grow=120' --to-folder=/Upload
   ```
 
-- **URI directly on the command line with `file_list=false`**
+  To upload `/var/log/app.log`:
 
   ```shell
-  ascli server upload 'file:///./growing?grow=120' --to-folder=/Upload --transfer.file_list=false --transfer.quiet=false
+  ascli server upload app.log --ts.source_root='file:////var/log?grow=120' --to-folder=/Upload
   ```
+
+- **Set the URI as source on the command line**
+
+  Set transfer parameter `file_list` to `false`, so that `ascli` places the source on the `ascp` command line instead of in a file list.
+  Use this method for a single file.
+
+  ```shell
+  ascli server upload 'file:///live.log?grow=120' --to-folder=/Upload --transfer.file_list=false
+  ```
+
+> [!TIP]
+> To display the native progress bar of `ascp` instead of the progress bar of `ascli`, add `--transfer.quiet=false`.
+
+#### Downloading a growing file
+
+For a download, the growing file is on the server.
+The transfer user on the server usually has a docroot, and the server does not resolve a `file:` URI from the client in this docroot: the transfer fails with the error `No such file or directory`.
+Instead, the server administrator sets the parameters in the docroot of the transfer user.
+For example, on the server:
+
+```shell
+asconfigurator -x 'set_user_data;user_name,xfer_live;absolute,file:////data/live?grow=120'
+```
+
+Then, the client downloads the file with a path relative to the docroot, as for any other file:
+
+```shell
+ascli server download live.log --to-folder=.
+```
+
+All the transfers of this user are then growing file transfers, so use a dedicated transfer user.
+This method also applies to transfers that use a token, for example with the Node API or Aspera on Cloud: for a download with a token, `ascp` does not accept a `file:` URI as source prefix.
+
+If the transfer user has no docroot and the transfer does not use a token, you can also use the upload methods, with absolute paths on the server.
 
 ### Usage
 
