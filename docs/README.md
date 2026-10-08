@@ -4512,7 +4512,7 @@ The description gives the corresponding `ascp` argument or environment variable.
 | `tags` | `Hash` | Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specifies a "retry timeout" but is not actually used for node API initiated transfers.<br/>(`--tags64=(conversion){object}`) |
 | `target_rate_cap_kbps` | `Integer` | Maximum target rate for incoming transfers, in kilobits per second. Returned by upload/download_setup node API.<br/>(C, T) |
 | `target_rate_kbps` | `Integer` | Specifies desired speed for the transfer.<br/>(`-l {integer}`) |
-| `target_rate` | `String` | Pseudo-parameter: desired transfer rate as a human-readable string with an optional unit suffix. Converted to `target_rate_kbps` before the transfer is started, overriding it if both are present. Accepted formats: plain integer (kbps), or integer followed by `k`/`K` (kbps), `m`/`M` (x1000 kbps), `g`/`G` (x1000000 kbps). Examples: `100000`, `100000k`, `100m`, `1g`. |
+| `target_rate` | `String, Integer` | Pseudo-parameter: desired transfer rate in bps, with an optional unit suffix. Converted to `target_rate_kbps` (rounded down) before the transfer is started, overriding it if both are present. Also applies to `async` (sync). Accepted formats: integer (bps), or integer followed by `k`/`K` (x1000), `m`/`M` (x1000000), `g`/`G` (x1000000000). Examples: `100000000`, `100000k`, `100m`, `1g`. |
 | `title` | `String` | Title of the transfer.<br/>(C, N, T) |
 | `token` | `String` | Authorization token. Type is Bearer, Basic or ATM.<br/>(env:`ASPERA_SCP_TOKEN`) |
 | `use_ascp4` | `Bool` | Specify version of protocol. `ascp4` will be deprecated.<br/>(A, N, T)<br/>Default: `false`. |
@@ -10536,7 +10536,7 @@ ascli config sync spec
 | `transport.raw_options` | `Array[String]` | Pass arbitrary arguments to `ascp`.<br/>(special:`--raw-options={array}`) |
 | `transport.read_block_size` | `Integer` | Use the specified block size (in bytes) for reading. Default is determined by `aspera.conf`.<br/>(`--read-block-size={integer}`)(-g) |
 | `transport.rexmsg_size` | `Integer` | Use the specified size (in bytes) for a retransmission request. Default is determined by `aspera.conf`.<br/>(`--rexmsg-size={integer}`)(-X) |
-| `transport.target_rate` | `Integer` | Transfer no faster than the specified rate (in bps).<br/>Default: `10000000`.<br/>(`--target-rate={integer}`)(-l) |
+| `transport.target_rate` | `Integer` | Transfer no faster than the specified rate (in bps). A string with suffix `k`, `m` or `g` is converted to bps by `ascli` (e.g. `100m`).<br/>Default: `10000000`.<br/>(`--target-rate={integer}`)(-l) |
 | `transport.udp_port` | `Integer` | Use the specified UDP port for FASP data transfer.<br/>Default: `33001`.<br/>(`--udp-port={integer}`)(-O) |
 | `transport.write_block_size` | `Integer` | Use the specified block size (in bytes) for writing. Default is determined by `aspera.conf`.<br/>(`--write-block-size={integer}`)(-G) |
 | `transport` | `Hash` | &nbsp; |

@@ -77,8 +77,10 @@ properties:
           type: string
           x-cli-option: true
         target_rate:
-          type: string
+          type: integer
           x-cli-option: true
+          x-ts-name: target_rate_kbps
+          x-ts-convert: kbps_to_bps
         cooloff:
           type: integer
           x-cli-option: true

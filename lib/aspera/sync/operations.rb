@@ -4,6 +4,7 @@
 
 require 'aspera/ascp/installation'
 require 'aspera/agent/direct'
+require 'aspera/transfer/spec'
 require 'aspera/exec_spec'
 require 'aspera/command_line_converter'
 require 'aspera/command_line_builder'
@@ -98,11 +99,13 @@ module Aspera
             remote = sync_info['remote']
             Aspera.assert_type(remote, Hash) { 'remote' }
             Aspera.assert_type(remote['path'], String) { 'remote path' }
+            normalize_target_rate(sync_info['transport'])
             # get transfer spec if possible, and feed back to new structure
             if block_given?
               transfer_spec = yield(direction_sym(sync_info), sync_info['local']['path'], remote['path'])
               Log.dump(:auth_ts, transfer_spec)
               transfer_spec.deep_merge!(opt_ts) unless opt_ts.nil?
+              Transfer::Spec.resolve_target_rate(transfer_spec)
               tspec_to_sync_info(transfer_spec, sync_info, CONF_SCHEMA)
               update_remote_dir(remote, 'path', transfer_spec)
             end
@@ -123,6 +126,7 @@ module Aspera
               sync_info.keys.push('instance').uniq.sort.eql?(CMDLINE_PARAMS_KEYS)
             Aspera.assert_type(sync_info['sessions'], Array)
             Aspera.assert_type(sync_info['sessions'].first, Hash)
+            sync_info['sessions'].each { |session| normalize_target_rate(session) }
             if block_given?
               sync_info['sessions'].each do |session|
                 Aspera.assert_type(session['local_dir'], String) { 'local_dir' }
@@ -130,6 +134,7 @@ module Aspera
                 transfer_spec = yield(direction_sym(session), session['local_dir'], session['remote_dir'])
                 Log.dump(:auth_ts, transfer_spec)
                 transfer_spec.deep_merge!(opt_ts) unless opt_ts.nil?
+                Transfer::Spec.resolve_target_rate(transfer_spec)
                 tspec_to_sync_info(transfer_spec, session, ARGS_SESSION_SCHEMA)
                 session['private_key_paths'] = Ascp::Installation.instance.aspera_token_ssh_key_paths(:rsa) if transfer_spec.key?('token')
                 update_remote_dir(session, 'remote_dir', transfer_spec)
@@ -256,6 +261,12 @@ module Aspera
         end
 
         # private
+
+        # Convert `target_rate` given as a string with optional suffix (e.g. `100m`) into integer bps
+        # @param params [Hash, nil] `transport` (`conf` format) or session (`args` format), modified in place
+        def normalize_target_rate(params)
+          params['target_rate'] = Transfer::Spec.rate_string_to_bps(params['target_rate']) if params.is_a?(Hash) && params['target_rate'].is_a?(String)
+        end
 
         # Transfer specification to synchronization information
         # tag `x-ts-name` in schema is used to map transfer spec parameters to async `sync_info`

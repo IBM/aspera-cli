@@ -252,7 +252,7 @@ module Aspera
         # updated transfer spec with command line
         transfer_spec.deep_merge!(@user_transfer_spec)
         # resolve pseudo-parameter: target_rate -> target_rate_kbps (overrides target_rate_kbps if both are present)
-        transfer_spec['target_rate_kbps'] = Transfer::Spec.rate_string_to_kbps(transfer_spec.delete('target_rate')) if transfer_spec.key?('target_rate')
+        Transfer::Spec.resolve_target_rate(transfer_spec)
         # recursively remove values that are nil (user wants to delete)
         transfer_spec.deep_do { |hash, key, value, _unused| hash.delete(key) if value.nil? }
         # if TS from app has content_protection (e.g. F5), that means content is protected: ask password if not provided

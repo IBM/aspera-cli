@@ -806,6 +806,7 @@ properties:
         x-cli-short: -X
       target_rate:
         description: Transfer no faster than the specified rate (in bps).
+          A string with suffix `k`, `m` or `g` is converted to bps by `ascli` (e.g. `100m`).
         type: integer
         default: 10000000
         x-ts-name: target_rate_kbps

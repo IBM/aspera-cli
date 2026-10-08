@@ -7,6 +7,7 @@ Released: [Place date of release here]
 ### New Features
 
 * `orchestrator`: `workflows export` with option `dependencies` saves a package (`.wkf`) with the sub-workflows and remote nodes used by the workflow, in the folder given by option `to_folder`.
+* `sync`: `target_rate` in `sync_info` accepts a string with suffix `k`, `m` or `g`, converted to bps (e.g. `100m`), in both `conf` and `args` formats.
 
 ### Issues Fixed
 
@@ -25,6 +26,8 @@ Released: [Place date of release here]
 * `config vault`: `@vault:` failed with a secret label containing dots (for example, a preset name secured with `preset secure`).
 * `config vault`: `system` (macOS): `show` and `@vault:` return the `username`.
 * `config vault`: `1password`: `url` is read from the website of the item (also for items created in 1Password).
+* **global**: Pseudo transfer-spec parameter `target_rate` is in bps, as documented: a value without suffix or with suffix `k` was taken as kbps. An integer value (e.g. `--ts.target_rate=1000000`) was rejected.
+* `sync`: Transfer spec parameter `target_rate` was ignored, and `target_rate_kbps` too with the `args` format of `sync_info`.
 
 ### Breaking Changes
 

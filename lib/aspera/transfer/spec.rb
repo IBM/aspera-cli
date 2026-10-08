@@ -35,13 +35,13 @@ module Aspera
           'sparse_csum' => 'sparse_checksum',
           'full_csum'   => 'full_checksum'
         }
-        # Multipliers for target_rate suffix (result is in kbps)
-        RATE_SUFFIX_KBPS = {
-          'k' => 1,
-          'm' => 1_000,
-          'g' => 1_000_000
+        # Multipliers for rate suffix (result is in bps)
+        RATE_SUFFIX_BPS = {
+          'k' => 1_000,
+          'm' => 1_000_000,
+          'g' => 1_000_000_000
         }.freeze
-        private_constant :POLICY_FIX, :RATE_SUFFIX_KBPS
+        private_constant :POLICY_FIX, :RATE_SUFFIX_BPS
         # translate upload/download to send/receive
         def transfer_type_to_direction(transfer_type)
           XFER_TYPE_TO_DIR.fetch(transfer_type)
@@ -52,15 +52,23 @@ module Aspera
           XFER_DIR_TO_TYPE.fetch(direction)
         end
 
-        # Parse a human-readable rate string (as accepted by ascp -l) into an integer kbps value.
-        # Accepted: plain integer (kbps), or integer + suffix k/K (kbps), m/M (x1000 kbps), g/G (x1000000 kbps).
-        # @param value [String] e.g. "100m", "500000", "1g"
-        # @return [Integer] value in kbps
-        def rate_string_to_kbps(value)
+        # Parse a human-readable rate (as accepted by async -l) into an integer bps value.
+        # Accepted: plain integer (bps), or integer + suffix k/K (x1000), m/M (x1000000), g/G (x1000000000).
+        # @param value [String, Integer] e.g. "100m", "500000", "1g", 500000
+        # @return [Integer] value in bps
+        def rate_string_to_bps(value)
           m = value.to_s.strip.match(/\A(\d+)([kKmMgG])?\z/)
           Aspera.assert(m) { "Invalid rate value: #{value.inspect}. Expected integer with optional suffix k/K, m/M or g/G." }
-          multiplier = m[2] ? RATE_SUFFIX_KBPS.fetch(m[2].downcase) : 1
+          multiplier = m[2] ? RATE_SUFFIX_BPS.fetch(m[2].downcase) : 1
           return m[1].to_i * multiplier
+        end
+
+        # Resolve pseudo-parameter `target_rate` (bps) into `target_rate_kbps` (rounded down), overriding it if both are present.
+        # @param transfer_spec [Hash] Transfer spec, modified in place
+        def resolve_target_rate(transfer_spec)
+          return unless transfer_spec.key?('target_rate')
+          rate = transfer_spec.delete('target_rate')
+          transfer_spec['target_rate_kbps'] = rate_string_to_bps(rate) / 1000 unless rate.nil?
         end
 
         def fix_transferd_resume_policy(transfer_spec)
