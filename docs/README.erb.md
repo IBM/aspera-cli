@@ -395,7 +395,11 @@ To uninstall, delete the folder, and the symbolic link if it was created.
 A ready-to-use ZIP archive for Windows (x64) is available in the [Releases](https://github.com/IBM/aspera-cli/releases): `<%=gemspec.name%>-<%=ph :version%>-windows-x86_64-portable.zip`.
 
 It contains the Ruby runtime, the <%=gemspec.name%> gem with its dependencies, and the Aspera Transfer SDK (`ascp`).
-No installation step, no administrator rights, and no internet access are required.
+Apart from the prerequisite below, no installation step, no administrator rights, and no internet access are required.
+
+> [!IMPORTANT]
+> The package does not include the Microsoft Visual C++ Redistributable (x64), which `ascp` requires.
+> If it is not already present on the system, install it from [Microsoft Visual C++ Redistributable latest supported downloads](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist) (administrator rights required), otherwise transfers fail.
 
 1. Download the ZIP archive, then right-click on it and select **Extract All...**.
    Preferably, extract in a folder writable by the user, for example: `%LOCALAPPDATA%\Programs`.
