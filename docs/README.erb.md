@@ -1588,24 +1588,25 @@ It allows you to construct complex parameters (`Hash`es and `Array`s) directly f
 The general syntax for this argument is:
 
 ```text
-@: <%=ph :dot_path%>=<%=ph :value%> [<%=ph :dot_path%>=<%=ph :value%>] ... [END]
+@:[<%=ph :marker%>] <%=ph :dot_path%>=<%=ph :value%> [<%=ph :dot_path%>=<%=ph :value%>] ... [<%=ph :marker%>]
 ```
 
-- `@:`: The prefix that initiates the collection of [dot-path](#dot-path-notation) assignments into a single data structure.
+- `@:[<%=ph :marker%>]`: A standalone argument that starts collecting [dot-path](#dot-path-notation) assignments into a single data structure.
+  The optional text after `:` sets the end marker. If it is empty, the marker is `END`.
 
 - `<%=ph :dot_path%>=<%=ph :value%>`: An assignment using the standard [dot-path](#dot-path-notation) notation. Multiple assignments can be provided in sequence to build a complex object.
 
-- `END`: An optional marker that terminates the `@:` parsing session.
+- `<%=ph :marker%>` (`END` by default): An optional argument that ends the collection.
 
-  - Without `END`: **All** remaining positional arguments are consumed and interpreted as part of the nested structure, as if `END` were the last argument on the command line.
+  - Without the marker: **All** remaining positional arguments are collected, and each one must contain `=`.
 
-  - With `END`: **Only** arguments between `@:` and `END` are used for the structure. Any arguments following `END` are treated as separate, subsequent positional parameters for the command.
+  - With the marker: **Only** arguments between `@:` and the marker are used for the structure. Arguments after the marker are passed to the command as normal positional arguments.
 
-  - If another value than `END` is preferred, then specify: `@:<%=ph :marker%>` and use `@:<%=ph :marker%>` as replacement for `END`.
+  - Example with a custom marker: `@:STOP a=1 STOP`.
 
 > [!IMPORTANT]
 > Use `END` whenever any positional argument must follow the object built with `@:` (for example, a file list, or any other subsequent positional parameter).
-> Without `END`, those arguments are silently consumed as [dot-path](#dot-path-notation) keys instead of being passed to the command.
+> Without `END`, those arguments are collected as [dot-path](#dot-path-notation) assignments instead of being passed to the command: an argument without `=` causes an error, and an argument containing `=` is silently added to the structure.
 
 **Example**: Sending a package with a file list using `@:` for package information.
 
@@ -1614,7 +1615,7 @@ The general syntax for this argument is:
 ```
 
 > [!CAUTION]
-> In the above example, removing `END` would cause `file1.dat` and `file2.dat` to be consumed as [dot-path](#dot-path-notation) keys, not passed as files.
+> In the above example, removing `END` causes an error, because `file1.dat` is read as a [dot-path](#dot-path-notation) assignment and does not contain `=`.
 
 > [!NOTE]
 > `@:` can also be used as an option value (for example, `--query=@: a=b`).

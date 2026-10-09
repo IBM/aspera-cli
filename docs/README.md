@@ -1633,24 +1633,25 @@ It allows you to construct complex parameters (`Hash`es and `Array`s) directly f
 The general syntax for this argument is:
 
 ```text
-@: <DOT_PATH>=<VALUE> [<DOT_PATH>=<VALUE>] ... [END]
+@:[<MARKER>] <DOT_PATH>=<VALUE> [<DOT_PATH>=<VALUE>] ... [<MARKER>]
 ```
 
-- `@:`: The prefix that initiates the collection of [dot-path](#dot-path-notation) assignments into a single data structure.
+- `@:[<MARKER>]`: A standalone argument that starts collecting [dot-path](#dot-path-notation) assignments into a single data structure.
+  The optional text after `:` sets the end marker. If it is empty, the marker is `END`.
 
 - `<DOT_PATH>=<VALUE>`: An assignment using the standard [dot-path](#dot-path-notation) notation. Multiple assignments can be provided in sequence to build a complex object.
 
-- `END`: An optional marker that terminates the `@:` parsing session.
+- `<MARKER>` (`END` by default): An optional argument that ends the collection.
 
-  - Without `END`: **All** remaining positional arguments are consumed and interpreted as part of the nested structure, as if `END` were the last argument on the command line.
+  - Without the marker: **All** remaining positional arguments are collected, and each one must contain `=`.
 
-  - With `END`: **Only** arguments between `@:` and `END` are used for the structure. Any arguments following `END` are treated as separate, subsequent positional parameters for the command.
+  - With the marker: **Only** arguments between `@:` and the marker are used for the structure. Arguments after the marker are passed to the command as normal positional arguments.
 
-  - If another value than `END` is preferred, then specify: `@:<MARKER>` and use `@:<MARKER>` as replacement for `END`.
+  - Example with a custom marker: `@:STOP a=1 STOP`.
 
 > [!IMPORTANT]
 > Use `END` whenever any positional argument must follow the object built with `@:` (for example, a file list, or any other subsequent positional parameter).
-> Without `END`, those arguments are silently consumed as [dot-path](#dot-path-notation) keys instead of being passed to the command.
+> Without `END`, those arguments are collected as [dot-path](#dot-path-notation) assignments instead of being passed to the command: an argument without `=` causes an error, and an argument containing `=` is silently added to the structure.
 
 **Example**: Sending a package with a file list using `@:` for package information.
 
@@ -1659,7 +1660,7 @@ ascli aoc packages send @: name="<TITLE>" recipients.0=user@example.com END file
 ```
 
 > [!CAUTION]
-> In the above example, removing `END` would cause `file1.dat` and `file2.dat` to be consumed as [dot-path](#dot-path-notation) keys, not passed as files.
+> In the above example, removing `END` causes an error, because `file1.dat` is read as a [dot-path](#dot-path-notation) assignment and does not contain `=`.
 
 > [!NOTE]
 > `@:` can also be used as an option value (for example, `--query=@: a=b`).
@@ -5199,7 +5200,7 @@ An absolute path starts with `/`, so the URI of an absolute path contains four s
 The URI supports the following parameters:
 
 | Parameter       | Description |
-|-----------------|-------------|
+|-----------------|----------------------------------------------------------------|
 | `grow`          | Wait time, in seconds: the transfer completes when the file does not change during this time.<br/>Required.<br/>If the value is not a number, for example `grow=default`, the wait time is 10 seconds. |
 | `wait_start`    | Start of the wait time:<br/>- `mtime`: the last modification time of the file.<br/>- `null_read`: the time when `ascp` reaches the end of the file, that is, when a read of the file returns no data.<br/>Default: `mtime` |
 | `confirm_stop`  | If `true`, the program that writes the file confirms the end of the file. See [Confirming the end of a growing file](#confirming-the-end-of-a-growing-file).<br/>Ignored if `wait_start` is `null_read`.<br/>Default: `false` |
