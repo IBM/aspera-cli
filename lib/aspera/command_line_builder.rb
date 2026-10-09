@@ -31,6 +31,7 @@ module Aspera
       'x-agents',       # [Array]        Supported agents (for doc only), if not specified: all
       'x-ts-name',      # [Boolean,String] (async) true if same name in transfer spec, else real name in transfer spec, else ignored
       'x-ts-convert',   # [String]       (async) Name of methods to convert value from transfer spec to `conf` API.
+      'x-unit',         # [String]       (async) Time unit of the integer value in `conf` (e.g. `ms`), command line option is a DURATION
       'x-deprecation'   # [String]       Deprecation message for doc
     ].freeze
 

@@ -28,6 +28,7 @@ Released: [Place date of release here]
 * `config vault`: `1password`: `url` is read from the website of the item (also for items created in 1Password).
 * **global**: Pseudo transfer-spec parameter `target_rate` is in bps, as documented: a value without suffix or with suffix `k` was taken as kbps. An integer value (e.g. `--ts.target_rate=1000000`) was rejected.
 * `sync`: Transfer spec parameter `target_rate` was ignored, and `target_rate_kbps` too with the `args` format of `sync_info`.
+* `config sync translate`: `-C`, `--ws-connect` and `-D` set `true` instead of `mode`=`continuous`, `connect_mode`=`ws` and `log.level`=`dbg1`, and `--scan-interval` and `--remote-scan-interval` were not converted to milliseconds.
 
 ### Breaking Changes
 

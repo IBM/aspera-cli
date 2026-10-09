@@ -6,6 +6,7 @@ $comment: >-
   It is modified with special `x-` fields.
   x-ts-name      [Boolean,String] `true` if same name in transfer spec, else real name in transfer spec
   x-ts-convert   [String]         Name of methods to convert value from transfer spec to `conf`
+  x-unit         [String]         Time unit of the integer value (e.g. `ms`), the command line option is a DURATION
   `x-` fields are also documented in `command_line_builder.rb`
 type: object
 required:
@@ -264,6 +265,7 @@ properties:
     type: integer
     default: -1
     x-cli-option: --scan-interval
+    x-unit: ms
   local_scan_threads:
     description: Number of directory scanning threads on the local host.
       Value must be between 1 and 99
@@ -606,6 +608,7 @@ properties:
     default: -1
     x-cli-option: --remote-scan-interval
     x-cli-special: true
+    x-unit: ms
   remote_scan_threads:
     description: Number of directory scanning threads on the remote host.
       Value must be between 1 and 99.

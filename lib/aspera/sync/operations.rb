@@ -341,9 +341,38 @@ module Aspera
               current[key] ||= {}
               current = current[key]
             end
-            current[last_key] = props['x-cli-switch'] ? true : args.shift
+            current[last_key] =
+              if props['x-cli-switch']
+                # a special switch sets the non-default enum value, e.g. `--continuous` sets `mode` to `continuous`
+                props.key?('enum') ? (props['enum'] - [props['default']]).first : true
+              elsif props.key?('x-unit')
+                duration_to_unit(args.shift, props['x-unit'])
+              else
+                args.shift
+              end
           end
           return result
+        end
+
+        # Convert an `async` DURATION to an integer in the given time unit
+        # @param value [String] `DDd HH:MM:SS.mmm` or `NNw NNd NNh NNm NNs NNms NNus`, leading fields and spaces may be omitted, a plain number is seconds
+        # @param unit  [String] Time unit of result (`x-unit` in schema), e.g. `ms`
+        # @return [Integer] Duration in `unit`, rounded down
+        def duration_to_unit(value, unit)
+          Aspera.assert_values(unit, DURATION_UNIT_US.keys) { 'x-unit' }
+          value = value.to_s.delete(' ')
+          if (m = value.match(/\A(?:(\d+)d)?(?:(?:(\d+):)?(\d+):)?(\d+)(?:\.(\d{1,3}))?\z/))
+            days, hours, minutes, seconds, millis = m.captures
+            hours = (days.to_i * 24) + hours.to_i
+            minutes = (hours * 60) + minutes.to_i
+            seconds = (minutes * 60) + seconds.to_i
+            microseconds = (seconds * DURATION_UNIT_US['s']) + (millis.to_s.ljust(3, '0').to_i * DURATION_UNIT_US['ms'])
+          else
+            units = value.scan(/(\d+)(ms|us|[wdhms])/)
+            Aspera.assert(!units.empty? && units.join.eql?(value)) { "Invalid duration: #{value}" }
+            microseconds = units.sum { |number, number_unit| number.to_i * DURATION_UNIT_US[number_unit] }
+          end
+          microseconds / DURATION_UNIT_US[unit]
         end
       end
       # Private stuff:
@@ -357,8 +386,10 @@ module Aspera
       PRIVATE_FOLDER = "#{Environment.instance.os.eql?(Environment::OS_WINDOWS) ? '~' : '.'}private-asp"
       ASYNC_DB = 'snap.db'
       PARAM_KEYS = %w[local sessions].freeze
+      # Microseconds per unit of `async` DURATION
+      DURATION_UNIT_US = {'w' => 604_800_000_000, 'd' => 86_400_000_000, 'h' => 3_600_000_000, 'm' => 60_000_000, 's' => 1_000_000, 'ms' => 1_000, 'us' => 1}.freeze
 
-      private_constant :ARGS_INSTANCE_SCHEMA, :ARGS_SESSION_SCHEMA, :CMDLINE_PARAMS_KEYS, :ASYNC_ADMIN_EXECUTABLE, :PRIVATE_FOLDER, :ASYNC_DB, :PARAM_KEYS
+      private_constant :ARGS_INSTANCE_SCHEMA, :ARGS_SESSION_SCHEMA, :CMDLINE_PARAMS_KEYS, :ASYNC_ADMIN_EXECUTABLE, :PRIVATE_FOLDER, :ASYNC_DB, :PARAM_KEYS, :DURATION_UNIT_US
     end
   end
 end
