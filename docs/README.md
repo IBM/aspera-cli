@@ -1752,11 +1752,11 @@ A command line argument is typically designed as option if:
 ### Interactive Input
 
 Some options and **Command Parameters** are mandatory and others are optional.
-By default, `ascli` prompts for missing mandatory options or **Command Parameters** during interactive execution.
+By default, `ascli` raises an error for missing mandatory options or **Command Parameters**.
 
 The behavior can be controlled with:
 
-- `--interactive=<yes|no>` (default=yes if STDIN is a terminal, else no)
+- `--interactive=<yes|no>` (default=no)
   - `yes`: Missing mandatory parameters/arguments are asked to the user.
   - `no`: Missing mandatory parameters/arguments raise an error message.
 - `--ask-options=<yes|no>` (default=no)
@@ -1869,7 +1869,7 @@ If value is `no`, then object's `field` names are only the first level keys of t
 
 If value is `yes` (default), then objects are "flattened" using [dot-path](#dot-path-notation) notation with a variation:
 
-- Final arrays are displayed as comma separated list of values
+- Final arrays are displayed as a list of values, one per line (see `str_lst_sep` in [`--out.table`](#option---outtable))
 - `Array` of `Hash` with only `name` keys are displayed as comma separated list of values
 - `Array` of `Hash` with only `name` and `value` keys are displayed like a `Hash` with value of `name` as key.
 
@@ -2147,7 +2147,7 @@ The following decoders are supported:
 | `list`   | `String` | `Array`  | Split a string in multiple items taking first character as separator and return an `Array`. |
 | `none`   | None     | Nil      | A `null` value. |
 | `path`   | `String` | `String` | Performs path expansion on specified path (prefix `~/` is replaced with the user's home folder). For example, `--config-file=@path:~/sample_config.yml` |
-| `preset` | `String` | `Hash`   | Get value from configuration file using [dot-path](#dot-path-notation) notation. |
+| `preset` | `String` | Any      | Get value from configuration file using [dot-path](#dot-path-notation) notation: a whole preset (`Hash`) or a single value. |
 | `extend` | `String` | `String` | Evaluates embedded [Extended Value](#extended-value-syntax) syntax in string. |
 | `re`     | `String` | `Regexp` | Ruby Regular Expression (short for `@ruby:/.../`) |
 | `ruby`   | `String` | Any      | Execute specified Ruby code. |
@@ -2156,6 +2156,7 @@ The following decoders are supported:
 | `stdin`  | `String` | `String` | Read from stdin in text mode. Argument: `<empty>`, `bin` or `chomp`. |
 | `uri`    | `String` | `String` | Read value from specified URL. Supported schemes: `http:`, `https:`, `data:`, `file:`. For example, `--fpac=@uri:http://serv/f.pac` or `--key=@uri:file:/path/to/key.pem` |
 | `val`    | `String` | `String` | Prevent decoding by the decoders on the right. For example, `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
+| `vault`  | `String` | `String` | Read a secret from the [Secret Vault](#secret-vault): `<label>.<field>`. For example, `--password=@vault:my_label.password` |
 | `yaml`   | `String` | Any      | Decode YAML. |
 | `zlib`   | `String` | `String` | Decompress data using zlib. |
 | `<empty>`| None     | Any      | The **dot-path** modifier: argument `@:` collects the following positional arguments as `key.subkey=value` assignments and builds a `Hash` or `Array` using [dot-path](#dot-path-notation) notation. Shell-friendly alternative to `@json:` for structured values.<br/>See [Positional Arguments with Dot-path](#positional-arguments-with-dot-path) for full syntax. Use `END` to stop collection when further positional arguments must follow. |
@@ -2519,7 +2520,7 @@ C:\Users\Kenji\.aspera\ascli
 When OAuth is used (AoC, Faspex 5), `ascli` keeps a cache of generated bearer tokens in folder `persist_store` located in the configuration folder by default.
 Option `cache_tokens` (**yes**/no) allows controlling if OAuth tokens are cached on file system, or generated for each request.
 The command `config tokens flush` clears that cache.
-Tokens are kept on disk for a maximum of 30 minutes (`TOKEN_CACHE_EXPIRY_SEC`) and garbage collected after that.
+Tokens are kept on disk for a maximum of 30 minutes and garbage collected after that.
 When a token has expired, then a new token is generated, either using a `refresh_token` if it is available, or by the default method.
 
 ### Configuration file
@@ -2607,8 +2608,10 @@ An [Option Preset](#option-preset) is a collection of options and their associat
 A named [Option Preset](#option-preset) can be modified directly using `ascli`, which will update the configuration file:
 
 ```text
-ascli config preset <set|delete|show|initialize|update> <PRESET_NAME>
+ascli config preset <show|delete|get|unset|set|initialize|update|ask> <PRESET_NAME> ...
 ```
+
+The syntax of all `config preset` commands, including `list` and `overview`, is displayed with `ascli config commands config preset`.
 
 The command `initialize` allows setting several options at once, but it deletes an existing configuration instead of updating it, and expects a `Hash` [Extended Value](#extended-value-syntax).
 
