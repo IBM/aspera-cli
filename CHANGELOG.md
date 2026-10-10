@@ -6,6 +6,16 @@ Released: [Place date of release here]
 
 ### New Features
 
+* `shares`: New commands covering previously missing API endpoints:
+  * `share list` — list shares accessible to the current user (`GET /api/v1/shares`)
+  * `share event create` — faux-transfer notification to trigger email alerts (`POST /api/v1/shares/{id}/events`)
+  * `admin directory list/show/users/groups` — manage authentication directories (`/api/v1/directories`)
+  * `admin user search list/show` and `admin group search list/show/members` — cross-directory search by URN (`/api/v1/users`, `/api/v1/groups`)
+  * `admin user|group all transfer_settings delete` — reset per-entity transfer settings to global inheritance
+  * `admin group local users list/show/modify/delete` — manage users of a local group (`/api/v1/data/local_groups/{id}/local_users`)
+  * `admin authenticate` — validate credentials and optionally check a permission (`POST /api/v1/authenticate`)
+* `shares health`: native `/health_check` endpoint — one status item per license (`valid`/`entitled`/`invalid`) and one per configured node.
+
 * `orchestrator`: `workflows export` with option `dependencies` saves a package (`.wkf`) with the sub-workflows and remote nodes used by the workflow, in the folder given by option `to_folder`.
 * `sync`: `target_rate` in `sync_info` accepts a string with suffix `k`, `m` or `g`, converted to bps (e.g. `100m`), in both `conf` and `args` formats.
 

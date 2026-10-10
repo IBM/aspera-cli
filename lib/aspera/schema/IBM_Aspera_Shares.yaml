@@ -29,11 +29,61 @@ info:
 
     ## Authentication
 
-    The API uses HTTP Basic Authentication.
-    Include your credentials in the Authorization header:
+    The Aspera Shares API supports two authentication methods: **HTTP Basic Authentication** and **OAuth 2.0 Bearer Authentication**.
 
-    ```
+    ### 1. HTTP Basic Authentication
+
+    Include your username and password encoded in Base64 in the `Authorization` header:
+
+    ```http
     Authorization: Basic base64(username:password)
+    ```
+
+    ### 2. OAuth 2.0 Authentication
+
+    When SAML authentication is configured, clients can obtain and use OAuth 2.0 access tokens.
+
+    #### Obtaining an Access Token (SAML 2.0 Bearer Assertion)
+
+    Exchange a base64-encoded SAML 2.0 assertion for an access token via `POST /auth/oauth2/token`:
+
+    ```http
+    POST /auth/oauth2/token
+    Content-Type: application/x-www-form-urlencoded
+
+    grant_type=urn:ietf:params:oauth:grant-type:saml2-bearer&assertion=<base64_encoded_saml_assertion>
+    ```
+
+    #### Refreshing an Access Token
+
+    Refresh a previously issued access token before it expires:
+
+    ```http
+    POST /auth/oauth2/token
+    Content-Type: application/x-www-form-urlencoded
+
+    grant_type=refresh_token&refresh_token=<refresh_token>
+    ```
+
+    #### Token Response
+
+    The token endpoint returns a JSON payload containing the access and refresh tokens:
+
+    ```json
+    {
+      "token_type": "bearer",
+      "access_token": "<access_token>",
+      "refresh_token": "<refresh_token>",
+      "expires_in": 86400
+    }
+    ```
+
+    #### Using the Bearer Token
+
+    Include the `access_token` in the `Authorization` header of subsequent API requests:
+
+    ```http
+    Authorization: Bearer <access_token>
     ```
 
     ## Base URLs
@@ -49,11 +99,16 @@ servers:
         description: Your Aspera Shares hostname
 security:
   - basicAuth: []
+  - bearerAuth: []
 tags:
   - name: Information
-    description: Information information and health checks
+    description: System status and health checks
   - name: API Information
     description: List of base endpoints and their capabilities
+  - name: Authentication
+    description: User authentication and OAuth2 token management
+  - name: Directories
+    description: Authentication directory services and queries
   - name: Files
     description: File operations (browse, info, create, rename, delete)
   - name: Node Transfers
@@ -62,6 +117,7 @@ tags:
     description: Watch folder management and monitoring
   - name: Users
     description: |
+      User management and directory user lookups.
       To create users, refer to Local User Management, SAML User Management, or LDAP User Management.
       However, delete occurs under Authorizable Users although you can also delete local users from Local User Management.
       It is important to note that only when the user type is database will the `local_user_id` be returned.
@@ -69,9 +125,9 @@ tags:
       > [!NOTE]
       > Manager authorization to these resources depends on the configuration option selected in the UI.
   - name: Groups
-    description: Group management
+    description: Group management and directory group lookups
   - name: Shares
-    description: Share management and operations
+    description: Share management, accessible shares, and transfer events
   - name: Nodes
     description: Node management
   - name: Transfer Settings
@@ -86,8 +142,13 @@ x-tagGroups:
       - Files
       - Node Transfers
       - Watch Folder
+  - name: Authentication & Directories
+    tags:
+      - Authentication
+      - Directories
   - name: Administrative
     tags:
+      - API Information
       - Users
       - Groups
       - Shares
@@ -95,13 +156,68 @@ x-tagGroups:
       - Transfer Settings
       - SMTP Servers
 paths:
+  # Health Check & Authentication
+  /health_check:
+    get:
+      tags:
+        - Information
+      summary: System health check
+      description: |
+        Returns the health status of the Aspera Shares instance.
+        Validates license status (or entitlement licensing) and connectivity to all configured transfer nodes.
+      operationId: getHealthCheck
+      security: []
+      responses:
+        "200":
+          description: System is healthy (valid license and all nodes active)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthCheckResponse"
+        "500":
+          description: System is unhealthy (invalid license or one or more nodes unreachable)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthCheckResponse"
+  /auth/oauth2/token:
+    post:
+      tags:
+        - Authentication
+      summary: Request or refresh OAuth2 access token
+      description: |
+        Exchange a SAML 2.0 assertion for an OAuth2 bearer access token, or exchange a refresh token for a new access token.
+      operationId: createOAuth2Token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/OAuth2TokenRequest"
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OAuth2TokenRequest"
+      responses:
+        "200":
+          description: OAuth2 access token successfully generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuth2TokenResponse"
+        "400":
+          description: Bad request (invalid assertion, invalid refresh token, or unsupported grant type)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuth2ErrorResponse"
   # API v1 Endpoints
   /api/v1:
     get:
       tags:
         - API Information
       summary: Get API v1 information
-      description: Returns general information about API v1
+      description: Returns general information about API v1 and links to core services
       operationId: getApiV1Info
       responses:
         "200":
@@ -130,6 +246,255 @@ paths:
                   - links
         "401":
           $ref: "#/components/responses/Unauthorized"
+  /api/v1/authenticate:
+    post:
+      tags:
+        - Authentication
+      summary: Authenticate user credentials
+      description: |
+        Authenticates a user against all configured authentication directories (Local Database, LDAP, SAML).
+        Optionally verifies that the user possesses a specific permission (e.g. `app.admin`, `app.login`, `app.share_manager`).
+      operationId: authenticateUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthenticateRequest"
+      responses:
+        "200":
+          description: User authenticated successfully or authentication error object
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DirectoryUserDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  # Directory Endpoints
+  /api/v1/directories:
+    get:
+      tags:
+        - Directories
+      summary: List authentication directories
+      description: Returns the list of all configured authentication directories in the Shares system.
+      operationId: listDirectories
+      responses:
+        "200":
+          description: List of configured directories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DirectorySummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/v1/directories/{id}:
+    get:
+      tags:
+        - Directories
+      summary: Get directory details
+      description: Returns detailed information for a specific authentication directory identified by its URN.
+      operationId: getDirectory
+      parameters:
+        - $ref: "#/components/parameters/UrnIdInPath"
+      responses:
+        "200":
+          description: Directory details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DirectorySummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/directories/{directory_id}/users:
+    get:
+      tags:
+        - Directories
+      summary: Search users in a directory
+      description: Searches or lists users belonging to a specific directory identified by its URN.
+      operationId: searchDirectoryUsers
+      parameters:
+        - $ref: "#/components/parameters/DirectoryIdInPath"
+        - $ref: "#/components/parameters/SearchQueryParam"
+      responses:
+        "200":
+          description: Collection of users found in the directory
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserCollectionResource"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/directories/{directory_id}/groups:
+    get:
+      tags:
+        - Directories
+      summary: Search groups in a directory
+      description: Searches or lists groups belonging to a specific directory identified by its URN.
+      operationId: searchDirectoryGroups
+      parameters:
+        - $ref: "#/components/parameters/DirectoryIdInPath"
+        - $ref: "#/components/parameters/SearchQueryParam"
+      responses:
+        "200":
+          description: Collection of groups found in the directory
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupCollectionResource"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  # Directory User & Group Lookups
+  /api/v1/users:
+    get:
+      tags:
+        - Users
+      summary: Search users across all directories
+      description: Searches for users across all active directories (Local Database, LDAP, SAML).
+      operationId: searchUsers
+      parameters:
+        - $ref: "#/components/parameters/SearchQueryParam"
+      responses:
+        "200":
+          description: Collection of matching users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserCollectionResource"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/v1/users/{id}:
+    get:
+      tags:
+        - Users
+      summary: Get directory user details by URN
+      description: Returns full directory user details, including group memberships and permissions, for a user identified by their URN.
+      operationId: getDirectoryUser
+      parameters:
+        - $ref: "#/components/parameters/UrnIdInPath"
+      responses:
+        "200":
+          description: Directory user details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DirectoryUserDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/groups:
+    get:
+      tags:
+        - Groups
+      summary: Search groups across all directories
+      description: Searches for groups across all active directories (Local Database, LDAP, SAML).
+      operationId: searchGroups
+      parameters:
+        - $ref: "#/components/parameters/SearchQueryParam"
+      responses:
+        "200":
+          description: Collection of matching groups
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupCollectionResource"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/v1/groups/{id}:
+    get:
+      tags:
+        - Groups
+      summary: Get directory group details by URN
+      description: Returns full details for a group identified by its URN.
+      operationId: getDirectoryGroup
+      parameters:
+        - $ref: "#/components/parameters/UrnIdInPath"
+      responses:
+        "200":
+          description: Directory group details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DirectoryGroupDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/groups/{id}/members:
+    get:
+      tags:
+        - Groups
+      summary: Search members in a directory group
+      description: Searches or lists members within a specific group identified by its URN.
+      operationId: searchGroupMembers
+      parameters:
+        - $ref: "#/components/parameters/UrnIdInPath"
+        - $ref: "#/components/parameters/SearchQueryParam"
+      responses:
+        "200":
+          description: Collection of group members
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserCollectionResource"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  # User Shares and Share Events
+  /api/v1/shares:
+    get:
+      tags:
+        - Shares
+      summary: List shares accessible by current user
+      description: Returns the list of shares that the authenticated API user has permission to access.
+      operationId: listUserShares
+      responses:
+        "200":
+          description: List of accessible shares
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSharesList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/v1/shares/{share_id}/events:
+    post:
+      tags:
+        - Shares
+      summary: Create share transfer notification event (Faux Transfer)
+      description: |
+        Notifies Aspera Shares of a completed file transfer on a specific share.
+        Queues email notifications to users configured to receive transfer completion alerts for that share.
+      operationId: createShareTransferEvent
+      parameters:
+        - name: share_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Share ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FauxTransferEventRequest"
+      responses:
+        "204":
+          description: Event processed and notification emails queued
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
   # User Endpoints
   /api/v1/data/users:
     get:
@@ -2536,6 +2901,10 @@ components:
       type: http
       scheme: basic
       description: HTTP Basic Authentication with username and password
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: OAuth2 Bearer token authentication
   parameters:
     IntegerIdInPath:
       name: id
@@ -2551,7 +2920,450 @@ components:
       schema:
         type: string
       description: Transfer ID
+    UrnIdInPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: URN identifier of the entity (URL-encoded)
+    DirectoryIdInPath:
+      name: directory_id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Directory URN identifier (URL-encoded)
+    SearchQueryParam:
+      name: search
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Search filter query
   schemas:
+    HealthCheckResponse:
+      type: object
+      properties:
+        valid_license:
+          type: boolean
+          description: Indicates whether the standard license is valid
+          example: true
+        entitled:
+          type: boolean
+          description: Indicates whether entitlement licensing is active and valid (Linux only)
+          example: true
+        nodes:
+          type: array
+          description: Connectivity status for each configured node
+          items:
+            type: object
+            required:
+              - id
+              - status
+            properties:
+              id:
+                type: integer
+                description: Node ID
+                example: 1
+              status:
+                type: string
+                description: Node status (e.g. "Active" or error message)
+                example: Active
+
+    OAuth2TokenRequest:
+      type: object
+      required:
+        - grant_type
+      properties:
+        grant_type:
+          type: string
+          enum:
+            - urn:ietf:params:oauth:grant-type:saml2-bearer
+            - refresh_token
+          description: The OAuth2 grant type
+          example: urn:ietf:params:oauth:grant-type:saml2-bearer
+        assertion:
+          type: string
+          description: Base64-encoded SAML 2.0 assertion (required for saml2-bearer grant)
+        refresh_token:
+          type: string
+          description: Refresh token previously issued (required for refresh_token grant)
+
+    OAuth2TokenResponse:
+      type: object
+      required:
+        - token_type
+        - access_token
+        - refresh_token
+        - expires_in
+      properties:
+        token_type:
+          type: string
+          example: bearer
+        access_token:
+          type: string
+          description: OAuth2 access token
+          example: 4a2b9c8d7e6f5a1b
+        refresh_token:
+          type: string
+          description: OAuth2 refresh token
+          example: 9f8e7d6c5b4a3b2a
+        expires_in:
+          type: integer
+          description: Token lifetime in seconds (86400 seconds = 1 day)
+          example: 86400
+
+    OAuth2ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          example: invalid_grant
+        error_description:
+          type: string
+          example: Invalid grant
+
+    AuthenticateRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          description: Username for authentication
+          example: admin
+        password:
+          type: string
+          format: password
+          description: Password for authentication
+          example: secret
+        required_permission:
+          type: string
+          description: Optional permission identifier required (e.g. app.admin, app.login, app.share_manager)
+          example: app.admin
+
+    ApiLink:
+      type: object
+      required:
+        - rel
+        - href
+      properties:
+        rel:
+          type: string
+          description: Relation type of the link
+          example: self
+        href:
+          type: string
+          description: URL target of the link
+          example: https://shares.example.com/api/v1/directories/urn:aspera:shares:directory:local_database
+
+    DirectorySummary:
+      type: object
+      required:
+        - id
+        - name
+        - resource_type
+        - type
+      properties:
+        id:
+          type: string
+          description: Unique URN of the directory
+          example: urn:aspera:shares:directory:local_database
+        name:
+          type: string
+          description: Directory display name
+          example: Local Database
+        type:
+          type: string
+          description: Directory provider type (e.g. local_database, active_directory, saml)
+          example: local_database
+        resource_type:
+          type: string
+          example: directory
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiLink"
+
+    DirectoryPermissionSummary:
+      type: object
+      required:
+        - id
+        - name
+        - resource_type
+      properties:
+        id:
+          type: string
+          description: Permission URN
+          example: urn:aspera:shares:permission:app.admin
+        name:
+          type: string
+          description: Permission name
+          example: app.admin
+        resource_type:
+          type: string
+          example: permission
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiLink"
+
+    DirectoryUserSummary:
+      type: object
+      required:
+        - id
+        - name
+        - username
+        - resource_type
+      properties:
+        id:
+          type: string
+          description: Unique URN of the user across directories
+          example: urn:aspera:shares:directory:local_database:user:admin
+        name:
+          type: string
+          description: User display name
+          example: admin
+        username:
+          type: string
+          description: User login name
+          example: admin
+        first_name:
+          type: string
+          nullable: true
+          example: John
+        last_name:
+          type: string
+          nullable: true
+          example: Doe
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: admin@example.com
+        resource_type:
+          type: string
+          example: user
+        directory:
+          $ref: "#/components/schemas/DirectorySummary"
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiLink"
+
+    DirectoryUserDetail:
+      type: object
+      required:
+        - id
+        - name
+        - username
+        - resource_type
+      properties:
+        id:
+          type: string
+          description: Unique URN of the user
+          example: urn:aspera:shares:directory:local_database:user:admin
+        name:
+          type: string
+          description: User display name
+          example: admin
+        username:
+          type: string
+          description: User login name
+          example: admin
+        first_name:
+          type: string
+          nullable: true
+          example: John
+        last_name:
+          type: string
+          nullable: true
+          example: Doe
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: admin@example.com
+        resource_type:
+          type: string
+          example: user
+        directory:
+          $ref: "#/components/schemas/DirectorySummary"
+        groups:
+          type: array
+          description: Groups the user belongs to
+          items:
+            $ref: "#/components/schemas/DirectoryGroupSummary"
+        permissions:
+          type: array
+          description: Permissions assigned to the user
+          items:
+            $ref: "#/components/schemas/DirectoryPermissionSummary"
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiLink"
+
+    DirectoryGroupSummary:
+      type: object
+      required:
+        - id
+        - name
+        - resource_type
+      properties:
+        id:
+          type: string
+          description: Unique URN of the group
+          example: urn:aspera:shares:directory:local_database:group:administrators
+        name:
+          type: string
+          description: Group display name
+          example: Administrators
+        resource_type:
+          type: string
+          example: group
+        directory:
+          $ref: "#/components/schemas/DirectorySummary"
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiLink"
+
+    DirectoryGroupDetail:
+      type: object
+      required:
+        - id
+        - name
+        - resource_type
+      properties:
+        id:
+          type: string
+          description: Unique URN of the group
+          example: urn:aspera:shares:directory:local_database:group:administrators
+        name:
+          type: string
+          description: Group display name
+          example: Administrators
+        resource_type:
+          type: string
+          example: group
+        directory:
+          $ref: "#/components/schemas/DirectorySummary"
+        groups:
+          type: array
+          description: Nested or parent groups
+          items:
+            $ref: "#/components/schemas/DirectoryGroupSummary"
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiLink"
+
+    UserCollectionResource:
+      type: object
+      required:
+        - resource_type
+        - complete
+        - members
+      properties:
+        resource_type:
+          type: string
+          example: collection
+        complete:
+          type: boolean
+          description: Indicates whether all matching records are returned (false if truncated by limits)
+          example: true
+        members:
+          type: array
+          description: List of user resources
+          items:
+            $ref: "#/components/schemas/DirectoryUserSummary"
+
+    GroupCollectionResource:
+      type: object
+      required:
+        - resource_type
+        - complete
+        - members
+      properties:
+        resource_type:
+          type: string
+          example: collection
+        complete:
+          type: boolean
+          description: Indicates whether all matching records are returned (false if truncated by limits)
+          example: true
+        members:
+          type: array
+          description: List of group resources
+          items:
+            $ref: "#/components/schemas/DirectoryGroupSummary"
+
+    UserSharesList:
+      type: object
+      required:
+        - shares
+      properties:
+        shares:
+          type: array
+          description: List of shares accessible by the current user
+          items:
+            type: object
+            required:
+              - id
+              - name
+              - directory
+            properties:
+              id:
+                type: integer
+                description: Share ID
+                example: 1
+              name:
+                type: string
+                description: Share display name
+                example: Marketing
+              directory:
+                type: string
+                description: Target path/directory on the node
+                example: /shares/marketing
+
+    FauxTransferEventRequest:
+      type: object
+      required:
+        - faux_transfer
+      properties:
+        faux_transfer:
+          type: object
+          properties:
+            path:
+              type: string
+              description: Destination path on the share
+              example: /marketing/videos
+            bytes_written:
+              type: integer
+              description: Total bytes transferred
+              example: 10485760
+            files_complete:
+              type: integer
+              description: Number of files successfully transferred
+              example: 1
+            files:
+              type: array
+              description: Detailed list of files transferred
+              items:
+                type: object
+                required:
+                  - path
+                properties:
+                  path:
+                    type: string
+                    description: Relative path of the transferred file
+                    example: /marketing/videos/intro.mp4
+
     # User Schemas
     AuthorizableUser:
       type: object

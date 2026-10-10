@@ -60,6 +60,15 @@ module Aspera
               rescue => e
                 e
               end
+            # Native JSON health check endpoint (no auth required)
+            result[:system] =
+              begin
+                Rest::Client
+                  .new(base_url: url)
+                  .read('health_check')
+              rescue => e
+                e
+              end
             result
           end
 
@@ -99,10 +108,14 @@ module Aspera
 
         # common to users and groups
         USR_GRP_SETTINGS = %i[transfer_settings app_authorizations share_permissions].freeze
+        # transfer_settings supports delete (resets to global inheritance); app_authorizations and share_permissions do not
+        TRANSFER_SETTINGS_OPS = %i[show modify delete].freeze
         # share_permissions is read-only (Rails only exposes index+show)
         SHARE_PERMISSIONS_OPS = %i[list show].freeze
-        # group users: Rails only exposes index+show+update+destroy (no create)
+        # group users (all): Rails only exposes index+show+update+destroy (no create)
         GROUP_USERS_OPS = (Operations::ALL - %i[create]).freeze
+        # local group users: same operations (no create), via data/local_groups/{id}/local_users
+        LOCAL_GROUP_USERS_OPS = GROUP_USERS_OPS
         # Arguments of group users commands, by operation
         GROUP_USERS_ARGS = {
           show:   [{name: :user_id, type: :identifier}],
@@ -117,6 +130,21 @@ module Aspera
         command :files,    description: 'Browse and transfer files on Shares', aliases: [:repository],
           mount: {plugin: Node, instance: :shares_node_plugin, only: Node::COMMANDS_SHARES}
         command :admin,    description: 'Administer Shares', setup: :setup_admin
+        command :share,    description: 'Shares accessible to current user'
+
+        commands_under :share do
+          command :list, description: 'List shares accessible to the current user',
+            action: ->(**) { entity_list(api: basic_auth_api(ADMIN_API_PATH), entity: 'shares', items_key: 'shares') }
+          command :event, description: 'Transfer notification events on a share'
+          commands_under :event do
+            command :create,
+              description: 'Notify Shares of a completed transfer (triggers email alerts)',
+              arguments: [
+                {name: :share_id, type: :identifier, lookup: :lookup_share_id_user},
+                {name: :event, type: Hash}
+              ]
+          end
+        end
 
         commands_under :admin do
           commands_under :node do
@@ -136,13 +164,30 @@ module Aspera
               body_component: Schema::Registry::SHARES,
               operations: %i[show create modify]
           end
+          commands_under :directory do
+            command :list, description: 'List configured authentication directories',
+              action: ->(**) { entity_list(api: @api_shares_admin, entity: 'directories') }
+            command :show,
+              description: 'Get details of an authentication directory',
+              arguments: [{name: :directory_id, type: :identifier}]
+            command :users,
+              description: 'Search users in a directory',
+              arguments: [{name: :directory_id, type: :identifier}]
+            command :groups,
+              description: 'Search groups in a directory',
+              arguments: [{name: :directory_id, type: :identifier}]
+          end
+          command :authenticate,
+            description: 'Validate credentials and optionally check a permission',
+            arguments: [{name: :credentials, type: Hash}]
           # user / group: sub-commands per location, generated for both entity types
           %i[user group].each do |entity_type|
             commands_under entity_type do
-              command :all,   description: "#{entity_type.capitalize}s from all sources"
-              command :local, description: "Local #{entity_type}s"
-              command :ldap,  description: "LDAP #{entity_type}s"
-              command :saml,  description: "SAML #{entity_type}s"
+              command :all,    description: "#{entity_type.capitalize}s from all sources"
+              command :local,  description: "Local #{entity_type}s"
+              command :ldap,   description: "LDAP #{entity_type}s"
+              command :saml,   description: "SAML #{entity_type}s"
+              command :search, description: "Search #{entity_type}s across all directories"
 
               user_fields = %w[id user_id username first_name last_name email] if entity_type.eql?(:user)
               # all: list/show/delete only (no create, no modify — users/groups/:all has no update route)
@@ -155,8 +200,13 @@ module Aspera
                   lookup:         lookup_method_all,
                   display_fields: user_fields && (user_fields + %w[directory_user])
                 USR_GRP_SETTINGS.each do |setting|
-                  # share_permissions: Rails only exposes index+show (read-only)
-                  setting_ops = setting.eql?(:share_permissions) ? SHARE_PERMISSIONS_OPS : %i[show modify]
+                  # choose the operations set for this setting
+                  setting_ops =
+                    case setting
+                    when :share_permissions then SHARE_PERMISSIONS_OPS
+                    when :transfer_settings then TRANSFER_SETTINGS_OPS
+                    else %i[show modify]
+                    end
                   command setting,
                     description: "Manage #{entity_noun(setting, singular: false)} for a #{entity_type}",
                     arguments: [{name: :"#{entity_type}_id", type: :identifier, lookup: lookup_method_all}]
@@ -165,7 +215,7 @@ module Aspera
                       # share_permissions > show needs a permission identifier (list does not), modify needs data
                       op_args =
                         case op
-                        when :show then setting.eql?(:share_permissions) ? [{name: :permission_id, type: :identifier, lookup: :lookup_share_id}] : nil
+                        when :show   then setting.eql?(:share_permissions) ? [{name: :permission_id, type: :identifier, lookup: :lookup_share_id}] : nil
                         when :modify then [{name: setting, type: Hash}]
                         end
                       command op,
@@ -197,11 +247,16 @@ module Aspera
                   body_component: Schema::Registry::SHARES
                 if entity_type.eql?(:group)
                   command :users,
-                    description: 'Manage users of a group',
+                    description: 'Manage users of a local group',
                     arguments: [{name: :group_id, type: :identifier, lookup: :lookup_shares_group_local_id}]
                   commands_under :users do
-                    GROUP_USERS_OPS.each do |op|
-                      command op, description: "#{op.capitalize} users of a group", arguments: GROUP_USERS_ARGS[op]
+                    LOCAL_GROUP_USERS_OPS.each do |op|
+                      local_op_args =
+                        case op
+                        when :show, :delete then [{name: :user_id, type: :identifier}]
+                        when :modify then [{name: :user_id, type: :identifier}, {name: :user, type: Hash}]
+                        end
+                      command op, description: "#{op.capitalize} users of a local group", arguments: local_op_args
                     end
                   end
                 end
@@ -217,6 +272,24 @@ module Aspera
               commands_under :saml do
                 command :import, description: "Import a SAML #{entity_type}",
                   arguments: [{name: entity_type, type: Hash, bulk: true}]
+              end
+
+              # search: list + show by URN + (groups only) members
+              # The cross-directory search endpoints return a collection object {"resource_type":"collection","members":[...]}
+              # entity_plural captured at class-load time in the closure
+              entity_plural_search = entity_type.eql?(:user) ? 'users' : 'groups'
+              commands_under :search do
+                command :list,
+                  description: "Search #{entity_type}s across all directories (use --query={q: '...'} to filter)",
+                  action: ->(**) { entity_list(api: @api_shares_admin, entity: entity_plural_search, items_key: 'members') }
+                command :show,
+                  description: "Get directory #{entity_type} details by URN",
+                  arguments: [{name: :"#{entity_type}_urn", type: :identifier}]
+                if entity_type.eql?(:group)
+                  command :members,
+                    description: 'Search members in a directory group',
+                    arguments: [{name: :group_urn, type: :identifier}]
+                end
               end
             end
           end
@@ -300,6 +373,13 @@ module Aspera
           Rest::List.lookup_entity_generic(entity: 'share', field: field, value: value) { @api_shares_admin.read('data/shares') }['id']
         end
 
+        # Lookup a share id by field/value using the user-level API (for share event create).
+        def lookup_share_id_user(field, value, **)
+          data = basic_auth_api(ADMIN_API_PATH).read('shares')
+          data = data['shares'] if data.is_a?(Hash)
+          Rest::List.lookup_entity_generic(entity: 'share', field: field, value: value) { data }['id']
+        end
+
         # --- health ---
 
         def action_health(**)
@@ -316,6 +396,25 @@ module Aspera
             nagios.add_ok('API', health[:api])
           else
             nagios.add_critical('API', health[:api].to_s)
+          end
+          if health[:system].is_a?(Hash)
+            sys = health[:system]
+            # one status item for the license (standard or entitlement)
+            if sys['valid_license'] || sys['entitled']
+              nagios.add_ok('license', sys['entitled'] ? 'entitled' : 'valid')
+            else
+              nagios.add_critical('license', 'invalid')
+            end
+            # one status item per configured node
+            (sys['nodes'] || []).each do |node|
+              if node['status'].to_s.casecmp('active').zero?
+                nagios.add_ok("node #{node['id']}", node['status'])
+              else
+                nagios.add_critical("node #{node['id']}", node['status'])
+              end
+            end
+          else
+            nagios.add_critical('system', health[:system].to_s)
           end
           Result::ObjectList.new(nagios.status_list)
         end
@@ -353,13 +452,18 @@ module Aspera
 
         # Generate action_admin_<user|group>_<location>_<verb> for all combinations
         %i[user group].each do |entity_type|
-          # all: list/show/delete only (no create, no modify — no update route on /users and /groups)
+          # all: list/show/delete only — nested settings (transfer_settings, app_authorizations, share_permissions) only under :all
           # local: full CRUD only — no nested settings under local_users/local_groups
           ENTITY_LOCATIONS.each do |location|
             unless location.eql?(:local)
               USR_GRP_SETTINGS.each do |setting|
-                # share_permissions: Rails only exposes index+show (read-only)
-                setting_ops = setting.eql?(:share_permissions) ? SHARE_PERMISSIONS_OPS : %i[show modify]
+                # choose the operations set for this setting
+                setting_ops =
+                  case setting
+                  when :share_permissions then SHARE_PERMISSIONS_OPS
+                  when :transfer_settings then TRANSFER_SETTINGS_OPS
+                  else %i[show modify]
+                  end
                 setting_ops.each do |op|
                   define_action_method([:admin, entity_type, location, setting, op]) do |**kwargs|
                     admin_entity_setting(entity_type, location, setting, op, entity_id: kwargs[:"#{entity_type}_id"], permission_id: kwargs[:permission_id], data: kwargs[setting])
@@ -368,10 +472,25 @@ module Aspera
               end
             end
             next unless entity_type.eql?(:group)
-            # group users: no create route (Rails only exposes index+show+update+destroy)
-            GROUP_USERS_OPS.each do |op|
-              define_action_method([:admin, entity_type, location, :users, op]) do |group_id:, user_id: nil, user: nil, **|
-                admin_entity_users(entity_type, location, op, group_id: group_id, user_id: user_id, data: user)
+            if location.eql?(:all)
+              # all group users: no create route (Rails only exposes index+show+update+destroy)
+              GROUP_USERS_OPS.each do |op|
+                define_action_method([:admin, entity_type, :all, :users, op]) do |group_id:, user_id: nil, user: nil, **|
+                  admin_entity_users(entity_type, :all, op, group_id: group_id, user_id: user_id, data: user)
+                end
+              end
+            else
+              # local group local_users: list/show/modify/delete (via data/local_groups/{id}/local_users)
+              LOCAL_GROUP_USERS_OPS.each do |op|
+                define_action_method([:admin, entity_type, :local, :users, op]) do |group_id:, user_id: nil, user: nil, **|
+                  send(
+                    :"entity_#{op}",
+                    api:    @api_shares_admin,
+                    entity: "data/local_groups/#{group_id}/local_users",
+                    id:     user_id,
+                    data:   user
+                  )
+                end
               end
             end
           end
@@ -397,6 +516,47 @@ module Aspera
               @api_shares_admin.create("#{path}/import", entity_parameters)
             end
           end
+
+          # search: list + show + (groups) members — cross-directory endpoints under /api/v1/users|groups
+          # URNs contain ':' and '=' and must be percent-encoded in the URL path segment.
+          entity_plural = entity_type.eql?(:user) ? 'users' : 'groups'
+          define_action_method(%i[admin].push(entity_type, :search, :show)) do |**kwargs|
+            urn = URI.encode_www_form_component(kwargs[:"#{entity_type}_urn"])
+            Result::SingleObject.new(@api_shares_admin.read("#{entity_plural}/#{urn}"))
+          end
+          next unless entity_type.eql?(:group)
+          define_action_method(%i[admin group search members]) do |group_urn:, **|
+            encoded = URI.encode_www_form_component(group_urn)
+            entity_list(api: @api_shares_admin, entity: "groups/#{encoded}/members", items_key: 'members')
+          end
+        end
+
+        # admin > directory > show / users / groups
+        # directory_id is a URN — must be percent-encoded in the URL path segment.
+        define_action_method(%i[admin directory show]) do |directory_id:, **|
+          enc = URI.encode_www_form_component(directory_id)
+          Result::SingleObject.new(@api_shares_admin.read("directories/#{enc}"))
+        end
+
+        define_action_method(%i[admin directory users]) do |directory_id:, **|
+          enc = URI.encode_www_form_component(directory_id)
+          entity_list(api: @api_shares_admin, entity: "directories/#{enc}/users", items_key: 'members')
+        end
+
+        define_action_method(%i[admin directory groups]) do |directory_id:, **|
+          enc = URI.encode_www_form_component(directory_id)
+          entity_list(api: @api_shares_admin, entity: "directories/#{enc}/groups", items_key: 'members')
+        end
+
+        # admin > authenticate
+        define_action_method(%i[admin authenticate]) do |credentials:, **|
+          Result::SingleObject.new(@api_shares_admin.create('authenticate', credentials))
+        end
+
+        # share > event > create
+        define_action_method(%i[share event create]) do |share_id:, event:, **|
+          basic_auth_api(ADMIN_API_PATH).create("shares/#{share_id}/events", event)
+          Result::Status.new('event created')
         end
       end
     end

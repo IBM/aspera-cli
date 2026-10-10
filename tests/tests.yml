@@ -380,6 +380,234 @@ shares_sync_push:
     - push
     - $(PATH_SHARES_SYNC)
     - --to-folder=@extend:@preset:shares.share_folder@/synctst
+# New Shares commands ------------------------------------------
+# health_check: native JSON endpoint
+shares_health_check:
+  args:
+    - -N
+    - shares
+    - health
+    - --url=@preset:shares_admin.url
+# share (user-level): list accessible shares
+shares_share_list:
+  args:
+    - --preset=shares_user
+    - shares
+    - share
+    - list
+# share > event > create (faux transfer notification)
+shares_share_event_create:
+  $comment: Requires Shares 1.11.5+ (bug fix for FauxTransfersController files param)
+  tags:
+    - nodoc
+    - flaky
+  args:
+    - --preset=shares_user
+    - shares
+    - share
+    - event
+    - create
+    - "%name:@preset:shares.share"
+    - '@json:{"faux_transfer":{"path":"/","bytes_written":1024,"files_complete":1,"files":[{"path":"/test.txt"}]}}'
+# admin > directory > list
+shares_admin_dir_list:
+  args:
+    - --preset=shares_admin
+    - shares
+    - admin
+    - directory
+    - list
+# admin > directory > show (uses first directory id from list)
+shares_admin_dir_id:
+  tags:
+    - nodoc
+    - save_output
+  args:
+    - --preset=shares_admin
+    - shares
+    - admin
+    - directory
+    - list
+    - --fields=id
+    - --format=csv
+shares_admin_dir_show:
+  depends_on:
+    - shares_admin_dir_id
+  tags:
+    - nodoc
+  args:
+    - --preset=shares_admin
+    - shares
+    - admin
+    - directory
+    - show
+    - $((t.saved_output :shares_admin_dir_id).split("\n").first)
+# admin > directory > users (search in directory)
+shares_admin_dir_users:
+  depends_on:
+    - shares_admin_dir_id
+  tags:
+    - nodoc
+  args:
+    - --preset=shares_admin
+    - shares
+    - admin
+    - directory
+    - users
+    - $((t.saved_output :shares_admin_dir_id).split("\n").first)
+# admin > directory > groups (search in directory)
+shares_admin_dir_groups:
+  depends_on:
+    - shares_admin_dir_id
+  tags:
+    - nodoc
+  args:
+    - --preset=shares_admin
+    - shares
+    - admin
+    - directory
+    - groups
+    - $((t.saved_output :shares_admin_dir_id).split("\n").first)
+# admin > user search (cross-directory)
+shares_admin_user_search_list:
+  args:
+    - --preset=shares_admin
+    - shares
+    - admin
+    - user
+    - search
+    - list
+# admin > user search > show by URN
+shares_admin_user_search_urn:
+  tags:
+    - nodoc
+    - save_output
+  args:
+    - --preset=shares_admin
+    - shares
+    - admin
+    - user
+    - all
+    - list
+    - --fields=urn
+    - --format=csv
+shares_admin_user_search_show:
+  depends_on:
+    - shares_admin_user_search_urn
+  tags:
+    - nodoc
+  args:
+    - --preset=shares_admin
+    - shares
+    - admin
+    - user
+    - search
+    - show
+    - $((t.saved_output :shares_admin_user_search_urn).split("\n").first)
+# admin > group search (cross-directory)
+shares_admin_group_search_list:
+  args:
+    - --preset=shares_admin
+    - shares
+    - admin
+    - group
+    - search
+    - list
+shares_admin_group_search_urn:
+  tags:
+    - nodoc
+    - save_output
+  args:
+    - --preset=shares_admin
+    - shares
+    - admin
+    - group
+    - search
+    - list
+    - --fields=id
+    - --format=csv
+# admin > group search > members
+shares_admin_group_search_members:
+  $comment: Server returns ErrorId=12 (internal error) for this endpoint on current deployment.
+  depends_on:
+    - shares_admin_group_search_urn
+  tags:
+    - nodoc
+    - flaky
+  args:
+    - --preset=shares_admin
+    - shares
+    - admin
+    - group
+    - search
+    - members
+    - $((t.saved_output :shares_admin_group_search_urn).split("\n").first)
+# admin > user all > transfer_settings > delete (reset to global)
+shares_admin_user_xfer_settings_delete:
+  tags:
+    - nodoc
+  args:
+    - --preset=shares_admin
+    - shares
+    - admin
+    - user
+    - all
+    - transfer_settings
+    - "%username:@preset:shares_admin.username"
+    - delete
+# admin > group all > transfer_settings > delete (reset to global)
+shares_admin_group_xfer_settings_delete:
+  tags:
+    - nodoc
+    - flaky
+  args:
+    - --preset=shares_admin
+    - shares
+    - admin
+    - group
+    - all
+    - transfer_settings
+    - "%name:@preset:shares.group"
+    - delete
+# admin > group local > users (list/show/modify/delete)
+shares_admin_local_group_id:
+  tags:
+    - nodoc
+    - save_output
+  args:
+    - --preset=shares_admin
+    - shares
+    - admin
+    - group
+    - local
+    - list
+    - --fields=id
+    - --format=csv
+shares_admin_local_group_users_list:
+  depends_on:
+    - shares_admin_local_group_id
+  tags:
+    - nodoc
+  args:
+    - --preset=shares_admin
+    - shares
+    - admin
+    - group
+    - local
+    - users
+    - $((t.saved_output :shares_admin_local_group_id).split("\n").first)
+    - list
+# admin > authenticate
+shares_admin_authenticate:
+  args:
+    - --preset=shares_admin
+    - shares
+    - admin
+    - authenticate
+    - "@:"
+    - username=@preset:shares_admin.username
+    - password=@preset:shares_admin.password
+
 # Server ------------------------------------------------------
 serv_health:
   args:
@@ -726,7 +954,8 @@ serv_sync_pull_conf_sync:
     - pull
     - "@preset:server.inside_folder"
     - --to-folder=$(PATH_TMP_SYNCS / 'serv_sync_pull_conf')
-    - '@json:@extend:{"name":"serv_sync_pull_conf"}'
+    - '@:'
+    - name=serv_sync_pull_conf
 serv_sync_pull_conf_status_after_sync:
   depends_on:
     - serv_sync_pull_conf_sync
