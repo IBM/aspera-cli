@@ -9148,11 +9148,18 @@ The `server` command accepts an optional [Hash](#extended-value-syntax) argument
 |-----|------|---------|-------------|
 | `port` | `integer` | `3000` | TCP port to listen on |
 | `bind` | `string` | `127.0.0.1` | Bind address |
+| `auth_token` | `string` | - | If set, requests must carry header `Authorization: Bearer <token>`, else HTTP 401 is returned |
 | `stateless` | `boolean` | `false` | Enable stateless mode |
 | `allowed_origins` | `Array<string>` | - | List of allowed origins |
 | `allowed_hosts` | `Array<string>` | - | List of allowed hostnames |
 | `session_idle_timeout` | `integer` | - | Idle session timeout in seconds |
 | `max_sessions` | `integer` | - | Maximum number of concurrent sessions |
+
+> [!WARNING]
+> The tool executes any <%=tool%> command with the credentials and presets of the user running the server.
+> With `http` transport, set `auth_token` (and keep `bind` on loopback, or use TLS through a reverse proxy) to prevent unauthorized use.
+> `allowed_hosts` and `allowed_origins` protect against DNS rebinding but do not authenticate clients.
+> `auth_token` is a static shared secret, not the OAuth 2.1 flow of the MCP authorization specification.
 
 > [!NOTE]
 > **HTTP transport discovery endpoint** - When using `http` transport, the server exposes a `GET /` endpoint that returns a JSON object with `name`, `version`, and `description` fields.
@@ -9169,7 +9176,7 @@ Start an MCP server over `stdio` (default - suitable for use as an MCP server in
 Start an MCP server over HTTP on port 8080:
 
 ```shell
-<%=cmd%> mcp server @: transport=http port=8080 bind=0.0.0.0
+<%=cmd%> mcp server @: transport=http port=8080 bind=0.0.0.0 auth_token=@env:MCP_TOKEN
 ```
 
 Start with custom instructions and a specific protocol version:

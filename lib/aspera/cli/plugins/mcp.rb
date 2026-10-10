@@ -22,6 +22,7 @@ module Aspera
       #   # stdio transport:
       #   max_line_bytes:         Integer - max JSON frame size (default 4 MiB)
       #   # http transport:
+      #   auth_token:             String  - if set, require "Authorization: Bearer <token>" on MCP requests
       #   port:                   Integer - TCP port (default 3000)
       #   bind:                   String  - bind address (default "127.0.0.1")
       #   stateless:              Boolean - stateless mode (default false)
@@ -88,7 +89,7 @@ module Aspera
         def action_server(mcp_options: nil, **)
           require 'aspera/cli/mcp_tool'
           mcp_options = (mcp_options || {}).transform_keys(&:to_sym)
-          unknown = mcp_options.keys - SERVER_KEYS - CONFIG_KEYS - STDIO_KEYS - HTTP_KEYS - TOOL_KEYS - %i[transport port bind]
+          unknown = mcp_options.keys - SERVER_KEYS - CONFIG_KEYS - STDIO_KEYS - HTTP_KEYS - TOOL_KEYS - %i[transport port bind auth_token]
           Aspera.assert(unknown.empty?, type: Cli::BadArgument) { "Unknown MCP option(s): #{unknown.join(', ')}" }
           Cli::McpTool.max_text_bytes = mcp_options.delete(:max_text_bytes)
           Cli::McpTool.extra_args     = mcp_options.delete(:extra_args)
@@ -135,20 +136,39 @@ module Aspera
           end
         end
 
+        # Validate the optional Bearer token, and warn if the server is exposed without one.
+        # @param auth_token [String, nil] expected Bearer token
+        # @param bind [String] bind address
+        # @return [String, nil] the token
+        def check_auth_token(auth_token, bind)
+          require 'openssl'
+          Aspera.assert(auth_token.nil? || !auth_token.to_s.empty?, type: Cli::BadArgument) { 'auth_token must not be empty' }
+          Log.log.warn { "MCP HTTP server bound to #{bind} without auth_token: anyone who can reach it can run commands" } if auth_token.nil? && !%w[127.0.0.1 ::1 localhost].include?(bind.to_s)
+          auth_token
+        end
+
         # Start HTTP transport using WEBrick (already a project dependency).
         # Rack 3 removed Rack::Handler - we build a native WEBrick servlet that
         # calls the Rack app directly instead of relying on Rack::Handler::WEBrick.
         def start_http_transport(server, mcp_options)
           require 'webrick'
-          http_opts = mcp_options.slice(*HTTP_KEYS)
-          port      = mcp_options.fetch(:port, 3000)
-          bind      = mcp_options.fetch(:bind, '127.0.0.1')
-          app       = MCP::Server::Transports::StreamableHTTPTransport.new(server, **http_opts)
+          http_opts  = mcp_options.slice(*HTTP_KEYS)
+          port       = mcp_options.fetch(:port, 3000)
+          bind       = mcp_options.fetch(:bind, '127.0.0.1')
+          auth_token = check_auth_token(mcp_options[:auth_token], bind)
+          app = MCP::Server::Transports::StreamableHTTPTransport.new(server, **http_opts)
           rack_servlet = Class.new(WEBrick::HTTPServlet::AbstractServlet) do
-            define_method(:initialize) do |srv, rack_app, server_info|
+            define_method(:initialize) do |srv, rack_app, server_info, token|
               @app = rack_app
               @server_info = server_info
+              @auth_token = token
               super(srv)
+            end
+            # @return [Boolean] true if no token is required, or the request carries the expected Bearer token
+            define_method(:authorized?) do |req|
+              return true if @auth_token.nil?
+              scheme, value = req['Authorization'].to_s.split(' ', 2)
+              scheme.to_s.casecmp?('Bearer') && OpenSSL.secure_compare(value.to_s, @auth_token.to_s)
             end
             %w[GET POST DELETE].each do |http_method|
               define_method(:"do_#{http_method}") do |req, res|
@@ -159,6 +179,13 @@ module Aspera
                   res.status = 200
                   res['Content-Type'] = 'application/json'
                   res.body = body
+                  next
+                end
+                unless authorized?(req)
+                  res.status = 401
+                  res['WWW-Authenticate'] = 'Bearer'
+                  res['Content-Type'] = 'application/json'
+                  res.body = JSON.generate(error: 'Unauthorized')
                   next
                 end
                 env = rack_env_from_webrick(req)
@@ -232,7 +259,7 @@ module Aspera
             version:     server.version,
             description: server.description
           }
-          webrick.mount('/', rack_servlet, app, server_info)
+          webrick.mount('/', rack_servlet, app, server_info, auth_token)
           Log.log.info { "MCP HTTP server listening on http://#{bind}:#{port}/" }
           trap('INT') { webrick.shutdown }
           trap('TERM') { webrick.shutdown }

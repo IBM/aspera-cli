@@ -59,6 +59,12 @@ components:
           type: string
           description: Bind address for HTTP transport.
           default: 127.0.0.1
+        auth_token:
+          type: string
+          description: >-
+            Bearer token required in the `Authorization` header of HTTP requests.
+
+            If not set, HTTP requests are not authenticated.
         stateless:
           type: boolean
           description: Run HTTP transport in stateless mode.
