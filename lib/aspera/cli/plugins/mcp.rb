@@ -81,13 +81,17 @@ module Aspera
         HTTP_KEYS   = %i[stateless allowed_origins allowed_hosts session_idle_timeout max_sessions].freeze
         # Keys consumed locally (not forwarded to MCP gem)
         TOOL_KEYS   = %i[max_text_bytes extra_args].freeze
-        private_constant :SERVER_KEYS, :CONFIG_KEYS, :STDIO_KEYS, :HTTP_KEYS, :TOOL_KEYS
+        # Extended-value handlers disabled in MCP server mode to prevent code execution
+        # and local resource access from a network-accessible client.
+        UNSAFE_EXTENDED_VALUE_HANDLERS = %i[ruby file uri stdin env].freeze
+        private_constant :SERVER_KEYS, :CONFIG_KEYS, :STDIO_KEYS, :HTTP_KEYS, :TOOL_KEYS, :UNSAFE_EXTENDED_VALUE_HANDLERS
 
         command :server, description: 'Start the MCP (Model Context Protocol) server',
           arguments:   [{name: :mcp_options, type: [Hash], mandatory: false, schema: 'opts:components.schemas.McpServerOptions'}]
 
         def action_server(mcp_options: nil, **)
           require 'aspera/cli/mcp_tool'
+          require 'aspera/cli/extended_value'
           mcp_options = (mcp_options || {}).transform_keys(&:to_sym)
           unknown = mcp_options.keys - SERVER_KEYS - CONFIG_KEYS - STDIO_KEYS - HTTP_KEYS - TOOL_KEYS - %i[transport port bind auth_token]
           Aspera.assert(unknown.empty?, type: Cli::BadArgument) { "Unknown MCP option(s): #{unknown.join(', ')}" }
@@ -96,6 +100,13 @@ module Aspera
           transport = mcp_options.delete(:transport) || 'stdio'
           raise Cli::BadArgument, "Unknown transport: #{transport}. Use 'stdio' or 'http'" \
             unless %w[stdio http].include?(transport.to_s)
+          # Disable extended-value handlers that allow arbitrary code execution or
+          # local resource access when called from a network-accessible MCP client.
+          # @ruby: evaluates attacker-supplied Ruby; @file:/@uri:/@stdin:/@env: expose
+          # the server's filesystem, environment, and internal network.
+          UNSAFE_EXTENDED_VALUE_HANDLERS.each do |handler|
+            ExtendedValue.instance.on(handler) { |_| raise Cli::BadArgument, "@#{handler}: extended value is disabled in MCP server mode" }
+          end
           Log.log.info { "Starting MCP server (transport=#{transport})..." }
           start_mcp_server(transport: transport.to_sym, mcp_options: mcp_options)
           Result::Nothing.new

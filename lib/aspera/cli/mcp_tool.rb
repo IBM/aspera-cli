@@ -41,8 +41,9 @@ module Aspera
           Structured values use an extended-value prefix on the relevant element:
             "@json:{...}"   — inline JSON object or array (preferred: no shell quoting)
             "@preset:name"  — expand a saved preset
-            "@env:VAR"      — read value from environment variable
-            "@file:/path"   — read value from a file
+            "@base64:..."   — base64-encoded value
+            "@val:..."      — literal string (no further decoding)
+          Note: @ruby:, @file:, @uri:, @stdin:, @env: are disabled in MCP server mode.
 
         AUTOMATIC FLAGS
           The server prepends extra_args to every call (default: #{DEFAULT_EXTRA_ARGS.join(' ')}).

@@ -18,7 +18,8 @@ Released: [Place date of release here]
 
 * `orchestrator`: `workflows export` with option `dependencies` saves a package (`.wkf`) with the sub-workflows and remote nodes used by the workflow, in the folder given by option `to_folder`.
 * `sync`: `target_rate` in `sync_info` accepts a string with suffix `k`, `m` or `g`, converted to bps (e.g. `100m`), in both `conf` and `args` formats.
-* `faspex5 postprocessing`: Two new optional parameters harden the unauthenticated webhook listener (addresses HackerOne report #4095423):
+* `mcp server`: Extended-value handlers `@ruby:`, `@file:`, `@uri:`, `@stdin:`, `@env:` are disabled at MCP server startup. These handlers allow arbitrary Ruby execution or local resource access from any MCP client; they are replaced by an explicit error. Safe handlers (`@json:`, `@preset:`, `@base64:`, `@val:`, …) remain available.
+* `faspex5 postprocessing`: Two new optional parameters harden the unauthenticated webhook listener:
   * `secret_token` — callers must supply `?token=<value>` in the URL; requests without the correct token are rejected with HTTP 401.
   * `allowed_ips` — restrict the listener to one IP or a list of IPs; requests from other source IPs are rejected with HTTP 403.
 * `faspex5 postprocessing`, `faspex5 gateway`, `aoc gateway`: Parameters are now validated against a JSON Schema (`Faspex4PostProcOptions`, `Faspex4GatewayOptions`). Unknown keys are rejected at startup instead of being silently ignored.
@@ -68,7 +69,7 @@ Released: 2026-10-06
 ### Server Versions
 
 | Plugin | Product | Version |
-|--------------|--------------------|------------------|
+| -------------- | -------------------- | ------------------ |
 | `aoc` | Aspera on Cloud | SaaS |
 | `console` | IBM Aspera Console | 3.4.4 |
 | `faspex5` | Faspex v5 | F5.0.17 |
@@ -80,7 +81,7 @@ Released: 2026-10-06
 ### Transfer Agent Versions
 
 | Agent | Product | Version |
-|-----------|--------------------------------|---------|
+| ----------- | -------------------------------- | --------- |
 | `connect` | IBM Aspera Connect Client | 4.2.14 |
 | `desktop` | IBM Aspera Desktop Client | 4.4.3 |
 | `direct` | IBM Aspera Transfer SDK (ascp) | 1.1.9 |
@@ -151,7 +152,7 @@ Released: 2026-10-05
 ### Server Versions
 
 | Plugin | Product | Version |
-|--------------|--------------------|------------------|
+| -------------- | -------------------- | ------------------ |
 | `aoc` | Aspera on Cloud | SaaS |
 | `console` | IBM Aspera Console | 3.4.4 |
 | `faspex5` | Faspex v5 | F5.0.17 |
@@ -163,7 +164,7 @@ Released: 2026-10-05
 ### Transfer Agent Versions
 
 | Agent | Product | Version |
-|-----------|--------------------------------|---------|
+| ----------- | -------------------------------- | --------- |
 | `connect` | IBM Aspera Connect Client | 4.2.14 |
 | `desktop` | IBM Aspera Desktop Client | 4.4.3 |
 | `direct` | IBM Aspera Transfer SDK (ascp) | 1.1.9 |
