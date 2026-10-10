@@ -529,9 +529,9 @@ module Aspera
         command :user,           description: 'Manage current user'
         command :shared_folders, description: 'Browse shared folders'
         command :gateway,        description: 'Start Faspex 4 gateway emulation',
-          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}}]
+          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: Schema::Registry::GATEWAY_OPTIONS}]
         command :postprocessing, description: 'Start Faspex 4 post-processing server',
-          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}}]
+          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: Schema::Registry::POSTPROC_OPTIONS}]
         command :invitations,    description: 'Manage invitations'
 
         commands_under :invitations do

@@ -101,6 +101,9 @@ module Aspera
       IMAGE_OPTIONS           = "#{OPTIONS}:components.schemas.ImageOptions"
       OUT_OPTIONS             = "#{OPTIONS}:components.schemas.OutOptions"
       PACKAGE_FOLDER_OPTIONS  = "#{OPTIONS}:components.schemas.PackageFolderOptions"
+      WEB_SERVER_OPTIONS      = "#{OPTIONS}:components.schemas.WebServerOptions"
+      GATEWAY_OPTIONS         = "#{OPTIONS}:components.schemas.Faspex4GatewayOptions"
+      POSTPROC_OPTIONS        = "#{OPTIONS}:components.schemas.Faspex4PostProcOptions"
 
       REQ_BODY = '.requestBody.content.application/json.schema'
       # Suffix appended to a dotted path to signal query-param extraction in reader()

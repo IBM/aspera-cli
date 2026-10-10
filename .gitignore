@@ -13,3 +13,4 @@
 /checksums/
 .tmp.*
 /.yardoc
+/private

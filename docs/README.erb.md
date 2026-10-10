@@ -8409,12 +8409,9 @@ It is invoked like this:
 
 An optional positional parameter can be provided as [Extended Value](#extended-value-syntax) `Hash`:
 
-| Parameter         | Type      | Default | Description                                       |
-|-------------------|-----------|-------|-----------------------------------------------------|
-| **server info**   | -         | -     | See [Web service](#web-service).                    |
-| `script_folder`   | `String`  | `.`   | Prefix added to script path (Default: CWD)          |
-| `fail_on_error`   | `Bool`    | false | Fail if true and process exits with non-zero code   |
-| `timeout_seconds` | `Integer` | 60    | Time out before script is killed                    |
+<%=schema_to_table('opts:components.schemas.Faspex4PostProcOptions')%>
+
+For details on `url` and HTTPS (`cert`, `key`, `chain`), see [Web service](#web-service).
 
 When a request on <%=tool%> is received the following happens:
 
@@ -8434,9 +8431,18 @@ In Faspex 5, the URL of the webhook endpoint shall be reachable from within Fasp
 For example, if <%=tool%> is running on the host, the URL hostname shall not be `localhost`, as this refers to the local address inside the Faspex container.
 Instead, one can specify the **IP address of the host** or `host.containers.internal` (Check `podman` manual).
 
+> [!NOTE]
+> **Security**: by default the listener binds to loopback (`localhost`) and is not reachable from outside the host.
+> When binding to a routable address, it is strongly recommended to add at least one of the following protections:
+>
+> - **`secret_token`**: include the token in the Faspex webhook URL: `http://host:8080/processing/script1.sh?token=mysecret`. Requests without the correct token are rejected with HTTP 401.
+> - **`allowed_ips`**: restrict the listener to the known Faspex container IPs, e.g. `@json:'{"allowed_ips":["192.168.1.10","192.168.1.11"]}'`. Requests from other IPs are rejected with HTTP 403.
+
 Define the web hook as follows:
 
 **Webhook endpoint URI**: `http://host.containers.internal:8080/processing/script1.sh`
+
+With `secret_token`: `http://host.containers.internal:8080/processing/script1.sh?token=mysecret`
 
 Then the post-processing script executed will be `/opt/scripts/script1.sh`.
 
@@ -8448,7 +8454,11 @@ Then the post-processing script executed will be `/opt/scripts/script1.sh`.
 
 For legacy Faspex client applications that use the `send` API (only) of Faspex v4, the command `gateway` provides the capability to present an API compatible with Faspex 4, and it will call the Faspex 5 API.
 
-It takes a single argument which is the URL at which the gateway will be located (locally):
+It takes an optional `Hash` argument:
+
+<%=schema_to_table(Aspera::Schema::Registry::GATEWAY_OPTIONS)%>
+
+Example:
 
 ```shell
 <%=cmd%> faspex5 gateway @json:'{"url":"https://localhost:12345/aspera/faspex"}'
@@ -8466,8 +8476,6 @@ There are many limitations:
 Behavior:
 The API client calls the Faspex 4 API on the gateway, then the gateway transforms this into a Faspex 5 API call, which returns a transfer spec, which is returned to the calling client.
 The calling client uses this to start a transfer to HSTS, which is managed by Faspex 5.
-
-For other parameters, see [Web service](#web-service).
 
 ### Faspex 5: Get Bearer token to use API
 

@@ -18,6 +18,11 @@ Released: [Place date of release here]
 
 * `orchestrator`: `workflows export` with option `dependencies` saves a package (`.wkf`) with the sub-workflows and remote nodes used by the workflow, in the folder given by option `to_folder`.
 * `sync`: `target_rate` in `sync_info` accepts a string with suffix `k`, `m` or `g`, converted to bps (e.g. `100m`), in both `conf` and `args` formats.
+* `faspex5 postprocessing`: Two new optional parameters harden the unauthenticated webhook listener (addresses HackerOne report #4095423):
+  * `secret_token` — callers must supply `?token=<value>` in the URL; requests without the correct token are rejected with HTTP 401.
+  * `allowed_ips` — restrict the listener to one IP or a list of IPs; requests from other source IPs are rejected with HTTP 403.
+* `faspex5 postprocessing`, `faspex5 gateway`, `aoc gateway`: Parameters are now validated against a JSON Schema (`Faspex4PostProcOptions`, `Faspex4GatewayOptions`). Unknown keys are rejected at startup instead of being silently ignored.
+* `options.schema.yaml`: New schemas `WebServerOptions` (shared `url`/`cert`/`key`/`chain`), `Faspex4GatewayOptions` (extends `WebServerOptions`), and `Faspex4PostProcOptions` (extends `WebServerOptions` with postprocessing-specific keys).
 
 ### Issues Fixed
 

@@ -851,3 +851,93 @@ components:
             Default is auto-detected: enabled if stdout is a terminal and the locale is UTF-8.
         img:
           $ref: "#/components/schemas/ImageOptions"
+    WebServerOptions:
+      type: object
+      description: >-
+        Address and TLS configuration for a local web server (`WebServerSimple`).
+        Used by commands that start an embedded HTTP(S) listener (`faspex5 gateway`,
+        `faspex5 postprocessing`, `aoc gateway`, `node emulator`, …).
+      additionalProperties: false
+      properties:
+        url:
+          type: string
+          description: >-
+            Address and port the server listens on.
+            Use `https://` with `cert`/`key` for TLS.
+          default: http://localhost:8080
+        cert:
+          type: string
+          description: >-
+            Path to the TLS certificate file.
+            Accepted formats: PEM (`.pem`) or PKCS12 (`.p12` / `.pfx`).
+          example: /path/to/cert.pem
+        key:
+          type: string
+          description: >-
+            Path to the PEM private key file, or the PKCS12 passphrase when `cert` is a `.p12`/`.pfx` file.
+          example: /path/to/key.pem
+        chain:
+          type: string
+          description: Path to the PEM certificate chain file (appended as extra chain certificates).
+          example: /path/to/chain.pem
+    Faspex4GatewayOptions:
+      description: >-
+        Configuration for the Faspex 4 gateway emulator (`faspex5 gateway`, `aoc gateway`).
+        The command starts a local HTTP server that accepts Faspex 4 API calls and translates them
+        to Faspex 5 / AoC API calls.
+        By default the server binds to loopback; use a routable address only when clients must reach
+        the host from outside.
+      allOf:
+        - $ref: "#/components/schemas/WebServerOptions"
+    Faspex4PostProcOptions:
+      description: >-
+        Configuration for the Faspex 4-style post-processing webhook receiver (`faspex5 postprocessing`).
+        The command starts a local HTTP(S) server that Faspex 5 calls after each package upload.
+        It maps the URL path to a script under `script_folder` and executes it with the webhook
+        JSON body as environment variables.
+        By default the server binds to loopback; use a routable address only when Faspex containers
+        must reach the host.
+      allOf:
+        - $ref: "#/components/schemas/WebServerOptions"
+        - type: object
+          additionalProperties: false
+          properties:
+            script_folder:
+              type: string
+              description: >-
+                Folder containing the post-processing scripts.
+                The URL path (after the base path) is appended to this folder to locate the script to execute.
+              default: "."
+              example: /opt/faspex/scripts
+            fail_on_error:
+              type: boolean
+              description: >-
+                When `true`, return HTTP 500 if the script exits with a non-zero status code.
+                When `false` (default), the exit code is reported in the response body but HTTP 200 is returned.
+              default: false
+            timeout_seconds:
+              type: integer
+              minimum: 1
+              description: >-
+                Maximum time in seconds to wait for the script to complete before killing it.
+              default: 60
+            secret_token:
+              type: string
+              description: >-
+                Shared secret for webhook authentication.
+                When set, every incoming request must include `?token=<value>` in the URL;
+                requests without the correct token are rejected with HTTP 401.
+                Configure the Faspex webhook URL as `http://host:port/path/script.sh?token=<value>`.
+              example: my-secret-token
+            allowed_ips:
+              description: >-
+                IP address or list of IP addresses allowed to call the listener.
+                Requests from any other source IP are rejected with HTTP 403.
+                When not set, no IP restriction is applied.
+              oneOf:
+                - type: string
+                  example: "192.168.1.10"
+                - type: array
+                  items:
+                    type: string
+                  example: ["192.168.1.10", "192.168.1.11"]

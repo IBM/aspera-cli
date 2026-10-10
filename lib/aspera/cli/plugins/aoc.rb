@@ -805,7 +805,7 @@ module Aspera
         end
         command :automation,        description: 'Manage automation (BETA)', setup: :setup_automation_api
         command :gateway,           description: 'Start AoC Faspex4 gateway',
-          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}}]
+          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: Schema::Registry::GATEWAY_OPTIONS}]
 
         # user sub-commands
         commands_under :user do

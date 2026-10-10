@@ -10,8 +10,15 @@ require 'aspera/mime'
 
 module Aspera
   # Start a Faspex-4 style post-processing script using Faspex-5 webhook
+  #
+  # Security notes:
+  # - By default the listener binds to loopback only (url defaults to http://localhost:...).
+  #   Use a routable address only when the Faspex containers must reach this host.
+  # - Use `secret_token` so the token must be present as a `token` query parameter on every
+  #   incoming request (configure the webhook URL in Faspex as http://host:port/path?token=VALUE).
+  # - Use `allowed_ips` to restrict which source IPs may call the listener.
   class Faspex4PostProcServlet < WEBrick::HTTPServlet::AbstractServlet
-    ALLOWED_PARAMETERS = %i[root script_folder fail_on_error timeout_seconds].freeze
+    ALLOWED_PARAMETERS = %i[root script_folder fail_on_error timeout_seconds secret_token allowed_ips].freeze
     def initialize(server, parameters)
       Aspera.assert_type(parameters, Hash)
       @parameters = parameters.symbolize_keys
@@ -21,6 +28,8 @@ module Aspera
       @parameters[:script_folder] ||= '.'
       @parameters[:fail_on_error] ||= false
       @parameters[:timeout_seconds] ||= 60
+      # allowed_ips: optional Array of IP strings; nil means no restriction
+      @parameters[:allowed_ips] = Array(@parameters[:allowed_ips]) if @parameters.key?(:allowed_ips)
       super(server)
       Log.log.debug { 'Faspex4PostProcServlet initialized' }
     end
@@ -30,6 +39,27 @@ module Aspera
       Log.log.debug { "request=#{request.path}" }
       Log.dump(:query, request.query)
       begin
+        # Check source IP against allowlist when configured
+        if @parameters[:allowed_ips]
+          client_ip = request.peeraddr[3]
+          unless @parameters[:allowed_ips].include?(client_ip)
+            Log.log.warn { "Rejected request from disallowed IP: #{client_ip}" }
+            response.status = 403
+            response['Content-Type'] = Mime::JSON
+            response.body = {status: 'error', message: 'Forbidden'}.to_json
+            return
+          end
+        end
+        # Verify shared secret when configured (expected as ?token=VALUE in the URL)
+        if @parameters[:secret_token]
+          unless request.query['token'] == @parameters[:secret_token]
+            Log.log.warn { 'Rejected request with invalid or missing token' }
+            response.status = 401
+            response['Content-Type'] = Mime::JSON
+            response.body = {status: 'error', message: 'Unauthorized'}.to_json
+            return
+          end
+        end
         # Only accept requests on the root
         if !request.path.start_with?(@parameters[:root])
           response.status = 400
