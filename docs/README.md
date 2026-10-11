@@ -7836,8 +7836,8 @@ sync admin file_info /data/local_sync
 sync admin overview /data/local_sync
 sync admin query --sql='SELECT name FROM sqlite_master WHERE type='table'' /data/local_sync
 sync admin status /data/local_sync
+sync pull my_inside_folder --to-folder=/data/local_sync @: name=serv_sync_pull_conf
 sync pull my_inside_folder --to-folder=/data/local_sync @json:'{"name":"serv_sync_pull_conf","reset":true,"transport":{"target_rate":my_bps}}'
-sync pull my_inside_folder --to-folder=/data/local_sync @json:'{"name":"serv_sync_pull_conf"}'
 upload 'faux:///test.bin?1k' --to-folder=my_upload_folder
 upload --sources=@ts --transfer.ascp_args=@list:,--file-list,file_list.txt --to-folder=my_inside_folder
 upload --sources=@ts --transfer.ascp_args=@list:,--file-pair-list,file_pair_list.txt
@@ -9280,12 +9280,19 @@ ascli faspex5 postprocessing
 
 An optional positional parameter can be provided as [Extended Value](#extended-value-syntax) `Hash`:
 
-| Parameter         | Type      | Default | Description                                       |
-|-------------------|-----------|-------|-----------------------------------------------------|
-| **server info**   | -         | -     | See [Web service](#web-service).                    |
-| `script_folder`   | `String`  | `.`   | Prefix added to script path (Default: CWD)          |
-| `fail_on_error`   | `Bool`    | false | Fail if true and process exits with non-zero code   |
-| `timeout_seconds` | `Integer` | 60    | Time out before script is killed                    |
+| Field | Type | Description |
+|-----------------|---------|----------------------------------------------------------------------------------|
+| `allowed_ips` | `` | IP address or list of IP addresses allowed to call the listener. Requests from any other source IP are rejected with HTTP 403. When not set, no IP restriction is applied. |
+| `cert` | `String` | Path to the TLS certificate file. Accepted formats: PEM (`.pem`) or PKCS12 (`.p12` / `.pfx`).<br/>Example: `/path/to/cert.pem`. |
+| `chain` | `String` | Path to the PEM certificate chain file (appended as extra chain certificates).<br/>Example: `/path/to/chain.pem`. |
+| `fail_on_error` | `Bool` | When `true`, return HTTP 500 if the script exits with a non-zero status code. When `false` (default), the exit code is reported in the response body but HTTP 200 is returned.<br/>Default: `false`. |
+| `key` | `String` | Path to the PEM private key file, or the PKCS12 passphrase when `cert` is a `.p12`/`.pfx` file.<br/>Example: `/path/to/key.pem`. |
+| `script_folder` | `String` | Folder containing the post-processing scripts. The URL path (after the base path) is appended to this folder to locate the script to execute.<br/>Default: `.`.<br/>Example: `/opt/faspex/scripts`. |
+| `secret_token` | `String` | Shared secret for webhook authentication. When set, every incoming request must include `?token=<value>` in the URL; requests without the correct token are rejected with HTTP 401. Configure the Faspex webhook URL as `http://host:port/path/script.sh?token=<value>`.<br/>Example: `my-secret-token`. |
+| `timeout_seconds` | `Integer` | Maximum time in seconds to wait for the script to complete before killing it.<br/>Default: `60`. |
+| `url` | `String` | Address and port the server listens on. Use `https://` with `cert`/`key` for TLS.<br/>Default: `http://localhost:8080`. |
+
+For details on `url` and HTTPS (`cert`, `key`, `chain`), see [Web service](#web-service).
 
 When a request on `ascli` is received the following happens:
 
@@ -9305,9 +9312,18 @@ In Faspex 5, the URL of the webhook endpoint shall be reachable from within Fasp
 For example, if `ascli` is running on the host, the URL hostname shall not be `localhost`, as this refers to the local address inside the Faspex container.
 Instead, one can specify the **IP address of the host** or `host.containers.internal` (Check `podman` manual).
 
+> [!NOTE]
+> **Security**: by default the listener binds to loopback (`localhost`) and is not reachable from outside the host.
+> When binding to a routable address, it is strongly recommended to add at least one of the following protections:
+>
+> - **`secret_token`**: include the token in the Faspex webhook URL: `http://host:8080/processing/script1.sh?token=mysecret`. Requests without the correct token are rejected with HTTP 401.
+> - **`allowed_ips`**: restrict the listener to the known Faspex container IPs, e.g. `@json:'{"allowed_ips":["192.168.1.10","192.168.1.11"]}'`. Requests from other IPs are rejected with HTTP 403.
+
 Define the web hook as follows:
 
 **Webhook endpoint URI**: `http://host.containers.internal:8080/processing/script1.sh`
+
+With `secret_token`: `http://host.containers.internal:8080/processing/script1.sh?token=mysecret`
 
 Then the post-processing script executed will be `/opt/scripts/script1.sh`.
 
@@ -9319,7 +9335,16 @@ Then the post-processing script executed will be `/opt/scripts/script1.sh`.
 
 For legacy Faspex client applications that use the `send` API (only) of Faspex v4, the command `gateway` provides the capability to present an API compatible with Faspex 4, and it will call the Faspex 5 API.
 
-It takes a single argument which is the URL at which the gateway will be located (locally):
+It takes an optional `Hash` argument:
+
+| Field | Type | Description |
+|-------|--------|----------------------------------------------------------------------------------|
+| `cert` | `String` | Path to the TLS certificate file. Accepted formats: PEM (`.pem`) or PKCS12 (`.p12` / `.pfx`).<br/>Example: `/path/to/cert.pem`. |
+| `chain` | `String` | Path to the PEM certificate chain file (appended as extra chain certificates).<br/>Example: `/path/to/chain.pem`. |
+| `key` | `String` | Path to the PEM private key file, or the PKCS12 passphrase when `cert` is a `.p12`/`.pfx` file.<br/>Example: `/path/to/key.pem`. |
+| `url` | `String` | Address and port the server listens on. Use `https://` with `cert`/`key` for TLS.<br/>Default: `http://localhost:8080`. |
+
+Example:
 
 ```shell
 ascli faspex5 gateway @json:'{"url":"https://localhost:12345/aspera/faspex"}'
@@ -9337,8 +9362,6 @@ There are many limitations:
 Behavior:
 The API client calls the Faspex 4 API on the gateway, then the gateway transforms this into a Faspex 5 API call, which returns a transfer spec, which is returned to the calling client.
 The calling client uses this to start a transfer to HSTS, which is managed by Faspex 5.
-
-For other parameters, see [Web service](#web-service).
 
 ### Faspex 5: Get Bearer token to use API
 
@@ -9397,7 +9420,10 @@ Available permissions: `browse_permission`, `download_permission`, `upload_permi
 > Add `ascli shares` in front of the following commands:
 
 ```shell
+admin authenticate @: username=my_username password=my_password
+admin directory list
 admin group all list
+admin group search list
 admin node list
 admin share list --fields=DEF,-status,status_message
 admin share user_permissions %name:my_share list
@@ -9412,6 +9438,7 @@ admin user all share_permissions %username:my_username show %name:my_share
 admin user ldap add the_name
 admin user local list
 admin user saml import @json:'{"id":"the_id","name_id":"the_name"}'
+admin user search list
 files browse /
 files delete my_share_folder/new_folder
 files delete my_share_folder/test_file.bin
@@ -9426,6 +9453,7 @@ files upload --to-folder=my_share_folder test_file.bin --transfer.agent=httpgw -
 files upload send_folder --to-folder=my_share_folder --transfer.agent=httpgw --transfer.url=https://tst.example.com/path --transfer.synchronous=true --transfer.api_version=v1 --transfer.upload_chunk_size=100000
 health --url=https://shares.example.com/path
 info
+share list
 ```
 
 ## Plugin: `console`: IBM Aspera Console
@@ -10184,11 +10212,35 @@ The `server` command accepts an optional [Hash](#extended-value-syntax) argument
 |-----|------|---------|-------------|
 | `port` | `integer` | `3000` | TCP port to listen on |
 | `bind` | `string` | `127.0.0.1` | Bind address |
+| `auth_token` | `string` | - | Static Bearer token. If set, all MCP requests must carry `Authorization: Bearer <token>`, else HTTP 401. Cannot be empty. |
+| `oauth` | `boolean` | `false` | Enable OAuth 2.0 PKCE flow with dynamic client registration. When `true`, clients register automatically and users authenticate via a browser consent page. |
+| `oauth_access_token_ttl` | `integer` | `3600` | OAuth access token lifetime in seconds. |
+| `oauth_refresh_token_ttl` | `integer` | `2592000` | OAuth refresh token lifetime in seconds (30 days). |
 | `stateless` | `boolean` | `false` | Enable stateless mode |
 | `allowed_origins` | `Array<string>` | - | List of allowed origins |
 | `allowed_hosts` | `Array<string>` | - | List of allowed hostnames |
 | `session_idle_timeout` | `integer` | - | Idle session timeout in seconds |
 | `max_sessions` | `integer` | - | Maximum number of concurrent sessions |
+
+> [!WARNING]
+> The tool executes any `ascli` command with the credentials and presets of the user running the server.
+> When `bind` is set to a non-local address, at least one of `auth_token` or `oauth` is **mandatory**: the server refuses to start without either.
+> For local-only deployments (`127.0.0.1`, `::1`, `localhost`), both are optional but recommended.
+> `allowed_hosts` and `allowed_origins` protect against DNS rebinding but do not authenticate clients.
+> `auth_token` and `oauth` can coexist: a request is accepted if it carries a valid static token **or** a valid OAuth access token.
+
+> [!NOTE]
+> **OAuth 2.0 PKCE flow** - When `oauth` is `true`, the server exposes the following additional endpoints:
+>
+> | Endpoint | Description |
+> |---|---|
+> | `GET /.well-known/oauth-authorization-server` | OAuth discovery metadata (RFC 8414) |
+> | `POST /oauth/register` | Dynamic client registration (RFC 7591) — any client may register and receive a `client_id` |
+> | `GET /oauth/authorize` | Consent page shown to the user in a browser |
+> | `POST /oauth/authorize` | Processes the user decision (allow/deny) and issues an authorization code |
+> | `POST /oauth/token` | Exchanges the code for tokens (`authorization_code`) or renews them (`refresh_token`) |
+>
+> AI clients that support the MCP Authorization spec (such as Bob) detect these endpoints automatically via the `WWW-Authenticate` header returned on HTTP 401, register dynamically, and launch the browser-based login flow without any extra configuration.
 
 > [!NOTE]
 > **HTTP transport discovery endpoint** - When using `http` transport, the server exposes a `GET /` endpoint that returns a JSON object with `name`, `version`, and `description` fields.
@@ -10205,7 +10257,7 @@ ascli mcp server
 Start an MCP server over HTTP on port 8080:
 
 ```shell
-ascli mcp server @: transport=http port=8080 bind=0.0.0.0
+ascli mcp server @: transport=http port=8080 bind=0.0.0.0 auth_token=@env:MCP_TOKEN
 ```
 
 Start with custom instructions and a specific protocol version:
@@ -10214,9 +10266,17 @@ Start with custom instructions and a specific protocol version:
 ascli mcp server @: instructions="Aspera transfer automation" protocol_version=2024-11-05
 ```
 
+Start an MCP server with OAuth 2.0 PKCE authentication (for AI clients such as Bob that support the MCP Authorization spec):
+
+```shell
+ascli mcp server @: transport=http port=3000 bind=0.0.0.0 oauth=true
+```
+
 ### MCP client configuration
 
 #### Streamable HTTP transport
+
+##### Local server (no authentication required)
 
 Start the server in a separate terminal first:
 
@@ -10251,6 +10311,76 @@ For other clients (Claude Desktop, VS Code, and so on):
   }
 }
 ```
+
+##### Remote server with static token
+
+When the server is exposed on a non-local address, at least one of `auth_token` or `oauth` is required.
+
+**Option A: static Bearer token** - suitable for all MCP clients.
+Set the token in the environment and start the server:
+
+```shell
+export MCP_TOKEN=my-secret-token
+ascli mcp server @: transport=http port=3000 bind=0.0.0.0 auth_token=@env:MCP_TOKEN
+```
+
+For [**IBM Bob**](https://bob.ibm.com/docs/ide/configuration/mcp/mcp-in-bob), pass the same token in the `Authorization` header:
+
+```json
+{
+  "mcpServers": {
+    "ascli": {
+      "type": "streamable-http",
+      "url": "http://your-server:3000/mcp",
+      "headers": {
+        "Authorization": "Bearer my-secret-token"
+      }
+    }
+  }
+}
+```
+
+For other clients (Claude Desktop, VS Code, and so on):
+
+```json
+{
+  "mcpServers": {
+    "ascli": {
+      "type": "http",
+      "url": "http://your-server:3000/mcp",
+      "headers": {
+        "Authorization": "Bearer my-secret-token"
+      }
+    }
+  }
+}
+```
+
+##### Remote server with OAuth 2.0 PKCE
+
+**Option B: OAuth 2.0 PKCE flow** - for AI clients that support the MCP Authorization spec (such as Bob).
+No token to manage manually: the client registers dynamically and opens a browser window for user consent on first connection.
+
+Start the server with OAuth enabled:
+
+```shell
+ascli mcp server @: transport=http port=3000 bind=0.0.0.0 oauth=true
+```
+
+For [**IBM Bob**](https://bob.ibm.com/docs/ide/configuration/mcp/mcp-in-bob), register the URL with no extra configuration:
+
+```json
+{
+  "mcpServers": {
+    "ascli": {
+      "type": "streamable-http",
+      "url": "http://your-server:3000/mcp"
+    }
+  }
+}
+```
+
+Bob detects the OAuth endpoints via the `WWW-Authenticate` header on the first HTTP 401 response and triggers the browser-based login flow automatically.
 
 > [!NOTE]
 > With `http` transport, the client connects to a running server process.

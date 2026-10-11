@@ -7662,6 +7662,7 @@ alee_entitlement:
 mcp_bad_transport:
   description: Reject an unknown MCP transport option.
   tags:
+    - mcp
     - must_fail
     - nodoc
   expect: "`/transport` is not one of: [\"stdio\", \"http\"]"
@@ -7673,6 +7674,7 @@ mcp_bad_transport:
 mcp_http_server:
   description: Start MCP HTTP server, call execute_ascli_command with conf gem version, stop server.
   tags:
+    - mcp
     - noblock
   args:
     - mcp
@@ -7693,6 +7695,7 @@ mcp_http_server:
 mcp_bad_option:
   description: Reject an unknown MCP option key.
   tags:
+    - mcp
     - must_fail
     - nodoc
   expect: "Unknown MCP option(s): unknown_key"
@@ -7703,6 +7706,7 @@ mcp_bad_option:
 mcp_http_tools_list:
   description: Start MCP HTTP server, verify tools/list contains execute_ascli_command, stop server.
   tags:
+    - mcp
     - noblock
     - nodoc
   args:
@@ -7724,6 +7728,8 @@ mcp_http_tools_list:
     t.stop_process :mcp_http_tools_list
 mcp_stdio_call:
   description: MCP stdio transport — initialize then tools/call returns the gem version.
+  tags:
+    - mcp
   stdin: |
     {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"0"}}}
     {"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"execute_ascli_command","arguments":{"args":["config","gem","version"]}}}
@@ -7738,6 +7744,210 @@ mcp_stdio_call:
     raise "No tools/call response found" unless call_line
     result = JSON.parse(call_line)
     raise "Unexpected result: #{result}" unless result.dig('result', 'content', 0, 'text') == Aspera::Cli::VERSION
+
+mcp_auth_required_nonlocal:
+  description: Reject HTTP server start when bind is non-local and no auth is configured.
+  tags:
+    - mcp
+    - must_fail
+    - nodoc
+  expect: "auth_token or oauth is required when bind address"
+  args:
+    - mcp
+    - server
+    - "@:"
+    - transport=http
+    - bind=0.0.0.0
+mcp_auth_token_server:
+  description: Start MCP HTTP server with static auth_token, verify 401 without token and 200 with token.
+  tags:
+    - mcp
+    - noblock
+    - nodoc
+  args:
+    - mcp
+    - server
+    - "@:"
+    - transport=http
+    - port=13779
+    - auth_token=test-secret
+  post: |
+    sleep 1
+    require 'net/http'
+    uri_mcp = URI('http://127.0.0.1:13779/mcp')
+    # Without token: expect 401
+    res_no_auth = Net::HTTP.start(uri_mcp.host, uri_mcp.port) do |http|
+      req = Net::HTTP::Post.new(uri_mcp.path, 'Content-Type' => 'application/json')
+      req.body = '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"0"}}}'
+      http.request(req)
+    end
+    raise "Expected 401 without token, got #{res_no_auth.code}" unless res_no_auth.code == '401'
+    raise "Expected WWW-Authenticate header" unless res_no_auth['WWW-Authenticate']
+    # With correct token: expect 200
+    res_with_auth = Net::HTTP.start(uri_mcp.host, uri_mcp.port) do |http|
+      req = Net::HTTP::Post.new(uri_mcp.path, 'Content-Type' => 'application/json', 'Authorization' => 'Bearer test-secret')
+      req.body = '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"0"}}}'
+      http.request(req)
+    end
+    raise "Expected 200 with token, got #{res_with_auth.code}" unless res_with_auth.code == '200'
+    t.stop_process :mcp_auth_token_server
+mcp_oauth_flow:
+  description: >-
+    Start MCP HTTP server with OAuth PKCE, complete the full flow:
+    discovery, consent, token exchange, refresh, and authenticated MCP call.
+  tags:
+    - mcp
+    - noblock
+    - nodoc
+  args:
+    - mcp
+    - server
+    - "@:"
+    - transport=http
+    - port=13780
+    - oauth=true
+  post: |
+    sleep 1
+    require 'net/http'
+    require 'uri'
+    require 'json'
+    require 'openssl'
+    require 'base64'
+    require 'securerandom'
+    base = 'http://127.0.0.1:13780'
+    # 1. Discovery
+    disc = JSON.parse(Net::HTTP.get(URI("#{base}/.well-known/oauth-authorization-server")))
+    raise "Missing authorization_endpoint"  unless disc['authorization_endpoint']
+    raise "Missing token_endpoint"          unless disc['token_endpoint']
+    raise "Missing registration_endpoint"   unless disc['registration_endpoint']
+    raise "S256 not advertised"             unless disc['code_challenge_methods_supported'].include?('S256')
+    # 2. Dynamic client registration (RFC 7591)
+    redirect = 'http://127.0.0.1:19999/cb'
+    res_reg = Net::HTTP.start('127.0.0.1', 13780) do |http|
+      req = Net::HTTP::Post.new('/oauth/register', 'Content-Type' => 'application/json')
+      req.body = JSON.generate(client_name: 'test', redirect_uris: [redirect])
+      http.request(req)
+    end
+    raise "Expected 201 for registration, got #{res_reg.code}" unless res_reg.code == '201'
+    reg = JSON.parse(res_reg.body)
+    client_id = reg['client_id']
+    raise "Missing client_id in registration response" unless client_id
+    # 3. Build PKCE pair
+    verifier  = SecureRandom.urlsafe_base64(32)
+    challenge = Base64.urlsafe_encode64(OpenSSL::Digest::SHA256.digest(verifier), padding: false)
+    state     = SecureRandom.hex(8)
+    # 4. GET /oauth/authorize — expect consent HTML
+    auth_uri = URI("#{base}/oauth/authorize")
+    auth_uri.query = URI.encode_www_form(
+      client_id: client_id, redirect_uri: redirect,
+      response_type: 'code', state: state,
+      code_challenge: challenge, code_challenge_method: 'S256'
+    )
+    res_html = Net::HTTP.get_response(auth_uri)
+    raise "Expected 200 for consent page, got #{res_html.code}" unless res_html.code == '200'
+    raise "Expected HTML consent page" unless res_html.body.include?('allow')
+    # 5. POST /oauth/authorize (simulate Allow click)
+    res_consent = Net::HTTP.start('127.0.0.1', 13780) do |http|
+      req = Net::HTTP::Post.new('/oauth/authorize', 'Content-Type' => 'application/x-www-form-urlencoded')
+      req.body = URI.encode_www_form(
+        client_id: client_id, redirect_uri: redirect,
+        state: state, code_challenge: challenge, code_challenge_method: 'S256',
+        decision: 'allow'
+      )
+      http.request(req)
+    end
+    raise "Expected 302 redirect, got #{res_consent.code}" unless res_consent.code == '302'
+    location = res_consent['Location']
+    raise "Missing Location header" unless location
+    code = URI.decode_www_form(URI(location).query).to_h['code']
+    raise "Missing code in redirect" unless code
+    # 6. POST /oauth/token — exchange code for tokens
+    res_token = Net::HTTP.start('127.0.0.1', 13780) do |http|
+      req = Net::HTTP::Post.new('/oauth/token', 'Content-Type' => 'application/x-www-form-urlencoded')
+      req.body = URI.encode_www_form(
+        grant_type: 'authorization_code', code: code,
+        redirect_uri: redirect, code_verifier: verifier
+      )
+      http.request(req)
+    end
+    raise "Expected 200 for token, got #{res_token.code}" unless res_token.code == '200'
+    tokens = JSON.parse(res_token.body)
+    access_token  = tokens['access_token']
+    refresh_token = tokens['refresh_token']
+    raise "Missing access_token"  unless access_token
+    raise "Missing refresh_token" unless refresh_token
+    raise "Wrong token_type"      unless tokens['token_type'] == 'Bearer'
+    raise "Missing expires_in"    unless tokens['expires_in'].to_i > 0
+    # 7. Use access_token for an MCP initialize call
+    res_mcp = Net::HTTP.start('127.0.0.1', 13780) do |http|
+      req = Net::HTTP::Post.new('/mcp',
+        'Content-Type'  => 'application/json',
+        'Accept'        => 'application/json, text/event-stream',
+        'Authorization' => "Bearer #{access_token}"
+      )
+      req.body = '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"0"}}}'
+      http.request(req)
+    end
+    raise "Expected 200 for MCP call, got #{res_mcp.code}" unless res_mcp.code == '200'
+    # 8. POST /oauth/token — refresh
+    res_refresh = Net::HTTP.start('127.0.0.1', 13780) do |http|
+      req = Net::HTTP::Post.new('/oauth/token', 'Content-Type' => 'application/x-www-form-urlencoded')
+      req.body = URI.encode_www_form(grant_type: 'refresh_token', refresh_token: refresh_token)
+      http.request(req)
+    end
+    raise "Expected 200 for refresh, got #{res_refresh.code}" unless res_refresh.code == '200'
+    new_tokens = JSON.parse(res_refresh.body)
+    raise "Missing new access_token after refresh"  unless new_tokens['access_token']
+    raise "Missing new refresh_token after refresh" unless new_tokens['refresh_token']
+    raise "Refresh token should rotate"             if new_tokens['refresh_token'] == refresh_token
+    # 9. Old refresh token must be revoked
+    res_reuse = Net::HTTP.start('127.0.0.1', 13780) do |http|
+      req = Net::HTTP::Post.new('/oauth/token', 'Content-Type' => 'application/x-www-form-urlencoded')
+      req.body = URI.encode_www_form(grant_type: 'refresh_token', refresh_token: refresh_token)
+      http.request(req)
+    end
+    raise "Expected 400 for reused refresh token, got #{res_reuse.code}" unless res_reuse.code == '400'
+    t.stop_process :mcp_oauth_flow
+mcp_oauth_deny:
+  description: OAuth consent deny — server must redirect with error=access_denied.
+  tags:
+    - mcp
+    - noblock
+    - nodoc
+  args:
+    - mcp
+    - server
+    - "@:"
+    - transport=http
+    - port=13781
+    - oauth=true
+  post: |
+    sleep 1
+    require 'net/http'
+    require 'uri'
+    require 'securerandom'
+    require 'openssl'
+    require 'base64'
+    base     = 'http://127.0.0.1:13781'
+    verifier = SecureRandom.urlsafe_base64(32)
+    challenge = Base64.urlsafe_encode64(OpenSSL::Digest::SHA256.digest(verifier), padding: false)
+    redirect  = 'http://127.0.0.1:19999/cb'
+    state     = 'deny-state'
+    res = Net::HTTP.start('127.0.0.1', 13781) do |http|
+      req = Net::HTTP::Post.new('/oauth/authorize', 'Content-Type' => 'application/x-www-form-urlencoded')
+      req.body = URI.encode_www_form(
+        client_id: 'test-client', redirect_uri: redirect,
+        state: state, code_challenge: challenge, code_challenge_method: 'S256',
+        decision: 'deny'
+      )
+      http.request(req)
+    end
+    raise "Expected 302 on deny, got #{res.code}" unless res.code == '302'
+    location = res['Location']
+    params   = URI.decode_www_form(URI(location).query).to_h
+    raise "Expected error=access_denied, got #{params}" unless params['error'] == 'access_denied'
+    raise "Expected state to be forwarded" unless params['state'] == state
+    t.stop_process :mcp_oauth_deny
 
 github_smoke_test:
   command: null

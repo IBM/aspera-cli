@@ -59,6 +59,8 @@ mkfile
 mklink
 nodegen4
 openssldir
+pkce
+PKCE
 pmax
 posix
 PVCL
