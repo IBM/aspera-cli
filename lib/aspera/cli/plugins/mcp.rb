@@ -180,8 +180,8 @@ module Aspera
           bind              = mcp_options.fetch(:bind, '127.0.0.1')
           auth_token        = mcp_options[:auth_token]
           oauth_enabled     = mcp_options.fetch(:oauth, false)
-          access_token_ttl  = mcp_options.fetch(:oauth_access_token_ttl, OAuth::Server::Pkce::ACCESS_TOKEN_TTL)
-          refresh_token_ttl = mcp_options.fetch(:oauth_refresh_token_ttl, OAuth::Server::Pkce::REFRESH_TOKEN_TTL)
+          access_token_ttl  = mcp_options.fetch(:oauth_access_token_ttl, OAuth::Server::Pkce.default_access_token_ttl)
+          refresh_token_ttl = mcp_options.fetch(:oauth_refresh_token_ttl, OAuth::Server::Pkce.default_refresh_token_ttl)
           check_auth_config(auth_token, oauth_enabled, bind)
           base_url = "http://#{bind == '0.0.0.0' ? 'localhost' : bind}:#{port}"
           app = MCP::Server::Transports::StreamableHTTPTransport.new(server, **http_opts)

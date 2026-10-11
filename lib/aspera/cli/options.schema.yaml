@@ -857,7 +857,6 @@ components:
         Address and TLS configuration for a local web server (`WebServerSimple`).
         Used by commands that start an embedded HTTP(S) listener (`faspex5 gateway`,
         `faspex5 postprocessing`, `aoc gateway`, `node emulator`, …).
-      additionalProperties: false
       properties:
         url:
           type: string
@@ -889,6 +888,15 @@ components:
         the host from outside.
       allOf:
         - $ref: "#/components/schemas/WebServerOptions"
+        - type: object
+          # List properties solely to allow them under additionalProperties: false.
+          # Types and descriptions are already defined in WebServerOptions above.
+          additionalProperties: false
+          properties:
+            url: {}
+            cert: {}
+            key: {}
+            chain: {}
     Faspex4PostProcOptions:
       description: >-
         Configuration for the Faspex 4-style post-processing webhook receiver (`faspex5 postprocessing`).
@@ -900,7 +908,6 @@ components:
       allOf:
         - $ref: "#/components/schemas/WebServerOptions"
         - type: object
-          additionalProperties: false
           properties:
             script_folder:
               type: string
