@@ -37,6 +37,20 @@ unless defined?(MCP::Server)
 
         def input_schema(**_kwargs); end
       end
+
+      class Response
+        attr_reader :content, :structured_content
+
+        def initialize(content, structured_content: nil, error: false)
+          @content            = content
+          @structured_content = structured_content
+          @error              = error
+        end
+
+        def error?
+          @error
+        end
+      end
     end
   end
 end
@@ -97,7 +111,6 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
         .to(raise_error(Aspera::Cli::BadArgument, /must not be empty/))
     end
   end
-
 end
 
 RSpec.describe(Aspera::OAuth::Server::Pkce) do

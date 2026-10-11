@@ -193,6 +193,13 @@ module Aspera
       def create(**parameters)
         Aspera.assert_type(parameters, Hash)
         id = parameters[:grant_method]
+        unless @token_type_classes.key?(id)
+          begin
+            require "aspera/oauth/client/#{id}"
+          rescue LoadError
+            # ignored, handled by assert
+          end
+        end
         Aspera.assert(@token_type_classes.key?(id)) { "token grant method unknown: '#{id}'" }
         create_parameters = parameters.reject { |k, _v| k.eql?(:grant_method) }
         @token_type_classes[id].new(**create_parameters)

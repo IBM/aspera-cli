@@ -2,16 +2,16 @@
 
 # Stub MCP::Tool and MCP::Tool::Response before loading mcp_tool.rb so that
 # the file can be required even when the optional 'mcp' gem is not installed.
-unless defined?(MCP::Tool)
-  module MCP
-    class Tool
-      # DSL class methods used at class-body evaluation time in McpTool
-      class << self
-        def tool_name(_name); end
-        def description(_text); end
-        def input_schema(**_kwargs); end
-      end
+module MCP
+  class Tool
+    # DSL class methods used at class-body evaluation time in McpTool
+    class << self
+      def tool_name(_name); end unless method_defined?(:tool_name) || respond_to?(:tool_name)
+      def description(_text); end unless method_defined?(:description) || respond_to?(:description)
+      def input_schema(**_kwargs); end unless method_defined?(:input_schema) || respond_to?(:input_schema)
+    end
 
+    unless defined?(MCP::Tool::Response)
       class Response
         attr_reader :content, :structured_content
 
