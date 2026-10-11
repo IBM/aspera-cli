@@ -7,7 +7,7 @@ require 'aspera/line_logger'
 require 'aspera/schema/registry'
 require 'aspera/cli/option_declarator'
 require 'aspera/rest'
-require 'aspera/oauth'
+require 'aspera/oauth/client/factory'
 require 'aspera/ssl'
 require 'openssl'
 

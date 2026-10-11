@@ -3,7 +3,7 @@
 require 'aspera/link_header'
 require 'aspera/transfer/spec'
 require 'aspera/rest'
-require 'aspera/oauth'
+require 'aspera/oauth/client/factory'
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/environment'

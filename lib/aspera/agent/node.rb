@@ -6,7 +6,7 @@ require 'aspera/transfer/spec'
 require 'aspera/api/node'
 require 'aspera/log'
 require 'aspera/assert'
-require 'aspera/oauth'
+require 'aspera/oauth/client/factory'
 
 module Aspera
   module Agent

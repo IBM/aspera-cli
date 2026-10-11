@@ -6,7 +6,6 @@
 
 require 'bundler/setup'
 require 'aspera/rest'
-require 'aspera/oauth'
 require 'aspera/transfer/error'
 require 'aspera/agent/node'
 require 'aspera/agent/desktop'

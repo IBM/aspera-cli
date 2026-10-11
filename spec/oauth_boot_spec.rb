@@ -2,8 +2,7 @@
 
 require 'spec_helper'
 require 'aspera/rest'
-require 'aspera/oauth'
-require 'aspera/oauth/boot'
+require 'aspera/oauth/client/boot'
 require 'base64'
 require 'json'
 

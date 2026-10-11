@@ -1,9 +1,0 @@
-# frozen_string_literal: true
-
-require 'aspera/oauth/factory'
-require 'aspera/oauth/boot'
-require 'aspera/oauth/generic'
-require 'aspera/oauth/jwt'
-require 'aspera/oauth/web'
-require 'aspera/oauth/url_json'
-require 'aspera/oauth/json_credentials'

@@ -2,7 +2,7 @@
 
 require 'aspera/assert'
 require 'aspera/rest'
-require 'aspera/oauth/base'
+require 'aspera/oauth/client/base'
 require 'aspera/rest/list'
 require 'digest'
 

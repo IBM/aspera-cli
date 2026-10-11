@@ -5,6 +5,7 @@
 require 'aspera/cli/plugins/base'
 require 'aspera/cli/info'
 require 'aspera/cli/version'
+require 'aspera/oauth/server/pkce'
 require 'json'
 require 'securerandom'
 
@@ -153,10 +154,7 @@ module Aspera
         end
 
         LOCAL_BIND_ADDRESSES = %w[127.0.0.1 ::1 localhost].freeze
-        OAUTH_ACCESS_TOKEN_TTL  = 3600        # 1 hour
-        OAUTH_REFRESH_TOKEN_TTL = 2_592_000   # 30 days
-        OAUTH_CODE_TTL          = 120         # 2 minutes
-        private_constant :LOCAL_BIND_ADDRESSES, :OAUTH_ACCESS_TOKEN_TTL, :OAUTH_REFRESH_TOKEN_TTL, :OAUTH_CODE_TTL
+        private_constant :LOCAL_BIND_ADDRESSES
 
         # Validate auth configuration.
         # - On a non-local bind address, auth_token or oauth_enabled is mandatory for security.
@@ -165,7 +163,6 @@ module Aspera
         # @param oauth_enabled [Boolean] whether OAuth PKCE flow is enabled
         # @param bind [String] bind address
         def check_auth_config(auth_token, oauth_enabled, bind)
-          require 'openssl'
           Aspera.assert(auth_token.nil? || !auth_token.to_s.empty?, type: Cli::BadArgument) { 'auth_token must not be empty' }
           has_auth = !auth_token.nil? || oauth_enabled
           Aspera.assert(has_auth || LOCAL_BIND_ADDRESSES.include?(bind.to_s), type: Cli::BadArgument) do
@@ -173,122 +170,41 @@ module Aspera
           end
         end
 
-        # Build the OAuth 2.0 authorization server metadata (RFC 8414).
-        # @param base_url [String] e.g. "http://host:port"
-        # @return [Hash]
-        def oauth_metadata(base_url)
-          {
-            issuer:                                base_url,
-            authorization_endpoint:                "#{base_url}/oauth/authorize",
-            token_endpoint:                        "#{base_url}/oauth/token",
-            registration_endpoint:                 "#{base_url}/oauth/register",
-            response_types_supported:              ['code'],
-            grant_types_supported:                 %w[authorization_code refresh_token],
-            code_challenge_methods_supported:      ['S256'],
-            token_endpoint_auth_methods_supported: ['none']
-          }
-        end
-
-        # Verify PKCE: SHA-256(code_verifier) == code_challenge (base64url, no padding).
-        # @param verifier [String]
-        # @param challenge [String]
-        # @return [Boolean]
-        def pkce_valid?(verifier, challenge)
-          require 'openssl'
-          require 'base64'
-          digest = OpenSSL::Digest::SHA256.digest(verifier)
-          computed = Base64.urlsafe_encode64(digest, padding: false)
-          OpenSSL.secure_compare(computed, challenge)
-        end
-
-        # HTML page shown to the user during the OAuth authorization step.
-        # @param params [Hash] query parameters from the authorization request
-        # @param base_url [String]
-        # @return [String] HTML body
-        def oauth_authorize_html(params, base_url)
-          client_id    = WEBrick::HTMLUtils.escape(params['client_id'].to_s)
-          redirect_uri = WEBrick::HTMLUtils.escape(params['redirect_uri'].to_s)
-          state        = WEBrick::HTMLUtils.escape(params['state'].to_s)
-          challenge    = WEBrick::HTMLUtils.escape(params['code_challenge'].to_s)
-          method       = WEBrick::HTMLUtils.escape(params['code_challenge_method'].to_s)
-          <<~HTML
-            <!DOCTYPE html>
-            <html lang="en">
-            <head><meta charset="utf-8"><title>Authorize #{Info::GEM_NAME} MCP server</title>
-            <style>
-              body{font-family:system-ui,sans-serif;max-width:480px;margin:4rem auto;padding:1rem}
-              h1{font-size:1.2rem}
-              .client{font-weight:bold}
-              button{margin:.5rem .5rem 0 0;padding:.5rem 1.2rem;cursor:pointer}
-              .allow{background:#0f62fe;color:#fff;border:none;border-radius:4px}
-              .deny{background:#fff;color:#da1e28;border:1px solid #da1e28;border-radius:4px}
-            </style>
-            </head>
-            <body>
-            <h1>Authorization request</h1>
-            <p>The client <span class="client">#{client_id}</span> is requesting access to the
-            <strong>#{Info::GEM_NAME} MCP server</strong>.</p>
-            <p>Do you want to allow it?</p>
-            <form method="POST" action="#{base_url}/oauth/authorize">
-              <input type="hidden" name="client_id"             value="#{client_id}">
-              <input type="hidden" name="redirect_uri"          value="#{redirect_uri}">
-              <input type="hidden" name="state"                 value="#{state}">
-              <input type="hidden" name="code_challenge"        value="#{challenge}">
-              <input type="hidden" name="code_challenge_method" value="#{method}">
-              <button class="allow" type="submit" name="decision" value="allow">Allow</button>
-              <button class="deny"  type="submit" name="decision" value="deny">Deny</button>
-            </form>
-            </body></html>
-          HTML
-        end
-
         # Start HTTP transport using WEBrick (already a project dependency).
         # Rack 3 removed Rack::Handler - we build a native WEBrick servlet that
         # calls the Rack app directly instead of relying on Rack::Handler::WEBrick.
         def start_http_transport(server, mcp_options) # rubocop:disable Metrics/MethodLength
           require 'webrick'
-          http_opts        = mcp_options.slice(*HTTP_KEYS)
-          port             = mcp_options.fetch(:port, 3000)
-          bind             = mcp_options.fetch(:bind, '127.0.0.1')
+          http_opts         = mcp_options.slice(*HTTP_KEYS)
+          port              = mcp_options.fetch(:port, 3000)
+          bind              = mcp_options.fetch(:bind, '127.0.0.1')
           auth_token        = mcp_options[:auth_token]
           oauth_enabled     = mcp_options.fetch(:oauth, false)
-          access_token_ttl  = mcp_options.fetch(:oauth_access_token_ttl, OAUTH_ACCESS_TOKEN_TTL)
-          refresh_token_ttl = mcp_options.fetch(:oauth_refresh_token_ttl, OAUTH_REFRESH_TOKEN_TTL)
+          access_token_ttl  = mcp_options.fetch(:oauth_access_token_ttl, OAuth::Server::Pkce::ACCESS_TOKEN_TTL)
+          refresh_token_ttl = mcp_options.fetch(:oauth_refresh_token_ttl, OAuth::Server::Pkce::REFRESH_TOKEN_TTL)
           check_auth_config(auth_token, oauth_enabled, bind)
-          # In-memory stores (all guarded by @store_mutex in the servlet)
-          oauth_clients   = []  # dynamically registered clients, populated at runtime
-          pending_codes   = {}  # code  => {client_id, redirect_uri, code_challenge, expires_at}
-          access_tokens   = {}  # token => expires_at
-          refresh_tokens  = {}  # token => {access_token, expires_at}
-          base_url        = "http://#{bind == '0.0.0.0' ? 'localhost' : bind}:#{port}"
+          base_url = "http://#{bind == '0.0.0.0' ? 'localhost' : bind}:#{port}"
           app = MCP::Server::Transports::StreamableHTTPTransport.new(server, **http_opts)
-          oauth_ctx = {
-            plugin:            self,
-            auth_token:        auth_token,
-            oauth_enabled:     oauth_enabled,
-            clients:           oauth_clients,
-            pending_codes:     pending_codes,
-            access_tokens:     access_tokens,
-            refresh_tokens:    refresh_tokens,
-            access_token_ttl:  access_token_ttl,
-            refresh_token_ttl: refresh_token_ttl,
-            base_url:          base_url
-          }
+          # Build OAuth::Server::Pkce only when OAuth is enabled.
+          # Pass MCP-specific branding via title: and description: so the external HTML
+          # template is used directly without a custom callback.
+          oauth_server = if oauth_enabled
+            OAuth::Server::Pkce.new(
+              base_url:          base_url,
+              access_token_ttl:  access_token_ttl,
+              refresh_token_ttl: refresh_token_ttl,
+              title:             "Authorize #{Info::GEM_NAME} MCP server",
+              description:       "the <strong>#{Info::GEM_NAME} MCP server</strong>"
+            )
+          end
           rack_servlet = Class.new(WEBrick::HTTPServlet::AbstractServlet) do
-            define_method(:initialize) do |srv, rack_app, server_info, ctx|
-              @app               = rack_app
-              @server_info       = server_info
-              @auth_token        = ctx[:auth_token]
-              @oauth_enabled     = ctx[:oauth_enabled]
-              @oauth_clients     = ctx[:clients]
-              @pending_codes     = ctx[:pending_codes]
-              @access_tokens     = ctx[:access_tokens]
-              @refresh_tokens    = ctx[:refresh_tokens]
-              @access_token_ttl  = ctx[:access_token_ttl]
-              @refresh_token_ttl = ctx[:refresh_token_ttl]
-              @base_url          = ctx[:base_url]
-              @plugin            = ctx[:plugin]
-              @store_mutex       = Mutex.new
+            define_method(:initialize) do |srv, rack_app, server_info, static_token, o_server, o_enabled, b_url|
+              @app          = rack_app
+              @server_info  = server_info
+              @auth_token   = static_token
+              @oauth_server = o_server
+              @oauth_enabled = o_enabled
+              @base_url     = b_url
               super(srv)
             end
 
@@ -297,19 +213,12 @@ module Aspera
             # @return [Boolean] true if no auth is configured OR the request carries a valid token
             define_method(:authorized?) do |req|
               return true if @auth_token.nil? && !@oauth_enabled
+              # Static token check
               scheme, value = req['Authorization'].to_s.split(' ', 2)
               return false unless scheme.to_s.casecmp?('Bearer')
-              # Static token check
               return true if @auth_token && OpenSSL.secure_compare(value.to_s, @auth_token.to_s)
               # OAuth access token check
-              @store_mutex.synchronize do
-                expire_at = @access_tokens[value]
-                expire_at && expire_at > Time.now
-              end
-            end
-
-            define_method(:oauth_client_allowed?) do |client_id|
-              @oauth_clients.any? { |c| c[:client_id] == client_id }
+              @oauth_server&.authorized?(req['Authorization'])
             end
 
             define_method(:json_error) do |res, status, error, description = nil|
@@ -320,156 +229,6 @@ module Aspera
               res.body = JSON.generate(body)
             end
 
-            define_method(:purge_expired) do
-              now = Time.now
-              @pending_codes.delete_if  { |_, v| v[:expires_at] < now }
-              @access_tokens.delete_if  { |_, exp| exp < now }
-              @refresh_tokens.delete_if { |_, v| v[:expires_at] < now }
-            end
-
-            define_method(:issue_tokens) do
-              access  = SecureRandom.urlsafe_base64(32)
-              refresh = SecureRandom.urlsafe_base64(48)
-              now = Time.now
-              @store_mutex.synchronize do
-                purge_expired
-                @access_tokens[access] = now + @access_token_ttl
-                @refresh_tokens[refresh] = {access_token: access, expires_at: now + @refresh_token_ttl}
-              end
-              {
-                access_token:  access,
-                token_type:    'Bearer',
-                expires_in:    @access_token_ttl,
-                refresh_token: refresh
-              }
-            end
-
-            # ------------------------------------------------------------------ OAuth endpoints
-
-            # POST /oauth/register — Dynamic Client Registration (RFC 7591)
-            # Accepts any client, assigns a generated client_id, and adds it to the
-            # in-memory allow-list so subsequent authorize calls succeed.
-            define_method(:handle_register) do |req, res|
-              body = req.body.to_s.empty? ? {} : (JSON.parse(req.body.to_s) rescue {})
-              client_id = SecureRandom.urlsafe_base64(16)
-              @store_mutex.synchronize { @oauth_clients << {client_id: client_id} }
-              Log.log.info { "OAuth dynamic registration: client_id=#{client_id} name=#{body['client_name']}" }
-              res.status = 201
-              res['Content-Type'] = 'application/json'
-              res['Cache-Control'] = 'no-store'
-              res.body = JSON.generate({
-                client_id:                  client_id,
-                client_id_issued_at:        Time.now.to_i,
-                grant_types:                %w[authorization_code refresh_token],
-                response_types:             ['code'],
-                token_endpoint_auth_method: 'none',
-                redirect_uris:              body['redirect_uris'] || []
-              })
-            end
-
-            # GET /.well-known/oauth-authorization-server
-            define_method(:handle_discovery) do |_req, res|
-              res.status = 200
-              res['Content-Type'] = 'application/json'
-              res.body = JSON.generate(@plugin.send(:oauth_metadata, @base_url))
-            end
-
-            # GET /oauth/authorize  → show consent page
-            define_method(:handle_authorize_get) do |req, res|
-              params = req.query
-              client_id = params['client_id']
-              unless oauth_client_allowed?(client_id)
-                json_error(res, 400, 'unauthorized_client', "Unknown client_id: #{client_id}")
-                next
-              end
-              unless params['code_challenge'] && params['code_challenge_method'] == 'S256'
-                json_error(res, 400, 'invalid_request', 'PKCE with S256 is required')
-                next
-              end
-              res.status = 200
-              res['Content-Type'] = 'text/html; charset=utf-8'
-              res.body = @plugin.send(:oauth_authorize_html, params, @base_url)
-            end
-
-            # POST /oauth/authorize  → process consent form
-            define_method(:handle_authorize_post) do |req, res|
-              params = WEBrick::HTTPUtils.parse_query(req.body.to_s)
-              client_id    = params['client_id']
-              redirect_uri = params['redirect_uri']
-              state        = params['state']
-              decision     = params['decision']
-              if decision != 'allow'
-                target = "#{redirect_uri}?error=access_denied"
-                target += "&state=#{WEBrick::HTTPUtils.escape(state)}" unless state.to_s.empty?
-                res.status = 302
-                res['Location'] = target
-                next
-              end
-              unless oauth_client_allowed?(client_id)
-                json_error(res, 400, 'unauthorized_client', "Unknown client_id: #{client_id}")
-                next
-              end
-              code = SecureRandom.urlsafe_base64(24)
-              @store_mutex.synchronize do
-                purge_expired
-                @pending_codes[code] = {
-                  client_id:      client_id,
-                  redirect_uri:   redirect_uri,
-                  code_challenge: params['code_challenge'],
-                  expires_at:     Time.now + OAUTH_CODE_TTL
-                }
-              end
-              target = "#{redirect_uri}?code=#{WEBrick::HTTPUtils.escape(code)}"
-              target += "&state=#{WEBrick::HTTPUtils.escape(state)}" unless state.to_s.empty?
-              res.status = 302
-              res['Location'] = target
-            end
-
-            # POST /oauth/token
-            define_method(:handle_token) do |req, res|
-              params     = WEBrick::HTTPUtils.parse_query(req.body.to_s)
-              grant_type = params['grant_type']
-              case grant_type
-              when 'authorization_code'
-                code = params['code']
-                code_verifier = params['code_verifier']
-                stored = @store_mutex.synchronize { @pending_codes.delete(code) }
-                if stored.nil? || stored[:expires_at] < Time.now
-                  json_error(res, 400, 'invalid_grant', 'Authorization code expired or unknown')
-                  next
-                end
-                unless @plugin.send(:pkce_valid?, code_verifier.to_s, stored[:code_challenge])
-                  json_error(res, 400, 'invalid_grant', 'PKCE verification failed')
-                  next
-                end
-                res.status = 200
-                res['Content-Type'] = 'application/json'
-                res['Cache-Control'] = 'no-store'
-                res.body = JSON.generate(issue_tokens)
-              when 'refresh_token'
-                rt_value = params['refresh_token']
-                stored = @store_mutex.synchronize do
-                  entry = @refresh_tokens[rt_value]
-                  if entry && entry[:expires_at] > Time.now
-                    # Rotate: revoke old access token and issue fresh pair
-                    @access_tokens.delete(entry[:access_token])
-                    @refresh_tokens.delete(rt_value)
-                  end
-                  entry
-                end
-                if stored.nil?
-                  json_error(res, 400, 'invalid_grant', 'Refresh token expired or unknown')
-                  next
-                end
-                res.status = 200
-                res['Content-Type'] = 'application/json'
-                res['Cache-Control'] = 'no-store'
-                res.body = JSON.generate(issue_tokens)
-              else
-                json_error(res, 400, 'unsupported_grant_type', "Unsupported grant_type: #{grant_type}")
-              end
-            end
-
             # ------------------------------------------------------------------ main dispatch
 
             %w[GET POST DELETE].each do |http_method|
@@ -477,29 +236,22 @@ module Aspera
                 case req.path
                 when '/'
                   # Discovery endpoint (server metadata, no auth required)
-                  body = JSON.generate(@server_info)
                   res.status = 200
                   res['Content-Type'] = 'application/json'
-                  res.body = body
+                  res.body = JSON.generate(@server_info)
                 when '/.well-known/oauth-authorization-server'
-                  handle_discovery(req, res)
-                when '/oauth/authorize'
-                  if http_method == 'GET'
-                    handle_authorize_get(req, res)
-                  elsif http_method == 'POST'
-                    handle_authorize_post(req, res)
-                  else
-                    json_error(res, 405, 'method_not_allowed')
-                  end
+                  @oauth_server ? @oauth_server.handle_discovery(req, res) : json_error(res, 404, 'not_found')
                 when '/oauth/register'
                   if http_method == 'POST'
-                    handle_register(req, res)
+                    @oauth_server ? @oauth_server.handle_register(req, res) : json_error(res, 404, 'not_found')
                   else
                     json_error(res, 405, 'method_not_allowed')
                   end
+                when '/oauth/authorize'
+                  @oauth_server ? @oauth_server.handle_authorize(req, res) : json_error(res, 404, 'not_found')
                 when '/oauth/token'
                   if http_method == 'POST'
-                    handle_token(req, res)
+                    @oauth_server ? @oauth_server.handle_token(req, res) : json_error(res, 404, 'not_found')
                   else
                     json_error(res, 405, 'method_not_allowed')
                   end
@@ -508,10 +260,8 @@ module Aspera
                   unless authorized?(req)
                     res.status = 401
                     res['Content-Type'] = 'application/json'
-                    # Advertise OAuth discovery if clients are configured
                     res['WWW-Authenticate'] = if @oauth_enabled
-                      "Bearer realm=\"#{@base_url}\", " \
-                        "resource_metadata=\"#{@base_url}/.well-known/oauth-authorization-server\""
+                      @oauth_server.www_authenticate_header
                     else
                       'Bearer'
                     end
@@ -588,10 +338,9 @@ module Aspera
             version:     server.version,
             description: server.description
           }
-          webrick.mount('/', rack_servlet, app, server_info, oauth_ctx)
+          webrick.mount('/', rack_servlet, app, server_info, auth_token, oauth_server, oauth_enabled, base_url)
           Log.log.info { "MCP HTTP server listening on http://#{bind}:#{port}/" }
-          Log.log.info { "OAuth 2.0 PKCE enabled (dynamic registration + #{oauth_clients.size} pre-registered client(s))" } \
-            if oauth_enabled
+          Log.log.info { 'OAuth 2.0 PKCE enabled (dynamic registration)' } if oauth_enabled
           trap('INT') { webrick.shutdown }
           trap('TERM') { webrick.shutdown }
           webrick.start

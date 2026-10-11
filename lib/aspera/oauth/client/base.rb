@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/oauth/factory'
+require 'aspera/oauth/client/factory'
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/mime'

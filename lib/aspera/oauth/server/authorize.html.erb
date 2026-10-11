@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            max-width: 480px;
+            margin: 4rem auto;
+            padding: 1rem;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+        }
+
+        .client {
+            font-weight: bold;
+        }
+
+        button {
+            margin: .5rem .5rem 0 0;
+            padding: .5rem 1.2rem;
+            cursor: pointer;
+        }
+
+        .allow {
+            background: #0f62fe;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+        }
+
+        .deny {
+            background: #fff;
+            color: #da1e28;
+            border: 1px solid #da1e28;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Authorization request</h1>
+    <p>The client <span class="client"><%= h client_id %></span> is requesting access to <%= description %>.</p>
+    <p>Do you want to allow it?</p>
+    <form method="POST" action="<%= action_url %>">
+        <input type="hidden" name="client_id"             value="<%= h client_id %>">
+        <input type="hidden" name="redirect_uri"          value="<%= h redirect_uri %>">
+        <input type="hidden" name="state"                 value="<%= h state %>">
+        <input type="hidden" name="code_challenge"        value="<%= h code_challenge %>">
+        <input type="hidden" name="code_challenge_method" value="<%= h code_challenge_method %>">
+        <button class="allow" type="submit" name="decision" value="allow">Allow</button>
+        <button class="deny"  type="submit" name="decision" value="deny">Deny</button>
+    </form>
+</body>
+</html>

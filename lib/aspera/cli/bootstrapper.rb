@@ -16,7 +16,7 @@ require 'aspera/persistency_folder'
 require 'aspera/rest'
 require 'aspera/log'
 require 'aspera/assert'
-require 'aspera/oauth'
+require 'aspera/oauth/client/web'
 require 'aspera/ssl'
 require 'aspera/schema/registry'
 

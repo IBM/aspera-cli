@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/oauth/jwt'
+require 'aspera/oauth/client/jwt'
 require 'aspera/assert'
 require 'aspera/cli/option_declarator'
 require 'aspera/cli/plugins/factory'

@@ -42,6 +42,7 @@ unless defined?(MCP::Server)
 end
 
 require 'aspera/cli/plugins/mcp'
+require 'aspera/oauth/server/pkce'
 
 RSpec.describe(Aspera::Cli::Plugins::Mcp) do
   # Build a minimal plugin instance without a real CLI context.
@@ -97,11 +98,43 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
     end
   end
 
+end
+
+RSpec.describe(Aspera::OAuth::Server::Pkce) do
+  let(:base_url) { 'http://localhost:3000' }
+  subject(:oauth) { described_class.new(base_url: base_url) }
+
   # -------------------------------------------------------------------------
-  # pkce_valid?
+  # metadata
+  # -------------------------------------------------------------------------
+  describe '#metadata' do
+    it 'includes the issuer equal to base_url' do
+      expect(oauth.metadata[:issuer]).to(eq(base_url))
+    end
+
+    it 'points authorization_endpoint under base_url' do
+      expect(oauth.metadata[:authorization_endpoint]).to(start_with(base_url))
+      expect(oauth.metadata[:authorization_endpoint]).to(include('/oauth/authorize'))
+    end
+
+    it 'points token_endpoint under base_url' do
+      expect(oauth.metadata[:token_endpoint]).to(start_with(base_url))
+      expect(oauth.metadata[:token_endpoint]).to(include('/oauth/token'))
+    end
+
+    it 'advertises S256 as the only code challenge method' do
+      expect(oauth.metadata[:code_challenge_methods_supported]).to(eq(['S256']))
+    end
+
+    it 'advertises authorization_code and refresh_token grant types' do
+      expect(oauth.metadata[:grant_types_supported]).to(include('authorization_code', 'refresh_token'))
+    end
+  end
+
+  # -------------------------------------------------------------------------
+  # pkce_valid? (private)
   # -------------------------------------------------------------------------
   describe '#pkce_valid? (private)' do
-    # Compute a valid S256 challenge for a known verifier
     let(:verifier) { 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk' }
     let(:challenge) do
       require 'openssl'
@@ -110,56 +143,40 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
     end
 
     it 'returns true for a matching verifier/challenge pair' do
-      expect(plugin.send(:pkce_valid?, verifier, challenge)).to(be(true))
+      expect(oauth.send(:pkce_valid?, verifier, challenge)).to(be(true))
     end
 
     it 'returns false for a wrong verifier' do
-      expect(plugin.send(:pkce_valid?, 'wrong-verifier', challenge)).to(be(false))
+      expect(oauth.send(:pkce_valid?, 'wrong-verifier', challenge)).to(be(false))
     end
 
     it 'returns false for a tampered challenge' do
-      expect(plugin.send(:pkce_valid?, verifier, challenge.reverse)).to(be(false))
+      expect(oauth.send(:pkce_valid?, verifier, challenge.reverse)).to(be(false))
     end
   end
 
   # -------------------------------------------------------------------------
-  # oauth_metadata
+  # authorized?
   # -------------------------------------------------------------------------
-  describe '#oauth_metadata (private)' do
-    let(:base_url) { 'http://localhost:3000' }
-    let(:metadata) { plugin.send(:oauth_metadata, base_url) }
-
-    it 'includes the issuer equal to base_url' do
-      expect(metadata[:issuer]).to(eq(base_url))
+  describe '#authorized?' do
+    it 'returns false when no token has been issued' do
+      expect(oauth.authorized?('Bearer sometoken')).to(be(false))
     end
 
-    it 'points authorization_endpoint under base_url' do
-      expect(metadata[:authorization_endpoint]).to(start_with(base_url))
-      expect(metadata[:authorization_endpoint]).to(include('/oauth/authorize'))
+    it 'returns false for a nil header' do
+      expect(oauth.authorized?(nil)).to(be(false))
     end
 
-    it 'points token_endpoint under base_url' do
-      expect(metadata[:token_endpoint]).to(start_with(base_url))
-      expect(metadata[:token_endpoint]).to(include('/oauth/token'))
-    end
-
-    it 'advertises S256 as the only code challenge method' do
-      expect(metadata[:code_challenge_methods_supported]).to(eq(['S256']))
-    end
-
-    it 'advertises authorization_code and refresh_token grant types' do
-      expect(metadata[:grant_types_supported]).to(include('authorization_code', 'refresh_token'))
+    it 'returns false for a non-Bearer scheme' do
+      expect(oauth.authorized?('Basic dXNlcjpwYXNz')).to(be(false))
     end
   end
 
   # -------------------------------------------------------------------------
-  # oauth_authorize_html
+  # authorize_html_from_template (private)
   # -------------------------------------------------------------------------
-  describe '#oauth_authorize_html (private)' do
-    # Stub WEBrick::HTTPUtils.escape_html before the call
-    before do
-      require 'webrick'
-    end
+  describe '#authorize_html_from_template (private)' do
+    before { require 'webrick' }
 
     let(:params) do
       {
@@ -170,14 +187,14 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
         'code_challenge_method' => 'S256'
       }
     end
-    let(:html) { plugin.send(:oauth_authorize_html, params, 'http://localhost:3000') }
+    let(:html) { oauth.send(:authorize_html_from_template, params) }
 
     it 'contains the client_id' do
       expect(html).to(include('bob'))
     end
 
     it 'contains a form POSTing to /oauth/authorize' do
-      expect(html).to(include('action="http://localhost:3000/oauth/authorize"'))
+      expect(html).to(include("action=\"#{base_url}/oauth/authorize\""))
       expect(html).to(include('method="POST"'))
     end
 
@@ -191,10 +208,19 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
       expect(html).to(include('value="deny"'))
     end
 
+    it 'uses the default title' do
+      expect(html).to(include('<title>Authorization request</title>'))
+    end
+
+    it 'uses a custom title when provided' do
+      custom = described_class.new(base_url: base_url, title: 'My Custom Server')
+      html2 = custom.send(:authorize_html_from_template, params)
+      expect(html2).to(include('<title>My Custom Server</title>'))
+    end
+
     it 'escapes HTML in client_id to prevent XSS' do
-      xss_params = params.merge('client_id' => '<script>alert(1)</script>')
-      xss_html = plugin.send(:oauth_authorize_html, xss_params, 'http://localhost:3000')
-      expect(xss_html).not_to(include('<script>'))
+      xss_html = oauth.send(:authorize_html_from_template, params.merge('client_id' => '<script>alert(1)</script>'))
+      expect(xss_html).not_to(include('<script>alert(1)</script>'))
     end
   end
 end
