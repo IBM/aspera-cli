@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %></title>
+    <title><%= h title %></title>
     <style>
         body {
             font-family: system-ui, sans-serif;
@@ -45,7 +45,7 @@
     <h1>Authorization request</h1>
     <p>The client <span class="client"><%= h client_id %></span> is requesting access to <%= description %>.</p>
     <p>Do you want to allow it?</p>
-    <form method="POST" action="<%= action_url %>">
+    <form method="POST" action="<%= h action_url %>">
         <input type="hidden" name="client_id"             value="<%= h client_id %>">
         <input type="hidden" name="redirect_uri"          value="<%= h redirect_uri %>">
         <input type="hidden" name="state"                 value="<%= h state %>">

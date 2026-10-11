@@ -236,4 +236,85 @@ RSpec.describe(Aspera::OAuth::Server::Pkce) do
       expect(xss_html).not_to(include('<script>alert(1)</script>'))
     end
   end
+
+  # -------------------------------------------------------------------------
+  # redirect_uri validation
+  # -------------------------------------------------------------------------
+  describe 'redirect_uri validation' do
+    before { require 'webrick' }
+
+    # Minimal stand-in for WEBrick::HTTPResponse
+    let(:response_class) do
+      Class.new do
+        attr_accessor :status, :body
+
+        def initialize = @headers = {}
+        def [](key) = @headers[key]
+
+        def []=(key, value)
+          @headers[key] = value
+        end
+      end
+    end
+    let(:request_class) { Struct.new(:body, :query) }
+    let(:redirect) { 'http://127.0.0.1:19999/cb' }
+    let(:res) { response_class.new }
+    let(:client_id) { JSON.parse(register([redirect]).body)['client_id'] }
+
+    def register(uris)
+      r = response_class.new
+      oauth.handle_register(request_class.new(JSON.generate(redirect_uris: uris)), r)
+      r
+    end
+
+    def post_authorize(client_id, redirect_uri, decision)
+      body = URI.encode_www_form(client_id: client_id, redirect_uri: redirect_uri, state: 's1', code_challenge: 'c', code_challenge_method: 'S256', decision: decision)
+      oauth.send(:handle_authorize_post, request_class.new(body), res)
+    end
+
+    it 'rejects registration without redirect_uris' do
+      expect(register(nil).status).to(eq(400))
+      expect(register([]).status).to(eq(400))
+    end
+
+    it 'redirects to registered redirect_uri on allow' do
+      post_authorize(client_id, redirect, 'allow')
+      expect(res.status).to(eq(302))
+      expect(res['Location']).to(start_with("#{redirect}?code="))
+      expect(res['Location']).to(include('&state=s1'))
+    end
+
+    it 'refuses unregistered redirect_uri on allow' do
+      post_authorize(client_id, 'http://evil.example/cb', 'allow')
+      expect(res.status).to(eq(400))
+      expect(res['Location']).to(be_nil)
+    end
+
+    it 'refuses unregistered redirect_uri on deny (no open redirect)' do
+      post_authorize(client_id, 'http://evil.example/cb', 'deny')
+      expect(res.status).to(eq(400))
+      expect(res['Location']).to(be_nil)
+    end
+
+    it 'redirects with access_denied on deny for registered redirect_uri' do
+      post_authorize(client_id, redirect, 'deny')
+      expect(res.status).to(eq(302))
+      expect(res['Location']).to(eq("#{redirect}?error=access_denied&state=s1"))
+    end
+
+    it 'appends parameters with & when redirect_uri already has a query' do
+      with_query = 'http://127.0.0.1:19999/cb?x=1'
+      id = JSON.parse(register([with_query]).body)['client_id']
+      post_authorize(id, with_query, 'deny')
+      expect(res['Location']).to(eq("#{with_query}&error=access_denied&state=s1"))
+    end
+
+    it 'sets anti-framing headers on consent page' do
+      query = {'client_id' => client_id, 'redirect_uri' => redirect, 'code_challenge' => 'c', 'code_challenge_method' => 'S256'}
+      oauth.send(:handle_authorize_get, request_class.new(nil, query), res)
+      expect(res.status).to(eq(200))
+      expect(res['X-Frame-Options']).to(eq('DENY'))
+      expect(res['Content-Security-Policy']).to(eq("frame-ancestors 'none'"))
+    end
+  end
 end

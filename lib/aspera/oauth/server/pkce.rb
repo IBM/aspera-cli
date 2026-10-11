@@ -58,7 +58,7 @@ module Aspera
         # @param access_token_ttl  [Integer] Lifetime (seconds) of issued access tokens
         # @param refresh_token_ttl [Integer] Lifetime (seconds) of issued refresh tokens
         # @param title             [String]  Page <title> and branding (default: "Authorization request")
-        # @param description       [String]  Description shown in the consent text (default: "this server")
+        # @param description       [String]  Description shown in the consent text (default: "this server"), trusted HTML (not escaped)
         # @param authorize_html_cb [#call]   Optional callable(params, base_url) → HTML String
         #                                    for the consent page.  If nil the built-in HTML template is used.
         def initialize(base_url:, access_token_ttl: ACCESS_TOKEN_TTL, refresh_token_ttl: REFRESH_TOKEN_TTL,
@@ -72,7 +72,7 @@ module Aspera
           @description       = description
           @authorize_html_cb = authorize_html_cb
           @store_mutex       = Mutex.new
-          # dynamically registered clients:  Array<{client_id:}>
+          # dynamically registered clients:  Array<{client_id:, redirect_uris:}>
           @clients           = []
           # pending authorization codes: code => {client_id:, redirect_uri:, code_challenge:, expires_at:}
           @pending_codes     = {}
@@ -132,8 +132,13 @@ module Aspera
         # POST /oauth/register
         def handle_register(req, res)
           body = req.body.to_s.empty? ? {} : (JSON.parse(req.body.to_s) rescue {})
+          redirect_uris = body['redirect_uris']
+          unless redirect_uris.is_a?(Array) && !redirect_uris.empty? && redirect_uris.all?(String)
+            json_error(res, 400, 'invalid_redirect_uri', 'redirect_uris must be a non-empty array of strings')
+            return
+          end
           client_id = SecureRandom.urlsafe_base64(16)
-          @store_mutex.synchronize { @clients << {client_id: client_id} }
+          @store_mutex.synchronize { @clients << {client_id: client_id, redirect_uris: redirect_uris} }
           Log.log.info { "OAuth dynamic registration: client_id=#{client_id} name=#{body['client_name']}" }
           res.status = 201
           res['Content-Type'] = 'application/json'
@@ -144,7 +149,7 @@ module Aspera
             grant_types:                %w[authorization_code refresh_token],
             response_types:             ['code'],
             token_endpoint_auth_method: 'none',
-            redirect_uris:              body['redirect_uris'] || []
+            redirect_uris:              redirect_uris
           })
         end
 
@@ -179,6 +184,11 @@ module Aspera
             stored = @store_mutex.synchronize { @pending_codes.delete(code) }
             if stored.nil? || stored[:expires_at] < Time.now
               json_error(res, 400, 'invalid_grant', 'Authorization code expired or unknown')
+              return
+            end
+            # RFC 6749 §4.1.3: redirect_uri must match the one used in the authorization request
+            unless params['redirect_uri'] == stored[:redirect_uri]
+              json_error(res, 400, 'invalid_grant', 'redirect_uri mismatch')
               return
             end
             unless pkce_valid?(code_verifier.to_s, stored[:code_challenge])
@@ -223,8 +233,17 @@ module Aspera
         # Internal helpers
         # -------------------------------------------------------------------------
 
-        def client_registered?(client_id)
-          @clients.any? { |c| c[:client_id] == client_id }
+        # @return [Boolean] true if client is registered and redirect_uri is one of its registered URIs (exact match)
+        def client_redirect_valid?(client_id, redirect_uri)
+          @store_mutex.synchronize do
+            @clients.any? { |c| c[:client_id] == client_id && c[:redirect_uris].include?(redirect_uri) }
+          end
+        end
+
+        # Build redirect URL to client, preserving any query already present in redirect_uri.
+        def client_redirect_url(redirect_uri, **params)
+          query = params.reject { |_, v| v.to_s.empty? }.map { |k, v| "#{k}=#{WEBrick::HTTPUtils.escape_form(v.to_s)}" }.join('&')
+          "#{redirect_uri}#{redirect_uri.include?('?') ? '&' : '?'}#{query}"
         end
 
         def json_error(res, status, error, description = nil)
@@ -278,8 +297,8 @@ module Aspera
           require 'webrick'
           params    = req.query
           client_id = params['client_id']
-          unless client_registered?(client_id)
-            json_error(res, 400, 'unauthorized_client', "Unknown client_id: #{client_id}")
+          unless client_redirect_valid?(client_id, params['redirect_uri'])
+            json_error(res, 400, 'unauthorized_client', "Unknown client_id or unregistered redirect_uri: #{client_id}")
             return
           end
           unless params['code_challenge'] && params['code_challenge_method'] == 'S256'
@@ -288,6 +307,10 @@ module Aspera
           end
           res.status = 200
           res['Content-Type'] = 'text/html; charset=utf-8'
+          # Prevent clickjacking of the consent page
+          res['X-Frame-Options'] = 'DENY'
+          res['Content-Security-Policy'] = "frame-ancestors 'none'"
+          res['Cache-Control'] = 'no-store'
           res.body = if @authorize_html_cb
             @authorize_html_cb.call(params, @base_url)
           else
@@ -302,15 +325,14 @@ module Aspera
           redirect_uri = params['redirect_uri']
           state        = params['state']
           decision     = params['decision']
-          if decision != 'allow'
-            target = "#{redirect_uri}?error=access_denied"
-            target += "&state=#{WEBrick::HTTPUtils.escape(state)}" unless state.to_s.empty?
-            res.status = 302
-            res['Location'] = target
+          # Validate client and redirect_uri before any redirect (prevents open redirect)
+          unless client_redirect_valid?(client_id, redirect_uri)
+            json_error(res, 400, 'unauthorized_client', "Unknown client_id or unregistered redirect_uri: #{client_id}")
             return
           end
-          unless client_registered?(client_id)
-            json_error(res, 400, 'unauthorized_client', "Unknown client_id: #{client_id}")
+          if decision != 'allow'
+            res.status = 302
+            res['Location'] = client_redirect_url(redirect_uri, error: 'access_denied', state: state)
             return
           end
           code = SecureRandom.urlsafe_base64(24)
@@ -323,10 +345,8 @@ module Aspera
               expires_at:     Time.now + CODE_TTL
             }
           end
-          target = "#{redirect_uri}?code=#{WEBrick::HTTPUtils.escape(code)}"
-          target += "&state=#{WEBrick::HTTPUtils.escape(state)}" unless state.to_s.empty?
           res.status = 302
-          res['Location'] = target
+          res['Location'] = client_redirect_url(redirect_uri, code: code, state: state)
         end
 
         # Render the consent page from the ERB template.

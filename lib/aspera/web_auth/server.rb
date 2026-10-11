@@ -8,6 +8,18 @@ module Aspera
   module WebAuth
     # servlet called on callback: it records the callback request
     class Servlet < WEBrick::HTTPServlet::AbstractServlet
+      # ERB template of page displayed in browser after authentication
+      HTML_TEMPLATE_PATH = File.join(__dir__, 'index.html.erb')
+      # Variables available in the ERB template
+      Page = Struct.new(:additional_info) do
+        include ERB::Util
+
+        def render(template_path)
+          ERB.new(File.read(template_path)).result(binding)
+        end
+      end
+      private_constant :HTML_TEMPLATE_PATH, :Page
+
       # @param server [WEBrick::HTTPServer] the HTTP server instance
       # @param web_auth [Server] the Server instance to record the callback
       def initialize(server, web_auth)
@@ -20,12 +32,12 @@ module Aspera
 
       def service(request, response)
         Log.log.debug { "received request from browser #{request.request_method} #{request.path}" }
-        Aspera.assert_values(request.request_method, ['GET'], type: WEBrick::HTTPStatus::MethodNotAllowed) { "Unsupported method: #{req.request_method}" }
-        Aspera.assert_values(request.path, ['/'], type: WEBrick::HTTPStatus::NotFound) { "Unsupported path: #{req.request_method}" }
+        Aspera.assert_values(request.request_method, ['GET'], type: WEBrick::HTTPStatus::MethodNotAllowed) { "Unsupported method: #{request.request_method}" }
+        Aspera.assert_values(request.path, ['/'], type: WEBrick::HTTPStatus::NotFound) { "Unsupported path: #{request.path}" }
         # response to browser
         response.status = 200
         response.content_type = 'text/html'
-        response.body = File.read("#{__dir__}/index.html").gsub('__ADD_INFO__', @web_auth.info_html)
+        response.body = Page.new(@web_auth.additional_info).render(HTML_TEMPLATE_PATH)
         # continue internal processing
         @web_auth.signal_request(request)
         nil
@@ -36,7 +48,7 @@ module Aspera
     # then start a browser that will callback the local server upon authentication
     # store the final query
     class Server < WebServerSimple
-      attr_reader :info_html
+      attr_reader :additional_info
 
       # @param endpoint_url    [String] e.g. 'https://127.0.0.1:12345'
       # @param additional_info [String] Information in web page
@@ -47,8 +59,7 @@ module Aspera
         @cond = ConditionVariable.new
         @expected_path = uri.path.empty? ? '/' : uri.path
         @query = nil
-        @info_html = additional_info.to_s
-        @info_html = "<p>#{ERB::Util.html_escape(@info_html)}</p>" unless @info_html.empty?
+        @additional_info = additional_info
         # last argument (self) is provided to constructor of servlet
         mount(@expected_path, Servlet, self)
         # server runs in thread
