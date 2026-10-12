@@ -198,13 +198,13 @@ module Aspera
             )
           end
           rack_servlet = Class.new(WEBrick::HTTPServlet::AbstractServlet) do
-            define_method(:initialize) do |srv, rack_app, server_info, static_token, o_server, o_enabled, b_url|
-              @app          = rack_app
-              @server_info  = server_info
-              @auth_token   = static_token
-              @oauth_server = o_server
-              @oauth_enabled = o_enabled
-              @base_url     = b_url
+            define_method(:initialize) do |srv, rack_app, server_info, static_token, auth_opts|
+              @app           = rack_app
+              @server_info   = server_info
+              @auth_token    = static_token
+              @oauth_server  = auth_opts[:oauth_server]
+              @oauth_enabled = auth_opts[:oauth_enabled]
+              @base_url      = auth_opts[:base_url]
               super(srv)
             end
 
@@ -338,7 +338,8 @@ module Aspera
             version:     server.version,
             description: server.description
           }
-          webrick.mount('/', rack_servlet, app, server_info, auth_token, oauth_server, oauth_enabled, base_url)
+          webrick.mount('/', rack_servlet, app, server_info, auth_token,
+            {oauth_server: oauth_server, oauth_enabled: oauth_enabled, base_url: base_url})
           Log.log.info { "MCP HTTP server listening on http://#{bind}:#{port}/" }
           Log.log.info { 'OAuth 2.0 PKCE enabled (dynamic registration)' } if oauth_enabled
           trap('INT') { webrick.shutdown }

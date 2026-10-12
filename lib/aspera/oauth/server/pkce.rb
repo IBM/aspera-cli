@@ -55,8 +55,10 @@ module Aspera
         private_constant :ACCESS_TOKEN_TTL, :REFRESH_TOKEN_TTL, :CODE_TTL, :HTML_TEMPLATE_PATH, :ConsentPage
 
         # Default TTL values, exposed for callers that want to display or override them.
-        def self.default_access_token_ttl  = ACCESS_TOKEN_TTL
-        def self.default_refresh_token_ttl = REFRESH_TOKEN_TTL
+        class << self
+          def default_access_token_ttl  = ACCESS_TOKEN_TTL
+          def default_refresh_token_ttl = REFRESH_TOKEN_TTL
+        end
 
         # @param base_url          [String]  Full base URL, e.g. "http://localhost:3000"
         # @param access_token_ttl  [Integer] Lifetime (seconds) of issued access tokens
