@@ -62,14 +62,14 @@ components:
         base_url:
           type: string
           description: >-
-            URL of the server for clients, used in OAuth metadata, for example `http://myhost:3000`.
+            URL of the server for clients, used in OAuth metadata and in the URL of secret pages (`@secret:`), for example `http://myhost:3000`.
 
             Default: built from `bind` and `port`. Mandatory with `oauth` when `bind` is `0.0.0.0` or `::`.
         auth_token:
           type: string
           description: >-
             Bearer token required in the `Authorization` header of HTTP requests.
-            With `oauth`, it is also the access code asked on the consent page.
+            It is also the access code asked on the secret pages (`@secret:`), and on the consent page with `oauth`.
 
             If not set, HTTP requests are not authenticated.
             Mandatory when `bind` is not local.

@@ -1,0 +1,202 @@
+<%# Layout of HTML pages: style and branding, see Aspera::WebPage. Variables: title, content (HTML of the card) %>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230f62fe'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='18' font-weight='bold' fill='white' text-anchor='middle'%3E%3E_%3C/text%3E%3C/svg%3E">
+    <title><%= h title %></title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            color: #161616;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+            border: 1px solid #e0e0e0;
+            max-width: 460px;
+            width: 100%;
+            padding: 2.25rem 2rem;
+            text-align: center;
+        }
+
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            padding: 0.25rem 0.75rem;
+            background: #f4f4f4;
+            border-radius: 16px;
+            font-size: 0.8rem;
+            color: #525252;
+            border: 1px solid #e0e0e0;
+        }
+
+        .brand .badge {
+            font-weight: 700;
+            color: #0f62fe;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        }
+
+        .icon-circle {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            margin: 0 auto 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #edf5ff;
+        }
+
+        .icon-circle.ok {
+            background: #defbe6;
+        }
+
+        .icon-circle.ko {
+            background: #fff1f1;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #161616;
+            margin-bottom: 0.5rem;
+        }
+
+        p {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: #525252;
+            margin-top: 0.5rem;
+        }
+
+        .client {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-weight: 600;
+            background: #f4f4f4;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            color: #161616;
+            border: 1px solid #e0e0e0;
+            word-break: break-all;
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+            justify-content: center;
+        }
+
+        button {
+            flex: 1;
+            padding: 0.75rem 1.25rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+            border: 1px solid transparent;
+        }
+
+        .allow {
+            background: #0f62fe;
+            color: #ffffff;
+            border-color: #0f62fe;
+        }
+
+        .allow:hover {
+            background: #0043ce;
+            border-color: #0043ce;
+        }
+
+        .deny {
+            background: #ffffff;
+            color: #da1e28;
+            border: 1px solid #da1e28;
+        }
+
+        .deny:hover {
+            background: #da1e28;
+            color: #ffffff;
+        }
+
+        .secret {
+            display: block;
+            margin-top: 1.25rem;
+            text-align: left;
+            font-size: 0.875rem;
+            color: #525252;
+        }
+
+        .secret input {
+            display: block;
+            width: 100%;
+            margin-top: 0.35rem;
+            padding: 0.6rem 0.75rem;
+            font-size: 0.95rem;
+            border: 1px solid #8d8d8d;
+            border-radius: 6px;
+        }
+
+        .error {
+            color: #da1e28;
+            font-weight: 600;
+        }
+
+        .info-box {
+            background: #f4f4f4;
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            margin-top: 1.25rem;
+            font-size: 0.875rem;
+            color: #161616;
+            word-break: break-word;
+            border-left: 3px solid #0f62fe;
+            text-align: left;
+        }
+
+        .footer {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid #f4f4f4;
+            font-size: 0.75rem;
+            color: #8d8d8d;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <div class="brand">
+            <span class="badge">ascli</span>
+            <span>IBM Aspera CLI</span>
+        </div>
+
+<%= content %>
+        <div class="footer">
+            IBM Aspera Command-Line Interface
+        </div>
+    </div>
+</body>
+
+</html>

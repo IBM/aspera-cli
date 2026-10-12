@@ -4,7 +4,7 @@
 
 require 'aspera/log'
 require 'aspera/assert'
-require 'erb'
+require 'aspera/web_page'
 require 'json'
 require 'securerandom'
 
@@ -45,15 +45,7 @@ module Aspera
         # Path to the ERB consent page template (relative to this file).
         HTML_TEMPLATE_PATH = File.join(__dir__, 'authorize.html.erb')
 
-        ConsentPage = Struct.new(:title, :description, :action_url, :client_id, :redirect_uri, :state, :code_challenge, :code_challenge_method, :secret_required, :error, keyword_init: true) do
-          include ERB::Util
-
-          def render(template_path)
-            ERB.new(File.read(template_path)).result(binding)
-          end
-        end
-
-        private_constant :ACCESS_TOKEN_TTL, :REFRESH_TOKEN_TTL, :CODE_TTL, :HTML_TEMPLATE_PATH, :ConsentPage
+        private_constant :ACCESS_TOKEN_TTL, :REFRESH_TOKEN_TTL, :CODE_TTL, :HTML_TEMPLATE_PATH
 
         # Default TTL values, exposed for callers that want to display or override them.
         class << self
@@ -393,7 +385,8 @@ module Aspera
         # Render the consent page from the ERB template.
         # @param error [String, nil] Error message displayed on the page
         def authorize_html_from_template(params, error: nil)
-          ConsentPage.new(
+          WebPage.render(
+            HTML_TEMPLATE_PATH,
             title:                 @title,
             description:           @description,
             action_url:            "#{@base_url}/oauth/authorize",
@@ -404,7 +397,7 @@ module Aspera
             code_challenge_method: params['code_challenge_method'].to_s,
             secret_required:       !@consent_secret.nil?,
             error:                 error
-          ).render(HTML_TEMPLATE_PATH)
+          )
         end
       end
     end

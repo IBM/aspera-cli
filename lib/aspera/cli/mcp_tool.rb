@@ -7,6 +7,7 @@ require 'aspera/log'
 require 'aspera/secret_hider'
 require 'aspera/cli/runner'
 require 'aspera/cli/error'
+require 'aspera/cli/mcp_secrets'
 require 'aspera/schema/reader'
 require 'aspera/schema/registry'
 unless defined?(MCP::Tool)
@@ -31,7 +32,8 @@ module Aspera
       # Extended-value handlers refused in arguments from the MCP client: code execution,
       # access to local files, environment, internal network, or stdin (JSON-RPC stream in stdio).
       # Presets of the user running the server may still use @file: and @env:.
-      UNTRUSTED_EXTENDED_VALUE_HANDLERS = %i[ruby file uri stdin env secret].freeze
+      # @secret: is entered by the user on a web page, see McpSecrets.
+      UNTRUSTED_EXTENDED_VALUE_HANDLERS = %i[ruby file uri stdin env].freeze
       # Matches the handlers anywhere in an argument, including in nested values (@extend:, dot-path, ...)
       UNTRUSTED_EXTENDED_VALUE_REGEX = /@(#{UNTRUSTED_EXTENDED_VALUE_HANDLERS.join('|')}):/
       private_constant :UNTRUSTED_EXTENDED_VALUE_HANDLERS, :UNTRUSTED_EXTENDED_VALUE_REGEX
@@ -50,7 +52,9 @@ module Aspera
             "@preset:name"  — expand a saved preset
             "@base64:..."   — base64-encoded value
             "@val:..."      — literal string (no further decoding)
-          Note: @ruby:, @file:, @uri:, @stdin:, @env:, @secret: are disabled in MCP server mode.
+            "@secret:name"  — secret entered by the user on a web page, never visible to you:
+                              use it for a secret the user did not give, e.g. "--password=@secret:password"
+          Note: @ruby:, @file:, @uri:, @stdin:, @env: are disabled in MCP server mode.
 
         AUTOMATIC FLAGS
           The server prepends extra_args to every call (default: #{DEFAULT_EXTRA_ARGS.join(' ')}).
@@ -116,8 +120,31 @@ module Aspera
 
       class << self
         attr_accessor :max_text_bytes, :extra_args
+        # @return [WebSecret, nil] Secret pages for extended value `@secret:`
+        attr_accessor :web_secret
 
+        # Executes the command.
+        # If it needs a secret (`@secret:`), returns an `input_required` result: the client opens the page where the user
+        # enters the secret, then calls the tool again, and the command is executed again with the secret.
         def call(args:, server_context: nil)
+          secret_call = McpSecrets::Call.new(web_secret, server_context)
+          prompt = catch(McpSecrets::THROW_TAG) do
+            response = McpSecrets.with_call(secret_call) { execute(args) }
+            secret_call.finish
+            # Secrets entered by the user never reach the client, even if displayed by the command
+            secret_call.hide(response.content)
+            secret_call.hide(response.structured_content)
+            return response
+          end
+          return secret_call.input_required(prompt) if secret_call.url_elicitation?
+          secret_call.finish
+          MCP::Tool::Response.new([{type: 'text', text: "Extended value @secret:#{prompt} requires an MCP client supporting URL mode elicitation"}], error: true)
+        end
+
+        # Executes the command in-process
+        # @param args [Array<String>] Arguments of the command
+        # @return [MCP::Tool::Response]
+        def execute(args)
           unsafe = args.map(&:to_s).flat_map { |arg| arg.scan(UNTRUSTED_EXTENDED_VALUE_REGEX).flatten }.uniq
           raise Cli::BadArgument, "Extended value disabled in MCP server mode: #{unsafe.map { |h| "@#{h}:" }.join(', ')}" unless unsafe.empty?
           effective_args = Array(extra_args || DEFAULT_EXTRA_ARGS) + args

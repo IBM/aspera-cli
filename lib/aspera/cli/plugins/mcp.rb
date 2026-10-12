@@ -29,7 +29,7 @@ module Aspera
       #   oauth:                  Boolean - enable OAuth 2.0 PKCE flow with dynamic client registration (RFC 7591)
       #   oauth_access_token_ttl: Integer - access token lifetime in seconds (default 3600)
       #   oauth_refresh_token_ttl: Integer - refresh token lifetime in seconds (default 2592000 = 30 days)
-      #   base_url:               String  - URL of the server for clients, used in OAuth metadata
+      #   base_url:               String  - URL of the server for clients, used in OAuth metadata and secret pages
       #                                     (default: from bind and port, mandatory with oauth on a wildcard bind)
       #   port:                   Integer - TCP port (default 3000)
       #   bind:                   String  - bind address (default "127.0.0.1")
@@ -67,6 +67,8 @@ module Aspera
           If the user provides credentials inline (--url, --username, --password, --private-key),
           use those exact values verbatim — never substitute a preset or another server.
           Some plugins support browser login (--auth=web).
+          For a secret the user did not give (password, passphrase), pass "@secret:<name>" as value:
+          the user enters it on a web page, you never see it. Prefer it to asking in the conversation.
           On error, report it as-is and stop.
 
           TRANSFERS
@@ -90,11 +92,11 @@ module Aspera
         # Keys consumed locally (not forwarded to MCP gem)
         TOOL_KEYS   = %i[max_text_bytes extra_args].freeze
         # Extended-value handlers disabled for the whole process in MCP server mode, including in presets:
-        # @ruby: code execution (a client can write a preset), @stdin: is the JSON-RPC stream (stdio),
-        # @secret: needs a terminal (fails with ENOTTY in stdio, blocks the request in http).
+        # @ruby: code execution (a client can write a preset), @stdin: is the JSON-RPC stream (stdio).
         # Other unsafe handlers are refused in client arguments only, see McpTool, so that presets
         # can still use @file: and @env:.
-        DISABLED_EXTENDED_VALUE_HANDLERS = %i[ruby stdin secret].freeze
+        # @secret: is entered on a web page instead of the terminal, see McpSecrets.
+        DISABLED_EXTENDED_VALUE_HANDLERS = %i[ruby stdin].freeze
         private_constant :SERVER_KEYS, :CONFIG_KEYS, :STDIO_KEYS, :HTTP_KEYS, :TOOL_KEYS, :DISABLED_EXTENDED_VALUE_HANDLERS
 
         command :server, description: 'Start the MCP (Model Context Protocol) server',
@@ -115,6 +117,7 @@ module Aspera
           DISABLED_EXTENDED_VALUE_HANDLERS.each do |handler|
             ExtendedValue.instance.on(handler) { |_| raise Cli::BadArgument, "@#{handler}: extended value is disabled in MCP server mode" }
           end
+          ExtendedValue.instance.on(:secret) { |prompt| Cli::McpSecrets.value(prompt) }
           Log.log.info { "Starting MCP server (transport=#{transport})..." }
           start_mcp_server(transport: transport.to_sym, mcp_options: mcp_options)
           Result::Nothing.new
@@ -133,10 +136,12 @@ module Aspera
           server_opts[:description]  ||= "#{Info::GEM_NAME} MCP server (IBM Aspera file transfer and management)"
           configuration = config_opts.empty? ? nil : MCP::Configuration.new(**config_opts)
           MCP::Server.new(
-            name:          Info::GEM_NAME,
-            version:       VERSION,
-            tools:         [tool],
-            configuration: configuration,
+            name:                   Info::GEM_NAME,
+            version:                VERSION,
+            tools:                  [tool],
+            configuration:          configuration,
+            # The request state of secret requests (@secret:) goes through the client: encrypted and bound to the tool call
+            request_state_security: MCP::Server::RequestStateSecurity.new(key: SecureRandom.random_bytes(32), ttl: Cli::WebSecret::TTL),
             **server_opts
           )
         end
@@ -148,6 +153,8 @@ module Aspera
           server = build_mcp_server(mcp_options)
           case transport
           when :stdio
+            # Secret pages are served by a local web server, started on first use of @secret:
+            Cli::McpTool.web_secret = Cli::McpSecrets.web_secret
             stdio_opts = mcp_options.slice(*STDIO_KEYS)
             MCP::Server::Transports::StdioTransport.new(server, **stdio_opts).open
           when :http
@@ -203,6 +210,9 @@ module Aspera
           refresh_token_ttl = mcp_options.fetch(:oauth_refresh_token_ttl, OAuth::Server::Pkce.default_refresh_token_ttl)
           check_auth_config(auth_token, oauth_enabled, bind)
           base_url = http_base_url(bind, port, mcp_options[:base_url], oauth_enabled)
+          # Secret pages are served by this server: the static token, if any, is the access code asked on the page
+          web_secret = Cli::McpSecrets.web_secret(base_url: base_url, access_code: auth_token)
+          Cli::McpTool.web_secret = web_secret
           app = MCP::Server::Transports::StreamableHTTPTransport.new(server, **http_opts)
           # Build OAuth::Server::Pkce only when OAuth is enabled.
           # Pass MCP-specific branding via title: and description: so the external HTML
@@ -226,6 +236,7 @@ module Aspera
               @oauth_server  = auth_opts[:oauth_server]
               @oauth_enabled = auth_opts[:oauth_enabled]
               @base_url      = auth_opts[:base_url]
+              @web_secret    = auth_opts[:web_secret]
               super(srv)
             end
 
@@ -276,6 +287,9 @@ module Aspera
                   else
                     json_error(res, 405, 'method_not_allowed')
                   end
+                when ->(path) { path.start_with?(Cli::WebSecret::PATH_PREFIX) }
+                  # Page opened by the user in a browser (no bearer token), protected by the access code
+                  @web_secret.handle(req, res)
                 else
                   # All other paths are MCP endpoints — require authorization
                   unless authorized?(req)
@@ -361,7 +375,7 @@ module Aspera
           }
           webrick.mount(
             '/', rack_servlet, app, server_info, auth_token,
-            {oauth_server: oauth_server, oauth_enabled: oauth_enabled, base_url: base_url}
+            {oauth_server: oauth_server, oauth_enabled: oauth_enabled, base_url: base_url, web_secret: web_secret}
           )
           Log.log.info { "MCP HTTP server listening on http://#{bind}:#{port}/" }
           Log.log.info { 'OAuth 2.0 PKCE enabled (dynamic registration)' } if oauth_enabled

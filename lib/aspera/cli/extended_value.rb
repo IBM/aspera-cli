@@ -73,6 +73,16 @@ module Aspera
           Aspera.assert(value.empty?, type: BadArgument) { "no value allowed for extended value type: #{ext_type}" }
         end
 
+        # Ask the user for a secret: on a web page if the user interface is graphical (option `ui`), else on terminal
+        # @param prompt [String] Name of the secret, empty for default
+        # @return [String] The secret
+        def read_secret(prompt)
+          prompt = 'secret' if prompt.empty?
+          return $stdin.getpass("#{prompt}> ") unless Environment.instance.url_method.eql?(:graphical)
+          require 'aspera/cli/web_secret'
+          WebSecret.ask(prompt)
+        end
+
         def read_stdin(mode)
           case mode
           when '' then $stdin.read
@@ -105,7 +115,7 @@ module Aspera
           re:     lambda { |i| Regexp.new(i, Regexp::MULTILINE) },
           ruby:   lambda { |i| Environment.secure_eval(i, __FILE__, __LINE__) },
           s:      lambda(&:to_s),
-          secret: lambda { |i| prompt = i.empty? ? 'secret' : i; $stdin.getpass("#{prompt}> ") }, # rubocop:disable Style/Semicolon
+          secret: lambda { |i| ExtendedValue.read_secret(i) },
           stdin:  lambda { |i| ExtendedValue.read_stdin(i) },
           yaml:   lambda { |i| YAML.safe_load(i) },
           zlib:   lambda { |i| Zlib::Inflate.inflate(i) },

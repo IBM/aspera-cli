@@ -7810,6 +7810,22 @@ mcp_oauth_deny:
     - port=13781
     - oauth=true
   post: mcp_oauth_deny_post(t)
+mcp_http_secret:
+  description: >-
+    Start MCP HTTP server with auth_token, execute a command with `@secret:` (protocol 2026-07-28):
+    URL mode elicitation, secret entered on the web page with access code, retried call with secret hidden in result.
+  tags:
+    - mcp
+    - noblock
+    - nodoc
+  args:
+    - mcp
+    - server
+    - "@:"
+    - transport=http
+    - port=13782
+    - auth_token=test-secret
+  post: mcp_http_secret_post(t)
 
 github_smoke_test:
   command: null

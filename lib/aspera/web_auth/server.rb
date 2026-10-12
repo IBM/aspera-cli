@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 require 'aspera/web_server_simple'
+require 'aspera/web_page'
 require 'aspera/assert'
-require 'erb'
 
 module Aspera
   module WebAuth
@@ -10,15 +10,7 @@ module Aspera
     class Servlet < WEBrick::HTTPServlet::AbstractServlet
       # ERB template of page displayed in browser after authentication
       HTML_TEMPLATE_PATH = File.join(__dir__, 'index.html.erb')
-      # Variables available in the ERB template
-      Page = Struct.new(:additional_info) do
-        include ERB::Util
-
-        def render(template_path)
-          ERB.new(File.read(template_path)).result(binding)
-        end
-      end
-      private_constant :HTML_TEMPLATE_PATH, :Page
+      private_constant :HTML_TEMPLATE_PATH
 
       # @param server [WEBrick::HTTPServer] the HTTP server instance
       # @param web_auth [Server] the Server instance to record the callback
@@ -37,7 +29,7 @@ module Aspera
         # response to browser
         response.status = 200
         response.content_type = 'text/html'
-        response.body = Page.new(@web_auth.additional_info).render(HTML_TEMPLATE_PATH)
+        response.body = WebPage.render(HTML_TEMPLATE_PATH, title: 'Authentication Complete', additional_info: @web_auth.additional_info)
         # continue internal processing
         @web_auth.signal_request(request)
         nil

@@ -2107,7 +2107,7 @@ The following decoders are supported:
 | `re`     | `String` | `Regexp` | Ruby Regular Expression (short for `@ruby:/.../`) |
 | `ruby`   | `String` | Any      | Execute specified Ruby code. |
 | `s`      | Any      | `String` | Converts argument to `String`. |
-| `secret` | `String` | `String` | Ask password interactively (hides input). Argument is the prompt. |
+| `secret` | `String` | `String` | Ask password interactively: on terminal (hides input), or on a web page if option `ui` is `graphical`. Argument is the prompt. |
 | `stdin`  | `String` | `String` | Read from stdin in text mode. Argument: `<empty>`, `bin` or `chomp`. |
 | `uri`    | `String` | `String` | Read value from specified URL. Supported schemes: `http:`, `https:`, `data:`, `file:`. For example, `--fpac=@uri:http://serv/f.pac` or `--key=@uri:file:/path/to/key.pem` |
 | `val`    | `String` | `String` | Prevent decoding by the decoders on the right. For example, `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
@@ -2963,6 +2963,8 @@ Terminal output (command result) secret removal is controlled by option `--out.s
 Log secret removal is controlled by option `log_secrets` (default: `no`).
 Mandatory command line options can be requested interactively (for example, password) using option `interactive`.
 It is possible to use [Extended Value](#extended-value-syntax) `@secret:[name]` to ask for a secret interactively.
+If option `ui` is `graphical` (see [Graphical Interactions](#graphical-interactions-browser-and-text-editor)), the secret is entered on a web page opened in the browser, served by a local web server on `127.0.0.1`, else on terminal.
+In MCP server mode, the secret is entered on a web page, see [Secrets entered in a web page](#secrets-entered-in-a-web-page).
 It is also possible to enter an option as an environment variable, for example, `<%=opt_env :password%>` for option `password` and read the env var like this:
 
 ```shell
@@ -3323,13 +3325,14 @@ curl -so - https://eudemo.asperademo.com/wallpaper.jpg | <%=cmd%> config image @
 Some actions may require the use of a graphical tool:
 
 - A browser for Aspera on Cloud authentication (web auth method)
+- A browser to enter a secret requested with `@secret:`
 - A text editor for editing the configuration file
 
 By default, <%=tool%> assumes that a graphical environment is available on Windows; on other systems, it relies on the presence of the `DISPLAY` environment variable.
 It is also possible to force the graphical mode with option `ui`:
 
-- `--ui=graphical` forces a graphical environment: a browser is opened for URLs, or a text editor for files.
-- `--ui=text` forces a text environment, the URL or file path to open is displayed on terminal.
+- `--ui=graphical` forces a graphical environment: a browser is opened for URLs or secrets, or a text editor for files.
+- `--ui=text` forces a text environment, the URL or file path to open is displayed on terminal, and secrets are entered on terminal.
 
 ### Logging, Debugging
 
@@ -9156,8 +9159,8 @@ The `server` command accepts an optional [Hash](#extended-value-syntax) argument
 |-----|------|---------|-------------|
 | `port` | `integer` | `3000` | TCP port to listen on |
 | `bind` | `string` | `127.0.0.1` | Bind address |
-| `base_url` | `string` | from `bind` and `port` | URL of the server for clients, used in OAuth metadata, for example, `http://your-server:3000`. Mandatory with `oauth` when `bind` is `0.0.0.0` or `::`. |
-| `auth_token` | `string` | - | Static Bearer token. If set, all MCP requests must carry `Authorization: Bearer <token>`, else HTTP 401. Cannot be empty. With `oauth`, it is also the access code asked on the consent page. |
+| `base_url` | `string` | from `bind` and `port` | URL of the server for clients, used in OAuth metadata and in the URL of secret pages, for example, `http://your-server:3000`. Mandatory with `oauth` when `bind` is `0.0.0.0` or `::`. |
+| `auth_token` | `string` | - | Static Bearer token. If set, all MCP requests must carry `Authorization: Bearer <token>`, else HTTP 401. Cannot be empty. It is also the access code asked on secret pages, and on the consent page with `oauth`. |
 | `oauth` | `boolean` | `false` | Enable OAuth 2.0 PKCE flow with dynamic client registration. When `true`, clients register automatically and users authenticate via a browser consent page. |
 | `oauth_access_token_ttl` | `integer` | `3600` | OAuth access token lifetime in seconds. |
 | `oauth_refresh_token_ttl` | `integer` | `2592000` | OAuth refresh token lifetime in seconds (30 days). |
@@ -9174,8 +9177,9 @@ The `server` command accepts an optional [Hash](#extended-value-syntax) argument
 > For local-only deployments (`127.0.0.1`, `::1`, `localhost`), both are optional but recommended. Without `auth_token`, the consent page only asks to click **Allow**.
 > `allowed_hosts` and `allowed_origins` protect against DNS rebinding but do not authenticate clients.
 > `auth_token` and `oauth` can coexist: a request is accepted if it carries a valid static token **or** a valid OAuth access token.
-> In commands sent by the client, extended values `@ruby:`, `@file:`, `@uri:`, `@stdin:`, `@env:`, and `@secret:` are refused.
-> Presets of the user running the server can still use `@file:` and `@env:`, but not `@ruby:`, `@stdin:`, or `@secret:`.
+> In commands sent by the client, extended values `@ruby:`, `@file:`, `@uri:`, `@stdin:`, and `@env:` are refused.
+> Presets of the user running the server can still use `@file:` and `@env:`, but not `@ruby:` or `@stdin:`.
+> `@secret:` is entered by the user on a web page, see [Secrets entered in a web page](#secrets-entered-in-a-web-page).
 
 > [!NOTE]
 > **OAuth 2.0 PKCE flow** - When `oauth` is `true`, the server exposes the following additional endpoints:
@@ -9193,6 +9197,38 @@ The `server` command accepts an optional [Hash](#extended-value-syntax) argument
 > [!NOTE]
 > **HTTP transport discovery endpoint** - When using `http` transport, the server exposes a `GET /` endpoint that returns a JSON object with `name`, `version`, and `description` fields.
 > AI clients that support this convention (such as Bob) automatically read the description from this endpoint and display it in their MCP server list without any manual configuration.
+
+### Secrets entered in a web page
+
+[Extended Value](#extended-value-syntax) `@secret:[name]` asks for a secret, for example, a password.
+In MCP server mode, there is no terminal: the user enters the secret on a web page of the server instead, following the [URL mode elicitation](https://modelcontextprotocol.io/specification/2026-07-28/client/elicitation) of the MCP protocol.
+The secret goes from the browser to the MCP server only: it is not sent to the MCP client or the AI model, and it is hidden in the results of the command.
+
+`@secret:` can be used in commands sent by the AI client, for example, `--password=@secret:password`, and in presets of the user running the server.
+
+For a command that needs a secret:
+
+1. The server replies to the tool call with the URL of a secret page.
+1. The MCP client shows the URL and asks the user for consent to open it in a browser.
+1. The user enters the secret on the page and submits it, or cancels.
+1. The MCP client calls the tool again, and the server executes the command with the secret.
+
+If the command needs several secrets, these steps are repeated for each secret.
+
+The secret page is served:
+
+- With the `http` transport: by the MCP server, at `<base_url>/secret/<id>`.
+  If `auth_token` is set, the page also asks for it as access code.
+  Set `base_url` if the browser does not reach the server on the `bind` address.
+- With the `stdio` transport: by a local web server on `http://127.0.0.1` with a random port, started on first use.
+
+A secret request expires after 10 minutes.
+Secrets are kept in memory only, until the command completes.
+
+> [!NOTE]
+> The MCP client must support URL mode elicitation (capability `elicitation.url`), else the command fails with an error.
+> Protocol `2026-07-28` (result `input_required`) and `2025-11-25` (request `elicitation/create` from the server) are supported.
+> With protocol `2025-11-25`, the `http` transport must not be `stateless`.
 
 ### Examples
 
@@ -9446,6 +9482,15 @@ Whenever a command syntax shows a Hash argument (e.g. `<account:Hash>`), call `h
 
 This returns a table of field names, types, and descriptions. Never infer field names from
 server error messages.
+
+#### Secrets
+
+To use a secret the user did not provide (password, passphrase), pass `@secret:<name>` as value.
+The user enters it on a web page and you never see it: prefer it to asking for the secret in the conversation.
+
+```json
+["server", "browse", "/", "--url=ssh://host:33001", "--username=user", "--password=@secret:password"]
+```
 
 #### Async transfers and cross-call status tracking
 

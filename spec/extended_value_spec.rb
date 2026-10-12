@@ -49,6 +49,30 @@ module Aspera
           expect(evaluate('@stdin:chomp')).to(eq('line'))
         end
       end
+
+      describe '@secret:' do
+        around do |example|
+          saved = Environment.instance.url_method
+          example.run
+        ensure
+          Environment.instance.url_method = saved
+        end
+
+        it 'asks on terminal when user interface is text' do
+          Environment.instance.url_method = :text
+          allow($stdin).to(receive(:getpass).and_return('typed'))
+          expect(evaluate('@secret:pw')).to(eq('typed'))
+          expect($stdin).to(have_received(:getpass).with('pw> '))
+        end
+
+        it 'asks on a web page when user interface is graphical' do
+          require 'aspera/cli/web_secret'
+          Environment.instance.url_method = :graphical
+          allow(WebSecret).to(receive(:ask).and_return('entered'))
+          expect(evaluate('@secret:')).to(eq('entered'))
+          expect(WebSecret).to(have_received(:ask).with('secret'))
+        end
+      end
     end
   end
 end

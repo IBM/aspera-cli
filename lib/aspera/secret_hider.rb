@@ -101,6 +101,21 @@ module Aspera
       return obj
     end
 
+    # Hides recursively the given secret values wherever they appear in Strings
+    # @param obj    [Object]        Hash or Array (modified in place), or String
+    # @param values [Array<String>] Secret values
+    # @return [Object] obj with secret values replaced by placeholder
+    def deep_hide_values(obj, values)
+      values = values.reject(&:empty?)
+      return obj if values.empty?
+      case obj
+      when String then values.reduce(obj) { |str, value| str.gsub(value, HIDDEN_PASSWORD) }
+      when Array then obj.map! { |i| deep_hide_values(i, values) }
+      when Hash then obj.transform_values! { |v| deep_hide_values(v, values) }
+      else obj
+      end
+    end
+
     # Declare additional exact key names whose values are secrets
     # @param keys [Array<String, Symbol>] Key names
     def add_secret_keys(keys)

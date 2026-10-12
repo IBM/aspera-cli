@@ -13,8 +13,10 @@ require 'aspera/json_rpc/client'
 
 MCP_REDIRECT_URI = 'http://127.0.0.1:19999/cb'
 MCP_INIT_PARAMS  = {protocolVersion: '2024-11-05', capabilities: {}, clientInfo: {name: 'test', version: '0'}}.freeze
-# Static token of the MCP server, also the access code of the OAuth consent page
+# Static token of the MCP server, also the access code of the OAuth consent page and of secret pages
 MCP_AUTH_TOKEN   = 'test-secret'
+# Protocol version of stateless requests: version and client capabilities in `_meta` of each request
+MCP_MODERN_VERSION = '2026-07-28'
 
 # Aspera::Rest::Client on the MCP endpoint (`/mcp`, as `/` is the discovery endpoint) that handles the MCP HTTP transport specifics:
 #   1. Requests must accept both JSON and SSE, else HTTP 406 (`create` sets JSON only).
@@ -189,6 +191,50 @@ def mcp_oauth_deny_post(t)
   raise "Expected error=access_denied, got #{params}" unless params['error'] == 'access_denied'
   raise 'Expected state to be forwarded'              unless params['state'] == state
   t.stop_process(:mcp_oauth_deny)
+end
+
+# Secret entered on a web page (port 13782), with protocol 2026-07-28: a command with `@secret:` returns `input_required`
+# with the URL of the page (URL mode elicitation), the page asks for the access code, and the retried call executes the command
+# with the secret, hidden in the result.
+def mcp_http_secret_post(t)
+  sleep(1)
+  tool_name = 'execute_ascli_command'
+  # Modern requests carry protocol version, method and name in headers too
+  client = McpHttpClient.new(
+    13782,
+    'Authorization'        => "Bearer #{MCP_AUTH_TOKEN}",
+    'MCP-Protocol-Version' => MCP_MODERN_VERSION,
+    'Mcp-Method'           => 'tools/call',
+    'Mcp-Name'             => tool_name
+  )
+  params = {
+    name:      tool_name,
+    arguments: {args: %w[config echo @secret:test]},
+    _meta:     {
+      'io.modelcontextprotocol/protocolVersion'    => MCP_MODERN_VERSION,
+      'io.modelcontextprotocol/clientCapabilities' => {elicitation: {url: {}}}
+    }
+  }
+  # 1. The command needs a secret: the client is asked to open the page
+  first = mcp_call(client, 'tools/call', params, 1)
+  raise "Expected input_required, got #{first}" unless first['resultType'] == 'input_required'
+  request_id, request = first['inputRequests'].first
+  raise "Expected URL mode elicitation, got #{request}" unless request['method'] == 'elicitation/create' && request.dig('params', 'mode') == 'url'
+  page_path = URI(request.dig('params', 'url')).path.delete_prefix('/')
+  # 2. The user enters the secret on the page, with the access code
+  api = oauth_api(13782)
+  html = api.read(page_path)
+  raise 'Expected access code field on secret page' unless html.include?('name="access_code"')
+  form = {secret: 'S3cret-value', decision: 'submit'}
+  res_refused = api.create(page_path, form.merge(access_code: 'wrong'), content_type: Aspera::Mime::WWW, exception: false, ret: :resp)
+  raise "Expected 401 for wrong access code, got #{res_refused.code}" unless res_refused.code == '401'
+  res_page = api.create(page_path, form.merge(access_code: MCP_AUTH_TOKEN), content_type: Aspera::Mime::WWW, exception: false, ret: :resp)
+  raise "Expected 200 for secret, got #{res_page.code}" unless res_page.code == '200'
+  # 3. The client retries the call: the command is executed with the secret, hidden in the result
+  final = mcp_call(client, 'tools/call', params.merge(inputResponses: {request_id => {action: 'accept'}}, requestState: first['requestState']), 2)
+  text = final.dig('content', 0, 'text')
+  raise "Expected the secret hidden in result, got #{final}" unless final['isError'] == false && text == '🔑'
+  t.stop_process(:mcp_http_secret)
 end
 
 # Token-auth server test (port 13779): verifies that the MCP endpoint returns 401 without

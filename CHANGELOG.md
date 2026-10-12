@@ -18,8 +18,10 @@ Released: [Place date of release here]
 
 * `orchestrator`: `workflows export` with option `dependencies` saves a package (`.wkf`) with the sub-workflows and remote nodes used by the workflow, in the folder given by option `to_folder`.
 * `sync`: `target_rate` in `sync_info` accepts a string with suffix `k`, `m` or `g`, converted to bps (e.g. `100m`), in both `conf` and `args` formats.
-* `mcp server`: Extended-value handlers `@ruby:`, `@file:`, `@uri:`, `@stdin:`, `@env:`, `@secret:` are refused in commands sent by MCP clients. These handlers allow arbitrary Ruby execution or local resource access; they are replaced by an explicit error. Presets of the user running the server can still use `@file:` and `@env:` (for example, `private_key`); `@ruby:`, `@stdin:` and `@secret:` are disabled for the whole server. Safe handlers (`@json:`, `@preset:`, `@base64:`, `@val:`, …) remain available.
-* `mcp server`: `http` transport: authentication with a static token (`auth_token`) or OAuth 2.0 PKCE with dynamic client registration (`oauth`). On a non-local `bind`, `auth_token` is mandatory, also with `oauth`: the consent page asks for it as access code. New option `base_url`: URL of the server for clients in OAuth metadata, mandatory with `oauth` on a wildcard `bind`.
+* `mcp server`: Extended-value handlers `@ruby:`, `@file:`, `@uri:`, `@stdin:`, `@env:` are refused in commands sent by MCP clients. These handlers allow arbitrary Ruby execution or local resource access; they are replaced by an explicit error. Presets of the user running the server can still use `@file:` and `@env:` (for example, `private_key`); `@ruby:` and `@stdin:` are disabled for the whole server. Safe handlers (`@json:`, `@preset:`, `@base64:`, `@val:`, …) remain available.
+* **global**: `@secret:` asks for the secret on a web page opened in the browser when option `ui` is `graphical` (default on Windows and macOS, or when `DISPLAY` is set), else on terminal. The page is served by a local web server on `127.0.0.1`.
+* `mcp server`: `@secret:` (in commands or presets) asks the user to enter the secret on a web page of the server, using MCP URL mode elicitation (protocol `2026-07-28`, and `2025-11-25` clients): the secret is not sent to the MCP client or the AI model, and is hidden in results. With `auth_token`, the page asks for it as access code. With the `stdio` transport, the page is served by a local web server on `127.0.0.1`. Requires an MCP client supporting URL mode elicitation.
+* `mcp server`: `http` transport: authentication with a static token (`auth_token`) or OAuth 2.0 PKCE with dynamic client registration (`oauth`). On a non-local `bind`, `auth_token` is mandatory, also with `oauth`: the consent page asks for it as access code. New option `base_url`: URL of the server for clients in OAuth metadata and secret pages, mandatory with `oauth` on a wildcard `bind`.
 * `faspex5 postprocessing`: Two new optional parameters harden the unauthenticated webhook listener:
   * `secret_token` — callers must supply `?token=<value>` in the URL; requests without the correct token are rejected with HTTP 401.
   * `allowed_ips` — restrict the listener to one IP or a list of IPs; requests from other source IPs are rejected with HTTP 403.
@@ -55,6 +57,7 @@ Released: [Place date of release here]
 * `orchestrator`: `workorders output` displays fields of variables as plain values instead of single-element arrays (e.g. `"value":"x"` instead of `"value":["x"]`), and an empty value as `null`.
 * `config vault`: `create` fails if a secret with the same label exists, for `vault` and `1password` (as for `file`). `delete` fails if the secret does not exist, for `file`.
 * `config vault`: `1password`: `url` is stored as the website of the item instead of a custom field.
+* **global**: `@secret:` asks for the secret in the browser when option `ui` is `graphical`, the default on Windows and macOS: use `--ui=text` to enter it on terminal.
 
 ## 4.27.5
 

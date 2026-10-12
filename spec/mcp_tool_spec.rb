@@ -27,6 +27,19 @@ module MCP
       end
     end
   end
+
+  class Server
+    unless defined?(MCP::Server::InputRequiredResult)
+      class InputRequiredResult
+        attr_reader :input_requests, :request_state
+
+        def initialize(input_requests: nil, request_state: nil)
+          @input_requests = input_requests
+          @request_state  = request_state
+        end
+      end
+    end
+  end
 end
 
 require 'aspera/cli/mcp_tool'
@@ -237,7 +250,7 @@ RSpec.describe(Aspera::Cli::McpTool) do
     before { allow(Aspera::Cli::Runner).to(receive(:new)) }
 
     it 'refuses them, also nested, without running the command' do
-      ['@file:/etc/passwd', '--private-key=@val:@file:/k', '@extend:a@env:HOME@', 'k=@ruby:1', '@secret:'].each do |arg|
+      ['@file:/etc/passwd', '--private-key=@val:@file:/k', '@extend:a@env:HOME@', 'k=@ruby:1', '@stdin:'].each do |arg|
         resp = described_class.call(args: ['config', 'echo', arg])
         expect(resp.error?).to(be(true))
         expect(resp.content.first[:text]).to(include('disabled in MCP server mode'))
@@ -248,8 +261,55 @@ RSpec.describe(Aspera::Cli::McpTool) do
     it 'accepts safe extended values' do
       runner = instance_double(Aspera::Cli::Runner, run_with_result: Aspera::Cli::Result::Nothing.new, context: context_stub)
       allow(Aspera::Cli::Runner).to(receive(:new).and_return(runner))
-      resp = described_class.call(args: ['config', 'echo', '@json:{"a":"b"}', '@preset:p', '--url=https://user@host/'])
+      resp = described_class.call(args: ['config', 'echo', '@json:{"a":"b"}', '@preset:p', '--url=https://user@host/', '--password=@secret:pw'])
       expect(resp.error?).to(be(false))
+    end
+  end
+
+  # -----------------------------------------------------------------------
+  # @secret: entered by the user on a web page (URL mode elicitation)
+  # -----------------------------------------------------------------------
+  describe '@secret: in arguments' do
+    let(:web_secret) { Aspera::Cli::McpSecrets.web_secret(base_url: 'http://localhost:3000') }
+    # Minimal stand-in for MCP::ServerContext of a 2026-07-28 client
+    let(:context_class) do
+      Struct.new(:request_state, :input_responses, :client_capabilities, keyword_init: true) do
+        def input_response(key) = input_responses&.[](key)
+        def modern? = true
+      end
+    end
+    let(:capabilities) { {elicitation: {url: {}}} }
+
+    before do
+      described_class.web_secret = web_secret
+      # The command displays the secret
+      runner = instance_double(Aspera::Cli::Runner, context: context_stub)
+      allow(runner).to(receive(:run_with_result) { Aspera::Cli::Result::Text.new("pw=#{Aspera::Cli::McpSecrets.value('pw')}") })
+      allow(Aspera::Cli::Runner).to(receive(:new).and_return(runner))
+    end
+
+    after { described_class.web_secret = nil }
+
+    it 'asks the client to open the page, then executes the command with the secret, hidden in result' do
+      args = %w[config echo @secret:pw]
+      first = described_class.call(args: args, server_context: context_class.new(client_capabilities: capabilities))
+      expect(first).to(be_a(MCP::Server::InputRequiredResult))
+      request_id, request = first.input_requests.first
+      expect(request[:params][:url]).to(eq(web_secret.url(request_id)))
+      # The user enters the secret on the page
+      page_request = Struct.new(:request_method, :path, :body).new('POST', "/secret/#{request_id}", 'secret=S3cret&decision=submit')
+      web_secret.handle(page_request, Struct.new(:status, :body) { def []=(*); end }.new)
+      retry_context = context_class.new(client_capabilities: capabilities, request_state: first.request_state, input_responses: {request_id => {action: 'accept'}})
+      resp = described_class.call(args: args, server_context: retry_context)
+      expect(resp.error?).to(be(false))
+      expect(resp.content).to(eq([{type: 'text', text: 'pw=🔑'}]))
+      expect(web_secret.prompt(request_id)).to(be_nil)
+    end
+
+    it 'returns an error if the client does not support URL mode elicitation' do
+      resp = described_class.call(args: %w[config echo @secret:pw], server_context: context_class.new(client_capabilities: {elicitation: {}}))
+      expect(resp.error?).to(be(true))
+      expect(resp.content.first[:text]).to(include('requires an MCP client supporting URL mode elicitation'))
     end
   end
 end
