@@ -1851,6 +1851,11 @@ A special parameter is defined: `str_lst_sep` (`String`), default is `\n`.
 It defines how lists of strings are displayed.
 Alternatively, set to `,`.
 
+When the output is a terminal, the table is fitted to the terminal width: columns with text (e.g. `description`) are wrapped, the widest first.
+Other columns (names, identifiers) are not wrapped.
+If the table cannot fit, it is displayed with its natural width.
+Parameter `width` (`Integer`) sets the table width (e.g. `--out.table.width=100`), also when the output is not a terminal.
+
 For `format=csv`, options are described in gem [`csv`](https://ruby.github.io/csv/CSV.html#class-CSV-label-Options+for+Generating).
 
 For example, to display a CSV with headers and quotes:

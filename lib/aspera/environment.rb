@@ -8,6 +8,7 @@ require 'singleton'
 require 'openssl'
 require 'open3'
 require 'English'
+require 'io/console'
 require 'shellwords'
 require 'aspera/rainbow'
 using Rainbow
@@ -203,6 +204,15 @@ module Aspera
       # @return [Boolean] true if we are in a terminal
       def terminal?
         $stdout.tty?
+      end
+
+      # @return [Integer, nil] Number of columns of the terminal, or `nil` if not a terminal or unknown
+      def terminal_columns
+        return unless terminal?
+        columns = $stdout.winsize[1]
+        columns.positive? ? columns : nil
+      rescue SystemCallError
+        nil
       end
 
       # force locale to C so that unicode characters are not used

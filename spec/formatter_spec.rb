@@ -136,6 +136,30 @@ module Aspera
           end
         end
       end
+
+      describe 'table width' do
+        let(:result) { Result::ObjectList.new([{'name' => 'identifier', 'description' => 'word ' * 30}]) }
+
+        # @return [Array<String>] lines of the table display of result
+        def table_lines(argv)
+          formatter = build_formatter(argv)
+          saved = $stdout
+          $stdout = StringIO.new
+          formatter.display_results(result)
+          $stdout.string.lines.map(&:chomp)
+        ensure
+          $stdout = saved
+        end
+
+        it 'fits in the terminal' do
+          allow(Environment).to(receive(:terminal_columns).and_return(50))
+          expect(table_lines([]).map(&:length).max).to(be_between(40, 50))
+        end
+
+        it 'fits in the width of option out.table' do
+          expect(table_lines(['--out.table.width=60']).map(&:length).uniq).to(eq([60]))
+        end
+      end
     end
   end
 end

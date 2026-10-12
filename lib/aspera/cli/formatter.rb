@@ -5,6 +5,7 @@ require 'aspera/schema/registry'
 require 'aspera/cli/option_declarator'
 require 'aspera/cli/special_values'
 require 'aspera/cli/terminal_formatter'
+require 'aspera/cli/table_fitter'
 require 'aspera/preview/terminal'
 require 'aspera/secret_hider'
 require 'aspera/environment'
@@ -12,7 +13,6 @@ require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/markdown'
 require 'aspera/dot_container'
-require 'terminal-table'
 require 'tty-spinner'
 require 'yaml'
 require 'pp'
@@ -423,22 +423,26 @@ module Aspera
         case @options[:format]
         when :table
           format_style[:border] = :unicode_round if Environment.terminal_supports_unicode?
+          # fit in the requested width, or in the terminal
+          width = format_style[:width] || Environment.terminal_columns
           if single || @options[:multi_single].eql?(:yes) ||
               (@options[:multi_single].eql?(:single) && final_table_rows.length.eql?(1))
             # display multiple objects as multiple transposed tables
             final_table_rows.each do |row|
-              display_message(:data, Terminal::Table.new(
+              display_message(:data, TableFitter.table(
                 headings:  SINGLE_OBJECT_COLUMN_NAMES,
                 rows:      fields.zip(row),
-                style:     format_style
+                style:     format_style,
+                width:     width
               ))
             end
           else
             # display the table as single table
-            display_message(:data, Terminal::Table.new(
+            display_message(:data, TableFitter.table(
               headings:  fields,
               rows:      final_table_rows,
-              style:     format_style
+              style:     format_style,
+              width:     width
             ))
           end
         when :csv

@@ -4,6 +4,7 @@ require 'aspera/cli/command_spec'
 require 'aspera/cli/context'
 require 'aspera/cli/parser'
 require 'aspera/cli/formatter'
+require 'aspera/cli/table_fitter'
 require 'aspera/cli/plugins/factory'
 require 'aspera/cli/bootstrapper'
 require 'aspera/rest/aspera_errors' # registers error handlers of Aspera REST APIs
@@ -334,7 +335,7 @@ module Aspera
         end
         style = {}
         style[:border] = :unicode_round if Environment.terminal_supports_unicode?
-        table = Terminal::Table.new(headings: builder.columns, rows: rows, style: style).to_s
+        table = TableFitter.table(headings: builder.columns, rows: rows, style: style, width: Environment.terminal_columns&.-(4)).to_s
         ["\n    SCHEMA: #{arg.name}", table.lines.map { |line| "    #{line.chomp}" }.join("\n")]
       end
 
