@@ -338,8 +338,10 @@ module Aspera
             version:     server.version,
             description: server.description
           }
-          webrick.mount('/', rack_servlet, app, server_info, auth_token,
-            {oauth_server: oauth_server, oauth_enabled: oauth_enabled, base_url: base_url})
+          webrick.mount(
+            '/', rack_servlet, app, server_info, auth_token,
+            {oauth_server: oauth_server, oauth_enabled: oauth_enabled, base_url: base_url}
+          )
           Log.log.info { "MCP HTTP server listening on http://#{bind}:#{port}/" }
           Log.log.info { 'OAuth 2.0 PKCE enabled (dynamic registration)' } if oauth_enabled
           trap('INT') { webrick.shutdown }
