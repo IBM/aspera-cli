@@ -1807,9 +1807,9 @@ It defines how lists of strings are displayed.
 Alternatively, set to `,`.
 
 When the output is a terminal, the table is fitted to the terminal width: columns with text (e.g. `description`) are wrapped, the widest first.
-Other columns (names, identifiers) are not wrapped.
-If the table cannot fit, it is displayed with its natural width.
-Parameter `width` (`Integer`) sets the table width (e.g. `--out.table.width=100`), also when the output is not a terminal.
+If not enough, other columns (names, identifiers) are wrapped too, preferably after a punctuation (`-`, `_`, `.`, `/`).
+If the table cannot fit, columns are narrowed to their minimum width (20 characters for text, 10 for others, or heading).
+Parameter `width` (`Integer`) sets the maximum table width (e.g. `--out.table.width=100`), also when the output is not a terminal.
 
 For `format=csv`, options are described in gem [`csv`](https://ruby.github.io/csv/CSV.html#class-CSV-label-Options+for+Generating).
 

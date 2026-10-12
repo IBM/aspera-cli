@@ -157,7 +157,11 @@ module Aspera
         end
 
         it 'fits in the width of option out.table' do
-          expect(table_lines(['--out.table.width=60']).map(&:length).uniq).to(eq([60]))
+          expect(table_lines(['--out.table.width=60']).map(&:length).max).to(be_between(50, 60))
+        end
+
+        it 'does not fail when width is too small' do
+          expect(table_lines(['--out.table.width=10']).map(&:length).max).to(be > 10)
         end
       end
     end

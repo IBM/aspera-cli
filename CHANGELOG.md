@@ -26,12 +26,13 @@ Released: [Place date of release here]
   * `secret_token` — callers must supply `?token=<value>` in the URL; requests without the correct token are rejected with HTTP 401.
   * `allowed_ips` — restrict the listener to one IP or a list of IPs; requests from other source IPs are rejected with HTTP 403.
 * `faspex5 postprocessing`, `faspex5 gateway`, `aoc gateway`: Parameters are now validated against a JSON Schema (`Faspex4PostProcOptions`, `Faspex4GatewayOptions`). Unknown keys are rejected at startup instead of being silently ignored.
-* **global**: Tables are fitted to the terminal width: text columns (e.g. `description`) are wrapped, the widest first. Parameter `width` of `--out.table` sets the table width.
+* **global**: Tables are fitted to the terminal width: text columns (e.g. `description`) are wrapped, the widest first, then other columns if needed. Parameter `width` of `--out.table` sets the maximum table width.
 * `options.schema.yaml`: New schemas `WebServerOptions` (shared `url`/`cert`/`key`/`chain`), `Faspex4GatewayOptions` (extends `WebServerOptions`), and `Faspex4PostProcOptions` (extends `WebServerOptions` with postprocessing-specific keys).
 
 ### Issues Fixed
 
 * **global**: Removed gem dependency on `blankslate` (JSON-RPC client of agent `desktop`).
+* **global**: Removed gem dependency on `word_wrap`: descriptions in schema tables are no longer cut at 120 characters, but wrapped to the terminal width.
 * **global**: A boolean or decimal result, or a list containing such values (for example `config echo @json:true`), failed with an internal error.
 * **global**: `--auth=web`: login could wait forever when the browser called back before the wait started, or when `redirect_uri` has a path (HTTP 404).
 * `mcp`: REST error messages were repeated once more at each tool call of the session: error handlers are now registered on load.
@@ -59,6 +60,7 @@ Released: [Place date of release here]
 * `config vault`: `create` fails if a secret with the same label exists, for `vault` and `1password` (as for `file`). `delete` fails if the secret does not exist, for `file`.
 * `config vault`: `1password`: `url` is stored as the website of the item instead of a custom field.
 * **global**: `@secret:` asks for the secret in the browser when option `ui` is `graphical`, the default on Windows and macOS: use `--ui=text` to enter it on terminal.
+* `config ascp spec`, `config sync spec`: `description` is a list of lines instead of a multi-line string (formats `json`, `yaml`), and absent when empty.
 
 ## 4.27.5
 

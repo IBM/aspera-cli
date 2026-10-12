@@ -331,7 +331,7 @@ module Aspera
       def schema_help_lines(arg)
         builder = Schema::Documentation.new(TerminalFormatter, Schema::Registry.instance.reader(arg.schema)).build
         rows = builder.rows.reject { |row| row['type'].eql?('&nbsp;') }.map do |row|
-          builder.columns.map { |column| row[column].to_s }
+          builder.columns.map { |column| Array(row[column]).join("\n") }
         end
         style = {}
         style[:border] = :unicode_round if Environment.terminal_supports_unicode?

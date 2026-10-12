@@ -38,8 +38,22 @@ RSpec.describe(Aspera::Cli::TableFitter) do
     expect(lines.join.count('x')).to(eq(30))
   end
 
-  it 'keeps natural width when columns without text do not fit' do
-    expect(render(20)).to(eq(render(nil)))
+  it 'wraps other columns when not enough, preferably after punctuation' do
+    lines = render(40)
+    expect(lines.map(&:length).max).to(be <= 40)
+    expect(lines.grep(/^\|/).map { |line| line.split('|')[1].strip }).to(include('identifier_', 'without_', 'spaces'))
+  end
+
+  it 'narrows columns to their minimum when table cannot fit' do
+    lines = render(20)
+    expect(lines.map(&:length).max).to(be_between(30, 10 + 20 + 7))
+    expect(lines).to(include(a_string_starting_with('| identifier |')))
+  end
+
+  it 'closes styles at end of line and opens them again on next line' do
+    lines = render(30, rows: [['id', "a \e[1m#{'x' * 30}\e[0m b"]]).select { |line| line.include?('x') }
+    expect(lines.length).to(eq(2))
+    expect(lines).to(all(match(/\e\[1mx+\e\[0m/)))
   end
 
   it 'takes style into account' do

@@ -16,7 +16,7 @@ module Aspera
         'array'   => 'Array',
         'object'  => 'Hash'
       }.freeze
-      # @param formatter [Cli::Formatter] Formatter instance with methods: markdown_text, tick, check_row
+      # @param formatter [Cli::Formatter] Formatter instance with methods: markdown_text, tick
       # @param schema [Reader]
       # @param include_option [Boolean] `true`: include CLI options (switches, env vars) in descriptions
       # @param agent_columns  [Boolean] `true`: add separate columns for each transfer agent compatibility
@@ -67,13 +67,13 @@ module Aspera
             if discriminant_property && discriminant_value
               desc = render_title.call("`#{discriminant_value}`")
               desc += ": #{render_title.call(title)}" if title
-              @formatter.check_row({
+              {
                 'name'        => render_title.call("**#{discriminant_property}**"),
                 'type'        => code.call(JSON_TYPE_TO_DOC['string']),
                 'description' => desc
-              })
+              }
             elsif title
-              @formatter.check_row({'name' => "**#{render_title.call(title)}**", 'type' => '&nbsp;', 'description' => '&nbsp;'})
+              {'name' => "**#{render_title.call(title)}**", 'type' => '&nbsp;', 'description' => '&nbsp;'}
             end
           @sections.push({header: header, rows: []})
         end
@@ -135,7 +135,8 @@ module Aspera
             short = node.key?('x-cli-short') ? "(#{node['x-cli-short']})" : nil
             item['description'].push("(#{'special:' if node['x-cli-special']}#{envvar_prefix}#{@formatter.markdown_text("`#{cli_option}`")})#{short}") if cli_option
           end
-          @sections.last[:rows].push(@formatter.check_row(item))
+          item.delete('description') if item['description'].empty?
+          @sections.last[:rows].push(item)
         end
         self
       end

@@ -1852,9 +1852,9 @@ It defines how lists of strings are displayed.
 Alternatively, set to `,`.
 
 When the output is a terminal, the table is fitted to the terminal width: columns with text (e.g. `description`) are wrapped, the widest first.
-Other columns (names, identifiers) are not wrapped.
-If the table cannot fit, it is displayed with its natural width.
-Parameter `width` (`Integer`) sets the table width (e.g. `--out.table.width=100`), also when the output is not a terminal.
+If not enough, other columns (names, identifiers) are wrapped too, preferably after a punctuation (`-`, `_`, `.`, `/`).
+If the table cannot fit, columns are narrowed to their minimum width (20 characters for text, 10 for others, or heading).
+Parameter `width` (`Integer`) sets the maximum table width (e.g. `--out.table.width=100`), also when the output is not a terminal.
 
 For `format=csv`, options are described in gem [`csv`](https://ruby.github.io/csv/CSV.html#class-CSV-label-Options+for+Generating).
 
@@ -10740,8 +10740,8 @@ ascli config sync spec
 | `filters[].value` | `String` | On include or exclude, the filter's pattern. On include_from or exclude_from, the path containing filter specifications |
 | `filters` | `Array[Hash]` | The filters allow to further specify which files have to be excluded and included from the transfer list. Each filter is defined by a rule and a value. Order of filters matters |
 | `ignore_delete` | `Bool` | Do not copy removals to the peer.<br/>Default: `false`.<br/>(`--ignore-delete`) |
-| `ignore_mode` | `Bool` | Source files that have had their mode changed after the initial. transfer will not update the destination file mode.<br/>Default: `false`.<br/>(`--ignore-mode`) |
-| `ignore_remote_host_sync_name` | `Bool` | Do not check that the remote host being used for the current. transfer matches the host used when the local database was created<br/>Default: `false`. |
+| `ignore_mode` | `Bool` | Source files that have had their mode changed after the initial transfer will not update the destination file mode.<br/>Default: `false`.<br/>(`--ignore-mode`) |
+| `ignore_remote_host_sync_name` | `Bool` | Do not check that the remote host being used for the current transfer matches the host used when the local database was created<br/>Default: `false`. |
 | `local.pass` | `String` | Authenticate the local async with the specified password. |
 | `local.path` | `String` | The directory to be synchronized on the local host.<br/>(`--local-dir={string}`)(-d) |
 | `local_apply_docroot` | `Bool` | Prepend the docroot to the directory on the local host.<br/>Default: `false`.<br/>(`--apply-local-docroot`) |
@@ -10792,7 +10792,7 @@ ascli config sync spec
 | `remote.private_key_paths` | `Array[String]` | Authenticate with the specified SSH private key file.<br/>(`--private-key-path={array}`)(-i) |
 | `remote.proxy.host` | `String` | Use the specified host name or address of the proxy. |
 | `remote.proxy.pass` | `String` | Authenticate to the proxy with the specified password. |
-| `remote.proxy.port` | `Integer` | Use the specified port, default is 9091 for dnat, 9092. for dnats |
+| `remote.proxy.port` | `Integer` | Use the specified port. Default is 9091 for dnat, 9092 for dnats. |
 | `remote.proxy.protocol` | `String` | The protocol to be used.<br/>Allowed values: `none`, `dnat`, `dnats`.<br/>Default: `none`. |
 | `remote.proxy.user` | `String` | Authenticate to the proxy with the specified username. |
 | `remote.proxy` | `Hash` | Specify the address of the Aspera high-speed proxy server.<br/>(special:`--proxy={object}`) |
@@ -10821,7 +10821,7 @@ ascli config sync spec
 | `resume.min_size` | `Integer` | This field specifies the minimum size of files that will be allowed to resume.<br/>Default: `1048576`.<br/>(`--support-resume={integer}`) |
 | `resume_scan` | `Bool` | Resume the scan from where the previous execution left off.<br/>Default: `false`.<br/>(`--resume-scan`) |
 | `resume` | `Hash` | Partial transfers may exist if communication disruptions caused the underlying ascp processes to terminate early. Note that transfer resumption can only happen if the `reset` option is disabled. If an async session starts with `reset` enabled and resume enabled, transfers interrupted during that session will be resumable, but only if async is then restarted with 'reset' disabled. |
-| `scan_dir_rename` | `Bool` | Enable the detection of renamed directories and files compared. to the previous scan, based on matching inodes<br/>Default: `false`.<br/>(`--scan-dir-rename`) |
+| `scan_dir_rename` | `Bool` | Enable the detection of renamed directories and files compared to the previous scan, based on matching inodes<br/>Default: `false`.<br/>(`--scan-dir-rename`) |
 | `scan_file_rename` | `Bool` | Enable the detection of renamed files compared to the previous scan, based on matching inodes.<br/>Default: `false`.<br/>(`--scan-file-rename`) |
 | `scan_intensity` | `String` | Scan at the set intensity. `vlow` minimizes system activity. `vhigh` maximizes system activity by continuously scanning files without rest.<br/>Allowed values: `vlow`, `low`, `medium`, `high`, `vhigh`.<br/>Default: `medium`.<br/>(`--scan-intensity={enum}`)(-H) |
 | `sharing_retry_max` | `Integer` | Retry synchronizations up to the specified maximum number after a sharing violation.<br/>Default: `3`.<br/>(`--sharing-retry-max={integer}`) |

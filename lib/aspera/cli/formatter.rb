@@ -17,7 +17,6 @@ require 'tty-spinner'
 require 'yaml'
 require 'pp'
 require 'csv'
-require 'word_wrap'
 require 'aspera/rainbow'
 using Rainbow
 
@@ -423,8 +422,8 @@ module Aspera
         case @options[:format]
         when :table
           format_style[:border] = :unicode_round if Environment.terminal_supports_unicode?
-          # fit in the requested width, or in the terminal
-          width = format_style[:width] || Environment.terminal_columns
+          # fit in the requested maximum width, or in the terminal
+          width = format_style.delete(:width) || Environment.terminal_columns
           if single || @options[:multi_single].eql?(:yes) ||
               (@options[:multi_single].eql?(:single) && final_table_rows.length.eql?(1))
             # display multiple objects as multiple transposed tables

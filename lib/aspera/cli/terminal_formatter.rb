@@ -38,13 +38,6 @@ module Aspera
         return %w[null empty].any? { |s| what.include?(s) } ? result.faint : result.inverse
       end
 
-      # Prepare table row for terminal display (word wrap arrays)
-      def check_row(row)
-        row.each_key do |k|
-          row[k] = row[k].map { |i| WordWrap.ww(i.to_s, 120).chomp }.join("\n") if row[k].is_a?(Array)
-        end
-      end
-
       # Convert Markdown to terminal format (**bold** -> blue, `code` -> bold)
       # @param match [MatchData, String]
       def markdown_text(match)
@@ -65,7 +58,7 @@ module Aspera
         end
       end
 
-      module_function :hint, :tick, :special_format, :check_row, :markdown_text
+      module_function :hint, :tick, :special_format, :markdown_text
     end
   end
 end

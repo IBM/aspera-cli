@@ -164,14 +164,14 @@ properties:
     x-cli-switch: true
   ignore_mode:
     description:
-      Source files that have had their mode changed after the initial.
+      Source files that have had their mode changed after the initial
       transfer will not update the destination file mode.
     type: boolean
     default: false
     x-cli-option: true
     x-cli-switch: true
   ignore_remote_host_sync_name:
-    description: Do not check that the remote host being used for the current.
+    description: Do not check that the remote host being used for the current
       transfer matches the host used when the local database was created
     type: boolean
     default: false
@@ -508,8 +508,8 @@ properties:
             description: Authenticate to the proxy with the specified password.
             type: string
           port:
-            description: Use the specified port, default is 9091 for dnat, 9092.
-              for dnats
+            description: Use the specified port.
+              Default is 9091 for dnat, 9092 for dnats.
             type: integer
           protocol:
             description: The protocol to be used.
@@ -668,7 +668,7 @@ properties:
     x-cli-option: true
     x-cli-switch: true
   scan_dir_rename:
-    description: Enable the detection of renamed directories and files compared.
+    description: Enable the detection of renamed directories and files compared
       to the previous scan, based on matching inodes
     type: boolean
     default: false

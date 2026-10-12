@@ -38,14 +38,6 @@ module MarkdownFormatter
     "&lt;#{special}&gt;"
   end
 
-  # Prepare table row for Markdown (join arrays with <br/>, replace empty with &nbsp;)
-  def check_row(row)
-    row.each_key do |k|
-      row[k] = row[k].join(Aspera::Markdown::HTML_BREAK) if row[k].is_a?(Array)
-      row[k] = '&nbsp;' if row[k].to_s.strip.empty?
-    end
-  end
-
   # Keep Markdown formatting unchanged (pass-through)
   # @param match [MatchData, String]
   def markdown_text(match)
@@ -57,7 +49,7 @@ module MarkdownFormatter
     bool ? 'Y' : ' '
   end
 
-  module_function :tick, :special_format, :check_row, :markdown_text
+  module_function :tick, :special_format, :markdown_text
 end
 
 # :reek:TooManyMethods
@@ -242,6 +234,13 @@ class DocHelper
   # @param spec [Aspera::Schema::Reader]
   def spec_to_table(spec, **kwargs)
     table = Aspera::Schema::Documentation.new(MarkdownFormatter, spec, code_highlight: true, **kwargs).build.table
+    # Multi-line cells joined with line breaks, empty cells filled
+    table = table.map do |row|
+      row.map do |cell|
+        text = Array(cell).join(Aspera::Markdown::HTML_BREAK)
+        text.strip.empty? ? '&nbsp;' : text
+      end
+    end
     table[0] = table[0].map(&:capitalize)
     table[0][0] = 'Field'
     Aspera::Markdown.table(table)
