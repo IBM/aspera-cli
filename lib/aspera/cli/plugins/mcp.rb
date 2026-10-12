@@ -1,12 +1,11 @@
 # frozen_string_literal: true
 
-# cspell:ignore ascli jsonrpc pkce enotty
+# cspell:ignore ascli jsonrpc pkce
 
 require 'aspera/cli/plugins/base'
 require 'aspera/cli/info'
 require 'aspera/cli/version'
 require 'aspera/oauth/server/pkce'
-require 'json'
 require 'securerandom'
 
 module Aspera
@@ -196,12 +195,9 @@ module Aspera
           "http://#{host}:#{port}"
         end
 
-        # Start HTTP transport using WEBrick (already a project dependency).
-        # Rack 3 removed Rack::Handler - we build a native WEBrick servlet that
-        # calls the Rack app directly instead of relying on Rack::Handler::WEBrick.
-        def start_http_transport(server, mcp_options) # rubocop:disable Metrics/MethodLength
-          require 'webrick'
-          http_opts         = mcp_options.slice(*HTTP_KEYS)
+        # Start HTTP transport, see Mcp::HttpServlet
+        def start_http_transport(server, mcp_options)
+          require 'aspera/cli/mcp/http_servlet'
           port              = mcp_options.fetch(:port, 3000)
           bind              = mcp_options.fetch(:bind, '127.0.0.1')
           auth_token        = mcp_options[:auth_token]
@@ -213,12 +209,12 @@ module Aspera
           # Secret pages are served by this server: the static token, if any, is the access code asked on the page
           web_secret = Cli::Mcp::Secrets.web_secret(base_url: base_url, access_code: auth_token)
           Cli::Mcp::Tool.web_secret = web_secret
-          app = MCP::Server::Transports::StreamableHTTPTransport.new(server, **http_opts)
           # Build OAuth::Server::Pkce only when OAuth is enabled.
           # Pass MCP-specific branding via title: and description: so the external HTML
           # template is used directly without a custom callback.
           # The static token, if any, is the access code asked on the consent page.
           oauth_server = if oauth_enabled
+            Log.log.info { 'OAuth 2.0 PKCE enabled (dynamic registration)' }
             OAuth::Server::Pkce.new(
               base_url:          base_url,
               access_token_ttl:  access_token_ttl,
@@ -228,160 +224,15 @@ module Aspera
               consent_secret:    auth_token
             )
           end
-          rack_servlet = Class.new(WEBrick::HTTPServlet::AbstractServlet) do
-            define_method(:initialize) do |srv, rack_app, server_info, static_token, auth_opts|
-              @app           = rack_app
-              @server_info   = server_info
-              @auth_token    = static_token
-              @oauth_server  = auth_opts[:oauth_server]
-              @oauth_enabled = auth_opts[:oauth_enabled]
-              @base_url      = auth_opts[:base_url]
-              @web_secret    = auth_opts[:web_secret]
-              super(srv)
-            end
-
-            # ------------------------------------------------------------------ helpers
-
-            # @return [Boolean] true if no auth is configured OR the request carries a valid token
-            define_method(:authorized?) do |req|
-              return true if @auth_token.nil? && !@oauth_enabled
-              # Static token check
-              scheme, value = req['Authorization'].to_s.split(' ', 2)
-              return false unless scheme.to_s.casecmp?('Bearer')
-              return true if @auth_token && OpenSSL.secure_compare(value.to_s, @auth_token.to_s)
-              # OAuth access token check
-              @oauth_server&.authorized?(req['Authorization'])
-            end
-
-            define_method(:json_error) do |res, status, error, description = nil|
-              res.status = status
-              res['Content-Type'] = 'application/json'
-              body = {error: error}
-              body[:error_description] = description if description
-              res.body = JSON.generate(body)
-            end
-
-            # ------------------------------------------------------------------ main dispatch
-
-            %w[GET POST DELETE].each do |http_method|
-              define_method(:"do_#{http_method}") do |req, res|
-                case req.path
-                when '/'
-                  # Discovery endpoint (server metadata, no auth required)
-                  res.status = 200
-                  res['Content-Type'] = 'application/json'
-                  res.body = JSON.generate(@server_info)
-                when '/.well-known/oauth-authorization-server'
-                  @oauth_server ? @oauth_server.handle_discovery(req, res) : json_error(res, 404, 'not_found')
-                when '/oauth/register'
-                  if http_method == 'POST'
-                    @oauth_server ? @oauth_server.handle_register(req, res) : json_error(res, 404, 'not_found')
-                  else
-                    json_error(res, 405, 'method_not_allowed')
-                  end
-                when '/oauth/authorize'
-                  @oauth_server ? @oauth_server.handle_authorize(req, res) : json_error(res, 404, 'not_found')
-                when '/oauth/token'
-                  if http_method == 'POST'
-                    @oauth_server ? @oauth_server.handle_token(req, res) : json_error(res, 404, 'not_found')
-                  else
-                    json_error(res, 405, 'method_not_allowed')
-                  end
-                when ->(path) { path.start_with?(Cli::WebSecret::PATH_PREFIX) }
-                  # Page opened by the user in a browser (no bearer token), protected by the access code
-                  @web_secret.handle(req, res)
-                else
-                  # All other paths are MCP endpoints — require authorization
-                  unless authorized?(req)
-                    res.status = 401
-                    res['Content-Type'] = 'application/json'
-                    res['WWW-Authenticate'] = if @oauth_enabled
-                      @oauth_server.www_authenticate_header
-                    else
-                      'Bearer'
-                    end
-                    res.body = JSON.generate(error: 'Unauthorized')
-                    next
-                  end
-                  env = rack_env_from_webrick(req)
-                  status, headers, rack_body = @app.call(env)
-                  res.status = status
-                  headers.each { |k, v| res[k] = v }
-                  if rack_body.respond_to?(:call)
-                    rack_proc = rack_body
-                    res.chunked = true
-                    res.body = proc do |socket|
-                      stream = Object.new
-                      stream.define_singleton_method(:write) { |data| socket.write(data) }
-                      stream.define_singleton_method(:flush) { socket.flush rescue nil }
-                      stream.define_singleton_method(:close) { socket.close rescue nil }
-                      rack_proc.call(stream)
-                    end
-                  else
-                    buf = +''
-                    rack_body.each { |chunk| buf << chunk }
-                    rack_body.close if rack_body.respond_to?(:close)
-                    res.body = buf
-                  end
-                end
-              end
-            end
-
-            define_method(:rack_env_from_webrick) do |req|
-              {
-                'REQUEST_METHOD'    => req.request_method,
-                'SCRIPT_NAME'       => '',
-                'PATH_INFO'         => req.path,
-                'QUERY_STRING'      => req.query_string || '',
-                'SERVER_NAME'       => req.host,
-                'SERVER_PORT'       => req.port.to_s,
-                'HTTP_VERSION'      => req.http_version,
-                'rack.input'        => StringIO.new(req.body.to_s),
-                'rack.errors'       => $stderr,
-                'rack.url_scheme'   => 'http',
-                'rack.multithread'  => true,
-                'rack.multiprocess' => false,
-                'rack.run_once'     => false
-              }.tap do |env|
-                req.header.each do |key, values|
-                  http_key = "HTTP_#{key.upcase.tr('-', '_')}"
-                  case key.downcase
-                  when 'content-type'   then env['CONTENT_TYPE']   = values.first
-                  when 'content-length' then env['CONTENT_LENGTH'] = values.first
-                  else                       env[http_key] = values.join(', ')
-                  end
-                end
-              end
-            end
-          end
-          # WEBrick logs Errno::ECONNRESET as ERROR when a client disconnects mid-stream
-          # (normal for SSE/streaming connections). Suppress those noisy non-fatal errors.
-          quiet_logger = WEBrick::Log.new($stderr).tap do |log|
-            log.define_singleton_method(:error) do |msg|
-              return if msg.to_s.include?('ECONNRESET') || msg.to_s.include?('Broken pipe')
-              super(msg)
-            end
-          end
-          webrick = WEBrick::HTTPServer.new(
-            BindAddress: bind,
-            Port:        port,
-            Logger:      quiet_logger,
-            AccessLog:   []
+          Cli::Mcp::HttpServlet.start(
+            bind:         bind,
+            port:         port,
+            app:          MCP::Server::Transports::StreamableHTTPTransport.new(server, **mcp_options.slice(*HTTP_KEYS)),
+            server_info:  {name: server.name, version: server.version, description: server.description},
+            web_secret:   web_secret,
+            auth_token:   auth_token,
+            oauth_server: oauth_server
           )
-          server_info = {
-            name:        server.name,
-            version:     server.version,
-            description: server.description
-          }
-          webrick.mount(
-            '/', rack_servlet, app, server_info, auth_token,
-            {oauth_server: oauth_server, oauth_enabled: oauth_enabled, base_url: base_url, web_secret: web_secret}
-          )
-          Log.log.info { "MCP HTTP server listening on http://#{bind}:#{port}/" }
-          Log.log.info { 'OAuth 2.0 PKCE enabled (dynamic registration)' } if oauth_enabled
-          trap('INT') { webrick.shutdown }
-          trap('TERM') { webrick.shutdown }
-          webrick.start
         end
       end
     end
