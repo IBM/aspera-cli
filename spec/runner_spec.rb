@@ -22,6 +22,21 @@ module Aspera
           expect(output).to(include('Allowed values: '))
           expect(output).to(include('stdio'))
         end
+
+        it 'renders the title of variants without discriminant' do
+          argument = ArgumentSpec.new(
+            name: :action,
+            type: [Hash],
+            schema: Schema::Registry.req_body(Schema::Registry::AUTOMATION, 'actions.post')
+          )
+
+          allow(Environment).to(receive(:terminal_supports_unicode?).and_return(false))
+
+          output = Runner.new([]).send(:schema_help_lines, argument).join("\n")
+          expect(output).to(include('| Creates a new action to send a file or folder '))
+          expect(output).to(include('| Creates a new action that calls an API '))
+          expect(output).not_to(include('&nbsp;'))
+        end
       end
     end
   end

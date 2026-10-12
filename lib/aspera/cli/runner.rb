@@ -330,7 +330,7 @@ module Aspera
       # @return [Array<String>]
       def schema_help_lines(arg)
         builder = Schema::Documentation.new(TerminalFormatter, Schema::Registry.instance.reader(arg.schema)).build
-        rows = builder.rows.reject { |row| row['type'].eql?('&nbsp;') }.map do |row|
+        rows = builder.rows.map do |row|
           builder.columns.map { |column| Array(row[column]).join("\n") }
         end
         style = {}

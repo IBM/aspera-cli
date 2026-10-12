@@ -32,6 +32,8 @@ Released: [Place date of release here]
 ### Issues Fixed
 
 * **global**: Removed gem dependency on `blankslate` (JSON-RPC client of agent `desktop`).
+* **global**: Manual and command help: the type of a parameter with alternatives (`oneOf`, e.g. `allowed_ips` of `faspex5 postprocessing`) is shown (e.g. `String, Array[String]`) instead of empty, which broke the PDF manual.
+* **global**: Command help: the schema of an argument with alternatives (`oneOf` without discriminator) shows the title of each alternative.
 * **global**: Removed gem dependency on `word_wrap`: descriptions in schema tables are no longer cut at 120 characters, but wrapped to the terminal width.
 * **global**: A boolean or decimal result, or a list containing such values (for example `config echo @json:true`), failed with an internal error.
 * **global**: `--auth=web`: login could wait forever when the browser called back before the wait started, or when `redirect_uri` has a path (HTTP 404).

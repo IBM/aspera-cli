@@ -73,26 +73,17 @@ module Aspera
                 'description' => desc
               }
             elsif title
-              {'name' => "**#{render_title.call(title)}**", 'type' => '&nbsp;', 'description' => '&nbsp;'}
+              {'name' => render_title.call("**#{title}**")}
             end
           @sections.push({header: header, rows: []})
         end
         schema.each_property(on_variant: on_variant) do |property_schema, _name, property_full_name|
           node = property_schema.current
           # Manual table
-          item_type =
-            if node['type'].is_a?(Array)
-              node['type'].map { |t| JSON_TYPE_TO_DOC.fetch(t, t) }.join(', ')
-            elsif node['type'].eql?('array') && node.dig('items', 'type').is_a?(String)
-              "#{JSON_TYPE_TO_DOC.fetch(node['type'], node['type'])}[#{JSON_TYPE_TO_DOC.fetch(node.dig('items', 'type'), node.dig('items', 'type'))}]"
-            else
-              JSON_TYPE_TO_DOC.fetch(node['type'], node['type'])
-            end
-          item = {
-            'name'        => code.call(property_full_name),
-            'type'        => code.call(item_type),
-            'description' => []
-          }
+          item = {'name' => code.call(property_full_name)}
+          item_type = type_text(node)
+          item['type'] = code.call(item_type) unless item_type.nil?
+          item['description'] = []
           # Render Markdown formatting and split lines
           item['description'] =
             node['description']
@@ -142,6 +133,19 @@ module Aspera
       end
 
       private
+
+      # @param node [Hash] Schema of a property
+      # @return [String, nil] Readable type, from `type`, or else from the types of `oneOf` alternatives, `nil` if none
+      def type_text(node)
+        if node['type'].nil?
+          types = Array(node['oneOf']).filter_map { |variant| type_text(variant) }.uniq
+          return types.empty? ? nil : types.join(', ')
+        end
+        return node['type'].map { |t| JSON_TYPE_TO_DOC.fetch(t, t) }.join(', ') if node['type'].is_a?(Array)
+        result = JSON_TYPE_TO_DOC.fetch(node['type'], node['type'])
+        result = "#{result}[#{type_text(node['items'])}]" if node['type'].eql?('array') && node.dig('items', 'type').is_a?(String)
+        result
+      end
 
       # Format a schema value (enum, default, example) as code
       # @param value [Object] value from schema, `nil` for JSON `null`

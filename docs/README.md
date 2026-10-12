@@ -871,11 +871,11 @@ The installation of the transfer binaries follows those steps:
   - By default, the archive is extracted to `$HOME/.aspera/sdk`.
   - The destination folder can be changed by setting the `sdk_folder` option.
 
-| Option          | Default | Description                                            |
-|-----------------|---------|--------------------------------------------------------|
-| `sdk_url`       | `DEF`   | URL to download the Aspera Transfer Daemon archive.<br/>`DEF` means: select from available archives. |
-| `locations_url` | `https://ibm.biz/sdk_location`<br/>`https://raw.githubusercontent.com/IBM/aspera-cli/refs/heads/main/docs/sdk_location.yaml` | List of URLs to get download URLs of Aspera Transfer Daemon from IBM official repository, tried in order.<br/>A list given in options replaces the default list. |
-| `sdk_folder`    | `$HOME/.aspera/sdk` | Folder where the SDK archive is extracted. |
+| Option        | Description                                                  |
+|---------------|--------------------------------------------------------------|
+| `sdk_url`     | URL to download the Aspera Transfer Daemon archive.<br/>Default: `DEF` (select from available archives.) |
+| `locations_url` | List of URLs to get download URLs of Aspera Transfer Daemon from IBM official repository, tried in order.<br/>A list given in options replaces the default list.<br/>Default:<br/>- `https://ibm.biz/sdk_location`<br/>- `https://raw.githubusercontent.com/IBM/aspera-cli/refs/heads/main/docs/sdk_location.yaml`|
+| `sdk_folder`  | Folder where the SDK archive is extracted.<br/>Default: `$HOME/.aspera/sdk` |
 
 Transfer Daemon versions available from `locations_url` can be listed with: `ascli config transferd list`
 
@@ -905,10 +905,10 @@ ascli config transferd install --sdk-url=file:///macos-arm64-1.1.3-c6c7a2a.zip
 
 The format is: `file:///<PATH>` (canonical form) or `file:<PATH>` (short form), where `<PATH>` can be either a relative path (not starting with `/`), or an absolute path (starting with `/`).
 
-| Form | Relative example | Absolute example |
-|------|-----------------|-----------------|
+| Form      | Relative example            | Absolute example                 |
+|-----------|-----------------------------|----------------------------------|
 | Canonical | `file:///mydir/archive.zip` | `file:////home/user/archive.zip` |
-| Short | `file:mydir/archive.zip` | `file:/home/user/archive.zip` |
+| Short     | `file:mydir/archive.zip`    | `file:/home/user/archive.zip`    |
 
 Supported platforms are listed in the [Release Notes](https://developer.ibm.com/apis/catalog/aspera--aspera-transfer-sdk/Release+notes) and archives can be downloaded from [Downloads](https://developer.ibm.com/apis/catalog/aspera--aspera-transfer-sdk/downloads/downloads.json).
 
@@ -1571,8 +1571,8 @@ Understanding this concept once makes it immediately usable everywhere it appear
 
 [Dot-path](#dot-path-notation) notation is used in four distinct places in `ascli`:
 
-| Surface                   | Syntax                | in/out | read/write |
-|---------------------------|-----------------------|--------|------------|
+| Surface        | Syntax                | in/out | read/write |
+|----------------|-----------------------|--------|------------|
 | [Option](#options) names  | `--opt.key.sub=value` | Input  | write     |
 | [Positional arguments](#positional-arguments) | `@: key.sub=value ... [END]` | Input | write |
 | [Extended value](#extended-value-syntax) `@preset:` | `@preset:key.sub` | Input | read  |
@@ -1817,7 +1817,7 @@ ascli config echo @json:'{"ni":null,"es":"","ea":[],"eh":{}}'
 The style of output can be set using the `format` option:
 
 | `format` | Output formatting         |
-|----------|---------------------------|
+| -------- | -------- |
 | `table`  | Text table (default)      |
 | `text`   | Value as `String`         |
 | `ruby`   | Ruby code                 |
@@ -1874,7 +1874,7 @@ If value is `no`, then object's `field` names are only the first level keys of t
 
 If value is `yes` (default), then objects are "flattened" using [dot-path](#dot-path-notation) notation with a variation:
 
-- Final arrays are displayed as a list of values, one per line (see `str_lst_sep` in [`--out.table`](#option---outtable))
+- Final arrays are displayed as a list of values, one per line (see `str_lst_sep` in `--out.table` above)
 - `Array` of `Hash` with only `name` keys are displayed as comma separated list of values
 - `Array` of `Hash` with only `name` and `value` keys are displayed like a `Hash` with value of `name` as key.
 
@@ -2038,7 +2038,7 @@ The option `--out.level` controls the level of output:
 By default, `ascli` detects the capabilities of the terminal:
 
 | Option         | Effect when `yes`                                             | Auto-detection (default)                                                       |
-|----------------|---------------------------------------------------------------|--------------------------------------------------------------------------------|
+|--|--|--|
 | `--out.colors` | ANSI colors and styles in results, messages and logs          | `yes` if both `stdout` and `stderr` are terminals and `TERM` is not `dumb`, or if `CLICOLOR_FORCE=1` |
 | `--out.utf8`   | Unicode characters: table borders, check marks                | `yes` if `stdout` is a terminal and the locale is UTF-8                        |
 
@@ -9289,8 +9289,8 @@ ascli faspex5 postprocessing
 An optional positional parameter can be provided as [Extended Value](#extended-value-syntax) `Hash`:
 
 | Field | Type | Description |
-|-----------------|---------|----------------------------------------------------------------------------------|
-| `allowed_ips` | `` | IP address or list of IP addresses allowed to call the listener. Requests from any other source IP are rejected with HTTP 403. When not set, no IP restriction is applied. |
+|-----------------|-----------------------|----------------------------------------------------------------------------------|
+| `allowed_ips` | `String, Array[String]` | IP address or list of IP addresses allowed to call the listener. Requests from any other source IP are rejected with HTTP 403. When not set, no IP restriction is applied. |
 | `cert` | `String` | Path to the TLS certificate file. Accepted formats: PEM (`.pem`) or PKCS12 (`.p12` / `.pfx`).<br/>Example: `/path/to/cert.pem`. |
 | `chain` | `String` | Path to the PEM certificate chain file (appended as extra chain certificates).<br/>Example: `/path/to/chain.pem`. |
 | `fail_on_error` | `Bool` | When `true`, return HTTP 500 if the script exits with a non-zero status code. When `false` (default), the exit code is reported in the response body but HTTP 200 is returned.<br/>Default: `false`. |
@@ -10172,9 +10172,9 @@ The `mcp` plugin starts a [Model Context Protocol (MCP)](https://modelcontextpro
 The server registers a single tool, `execute_ascli_command`, which executes any `ascli` command in-process and returns the result as text.
 
 > [!IMPORTANT]
-> The `mcp` and `rack` gems are required.
-> Check section [Installing Optional Gems](#installing-optional-gems).
-> Install them with the following command:
+> The `mcp` and `rack` gems are required, see section [Installing Optional Gems](#installing-optional-gems).
+
+Install them with the following command:
 
 ```shell
 gem install mcp rack
@@ -10195,18 +10195,18 @@ The `server` command accepts an optional [Hash](#extended-value-syntax) argument
 #### General
 
 | Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `transport` | `string` | `stdio` | Transport to use: `stdio` or `http` |
-| `description` | `string` | - | Short description of the server shown in the AI client UI |
-| `instructions` | `string` | - | Longer hint shown to the AI client describing what the server does and how to use it |
+|---|---|---|---|
+| `transport`        | `string` | `stdio` | Transport to use: `stdio` or `http` |
+| `description`      | `string` | - | Short description of the server shown in the AI client UI |
+| `instructions`     | `string` | - | Longer hint shown to the AI client describing what the server does and how to use it |
 | `protocol_version` | `string` | - | MCP protocol version to advertise, for example, `2024-11-05` |
 | `validate_tool_call_arguments` | `boolean` | `true` | Whether to validate tool arguments against the input schema |
-| `max_text_bytes` | `integer` | `100000` | Maximum byte size of the JSON text content for list results. Items are appended whole until the limit is reached; the full list is always available in `structuredContent` |
+| `max_text_bytes`   | `integer` | `100000` | Maximum byte size of the JSON text content for list results. Items are appended whole until the limit is reached; the full list is always available in `structuredContent` |
 
 #### `stdio` transport
 
 | Key | Type | Default | Description |
-|-----|------|---------|-------------|
+|-----|-----|-----|-----|
 | `max_line_bytes` | `integer` | 4194304 (4 MiB) | Maximum JSON frame size in bytes |
 
 > [!NOTE]
@@ -10217,7 +10217,7 @@ The `server` command accepts an optional [Hash](#extended-value-syntax) argument
 #### `http` transport (Streamable HTTP)
 
 | Key | Type | Default | Description |
-|-----|------|---------|-------------|
+|-----|-----|-----|-----|
 | `port` | `integer` | `3000` | TCP port to listen on |
 | `bind` | `string` | `127.0.0.1` | Bind address |
 | `base_url` | `string` | from `bind` and `port` | URL of the server for clients, used in OAuth metadata and in the URL of secret pages, for example, `http://your-server:3000`. Mandatory with `oauth` when `bind` is `0.0.0.0` or `::`. |
@@ -10231,33 +10231,44 @@ The `server` command accepts an optional [Hash](#extended-value-syntax) argument
 | `session_idle_timeout` | `integer` | - | Idle session timeout in seconds |
 | `max_sessions` | `integer` | - | Maximum number of concurrent sessions |
 
+### Security
+
 > [!WARNING]
 > The tool executes any `ascli` command with the credentials and presets of the user running the server.
 > When `bind` is set to a non-local address, `auth_token` is **mandatory**, also with `oauth`: the server refuses to start without it.
-> With `oauth`, the consent page asks for `auth_token` as access code, else anyone reaching the server could approve its own client.
-> For local-only deployments (`127.0.0.1`, `::1`, `localhost`), both are optional but recommended. Without `auth_token`, the consent page only asks to click **Allow**.
-> `allowed_hosts` and `allowed_origins` protect against DNS rebinding but do not authenticate clients.
-> `auth_token` and `oauth` can coexist: a request is accepted if it carries a valid static token **or** a valid OAuth access token.
-> In commands sent by the client, extended values `@ruby:`, `@file:`, `@uri:`, `@stdin:`, and `@env:` are refused.
-> Presets of the user running the server can still use `@file:` and `@env:`, but not `@ruby:` or `@stdin:`.
-> `@secret:` is entered by the user on a web page, see [Secrets entered in a web page](#secrets-entered-in-a-web-page).
 
-> [!NOTE]
-> **OAuth 2.0 PKCE flow** - When `oauth` is `true`, the server exposes the following additional endpoints:
->
-> | Endpoint | Description |
-> |---|---|
-> | `GET /.well-known/oauth-authorization-server` | OAuth discovery metadata (RFC 8414) |
-> | `POST /oauth/register` | Dynamic client registration (RFC 7591) — any client may register and receive a `client_id` |
-> | `GET /oauth/authorize` | Consent page shown to the user in a browser |
-> | `POST /oauth/authorize` | Processes the user decision (allow/deny) and issues an authorization code |
-> | `POST /oauth/token` | Exchanges the code for tokens (`authorization_code`) or renews them (`refresh_token`) |
->
-> AI clients that support the MCP Authorization spec (such as Bob) detect these endpoints automatically via the `WWW-Authenticate` header returned on HTTP 401, register dynamically, and launch the browser-based login flow without any extra configuration.
+With the `http` transport:
 
-> [!NOTE]
-> **HTTP transport discovery endpoint** - When using `http` transport, the server exposes a `GET /` endpoint that returns a JSON object with `name`, `version`, and `description` fields.
-> AI clients that support this convention (such as Bob) automatically read the description from this endpoint and display it in their MCP server list without any manual configuration.
+- With `oauth`, the consent page asks for `auth_token` as access code, else anyone reaching the server could approve its own client.
+- For local-only deployments (`127.0.0.1`, `::1`, `localhost`), `auth_token` and `oauth` are optional but recommended.
+  Without `auth_token`, the consent page only asks to click **Allow**.
+- `auth_token` and `oauth` can coexist: a request is accepted if it carries a valid static token **or** a valid OAuth access token.
+- `allowed_hosts` and `allowed_origins` protect against DNS rebinding but do not authenticate clients.
+
+With both transports:
+
+- In commands sent by the client, extended values `@ruby:`, `@file:`, `@uri:`, `@stdin:`, and `@env:` are refused.
+- Presets of the user running the server can still use `@file:` and `@env:`, but not `@ruby:` or `@stdin:`.
+- `@secret:` is entered by the user on a web page, see [Secrets entered in a web page](#secrets-entered-in-a-web-page).
+
+### HTTP endpoints
+
+With the `http` transport, the server exposes the following endpoints:
+
+| Endpoint | Description |
+|---|---|
+| `GET /` | Discovery: JSON object with `name`, `version`, and `description` of the server, no authentication |
+| `POST`, `GET`, `DELETE` `/mcp` | MCP endpoint (Streamable HTTP), the URL to configure in the AI client. Requires `auth_token` or an OAuth access token, if configured |
+| `GET`, `POST` `/secret/<id>` | Secret pages, see [Secrets entered in a web page](#secrets-entered-in-a-web-page) |
+| `GET /.well-known/oauth-authorization-server` | With `oauth`: OAuth discovery metadata (RFC 8414) |
+| `POST /oauth/register` | With `oauth`: Dynamic client registration (RFC 7591) — any client may register and receive a `client_id` |
+| `GET /oauth/authorize` | With `oauth`: Consent page shown to the user in a browser |
+| `POST /oauth/authorize` | With `oauth`: Processes the user decision (allow/deny) and issues an authorization code |
+| `POST /oauth/token` | With `oauth`: Exchanges the code for tokens (`authorization_code`) or renews them (`refresh_token`) |
+
+AI clients that support the discovery endpoint (such as Bob) read the description from it and display it in their MCP server list without any manual configuration.
+
+AI clients that support the MCP Authorization spec (such as Bob) detect the OAuth endpoints automatically via the `WWW-Authenticate` header returned on HTTP 401, register dynamically, and launch the browser-based login flow without any extra configuration.
 
 ### Secrets entered in a web page
 
@@ -10506,18 +10517,14 @@ server @: transport=http port=13777
 
 ### End-to-end AI testing
 
-The file [`docs/test-mcp-with-ai.md`](test-mcp-with-ai.md) contains a step-by-step test
-procedure for validating the MCP server with a live AI assistant (Bob, Claude Desktop,
-VS Code Copilot, or any MCP-capable client).
-It covers tool visibility, self-discovery, Hash schema introspection, option listing,
-documentation retrieval, live transfer tasks, truncation handling, error handling, and
-credential safety.
+The file [`docs/test-mcp-with-ai.md`](test-mcp-with-ai.md) contains a step-by-step test procedure for validating the MCP server with a live AI assistant (Bob, Claude Desktop, VS Code Copilot, or any MCP-capable client).
+It covers tool visibility, self-discovery, Hash schema introspection, option listing, documentation retrieval, live transfer tasks, truncation handling, error handling, and credential safety.
 
 ### MCP usage patterns for AI
 
 > [!TIP]
-> This section is for AI assistants using the MCP server. Follow these patterns to avoid
-> common first-call failures and unnecessary retries.
+> This section is for AI assistants using the MCP server.
+> Follow these patterns to avoid common first-call failures and unnecessary retries.
 
 #### Session bootstrap
 
@@ -10528,8 +10535,7 @@ Always start a session with two discovery calls before doing anything else:
 ["config", "preset", "show", "default"]
 ```
 
-The second call returns the mapping from `plugin` to `preset_name` so you know which credentials
-are active for each plugin.
+The second call returns the mapping from `plugin` to `preset_name` so you know which credentials are active for each plugin.
 
 #### Command discovery
 
@@ -10538,8 +10544,7 @@ Add command words to list only the commands under that path, e.g. `["config", "c
 A line ending with `<command...>` provides the commands of another plugin, given by `(see: ...)`.
 Use option `--expand-mounts=yes` to list them in place.
 Omit `<plugin>` to list the commands of all plugins (much larger result).
-Never guess command names from training data: names like `shared_folders` vs
-`shared_inboxes` are easily confused.
+Never guess command names from training data: names like `shared_folders` vs `shared_inboxes` are easily confused.
 
 #### Schema introspection for Hash arguments
 
@@ -10549,8 +10554,8 @@ Whenever a command syntax shows a Hash argument (e.g. `<account:Hash>`), call `h
 ["<plugin>", "<cmd>", ..., "help"]
 ```
 
-This returns a table of field names, types, and descriptions. Never infer field names from
-server error messages.
+This returns a table of field names, types, and descriptions.
+Never infer field names from server error messages.
 
 #### Secrets
 
@@ -10563,8 +10568,8 @@ The user enters it on a web page and you never see it: prefer it to asking for t
 
 #### Async transfers and cross-call status tracking
 
-The `direct` agent keeps transfer state in-memory. A job started in one MCP call **cannot**
-be monitored in a subsequent call: the in-memory agent is gone between calls.
+The `direct` agent keeps transfer state in-memory.
+A job started in one MCP call **cannot** be monitored in a subsequent call: the in-memory agent is gone between calls.
 
 Use the `transferd` agent when you need to check transfer status in a later call:
 
@@ -10576,8 +10581,8 @@ The `desktop` agent is also unaffected because it runs in an external process.
 
 #### Workspace context for AoC
 
-`aoc files` and `aoc packages` commands require a workspace context. If no default
-workspace is configured in the preset, always add `--workspace=NAME`:
+`aoc files` and `aoc packages` commands require a workspace context.
+If no default workspace is configured in the preset, always add `--workspace=NAME`:
 
 ```json
 ["aoc", "files", "ls", "/", "--workspace=MyWorkspace"]
@@ -10588,7 +10593,8 @@ List available workspaces with `["aoc", "user", "workspaces", "list"]`.
 #### Admin operations and privilege checks
 
 Before calling any `admin` sub-command, verify that the active preset has admin rights.
-`access_denied` typically means the wrong preset is active, not a syntax error. Check with:
+`access_denied` typically means the wrong preset is active, not a syntax error.
+Check with:
 
 ```json
 ["config", "preset", "show", "<preset_name>"]
@@ -10758,11 +10764,11 @@ ascli config sync spec
 | `local_scan_interval_milliseconds` | `Integer` | Enable periodic scans on the local host during a continuous sync. `-1` for disabled<br/>Default: `-1`.<br/>(`--scan-interval={integer}`) |
 | `local_scan_threads` | `Integer` | Number of directory scanning threads on the local host. Value must be between 1 and 99<br/>Default: `1`.<br/>(`--scan-threads={integer}`) |
 | `local_stat_cache_size` | `Integer` | Set stat cache size on the local host. 0 for disabled.<br/>Default: `0`. |
-| `local` | `Hash` | &nbsp; |
+| `local` | `Hash` |  |
 | `log.level` | `String` | Use the specified log level.<br/>Allowed values: `log`, `dbg1`, `dbg2`.<br/>Default: `log`.<br/>(special:`-D`) |
 | `log.local_dir` | `String` | Use the specified logging directory on the local host.<br/>(`--alt-logdir={string}`)(-L) |
 | `log.remote_dir` | `String` | Use the specified logging directory on the remote host.<br/>(`--remote-logdir={string}`)(-R) |
-| `log` | `Hash` | &nbsp; |
+| `log` | `Hash` |  |
 | `manifest_path` | `String` | A directory path where ascp will create manifest TEXT files (passed to ascp as --file-manifest-path) |
 | `mirror` | `Bool` | Force the pulling side to be exactly like the pushing side, removing files on the destination that don't exist on the source and resending source files that don't have an exact match on the destination. Cannot be used in bi-directional mode.<br/>Default: `false`.<br/>(`--mirror`) |
 | `mode` | `String` | Specify whether async runs continuously or not. In `one_time` mode, async stops after the first full synchronization. `continuous` supported only if the source is Windows or Linux.<br/>Allowed values: `one_time`, `continuous`.<br/>Default: `one_time`.<br/>(special:`--continuous`)(-C) |
@@ -10813,7 +10819,7 @@ ascli config sync spec
 | `remote_scan_interval_milliseconds` | `Integer` | Enable periodic scans on the remote host. `-1` for disabled.<br/>Default: `-1`.<br/>(special:`--remote-scan-interval={integer}`) |
 | `remote_scan_threads` | `Integer` | Number of directory scanning threads on the remote host. Value must be between 1 and 99.<br/>Default: `1`.<br/>(`--remote-scan-threads={integer}`) |
 | `remote_stat_cache_size` | `Integer` | Set stat cache size on the remote host. 0 for disabled.<br/>Default: `0`. |
-| `remote` | `Hash` | &nbsp; |
+| `remote` | `Hash` |  |
 | `remove_after_transfer` | `Bool` | Remove source files after they are successfully synchronized.<br/>Default: `false`.<br/>(`--remove-after-transfer`) |
 | `reset` | `Bool` | Clear the snapshot database and rescan the synchronized directories and files to create a fresh snapshot<br/>Default: `false`.<br/>(`--reset`)(-x) |
 | `resume.enabled` | `Bool` | Enable the possibility of resuming individual file transfers between async sessions.<br/>Default: `false`. |
@@ -10842,7 +10848,7 @@ ascli config sync spec
 | `transport.target_rate` | `Integer` | Transfer no faster than the specified rate (in bps). A string with suffix `k`, `m` or `g` is converted to bps by `ascli` (e.g. `100m`).<br/>Default: `10000000`.<br/>(`--target-rate={integer}`)(-l) |
 | `transport.udp_port` | `Integer` | Use the specified UDP port for FASP data transfer.<br/>Default: `33001`.<br/>(`--udp-port={integer}`)(-O) |
 | `transport.write_block_size` | `Integer` | Use the specified block size (in bytes) for writing. Default is determined by `aspera.conf`.<br/>(`--write-block-size={integer}`)(-G) |
-| `transport` | `Hash` | &nbsp; |
+| `transport` | `Hash` |  |
 | `watchd.datastore` | `String` | Specify the type of datastore, `none` for disabled.<br/>Allowed values: `none`, `redis`, `scalekv`.<br/>Default: `none`. |
 | `watchd.domain` | `String` | Specify the domain. Default is the current username. |
 | `watchd.host` | `String` | Use the specified host name or address to connect to the datastore. |

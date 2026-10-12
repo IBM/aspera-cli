@@ -234,13 +234,8 @@ class DocHelper
   # @param spec [Aspera::Schema::Reader]
   def spec_to_table(spec, **kwargs)
     table = Aspera::Schema::Documentation.new(MarkdownFormatter, spec, code_highlight: true, **kwargs).build.table
-    # Multi-line cells joined with line breaks, empty cells filled
-    table = table.map do |row|
-      row.map do |cell|
-        text = Array(cell).join(Aspera::Markdown::HTML_BREAK)
-        text.strip.empty? ? '&nbsp;' : text
-      end
-    end
+    # Multi-line cells joined with line breaks
+    table = table.map { |row| row.map { |cell| Array(cell).join(Aspera::Markdown::HTML_BREAK) } }
     table[0] = table[0].map(&:capitalize)
     table[0][0] = 'Field'
     Aspera::Markdown.table(table)
