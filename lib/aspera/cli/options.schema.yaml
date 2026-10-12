@@ -59,12 +59,32 @@ components:
           type: string
           description: Bind address for HTTP transport.
           default: 127.0.0.1
+        base_url:
+          type: string
+          description: >-
+            URL of the server for clients, used in OAuth metadata, for example `http://myhost:3000`.
+
+            Default: built from `bind` and `port`. Mandatory with `oauth` when `bind` is `0.0.0.0` or `::`.
         auth_token:
           type: string
           description: >-
             Bearer token required in the `Authorization` header of HTTP requests.
+            With `oauth`, it is also the access code asked on the consent page.
 
             If not set, HTTP requests are not authenticated.
+            Mandatory when `bind` is not local.
+        oauth:
+          type: boolean
+          description: Enable OAuth 2.0 PKCE flow with dynamic client registration.
+          default: false
+        oauth_access_token_ttl:
+          type: integer
+          description: OAuth access token lifetime in seconds.
+          default: 3600
+        oauth_refresh_token_ttl:
+          type: integer
+          description: OAuth refresh token lifetime in seconds.
+          default: 2592000
         stateless:
           type: boolean
           description: Run HTTP transport in stateless mode.

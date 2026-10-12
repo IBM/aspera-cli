@@ -18,7 +18,8 @@ Released: [Place date of release here]
 
 * `orchestrator`: `workflows export` with option `dependencies` saves a package (`.wkf`) with the sub-workflows and remote nodes used by the workflow, in the folder given by option `to_folder`.
 * `sync`: `target_rate` in `sync_info` accepts a string with suffix `k`, `m` or `g`, converted to bps (e.g. `100m`), in both `conf` and `args` formats.
-* `mcp server`: Extended-value handlers `@ruby:`, `@file:`, `@uri:`, `@stdin:`, `@env:` are disabled at MCP server startup. These handlers allow arbitrary Ruby execution or local resource access from any MCP client; they are replaced by an explicit error. Safe handlers (`@json:`, `@preset:`, `@base64:`, `@val:`, …) remain available.
+* `mcp server`: Extended-value handlers `@ruby:`, `@file:`, `@uri:`, `@stdin:`, `@env:`, `@secret:` are refused in commands sent by MCP clients. These handlers allow arbitrary Ruby execution or local resource access; they are replaced by an explicit error. Presets of the user running the server can still use `@file:` and `@env:` (for example, `private_key`); `@ruby:`, `@stdin:` and `@secret:` are disabled for the whole server. Safe handlers (`@json:`, `@preset:`, `@base64:`, `@val:`, …) remain available.
+* `mcp server`: `http` transport: authentication with a static token (`auth_token`) or OAuth 2.0 PKCE with dynamic client registration (`oauth`). On a non-local `bind`, `auth_token` is mandatory, also with `oauth`: the consent page asks for it as access code. New option `base_url`: URL of the server for clients in OAuth metadata, mandatory with `oauth` on a wildcard `bind`.
 * `faspex5 postprocessing`: Two new optional parameters harden the unauthenticated webhook listener:
   * `secret_token` — callers must supply `?token=<value>` in the URL; requests without the correct token are rejected with HTTP 401.
   * `allowed_ips` — restrict the listener to one IP or a list of IPs; requests from other source IPs are rejected with HTTP 403.
@@ -29,6 +30,7 @@ Released: [Place date of release here]
 
 * **global**: Removed gem dependency on `blankslate` (JSON-RPC client of agent `desktop`).
 * **global**: A boolean or decimal result, or a list containing such values (for example `config echo @json:true`), failed with an internal error.
+* **global**: `--auth=web`: login could wait forever when the browser called back before the wait started, or when `redirect_uri` has a path (HTTP 404).
 * `mcp`: REST error messages were repeated once more at each tool call of the session: error handlers are now registered on load.
 * `orchestrator`: `workflows import` uploads the workflow file as a multipart form, as expected by Orchestrator, and displays the imported workflow.
 * `orchestrator`: `workflows publish` sends the workflow `id` expected by Orchestrator (also accepts the portable ID), and displays `published`.

@@ -9156,7 +9156,8 @@ The `server` command accepts an optional [Hash](#extended-value-syntax) argument
 |-----|------|---------|-------------|
 | `port` | `integer` | `3000` | TCP port to listen on |
 | `bind` | `string` | `127.0.0.1` | Bind address |
-| `auth_token` | `string` | - | Static Bearer token. If set, all MCP requests must carry `Authorization: Bearer <token>`, else HTTP 401. Cannot be empty. |
+| `base_url` | `string` | from `bind` and `port` | URL of the server for clients, used in OAuth metadata, for example, `http://your-server:3000`. Mandatory with `oauth` when `bind` is `0.0.0.0` or `::`. |
+| `auth_token` | `string` | - | Static Bearer token. If set, all MCP requests must carry `Authorization: Bearer <token>`, else HTTP 401. Cannot be empty. With `oauth`, it is also the access code asked on the consent page. |
 | `oauth` | `boolean` | `false` | Enable OAuth 2.0 PKCE flow with dynamic client registration. When `true`, clients register automatically and users authenticate via a browser consent page. |
 | `oauth_access_token_ttl` | `integer` | `3600` | OAuth access token lifetime in seconds. |
 | `oauth_refresh_token_ttl` | `integer` | `2592000` | OAuth refresh token lifetime in seconds (30 days). |
@@ -9168,10 +9169,13 @@ The `server` command accepts an optional [Hash](#extended-value-syntax) argument
 
 > [!WARNING]
 > The tool executes any <%=tool%> command with the credentials and presets of the user running the server.
-> When `bind` is set to a non-local address, at least one of `auth_token` or `oauth` is **mandatory**: the server refuses to start without either.
-> For local-only deployments (`127.0.0.1`, `::1`, `localhost`), both are optional but recommended.
+> When `bind` is set to a non-local address, `auth_token` is **mandatory**, also with `oauth`: the server refuses to start without it.
+> With `oauth`, the consent page asks for `auth_token` as access code, else anyone reaching the server could approve its own client.
+> For local-only deployments (`127.0.0.1`, `::1`, `localhost`), both are optional but recommended. Without `auth_token`, the consent page only asks to click **Allow**.
 > `allowed_hosts` and `allowed_origins` protect against DNS rebinding but do not authenticate clients.
 > `auth_token` and `oauth` can coexist: a request is accepted if it carries a valid static token **or** a valid OAuth access token.
+> In commands sent by the client, extended values `@ruby:`, `@file:`, `@uri:`, `@stdin:`, `@env:`, and `@secret:` are refused.
+> Presets of the user running the server can still use `@file:` and `@env:`, but not `@ruby:`, `@stdin:`, or `@secret:`.
 
 > [!NOTE]
 > **OAuth 2.0 PKCE flow** - When `oauth` is `true`, the server exposes the following additional endpoints:
@@ -9213,7 +9217,7 @@ Start with custom instructions and a specific protocol version:
 Start an MCP server with OAuth 2.0 PKCE authentication (for AI clients such as Bob that support the MCP Authorization spec):
 
 ```shell
-<%=cmd%> mcp server @: transport=http port=3000 bind=0.0.0.0 oauth=true
+<%=cmd%> mcp server @: transport=http port=3000 bind=0.0.0.0 base_url=http://your-server:3000 oauth=true auth_token=@env:MCP_TOKEN
 ```
 
 ### MCP client configuration
@@ -9258,7 +9262,7 @@ For other clients (Claude Desktop, VS Code, and so on):
 
 ##### Remote server with static token
 
-When the server is exposed on a non-local address, at least one of `auth_token` or `oauth` is required.
+When the server is exposed on a non-local address, `auth_token` is required.
 
 **Option A: static Bearer token** - suitable for all MCP clients.
 Set the token in the environment and start the server:
@@ -9303,12 +9307,13 @@ For other clients (Claude Desktop, VS Code, and so on):
 ##### Remote server with OAuth 2.0 PKCE
 
 **Option B: OAuth 2.0 PKCE flow** - for AI clients that support the MCP Authorization spec (such as Bob).
-No token to manage manually: the client registers dynamically and opens a browser window for user consent on first connection.
+No token to configure in the client: the client registers dynamically and opens a browser window for user consent on first connection.
+The consent page asks for the access code: the value of `auth_token`.
 
 Start the server with OAuth enabled:
 
 ```shell
-<%=cmd%> mcp server @: transport=http port=3000 bind=0.0.0.0 oauth=true
+<%=cmd%> mcp server @: transport=http port=3000 bind=0.0.0.0 base_url=http://your-server:3000 oauth=true auth_token=@env:MCP_TOKEN
 ```
 
 For [**IBM Bob**](https://bob.ibm.com/docs/ide/configuration/mcp/mcp-in-bob), register the URL with no extra configuration:

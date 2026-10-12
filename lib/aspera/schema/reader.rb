@@ -99,11 +99,14 @@ module Aspera
           return
         end
         if @current.key?('allOf')
-          # Merge all branches: each branch contributes its properties (no variants)
+          # Merge all branches: each branch contributes its properties (no variants).
+          # A property is listed once, with its first declaration: a later one may be empty,
+          # only to allow the property under `additionalProperties: false`.
+          listed = Set.new
           @current['allOf'].each do |branch_node|
-            ref = branch_node['$ref']
-            branch_reader = ref ? resolve_ref(ref) : Reader.new(@root, branch_node)
-            branch_reader.each_property(prefix, on_variant: on_variant, &block)
+            branch_reader(branch_node).each_property(prefix, on_variant: on_variant) do |property_schema, name, full_name|
+              yield(property_schema, name, full_name) if listed.add?(full_name)
+            end
           end
           return
         end
@@ -150,9 +153,22 @@ module Aspera
 
       private
 
+      # @param node [Hash] Branch of `allOf` or `oneOf`
+      # @return [Reader] Reader on the branch, with `$ref` resolved
+      def branch_reader(node)
+        node['$ref'] ? resolve_ref(node['$ref']) : Reader.new(@root, node)
+      end
+
       # Recursively collect rows from a schema node, passing each property's own
       # parent `required` array so that only direct-parent membership is checked.
+      # Branches of `allOf` are merged: a property is listed once, with its first declaration.
       def collect_rows(rows, reader, prefix)
+        reader.current['allOf']&.each do |branch_node|
+          branch_rows = []
+          collect_rows(branch_rows, branch_reader(branch_node), prefix)
+          listed = rows.to_set { |row| row['name'] }
+          rows.concat(branch_rows.reject { |row| listed.include?(row['name']) })
+        end
         return unless reader.current.key?('properties')
         parent_required = Set.new(Array(reader.current['required']))
         props_reader = reader.dig('properties')

@@ -15,6 +15,8 @@ module Aspera
     MULTIPART = 'multipart/form-data'
     # JSON:API body (https://jsonapi.org)
     JSON_API = 'application/vnd.api+json'
+    # Server-Sent Events stream
+    EVENT_STREAM = 'text/event-stream'
     # Check if a media type is JSON: `application/json` or structured syntax suffix `+json` (RFC 6839)
     # @param mime [String] Media type, without parameters (see `Rest.parse_header`)
     # @return [Boolean] `true` if JSON

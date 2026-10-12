@@ -189,6 +189,19 @@ RSpec.describe(Aspera::Schema::Reader) do
       })
       expect(full_names(nullable)).to(eq(%w[owner owner.name items items[].id]))
     end
+
+    it 'lists once a property declared again in a later allOf branch' do
+      redeclared = described_class.new(root.merge(
+        'allOf' => [
+          {'$ref' => '#/components/schemas/Address'},
+          {'additionalProperties' => false, 'properties' => {'city' => {}, 'zip' => {'type' => 'string'}}}
+        ]
+      ))
+      schemas = {}
+      redeclared.each_property { |schema, _name, full| (schemas[full] ||= []) << schema.current }
+      expect(schemas.keys).to(eq(%w[city zip]))
+      expect(schemas['city']).to(eq([{'type' => 'string'}]))
+    end
   end
 
   describe '#to_rows' do
@@ -221,6 +234,19 @@ RSpec.describe(Aspera::Schema::Reader) do
       }).to_rows
       expect(nullable_rows.map { |row| [row['name'], row['type']] }).to(eq([
         ['owner', 'object, null'], ['owner.name', 'string'], ['items', 'array, null'], ['items[].id', 'string']
+      ]))
+    end
+
+    it 'merges allOf branches, a property once with its first declaration' do
+      all_of_rows = described_class.new({
+        'components' => {'schemas' => {'Base' => {'required' => ['url'], 'properties' => {'url' => {'type' => 'string'}}}}},
+        'allOf'      => [
+          {'$ref' => '#/components/schemas/Base'},
+          {'properties' => {'url' => {}, 'script' => {'type' => 'string'}}}
+        ]
+      }).to_rows
+      expect(all_of_rows.map { |row| [row['name'], row['type'], row['required']] }).to(eq([
+        ['url', 'string', true], ['script', 'string', false]
       ]))
     end
   end

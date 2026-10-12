@@ -3,6 +3,7 @@
 # cspell:ignore pkce urlsafe
 
 require 'aspera/log'
+require 'aspera/assert'
 require 'erb'
 require 'json'
 require 'securerandom'
@@ -44,7 +45,7 @@ module Aspera
         # Path to the ERB consent page template (relative to this file).
         HTML_TEMPLATE_PATH = File.join(__dir__, 'authorize.html.erb')
 
-        ConsentPage = Struct.new(:title, :description, :action_url, :client_id, :redirect_uri, :state, :code_challenge, :code_challenge_method, keyword_init: true) do
+        ConsentPage = Struct.new(:title, :description, :action_url, :client_id, :redirect_uri, :state, :code_challenge, :code_challenge_method, :secret_required, :error, keyword_init: true) do
           include ERB::Util
 
           def render(template_path)
@@ -65,17 +66,22 @@ module Aspera
         # @param refresh_token_ttl [Integer] Lifetime (seconds) of issued refresh tokens
         # @param title             [String]  Page <title> and branding (default: "Authorization request")
         # @param description       [String]  Description shown in the consent text (default: "this server"), trusted HTML (not escaped)
+        # @param consent_secret    [String, nil] If set, the user must enter this secret on the consent page to allow access.
+        #                                    Without it, anyone who can reach the server can approve its own request.
         # @param authorize_html_cb [#call]   Optional callable(params, base_url) → HTML String
         #                                    for the consent page.  If nil the built-in HTML template is used.
+        #                                    With `consent_secret`, the form must post it in field `consent_secret`.
         def initialize(base_url:, access_token_ttl: ACCESS_TOKEN_TTL, refresh_token_ttl: REFRESH_TOKEN_TTL,
           title: 'Authorization request', description: 'this server',
-          authorize_html_cb: nil)
+          consent_secret: nil, authorize_html_cb: nil)
           require 'openssl'
+          Aspera.assert(consent_secret.nil? || !consent_secret.to_s.empty?) { 'consent_secret must not be empty' }
           @base_url          = base_url
           @access_token_ttl  = access_token_ttl
           @refresh_token_ttl = refresh_token_ttl
           @title             = title
           @description       = description
+          @consent_secret    = consent_secret&.to_s
           @authorize_html_cb = authorize_html_cb
           @store_mutex       = Mutex.new
           # dynamically registered clients:  Array<{client_id:, redirect_uris:}>
@@ -192,6 +198,11 @@ module Aspera
               json_error(res, 400, 'invalid_grant', 'Authorization code expired or unknown')
               return
             end
+            # RFC 6749 §4.1.3: the code must have been issued to this client (client_id is optional with PKCE)
+            unless params['client_id'].nil? || params['client_id'] == stored[:client_id]
+              json_error(res, 400, 'invalid_grant', 'client_id mismatch')
+              return
+            end
             # RFC 6749 §4.1.3: redirect_uri must match the one used in the authorization request
             unless params['redirect_uri'] == stored[:redirect_uri]
               json_error(res, 400, 'invalid_grant', 'redirect_uri mismatch')
@@ -205,12 +216,11 @@ module Aspera
           when 'refresh_token'
             rt_value = params['refresh_token']
             stored = @store_mutex.synchronize do
-              entry = @refresh_tokens[rt_value]
-              if entry && entry[:expires_at] > Time.now
-                # Rotate: revoke old access token and issue fresh pair
-                @access_tokens.delete(entry[:access_token])
-                @refresh_tokens.delete(rt_value)
-              end
+              # Single use: removed even if expired
+              entry = @refresh_tokens.delete(rt_value)
+              next nil if entry.nil? || entry[:expires_at] < Time.now
+              # Rotate: revoke old access token and issue fresh pair
+              @access_tokens.delete(entry[:access_token])
               entry
             end
             if stored.nil?
@@ -293,6 +303,7 @@ module Aspera
 
         # Verify PKCE: SHA-256(code_verifier) == code_challenge (base64url, no padding).
         def pkce_valid?(verifier, challenge)
+          return false unless challenge.is_a?(String) && !challenge.empty?
           require 'base64'
           digest   = OpenSSL::Digest::SHA256.digest(verifier)
           computed = Base64.urlsafe_encode64(digest, padding: false)
@@ -307,11 +318,24 @@ module Aspera
             json_error(res, 400, 'unauthorized_client', "Unknown client_id or unregistered redirect_uri: #{client_id}")
             return
           end
-          unless params['code_challenge'] && params['code_challenge_method'] == 'S256'
+          unless pkce_requested?(params)
             json_error(res, 400, 'invalid_request', 'PKCE with S256 is required')
             return
           end
-          res.status = 200
+          consent_page(res, params)
+        end
+
+        # @return [Boolean] true if the request carries a S256 PKCE challenge
+        def pkce_requested?(params)
+          !params['code_challenge'].to_s.empty? && params['code_challenge_method'] == 'S256'
+        end
+
+        # Respond with the consent page
+        # @param params [Hash]    Parameters of the authorization request
+        # @param status [Integer] HTTP status
+        # @param error  [String, nil] Error message displayed on the page
+        def consent_page(res, params, status: 200, error: nil)
+          res.status = status
           res['Content-Type'] = 'text/html; charset=utf-8'
           # Prevent clickjacking of the consent page
           res['X-Frame-Options'] = 'DENY'
@@ -320,7 +344,7 @@ module Aspera
           res.body = if @authorize_html_cb
             @authorize_html_cb.call(params, @base_url)
           else
-            authorize_html_from_template(params)
+            authorize_html_from_template(params, error: error)
           end
         end
 
@@ -341,6 +365,17 @@ module Aspera
             res['Location'] = client_redirect_url(redirect_uri, error: 'access_denied', state: state)
             return
           end
+          unless pkce_requested?(params)
+            res.status = 302
+            res['Location'] = client_redirect_url(redirect_uri, error: 'invalid_request', error_description: 'PKCE with S256 is required', state: state)
+            return
+          end
+          # The consent secret proves that the user approving the request is allowed to grant access
+          if @consent_secret && !OpenSSL.secure_compare(params['consent_secret'].to_s, @consent_secret)
+            Log.log.warn { "OAuth consent refused: wrong access code for client_id=#{client_id}" }
+            consent_page(res, params, status: 401, error: 'Invalid access code')
+            return
+          end
           code = SecureRandom.urlsafe_base64(24)
           @store_mutex.synchronize do
             purge_expired
@@ -356,7 +391,8 @@ module Aspera
         end
 
         # Render the consent page from the ERB template.
-        def authorize_html_from_template(params)
+        # @param error [String, nil] Error message displayed on the page
+        def authorize_html_from_template(params, error: nil)
           ConsentPage.new(
             title:                 @title,
             description:           @description,
@@ -365,7 +401,9 @@ module Aspera
             redirect_uri:          params['redirect_uri'].to_s,
             state:                 params['state'].to_s,
             code_challenge:        params['code_challenge'].to_s,
-            code_challenge_method: params['code_challenge_method'].to_s
+            code_challenge_method: params['code_challenge_method'].to_s,
+            secret_required:       !@consent_secret.nil?,
+            error:                 error
           ).render(HTML_TEMPLATE_PATH)
         end
       end

@@ -28,6 +28,13 @@ module Aspera
       # Default extra arguments automatically prepended to every ascli call.
       # Keeps the AI from having to remember mandatory flags on every invocation.
       DEFAULT_EXTRA_ARGS = ['--interactive=no', '--transfer.asynchronous=true'].freeze
+      # Extended-value handlers refused in arguments from the MCP client: code execution,
+      # access to local files, environment, internal network, or stdin (JSON-RPC stream in stdio).
+      # Presets of the user running the server may still use @file: and @env:.
+      UNTRUSTED_EXTENDED_VALUE_HANDLERS = %i[ruby file uri stdin env secret].freeze
+      # Matches the handlers anywhere in an argument, including in nested values (@extend:, dot-path, ...)
+      UNTRUSTED_EXTENDED_VALUE_REGEX = /@(#{UNTRUSTED_EXTENDED_VALUE_HANDLERS.join('|')}):/
+      private_constant :UNTRUSTED_EXTENDED_VALUE_HANDLERS, :UNTRUSTED_EXTENDED_VALUE_REGEX
 
       tool_name 'execute_ascli_command'
 
@@ -43,7 +50,7 @@ module Aspera
             "@preset:name"  — expand a saved preset
             "@base64:..."   — base64-encoded value
             "@val:..."      — literal string (no further decoding)
-          Note: @ruby:, @file:, @uri:, @stdin:, @env: are disabled in MCP server mode.
+          Note: @ruby:, @file:, @uri:, @stdin:, @env:, @secret: are disabled in MCP server mode.
 
         AUTOMATIC FLAGS
           The server prepends extra_args to every call (default: #{DEFAULT_EXTRA_ARGS.join(' ')}).
@@ -111,6 +118,8 @@ module Aspera
         attr_accessor :max_text_bytes, :extra_args
 
         def call(args:, server_context: nil)
+          unsafe = args.map(&:to_s).flat_map { |arg| arg.scan(UNTRUSTED_EXTENDED_VALUE_REGEX).flatten }.uniq
+          raise Cli::BadArgument, "Extended value disabled in MCP server mode: #{unsafe.map { |h| "@#{h}:" }.join(', ')}" unless unsafe.empty?
           effective_args = Array(extra_args || DEFAULT_EXTRA_ARGS) + args
           Log.dump(:mcp_execute, effective_args)
           runner = Runner.new(effective_args)

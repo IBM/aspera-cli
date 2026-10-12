@@ -351,7 +351,17 @@ namespace TEST_CASE_NS do
         if info[:post]
           Aspera.assert_type(info[:post], String)
           log.info("Executing: #{info[:post]}")
-          Aspera::Environment.secure_eval(info[:post], __FILE__, __LINE__, exec_binding)
+          begin
+            Aspera::Environment.secure_eval(info[:post], __FILE__, __LINE__, exec_binding)
+          rescue StandardError
+            # Do not leave the background process running: it keeps its port and the output of rake
+            begin
+              t.stop_process if tags[:noblock]
+            rescue Errno::ESRCH
+              nil
+            end
+            raise
+          end
         end
         if tags[:save_output]
           saved_value = t.saved_output

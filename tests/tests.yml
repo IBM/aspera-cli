@@ -7729,13 +7729,42 @@ mcp_auth_required_nonlocal:
     - mcp
     - must_fail
     - nodoc
-  expect: "auth_token or oauth is required when bind address"
+  expect: "auth_token is required when bind address"
   args:
     - mcp
     - server
     - "@:"
     - transport=http
     - bind=0.0.0.0
+mcp_oauth_token_required_nonlocal:
+  description: Reject HTTP server start when bind is non-local with OAuth but no auth_token (consent access code).
+  tags:
+    - mcp
+    - must_fail
+    - nodoc
+  expect: "auth_token is required (asked on the consent page) when bind address"
+  args:
+    - mcp
+    - server
+    - "@:"
+    - transport=http
+    - bind=0.0.0.0
+    - oauth=true
+mcp_oauth_base_url_required:
+  description: Reject HTTP server start with OAuth on a wildcard bind address without base_url.
+  tags:
+    - mcp
+    - must_fail
+    - nodoc
+  expect: "base_url is required with oauth when bind address is 0.0.0.0"
+  args:
+    - mcp
+    - server
+    - "@:"
+    - transport=http
+    - bind=0.0.0.0
+    - oauth=true
+    - auth_token=test-secret
 mcp_auth_token_server:
   description: Start MCP HTTP server with static auth_token, verify 401 without token and 200 with token.
   tags:
@@ -7753,7 +7782,7 @@ mcp_auth_token_server:
 mcp_oauth_flow:
   description: >-
     Start MCP HTTP server with OAuth PKCE, complete the full flow:
-    discovery, consent, token exchange, refresh, and authenticated MCP call.
+    discovery, consent with access code, token exchange, refresh, and authenticated MCP call.
   tags:
     - mcp
     - noblock
@@ -7765,6 +7794,7 @@ mcp_oauth_flow:
     - transport=http
     - port=13780
     - oauth=true
+    - auth_token=test-secret
   post: mcp_oauth_flow_post(t)
 mcp_oauth_deny:
   description: OAuth consent deny — server must redirect with error=access_denied.

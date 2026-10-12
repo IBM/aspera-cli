@@ -131,6 +131,29 @@
             color: #ffffff;
         }
 
+        .secret {
+            display: block;
+            margin-top: 1.25rem;
+            text-align: left;
+            font-size: 0.875rem;
+            color: #525252;
+        }
+
+        .secret input {
+            display: block;
+            width: 100%;
+            margin-top: 0.35rem;
+            padding: 0.6rem 0.75rem;
+            font-size: 0.95rem;
+            border: 1px solid #8d8d8d;
+            border-radius: 6px;
+        }
+
+        .error {
+            color: #da1e28;
+            font-weight: 600;
+        }
+
         .footer {
             margin-top: 1.5rem;
             padding-top: 1rem;
@@ -159,6 +182,9 @@
         <h1>Authorization request</h1>
         <p>The client <span class="client"><%= h client_id %></span> is requesting access to <%= description %>.</p>
         <p>Do you want to allow it?</p>
+<% if error %>
+        <p class="error"><%= h error %></p>
+<% end %>
 
         <form method="POST" action="<%= h action_url %>">
             <input type="hidden" name="client_id"             value="<%= h client_id %>">
@@ -166,9 +192,14 @@
             <input type="hidden" name="state"                 value="<%= h state %>">
             <input type="hidden" name="code_challenge"        value="<%= h code_challenge %>">
             <input type="hidden" name="code_challenge_method" value="<%= h code_challenge_method %>">
+<% if secret_required %>
+            <label class="secret">Server access code
+                <input type="password" name="consent_secret" autocomplete="current-password" required autofocus>
+            </label>
+<% end %>
             <div class="actions">
                 <button class="allow" type="submit" name="decision" value="allow">Allow</button>
-                <button class="deny"  type="submit" name="decision" value="deny">Deny</button>
+                <button class="deny"  type="submit" name="decision" value="deny" formnovalidate>Deny</button>
             </div>
         </form>
 

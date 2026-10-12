@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# cspell:ignore ascli jsonrpc pkce
+# cspell:ignore ascli jsonrpc pkce enotty
 
 require 'aspera/cli/plugins/base'
 require 'aspera/cli/info'
@@ -24,10 +24,13 @@ module Aspera
       #   # stdio transport:
       #   max_line_bytes:         Integer - max JSON frame size (default 4 MiB)
       #   # http transport:
-      #   auth_token:             String  - if set, require "Authorization: Bearer <token>" on MCP requests
+      #   auth_token:             String  - if set, require "Authorization: Bearer <token>" on MCP requests,
+      #                                     and asked on the OAuth consent page (mandatory on a non-local bind)
       #   oauth:                  Boolean - enable OAuth 2.0 PKCE flow with dynamic client registration (RFC 7591)
       #   oauth_access_token_ttl: Integer - access token lifetime in seconds (default 3600)
       #   oauth_refresh_token_ttl: Integer - refresh token lifetime in seconds (default 2592000 = 30 days)
+      #   base_url:               String  - URL of the server for clients, used in OAuth metadata
+      #                                     (default: from bind and port, mandatory with oauth on a wildcard bind)
       #   port:                   Integer - TCP port (default 3000)
       #   bind:                   String  - bind address (default "127.0.0.1")
       #   stateless:              Boolean - stateless mode (default false)
@@ -86,10 +89,13 @@ module Aspera
         HTTP_KEYS   = %i[stateless allowed_origins allowed_hosts session_idle_timeout max_sessions].freeze
         # Keys consumed locally (not forwarded to MCP gem)
         TOOL_KEYS   = %i[max_text_bytes extra_args].freeze
-        # Extended-value handlers disabled in MCP server mode to prevent code execution
-        # and local resource access from a network-accessible client.
-        UNSAFE_EXTENDED_VALUE_HANDLERS = %i[ruby file uri stdin env].freeze
-        private_constant :SERVER_KEYS, :CONFIG_KEYS, :STDIO_KEYS, :HTTP_KEYS, :TOOL_KEYS, :UNSAFE_EXTENDED_VALUE_HANDLERS
+        # Extended-value handlers disabled for the whole process in MCP server mode, including in presets:
+        # @ruby: code execution (a client can write a preset), @stdin: is the JSON-RPC stream (stdio),
+        # @secret: needs a terminal (fails with ENOTTY in stdio, blocks the request in http).
+        # Other unsafe handlers are refused in client arguments only, see McpTool, so that presets
+        # can still use @file: and @env:.
+        DISABLED_EXTENDED_VALUE_HANDLERS = %i[ruby stdin secret].freeze
+        private_constant :SERVER_KEYS, :CONFIG_KEYS, :STDIO_KEYS, :HTTP_KEYS, :TOOL_KEYS, :DISABLED_EXTENDED_VALUE_HANDLERS
 
         command :server, description: 'Start the MCP (Model Context Protocol) server',
           arguments:   [{name: :mcp_options, type: [Hash], mandatory: false, schema: 'opts:components.schemas.McpServerOptions'}]
@@ -99,18 +105,14 @@ module Aspera
           require 'aspera/cli/extended_value'
           mcp_options = (mcp_options || {}).transform_keys(&:to_sym)
           unknown = mcp_options.keys - SERVER_KEYS - CONFIG_KEYS - STDIO_KEYS - HTTP_KEYS - TOOL_KEYS -
-            %i[transport port bind auth_token oauth oauth_access_token_ttl oauth_refresh_token_ttl]
+            %i[transport port bind base_url auth_token oauth oauth_access_token_ttl oauth_refresh_token_ttl]
           Aspera.assert(unknown.empty?, type: Cli::BadArgument) { "Unknown MCP option(s): #{unknown.join(', ')}" }
           Cli::McpTool.max_text_bytes = mcp_options.delete(:max_text_bytes)
           Cli::McpTool.extra_args     = mcp_options.delete(:extra_args)
           transport = mcp_options.delete(:transport) || 'stdio'
           raise Cli::BadArgument, "Unknown transport: #{transport}. Use 'stdio' or 'http'" \
             unless %w[stdio http].include?(transport.to_s)
-          # Disable extended-value handlers that allow arbitrary code execution or
-          # local resource access when called from a network-accessible MCP client.
-          # @ruby: evaluates attacker-supplied Ruby; @file:/@uri:/@stdin:/@env: expose
-          # the server's filesystem, environment, and internal network.
-          UNSAFE_EXTENDED_VALUE_HANDLERS.each do |handler|
+          DISABLED_EXTENDED_VALUE_HANDLERS.each do |handler|
             ExtendedValue.instance.on(handler) { |_| raise Cli::BadArgument, "@#{handler}: extended value is disabled in MCP server mode" }
           end
           Log.log.info { "Starting MCP server (transport=#{transport})..." }
@@ -154,20 +156,37 @@ module Aspera
         end
 
         LOCAL_BIND_ADDRESSES = %w[127.0.0.1 ::1 localhost].freeze
-        private_constant :LOCAL_BIND_ADDRESSES
+        # Bind addresses listening on all interfaces: not a host name usable by clients
+        WILDCARD_BIND_ADDRESSES = %w[0.0.0.0 ::].freeze
+        private_constant :LOCAL_BIND_ADDRESSES, :WILDCARD_BIND_ADDRESSES
 
         # Validate auth configuration.
-        # - On a non-local bind address, auth_token or oauth_enabled is mandatory for security.
+        # - On a non-local bind address, auth_token is mandatory for security, also with OAuth:
+        #   it is the secret asked on the consent page, else anyone could approve its own client.
         # - On a local bind address, both are optional but accepted.
         # @param auth_token [String, nil] expected static Bearer token
         # @param oauth_enabled [Boolean] whether OAuth PKCE flow is enabled
         # @param bind [String] bind address
         def check_auth_config(auth_token, oauth_enabled, bind)
           Aspera.assert(auth_token.nil? || !auth_token.to_s.empty?, type: Cli::BadArgument) { 'auth_token must not be empty' }
-          has_auth = !auth_token.nil? || oauth_enabled
-          Aspera.assert(has_auth || LOCAL_BIND_ADDRESSES.include?(bind.to_s), type: Cli::BadArgument) do
-            "auth_token or oauth is required when bind address (#{bind}) is not local (#{LOCAL_BIND_ADDRESSES.join(', ')})"
+          Aspera.assert(!auth_token.nil? || LOCAL_BIND_ADDRESSES.include?(bind.to_s), type: Cli::BadArgument) do
+            "auth_token is required#{' (asked on the consent page)' if oauth_enabled} when bind address (#{bind}) is not local (#{LOCAL_BIND_ADDRESSES.join(', ')})"
           end
+        end
+
+        # @param bind     [String]      bind address
+        # @param port     [Integer]     TCP port
+        # @param base_url [String, nil] URL of the server for clients, if provided by user
+        # @param oauth_enabled [Boolean] whether OAuth PKCE flow is enabled
+        # @return [String] URL of the server for clients, without trailing slash
+        def http_base_url(bind, port, base_url, oauth_enabled)
+          return base_url.to_s.chomp('/') unless base_url.nil?
+          Aspera.assert(!oauth_enabled || !WILDCARD_BIND_ADDRESSES.include?(bind.to_s), type: Cli::BadArgument) do
+            "base_url is required with oauth when bind address is #{bind}: URL used by clients, e.g. http://myhost:#{port}"
+          end
+          host = WILDCARD_BIND_ADDRESSES.include?(bind.to_s) ? 'localhost' : bind.to_s
+          host = "[#{host}]" if host.include?(':')
+          "http://#{host}:#{port}"
         end
 
         # Start HTTP transport using WEBrick (already a project dependency).
@@ -183,18 +202,20 @@ module Aspera
           access_token_ttl  = mcp_options.fetch(:oauth_access_token_ttl, OAuth::Server::Pkce.default_access_token_ttl)
           refresh_token_ttl = mcp_options.fetch(:oauth_refresh_token_ttl, OAuth::Server::Pkce.default_refresh_token_ttl)
           check_auth_config(auth_token, oauth_enabled, bind)
-          base_url = "http://#{bind == '0.0.0.0' ? 'localhost' : bind}:#{port}"
+          base_url = http_base_url(bind, port, mcp_options[:base_url], oauth_enabled)
           app = MCP::Server::Transports::StreamableHTTPTransport.new(server, **http_opts)
           # Build OAuth::Server::Pkce only when OAuth is enabled.
           # Pass MCP-specific branding via title: and description: so the external HTML
           # template is used directly without a custom callback.
+          # The static token, if any, is the access code asked on the consent page.
           oauth_server = if oauth_enabled
             OAuth::Server::Pkce.new(
               base_url:          base_url,
               access_token_ttl:  access_token_ttl,
               refresh_token_ttl: refresh_token_ttl,
               title:             "Authorize #{Info::GEM_NAME} MCP server",
-              description:       "the <strong>#{Info::GEM_NAME} MCP server</strong>"
+              description:       "the <strong>#{Info::GEM_NAME} MCP server</strong>",
+              consent_secret:    auth_token
             )
           end
           rack_servlet = Class.new(WEBrick::HTTPServlet::AbstractServlet) do

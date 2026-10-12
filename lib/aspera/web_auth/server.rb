@@ -33,7 +33,7 @@ module Aspera
       def service(request, response)
         Log.log.debug { "received request from browser #{request.request_method} #{request.path}" }
         Aspera.assert_values(request.request_method, ['GET'], type: WEBrick::HTTPStatus::MethodNotAllowed) { "Unsupported method: #{request.request_method}" }
-        Aspera.assert_values(request.path, ['/'], type: WEBrick::HTTPStatus::NotFound) { "Unsupported path: #{request.path}" }
+        Aspera.assert_values(request.path, [@web_auth.expected_path], type: WEBrick::HTTPStatus::NotFound) { "Unsupported path: #{request.path}" }
         # response to browser
         response.status = 200
         response.content_type = 'text/html'
@@ -48,7 +48,7 @@ module Aspera
     # then start a browser that will callback the local server upon authentication
     # store the final query
     class Server < WebServerSimple
-      attr_reader :additional_info
+      attr_reader :additional_info, :expected_path
 
       # @param endpoint_url    [String] e.g. 'https://127.0.0.1:12345'
       # @param additional_info [String] Information in web page
@@ -81,8 +81,8 @@ module Aspera
       # wait for request on web server (main thread)
       # @return [Hash] the query
       def received_request
-        # wait for signal from thread
-        @mutex.synchronize { @cond.wait(@mutex) }
+        # wait for signal from thread, unless the request was already received (signal is not memorized)
+        @mutex.synchronize { @cond.wait(@mutex) while @query.nil? }
         # tell server thread to stop
         shutdown
         return @query

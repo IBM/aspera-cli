@@ -13,32 +13,40 @@ require 'aspera/json_rpc/client'
 
 MCP_REDIRECT_URI = 'http://127.0.0.1:19999/cb'
 MCP_INIT_PARAMS  = {protocolVersion: '2024-11-05', capabilities: {}, clientInfo: {name: 'test', version: '0'}}.freeze
+# Static token of the MCP server, also the access code of the OAuth consent page
+MCP_AUTH_TOKEN   = 'test-secret'
 
-# Aspera::Rest::Client subclass that transparently handles the two MCP HTTP transport specifics:
-#   1. Responses are SSE-wrapped: body starts with "data: " — stripped before JSON parsing.
+# Aspera::Rest::Client on the MCP endpoint (`/mcp`, as `/` is the discovery endpoint) that handles the MCP HTTP transport specifics:
+#   1. Requests must accept both JSON and SSE, else HTTP 406 (`create` sets JSON only).
 #   2. The Mcp-Session-Id header must be captured from the first response and replayed on subsequent calls.
+#   3. Responses with notifications are SSE: the JSON-RPC response is the last `data:` frame.
 class McpHttpClient < Aspera::Rest::Client
+  ACCEPT = [Aspera::Mime::JSON, Aspera::Mime::EVENT_STREAM].join(', ')
+
   def initialize(port, extra_headers = {})
-    super(
-      base_url: "http://127.0.0.1:#{port}",
-      headers:  {'Accept' => 'application/json, text/event-stream'}.merge(extra_headers)
-    )
+    super(base_url: "http://127.0.0.1:#{port}/mcp", headers: extra_headers)
     @mcp_session_id = nil
   end
 
-  def call(**kwargs)
-    kwargs[:headers] = {'Mcp-Session-Id' => @mcp_session_id}.merge(kwargs[:headers] || {}) if @mcp_session_id
-    result = super(**kwargs)
-    @mcp_session_id ||= result['mcp-session-id'] if result.is_a?(Net::HTTPResponse)
-    result
+  def call(ret: :data, **kwargs)
+    headers = {'Accept' => ACCEPT}
+    headers['Mcp-Session-Id'] = @mcp_session_id if @mcp_session_id
+    kwargs[:headers] = (kwargs[:headers] || {}).merge(headers)
+    data, http = super(**kwargs, ret: :both)
+    @mcp_session_id ||= http['mcp-session-id']
+    case ret
+    when :data then data
+    when :resp then http
+    when :both then [data, http]
+    end
   end
 
   private
 
-  # Strip the SSE "data: " envelope before the parent parses JSON.
   def parse_response(result_http, result_mime)
-    result_http.body&.delete_prefix!('data: ')
-    super
+    return super unless result_mime.eql?(Aspera::Mime::EVENT_STREAM)
+    last_frame = result_http.body.to_s.scan(/^data: (.*)$/).last
+    last_frame && JSON.parse(last_frame.first)
   end
 end
 
@@ -78,7 +86,7 @@ def mcp_call(http_client, method, params, id)
 end
 
 # Full OAuth 2.0 / PKCE flow test against the MCP OAuth server (port 13780).
-# Covers: discovery, dynamic client registration, PKCE authorize/allow, token exchange,
+# Covers: discovery, dynamic client registration, PKCE authorize/allow with access code, token exchange,
 # MCP call with bearer token, token refresh, and old-token revocation.
 def mcp_oauth_flow_post(t)
   sleep(1)
@@ -104,15 +112,16 @@ def mcp_oauth_flow_post(t)
   )
   raise "Expected 200 for consent page, got #{res_html.code}" unless res_html.code == '200'
   raise 'Expected HTML consent page'                          unless html.include?('allow')
-  # 4. POST /oauth/authorize (simulate Allow click) — returns 302, must not follow redirect
-  res_consent = api.create(
-    'oauth/authorize',
-    {
-      client_id: client_id, redirect_uri: MCP_REDIRECT_URI, state: state,
-     code_challenge: challenge, code_challenge_method: 'S256', decision: 'allow'
-    },
-    content_type: Aspera::Mime::WWW, exception: false, ret: :resp
-  )
+  raise 'Expected access code field on consent page'          unless html.include?('name="consent_secret"')
+  consent = {
+    client_id: client_id, redirect_uri: MCP_REDIRECT_URI, state: state,
+    code_challenge: challenge, code_challenge_method: 'S256', decision: 'allow'
+  }
+  # 4a. POST /oauth/authorize with a wrong access code — consent page again, no code issued
+  res_refused = api.create('oauth/authorize', consent.merge(consent_secret: 'wrong'), content_type: Aspera::Mime::WWW, exception: false, ret: :resp)
+  raise "Expected 401 for wrong access code, got #{res_refused.code}" unless res_refused.code == '401'
+  # 4b. POST /oauth/authorize (simulate Allow click) — returns 302, must not follow redirect
+  res_consent = api.create('oauth/authorize', consent.merge(consent_secret: MCP_AUTH_TOKEN), content_type: Aspera::Mime::WWW, exception: false, ret: :resp)
   raise "Expected 302 redirect, got #{res_consent.code}" unless res_consent.code == '302'
   location = res_consent['Location']
   raise 'Missing Location header' unless location
@@ -121,7 +130,7 @@ def mcp_oauth_flow_post(t)
   # 5. POST /oauth/token — exchange code for tokens
   tokens, res_token = api.create(
     'oauth/token',
-    {grant_type: 'authorization_code', code: code, redirect_uri: MCP_REDIRECT_URI, code_verifier: verifier},
+    {grant_type: 'authorization_code', code: code, client_id: client_id, redirect_uri: MCP_REDIRECT_URI, code_verifier: verifier},
     content_type: Aspera::Mime::WWW, exception: false, ret: :both
   )
   raise "Expected 200 for token, got #{res_token.code}" unless res_token.code == '200'
@@ -132,12 +141,7 @@ def mcp_oauth_flow_post(t)
   raise 'Wrong token_type'      unless tokens['token_type'] == 'Bearer'
   raise 'Missing expires_in'    if tokens['expires_in'].to_i <= 0
   # 6. Use access_token for an MCP initialize call
-  res_mcp = McpHttpClient.new(13780, 'Authorization' => "Bearer #{access_token}").call(
-    operation: 'POST', subpath: 'mcp', content_type: Aspera::Mime::JSON,
-    body: {jsonrpc: '2.0', id: 1, method: 'initialize', params: MCP_INIT_PARAMS},
-    exception: false, ret: :resp
-  )
-  raise "Expected 200 for MCP call, got #{res_mcp.code}" unless res_mcp.code == '200'
+  mcp_call(McpHttpClient.new(13780, 'Authorization' => "Bearer #{access_token}"), 'initialize', MCP_INIT_PARAMS, 1)
   # 7. POST /oauth/token — refresh
   new_tokens, res_refresh = api.create(
     'oauth/token',
@@ -191,17 +195,12 @@ end
 # a bearer token and 200 with the correct token.
 def mcp_auth_token_server_post(t)
   sleep(1)
-  mcp_init_body = JSON.generate({jsonrpc: '2.0', id: 1, method: 'initialize', params: MCP_INIT_PARAMS})
   # Without token: expect 401
-  res_no_auth = Aspera::Rest::Client.new(base_url: 'http://127.0.0.1:13779').create('mcp', mcp_init_body, exception: false, ret: :resp)
+  res_no_auth = McpHttpClient.new(13779).create('', {jsonrpc: '2.0', id: 1, method: 'initialize', params: MCP_INIT_PARAMS}, exception: false, ret: :resp)
   raise "Expected 401 without token, got #{res_no_auth.code}" unless res_no_auth.code == '401'
   raise 'Expected WWW-Authenticate header'                    unless res_no_auth['WWW-Authenticate']
-  # With correct token: expect 200
-  res_with_auth = Aspera::Rest::Client.new(
-    base_url: 'http://127.0.0.1:13779',
-    headers:  {'Authorization' => 'Bearer test-secret'}
-  ).create('mcp', mcp_init_body, exception: false, ret: :resp)
-  raise "Expected 200 with token, got #{res_with_auth.code}" unless res_with_auth.code == '200'
+  # With correct token: expect success
+  mcp_call(McpHttpClient.new(13779, 'Authorization' => "Bearer #{MCP_AUTH_TOKEN}"), 'initialize', MCP_INIT_PARAMS, 1)
   t.stop_process(:mcp_auth_token_server)
 end
 

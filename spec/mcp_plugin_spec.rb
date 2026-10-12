@@ -90,15 +90,16 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
     context 'with a non-local bind address' do
       it 'raises BadArgument when neither auth_token nor oauth_enabled is provided' do
         expect { plugin.send(:check_auth_config, nil, false, nonlocal_bind) }
-          .to(raise_error(Aspera::Cli::BadArgument, /auth_token or oauth is required/))
+          .to(raise_error(Aspera::Cli::BadArgument, /auth_token is required when/))
       end
 
       it 'accepts auth_token' do
         expect { plugin.send(:check_auth_config, 'secret', false, nonlocal_bind) }.not_to(raise_error)
       end
 
-      it 'accepts oauth_enabled' do
-        expect { plugin.send(:check_auth_config, nil, true, nonlocal_bind) }.not_to(raise_error)
+      it 'raises BadArgument with oauth_enabled alone (consent would not be protected)' do
+        expect { plugin.send(:check_auth_config, nil, true, nonlocal_bind) }
+          .to(raise_error(Aspera::Cli::BadArgument, /auth_token is required \(asked on the consent page\)/))
       end
 
       it 'accepts both auth_token and oauth_enabled together' do
@@ -109,6 +110,33 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
     it 'raises BadArgument when auth_token is an empty string' do
       expect { plugin.send(:check_auth_config, '', false, '127.0.0.1') }
         .to(raise_error(Aspera::Cli::BadArgument, /must not be empty/))
+    end
+  end
+
+  # -------------------------------------------------------------------------
+  # http_base_url
+  # -------------------------------------------------------------------------
+  describe '#http_base_url (private)' do
+    it 'uses the bind address and port' do
+      expect(plugin.send(:http_base_url, '192.168.1.10', 3000, nil, true)).to(eq('http://192.168.1.10:3000'))
+    end
+
+    it 'puts brackets around an IPv6 address' do
+      expect(plugin.send(:http_base_url, '::1', 3000, nil, true)).to(eq('http://[::1]:3000'))
+    end
+
+    it 'uses localhost for a wildcard bind without OAuth' do
+      expect(plugin.send(:http_base_url, '0.0.0.0', 3000, nil, false)).to(eq('http://localhost:3000'))
+      expect(plugin.send(:http_base_url, '::', 3000, nil, false)).to(eq('http://localhost:3000'))
+    end
+
+    it 'requires base_url with OAuth on a wildcard bind' do
+      expect { plugin.send(:http_base_url, '0.0.0.0', 3000, nil, true) }
+        .to(raise_error(Aspera::Cli::BadArgument, /base_url is required/))
+    end
+
+    it 'uses the provided base_url without trailing slash' do
+      expect(plugin.send(:http_base_url, '0.0.0.0', 3000, 'https://mcp.example.com/', true)).to(eq('https://mcp.example.com'))
     end
   end
 end
@@ -315,6 +343,114 @@ RSpec.describe(Aspera::OAuth::Server::Pkce) do
       expect(res.status).to(eq(200))
       expect(res['X-Frame-Options']).to(eq('DENY'))
       expect(res['Content-Security-Policy']).to(eq("frame-ancestors 'none'"))
+    end
+
+    it 'redirects with invalid_request on allow without PKCE challenge' do
+      body = URI.encode_www_form(client_id: client_id, redirect_uri: redirect, state: 's1', decision: 'allow')
+      oauth.send(:handle_authorize_post, request_class.new(body), res)
+      expect(res.status).to(eq(302))
+      expect(res['Location']).to(start_with("#{redirect}?error=invalid_request&"))
+      expect(res['Location']).not_to(include('code='))
+    end
+
+    context 'with a consent secret' do
+      subject(:oauth) { described_class.new(base_url: base_url, consent_secret: 'pass') }
+
+      def post_allow(secret)
+        body = URI.encode_www_form(client_id: client_id, redirect_uri: redirect, state: 's1', code_challenge: 'c', code_challenge_method: 'S256', decision: 'allow', consent_secret: secret)
+        oauth.send(:handle_authorize_post, request_class.new(body), res)
+      end
+
+      it 'asks for the access code on the consent page' do
+        query = {'client_id' => client_id, 'redirect_uri' => redirect, 'code_challenge' => 'c', 'code_challenge_method' => 'S256'}
+        oauth.send(:handle_authorize_get, request_class.new(nil, query), res)
+        expect(res.body).to(include('name="consent_secret"'))
+      end
+
+      it 'shows the consent page again with an error on a wrong access code' do
+        post_allow('wrong')
+        expect(res.status).to(eq(401))
+        expect(res['Location']).to(be_nil)
+        expect(res.body).to(include('Invalid access code'))
+      end
+
+      it 'redirects with a code on the right access code' do
+        post_allow('pass')
+        expect(res.status).to(eq(302))
+        expect(res['Location']).to(start_with("#{redirect}?code="))
+      end
+
+      it 'does not need the access code to deny' do
+        post_authorize(client_id, redirect, 'deny')
+        expect(res['Location']).to(eq("#{redirect}?error=access_denied&state=s1"))
+      end
+    end
+  end
+
+  # -------------------------------------------------------------------------
+  # token endpoint
+  # -------------------------------------------------------------------------
+  describe '#handle_token' do
+    before do
+      require 'webrick'
+      require 'base64'
+    end
+
+    let(:response_class) do
+      Class.new do
+        attr_accessor :status, :body
+
+        def initialize = @headers = {}
+        def [](key) = @headers[key]
+
+        def []=(key, value)
+          @headers[key] = value
+        end
+      end
+    end
+    let(:request_class) { Struct.new(:body, :query) }
+    let(:redirect) { 'http://127.0.0.1:19999/cb' }
+    let(:verifier) { 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk' }
+    let(:challenge) { Base64.urlsafe_encode64(OpenSSL::Digest::SHA256.digest(verifier), padding: false) }
+    let(:client_id) do
+      r = response_class.new
+      oauth.handle_register(request_class.new(JSON.generate(redirect_uris: [redirect])), r)
+      JSON.parse(r.body)['client_id']
+    end
+
+    # @return [String] authorization code
+    def authorization_code
+      r = response_class.new
+      body = URI.encode_www_form(client_id: client_id, redirect_uri: redirect, code_challenge: challenge, code_challenge_method: 'S256', decision: 'allow')
+      oauth.send(:handle_authorize_post, request_class.new(body), r)
+      URI.decode_www_form(URI(r['Location']).query).to_h['code']
+    end
+
+    # @return [Object] response of token endpoint
+    def token(**params)
+      r = response_class.new
+      oauth.handle_token(request_class.new(URI.encode_www_form(params)), r)
+      r
+    end
+
+    it 'issues tokens for a valid code and verifier' do
+      r = token(grant_type: 'authorization_code', code: authorization_code, client_id: client_id, redirect_uri: redirect, code_verifier: verifier)
+      expect(r.status).to(eq(200))
+      expect(JSON.parse(r.body)).to(include('access_token', 'refresh_token'))
+    end
+
+    it 'refuses a code issued to another client' do
+      r = token(grant_type: 'authorization_code', code: authorization_code, client_id: 'other', redirect_uri: redirect, code_verifier: verifier)
+      expect(r.status).to(eq(400))
+    end
+
+    it 'refuses an expired refresh token' do
+      short = described_class.new(base_url: 'http://localhost:3000', refresh_token_ttl: -1)
+      refresh = short.send(:issue_tokens)[:refresh_token]
+      r = response_class.new
+      short.handle_token(request_class.new(URI.encode_www_form(grant_type: 'refresh_token', refresh_token: refresh)), r)
+      expect(r.status).to(eq(400))
+      expect(r.body).to(include('invalid_grant'))
     end
   end
 end

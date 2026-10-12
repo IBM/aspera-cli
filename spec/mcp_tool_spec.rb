@@ -229,4 +229,27 @@ RSpec.describe(Aspera::Cli::McpTool) do
       expect(resp.error?).to(be(false))
     end
   end
+
+  # -----------------------------------------------------------------------
+  # Unsafe extended values in client arguments
+  # -----------------------------------------------------------------------
+  describe 'unsafe extended values in arguments' do
+    before { allow(Aspera::Cli::Runner).to(receive(:new)) }
+
+    it 'refuses them, also nested, without running the command' do
+      ['@file:/etc/passwd', '--private-key=@val:@file:/k', '@extend:a@env:HOME@', 'k=@ruby:1', '@secret:'].each do |arg|
+        resp = described_class.call(args: ['config', 'echo', arg])
+        expect(resp.error?).to(be(true))
+        expect(resp.content.first[:text]).to(include('disabled in MCP server mode'))
+      end
+      expect(Aspera::Cli::Runner).not_to(have_received(:new))
+    end
+
+    it 'accepts safe extended values' do
+      runner = instance_double(Aspera::Cli::Runner, run_with_result: Aspera::Cli::Result::Nothing.new, context: context_stub)
+      allow(Aspera::Cli::Runner).to(receive(:new).and_return(runner))
+      resp = described_class.call(args: ['config', 'echo', '@json:{"a":"b"}', '@preset:p', '--url=https://user@host/'])
+      expect(resp.error?).to(be(false))
+    end
+  end
 end
