@@ -14,7 +14,7 @@ require 'securerandom'
 module Aspera
   module Cli
     # Secrets entered by the user on a web page, instead of the terminal.
-    # Used by extended value `@secret:` when option `ui` is `graphical`, and in MCP server mode (see McpSecrets).
+    # Used by extended value `@secret:` when option `ui` is `graphical`, and in MCP server mode (see Mcp::Secrets).
     #
     # Requests are kept in memory, identified by a random value in the URL of the page, and expire after TTL seconds.
     # Pages are served by a local web server, started on first request, or by the web server of the caller (see #handle).

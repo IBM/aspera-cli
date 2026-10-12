@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-# Stub MCP::Tool and MCP::Tool::Response before loading mcp_tool.rb so that
+# Stub MCP::Tool and MCP::Tool::Response before loading mcp/tool.rb so that
 # the file can be required even when the optional 'mcp' gem is not installed.
 module MCP
   class Tool
-    # DSL class methods used at class-body evaluation time in McpTool
+    # DSL class methods used at class-body evaluation time in Mcp::Tool
     class << self
       def tool_name(_name); end unless method_defined?(:tool_name) || respond_to?(:tool_name)
       def description(_text); end unless method_defined?(:description) || respond_to?(:description)
@@ -42,10 +42,10 @@ module MCP
   end
 end
 
-require 'aspera/cli/mcp_tool'
+require 'aspera/cli/mcp/tool'
 require 'aspera/cli/result'
 
-RSpec.describe(Aspera::Cli::McpTool) do
+RSpec.describe(Aspera::Cli::Mcp::Tool) do
   # Minimal formatter stub that only implements filter_columns_on_select.
   # When select_filter is nil the method is a no-op, otherwise it applies the Hash filter.
   let(:formatter_stub) do
@@ -58,7 +58,7 @@ RSpec.describe(Aspera::Cli::McpTool) do
 
   let(:context_stub) { instance_double(Aspera::Cli::Context, formatter: formatter_stub) }
 
-  # Helper: stub Runner so McpTool.call never spawns a real CLI execution.
+  # Helper: stub Runner so Mcp::Tool.call never spawns a real CLI execution.
   # @param result [Aspera::Cli::Result] the result to return from run_with_result
   def call_with_result(result)
     runner = instance_double(Aspera::Cli::Runner, run_with_result: result, context: context_stub)
@@ -270,7 +270,7 @@ RSpec.describe(Aspera::Cli::McpTool) do
   # @secret: entered by the user on a web page (URL mode elicitation)
   # -----------------------------------------------------------------------
   describe '@secret: in arguments' do
-    let(:web_secret) { Aspera::Cli::McpSecrets.web_secret(base_url: 'http://localhost:3000') }
+    let(:web_secret) { Aspera::Cli::Mcp::Secrets.web_secret(base_url: 'http://localhost:3000') }
     # Minimal stand-in for MCP::ServerContext of a 2026-07-28 client
     let(:context_class) do
       Struct.new(:request_state, :input_responses, :client_capabilities, keyword_init: true) do
@@ -284,7 +284,7 @@ RSpec.describe(Aspera::Cli::McpTool) do
       described_class.web_secret = web_secret
       # The command displays the secret
       runner = instance_double(Aspera::Cli::Runner, context: context_stub)
-      allow(runner).to(receive(:run_with_result) { Aspera::Cli::Result::Text.new("pw=#{Aspera::Cli::McpSecrets.value('pw')}") })
+      allow(runner).to(receive(:run_with_result) { Aspera::Cli::Result::Text.new("pw=#{Aspera::Cli::Mcp::Secrets.value('pw')}") })
       allow(Aspera::Cli::Runner).to(receive(:new).and_return(runner))
     end
 

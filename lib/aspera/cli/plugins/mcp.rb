@@ -93,9 +93,9 @@ module Aspera
         TOOL_KEYS   = %i[max_text_bytes extra_args].freeze
         # Extended-value handlers disabled for the whole process in MCP server mode, including in presets:
         # @ruby: code execution (a client can write a preset), @stdin: is the JSON-RPC stream (stdio).
-        # Other unsafe handlers are refused in client arguments only, see McpTool, so that presets
+        # Other unsafe handlers are refused in client arguments only, see Mcp::Tool, so that presets
         # can still use @file: and @env:.
-        # @secret: is entered on a web page instead of the terminal, see McpSecrets.
+        # @secret: is entered on a web page instead of the terminal, see Mcp::Secrets.
         DISABLED_EXTENDED_VALUE_HANDLERS = %i[ruby stdin].freeze
         private_constant :SERVER_KEYS, :CONFIG_KEYS, :STDIO_KEYS, :HTTP_KEYS, :TOOL_KEYS, :DISABLED_EXTENDED_VALUE_HANDLERS
 
@@ -103,21 +103,21 @@ module Aspera
           arguments:   [{name: :mcp_options, type: [Hash], mandatory: false, schema: 'opts:components.schemas.McpServerOptions'}]
 
         def action_server(mcp_options: nil, **)
-          require 'aspera/cli/mcp_tool'
+          require 'aspera/cli/mcp/tool'
           require 'aspera/cli/extended_value'
           mcp_options = (mcp_options || {}).transform_keys(&:to_sym)
           unknown = mcp_options.keys - SERVER_KEYS - CONFIG_KEYS - STDIO_KEYS - HTTP_KEYS - TOOL_KEYS -
             %i[transport port bind base_url auth_token oauth oauth_access_token_ttl oauth_refresh_token_ttl]
           Aspera.assert(unknown.empty?, type: Cli::BadArgument) { "Unknown MCP option(s): #{unknown.join(', ')}" }
-          Cli::McpTool.max_text_bytes = mcp_options.delete(:max_text_bytes)
-          Cli::McpTool.extra_args     = mcp_options.delete(:extra_args)
+          Cli::Mcp::Tool.max_text_bytes = mcp_options.delete(:max_text_bytes)
+          Cli::Mcp::Tool.extra_args     = mcp_options.delete(:extra_args)
           transport = mcp_options.delete(:transport) || 'stdio'
           raise Cli::BadArgument, "Unknown transport: #{transport}. Use 'stdio' or 'http'" \
             unless %w[stdio http].include?(transport.to_s)
           DISABLED_EXTENDED_VALUE_HANDLERS.each do |handler|
             ExtendedValue.instance.on(handler) { |_| raise Cli::BadArgument, "@#{handler}: extended value is disabled in MCP server mode" }
           end
-          ExtendedValue.instance.on(:secret) { |prompt| Cli::McpSecrets.value(prompt) }
+          ExtendedValue.instance.on(:secret) { |prompt| Cli::Mcp::Secrets.value(prompt) }
           Log.log.info { "Starting MCP server (transport=#{transport})..." }
           start_mcp_server(transport: transport.to_sym, mcp_options: mcp_options)
           Result::Nothing.new
@@ -129,7 +129,7 @@ module Aspera
         # @param mcp_options [Hash] symbolized options
         # @return [MCP::Server]
         def build_mcp_server(mcp_options)
-          tool = Cli::McpTool
+          tool = Cli::Mcp::Tool
           config_opts = mcp_options.slice(*CONFIG_KEYS)
           server_opts = mcp_options.slice(*SERVER_KEYS)
           server_opts[:instructions] ||= DEFAULT_INSTRUCTIONS
@@ -154,7 +154,7 @@ module Aspera
           case transport
           when :stdio
             # Secret pages are served by a local web server, started on first use of @secret:
-            Cli::McpTool.web_secret = Cli::McpSecrets.web_secret
+            Cli::Mcp::Tool.web_secret = Cli::Mcp::Secrets.web_secret
             stdio_opts = mcp_options.slice(*STDIO_KEYS)
             MCP::Server::Transports::StdioTransport.new(server, **stdio_opts).open
           when :http
@@ -211,8 +211,8 @@ module Aspera
           check_auth_config(auth_token, oauth_enabled, bind)
           base_url = http_base_url(bind, port, mcp_options[:base_url], oauth_enabled)
           # Secret pages are served by this server: the static token, if any, is the access code asked on the page
-          web_secret = Cli::McpSecrets.web_secret(base_url: base_url, access_code: auth_token)
-          Cli::McpTool.web_secret = web_secret
+          web_secret = Cli::Mcp::Secrets.web_secret(base_url: base_url, access_code: auth_token)
+          Cli::Mcp::Tool.web_secret = web_secret
           app = MCP::Server::Transports::StreamableHTTPTransport.new(server, **http_opts)
           # Build OAuth::Server::Pkce only when OAuth is enabled.
           # Pass MCP-specific branding via title: and description: so the external HTML

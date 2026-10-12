@@ -61,7 +61,7 @@ Aspera::Cli::Runner.new(ARGV).run
 The `Runner` class orchestrates the full command lifecycle:
 
 - **`run`**: Main entry point — calls `run_with_result`, displays the result via `Formatter`, handles all exceptions, and exits with the appropriate status code.
-- **`run_with_result`**: Pure computation entry point — initializes all agents and options, resolves the target plugin, executes the action, and returns a `Result` object. Raises on error. Used by the MCP server ([`mcp_tool.rb`](../lib/aspera/cli/mcp_tool.rb)) to run commands in-process.
+- **`run_with_result`**: Pure computation entry point — initializes all agents and options, resolves the target plugin, executes the action, and returns a `Result` object. Raises on error. Used by the MCP server ([`mcp/tool.rb`](../lib/aspera/cli/mcp/tool.rb)) to run commands in-process.
 
 All shared objects are held in a `Context` instance and passed to plugins by reference.
 Members: `options` (`Parser`), `transfer` (`TransferAgent`), `config` (`Plugins::Config`), `formatter`, `persistency`, `man_header`, `presets` (`PresetManager`), `http_config` (`Http`), `main_folder`, `mailer` (`Mailer`), `secret_finder`, plus `progress_bar`, `pac_executor` and `help_requested`.
@@ -843,7 +843,7 @@ Analyzes API errors and provides:
   - `base_dsl_spec.rb` — `Base` DSL dispatcher
   - `command_registry_spec.rb` — `CommandRegistry` validation rules
   - `plugin_registry_spec.rb` — `validate!(plugin_class:)` consistency of every plugin registry (every leaf has an action or a matching `action_*` method, and every action accepts `**`)
-  - `parser_spec.rb`, `option_declarator_spec.rb`, `preset_actions_spec.rb`, `runner_spec.rb`, `mcp_tool_spec.rb`, `formatter_spec.rb`, `http_spec.rb`
+  - `parser_spec.rb`, `option_declarator_spec.rb`, `preset_actions_spec.rb`, `runner_spec.rb`, `mcp/tool_spec.rb`, `formatter_spec.rb`, `http_spec.rb`
   - `async_transfer_store_spec.rb`, `transfer_agent_async_spec.rb`, `transfer_agent_options_spec.rb`, `transfer_result_spec.rb`, `agent_transfer_status_spec.rb`
   - `rest/client_spec.rb`, `secret_hider_spec.rb`, `proxy_auto_config_spec.rb`, `schema_reader_spec.rb`, `string_ext_spec.rb`, `uri_reader_spec.rb`, `temp_file_manager_spec.rb`, `assert_spec.rb`, `environment_spec.rb`, `version_spec.rb`, …
 - Integration tests requiring a live server (`integration_helper.rb`, e.g. `ascmd_ssh_integration_spec.rb`)

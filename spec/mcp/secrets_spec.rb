@@ -16,12 +16,12 @@ unless defined?(MCP::Server::InputRequiredResult)
   end
 end
 
-require 'aspera/cli/mcp_secrets'
+require 'aspera/cli/mcp/secrets'
 require 'json'
 require 'uri'
 
-RSpec.describe(Aspera::Cli::McpSecrets) do
-  let(:web_secret) { Aspera::Cli::McpSecrets.web_secret(base_url: 'http://localhost:3000') }
+RSpec.describe(Aspera::Cli::Mcp::Secrets) do
+  let(:web_secret) { Aspera::Cli::Mcp::Secrets.web_secret(base_url: 'http://localhost:3000') }
 
   before { require 'webrick' }
 
@@ -34,7 +34,7 @@ RSpec.describe(Aspera::Cli::McpSecrets) do
   # -------------------------------------------------------------------------
   # Secrets of a tool call, over rounds of multi round-trip requests
   # -------------------------------------------------------------------------
-  describe Aspera::Cli::McpSecrets::Call do
+  describe Aspera::Cli::Mcp::Secrets::Call do
     # Minimal stand-in for MCP::ServerContext
     let(:context_class) do
       Struct.new(:request_state, :client_capabilities, :input_responses, :modern, :completed, keyword_init: true) do
@@ -53,7 +53,7 @@ RSpec.describe(Aspera::Cli::McpSecrets) do
     # @return [MCP::Server::InputRequiredResult] result of first round of a call needing a secret
     def request_secret(context = first_round)
       call = described_class.new(web_secret, context)
-      prompt = catch(Aspera::Cli::McpSecrets::THROW_TAG) { call.value('pw') }
+      prompt = catch(Aspera::Cli::Mcp::Secrets::THROW_TAG) { call.value('pw') }
       call.input_required(prompt)
     end
 
@@ -64,7 +64,7 @@ RSpec.describe(Aspera::Cli::McpSecrets) do
     end
 
     it 'throws the prompt when the secret was not requested yet' do
-      expect(catch(Aspera::Cli::McpSecrets::THROW_TAG) { described_class.new(web_secret, first_round).value('pw') }).to(eq('pw'))
+      expect(catch(Aspera::Cli::Mcp::Secrets::THROW_TAG) { described_class.new(web_secret, first_round).value('pw') }).to(eq('pw'))
     end
 
     it 'needs client support of URL mode elicitation' do
