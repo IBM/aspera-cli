@@ -1608,14 +1608,7 @@ module Aspera
 
         def action_gateway(parameters: {}, **)
           require 'aspera/faspex_gw'
-          parameters = parameters.symbolize_keys
-          uri = URI.parse(parameters.delete(:url) { WebServerSimple::DEFAULT_URL })
-          servlet_parameters = Faspex4GWServlet.normalize_parameters(parameters.except(*WebServerSimple::PARAMS))
-          # Packages can be sent to anyone by anyone who can reach the server
-          WebServerSimple.assert_protected(uri.hostname, protected: !servlet_parameters[:username].nil?, what: 'username and password', type: Cli::BadArgument)
-          server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
-          server.mount(uri.path, Faspex4GWServlet, servlet_parameters, aoc_api, aoc_api.workspace_info[:id])
-          server.start
+          Faspex4GWServlet.serve(parameters.symbolize_keys, type: Cli::BadArgument) { [aoc_api, aoc_api.workspace_info[:id]] }
           return Result::Status.new('Gateway terminated')
         end
       end

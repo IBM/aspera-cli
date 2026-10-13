@@ -35,6 +35,38 @@ RSpec.describe(Aspera::WebServerSimple) do
     end
   end
 
+  describe '.url and .servlet_parameters' do
+    it 'splits the parameters of a command' do
+      expect(described_class.url({})).to(eq(URI('http://localhost:8080')))
+      expect(described_class.servlet_parameters({url: 'http://localhost:1', cert: 'c', key: 'k', chain: 'x', username: 'u'})).to(eq({username: 'u'}))
+    end
+  end
+
+  describe '.serve' do
+    let(:server) { instance_double(described_class, mount: nil, start: nil) }
+
+    before { allow(described_class).to(receive(:new).and_return(server)) }
+
+    it 'mounts the servlet on the path of url, with the arguments of the block, and starts' do
+      described_class.serve({url: 'https://127.0.0.1:9443/path', cert: 'c', key: 'k', other: 1}, WEBrick::HTTPServlet::AbstractServlet, protected: false, what: 'token') { %w[a b] }
+      expect(described_class).to(have_received(:new).with(URI('https://127.0.0.1:9443/path'), cert: 'c', key: 'k'))
+      expect(server).to(have_received(:mount).with('/path', WEBrick::HTTPServlet::AbstractServlet, 'a', 'b'))
+      expect(server).to(have_received(:start))
+    end
+
+    it 'refuses an unprotected server before creating it and evaluating the arguments' do
+      evaluated = false
+      expect do
+        described_class.serve({url: 'http://0.0.0.0:8080'}, WEBrick::HTTPServlet::AbstractServlet, protected: false, what: 'token') do
+          evaluated = true
+          []
+        end
+      end.to(raise_error(Aspera::ParameterError, /token is required/))
+      expect(evaluated).to(be(false))
+      expect(described_class).not_to(have_received(:new))
+    end
+  end
+
   describe '#initialize' do
     it 'listens on an IPv6 address given in brackets in the URL' do
       skip('no IPv6 loopback') if Socket.ip_address_list.none?(&:ipv6_loopback?)

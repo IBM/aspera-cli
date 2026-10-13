@@ -12,6 +12,7 @@ require 'aspera/environment'
 require 'aspera/hash_ext'
 require 'aspera/secret_strength'
 require 'aspera/servlet_helpers'
+require 'aspera/web_server_simple'
 
 module Aspera
   # Start a Faspex-4 style post-processing script using Faspex-5 webhook
@@ -19,7 +20,7 @@ module Aspera
   # Security notes:
   # - By default the listener binds to loopback only (url defaults to http://localhost:...).
   #   Use a routable address only when the Faspex containers must reach this host:
-  #   then `secret_token` or `allowed_ips` is required (checked by the `faspex5 postprocessing` command).
+  #   then `secret_token` or `allowed_ips` is required (checked by `serve`).
   # - Use `secret_token` so the token must be present as a `token` query parameter on every
   #   incoming request (configure the webhook URL in Faspex as http://host:port/path?token=VALUE).
   # - Use `allowed_ips` to restrict which source IPs or networks may call the listener.
@@ -54,6 +55,22 @@ module Aspera
         # allowed_ips: optional IP addresses or networks (CIDR); nil means no restriction
         parameters[:allowed_ips] = Array(parameters[:allowed_ips]).map { |ip| ip_address(ip) } if parameters.key?(:allowed_ips)
         parameters
+      end
+
+      # Start the server, until signal INT or TERM
+      # Parameters are checked before: the servlet is created on each request
+      # @param parameters [Hash]      Parameters of the server (see `WebServerSimple.url`) and of the servlet (see `normalize_parameters`)
+      # @param type       [Exception] Exception raised when the server is not protected
+      def serve(parameters, type: ParameterError)
+        servlet_parameters = normalize_parameters(WebServerSimple.servlet_parameters(parameters).merge(root: WebServerSimple.url(parameters).path))
+        # Scripts can be started by anyone who can reach the server
+        WebServerSimple.serve(
+          parameters,
+          self,
+          protected: servlet_parameters.key?(:secret_token) || servlet_parameters.key?(:allowed_ips),
+          what:      'secret_token or allowed_ips',
+          type:      type
+        ) { [servlet_parameters] }
       end
 
       private

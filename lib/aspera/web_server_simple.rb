@@ -16,7 +16,7 @@ module Aspera
     PKCS12_EXT = %w[p12 pfx].map { |i| ".#{i}" }.freeze
     CLOCK_SKEW_OFFSET_SEC = 5
 
-    private_constant :GENERIC_ISSUER, :ONE_YEAR_SECONDS, :PKCS12_EXT, :CLOCK_SKEW_OFFSET_SEC
+    private_constant :PARAMS, :DEFAULT_URL, :GENERIC_ISSUER, :ONE_YEAR_SECONDS, :PKCS12_EXT, :CLOCK_SKEW_OFFSET_SEC
 
     class << self
       # @param host [String] Host name or IP address the server listens on
@@ -26,6 +26,30 @@ module Aspera
         IPAddr.new(host).loopback?
       rescue IPAddr::Error
         false
+      end
+
+      # @param parameters [Hash] Parameters of a command that starts a server (symbol keys): `url`, `cert`, `key`, `chain`, others are for the servlet
+      # @return [URI] URL of the server: `url`, or `DEFAULT_URL`
+      def url(parameters) = URI.parse(parameters.fetch(:url, DEFAULT_URL))
+
+      # @param parameters [Hash] Parameters of a command that starts a server, see `url`
+      # @return [Hash] Parameters of the servlet: other than `url`, `cert`, `key`, `chain`
+      def servlet_parameters(parameters) = parameters.except(:url, *PARAMS)
+
+      # Start a server with one servlet on the path of `url`, until signal INT or TERM.
+      # A server without protection reachable from the network is refused, see `assert_protected`.
+      # @param parameters [Hash]      Parameters of the command, see `url`
+      # @param servlet    [Class]     Servlet
+      # @param protected  [Boolean]   `true` if requests are authenticated or restricted
+      # @param what       [String]    Parameters that protect the server, for the error message
+      # @param type       [Exception] Exception to raise
+      # @yieldreturn [Array] Arguments of the servlet, evaluated once parameters are checked
+      def serve(parameters, servlet, protected:, what:, type: ParameterError)
+        uri = url(parameters)
+        assert_protected(uri.hostname, protected: protected, what: what, type: type)
+        server = new(uri, **parameters.slice(*PARAMS))
+        server.mount(uri.path, servlet, *yield)
+        server.start
       end
 
       # Refuse a server without protection reachable from the network: anyone could call it

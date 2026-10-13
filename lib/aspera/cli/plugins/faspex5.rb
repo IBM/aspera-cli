@@ -977,38 +977,15 @@ module Aspera
         end
 
         def action_gateway(parameters: {}, **)
-          require 'aspera/web_server_simple'
           require 'aspera/faspex_gw'
-          parameters = parameters.symbolize_keys
-          uri = URI.parse(parameters.delete(:url) { WebServerSimple::DEFAULT_URL })
-          servlet_parameters = Faspex4GWServlet.normalize_parameters(parameters.except(*WebServerSimple::PARAMS))
-          # Packages can be sent to anyone by anyone who can reach the server
-          WebServerSimple.assert_protected(uri.hostname, protected: !servlet_parameters[:username].nil?, what: 'username and password', type: Cli::BadArgument)
-          server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
-          server.mount(uri.path, Faspex4GWServlet, servlet_parameters, api_v5, nil)
-          server.start
+          Faspex4GWServlet.serve(parameters.symbolize_keys, type: Cli::BadArgument) { [api_v5, nil] }
           Result::Status.new('Gateway terminated')
         end
 
         def action_postprocessing(parameters: {}, **)
-          require 'aspera/web_server_simple'
           require 'aspera/faspex_postproc' # cspell:disable-line
-          parameters = parameters.symbolize_keys
-          uri = URI.parse(parameters.delete(:url) { WebServerSimple::DEFAULT_URL })
-          parameters[:root] = uri.path
-          # Check parameters before starting the server: the servlet is created on each request
-          servlet_parameters = Faspex4PostProcServlet.normalize_parameters(parameters.except(*WebServerSimple::PARAMS))
-          # Scripts can be started by anyone who can reach the server
-          WebServerSimple.assert_protected(
-            uri.hostname,
-            protected: servlet_parameters.key?(:secret_token) || servlet_parameters.key?(:allowed_ips),
-            what:      'secret_token or allowed_ips',
-            type:      Cli::BadArgument
-          )
-          server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
-          server.mount(uri.path, Faspex4PostProcServlet, servlet_parameters)
-          server.start
-          Result::Status.new('Gateway terminated')
+          Faspex4PostProcServlet.serve(parameters.symbolize_keys, type: Cli::BadArgument)
+          Result::Status.new('Post-processing terminated')
         end
         ACCOUNT_TYPES = %w{local_user saml_user self_registered_user external_user}.freeze
         WORKGROUP_TYPES = %w{workgroup shared_inbox}.freeze

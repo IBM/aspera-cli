@@ -6,6 +6,7 @@ require 'aspera/hash_ext'
 require 'aspera/mime'
 require 'aspera/secret_strength'
 require 'aspera/servlet_helpers'
+require 'aspera/web_server_simple'
 require 'webrick'
 require 'json'
 
@@ -15,7 +16,7 @@ module Aspera
   # Security notes:
   # - Packages are created as the user of the application, to any recipient, and the caller receives an upload transfer spec.
   # - Clients authenticate with HTTP Basic, as on Faspex 4, when `username` and `password` are set:
-  #   they are required when the server listens on an address that is not loopback (checked by the `gateway` commands).
+  #   they are required when the server listens on an address that is not loopback (checked by `serve`).
   # - Requests that a web page could send are refused (see ServletHelpers#check_request): the body shall be `application/json`.
   class Faspex4GWServlet < WEBrick::HTTPServlet::AbstractServlet
     include ServletHelpers
@@ -40,6 +41,16 @@ module Aspera
         parameters[:password_min_bits] ||= SecretStrength::DEFAULT_MIN_BITS
         SecretStrength.assert_strong(parameters[:password], name: 'password', min_bits: parameters[:password_min_bits]) unless parameters[:password].nil?
         parameters
+      end
+
+      # Start the gateway, until signal INT or TERM
+      # @param parameters [Hash]      Parameters of the server (see `WebServerSimple.url`) and of the servlet (see `normalize_parameters`)
+      # @param type       [Exception] Exception raised when the server is not protected
+      # @yieldreturn [Array] API of the application, and workspace id (AoC only), see `initialize`: called once parameters are checked
+      def serve(parameters, type: ParameterError)
+        servlet_parameters = normalize_parameters(WebServerSimple.servlet_parameters(parameters))
+        # Packages can be sent to anyone by anyone who can reach the server
+        WebServerSimple.serve(parameters, self, protected: !servlet_parameters[:username].nil?, what: 'username and password', type: type) { [servlet_parameters, *yield] }
       end
     end
 
