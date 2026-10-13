@@ -20,7 +20,7 @@ module Aspera
     #   own_children_of(path)   - Hash{Symbol => CommandSpec} of direct children declared on the node, without mounted ones
     #   arguments_at(path)      - Array of ArgumentSpec read by the node at path (mount arguments first)
     #   leaf_paths              - Array of all leaf paths (follows mounts, or stops at mount nodes)
-    #   command_path(words)     - command path designated by command line words (aliases, arguments)
+    #   command_path(words)     - command path designated by command line words (aliases, prefixes, arguments)
     #   command_position(words) - command path and number of its arguments, as read by the dispatcher
     #   all_paths               - Array of all locally registered full paths
     #   any?                    - true if at least one spec has been registered
@@ -140,7 +140,7 @@ module Aspera
         end
       end
 
-      # Command path designated by words of a command line: sub-commands (or their aliases),
+      # Command path designated by words of a command line: sub-commands (or their aliases, or a unique prefix),
       # each possibly followed by its positional arguments, e.g. `packages receive ALL` designates `packages receive`.
       # Words after a leaf command are its arguments.
       # @param words [Array<Symbol>] words following the plugin name
@@ -290,11 +290,19 @@ module Aspera
 
       private
 
+      # As the parser: an exact name, else the unique name starting with word (e.g. `brow` for alias `browse` of `ls`).
       # @param children [Hash{Symbol => CommandSpec}] children of a node
       # @param word     [Symbol]                      command line word
-      # @return [Symbol, nil] id of the child designated by word, or its alias
+      # @return [Symbol, nil] id of the child designated by word: id or alias, or unique prefix of one
       def child_id(children, word)
-        children.key?(word) ? word : children.find { |_, c| Array(c.aliases).include?(word) }&.first
+        # Name (id or alias) => id
+        names = children.each_with_object({}) do |(id, spec), h|
+          h[id] = id
+          Array(spec.aliases).each { |a| h[a] = id }
+        end
+        return names[word] if names.key?(word)
+        matching = names.keys.select { |name| name.to_s.start_with?(word.to_s) }
+        names[matching.first] if matching.length.eql?(1)
       end
 
       # @return [Boolean] true if plugin_class defines instance method name (public or private)

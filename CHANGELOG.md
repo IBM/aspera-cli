@@ -46,6 +46,7 @@ Released: [Place date of release here]
   * `config completion` does not check for a newer gem version (no network access on `Tab` or at shell startup).
   * Scripts call new command `config completion candidates`: Zsh, Fish and PowerShell display the description of commands and options. Options are proposed after any command for a word starting with `-`, values of option also for `--name=value`, and local files after the arguments of upload commands. The type of an expected value (e.g. `<identifier>`) is displayed, but no longer inserted. Scripts saved in a completion folder shall be saved again.
   * Bash: words containing `=` or `:` (e.g. a URL) no longer break completion of the next words.
+  * Aliases of commands are proposed (e.g. `browse` for `ls`), and a plugin, command or alias abbreviated as on the command line (unique prefix, e.g. `serv br`) is followed.
 
 ### Issues Fixed
 

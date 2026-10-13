@@ -325,6 +325,12 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
       expect(registry.command_position(%i[packages do 42 ls])).to(eq([%i[packages do ls], 0]))
     end
 
+    it 'accepts a unique prefix of a command or alias, as the parser' do
+      expect(registry.command_position(%i[pack rece 42])).to(eq([%i[packages receive], 1]))
+      expect(registry.command_position(%i[packages recv])).to(eq([%i[packages receive], 0]))
+      expect(registry.command_position(%i[packages rec])).to(be_nil)
+    end
+
     it 'returns nil for a word that is neither a command nor an expected argument' do
       expect(registry.command_position(%i[nope])).to(be_nil)
       expect(registry.command_position(%i[packages receive 42 43])).to(be_nil)

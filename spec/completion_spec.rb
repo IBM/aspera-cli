@@ -138,6 +138,12 @@ module Aspera
         it 'does not evaluate extended values in words' do
           expect(run_words('@env:COMPLETION_TEST_WORD', env: {'COMPLETION_TEST_WORD' => 'server'})).to(eq([]))
         end
+
+        it 'accepts a unique prefix of plugin, command or alias, and proposes aliases' do
+          expect(run_words('serv')).to(include('ls', 'browse', 'rm', 'delete'))
+          expect(run_words('serv', 'br')).to(eq(['<String>']))
+          expect(run_words('conf', 'pres', 'sh')).to(eq(['<identifier>']))
+        end
       end
 
       describe 'completion candidates action' do
@@ -147,7 +153,7 @@ module Aspera
 
         it 'lists candidates with their description, then the directive' do
           lines = run_candidates('server', '')
-          expect(lines).to(include("upload\tUpload files to server", "ls\tList files"))
+          expect(lines).to(include("upload\tUpload files to server", "ls\tList files", "browse\tList files"))
           expect(lines.last).to(eq(':'))
         end
 
@@ -204,6 +210,7 @@ module Aspera
 
         it 'completes a word' do
           expect(complete_bash(bash, 'ascli serv', %w[ascli serv])).to(eq(['server']))
+          expect(complete_bash(bash, 'ascli serv br', %w[ascli serv br])).to(eq(['browse']))
         end
 
         it 'completes the value of an option, with words split on = and :' do

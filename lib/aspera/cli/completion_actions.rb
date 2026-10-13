@@ -77,8 +77,8 @@ module Aspera
       def completion_context(words)
         positional, waiting = completion_split(words)
         return [nil, positional, waiting] if positional.empty?
-        plugin_sym = positional.first.to_sym
-        return [] unless Plugins::Factory.instance.plugin_list.include?(plugin_sym)
+        plugin_sym = completion_plugin(positional.first)
+        return [] if plugin_sym.nil?
         begin
           plugin_class = Plugins::Factory.instance.plugin_class(plugin_sym)
         rescue StandardError
@@ -87,6 +87,16 @@ module Aspera
         plugin_class.declare_options(options)
         # Options of the plugin may take a value: split again
         [plugin_class, *completion_split(words)]
+      end
+
+      # As the runner: an exact name, else the unique plugin name starting with word
+      # @param word [String] first positional word
+      # @return [Symbol, nil] plugin designated by word
+      def completion_plugin(word)
+        plugins = Plugins::Factory.instance.plugin_list
+        return word.to_sym if plugins.include?(word.to_sym)
+        matching = plugins.select { |p| p.to_s.start_with?(word) }
+        matching.first if matching.length.eql?(1)
       end
 
       # @param plugin_class [Class]         plugin
@@ -107,7 +117,11 @@ module Aspera
         return completion_argument(next_argument) unless next_argument.nil?
         # Source files of an upload follow the declared arguments
         return Completion.new(candidates: [], files: true) if children.empty? && registry[path]&.transfer_paths.eql?(:send)
-        candidates = children.map { |id, spec| [id.to_s, completion_description(spec.description)] }
+        # Commands, each followed by its aliases, with the same description
+        candidates = children.flat_map do |id, spec|
+          description = completion_description(spec.description)
+          [id, *Array(spec.aliases)].map { |name| [name.to_s, description] }
+        end
         # Options of plugin only right after the plugin name
         candidates.concat(completion_options(plugin_class.option_sources.each_key.flat_map { |src| src.option_specs.keys }.uniq)) if words.empty?
         Completion.new(candidates: candidates)
