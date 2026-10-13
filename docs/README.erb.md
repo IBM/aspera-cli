@@ -7826,30 +7826,34 @@ For details on `url` and HTTPS, see [Web service](#web-service).
 
 Like on a real node, the files of the emulator are in its `docroot`: paths of `browse`, and local paths of transfers, are relative to it.
 Local paths are the sources of an upload (`send`), and the destination of a download (`receive`).
-Paths leading out of the `docroot` are rejected.
+Paths leading out of the `docroot`, also through symbolic links, are rejected.
 
 Start the emulator, it runs until interrupted:
 
 ```shell
-<%=cmd%> node emulator @json:'{"url":"http://localhost:12348","username":"sim","password":"sim","docroot":"/data"}'
+<%=cmd%> node emulator @json:'{"url":"http://localhost:12348","username":"sim","password":"<%=ph :password%>","docroot":"/data"}'
 ```
+
+Generate the password with `openssl rand -hex 32`.
+A weak password is refused at startup: its strength is estimated in bits, and shall be at least `password_min_bits`.
+`username` and `password` are mandatory when `url` is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`): anyone reaching the emulator could send the files of the `docroot` to any host.
 
 Then, in another terminal, use it as a node, for example, to list the files in `/data`:
 
 ```shell
-<%=cmd%> node --url=http://localhost:12348 --username=sim --password=sim browse /
+<%=cmd%> node --url=http://localhost:12348 --username=sim --password=<%=ph :password%> browse /
 ```
 
 Or as the transfer agent, for example, to upload the file `/data/my_file.dat` to a transfer server:
 
 ```shell
-<%=cmd%> server upload /my_file.dat --transfer.agent=node --transfer.url=http://localhost:12348 --transfer.username=sim --transfer.password=sim
+<%=cmd%> server upload /my_file.dat --transfer.agent=node --transfer.url=http://localhost:12348 --transfer.username=sim --transfer.password=<%=ph :password%>
 ```
 
 The transfer is executed by `transferd`, and its status is available on the emulator:
 
 ```shell
-<%=cmd%> node --url=http://localhost:12348 --username=sim --password=sim transfer list
+<%=cmd%> node --url=http://localhost:12348 --username=sim --password=<%=ph :password%> transfer list
 ```
 
 Supported endpoints:
@@ -7867,7 +7871,7 @@ Supported endpoints:
 Limitations:
 
 - Only transfers started through the emulator are known. They are kept in memory, and lost when the emulator stops. Ended transfers are removed from the list after `retention_sec` (default: one day).
-- Only Basic authentication is supported: when `username` and `password` are set, bearer tokens and access keys are rejected. When they are not set, all requests are accepted.
+- Only Basic authentication is supported: when `username` and `password` are set, bearer tokens and access keys are rejected. When they are not set (loopback `url` only), all requests are accepted.
 - Not supported: `files/upload_setup` and `files/download_setup` (so, `node upload|download` on the emulator), `ops/transfers/bandwidth`, pause and resume of transfers, query parameters `iteration_token` and `tag`.
 
 ## Plugin: `faspex5`: IBM Aspera Faspex v5

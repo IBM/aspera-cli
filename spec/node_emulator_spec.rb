@@ -14,7 +14,11 @@ rescue LoadError => e
   RSpec.describe('Aspera::NodeEmulator') { it('requires gem grpc') { skip(e.message) } }
   return
 end
+require 'aspera/cli/context'
+require 'aspera/cli/parser'
+require 'aspera/cli/plugins/node'
 require 'net/http'
+require 'securerandom'
 require 'tmpdir'
 
 module Aspera
@@ -633,6 +637,38 @@ module Aspera
           expect { simulator.start({'direction' => 'receive', 'destination_root' => '/', 'paths' => [{'source' => 'a', 'destination' => '../a'}]}) }.to(raise_error(AssertError, /outside docroot/))
           expect(client.requests).to(be_empty)
         end
+
+        it 'refuses local paths leading out of the docroot through a symbolic link' do
+          outside = Dir.mktmpdir('node_emulator_spec_outside')
+          File.write(File.join(outside, 'secret'), 'data')
+          File.symlink(outside, File.join(docroot, 'folder', 'out'))
+          File.symlink(File.join(outside, 'missing'), File.join(docroot, 'dangling'))
+          [
+            {'direction' => 'send', 'paths' => [{'source' => '/folder/out/secret'}]},
+            {'direction' => 'send', 'paths' => [{'source' => '/folder/out'}]},
+            {'direction' => 'send', 'source_root' => '/folder/out', 'paths' => [{'source' => 'secret'}]},
+            {'direction' => 'send', 'source_root' => '/folder', 'paths' => [{'source' => 'out/secret'}]},
+            {'direction' => 'receive', 'destination_root' => '/folder/out', 'paths' => [{'source' => 'file'}]},
+            # destination does not exist yet: its existing part is resolved
+            {'direction' => 'receive', 'destination_root' => '/folder/out/new/sub', 'paths' => [{'source' => 'file'}]},
+            {'direction' => 'receive', 'destination_root' => '/', 'paths' => [{'source' => 'file', 'destination' => 'folder/out/new'}]},
+            {'direction' => 'receive', 'destination_root' => '/dangling', 'paths' => [{'source' => 'file'}]}
+          ].each do |transfer_spec|
+            expect { simulator.start(transfer_spec) }.to(raise_error(AssertError, /outside docroot/), transfer_spec.to_s)
+          end
+          expect { simulator.browse('/dangling') }.to(raise_error(AssertError, /outside docroot/))
+          expect(client.requests).to(be_empty)
+        ensure
+          FileUtils.rm_rf(outside)
+        end
+
+        it 'accepts symbolic links within the docroot, and destinations not created yet' do
+          File.symlink('folder', File.join(docroot, 'link'))
+          spec = sent({'direction' => 'send', 'paths' => [{'source' => '/link/file'}]})
+          expect(spec['paths']).to(eq([{'source' => File.join(docroot, 'link/file')}]))
+          spec = sent({'direction' => 'receive', 'destination_root' => '/link/new/sub', 'paths' => [{'source' => 'file'}]})
+          expect(spec['destination_root']).to(eq(File.join(docroot, 'link/new/sub')))
+        end
       end
     end
 
@@ -833,6 +869,49 @@ module Aspera
       it 'returns 500 when transferd fails' do
         start_server(simulator: FakeSimulator.new(start_error: GRPC::Unavailable.new('daemon down')))
         expect_error(call('POST', '/ops/transfers', body: '{}'), 500, /daemon down/)
+      end
+    end
+
+    RSpec.describe(Cli::Plugins::Node) do
+      describe '#action_emulator' do
+        let(:password) { SecureRandom.hex(32) }
+
+        before do
+          allow(NodeEmulator).to(receive(:new).and_return(instance_double(NodeEmulator)))
+          allow(WebServerSimple).to(receive(:new).and_return(instance_double(WebServerSimple, mount: nil, start: nil)))
+        end
+
+        # @param parameters [Hash] parameters of command
+        def emulator(parameters)
+          context = Cli::Context.new
+          context.man_header = false
+          context.options = Cli::Parser.new('test', [])
+          described_class.new(context: context).send(:action_emulator, parameters: parameters)
+        end
+
+        it 'starts without credentials on a local address' do
+          expect(emulator({'url' => 'http://127.0.0.1:8080'})).to(be_a(Cli::Result::Status))
+          expect(emulator({'url' => 'http://[::1]:8080'})).to(be_a(Cli::Result::Status))
+        end
+
+        it 'refuses to start without credentials on a non-local address' do
+          expect { emulator({'url' => 'http://0.0.0.0:8080'}) }.to(raise_error(Cli::BadArgument, /username and password is required/))
+          expect(WebServerSimple).not_to(have_received(:new))
+        end
+
+        it 'starts with credentials on a non-local address' do
+          expect(emulator({'url' => 'http://0.0.0.0:8080', 'username' => 'sim', 'password' => password})).to(be_a(Cli::Result::Status))
+        end
+
+        it 'refuses a weak password, unless the check is disabled' do
+          expect { emulator({'username' => 'sim', 'password' => 'sim'}) }.to(raise_error(Cli::BadArgument, /password is too weak: about \d+ bits, minimum 80 \(password_min_bits\)/))
+          expect(emulator({'username' => 'sim', 'password' => 'sim', 'password_min_bits' => 0})).to(be_a(Cli::Result::Status))
+          expect(WebServerSimple).to(have_received(:new).once)
+        end
+
+        it 'refuses username without password' do
+          expect { emulator({'username' => 'sim'}) }.to(raise_error(Cli::BadArgument, /must be set together/))
+        end
       end
     end
   end

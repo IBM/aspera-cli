@@ -478,8 +478,21 @@ module Aspera
     def real_path(path)
       # `./` prevents expansion of `~`
       real = File.expand_path("./#{path.to_s.sub(%r{\A/+}, '')}", @docroot)
-      Aspera.assert(in_docroot?(real)) { "Path outside docroot: #{path}" }
+      # symbolic links shall not lead out of the docroot
+      resolved = resolved_path(real) if in_docroot?(real)
+      Aspera.assert(!resolved.nil? && in_docroot?(resolved)) { "Path outside docroot: #{path}" }
       real
+    end
+
+    # Resolve symbolic links of the existing part of a path: a destination may not exist yet
+    # @param real [String] absolute path, without `..`, within the docroot
+    # @return [String, nil] real path of the longest existing part of `real`, `nil` if it is a dangling symbolic link
+    def resolved_path(real)
+      # stops at the docroot, which exists
+      real = File.dirname(real) until File.exist?(real) || File.symlink?(real)
+      File.realpath(real)
+    rescue Errno::ENOENT, Errno::ELOOP
+      nil
     end
 
     # Convert a real path to a Node API path

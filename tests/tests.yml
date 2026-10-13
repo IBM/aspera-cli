@@ -1652,7 +1652,7 @@ node_emulator_start:
   args:
     - node
     - emulator
-    - '@json:{"url":"http://localhost:12348","username":"sim","password":"sim","docroot":"$(TMP)"}'
+    - '@json:{"url":"http://localhost:12348","username":"sim","password":"sim","password_min_bits":0,"docroot":"$(TMP)"}'
   post: |
     require 'socket'
     require 'timeout'
