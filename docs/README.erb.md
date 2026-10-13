@@ -8405,6 +8405,8 @@ To send a password reset link to a user, use command `faspex5 admin accounts res
 The command `<%=cmd%> faspex5 postprocessing` emulates Faspex 4 post-processing script execution in Faspex 5.
 It implements a web hook for Faspex 5 and calls a script with the same environment variables as set by Faspex 4.
 Environment variables are set to the values provided by the web hook, which are the same as Faspex 4 post-processing.
+Only values whose key starts with `faspex_` are passed: other keys are ignored, as they could change the behavior of the script (e.g. `PATH`).
+A structured value (object or array) is passed as JSON.
 
 It allows migrating workflows from Faspex 4 to Faspex 5 while preserving scripts.
 Nevertheless, in the long term, a native approach shall be considered, such as using Aspera Orchestrator or other workflow engine, using Faspex 5 native web hooks or File Processing.
@@ -8423,36 +8425,49 @@ For details on `url` and HTTPS (`cert`, `key`, `chain`), see [Web service](#web-
 
 When a request on <%=tool%> is received the following happens:
 
-- <%=tool%> gets the path of the URL called
+- If `allowed_ips` is set, <%=tool%> checks the source IP address of the request (else HTTP 403).
+- If `secret_token` is set, <%=tool%> checks the `token` parameter of the URL (else HTTP 401).
+- <%=tool%> gets the path of the URL called.
 - It removes the **base path** of base URL.
-- It prepends it with the value of `script_folder`
-- It executes the script at that path
-- Upon success, a success code is returned
+- It prepends it with the value of `script_folder`.
+- It executes the script at that path, if it exists (else HTTP 404) and is inside `script_folder` (else HTTP 403).
+- The script is killed if it does not finish within `timeout_seconds`.
+- Upon success, a success code is returned.
 
 For example:
 
 ```shell
-<%=cmd%> faspex5 postprocessing @json:'{"url":"http://localhost:8080/processing","script_folder":"/opt/scripts"}'
+<%=cmd%> faspex5 postprocessing @json:'{"url":"http://0.0.0.0:8080/processing","script_folder":"/opt/scripts","secret_token":"mysecret"}'
 ```
 
 In Faspex 5, the URL of the webhook endpoint shall be reachable from within Faspex containers.
 For example, if <%=tool%> is running on the host, the URL hostname shall not be `localhost`, as this refers to the local address inside the Faspex container.
 Instead, one can specify the **IP address of the host** or `host.containers.internal` (Check `podman` manual).
+So, <%=tool%> shall listen on an address reachable from the containers: the IP address of the host, or `0.0.0.0` for all interfaces.
 
 > [!NOTE]
 > **Security**: by default the listener binds to loopback (`localhost`) and is not reachable from outside the host.
-> When binding to a routable address, it is strongly recommended to add at least one of the following protections:
+> When `url` is not a local address (`localhost`, `127.0.0.1`, `::1`), at least one of the following protections is required:
 >
 > - **`secret_token`**: include the token in the Faspex webhook URL: `http://host:8080/processing/script1.sh?token=mysecret`. Requests without the correct token are rejected with HTTP 401.
-> - **`allowed_ips`**: restrict the listener to the known Faspex container IPs, e.g. `@json:'{"allowed_ips":["192.168.1.10","192.168.1.11"]}'`. Requests from other IPs are rejected with HTTP 403.
+> - **`allowed_ips`**: restrict the listener to the known Faspex container IPs or network, e.g. `@json:'{"allowed_ips":["192.168.1.10","10.89.0.0/24"]}'`. Requests from other IPs are rejected with HTTP 403.
 
 Define the web hook as follows:
 
-**Webhook endpoint URI**: `http://host.containers.internal:8080/processing/script1.sh`
-
-With `secret_token`: `http://host.containers.internal:8080/processing/script1.sh?token=mysecret`
+**Webhook endpoint URI**: `http://host.containers.internal:8080/processing/script1.sh?token=mysecret`
 
 Then the post-processing script executed will be `/opt/scripts/script1.sh`.
+
+A Ruby script can also be evaluated in the process of <%=tool%>, instead of being executed in a new process.
+For this, add `lambda` to the query of the URL, e.g. `http://host.containers.internal:8080/processing/notify.rb?token=mysecret&lambda`.
+The script shall have extension `.rb`, and return a lambda, which is called with all the webhook values (`Hash`).
+For example:
+
+```ruby
+->(params) { File.write('/tmp/last_package.txt', params['faspex_pkg_name']) }
+```
+
+The lambda runs with the privileges and configuration of <%=tool%>, and is stopped after `timeout_seconds`.
 
 ### Faspex 5: Faspex 4 Gateway
 

@@ -45,6 +45,11 @@ RSpec.describe(Aspera::SecretHider) do
       expect(log('Password: secret123')).to(eq('Password: 🔑'))
     end
 
+    it 'hides secrets in URL query parameters' do
+      expect(log('"POST /processing/x.sh?token=s3cret HTTP/1.1" 200')).to(eq('"POST /processing/x.sh?token=🔑 HTTP/1.1" 200'))
+      expect(log('"GET /cb?code=abc&client_secret=xyz&state=1 HTTP/1.1" 200')).to(eq('"GET /cb?code=abc&client_secret=🔑&state=1 HTTP/1.1" 200'))
+    end
+
     it 'hides get/set options' do
       expect(log('get password=secret123')).to(eq('get password=🔑'))
     end

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'ipaddr'
 require 'webrick'
 require 'aspera/log'
 require 'aspera/assert'
@@ -18,6 +19,15 @@ module Aspera
     private_constant :GENERIC_ISSUER, :ONE_YEAR_SECONDS, :PKCS12_EXT, :CLOCK_SKEW_OFFSET_SEC
 
     class << self
+      # @param host [String] Host name or IP address the server listens on
+      # @return [Boolean] `true` if the server is reachable from the local host only
+      def loopback?(host)
+        return true if host.eql?('localhost')
+        IPAddr.new(host).loopback?
+      rescue IPAddr::Error
+        false
+      end
+
       # Generate or fill and self sign certificate
       def self_signed_cert(private_key, digest: 'SHA256')
         cert = OpenSSL::X509::Certificate.new

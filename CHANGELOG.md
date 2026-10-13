@@ -22,9 +22,10 @@ Released: [Place date of release here]
 * **global**: `@secret:` asks for the secret on a web page opened in the browser when option `ui` is `graphical` (default on Windows and macOS, or when `DISPLAY` is set), else on terminal. The page is served by a local web server on `127.0.0.1`.
 * `mcp server`: `@secret:` (in commands or presets) asks the user to enter the secret on a web page of the server, using MCP URL mode elicitation (protocol `2026-07-28`, and `2025-11-25` clients): the secret is not sent to the MCP client or the AI model, and is hidden in results. With `auth_token`, the page asks for it as access code. With the `stdio` transport, the page is served by a local web server on `127.0.0.1`. Requires an MCP client supporting URL mode elicitation.
 * `mcp server`: `http` transport: authentication with a static token (`auth_token`) or OAuth 2.0 PKCE with dynamic client registration (`oauth`). On a non-local `bind`, `auth_token` is mandatory, also with `oauth`: the consent page asks for it as access code. New option `base_url`: URL of the server for clients in OAuth metadata and secret pages, mandatory with `oauth` on a wildcard `bind`.
+* `faspex5 postprocessing`: With `lambda` in the URL query, a Ruby script (`.rb`) is evaluated in the process of `ascli`: it returns a lambda, called with the webhook values. This parameter was ignored before.
 * `faspex5 postprocessing`: Two new optional parameters harden the unauthenticated webhook listener:
   * `secret_token` — callers must supply `?token=<value>` in the URL; requests without the correct token are rejected with HTTP 401.
-  * `allowed_ips` — restrict the listener to one IP or a list of IPs; requests from other source IPs are rejected with HTTP 403.
+  * `allowed_ips` — restrict the listener to one IP address or network (CIDR), or a list of them; requests from other source IPs are rejected with HTTP 403.
 * `faspex5 postprocessing`, `faspex5 gateway`, `aoc gateway`: Parameters are now validated against a JSON Schema (`Faspex4PostProcOptions`, `Faspex4GatewayOptions`). Unknown keys are rejected at startup instead of being silently ignored.
 * **global**: Tables are fitted to the terminal width: text columns (e.g. `description`) are wrapped, the widest first, then other columns if needed. Parameter `width` of `--out.table` sets the maximum table width.
 * `options.schema.yaml`: New schemas `WebServerOptions` (shared `url`/`cert`/`key`/`chain`), `Faspex4GatewayOptions` (extends `WebServerOptions`), and `Faspex4PostProcOptions` (extends `WebServerOptions` with postprocessing-specific keys).
@@ -53,9 +54,14 @@ Released: [Place date of release here]
 * **global**: Pseudo transfer-spec parameter `target_rate` is in bps, as documented: a value without suffix or with suffix `k` was taken as kbps. An integer value (e.g. `--ts.target_rate=1000000`) was rejected.
 * `sync`: Transfer spec parameter `target_rate` was ignored, and `target_rate_kbps` too with the `args` format of `sync_info`.
 * `config sync translate`: `-C`, `--ws-connect` and `-D` set `true` instead of `mode`=`continuous`, `connect_mode`=`ws` and `log.level`=`dbg1`, and `--scan-interval` and `--remote-scan-interval` were not converted to milliseconds.
+* `faspex5 postprocessing`: A request with a body that is not a JSON object is rejected with HTTP 400, a missing script with HTTP 404, and a script outside `script_folder` with HTTP 403, instead of HTTP 500 with the path of the script in the message.
+* `faspex5 postprocessing`: An unknown parameter, an invalid `allowed_ips` or a missing `script_folder` is reported at startup, instead of at each request.
+* **global**: Secret values of URL query parameters (e.g. `token`, `client_secret`) are hidden in logs.
 
 ### Breaking Changes
 
+* `faspex5 postprocessing`: `secret_token` or `allowed_ips` is required when `url` is not a local address (`localhost`, `127.0.0.1`, `::1`): anyone reaching the server could start the scripts.
+* `faspex5 postprocessing`: Only webhook values whose key starts with `faspex_` (Faspex 4 post-processing variables) are passed to the script as environment variables. Other keys are ignored: they could change the behavior of the script (e.g. `PATH`, `LD_PRELOAD`). A structured value (object or array) is passed as JSON instead of Ruby format.
 * `orchestrator`: `workflows import` takes the path of a file created by `workflows export`, instead of a `Hash` (rejected by Orchestrator).
 * `orchestrator`: `workflows import_with_constraints` takes keys `filename`, `add_as_revision`, `subwf_constraints`, `action_template_constraints`, `remote_node_constraints`, `auto_enable_missing_plugins`, instead of `workflow_data` and `constraints` (rejected by Orchestrator).
 * `orchestrator`: `workorders output` displays fields of variables as plain values instead of single-element arrays (e.g. `"value":"x"` instead of `"value":["x"]`), and an empty value as `null`.

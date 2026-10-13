@@ -23,6 +23,32 @@ module Aspera
           instance
         end
 
+        describe '#action_postprocessing' do
+          before { allow(WebServerSimple).to(receive(:new).and_return(instance_double(WebServerSimple, mount: nil, start: nil))) }
+
+          # @param parameters [Hash] parameters of command
+          def postprocessing(parameters)
+            plugin([], nil).send(:action_postprocessing, parameters: parameters)
+          end
+
+          it 'starts without protection on a local address' do
+            expect(postprocessing({'url' => 'http://127.0.0.1:8080/processing'})).to(be_a(Result::Status))
+          end
+
+          it 'refuses to start without protection on a non-local address' do
+            expect { postprocessing({'url' => 'http://0.0.0.0:8080/processing'}) }.to(raise_error(BadArgument, /secret_token or allowed_ips is required/))
+            expect(WebServerSimple).not_to(have_received(:new))
+          end
+
+          it 'starts with secret_token on a non-local address' do
+            expect(postprocessing({'url' => 'http://0.0.0.0:8080/processing', 'secret_token' => 's3cret'})).to(be_a(Result::Status))
+          end
+
+          it 'starts with allowed_ips on a non-local address' do
+            expect(postprocessing({'url' => 'http://myhost:8080/processing', 'allowed_ips' => '10.89.0.0/24'})).to(be_a(Result::Status))
+          end
+        end
+
         describe '#persistency_user_id' do
           it 'is the username without public link' do
             expect(plugin(['--username=john'], nil).send(:persistency_user_id)).to(eq('john'))

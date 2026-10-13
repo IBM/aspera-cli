@@ -921,14 +921,20 @@ components:
       description: >-
         Configuration for the Faspex 4-style post-processing webhook receiver (`faspex5 postprocessing`).
         The command starts a local HTTP(S) server that Faspex 5 calls after each package upload.
-        It maps the URL path to a script under `script_folder` and executes it with the webhook
-        JSON body as environment variables.
+        It maps the URL path to a script under `script_folder` and executes it with the values of the
+        webhook JSON body whose key starts with `faspex_` as environment variables.
         By default the server binds to loopback; use a routable address only when Faspex containers
-        must reach the host.
+        must reach the host: then `secret_token` or `allowed_ips` is required.
       allOf:
         - $ref: "#/components/schemas/WebServerOptions"
         - type: object
+          additionalProperties: false
           properties:
+            # Listed solely to allow them under additionalProperties: false (defined in WebServerOptions).
+            url: {}
+            cert: {}
+            key: {}
+            chain: {}
             script_folder:
               type: string
               description: >-
@@ -950,21 +956,26 @@ components:
               default: 60
             secret_token:
               type: string
+              minLength: 1
               description: >-
                 Shared secret for webhook authentication.
                 When set, every incoming request must include `?token=<value>` in the URL;
                 requests without the correct token are rejected with HTTP 401.
                 Configure the Faspex webhook URL as `http://host:port/path/script.sh?token=<value>`.
+                This parameter or `allowed_ips` is required when `url` is not a local address.
               example: my-secret-token
             allowed_ips:
               description: >-
-                IP address or list of IP addresses allowed to call the listener.
+                IP address or network (CIDR, e.g. `10.89.0.0/24`), or list of them, allowed to call the listener.
                 Requests from any other source IP are rejected with HTTP 403.
                 When not set, no IP restriction is applied.
+                This parameter or `secret_token` is required when `url` is not a local address.
               oneOf:
                 - type: string
                   example: "192.168.1.10"
                 - type: array
                   items:
                     type: string
-                  example: ["192.168.1.10", "192.168.1.11"]
+                  example:
+                    - "192.168.1.10"
+                    - "10.89.0.0/24"

@@ -38,6 +38,8 @@ module Aspera
       /(?<begin>(?:(?<quote>["'])|:)[^"':=]*(?:#{ALL_SECRETS.join('|')})[^"':=]*\k<quote>? *(?:=>|:) *")(?:[^"\\]|\\.)+(?<end>")/i,
       # rendered Ruby 3.4+ symbol key: `k: "v"`
       /(?<begin>\b\w*(?:#{ALL_SECRETS.join('|')})\w*: *")(?:[^"\\]|\\.)+(?<end>")/i,
+      # query parameter of URL: `?token=v` or `&client_secret=v`
+      /(?<begin>[?&][^=&\s"]*(?:#{KEY_SECRETS.join('|')})[^=&\s"]*=)[^&\s"#]+(?<end>)/i,
       # logged data
       /(?<begin>(?:#{NON_ENV_SECRETS.join('|')})[ =:]+)[^ "\n]#{SECRET_LENGTH}(?<end>$)/i,
       # cred in http dump
