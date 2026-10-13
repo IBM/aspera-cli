@@ -24,6 +24,7 @@ module Aspera
     #                                                     Style: use Symbol for named methods; ->(){} for 1-liners; lambda do…end for 2–3 statements.
     # @!attribute allowed     [Array<Symbol>, nil]        Allowed Symbol values; when set, type is forced to Symbol and accept_list is applied
     # @!attribute interactive [Boolean]                   When true, prompts for this argument (only) when no CLI args are provided
+    # @!attribute raw         [Boolean]                   When true, the value is not evaluated as extended value (e.g. `@env:`)
     ArgumentSpec = Struct.new(
       :name,
       :description,
@@ -36,6 +37,7 @@ module Aspera
       :lookup,
       :allowed,
       :interactive,
+      :raw,
       keyword_init: true
     ) do
       def initialize(**kwargs)
@@ -43,6 +45,7 @@ module Aspera
         kwargs[:multiple]     = false if kwargs[:multiple].nil?
         kwargs[:bulk]         = false if kwargs[:bulk].nil?
         kwargs[:interactive]  = false if kwargs[:interactive].nil?
+        kwargs[:raw]          = false if kwargs[:raw].nil?
         kwargs[:type]         = String unless kwargs.key?(:type) || kwargs[:allowed]
         super
       end

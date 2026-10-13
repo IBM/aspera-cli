@@ -2900,16 +2900,28 @@ Add-Content -Path $PROFILE -Value ". '$HOME\<%=cmd%>_completion.ps1'"
 
 In PowerShell, the words proposed are kept for the session, so only the first `Tab` at a given position executes <%=tool%>.
 
-Once active, press `Tab` to complete commands at any depth:
+Once active, press `Tab` to complete:
+
+<%# check_commands: skip -%>
 
 ```bash
-<%=cmd%> <Tab>               # lists all plugins: aoc, server, node, ...
-<%=cmd%> server <Tab>        # lists server sub-commands: upload, download, ls, ...
-<%=cmd%> aoc admin <Tab>     # lists aoc admin sub-commands: user, node, ...
+<%=cmd%> <Tab>                     # plugins and global options: aoc, server, node, ..., --format, ...
+<%=cmd%> server <Tab>              # sub-commands and options of plugin: upload, download, ls, ..., --url, ...
+<%=cmd%> aoc admin <Tab>           # sub-commands at any depth: user, node, ...
+<%=cmd%> server ls --u<Tab>        # options, after any command: --url, --username, ...
+<%=cmd%> --format=<Tab>            # values of option: --format=json, --format=table, ...
+<%=cmd%> server upload <Tab>       # local files
+<%=cmd%> config preset show <Tab>  # type of expected value, not inserted: <identifier>
 ```
 
-The scripts call `<%=cmd%> config completion words [<word>...]`, which lists the words that can follow the given ones.
-It can also be used directly to inspect available commands:
+Zsh, Fish and PowerShell also display the description of commands and options.
+Zsh lists options once `-` is typed (zsh style `prefix-needed`).
+The type of an expected value is displayed by Bash and Zsh, and by PowerShell in the list of `MenuComplete` (`Ctrl+Space`).
+
+The scripts call `<%=cmd%> config completion candidates -- [<word>...] <current word>`, which lists the candidates for the word at the cursor, with their description, followed by a directive for the shell.
+The words are not evaluated (e.g. `@env:` is not replaced).
+The command `<%=cmd%> config completion words [<word>...]` lists the words that can follow the given ones.
+It can be used directly to inspect available commands:
 
 ```bash
 <%=cmd%> config completion words aoc admin

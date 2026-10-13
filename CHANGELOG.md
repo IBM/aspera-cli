@@ -44,9 +44,12 @@ Released: [Place date of release here]
   * The arguments of an intermediate command are proposed before its sub-commands (e.g. `node access_keys do <access_key_id>`).
   * Deprecated options are not proposed.
   * `config completion` does not check for a newer gem version (no network access on `Tab` or at shell startup).
+  * Scripts call new command `config completion candidates`: Zsh, Fish and PowerShell display the description of commands and options. Options are proposed after any command for a word starting with `-`, values of option also for `--name=value`, and local files after the arguments of upload commands. The type of an expected value (e.g. `<identifier>`) is displayed, but no longer inserted. Scripts saved in a completion folder shall be saved again.
+  * Bash: words containing `=` or `:` (e.g. a URL) no longer break completion of the next words.
 
 ### Issues Fixed
 
+* `config completion words`: words typed on the command line were evaluated as extended values at each `Tab` (e.g. `@ruby:` code was executed, `@stdin:` waited for input).
 * **global**: Removed gem dependency on `blankslate` (JSON-RPC client of agent `desktop`).
 * **global**: Manual and command help: the type of a parameter with alternatives (`oneOf`, e.g. `allowed_ips` of `faspex5 postprocessing`) is shown (e.g. `String, Array[String]`) instead of empty, which broke the PDF manual.
 * **global**: Command help: the schema of an argument with alternatives (`oneOf` without discriminator) shows the title of each alternative.

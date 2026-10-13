@@ -14,6 +14,7 @@ require 'aspera/cli/wizard'
 require 'aspera/cli/sync_actions'
 require 'aspera/cli/ascp_actions'
 require 'aspera/cli/preset_actions'
+require 'aspera/cli/completion_actions'
 require 'aspera/cli/vault_manager'
 require 'aspera/cli/transfer_actions'
 require 'aspera/cli/gem_checker'
@@ -48,6 +49,7 @@ module Aspera
         include AscpActions
         include PresetActions
         include TransferActions
+        include CompletionActions
 
         class << self
           # Folder containing plugins in the gem's main folder
@@ -83,10 +85,7 @@ module Aspera
         end
 
         DEFAULT_CHECK_NEW_VERSION_DAYS = 7
-        # Shells with a completion script in COMPLETION_FOLDER: shell => extension of script
-        COMPLETION_SHELLS = {bash: 'bash', zsh: 'zsh', fish: 'fish', powershell: 'ps1'}.freeze
-        COMPLETION_FOLDER = File.expand_path('../completion', __dir__)
-        private_constant :DEFAULT_CHECK_NEW_VERSION_DAYS, :COMPLETION_SHELLS, :COMPLETION_FOLDER
+        private_constant :DEFAULT_CHECK_NEW_VERSION_DAYS
 
         option :preset,             description: 'Load the named option preset from current config file',             short: 'P', on_set: :load_preset
         option :version_check_days, description: 'Period in days to check new version (zero to disable)',             allowed: Type::INTEGER, default: DEFAULT_CHECK_NEW_VERSION_DAYS
@@ -429,8 +428,10 @@ module Aspera
 
         # completion sub-commands
         commands_under :completion do
-          command :words, description: 'List words that can follow the given words (used by completion scripts)',
-            arguments: [{name: :words, multiple: true, mandatory: false}]
+          command :words, description: 'List words that can follow the given words',
+            arguments: [{name: :words, multiple: true, mandatory: false, raw: true}]
+          command :candidates, description: 'Complete the last word, with descriptions and a directive for the shell (used by completion scripts)',
+            arguments: [{name: :words, multiple: true, mandatory: false, raw: true}]
           COMPLETION_SHELLS.each_key do |shell|
             command shell, description: "Generate #{shell} completion script, to evaluate in shell",
               action: ->(**) { completion_script(shell) }
@@ -633,145 +634,6 @@ module Aspera
             row
           end
           Result::ObjectList.new(rows, fields: %w[option description allowed deprecated replacement])
-        end
-
-        # List words that can follow the given words, one per line, for completion scripts.
-        # @param words [Array<String>, nil] words typed before the cursor, after the command name
-        def action_completion_words(words: nil, **)
-          completion_candidates(completion_join_bash_split(Array(words))).each { |w| puts w }
-          Process.exit(0)
-        end
-
-        # @param words [Array<String>] words typed before the cursor, after the command name
-        # @return [Array<String>] words that can follow
-        def completion_candidates(words)
-          plugins = Plugins::Factory.instance.plugin_list
-          positional, waiting = completion_split(words)
-          plugin_class = nil
-          unless positional.empty?
-            # The first positional word is the plugin
-            return [] unless plugins.include?(positional.first.to_sym)
-            begin
-              plugin_class = Plugins::Factory.instance.plugin_class(positional.first.to_sym)
-            rescue StandardError
-              return []
-            end
-            plugin_class.declare_options(options)
-            # Options of the plugin may take a value: split again
-            positional, waiting = completion_split(words)
-          end
-          return completion_option_values(waiting) unless waiting.nil?
-          # Level 0: plugin names and global options
-          return plugins.map(&:to_s) + completion_option_names(options.declared_options) if plugin_class.nil?
-          registry = plugin_class.command_registry
-          path, given = registry.command_position(positional[1..].map(&:to_sym))
-          return [] if path.nil?
-          children = registry.children_of(path)
-          arguments = registry.arguments_at(path)
-          next_argument =
-            if given < arguments.length
-              arguments[given]
-            elsif children.empty? && arguments.last&.multiple
-              arguments.last
-            end
-          return completion_argument_placeholder(next_argument) unless next_argument.nil?
-          result = children.keys.map(&:to_s)
-          # Options of plugin only right after the plugin name
-          result.concat(completion_option_names(plugin_class.option_sources.each_key.inject({}) { |h, src| h.merge(src.option_specs) })) if positional.length.eql?(1)
-          result
-        end
-
-        # Bash splits `--opt=value` in words `--opt`, `=` and `value`: join them back.
-        # @param words [Array<String>] words typed before the cursor
-        # @return [Array<String>] words, with options and their value joined
-        def completion_join_bash_split(words)
-          result = []
-          join_next = false
-          words.each do |word|
-            if join_next
-              result[-1] += word
-              join_next = false
-            elsif word.eql?(Option::VALUE_SEP) && result.last&.start_with?(Option::PREFIX) && !result.last.include?(Option::VALUE_SEP)
-              result[-1] += word
-              join_next = true
-            else
-              result.push(word)
-            end
-          end
-          result
-        end
-
-        # Split words as the command line parser does: an option without inline value takes the next word as value,
-        # unless it is a flag. An option not declared yet (e.g. of a plugin) takes a value.
-        # @param words [Array<String>] words typed before the cursor
-        # @return [Array(Array<String>, Option)] positional words, and the last option if it is waiting for its value
-        def completion_split(words)
-          positional = []
-          waiting = nil
-          stop = false
-          words.each do |word|
-            if !stop && word.eql?(Option::STOP)
-              stop = true
-              waiting = nil
-            elsif !stop && Option.option?(word)
-              tok = Option.parse(word)
-              # `--opt=` at end of line (from bash split): value is being typed
-              waiting = (tok.inline? && !tok.inline_value.empty?) || completion_option(tok)&.flag? ? nil : tok
-            elsif waiting
-              waiting = nil
-            else
-              positional.push(word)
-            end
-          end
-          [positional, waiting]
-        end
-
-        # @param tok [Option] option token
-        # @return [OptionValue, nil] declared option designated by the token
-        def completion_option(tok)
-          return options.declared_options.values.find { |o| o.short.eql?(tok.short_char) } if tok.short_char
-          options.declared_options[tok.name.to_sym]
-        end
-
-        # @param declared [Hash{Symbol => OptionValue, OptionSpec}] options by name
-        # @return [Array<String>] command line names of options, except deprecated ones
-        def completion_option_names(declared)
-          declared.reject { |_, o| o.deprecation }.keys.map { |name| Parser.option_name_to_line(name) }
-        end
-
-        # @param tok [Option] option token waiting for its value
-        # @return [Array<String>] allowed values of the option, or a type placeholder
-        def completion_option_values(tok)
-          option = completion_option(tok)
-          # No information on the value of a key of a dotted option
-          return [] if option.nil? || tok.dot_path
-          return option.values.map(&:to_s).uniq if option.values&.any?
-          types = option.types&.reject { |t| t.eql?(NilClass) }
-          ["<#{types&.any? ? types.map(&:name).join('|') : option.allowed_info || 'String'}>"]
-        end
-
-        def completion_argument_placeholder(arg_spec)
-          if arg_spec.allowed
-            arg_spec.allowed.map(&:to_s)
-          else
-            type_str =
-              case arg_spec.type
-              when :identifier then 'identifier'
-              when Array       then arg_spec.type.map(&:name).join('|')
-              when Class       then arg_spec.type.name
-              when nil         then 'String'
-              else arg_spec.type.to_s
-              end
-            ["<#{type_str}>"]
-          end
-        end
-
-        # Display the completion script for the given shell.
-        # Raw output, not formatted, so that it can be evaluated by the shell.
-        # @param shell [Symbol] One of `COMPLETION_SHELLS`
-        def completion_script(shell)
-          $stdout.write(File.read(File.join(COMPLETION_FOLDER, "#{Info::CMD_NAME}.#{COMPLETION_SHELLS[shell]}")))
-          Process.exit(0)
         end
 
         # Folder in $HOME for application files (~/.aspera)

@@ -1,18 +1,49 @@
 # frozen_string_literal: true
 
-# Shell completion scripts displayed by `config completion <shell>`.
-# The PowerShell script is executed with `pwsh`, if available.
+# Shell completion scripts displayed by `config completion <shell>`, and the commands they call.
+# The Bash and PowerShell scripts are executed with `bash` and `pwsh`, if available.
 
 require 'aspera/cli/runner'
 require 'aspera/cli/plugins/config'
 require 'open3'
 require 'rbconfig'
+require 'shellwords'
 require 'tmpdir'
 
 module Aspera
   module Cli
     RSpec.describe(Plugins::Config) do
       completion_folder = described_class.const_get(:COMPLETION_FOLDER)
+      # Path of executable in PATH, or nil
+      executable = ->(name) { ENV.fetch('PATH', '').split(File::PATH_SEPARATOR).map { |dir| File.join(dir, name) }.find { |f| File.executable?(f) } }
+
+      # @return [String] root folder of this source tree
+      def source_root
+        File.expand_path('..', __dir__)
+      end
+
+      # @param command [String] sub-command of `config completion`
+      # @param words   [Array<String>] words given after `--`
+      # @param env     [Hash] environment variables
+      # @return [Array<String>] lines of output
+      def run_completion(command, *words, env: {})
+        cmd = [RbConfig.ruby, "-I#{source_root}/lib", File.join(source_root, 'bin', Info::CMD_NAME), 'config', 'completion', command]
+        cmd += ['--', *words] unless words.empty?
+        output, status = Open3.capture2e(env, *cmd)
+        expect(status.exitstatus).to(eq(0), output)
+        output.lines.map(&:chomp)
+      end
+
+      # Execute the block with `ascli` of this source tree in `PATH`, as called by completion scripts
+      # @yieldparam env [Hash] environment variables
+      def with_ascli_in_path
+        Dir.mktmpdir do |dir|
+          wrapper = File.join(dir, Info::CMD_NAME)
+          File.write(wrapper, %Q(#!/bin/sh\nexec "#{RbConfig.ruby}" -I"#{source_root}/lib" "#{source_root}/bin/#{Info::CMD_NAME}" "$@"\n))
+          File.chmod(0o755, wrapper)
+          yield({'PATH' => [dir, ENV.fetch('PATH', '')].join(File::PATH_SEPARATOR)})
+        end
+      end
 
       described_class.const_get(:COMPLETION_SHELLS).each do |shell, extension|
         it "has a completion script and command for #{shell}" do
@@ -22,14 +53,8 @@ module Aspera
       end
 
       describe 'completion words action' do
-        let(:root) { File.expand_path('..', __dir__) }
-
-        def run_words(*words)
-          cmd = [RbConfig.ruby, "-I#{root}/lib", File.join(root, 'bin', Info::CMD_NAME), 'config', 'completion', 'words']
-          cmd += ['--', *words] unless words.empty?
-          output, status = Open3.capture2e(*cmd)
-          expect(status.exitstatus).to(eq(0))
-          output.lines.map(&:chomp)
+        def run_words(*words, env: {})
+          run_completion('words', *words, env: env)
         end
 
         it 'proposes plugin names before options at root' do
@@ -109,34 +134,116 @@ module Aspera
           expect(run_words('server', 'nope')).to(eq([]))
           expect(run_words('config', 'preset', 'get', 'a', 'b')).to(eq([]))
         end
+
+        it 'does not evaluate extended values in words' do
+          expect(run_words('@env:COMPLETION_TEST_WORD', env: {'COMPLETION_TEST_WORD' => 'server'})).to(eq([]))
+        end
+      end
+
+      describe 'completion candidates action' do
+        def run_candidates(*words, env: {})
+          run_completion('candidates', *words, env: env)
+        end
+
+        it 'lists candidates with their description, then the directive' do
+          lines = run_candidates('server', '')
+          expect(lines).to(include("upload\tUpload files to server", "ls\tList files"))
+          expect(lines.last).to(eq(':'))
+        end
+
+        it 'proposes all options for a word at cursor starting with a dash' do
+          words = run_candidates('server', 'ls', '-')[0..-2].map { |l| l.split("\t").first }
+          expect(words).to(include('--url', '--username', '--format'))
+          expect(words).to(all(start_with('--')))
+        end
+
+        it 'proposes the values of an option with its prefix' do
+          expect(run_candidates('--format=j')).to(eq(%w[text nagios ruby json jsonpp yaml table csv image].map { |v| "--format=#{v}" } + [':']))
+        end
+
+        it 'gives the type of an expected value as hint' do
+          expect(run_candidates('config', 'preset', 'show', '')).to(eq([':hint <identifier>']))
+          expect(run_candidates('server', '--url=')).to(eq([':hint <String>']))
+        end
+
+        it 'asks for local files after the arguments of an upload' do
+          expect(run_candidates('server', 'upload', '')).to(eq([':files']))
+          expect(run_candidates('aoc', 'packages', 'send', '')).to(eq([':hint <Hash>']))
+          expect(run_candidates('aoc', 'packages', 'send', '@json:{}', '')).to(eq([':files']))
+        end
+
+        it 'does not evaluate extended values in words' do
+          expect(run_candidates('@env:COMPLETION_TEST_WORD', '', env: {'COMPLETION_TEST_WORD' => 'server'})).to(eq([':']))
+        end
+      end
+
+      describe 'Bash completion script', :bash do
+        bash = executable.call('bash')
+
+        # @param line       [String]        command line, the cursor is at the end
+        # @param comp_words [Array<String>] words as split by bash: also on characters of COMP_WORDBREAKS
+        # @return [Array<String>] COMPREPLY
+        def complete_bash(bash, line, comp_words)
+          script = <<~BASH
+            source #{Shellwords.escape(File.join(source_root, 'lib/aspera/cli/completion', "#{Info::CMD_NAME}.bash"))}
+            COMP_LINE=#{Shellwords.escape(line)}
+            COMP_POINT=${#COMP_LINE}
+            COMP_WORDS=(#{comp_words.map { |w| Shellwords.escape(w) }.join(' ')})
+            COMP_CWORD=#{comp_words.length - 1}
+            _ascli_complete
+            printf '%s\n' "${COMPREPLY[@]}"
+          BASH
+          with_ascli_in_path do |env|
+            output, status = Open3.capture2e(env, bash, '--norc', '--noprofile', '-c', script, chdir: source_root)
+            expect(status).to(be_success, output)
+            return output.lines.map(&:chomp)
+          end
+        end
+
+        before { skip('bash not found') if bash.nil? || Environment.instance.os.eql?(Environment::OS_WINDOWS) }
+
+        it 'completes a word' do
+          expect(complete_bash(bash, 'ascli serv', %w[ascli serv])).to(eq(['server']))
+        end
+
+        it 'completes the value of an option, with words split on = and :' do
+          expect(complete_bash(bash, 'ascli --format=js', %w[ascli --format = js])).to(eq(%w[json jsonpp]))
+          expect(complete_bash(bash, 'ascli server --url=https://h:443 l', %w[ascli server --url = https : //h : 443 l])).to(eq(['ls']))
+        end
+
+        it 'displays a hint without inserting it' do
+          expect(complete_bash(bash, 'ascli config preset show ', ['ascli', 'config', 'preset', 'show', ''])).to(eq(['<identifier>', ' ']))
+        end
+
+        it 'completes local files where expected' do
+          expect(complete_bash(bash, 'ascli server upload READ', %w[ascli server upload READ])).to(include('README.md'))
+        end
       end
 
       describe 'PowerShell completion script', :powershell do
-        pwsh = ENV.fetch('PATH', '').split(File::PATH_SEPARATOR).map { |dir| File.join(dir, 'pwsh') }.find { |f| File.executable?(f) }
+        pwsh = executable.call('pwsh')
 
-        it 'completes commands at any depth' do
+        it 'completes commands at any depth, option values, and displays hints' do
           skip('pwsh not found') if pwsh.nil?
           skip('ascli wrapper is a shell script') if Environment.instance.os.eql?(Environment::OS_WINDOWS)
-          root = File.expand_path('..', __dir__)
-          Dir.mktmpdir do |dir|
-            # ascli of this source tree, found in PATH by the completer
-            wrapper = File.join(dir, Info::CMD_NAME)
-            File.write(wrapper, %Q(#!/bin/sh\nexec "#{RbConfig.ruby}" -I"#{root}/lib" "#{root}/bin/#{Info::CMD_NAME}" "$@"\n))
-            File.chmod(0o755, wrapper)
-            # Activated as documented, then one line of completions per command line, with the cursor at the end (the word completed is compared without case)
-            script = <<~PS1
-              ascli config completion powershell | Out-String | Invoke-Expression
-              foreach ($line in 'ascli conf', 'ascli config completion ', 'ascli config COMPL') {
-                  (TabExpansion2 -inputScript $line -cursorColumn $line.Length).CompletionMatches.CompletionText -join ' '
-              }
-            PS1
-            env = {'PATH' => [dir, ENV.fetch('PATH', '')].join(File::PATH_SEPARATOR)}
+          # Activated as documented, then one line of completions per command line, with the cursor at the end (the word completed is compared without case)
+          script = <<~PS1
+            ascli config completion powershell | Out-String | Invoke-Expression
+            foreach ($line in 'ascli conf', 'ascli config completion ', 'ascli config COMPL', 'ascli --format=js', 'ascli config preset show ') {
+                $matches = (TabExpansion2 -inputScript $line -cursorColumn $line.Length).CompletionMatches
+                ($matches.CompletionText -join ' ') + '|' + ($matches.ListItemText -join ' ')
+            }
+          PS1
+          with_ascli_in_path do |env|
             output, status = Open3.capture2e(env, pwsh, '-NoProfile', '-NonInteractive', '-Command', script)
             expect(status).to(be_success, output)
             lines = output.lines.map(&:chomp)
-            expect(lines[0]).to(eq('config'))
-            expect(lines[1].split).to(include('words', 'bash', 'powershell'))
-            expect(lines[2]).to(eq('completion'))
+            expect(lines[0]).to(eq('config|config'))
+            expect(lines[1].split('|').first.split).to(include('words', 'candidates', 'bash', 'powershell'))
+            expect(lines[2]).to(eq('completion|completion'))
+            expect(lines[3]).to(eq('--format=json --format=jsonpp|--format=json --format=jsonpp'))
+            # Not changed, so that no file path is completed
+            expect(lines[4]).to(eq(' |<identifier>'))
           end
         end
       end

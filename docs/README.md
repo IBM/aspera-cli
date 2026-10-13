@@ -3074,16 +3074,27 @@ Add-Content -Path $PROFILE -Value ". '$HOME\ascli_completion.ps1'"
 
 In PowerShell, the words proposed are kept for the session, so only the first `Tab` at a given position executes `ascli`.
 
-Once active, press `Tab` to complete commands at any depth:
+Once active, press `Tab` to complete:
+
 
 ```bash
-ascli <Tab>               # lists all plugins: aoc, server, node, ...
-ascli server <Tab>        # lists server sub-commands: upload, download, ls, ...
-ascli aoc admin <Tab>     # lists aoc admin sub-commands: user, node, ...
+ascli <Tab>                     # plugins and global options: aoc, server, node, ..., --format, ...
+ascli server <Tab>              # sub-commands and options of plugin: upload, download, ls, ..., --url, ...
+ascli aoc admin <Tab>           # sub-commands at any depth: user, node, ...
+ascli server ls --u<Tab>        # options, after any command: --url, --username, ...
+ascli --format=<Tab>            # values of option: --format=json, --format=table, ...
+ascli server upload <Tab>       # local files
+ascli config preset show <Tab>  # type of expected value, not inserted: <identifier>
 ```
 
-The scripts call `ascli config completion words [<word>...]`, which lists the words that can follow the given ones.
-It can also be used directly to inspect available commands:
+Zsh, Fish and PowerShell also display the description of commands and options.
+Zsh lists options once `-` is typed (zsh style `prefix-needed`).
+The type of an expected value is displayed by Bash and Zsh, and by PowerShell in the list of `MenuComplete` (`Ctrl+Space`).
+
+The scripts call `ascli config completion candidates -- [<word>...] <current word>`, which lists the candidates for the word at the cursor, with their description, followed by a directive for the shell.
+The words are not evaluated (e.g. `@env:` is not replaced).
+The command `ascli config completion words [<word>...]` lists the words that can follow the given ones.
+It can be used directly to inspect available commands:
 
 ```bash
 ascli config completion words aoc admin

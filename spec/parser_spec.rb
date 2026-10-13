@@ -486,6 +486,12 @@ module Aspera
           expect(build_parser([]).next_argument_in?(%w[a])).to(be(false))
         end
 
+        it 'does not evaluate a raw argument as extended value' do
+          opts = build_parser(%w[@json:[1] @json:[1]])
+          expect(opts.get_next_argument('raw', raw: true)).to(eq('@json:[1]'))
+          expect(opts.get_next_argument('evaluated', validation: nil)).to(eq([1]))
+        end
+
         it 'checks the next arguments in order without consuming them' do
           opts = build_parser(%w[--x=1 a b c])
           expect(opts.next_arguments?(%w[a b])).to(be(true))

@@ -555,7 +555,8 @@ module Aspera
                   validation:  arg_spec.type,
                   accept_list: arg_spec.allowed,
                   default:     arg_spec.interactive ? nil : arg_spec.default,
-                  schema:      arg_spec.schema
+                  schema:      arg_spec.schema,
+                  raw:         arg_spec.raw
                 )
               end
             end

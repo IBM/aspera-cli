@@ -5716,7 +5716,7 @@ conf_query_help_aoc:
     - list
     - --query=help
 conf_completion_words:
-  description: List sub-commands, as called by completion scripts
+  description: List words that can follow the given ones
   tags:
     - nodoc
   args:
@@ -5726,6 +5726,18 @@ conf_completion_words:
     - --
     - config
     - completion
+conf_completion_candidates:
+  description: Complete the last word, as called by completion scripts
+  tags:
+    - nodoc
+  args:
+    - config
+    - completion
+    - candidates
+    - --
+    - config
+    - completion
+    - ''
 conf_completion_bash:
   tags:
     - nodoc

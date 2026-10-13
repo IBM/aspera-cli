@@ -205,8 +205,9 @@ module Aspera
       # @param validation  [Class, Array, nil] Accepted value type(s) or list of Symbols
       # @param aliases     [Hash] map of aliases: key = alias, value = real value
       # @param default     [Object] default value
+      # @param raw         [Boolean] `true`: value is not evaluated as extended value
       # @return [Object, Array, nil] one value, list or nil (if optional and no default)
-      def get_next_argument(descr, mandatory: true, multiple: false, accept_list: nil, validation: Type::STRING, aliases: nil, default: nil, schema: nil)
+      def get_next_argument(descr, mandatory: true, multiple: false, accept_list: nil, validation: Type::STRING, aliases: nil, default: nil, schema: nil, raw: false)
         ensure_parsed
         Aspera.assert_array_all(accept_list, Symbol) unless accept_list.nil?
         Aspera.assert_hash_all(aliases, Symbol, Symbol) unless aliases.nil?
@@ -215,7 +216,7 @@ module Aspera
         Aspera.assert_array_all(validation, Class) { 'validation' } unless validation.nil?
         descr = "#{descr}#{add_types_info(validation)}"
         result =
-          if !@command_line.pending_arguments.empty? then read_arguments(descr, multiple: multiple, validation: validation, accept_list: accept_list, aliases: aliases)
+          if !@command_line.pending_arguments.empty? then read_arguments(descr, multiple: multiple, validation: validation, accept_list: accept_list, aliases: aliases, raw: raw)
           elsif !default.nil? then default
           elsif mandatory then get_interactive(descr, multiple: multiple, accept_list: accept_list, aliases: aliases, schema: schema)
           end
@@ -524,11 +525,11 @@ module Aspera
         " (#{types.map(&:name).join(', ')})"
       end
 
-      # Consume and evaluate positional arguments
+      # Consume positional arguments, and evaluate them unless `raw`
       # @return [Object, Array] one value, or list if `multiple`
-      def read_arguments(descr, multiple:, validation:, accept_list:, aliases:)
+      def read_arguments(descr, multiple:, validation:, accept_list:, aliases:, raw:)
         values = @command_line.shift_arguments(multiple)
-        values = values.map { |v| ExtendedValue.instance.evaluate(v, context: "argument: #{descr}", allowed: validation) }
+        values = values.map { |v| ExtendedValue.instance.evaluate(v, context: "argument: #{descr}", allowed: validation) } unless raw
         # If expecting list and only one arg of type array : it is the list
         values = values.first if multiple && values.length.eql?(1) && values.first.is_a?(Array)
         if accept_list
