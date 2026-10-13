@@ -368,7 +368,7 @@ module Aspera
             seconds = (minutes * 60) + seconds.to_i
             microseconds = (seconds * DURATION_UNIT_US['s']) + (millis.to_s.ljust(3, '0').to_i * DURATION_UNIT_US['ms'])
           else
-            units = value.scan(/(\d+)(ms|us|[wdhms])/)
+            units = value.scan(/(?<!\d)(\d+)(ms|us|[wdhms])/)
             Aspera.assert(!units.empty? && units.join.eql?(value)) { "Invalid duration: #{value}" }
             microseconds = units.sum { |number, number_unit| number.to_i * DURATION_UNIT_US[number_unit] }
           end
