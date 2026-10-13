@@ -321,6 +321,25 @@ jobs:
           if ($output -ne $env:VERSION) { throw "Unexpected output of --version:`n$output" }
           .\portable\ascli.cmd config ascp info --fields=ascp_version
 
+      # Completion in PowerShell 7 and Windows PowerShell 5.1, activated as documented (ascli found in PATH),
+      # for ascli, or typed with a path (as ascli.cmd)
+      # Not in versions before 4.28
+      - name: Check PowerShell completion
+        run: |
+          .\portable\ascli.cmd config completion powershell > $null
+          if ($LASTEXITCODE -ne 0) { Write-Output '::warning::No PowerShell completion in this version'; exit 0 }
+          foreach ($shell in 'pwsh', 'powershell') {
+              & $shell -NoProfile -ExecutionPolicy Bypass -Command {
+                  $env:PATH = "$PWD\portable;$env:PATH"
+                  ascli config completion powershell | Out-String | Invoke-Expression
+                  foreach ($line in 'ascli conf', '.\portable\ascli.cmd conf') {
+                      $output = (TabExpansion2 -inputScript $line -cursorColumn $line.Length).CompletionMatches.CompletionText -join ' '
+                      if ($output -ne 'config') { throw "Unexpected completion of '$line': $output" }
+                  }
+              }
+              if ($LASTEXITCODE -ne 0) { throw "Completion check failed in $shell" }
+          }
+
       - name: Upload to GitHub release
         env:
           GH_TOKEN: ${{ github.token }}

@@ -22,6 +22,16 @@ To use `ascli` from any folder, add this folder to the user `PATH` by double-cli
 ascli -v
 ```
 
+## PowerShell completion
+
+To complete commands of `ascli` when `Tab` is pressed in PowerShell, add this line to the PowerShell profile (edit with `notepad $PROFILE`), once this folder is in the `PATH`:
+
+```powershell
+ascli config completion powershell | Out-String | Invoke-Expression
+```
+
+This executes `ascli` at each start of PowerShell: to avoid it, save the completion script in a file, see section *Shell Completion* of the manual.
+
 ## Configuration
 
 Configuration files are stored in `%USERPROFILE%\.aspera\ascli`, like with a regular installation.

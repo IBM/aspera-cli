@@ -35,6 +35,7 @@ Released: [Place date of release here]
 * `faspex5 postprocessing`, `faspex5 gateway`, `aoc gateway`: Parameters are now validated against a JSON Schema (`Faspex4PostProcOptions`, `Faspex4GatewayOptions`). Unknown keys are rejected at startup instead of being silently ignored.
 * **global**: Tables are fitted to the terminal width: text columns (e.g. `description`) are wrapped, the widest first, then other columns if needed. Parameter `width` of `--out.table` sets the maximum table width.
 * `options.schema.yaml`: New schemas `WebServerOptions` (shared `url`/`cert`/`key`/`chain`), `Faspex4GatewayOptions` (extends `WebServerOptions`), and `Faspex4PostProcOptions` (extends `WebServerOptions` with postprocessing-specific keys).
+* `config`: `completion powershell` displays the completion script of PowerShell (Windows PowerShell 5.1 and PowerShell 7, on any OS): activate with `ascli config completion powershell | Out-String | Invoke-Expression` in `$PROFILE` (see manual). The words proposed are kept for the session.
 
 ### Issues Fixed
 

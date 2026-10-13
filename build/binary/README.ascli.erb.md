@@ -29,7 +29,7 @@ Install the Aspera Transfer SDK (`ascp`):
 <%= cmd %> config transferd install
 ```
 
-Optionally, activate shell completion (`bash`, `zsh` or `fish`):
+Optionally, activate shell completion (`bash`, `zsh`, `fish` or `powershell`):
 
 ```shell
 eval "$(<%= cmd %> config completion bash)"

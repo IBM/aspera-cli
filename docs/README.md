@@ -418,6 +418,8 @@ Apart from the prerequisite below, no installation step, no administrator rights
    ascli -v
    ```
 
+4. Optionally, activate the [shell completion](#shell-completion) of PowerShell (the folder must be in the `PATH`).
+
 > [!NOTE]
 > The launcher `ascli.cmd` uses the `ascp` located in folder `sdk` of the package, unless environment variable `ASCLI_SDK_FOLDER` is set.
 > So, `ascli config transferd install` is not needed.
@@ -3025,7 +3027,7 @@ ascli -N --preset=@json:'{"url":"<URL>","password":"<PASSWORD>","username":"<USE
 
 #### Shell Completion
 
-`ascli` supports shell tab-completion for **Bash**, **Zsh**, and **Fish**.
+`ascli` supports shell tab-completion for **Bash**, **Zsh**, **Fish**, and **PowerShell** (Windows PowerShell 5.1 and PowerShell 7, on any OS).
 The command `ascli config completion <shell>` displays the completion script for the given shell.
 
 To activate completion, add the line for your shell to its startup file:
@@ -3045,6 +3047,11 @@ eval "$(ascli config completion zsh)"
 ascli config completion fish | source
 ```
 
+```powershell
+# PowerShell, in $PROFILE (edit with notepad $PROFILE)
+ascli config completion powershell | Out-String | Invoke-Expression
+```
+
 The startup file then executes `ascli` each time a shell starts.
 Alternatively, save the script once in the completion folder of the shell (and save it again after an upgrade of `ascli`):
 
@@ -3056,6 +3063,15 @@ ascli config completion zsh > ~/.zsh/completions/_ascli
 # Fish
 ascli config completion fish > ~/.config/fish/completions/ascli.fish
 ```
+
+PowerShell has no completion folder: save the script, and dot-source it in `$PROFILE`:
+
+```powershell
+ascli config completion powershell | Set-Content "$HOME\ascli_completion.ps1"
+Add-Content -Path $PROFILE -Value ". '$HOME\ascli_completion.ps1'"
+```
+
+In PowerShell, the words proposed are kept for the session, so only the first `Tab` at a given position executes `ascli`.
 
 Once active, press `Tab` to complete commands at any depth:
 

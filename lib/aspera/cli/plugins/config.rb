@@ -83,8 +83,8 @@ module Aspera
         end
 
         DEFAULT_CHECK_NEW_VERSION_DAYS = 7
-        # Shells with a completion script in COMPLETION_FOLDER
-        COMPLETION_SHELLS = %i[bash zsh fish].freeze
+        # Shells with a completion script in COMPLETION_FOLDER: shell => extension of script
+        COMPLETION_SHELLS = {bash: 'bash', zsh: 'zsh', fish: 'fish', powershell: 'ps1'}.freeze
         COMPLETION_FOLDER = File.expand_path('../completion', __dir__)
         private_constant :DEFAULT_CHECK_NEW_VERSION_DAYS, :COMPLETION_SHELLS, :COMPLETION_FOLDER
 
@@ -431,7 +431,7 @@ module Aspera
         commands_under :completion do
           command :words, description: 'List words that can follow the given words (used by completion scripts)',
             arguments: [{name: :words, multiple: true, mandatory: false}]
-          COMPLETION_SHELLS.each do |shell|
+          COMPLETION_SHELLS.each_key do |shell|
             command shell, description: "Generate #{shell} completion script, to evaluate in shell",
               action: ->(**) { completion_script(shell) }
           end
@@ -657,7 +657,7 @@ module Aspera
         # Raw output, not formatted, so that it can be evaluated by the shell.
         # @param shell [Symbol] One of `COMPLETION_SHELLS`
         def completion_script(shell)
-          $stdout.write(File.read(File.join(COMPLETION_FOLDER, "#{Info::CMD_NAME}.#{shell}")))
+          $stdout.write(File.read(File.join(COMPLETION_FOLDER, "#{Info::CMD_NAME}.#{COMPLETION_SHELLS[shell]}")))
           Process.exit(0)
         end
 

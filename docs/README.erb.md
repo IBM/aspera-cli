@@ -417,6 +417,8 @@ Apart from the prerequisite below, no installation step, no administrator rights
    <%=cmd%> -v
    ```
 
+4. Optionally, activate the [shell completion](#shell-completion) of PowerShell (the folder must be in the `PATH`).
+
 > [!NOTE]
 > The launcher `<%=cmd%>.cmd` uses the `ascp` located in folder `sdk` of the package, unless environment variable `ASCLI_SDK_FOLDER` is set.
 > So, `<%=cmd%> config transferd install` is not needed.
@@ -2851,7 +2853,7 @@ Example: Define options using a `Hash`:
 
 #### Shell Completion
 
-<%=tool%> supports shell tab-completion for **Bash**, **Zsh**, and **Fish**.
+<%=tool%> supports shell tab-completion for **Bash**, **Zsh**, **Fish**, and **PowerShell** (Windows PowerShell 5.1 and PowerShell 7, on any OS).
 The command `<%=cmd%> config completion <shell>` displays the completion script for the given shell.
 
 To activate completion, add the line for your shell to its startup file:
@@ -2871,6 +2873,11 @@ eval "$(<%=cmd%> config completion zsh)"
 <%=cmd%> config completion fish | source
 ```
 
+```powershell
+# PowerShell, in $PROFILE (edit with notepad $PROFILE)
+<%=cmd%> config completion powershell | Out-String | Invoke-Expression
+```
+
 The startup file then executes <%=tool%> each time a shell starts.
 Alternatively, save the script once in the completion folder of the shell (and save it again after an upgrade of <%=tool%>):
 
@@ -2882,6 +2889,15 @@ Alternatively, save the script once in the completion folder of the shell (and s
 # Fish
 <%=cmd%> config completion fish > ~/.config/fish/completions/<%=cmd%>.fish
 ```
+
+PowerShell has no completion folder: save the script, and dot-source it in `$PROFILE`:
+
+```powershell
+<%=cmd%> config completion powershell | Set-Content "$HOME\<%=cmd%>_completion.ps1"
+Add-Content -Path $PROFILE -Value ". '$HOME\<%=cmd%>_completion.ps1'"
+```
+
+In PowerShell, the words proposed are kept for the session, so only the first `Tab` at a given position executes <%=tool%>.
 
 Once active, press `Tab` to complete commands at any depth:
 
