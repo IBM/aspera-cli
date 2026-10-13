@@ -651,8 +651,10 @@ module Aspera
         Thread.new { @server.start }
       end
 
+      # A body is sent as JSON, unless `Content-Type` is in `headers`
       # @return [Array] HTTP code, header `WWW-Authenticate`, parsed body (`nil` if none)
       def call(verb, path, body: nil, headers: {})
+        headers = {'Content-Type' => 'application/json', **headers} unless body.nil?
         request = Net::HTTPGenericRequest.new(verb, !body.nil?, true, path, headers)
         request.body = body
         response = Net::HTTP.new('127.0.0.1', @server.config[:Port]).request(request)
@@ -782,6 +784,20 @@ module Aspera
 
         it 'returns 404 when modifying an unknown transfer' do
           expect_error(call('PUT', '/ops/transfers/unknown', body: '{"target_rate_kbps":1000}'), 404, 'Unknown transfer')
+        end
+
+        it 'refuses a transfer started by a web page without preflight' do
+          expect_error(call('POST', '/ops/transfers', body: '{"direction":"send"}', headers: {'Content-Type' => 'text/plain'}), 415, /Content-Type/)
+          expect_error(call('PUT', "/ops/transfers/#{TRANSFER_ID}", body: '{"status":"cancelled"}', headers: {'Content-Type' => 'text/plain'}), 415)
+          expect(fake_simulator.calls).to(be_empty)
+        end
+
+        it 'refuses a request from a web page of another site' do
+          expect_error(call('GET', '/ops/transfers', headers: {'Origin' => 'https://attacker.example.com'}), 403, /Origin/)
+        end
+
+        it 'refuses a host name that is not loopback, as after DNS rebinding' do
+          expect_error(call('GET', '/ops/transfers', headers: {'Host' => 'attacker.example.com:12348'}), 403, /Host/)
         end
       end
 

@@ -3512,6 +3512,16 @@ Parameter `url` (base URL) defines:
 - The local port number (default 443 for HTTPS, 80 for HTTP)
 - The **base path**, that is, the path under which requests are received (useful for routing when a reverse proxy is used).
 
+A web page open in a browser can send requests to a local web server, also on `localhost`.
+To refuse them, the server checks each request:
+
+- When `url` is a loopback address (`localhost`, `127.0.0.0/8`, `::1`), header `Host` shall be a loopback name or address, else HTTP 403: a host name that resolves to `127.0.0.1` is refused (DNS rebinding).
+- Header `Origin`, sent by browsers, shall be the origin of the server, else HTTP 403.
+- A JSON body shall have `Content-Type: application/json`, else HTTP 415: a web page cannot send it to another site without the agreement of that site.
+
+Clients that are not browsers send no `Origin`, and the `Host` of the URL they call.
+They shall send the type of a JSON body: for example, with `curl`, add `-H 'Content-Type: application/json'`.
+
 ### Image and video thumbnails
 
 `ascli` can display thumbnails for images and videos in the **terminal**, using [iTerm2 inline image protocol](https://iterm2.com/documentation-images.html) or through colorized text.
@@ -10298,6 +10308,7 @@ With the `http` transport:
 - `auth_token` and `oauth` can coexist: a request is accepted if it carries a valid static token **or** a valid OAuth access token.
 - A weak `auth_token` is refused at startup (see `auth_token_min_bits`): generate it with `openssl rand -hex 32`.
 - `allowed_hosts` and `allowed_origins` protect against DNS rebinding but do not authenticate clients.
+  They apply to all endpoints, also OAuth and secret pages, which also accept the origin of `base_url` (for a reverse proxy that changes header `Host`).
 
 With both transports:
 

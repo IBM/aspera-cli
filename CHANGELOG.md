@@ -61,6 +61,8 @@ Released: [Place date of release here]
 * `faspex5 postprocessing`: An unknown parameter, an invalid `allowed_ips` or a missing `script_folder` is reported at startup, instead of at each request.
 * **global**: Secret values of URL query parameters (e.g. `token`, `client_secret`) are hidden in logs.
 * **global**: Local web servers (`faspex5 postprocessing`, `faspex5 gateway`, `aoc gateway`, `node emulator`): parameter `chain` failed with an internal error.
+* **global**: Local web servers (`faspex5 postprocessing`, `faspex5 gateway`, `aoc gateway`, `node emulator`, `mcp server`, `--auth=web`, `@secret:` page) refuse requests that a web page open in the browser can send: header `Host` that is not loopback when the server listens on loopback (DNS rebinding), or header `Origin` of another site (HTTP 403), and a JSON body without type `application/json` (HTTP 415). `mcp server`: `allowed_hosts` and `allowed_origins` also apply to OAuth endpoints and secret pages, which also accept the origin of `base_url`.
+* `faspex5 gateway`, `aoc gateway`: The response to a failed request no longer contains the stack trace.
 
 ### Breaking Changes
 
@@ -73,6 +75,7 @@ Released: [Place date of release here]
 * `config vault`: `1password`: `url` is stored as the website of the item instead of a custom field.
 * **global**: `@secret:` asks for the secret in the browser when option `ui` is `graphical`, the default on Windows and macOS: use `--ui=text` to enter it on terminal.
 * `config ascp spec`, `config sync spec`: `description` is a list of lines instead of a multi-line string (formats `json`, `yaml`), and absent when empty.
+* **global**: Local web servers (`faspex5 postprocessing`, `faspex5 gateway`, `aoc gateway`, `node emulator`): a JSON body requires header `Content-Type: application/json`, else HTTP 415.
 
 ## 4.27.5
 

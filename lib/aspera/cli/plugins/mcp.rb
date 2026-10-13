@@ -236,13 +236,16 @@ module Aspera
             )
           end
           Cli::Mcp::HttpServlet.start(
-            bind:         bind,
-            port:         port,
-            app:          MCP::Server::Transports::StreamableHTTPTransport.new(server, **mcp_options.slice(*HTTP_KEYS)),
-            server_info:  {name: server.name, version: server.version, description: server.description},
-            web_secret:   web_secret,
-            auth_token:   auth_token,
-            oauth_server: oauth_server
+            bind:            bind,
+            port:            port,
+            app:             MCP::Server::Transports::StreamableHTTPTransport.new(server, **mcp_options.slice(*HTTP_KEYS)),
+            server_info:     {name: server.name, version: server.version, description: server.description},
+            web_secret:      web_secret,
+            auth_token:      auth_token,
+            oauth_server:    oauth_server,
+            allowed_hosts:   mcp_options[:allowed_hosts],
+            # Pages of the server (consent, secret) are opened at base_url, also behind a reverse proxy that changes Host
+            allowed_origins: [*mcp_options[:allowed_origins], ServletHelpers.origin(base_url)]
           )
         end
       end

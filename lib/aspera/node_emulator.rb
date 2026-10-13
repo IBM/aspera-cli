@@ -2,7 +2,6 @@
 
 # cspell:ignore precalc noxfer euid gettime
 require 'aspera/assert'
-require 'aspera/mime'
 require 'aspera/ascp/installation'
 require 'aspera/agent/transferd'
 require 'aspera/transfer/spec'
@@ -10,6 +9,7 @@ require 'aspera/transfer/error'
 require 'aspera/secret_hider'
 require 'aspera/string_ext'
 require 'aspera/log'
+require 'aspera/servlet_helpers'
 require 'webrick'
 require 'openssl'
 require 'etc'
@@ -581,6 +581,8 @@ module Aspera
   # Answers a subset of the Node API, transfers are delegated to a NodeEmulator
   # a new instance is created for each request
   class NodeEmulatorServlet < WEBrick::HTTPServlet::AbstractServlet
+    include ServletHelpers
+
     PATH_TRANSFERS = '/ops/transfers'
     PATH_ONE_TRANSFER = %r{/ops/transfers/(.+)$}
     PATH_BROWSE = '/files/browse'
@@ -589,6 +591,8 @@ module Aspera
     CANCEL_STATUSES = %w[canceled cancelled stopped].freeze
     # `PUT` fields modified by transferd
     MODIFIABLE = %w[target_rate_kbps min_rate_kbps rate_policy].freeze
+    # HTTP methods with a JSON body
+    JSON_METHODS = %w[POST PUT].freeze
     # Create the servlet, with optional Basic authentication
     # @param server    [WEBrick::HTTPServer]
     # @param config    [Hash] `username` and `password` (Basic authentication expected from clients, optional)
@@ -599,14 +603,12 @@ module Aspera
       @expected_auth = "#{config[:username]}:#{config[:password]}" unless config[:username].nil?
     end
 
-    # Check authentication, dispatch to `do_<verb>`, and send errors in Node API format
+    # Refuse requests of web pages, check authentication, dispatch to `do_<verb>`, and send errors in Node API format
     # @param request  [WEBrick::HTTPRequest]
     # @param response [WEBrick::HTTPResponse]
     def service(request, response)
-      unless authorized?(request)
-        response['WWW-Authenticate'] = %Q(Basic realm="#{REALM}")
-        return set_error(request, response, 401, 'Invalid or missing credentials')
-      end
+      check_request(request, json: JSON_METHODS.include?(request.request_method))
+      return set_error(request, response, 401, 'Invalid or missing credentials', headers: {'WWW-Authenticate' => %Q(Basic realm="#{REALM}")}) unless authorized?(request)
       super
     rescue WEBrick::HTTPStatus::Error => e
       set_error(request, response, e.code, e.message)
@@ -730,8 +732,9 @@ module Aspera
     # @param response [WEBrick::HTTPResponse]
     # @param code     [Integer] HTTP status code
     # @param message  [String]  message for the user
-    def set_error(request, response, code, message)
-      set_json_response(request, response, {error: {code: code, reason: WEBrick::HTTPStatus.reason_phrase(code), user_message: message}}, code: code)
+    # @param headers  [Hash{String => String}] Other headers of the response
+    def set_error(request, response, code, message, headers: {})
+      set_json_response(request, response, {error: {code: code, reason: WEBrick::HTTPStatus.reason_phrase(code), user_message: message}}, code: code, headers: headers)
     end
 
     # Check the Basic credentials of the request
@@ -749,10 +752,9 @@ module Aspera
     # @param response [WEBrick::HTTPResponse]
     # @param json     [Hash, Array] body of the response
     # @param code     [Integer] HTTP status code
-    def set_json_response(request, response, json, code: 200)
-      response.status = code
-      response['Content-Type'] = Mime::JSON
-      response.body = json.to_json
+    # @param headers  [Hash{String => String}] Other headers of the response
+    def set_json_response(request, response, json, code: 200, headers: {})
+      json_response(response, code, json, headers: headers)
       Log.log.trace1 { Log.obj_dump("response for #{request.request_method} #{request.path}", json) }
     end
   end

@@ -3,12 +3,15 @@
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/mime'
+require 'aspera/servlet_helpers'
 require 'webrick'
 require 'json'
 
 module Aspera
   # Simulate the Faspex 4 /send API and creates a package on Aspera on Cloud or Faspex 5
   class Faspex4GWServlet < WEBrick::HTTPServlet::AbstractServlet
+    include ServletHelpers
+
     AOC_API = 'Aspera::Api::AoC'
     FX_API = 'Aspera::Api::Faspex'
     # @param app_api     [Rest::Client]   API object
@@ -66,37 +69,31 @@ module Aspera
     end
 
     def do_POST(request, response)
-      case request.path
-      when '/aspera/faspex/send'
-        begin
-          Aspera.assert(!request.body.nil?, 'payload missing')
-          faspex_pkg_parameters = JSON.parse(request.body)
-          Log.dump(:faspex_pkg_parameters, faspex_pkg_parameters)
-          # compare string, as class is not yet known here
-          faspex_package_create_result =
-            case @app_api.class.name
-            when AOC_API
-              faspex4_send_to_aoc(faspex_pkg_parameters)
-            when FX_API
-              faspex4_send_to_faspex5(faspex_pkg_parameters)
-            else Aspera.error_unexpected_value(@app_api.class.name)
-            end
-          Log.dump(:faspex_package_create_result, faspex_package_create_result)
-          response.status = 200
-          response.content_type = Mime::JSON
-          response.body = JSON.generate(faspex_package_create_result)
-        rescue StandardError => e
-          response.status = 500
-          response['Content-Type'] = Mime::JSON
-          response.body = {error: e.message, stacktrace: e.backtrace}.to_json
-          Log.log.error(e.message)
-          Log.log.debug { e.backtrace.join("\n") }
+      # Refuse requests of web pages
+      check_request(request, json: true)
+      return json_error(response, 400, 'Unsupported endpoint') unless request.path.eql?('/aspera/faspex/send')
+      Aspera.assert(!request.body.nil?, 'payload missing')
+      faspex_pkg_parameters = JSON.parse(request.body)
+      Log.dump(:faspex_pkg_parameters, faspex_pkg_parameters)
+      # compare string, as class is not yet known here
+      faspex_package_create_result =
+        case @app_api.class.name
+        when AOC_API
+          faspex4_send_to_aoc(faspex_pkg_parameters)
+        when FX_API
+          faspex4_send_to_faspex5(faspex_pkg_parameters)
+        else Aspera.error_unexpected_value(@app_api.class.name)
         end
-      else
-        response.status = 400
-        response['Content-Type'] = Mime::JSON
-        response.body = {error: 'Unsupported endpoint'}.to_json
-      end
+      Log.dump(:faspex_package_create_result, faspex_package_create_result)
+      json_response(response, 200, faspex_package_create_result)
+    rescue WEBrick::HTTPStatus::Error => e
+      Log.log.warn { "Rejected request: #{e.message}" }
+      json_error(response, e.code, e.message)
+    rescue StandardError => e
+      # The stack trace is logged only: it is not for the caller
+      Log.log.error(e.message)
+      Log.log.debug { e.backtrace.join("\n") }
+      json_error(response, 500, e.message)
     end
   end
 end

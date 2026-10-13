@@ -3,6 +3,7 @@
 # cspell:ignore webrick
 
 require 'aspera/log'
+require 'aspera/servlet_helpers'
 require 'aspera/cli/web_secret'
 require 'json'
 require 'openssl'
@@ -20,7 +21,15 @@ module Aspera
       #   /.well-known/oauth-authorization-server, /oauth/*: OAuth 2.0 PKCE server, if enabled
       #   /secret/<id>          Secret pages (see WebSecret), protected by their access code
       #   other paths           MCP endpoints: static Bearer token or OAuth access token, if configured
+      # Requests that a web page could send are refused on all paths (see ServletHelpers#check_request),
+      # as the MCP transport does for its own endpoints, with the same `allowed_hosts` and `allowed_origins`.
       class HttpServlet < WEBrick::HTTPServlet::AbstractServlet
+        include ServletHelpers
+
+        # Paths with a JSON body, not handled by the MCP transport
+        JSON_PATHS = %w[/oauth/register].freeze
+        private_constant :JSON_PATHS
+
         class << self
           # Start the HTTP server, until signal INT or TERM
           # @param bind    [String]  Bind address
@@ -51,6 +60,8 @@ module Aspera
         #   web_secret:   [WebSecret]                Secret pages
         #   auth_token:   [String, nil]              Static Bearer token, if any
         #   oauth_server: [OAuth::Server::Pkce, nil] OAuth server, if enabled
+        #   allowed_hosts:   [Array<String>, nil]    Other values accepted in header `Host`
+        #   allowed_origins: [Array<String>, nil]    Other values accepted in header `Origin`
         def initialize(server, options)
           super(server)
           @app          = options.fetch(:app)
@@ -58,6 +69,7 @@ module Aspera
           @web_secret   = options.fetch(:web_secret)
           @auth_token   = options[:auth_token]
           @oauth_server = options[:oauth_server]
+          @allowed      = {allowed_hosts: Array(options[:allowed_hosts]), allowed_origins: Array(options[:allowed_origins])}
         end
 
         def do_GET(req, res) = dispatch(req, res)
@@ -67,12 +79,11 @@ module Aspera
         private
 
         def dispatch(req, res)
+          check_request(req, json: JSON_PATHS.include?(req.path), **@allowed)
           case req.path
           when '/'
             # Discovery endpoint (server metadata, no auth required)
-            res.status = 200
-            res['Content-Type'] = 'application/json'
-            res.body = JSON.generate(@server_info)
+            json_response(res, 200, @server_info)
           when '/.well-known/oauth-authorization-server' then oauth(req, res, :handle_discovery)
           when '/oauth/register'                          then oauth(req, res, :handle_register, post_only: true)
           when '/oauth/authorize'                         then oauth(req, res, :handle_authorize)
@@ -85,6 +96,9 @@ module Aspera
             return unauthorized(res) unless authorized?(req)
             call_app(req, res)
           end
+        rescue WEBrick::HTTPStatus::Error => e
+          Log.log.warn { "Rejected request: #{e.message}" }
+          json_error(res, e.code, 'invalid_request', e.message)
         end
 
         # Route to the OAuth server, if enabled
@@ -108,18 +122,7 @@ module Aspera
         end
 
         def unauthorized(res)
-          res.status = 401
-          res['Content-Type'] = 'application/json'
-          res['WWW-Authenticate'] = @oauth_server.nil? ? 'Bearer' : @oauth_server.www_authenticate_header
-          res.body = JSON.generate(error: 'Unauthorized')
-        end
-
-        def json_error(res, status, error, description = nil)
-          res.status = status
-          res['Content-Type'] = 'application/json'
-          body = {error: error}
-          body[:error_description] = description if description
-          res.body = JSON.generate(body)
+          json_error(res, 401, 'Unauthorized', headers: {'WWW-Authenticate' => @oauth_server.nil? ? 'Bearer' : @oauth_server.www_authenticate_header})
         end
 
         # Call the Rack app, with streaming of the response body if it is a callable (SSE)

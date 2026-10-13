@@ -125,4 +125,42 @@ RSpec.describe(Aspera::Cli::Mcp::HttpServlet) do
     expect(web_secret).to(have_received(:handle))
     expect(app.calls).to(be_empty)
   end
+
+  describe 'requests of web pages' do
+    before { allow(Aspera::Log.log).to(receive(:warn)) }
+
+    it 'refuses a host name that is not loopback, as after DNS rebinding' do
+      res = request('GET', '/secret/abc', 'Host' => 'attacker.example.com:3000')
+      expect(res.status).to(eq(403))
+      expect(JSON.parse(res.body)['error_description']).to(include('attacker.example.com'))
+      expect(web_secret).not_to(have_received(:handle))
+    end
+
+    it 'accepts a host name of allowed_hosts' do
+      options[:allowed_hosts] = ['myhost']
+      request('GET', '/secret/abc', 'Host' => 'myhost:3000')
+      expect(web_secret).to(have_received(:handle))
+    end
+
+    it 'refuses a form sent by a web page of another site' do
+      expect(request('POST', '/secret/abc', 'Host' => 'localhost:3000', 'Origin' => 'https://attacker.example.com').status).to(eq(403))
+      expect(web_secret).not_to(have_received(:handle))
+    end
+
+    it 'accepts a form sent by a page of the server, also at an origin of allowed_origins' do
+      options[:allowed_origins] = ['https://mcp.example.com']
+      request('POST', '/secret/abc', 'Host' => 'localhost:3000', 'Origin' => 'http://localhost:3000')
+      request('POST', '/secret/abc', 'Host' => 'localhost:3000', 'Origin' => 'https://mcp.example.com')
+      expect(web_secret).to(have_received(:handle).twice)
+    end
+
+    it 'refuses a client registration that is not JSON' do
+      require 'aspera/oauth/server/pkce'
+      oauth_server = instance_double(Aspera::OAuth::Server::Pkce, handle_register: nil)
+      options[:oauth_server] = oauth_server
+      expect(request('POST', '/oauth/register', 'Content-Type' => 'text/plain').status).to(eq(415))
+      request('POST', '/oauth/register', 'Content-Type' => 'application/json')
+      expect(oauth_server).to(have_received(:handle_register).once)
+    end
+  end
 end

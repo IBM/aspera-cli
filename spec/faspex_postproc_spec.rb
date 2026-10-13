@@ -16,8 +16,9 @@ RSpec.describe(Aspera::Faspex4PostProcServlet) do
   let(:parameters) { {root: '/processing', script_folder: script_folder} }
   # Minimal stand-in for WEBrick::HTTPRequest
   let(:request_class) do
-    Struct.new(:path, :query_string, :body, :client_ip) do
+    Struct.new(:path, :query_string, :body, :client_ip, :headers) do
       def peeraddr = ['AF_INET', 40_000, client_ip, client_ip]
+      def [](key) = headers[key]
     end
   end
   # Minimal stand-in for WEBrick::HTTPResponse
@@ -44,10 +45,12 @@ RSpec.describe(Aspera::Faspex4PostProcServlet) do
   after { FileUtils.rm_rf(script_folder) }
 
   # Send a webhook request to the servlet, as Faspex does: JSON body, parameters in URL
+  # @param headers [Hash] Headers added to, or replacing, the ones of Faspex
   # @return [Object] response of the servlet
-  def post(query_string = nil, script: 'marker.sh', client_ip: '127.0.0.1', body: {faspex_pkg_name: 'executed'}.to_json)
+  def post(query_string = nil, script: 'marker.sh', client_ip: '127.0.0.1', body: {faspex_pkg_name: 'executed'}.to_json, headers: {})
     res = response_class.new
-    servlet.do_POST(request_class.new("/processing/#{script}", query_string, body, client_ip), res)
+    headers = {'Host' => 'localhost:8080', 'Content-Type' => 'application/json', **headers}
+    servlet.do_POST(request_class.new("/processing/#{script}", query_string, body, client_ip, headers), res)
     res
   end
 
@@ -70,6 +73,33 @@ RSpec.describe(Aspera::Faspex4PostProcServlet) do
       expect(post(script: 'env.sh', body: body).status).to(eq(200))
       expect(File.read(marker).lines(chomp: true)).to(eq(['{"_pkg_name":"Test"}', ENV.fetch('PATH'), 'unset']))
       expect(Aspera::Log.log).to(have_received(:warn).twice)
+    end
+  end
+
+  describe 'requests of web pages' do
+    it 'refuses a body that is not application/json, sent by a web page without preflight' do
+      res = post(headers: {'Content-Type' => 'text/plain'})
+      expect(res.status).to(eq(415))
+      expect(JSON.parse(res.body)['message']).to(include('Content-Type shall be application/json'))
+      expect(File.exist?(marker)).to(be(false))
+    end
+
+    it 'refuses a body without Content-Type' do
+      expect(post(headers: {'Content-Type' => nil}).status).to(eq(415))
+    end
+
+    it 'accepts a Content-Type with parameters' do
+      expect(post(headers: {'Content-Type' => 'application/json; charset=utf-8'}).status).to(eq(200))
+    end
+
+    it 'refuses a request from a web page of another site' do
+      expect(post(headers: {'Origin' => 'https://attacker.example.com'}).status).to(eq(403))
+      expect(File.exist?(marker)).to(be(false))
+    end
+
+    it 'refuses a host name that is not loopback, as after DNS rebinding' do
+      expect(post(headers: {'Host' => 'attacker.example.com:8080', 'Origin' => 'http://attacker.example.com:8080'}).status).to(eq(403))
+      expect(File.exist?(marker)).to(be(false))
     end
   end
 

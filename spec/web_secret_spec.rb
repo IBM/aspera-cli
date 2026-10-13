@@ -54,11 +54,12 @@ RSpec.describe(Aspera::Cli::WebSecret) do
       expect(res.body).to(include('the AI assistant does not see it'))
     end
 
-    it 'sets anti-framing, no-cache and no-referrer headers' do
+    it 'sets anti-framing, no-cache and same-origin referrer headers' do
       res = page('GET')
       expect(res['X-Frame-Options']).to(eq('DENY'))
       expect(res['Cache-Control']).to(eq('no-store'))
-      expect(res['Referrer-Policy']).to(eq('no-referrer'))
+      # not no-referrer: the form would be sent with Origin null
+      expect(res['Referrer-Policy']).to(eq('same-origin'))
     end
 
     it 'escapes HTML in the prompt' do
@@ -135,6 +136,20 @@ RSpec.describe(Aspera::Cli::WebSecret) do
     it 'fails when the user cancels' do
       browser_enters('decision' => 'cancel')
       expect { described_class.ask('pw') }.to(raise_error(Aspera::Cli::Error, /cancelled/))
+    end
+  end
+
+  describe 'local web server' do
+    subject(:web_secret) { described_class.new }
+
+    after { web_secret.shutdown }
+
+    it 'refuses a form sent by a web page of another site, accepts the one of its page' do
+      uri = URI(web_secret.url(id))
+      send_form = ->(origin) { Net::HTTP.start(uri.host, uri.port) { |http| http.post(uri.path, URI.encode_www_form('secret' => 'S3cret'), 'Origin' => origin) } }
+      expect(send_form.call('https://attacker.example.com').code).to(eq('403'))
+      expect(send_form.call("http://#{uri.host}:#{uri.port}").code).to(eq('200'))
+      expect(web_secret.wait_value(id)).to(eq('S3cret'))
     end
   end
 end

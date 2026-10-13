@@ -5,6 +5,7 @@
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/web_page'
+require 'aspera/servlet_helpers'
 require 'json'
 require 'securerandom'
 
@@ -39,6 +40,8 @@ module Aspera
       #     end
       #   end
       class Pkce
+        include ServletHelpers
+
         ACCESS_TOKEN_TTL  = 3600        # 1 hour
         REFRESH_TOKEN_TTL = 2_592_000   # 30 days
         CODE_TTL          = 120         # 2 minutes
@@ -124,9 +127,7 @@ module Aspera
 
         # GET /.well-known/oauth-authorization-server
         def handle_discovery(_req, res)
-          res.status = 200
-          res['Content-Type'] = 'application/json'
-          res.body = JSON.generate(metadata)
+          json_response(res, 200, metadata)
         end
 
         # -------------------------------------------------------------------------
@@ -144,17 +145,15 @@ module Aspera
           client_id = SecureRandom.urlsafe_base64(16)
           @store_mutex.synchronize { @clients << {client_id: client_id, redirect_uris: redirect_uris} }
           Log.log.info { "OAuth dynamic registration: client_id=#{client_id} name=#{body['client_name']}" }
-          res.status = 201
-          res['Content-Type'] = 'application/json'
-          res['Cache-Control'] = 'no-store'
-          res.body = JSON.generate({
+          registration = {
             client_id:                  client_id,
             client_id_issued_at:        Time.now.to_i,
             grant_types:                %w[authorization_code refresh_token],
             response_types:             ['code'],
             token_endpoint_auth_method: 'none',
             redirect_uris:              redirect_uris
-          })
+          }
+          json_response(res, 201, registration, headers: {'Cache-Control' => 'no-store'})
         end
 
         # -------------------------------------------------------------------------
@@ -254,14 +253,6 @@ module Aspera
           "#{redirect_uri}#{redirect_uri.include?('?') ? '&' : '?'}#{query}"
         end
 
-        def json_error(res, status, error, description = nil)
-          res.status = status
-          res['Content-Type'] = 'application/json'
-          body = {error: error}
-          body[:error_description] = description if description
-          res.body = JSON.generate(body)
-        end
-
         def purge_expired
           now = Time.now
           @pending_codes.delete_if  { |_, v| v[:expires_at] < now }
@@ -287,10 +278,7 @@ module Aspera
         end
 
         def token_response(res)
-          res.status = 200
-          res['Content-Type'] = 'application/json'
-          res['Cache-Control'] = 'no-store'
-          res.body = JSON.generate(issue_tokens)
+          json_response(res, 200, issue_tokens, headers: {'Cache-Control' => 'no-store'})
         end
 
         # Verify PKCE: SHA-256(code_verifier) == code_challenge (base64url, no padding).

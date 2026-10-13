@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/web_server_simple'
+require 'aspera/servlet_helpers'
 require 'aspera/web_page'
 require 'aspera/assert'
 
@@ -8,6 +9,8 @@ module Aspera
   module WebAuth
     # servlet called on callback: it records the callback request
     class Servlet < WEBrick::HTTPServlet::AbstractServlet
+      include ServletHelpers
+
       # ERB template of page displayed in browser after authentication
       HTML_TEMPLATE_PATH = File.join(__dir__, 'index.html.erb')
       private_constant :HTML_TEMPLATE_PATH
@@ -24,6 +27,8 @@ module Aspera
 
       def service(request, response)
         Log.log.debug { "received request from browser #{request.request_method} #{request.path}" }
+        # Refuse requests of other web pages
+        check_request(request)
         Aspera.assert_values(request.request_method, ['GET'], type: WEBrick::HTTPStatus::MethodNotAllowed) { "Unsupported method: #{request.request_method}" }
         Aspera.assert_values(request.path, [@web_auth.expected_path], type: WEBrick::HTTPStatus::NotFound) { "Unsupported path: #{request.path}" }
         # response to browser

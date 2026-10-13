@@ -6,6 +6,7 @@ require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/environment'
 require 'aspera/web_page'
+require 'aspera/servlet_helpers'
 require 'aspera/cli/error'
 require 'aspera/cli/info'
 require 'openssl'
@@ -142,11 +143,12 @@ module Aspera
         end
         res.status = status
         res['Content-Type'] = 'text/html; charset=utf-8'
-        # Prevent clickjacking, caching of the page, and leak of its URL
+        # Prevent clickjacking, caching of the page, and leak of its URL to other sites.
+        # Not `no-referrer`: the browser would send `Origin: null` with the form, refused by ServletHelpers#check_request
         res['X-Frame-Options'] = 'DENY'
         res['Content-Security-Policy'] = "frame-ancestors 'none'"
         res['Cache-Control'] = 'no-store'
-        res['Referrer-Policy'] = 'no-referrer'
+        res['Referrer-Policy'] = 'same-origin'
         # Variables of the template, state is one of: :form, :received, :cancelled, :unknown
         res.body = WebPage.render(
           HTML_TEMPLATE_PATH,
@@ -204,8 +206,11 @@ module Aspera
       def start_local_server
         require 'webrick'
         servlet = Class.new(WEBrick::HTTPServlet::AbstractServlet) do
-          # The WebSecret instance is the option of the servlet
+          include ServletHelpers
+
+          # Refuse requests of other web pages, the WebSecret instance is the option of the servlet
           def service(req, res)
+            check_request(req)
             @options.first.handle(req, res)
           end
         end

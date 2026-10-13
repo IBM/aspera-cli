@@ -10,8 +10,8 @@ require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/environment'
 require 'aspera/hash_ext'
-require 'aspera/mime'
 require 'aspera/secret_strength'
+require 'aspera/servlet_helpers'
 
 module Aspera
   # Start a Faspex-4 style post-processing script using Faspex-5 webhook
@@ -23,10 +23,13 @@ module Aspera
   # - Use `secret_token` so the token must be present as a `token` query parameter on every
   #   incoming request (configure the webhook URL in Faspex as http://host:port/path?token=VALUE).
   # - Use `allowed_ips` to restrict which source IPs or networks may call the listener.
+  # - Requests that a web page could send are refused (see ServletHelpers#check_request): the body shall be `application/json`.
   # - Only webhook values with a key starting with `faspex_` are passed to the script.
   # - With `lambda` in the URL query, a Ruby script (`.rb`) is evaluated in this process:
   #   it shall return a lambda, called with the webhook values.
   class Faspex4PostProcServlet < WEBrick::HTTPServlet::AbstractServlet
+    include ServletHelpers
+
     ALLOWED_PARAMETERS = %i[root script_folder fail_on_error timeout_seconds secret_token secret_token_min_bits allowed_ips].freeze
     # Prefix of keys of webhook values passed as environment variables: Faspex 4 post-processing variables
     ENV_KEY_PREFIX = 'faspex_'
@@ -83,6 +86,8 @@ module Aspera
       post_proc_pid = nil
       script_path = nil
       begin
+        # Refuse requests of web pages (also on localhost without protection)
+        check_request(request, json: true)
         # Check source IP against allowlist when configured
         if @parameters[:allowed_ips]
           client_ip = request.peeraddr[3]
@@ -137,10 +142,11 @@ module Aspera
           process_status = $CHILD_STATUS
           Aspera.assert(process_status.success? || !@parameters[:fail_on_error]) { "script #{script_path} failed with code #{process_status.exitstatus}" }
         end
-        response.status = 200
-        response.content_type = Mime::JSON
-        response.body = JSON.generate({status: 'success', script: script_path, exit_code: process_status&.exitstatus})
+        json_response(response, 200, {status: 'success', script: script_path, exit_code: process_status&.exitstatus})
         Log.log.debug { 'Script executed successfully' }
+      rescue WEBrick::HTTPStatus::Error => e
+        Log.log.warn { "Rejected request: #{e.message}" }
+        error_response(response, e.code, e.message)
       rescue StandardError, ScriptError => e
         # ScriptError: syntax error in lambda script
         Log.log.error("Script failed: #{e.class}:#{e.message}")
@@ -158,10 +164,7 @@ module Aspera
     # @param info     [Hash]    Additional fields in body
     # @return nil
     def error_response(response, status, message, **info)
-      response.status = status
-      response['Content-Type'] = Mime::JSON
-      response.body = JSON.generate({status: 'error', **info, message: message})
-      nil
+      json_response(response, status, {status: 'error', **info, message: message})
     end
 
     # @param client_ip [String] Source IP address of the request
