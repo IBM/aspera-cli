@@ -77,7 +77,8 @@ module Aspera
       @uri = uri
       # see https://www.rubydoc.info/stdlib/webrick/WEBrick/Config
       webrick_options = {
-        BindAddress: @uri.host,
+        # without brackets of IPv6 address
+        BindAddress: @uri.hostname,
         Port:        @uri.port,
         Logger:      Log.log,
         AccessLog:   [[self, WEBrick::AccessLog::COMMON_LOG_FORMAT]] # replace default access log to call local method "<<" below

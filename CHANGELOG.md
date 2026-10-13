@@ -43,6 +43,8 @@ Released: [Place date of release here]
 * **global**: Removed gem dependency on `word_wrap`: descriptions in schema tables are no longer cut at 120 characters, but wrapped to the terminal width.
 * **global**: A boolean or decimal result, or a list containing such values (for example `config echo @json:true`), failed with an internal error.
 * **global**: `--auth=web`: login could wait forever when the browser called back before the wait started, or when `redirect_uri` has a path (HTTP 404).
+* **global**: `--auth=web`: a `redirect_uri` on IPv6 loopback (`[::1]`) or on `127.0.0.0/8` other than `127.0.0.1` was refused.
+* **global**: Local web servers (`faspex5 postprocessing`, `faspex5 gateway`, `aoc gateway`, `node emulator`, `--auth=web`): a `url` with an IPv6 address (e.g. `http://[::1]:8080`) failed to start the server.
 * `mcp`: REST error messages were repeated once more at each tool call of the session: error handlers are now registered on load.
 * `orchestrator`: `workflows import` uploads the workflow file as a multipart form, as expected by Orchestrator, and displays the imported workflow.
 * `orchestrator`: `workflows publish` sends the workflow `id` expected by Orchestrator (also accepts the portable ID), and displays `published`.

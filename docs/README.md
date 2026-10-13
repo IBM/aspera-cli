@@ -6071,6 +6071,7 @@ To register with web-based authentication (auth=web):
 > [!NOTE]
 > For web based authentication, `ascli` listens on a local port (for example, specified by the `redirect_uri` parameter, in this example: `12345`), and the browser will provide the OAuth code there.
 > For `ascli`, HTTP is required, and `12345` is the default port.
+> The host of `redirect_uri` shall be loopback: `localhost`, an address of `127.0.0.0/8`, or `[::1]`.
 
 Once the client is registered, a **Client ID** and **Secret** are created; these values are used in the next step.
 

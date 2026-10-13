@@ -35,6 +35,17 @@ RSpec.describe(Aspera::WebServerSimple) do
     end
   end
 
+  describe '#initialize' do
+    it 'listens on an IPv6 address given in brackets in the URL' do
+      skip('no IPv6 loopback') if Socket.ip_address_list.none?(&:ipv6_loopback?)
+      server = described_class.new(URI('http://[::1]:0'))
+      expect(server.config[:BindAddress]).to(eq('::1'))
+      expect(server.listeners.map { |listener| listener.local_address.ip_address }).to(eq(['::1']))
+    ensure
+      server&.shutdown
+    end
+  end
+
   describe '#initialize with HTTPS' do
     it 'loads PEM certificate, key and chain' do
       Dir.mktmpdir do |dir|
