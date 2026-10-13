@@ -68,6 +68,8 @@ Released: [Place date of release here]
 * **global**: Local web servers (`faspex5 postprocessing`, `faspex5 gateway`, `aoc gateway`, `node emulator`): parameter `chain` failed with an internal error.
 * **global**: Local web servers (`faspex5 postprocessing`, `faspex5 gateway`, `aoc gateway`, `node emulator`, `mcp server`, `--auth=web`, `@secret:` page) refuse requests that a web page open in the browser can send: header `Host` that is not loopback when the server listens on loopback (DNS rebinding), or header `Origin` of another site (HTTP 403), and a JSON body without type `application/json` (HTTP 415). `mcp server`: `allowed_hosts` and `allowed_origins` also apply to OAuth endpoints and secret pages, which also accept the origin of `base_url`.
 * `faspex5 gateway`, `aoc gateway`: The response to a failed request no longer contains the stack trace.
+* `mcp server`: `oauth`: Dynamic client registration is limited: at most 100 clients are kept (the least recently used is removed), and at most 10 `redirect_uris` of 2048 characters, absolute and without fragment. A body that is not a JSON object returns HTTP 400.
+* `mcp server`: `oauth`: The consent page shows where the authorization is sent (origin of `redirect_uri`).
 * `faspex5 gateway`, `aoc gateway`: An invalid request (empty or not JSON, without `delivery` or `recipients`) returns HTTP 400 instead of 500.
 * `node emulator`: A symbolic link in the `docroot` leading out of it was followed by transfers (sources of `send`, destination of `receive`): the real path of local paths shall be in the `docroot`.
 

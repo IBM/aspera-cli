@@ -302,6 +302,16 @@ RSpec.describe(Aspera::OAuth::Server::Pkce) do
       expect(html2).to(include('<title>My Custom Server</title>'))
     end
 
+    it 'shows where the code is sent: origin of redirect_uri' do
+      expect(html).to(include('sent to <span class="client">http://localhost:9999</span>'))
+      {
+        'cursor://anysphere.cursor-retrieval/oauth/cb' => 'cursor://anysphere.cursor-retrieval',
+        'com.example.app:/cb'                          => 'com.example.app:/cb'
+      }.each do |redirect_uri, shown|
+        expect(oauth.send(:authorize_html_from_template, params.merge('redirect_uri' => redirect_uri))).to(include("sent to <span class=\"client\">#{shown}</span>"))
+      end
+    end
+
     it 'escapes HTML in client_id to prevent XSS' do
       xss_html = oauth.send(:authorize_html_from_template, params.merge('client_id' => '<script>alert(1)</script>'))
       expect(xss_html).not_to(include('<script>alert(1)</script>'))
@@ -346,6 +356,31 @@ RSpec.describe(Aspera::OAuth::Server::Pkce) do
     it 'rejects registration without redirect_uris' do
       expect(register(nil).status).to(eq(400))
       expect(register([]).status).to(eq(400))
+      r = response_class.new
+      oauth.handle_register(request_class.new('[1]'), r)
+      expect(r.status).to(eq(400))
+    end
+
+    it 'rejects too many, too long, relative redirect_uris, or with fragment' do
+      expect(register(Array.new(11) { |i| "http://127.0.0.1:#{19_000 + i}/cb" }).body).to(include('at most 10 values'))
+      expect(register(["http://127.0.0.1:19999/#{'a' * 2048}"]).body).to(include('at most 2048 characters'))
+      ['/cb', 'http://127.0.0.1:19999/cb#frag', 'http://[bad'].each do |redirect_uri|
+        expect(register([redirect_uri]).body).to(include('absolute URI without fragment'), redirect_uri)
+      end
+      expect(register(['cursor://anysphere.cursor-retrieval/oauth/cb']).status).to(eq(201))
+    end
+
+    it 'removes the least recently used client beyond the limit' do
+      max_clients = described_class.const_get(:MAX_CLIENTS)
+      used = client_id
+      unused = JSON.parse(register([redirect]).body)['client_id']
+      (max_clients - 2).times { register([redirect]) }
+      # use the oldest client
+      expect(oauth.send(:client_redirect_valid?, used, redirect)).to(be(true))
+      register([redirect])
+      expect(oauth.send(:client_redirect_valid?, unused, redirect)).to(be(false))
+      expect(oauth.send(:client_redirect_valid?, used, redirect)).to(be(true))
+      expect(oauth.instance_variable_get(:@clients).size).to(eq(max_clients))
     end
 
     it 'redirects to registered redirect_uri on allow' do

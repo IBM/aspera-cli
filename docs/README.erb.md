@@ -9253,6 +9253,7 @@ The `server` command accepts an optional [Hash](#extended-value-syntax) argument
 With the `http` transport:
 
 - With `oauth`, the consent page asks for `auth_token` as access code, else anyone reaching the server could approve its own client.
+  It shows where the authorization is sent (origin of `redirect_uri`): allow only if it is the expected AI client, for example `http://127.0.0.1:<port>`.
 - For local-only deployments (loopback `bind`: `localhost`, `127.0.0.0/8`, `::1`), `auth_token` and `oauth` are optional but recommended.
   Without `auth_token`, the consent page only asks to click **Allow**.
 - `auth_token` and `oauth` can coexist: a request is accepted if it carries a valid static token **or** a valid OAuth access token.
@@ -9291,8 +9292,8 @@ With the `http` transport, the server exposes the following endpoints:
 | `POST`, `GET`, `DELETE` `/mcp` | MCP endpoint (Streamable HTTP), the URL to configure in the AI client. Requires `auth_token` or an OAuth access token, if configured |
 | `GET`, `POST` `/secret/<id>` | Secret pages, see [Secrets entered in a web page](#secrets-entered-in-a-web-page) |
 | `GET /.well-known/oauth-authorization-server` | With `oauth`: OAuth discovery metadata (RFC 8414) |
-| `POST /oauth/register` | With `oauth`: Dynamic client registration (RFC 7591) — any client may register and receive a `client_id` |
-| `GET /oauth/authorize` | With `oauth`: Consent page shown to the user in a browser |
+| `POST /oauth/register` | With `oauth`: Dynamic client registration (RFC 7591) — any client may register and receive a `client_id`. At most 100 clients are kept: beyond, the least recently used is removed. At most 10 `redirect_uris`, absolute and without fragment |
+| `GET /oauth/authorize` | With `oauth`: Consent page shown to the user in a browser, with the `client_id` and where the code is sent (origin of `redirect_uri`) |
 | `POST /oauth/authorize` | With `oauth`: Processes the user decision (allow/deny) and issues an authorization code |
 | `POST /oauth/token` | With `oauth`: Exchanges the code for tokens (`authorization_code`) or renews them (`refresh_token`) |
 

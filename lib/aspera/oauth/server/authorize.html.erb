@@ -9,6 +9,7 @@
 
         <h1>Authorization request</h1>
         <p>The client <span class="client"><%= h client_id %></span> is requesting access to <%= description %>.</p>
+        <p>The authorization is sent to <span class="client"><%= h redirect_origin %></span>.</p>
         <p>Do you want to allow it?</p>
 <% if error %>
         <p class="error"><%= h error %></p>

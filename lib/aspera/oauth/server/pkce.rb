@@ -8,6 +8,7 @@ require 'aspera/web_page'
 require 'aspera/servlet_helpers'
 require 'json'
 require 'securerandom'
+require 'uri'
 
 module Aspera
   module OAuth
@@ -45,10 +46,14 @@ module Aspera
         ACCESS_TOKEN_TTL  = 3600        # 1 hour
         REFRESH_TOKEN_TTL = 2_592_000   # 30 days
         CODE_TTL          = 120         # 2 minutes
+        # Limits of dynamic client registration, which needs no authentication
+        MAX_CLIENTS           = 100 # beyond, the least recently used client is removed
+        MAX_REDIRECT_URIS     = 10
+        MAX_REDIRECT_URI_SIZE = 2048
         # Path to the ERB consent page template (relative to this file).
         HTML_TEMPLATE_PATH = File.join(__dir__, 'authorize.html.erb')
 
-        private_constant :ACCESS_TOKEN_TTL, :REFRESH_TOKEN_TTL, :CODE_TTL, :HTML_TEMPLATE_PATH
+        private_constant :ACCESS_TOKEN_TTL, :REFRESH_TOKEN_TTL, :CODE_TTL, :MAX_CLIENTS, :MAX_REDIRECT_URIS, :MAX_REDIRECT_URI_SIZE, :HTML_TEMPLATE_PATH
 
         # Default TTL values, exposed for callers that want to display or override them.
         class << self
@@ -79,8 +84,8 @@ module Aspera
           @consent_secret    = consent_secret&.to_s
           @authorize_html_cb = authorize_html_cb
           @store_mutex       = Mutex.new
-          # dynamically registered clients:  Array<{client_id:, redirect_uris:}>
-          @clients           = []
+          # dynamically registered clients: client_id => redirect_uris, least recently used first
+          @clients           = {}
           # pending authorization codes: code => {client_id:, redirect_uri:, code_challenge:, expires_at:}
           @pending_codes     = {}
           # valid access tokens: token => expires_at (Time)
@@ -137,14 +142,22 @@ module Aspera
         # POST /oauth/register
         def handle_register(req, res)
           body = req.body.to_s.empty? ? {} : (JSON.parse(req.body.to_s) rescue {})
+          body = {} unless body.is_a?(Hash)
           redirect_uris = body['redirect_uris']
-          unless redirect_uris.is_a?(Array) && !redirect_uris.empty? && redirect_uris.all?(String)
-            json_error(res, 400, 'invalid_redirect_uri', 'redirect_uris must be a non-empty array of strings')
+          error = redirect_uris_error(redirect_uris)
+          unless error.nil?
+            json_error(res, 400, 'invalid_redirect_uri', error)
             return
           end
           client_id = SecureRandom.urlsafe_base64(16)
-          @store_mutex.synchronize { @clients << {client_id: client_id, redirect_uris: redirect_uris} }
-          Log.log.info { "OAuth dynamic registration: client_id=#{client_id} name=#{body['client_name']}" }
+          @store_mutex.synchronize do
+            while @clients.size >= MAX_CLIENTS
+              removed_id, = @clients.shift
+              Log.log.info { "OAuth client removed, limit of #{MAX_CLIENTS} clients reached: client_id=#{removed_id}" }
+            end
+            @clients[client_id] = redirect_uris
+          end
+          Log.log.info { "OAuth dynamic registration: client_id=#{client_id} name=#{body['client_name'].to_s[0, 64].inspect}" }
           registration = {
             client_id:                  client_id,
             client_id_issued_at:        Time.now.to_i,
@@ -240,11 +253,37 @@ module Aspera
         # Internal helpers
         # -------------------------------------------------------------------------
 
+        # @param redirect_uris [Object] Value of `redirect_uris` in the registration request
+        # @return [String, nil] Reason why `redirect_uris` is refused, `nil` if valid
+        def redirect_uris_error(redirect_uris)
+          return 'redirect_uris must be a non-empty array of strings' unless redirect_uris.is_a?(Array) && !redirect_uris.empty? && redirect_uris.all?(String)
+          return "redirect_uris must have at most #{MAX_REDIRECT_URIS} values" if redirect_uris.length > MAX_REDIRECT_URIS
+          redirect_uris.each do |redirect_uri|
+            return "redirect_uri must have at most #{MAX_REDIRECT_URI_SIZE} characters" if redirect_uri.length > MAX_REDIRECT_URI_SIZE
+            # RFC 6749 §3.1.2: absolute URI, without fragment
+            uri = URI.parse(redirect_uri) rescue nil
+            return "redirect_uri must be an absolute URI without fragment: #{redirect_uri}" if uri.nil? || !uri.absolute? || !uri.fragment.nil?
+          end
+          nil
+        end
+
+        # The client is also marked as the most recently used one
         # @return [Boolean] true if client is registered and redirect_uri is one of its registered URIs (exact match)
         def client_redirect_valid?(client_id, redirect_uri)
           @store_mutex.synchronize do
-            @clients.any? { |c| c[:client_id] == client_id && c[:redirect_uris].include?(redirect_uri) }
+            redirect_uris = @clients.delete(client_id)
+            next false if redirect_uris.nil?
+            @clients[client_id] = redirect_uris
+            redirect_uris.include?(redirect_uri)
           end
+        end
+
+        # @param redirect_uri [String] Redirect URI of the authorization request
+        # @return [String] Where the code is sent: origin of `redirect_uri`, or `redirect_uri` if it has no host
+        def redirect_origin(redirect_uri)
+          URI.parse(redirect_uri).host.to_s.empty? ? redirect_uri : ServletHelpers.origin(redirect_uri)
+        rescue URI::InvalidURIError
+          redirect_uri
         end
 
         # Build redirect URL to client, preserving any query already present in redirect_uri.
@@ -380,6 +419,7 @@ module Aspera
             action_url:            "#{@base_url}/oauth/authorize",
             client_id:             params['client_id'].to_s,
             redirect_uri:          params['redirect_uri'].to_s,
+            redirect_origin:       redirect_origin(params['redirect_uri'].to_s),
             state:                 params['state'].to_s,
             code_challenge:        params['code_challenge'].to_s,
             code_challenge_method: params['code_challenge_method'].to_s,
