@@ -977,6 +977,7 @@ module Aspera
         end
 
         def action_gateway(parameters: {}, **)
+          require 'aspera/web_server_simple'
           require 'aspera/faspex_gw'
           parameters = parameters.symbolize_keys
           uri = URI.parse(parameters.delete(:url) { WebServerSimple::DEFAULT_URL })
@@ -988,6 +989,7 @@ module Aspera
         end
 
         def action_postprocessing(parameters: {}, **)
+          require 'aspera/web_server_simple'
           require 'aspera/faspex_postproc' # cspell:disable-line
           parameters = parameters.symbolize_keys
           uri = URI.parse(parameters.delete(:url) { WebServerSimple::DEFAULT_URL })

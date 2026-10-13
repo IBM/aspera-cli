@@ -5,6 +5,8 @@
 require 'aspera/cli/context'
 require 'aspera/cli/parser'
 require 'aspera/cli/plugins/faspex5'
+require 'aspera/web_server_simple'
+require 'securerandom'
 
 module Aspera
   module Cli
@@ -41,7 +43,7 @@ module Aspera
           end
 
           it 'starts with secret_token on a non-local address' do
-            expect(postprocessing({'url' => 'http://0.0.0.0:8080/processing', 'secret_token' => 's3cret'})).to(be_a(Result::Status))
+            expect(postprocessing({'url' => 'http://0.0.0.0:8080/processing', 'secret_token' => SecureRandom.hex(32)})).to(be_a(Result::Status))
           end
 
           it 'starts with allowed_ips on a non-local address' do

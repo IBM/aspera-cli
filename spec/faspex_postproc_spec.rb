@@ -3,10 +3,11 @@
 require 'aspera/faspex_postproc'
 require 'fileutils'
 require 'json'
+require 'securerandom'
 require 'tmpdir'
 
 RSpec.describe(Aspera::Faspex4PostProcServlet) do
-  subject(:servlet) { described_class.new(webrick, parameters) }
+  subject(:servlet) { described_class.new(webrick, described_class.normalize_parameters(parameters)) }
 
   let(:webrick) { WEBrick::HTTPServer.new(BindAddress: '127.0.0.1', Port: 0, Logger: WEBrick::Log.new(File::NULL), AccessLog: [], DoNotListen: true) }
   let(:script_folder) { Dir.mktmpdir('postproc') }
@@ -153,13 +154,23 @@ RSpec.describe(Aspera::Faspex4PostProcServlet) do
       expect { described_class.normalize_parameters(secret_token: '') }.to(raise_error(/secret_token must not be empty/))
     end
 
+    it 'refuses a weak secret_token' do
+      expect { described_class.normalize_parameters(secret_token: 'MySecretToken2024!') }.to(raise_error(/secret_token is too weak: about \d+ bits, minimum 80/))
+    end
+
+    it 'accepts a weak secret_token if secret_token_min_bits allows it' do
+      expect(described_class.normalize_parameters(secret_token: 'mysecret', secret_token_min_bits: 0)).to(include(secret_token: 'mysecret'))
+    end
+
     it 'refuses an invalid IP address' do
       expect { described_class.normalize_parameters(allowed_ips: 'not_an_ip') }.to(raise_error(ArgumentError, /invalid IP address or network: not_an_ip/))
     end
   end
 
   context 'with secret_token' do
-    before { parameters[:secret_token] = 's3cret' }
+    let(:token) { SecureRandom.hex(32) }
+
+    before { parameters[:secret_token] = token }
 
     it 'refuses a request without token' do
       expect(post.status).to(eq(401))
@@ -172,7 +183,7 @@ RSpec.describe(Aspera::Faspex4PostProcServlet) do
     end
 
     it 'executes the script with the token in the URL query' do
-      expect(post('token=s3cret').status).to(eq(200))
+      expect(post("token=#{token}").status).to(eq(200))
       expect(File.read(marker)).to(eq('executed'))
     end
   end

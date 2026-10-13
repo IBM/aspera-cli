@@ -752,6 +752,7 @@ See [Gemfile](../Gemfile):
 | ed25519 | ~> 1.4 | (no jruby) for ed25519 and OpenSSH file format |
 | bcrypt_pbkdf | ~> 1.1 | (no jruby) for ed25519 and OpenSSH file format |
 | syslog | ~> 0.3 | (no jruby) for logger=syslog |
+| zxcvbn | ~> 1.0 | for better estimate of secret strength (faspex5 postprocessing secret_token) |
 | rmagick | ~> 6.1 | (no jruby) for terminal view |
 
 Install like this:
@@ -778,6 +779,7 @@ gem install sequel -v '~> 5.96'
 gem install ed25519 -v '~> 1.4'
 gem install bcrypt_pbkdf -v '~> 1.1'
 gem install syslog -v '~> 0.3'
+gem install zxcvbn -v '~> 1.0'
 gem install rmagick -v '~> 6.1'
 ```
 
@@ -9291,14 +9293,15 @@ ascli faspex5 postprocessing
 An optional positional parameter can be provided as [Extended Value](#extended-value-syntax) `Hash`:
 
 | Field | Type | Description |
-|-----------------|-----------------------|----------------------------------------------------------------------------------|
+|-----------------------|-----------------------|----------------------------------------------------------------------------------|
 | `allowed_ips` | `String, Array[String]` | IP address or network (CIDR, e.g. `10.89.0.0/24`), or list of them, allowed to call the listener. Requests from any other source IP are rejected with HTTP 403. When not set, no IP restriction is applied. This parameter or `secret_token` is required when `url` is not a local address. |
 | `cert` | `String` | Path to the TLS certificate file. Accepted formats: PEM (`.pem`) or PKCS12 (`.p12` / `.pfx`).<br/>Example: `/path/to/cert.pem`. |
 | `chain` | `String` | Path to the PEM certificate chain file (appended as extra chain certificates).<br/>Example: `/path/to/chain.pem`. |
 | `fail_on_error` | `Bool` | When `true`, return HTTP 500 if the script exits with a non-zero status code. When `false` (default), the exit code is reported in the response body but HTTP 200 is returned.<br/>Default: `false`. |
 | `key` | `String` | Path to the PEM private key file, or the PKCS12 passphrase when `cert` is a `.p12`/`.pfx` file.<br/>Example: `/path/to/key.pem`. |
 | `script_folder` | `String` | Folder containing the post-processing scripts. The URL path (after the base path) is appended to this folder to locate the script to execute.<br/>Default: `.`.<br/>Example: `/opt/faspex/scripts`. |
-| `secret_token` | `String` | Shared secret for webhook authentication. When set, every incoming request must include `?token=<value>` in the URL; requests without the correct token are rejected with HTTP 401. Configure the Faspex webhook URL as `http://host:port/path/script.sh?token=<value>`. This parameter or `allowed_ips` is required when `url` is not a local address.<br/>Example: `my-secret-token`. |
+| `secret_token_min_bits` | `Integer` | Minimum estimated strength of `secret_token`, in bits (log2 of the number of guesses to find it). The strength is estimated with gem `zxcvbn` if installed, else with a built-in estimate that detects repeats, sequences, keyboard rows, words and years. `0` disables the check. A random token of 32 bytes (`openssl rand -hex 32`) is far above the default.<br/>Default: `80`. |
+| `secret_token` | `String` | Shared secret for webhook authentication. When set, every incoming request must include `?token=<value>` in the URL; requests without the correct token are rejected with HTTP 401. Configure the Faspex webhook URL as `http://host:port/path/script.sh?token=<value>`. This parameter or `allowed_ips` is required when `url` is not a local address. Generate it with `openssl rand -hex 32`: a weak token is refused (see `secret_token_min_bits`). |
 | `timeout_seconds` | `Integer` | Maximum time in seconds to wait for the script to complete before killing it.<br/>Default: `60`. |
 | `url` | `String` | Address and port the server listens on. Use `https://` with `cert`/`key` for TLS.<br/>Default: `http://localhost:8080`. |
 
@@ -9318,8 +9321,12 @@ When a request on `ascli` is received the following happens:
 For example:
 
 ```shell
-ascli faspex5 postprocessing @json:'{"url":"http://0.0.0.0:8080/processing","script_folder":"/opt/scripts","secret_token":"mysecret"}'
+ascli faspex5 postprocessing @json:'{"url":"http://0.0.0.0:8080/processing","script_folder":"/opt/scripts","secret_token":"<TOKEN>"}'
 ```
+
+Generate the token with `openssl rand -hex 32`.
+A weak token is refused at startup: its strength is estimated in bits, and shall be at least `secret_token_min_bits`.
+The estimate uses the optional gem `zxcvbn` if installed, else a built-in estimate.
 
 In Faspex 5, the URL of the webhook endpoint shall be reachable from within Faspex containers.
 For example, if `ascli` is running on the host, the URL hostname shall not be `localhost`, as this refers to the local address inside the Faspex container.
@@ -9330,17 +9337,17 @@ So, `ascli` shall listen on an address reachable from the containers: the IP add
 > **Security**: by default the listener binds to loopback (`localhost`) and is not reachable from outside the host.
 > When `url` is not a local address (`localhost`, `127.0.0.1`, `::1`), at least one of the following protections is required:
 >
-> - **`secret_token`**: include the token in the Faspex webhook URL: `http://host:8080/processing/script1.sh?token=mysecret`. Requests without the correct token are rejected with HTTP 401.
+> - **`secret_token`**: include the token in the Faspex webhook URL: `http://host:8080/processing/script1.sh?token=<TOKEN>`. Requests without the correct token are rejected with HTTP 401.
 > - **`allowed_ips`**: restrict the listener to the known Faspex container IPs or network, e.g. `@json:'{"allowed_ips":["192.168.1.10","10.89.0.0/24"]}'`. Requests from other IPs are rejected with HTTP 403.
 
 Define the web hook as follows:
 
-**Webhook endpoint URI**: `http://host.containers.internal:8080/processing/script1.sh?token=mysecret`
+**Webhook endpoint URI**: `http://host.containers.internal:8080/processing/script1.sh?token=<TOKEN>`
 
 Then the post-processing script executed will be `/opt/scripts/script1.sh`.
 
 A Ruby script can also be evaluated in the process of `ascli`, instead of being executed in a new process.
-For this, add `lambda` to the query of the URL, e.g. `http://host.containers.internal:8080/processing/notify.rb?token=mysecret&lambda`.
+For this, add `lambda` to the query of the URL, e.g. `http://host.containers.internal:8080/processing/notify.rb?token=<TOKEN>&lambda`.
 The script shall have extension `.rb`, and return a lambda, which is called with all the webhook values (`Hash`).
 For example:
 

@@ -963,7 +963,17 @@ components:
                 requests without the correct token are rejected with HTTP 401.
                 Configure the Faspex webhook URL as `http://host:port/path/script.sh?token=<value>`.
                 This parameter or `allowed_ips` is required when `url` is not a local address.
-              example: my-secret-token
+                Generate it with `openssl rand -hex 32`: a weak token is refused (see `secret_token_min_bits`).
+            secret_token_min_bits:
+              type: integer
+              minimum: 0
+              default: 80
+              description: >-
+                Minimum estimated strength of `secret_token`, in bits (log2 of the number of guesses to find it).
+                The strength is estimated with gem `zxcvbn` if installed, else with a built-in estimate
+                that detects repeats, sequences, keyboard rows, words and years.
+                `0` disables the check.
+                A random token of 32 bytes (`openssl rand -hex 32`) is far above the default.
             allowed_ips:
               description: >-
                 IP address or network (CIDR, e.g. `10.89.0.0/24`), or list of them, allowed to call the listener.

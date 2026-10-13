@@ -36,6 +36,7 @@ group :optional do
   gem('ed25519', '~> 1.4') unless defined?(JRUBY_VERSION) # for ed25519 and OpenSSH file format
   gem('bcrypt_pbkdf', '~> 1.1') unless defined?(JRUBY_VERSION) # for ed25519 and OpenSSH file format
   gem('syslog', '~> 0.3') unless defined?(JRUBY_VERSION) # for logger=syslog
+  gem('zxcvbn', '~> 1.0') # for better estimate of secret strength (faspex5 postprocessing secret_token)
 end
 
 # Special dependency gems for runtime that can cause problems (native part to compile) but required for some features

@@ -8437,8 +8437,12 @@ When a request on <%=tool%> is received the following happens:
 For example:
 
 ```shell
-<%=cmd%> faspex5 postprocessing @json:'{"url":"http://0.0.0.0:8080/processing","script_folder":"/opt/scripts","secret_token":"mysecret"}'
+<%=cmd%> faspex5 postprocessing @json:'{"url":"http://0.0.0.0:8080/processing","script_folder":"/opt/scripts","secret_token":"<%=ph :token%>"}'
 ```
+
+Generate the token with `openssl rand -hex 32`.
+A weak token is refused at startup: its strength is estimated in bits, and shall be at least `secret_token_min_bits`.
+The estimate uses the optional gem `zxcvbn` if installed, else a built-in estimate.
 
 In Faspex 5, the URL of the webhook endpoint shall be reachable from within Faspex containers.
 For example, if <%=tool%> is running on the host, the URL hostname shall not be `localhost`, as this refers to the local address inside the Faspex container.
@@ -8449,17 +8453,17 @@ So, <%=tool%> shall listen on an address reachable from the containers: the IP a
 > **Security**: by default the listener binds to loopback (`localhost`) and is not reachable from outside the host.
 > When `url` is not a local address (`localhost`, `127.0.0.1`, `::1`), at least one of the following protections is required:
 >
-> - **`secret_token`**: include the token in the Faspex webhook URL: `http://host:8080/processing/script1.sh?token=mysecret`. Requests without the correct token are rejected with HTTP 401.
+> - **`secret_token`**: include the token in the Faspex webhook URL: `http://host:8080/processing/script1.sh?token=<%=ph :token%>`. Requests without the correct token are rejected with HTTP 401.
 > - **`allowed_ips`**: restrict the listener to the known Faspex container IPs or network, e.g. `@json:'{"allowed_ips":["192.168.1.10","10.89.0.0/24"]}'`. Requests from other IPs are rejected with HTTP 403.
 
 Define the web hook as follows:
 
-**Webhook endpoint URI**: `http://host.containers.internal:8080/processing/script1.sh?token=mysecret`
+**Webhook endpoint URI**: `http://host.containers.internal:8080/processing/script1.sh?token=<%=ph :token%>`
 
 Then the post-processing script executed will be `/opt/scripts/script1.sh`.
 
 A Ruby script can also be evaluated in the process of <%=tool%>, instead of being executed in a new process.
-For this, add `lambda` to the query of the URL, e.g. `http://host.containers.internal:8080/processing/notify.rb?token=mysecret&lambda`.
+For this, add `lambda` to the query of the URL, e.g. `http://host.containers.internal:8080/processing/notify.rb?token=<%=ph :token%>&lambda`.
 The script shall have extension `.rb`, and return a lambda, which is called with all the webhook values (`Hash`).
 For example:
 

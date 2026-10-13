@@ -26,6 +26,7 @@ Released: [Place date of release here]
 * `faspex5 postprocessing`: Two new optional parameters harden the unauthenticated webhook listener:
   * `secret_token` — callers must supply `?token=<value>` in the URL; requests without the correct token are rejected with HTTP 401.
   * `allowed_ips` — restrict the listener to one IP address or network (CIDR), or a list of them; requests from other source IPs are rejected with HTTP 403.
+* `faspex5 postprocessing`: A weak `secret_token` is refused at startup: its estimated strength in bits shall be at least `secret_token_min_bits` (default `80`, `0` disables the check). The estimate uses the optional gem `zxcvbn` if installed, else a built-in estimate that detects repeats, sequences, keyboard rows, words and years.
 * `faspex5 postprocessing`, `faspex5 gateway`, `aoc gateway`: Parameters are now validated against a JSON Schema (`Faspex4PostProcOptions`, `Faspex4GatewayOptions`). Unknown keys are rejected at startup instead of being silently ignored.
 * **global**: Tables are fitted to the terminal width: text columns (e.g. `description`) are wrapped, the widest first, then other columns if needed. Parameter `width` of `--out.table` sets the maximum table width.
 * `options.schema.yaml`: New schemas `WebServerOptions` (shared `url`/`cert`/`key`/`chain`), `Faspex4GatewayOptions` (extends `WebServerOptions`), and `Faspex4PostProcOptions` (extends `WebServerOptions` with postprocessing-specific keys).

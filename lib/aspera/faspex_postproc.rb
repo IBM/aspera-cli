@@ -11,6 +11,7 @@ require 'aspera/assert'
 require 'aspera/environment'
 require 'aspera/hash_ext'
 require 'aspera/mime'
+require 'aspera/secret_strength'
 
 module Aspera
   # Start a Faspex-4 style post-processing script using Faspex-5 webhook
@@ -26,7 +27,7 @@ module Aspera
   # - With `lambda` in the URL query, a Ruby script (`.rb`) is evaluated in this process:
   #   it shall return a lambda, called with the webhook values.
   class Faspex4PostProcServlet < WEBrick::HTTPServlet::AbstractServlet
-    ALLOWED_PARAMETERS = %i[root script_folder fail_on_error timeout_seconds secret_token allowed_ips].freeze
+    ALLOWED_PARAMETERS = %i[root script_folder fail_on_error timeout_seconds secret_token secret_token_min_bits allowed_ips].freeze
     # Prefix of keys of webhook values passed as environment variables: Faspex 4 post-processing variables
     ENV_KEY_PREFIX = 'faspex_'
     private_constant :ENV_KEY_PREFIX
@@ -44,9 +45,16 @@ module Aspera
         parameters[:script_folder] ||= '.'
         parameters[:fail_on_error] ||= false
         parameters[:timeout_seconds] ||= 60
+        parameters[:secret_token_min_bits] ||= 80
         Aspera.assert(File.directory?(parameters[:script_folder])) { "script_folder not found: #{parameters[:script_folder]}" }
         # An empty token would accept requests without token
-        Aspera.assert(!parameters.key?(:secret_token) || !parameters[:secret_token].to_s.empty?) { 'secret_token must not be empty' }
+        if parameters.key?(:secret_token)
+          Aspera.assert(!parameters[:secret_token].to_s.empty?) { 'secret_token must not be empty' }
+          bits = SecretStrength.bits(parameters[:secret_token])
+          Aspera.assert(bits >= parameters[:secret_token_min_bits]) do
+            "secret_token is too weak: about #{bits.round} bits, minimum #{parameters[:secret_token_min_bits]} (secret_token_min_bits). Generate one with: openssl rand -hex 32"
+          end
+        end
         # allowed_ips: optional IP addresses or networks (CIDR); nil means no restriction
         parameters[:allowed_ips] = Array(parameters[:allowed_ips]).map { |ip| ip_address(ip) } if parameters.key?(:allowed_ips)
         parameters
@@ -64,8 +72,10 @@ module Aspera
       end
     end
 
+    # @param server     [WEBrick::HTTPServer] Server
+    # @param parameters [Hash] Parameters from `normalize_parameters`: the servlet is created on each request
     def initialize(server, parameters)
-      @parameters = self.class.normalize_parameters(parameters)
+      @parameters = parameters
       Log.dump(:post_proc_parameters, @parameters)
       super(server)
       Log.log.debug { 'Faspex4PostProcServlet initialized' }
