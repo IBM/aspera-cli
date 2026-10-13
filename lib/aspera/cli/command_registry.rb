@@ -21,6 +21,7 @@ module Aspera
     #   arguments_at(path)      - Array of ArgumentSpec read by the node at path (mount arguments first)
     #   leaf_paths              - Array of all leaf paths (follows mounts, or stops at mount nodes)
     #   command_path(words)     - command path designated by command line words (aliases, arguments)
+    #   command_position(words) - command path and number of its arguments, as read by the dispatcher
     #   all_paths               - Array of all locally registered full paths
     #   any?                    - true if at least one spec has been registered
     #   validate!               - cross-spec consistency checks; raises on violation
@@ -152,7 +153,7 @@ module Aspera
         words.each do |word|
           children = children_of(path)
           break if children.empty?
-          id = children.key?(word) ? word : children.find { |_, c| Array(c.aliases).include?(word) }&.first
+          id = child_id(children, word)
           if id
             path += [id]
             arguments = arguments_at(path)
@@ -164,6 +165,30 @@ module Aspera
           end
         end
         [path, nil]
+      end
+
+      # Position reached by words of a command line, as read by the dispatcher: an intermediate command reads
+      # its positional arguments before its sub-command, a leaf command reads the following words as arguments.
+      # Unlike `command_path`, a word expected as argument is never taken as a sub-command.
+      # @param words [Array<Symbol>] words following the plugin name
+      # @return [Array(Array<Symbol>, Integer), nil] command path, and number of its positional arguments given;
+      #   `nil` if a word is neither a sub-command nor an expected argument
+      def command_position(words)
+        path = []
+        given = 0
+        words.each do |word|
+          children = children_of(path)
+          arguments = arguments_at(path)
+          if given < arguments.length || (children.empty? && arguments.last&.multiple)
+            given += 1
+          else
+            id = child_id(children, word)
+            return nil if id.nil?
+            path += [id]
+            given = 0
+          end
+        end
+        [path, given]
       end
 
       # @return [Array<Array<Symbol>>] all locally registered full paths
@@ -264,6 +289,13 @@ module Aspera
       end
 
       private
+
+      # @param children [Hash{Symbol => CommandSpec}] children of a node
+      # @param word     [Symbol]                      command line word
+      # @return [Symbol, nil] id of the child designated by word, or its alias
+      def child_id(children, word)
+        children.key?(word) ? word : children.find { |_, c| Array(c.aliases).include?(word) }&.first
+      end
 
       # @return [Boolean] true if plugin_class defines instance method name (public or private)
       def instance_method?(plugin_class, name)

@@ -97,7 +97,8 @@ module Aspera
         Plugins::Factory.instance.add_plugins_from_lookup_folders
         # Help requested without command? Show global options + plugin list
         return result_usage if @option_help && @context.options.command_or_arg_empty?
-        @context.config.periodic_check_newer_gem_version
+        # Shell completion is executed on each `Tab`: no network access
+        @context.config.periodic_check_newer_gem_version unless @context.options.next_arguments?(COMPLETION_COMMAND)
         command_sym =
           if @option_show_config && @context.options.command_or_arg_empty?
             COMMAND_CONFIG
@@ -478,12 +479,14 @@ module Aspera
       end
       COMMAND_CONFIG = :config
       COMMAND_HELP = :help
+      # Shell completion commands (scripts and words)
+      COMPLETION_COMMAND = %w[config completion].freeze
       # Types that go to result of type = text
       SCALAR_TYPES = [String, Integer, Symbol].freeze
       USER_INTERFACES = %i[text graphical].freeze
       EXTEND_ARGS = :''
 
-      private_constant :COMMAND_CONFIG, :COMMAND_HELP, :SCALAR_TYPES, :USER_INTERFACES, :EXTEND_ARGS
+      private_constant :COMMAND_CONFIG, :COMMAND_HELP, :COMPLETION_COMMAND, :SCALAR_TYPES, :USER_INTERFACES, :EXTEND_ARGS
     end
   end
 end

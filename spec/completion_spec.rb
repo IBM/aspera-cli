@@ -82,6 +82,33 @@ module Aspera
           expect(run_words('config', 'vault', 'create')).to(eq(['<Hash>']))
           expect(run_words('config', 'vault', 'import')).to(eq(['<Array>']))
         end
+
+        it 'skips values of options given in a separate word' do
+          expect(run_words('server', '--url', 'https://x', 'ls')).to(eq(['<String>']))
+          expect(run_words('--format', 'json', 'server')).to(include('ls', 'upload'))
+          expect(run_words('-P', 'mypreset', 'server')).to(include('ls', 'upload'))
+        end
+
+        it 'joins option and value split on = by bash' do
+          expect(run_words('--format', '=')).to(eq(%w[text nagios ruby json jsonpp yaml table csv image]))
+          expect(run_words('--format', '=', 'json', 'server')).to(include('ls', 'upload'))
+        end
+
+        it 'proposes the arguments of an intermediate command before its sub-commands' do
+          expect(run_words('node', 'access_keys', 'do')).to(eq(['<identifier>']))
+          expect(run_words('node', 'access_keys', 'do', 'myid')).to(include('ls', 'upload', 'permission'))
+          expect(run_words('node', 'access_keys', 'do', 'myid', 'ls')).to(eq(['<String>']))
+        end
+
+        it 'does not propose deprecated options' do
+          expect(run_words).not_to(include('--display', '--output', '--table-style', '--flat-hash'))
+        end
+
+        it 'proposes nothing after an unknown word' do
+          expect(run_words('nope')).to(eq([]))
+          expect(run_words('server', 'nope')).to(eq([]))
+          expect(run_words('config', 'preset', 'get', 'a', 'b')).to(eq([]))
+        end
       end
 
       describe 'PowerShell completion script', :powershell do

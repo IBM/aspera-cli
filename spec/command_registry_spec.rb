@@ -301,6 +301,38 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
   end
 
   # -----------------------------------------------------------------------
+  # command_position
+  # -----------------------------------------------------------------------
+  describe '#command_position' do
+    before do
+      registry.register(spec(id: :packages))
+      registry.register(spec(id: :receive, parent: :packages, action: :x, aliases: [:recv], arguments: [{name: :package_id}]))
+      registry.register(spec(id: :send, parent: :packages, action: :x, arguments: [{name: :paths, multiple: true}]))
+      registry.register(spec(id: :do, parent: :packages, arguments: [{name: :id}]))
+      registry.register(spec(id: :ls, parent: %i[packages do], action: :x))
+    end
+
+    it 'counts the arguments given to the command' do
+      expect(registry.command_position([])).to(eq([[], 0]))
+      expect(registry.command_position(%i[packages recv])).to(eq([%i[packages receive], 0]))
+      expect(registry.command_position(%i[packages receive 42])).to(eq([%i[packages receive], 1]))
+      expect(registry.command_position(%i[packages send a b c])).to(eq([%i[packages send], 3]))
+    end
+
+    it 'reads the arguments of an intermediate command before its sub-command' do
+      expect(registry.command_position(%i[packages do])).to(eq([%i[packages do], 0]))
+      expect(registry.command_position(%i[packages do ls])).to(eq([%i[packages do], 1]))
+      expect(registry.command_position(%i[packages do 42 ls])).to(eq([%i[packages do ls], 0]))
+    end
+
+    it 'returns nil for a word that is neither a command nor an expected argument' do
+      expect(registry.command_position(%i[nope])).to(be_nil)
+      expect(registry.command_position(%i[packages receive 42 43])).to(be_nil)
+      expect(registry.command_position(%i[packages do 42 43])).to(be_nil)
+    end
+  end
+
+  # -----------------------------------------------------------------------
   # mount:
   # -----------------------------------------------------------------------
   describe 'mount:' do

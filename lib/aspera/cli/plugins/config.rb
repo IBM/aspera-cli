@@ -635,110 +635,119 @@ module Aspera
           Result::ObjectList.new(rows, fields: %w[option description allowed deprecated replacement])
         end
 
+        # List words that can follow the given words, one per line, for completion scripts.
+        # @param words [Array<String>, nil] words typed before the cursor, after the command name
         def action_completion_words(words: nil, **)
-          words = Array(words)
-          plugins = Plugins::Factory.instance.plugin_list
-          plugin_index = words.find_index { |w| !w.start_with?('-') && plugins.include?(w.to_sym) }
+          completion_candidates(completion_join_bash_split(Array(words))).each { |w| puts w }
+          Process.exit(0)
+        end
 
+        # @param words [Array<String>] words typed before the cursor, after the command name
+        # @return [Array<String>] words that can follow
+        def completion_candidates(words)
+          plugins = Plugins::Factory.instance.plugin_list
+          positional, waiting = completion_split(words)
           plugin_class = nil
-          if plugin_index
-            plugin_sym = words[plugin_index].to_sym
-            plugin_class = begin
-              Plugins::Factory.instance.plugin_class(plugin_sym)
+          unless positional.empty?
+            # The first positional word is the plugin
+            return [] unless plugins.include?(positional.first.to_sym)
+            begin
+              plugin_class = Plugins::Factory.instance.plugin_class(positional.first.to_sym)
             rescue StandardError
-              Process.exit(0)
+              return []
             end
             plugin_class.declare_options(options)
+            # Options of the plugin may take a value: split again
+            positional, waiting = completion_split(words)
           end
-
-          # Check if the last word is an option waiting for a value
-          last = words.last
-          prev = words[-2] if words.length >= 2
-          opt_tok =
-            if last.eql?('=') && prev&.start_with?('-')
-              prev
-            elsif last&.start_with?('-') && !last.eql?('--')
-              last
+          return completion_option_values(waiting) unless waiting.nil?
+          # Level 0: plugin names and global options
+          return plugins.map(&:to_s) + completion_option_names(options.declared_options) if plugin_class.nil?
+          registry = plugin_class.command_registry
+          path, given = registry.command_position(positional[1..].map(&:to_sym))
+          return [] if path.nil?
+          children = registry.children_of(path)
+          arguments = registry.arguments_at(path)
+          next_argument =
+            if given < arguments.length
+              arguments[given]
+            elsif children.empty? && arguments.last&.multiple
+              arguments.last
             end
+          return completion_argument_placeholder(next_argument) unless next_argument.nil?
+          result = children.keys.map(&:to_s)
+          # Options of plugin only right after the plugin name
+          result.concat(completion_option_names(plugin_class.option_sources.each_key.inject({}) { |h, src| h.merge(src.option_specs) })) if positional.length.eql?(1)
+          result
+        end
 
-          if opt_tok
-            opt_def =
-              if opt_tok.start_with?('--')
-                name = opt_tok.delete_prefix('--').split('=').first.split('.').first.tr('-', '_').to_sym
-                options.declared_options[name]
-              elsif opt_tok.length == 2
-                options.declared_options.values.find { |o| o.short == opt_tok[1] }
-              end
-
-            if opt_def && !opt_def.flag?
-              if opt_def.values&.any?
-                opt_def.values.map(&:to_s).uniq.each { |v| puts v }
-              else
-                types = opt_def.types&.reject { |t| t.eql?(NilClass) }
-                type_str = types&.any? ? types.map(&:name).join('|') : (opt_def.allowed_info || 'String')
-                puts "<#{type_str}>"
-              end
-              Process.exit(0)
-            end
-          end
-
-          if plugin_index.nil?
-            # Level 0: propose plugin names and global options
-            plugins.each { |p| puts p }
-            options.declared_options.each_key { |sym| puts "--#{sym.to_s.tr('_', '-')}" }
-          else
-            sub_words = words[(plugin_index + 1)..].reject { |w| w.start_with?('-') }
-            path = []
-            words_left = sub_words.map(&:to_sym)
-
-            while words_left.any?
-              children = plugin_class.command_registry.children_of(path)
-              break if children.empty?
-              word = words_left.first
-              cmd_id = children.key?(word) ? word : children.find { |_, c| Array(c.aliases).include?(word) }&.first
-              break if cmd_id.nil?
-              words_left.shift
-              path += [cmd_id]
-              args = plugin_class.command_registry.arguments_at(path)
-              if plugin_class.command_registry.children_of(path).any? && !args.empty?
-                to_consume = [args.length, words_left.length].min
-                words_left.shift(to_consume)
-              end
-            end
-
-            children = plugin_class.command_registry.children_of(path)
-            arguments = plugin_class.command_registry.arguments_at(path)
-
-            if arguments.any? && (children.empty? || words_left.any?)
-              next_arg =
-                if words_left.length < arguments.length
-                  arguments[words_left.length]
-                elsif arguments.last.multiple
-                  arguments.last
-                end
-              if next_arg
-                completion_argument_placeholder(next_arg).each { |v| puts v }
-                Process.exit(0)
-              end
-            end
-
-            if children.any?
-              children.each_key { |k| puts k }
-            elsif arguments.any? && words_left.empty?
-              completion_argument_placeholder(arguments.first).each { |v| puts v }
-              Process.exit(0)
-            end
-
-            # Propose plugin-specific options only right after the plugin name
-            if sub_words.empty?
-              plugin_opts = []
-              plugin_class.option_sources.each_key do |src|
-                src.option_specs.each_key { |sym| plugin_opts << "--#{sym.to_s.tr('_', '-')}" }
-              end
-              plugin_opts.uniq.each { |opt| puts opt }
+        # Bash splits `--opt=value` in words `--opt`, `=` and `value`: join them back.
+        # @param words [Array<String>] words typed before the cursor
+        # @return [Array<String>] words, with options and their value joined
+        def completion_join_bash_split(words)
+          result = []
+          join_next = false
+          words.each do |word|
+            if join_next
+              result[-1] += word
+              join_next = false
+            elsif word.eql?(Option::VALUE_SEP) && result.last&.start_with?(Option::PREFIX) && !result.last.include?(Option::VALUE_SEP)
+              result[-1] += word
+              join_next = true
+            else
+              result.push(word)
             end
           end
-          Process.exit(0)
+          result
+        end
+
+        # Split words as the command line parser does: an option without inline value takes the next word as value,
+        # unless it is a flag. An option not declared yet (e.g. of a plugin) takes a value.
+        # @param words [Array<String>] words typed before the cursor
+        # @return [Array(Array<String>, Option)] positional words, and the last option if it is waiting for its value
+        def completion_split(words)
+          positional = []
+          waiting = nil
+          stop = false
+          words.each do |word|
+            if !stop && word.eql?(Option::STOP)
+              stop = true
+              waiting = nil
+            elsif !stop && Option.option?(word)
+              tok = Option.parse(word)
+              # `--opt=` at end of line (from bash split): value is being typed
+              waiting = (tok.inline? && !tok.inline_value.empty?) || completion_option(tok)&.flag? ? nil : tok
+            elsif waiting
+              waiting = nil
+            else
+              positional.push(word)
+            end
+          end
+          [positional, waiting]
+        end
+
+        # @param tok [Option] option token
+        # @return [OptionValue, nil] declared option designated by the token
+        def completion_option(tok)
+          return options.declared_options.values.find { |o| o.short.eql?(tok.short_char) } if tok.short_char
+          options.declared_options[tok.name.to_sym]
+        end
+
+        # @param declared [Hash{Symbol => OptionValue, OptionSpec}] options by name
+        # @return [Array<String>] command line names of options, except deprecated ones
+        def completion_option_names(declared)
+          declared.reject { |_, o| o.deprecation }.keys.map { |name| Parser.option_name_to_line(name) }
+        end
+
+        # @param tok [Option] option token waiting for its value
+        # @return [Array<String>] allowed values of the option, or a type placeholder
+        def completion_option_values(tok)
+          option = completion_option(tok)
+          # No information on the value of a key of a dotted option
+          return [] if option.nil? || tok.dot_path
+          return option.values.map(&:to_s).uniq if option.values&.any?
+          types = option.types&.reject { |t| t.eql?(NilClass) }
+          ["<#{types&.any? ? types.map(&:name).join('|') : option.allowed_info || 'String'}>"]
         end
 
         def completion_argument_placeholder(arg_spec)

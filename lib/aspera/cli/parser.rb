@@ -353,6 +353,14 @@ module Aspera
         values.include?(@command_line.pending_arguments.first)
       end
 
+      # Check the next pending positional arguments, without consuming them
+      # @param values [Array<String>] values to compare with, in order
+      # @return [Boolean] true if the next pending positional arguments are values
+      def next_arguments?(values)
+        ensure_parsed
+        @command_line.pending_arguments.first(values.length).eql?(values)
+      end
+
       # Check for unprocessed options or arguments error messages
       # @return [Array<String>] list of error messages for unprocessed tokens
       def final_errors

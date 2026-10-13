@@ -40,6 +40,10 @@ Released: [Place date of release here]
   * Global options are proposed after `ascli`, plugin options right after the plugin name, and only sub-commands deeper in the tree.
   * Options expecting a value propose allowed values (enums, booleans) or a type placeholder (`<String>`, `<Integer>`, `<Hash>`, etc.).
   * Positional arguments propose allowed values or a type placeholder.
+  * The value of an option given in a separate word (e.g. `--url https://...`) is not taken as a command.
+  * The arguments of an intermediate command are proposed before its sub-commands (e.g. `node access_keys do <access_key_id>`).
+  * Deprecated options are not proposed.
+  * `config completion` does not check for a newer gem version (no network access on `Tab` or at shell startup).
 
 ### Issues Fixed
 
