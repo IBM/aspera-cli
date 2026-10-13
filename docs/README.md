@@ -2485,6 +2485,35 @@ ascli config echo Hello\ World --format=text
 Hello World
 ```
 
+### Security Level
+
+On the command line, `ascli` can do anything that the user running it is allowed to do.
+Option `security` restricts the features that access local resources or execute code, for example, when commands come from another program, such as an MCP client (see [MCP Security](#security)).
+It is a `Hash` with the following keys:
+
+| Key | Type | Default | Description |
+|-----|-----|-----|-----|
+| `level` | `string` | `low` | `low`, `medium`, or `high` |
+| `allowed_paths` | `Array<string>` | - | With level `medium`: files and folders that `@file:` can read |
+
+| Level | `@file:` | `@ruby:`, `@uri:`, and `@env:` |
+|---|---|---|
+| `low` | Allowed | Allowed |
+| `medium` | Only files in `allowed_paths` | Refused |
+| `high` | Refused | Refused |
+
+With level `medium`, the real path of the file is checked: a symbolic link leading outside of `allowed_paths` is refused.
+
+Options are evaluated in the order of the command line: place `--security` before options that use extended values.
+
+```shell
+ascli config echo @file:/etc/hosts --security.level=high
+```
+
+```text
+ERRR Argument: Evaluation of file for argument: value: @file: extended value is disabled by security level high
+```
+
 ### Main, configuration and Persistency Folder
 
 `ascli` looks for configuration and persistency files (token cache, file lists, persistency files) in the folder specified using option `home`.
@@ -5395,6 +5424,7 @@ OPTIONS: global
     --log-format=VALUE             Log formatter
     --logger=stderr|stdout|syslog  Logging method
     --log=HASH                     Logging options (dot-notation: level, type, format, secrets)
+    --security=HASH                Security restrictions (dot-notation: level, allowed_paths)
     --lock-port=INT                Prevent dual execution of a command, e.g. in cron
     --once-only=yes|no             Process only new items (some commands)
     --log-secrets=yes|no           Show passwords in logs
@@ -10271,9 +10301,24 @@ With the `http` transport:
 
 With both transports:
 
-- In commands sent by the client, extended values `@ruby:`, `@file:`, `@uri:`, `@stdin:`, and `@env:` are refused.
-- Presets of the user running the server can still use `@file:` and `@env:`, but not `@ruby:` or `@stdin:`.
+- Extended value `@stdin:` is refused.
 - `@secret:` is entered by the user on a web page, see [Secrets entered in a web page](#secrets-entered-in-a-web-page).
+- The [Security Level](#security-level) is `high` by default: `@ruby:`, `@file:`, `@uri:`, and `@env:` are refused.
+  It applies to commands sent by the client, and to presets, because the client can modify presets.
+  Commands sent by the client cannot change option `security`.
+
+To use another level, set option `security` when starting the server, for example:
+
+```shell
+ascli mcp server --security.level=medium --security.allowed_paths.0=$HOME/.aspera/ascli/my_private_key
+```
+
+> [!NOTE]
+> A level set by option also applies to the parameters of the `server` command: for example, `auth_token=@env:MCP_TOKEN` requires level `low`.
+> Without option `security`, the parameters of the `server` command are not restricted.
+>
+> A preset created by `aoc wizard` or `faspex5 wizard` reads the private key with `@file:`.
+> With level `high`, either store the key in the preset (`ascli config preset set <AOC_ORG> private_key @file:<PATH>`, without `@val:`), or use level `medium` with the key in `allowed_paths`.
 
 ### HTTP endpoints
 

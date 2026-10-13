@@ -6,6 +6,7 @@ require 'aspera/cli/plugins/base'
 require 'aspera/cli/info'
 require 'aspera/cli/version'
 require 'aspera/oauth/server/pkce'
+require 'aspera/cli/security'
 require 'aspera/secret_strength'
 require 'securerandom'
 
@@ -92,13 +93,14 @@ module Aspera
         HTTP_KEYS   = %i[stateless allowed_origins allowed_hosts session_idle_timeout max_sessions].freeze
         # Keys consumed locally (not forwarded to MCP gem)
         TOOL_KEYS   = %i[max_text_bytes extra_args].freeze
-        # Extended-value handlers disabled for the whole process in MCP server mode, including in presets:
-        # @ruby: code execution (a client can write a preset), @stdin: is the JSON-RPC stream (stdio).
-        # Other unsafe handlers are refused in client arguments only, see Mcp::Tool, so that presets
-        # can still use @file: and @env:.
+        # Extended-value handlers disabled in MCP server mode whatever the security level:
+        # @stdin: is the JSON-RPC stream (stdio).
+        # Other unsafe handlers depend on the security level, see Security.
         # @secret: is entered on a web page instead of the terminal, see Mcp::Secrets.
-        DISABLED_EXTENDED_VALUE_HANDLERS = %i[ruby stdin].freeze
-        private_constant :SERVER_KEYS, :CONFIG_KEYS, :STDIO_KEYS, :HTTP_KEYS, :TOOL_KEYS, :DISABLED_EXTENDED_VALUE_HANDLERS
+        DISABLED_EXTENDED_VALUE_HANDLERS = %i[stdin].freeze
+        # Security level when not set by option `security`
+        DEFAULT_SECURITY_LEVEL = :high
+        private_constant :SERVER_KEYS, :CONFIG_KEYS, :STDIO_KEYS, :HTTP_KEYS, :TOOL_KEYS, :DISABLED_EXTENDED_VALUE_HANDLERS, :DEFAULT_SECURITY_LEVEL
 
         command :server, description: 'Start the MCP (Model Context Protocol) server',
           arguments:   [{name: :mcp_options, type: [Hash], mandatory: false, schema: 'opts:components.schemas.McpServerOptions'}]
@@ -119,7 +121,9 @@ module Aspera
             ExtendedValue.instance.on(handler) { |_| raise Cli::BadArgument, "@#{handler}: extended value is disabled in MCP server mode" }
           end
           ExtendedValue.instance.on(:secret) { |prompt| Cli::Mcp::Secrets.value(prompt) }
-          Log.log.info { "Starting MCP server (transport=#{transport})..." }
+          # Applies to commands of the client, and to presets, which the client can modify
+          Security.instance.lock('in MCP server mode', default: DEFAULT_SECURITY_LEVEL)
+          Log.log.info { "Starting MCP server (transport=#{transport}, security level #{Security.instance.level})..." }
           start_mcp_server(transport: transport.to_sym, mcp_options: mcp_options)
           Result::Nothing.new
         end

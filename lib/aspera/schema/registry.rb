@@ -88,6 +88,7 @@ module Aspera
       SHARES = 'shares+/api/v1'
       ASYNC_TABLES = 'async_tables'
       LOG_OPTIONS             = "#{OPTIONS}:components.schemas.LogOptions"
+      SECURITY_OPTIONS        = "#{OPTIONS}:components.schemas.SecurityOptions"
       DIRECT_AGENT_OPTIONS    = "#{OPTIONS}:components.schemas.DirectAgentOptions"
       NODE_AGENT_OPTIONS      = "#{OPTIONS}:components.schemas.NodeAgentOptions"
       NODE_EMULATOR_OPTIONS   = "#{OPTIONS}:components.schemas.NodeEmulatorOptions"

@@ -29,6 +29,31 @@ components:
           type: boolean
           description: Show passwords and secrets in logs.
           default: false
+    SecurityOptions:
+      type: object
+      description: >-
+        Restrictions of the features that access local resources or execute code.
+        On the command line, the default level is `low`.
+        In MCP server mode, the default level is `high`, and commands of the client cannot change the security options.
+      additionalProperties: false
+      properties:
+        level:
+          type: string
+          description: >-
+            `low`: no restriction.
+            `medium`: `@file:` reads only files in `allowed_paths`, `@ruby:`, `@uri:` and `@env:` are refused.
+            `high`: `@ruby:`, `@file:`, `@uri:` and `@env:` are refused.
+          enum:
+            - low
+            - medium
+            - high
+        allowed_paths:
+          type: array
+          description: >-
+            With level `medium`: files and folders that `@file:` can read.
+            A symbolic link leading outside of them is refused.
+          items:
+            type: string
     McpServerOptions:
       type: object
       description: MCP server configuration for the `mcp server` command.

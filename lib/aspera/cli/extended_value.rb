@@ -7,6 +7,7 @@ require 'aspera/yaml'
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/cli/error'
+require 'aspera/cli/security'
 require 'json'
 require 'base64'
 require 'zlib'
@@ -105,7 +106,7 @@ module Aspera
           base64: lambda { |i| Base64.decode64(i) },
           csvt:   lambda { |i| ExtendedValue.decode_csvt(i) },
           env:    lambda { |i| ENV.fetch(i, nil) },
-          file:   lambda { |i| File.read(File.expand_path(i)) },
+          file:   lambda { |i| File.read(Security.instance.readable_path(i)) },
           uri:    lambda { |i| UriReader.read(i) },
           json:   lambda { |i| ExtendedValue.JSON_parse(i) },
           lines:  lambda { |i| i.split("\n") },
@@ -181,6 +182,7 @@ module Aspera
         end
         Log.log.trace1 { "evaluating: #{handlers_reversed}, value: #{value.class}:#{value}" }
         handlers_reversed.each do |handler|
+          Security.instance.check_extended_value(handler)
           value = @handlers[handler].call(value)
         rescue => e
           raise BadArgument, "Evaluation of #{handler} for #{context}: #{e.message}"

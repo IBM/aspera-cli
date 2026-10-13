@@ -30,14 +30,6 @@ module Aspera
         # Default extra arguments automatically prepended to every ascli call.
         # Keeps the AI from having to remember mandatory flags on every invocation.
         DEFAULT_EXTRA_ARGS = ['--interactive=no', '--transfer.asynchronous=true'].freeze
-        # Extended-value handlers refused in arguments from the MCP client: code execution,
-        # access to local files, environment, internal network, or stdin (JSON-RPC stream in stdio).
-        # Presets of the user running the server may still use @file: and @env:.
-        # @secret: is entered by the user on a web page, see Secrets.
-        UNTRUSTED_EXTENDED_VALUE_HANDLERS = %i[ruby file uri stdin env].freeze
-        # Matches the handlers anywhere in an argument, including in nested values (@extend:, dot-path, ...)
-        UNTRUSTED_EXTENDED_VALUE_REGEX = /@(#{UNTRUSTED_EXTENDED_VALUE_HANDLERS.join('|')}):/
-        private_constant :UNTRUSTED_EXTENDED_VALUE_HANDLERS, :UNTRUSTED_EXTENDED_VALUE_REGEX
 
         tool_name 'execute_ascli_command'
 
@@ -55,7 +47,7 @@ module Aspera
               "@val:..."      — literal string (no further decoding)
               "@secret:name"  — secret entered by the user on a web page, never visible to you:
                                 use it for a secret the user did not give, e.g. "--password=@secret:password"
-            Note: @ruby:, @file:, @uri:, @stdin:, @env: are disabled in MCP server mode.
+            Note: @stdin: is disabled; @ruby:, @file:, @uri:, @env: depend on the security level of the server.
 
           AUTOMATIC FLAGS
             The server prepends extra_args to every call (default: #{DEFAULT_EXTRA_ARGS.join(' ')}).
@@ -143,11 +135,10 @@ module Aspera
           end
 
           # Executes the command in-process
+          # Unsafe extended values are restricted when evaluated, see Security
           # @param args [Array<String>] Arguments of the command
           # @return [MCP::Tool::Response]
           def execute(args)
-            unsafe = args.map(&:to_s).flat_map { |arg| arg.scan(UNTRUSTED_EXTENDED_VALUE_REGEX).flatten }.uniq
-            raise Cli::BadArgument, "Extended value disabled in MCP server mode: #{unsafe.map { |h| "@#{h}:" }.join(', ')}" unless unsafe.empty?
             effective_args = Array(extra_args || DEFAULT_EXTRA_ARGS) + args
             Log.dump(:mcp_execute, effective_args)
             runner = Runner.new(effective_args)

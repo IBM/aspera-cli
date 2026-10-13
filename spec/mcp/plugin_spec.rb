@@ -150,6 +150,38 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
       expect(plugin.send(:http_base_url, '0.0.0.0', 3000, 'https://mcp.example.com/', true)).to(eq('https://mcp.example.com'))
     end
   end
+
+  # -------------------------------------------------------------------------
+  # action_server: security level
+  # -------------------------------------------------------------------------
+  describe '#action_server security level' do
+    let(:extended) { Aspera::Cli::ExtendedValue.instance }
+    let(:security) { Aspera::Cli::Security.instance }
+
+    around do |example|
+      saved = extended.instance_variable_get(:@handlers).dup
+      example.run
+    ensure
+      extended.instance_variable_set(:@handlers, saved)
+      extended.send(:update_regex)
+      security.reset
+    end
+
+    before { allow(plugin).to(receive(:start_mcp_server)) }
+
+    it 'is high by default, and cannot be changed by the client' do
+      plugin.action_server
+      expect(security.level).to(eq(:high))
+      expect { security.options = {'level' => 'low'} }.to(raise_error(Aspera::Cli::BadArgument, /security cannot be changed in MCP server mode/))
+      expect { extended.evaluate('@stdin:', context: 'test') }.to(raise_error(Aspera::Cli::BadArgument, /disabled in MCP server mode/))
+    end
+
+    it 'keeps the level set by option' do
+      security.options = {'level' => 'low'}
+      plugin.action_server
+      expect(security.level).to(eq(:low))
+    end
+  end
 end
 
 RSpec.describe(Aspera::OAuth::Server::Pkce) do

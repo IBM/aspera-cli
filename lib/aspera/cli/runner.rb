@@ -12,6 +12,7 @@ require 'aspera/cli/plugins/config'
 require 'aspera/cli/mailer'
 require 'aspera/cli/secret_finder'
 require 'aspera/cli/extended_value'
+require 'aspera/cli/security'
 require 'aspera/cli/transfer_agent'
 require 'aspera/cli/version'
 require 'aspera/cli/info'
@@ -445,6 +446,7 @@ module Aspera
         @context.options.declare(:log_format, description: 'Log formatter', allowed: [Proc, Logger::Formatter, String], on_set: Log.instance.method(:formatter=))
         @context.options.declare(:logger, description: 'Logging method', allowed: Log::LOG_TYPES, on_set: Log.instance.method(:logger_type=))
         @context.options.declare(:log, description: 'Logging options (dot-notation: level, type, format, secrets)', on_set: method(:option_log=), schema: Schema::Registry::LOG_OPTIONS)
+        @context.options.declare(:security, description: 'Security restrictions (dot-notation: level, allowed_paths)', on_set: Security.instance.method(:options=), schema: Schema::Registry::SECURITY_OPTIONS)
         @context.options.declare(:lock_port, description: 'Prevent dual execution of a command, e.g. in cron', allowed: Type::INTEGER)
         @context.options.declare(:once_only, description: 'Process only new items (some commands)', allowed: Type::BOOLEAN, default: false)
         @context.options.declare(:log_secrets, description: 'Show passwords in logs', allowed: Type::BOOLEAN, default: SecretHider.instance.log_secrets, on_set: SecretHider.instance.method(:log_secrets=))
