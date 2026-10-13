@@ -9413,17 +9413,26 @@ For legacy Faspex client applications that use the `send` API (only) of Faspex v
 It takes an optional `Hash` argument:
 
 | Field | Type | Description |
-|-------|--------|----------------------------------------------------------------------------------|
+|-------------------|---------|----------------------------------------------------------------------------------|
 | `cert` | `String` | Path to the TLS certificate file. Accepted formats: PEM (`.pem`) or PKCS12 (`.p12` / `.pfx`).<br/>Example: `/path/to/cert.pem`. |
 | `chain` | `String` | Path to the PEM certificate chain file (appended as extra chain certificates).<br/>Example: `/path/to/chain.pem`. |
 | `key` | `String` | Path to the PEM private key file, or the PKCS12 passphrase when `cert` is a `.p12`/`.pfx` file.<br/>Example: `/path/to/key.pem`. |
+| `password_min_bits` | `Integer` | Minimum estimated strength of `password`, in bits (log2 of the number of guesses to find it). The strength is estimated with gem `zxcvbn` if installed, else with a built-in estimate that detects repeats, sequences, keyboard rows, words and years. `0` disables the check. A random password of 32 bytes (`openssl rand -hex 32`) is far above the default.<br/>Default: `80`. |
+| `password` | `String` | Password expected from clients in HTTP Basic authentication, for the above `username`. Generate it with `openssl rand -hex 32`: a weak password is refused (see `password_min_bits`).<br/>Example: `my_password`. |
 | `url` | `String` | Address and port the server listens on. Use `https://` with `cert`/`key` for TLS.<br/>Default: `http://localhost:8080`. |
+| `username` | `String` | Username expected from clients in HTTP Basic authentication. Set together with `password`. When not set, requests are accepted without authentication. Mandatory when `url` is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`).<br/>Example: `fx4_user`. |
 
 Example:
 
 ```shell
-ascli faspex5 gateway @json:'{"url":"https://localhost:12345/aspera/faspex"}'
+ascli faspex5 gateway @json:'{"url":"https://localhost:12345/aspera/faspex","username":"fx4","password":"<PASSWORD>"}'
 ```
+
+Clients authenticate with HTTP Basic, as on Faspex 4, with the `username` and `password` of the gateway.
+Generate the password with `openssl rand -hex 32`.
+A weak password is refused at startup: its strength is estimated in bits, and shall be at least `password_min_bits`.
+`username` and `password` are mandatory when `url` is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`): anyone reaching the gateway could send packages to anyone, as the Faspex 5 user.
+When they are not set, requests are accepted without authentication.
 
 There are many limitations:
 
@@ -9431,8 +9440,7 @@ There are many limitations:
 - No support for remote sources, only for an actual file transfer by the client.
 - The client must use the transfer spec returned by the API (not `faspe:` URL).
 - Tags returned in transfer spec must be used in transfer.
-- Only a single authentication is possible (per gateway) on Faspex 5.
-- No authentication on the Faspex 4 side (ignored).
+- Only a single authentication is possible (per gateway) on Faspex 5: all packages are sent by the same Faspex 5 user.
 
 Behavior:
 The API client calls the Faspex 4 API on the gateway, then the gateway transforms this into a Faspex 5 API call, which returns a transfer spec, which is returned to the calling client.

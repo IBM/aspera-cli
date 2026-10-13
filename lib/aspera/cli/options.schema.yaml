@@ -952,8 +952,9 @@ components:
         Configuration for the Faspex 4 gateway emulator (`faspex5 gateway`, `aoc gateway`).
         The command starts a local HTTP server that accepts Faspex 4 API calls and translates them
         to Faspex 5 / AoC API calls.
+        Clients authenticate with HTTP Basic, as on Faspex 4, when `username` and `password` are set.
         By default the server binds to loopback; use a routable address only when clients must reach
-        the host from outside.
+        the host from outside: then `username` and `password` are required.
       allOf:
         - $ref: "#/components/schemas/WebServerOptions"
         - type: object
@@ -965,6 +966,30 @@ components:
             cert: {}
             key: {}
             chain: {}
+            username:
+              type: string
+              description: >-
+                Username expected from clients in HTTP Basic authentication.
+                Set together with `password`.
+                When not set, requests are accepted without authentication.
+                Mandatory when `url` is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`).
+              example: fx4_user
+            password:
+              type: string
+              description: >-
+                Password expected from clients in HTTP Basic authentication, for the above `username`.
+                Generate it with `openssl rand -hex 32`: a weak password is refused (see `password_min_bits`).
+              example: my_password
+            password_min_bits:
+              type: integer
+              minimum: 0
+              default: 80
+              description: >-
+                Minimum estimated strength of `password`, in bits (log2 of the number of guesses to find it).
+                The strength is estimated with gem `zxcvbn` if installed, else with a built-in estimate
+                that detects repeats, sequences, keyboard rows, words and years.
+                `0` disables the check.
+                A random password of 32 bytes (`openssl rand -hex 32`) is far above the default.
     Faspex4PostProcOptions:
       description: >-
         Configuration for the Faspex 4-style post-processing webhook receiver (`faspex5 postprocessing`).

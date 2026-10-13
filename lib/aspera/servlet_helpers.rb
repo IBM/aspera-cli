@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'json'
+require 'openssl'
 require 'uri'
 require 'webrick'
 require 'aspera/mime'
@@ -64,6 +65,22 @@ module Aspera
       body = {error: error}
       body[:error_description] = description unless description.nil?
       json_response(response, status, body, headers: headers)
+    end
+
+    # @param request [WEBrick::HTTPRequest]
+    # @param scheme  [String] Authentication scheme, e.g. `Basic` or `Bearer`
+    # @return [String, nil] Credentials of header `Authorization` if it has this scheme, else `nil`
+    def authorization(request, scheme)
+      request_scheme, credentials = request['Authorization'].to_s.split(' ', 2)
+      credentials.to_s if request_scheme.to_s.casecmp?(scheme)
+    end
+
+    # Check the credentials of HTTP Basic authentication, in constant time
+    # @param request  [WEBrick::HTTPRequest]
+    # @param expected [String] Expected `username:password`
+    # @return [Boolean] `true` if the request has the expected credentials
+    def basic_authorized?(request, expected)
+      OpenSSL.secure_compare(authorization(request, 'Basic').to_s.unpack1('m').to_s, expected)
     end
 
     # Refuse a request that a web page in a browser could send. Clients that are not browsers send no `Origin`, and the `Host` of the URL they call.

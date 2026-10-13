@@ -8531,8 +8531,14 @@ It takes an optional `Hash` argument:
 Example:
 
 ```shell
-<%=cmd%> faspex5 gateway @json:'{"url":"https://localhost:12345/aspera/faspex"}'
+<%=cmd%> faspex5 gateway @json:'{"url":"https://localhost:12345/aspera/faspex","username":"fx4","password":"<%=ph :password%>"}'
 ```
+
+Clients authenticate with HTTP Basic, as on Faspex 4, with the `username` and `password` of the gateway.
+Generate the password with `openssl rand -hex 32`.
+A weak password is refused at startup: its strength is estimated in bits, and shall be at least `password_min_bits`.
+`username` and `password` are mandatory when `url` is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`): anyone reaching the gateway could send packages to anyone, as the Faspex 5 user.
+When they are not set, requests are accepted without authentication.
 
 There are many limitations:
 
@@ -8540,8 +8546,7 @@ There are many limitations:
 - No support for remote sources, only for an actual file transfer by the client.
 - The client must use the transfer spec returned by the API (not `faspe:` URL).
 - Tags returned in transfer spec must be used in transfer.
-- Only a single authentication is possible (per gateway) on Faspex 5.
-- No authentication on the Faspex 4 side (ignored).
+- Only a single authentication is possible (per gateway) on Faspex 5: all packages are sent by the same Faspex 5 user.
 
 Behavior:
 The API client calls the Faspex 4 API on the gateway, then the gateway transforms this into a Faspex 5 API call, which returns a transfer spec, which is returned to the calling client.

@@ -2,23 +2,55 @@
 
 require 'aspera/log'
 require 'aspera/assert'
+require 'aspera/hash_ext'
 require 'aspera/mime'
+require 'aspera/secret_strength'
 require 'aspera/servlet_helpers'
 require 'webrick'
 require 'json'
 
 module Aspera
   # Simulate the Faspex 4 /send API and creates a package on Aspera on Cloud or Faspex 5
+  #
+  # Security notes:
+  # - Packages are created as the user of the application, to any recipient, and the caller receives an upload transfer spec.
+  # - Clients authenticate with HTTP Basic, as on Faspex 4, when `username` and `password` are set:
+  #   they are required when the server listens on an address that is not loopback (checked by the `gateway` commands).
+  # - Requests that a web page could send are refused (see ServletHelpers#check_request): the body shall be `application/json`.
   class Faspex4GWServlet < WEBrick::HTTPServlet::AbstractServlet
     include ServletHelpers
 
     AOC_API = 'Aspera::Api::AoC'
     FX_API = 'Aspera::Api::Faspex'
-    # @param app_api     [Rest::Client]   API object
-    # @param app_context [String] workspace id (aoc only)
-    def initialize(server, app_api, app_context)
+    ALLOWED_PARAMETERS = %i[username password password_min_bits].freeze
+    REALM = 'Faspex 4 Gateway'
+    private_constant :REALM
+
+    class << self
+      # Check parameters and set defaults
+      # Called at startup, so that errors are reported before the first request
+      # @param parameters [Hash] Parameters of the servlet
+      # @return [Hash] Parameters with defaults
+      def normalize_parameters(parameters)
+        Aspera.assert_type(parameters, Hash)
+        parameters = parameters.symbolize_keys
+        not_allowed = parameters.keys - ALLOWED_PARAMETERS
+        Aspera.assert(not_allowed.empty?, type: ParameterError) { "unsupported parameters: #{not_allowed.join(', ')}" }
+        Aspera.assert(parameters[:username].nil? == parameters[:password].nil?, type: ParameterError) { 'Parameters username and password must be set together' }
+        parameters[:password_min_bits] ||= SecretStrength::DEFAULT_MIN_BITS
+        SecretStrength.assert_strong(parameters[:password], name: 'password', min_bits: parameters[:password_min_bits]) unless parameters[:password].nil?
+        parameters
+      end
+    end
+
+    # @param server      [WEBrick::HTTPServer] Server
+    # @param parameters  [Hash]         Parameters from `normalize_parameters`
+    # @param app_api     [Rest::Client] API object
+    # @param app_context [String]       workspace id (aoc only)
+    def initialize(server, parameters, app_api, app_context)
       Aspera.assert_values(app_api.class.name, [AOC_API, FX_API])
       super(server)
+      @expected_auth = "#{parameters[:username]}:#{parameters[:password]}" unless parameters[:username].nil?
       @app_api = app_api
       @app_context = app_context
     end
@@ -71,9 +103,9 @@ module Aspera
     def do_POST(request, response)
       # Refuse requests of web pages
       check_request(request, json: true)
+      return json_error(response, 401, 'Invalid or missing credentials', headers: {'WWW-Authenticate' => %Q(Basic realm="#{REALM}")}) unless authorized?(request)
       return json_error(response, 400, 'Unsupported endpoint') unless request.path.eql?('/aspera/faspex/send')
-      Aspera.assert(!request.body.nil?, 'payload missing')
-      faspex_pkg_parameters = JSON.parse(request.body)
+      faspex_pkg_parameters = package_parameters(request.body)
       Log.dump(:faspex_pkg_parameters, faspex_pkg_parameters)
       # compare string, as class is not yet known here
       faspex_package_create_result =
@@ -94,6 +126,32 @@ module Aspera
       Log.log.error(e.message)
       Log.log.debug { e.backtrace.join("\n") }
       json_error(response, 500, e.message)
+    end
+
+    private
+
+    # @param request [WEBrick::HTTPRequest]
+    # @return [Boolean] `true` if the request has the expected Basic credentials, or if none are expected
+    def authorized?(request)
+      @expected_auth.nil? || basic_authorized?(request, @expected_auth)
+    end
+
+    # @param body [String, nil] Body of the request
+    # @return [Hash] Parameters of Faspex 4 package creation, with `delivery` and its `recipients`
+    # @raise [WEBrick::HTTPStatus::BadRequest] if the body is not a valid package creation request
+    def package_parameters(body)
+      raise WEBrick::HTTPStatus::BadRequest, 'Empty request' if body.nil?
+      parameters =
+        begin
+          JSON.parse(body)
+        rescue JSON::ParserError
+          nil
+        end
+      raise WEBrick::HTTPStatus::BadRequest, 'Request body shall be a JSON object' unless parameters.is_a?(Hash)
+      raise WEBrick::HTTPStatus::BadRequest, 'Missing object: delivery' unless parameters['delivery'].is_a?(Hash)
+      recipients = parameters['delivery']['recipients']
+      raise WEBrick::HTTPStatus::BadRequest, 'delivery.recipients shall be a non-empty list of names' unless recipients.is_a?(Array) && !recipients.empty? && recipients.all?(String)
+      parameters
     end
   end
 end

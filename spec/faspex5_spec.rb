@@ -51,6 +51,33 @@ module Aspera
           end
         end
 
+        describe '#action_gateway' do
+          before { allow(WebServerSimple).to(receive(:new).and_return(instance_double(WebServerSimple, mount: nil, start: nil))) }
+
+          # @param parameters [Hash] parameters of command
+          def gateway(parameters)
+            plugin([], nil).send(:action_gateway, parameters: parameters)
+          end
+
+          it 'starts without credentials on a local address' do
+            expect(gateway({'url' => 'http://127.0.0.1:8080/aspera/faspex'})).to(be_a(Result::Status))
+          end
+
+          it 'refuses to start without credentials on a non-local address' do
+            expect { gateway({'url' => 'http://0.0.0.0:8080/aspera/faspex'}) }.to(raise_error(BadArgument, /username and password is required/))
+            expect(WebServerSimple).not_to(have_received(:new))
+          end
+
+          it 'starts with credentials on a non-local address' do
+            expect(gateway({'url' => 'http://0.0.0.0:8080/aspera/faspex', 'username' => 'fx4', 'password' => SecureRandom.hex(32)})).to(be_a(Result::Status))
+          end
+
+          it 'refuses a weak password' do
+            expect { gateway({'username' => 'fx4', 'password' => 'fx4'}) }.to(raise_error(ParameterError, /password_min_bits/))
+            expect(WebServerSimple).not_to(have_received(:new))
+          end
+        end
+
         describe '#persistency_user_id' do
           it 'is the username without public link' do
             expect(plugin(['--username=john'], nil).send(:persistency_user_id)).to(eq('john'))

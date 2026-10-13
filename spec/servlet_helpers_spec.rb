@@ -29,6 +29,28 @@ RSpec.describe(Aspera::ServletHelpers) do
     end
   end
 
+  describe 'Authorization' do
+    let(:helper) { Class.new { include Aspera::ServletHelpers }.new }
+
+    # @param authorization [String, nil] Value of header `Authorization`
+    def request(authorization) = request_class.new({'Authorization' => authorization})
+
+    it 'returns the credentials of the given scheme, case insensitive' do
+      expect(helper.authorization(request('bearer abc def'), 'Bearer')).to(eq('abc def'))
+      expect(helper.authorization(request('Bearer'), 'Bearer')).to(eq(''))
+      expect(helper.authorization(request('Basic abc'), 'Bearer')).to(be_nil)
+      expect(helper.authorization(request(nil), 'Bearer')).to(be_nil)
+    end
+
+    it 'checks Basic credentials' do
+      expect(helper.basic_authorized?(request("Basic #{['user:pass:word'].pack('m0')}"), 'user:pass:word')).to(be(true))
+      expect(helper.basic_authorized?(request("Basic #{['user:wrong'].pack('m0')}"), 'user:pass:word')).to(be(false))
+      expect(helper.basic_authorized?(request("Bearer #{['user:pass:word'].pack('m0')}"), 'user:pass:word')).to(be(false))
+      expect(helper.basic_authorized?(request('Basic !!!'), 'user:pass:word')).to(be(false))
+      expect(helper.basic_authorized?(request(nil), 'user:pass:word')).to(be(false))
+    end
+  end
+
   describe '#check_request' do
     let(:bind) { 'localhost' }
     let(:servlet) do

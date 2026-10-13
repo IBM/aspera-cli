@@ -30,6 +30,7 @@ Released: [Place date of release here]
 * `mcp server`: A weak `auth_token` is refused at startup of the `http` transport: its estimated strength in bits shall be at least `auth_token_min_bits` (default `80`, `0` disables the check), with the same estimate as `faspex5 postprocessing`.
 * `faspex5 postprocessing`: A weak `secret_token` is refused at startup: its estimated strength in bits shall be at least `secret_token_min_bits` (default `80`, `0` disables the check). The estimate uses the optional gem `zxcvbn` if installed, else a built-in estimate that detects repeats, sequences, keyboard rows, words and years.
 * `node emulator`: A weak `password` is refused at startup: its estimated strength in bits shall be at least `password_min_bits` (default `80`, `0` disables the check), with the same estimate as `faspex5 postprocessing`.
+* `faspex5 gateway`, `aoc gateway`: New parameters `username` and `password`: clients authenticate with HTTP Basic, as on Faspex 4. A weak `password` is refused at startup (see `password_min_bits`, default `80`).
 * `faspex5 postprocessing`, `faspex5 gateway`, `aoc gateway`: Parameters are now validated against a JSON Schema (`Faspex4PostProcOptions`, `Faspex4GatewayOptions`). Unknown keys are rejected at startup instead of being silently ignored.
 * **global**: Tables are fitted to the terminal width: text columns (e.g. `description`) are wrapped, the widest first, then other columns if needed. Parameter `width` of `--out.table` sets the maximum table width.
 * `options.schema.yaml`: New schemas `WebServerOptions` (shared `url`/`cert`/`key`/`chain`), `Faspex4GatewayOptions` (extends `WebServerOptions`), and `Faspex4PostProcOptions` (extends `WebServerOptions` with postprocessing-specific keys).
@@ -64,12 +65,14 @@ Released: [Place date of release here]
 * **global**: Local web servers (`faspex5 postprocessing`, `faspex5 gateway`, `aoc gateway`, `node emulator`): parameter `chain` failed with an internal error.
 * **global**: Local web servers (`faspex5 postprocessing`, `faspex5 gateway`, `aoc gateway`, `node emulator`, `mcp server`, `--auth=web`, `@secret:` page) refuse requests that a web page open in the browser can send: header `Host` that is not loopback when the server listens on loopback (DNS rebinding), or header `Origin` of another site (HTTP 403), and a JSON body without type `application/json` (HTTP 415). `mcp server`: `allowed_hosts` and `allowed_origins` also apply to OAuth endpoints and secret pages, which also accept the origin of `base_url`.
 * `faspex5 gateway`, `aoc gateway`: The response to a failed request no longer contains the stack trace.
+* `faspex5 gateway`, `aoc gateway`: An invalid request (empty or not JSON, without `delivery` or `recipients`) returns HTTP 400 instead of 500.
 * `node emulator`: A symbolic link in the `docroot` leading out of it was followed by transfers (sources of `send`, destination of `receive`): the real path of local paths shall be in the `docroot`.
 
 ### Breaking Changes
 
 * `faspex5 postprocessing`: `secret_token` or `allowed_ips` is required when `url` is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`): anyone reaching the server could start the scripts.
 * `node emulator`: `username` and `password` are required when `url` is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`): anyone reaching the server could send the files of the `docroot` to any host. A weak `password` is refused (see `password_min_bits`).
+* `faspex5 gateway`, `aoc gateway`: `username` and `password` are required when `url` is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`): anyone reaching the gateway could send packages to anyone, as the user of the application, and get the upload transfer spec.
 * `faspex5 postprocessing`: Only webhook values whose key starts with `faspex_` (Faspex 4 post-processing variables) are passed to the script as environment variables. Other keys are ignored: they could change the behavior of the script (e.g. `PATH`, `LD_PRELOAD`). A structured value (object or array) is passed as JSON instead of Ruby format.
 * `orchestrator`: `workflows import` takes the path of a file created by `workflows export`, instead of a `Hash` (rejected by Orchestrator).
 * `orchestrator`: `workflows import_with_constraints` takes keys `filename`, `add_as_revision`, `subwf_constraints`, `action_template_constraints`, `remote_node_constraints`, `auto_enable_missing_plugins`, instead of `workflow_data` and `constraints` (rejected by Orchestrator).

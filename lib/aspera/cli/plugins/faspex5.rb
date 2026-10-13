@@ -981,9 +981,11 @@ module Aspera
           require 'aspera/faspex_gw'
           parameters = parameters.symbolize_keys
           uri = URI.parse(parameters.delete(:url) { WebServerSimple::DEFAULT_URL })
+          servlet_parameters = Faspex4GWServlet.normalize_parameters(parameters.except(*WebServerSimple::PARAMS))
+          # Packages can be sent to anyone by anyone who can reach the server
+          WebServerSimple.assert_protected(uri.hostname, protected: !servlet_parameters[:username].nil?, what: 'username and password', type: Cli::BadArgument)
           server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
-          Aspera.assert(parameters.except(*WebServerSimple::PARAMS).empty?) { "unexpected parameters: #{parameters.except(*WebServerSimple::PARAMS).keys}" }
-          server.mount(uri.path, Faspex4GWServlet, api_v5, nil)
+          server.mount(uri.path, Faspex4GWServlet, servlet_parameters, api_v5, nil)
           server.start
           Result::Status.new('Gateway terminated')
         end

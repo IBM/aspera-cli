@@ -11,7 +11,6 @@ require 'aspera/string_ext'
 require 'aspera/log'
 require 'aspera/servlet_helpers'
 require 'webrick'
-require 'openssl'
 require 'etc'
 require 'securerandom'
 require 'json'
@@ -754,10 +753,7 @@ module Aspera
     # @param request [WEBrick::HTTPRequest]
     # @return [Boolean] `true` if the request has the expected Basic credentials, or if none are expected
     def authorized?(request)
-      return true if @expected_auth.nil?
-      scheme, value = request['Authorization'].to_s.split(' ', 2)
-      # constant time comparison
-      scheme.to_s.casecmp?('Basic') && OpenSSL.secure_compare(value.to_s.unpack1('m'), @expected_auth)
+      @expected_auth.nil? || basic_authorized?(request, @expected_auth)
     end
 
     # Set the status and the JSON body of the response
