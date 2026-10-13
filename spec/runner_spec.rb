@@ -6,14 +6,25 @@ module Aspera
   module Cli
     RSpec.describe(Runner) do
       describe '#schema_help_lines' do
+        # Fixed rendering, whatever the terminal running the tests: no colors, ASCII borders, no wrapping
+        around do |example|
+          colors = Rainbow.enabled
+          Rainbow.enabled = false
+          example.run
+        ensure
+          Rainbow.enabled = colors
+        end
+
+        before do
+          allow(Environment).to(receive_messages(terminal_supports_unicode?: false, terminal_columns: nil))
+        end
+
         it 'renders the properties of a Hash argument schema' do
           argument = ArgumentSpec.new(
             name: :mcp_options,
             type: [Hash],
             schema: 'opts:components.schemas.McpServerOptions'
           )
-
-          allow(Environment).to(receive(:terminal_supports_unicode?).and_return(false))
 
           lines = Runner.new([]).send(:schema_help_lines, argument)
 
@@ -29,8 +40,6 @@ module Aspera
             type: [Hash],
             schema: Schema::Registry.req_body(Schema::Registry::AUTOMATION, 'actions.post')
           )
-
-          allow(Environment).to(receive(:terminal_supports_unicode?).and_return(false))
 
           output = Runner.new([]).send(:schema_help_lines, argument).join("\n")
           expect(output).to(include('| Creates a new action to send a file or folder '))
