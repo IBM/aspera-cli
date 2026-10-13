@@ -368,8 +368,14 @@ module Aspera
             seconds = (minutes * 60) + seconds.to_i
             microseconds = (seconds * DURATION_UNIT_US['s']) + (millis.to_s.ljust(3, '0').to_i * DURATION_UNIT_US['ms'])
           else
-            units = value.scan(/(\d+)(ms|us|[wdhms])/)
-            Aspera.assert(!units.empty? && units.join.eql?(value)) { "Invalid duration: #{value}" }
+            # anchored sequential matching (linear time, no backtracking over start positions)
+            scanner = StringScanner.new(value)
+            units = []
+            until scanner.eos?
+              Aspera.assert(scanner.scan(/(\d+)(ms|us|[wdhms])/)) { "Invalid duration: #{value}" }
+              units.push([scanner[1], scanner[2]])
+            end
+            Aspera.assert(!units.empty?) { "Invalid duration: #{value}" }
             microseconds = units.sum { |number, number_unit| number.to_i * DURATION_UNIT_US[number_unit] }
           end
           microseconds / DURATION_UNIT_US[unit]

@@ -12,7 +12,7 @@ module Aspera
     # HTML line-break tag used in Markdown table cells to separate multi-line values.
     HTML_BREAK = '<br/>'
     # Matches a Markdown heading line (e.g. `## Title`); group 1 = `#` chars, group 2 = text.
-    HEADING_RE = /^(\#{1,6})\s+(.+)$/
+    HEADING_RE = /^(\#{1,6})[ \t]+(\S.*)$/
     # Maximum column width (in characters) for generated Markdown tables.
     COL_WIDTH = 80
     # Accepted admonition types.
