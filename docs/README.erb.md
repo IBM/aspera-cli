@@ -9197,7 +9197,7 @@ gem install mcp rack
 ```shell
 <%=cmd%> mcp server
 <%=cmd%> mcp server @: instructions="Use this server to manage Aspera transfers"
-<%=cmd%> mcp server @: transport=http port=3000
+<%=cmd%> mcp server @: transport=http
 ```
 
 ### `server` command options
@@ -9230,9 +9230,11 @@ The `server` command accepts an optional [Hash](#extended-value-syntax) argument
 
 | Key | Type | Default | Description |
 |-----|-----|-----|-----|
-| `port` | `integer` | `3000` | TCP port to listen on |
-| `bind` | `string` | `127.0.0.1` | Bind address |
-| `base_url` | `string` | from `bind` and `port` | URL of the server for clients, used in OAuth metadata and in the URL of secret pages, for example, `http://your-server:3000`. Mandatory with `oauth` when `bind` is `0.0.0.0` or `::`. |
+| `url` | `string` | `http://127.0.0.1:3000` | Address and port the server listens on, without path, for example, `http://0.0.0.0:3000`. Use `https://` for TLS. |
+| `cert` | `string` | - | With `https://`: path to the TLS certificate file, PEM or PKCS12 (`.p12`, `.pfx`). Without `cert` and `key`, a self-signed certificate is generated. |
+| `key` | `string` | - | With `https://`: path to the PEM private key file, or the PKCS12 passphrase. |
+| `chain` | `string` | - | With `https://`: path to the PEM certificate chain file. |
+| `base_url` | `string` | from `url` | URL of the server for clients, used in OAuth metadata and in the URL of secret pages, for example, `https://your-server:3000`. Mandatory with `oauth` when the host of `url` is `0.0.0.0` or `::`. |
 | `auth_token` | `string` | - | Static Bearer token. If set, all MCP requests must carry `Authorization: Bearer <token>`, else HTTP 401. Cannot be empty. It is also the access code asked on secret pages, and on the consent page with `oauth`. Generate it with `openssl rand -hex 32`. |
 | `auth_token_min_bits` | `integer` | `80` | Minimum estimated strength of `auth_token`, in bits: a weak token is refused at startup. The estimate uses the optional gem `zxcvbn` if installed, else a built-in estimate. `0` disables the check. |
 | `oauth` | `boolean` | `false` | Enable OAuth 2.0 PKCE flow with dynamic client registration. When `true`, clients register automatically and users authenticate via a browser consent page. |
@@ -9244,20 +9246,24 @@ The `server` command accepts an optional [Hash](#extended-value-syntax) argument
 | `session_idle_timeout` | `integer` | - | Idle session timeout in seconds |
 | `max_sessions` | `integer` | - | Maximum number of concurrent sessions |
 
+> [!NOTE]
+> `port` and `bind` are deprecated: use `url`, for example, `url=http://0.0.0.0:8080` instead of `port=8080 bind=0.0.0.0`.
+
 ### Security
 
 > [!WARNING]
 > The tool executes any <%=tool%> command with the credentials and presets of the user running the server.
-> When `bind` is set to a non-local address, `auth_token` is **mandatory**, also with `oauth`: the server refuses to start without it.
+> When the host of `url` is not a loopback address, `auth_token` is **mandatory**, also with `oauth`: the server refuses to start without it.
 
 With the `http` transport:
 
 - With `oauth`, the consent page asks for `auth_token` as access code, else anyone reaching the server could approve its own client.
   It shows where the authorization is sent (origin of `redirect_uri`): allow only if it is the expected AI client, for example `http://127.0.0.1:<port>`.
-- For local-only deployments (loopback `bind`: `localhost`, `127.0.0.0/8`, `::1`), `auth_token` and `oauth` are optional but recommended.
+- For local-only deployments (host of `url` is loopback: `localhost`, `127.0.0.0/8`, `::1`), `auth_token` and `oauth` are optional but recommended.
   Without `auth_token`, the consent page only asks to click **Allow**.
 - `auth_token` and `oauth` can coexist: a request is accepted if it carries a valid static token **or** a valid OAuth access token.
 - A weak `auth_token` is refused at startup (see `auth_token_min_bits`): generate it with `openssl rand -hex 32`.
+- On a network, use `https://` in `url` (or a reverse proxy with TLS): with `http://`, the token is sent in clear.
 - `allowed_hosts` and `allowed_origins` protect against DNS rebinding but do not authenticate clients.
   They apply to all endpoints, also OAuth and secret pages, which also accept the origin of `base_url` (for a reverse proxy that changes header `Host`).
 
@@ -9322,7 +9328,7 @@ The secret page is served:
 
 - With the `http` transport: by the MCP server, at `<base_url>/secret/<id>`.
   If `auth_token` is set, the page also asks for it as access code.
-  Set `base_url` if the browser does not reach the server on the `bind` address.
+  Set `base_url` if the browser does not reach the server on the address of `url`.
 - With the `stdio` transport: by a local web server on `http://127.0.0.1` with a random port, started on first use.
 
 A secret request expires after 10 minutes.
@@ -9344,7 +9350,13 @@ Start an MCP server over `stdio` (default - suitable for use as an MCP server in
 Start an MCP server over HTTP on port 8080:
 
 ```shell
-<%=cmd%> mcp server @: transport=http port=8080 bind=0.0.0.0 auth_token=@env:MCP_TOKEN
+<%=cmd%> mcp server @: transport=http url=http://0.0.0.0:8080 auth_token=@env:MCP_TOKEN
+```
+
+Start an MCP server over HTTPS, with a certificate:
+
+```shell
+<%=cmd%> mcp server @: transport=http url=https://0.0.0.0:8443 cert=<%=ph :path%>/cert.pem key=<%=ph :path%>/key.pem auth_token=@env:MCP_TOKEN
 ```
 
 Start with custom instructions and a specific protocol version:
@@ -9356,7 +9368,7 @@ Start with custom instructions and a specific protocol version:
 Start an MCP server with OAuth 2.0 PKCE authentication (for AI clients such as Bob that support the MCP Authorization spec):
 
 ```shell
-<%=cmd%> mcp server @: transport=http port=3000 bind=0.0.0.0 base_url=http://your-server:3000 oauth=true auth_token=@env:MCP_TOKEN
+<%=cmd%> mcp server @: transport=http url=http://0.0.0.0:3000 base_url=http://your-server:3000 oauth=true auth_token=@env:MCP_TOKEN
 ```
 
 ### MCP client configuration
@@ -9368,7 +9380,7 @@ Start an MCP server with OAuth 2.0 PKCE authentication (for AI clients such as B
 Start the server in a separate terminal first:
 
 ```shell
-<%=cmd%> mcp server @: transport=http port=3000
+<%=cmd%> mcp server @: transport=http
 ```
 
 Then register it in the AI client's MCP configuration file.
@@ -9408,7 +9420,7 @@ Set the token in the environment and start the server:
 
 ```shell
 export MCP_TOKEN=$(openssl rand -hex 32)
-<%=cmd%> mcp server @: transport=http port=3000 bind=0.0.0.0 auth_token=@env:MCP_TOKEN
+<%=cmd%> mcp server @: transport=http url=http://0.0.0.0:3000 auth_token=@env:MCP_TOKEN
 ```
 
 For [**IBM Bob**](https://bob.ibm.com/docs/ide/configuration/mcp/mcp-in-bob), pass the same token in the `Authorization` header:
@@ -9452,7 +9464,7 @@ The consent page asks for the access code: the value of `auth_token`.
 Start the server with OAuth enabled:
 
 ```shell
-<%=cmd%> mcp server @: transport=http port=3000 bind=0.0.0.0 base_url=http://your-server:3000 oauth=true auth_token=@env:MCP_TOKEN
+<%=cmd%> mcp server @: transport=http url=http://0.0.0.0:3000 base_url=http://your-server:3000 oauth=true auth_token=@env:MCP_TOKEN
 ```
 
 For [**IBM Bob**](https://bob.ibm.com/docs/ide/configuration/mcp/mcp-in-bob), register the URL with no extra configuration:

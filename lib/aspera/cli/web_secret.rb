@@ -198,7 +198,7 @@ module Aspera
       # Start a local web server for the pages
       # @return [String] URL of the local server
       def start_local_server
-        require 'webrick'
+        require 'aspera/web_server_simple'
         servlet = Class.new(WEBrick::HTTPServlet::AbstractServlet) do
           include ServletHelpers
 
@@ -208,16 +208,12 @@ module Aspera
             @options.first.handle(req, res)
           end
         end
-        # Messages of WEBrick are not useful to the user: warnings and errors only.
-        # Logs do not go to stdout: in MCP stdio mode, it is the JSON-RPC stream.
-        logger = Log.log.dup.tap { |log| log.level = [Log.log.level, ::Logger::WARN].max }
         # Port 0: any free port
-        @local_server = WEBrick::HTTPServer.new(BindAddress: LOCAL_ADDRESS, Port: 0, Logger: logger, AccessLog: [])
+        @local_server = WebServerSimple.new(URI::HTTP.build(host: LOCAL_ADDRESS, port: 0))
         @local_server.mount(PATH_PREFIX, servlet, self)
+        # In a thread: signals are not trapped by the server
         @local_thread = Thread.new { @local_server.start }
-        url = "http://#{LOCAL_ADDRESS}:#{@local_server.config[:Port]}"
-        Log.log.debug { "Secret pages served on #{url}" }
-        url
+        @local_server.uri.to_s
       end
     end
   end

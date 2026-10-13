@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'delegate'
 require 'ipaddr'
 require 'webrick'
 require 'aspera/log'
@@ -17,6 +18,16 @@ module Aspera
     CLOCK_SKEW_OFFSET_SEC = 5
 
     private_constant :PARAMS, :DEFAULT_URL, :GENERIC_ISSUER, :ONE_YEAR_SECONDS, :PKCS12_EXT, :CLOCK_SKEW_OFFSET_SEC
+
+    # Logger of WEBrick: its information messages (version, start, shutdown) at debug level, the server logs its URL
+    class WebrickLogger < SimpleDelegator
+      def info(message = nil, &block) = debug(message, &block)
+      def info? = debug?
+    end
+    private_constant :WebrickLogger
+
+    # @return [URI] URL of the server, with the port it listens on: any free port if `0` was given
+    attr_reader :uri
 
     class << self
       # @param host [String] Host name or IP address the server listens on
@@ -92,19 +103,19 @@ module Aspera
       end
     end
 
-    # @param url   [URI]    Local address where server will listen (use scheme, host and port only)
+    # @param uri   [URI]    Local address where server will listen (use scheme, host and port only), port `0` for any free port
     # @param cert  [String] Path to certificate file, either with extension .p12 or .pfx, else assumed PEM
     # @param key   [String] Path to key file (PEM) or passphrase (pkcs12)
     # @param chain [String] Path to certificate chain file (PEM only)
     def initialize(uri, cert: nil, key: nil, chain: nil)
       Aspera.assert_type(uri, URI)
-      @uri = uri
+      @uri = uri.dup
       # see https://www.rubydoc.info/stdlib/webrick/WEBrick/Config
       webrick_options = {
         # without brackets of IPv6 address
         BindAddress: @uri.hostname,
         Port:        @uri.port,
-        Logger:      Log.log,
+        Logger:      WebrickLogger.new(Log.log),
         AccessLog:   [[self, WEBrick::AccessLog::COMMON_LOG_FORMAT]] # replace default access log to call local method "<<" below
       }
       case @uri.scheme
@@ -147,14 +158,19 @@ module Aspera
       # self signed certificate generates characters on STDERR
       # see create_self_signed_cert in webrick/ssl.rb
       Log.capture_stderr { super(webrick_options) }
+      @uri.port = config[:Port]
     end
 
-    # blocking
+    # Serve requests until #shutdown.
+    # In the main thread, signals INT and TERM call #shutdown.
+    # In another thread, signals are left to the application, which calls #shutdown, e.g. INT interrupts the main thread.
     def start
       Log.log.info { "Listening on #{@uri}" }
-      # kill (-TERM) for graceful shutdown
-      handler = proc { shutdown }
-      %i{INT TERM}.each { |sig| trap(sig, &handler) }
+      if Thread.current.equal?(Thread.main)
+        # kill (-TERM) for graceful shutdown
+        handler = proc { shutdown }
+        %i{INT TERM}.each { |sig| trap(sig, &handler) }
+      end
       super
     end
 

@@ -24,6 +24,7 @@ RSpec.describe(Aspera::Cli::Mcp::HttpServlet) do
       def query_string = nil
       def host = 'localhost'
       def port = 3000
+      def ssl? = false
       def http_version = '1.1'
       def body = '{}'
     end

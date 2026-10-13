@@ -13,7 +13,7 @@ require 'webrick'
 module Aspera
   module Cli
     module Mcp
-      # Servlet of the HTTP transport of the MCP server, on WEBrick (already a project dependency).
+      # Servlet of the HTTP transport of the MCP server, on WEBrick (already a project dependency), mounted on `/` of a WebServerSimple.
       # Rack 3 removed Rack::Handler: the servlet calls the Rack app of the MCP transport directly.
       #
       # Routes:
@@ -29,29 +29,6 @@ module Aspera
         # Paths with a JSON body, not handled by the MCP transport
         JSON_PATHS = %w[/oauth/register].freeze
         private_constant :JSON_PATHS
-
-        class << self
-          # Start the HTTP server, until signal INT or TERM
-          # @param bind    [String]  Bind address
-          # @param port    [Integer] TCP port
-          # @param options [Hash]    Options of the servlet, see #initialize
-          def start(bind:, port:, **options)
-            # WEBrick logs Errno::ECONNRESET as ERROR when a client disconnects mid-stream
-            # (normal for SSE/streaming connections). Suppress those noisy non-fatal errors.
-            quiet_logger = WEBrick::Log.new($stderr).tap do |log|
-              log.define_singleton_method(:error) do |msg|
-                return if msg.to_s.include?('ECONNRESET') || msg.to_s.include?('Broken pipe')
-                super(msg)
-              end
-            end
-            webrick = WEBrick::HTTPServer.new(BindAddress: bind, Port: port, Logger: quiet_logger, AccessLog: [])
-            webrick.mount('/', self, options)
-            Log.log.info { "MCP HTTP server listening on http://#{bind}:#{port}/" }
-            trap('INT') { webrick.shutdown }
-            trap('TERM') { webrick.shutdown }
-            webrick.start
-          end
-        end
 
         # @param server  [WEBrick::HTTPServer]
         # @param options [Hash] With keys:
@@ -158,7 +135,7 @@ module Aspera
             'HTTP_VERSION'      => req.http_version,
             'rack.input'        => StringIO.new(req.body.to_s),
             'rack.errors'       => $stderr,
-            'rack.url_scheme'   => 'http',
+            'rack.url_scheme'   => req.ssl? ? 'https' : 'http',
             'rack.multithread'  => true,
             'rack.multiprocess' => false,
             'rack.run_once'     => false

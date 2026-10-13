@@ -2,6 +2,7 @@
 
 require 'aspera/web_server_simple'
 require 'openssl'
+require 'net/http'
 require 'tmpdir'
 require 'uri'
 
@@ -75,6 +76,24 @@ RSpec.describe(Aspera::WebServerSimple) do
       expect(server.listeners.map { |listener| listener.local_address.ip_address }).to(eq(['::1']))
     ensure
       server&.shutdown
+    end
+  end
+
+  describe '#uri and #start' do
+    it 'listens on any free port with port 0, and in a thread leaves signals to the application' do
+      server = described_class.new(URI('http://127.0.0.1:0'))
+      server.mount_proc('/') { |_, res| res.body = 'ok' }
+      expect(server.uri.port).to(eq(server.config[:Port]))
+      expect(server.uri.port).not_to(eq(0))
+      handler = proc {}
+      previous = trap('INT', handler)
+      thread = Thread.new { server.start }
+      expect(Net::HTTP.get(server.uri)).to(eq('ok'))
+      # not replaced by the server
+      expect(trap('INT', previous)).to(be(handler))
+    ensure
+      server&.shutdown
+      thread&.join
     end
   end
 

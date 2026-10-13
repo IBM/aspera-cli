@@ -76,20 +76,30 @@ components:
           type: integer
           description: Maximum JSON frame size for stdio transport.
           default: 4194304
+        url:
+          type: string
+          description: >-
+            Address and port the HTTP transport listens on, without path.
+            Use `https://` for TLS, with `cert` and `key`.
+          default: http://127.0.0.1:3000
+        cert:
+          $ref: "#/components/schemas/WebServerOptions/properties/cert"
+        key:
+          $ref: "#/components/schemas/WebServerOptions/properties/key"
+        chain:
+          $ref: "#/components/schemas/WebServerOptions/properties/chain"
         port:
           type: integer
-          description: TCP port for HTTP transport.
-          default: 3000
+          description: "Deprecated: use `url`. TCP port for HTTP transport."
         bind:
           type: string
-          description: Bind address for HTTP transport.
-          default: 127.0.0.1
+          description: "Deprecated: use `url`. Bind address for HTTP transport."
         base_url:
           type: string
           description: >-
             URL of the server for clients, used in OAuth metadata and in the URL of secret pages (`@secret:`), for example `http://myhost:3000`.
 
-            Default: built from `bind` and `port`. Mandatory with `oauth` when `bind` is `0.0.0.0` or `::`.
+            Default: built from `url`. Mandatory with `oauth` when `url` has host `0.0.0.0` or `::`.
         auth_token:
           type: string
           description: >-
@@ -97,7 +107,7 @@ components:
             It is also the access code asked on the secret pages (`@secret:`), and on the consent page with `oauth`.
 
             If not set, HTTP requests are not authenticated.
-            Mandatory when `bind` is not local.
+            Mandatory when the host of `url` is not loopback.
             Generate it with `openssl rand -hex 32`: a weak token is refused (see `auth_token_min_bits`).
         auth_token_min_bits:
           type: integer

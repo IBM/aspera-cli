@@ -66,61 +66,92 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
   end
 
   # -------------------------------------------------------------------------
-  # check_auth_config
+  # start_http_transport
   # -------------------------------------------------------------------------
-  describe '#check_auth_config (private)' do
-    let(:local_binds)    { %w[127.0.0.1 127.0.0.2 ::1 ::ffff:127.0.0.1 localhost] }
-    let(:nonlocal_bind)  { '0.0.0.0' }
-    let(:token)          { SecureRandom.hex(32) }
+  describe '#start_http_transport (private)' do
+    let(:token)      { SecureRandom.hex(32) }
+    let(:mcp_server) { MCP::Server.new(name: 'ascli', version: '1', tools: []) }
+    # Arguments of WebServerSimple.new: URI and TLS parameters
+    let(:created) { [] }
+    # Arguments of WebServerSimple#mount: path, servlet, servlet options
+    let(:mounted) { [] }
 
-    context 'with a local bind address' do
-      it 'accepts no auth at all' do
-        local_binds.each do |bind|
-          expect { plugin.send(:check_auth_config, nil, false, bind) }.not_to(raise_error)
-        end
-      end
+    around do |example|
+      saved = Aspera::Cli::Mcp::Tool.web_secret
+      example.run
+    ensure
+      Aspera::Cli::Mcp::Tool.web_secret = saved
+    end
 
-      it 'accepts auth_token alone' do
-        expect { plugin.send(:check_auth_config, token, false, '127.0.0.1') }.not_to(raise_error)
-      end
-
-      it 'accepts oauth_enabled alone' do
-        expect { plugin.send(:check_auth_config, nil, true, '127.0.0.1') }.not_to(raise_error)
+    before do
+      require 'aspera/cli/mcp/tool'
+      require 'aspera/cli/mcp/http_servlet'
+      web_server = instance_double(Aspera::WebServerSimple, start: nil)
+      allow(web_server).to(receive(:mount)) { |*args| mounted.replace(args) }
+      allow(Aspera::WebServerSimple).to(receive(:new)) do |uri, **tls|
+        created.replace([uri.to_s, tls])
+        web_server
       end
     end
 
-    context 'with a non-local bind address' do
-      it 'raises BadArgument when neither auth_token nor oauth_enabled is provided' do
-        expect { plugin.send(:check_auth_config, nil, false, nonlocal_bind) }
-          .to(raise_error(Aspera::Cli::BadArgument, /auth_token is required when/))
-      end
+    # @param mcp_options [Hash] Options of the server
+    # @return [Hash] Options of the servlet
+    def start(**mcp_options)
+      plugin.send(:start_http_transport, mcp_server, mcp_options)
+      mounted.last
+    end
 
-      it 'accepts auth_token' do
-        expect { plugin.send(:check_auth_config, token, false, nonlocal_bind) }.not_to(raise_error)
-      end
+    it 'listens on 127.0.0.1:3000 by default, with the servlet on /' do
+      options = start
+      expect(created).to(eq(['http://127.0.0.1:3000', {}]))
+      expect(mounted.first(2)).to(eq(['', Aspera::Cli::Mcp::HttpServlet]))
+      expect(options[:web_secret].url('id')).to(eq('http://127.0.0.1:3000/secret/id'))
+      expect(options[:allowed_origins]).to(eq(['http://127.0.0.1:3000']))
+    end
 
-      it 'raises BadArgument with oauth_enabled alone (consent would not be protected)' do
-        expect { plugin.send(:check_auth_config, nil, true, nonlocal_bind) }
-          .to(raise_error(Aspera::Cli::BadArgument, /auth_token \(asked on the consent page\) is required when/))
-      end
-
-      it 'accepts both auth_token and oauth_enabled together' do
-        expect { plugin.send(:check_auth_config, token, true, nonlocal_bind) }.not_to(raise_error)
+    it 'accepts no auth on a loopback address' do
+      %w[http://127.0.0.1:3000 http://127.0.0.2:3000 http://[::1]:3000 http://[::ffff:127.0.0.1]:3000 http://localhost:3000/].each do |url|
+        expect { start(url: url) }.not_to(raise_error, url)
       end
     end
 
-    it 'raises BadArgument when auth_token is an empty string' do
-      expect { plugin.send(:check_auth_config, '', false, '127.0.0.1') }
-        .to(raise_error(Aspera::Cli::BadArgument, /must not be empty/))
+    it 'requires auth_token on an address that is not loopback, also with oauth' do
+      expect { start(url: 'http://0.0.0.0:3000') }
+        .to(raise_error(Aspera::Cli::BadArgument, /auth_token is required when/))
+      expect { start(url: 'http://0.0.0.0:3000', oauth: true, base_url: 'http://myhost:3000') }
+        .to(raise_error(Aspera::Cli::BadArgument, /auth_token \(asked on the consent page\) is required when/))
+      expect(Aspera::WebServerSimple).not_to(have_received(:new))
     end
 
-    it 'raises BadArgument when auth_token is weak' do
-      expect { plugin.send(:check_auth_config, 'MySecretToken2024!', false, '127.0.0.1') }
-        .to(raise_error(Aspera::Cli::BadArgument, /auth_token is too weak: about \d+ bits, minimum 80/))
+    it 'accepts auth_token on an address that is not loopback, also with oauth' do
+      expect(start(url: 'http://0.0.0.0:3000', auth_token: token)[:auth_token]).to(eq(token))
+      options = start(url: 'http://0.0.0.0:3000', auth_token: token, oauth: true, base_url: 'http://myhost:3000/')
+      expect(options[:oauth_server]).to(be_a(Aspera::OAuth::Server::Pkce))
+      expect(options[:allowed_origins]).to(eq(['http://myhost:3000']))
     end
 
-    it 'accepts a weak auth_token if min_bits allows it' do
-      expect { plugin.send(:check_auth_config, 'tok', false, '127.0.0.1', min_bits: 0) }.not_to(raise_error)
+    it 'refuses an empty or weak auth_token, unless min_bits allows it' do
+      expect { start(auth_token: '') }.to(raise_error(Aspera::Cli::BadArgument, /must not be empty/))
+      expect { start(auth_token: 'MySecretToken2024!') }.to(raise_error(Aspera::Cli::BadArgument, /auth_token is too weak: about \d+ bits, minimum 80/))
+      expect { start(auth_token: 'tok', auth_token_min_bits: 0) }.not_to(raise_error)
+    end
+
+    it 'listens on HTTPS with cert, key and chain' do
+      options = start(url: 'https://127.0.0.1:8443', cert: 'cert.pem', key: 'key.pem', chain: 'chain.pem')
+      expect(created).to(eq(['https://127.0.0.1:8443', {cert: 'cert.pem', key: 'key.pem', chain: 'chain.pem'}]))
+      expect(options[:web_secret].url('id')).to(eq('https://127.0.0.1:8443/secret/id'))
+    end
+
+    it 'accepts deprecated bind and port, but not with url' do
+      start(bind: '0.0.0.0', port: 8080, auth_token: token)
+      expect(created.first).to(eq('http://0.0.0.0:8080'))
+      start(bind: '::1')
+      expect(created.first).to(eq('http://[::1]:3000'))
+      expect { start(url: 'http://127.0.0.1:3000', port: 8080) }.to(raise_error(Aspera::Cli::BadArgument, /url cannot be used with bind or port/))
+    end
+
+    it 'refuses a url with a path' do
+      expect { start(url: 'http://127.0.0.1:3000/mcp') }.to(raise_error(Aspera::Cli::BadArgument, /url shall have no path/))
     end
   end
 
@@ -128,26 +159,30 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
   # http_base_url
   # -------------------------------------------------------------------------
   describe '#http_base_url (private)' do
-    it 'uses the bind address and port' do
-      expect(plugin.send(:http_base_url, '192.168.1.10', 3000, nil, true)).to(eq('http://192.168.1.10:3000'))
+    # @return [String] base URL for the given listening URL
+    def base_url(url, base_url = nil, oauth: true) = plugin.send(:http_base_url, URI.parse(url), base_url, oauth)
+
+    it 'uses the scheme, host and port of url' do
+      expect(base_url('http://192.168.1.10:3000')).to(eq('http://192.168.1.10:3000'))
+      expect(base_url('https://myhost')).to(eq('https://myhost'))
     end
 
-    it 'puts brackets around an IPv6 address' do
-      expect(plugin.send(:http_base_url, '::1', 3000, nil, true)).to(eq('http://[::1]:3000'))
+    it 'keeps brackets around an IPv6 address' do
+      expect(base_url('http://[::1]:3000')).to(eq('http://[::1]:3000'))
     end
 
-    it 'uses localhost for a wildcard bind without OAuth' do
-      expect(plugin.send(:http_base_url, '0.0.0.0', 3000, nil, false)).to(eq('http://localhost:3000'))
-      expect(plugin.send(:http_base_url, '::', 3000, nil, false)).to(eq('http://localhost:3000'))
+    it 'uses localhost for a wildcard address without OAuth' do
+      expect(base_url('http://0.0.0.0:3000', oauth: false)).to(eq('http://localhost:3000'))
+      expect(base_url('https://[::]:8443', oauth: false)).to(eq('https://localhost:8443'))
     end
 
-    it 'requires base_url with OAuth on a wildcard bind' do
-      expect { plugin.send(:http_base_url, '0.0.0.0', 3000, nil, true) }
+    it 'requires base_url with OAuth on a wildcard address' do
+      expect { base_url('http://0.0.0.0:3000') }
         .to(raise_error(Aspera::Cli::BadArgument, /base_url is required/))
     end
 
     it 'uses the provided base_url without trailing slash' do
-      expect(plugin.send(:http_base_url, '0.0.0.0', 3000, 'https://mcp.example.com/', true)).to(eq('https://mcp.example.com'))
+      expect(base_url('http://0.0.0.0:3000', 'https://mcp.example.com/')).to(eq('https://mcp.example.com'))
     end
   end
 
