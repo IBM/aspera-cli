@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'aspera/agent/factory'
-require 'aspera/markdown'
 
 module Aspera
   module Schema
@@ -60,20 +59,19 @@ module Aspera
       def build(schema = nil)
         code = @code_highlight ? ->(c) { "`#{c}`" } : ->(c) { c }
         schema ||= @schema
-        render_title = ->(title) { title.gsub(Markdown::FORMATS) { @formatter.markdown_text(Regexp.last_match) } }
         on_variant = ->(variant_reader, discriminant_property, discriminant_value) do
           title = variant_reader.current['title'] || variant_reader.current['description']
           header =
             if discriminant_property && discriminant_value
-              desc = render_title.call("`#{discriminant_value}`")
-              desc += ": #{render_title.call(title)}" if title
+              desc = @formatter.markdown_text("`#{discriminant_value}`")
+              desc += ": #{@formatter.markdown_text(title)}" if title
               {
-                'name'        => render_title.call("**#{discriminant_property}**"),
+                'name'        => @formatter.markdown_text("**#{discriminant_property}**"),
                 'type'        => code.call(JSON_TYPE_TO_DOC['string']),
                 'description' => desc
               }
             elsif title
-              {'name' => render_title.call("**#{title}**")}
+              {'name' => @formatter.markdown_text("**#{title}**")}
             end
           @sections.push({header: header, rows: []})
         end
@@ -85,10 +83,7 @@ module Aspera
           item['type'] = code.call(item_type) unless item_type.nil?
           item['description'] = []
           # Render Markdown formatting and split lines
-          item['description'] =
-            node['description']
-              .gsub(Markdown::FORMATS) { @formatter.markdown_text(Regexp.last_match) }
-              .split("\n") if node.key?('description')
+          item['description'] = @formatter.markdown_text(node['description']).split("\n") if node.key?('description')
           item['description'].unshift("DEPRECATED: #{node['x-deprecation']}") if node.key?('x-deprecation')
           # Add flags for supported agents in doc
           agents = []

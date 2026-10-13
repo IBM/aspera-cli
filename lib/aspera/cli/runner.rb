@@ -188,11 +188,14 @@ module Aspera
             else
               reader = Schema::Registry.instance.reader(schema_path)
               rows   = reader.to_rows.map do |row|
+                row = row.dup
                 if row.key?('enum')
-                  row = row.dup
                   row['type'] = 'enum'
                   row['description'] = "#{row['description']}\nAllowed: #{row['enum'].join(', ')}"
                 end
+                row['description'] = "#{row['description']}\nDefault: `#{row['default'].nil? ? 'null' : row['default']}`" if row.key?('default')
+                # Render Markdown formatting (bold, code)
+                row['description'] = TerminalFormatter.markdown_text(row['description'])
                 row
               end
               @context.formatter.display_results(Result::ObjectList.new(rows, fields: %w[name type required description]))

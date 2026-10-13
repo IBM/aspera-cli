@@ -39,9 +39,9 @@ module MarkdownFormatter
   end
 
   # Keep Markdown formatting unchanged (pass-through)
-  # @param match [MatchData, String]
-  def markdown_text(match)
-    match.to_s
+  # @param text [String]
+  def markdown_text(text)
+    text.to_s
   end
 
   # Format boolean as simple Y or space

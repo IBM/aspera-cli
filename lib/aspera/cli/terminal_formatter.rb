@@ -38,23 +38,22 @@ module Aspera
         return %w[null empty].any? { |s| what.include?(s) } ? result.faint : result.inverse
       end
 
-      # Convert Markdown to terminal format (**bold** -> blue, `code` -> bold)
-      # @param match [MatchData, String]
-      def markdown_text(match)
-        if match.is_a?(String)
-          match = Markdown::FORMATS.match(match)
-          Aspera.assert(match, 'markdown text does not match any known format')
-        end
-        Aspera.assert_type(match, MatchData)
-        if match[:entity]
-          Aspera.assert_values(match[:entity], %w[bsol])
-          '\\'
-        elsif match[:bold]
-          match[:bold].to_s.blue
-        elsif match[:code]
-          match[:code].to_s.bold
-        else
-          Aspera.error_unexpected_value(match.to_s)
+      # Convert Markdown inline markup to terminal format (**bold** -> blue, `code` -> bold)
+      # @param text [String] text with Markdown inline markup
+      # @return [String] text with terminal formatting
+      def markdown_text(text)
+        text.to_s.gsub(Markdown::INLINE_MARKUP_RE) do
+          match = Regexp.last_match
+          if match[:entity]
+            Aspera.assert_values(match[:entity], %w[bsol])
+            '\\'
+          elsif match[:bold]
+            match[:bold].to_s.blue
+          elsif match[:code]
+            match[:code].to_s.bold
+          else
+            Aspera.error_unexpected_value(match.to_s)
+          end
         end
       end
 
