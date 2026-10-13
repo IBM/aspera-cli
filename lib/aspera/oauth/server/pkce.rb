@@ -23,7 +23,7 @@ module Aspera
       # responsible for:
       #   1. Creating an instance (once, before the server starts).
       #   2. Routing the five OAuth paths to the handle_* methods.
-      #   3. Calling authorized?(bearer_token) to gate every other request.
+      #   3. Calling access_token_valid?(bearer_token) to gate every other request.
       #
       # All in-memory stores are protected by an internal Mutex.
       #
@@ -36,7 +36,7 @@ module Aspera
       #   when '/oauth/authorize'  then @oauth.handle_authorize(req, res)
       #   when '/oauth/token'      then @oauth.handle_token(req, res)
       #   else
-      #     unless @oauth.authorized?(req['Authorization'])
+      #     unless @oauth.access_token_valid?(authorization(req, 'Bearer'))
       #       # respond 401 …
       #     end
       #   end
@@ -98,17 +98,14 @@ module Aspera
         # Authorization check
         # -------------------------------------------------------------------------
 
-        # Returns true when the Authorization header carries a valid Bearer token.
-        # @param authorization_header [String, nil] value of the "Authorization" HTTP header
-        # @return [Boolean]
-        def authorized?(authorization_header)
-          scheme, value = authorization_header.to_s.split(' ', 2)
-          return false unless scheme.to_s.casecmp?('Bearer')
-          result = @store_mutex.synchronize do
-            expire_at = @access_tokens[value]
-            expire_at && expire_at > Time.now
+        # @param access_token [String, nil] Bearer token of the request, see ServletHelpers#authorization
+        # @return [Boolean] true if it is an access token issued by this server, not expired
+        def access_token_valid?(access_token)
+          return false if access_token.nil?
+          @store_mutex.synchronize do
+            expire_at = @access_tokens[access_token]
+            !expire_at.nil? && expire_at > Time.now
           end
-          result == true
         end
 
         # -------------------------------------------------------------------------

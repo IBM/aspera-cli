@@ -113,12 +113,11 @@ module Aspera
         # @return [Boolean] true if no auth is configured, or the request carries a valid token
         def authorized?(req)
           return true if @auth_token.nil? && @oauth_server.nil?
-          # Static token check
-          scheme, value = req['Authorization'].to_s.split(' ', 2)
-          return false unless scheme.to_s.casecmp?('Bearer')
-          return true if @auth_token && OpenSSL.secure_compare(value.to_s, @auth_token.to_s)
-          # OAuth access token check
-          !@oauth_server.nil? && @oauth_server.authorized?(req['Authorization'])
+          token = authorization(req, 'Bearer')
+          return false if token.nil?
+          # Static token, or OAuth access token
+          (!@auth_token.nil? && OpenSSL.secure_compare(token, @auth_token.to_s)) ||
+            (!@oauth_server.nil? && @oauth_server.access_token_valid?(token))
         end
 
         def unauthorized(res)

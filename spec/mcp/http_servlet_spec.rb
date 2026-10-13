@@ -73,13 +73,15 @@ RSpec.describe(Aspera::Cli::Mcp::HttpServlet) do
       expect(app.calls).to(be_empty)
     end
 
-    it 'refuses a wrong token' do
+    it 'refuses a wrong token, or the token with another scheme' do
       expect(request('POST', '/mcp', 'Authorization' => 'Bearer bad').status).to(eq(401))
+      expect(request('POST', '/mcp', 'Authorization' => 'Basic tok').status).to(eq(401))
     end
 
-    it 'calls the MCP app with the token' do
+    it 'calls the MCP app with the token, scheme in any case' do
       expect(request('POST', '/mcp', 'Authorization' => 'Bearer tok').status).to(eq(200))
-      expect(app.calls.size).to(eq(1))
+      expect(request('POST', '/mcp', 'Authorization' => 'bearer tok').status).to(eq(200))
+      expect(app.calls.size).to(eq(2))
     end
   end
 
@@ -94,7 +96,7 @@ RSpec.describe(Aspera::Cli::Mcp::HttpServlet) do
   context 'with OAuth' do
     let(:oauth_server) do
       instance_double(Aspera::OAuth::Server::Pkce, www_authenticate_header: 'Bearer realm="x"', handle_authorize: nil).tap do |oauth|
-        allow(oauth).to(receive(:authorized?)) { |header| header.eql?('Bearer access') }
+        allow(oauth).to(receive(:access_token_valid?)) { |token| token.eql?('access') }
       end
     end
 
@@ -111,6 +113,13 @@ RSpec.describe(Aspera::Cli::Mcp::HttpServlet) do
 
     it 'calls the MCP app with an OAuth access token' do
       expect(request('POST', '/mcp', 'Authorization' => 'Bearer access').status).to(eq(200))
+    end
+
+    it 'accepts the static token or an OAuth access token' do
+      options[:auth_token] = 'tok'
+      expect(request('POST', '/mcp', 'Authorization' => 'Bearer tok').status).to(eq(200))
+      expect(request('POST', '/mcp', 'Authorization' => 'Bearer access').status).to(eq(200))
+      expect(request('POST', '/mcp', 'Authorization' => 'Bearer bad').status).to(eq(401))
     end
 
     it 'routes OAuth endpoints to the OAuth server' do

@@ -240,19 +240,26 @@ RSpec.describe(Aspera::OAuth::Server::Pkce) do
   end
 
   # -------------------------------------------------------------------------
-  # authorized?
+  # access_token_valid?
   # -------------------------------------------------------------------------
-  describe '#authorized?' do
+  describe '#access_token_valid?' do
     it 'returns false when no token has been issued' do
-      expect(oauth.authorized?('Bearer sometoken')).to(be(false))
+      expect(oauth.access_token_valid?('sometoken')).to(be(false))
     end
 
-    it 'returns false for a nil header' do
-      expect(oauth.authorized?(nil)).to(be(false))
+    it 'returns false for no token' do
+      expect(oauth.access_token_valid?(nil)).to(be(false))
     end
 
-    it 'returns false for a non-Bearer scheme' do
-      expect(oauth.authorized?('Basic dXNlcjpwYXNz')).to(be(false))
+    it 'returns true for an issued access token, not for a refresh token' do
+      tokens = oauth.send(:issue_tokens)
+      expect(oauth.access_token_valid?(tokens[:access_token])).to(be(true))
+      expect(oauth.access_token_valid?(tokens[:refresh_token])).to(be(false))
+    end
+
+    it 'returns false for an expired access token' do
+      expired = described_class.new(base_url: base_url, access_token_ttl: -1)
+      expect(expired.access_token_valid?(expired.send(:issue_tokens)[:access_token])).to(be(false))
     end
   end
 
