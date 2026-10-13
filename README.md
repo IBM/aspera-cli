@@ -28,7 +28,7 @@ Choose what best suits you:
 
 ## Install
 
-Install **Ruby** ≥ 3.1
+Install **Ruby** ≥ 3.2
 
 ```bash
 gem install aspera-cli

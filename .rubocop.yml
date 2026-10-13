@@ -5,7 +5,7 @@ inherit_gem:
 inherit_from: .rubocop_todo.yml
 AllCops:
   SuggestExtensions: true
-  TargetRubyVersion: 3.1
+  TargetRubyVersion: 3.2
   NewCops: enable
   Exclude:
     - tmp/**/*

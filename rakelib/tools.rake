@@ -129,11 +129,9 @@ namespace :tools do
       end
     raise 'No stable Ruby versions found' if stable_versions.empty?
 
-    # Minimum supported version from the gemspec (e.g. ">= 3.1" → [3, 1]).
-    gemspec_min = Paths::GEMSPEC.read[/required_ruby_version\s*=\s*['"]>=\s*(\d+\.\d+)['"]/, 1]
-    raise 'Could not read required_ruby_version from gemspec' unless gemspec_min
-    min_ver = gemspec_min.split('.').map(&:to_i)
-    log.info("Minimum Ruby version (from gemspec): #{gemspec_min}")
+    # Minimum supported version (e.g. "3.2" → [3, 2]).
+    min_ver = Aspera::Cli::Info::RUBY_MINIMUM_VERSION.split('.').map(&:to_i)
+    log.info("Minimum Ruby version: #{Aspera::Cli::Info::RUBY_MINIMUM_VERSION}")
 
     # Latest overall release — used by fixed ruby-version: "X.Y.Z" fields.
     latest_str = stable_versions.max.join('.')
@@ -186,5 +184,61 @@ namespace :tools do
     else
       log.info("Updated #{updated.size} workflow file(s): #{updated.join(', ')}")
     end
+  end
+
+  desc 'Check consistency of Ruby versions in files; reference: Aspera::Cli::Info (minimum, future minimum, tested)'
+  task :check_ruby do
+    min = Aspera::Cli::Info::RUBY_MINIMUM_VERSION
+    future = Aspera::Cli::Info::RUBY_FUTURE_MINIMUM_VERSION
+    tested = Aspera::Cli::Info::RUBY_TESTED_VERSION
+    tested_minor = tested[/\A\d+\.\d+/]
+    log.info("Reference (Aspera::Cli::Info): minimum #{min}, future minimum #{future}, tested #{tested}")
+    errors = []
+    # @return [MatchData, nil] match of regex in file, error recorded if not found
+    find = lambda do |file, regex|
+      m = file.read.match(regex)
+      errors << "#{file.relative_path_from(TOP)}: not found: #{regex.source}" if m.nil?
+      m
+    end
+    # Record an error if value is not the expected one
+    same = lambda do |file, what, found, expected|
+      errors << "#{file.relative_path_from(TOP)}: #{what}: #{found.inspect}, expected #{expected.inspect}" unless found.eql?(expected)
+    end
+    # Record an error if version is less than minimum
+    not_less = lambda do |file, what, found, minimum|
+      errors << "#{file.relative_path_from(TOP)}: #{what}: #{found}, less than #{minimum}" if Gem::Version.new(found) < Gem::Version.new(minimum)
+    end
+    # Reference
+    errors << "Aspera::Cli::Info::RUBY_FUTURE_MINIMUM_VERSION #{future} shall be greater than minimum #{min}" if Gem::Version.new(future) <= Gem::Version.new(min)
+    errors << "Aspera::Cli::Info::RUBY_TESTED_VERSION #{tested} shall not be less than future minimum #{future}" if Gem::Version.new(tested) < Gem::Version.new(future)
+    # RuboCop
+    file = TOP / '.rubocop.yml'
+    same.call(file, 'TargetRubyVersion', find.call(file, /TargetRubyVersion:\s*(\S+)/)&.[](1), min)
+    # Test workflow: matrix from minimum to tested, job `test` with tested
+    file = TOP / '.github/workflows/test.yml'
+    matrix = find.call(file, /^\s*ruby: \[(.*?)\]/)&.[](1).to_s.scan(/"(\d+\.\d+)"/).flatten
+    same.call(file, 'first version of matrix', matrix.first, min)
+    same.call(file, 'last version of matrix', matrix.last, tested_minor)
+    same.call(file, 'ruby-version of job test', find.call(file, /^  test:.*?ruby-version:\s*"(\d+\.\d+)"/m)&.[](1), tested_minor)
+    # Workflows: fixed Ruby version
+    (TOP / '.github/workflows').glob('*.yml').sort.each do |workflow|
+      workflow.read.scan(/ruby-version:\s*["'](\d+\.\d+\.\d+)["']/).flatten.each do |v|
+        same.call(workflow, 'ruby-version', v, tested)
+      end
+    end
+    # Ruby used to run rake in the Linux package build
+    file = TOP / '.github/workflows/packages.yml'
+    not_less.call(file, 'dnf module ruby', find.call(file, /dnf module install -y ruby:(\d+\.\d+)/)&.[](1) || '0', min)
+    # Documentation
+    file = TOP / 'README.md'
+    same.call(file, 'Ruby version', find.call(file, /Install \*\*Ruby\*\* ≥ (\d+\.\d+)/)&.[](1), min)
+    file = Paths::MD_MANUAL
+    same.call(file, 'Required Ruby version', find.call(file, /Required Ruby version is version: >= (\d+\.\d+)/)&.[](1), min)
+    same.call(file, 'Future minimum Ruby version', find.call(file, /The minimum Ruby version will be (\d+\.\d+) in a future version/)&.[](1), future)
+    [Paths::MD_MANUAL, Paths::MD_ERB].each do |doc|
+      not_less.call(doc, 'dnf module ruby', find.call(doc, /dnf module -y enable ruby:(\d+\.\d+)/)&.[](1) || '0', min)
+    end
+    raise "Inconsistent Ruby versions:\n#{errors.join("\n")}" unless errors.empty?
+    log.info('Ruby versions are consistent')
   end
 end

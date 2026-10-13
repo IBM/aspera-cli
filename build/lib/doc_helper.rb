@@ -251,17 +251,10 @@ class DocHelper
     Aspera::Markdown.table([%w[ID Name]] + Aspera::Agent::Factory::ALL.map { |_, v| [v[:short].upcase, v[:long]] }.sort_by { |a| a[0] })
   end
 
-  # @return the minimum ruby version from gemspec
-  def ruby_minimum_version
-    requirement = gemspec.required_ruby_version.to_s
-    raise "gemspec version must be generic, i.e. like '>= x.y', not specific like '#{requirement}'" if gemspec.required_ruby_version.specific?
-    return requirement.gsub(/^[^0-9]*/, '')
-  end
-
-  # get minimum required Ruby version and future one
+  # get minimum required Ruby version and future one, from Aspera::Cli::Info
   def ruby_version
-    message = "version: #{gemspec.required_ruby_version}"
-    message += ".\n\n> [!WARNING]\n> The minimum Ruby version will be #{Aspera::Cli::Info::RUBY_FUTURE_MINIMUM_VERSION} in a future version" unless ruby_minimum_version.eql?(Aspera::Cli::Info::RUBY_FUTURE_MINIMUM_VERSION)
+    message = "version: >= #{Aspera::Cli::Info::RUBY_MINIMUM_VERSION}"
+    message += ".\n\n> [!WARNING]\n> The minimum Ruby version will be #{Aspera::Cli::Info::RUBY_FUTURE_MINIMUM_VERSION} in a future version" unless Aspera::Cli::Info::RUBY_MINIMUM_VERSION.eql?(Aspera::Cli::Info::RUBY_FUTURE_MINIMUM_VERSION)
     return message
   end
 

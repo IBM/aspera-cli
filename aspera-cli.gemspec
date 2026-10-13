@@ -42,8 +42,7 @@ Gem::Specification.new do |spec|
     spec.signing_key = signing_key.start_with?('-----BEGIN ') ? OpenSSL::PKey.read(signing_key) : File.expand_path(signing_key)
     raise "Missing SIGNING_KEY file: #{spec.signing_key}" if spec.signing_key.is_a?(String) && !File.exist?(spec.signing_key)
   end
-  # see also Aspera::Cli::Info::RUBY_FUTURE_MINIMUM_VERSION
-  spec.required_ruby_version = '>= 3.1'
+  spec.required_ruby_version = ">= #{Aspera::Cli::Info::RUBY_MINIMUM_VERSION}"
   spec.add_dependency('chunky_png', '~> 1.4')
   spec.add_dependency('csv', '~> 3.0')
   spec.add_dependency('execjs', '~> 2.0')

@@ -17,7 +17,7 @@ The architecture diagram illustrates the layered structure of `ascli` and its in
 The foundation layer consists of the local execution environment:
 
 - **Operating System**: Cross-platform support (Linux, macOS, Windows)
-- **Ruby Runtime**: Ruby ≥ 3.1 interpreter (CI tests 3.1 → 4.0 and JRuby)
+- **Ruby Runtime**: Ruby interpreter, minimum version `RUBY_MINIMUM_VERSION` in [`lib/aspera/cli/info.rb`](../lib/aspera/cli/info.rb) (CI tests: matrix in [`.github/workflows/test.yml`](../.github/workflows/test.yml))
 - **Ruby Gems**: Third-party dependencies managed via Bundler
 - **Transfer Agents**: Multiple FASP client implementations
   - `ascp` (client): The core FASP protocol implementation
@@ -852,7 +852,7 @@ Analyzes API errors and provides:
 
 GitHub Actions workflows (`.github/workflows/`):
 
-- Multi-version Ruby testing (3.1, 3.2, 3.3, 3.4, 4.0, JRuby)
+- Multi-version Ruby testing, and JRuby (matrix in `test.yml`)
 - Code quality checks (RuboCop)
 - Security scanning (CodeQL)
 - Release, deploy, certificate renewal
@@ -936,7 +936,7 @@ The plugin factory discovers the plugin automatically; `CommandRegistry#validate
 
 ### Runtime Requirements
 
-- Ruby ≥ 3.1
+- Ruby, see `RUBY_MINIMUM_VERSION` in [`lib/aspera/cli/info.rb`](../lib/aspera/cli/info.rb)
 - FASP client (ascp or Transfer SDK)
 - Network connectivity
 - Sufficient disk space for transfers

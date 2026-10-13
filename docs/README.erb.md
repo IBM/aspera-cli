@@ -454,7 +454,8 @@ Required Ruby version is <%=ruby_version%>.
 
 For convenience, you may refer to the following sections for a proposed method for specific operating systems.
 
-<%=tool%> requires a Ruby version [at least under maintenance support](https://www.ruby-lang.org/en/downloads/branches/).
+<%=tool%> supports a Ruby version until 18 months after its [end of official support](https://www.ruby-lang.org/en/downloads/branches/).
+The minimum version is increased accordingly, and announced in advance.
 If only an older Ruby version must be used due to system constraints, use an older version of <%=tool%> that supports it; refer to [rubygems.org](<%=gemspec.metadata['rubygems_uri']%>).
 
 #### Windows: Installer

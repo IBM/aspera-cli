@@ -34,7 +34,10 @@ module Aspera
       # @return [Boolean] `true` if the server is reachable from the local host only
       def loopback?(host)
         return true if host.eql?('localhost')
-        IPAddr.new(host).loopback?
+        address = IPAddr.new(host)
+        # Older versions of ipaddr do not see IPv4-mapped IPv6 addresses (::ffff:127.0.0.1) as loopback
+        address = address.native if address.ipv4_mapped?
+        address.loopback?
       rescue IPAddr::Error
         false
       end

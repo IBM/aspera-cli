@@ -444,10 +444,10 @@ Then, install the Aspera Transfer Daemon, see [Installing `ascp` through `transf
 
 A Ruby interpreter is required to run `ascli`.
 
-Required Ruby version is version: >= 3.1.
+Required Ruby version is version: >= 3.2.
 
 > [!WARNING]
-> The minimum Ruby version will be 3.2 in a future version.
+> The minimum Ruby version will be 3.3 in a future version.
 
 **Ruby can be installed using any of the following methods**: `rpm`, `yum`, `dnf`, `rvm`, `rbenv`, `brew`, Windows installer, ...
 
@@ -458,7 +458,8 @@ Required Ruby version is version: >= 3.1.
 
 For convenience, you may refer to the following sections for a proposed method for specific operating systems.
 
-`ascli` requires a Ruby version [at least under maintenance support](https://www.ruby-lang.org/en/downloads/branches/).
+`ascli` supports a Ruby version until 18 months after its [end of official support](https://www.ruby-lang.org/en/downloads/branches/).
+The minimum version is increased accordingly, and announced in advance.
 If only an older Ruby version must be used due to system constraints, use an older version of `ascli` that supports it; refer to [rubygems.org](https://rubygems.org/gems/aspera-cli).
 
 #### Windows: Installer
