@@ -44,4 +44,30 @@ RSpec.describe(Aspera::SecretStrength) do
       expect(described_class.bits(nil)).to(eq(0.0))
     end
   end
+
+  describe '.assert_strong' do
+    it 'accepts a random secret of 32 bytes' do
+      expect { described_class.assert_strong(random_secrets.first, name: 'my_token') }.not_to(raise_error)
+    end
+
+    it 'refuses an empty or nil secret, also with min_bits 0' do
+      ['', nil].each do |secret|
+        expect { described_class.assert_strong(secret, name: 'my_token', min_bits: 0) }
+          .to(raise_error(Aspera::ParameterError, 'my_token must not be empty'))
+      end
+    end
+
+    it 'refuses a weak secret, with the name of the parameter of the minimum' do
+      expect { described_class.assert_strong('MySecretToken2024!', name: 'my_token') }
+        .to(raise_error(Aspera::ParameterError, /\Amy_token is too weak: about \d+ bits, minimum 80 \(my_token_min_bits\)\. Generate one with: openssl rand -hex 32\z/))
+    end
+
+    it 'accepts a weak secret if min_bits allows it' do
+      expect { described_class.assert_strong('mysecret', name: 'my_token', min_bits: 0) }.not_to(raise_error)
+    end
+
+    it 'raises the given exception' do
+      expect { described_class.assert_strong('mysecret', name: 'my_token', type: ArgumentError) }.to(raise_error(ArgumentError, /my_token is too weak/))
+    end
+  end
 end

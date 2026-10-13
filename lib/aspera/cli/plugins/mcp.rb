@@ -182,13 +182,7 @@ module Aspera
         # @param min_bits [Integer] minimum estimated strength of auth_token, in bits
         def check_auth_config(auth_token, oauth_enabled, bind, min_bits: SecretStrength::DEFAULT_MIN_BITS)
           require 'aspera/web_server_simple'
-          Aspera.assert(auth_token.nil? || !auth_token.to_s.empty?, type: Cli::BadArgument) { 'auth_token must not be empty' }
-          unless auth_token.nil?
-            bits = SecretStrength.bits(auth_token.to_s)
-            Aspera.assert(bits >= min_bits, type: Cli::BadArgument) do
-              "auth_token is too weak: about #{bits.round} bits, minimum #{min_bits} (auth_token_min_bits). Generate one with: openssl rand -hex 32"
-            end
-          end
+          SecretStrength.assert_strong(auth_token, name: 'auth_token', min_bits: min_bits, type: Cli::BadArgument) unless auth_token.nil?
           WebServerSimple.assert_protected(
             bind.to_s,
             protected: !auth_token.nil?,

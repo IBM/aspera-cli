@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/log'
+require 'aspera/assert'
 
 module Aspera
   # Estimate of the strength of a secret (e.g. a token), in bits: log2 of the number of guesses to find it
@@ -32,6 +33,20 @@ module Aspera
         secret = secret.to_s
         return 0.0 if secret.empty?
         zxcvbn_bits(secret) || estimate_bits(secret)
+      end
+
+      # Refuse an empty or weak secret: an empty one would often accept requests without secret
+      # @param secret   [String]    Secret to check
+      # @param name     [String]    Name of the parameter holding the secret, its minimum is in parameter `<name>_min_bits`
+      # @param min_bits [Integer]   Minimum estimated strength in bits, `0` checks only that the secret is not empty
+      # @param type     [Exception] Exception to raise
+      # @raise [Exception] if the secret is empty or weaker than `min_bits`
+      def assert_strong(secret, name:, min_bits: DEFAULT_MIN_BITS, type: ParameterError)
+        Aspera.assert(!secret.to_s.empty?, type: type) { "#{name} must not be empty" }
+        strength = bits(secret)
+        Aspera.assert(strength >= min_bits, type: type) do
+          "#{name} is too weak: about #{strength.round} bits, minimum #{min_bits} (#{name}_min_bits). Generate one with: openssl rand -hex 32"
+        end
       end
 
       # Built-in estimate, without dictionary

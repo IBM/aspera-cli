@@ -47,14 +47,7 @@ module Aspera
         parameters[:timeout_seconds] ||= 60
         parameters[:secret_token_min_bits] ||= SecretStrength::DEFAULT_MIN_BITS
         Aspera.assert(File.directory?(parameters[:script_folder])) { "script_folder not found: #{parameters[:script_folder]}" }
-        # An empty token would accept requests without token
-        if parameters.key?(:secret_token)
-          Aspera.assert(!parameters[:secret_token].to_s.empty?) { 'secret_token must not be empty' }
-          bits = SecretStrength.bits(parameters[:secret_token])
-          Aspera.assert(bits >= parameters[:secret_token_min_bits]) do
-            "secret_token is too weak: about #{bits.round} bits, minimum #{parameters[:secret_token_min_bits]} (secret_token_min_bits). Generate one with: openssl rand -hex 32"
-          end
-        end
+        SecretStrength.assert_strong(parameters[:secret_token], name: 'secret_token', min_bits: parameters[:secret_token_min_bits]) if parameters.key?(:secret_token)
         # allowed_ips: optional IP addresses or networks (CIDR); nil means no restriction
         parameters[:allowed_ips] = Array(parameters[:allowed_ips]).map { |ip| ip_address(ip) } if parameters.key?(:allowed_ips)
         parameters
