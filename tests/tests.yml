@@ -745,6 +745,8 @@ serv_ls_local:
 serv_upload_simple:
   tags:
     - smoke_test
+  depends_on:
+    - conf_transferd_install_latest
   args:
     - server
     - upload
