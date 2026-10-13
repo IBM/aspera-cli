@@ -261,7 +261,10 @@ properties:
   local_scan_interval_milliseconds:
     description:
       Enable periodic scans on the local host during a continuous sync.
-      `-1` for disabled
+      `-1` for disabled.
+      On the command line, the value is a duration, e.g. `1h 30m`, `2s500ms`, `5:30`, `1d 02:00:00.250`.
+      A plain number is in seconds.
+      Stored in milliseconds.
     type: integer
     default: -1
     x-cli-option: --scan-interval
@@ -604,6 +607,9 @@ properties:
   remote_scan_interval_milliseconds:
     description: Enable periodic scans on the remote host.
       `-1` for disabled.
+      On the command line, the value is a duration, e.g. `1h 30m`, `2s500ms`, `5:30`, `1d 02:00:00.250`.
+      A plain number is in seconds.
+      Stored in milliseconds.
     type: integer
     default: -1
     x-cli-option: --remote-scan-interval

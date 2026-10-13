@@ -10886,7 +10886,7 @@ ascli config sync spec
 | `local_move_cache_timeout_seconds` | `Integer` | Delay in seconds before aborting moving a file from local cache to final destination. `-1` for disabled.<br/>Default: `-1`.<br/>(`--local-move-cache-timeout={integer}`) |
 | `local_preserve_acls` | `String` | Preserve access control lists on the local host.<br/>Allowed values: `native`, `metafile`, `none`.<br/>Default: `none`.<br/>(`--preserve-acls={enum}`) |
 | `local_preserve_xattrs` | `String` | Preserve extended attributes on the local.<br/>Allowed values: `native`, `metafile`, `none`.<br/>Default: `none`.<br/>(`--preserve-xattrs={enum}`) |
-| `local_scan_interval_milliseconds` | `Integer` | Enable periodic scans on the local host during a continuous sync. `-1` for disabled<br/>Default: `-1`.<br/>(`--scan-interval={integer}`) |
+| `local_scan_interval_milliseconds` | `Integer` | Enable periodic scans on the local host during a continuous sync. `-1` for disabled. On the command line, the value is a duration, e.g. `1h 30m`, `2s500ms`, `5:30`, `1d 02:00:00.250`. A plain number is in seconds. Stored in milliseconds.<br/>Default: `-1`.<br/>(`--scan-interval={integer}`) |
 | `local_scan_threads` | `Integer` | Number of directory scanning threads on the local host. Value must be between 1 and 99<br/>Default: `1`.<br/>(`--scan-threads={integer}`) |
 | `local_stat_cache_size` | `Integer` | Set stat cache size on the local host. 0 for disabled.<br/>Default: `0`. |
 | `local` | `Hash` |  |
@@ -10941,7 +10941,7 @@ ascli config sync spec
 | `remote_move_cache_timeout_seconds` | `Integer` | Delay in seconds before aborting moving a file from remote cache to final destination. `-1` for disabled.<br/>Default: `-1`.<br/>(`--remote-move-cache-timeout={integer}`) |
 | `remote_preserve_acls` | `String` | Preserve access control lists on the remote host. If not specified, the default behavior is to use the same storage mode as specified by `preserve_acls`.<br/>Allowed values: `native`, `metafile`, `none`.<br/>(`--remote-preserve-acls={enum}`) |
 | `remote_preserve_xattrs` | `String` | Preserve extended attributes on the remote host. If not specified, the default behavior is to use the same storage mode as specified by `preserve_xattrs`.<br/>Allowed values: `native`, `metafile`, `none`.<br/>(`--remote-preserve-xattrs={enum}`) |
-| `remote_scan_interval_milliseconds` | `Integer` | Enable periodic scans on the remote host. `-1` for disabled.<br/>Default: `-1`.<br/>(special:`--remote-scan-interval={integer}`) |
+| `remote_scan_interval_milliseconds` | `Integer` | Enable periodic scans on the remote host. `-1` for disabled. On the command line, the value is a duration, e.g. `1h 30m`, `2s500ms`, `5:30`, `1d 02:00:00.250`. A plain number is in seconds. Stored in milliseconds.<br/>Default: `-1`.<br/>(special:`--remote-scan-interval={integer}`) |
 | `remote_scan_threads` | `Integer` | Number of directory scanning threads on the remote host. Value must be between 1 and 99.<br/>Default: `1`.<br/>(`--remote-scan-threads={integer}`) |
 | `remote_stat_cache_size` | `Integer` | Set stat cache size on the remote host. 0 for disabled.<br/>Default: `0`. |
 | `remote` | `Hash` |  |
