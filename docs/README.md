@@ -2900,7 +2900,7 @@ echo @json:'[{"user":{"id":1,"name":"foo"},"project":"bar"}]' --out.table.pivot=
 echo @json:'{"empty":"","bool":true}' --out.colors=yes --out.utf8=yes
 echo @lines:@stdin:
 echo @list:,1,2,3
-echo @secret:
+echo @secret: --ui=text
 echo @stdin:bin
 echo @uri:/etc/hosts
 echo @uri:file:/etc/hosts

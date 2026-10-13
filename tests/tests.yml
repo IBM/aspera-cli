@@ -6198,12 +6198,24 @@ conf_echo_yaml:
     - '@yaml:@json:"- 1\n- 2\n"'
     - --format=ruby
 conf_echo_secret:
+  description: Secret entered on terminal.
   tags:
     - interactive
   args:
     - config
     - echo
     - "@secret:"
+    - --ui=text
+conf_echo_secret_web:
+  description: Secret entered on a web page opened in the browser.
+  tags:
+    - interactive
+    - nodoc
+  args:
+    - config
+    - echo
+    - "@secret:"
+    - --ui=graphical
 conf_hint:
   description: REST error with expired signature hint
   tags:
