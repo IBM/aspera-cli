@@ -57,6 +57,7 @@ RSpec.describe(Aspera::Cli::WebSecret) do
     it 'sets anti-framing, no-cache and same-origin referrer headers' do
       res = page('GET')
       expect(res['X-Frame-Options']).to(eq('DENY'))
+      expect(res['Content-Security-Policy']).to(eq("frame-ancestors 'none'"))
       expect(res['Cache-Control']).to(eq('no-store'))
       # not no-referrer: the form would be sent with Origin null
       expect(res['Referrer-Policy']).to(eq('same-origin'))

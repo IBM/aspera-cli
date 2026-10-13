@@ -352,11 +352,7 @@ module Aspera
         # @param error  [String, nil] Error message displayed on the page
         def consent_page(res, params, status: 200, error: nil)
           res.status = status
-          res['Content-Type'] = 'text/html; charset=utf-8'
-          # Prevent clickjacking of the consent page
-          res['X-Frame-Options'] = 'DENY'
-          res['Content-Security-Policy'] = "frame-ancestors 'none'"
-          res['Cache-Control'] = 'no-store'
+          WebPage.secure_headers(res)
           res.body = if @authorize_html_cb
             @authorize_html_cb.call(params, @base_url)
           else

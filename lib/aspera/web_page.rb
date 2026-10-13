@@ -28,9 +28,26 @@ module Aspera
       # @return [Binding] Binding without local variables, so that they do not hide template variables
       def template_binding = binding
     end
-    private_constant :LAYOUT_PATH, :Context
+    # Headers of HTML pages: type, and protection against clickjacking, caching, and leak of the URL to other sites.
+    # Not `Referrer-Policy: no-referrer`: the browser would send `Origin: null` with a form, refused by ServletHelpers#check_request
+    HEADERS = {
+      'Content-Type'            => 'text/html; charset=utf-8',
+      'X-Frame-Options'         => 'DENY',
+      'Content-Security-Policy' => "frame-ancestors 'none'",
+      'Cache-Control'           => 'no-store',
+      'Referrer-Policy'         => 'same-origin'
+    }.freeze
+    private_constant :LAYOUT_PATH, :Context, :HEADERS
 
     class << self
+      # Set the headers of an HTML page: type and security headers
+      # @param response [WEBrick::HTTPResponse]
+      # @return [nil]
+      def secure_headers(response)
+        HEADERS.each { |name, value| response[name] = value }
+        nil
+      end
+
       # @param template_path [String] Path of the ERB template of the content of the page
       # @param title         [String] Title of the page
       # @param variables     [Hash]   Variables of the template of the content

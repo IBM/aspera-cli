@@ -33,7 +33,7 @@ module Aspera
         Aspera.assert_values(request.path, [@web_auth.expected_path], type: WEBrick::HTTPStatus::NotFound) { "Unsupported path: #{request.path}" }
         # response to browser
         response.status = 200
-        response.content_type = 'text/html'
+        WebPage.secure_headers(response)
         response.body = WebPage.render(HTML_TEMPLATE_PATH, title: 'Authentication Complete', additional_info: @web_auth.additional_info)
         # continue internal processing
         @web_auth.signal_request(request)

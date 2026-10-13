@@ -142,13 +142,7 @@ module Aspera
           end
         end
         res.status = status
-        res['Content-Type'] = 'text/html; charset=utf-8'
-        # Prevent clickjacking, caching of the page, and leak of its URL to other sites.
-        # Not `no-referrer`: the browser would send `Origin: null` with the form, refused by ServletHelpers#check_request
-        res['X-Frame-Options'] = 'DENY'
-        res['Content-Security-Policy'] = "frame-ancestors 'none'"
-        res['Cache-Control'] = 'no-store'
-        res['Referrer-Policy'] = 'same-origin'
+        WebPage.secure_headers(res)
         # Variables of the template, state is one of: :form, :received, :cancelled, :unknown
         res.body = WebPage.render(
           HTML_TEMPLATE_PATH,

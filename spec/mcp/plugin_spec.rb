@@ -422,12 +422,14 @@ RSpec.describe(Aspera::OAuth::Server::Pkce) do
       expect(res['Location']).to(eq("#{with_query}&error=access_denied&state=s1"))
     end
 
-    it 'sets anti-framing headers on consent page' do
+    it 'sets anti-framing, no-cache and same-origin referrer headers on consent page' do
       query = {'client_id' => client_id, 'redirect_uri' => redirect, 'code_challenge' => 'c', 'code_challenge_method' => 'S256'}
       oauth.send(:handle_authorize_get, request_class.new(nil, query), res)
       expect(res.status).to(eq(200))
       expect(res['X-Frame-Options']).to(eq('DENY'))
       expect(res['Content-Security-Policy']).to(eq("frame-ancestors 'none'"))
+      expect(res['Cache-Control']).to(eq('no-store'))
+      expect(res['Referrer-Policy']).to(eq('same-origin'))
     end
 
     it 'redirects with invalid_request on allow without PKCE challenge' do
