@@ -217,6 +217,27 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
       expect(security.level).to(eq(:low))
     end
   end
+
+  # -------------------------------------------------------------------------
+  # action_server: options of the transport
+  # -------------------------------------------------------------------------
+  describe '#action_server options of the transport' do
+    it 'refuses options of the http transport with stdio, the default' do
+      expect { plugin.action_server(mcp_options: {'url' => 'http://127.0.0.1:3000', 'auth_token' => 'x'}) }
+        .to(raise_error(Aspera::Cli::BadArgument, /not used with transport stdio: url, auth_token/))
+      expect { plugin.action_server(mcp_options: {'transport' => 'stdio', 'allowed_hosts' => ['h']}) }
+        .to(raise_error(Aspera::Cli::BadArgument, /not used with transport stdio: allowed_hosts/))
+    end
+
+    it 'refuses options of the stdio transport with http' do
+      expect { plugin.action_server(mcp_options: {'transport' => 'http', 'max_line_bytes' => 1000}) }
+        .to(raise_error(Aspera::Cli::BadArgument, /not used with transport http: max_line_bytes/))
+    end
+
+    it 'refuses unknown options' do
+      expect { plugin.action_server(mcp_options: {'foo' => 1}) }.to(raise_error(Aspera::Cli::BadArgument, /Unknown MCP option\(s\): foo/))
+    end
+  end
 end
 
 RSpec.describe(Aspera::OAuth::Server::Pkce) do

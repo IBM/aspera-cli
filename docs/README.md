@@ -10266,7 +10266,8 @@ ascli mcp server @: transport=http
 
 ### `server` command options
 
-The `server` command accepts an optional [Hash](#extended-value-syntax) argument with the following keys:
+The `server` command accepts an optional [Hash](#extended-value-syntax) argument with the following keys.
+Keys of a transport are refused with the other transport.
 
 #### General
 

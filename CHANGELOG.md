@@ -80,6 +80,7 @@ Released: [Place date of release here]
 
 ### Breaking Changes
 
+* `mcp server`: Keys of the `http` transport (e.g. `url`, `auth_token`, `oauth`) are refused with transport `stdio` (the default), and `max_line_bytes` with transport `http`: they were ignored.
 * `faspex5 postprocessing`: `secret_token` or `allowed_ips` is required when `url` is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`): anyone reaching the server could start the scripts.
 * `node emulator`: `username` and `password` are required when `url` is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`): anyone reaching the server could send the files of the `docroot` to any host. A weak `password` is refused (see `password_min_bits`).
 * `faspex5 gateway`, `aoc gateway`: `username` and `password` are required when `url` is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`): anyone reaching the gateway could send packages to anyone, as the user of the application, and get the upload transfer spec.

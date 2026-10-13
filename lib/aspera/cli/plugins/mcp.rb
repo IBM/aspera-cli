@@ -86,15 +86,17 @@ module Aspera
         INST
 
         # Keys forwarded to MCP::Server constructor (symbolized)
-        SERVER_KEYS = %i[instructions description].freeze
+        SERVER_KEYS      = %i[instructions description].freeze
         # Keys forwarded to MCP::Configuration
-        CONFIG_KEYS = %i[protocol_version validate_tool_call_arguments].freeze
+        CONFIG_KEYS      = %i[protocol_version validate_tool_call_arguments].freeze
         # Keys forwarded to StdioTransport
-        STDIO_KEYS  = %i[max_line_bytes].freeze
+        STDIO_KEYS       = %i[max_line_bytes].freeze
         # Keys forwarded to StreamableHTTPTransport
-        HTTP_KEYS   = %i[stateless allowed_origins allowed_hosts session_idle_timeout max_sessions].freeze
+        HTTP_KEYS        = %i[stateless allowed_origins allowed_hosts session_idle_timeout max_sessions].freeze
+        # Keys of the HTTP server, consumed locally
+        HTTP_SERVER_KEYS = %i[url cert key chain port bind base_url auth_token auth_token_min_bits oauth oauth_access_token_ttl oauth_refresh_token_ttl].freeze
         # Keys consumed locally (not forwarded to MCP gem)
-        TOOL_KEYS   = %i[max_text_bytes extra_args].freeze
+        TOOL_KEYS        = %i[max_text_bytes extra_args].freeze
         # Extended-value handlers disabled in MCP server mode whatever the security level:
         # @stdin: is the JSON-RPC stream (stdio).
         # Other unsafe handlers depend on the security level, see Security.
@@ -102,7 +104,7 @@ module Aspera
         DISABLED_EXTENDED_VALUE_HANDLERS = %i[stdin].freeze
         # Security level when not set by option `security`
         DEFAULT_SECURITY_LEVEL = :high
-        private_constant :SERVER_KEYS, :CONFIG_KEYS, :STDIO_KEYS, :HTTP_KEYS, :TOOL_KEYS, :DISABLED_EXTENDED_VALUE_HANDLERS, :DEFAULT_SECURITY_LEVEL
+        private_constant :SERVER_KEYS, :CONFIG_KEYS, :STDIO_KEYS, :HTTP_KEYS, :HTTP_SERVER_KEYS, :TOOL_KEYS, :DISABLED_EXTENDED_VALUE_HANDLERS, :DEFAULT_SECURITY_LEVEL
 
         command :server, description: 'Start the MCP (Model Context Protocol) server',
           arguments:   [{name: :mcp_options, type: [Hash], mandatory: false, schema: 'opts:components.schemas.McpServerOptions'}]
@@ -111,14 +113,16 @@ module Aspera
           require 'aspera/cli/mcp/tool'
           require 'aspera/cli/extended_value'
           mcp_options = (mcp_options || {}).transform_keys(&:to_sym)
-          unknown = mcp_options.keys - SERVER_KEYS - CONFIG_KEYS - STDIO_KEYS - HTTP_KEYS - TOOL_KEYS -
-            %i[transport url cert key chain port bind base_url auth_token auth_token_min_bits oauth oauth_access_token_ttl oauth_refresh_token_ttl]
+          unknown = mcp_options.keys - SERVER_KEYS - CONFIG_KEYS - STDIO_KEYS - HTTP_KEYS - HTTP_SERVER_KEYS - TOOL_KEYS - %i[transport]
           Aspera.assert(unknown.empty?, type: Cli::BadArgument) { "Unknown MCP option(s): #{unknown.join(', ')}" }
           Cli::Mcp::Tool.max_text_bytes = mcp_options.delete(:max_text_bytes)
           Cli::Mcp::Tool.extra_args     = mcp_options.delete(:extra_args)
           transport = mcp_options.delete(:transport) || 'stdio'
           raise Cli::BadArgument, "Unknown transport: #{transport}. Use 'stdio' or 'http'" \
             unless %w[stdio http].include?(transport.to_s)
+          # Options of the other transport would be ignored
+          ignored = mcp_options.keys & (transport.to_s.eql?('stdio') ? HTTP_KEYS + HTTP_SERVER_KEYS : STDIO_KEYS)
+          Aspera.assert(ignored.empty?, type: Cli::BadArgument) { "MCP option(s) not used with transport #{transport}: #{ignored.join(', ')}" }
           DISABLED_EXTENDED_VALUE_HANDLERS.each do |handler|
             ExtendedValue.instance.on(handler) { |_| raise Cli::BadArgument, "@#{handler}: extended value is disabled in MCP server mode" }
           end
