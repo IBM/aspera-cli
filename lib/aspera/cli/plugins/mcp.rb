@@ -54,12 +54,23 @@ module Aspera
       #   ascli mcp server @json:{"protocol_version":"2024-11-05","max_line_bytes":1048576}
       class Mcp < Base
         application_name 'Model Context Protocol Server'
+
+        # Instruction for AI agents to always display the equivalent CLI command in their output.
+        COMMAND_DISPLAY_INSTRUCTIONS = <<~INST.strip
+          COMMAND DISPLAY (MANDATORY)
+            Whenever you execute an ascli command or present its results, you MUST ALWAYS explicitly
+            show the equivalent command line in your response to the user as bash syntax
+            (e.g. `ascli plugin command --option=value`).
+        INST
+
         # Default instructions shown to the AI client when none are provided by the user.
         DEFAULT_INSTRUCTIONS = <<~INST.strip
           This is the Aspera CLI (ascli) MCP server (IBM Aspera file transfer and management).
           It exposes a single tool, execute_ascli_command, which runs any ascli command in-process.
           Its description gives the syntax and the discovery sequence: follow it before any
           command whose syntax you have not verified in this session.
+
+          #{COMMAND_DISPLAY_INSTRUCTIONS}
 
           Plugins: aoc (Aspera on Cloud), faspex5 (Faspex 5), node (Node API), server (FASP/SSH
           server), config (local configuration), console, orchestrator, ats, preview, shares,

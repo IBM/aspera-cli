@@ -10,6 +10,7 @@ require 'aspera/cli/error'
 require 'aspera/cli/mcp/secrets'
 require 'aspera/schema/reader'
 require 'aspera/schema/registry'
+require 'aspera/cli/plugins/mcp'
 unless defined?(MCP::Tool)
   begin
     require 'mcp'
@@ -36,9 +37,7 @@ module Aspera
         description <<~DESC.strip
           Execute any ascli (Aspera CLI) command in-process and return its result.
 
-          COMMAND DISPLAY
-            Before calling this tool, always display the equivalent command line to the user
-            as if typed in bash (e.g. `ascli plugin command --option=value`).
+          #{Plugins::Mcp::COMMAND_DISPLAY_INSTRUCTIONS}
 
           SYNTAX
             args is a JSON array of strings mirroring the CLI command line.
