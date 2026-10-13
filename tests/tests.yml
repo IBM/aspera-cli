@@ -651,6 +651,8 @@ serv_wizard_password:
     - --username=@preset:server_user.username
     - --password=@preset:server_user.password
 serv_browse:
+  tags:
+    - smoke_test
   args:
     - server
     - browse
@@ -741,6 +743,8 @@ serv_ls_local:
     - ls
     - .
 serv_upload_simple:
+  tags:
+    - smoke_test
   args:
     - server
     - upload
@@ -4935,6 +4939,8 @@ conf_ascp_installd:
     - transferd
     - list
 conf_transferd_install_latest:
+  tags:
+    - smoke_test
   args:
     - config
     - transferd
@@ -5155,6 +5161,7 @@ conf_list:
     - list
 conf_over:
   tags:
+    - smoke_test
     - tmp_conf
   args:
     - config
@@ -7842,12 +7849,3 @@ mcp_http_secret:
     - auth_token=test-secret
     - auth_token_min_bits=0
   post: mcp_http_secret_post(t)
-
-github_smoke_test:
-  command: null
-  depends_on:
-    - unit
-    - serv_browse
-    - conf_over
-    - conf_transferd_install_latest
-    - serv_upload_simple

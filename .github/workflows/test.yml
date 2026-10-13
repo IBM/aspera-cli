@@ -88,4 +88,4 @@ jobs:
               - aes128-ctr
           EOF
           ))"
-          bundle exec rake test:run'[github_smoke_test]'
+          bundle exec rake test:run'[tag smoke_test]'
