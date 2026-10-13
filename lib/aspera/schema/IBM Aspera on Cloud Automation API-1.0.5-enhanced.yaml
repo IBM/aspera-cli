@@ -802,7 +802,7 @@ components:
           examples:
             - transfer step
         status:
-          description: 'Status of the workflow instance. Allowed values: executing, failed, complete, canceled.'
+          description: 'Status of the workflow instance.'
           type: string
           examples:
             - complete
@@ -963,7 +963,7 @@ components:
           examples:
             - '1072'
         state:
-          description: 'State of the workflow. Allowed values: draft, active, inactive, error.'
+          description: 'State of the workflow.'
           type: string
           examples:
             - draft
@@ -973,7 +973,7 @@ components:
             - inactive
             - error
         status:
-          description: 'Workflow status. Allowed values: not_started, executing, failed, complete, canceled.'
+          description: 'Workflow status.'
           type: string
           examples:
             - not_started
@@ -1065,7 +1065,7 @@ components:
           examples:
             - 2019-01-10T21:25:24.000Z
         trigger_type:
-          description: 'Trigger type for the workflow. Allowed values: manual, shared_inbox, watch_folder, scheduled.'
+          description: 'Trigger type for the workflow.'
           type: string
           examples:
             - scheduled
@@ -1147,7 +1147,7 @@ components:
           examples:
             - '1230'
         state:
-          description: 'The state of the workflow. Allowed values: draft, active, inactive, error.'
+          description: 'The state of the workflow.'
           type: string
           examples:
             - draft
@@ -1157,7 +1157,7 @@ components:
             - inactive
             - error
         status:
-          description: 'Workflow status. Allowed values: not_started, executing, failed, complete, canceled.'
+          description: 'Workflow status.'
           type: string
           examples:
             - not_started
@@ -1188,7 +1188,7 @@ components:
           examples:
             - 2019-02-19T23:52:20.000Z
         trigger_type:
-          description: 'Trigger type for the workflow. Allowed values: manual, shared_inbox, watch_folder, scheduled.'
+          description: 'Trigger type for the workflow.'
           type: string
           examples:
             - manual
@@ -1260,7 +1260,7 @@ components:
           examples:
             - null
         type:
-          description: 'Type of action, which can include a workflow trigger. Allowed values: transfer, send_package, api, email_notification, manual, shared_inbox, watch_folder, scheduled.'
+          description: 'Type of action, which can include a workflow trigger.'
           type: string
           examples:
             - scheduled
@@ -1360,7 +1360,7 @@ components:
       type: object
       properties:
         name:
-          description: Name for the path. Allowed values, source, file_id, node_id, message, value, conditions.
+          description: Name for the path.
           type: string
           examples:
             - message
@@ -1372,7 +1372,7 @@ components:
             - value
             - conditions
         type:
-          description: 'Path type. Allowed values: map, array. Note that path type of map indicates a key:value pair.'
+          description: 'Path type. Note that path type of map indicates a key:value pair.'
           type: string
           examples:
             - map
@@ -1424,9 +1424,9 @@ components:
               properties:
                 type:
                   description: |-
-                    Authentication type required by the API. Allowed values: bearer, basic, none. Default: none. Use 'bearer' for bearer token authentication, for basic authentication, 'none' for no authentication method.
+                    Authentication type required by the API. Use 'bearer' for bearer token authentication, 'basic' for basic authentication, 'none' for no authentication method.
 
-                    The bearer authentication type requires a token parameter. Allowed values: none, bearer, basic. Default: none. The basic authentication type requires username and password parameters. The 'none' authentication type does not require additional parameters.
+                    The bearer authentication type requires a token parameter. The basic authentication type requires username and password parameters. The 'none' authentication type does not require additional parameters.
                   type: string
                   examples:
                     - bearer
@@ -1561,7 +1561,7 @@ components:
                   examples:
                     - true
                 difference_check:
-                  description: 'Type of check used to validate content. Allowed values: attrs, none.'
+                  description: 'Type of check used to validate content.'
                   type: string
                   examples:
                     - attrs
@@ -1569,7 +1569,7 @@ components:
                     - attrs
                     - none
                 destination_file_options:
-                  description: 'Processing options for file at destination. Allowed values: overwrite_always, overwrite_both_newer_and_different, overwrite_different, overwrite_newer, overwrite_never.'
+                  description: 'Processing options for file at destination.'
                   type: string
                   examples:
                     - overwrite_always
@@ -1589,7 +1589,7 @@ components:
               type: object
               properties:
                 archive_option:
-                  description: 'Archive policy for the package at the source. Allowed values: none, archive, delete.'
+                  description: 'Archive policy for the package at the source.'
                   type: string
                   examples:
                     - archive
@@ -1613,7 +1613,7 @@ components:
                   examples:
                     - true
             conditions_type:
-              description: 'The conditions type for the transfer. Allowed values: all_new (transfers all new files), custom (adds custom filtering conditions). Default: all-new.'
+              description: 'The conditions type for the transfer: all_new transfers all new files, custom adds custom filtering conditions.'
               type: string
               examples:
                 - custom
@@ -1831,7 +1831,7 @@ components:
           type: object
           properties:
             method:
-              description: 'API method for the request. Allowed values: get, post, put, delete.'
+              description: 'API method for the request.'
               type: string
               examples:
                 - get
@@ -1851,9 +1851,9 @@ components:
               properties:
                 type:
                   description: |-
-                    Authentication type required by the API. Allowed values: bearer, basic, none. Default: none. Use 'bearer' for bearer token authentication, for basic authentication, 'none' for no authentication method.
+                    Authentication type required by the API. Use 'bearer' for bearer token authentication, 'basic' for basic authentication, 'none' for no authentication method.
 
-                    Allowed values: none, bearer, basic. Default: none. The basic authentication type requires a username parameter and a password parameter. The bearer authentication type requires a token parameter. The 'none' authentication type does not require additional parameters.
+                    The basic authentication type requires a username parameter and a password parameter. The bearer authentication type requires a token parameter. The 'none' authentication type does not require additional parameters.
                   type: string
                   examples:
                     - bearer
@@ -1987,7 +1987,7 @@ components:
                   items:
                     $ref: '#/components/schemas/Paths'
                 type:
-                  description: 'Type of destination for transfer. Allowed values: workspace, node.'
+                  description: 'Type of destination for transfer.'
                   type: string
                   examples:
                     - workspace
@@ -2013,7 +2013,7 @@ components:
               examples:
                 - true
             conditions_type:
-              description: 'The conditions type for the transfer. Allowed values: all_new (transfers all new files), custom (adds custom filtering conditions). Default: all-new.'
+              description: 'The conditions type for the transfer: all_new transfers all new files, custom adds custom filtering conditions.'
               type: string
               examples:
                 - custom
@@ -2022,7 +2022,7 @@ components:
                 - custom
                 - all_new
             join_type:
-              description: 'The logical operator that joins multiple conditions. Allowed values: and, or.'
+              description: 'The logical operator that joins multiple conditions.'
               type: string
               examples:
                 - and
@@ -2039,7 +2039,7 @@ components:
               type: object
               properties:
                 destination_file_options:
-                  description: 'Processing options for file at destination. Allowed values: overwrite_always, overwrite_both_newer_and_different, overwrite_different, overwrite_newer, overwrite_never.'
+                  description: 'Processing options for file at destination.'
                   type: string
                   examples:
                     - overwrite_always
@@ -2050,7 +2050,7 @@ components:
                     - overwrite_newer
                     - overwrite_never
                 difference_check:
-                  description: 'Type of check used to validate content. Allowed values: attrs, none.'
+                  description: 'Type of check used to validate content.'
                   type: string
                   examples:
                     - attrs
@@ -2067,7 +2067,7 @@ components:
               type: object
               properties:
                 type:
-                  description: 'Source type. Allowed values: workspace, node.'
+                  description: 'Source type.'
                   type: string
                   examples:
                     - node
@@ -2113,7 +2113,7 @@ components:
               type: object
               properties:
                 archive_option:
-                  description: 'Archive policy for the package at the source. Allowed values: none, archive, delete.'
+                  description: 'Archive policy for the package at the source.'
                   type: string
                   examples:
                     - none
@@ -2142,7 +2142,7 @@ components:
               items:
                 $ref: '#/components/schemas/substitutionVariables'
             timeout:
-              description: 'The maximum time, in seconds, the action can take before it is marked as failed. Default: 24 hours, minimum: 1 hour, maximum: 48 hours.'
+              description: 'The maximum time, in seconds, the action can take before it is marked as failed, from 1 hour to 48 hours.'
               type: integer
               examples:
                 - 144000
@@ -2201,7 +2201,7 @@ components:
       type: object
       properties:
         field_name:
-          description: 'Name of the condition field. Allowed values: file_name, extension_name, file_size'
+          description: 'Name of the condition field.'
           type: string
           examples:
             - file_name
@@ -2210,7 +2210,7 @@ components:
             - extension_name
             - file_size
         field_type:
-          description: 'Type of the condition field. Allowed values: string, byte. The value ''string'' is used with a field_name of file_name or extension_name. The value ''byte'' is used with a field_name of file_size.'
+          description: 'Type of the condition field. The value ''string'' is used with a field_name of file_name or extension_name. The value ''byte'' is used with a field_name of file_size.'
           type: string
           examples:
             - string
@@ -2218,7 +2218,7 @@ components:
             - string
             - byte
         match_type:
-          description: 'Logic for the matching condition. Allowed values: includes, excludes, matches, regex, equal, greater_than, less_than, greater_than_or_equal, less_than_or_equal. A value of includes, excludes, matches, or regex is used with a field_name of file_name or extension_name. A value of equal, greater_than, less_than, greater_than_or_equal or less_than_or_equal is used with a field_name of file_size.'
+          description: 'Logic for the matching condition. A value of includes, excludes, matches, or regex is used with a field_name of file_name or extension_name. A value of equal, greater_than, less_than, greater_than_or_equal or less_than_or_equal is used with a field_name of file_size.'
           type: string
           examples:
             - includes
@@ -2256,7 +2256,7 @@ components:
           examples:
             - '3201'
         type:
-          description: 'User type of recipient. Allowed values: user, admin.'
+          description: 'User type of recipient.'
           type: string
           examples:
             - user
@@ -2281,7 +2281,7 @@ components:
           examples:
             - '3202'
         type:
-          description: 'User type of recipient. Allowed values: user, admin.'
+          description: 'User type of recipient.'
           type: string
           examples:
             - admin
@@ -2306,7 +2306,7 @@ components:
           examples:
             - '3203'
         type:
-          description: 'User type of recipient. Allowed values: user, admin.'
+          description: 'User type of recipient.'
           type: string
           examples:
             - admin
@@ -2331,7 +2331,7 @@ components:
           examples:
             - '3204'
         type:
-          description: 'User type of recipient. Allowed values: user, admin.'
+          description: 'User type of recipient.'
           type: string
           examples:
             - user
@@ -2362,7 +2362,7 @@ components:
       type: object
       properties:
         event:
-          description: 'Request a state change. Allowed values: save_as_draft, activate, deactivate. To save a workflow in a state that can be edited, use ''save_as_draft''. To launch running instances of the workflow, use ''activate''. To stop all running instances of a workflow, use ''deactivate''; this event allows you to edit the workflow.'
+          description: 'Request a state change. To save a workflow in a state that can be edited, use ''save_as_draft''. To launch running instances of the workflow, use ''activate''. To stop all running instances of a workflow, use ''deactivate''; this event allows you to edit the workflow.'
           type: string
           examples:
             - save_as_draft
