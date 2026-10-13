@@ -21,7 +21,7 @@ module Aspera
         end
       end
 
-      describe 'PowerShell completion script' do
+      describe 'PowerShell completion script', :powershell do
         pwsh = ENV.fetch('PATH', '').split(File::PATH_SEPARATOR).map { |dir| File.join(dir, 'pwsh') }.find { |f| File.executable?(f) }
 
         it 'completes commands at any depth' do

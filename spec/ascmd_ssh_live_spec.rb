@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'rspec'
-require 'integration_helper'
+require_relative '../build/lib/test_env'
 require 'aspera/log'
 # Aspera::Log.instance.level = :debug
 # Aspera::Log.instance.logger_type = :stderr
@@ -10,25 +10,42 @@ require 'aspera/ssh'
 require 'uri'
 require 'openssl'
 
-ssh_url = URI.parse(RSpec.configuration.url)
+# Examples tagged `:live` need the server of the test configuration (default server).
+# The configuration is read only when such an example runs, so that `--tag ~live` works without a configuration.
+RSpec.shared_context('with live server', :live) do
+  let(:server_info) do
+    full_config = TestEnv.configuration
+    default_server = full_config.dig('default', 'server')
+    raise 'Missing default config for server' if default_server.nil?
+    info = full_config[default_server]
+    %w[url username password].each do |p|
+      param = info[p]
+      raise "Wrong value for parameter: #{p}" unless param.is_a?(String) && !param.empty?
+    end
+    info
+  end
+  let(:ssh_url) { URI.parse(server_info['url']) }
+  let(:ssh_options) do
+    options = {
+      password:  server_info['password'],
+      port:      ssh_url.port,
+      use_agent: false
+    }
+    if defined?(JRUBY_VERSION)
+      # :nocov:
+      options.merge!({
+        host_key:   %w[rsa-sha2-512 rsa-sha2-256],
+        kex:        %w[curve25519-sha256 diffie-hellman-group14-sha256],
+        encryption: %w[aes256-ctr aes192-ctr aes128-ctr]
+      })
+      # :nocov:
+    end
+    options
+  end
+end
+
 # main folder relative to docroot and server executor
 PATH_FOLDER_MAIN = '/'
-ssh_options = {
-  password:  RSpec.configuration.password,
-  port:      ssh_url.port,
-  use_agent: false
-}
-if defined?(JRUBY_VERSION)
-  # :nocov:
-  ssh_options.merge!({
-    host_key:   %w[rsa-sha2-512 rsa-sha2-256],
-    kex:        %w[curve25519-sha256 diffie-hellman-group14-sha256],
-    encryption: %w[aes256-ctr aes192-ctr aes128-ctr]
-  })
-  # :nocov:
-end
-demo_executor = Aspera::Ssh.new(ssh_url.host, RSpec.configuration.username, **ssh_options)
-
 TEST_RUN_ID = rand(1000).to_s
 PATH_FOLDER_TINY = File.join(PATH_FOLDER_MAIN, 'aspera-test-dir-tiny')
 PATH_FOLDER_DEST = File.join(PATH_FOLDER_MAIN, 'Upload')
@@ -40,8 +57,8 @@ PATH_FILE_COPY = File.join(PATH_FOLDER_DEST, "#{NAME_FILE1}.copy1-#{TEST_RUN_ID}
 PATH_FILE_RENAMED = File.join(PATH_FOLDER_DEST, "#{NAME_FILE1}.renamed-#{TEST_RUN_ID}")
 puts "Openssl version: #{OpenSSL::OPENSSL_VERSION}"
 
-RSpec.describe(Aspera::AsCmd) do
-  ascmd = Aspera::AsCmd.new(demo_executor)
+RSpec.describe(Aspera::AsCmd, :live) do
+  let(:ascmd) { Aspera::AsCmd.new(Aspera::Ssh.new(ssh_url.host, server_info['username'], **ssh_options)) }
   #    ['du','/Users/xfer'],
   #    ['df','/'],
   #    ['df'],
@@ -141,16 +158,16 @@ RSpec.describe(Aspera::AsCmd) do
   end
 end
 
-RSpec.describe(Aspera::Ssh) do
+RSpec.describe(Aspera::Ssh, :live) do
   it 'catches aspshell error in exception' do
     ssh_opts = {
-      password:        RSpec.configuration.password,
+      password:        server_info['password'],
       port:            ssh_url.port,
       use_agent:       false,
       host_key:        %w[rsa-sha2-512 rsa-sha2-256 ssh-rsa],
       verify_host_key: :never
     }
-    executor = Aspera::Ssh.new(ssh_url.host, RSpec.configuration.username, ssh_opts)
+    executor = Aspera::Ssh.new(ssh_url.host, server_info['username'], ssh_opts)
     expect do
       executor.execute('foo')
     end.to(raise_error(Aspera::Ssh::Error, /Command not accepted: foo/))

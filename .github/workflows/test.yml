@@ -42,7 +42,7 @@ jobs:
 
       - name: Run unit tests (no server required)
         run: |
-          bundle exec rspec spec/ --exclude-pattern "spec/**/*_integration_spec.rb"
+          bundle exec rspec spec/ --tag "~live" --tag "~powershell"
 
   test:
     runs-on: ubuntu-latest

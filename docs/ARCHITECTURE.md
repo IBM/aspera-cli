@@ -846,7 +846,7 @@ Analyzes API errors and provides:
   - `parser_spec.rb`, `option_declarator_spec.rb`, `preset_actions_spec.rb`, `runner_spec.rb`, `mcp/tool_spec.rb`, `formatter_spec.rb`, `http_spec.rb`
   - `async_transfer_store_spec.rb`, `transfer_agent_async_spec.rb`, `transfer_agent_options_spec.rb`, `transfer_result_spec.rb`, `agent_transfer_status_spec.rb`
   - `rest/client_spec.rb`, `secret_hider_spec.rb`, `proxy_auto_config_spec.rb`, `schema_reader_spec.rb`, `string_ext_spec.rb`, `uri_reader_spec.rb`, `temp_file_manager_spec.rb`, `assert_spec.rb`, `environment_spec.rb`, `version_spec.rb`, …
-- Integration tests requiring a live server (`integration_helper.rb`, e.g. `ascmd_ssh_integration_spec.rb`)
+- Live tests requiring a server, tagged `:live` (e.g. `ascmd_ssh_live_spec.rb`)
 
 ### CI/CD Integration
 
