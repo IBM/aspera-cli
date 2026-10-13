@@ -5717,17 +5717,13 @@ conf_query_help_aoc:
     - --query=help
 conf_completion_words:
   description: List sub-commands, as called by completion scripts
-  expect: |-
-    words
-    bash
-    zsh
-    fish
   tags:
     - nodoc
   args:
     - config
     - completion
     - words
+    - --
     - config
     - completion
 conf_completion_bash:

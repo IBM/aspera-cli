@@ -12,5 +12,5 @@ complete --command ascli --no-files
 # to `ascli config completion words` and return the result as completions.
 complete --command ascli --arguments '(
     set -l words (commandline -opc)
-    ascli config completion words $words[2..] 2>/dev/null
+    ascli config completion words -- $words[2..] 2>/dev/null
 )'

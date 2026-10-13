@@ -6,7 +6,7 @@
 _ascli() {
     local -a candidates
     # words[1] is 'ascli' itself; pass only the words typed before the cursor
-    candidates=(${(f)"$(ascli config completion words "${(@)words[2,CURRENT-1]}" 2>/dev/null)"})
+    candidates=(${(f)"$(ascli config completion words -- "${(@)words[2,CURRENT-1]}" 2>/dev/null)"})
     compadd -a candidates
 }
 

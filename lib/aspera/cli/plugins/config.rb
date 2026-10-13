@@ -636,21 +636,125 @@ module Aspera
         end
 
         def action_completion_words(words: nil, **)
-          if words.nil? || words.empty?
-            # Level 0: propose plugin names
-            Plugins::Factory.instance.plugin_list.each { |p| puts p }
-          else
-            plugin_sym = words.first.to_sym
+          words = Array(words)
+          plugins = Plugins::Factory.instance.plugin_list
+          plugin_index = words.find_index { |w| !w.start_with?('-') && plugins.include?(w.to_sym) }
+
+          plugin_class = nil
+          if plugin_index
+            plugin_sym = words[plugin_index].to_sym
             plugin_class = begin
               Plugins::Factory.instance.plugin_class(plugin_sym)
             rescue StandardError
               Process.exit(0)
             end
-            # Navigate into the registry using remaining words as path
-            path = words[1..].map(&:to_sym)
-            plugin_class.command_registry.children_of(path).each_key { |k| puts k }
+            plugin_class.declare_options(options)
+          end
+
+          # Check if the last word is an option waiting for a value
+          last = words.last
+          prev = words[-2] if words.length >= 2
+          opt_tok =
+            if last.eql?('=') && prev&.start_with?('-')
+              prev
+            elsif last&.start_with?('-') && !last.eql?('--')
+              last
+            end
+
+          if opt_tok
+            opt_def =
+              if opt_tok.start_with?('--')
+                name = opt_tok.delete_prefix('--').split('=').first.split('.').first.tr('-', '_').to_sym
+                options.declared_options[name]
+              elsif opt_tok.length == 2
+                options.declared_options.values.find { |o| o.short == opt_tok[1] }
+              end
+
+            if opt_def && !opt_def.flag?
+              if opt_def.values&.any?
+                opt_def.values.map(&:to_s).uniq.each { |v| puts v }
+              else
+                types = opt_def.types&.reject { |t| t.eql?(NilClass) }
+                type_str = types&.any? ? types.map(&:name).join('|') : (opt_def.allowed_info || 'String')
+                puts "<#{type_str}>"
+              end
+              Process.exit(0)
+            end
+          end
+
+          if plugin_index.nil?
+            # Level 0: propose plugin names and global options
+            plugins.each { |p| puts p }
+            options.declared_options.each_key { |sym| puts "--#{sym.to_s.tr('_', '-')}" }
+          else
+            sub_words = words[(plugin_index + 1)..].reject { |w| w.start_with?('-') }
+            path = []
+            words_left = sub_words.map(&:to_sym)
+
+            while words_left.any?
+              children = plugin_class.command_registry.children_of(path)
+              break if children.empty?
+              word = words_left.first
+              cmd_id = children.key?(word) ? word : children.find { |_, c| Array(c.aliases).include?(word) }&.first
+              break if cmd_id.nil?
+              words_left.shift
+              path += [cmd_id]
+              args = plugin_class.command_registry.arguments_at(path)
+              if plugin_class.command_registry.children_of(path).any? && !args.empty?
+                to_consume = [args.length, words_left.length].min
+                words_left.shift(to_consume)
+              end
+            end
+
+            children = plugin_class.command_registry.children_of(path)
+            arguments = plugin_class.command_registry.arguments_at(path)
+
+            if arguments.any? && (children.empty? || words_left.any?)
+              next_arg =
+                if words_left.length < arguments.length
+                  arguments[words_left.length]
+                elsif arguments.last.multiple
+                  arguments.last
+                end
+              if next_arg
+                completion_argument_placeholder(next_arg).each { |v| puts v }
+                Process.exit(0)
+              end
+            end
+
+            if children.any?
+              children.each_key { |k| puts k }
+            elsif arguments.any? && words_left.empty?
+              completion_argument_placeholder(arguments.first).each { |v| puts v }
+              Process.exit(0)
+            end
+
+            # Propose plugin-specific options only right after the plugin name
+            if sub_words.empty?
+              plugin_opts = []
+              plugin_class.option_sources.each_key do |src|
+                src.option_specs.each_key { |sym| plugin_opts << "--#{sym.to_s.tr('_', '-')}" }
+              end
+              plugin_opts.uniq.each { |opt| puts opt }
+            end
           end
           Process.exit(0)
+        end
+
+        def completion_argument_placeholder(arg_spec)
+          if arg_spec.allowed
+            arg_spec.allowed.map(&:to_s)
+          else
+            type_str =
+              case arg_spec.type
+              when :identifier then 'identifier'
+              when Array       then arg_spec.type.map(&:name).join('|')
+              when Class       then arg_spec.type.name
+              when nil         then 'String'
+              else arg_spec.type.to_s
+              end
+            ["<#{type_str}>"]
+          end
         end
 
         # Display the completion script for the given shell.

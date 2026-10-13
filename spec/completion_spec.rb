@@ -21,6 +21,69 @@ module Aspera
         end
       end
 
+      describe 'completion words action' do
+        let(:root) { File.expand_path('..', __dir__) }
+
+        def run_words(*words)
+          cmd = [RbConfig.ruby, "-I#{root}/lib", File.join(root, 'bin', Info::CMD_NAME), 'config', 'completion', 'words']
+          cmd += ['--', *words] unless words.empty?
+          output, status = Open3.capture2e(*cmd)
+          expect(status.exitstatus).to(eq(0))
+          output.lines.map(&:chomp)
+        end
+
+        it 'proposes plugin names before options at root' do
+          results = run_words
+          expect(results).to(include('config', 'server', 'node', '--interactive', '--format', '--help'))
+          expect(results).not_to(include('--ssh-keys'))
+          plugin_idx = results.index('config')
+          option_idx = results.index('--interactive')
+          expect(plugin_idx).to(be < option_idx)
+        end
+
+        it 'proposes sub-commands before plugin options for a plugin' do
+          results = run_words('server')
+          expect(results).to(include('ls', 'upload', 'download', '--url', '--username', '--password', '--ssh-keys'))
+          expect(results).not_to(include('--clean-temp'))
+          cmd_idx = results.index('ls')
+          option_idx = results.index('--url')
+          expect(cmd_idx).to(be < option_idx)
+        end
+
+        it 'proposes only sub-commands under deeper paths' do
+          results = run_words('aoc', 'user')
+          expect(results).to(include('workspaces', 'profile', 'preferences', 'notifications', 'contacts', 'settings'))
+          expect(results.none? { |r| r.start_with?('-') }).to(be(true))
+
+          preset_results = run_words('config', 'preset')
+          expect(preset_results).to(include('list', 'overview', 'delete', 'show'))
+          expect(preset_results.none? { |r| r.start_with?('-') }).to(be(true))
+        end
+
+        it 'proposes allowed values for an enum option' do
+          results = run_words('--format')
+          expect(results).to(eq(%w[text nagios ruby json jsonpp yaml table csv image]))
+        end
+
+        it 'proposes placeholder for typed options' do
+          expect(run_words('--lock-port')).to(eq(['<Integer>']))
+          expect(run_words('server', '--url')).to(eq(['<String>']))
+          expect(run_words('--vault')).to(eq(['<Hash>']))
+        end
+
+        it 'proposes allowed values for positional arguments with enum' do
+          expect(run_words('config', 'documentation')).to(eq(%w[github local toc]))
+          expect(run_words('config', 'ascp', 'schema')).to(eq(%w[desktop node direct transferd httpgw connect]))
+        end
+
+        it 'proposes placeholder for positional arguments with type' do
+          expect(run_words('config', 'preset', 'show')).to(eq(['<identifier>']))
+          expect(run_words('config', 'preset', 'get', 'mypreset')).to(eq(['<String>']))
+          expect(run_words('config', 'vault', 'create')).to(eq(['<Hash>']))
+          expect(run_words('config', 'vault', 'import')).to(eq(['<Array>']))
+        end
+      end
+
       describe 'PowerShell completion script', :powershell do
         pwsh = ENV.fetch('PATH', '').split(File::PATH_SEPARATOR).map { |dir| File.join(dir, 'pwsh') }.find { |f| File.executable?(f) }
 

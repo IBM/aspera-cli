@@ -16,7 +16,7 @@
                 ForEach-Object { $_.Extent.Text })
         $key = (@($command) + $words) -join ' '
         if (-not $cache.ContainsKey($key)) {
-            $cache[$key] = @(& $command config completion words @words 2>$null)
+            $cache[$key] = @(& $command config completion words -- @words 2>$null)
         }
         $cache[$key] | Where-Object { $_.StartsWith($wordToComplete, [System.StringComparison]::OrdinalIgnoreCase) } |
             ForEach-Object { [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_) }

@@ -36,6 +36,10 @@ Released: [Place date of release here]
 * **global**: Tables are fitted to the terminal width: text columns (e.g. `description`) are wrapped, the widest first, then other columns if needed. Parameter `width` of `--out.table` sets the maximum table width.
 * `options.schema.yaml`: New schemas `WebServerOptions` (shared `url`/`cert`/`key`/`chain`), `Faspex4GatewayOptions` (extends `WebServerOptions`), and `Faspex4PostProcOptions` (extends `WebServerOptions` with postprocessing-specific keys).
 * `config`: `completion powershell` displays the completion script of PowerShell (Windows PowerShell 5.1 and PowerShell 7, on any OS): activate with `ascli config completion powershell | Out-String | Invoke-Expression` in `$PROFILE` (see manual). The words proposed are kept for the session.
+* **global**: Improved shell completion (`config completion words`):
+  * Global options are proposed after `ascli`, plugin options right after the plugin name, and only sub-commands deeper in the tree.
+  * Options expecting a value propose allowed values (enums, booleans) or a type placeholder (`<String>`, `<Integer>`, `<Hash>`, etc.).
+  * Positional arguments propose allowed values or a type placeholder.
 
 ### Issues Fixed
 
