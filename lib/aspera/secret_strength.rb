@@ -11,6 +11,8 @@ module Aspera
   # - patterns: repeats, sequences and keyboard rows cost 1 bit per character, words and years 2 bits per character
   # Both under-estimate random secrets: a random secret of 32 bytes (e.g. `openssl rand -hex 32`) is far above any usual minimum.
   module SecretStrength
+    # Default minimum strength of tokens, in bits: random tokens of 32 bytes are far above
+    DEFAULT_MIN_BITS = 80
     # Classes of characters, with their size
     CHARACTER_CLASSES = [[/[a-z]/, 26], [/[A-Z]/, 26], [/\d/, 10], [/[^a-zA-Z\d]/, 33]].freeze
     # Adjacent characters in those rows form a sequence

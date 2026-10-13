@@ -6,6 +6,7 @@ require 'aspera/cli/plugins/base'
 require 'aspera/cli/info'
 require 'aspera/cli/version'
 require 'aspera/oauth/server/pkce'
+require 'aspera/secret_strength'
 require 'securerandom'
 
 module Aspera
@@ -25,6 +26,7 @@ module Aspera
       #   # http transport:
       #   auth_token:             String  - if set, require "Authorization: Bearer <token>" on MCP requests,
       #                                     and asked on the OAuth consent page (mandatory on a non-local bind)
+      #   auth_token_min_bits:    Integer - minimum estimated strength of auth_token in bits (default 80, 0 disables)
       #   oauth:                  Boolean - enable OAuth 2.0 PKCE flow with dynamic client registration (RFC 7591)
       #   oauth_access_token_ttl: Integer - access token lifetime in seconds (default 3600)
       #   oauth_refresh_token_ttl: Integer - refresh token lifetime in seconds (default 2592000 = 30 days)
@@ -106,7 +108,7 @@ module Aspera
           require 'aspera/cli/extended_value'
           mcp_options = (mcp_options || {}).transform_keys(&:to_sym)
           unknown = mcp_options.keys - SERVER_KEYS - CONFIG_KEYS - STDIO_KEYS - HTTP_KEYS - TOOL_KEYS -
-            %i[transport port bind base_url auth_token oauth oauth_access_token_ttl oauth_refresh_token_ttl]
+            %i[transport port bind base_url auth_token auth_token_min_bits oauth oauth_access_token_ttl oauth_refresh_token_ttl]
           Aspera.assert(unknown.empty?, type: Cli::BadArgument) { "Unknown MCP option(s): #{unknown.join(', ')}" }
           Cli::Mcp::Tool.max_text_bytes = mcp_options.delete(:max_text_bytes)
           Cli::Mcp::Tool.extra_args     = mcp_options.delete(:extra_args)
@@ -170,11 +172,19 @@ module Aspera
         # - On a non-local bind address, auth_token is mandatory for security, also with OAuth:
         #   it is the secret asked on the consent page, else anyone could approve its own client.
         # - On a local bind address, both are optional but accepted.
+        # - A weak auth_token is refused.
         # @param auth_token [String, nil] expected static Bearer token
         # @param oauth_enabled [Boolean] whether OAuth PKCE flow is enabled
         # @param bind [String] bind address
-        def check_auth_config(auth_token, oauth_enabled, bind)
+        # @param min_bits [Integer] minimum estimated strength of auth_token, in bits
+        def check_auth_config(auth_token, oauth_enabled, bind, min_bits: SecretStrength::DEFAULT_MIN_BITS)
           Aspera.assert(auth_token.nil? || !auth_token.to_s.empty?, type: Cli::BadArgument) { 'auth_token must not be empty' }
+          unless auth_token.nil?
+            bits = SecretStrength.bits(auth_token.to_s)
+            Aspera.assert(bits >= min_bits, type: Cli::BadArgument) do
+              "auth_token is too weak: about #{bits.round} bits, minimum #{min_bits} (auth_token_min_bits). Generate one with: openssl rand -hex 32"
+            end
+          end
           Aspera.assert(!auth_token.nil? || LOCAL_BIND_ADDRESSES.include?(bind.to_s), type: Cli::BadArgument) do
             "auth_token is required#{' (asked on the consent page)' if oauth_enabled} when bind address (#{bind}) is not local (#{LOCAL_BIND_ADDRESSES.join(', ')})"
           end
@@ -204,7 +214,7 @@ module Aspera
           oauth_enabled     = mcp_options.fetch(:oauth, false)
           access_token_ttl  = mcp_options.fetch(:oauth_access_token_ttl, OAuth::Server::Pkce.default_access_token_ttl)
           refresh_token_ttl = mcp_options.fetch(:oauth_refresh_token_ttl, OAuth::Server::Pkce.default_refresh_token_ttl)
-          check_auth_config(auth_token, oauth_enabled, bind)
+          check_auth_config(auth_token, oauth_enabled, bind, min_bits: mcp_options.fetch(:auth_token_min_bits, SecretStrength::DEFAULT_MIN_BITS))
           base_url = http_base_url(bind, port, mcp_options[:base_url], oauth_enabled)
           # Secret pages are served by this server: the static token, if any, is the access code asked on the page
           web_secret = Cli::Mcp::Secrets.web_secret(base_url: base_url, access_code: auth_token)

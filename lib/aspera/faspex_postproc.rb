@@ -45,7 +45,7 @@ module Aspera
         parameters[:script_folder] ||= '.'
         parameters[:fail_on_error] ||= false
         parameters[:timeout_seconds] ||= 60
-        parameters[:secret_token_min_bits] ||= 80
+        parameters[:secret_token_min_bits] ||= SecretStrength::DEFAULT_MIN_BITS
         Aspera.assert(File.directory?(parameters[:script_folder])) { "script_folder not found: #{parameters[:script_folder]}" }
         # An empty token would accept requests without token
         if parameters.key?(:secret_token)

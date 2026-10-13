@@ -102,7 +102,7 @@ module Aspera
           else
             OpenSSL::X509::Certificate.new(File.read(cert))
           end
-          webrick_options[:SSLExtraChainCert] = read_chain_file(chain) unless chain.nil?
+          webrick_options[:SSLExtraChainCert] = self.class.read_chain_file(chain) unless chain.nil?
           Aspera.assert(webrick_options[:SSLCertificate].public_key.to_der == webrick_options[:SSLPrivateKey].public_key.to_der, type: Error) { 'key and cert do not match' }
         end
       end

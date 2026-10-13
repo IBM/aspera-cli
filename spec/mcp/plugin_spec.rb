@@ -57,6 +57,7 @@ end
 
 require 'aspera/cli/plugins/mcp'
 require 'aspera/oauth/server/pkce'
+require 'securerandom'
 
 RSpec.describe(Aspera::Cli::Plugins::Mcp) do
   # Build a minimal plugin instance without a real CLI context.
@@ -70,6 +71,7 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
   describe '#check_auth_config (private)' do
     let(:local_binds)    { %w[127.0.0.1 ::1 localhost] }
     let(:nonlocal_bind)  { '0.0.0.0' }
+    let(:token)          { SecureRandom.hex(32) }
 
     context 'with a local bind address' do
       it 'accepts no auth at all' do
@@ -79,7 +81,7 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
       end
 
       it 'accepts auth_token alone' do
-        expect { plugin.send(:check_auth_config, 'tok', false, '127.0.0.1') }.not_to(raise_error)
+        expect { plugin.send(:check_auth_config, token, false, '127.0.0.1') }.not_to(raise_error)
       end
 
       it 'accepts oauth_enabled alone' do
@@ -94,7 +96,7 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
       end
 
       it 'accepts auth_token' do
-        expect { plugin.send(:check_auth_config, 'secret', false, nonlocal_bind) }.not_to(raise_error)
+        expect { plugin.send(:check_auth_config, token, false, nonlocal_bind) }.not_to(raise_error)
       end
 
       it 'raises BadArgument with oauth_enabled alone (consent would not be protected)' do
@@ -103,13 +105,22 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
       end
 
       it 'accepts both auth_token and oauth_enabled together' do
-        expect { plugin.send(:check_auth_config, 'secret', true, nonlocal_bind) }.not_to(raise_error)
+        expect { plugin.send(:check_auth_config, token, true, nonlocal_bind) }.not_to(raise_error)
       end
     end
 
     it 'raises BadArgument when auth_token is an empty string' do
       expect { plugin.send(:check_auth_config, '', false, '127.0.0.1') }
         .to(raise_error(Aspera::Cli::BadArgument, /must not be empty/))
+    end
+
+    it 'raises BadArgument when auth_token is weak' do
+      expect { plugin.send(:check_auth_config, 'MySecretToken2024!', false, '127.0.0.1') }
+        .to(raise_error(Aspera::Cli::BadArgument, /auth_token is too weak: about \d+ bits, minimum 80/))
+    end
+
+    it 'accepts a weak auth_token if min_bits allows it' do
+      expect { plugin.send(:check_auth_config, 'tok', false, '127.0.0.1', min_bits: 0) }.not_to(raise_error)
     end
   end
 

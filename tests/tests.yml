@@ -7539,7 +7539,7 @@ f5_postproc_cert_pem:
   args:
     - faspex5
     - postprocessing
-    - '@json:{"url":"https://localhost:18443/domain","certificate":{},"script_folder":"$(PATH_SCRIPTS)"}'
+    - '@json:{"url":"https://localhost:18443/domain","script_folder":"$(PATH_SCRIPTS)"}'
   post: |
     sleep 2
     t.stop_process :f5_postproc_cert_pem
@@ -7551,7 +7551,7 @@ f5_postproc_cert_pkcs12:
   args:
     - faspex5
     - postprocessing
-    - '@json:{"url":"https://localhost:18443/domain","certificate":{"cert":"$(TMP / "certificate.pem")","chain":"$(TMP / "certificate.pem")","key":"$(TMP / "private_key.pem")"},"script_folder":"$(PATH_SCRIPTS)"}'
+    - '@json:{"url":"https://localhost:18443/domain","cert":"$(TMP / "certificate.pem")","chain":"$(TMP / "certificate.pem")","key":"$(TMP / "private_key.pem")","script_folder":"$(PATH_SCRIPTS)"}'
   post: |
     sleep 2
     t.stop_process :f5_postproc_cert_pkcs12
@@ -7563,7 +7563,7 @@ f5_postproc_cert_pkcs12_key:
   args:
     - faspex5
     - postprocessing
-    - '@json:{"url":"https://localhost:18443/domain","certificate":{"pkcs12":"$(TMP / "certificate.p12")","key":"$(PKCS_P)"},"script_folder":"$(PATH_SCRIPTS)"}'
+    - '@json:{"url":"https://localhost:18443/domain","cert":"$(TMP / "certificate.p12")","key":"$(PKCS_P)","script_folder":"$(PATH_SCRIPTS)"}'
   post: |
     sleep 2
     t.stop_process :f5_postproc_cert_pkcs12_key
@@ -7765,6 +7765,7 @@ mcp_oauth_base_url_required:
     - bind=0.0.0.0
     - oauth=true
     - auth_token=test-secret
+    - auth_token_min_bits=0
 mcp_auth_token_server:
   description: Start MCP HTTP server with static auth_token, verify 401 without token and 200 with token.
   tags:
@@ -7778,6 +7779,7 @@ mcp_auth_token_server:
     - transport=http
     - port=13779
     - auth_token=test-secret
+    - auth_token_min_bits=0
   post: mcp_auth_token_server_post(t)
 mcp_oauth_flow:
   description: >-
@@ -7795,6 +7797,7 @@ mcp_oauth_flow:
     - port=13780
     - oauth=true
     - auth_token=test-secret
+    - auth_token_min_bits=0
   post: mcp_oauth_flow_post(t)
 mcp_oauth_deny:
   description: OAuth consent deny — server must redirect with error=access_denied.
@@ -7825,6 +7828,7 @@ mcp_http_secret:
     - transport=http
     - port=13782
     - auth_token=test-secret
+    - auth_token_min_bits=0
   post: mcp_http_secret_post(t)
 
 github_smoke_test:

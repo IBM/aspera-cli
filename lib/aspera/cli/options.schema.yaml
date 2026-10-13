@@ -73,6 +73,16 @@ components:
 
             If not set, HTTP requests are not authenticated.
             Mandatory when `bind` is not local.
+            Generate it with `openssl rand -hex 32`: a weak token is refused (see `auth_token_min_bits`).
+        auth_token_min_bits:
+          type: integer
+          minimum: 0
+          default: 80
+          description: >-
+            Minimum estimated strength of `auth_token`, in bits (log2 of the number of guesses to find it).
+            The strength is estimated with gem `zxcvbn` if installed, else with a built-in estimate
+            that detects repeats, sequences, keyboard rows, words and years.
+            `0` disables the check.
         oauth:
           type: boolean
           description: Enable OAuth 2.0 PKCE flow with dynamic client registration.

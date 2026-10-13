@@ -9184,7 +9184,8 @@ The `server` command accepts an optional [Hash](#extended-value-syntax) argument
 | `port` | `integer` | `3000` | TCP port to listen on |
 | `bind` | `string` | `127.0.0.1` | Bind address |
 | `base_url` | `string` | from `bind` and `port` | URL of the server for clients, used in OAuth metadata and in the URL of secret pages, for example, `http://your-server:3000`. Mandatory with `oauth` when `bind` is `0.0.0.0` or `::`. |
-| `auth_token` | `string` | - | Static Bearer token. If set, all MCP requests must carry `Authorization: Bearer <token>`, else HTTP 401. Cannot be empty. It is also the access code asked on secret pages, and on the consent page with `oauth`. |
+| `auth_token` | `string` | - | Static Bearer token. If set, all MCP requests must carry `Authorization: Bearer <token>`, else HTTP 401. Cannot be empty. It is also the access code asked on secret pages, and on the consent page with `oauth`. Generate it with `openssl rand -hex 32`. |
+| `auth_token_min_bits` | `integer` | `80` | Minimum estimated strength of `auth_token`, in bits: a weak token is refused at startup. The estimate uses the optional gem `zxcvbn` if installed, else a built-in estimate. `0` disables the check. |
 | `oauth` | `boolean` | `false` | Enable OAuth 2.0 PKCE flow with dynamic client registration. When `true`, clients register automatically and users authenticate via a browser consent page. |
 | `oauth_access_token_ttl` | `integer` | `3600` | OAuth access token lifetime in seconds. |
 | `oauth_refresh_token_ttl` | `integer` | `2592000` | OAuth refresh token lifetime in seconds (30 days). |
@@ -9206,6 +9207,7 @@ With the `http` transport:
 - For local-only deployments (`127.0.0.1`, `::1`, `localhost`), `auth_token` and `oauth` are optional but recommended.
   Without `auth_token`, the consent page only asks to click **Allow**.
 - `auth_token` and `oauth` can coexist: a request is accepted if it carries a valid static token **or** a valid OAuth access token.
+- A weak `auth_token` is refused at startup (see `auth_token_min_bits`): generate it with `openssl rand -hex 32`.
 - `allowed_hosts` and `allowed_origins` protect against DNS rebinding but do not authenticate clients.
 
 With both transports:
@@ -9339,7 +9341,7 @@ When the server is exposed on a non-local address, `auth_token` is required.
 Set the token in the environment and start the server:
 
 ```shell
-export MCP_TOKEN=my-secret-token
+export MCP_TOKEN=$(openssl rand -hex 32)
 <%=cmd%> mcp server @: transport=http port=3000 bind=0.0.0.0 auth_token=@env:MCP_TOKEN
 ```
 
@@ -9352,7 +9354,7 @@ For [**IBM Bob**](https://bob.ibm.com/docs/ide/configuration/mcp/mcp-in-bob), pa
       "type": "streamable-http",
       "url": "http://your-server:3000/mcp",
       "headers": {
-        "Authorization": "Bearer my-secret-token"
+        "Authorization": "Bearer <%=ph :token%>"
       }
     }
   }
@@ -9368,7 +9370,7 @@ For other clients (Claude Desktop, VS Code, and so on):
       "type": "http",
       "url": "http://your-server:3000/mcp",
       "headers": {
-        "Authorization": "Bearer my-secret-token"
+        "Authorization": "Bearer <%=ph :token%>"
       }
     }
   }

@@ -26,6 +26,7 @@ Released: [Place date of release here]
 * `faspex5 postprocessing`: Two new optional parameters harden the unauthenticated webhook listener:
   * `secret_token` — callers must supply `?token=<value>` in the URL; requests without the correct token are rejected with HTTP 401.
   * `allowed_ips` — restrict the listener to one IP address or network (CIDR), or a list of them; requests from other source IPs are rejected with HTTP 403.
+* `mcp server`: A weak `auth_token` is refused at startup of the `http` transport: its estimated strength in bits shall be at least `auth_token_min_bits` (default `80`, `0` disables the check), with the same estimate as `faspex5 postprocessing`.
 * `faspex5 postprocessing`: A weak `secret_token` is refused at startup: its estimated strength in bits shall be at least `secret_token_min_bits` (default `80`, `0` disables the check). The estimate uses the optional gem `zxcvbn` if installed, else a built-in estimate that detects repeats, sequences, keyboard rows, words and years.
 * `faspex5 postprocessing`, `faspex5 gateway`, `aoc gateway`: Parameters are now validated against a JSON Schema (`Faspex4PostProcOptions`, `Faspex4GatewayOptions`). Unknown keys are rejected at startup instead of being silently ignored.
 * **global**: Tables are fitted to the terminal width: text columns (e.g. `description`) are wrapped, the widest first, then other columns if needed. Parameter `width` of `--out.table` sets the maximum table width.
@@ -58,6 +59,7 @@ Released: [Place date of release here]
 * `faspex5 postprocessing`: A request with a body that is not a JSON object is rejected with HTTP 400, a missing script with HTTP 404, and a script outside `script_folder` with HTTP 403, instead of HTTP 500 with the path of the script in the message.
 * `faspex5 postprocessing`: An unknown parameter, an invalid `allowed_ips` or a missing `script_folder` is reported at startup, instead of at each request.
 * **global**: Secret values of URL query parameters (e.g. `token`, `client_secret`) are hidden in logs.
+* **global**: Local web servers (`faspex5 postprocessing`, `faspex5 gateway`, `aoc gateway`, `node emulator`): parameter `chain` failed with an internal error.
 
 ### Breaking Changes
 
