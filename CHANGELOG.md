@@ -55,6 +55,7 @@ Released: [Place date of release here]
 * `config vault`: `file`: `password` did not migrate a vault created by version 4.26.0 or earlier to the new key derivation (PBKDF2).
 * `config vault`: `@vault:` failed with a secret label containing dots (for example, a preset name secured with `preset secure`).
 * `config vault`: `system` (macOS): `show` and `@vault:` return the `username`.
+* `config vault`: `file`: The vault file is loaded with YAML safe loading: Ruby objects are refused.
 * `config vault`: `1password`: `url` is read from the website of the item (also for items created in 1Password).
 * **global**: Pseudo transfer-spec parameter `target_rate` is in bps, as documented: a value without suffix or with suffix `k` was taken as kbps. An integer value (e.g. `--ts.target_rate=1000000`) was rejected.
 * `sync`: Transfer spec parameter `target_rate` was ignored, and `target_rate_kbps` too with the `args` format of `sync_info`.

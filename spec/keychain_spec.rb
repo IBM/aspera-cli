@@ -39,6 +39,16 @@ RSpec.describe(Aspera::Keychain) do
       end
     end
 
+    it 'refuses a vault file with Ruby objects' do
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'vault.bin')
+        File.write(path, "--- !ruby/object:OpenStruct\ntable: {}\n")
+        expect { described_class.new(file: path, password: 'pass') }.to(raise_error(Psych::DisallowedClass))
+        File.write(path, "--- just a string\n")
+        expect { described_class.new(file: path, password: 'pass') }.to(raise_error(/Invalid vault file/))
+      end
+    end
+
     it 'refuses to overwrite a secret and to delete a missing one' do
       Dir.mktmpdir do |dir|
         vault = described_class.new(file: File.join(dir, 'vault.bin'), password: 'pass')

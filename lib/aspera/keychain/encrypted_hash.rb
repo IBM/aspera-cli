@@ -40,7 +40,8 @@ module Aspera
         if File.exist?(@path)
           vault_file = File.read(@path)
           if vault_file.start_with?('---')
-            vault_info = YAML.parse(vault_file).to_ruby
+            vault_info = Yaml.safe_load(vault_file)
+            Aspera.assert_type(vault_info, Hash) { "Invalid vault file: #{@path}" }
             sorted_keys = vault_info.keys.sort
             Aspera.assert(sorted_keys == FILE_KEYS || sorted_keys == FILE_KEYS_KDF) { "Invalid vault file: #{@path}: #{sorted_keys}" }
             @cipher_name = vault_info['cipher']
