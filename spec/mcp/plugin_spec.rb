@@ -69,7 +69,7 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
   # check_auth_config
   # -------------------------------------------------------------------------
   describe '#check_auth_config (private)' do
-    let(:local_binds)    { %w[127.0.0.1 ::1 localhost] }
+    let(:local_binds)    { %w[127.0.0.1 127.0.0.2 ::1 ::ffff:127.0.0.1 localhost] }
     let(:nonlocal_bind)  { '0.0.0.0' }
     let(:token)          { SecureRandom.hex(32) }
 
@@ -101,7 +101,7 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
 
       it 'raises BadArgument with oauth_enabled alone (consent would not be protected)' do
         expect { plugin.send(:check_auth_config, nil, true, nonlocal_bind) }
-          .to(raise_error(Aspera::Cli::BadArgument, /auth_token is required \(asked on the consent page\)/))
+          .to(raise_error(Aspera::Cli::BadArgument, /auth_token \(asked on the consent page\) is required when/))
       end
 
       it 'accepts both auth_token and oauth_enabled together' do

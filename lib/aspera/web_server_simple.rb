@@ -28,6 +28,18 @@ module Aspera
         false
       end
 
+      # Refuse a server without protection reachable from the network: anyone could call it
+      # @param host      [String]    Host name or IP address the server listens on
+      # @param protected [Boolean]   `true` if requests are authenticated or restricted
+      # @param what      [String]    Parameters that protect the server, for the error message
+      # @param type      [Exception] Exception to raise
+      # @raise [Exception] if not protected and `host` is not a loopback address
+      def assert_protected(host, protected:, what:, type: ParameterError)
+        Aspera.assert(protected || loopback?(host), type: type) do
+          "#{what} is required when the server listens on an address that is not loopback (localhost, 127.0.0.0/8, ::1): #{host}"
+        end
+      end
+
       # Generate or fill and self sign certificate
       def self_signed_cert(private_key, digest: 'SHA256')
         cert = OpenSSL::X509::Certificate.new

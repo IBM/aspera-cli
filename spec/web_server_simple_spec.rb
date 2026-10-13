@@ -16,6 +16,25 @@ RSpec.describe(Aspera::WebServerSimple) do
     end
   end
 
+  describe '.assert_protected' do
+    it 'accepts a loopback address without protection' do
+      expect { described_class.assert_protected('localhost', protected: false, what: 'token') }.not_to(raise_error)
+    end
+
+    it 'accepts a protected server on any address' do
+      expect { described_class.assert_protected('0.0.0.0', protected: true, what: 'token') }.not_to(raise_error)
+    end
+
+    it 'refuses an unprotected server on a non-loopback address' do
+      expect { described_class.assert_protected('0.0.0.0', protected: false, what: 'token') }
+        .to(raise_error(Aspera::ParameterError, /token is required when the server listens on an address that is not loopback .*: 0\.0\.0\.0/))
+    end
+
+    it 'raises the given exception' do
+      expect { described_class.assert_protected('myhost', protected: false, what: 'token', type: ArgumentError) }.to(raise_error(ArgumentError))
+    end
+  end
+
   describe '#initialize with HTTPS' do
     it 'loads PEM certificate, key and chain' do
       Dir.mktmpdir do |dir|

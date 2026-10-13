@@ -167,10 +167,9 @@ module Aspera
           end
         end
 
-        LOCAL_BIND_ADDRESSES = %w[127.0.0.1 ::1 localhost].freeze
         # Bind addresses listening on all interfaces: not a host name usable by clients
         WILDCARD_BIND_ADDRESSES = %w[0.0.0.0 ::].freeze
-        private_constant :LOCAL_BIND_ADDRESSES, :WILDCARD_BIND_ADDRESSES
+        private_constant :WILDCARD_BIND_ADDRESSES
 
         # Validate auth configuration.
         # - On a non-local bind address, auth_token is mandatory for security, also with OAuth:
@@ -182,6 +181,7 @@ module Aspera
         # @param bind [String] bind address
         # @param min_bits [Integer] minimum estimated strength of auth_token, in bits
         def check_auth_config(auth_token, oauth_enabled, bind, min_bits: SecretStrength::DEFAULT_MIN_BITS)
+          require 'aspera/web_server_simple'
           Aspera.assert(auth_token.nil? || !auth_token.to_s.empty?, type: Cli::BadArgument) { 'auth_token must not be empty' }
           unless auth_token.nil?
             bits = SecretStrength.bits(auth_token.to_s)
@@ -189,9 +189,12 @@ module Aspera
               "auth_token is too weak: about #{bits.round} bits, minimum #{min_bits} (auth_token_min_bits). Generate one with: openssl rand -hex 32"
             end
           end
-          Aspera.assert(!auth_token.nil? || LOCAL_BIND_ADDRESSES.include?(bind.to_s), type: Cli::BadArgument) do
-            "auth_token is required#{' (asked on the consent page)' if oauth_enabled} when bind address (#{bind}) is not local (#{LOCAL_BIND_ADDRESSES.join(', ')})"
-          end
+          WebServerSimple.assert_protected(
+            bind.to_s,
+            protected: !auth_token.nil?,
+            what:      "auth_token#{' (asked on the consent page)' if oauth_enabled}",
+            type:      Cli::BadArgument
+          )
         end
 
         # @param bind     [String]      bind address

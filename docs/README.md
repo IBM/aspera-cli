@@ -9365,7 +9365,7 @@ So, `ascli` shall listen on an address reachable from the containers: the IP add
 
 > [!NOTE]
 > **Security**: by default the listener binds to loopback (`localhost`) and is not reachable from outside the host.
-> When `url` is not a local address (`localhost`, `127.0.0.1`, `::1`), at least one of the following protections is required:
+> When `url` is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`), at least one of the following protections is required:
 >
 > - **`secret_token`**: include the token in the Faspex webhook URL: `http://host:8080/processing/script1.sh?token=<TOKEN>`. Requests without the correct token are rejected with HTTP 401.
 > - **`allowed_ips`**: restrict the listener to the known Faspex container IPs or network, e.g. `@json:'{"allowed_ips":["192.168.1.10","10.89.0.0/24"]}'`. Requests from other IPs are rejected with HTTP 403.
@@ -10293,7 +10293,7 @@ The `server` command accepts an optional [Hash](#extended-value-syntax) argument
 With the `http` transport:
 
 - With `oauth`, the consent page asks for `auth_token` as access code, else anyone reaching the server could approve its own client.
-- For local-only deployments (`127.0.0.1`, `::1`, `localhost`), `auth_token` and `oauth` are optional but recommended.
+- For local-only deployments (loopback `bind`: `localhost`, `127.0.0.0/8`, `::1`), `auth_token` and `oauth` are optional but recommended.
   Without `auth_token`, the consent page only asks to click **Allow**.
 - `auth_token` and `oauth` can coexist: a request is accepted if it carries a valid static token **or** a valid OAuth access token.
 - A weak `auth_token` is refused at startup (see `auth_token_min_bits`): generate it with `openssl rand -hex 32`.

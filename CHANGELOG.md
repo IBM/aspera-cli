@@ -64,7 +64,7 @@ Released: [Place date of release here]
 
 ### Breaking Changes
 
-* `faspex5 postprocessing`: `secret_token` or `allowed_ips` is required when `url` is not a local address (`localhost`, `127.0.0.1`, `::1`): anyone reaching the server could start the scripts.
+* `faspex5 postprocessing`: `secret_token` or `allowed_ips` is required when `url` is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`): anyone reaching the server could start the scripts.
 * `faspex5 postprocessing`: Only webhook values whose key starts with `faspex_` (Faspex 4 post-processing variables) are passed to the script as environment variables. Other keys are ignored: they could change the behavior of the script (e.g. `PATH`, `LD_PRELOAD`). A structured value (object or array) is passed as JSON instead of Ruby format.
 * `orchestrator`: `workflows import` takes the path of a file created by `workflows export`, instead of a `Hash` (rejected by Orchestrator).
 * `orchestrator`: `workflows import_with_constraints` takes keys `filename`, `add_as_revision`, `subwf_constraints`, `action_template_constraints`, `remote_node_constraints`, `auto_enable_missing_plugins`, instead of `workflow_data` and `constraints` (rejected by Orchestrator).

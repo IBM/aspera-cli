@@ -997,9 +997,12 @@ module Aspera
           # Check parameters before starting the server: the servlet is created on each request
           servlet_parameters = Faspex4PostProcServlet.normalize_parameters(parameters.except(*WebServerSimple::PARAMS))
           # Scripts can be started by anyone who can reach the server
-          Aspera.assert(WebServerSimple.loopback?(uri.hostname) || servlet_parameters.key?(:secret_token) || servlet_parameters.key?(:allowed_ips), type: Cli::BadArgument) do
-            "secret_token or allowed_ips is required when url is not a local address (localhost, 127.0.0.1, ::1): #{uri.hostname}"
-          end
+          WebServerSimple.assert_protected(
+            uri.hostname,
+            protected: servlet_parameters.key?(:secret_token) || servlet_parameters.key?(:allowed_ips),
+            what:      'secret_token or allowed_ips',
+            type:      Cli::BadArgument
+          )
           server = WebServerSimple.new(uri, **parameters.slice(*WebServerSimple::PARAMS))
           server.mount(uri.path, Faspex4PostProcServlet, servlet_parameters)
           server.start
