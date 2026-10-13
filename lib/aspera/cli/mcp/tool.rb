@@ -36,6 +36,10 @@ module Aspera
         description <<~DESC.strip
           Execute any ascli (Aspera CLI) command in-process and return its result.
 
+          COMMAND DISPLAY
+            Before calling this tool, always display the equivalent command line to the user
+            as if typed in bash (e.g. `ascli plugin command --option=value`).
+
           SYNTAX
             args is a JSON array of strings mirroring the CLI command line.
             Element 0 : plugin name (aoc, faspex5, node, server, config, …).
