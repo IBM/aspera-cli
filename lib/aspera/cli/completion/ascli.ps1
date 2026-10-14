@@ -10,13 +10,13 @@
         param($wordToComplete, $commandAst, $cursorPosition)
         # Run ascli as typed, e.g. .\ascli.cmd when not in PATH
         $command = $commandAst.GetCommandName()
-        # CommandElements[0] is the command itself; pass only the words typed before the cursor
+        # CommandElements[0] is the command itself; pass only the words typed before the cursor, unquoted (e.g. '@:')
         $words = @($commandAst.CommandElements | Select-Object -Skip 1 |
                 Where-Object { $_.Extent.EndOffset -lt $cursorPosition } |
-                ForEach-Object { $_.Extent.Text })
-        # Only the beginning of the word at cursor matters: `-` (option names) or `--name=` (option values), candidates are filtered here.
+                ForEach-Object { if ($_ -is [System.Management.Automation.Language.StringConstantExpressionAst]) { $_.Value } else { $_.Extent.Text } })
+        # Only the beginning of the word at cursor matters: `-` (option names), `--name.` (keys) or `--name=` (values), candidates are filtered here.
         # Other words give the same candidates: `.` is passed, as Windows PowerShell does not pass an empty argument.
-        $current = if ($wordToComplete -match '^--[^=]*=') { $Matches[0] } elseif ($wordToComplete.StartsWith('-')) { '-' } else { '.' }
+        $current = if ($wordToComplete -match '^--[^=]*[=.]') { $Matches[0] } elseif ($wordToComplete.StartsWith('-')) { '-' } else { '.' }
         $key = (@($command) + $words + $current) -join ' '
         if (-not $cache.ContainsKey($key)) {
             $cache[$key] = @(& $command config completion candidates -- @words $current 2>$null)

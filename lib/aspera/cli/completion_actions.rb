@@ -3,6 +3,9 @@
 require 'aspera/cli/info'
 require 'aspera/cli/parser'
 require 'aspera/cli/plugins/factory'
+require 'aspera/cli/special_values'
+require 'aspera/schema/documentation'
+require 'aspera/schema/registry'
 
 module Aspera
   module Cli
@@ -16,7 +19,16 @@ module Aspera
       # @!attribute hint       [String, nil] displayed when a value is expected, but cannot be proposed (e.g. `<String>`)
       # @!attribute files      [Boolean] local files can be completed
       Completion = Struct.new(:candidates, :hint, :files, keyword_init: true)
-      private_constant :COMPLETION_SHELLS, :COMPLETION_FOLDER, :Completion
+      # Structure built with `@:` (see `Parser#args_as_extended`) being typed
+      # @!attribute marker      [String]      end marker
+      # @!attribute assignments [Integer]     number of assignments given
+      # @!attribute option      [Option, nil] option token whose value is built, `nil` for a positional argument
+      Collecting = Struct.new(:marker, :assignments, :option, keyword_init: true)
+      # Value starting a structure built with `@:`: the optional text after `:` is the end marker
+      REGEX_EXTEND_ARGS = /\A@:(.*)\z/
+      # Maximum length of a hint listing the keys of a structure
+      HINT_MAX_LENGTH = 72
+      private_constant :COMPLETION_SHELLS, :COMPLETION_FOLDER, :Completion, :Collecting, :REGEX_EXTEND_ARGS, :HINT_MAX_LENGTH
 
       # List words that can follow the given words, one per line.
       # When a value is expected but cannot be proposed, its type is listed (e.g. `<String>`).
@@ -54,13 +66,17 @@ module Aspera
         # `--opt=value`: complete the value of the option, with this prefix
         prefix = current.start_with?(Option::PREFIX) && current.include?(Option::VALUE_SEP) ? current[0..current.index(Option::VALUE_SEP)] : ''
         words += [prefix] unless prefix.empty?
-        plugin_class, positional, waiting = completion_context(words)
+        plugin_class, positional, waiting, collecting = completion_context(words)
         return Completion.new(candidates: []) if positional.nil?
         result =
-          if prefix.empty? && current.start_with?('-')
+          if prefix.empty? && (keys = completion_option_keys(current))
+            keys
+          elsif prefix.empty? && current.start_with?('-')
             Completion.new(candidates: completion_options(options.declared_options.keys))
           elsif !waiting.nil?
             completion_option_values(waiting)
+          elsif !collecting.nil?
+            completion_collecting(collecting, plugin_class, positional)
           elsif plugin_class.nil?
             # Level 0: plugin names and global options
             Completion.new(candidates: Plugins::Factory.instance.plugin_list.map { |p| [p.to_s, completion_plugin_description(p)] } + completion_options(options.declared_options.keys))
@@ -72,11 +88,11 @@ module Aspera
       end
 
       # @param words [Array<String>] words typed before the cursor
-      # @return [Array(Class, Array<String>, Option)] plugin class (`nil` at root), positional words, and the last option
-      #   if it is waiting for its value; `[]` if the first positional word is not a plugin
+      # @return [Array(Class, Array<String>, Option, Collecting)] plugin class (`nil` at root), and result of `completion_split`;
+      #   `[]` if the first positional word is not a plugin
       def completion_context(words)
-        positional, waiting = completion_split(words)
-        return [nil, positional, waiting] if positional.empty?
+        positional, waiting, collecting = completion_split(words)
+        return [nil, positional, waiting, collecting] if positional.empty?
         plugin_sym = completion_plugin(positional.first)
         return [] if plugin_sym.nil?
         begin
@@ -107,13 +123,7 @@ module Aspera
         path, given = registry.command_position(words.map(&:to_sym))
         return Completion.new(candidates: []) if path.nil?
         children = registry.children_of(path)
-        arguments = registry.arguments_at(path)
-        next_argument =
-          if given < arguments.length
-            arguments[given]
-          elsif children.empty? && arguments.last&.multiple
-            arguments.last
-          end
+        next_argument = completion_next_argument(registry, path, given)
         return completion_argument(next_argument) unless next_argument.nil?
         # Source files of an upload follow the declared arguments
         return Completion.new(candidates: [], files: true) if children.empty? && registry[path]&.transfer_paths.eql?(:send)
@@ -125,6 +135,35 @@ module Aspera
         # Options of plugin only right after the plugin name
         candidates.concat(completion_options(plugin_class.option_sources.each_key.flat_map { |src| src.option_specs.keys }.uniq)) if words.empty?
         Completion.new(candidates: candidates)
+      end
+
+      # @param registry [CommandRegistry] registry of plugin
+      # @param path     [Array<Symbol>]   command path
+      # @param given    [Integer]         number of arguments given to the command
+      # @return [ArgumentSpec, nil] argument expected after the given ones
+      def completion_next_argument(registry, path, given)
+        arguments = registry.arguments_at(path)
+        return arguments[given] if given < arguments.length
+        arguments.last if registry.children_of(path).empty? && arguments.last&.multiple
+      end
+
+      # In a structure built with `@:`: its end marker once an assignment is given, else the expected keys
+      # @param collecting   [Collecting]    structure being typed
+      # @param plugin_class [Class, nil]    plugin
+      # @param positional   [Array<String>] positional words, the plugin name first
+      # @return [Completion]
+      def completion_collecting(collecting, plugin_class, positional)
+        return Completion.new(candidates: [[collecting.marker, 'End of structure built with @:']]) if collecting.assignments.positive?
+        schema =
+          if collecting.option
+            completion_option(collecting.option)&.schema
+          elsif plugin_class
+            # The positional argument built is the last positional word: `@:`
+            registry = plugin_class.command_registry
+            path, given = registry.command_position(positional[1..-2].map(&:to_sym))
+            completion_next_argument(registry, path, given)&.schema unless path.nil?
+          end
+        Completion.new(candidates: [], hint: completion_hint('path=value', schema))
       end
 
       # Bash splits `--opt=value` in words `--opt`, `=` and `value`: join them back.
@@ -149,11 +188,14 @@ module Aspera
 
       # Split words as the command line parser does: an option without inline value takes the next word as value,
       # unless it is a flag. An option not declared yet (e.g. of a plugin) takes a value.
+      # A value `@:` (of option, or of positional argument) collects the next positional words, up to its end marker.
       # @param words [Array<String>] words typed before the cursor
-      # @return [Array(Array<String>, Option)] positional words, and the last option if it is waiting for its value
+      # @return [Array(Array<String>, Option, Collecting)] positional words, the last option if it is waiting for its value,
+      #   and the structure built with `@:` if its end marker is not given
       def completion_split(words)
         positional = []
         waiting = nil
+        collecting = nil
         stop = false
         words.each do |word|
           if !stop && word.eql?(Option::STOP)
@@ -163,13 +205,29 @@ module Aspera
             tok = Option.parse(word)
             # `--opt=` at end of line (from bash split): value is being typed
             waiting = (tok.inline? && !tok.inline_value.empty?) || completion_option(tok)&.flag? ? nil : tok
+            collecting = completion_collecting_start(tok.inline_value, tok) || collecting
           elsif waiting
+            collecting = completion_collecting_start(word, waiting) || collecting
             waiting = nil
+          elsif collecting
+            # Assignment, or end marker
+            collecting.assignments += 1
+            collecting = nil if word.eql?(collecting.marker)
           else
             positional.push(word)
+            collecting = completion_collecting_start(word, nil)
           end
         end
-        [positional, waiting]
+        [positional, waiting, collecting]
+      end
+
+      # @param value  [String, nil] value of option or argument
+      # @param option [Option, nil] option token, `nil` for a positional argument
+      # @return [Collecting, nil] structure started by the value, if it is `@:`
+      def completion_collecting_start(value, option)
+        match = REGEX_EXTEND_ARGS.match(value.to_s)
+        return if match.nil?
+        Collecting.new(marker: match[1].empty? ? SpecialValues::EOA : match[1], assignments: 0, option: option)
       end
 
       # @param tok [Option] option token
@@ -193,15 +251,73 @@ module Aspera
       # @return [Completion] allowed values of the option, or its type as hint
       def completion_option_values(tok)
         option = completion_option(tok)
-        # No information on the value of a key of a dotted option
-        return Completion.new(candidates: []) if option.nil? || tok.dot_path
+        return Completion.new(candidates: []) if option.nil?
+        return completion_key_value(option.schema, tok.dot_path) unless tok.dot_path.nil?
         return Completion.new(candidates: option.values.map(&:to_s).uniq.map { |v| [v, nil] }) if option.values&.any?
         types = option.types&.reject { |t| t.eql?(NilClass) }
-        Completion.new(candidates: [], hint: "<#{types&.any? ? types.map(&:name).join('|') : option.allowed_info || 'String'}>")
+        Completion.new(candidates: [], hint: completion_hint(types&.any? ? types.map(&:name).join('|') : option.allowed_info || 'String', option.schema))
+      end
+
+      # Keys of an option with dotted notation, from its schema, e.g. `--ts.ta` gives `--ts.target_rate_kbps`
+      # @param current [String] word at cursor
+      # @return [Completion, nil] keys at the level of the word, `nil` if the word is not a dotted option
+      def completion_option_keys(current)
+        match = current.match(/\A--([^=.]+)\.([^=]*)\z/)
+        return if match.nil?
+        option = options.declared_options[Parser.option_line_to_name(match[1]).to_sym]
+        parents = match[2].split(DotContainer::SEPARATOR, -1)[0..-2]
+        candidates = completion_schema_rows(option&.schema).filter_map do |row|
+          path = row['name'].split(DotContainer::SEPARATOR)
+          next if row['name'].include?('[]') || !path[0..-2].eql?(parents)
+          ["--#{match[1]}.#{row['name']}", completion_description(row['description']) || completion_type(row['type'])]
+        end
+        Completion.new(candidates: candidates)
+      end
+
+      # @param schema   [String, nil]   schema of structure
+      # @param dot_path [Array<String>] key in structure
+      # @return [Completion] allowed values of the key, or its type as hint
+      def completion_key_value(schema, dot_path)
+        row = completion_schema_rows(schema).find { |r| r['name'].eql?(dot_path.join(DotContainer::SEPARATOR)) }
+        return Completion.new(candidates: []) if row.nil?
+        return Completion.new(candidates: row['enum'].compact.map { |v| [v.to_s, nil] }) if row['enum']
+        return Completion.new(candidates: [['true', nil], ['false', nil]]) if row['type'].eql?('boolean')
+        Completion.new(candidates: [], hint: ["<#{completion_type(row['type'])}>", completion_description(row['description'])].compact.join(' '))
+      end
+
+      # @param type   [String]      expected type, e.g. `Hash`
+      # @param schema [String, nil] schema of value
+      # @return [String] type, followed by the top level keys of the schema, if any: required ones first, followed by `*`
+      def completion_hint(type, schema)
+        hint = "<#{type}>"
+        top = completion_schema_rows(schema).reject { |r| r['name'].match?(/[.\[]/) }
+        required, optional = top.partition { |r| r['required'] }
+        names = required.map { |r| "#{r['name']}*" } + optional.map { |r| r['name'] }
+        names.each_with_index do |name, index|
+          separator = index.zero? ? ' ' : ', '
+          return "#{hint}#{separator}…" if hint.length + separator.length + name.length > HINT_MAX_LENGTH
+          hint = "#{hint}#{separator}#{name}"
+        end
+        hint
+      end
+
+      # @param schema [String, nil] name of schema in registry
+      # @return [Array<Hash>] fields of the schema (see `Schema::Reader#to_rows`), empty if none
+      def completion_schema_rows(schema)
+        return [] if schema.nil?
+        Schema::Registry.instance.reader(schema).to_rows
+      rescue StandardError
+        []
+      end
+
+      # @param type [String] JSON type(s) of a schema field, e.g. `integer` or `string, null`
+      # @return [String] type, as displayed in help, e.g. `Integer`
+      def completion_type(type)
+        type.to_s.split(', ').reject { |t| t.eql?('null') }.map { |t| Schema::Documentation::JSON_TYPE_TO_DOC.fetch(t, t) }.join('|')
       end
 
       # @param arg_spec [ArgumentSpec] expected argument
-      # @return [Completion] allowed values of the argument, or its type as hint
+      # @return [Completion] allowed values of the argument, or its type (and keys of its schema) as hint
       def completion_argument(arg_spec)
         return Completion.new(candidates: arg_spec.allowed.map { |v| [v.to_s, nil] }) if arg_spec.allowed
         type_str =
@@ -212,7 +328,7 @@ module Aspera
           when nil         then 'String'
           else arg_spec.type.to_s
           end
-        Completion.new(candidates: [], hint: "<#{type_str}>")
+        Completion.new(candidates: [], hint: completion_hint(type_str, arg_spec.schema))
       end
 
       # @param plugin_sym [Symbol] plugin name
@@ -224,9 +340,9 @@ module Aspera
       end
 
       # @param text [String, nil] description
-      # @return [String, nil] first line, as displayed by the shell
+      # @return [String, nil] first line, without final period, as displayed by the shell
       def completion_description(text)
-        line = text.to_s.lines.first.to_s.strip.tr("\t", ' ')
+        line = text.to_s.lines.first.to_s.strip.tr("\t", ' ').delete_suffix('.')
         line.empty? ? nil : line
       end
 

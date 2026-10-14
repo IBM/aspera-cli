@@ -104,7 +104,7 @@ module Aspera
         it 'proposes placeholder for positional arguments with type' do
           expect(run_words('config', 'preset', 'show')).to(eq(['<identifier>']))
           expect(run_words('config', 'preset', 'get', 'mypreset')).to(eq(['<String>']))
-          expect(run_words('config', 'vault', 'create')).to(eq(['<Hash>']))
+          expect(run_words('config', 'vault', 'create')).to(eq(['<Hash> label*, username, password, url, description']))
           expect(run_words('config', 'vault', 'import')).to(eq(['<Array>']))
         end
 
@@ -174,12 +174,36 @@ module Aspera
 
         it 'asks for local files after the arguments of an upload' do
           expect(run_candidates('server', 'upload', '')).to(eq([':files']))
-          expect(run_candidates('aoc', 'packages', 'send', '')).to(eq([':hint <Hash>']))
+          expect(run_candidates('aoc', 'packages', 'send', '')).to(eq([':hint <Hash> name*, workspace_id*, archived, bcc_recipients, …']))
           expect(run_candidates('aoc', 'packages', 'send', '@json:{}', '')).to(eq([':files']))
         end
 
         it 'does not evaluate extended values in words' do
           expect(run_candidates('@env:COMPLETION_TEST_WORD', '', env: {'COMPLETION_TEST_WORD' => 'server'})).to(eq([':']))
+        end
+
+        it 'proposes the keys of an option with dotted notation, from its schema' do
+          expect(run_candidates('--ts.dir')).to(include("--ts.direction\tDirection of transfer (on client side)"))
+          expect(run_candidates('--out.table.')).to(include(start_with("--out.table.pivot\t")))
+        end
+
+        it 'proposes the values of a key of an option, from its schema' do
+          expect(run_candidates('--ts.direction=')).to(eq(['--ts.direction=send', '--ts.direction=receive', ':']))
+          expect(run_candidates('--ts.direction', '')).to(eq(%w[send receive :]))
+          expect(run_candidates('--ts.target_rate_kbps', '')).to(eq([':hint <Integer> Specifies desired speed for the transfer']))
+        end
+
+        it 'gives the keys of the schema of a structure, required ones first' do
+          expect(run_candidates('aoc', 'packages', 'send', '')).to(eq([':hint <Hash> name*, workspace_id*, archived, bcc_recipients, …']))
+        end
+
+        it 'proposes the end marker of a structure built with @:' do
+          expect(run_candidates('aoc', 'packages', 'send', '@:', '')).to(eq([':hint <path=value> name*, workspace_id*, archived, bcc_recipients, …']))
+          expect(run_candidates('aoc', 'packages', 'send', '@:', 'name=x', '')).to(eq(["END\tEnd of structure built with @:", ':']))
+          expect(run_candidates('aoc', 'packages', 'send', '@:STOP', 'name=x', '')).to(eq(["STOP\tEnd of structure built with @:", ':']))
+          expect(run_candidates('aoc', 'tier_restrictions', '--query=@:', 'a=b', '')).to(eq(["END\tEnd of structure built with @:", ':']))
+          # Words of the structure are not arguments
+          expect(run_candidates('aoc', 'packages', 'send', '@:', 'name=x', 'END', '')).to(eq([':files']))
         end
       end
 
@@ -218,6 +242,10 @@ module Aspera
           expect(complete_bash(bash, 'ascli server --url=https://h:443 l', %w[ascli server --url = https : //h : 443 l])).to(eq(['ls']))
         end
 
+        it 'completes the end marker of a structure built with @:, split on @ and :' do
+          expect(complete_bash(bash, 'ascli aoc packages send @: name=x ', ['ascli', 'aoc', 'packages', 'send', '@', ':', 'name', '=', 'x', ''])).to(eq(['END']))
+        end
+
         it 'displays a hint without inserting it' do
           expect(complete_bash(bash, 'ascli config preset show ', ['ascli', 'config', 'preset', 'show', ''])).to(eq(['<identifier>', ' ']))
         end
@@ -236,7 +264,7 @@ module Aspera
           # Activated as documented, then one line of completions per command line, with the cursor at the end (the word completed is compared without case)
           script = <<~PS1
             ascli config completion powershell | Out-String | Invoke-Expression
-            foreach ($line in 'ascli conf', 'ascli config completion ', 'ascli config COMPL', 'ascli --format=js', 'ascli config preset show ') {
+            foreach ($line in 'ascli conf', 'ascli config completion ', 'ascli config COMPL', 'ascli --format=js', 'ascli config preset show ', 'ascli --ts.dire', "ascli aoc packages send '@:' name=x ") {
                 $matches = (TabExpansion2 -inputScript $line -cursorColumn $line.Length).CompletionMatches
                 ($matches.CompletionText -join ' ') + '|' + ($matches.ListItemText -join ' ')
             }
@@ -251,6 +279,9 @@ module Aspera
             expect(lines[3]).to(eq('--format=json --format=jsonpp|--format=json --format=jsonpp'))
             # Not changed, so that no file path is completed
             expect(lines[4]).to(eq(' |<identifier>'))
+            expect(lines[5]).to(eq('--ts.direction|--ts.direction'))
+            # Quoted word, as required for @: in PowerShell
+            expect(lines[6]).to(eq('END|END'))
           end
         end
       end

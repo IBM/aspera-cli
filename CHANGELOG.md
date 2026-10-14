@@ -47,6 +47,9 @@ Released: [Place date of release here]
   * Scripts call new command `config completion candidates`: Zsh, Fish and PowerShell display the description of commands and options. Options are proposed after any command for a word starting with `-`, values of option also for `--name=value`, and local files after the arguments of upload commands. The type of an expected value (e.g. `<identifier>`) is displayed, but no longer inserted. Scripts saved in a completion folder shall be saved again.
   * Bash: words containing `=` or `:` (e.g. a URL) no longer break completion of the next words.
   * Aliases of commands are proposed (e.g. `browse` for `ls`), and a plugin, command or alias abbreviated as on the command line (unique prefix, e.g. `serv br`) is followed.
+  * Keys of an option with a schema, in dotted notation (e.g. `--ts.direction`), and their values (e.g. `send`, `receive`), with their description.
+  * The type of an expected structure is followed by its keys, required ones first with `*` (e.g. `<Hash> name*, workspace_id*, …`), also after `@:`.
+  * In a structure built with `@:`, its end marker (e.g. `END`) is proposed, and the words of the structure are not taken as arguments.
 
 ### Issues Fixed
 
