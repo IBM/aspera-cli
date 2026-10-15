@@ -15,7 +15,16 @@ module Aspera
       class Orchestrator < BasicAuth
         STANDARD_PATH = '/aspera/orchestrator'
         TEST_ENDPOINT = 'api/remote_node_ping'
-        private_constant :STANDARD_PATH, :TEST_ENDPOINT
+        # Raw Markdown of the workflow authoring documents
+        DOC_BASE_URL = 'https://raw.githubusercontent.com/laurent-martin/aspera-orchestrator-plugins-doc/main/docs'
+        # Documents of command `workflows development`: name => file
+        DOC_FILES = {
+          authoring: 'workflow-authoring-guide.md',
+          templates: 'action-template-reference.md'
+        }.freeze
+        # Value of argument `section` of command `workflows development` for the table of contents
+        DOC_TOC = 'toc'
+        private_constant :STANDARD_PATH, :TEST_ENDPOINT, :DOC_BASE_URL, :DOC_FILES, :DOC_TOC
 
         class << self
           # @return [Hash,NilClass]
@@ -148,6 +157,11 @@ module Aspera
           command :workorders, description: 'List work orders of a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
             action: ->(workflow_id:, **) { Result::ObjectList.new(call_ao("work_orders_list/#{workflow_id}")['work_orders']) }
+          command :development, description: "Show documentation for workflow development, from GitHub (no access to Orchestrator): whole document, its table of contents (#{DOC_TOC}), or one section (anchor)",
+            arguments: [
+              {name: :document, type: Symbol, mandatory: false, default: :authoring, allowed: DOC_FILES.keys},
+              {name: :section, mandatory: false}
+            ]
           command :outputs,    description: 'Show output specification of a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
             action: ->(workflow_id:, **) { Result::ObjectList.new(call_ao("workflow_outputs_spec/#{workflow_id}")['workflow_outputs_spec']['output']) }
@@ -241,6 +255,18 @@ module Aspera
             call_ao('workflows_list')['workflows']['workflow'],
             fields: %w[id portable_id name published_status published_revision_id latest_revision_id last_modification]
           )
+        end
+
+        # The document is read from GitHub: does not require access to Orchestrator
+        def action_workflows_development(document: :authoring, section: nil, **)
+          require 'aspera/markdown'
+          require 'aspera/uri_reader'
+          content = UriReader.read("#{DOC_BASE_URL}/#{DOC_FILES[document]}")
+          return Result::Text.new(content) if section.nil?
+          return Result::ObjectList.new(Markdown.toc(content), fields: %w[level title anchor]) if section.eql?(DOC_TOC)
+          text = Markdown.extract_section(content, section)
+          Aspera.assert(!text.nil?, type: Cli::Error) { "Section not found: #{section}, use #{DOC_TOC} to list anchors" }
+          Result::Text.new(text)
         end
 
         # Without dependencies, the workflow file (YAML) is displayed.

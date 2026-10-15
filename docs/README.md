@@ -9689,6 +9689,16 @@ transfer smart sub my_smart_id @: source.paths.0=my_smart_file source_type=user_
 
 To write workflow files without the designer, refer to the [Workflow Authoring Guide](https://github.com/laurent-martin/aspera-orchestrator-plugins-doc/blob/main/docs/workflow-authoring-guide.md): file format, graph, execution, examples and REST API.
 
+Command `workflows development` displays the documentation for workflow development, read from GitHub: this guide (`authoring`), or the [Action Template Reference](https://github.com/laurent-martin/aspera-orchestrator-plugins-doc/blob/main/docs/action-template-reference.md) (`templates`).
+With `toc`, it lists the sections of the document, and with the anchor of a section, it displays only that section.
+It does not require access to Orchestrator.
+The [MCP server](#plugin-mcp-model-context-protocol-server) instructs AI assistants to read it before writing or modifying a workflow.
+
+```shell
+ascli orchestrator workflows development authoring toc
+ascli orchestrator workflows development templates customruby
+```
+
 ### Authentication
 
 The Orchestrator plugin supports different credentials and authentication styles configured via `--auth_style`:
@@ -9789,6 +9799,8 @@ workflow status ALL
 workflow status my_workflow_id
 workflow workorders my_workflow_id
 workflow workorders my_workflow_id --fields=id --query.max_results=1
+workflows development authoring toc
+workflows development templates customruby
 workorder cancel <id>
 workorder output <id>
 workorder reset <id>

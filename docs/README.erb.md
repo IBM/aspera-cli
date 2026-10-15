@@ -8717,6 +8717,16 @@ In addition, it is possible to place a single `query` parameter in the request t
 
 To write workflow files without the designer, refer to the [Workflow Authoring Guide](https://github.com/laurent-martin/aspera-orchestrator-plugins-doc/blob/main/docs/workflow-authoring-guide.md): file format, graph, execution, examples and REST API.
 
+Command `workflows development` displays the documentation for workflow development, read from GitHub: this guide (`authoring`), or the [Action Template Reference](https://github.com/laurent-martin/aspera-orchestrator-plugins-doc/blob/main/docs/action-template-reference.md) (`templates`).
+With `toc`, it lists the sections of the document, and with the anchor of a section, it displays only that section.
+It does not require access to Orchestrator.
+The [MCP server](#plugin-mcp-model-context-protocol-server) instructs AI assistants to read it before writing or modifying a workflow.
+
+```shell
+<%=cmd%> orchestrator workflows development authoring toc
+<%=cmd%> orchestrator workflows development templates customruby
+```
+
 ### Authentication
 
 The Orchestrator plugin supports different credentials and authentication styles configured via `--auth_style`:

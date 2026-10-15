@@ -190,6 +190,41 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
     end
   end
 
+  describe '#action_workflows_development' do
+    let(:content) { "# Guide\n\nIntro\n\n## Recipes\n\nRecipe text\n\n## Known issues\n\nNone\n" }
+
+    before do
+      allow(Aspera::UriReader).to(receive(:read).and_return(content))
+    end
+
+    it 'reads the raw document of GitHub' do
+      orchestrator.action_workflows_development(document: :templates)
+      expect(Aspera::UriReader).to(have_received(:read).with(%r{^https://raw\.githubusercontent\.com/.+/action-template-reference\.md$}))
+    end
+
+    it 'displays the whole document without section' do
+      result = orchestrator.action_workflows_development(document: :authoring)
+      expect(result).to(be_a(Aspera::Cli::Result::Text))
+      expect(result.data).to(eq(content))
+    end
+
+    it 'lists the table of contents' do
+      result = orchestrator.action_workflows_development(document: :authoring, section: 'toc')
+      expect(result).to(be_a(Aspera::Cli::Result::ObjectList))
+      expect(result.data.map { |e| e[:anchor] }).to(eq(%w[guide recipes known-issues]))
+    end
+
+    it 'displays one section' do
+      result = orchestrator.action_workflows_development(document: :authoring, section: 'recipes')
+      expect(result.data).to(eq("## Recipes\n\nRecipe text\n\n"))
+    end
+
+    it 'fails on an unknown section' do
+      expect { orchestrator.action_workflows_development(document: :authoring, section: 'nope') }
+        .to(raise_error(Aspera::Cli::Error, /Section not found: nope/))
+    end
+  end
+
   describe '#action_workflows_start' do
     {
       'work order information'   => [{'work_order' => {'id' => 1}}, Aspera::Cli::Result::SingleObject],

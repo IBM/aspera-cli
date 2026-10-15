@@ -94,6 +94,15 @@ module Aspera
             monitor → ["config", "transfer", "status", "<job_id>"]
             list    → ["config", "transfer", "list"]
             cleanup → ["config", "transfer", "cleanup"]
+
+          ORCHESTRATOR WORKFLOW DEVELOPMENT
+          Before writing or modifying an Orchestrator workflow, read the documentation for workflow
+          development (file format, graph, execution, recipes, authoring checklist):
+            ["orchestrator", "workflows", "development", "authoring"]
+          For the template attributes, inputs and outputs of an action plugin, read only its section
+          of the template reference (anchor: plugin name in lowercase, e.g. "customruby"):
+            ["orchestrator", "workflows", "development", "templates", "<anchor>"]
+          The anchor "toc" lists the sections of a document.
         INST
 
         # Keys forwarded to MCP::Server constructor (symbolized)

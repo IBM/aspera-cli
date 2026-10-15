@@ -16,6 +16,7 @@ Released: [Place date of release here]
   * `admin authenticate` — validate credentials and optionally check a permission (`POST /api/v1/authenticate`)
 * `shares health`: native `/health_check` endpoint — one status item per license (`valid`/`entitled`/`invalid`) and one per configured node.
 
+* `orchestrator`: New command `workflows development`: documentation for workflow development, read from GitHub: the Workflow Authoring Guide (`authoring`) or the Action Template Reference (`templates`), whole, its table of contents (`toc`), or one section. It does not require access to Orchestrator. The instructions of `mcp server` tell AI assistants to read it before writing or modifying a workflow.
 * `orchestrator`: `workflows export` with option `dependencies` saves a package (`.wkf`) with the sub-workflows and remote nodes used by the workflow, in the folder given by option `to_folder`.
 * `sync`: `target_rate` in `sync_info` accepts a string with suffix `k`, `m` or `g`, converted to bps (e.g. `100m`), in both `conf` and `args` formats.
 * **global**: New option `security`: `level` `low` (default) has no restriction, `medium` refuses `@ruby:`, `@uri:`, `@env:` and allows `@file:` only for files in `allowed_paths` (real path), `high` refuses `@ruby:`, `@file:`, `@uri:`, `@env:`.

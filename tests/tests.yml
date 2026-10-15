@@ -4225,6 +4225,20 @@ orch_info:
   args:
     - orchestrator
     - info
+orch_wf_dev_toc:
+  args:
+    - orchestrator
+    - workflows
+    - development
+    - authoring
+    - toc
+orch_wf_dev_section:
+  args:
+    - orchestrator
+    - workflows
+    - development
+    - templates
+    - customruby
 orch_wf_list:
   args:
 #    - -N
