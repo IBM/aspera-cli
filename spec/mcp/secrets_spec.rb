@@ -86,6 +86,8 @@ RSpec.describe(Aspera::Cli::Mcp::Secrets) do
     end
 
     it 'gives the secret entered on the page on next round, then hides it and forgets it' do
+      # Placeholder of hidden secret depends on Unicode support
+      Aspera::Environment.unicode = true
       result = request_secret
       request_id = result.input_requests.keys.first
       enter_secret(request_id, 'S3cret')
@@ -94,6 +96,8 @@ RSpec.describe(Aspera::Cli::Mcp::Secrets) do
       expect(call.hide({'a' => ['x S3cret y'], 'b' => 1})).to(eq({'a' => ['x 🔑 y'], 'b' => 1}))
       call.finish
       expect(web_secret.prompt(request_id)).to(be_nil)
+    ensure
+      Aspera::Environment.unicode = nil
     end
 
     it 'adds elicitation identifier and completion notification for 2025-11-25 clients' do

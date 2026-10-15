@@ -41,6 +41,19 @@ module Aspera
 
     I18N_VARS = %w(LC_ALL LC_CTYPE LANG).freeze
 
+    # Unicode characters used in messages, and their ASCII equivalent when Unicode is not supported (see `Environment.char`)
+    # Key: hidden secret, hieroglyph: app switcher menu of web apps, bust: user menu of web apps
+    UNICODE_TO_ASCII = {
+      '🔑' => '***',
+      '✓' => 'Y',
+      '✗' => ' ',
+      '→' => '->',
+      '…' => '...',
+      '—' => '-',
+      '𓃑' => '(App switcher)',
+      '👤' => '(User)'
+    }.freeze
+
     # "/" is invalid on both Unix and Windows, other are Windows special characters
     # See: https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file
     WINDOWS_FILENAME_INVALID_CHARACTERS = '<>:"/\\|?*'
@@ -223,19 +236,31 @@ module Aspera
       # Override detection of Unicode support: `true` or `false`, or `nil` for auto-detection
       attr_writer :unicode
 
-      # @return [Boolean] true if we can display Unicode characters
+      # @return [Boolean] true if we can display Unicode characters on stdout
+      def terminal_supports_unicode?
+        return @unicode unless @unicode.nil?
+        terminal? && unicode_environment?
+      end
+
+      # @return [Boolean] true if the locale, or the terminal host on Windows, supports Unicode, whether stdout is a terminal or not
       # Uses Encoding.locale_charmap for OS-independent detection.
       # On Windows, also detects terminal hosts that render Unicode whatever the console code page.
       # Falls back to the locale env var with highest precedence, for locales not installed.
       # https://www.gnu.org/software/libc/manual/html_node/Locale-Categories.html
       # https://pubs.opengroup.org/onlinepubs/7908799/xbd/envvar.html
-      def terminal_supports_unicode?
-        return @unicode unless @unicode.nil?
-        return false unless terminal?
+      def unicode_environment?
         return true if locale_charmap_utf8?
         return true if instance.os.eql?(OS_WINDOWS) && windows_unicode_terminal?
         locale = ENV.values_at(*I18N_VARS).find { |value| !value.to_s.empty? }
         locale&.match?(/UTF-?8/i) || false
+      end
+
+      # @param char    [String]  Unicode character, key of UNICODE_TO_ASCII
+      # @param unicode [Boolean] `true` if Unicode is supported
+      # @return [String] The character, or its ASCII equivalent if Unicode is not supported
+      def char(char, unicode: terminal_supports_unicode?)
+        Aspera.assert(UNICODE_TO_ASCII.key?(char), "No ASCII equivalent for: #{char}", type: Aspera::InternalError)
+        unicode ? char : UNICODE_TO_ASCII[char]
       end
 
       private

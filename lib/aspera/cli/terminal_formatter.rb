@@ -20,22 +20,17 @@ module Aspera
         'HINT:'.bg(:green).white.blink
       end
 
-      # Format boolean with colored symbol (+/- or Y/ )
+      # Format boolean with colored check mark, or Y and space without Unicode
       def tick(yes)
-        result =
-          if Environment.terminal_supports_unicode?
-            yes ? "\u2713" : "\u2717"
-          else
-            yes ? 'Y' : ' '
-          end
+        result = Environment.char(yes ? '✓' : '✗')
         return result.green if yes
-        return result.red
+        result.red
       end
 
       # Format special values with colors (dim for empty, reverse for others)
       def special_format(what)
         result = "<#{what}>"
-        return %w[null empty].any? { |s| what.include?(s) } ? result.faint : result.inverse
+        %w[null empty].any? { |s| what.include?(s) } ? result.faint : result.inverse
       end
 
       # Convert Markdown inline markup to terminal format (**bold** -> blue, `code` -> bold)

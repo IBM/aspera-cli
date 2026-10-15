@@ -2,6 +2,7 @@
 
 require 'aspera/oauth/client/jwt'
 require 'aspera/assert'
+require 'aspera/environment'
 require 'aspera/cli/option_declarator'
 require 'aspera/cli/plugins/factory'
 require 'aspera/rainbow'
@@ -84,10 +85,18 @@ module Aspera
         return found_apps
       end
 
+      # Display the path to a page of the web UI
+      # @param steps [Array<String>] Menus and pages, from the top (e.g. `Environment.char('👤')` for the user menu)
+      # @return [nil]
+      def display_navigation(*steps)
+        formatter.display_status("Navigate to: #{steps.join(" #{Environment.char('→')} ")}")
+        nil
+      end
+
       # To be called in public wizard method to get private key
       # @param user [String] User's email
       # @param url  [String] Instance URL
-      # @param page [String] URL of page to enter pub key
+      # @param page [Array<String>] Navigation steps to the page to enter the public key (see `display_navigation`)
       # @return [String] Private key path (can contain ~ for home)
       def ask_private_key(user:, url:, page:)
         # Lets see if path to priv key is provided
@@ -111,7 +120,7 @@ module Aspera
         pub_key_pem = OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s
         options.set_option(:private_key, private_key_pem)
         formatter.display_status("Please Log in as user #{user.red} at: #{url.red}")
-        formatter.display_status("Navigate to: #{page}")
+        display_navigation(*page)
         formatter.display_status("Check or update the value to (#{'including BEGIN/END lines'.red}):".blink)
         formatter.display_status(pub_key_pem, hide_secrets: false)
         formatter.display_status('Once updated or validated, press [Enter].')

@@ -233,7 +233,8 @@ def mcp_http_secret_post(t)
   # 3. The client retries the call: the command is executed with the secret, hidden in the result
   final = mcp_call(client, 'tools/call', params.merge(inputResponses: {request_id => {action: 'accept'}}, requestState: first['requestState']), 2)
   text = final.dig('content', 0, 'text')
-  raise "Expected the secret hidden in result, got #{final}" unless final['isError'] == false && text == '🔑'
+  # Placeholder is ASCII when the output of the server is not a terminal supporting Unicode
+  raise "Expected the secret hidden in result, got #{final}" unless final['isError'] == false && ['🔑', '***'].include?(text)
   t.stop_process(:mcp_http_secret)
 end
 

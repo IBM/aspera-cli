@@ -2,6 +2,7 @@
 
 require 'aspera/oauth/client/base'
 require 'aspera/assert'
+require 'aspera/environment'
 require 'json'
 
 module Aspera
@@ -35,7 +36,7 @@ module Aspera
 
       # Should never be reached: if cache and refresh are both exhausted, re-authenticate via browser
       def create_token
-        Aspera.report_error(AssertError, 'Boot: token expired and no refresh available — re-authenticate in browser')
+        Aspera.report_error(AssertError, 'Boot: token expired and no refresh available. Re-authenticate in browser')
       end
     end
     Factory.instance.register_token_creator(Boot)

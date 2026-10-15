@@ -268,6 +268,8 @@ RSpec.describe(Aspera::Cli::Mcp::Tool) do
     after { described_class.web_secret = nil }
 
     it 'asks the client to open the page, then executes the command with the secret, hidden in result' do
+      # Placeholder of hidden secret depends on Unicode support
+      Aspera::Environment.unicode = true
       args = %w[config echo @secret:pw]
       first = described_class.call(args: args, server_context: context_class.new(client_capabilities: capabilities))
       expect(first).to(be_a(MCP::Server::InputRequiredResult))
@@ -281,6 +283,8 @@ RSpec.describe(Aspera::Cli::Mcp::Tool) do
       expect(resp.error?).to(be(false))
       expect(resp.content).to(eq([{type: 'text', text: 'pw=🔑'}]))
       expect(web_secret.prompt(request_id)).to(be_nil)
+    ensure
+      Aspera::Environment.unicode = nil
     end
 
     it 'returns an error if the client does not support URL mode elicitation' do

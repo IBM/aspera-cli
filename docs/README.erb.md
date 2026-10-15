@@ -1987,7 +1987,7 @@ The option `--out.level` controls the level of output:
 
 #### Option: `--out.secrets`: Hide or show secrets in results
 
-- If value is `no` (default), then secrets are redacted from command results.
+- If value is `no` (default), then secrets are redacted from command results: replaced with `🔑`, or `***` if the terminal does not support Unicode (see [`--out.utf8`](#terminal-rendering-colors-and-utf-8)).
 - If value is `yes`, then secrets are shown in clear in results.
 - If `--out.level` is `data`, secrets are included to allow piping results.
 
@@ -1998,7 +1998,7 @@ By default, <%=tool%> detects the capabilities of the terminal:
 | Option         | Effect when `yes`                                             | Auto-detection (default)                                                       |
 |--|--|--|
 | `--out.colors` | ANSI colors and styles in results, messages and logs          | `no` if [`NO_COLOR`](https://no-color.org) is set or results are written to a file (`--out.file`), else `yes` if `CLICOLOR_FORCE` is set and not `0`, else `yes` if both `stdout` and `stderr` are terminals, `TERM` is not `dumb` and `CLICOLOR` is not `0` |
-| `--out.utf8`   | Unicode characters: table borders, check marks                | `yes` if `stdout` is a terminal and the locale is UTF-8, or on Windows, the terminal is Windows Terminal, VS Code, Git Bash, ConEmu, or sets `TERM` to `xterm*` |
+| `--out.utf8`   | Unicode characters: table borders, check marks, hidden secrets, symbols in messages, half blocks in images (else ASCII equivalents) | `yes` if `stdout` is a terminal and the locale is UTF-8, or on Windows, the terminal is Windows Terminal, VS Code, Git Bash, ConEmu, or sets `TERM` to `xterm*` |
 
 Set either option to `yes` or `no` to override detection, for example to keep colors when piping to `less -R`, or to get plain ASCII output in a terminal:
 

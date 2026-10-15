@@ -69,7 +69,7 @@ module Aspera
             formatter.display_status('Ask the ascli client id and secret to your Administrator.'.red)
             formatter.display_status("Log in as an admin user at: #{app_url}")
             Environment.instance.open_uri(app_url)
-            formatter.display_status('Navigate to: 𓃑  → Admin → Configurations → API clients')
+            wizard.display_navigation(Environment.char('𓃑'), 'Admin', 'Configurations', 'API clients')
             formatter.display_status('Create an API client with:')
             formatter.display_status('- name: ascli')
             formatter.display_status('- JWT: enabled')
@@ -82,7 +82,7 @@ module Aspera
           private_key_path = wizard.ask_private_key(
             user: wiz_username,
             url: app_url,
-            page: '👤 → Account Settings → Preferences → Public Key in PEM'
+            page: [Environment.char('👤'), 'Account Settings', 'Preferences', 'Public Key in PEM']
           )
           return {
             preset_value: {

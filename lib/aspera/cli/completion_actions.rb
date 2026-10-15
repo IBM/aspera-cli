@@ -4,6 +4,7 @@ require 'aspera/cli/info'
 require 'aspera/cli/parser'
 require 'aspera/cli/plugins/factory'
 require 'aspera/cli/special_values'
+require 'aspera/environment'
 require 'aspera/schema/documentation'
 require 'aspera/schema/registry'
 
@@ -295,7 +296,8 @@ module Aspera
         names = required.map { |r| "#{r['name']}*" } + optional.map { |r| r['name'] }
         names.each_with_index do |name, index|
           separator = index.zero? ? ' ' : ', '
-          return "#{hint}#{separator}…" if hint.length + separator.length + name.length > HINT_MAX_LENGTH
+          # stdout is read by the shell, not a terminal, but the hint is displayed on the terminal: check the locale only
+          return "#{hint}#{separator}#{Environment.char('…', unicode: Environment.unicode_environment?)}" if hint.length + separator.length + name.length > HINT_MAX_LENGTH
           hint = "#{hint}#{separator}#{name}"
         end
         hint

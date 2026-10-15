@@ -118,7 +118,7 @@ module Aspera
           expect(Environment.terminal_supports_unicode?).to(be(false))
           build_formatter(['--out.utf8=yes'])
           expect(Environment.terminal_supports_unicode?).to(be(true))
-          expect(TerminalFormatter.tick(true)).to(include("\u2713"))
+          expect(TerminalFormatter.tick(true)).to(include('✓'))
           build_formatter(['--out.utf8=no'])
           expect(Environment.terminal_supports_unicode?).to(be(false))
           build_formatter(['--out.utf8=@none:'])

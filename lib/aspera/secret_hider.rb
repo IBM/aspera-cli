@@ -14,7 +14,7 @@ module Aspera
   class SecretHider
     include Singleton
 
-    # display string for hidden secrets
+    # display string for hidden secrets (see `Environment::UNICODE_TO_ASCII`)
     HIDDEN_PASSWORD = '🔑'
     # env vars for ascp with secrets
     ASCP_ENV_SECRETS = %w[ASPERA_SCP_PASS ASPERA_SCP_KEY ASPERA_SCP_FILEPASS ASPERA_PROXY_PASS ASPERA_SCP_TOKEN].freeze
@@ -65,8 +65,9 @@ module Aspera
     # @param all   [Boolean] `false`: only private keys, `true`: all known secret patterns
     # @return [String] String with secrets replaced by placeholder
     def hide_secrets_in_string(value, all: false)
+      marker = hidden_marker
       (all ? REGEX_LOG_REPLACES : REGEX_LOG_REPLACES.first(1)).each do |reg_ex|
-        value = value.gsub(reg_ex) { "#{Regexp.last_match(:begin)}#{HIDDEN_PASSWORD}#{Regexp.last_match(:end)}" }
+        value = value.gsub(reg_ex) { "#{Regexp.last_match(:begin)}#{marker}#{Regexp.last_match(:end)}" }
       end
       return value
     end
@@ -94,7 +95,7 @@ module Aspera
       when Hash
         obj.each do |k, v|
           if secret?(k, v)
-            obj[k] = HIDDEN_PASSWORD
+            obj[k] = hidden_marker
           elsif v.is_a?(Hash) || v.is_a?(Array)
             deep_remove_secret(v)
           end
@@ -111,7 +112,7 @@ module Aspera
       values = values.reject(&:empty?)
       return obj if values.empty?
       case obj
-      when String then values.reduce(obj) { |str, value| str.gsub(value, HIDDEN_PASSWORD) }
+      when String then values.reduce(obj) { |str, value| str.gsub(value, hidden_marker) }
       when Array then obj.map! { |i| deep_hide_values(i, values) }
       when Hash then obj.transform_values! { |v| deep_hide_values(v, values) }
       else obj
@@ -129,6 +130,13 @@ module Aspera
     def initialize
       @log_secrets = false
       @additional_keys = Set.new
+    end
+
+    # @return [String] Placeholder for hidden secrets, in ASCII when Unicode is not supported
+    def hidden_marker
+      # Required here, as `aspera/environment` requires `aspera/log`, which requires this file
+      require 'aspera/environment'
+      Environment.char(HIDDEN_PASSWORD)
     end
   end
 end

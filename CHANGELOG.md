@@ -98,6 +98,7 @@ Released: [Place date of release here]
 * **global**: Detection of Unicode support (`--out.utf8`) on Windows: enabled in Windows Terminal, VS Code, Git Bash, ConEmu and terminals setting `TERM` (MSYS2, Cygwin, SSH), whatever the console code page. Use `--out.utf8=no` for a legacy console with a font lacking the characters.
 * **global**: Detection of ANSI colors (`--out.colors`) follows conventions: `NO_COLOR` (set, not empty) disables colors, `CLICOLOR=0` disables them, `CLICOLOR_FORCE` enables them with any value other than `0` (was only `1`).
 * **global**: `--out.file`: results written to the file contained ANSI color codes when the terminal supports colors. Colors are disabled, unless `--out.colors=yes`.
+* **global**: Unicode characters are replaced with their ASCII equivalent when Unicode is not supported (`--out.utf8`): hidden secrets (`🔑` becomes `***`, also in logs and piped results), symbols in hints (`→`, `𓃑`, `👤`), ellipsis in shell completion. Image preview then uses full lines (`--out.img.double=no`) by default.
 
 ### Breaking Changes
 

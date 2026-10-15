@@ -6,6 +6,7 @@ require 'aspera/cli/plugins/node'
 require 'aspera/cli/plugins/ats'
 require 'aspera/cli/transfer_agent'
 require 'aspera/cli/special_values'
+require 'aspera/environment'
 require 'aspera/cli/wizard'
 require 'aspera/agent/node'
 require 'aspera/transfer/result'
@@ -213,7 +214,7 @@ module Aspera
           private_key_path = wizard.ask_private_key(
             user: wiz_username,
             url: app_url,
-            page: '👤 → Account Settings → Profile → Public Key'
+            page: [Environment.char('👤'), 'Account Settings', 'Profile', 'Public Key']
           )
           client_id = options.get_option(:client_id)
           client_secret = options.get_option(:client_secret)
@@ -227,7 +228,7 @@ module Aspera
             else
               formatter.display_status('Using organization specific client_id.')
               formatter.display_status('Please login to your Aspera on Cloud instance.'.red)
-              formatter.display_status('Navigate to: 𓃑  → Admin → Integrations → API Clients')
+              wizard.display_navigation(Environment.char('𓃑'), 'Admin', 'Integrations', 'API Clients')
               formatter.display_status('Check or create in integration:')
               formatter.display_status('- name: cli')
               formatter.display_status("- redirect uri: #{REDIRECT_LOCALHOST}")

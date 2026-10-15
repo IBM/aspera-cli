@@ -125,11 +125,12 @@ module Aspera
         # @param blob       [String]  The image as a binary string
         # @param text       [Boolean] `true` to display the image as text, `false` to use iTerm2 if supported
         # @param reserve    [Integer] Number of lines to reserve for other text than the image
-        # @param double     [Boolean] `true` to use colors on half lines, `false` to use colors on full lines
+        # @param double     [Boolean, nil] `true` to use colors on half lines (Unicode half block), `false` to use colors on full lines, `nil` for `true` if Unicode is supported
         # @param font_ratio [Float]   ratio = font height / font width
         # @return [String] The image as text, or the iTerm2 escape sequence
-        def build(blob, text: false, reserve: 3, double: true, font_ratio: DEFAULT_FONT_RATIO)
+        def build(blob, text: false, reserve: 3, double: nil, font_ratio: DEFAULT_FONT_RATIO)
           return '[Image display requires a terminal]' unless Environment.terminal?
+          double = Environment.terminal_supports_unicode? if double.nil?
           return iterm_display_image(blob) if iterm_supported? && !text
           pixel_colors =
             begin

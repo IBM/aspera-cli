@@ -163,6 +163,31 @@ RSpec.describe(Aspera::Environment) do
     end
   end
 
+  describe '.char' do
+    after { described_class.unicode = nil }
+
+    it 'gives the Unicode character when Unicode is supported' do
+      described_class.unicode = true
+      expect(described_class.char('🔑')).to(eq('🔑'))
+    end
+
+    it 'gives the ASCII equivalent when Unicode is not supported' do
+      described_class.unicode = false
+      expect(described_class.char('🔑')).to(eq('***'))
+      expect(described_class.char('→')).to(eq('->'))
+    end
+
+    it 'uses the given Unicode support' do
+      described_class.unicode = false
+      expect(described_class.char('…', unicode: true)).to(eq('…'))
+    end
+
+    it 'requires an ASCII equivalent' do
+      expect { described_class.char('–') }.to(raise_error(Aspera::InternalError))
+      expect(Aspera::Environment::UNICODE_TO_ASCII.values).to(all(be_ascii_only))
+    end
+  end
+
   describe '.write_file_restricted' do
     it 'creates the file with restricted access, not only after writing' do
       Dir.mktmpdir do |dir|

@@ -590,8 +590,9 @@ components:
           default: false
         double:
           type: boolean
-          description: Use double vertical resolution via half-block characters.
-          default: true
+          description: >-
+            Use double vertical resolution via half-block characters (Unicode).
+            Default is `true` if the terminal supports Unicode (see `utf8`).
         font_ratio:
           type: number
           format: float
@@ -927,7 +928,7 @@ components:
         utf8:
           type: boolean
           description: >-
-            Use Unicode characters in terminal output (e.g. table borders, check marks).
+            Use Unicode characters in terminal output (e.g. table borders, check marks, hidden secrets), else ASCII replacements.
             Default is auto-detected: enabled if stdout is a terminal and the locale is UTF-8, or on Windows, the terminal renders Unicode (e.g. Windows Terminal, VS Code).
         img:
           $ref: "#/components/schemas/ImageOptions"

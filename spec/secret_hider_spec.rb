@@ -2,13 +2,29 @@
 
 require 'bundler/setup'
 require 'aspera/secret_hider'
+require 'aspera/environment'
 
 RSpec.describe(Aspera::SecretHider) do
   let(:hider) { described_class.instance }
   let(:formatter) { hider.log_formatter(proc { |_s, _d, _p, m| m }) }
 
+  # The placeholder depends on Unicode support: tests use the Unicode one, unless stated otherwise
+  around do |example|
+    Aspera::Environment.unicode = true
+    example.run
+  ensure
+    Aspera::Environment.unicode = nil
+  end
+
   def log(msg)
     formatter.call('DEBUG', nil, nil, msg)
+  end
+
+  it 'uses an ASCII placeholder when Unicode is not supported' do
+    Aspera::Environment.unicode = false
+    expect(log('{"password":"secret123"}')).to(eq('{"password":"***"}'))
+    expect(hider.deep_remove_secret({'password' => 'secret123'})).to(eq({'password' => '***'}))
+    expect(hider.deep_hide_values('a secret123 b', ['secret123'])).to(eq('a *** b'))
   end
 
   describe '#log_formatter' do
