@@ -95,6 +95,24 @@ module Aspera
           expect(Rainbow.enabled).to(be(false))
         end
 
+        it 'disables detected colors when results go to a file, unless forced' do
+          Dir.mktmpdir do |dir|
+            file = File.join(dir, 'result.txt')
+            {
+              ["--out.file=#{file}"]                     => false,
+              ['--out.colors=yes', "--out.file=#{file}"] => true,
+              ['--out.file=-']                           => true
+            }.each do |argv, colors|
+              Rainbow.enabled = true
+              build_formatter(argv)
+              expect(Rainbow.enabled).to(be(colors), argv.join(' '))
+            ensure
+              $stdout.close unless $stdout.equal?(STDOUT) # rubocop:disable Style/GlobalStdStream
+              $stdout = STDOUT
+            end
+          end
+        end
+
         it 'overrides Unicode detection' do
           allow($stdout).to(receive(:tty?).and_return(false))
           expect(Environment.terminal_supports_unicode?).to(be(false))

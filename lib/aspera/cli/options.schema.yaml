@@ -921,7 +921,9 @@ components:
           type: boolean
           description: >-
             Use ANSI colors and styles in terminal output and logs.
-            Default is auto-detected: enabled if both stdout and stderr are terminals and `TERM` is not `dumb`, or if `CLICOLOR_FORCE=1`.
+            Default is auto-detected: disabled if `NO_COLOR` is set or results are written to a file,
+            else enabled if `CLICOLOR_FORCE` is set and not `0`,
+            else enabled if both stdout and stderr are terminals, `TERM` is not `dumb` and `CLICOLOR` is not `0`.
         utf8:
           type: boolean
           description: >-

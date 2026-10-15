@@ -96,6 +96,8 @@ Released: [Place date of release here]
 * `node emulator`: A symbolic link in the `docroot` leading out of it was followed by transfers (sources of `send`, destination of `receive`): the real path of local paths shall be in the `docroot`.
 * **global**: Detection of Unicode support (`--out.utf8`) follows the precedence of locale variables: `LC_ALL=C` disables it even if `LANG` is UTF-8. A locale named `utf8` (e.g. `en_US.utf8`) is detected also when it is not installed.
 * **global**: Detection of Unicode support (`--out.utf8`) on Windows: enabled in Windows Terminal, VS Code, Git Bash, ConEmu and terminals setting `TERM` (MSYS2, Cygwin, SSH), whatever the console code page. Use `--out.utf8=no` for a legacy console with a font lacking the characters.
+* **global**: Detection of ANSI colors (`--out.colors`) follows conventions: `NO_COLOR` (set, not empty) disables colors, `CLICOLOR=0` disables them, `CLICOLOR_FORCE` enables them with any value other than `0` (was only `1`).
+* **global**: `--out.file`: results written to the file contained ANSI color codes when the terminal supports colors. Colors are disabled, unless `--out.colors=yes`.
 
 ### Breaking Changes
 

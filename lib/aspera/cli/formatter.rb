@@ -101,8 +101,12 @@ module Aspera
         @options = {}
         # Last value of option `out`
         @out_dispatched = {}
-        # Colors auto-detected by Rainbow at load time, restored when `--out.colors` is reset
+        # Colors auto-detected at load time (aspera/rainbow), restored when `--out.colors` is reset
         @colors_detected = Rainbow.enabled
+        # Value of `--out.colors`: `true`, `false`, or `nil` for detection
+        @colors = nil
+        # `true` if results are written to a file (`--out.file`)
+        @output_to_file = false
         @spinner = nil
       end
 
@@ -184,8 +188,10 @@ module Aspera
             when :flat     then @parser.set_option(:flat_hash,    v, warn_deprecation: false)
             when :secrets  then @parser.set_option(:show_secrets, v, warn_deprecation: false)
             when :img      then @parser.set_option(:image,        v, warn_deprecation: false)
-            when :colors   then Rainbow.enabled = v.nil? ? @colors_detected : v
             when :utf8     then Environment.unicode = v
+            when :colors
+              @colors = v
+              apply_colors
             else Aspera.error_unexpected_value(k) { 'out sub-option (format, level, file, fields, select, table[.pivot], flat, secrets, colors, utf8, img)' }
             end
           end
@@ -198,11 +204,13 @@ module Aspera
           # The default output level depends on the format, unless the level is set explicitly (e.g. `--out.level`)
           @options[:display] = value.eql?(:table) ? :info : :data if @parser.nil? || @parser.option_def(:display).source.eql?(:default)
         when :output
-          $stdout = if value.eql?('-')
-            STDOUT # rubocop:disable Style/GlobalStdStream
-          else
+          @output_to_file = !value.eql?('-')
+          $stdout = if @output_to_file
             File.open(value, 'w')
+          else
+            STDOUT # rubocop:disable Style/GlobalStdStream
           end
+          apply_colors
         when :image
           # get list if key arguments of method
           allowed_options = Preview::Terminal.method(:build).parameters.select { |i| i[0].eql?(:key) }.map { |i| i[1] }
@@ -210,6 +218,13 @@ module Aspera
           unknown_options = value.keys.map(&:to_sym) - allowed_options
           Aspera.assert(unknown_options.empty?) { "Invalid parameter(s) for option image: #{unknown_options.join(', ')}, use #{allowed_options.join(', ')}" }
         end
+        nil
+      end
+
+      # Enable colors as set by `--out.colors`, else as detected, but not when results go to a file
+      # @return [nil]
+      def apply_colors
+        Rainbow.enabled = @colors.nil? ? @colors_detected && !@output_to_file : @colors
         nil
       end
 
