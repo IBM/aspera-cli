@@ -94,7 +94,7 @@ components:
         bind:
           type: string
           description: "Deprecated: use `url`. Bind address for HTTP transport."
-        base_url:
+        public_url:
           type: string
           description: >-
             URL of the server for clients, used in OAuth metadata and in the URL of secret pages (`@secret:`), for example `http://myhost:3000`.
@@ -107,7 +107,7 @@ components:
             It is also the access code asked on the secret pages (`@secret:`), and on the consent page with `oauth`.
 
             If not set, HTTP requests are not authenticated.
-            Mandatory when the host of `url` is not loopback.
+            Mandatory when the host of `url` or `public_url` is not loopback.
             Generate it with `openssl rand -hex 32`: a weak token is refused (see `auth_token_min_bits`).
         auth_token_min_bits:
           type: integer

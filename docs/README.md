@@ -10427,7 +10427,7 @@ Keys of a transport are refused with the other transport.
 | `cert` | `string` | - | With `https://`: path to the TLS certificate file, PEM or PKCS12 (`.p12`, `.pfx`). Without `cert` and `key`, a self-signed certificate is generated. |
 | `key` | `string` | - | With `https://`: path to the PEM private key file, or the PKCS12 passphrase. |
 | `chain` | `string` | - | With `https://`: path to the PEM certificate chain file. |
-| `base_url` | `string` | from `url` | URL of the server for clients, used in OAuth metadata and in the URL of secret pages, for example, `https://your-server:3000`. Mandatory with `oauth` when the host of `url` is `0.0.0.0` or `::`. |
+| `public_url` | `string` | from `url` | URL of the server for clients, used in OAuth metadata and in the URL of secret pages, for example, `https://your-server:3000`. Mandatory with `oauth` when the host of `url` is `0.0.0.0` or `::`. |
 | `auth_token` | `string` | - | Static Bearer token. If set, all MCP requests must carry `Authorization: Bearer <token>`, else HTTP 401. Cannot be empty. It is also the access code asked on secret pages, and on the consent page with `oauth`. Generate it with `openssl rand -hex 32`. |
 | `auth_token_min_bits` | `integer` | `80` | Minimum estimated strength of `auth_token`, in bits: a weak token is refused at startup. The estimate uses the optional gem `zxcvbn` if installed, else a built-in estimate. `0` disables the check. |
 | `oauth` | `boolean` | `false` | Enable OAuth 2.0 PKCE flow with dynamic client registration. When `true`, clients register automatically and users authenticate via a browser consent page. |
@@ -10446,19 +10446,19 @@ Keys of a transport are refused with the other transport.
 
 > [!WARNING]
 > The tool executes any `ascli` command with the credentials and presets of the user running the server.
-> When the host of `url` is not a loopback address, `auth_token` is **mandatory**, also with `oauth`: the server refuses to start without it.
+> When the host of `url` or `public_url` is not a loopback address, `auth_token` is **mandatory**, also with `oauth`: the server refuses to start without it.
 
 With the `http` transport:
 
 - With `oauth`, the consent page asks for `auth_token` as access code, else anyone reaching the server could approve its own client.
   It shows where the authorization is sent (origin of `redirect_uri`): allow only if it is the expected AI client, for example `http://127.0.0.1:<port>`.
-- For local-only deployments (host of `url` is loopback: `localhost`, `127.0.0.0/8`, `::1`), `auth_token` and `oauth` are optional but recommended.
+- For local-only deployments (hosts of `url` and `public_url` are loopback: `localhost`, `127.0.0.0/8`, `::1`), `auth_token` and `oauth` are optional but recommended.
   Without `auth_token`, the consent page only asks to click **Allow**.
 - `auth_token` and `oauth` can coexist: a request is accepted if it carries a valid static token **or** a valid OAuth access token.
 - A weak `auth_token` is refused at startup (see `auth_token_min_bits`): generate it with `openssl rand -hex 32`.
 - On a network, use `https://` in `url` (or a reverse proxy with TLS): with `http://`, the token is sent in clear.
 - `allowed_hosts` and `allowed_origins` protect against DNS rebinding but do not authenticate clients.
-  They apply to all endpoints, also OAuth and secret pages, which also accept the origin of `base_url` (for a reverse proxy that changes header `Host`).
+  They apply to all endpoints, also OAuth and secret pages, which also accept the origin of `public_url` (for a reverse proxy that changes header `Host`).
 
 With both transports:
 
@@ -10519,9 +10519,9 @@ If the command needs several secrets, these steps are repeated for each secret.
 
 The secret page is served:
 
-- With the `http` transport: by the MCP server, at `<base_url>/secret/<id>`.
+- With the `http` transport: by the MCP server, at `<public_url>/secret/<id>`.
   If `auth_token` is set, the page also asks for it as access code.
-  Set `base_url` if the browser does not reach the server on the address of `url`.
+  Set `public_url` if the browser does not reach the server on the address of `url`.
 - With the `stdio` transport: by a local web server on `http://127.0.0.1` with a random port, started on first use.
 
 A secret request expires after 10 minutes.
@@ -10561,7 +10561,7 @@ ascli mcp server @: instructions="Aspera transfer automation" protocol_version=2
 Start an MCP server with OAuth 2.0 PKCE authentication (for AI clients such as Bob that support the MCP Authorization spec):
 
 ```shell
-ascli mcp server @: transport=http url=http://0.0.0.0:3000 base_url=http://your-server:3000 oauth=true auth_token=@env:MCP_TOKEN
+ascli mcp server @: transport=http url=http://0.0.0.0:3000 public_url=http://your-server:3000 oauth=true auth_token=@env:MCP_TOKEN
 ```
 
 ### MCP client configuration
@@ -10657,7 +10657,7 @@ The consent page asks for the access code: the value of `auth_token`.
 Start the server with OAuth enabled:
 
 ```shell
-ascli mcp server @: transport=http url=http://0.0.0.0:3000 base_url=http://your-server:3000 oauth=true auth_token=@env:MCP_TOKEN
+ascli mcp server @: transport=http url=http://0.0.0.0:3000 public_url=http://your-server:3000 oauth=true auth_token=@env:MCP_TOKEN
 ```
 
 For [**IBM Bob**](https://bob.ibm.com/docs/ide/configuration/mcp/mcp-in-bob), register the URL with no extra configuration:

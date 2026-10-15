@@ -29,12 +29,12 @@ module Aspera
       #   url:                    String  - address and port the server listens on (default "http://127.0.0.1:3000"), https:// for TLS
       #   cert, key, chain:       String  - TLS certificate, private key or PKCS12 passphrase, chain, see WebServerSimple
       #   auth_token:             String  - if set, require "Authorization: Bearer <token>" on MCP requests,
-      #                                     and asked on the OAuth consent page (mandatory when url is not loopback)
+      #                                     and asked on the OAuth consent page (mandatory when url or public_url is not loopback)
       #   auth_token_min_bits:    Integer - minimum estimated strength of auth_token in bits (default 80, 0 disables)
       #   oauth:                  Boolean - enable OAuth 2.0 PKCE flow with dynamic client registration (RFC 7591)
       #   oauth_access_token_ttl: Integer - access token lifetime in seconds (default 3600)
       #   oauth_refresh_token_ttl: Integer - refresh token lifetime in seconds (default 2592000 = 30 days)
-      #   base_url:               String  - URL of the server for clients, used in OAuth metadata and secret pages
+      #   public_url:             String  - URL of the server for clients, used in OAuth metadata and secret pages
       #                                     (default: from url, mandatory with oauth on a wildcard address)
       #   port, bind:             deprecated, replaced by url
       #   stateless:              Boolean - stateless mode (default false)
@@ -114,7 +114,7 @@ module Aspera
         # Keys forwarded to StreamableHTTPTransport
         HTTP_KEYS        = %i[stateless allowed_origins allowed_hosts session_idle_timeout max_sessions].freeze
         # Keys of the HTTP server, consumed locally
-        HTTP_SERVER_KEYS = %i[url cert key chain port bind base_url auth_token auth_token_min_bits oauth oauth_access_token_ttl oauth_refresh_token_ttl].freeze
+        HTTP_SERVER_KEYS = %i[url cert key chain port bind public_url auth_token auth_token_min_bits oauth oauth_access_token_ttl oauth_refresh_token_ttl].freeze
         # Keys consumed locally (not forwarded to MCP gem)
         TOOL_KEYS        = %i[max_text_bytes extra_args].freeze
         # Extended-value handlers disabled in MCP server mode whatever the security level:
@@ -219,14 +219,14 @@ module Aspera
         end
 
         # @param uri      [URI]         Address the server listens on
-        # @param base_url [String, nil] URL of the server for clients, if provided by user
+        # @param public_url [String, nil] URL of the server for clients, if provided by user
         # @param oauth_enabled [Boolean] whether OAuth PKCE flow is enabled
         # @return [String] URL of the server for clients, without trailing slash
-        def http_base_url(uri, base_url, oauth_enabled)
-          return base_url.to_s.chomp('/') unless base_url.nil?
+        def http_base_url(uri, public_url, oauth_enabled)
+          return public_url.to_s.chomp('/') unless public_url.nil?
           wildcard = WILDCARD_BIND_ADDRESSES.include?(uri.hostname)
           Aspera.assert(!oauth_enabled || !wildcard, type: Cli::BadArgument) do
-            "base_url is required with oauth when listening on #{uri.hostname}: URL used by clients, e.g. #{uri.scheme}://myhost:#{uri.port}"
+            "public_url is required with oauth when listening on #{uri.hostname}: URL used by clients, e.g. #{uri.scheme}://myhost:#{uri.port}"
           end
           URI.parse("#{uri.scheme}://#{wildcard ? 'localhost' : uri.host}:#{uri.port}").to_s
         end
@@ -245,12 +245,20 @@ module Aspera
           refresh_token_ttl = mcp_options.fetch(:oauth_refresh_token_ttl, OAuth::Server::Pkce.default_refresh_token_ttl)
           min_bits          = mcp_options.fetch(:auth_token_min_bits, SecretStrength::DEFAULT_MIN_BITS)
           SecretStrength.assert_strong(auth_token, name: 'auth_token', min_bits: min_bits, type: Cli::BadArgument) unless auth_token.nil?
-          base_url = http_base_url(uri, mcp_options[:base_url], oauth_enabled)
+          base_url = http_base_url(uri, mcp_options[:public_url], oauth_enabled)
+          what = "auth_token#{' (asked on the consent page)' if oauth_enabled}"
+          # Clients reach the server at public_url (e.g. through a reverse proxy), whatever the address it listens on
+          unless mcp_options[:public_url].nil?
+            public_host = URI.parse(base_url).hostname
+            Aspera.assert(!auth_token.nil? || WebServerSimple.loopback?(public_host), type: Cli::BadArgument) do
+              "#{what} is required when public_url is not loopback (localhost, 127.0.0.0/8, ::1): #{public_host}"
+            end
+          end
           WebServerSimple.serve(
             parameters,
             Cli::Mcp::HttpServlet,
             protected: !auth_token.nil?,
-            what:      "auth_token#{' (asked on the consent page)' if oauth_enabled}",
+            what:      what,
             type:      Cli::BadArgument
           ) do
             # Secret pages are served by this server: the static token, if any, is the access code asked on the page

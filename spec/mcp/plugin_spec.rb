@@ -118,14 +118,24 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
     it 'requires auth_token on an address that is not loopback, also with oauth' do
       expect { start(url: 'http://0.0.0.0:3000') }
         .to(raise_error(Aspera::Cli::BadArgument, /auth_token is required when/))
-      expect { start(url: 'http://0.0.0.0:3000', oauth: true, base_url: 'http://myhost:3000') }
+      expect { start(url: 'http://0.0.0.0:3000', oauth: true, public_url: 'http://myhost:3000') }
         .to(raise_error(Aspera::Cli::BadArgument, /auth_token \(asked on the consent page\) is required when/))
       expect(Aspera::WebServerSimple).not_to(have_received(:new))
     end
 
+    it 'requires auth_token when public_url is not loopback, even if url is loopback' do
+      expect { start(url: 'http://127.0.0.1:3000', public_url: 'https://mcp.example.com') }
+        .to(raise_error(Aspera::Cli::BadArgument, /auth_token is required when public_url is not loopback.*mcp\.example\.com/))
+      expect { start(url: 'http://127.0.0.1:3000', public_url: 'https://mcp.example.com', oauth: true) }
+        .to(raise_error(Aspera::Cli::BadArgument, /auth_token \(asked on the consent page\) is required when public_url/))
+      expect(Aspera::WebServerSimple).not_to(have_received(:new))
+      expect { start(url: 'http://127.0.0.1:3000', public_url: 'http://localhost:3000') }.not_to(raise_error)
+      expect { start(url: 'http://127.0.0.1:3000', public_url: 'https://mcp.example.com', auth_token: token) }.not_to(raise_error)
+    end
+
     it 'accepts auth_token on an address that is not loopback, also with oauth' do
       expect(start(url: 'http://0.0.0.0:3000', auth_token: token)[:auth_token]).to(eq(token))
-      options = start(url: 'http://0.0.0.0:3000', auth_token: token, oauth: true, base_url: 'http://myhost:3000/')
+      options = start(url: 'http://0.0.0.0:3000', auth_token: token, oauth: true, public_url: 'http://myhost:3000/')
       expect(options[:oauth_server]).to(be_a(Aspera::OAuth::Server::Pkce))
       expect(options[:allowed_origins]).to(eq(['http://myhost:3000']))
     end
@@ -176,12 +186,12 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
       expect(base_url('https://[::]:8443', oauth: false)).to(eq('https://localhost:8443'))
     end
 
-    it 'requires base_url with OAuth on a wildcard address' do
+    it 'requires public_url with OAuth on a wildcard address' do
       expect { base_url('http://0.0.0.0:3000') }
-        .to(raise_error(Aspera::Cli::BadArgument, /base_url is required/))
+        .to(raise_error(Aspera::Cli::BadArgument, /public_url is required/))
     end
 
-    it 'uses the provided base_url without trailing slash' do
+    it 'uses the provided public_url without trailing slash' do
       expect(base_url('http://0.0.0.0:3000', 'https://mcp.example.com/')).to(eq('https://mcp.example.com'))
     end
   end

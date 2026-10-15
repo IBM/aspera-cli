@@ -7805,45 +7805,46 @@ mcp_stdio_call:
   post: mcp_stdio_call_post(t)
 
 mcp_auth_required_nonlocal:
-  description: Reject HTTP server start when bind is non-local and no auth is configured.
+  description: Reject HTTP server start when url is non-local and no auth is configured.
   tags:
     - mcp
     - must_fail
     - nodoc
-  expect: "auth_token is required when bind address"
+  expect: "auth_token is required when the server listens on an address that is not loopback"
   args:
     - mcp
     - server
     - "@:"
     - transport=http
-    - bind=0.0.0.0
+    - url=http://0.0.0.0:3000
 mcp_oauth_token_required_nonlocal:
-  description: Reject HTTP server start when bind is non-local with OAuth but no auth_token (consent access code).
+  description: Reject HTTP server start when url is non-local with OAuth but no auth_token (consent access code).
   tags:
     - mcp
     - must_fail
     - nodoc
-  expect: "auth_token is required (asked on the consent page) when bind address"
+  expect: "auth_token (asked on the consent page) is required when public_url is not loopback"
   args:
     - mcp
     - server
     - "@:"
     - transport=http
-    - bind=0.0.0.0
+    - url=http://0.0.0.0:3000
+    - public_url=http://your-server:3000
     - oauth=true
-mcp_oauth_base_url_required:
-  description: Reject HTTP server start with OAuth on a wildcard bind address without base_url.
+mcp_oauth_public_url_required:
+  description: Reject HTTP server start with OAuth on a wildcard address without public_url.
   tags:
     - mcp
     - must_fail
     - nodoc
-  expect: "base_url is required with oauth when bind address is 0.0.0.0"
+  expect: "public_url is required with oauth when listening on 0.0.0.0"
   args:
     - mcp
     - server
     - "@:"
     - transport=http
-    - bind=0.0.0.0
+    - url=http://0.0.0.0:3000
     - oauth=true
     - auth_token=test-secret
     - auth_token_min_bits=0
