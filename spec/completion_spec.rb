@@ -98,7 +98,7 @@ module Aspera
 
         it 'proposes allowed values for positional arguments with enum' do
           expect(run_words('config', 'documentation')).to(eq(%w[github local toc]))
-          expect(run_words('config', 'ascp', 'schema')).to(eq(%w[desktop node direct transferd httpgw connect]))
+          expect(run_words('config', 'ascp', 'schema')).to(eq(%w[connect desktop direct httpgw node transferd]))
         end
 
         it 'proposes placeholder for positional arguments with type' do
