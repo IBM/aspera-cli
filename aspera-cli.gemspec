@@ -46,6 +46,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency('chunky_png', '~> 1.4')
   spec.add_dependency('csv', '~> 3.0')
   spec.add_dependency('execjs', '~> 2.0')
+  spec.add_dependency('jmespath', '~> 1.6')
   spec.add_dependency('json_schemer', '~> 2.4')
   spec.add_dependency('jwt', '>= 2.0') # keep quite open as long as used methods are compatible. (for Orchestrator)
   spec.add_dependency('marcel', '~> 1.1')

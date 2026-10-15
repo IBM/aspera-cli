@@ -7,6 +7,7 @@
 # get transfer spec parameter description
 require 'aspera/environment'
 require 'aspera/cli/info'
+require 'aspera/cli/error'
 require 'aspera/agent/factory'
 require 'aspera/cli/plugins/factory'
 require 'aspera/cli/plugins/config'
@@ -164,6 +165,11 @@ class DocHelper
   # list of specific formatters supported
   def log_formatters
     Aspera::Log::FORMATTERS.map { |i| Aspera::Markdown.icode(i) }.join(br)
+  end
+
+  # Markdown table of exit codes
+  def exit_codes_md_table
+    Aspera::Markdown.table([%w[Code Description]] + Aspera::Cli::ExitCode::DESCRIPTIONS.map { |code, description| [Aspera::Markdown.icode(code), description] })
   end
 
   def gemspec

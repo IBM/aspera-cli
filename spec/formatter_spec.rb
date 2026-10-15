@@ -2,6 +2,7 @@
 
 # Unit tests for Aspera::Cli::Formatter option handling — no server, no config file needed.
 
+require 'securerandom'
 require 'stringio'
 require 'aspera/cli/parser'
 require 'aspera/cli/formatter'
@@ -68,6 +69,10 @@ module Aspera
 
         it 'rejects an unknown sub-option' do
           expect { build_formatter(['--out.foo=bar']) }.to(raise_error(/out sub-option/))
+        end
+
+        it 'accepts a Ruby lambda for select' do
+          expect(build_formatter(['--out.select=@ruby:->(i){true}']).instance_variable_get(:@options)[:select]).to(be_a(Proc))
         end
       end
 
@@ -152,6 +157,78 @@ module Aspera
           it "renders #{result.class.name.split('::').last} as text" do
             expect(output_of(result, :text).chomp).to(eq(result.data.to_s))
           end
+        end
+      end
+
+      describe 'option out query' do
+        let(:users) do
+          [
+            {'name' => 'alice', 'size' => 10, 'tags' => ['a']},
+            {'name' => 'bob', 'size' => 2000, 'tags' => []},
+            {'name' => 'carol', 'size' => 500, 'tags' => %w[a b]}
+          ]
+        end
+
+        # @return [String] standard output of the display of result
+        def output_of(result, *argv)
+          formatter = build_formatter(argv)
+          saved = $stdout
+          $stdout = StringIO.new
+          formatter.display_results(result)
+          $stdout.string
+        ensure
+          $stdout = saved
+        end
+
+        it 'filters and reshapes a list of objects' do
+          output = output_of(Result::ObjectList.new(users), '--format=json', '--out.query=[?size > `100`].{who: name, count: length(tags)}')
+          expect(JSON.parse(output)).to(eq([{'who' => 'bob', 'count' => 0}, {'who' => 'carol', 'count' => 2}]))
+        end
+
+        it 'displays a list of values, one per line' do
+          expect(output_of(Result::ObjectList.new(users), '--format=text', '--out.query=[].name')).to(eq("alice\nbob\ncarol\n"))
+        end
+
+        it 'displays a single value' do
+          expect(output_of(Result::ObjectList.new(users), '--format=text', '--out.query=length(@)')).to(eq("3\n"))
+          expect(output_of(Result::Empty.new, '--format=text', '--out.query=length(@)')).to(eq("0\n"))
+        end
+
+        it 'applies select and fields to the result of the expression' do
+          output = output_of(Result::ObjectList.new(users), '--format=json', '--out.query=[?size > `100`]', '--select=@json:{"name":"bob"}', '--fields=name')
+          expect(JSON.parse(output)).to(eq(['bob']))
+        end
+
+        it 'displays a list of lists only in a structured format' do
+          expect(JSON.parse(output_of(Result::ObjectList.new(users), '--format=json', '--out.query=[].[name, size]'))).to(eq([['alice', 10], ['bob', 2000], ['carol', 500]]))
+          expect { output_of(Result::ObjectList.new(users), '--format=table', '--out.query=[].[name, size]') }.to(raise_error(BadArgument, /multi-select hash/))
+        end
+
+        it 'leaves other results unchanged' do
+          expect(output_of(Result::Status.new('complete'), '--format=text', '--out.query=length(@)')).to(eq("complete\n"))
+        end
+
+        it 'hides secrets before the expression renames their key' do
+          hidden = SecureRandom.hex(8)
+          output = output_of(Result::SingleObject.new({'password' => hidden}), '--format=table', '--out.query={p: password}')
+          expect(output).not_to(include(hidden))
+        end
+
+        it 'rejects an invalid expression before the command is executed' do
+          expect { build_formatter(['--out.query=[?']) }.to(raise_error(BadArgument, /JMESPath/))
+        end
+
+        it 'reports an error of evaluation as a bad argument' do
+          expect { output_of(Result::ObjectList.new(users), '--out.query=length(size)') }.to(raise_error(BadArgument, /JMESPath/))
+        end
+
+        it 'calls a Ruby lambda with the data, and converts its result to JSON data' do
+          output = output_of(Result::ObjectList.new(users), '--format=yaml', '--out.query=@ruby:->(u){{count: u.size, by_tags: u.group_by{|i|i["tags"].size}.transform_values(&:count)}}')
+          expect(YAML.safe_load(output)).to(eq({'count' => 3, 'by_tags' => {'1' => 1, '0' => 1, '2' => 1}}))
+        end
+
+        it 'reports an error of a Ruby lambda as a bad argument' do
+          expect { output_of(Result::ObjectList.new(users), '--out.query=@ruby:->(u){u.foo}') }.to(raise_error(BadArgument, /ruby lambda/))
         end
       end
 

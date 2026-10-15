@@ -3609,6 +3609,15 @@ aoc_adm_user_list:
     - admin
     - user
     - list
+aoc_adm_user_list_query:
+  description: Filter and reshape the result with a JMESPath expression
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - user
+    - list
+    - '--out.query=[?ats_admin].{name: name, email: email}'
 aoc_adm_user_modify:
   args:
     - --preset=aoc_admin
@@ -5994,6 +6003,35 @@ conf_echo_colors_utf8:
     - '@json:{"empty":"","bool":true}'
     - --out.colors=yes
     - --out.utf8=yes
+conf_echo_out_query:
+  description: Filter and reshape the result with a JMESPath expression
+  expect: bob
+  args:
+    - config
+    - echo
+    - '@json:[{"name":"alice","size":10},{"name":"bob","size":2000}]'
+    - '--out.query=[?size > `100`].name'
+    - --format=text
+conf_echo_out_query_lambda:
+  description: Filter and reshape the result with a Ruby lambda
+  expect: '{"x.com":2,"y.org":1}'
+  args:
+    - config
+    - echo
+    - '@json:[{"email":"a@x.com"},{"email":"b@x.com"},{"email":"c@y.org"}]'
+    - '--out.query=@ruby:->(users){users.group_by{|u|u["email"].split("@").last}.transform_values(&:count)}'
+    - --format=json
+conf_echo_out_query_fail:
+  description: Syntax of the JMESPath expression is checked before execution of the command
+  tags:
+    - must_fail
+    - nodoc
+  expect: "JMESPath: "
+  args:
+    - config
+    - echo
+    - hello
+    - --out.query=[?
 conf_echo_picture_svg:
   args:
     - config

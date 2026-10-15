@@ -14,6 +14,7 @@ require 'aspera/assert'
 require 'aspera/markdown'
 require 'aspera/dot_container'
 require 'tty-spinner'
+require 'json'
 require 'yaml'
 require 'pp'
 require 'csv'
@@ -36,10 +37,12 @@ module Aspera
       SINGLE_OBJECT_COLUMN_NAMES = %i[field value].freeze
       # Terminal: vertical separator for list of strings.
       STR_LST_SEP_VERT = "\n"
+      # Sub-options of option `out`, for help and errors
+      OUT_SUB_OPTIONS = 'format, level, file, fields, select, query, table[.pivot], flat, secrets, colors, utf8, img'
 
-      private_constant :FIELDS_LESS, :DISPLAY_FORMATS, :DISPLAY_LEVELS, :SINGLE_OBJECT_COLUMN_NAMES, :STR_LST_SEP_VERT
+      private_constant :FIELDS_LESS, :DISPLAY_FORMATS, :DISPLAY_LEVELS, :SINGLE_OBJECT_COLUMN_NAMES, :STR_LST_SEP_VERT, :OUT_SUB_OPTIONS
 
-      option :out,          description: 'Output rendering options (dot-notation: format, level, file, fields, select, table[.pivot], flat, secrets, colors, utf8, img)', schema: Schema::Registry::OUT_OPTIONS
+      option :out,          description: "Output rendering options (dot-notation: #{OUT_SUB_OPTIONS})", schema: Schema::Registry::OUT_OPTIONS
       option :display,      description: 'Output only some information', allowed: DISPLAY_LEVELS, default: :data, deprecation: {last: '4.27.0', message: 'use --out.level'}
       option :format,       description: 'Output format (also: --out.format)', allowed: DISPLAY_FORMATS, default: :table
       option :output,       description: 'Destination for results', deprecation: {last: '4.27.0', message: 'use --out.file'}
@@ -188,11 +191,12 @@ module Aspera
             when :flat     then @parser.set_option(:flat_hash,    v, warn_deprecation: false)
             when :secrets  then @parser.set_option(:show_secrets, v, warn_deprecation: false)
             when :img      then @parser.set_option(:image,        v, warn_deprecation: false)
+            when :query    then self.query = v
             when :utf8     then Environment.unicode = v
             when :colors
               @colors = v
               apply_colors
-            else Aspera.error_unexpected_value(k) { 'out sub-option (format, level, file, fields, select, table[.pivot], flat, secrets, colors, utf8, img)' }
+            else Aspera.error_unexpected_value(k) { "out sub-option (#{OUT_SUB_OPTIONS})" }
             end
           end
           return
@@ -226,6 +230,21 @@ module Aspera
       def apply_colors
         Rainbow.enabled = @colors.nil? ? @colors_detected && !@output_to_file : @colors
         nil
+      end
+
+      # Set the query of `--out.query`, syntax of a JMESPath expression is checked before the command is executed
+      # @param expression [String, Proc, nil] JMESPath expression, or Ruby lambda, or `nil` for none
+      def query=(expression)
+        Aspera.assert_type(expression, String, Proc, NilClass, type: Cli::BadArgument) { 'out.query' }
+        if expression.is_a?(String)
+          require 'jmespath'
+          begin
+            JMESPath::Parser.new.parse(expression)
+          rescue JMESPath::Errors::SyntaxError => e
+            raise Cli::BadArgument, "JMESPath: #{e.message}"
+          end
+        end
+        @options[:query] = expression
       end
 
       # Main output method for displaying messages to the user
@@ -276,6 +295,8 @@ module Aspera
 
         # Hide secrets in data
         hide_secrets(result.data)
+        # Secrets are hidden before the expression may rename their keys
+        result = query_result(result) unless @options[:query].nil?
 
         # Use the Visitor pattern: delegate formatting to the result object
         result.format(self)
@@ -371,7 +392,7 @@ module Aspera
         # no filter for single element
         return data unless data.is_a?(Array)
         # by default, keep all data intact
-        return data if @options[:fields].eql?(SpecialValues::DEF) && @options[:select].nil?
+        return data if @options[:fields].eql?(SpecialValues::DEF) && [nil, {}].include?(@options[:select])
         Aspera.assert_array_all(data, Hash) { 'filter or select' }
         filter_columns_on_select(data)
         return data if @options[:fields].eql?(SpecialValues::DEF)
@@ -395,6 +416,39 @@ module Aspera
           @options[:select].each { |k, v| data.select! { |i| i[k].eql?(v) } }
         end
         nil
+      end
+
+      # Apply the query of `--out.query` to the data of an object or list result
+      # @param result [Result] Result of command
+      # @return [Result] Result with the value of the expression, or `result` if not an object or list
+      def query_result(result)
+        data =
+          case result
+          when Result::SingleObject, Result::ObjectList, Result::ValueList then result.data
+          when Result::Empty then []
+          else return result
+          end
+        value =
+          if @options[:query].is_a?(Proc)
+            begin
+              # JSON view of the value, as with JMESPath: keys, and objects like `Time`, become strings
+              JSON.parse(JSON.generate(@options[:query].call(data)))
+            rescue StandardError => e
+              raise Cli::BadArgument, "Error in user-provided ruby lambda code during query: #{e.message}"
+            end
+          else
+            begin
+              JMESPath.search(@options[:query], data)
+            rescue JMESPath::Errors::Error => e
+              raise Cli::BadArgument, "JMESPath: #{e.message}"
+            end
+          end
+        # Lists of objects, and lists of scalar values are displayed as tables
+        return Result.auto(value) unless value.is_a?(Array) && !value.all?(Hash) && !value.all? { |i| Result::SCALAR_TYPES.include?(i.class) }
+        Aspera.assert(Result::STRUCTURED_FORMATS.include?(@options[:format]), type: Cli::BadArgument) do
+          "Result of query is a list of lists or of mixed values: use a JMESPath multi-select hash (e.g. `[].{a: x, b: y}`), or a format among: #{Result::STRUCTURED_FORMATS.join(', ')}"
+        end
+        Result.new(data: value)
       end
 
       # Displays a list of objects

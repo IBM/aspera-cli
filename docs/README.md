@@ -2113,6 +2113,76 @@ In the above example, the same result is obtained with option:
 
 Option `select` applies the filter after a possible "flattening" with option `--out.flat`.
 
+For comparisons, functions or reshaping of results, use [`--out.query`](#option---outquery).
+
+#### Option: `--out.query`
+
+Option `--out.query` applies a [JMESPath](https://jmespath.org) expression to the result of a command, when it is an object or a list.
+JMESPath is a standard query language for JSON, also used by option `--query` of the AWS and Azure CLIs.
+
+The expression is applied to the data as returned by the API, before the options `select` and `fields`, and before flattening with `--out.flat`.
+Its syntax is checked before the command is executed.
+Results of other types (status, no result) are not changed.
+
+Examples:
+
+```shell
+# Name and email of ATS administrators
+ascli aoc admin user list --out.query='[?ats_admin].{name: name, email: email}'
+# Number of users
+ascli aoc admin user list --out.query='length(@)'
+# Email of users, one per line, for use in a shell loop
+ascli aoc admin user list --out.query='[].email' --format=text
+```
+
+> [!TIP]
+> Enclose the expression in single quotes for the shell.
+> In JMESPath, literal values are enclosed in backticks, for example: ``[?size > `1000`]``.
+
+For processing that JMESPath does not provide (regular expressions, string manipulation, grouping), the value can be a Ruby lambda (`@ruby:`): it is called with the data, and returns the new data, converted to JSON data (for example, symbols and dates become strings).
+It is refused at [Security Level](#security-level) `medium` and `high`.
+
+```shell
+# Number of users per email domain
+ascli aoc admin user list --out.query=@ruby:'->(users){users.group_by{|u|u["email"].split("@").last}.transform_values(&:count)}'
+```
+
+The result of the query is displayed according to its type: a list of objects as a table, a list of values with one value per line, a single value as is.
+A list of lists (for example, `[].[name, email]`) is displayed only with a structured format (`json`, `yaml`, ...): to display a table, or CSV, use a multi-select hash instead, for example, `[].{name: name, email: email}`.
+
+> [!NOTE]
+> Option `--query` gives filtering parameters to the API, while option `--out.query` filters and reshapes the result received.
+> Option `--out.query` is the equivalent of option `--query` of the AWS and Azure CLIs.
+
+### Exit status
+
+The exit code of `ascli` indicates the category of error, so that scripts can react to it:
+
+| Code | Description |
+|------|----------------------------------------------------------------------------|
+| `0` | Success |
+| `1` | Other error |
+| `2` | Command line error: unknown command or option, invalid or missing argument |
+| `3` | Authentication or authorization failure: SSH, HTTP 401 or 403, OAuth grant |
+| `4` | Resource not found, or several resources match the identifier, HTTP 404 |
+| `5` | Transfer failure |
+| `6` | Network or TLS failure: name resolution, connection, timeout, certificate |
+| `7` | Other error returned by a remote API |
+| `130` | Interrupted by user (Ctrl-C) |
+
+With format `nagios`, the exit code is the status of the check: `0` (OK), `1` (WARNING), `2` (CRITICAL), and `3` (UNKNOWN) if the command fails, following the [Nagios plugin guidelines](https://nagios-plugins.org/doc/guidelines.html).
+
+Example:
+
+```bash
+ascli aoc files download /report.csv
+case $? in
+  0) echo 'Downloaded' ;;
+  6) echo 'Network failure, retry later' ;;
+  *) echo 'Failed' ;;
+esac
+```
+
 ### Extended Value Syntax
 
 An **Extended Value** is a structured value - typically a `Hash` (key/value dictionary) or `Array`, potentially nested - that is passed on the command line wherever a simple string is not sufficient.
@@ -2896,6 +2966,8 @@ echo -- --special-string
 echo @base64:SGVsbG8gV29ybGQK
 echo @csvt:@stdin:
 echo @env:USER
+echo @json:'[{"email":"a@x.com"},{"email":"b@x.com"},{"email":"c@y.org"}]' --out.query=@ruby:'->(users){users.group_by{|u|u["email"].split("@").last}.transform_values(&:count)}' --format=json
+echo @json:'[{"name":"alice","size":10},{"name":"bob","size":2000}]' --out.query='[?size > `100`].name' --format=text
 echo @json:'[{"user":{"id":1,"name":"foo"},"project":"bar"}]' --out.table.pivot=single
 echo @json:'[{"user":{"id":1,"name":"foo"},"project":"bar"}]' --out.table.pivot=yes
 echo @json:'{"empty":"","bool":true}' --out.colors=yes --out.utf8=yes
@@ -5443,10 +5515,21 @@ OPTIONS
 ARGS
         Some commands require mandatory arguments, e.g. a path.
 
+EXIT STATUS
+        0    Success
+        1    Other error
+        2    Command line error: unknown command or option, invalid or missing argument
+        3    Authentication or authorization failure: SSH, HTTP 401 or 403, OAuth grant
+        4    Resource not found, or several resources match the identifier, HTTP 404
+        5    Transfer failure
+        6    Network or TLS failure: name resolution, connection, timeout, certificate
+        7    Other error returned by a remote API
+        130  Interrupted by user (Ctrl-C)
+
 OPTIONS: global
     --interactive=yes|no           Use interactive input of missing params
     --ask-options=yes|no           Ask even optional options
-    --out=HASH                     Output rendering options (dot-notation: format, level, file, fields, select, table[.pivot], flat, secrets, colors, utf8, img)
+    --out=HASH                     Output rendering options (dot-notation: format, level, file, fields, select, query, table[.pivot], flat, secrets, colors, utf8, img)
     --display=info|data|error      Output only some information (deprecated after 4.27.0: use --out.level)
     --format=ENUM                  Output format (also: --out.format)
     --output=VALUE                 Destination for results (deprecated after 4.27.0: use --out.file)
@@ -7622,6 +7705,7 @@ admin subscription account
 admin subscription usage
 admin subscription usage MONTH
 admin user list
+admin user list --out.query='[?ats_admin].{name: name, email: email}'
 admin user modify %name:my_user_email @: deactivated=false
 admin user notifications %name:my_user_email show
 admin user preferences %name:my_user_email show

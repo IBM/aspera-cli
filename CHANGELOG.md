@@ -50,6 +50,8 @@ Released: [Place date of release here]
   * Keys of an option with a schema, in dotted notation (e.g. `--ts.direction`), and their values (e.g. `send`, `receive`), with their description.
   * The type of an expected structure is followed by its keys, required ones first with `*` (e.g. `<Hash> name*, workspace_id*, …`), also after `@:`.
   * In a structure built with `@:`, its end marker (e.g. `END`) is proposed, and the words of the structure are not taken as arguments.
+* **global**: New option `--out.query`: [JMESPath](https://jmespath.org) expression applied to an object or list result, before `select` and `fields`, to filter and reshape data (as option `--query` of the AWS and Azure CLIs). Its syntax is checked before the command is executed. It can also be a Ruby lambda (`@ruby:`), called with the data and returning the new data. New gem dependency: `jmespath`.
+* **global**: The exit code indicates the category of error: `2` command line, `3` authentication, `4` resource not found, `5` transfer, `6` network or TLS, `7` other API error, `130` interrupted, `1` other. Listed in `ascli -h` and in the manual (Exit status).
 
 ### Issues Fixed
 
@@ -99,6 +101,8 @@ Released: [Place date of release here]
 * **global**: Detection of ANSI colors (`--out.colors`) follows conventions: `NO_COLOR` (set, not empty) disables colors, `CLICOLOR=0` disables them, `CLICOLOR_FORCE` enables them with any value other than `0` (was only `1`).
 * **global**: `--out.file`: results written to the file contained ANSI color codes when the terminal supports colors. Colors are disabled, unless `--out.colors=yes`.
 * **global**: Unicode characters are replaced with their ASCII equivalent when Unicode is not supported (`--out.utf8`): hidden secrets (`🔑` becomes `***`, also in logs and piped results), symbols in hints (`→`, `𓃑`, `👤`), ellipsis in shell completion. Image preview then uses full lines (`--out.img.double=no`) by default.
+* **global**: Network errors (e.g. connection refused, timeout) and resources not found by name were reported as `Other(<exception class>)`, with a hint to use `--log-level=debug`.
+* **global**: `--out.select` refused a Ruby lambda (`@ruby:`): `value at /select is not an object`.
 
 ### Breaking Changes
 
@@ -115,6 +119,7 @@ Released: [Place date of release here]
 * **global**: `@secret:` asks for the secret in the browser when option `ui` is `graphical`, the default on Windows and macOS: use `--ui=text` to enter it on terminal.
 * `config ascp spec`, `config sync spec`: `description` is a list of lines instead of a multi-line string (formats `json`, `yaml`), and absent when empty.
 * **global**: Local web servers (`faspex5 postprocessing`, `faspex5 gateway`, `aoc gateway`, `node emulator`): a JSON body requires header `Content-Type: application/json`, else HTTP 415.
+* **global**: The exit code on error is no longer always `1`, but indicates the category of error (see New Features): scripts testing for `1` shall test for a non-zero code. With `--log-level=debug`, the exit code is the same as without. With `--format=nagios`, a failed command exits with `3` (UNKNOWN) instead of `1` (WARNING). Value `help` of a structured option or argument (display of schema) exits with `0`.
 
 ## 4.27.5
 

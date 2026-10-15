@@ -2,6 +2,48 @@
 
 module Aspera
   module Cli
+    # Exit status of the process, by category of error
+    module ExitCode
+      SUCCESS     = 0
+      ERROR       = 1
+      USAGE       = 2
+      AUTH        = 3
+      NOT_FOUND   = 4
+      TRANSFER    = 5
+      NETWORK     = 6
+      API         = 7
+      # 128 + SIGINT, as shells do
+      INTERRUPTED = 130
+      # For help and documentation
+      DESCRIPTIONS = {
+        SUCCESS     => 'Success',
+        ERROR       => 'Other error',
+        USAGE       => 'Command line error: unknown command or option, invalid or missing argument',
+        AUTH        => 'Authentication or authorization failure: SSH, HTTP 401 or 403, OAuth grant',
+        NOT_FOUND   => 'Resource not found, or several resources match the identifier, HTTP 404',
+        TRANSFER    => 'Transfer failure',
+        NETWORK     => 'Network or TLS failure: name resolution, connection, timeout, certificate',
+        API         => 'Other error returned by a remote API',
+        INTERRUPTED => 'Interrupted by user (Ctrl-C)'
+      }.freeze
+      # OAuth 2.0 error codes of a refused authentication (RFC 6749, RFC 6750)
+      OAUTH_AUTH_ERRORS = %w[invalid_client invalid_grant unauthorized_client access_denied invalid_token insufficient_scope].freeze
+      private_constant :OAUTH_AUTH_ERRORS
+
+      class << self
+        # @param error [Rest::CallError] Failed API call
+        # @return [Integer] Exit code for the HTTP status, or OAuth error
+        def for_call_error(error)
+          return AUTH if error.data.is_a?(Hash) && OAUTH_AUTH_ERRORS.include?(error.data['error'])
+          case error.response&.code
+          when '401', '403' then AUTH
+          when '404' then NOT_FOUND
+          else API
+          end
+        end
+      end
+    end
+
     # CLI base exception
     class Error < StandardError; end
 

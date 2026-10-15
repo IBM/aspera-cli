@@ -906,8 +906,13 @@ components:
             `ALL` for all fields, `DEF` for default fields.
             Prefix a field name with `-` to exclude it.
         select:
-          type: object
-          description: Select only matching items from a list (field/value filter or lambda).
+          description: >-
+            Select only matching items from a list:
+            `Hash` of field/value, or Ruby lambda (`@ruby:`) returning `true` for items to keep.
+        query:
+          description: >-
+            Filter and reshape an object or list result, before `select` and `fields`:
+            JMESPath expression (https://jmespath.org), or Ruby lambda (`@ruby:`) called with the data and returning the new data.
         table:
           $ref: "#/components/schemas/TableOptions"
         flat:

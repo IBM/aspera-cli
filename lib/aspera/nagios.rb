@@ -13,6 +13,8 @@ module Aspera
     DATE_WARN_OFFSET = 2
     DATE_CRIT_OFFSET = 5
     private_constant :LEVELS, :ADD_PREFIX, :DATE_WARN_OFFSET, :DATE_CRIT_OFFSET
+    # Exit code when the check itself fails
+    UNKNOWN = LEVELS.index(:unknown)
 
     # add methods to add nagios error levels, each take component name and message
     LEVELS.each_index do |code|

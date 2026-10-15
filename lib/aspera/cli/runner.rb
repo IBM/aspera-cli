@@ -25,6 +25,7 @@ require 'aspera/assert'
 require 'aspera/schema/documentation'
 require 'aspera/schema/registry'
 require 'net/ssh/errors'
+require 'net/protocol'
 require 'openssl'
 
 module Aspera
@@ -162,18 +163,18 @@ module Aspera
         begin
           result = run_with_result
           @context.formatter.display_results(result) if result
-        rescue Net::SSH::AuthenticationFailed => e; exception_info = {e: e, t: 'SSH', security: true}
-        rescue OpenSSL::SSL::SSLError => e;         exception_info = {e: e, t: 'SSL'}
-        rescue Cli::BadArgument => e;               exception_info = {e: e, t: 'Argument', usage: true}
-        rescue Cli::MissingArgument => e;           exception_info = {e: e, t: 'Missing'}
-        rescue Cli::BadIdentifier => e;             exception_info = {e: e, t: 'Identifier'}
-        rescue Cli::SchemaRequest => e;             exception_info = {e: e, t: 'Schema'}
-        rescue Cli::Error => e;                     exception_info = {e: e, t: 'Tool', usage: true}
-        rescue Transfer::Error => e;                exception_info = {e: e, t: 'Transfer'}
-        rescue Rest::CallError => e;                exception_info = {e: e, t: 'Rest'}
-        rescue SocketError => e;                    exception_info = {e: e, t: 'Network'}
-        rescue StandardError => e;                  exception_info = {e: e, t: "Other(#{e.class.name})", debug: true}
-        rescue Interrupt => e;                      exception_info = {e: e, t: 'Interruption', debug: true}
+        rescue Net::SSH::AuthenticationFailed => e;    exception_info = {e: e, t: 'SSH', security: true, exit: ExitCode::AUTH}
+        rescue OpenSSL::SSL::SSLError => e;            exception_info = {e: e, t: 'SSL', exit: ExitCode::NETWORK}
+        rescue Cli::BadArgument => e;                  exception_info = {e: e, t: 'Argument', usage: true, exit: ExitCode::USAGE}
+        rescue Cli::MissingArgument => e;              exception_info = {e: e, t: 'Missing', exit: ExitCode::USAGE}
+        rescue Cli::BadIdentifier, EntityNotFound => e; exception_info = {e: e, t: 'Identifier', exit: ExitCode::NOT_FOUND}
+        rescue Cli::SchemaRequest => e;                exception_info = {e: e, t: 'Schema', exit: ExitCode::SUCCESS}
+        rescue Cli::Error => e;                        exception_info = {e: e, t: 'Tool', usage: true, exit: ExitCode::ERROR}
+        rescue Transfer::Error => e;                   exception_info = {e: e, t: 'Transfer', exit: ExitCode::TRANSFER}
+        rescue Rest::CallError => e;                   exception_info = {e: e, t: 'Rest', exit: ExitCode.for_call_error(e)}
+        rescue *NETWORK_ERRORS => e;                   exception_info = {e: e, t: 'Network', exit: ExitCode::NETWORK}
+        rescue StandardError => e;                     exception_info = {e: e, t: "Other(#{e.class.name})", debug: true, exit: ExitCode::ERROR}
+        rescue Interrupt => e;                         exception_info = {e: e, t: 'Interruption', debug: true, exit: ExitCode::INTERRUPTED}
         end
         # 1- processing of error condition
         unless exception_info.nil?
@@ -208,14 +209,21 @@ module Aspera
         unless @option_help
           @context.options&.final_errors&.each do |msg|
             Log.log.error { "Argument: #{msg}" }
-            exception_info = {e: Exception.new(msg), t: 'UnusedArg'} if exception_info.nil?
+            exception_info = {e: Exception.new(msg), t: 'UnusedArg', exit: ExitCode::USAGE} if exception_info.nil?
           end
         end
         # 3- exit on error
         unless exception_info.nil?
-          raise exception_info[:e] if Log.log.debug?
-          @context.formatter.display_message(:error, 'Use --log-level=debug to get more details.') if exception_info[:debug]
-          Process.exit(1)
+          if Log.log.debug?
+            # Same display as an uncaught exception, but keeps the exit code
+            $stderr.puts(exception_info[:e].full_message) # rubocop:disable Style/StderrPuts
+          elsif exception_info[:debug]
+            @context.formatter.display_message(:error, 'Use --log-level=debug to get more details.')
+          end
+          exit_code = exception_info[:exit]
+          # Nagios plugins report the failure of the check itself as UNKNOWN
+          exit_code = Nagios::UNKNOWN if !exit_code.eql?(ExitCode::SUCCESS) && @context.formatter&.format_type.eql?(:nagios)
+          Process.exit(exit_code)
         end
         return
       end
@@ -420,6 +428,9 @@ module Aspera
 
           ARGS
           #{t}Some commands require mandatory arguments, e.g. a path.
+
+          EXIT STATUS
+          #{ExitCode::DESCRIPTIONS.map { |code, description| "#{t}#{code.to_s.ljust(5)}#{description}" }.join("\n")}
         END_OF_BANNER
       end
 
@@ -485,8 +496,13 @@ module Aspera
       SCALAR_TYPES = [String, Integer, Symbol].freeze
       USER_INTERFACES = %i[text graphical].freeze
       EXTEND_ARGS = :''
+      # Errors of name resolution, connection and timeout
+      NETWORK_ERRORS = [
+        SocketError, Net::OpenTimeout, Net::ReadTimeout, Net::WriteTimeout,
+        Errno::ECONNREFUSED, Errno::ECONNRESET, Errno::EHOSTUNREACH, Errno::ENETUNREACH, Errno::ETIMEDOUT
+      ].freeze
 
-      private_constant :COMMAND_CONFIG, :COMMAND_HELP, :COMPLETION_COMMAND, :SCALAR_TYPES, :USER_INTERFACES, :EXTEND_ARGS
+      private_constant :COMMAND_CONFIG, :COMMAND_HELP, :COMPLETION_COMMAND, :SCALAR_TYPES, :USER_INTERFACES, :EXTEND_ARGS, :NETWORK_ERRORS
     end
   end
 end
