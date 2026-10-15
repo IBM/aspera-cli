@@ -69,6 +69,6 @@ RSpec.describe(Aspera::OAuth::Boot) do
 
   it 'cannot create a token when cache is empty' do
     boot = described_class.new(username: 'nobody', **base_params)
-    expect { boot.token }.to(raise_error(Aspera::AssertError, /re-authenticate in browser/))
+    expect { boot.token }.to(raise_error(Aspera::AssertError, /Re-authenticate in browser/))
   end
 end
