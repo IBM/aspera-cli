@@ -93,6 +93,76 @@ RSpec.describe(Aspera::Environment) do
     end
   end
 
+  describe '.terminal_supports_unicode?' do
+    let(:env_vars) { Aspera::Environment::I18N_VARS + %w[WT_SESSION TERM_PROGRAM ConEmuANSI TERM] }
+
+    around do |example|
+      saved = env_vars.to_h { |var| [var, ENV.delete(var)] }
+      example.run
+    ensure
+      saved.each { |var, value| value.nil? ? ENV.delete(var) : ENV.store(var, value) }
+      described_class.unicode = nil
+    end
+
+    before do
+      allow(described_class).to(receive(:terminal?).and_return(true))
+      allow(Encoding).to(receive(:locale_charmap).and_return('US-ASCII'))
+    end
+
+    it 'is enabled when the locale charmap is UTF-8' do
+      allow(Encoding).to(receive(:locale_charmap).and_return('UTF-8'))
+      expect(described_class.terminal_supports_unicode?).to(be(true))
+    end
+
+    it 'is disabled when not a terminal' do
+      allow(Encoding).to(receive(:locale_charmap).and_return('UTF-8'))
+      allow(described_class).to(receive(:terminal?).and_return(false))
+      expect(described_class.terminal_supports_unicode?).to(be(false))
+    end
+
+    it 'falls back to a locale variable for a locale not installed' do
+      expect(described_class.terminal_supports_unicode?).to(be(false))
+      ENV['LANG'] = 'en_US.utf8'
+      expect(described_class.terminal_supports_unicode?).to(be(true))
+    end
+
+    it 'uses the locale variable with highest precedence' do
+      ENV['LANG'] = 'en_US.UTF-8'
+      ENV['LC_ALL'] = 'C'
+      expect(described_class.terminal_supports_unicode?).to(be(false))
+      ENV['LC_ALL'] = ''
+      expect(described_class.terminal_supports_unicode?).to(be(true))
+      ENV['LC_CTYPE'] = 'POSIX'
+      expect(described_class.terminal_supports_unicode?).to(be(false))
+    end
+
+    it 'is overridden by option' do
+      described_class.unicode = true
+      allow(described_class).to(receive(:terminal?).and_return(false))
+      expect(described_class.terminal_supports_unicode?).to(be(true))
+    end
+
+    it 'detects terminal hosts rendering Unicode on Windows, whatever the code page' do
+      allow(Encoding).to(receive(:locale_charmap).and_return('CP437'))
+      allow(described_class.instance).to(receive(:os).and_return(Aspera::Environment::OS_WINDOWS))
+      expect(described_class.terminal_supports_unicode?).to(be(false))
+      {'WT_SESSION' => 'f0e1d2c3', 'TERM_PROGRAM' => 'vscode', 'ConEmuANSI' => 'ON', 'TERM' => 'xterm-256color'}.each do |var, value|
+        ENV[var] = value
+        expect(described_class.terminal_supports_unicode?).to(be(true))
+        ENV.delete(var)
+      end
+      ENV['TERM_PROGRAM'] = 'other'
+      expect(described_class.terminal_supports_unicode?).to(be(false))
+    end
+
+    it 'ignores Windows terminal hosts on other OS' do
+      allow(described_class.instance).to(receive(:os).and_return(Aspera::Environment::OS_LINUX))
+      ENV['WT_SESSION'] = 'f0e1d2c3'
+      ENV['TERM'] = 'xterm-256color'
+      expect(described_class.terminal_supports_unicode?).to(be(false))
+    end
+  end
+
   describe '.write_file_restricted' do
     it 'creates the file with restricted access, not only after writing' do
       Dir.mktmpdir do |dir|

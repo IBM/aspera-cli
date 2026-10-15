@@ -926,7 +926,7 @@ components:
           type: boolean
           description: >-
             Use Unicode characters in terminal output (e.g. table borders, check marks).
-            Default is auto-detected: enabled if stdout is a terminal and the locale is UTF-8.
+            Default is auto-detected: enabled if stdout is a terminal and the locale is UTF-8, or on Windows, the terminal renders Unicode (e.g. Windows Terminal, VS Code).
         img:
           $ref: "#/components/schemas/ImageOptions"
     WebServerOptions:

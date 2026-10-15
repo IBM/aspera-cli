@@ -13,7 +13,7 @@ require 'shellwords'
 require 'aspera/rainbow'
 using Rainbow
 
-# cspell:words mswin bccwin
+# cspell:words mswin bccwin conhost mintty Cmder
 
 module Aspera
   # detect OS, architecture, and specific stuff
@@ -225,20 +225,35 @@ module Aspera
 
       # @return [Boolean] true if we can display Unicode characters
       # Uses Encoding.locale_charmap for OS-independent detection.
-      # Falls back to locale env vars for systems where charmap is not available.
+      # On Windows, also detects terminal hosts that render Unicode whatever the console code page.
+      # Falls back to the locale env var with highest precedence, for locales not installed.
       # https://www.gnu.org/software/libc/manual/html_node/Locale-Categories.html
       # https://pubs.opengroup.org/onlinepubs/7908799/xbd/envvar.html
       def terminal_supports_unicode?
         return @unicode unless @unicode.nil?
         return false unless terminal?
-        locale_charmap_utf8? || I18N_VARS.any? { |var| ENV[var]&.include?('UTF-8') }
+        return true if locale_charmap_utf8?
+        return true if instance.os.eql?(OS_WINDOWS) && windows_unicode_terminal?
+        locale = ENV.values_at(*I18N_VARS).find { |value| !value.to_s.empty? }
+        locale&.match?(/UTF-?8/i) || false
       end
 
       private
 
+      # @return [Boolean] true if the terminal host renders Unicode
+      # Ruby writes to the Windows console with WriteConsoleW (UTF-16): the code page does not matter, the font does.
+      # Legacy conhost may lack glyphs (e.g. check marks), while these hosts render them.
+      def windows_unicode_terminal?
+        # Windows Terminal, VS Code, Git Bash, ConEmu or Cmder, MSYS2 or Cygwin or SSH
+        ENV.key?('WT_SESSION') ||
+          %w[vscode mintty].include?(ENV.fetch('TERM_PROGRAM', nil)) ||
+          ENV.fetch('ConEmuANSI', nil).eql?('ON') ||
+          ENV.fetch('TERM', '').match?(/xterm|256color/)
+      end
+
       # @return [Boolean] true if the locale charmap resolves to UTF-8
       # Unix: nl_langinfo(CODESET) returns "UTF-8"
-      # Windows: GetACP returns "CP65001" which Encoding.find resolves as UTF-8
+      # Windows: console code page (GetConsoleCP), else ANSI code page (GetACP): "CP65001" resolves as UTF-8
       def locale_charmap_utf8?
         Encoding.find(Encoding.locale_charmap) == Encoding::UTF_8
       rescue ArgumentError

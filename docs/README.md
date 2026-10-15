@@ -2045,7 +2045,7 @@ By default, `ascli` detects the capabilities of the terminal:
 | Option         | Effect when `yes`                                             | Auto-detection (default)                                                       |
 |--|--|--|
 | `--out.colors` | ANSI colors and styles in results, messages and logs          | `yes` if both `stdout` and `stderr` are terminals and `TERM` is not `dumb`, or if `CLICOLOR_FORCE=1` |
-| `--out.utf8`   | Unicode characters: table borders, check marks                | `yes` if `stdout` is a terminal and the locale is UTF-8                        |
+| `--out.utf8`   | Unicode characters: table borders, check marks                | `yes` if `stdout` is a terminal and the locale is UTF-8, or on Windows, the terminal is Windows Terminal, VS Code, Git Bash, ConEmu, or sets `TERM` to `xterm*` |
 
 Set either option to `yes` or `no` to override detection, for example to keep colors when piping to `less -R`, or to get plain ASCII output in a terminal:
 

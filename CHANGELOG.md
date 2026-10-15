@@ -94,6 +94,8 @@ Released: [Place date of release here]
 * `mcp server`: `oauth`: The consent page shows where the authorization is sent (origin of `redirect_uri`).
 * `faspex5 gateway`, `aoc gateway`: An invalid request (empty or not JSON, without `delivery` or `recipients`) returns HTTP 400 instead of 500.
 * `node emulator`: A symbolic link in the `docroot` leading out of it was followed by transfers (sources of `send`, destination of `receive`): the real path of local paths shall be in the `docroot`.
+* **global**: Detection of Unicode support (`--out.utf8`) follows the precedence of locale variables: `LC_ALL=C` disables it even if `LANG` is UTF-8. A locale named `utf8` (e.g. `en_US.utf8`) is detected also when it is not installed.
+* **global**: Detection of Unicode support (`--out.utf8`) on Windows: enabled in Windows Terminal, VS Code, Git Bash, ConEmu and terminals setting `TERM` (MSYS2, Cygwin, SSH), whatever the console code page. Use `--out.utf8=no` for a legacy console with a font lacking the characters.
 
 ### Breaking Changes
 
