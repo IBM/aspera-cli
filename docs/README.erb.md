@@ -1,9 +1,10 @@
 # Command Line Interface for IBM Aspera products
 <!--
-EDITING GUIDELINES (developers and AI):
+EDITING GUIDELINES:
 - This file is the source template for the generated README.md. Edit this file, not README.md.
-- Do not use Unicode characters unless strictly necessary (e.g. wizard menu labels that must
-  match the actual on-screen UI text). Use plain ASCII equivalents instead:
+- Do not use Unicode characters unless strictly necessary
+  (e.g. wizard menu labels that must match the actual on-screen UI text). 
+  Use plain ASCII equivalents instead:
     apostrophe : ' (not ' or ')
     dash       : - (not en-dash U+2013, not em-dash U+2014, not --)
     ellipsis   : ... (not U+2026)
