@@ -83,10 +83,12 @@ module Aspera
         # @param app_url [String] Tested URL
         # @return [Hash] :preset_value, :test_args
         def wizard(wizard, app_url)
+          username = options.get_option(:username, mandatory: true)
           return {
+            preset_ids:   [username],
             preset_value: {
               url:      app_url,
-              username: options.get_option(:username, mandatory: true),
+              username: username,
               password: options.get_option(:password, mandatory: true)
             },
             test_args:    'info'

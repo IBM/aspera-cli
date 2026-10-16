@@ -34,20 +34,26 @@ module Aspera
             url:  app_url,
             auth: auth_type.to_s
           }
+          preset_ids = []
           case auth_type
           when :none
             # No credentials needed
           when :basic
-            preset_value[:username] = options.get_option(:username, mandatory: true)
+            username = options.get_option(:username, mandatory: true)
+            preset_value[:username] = username
             preset_value[:password] = options.get_option(:password, mandatory: true)
+            preset_ids.push(username)
           when :jwt
-            preset_value[:client_id] = options.get_option(:client_id, mandatory: true)
+            client_id = options.get_option(:client_id, mandatory: true)
+            preset_value[:client_id] = client_id
             key_path = options.get_option(:key_path)
             preset_value[:private_key] = key_path ? "@file:#{key_path}" : options.get_option(:private_key, mandatory: true)
             passphrase = options.get_option(:passphrase)
             preset_value[:passphrase] = passphrase unless passphrase.nil?
+            preset_ids.push(client_id)
           end
           return {
+            preset_ids:   preset_ids,
             preset_value: preset_value,
             test_args:    'bridges list'
           }

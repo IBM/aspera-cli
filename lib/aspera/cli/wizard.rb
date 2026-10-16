@@ -15,7 +15,7 @@ module Aspera
     class Wizard
       extend OptionDeclarator
 
-      WIZARD_RESULT_KEYS = %i[preset_value test_args].freeze
+      WIZARD_RESULT_KEYS = %i[preset_ids preset_value test_args].freeze
       DEFAULT_PRIV_KEY_FILENAME = 'my_private_key.pem' # pragma: allowlist secret
       private_constant :WIZARD_RESULT_KEYS, :DEFAULT_PRIV_KEY_FILENAME
 
@@ -156,13 +156,13 @@ module Aspera
         wizard_result = plugin_instance.wizard(self, wiz_url)
         Log.log.debug { "wizard result: #{wizard_result}" }
         Aspera.assert(WIZARD_RESULT_KEYS.eql?(wizard_result.keys.sort)) { "missing or extra keys in wizard result: #{wizard_result.keys}" }
+        Aspera.assert_array_all(wizard_result[:preset_ids], String) { 'preset_ids' }
         # Get preset name from user or default
         if wiz_preset_name.empty?
           wiz_preset_name = IdGenerator.from_list(
             identification[:product],
             wiz_url,
-            wizard_result[:preset_value][:username],
-            wizard_result[:preset_value][:client_id]
+            *wizard_result[:preset_ids]
           )
         end
         # Write configuration file

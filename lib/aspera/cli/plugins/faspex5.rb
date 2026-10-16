@@ -85,6 +85,7 @@ module Aspera
             page: [Environment.char('👤'), 'Account Settings', 'Preferences', 'Public Key in PEM']
           )
           return {
+            preset_ids:   [wiz_username, client_id].compact,
             preset_value: {
               url:           app_url,
               username:      wiz_username,

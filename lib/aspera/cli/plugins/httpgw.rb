@@ -29,6 +29,7 @@ module Aspera
         # @return [Hash] :preset_value, :test_args
         def wizard(wizard, app_url)
           return {
+            preset_ids:   [],
             preset_value: {
               url: app_url
             },

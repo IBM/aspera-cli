@@ -7694,6 +7694,7 @@ faspio_wizard:
     - wizard
     - "@preset:tst_faspio.url"
     - faspio
+    - --override=yes
     - --username=@preset:tst_faspio.username
     - --password=@preset:tst_faspio.password
 faspio_blist:

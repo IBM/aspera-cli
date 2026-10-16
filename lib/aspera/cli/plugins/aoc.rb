@@ -199,6 +199,7 @@ module Aspera
             }
             preset_value[:password] = options.get_option(:password, mandatory: true) if pub_info['password_protected']
             return {
+              preset_ids:   [],
               preset_value: preset_value,
               test_args:    'organization'
             }
@@ -260,6 +261,7 @@ module Aspera
             aoc_api.update("clients/#{options.get_option(:client_id)}", {'jwt_grant_enabled' => true, 'explicit_authorization_required' => false})
           end
           return {
+            preset_ids:   [myself['email'], client_id].compact,
             preset_value: {
               url:           app_url,
               username:      myself['email'],

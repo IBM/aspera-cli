@@ -9,6 +9,7 @@ module Aspera
     class << self
       # Generate an ID from a list of object IDs
       # The generated ID is safe as file name
+      # In URLs keep only the host name, we assume only one instance on a given host.
       # @param ids [Array] the object IDs (can be nested, will be flattened, and nils removed)
       # @return [String] the generated ID
       def from_list(*ids)
