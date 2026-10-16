@@ -161,7 +161,8 @@ module Aspera
             identification[:product],
             URI.parse(wiz_url).host
           ]
-          elements.push(options.get_option(:username, mandatory: true)) unless wizard_result[:preset_value].key?(:link) rescue nil
+          elements.push(wizard_result[:preset_value][:username]) if wizard_result[:preset_value].key?(:username)
+          elements.push(wizard_result[:preset_value][:client_id]) if wizard_result[:preset_value].key?(:client_id) && !wizard_result[:preset_value].key?(:username)
           wiz_preset_name = elements.join('_').strip.downcase.gsub(/[^a-z0-9]/, '_').squeeze('_')
         end
         # Write configuration file

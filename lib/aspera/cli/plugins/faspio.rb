@@ -29,23 +29,41 @@ module Aspera
         # @param app_url [String] Tested URL
         # @return [Hash] :preset_value, :test_args
         def wizard(wizard, app_url)
+          auth_type = options.get_option(:auth, mandatory: wizard.required) || :basic
+          preset_value = {
+            url:  app_url,
+            auth: auth_type.to_s
+          }
+          case auth_type
+          when :none
+            # No credentials needed
+          when :basic
+            preset_value[:username] = options.get_option(:username, mandatory: true)
+            preset_value[:password] = options.get_option(:password, mandatory: true)
+          when :jwt
+            preset_value[:client_id] = options.get_option(:client_id, mandatory: true)
+            key_path = options.get_option(:key_path)
+            preset_value[:private_key] = key_path ? "@file:#{key_path}" : options.get_option(:private_key, mandatory: true)
+            passphrase = options.get_option(:passphrase)
+            preset_value[:passphrase] = passphrase unless passphrase.nil?
+          end
           return {
-            preset_value: {
-              url: app_url
-            },
+            preset_value: preset_value,
             test_args:    'bridges list'
           }
         end
 
-        command :health, description: 'Check faspio Gateway health'
+        command :health,  description: 'Check faspio Gateway health'
+        command :metrics, description: 'Get Prometheus metrics'
 
         commands_under :bridges do
           crud_commands entity: 'bridges',
             api: :build_api,
+            operations: %i[create list show delete],
             body_component: Schema::Registry::FASPIO
         end
 
-        option :auth,        description: 'OAuth type of authentication', allowed: %i[jwt basic]
+        option :auth,        description: 'Type of authentication', allowed: %i[basic jwt none]
         option :client_id,   description: 'OAuth client identifier'
         option :private_key, description: 'OAuth JWT RSA private key PEM **value**'
         option :passphrase,  description: 'OAuth JWT RSA private key passphrase'
@@ -55,6 +73,8 @@ module Aspera
         def build_api
           base_url = options.get_option(:url, mandatory: true)
           case options.get_option(:auth, mandatory: true)
+          when :none
+            Rest::Client.new(base_url: base_url)
           when :basic
             basic_auth_api
           when :jwt
@@ -93,6 +113,10 @@ module Aspera
             nagios.add_critical('api', e.to_s)
           end
           Result::ObjectList.new(nagios.status_list)
+        end
+
+        def action_metrics(**)
+          Result::Text.new(build_api.read('metrics', headers: {'Accept' => 'text/plain'}))
         end
       end
     end
