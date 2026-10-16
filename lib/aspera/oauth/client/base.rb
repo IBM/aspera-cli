@@ -39,8 +39,7 @@ module Aspera
         @path_token = path_token
         @token_field = token_field
         @use_query = use_query
-        # TODO: :username and :scope shall be done in class, using cache_ids
-        @token_cache_id = Factory.cache_id(@api.base_url, self.class, cache_ids, rest_params[:username], @params[:scope])
+        @token_cache_id = Factory.cache_id(@api.base_url, self.class, *cache_ids, @params[:scope])
       end
 
       # The OAuth API Object
