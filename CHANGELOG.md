@@ -4,123 +4,83 @@
 
 Released: [Place date of release here]
 
+Highlights: security hardening of local web servers (authentication, minimum secret strength, cross-site requests refused), new option `security`, `mcp server` over HTTPS with token or OAuth authentication, JMESPath queries (`--out.query`), exit code by category of error, context-aware shell completion (also PowerShell), tables fitted to the terminal width. Ruby 3.2 or later is required.
+
 ### New Features
 
-* `shares`: New commands covering previously missing API endpoints:
-  * `share list` — list shares accessible to the current user (`GET /api/v1/shares`)
-  * `share event create` — faux-transfer notification to trigger email alerts (`POST /api/v1/shares/{id}/events`)
-  * `admin directory list/show/users/groups` — manage authentication directories (`/api/v1/directories`)
-  * `admin user search list/show` and `admin group search list/show/members` — cross-directory search by URN (`/api/v1/users`, `/api/v1/groups`)
-  * `admin user|group all transfer_settings delete` — reset per-entity transfer settings to global inheritance
-  * `admin group local users list/show/modify/delete` — manage users of a local group (`/api/v1/data/local_groups/{id}/local_users`)
-  * `admin authenticate` — validate credentials and optionally check a permission (`POST /api/v1/authenticate`)
-* `shares health`: native `/health_check` endpoint — one status item per license (`valid`/`entitled`/`invalid`) and one per configured node.
-
-* `orchestrator`: New command `workflows development`: documentation for workflow development, read from GitHub: the Workflow Authoring Guide (`authoring`) or the Action Template Reference (`templates`), whole, its table of contents (`toc`), or one section. It does not require access to Orchestrator. The instructions of `mcp server` tell AI assistants to read it before writing or modifying a workflow.
-* `orchestrator`: `workflows export` with option `dependencies` saves a package (`.wkf`) with the sub-workflows and remote nodes used by the workflow, in the folder given by option `to_folder`.
-* `sync`: `target_rate` in `sync_info` accepts a string with suffix `k`, `m` or `g`, converted to bps (e.g. `100m`), in both `conf` and `args` formats.
-* **global**: New option `security`: `level` `low` (default) has no restriction, `medium` refuses `@ruby:`, `@uri:`, `@env:` and allows `@file:` only for files in `allowed_paths` (real path), `high` refuses `@ruby:`, `@file:`, `@uri:`, `@env:`.
-* `mcp server`: Extended-value handler `@stdin:` is refused. Option `security` has level `high` by default, and commands of the client cannot change it. It applies to commands of the client and to presets, which the client can modify: a preset reading a private key with `@file:` requires level `medium` or `low`, or the key stored in the preset. Safe handlers (`@json:`, `@preset:`, `@base64:`, `@val:`, …) remain available.
-* **global**: `@secret:` asks for the secret on a web page opened in the browser when option `ui` is `graphical` (default on Windows and macOS, or when `DISPLAY` is set), else on terminal. The page is served by a local web server on `127.0.0.1`.
-* `mcp server`: `@secret:` (in commands or presets) asks the user to enter the secret on a web page of the server, using MCP URL mode elicitation (protocol `2026-07-28`, and `2025-11-25` clients): the secret is not sent to the MCP client or the AI model, and is hidden in results. With `auth_token`, the page asks for it as access code. With the `stdio` transport, the page is served by a local web server on `127.0.0.1`. Requires an MCP client supporting URL mode elicitation.
-* `mcp server`: `http` transport: authentication with a static token (`auth_token`) or OAuth 2.0 PKCE with dynamic client registration (`oauth`). On a non-local `bind` or `public_url`, `auth_token` is mandatory, also with `oauth`: the consent page asks for it as access code. New option `public_url`: URL of the server for clients in OAuth metadata and secret pages, mandatory with `oauth` on a wildcard `bind`.
-* `faspex5 postprocessing`: With `lambda` in the URL query, a Ruby script (`.rb`) is evaluated in the process of `ascli`: it returns a lambda, called with the webhook values. This parameter was ignored before.
-* `faspex5 postprocessing`: Two new optional parameters harden the unauthenticated webhook listener:
-  * `secret_token` — callers must supply `?token=<value>` in the URL; requests without the correct token are rejected with HTTP 401.
-  * `allowed_ips` — restrict the listener to one IP address or network (CIDR), or a list of them; requests from other source IPs are rejected with HTTP 403.
-* `mcp server`: A weak `auth_token` is refused at startup of the `http` transport: its estimated strength in bits shall be at least `auth_token_min_bits` (default `80`, `0` disables the check), with the same estimate as `faspex5 postprocessing`.
-* `mcp server`: `http` transport: New options `url`, `cert`, `key` and `chain`, as for other local web servers: HTTPS with `url` `https://...`. Options `bind` and `port` are deprecated: use `url`, for example `url=http://0.0.0.0:3000`.
-* `faspex5 postprocessing`: A weak `secret_token` is refused at startup: its estimated strength in bits shall be at least `secret_token_min_bits` (default `80`, `0` disables the check). The estimate uses the optional gem `zxcvbn` if installed, else a built-in estimate that detects repeats, sequences, keyboard rows, words and years.
-* `node emulator`: A weak `password` is refused at startup: its estimated strength in bits shall be at least `password_min_bits` (default `80`, `0` disables the check), with the same estimate as `faspex5 postprocessing`.
-* `faspex5 gateway`, `aoc gateway`: New parameters `username` and `password`: clients authenticate with HTTP Basic, as on Faspex 4. A weak `password` is refused at startup (see `password_min_bits`, default `80`).
-* `faspex5 postprocessing`, `faspex5 gateway`, `aoc gateway`: Parameters are now validated against a JSON Schema (`Faspex4PostProcOptions`, `Faspex4GatewayOptions`). Unknown keys are rejected at startup instead of being silently ignored.
-* **global**: Tables are fitted to the terminal width: text columns (e.g. `description`) are wrapped, the widest first, then other columns if needed. Parameter `width` of `--out.table` sets the maximum table width.
-* `options.schema.yaml`: New schemas `WebServerOptions` (shared `url`/`cert`/`key`/`chain`), `Faspex4GatewayOptions` (extends `WebServerOptions`), and `Faspex4PostProcOptions` (extends `WebServerOptions` with postprocessing-specific keys).
-* `config`: `completion powershell` displays the completion script of PowerShell (Windows PowerShell 5.1 and PowerShell 7, on any OS): activate with `ascli config completion powershell | Out-String | Invoke-Expression` in `$PROFILE` (see manual). The words proposed are kept for the session.
-* **global**: Improved shell completion (`config completion words`):
-  * Global options are proposed after `ascli`, plugin options right after the plugin name, and only sub-commands deeper in the tree.
-  * Options expecting a value propose allowed values (enums, booleans) or a type placeholder (`<String>`, `<Integer>`, `<Hash>`, etc.).
-  * Positional arguments propose allowed values or a type placeholder.
-  * The value of an option given in a separate word (e.g. `--url https://...`) is not taken as a command.
-  * The arguments of an intermediate command are proposed before its sub-commands (e.g. `node access_keys do <access_key_id>`).
-  * Deprecated options are not proposed.
-  * `config completion` does not check for a newer gem version (no network access on `Tab` or at shell startup).
-  * Scripts call new command `config completion candidates`: Zsh, Fish and PowerShell display the description of commands and options. Options are proposed after any command for a word starting with `-`, values of option also for `--name=value`, and local files after the arguments of upload commands. The type of an expected value (e.g. `<identifier>`) is displayed, but no longer inserted. Scripts saved in a completion folder shall be saved again.
-  * Bash: words containing `=` or `:` (e.g. a URL) no longer break completion of the next words.
-  * Aliases of commands are proposed (e.g. `browse` for `ls`), and a plugin, command or alias abbreviated as on the command line (unique prefix, e.g. `serv br`) is followed.
-  * Keys of an option with a schema, in dotted notation (e.g. `--ts.direction`), and their values (e.g. `send`, `receive`), with their description.
-  * The type of an expected structure is followed by its keys, required ones first with `*` (e.g. `<Hash> name*, workspace_id*, …`), also after `@:`.
-  * In a structure built with `@:`, its end marker (e.g. `END`) is proposed, and the words of the structure are not taken as arguments.
-* **global**: New option `--out.query`: [JMESPath](https://jmespath.org) expression applied to an object or list result, before `select` and `fields`, to filter and reshape data (as option `--query` of the AWS and Azure CLIs). Its syntax is checked before the command is executed. It can also be a Ruby lambda (`@ruby:`), called with the data and returning the new data. New gem dependency: `jmespath`.
-* **global**: The exit code indicates the category of error: `2` command line, `3` authentication, `4` resource not found, `5` transfer, `6` network or TLS, `7` other API error, `130` interrupted, `1` other. Listed in `ascli -h` and in the manual (Exit status).
+* `shares`: New commands `share list`, `share event create`, `admin directory`, `admin user|group search`, `admin group local users`, `admin authenticate`, and `admin user|group all transfer_settings delete` (reset to global settings).
+* `shares`: `health` uses the `/health_check` endpoint: status of each license and node.
+* `orchestrator`: New command `workflows development` displays the Workflow Authoring Guide and the Action Template Reference (from GitHub), also used by AI assistants through `mcp server`.
+* `orchestrator`: `workflows export` with option `dependencies` saves a package (`.wkf`) with sub-workflows and remote nodes.
+* `mcp server`:
+  * `http` transport: authentication with a static token (`auth_token`) or OAuth 2.0 (`oauth`), new option `public_url`.
+  * `http` transport: HTTPS with options `url`, `cert`, `key` and `chain`. Options `bind` and `port` are deprecated: use `url`.
+  * `@secret:` asks the user on a web page (MCP URL mode elicitation): the secret is not sent to the AI model.
+* `faspex5 postprocessing`: New parameters `secret_token` (`?token=` in URL) and `allowed_ips` (addresses or CIDR) restrict callers.
+* `faspex5 postprocessing`: Parameter `lambda` of the URL query evaluates a Ruby script returning a lambda, called with the webhook values (was ignored).
+* `faspex5 gateway`, `aoc gateway`: New parameters `username` and `password` (HTTP Basic, as Faspex 4).
+* **global**: Local web servers refuse a weak secret at startup (`auth_token` of `mcp server`, `secret_token` of `faspex5 postprocessing`, `password` of `node emulator` and gateways): minimum strength set by parameter `*_min_bits` (default `80`, `0` disables), estimated with gem `zxcvbn` if installed.
+* **global**: New option `security`: level `medium` or `high` restricts extended values `@ruby:`, `@uri:`, `@env:` and `@file:` (see manual).
+* **global**: `@secret:` asks for the secret on a local web page in the browser when option `ui` is `graphical`.
+* **global**: New option `--out.query`: [JMESPath](https://jmespath.org) expression (or `@ruby:` lambda) to filter and reshape results, as `--query` of the AWS and Azure CLIs. New gem dependency: `jmespath`.
+* **global**: The exit code indicates the category of error (e.g. `3` authentication, `4` not found, `5` transfer, `6` network): see `ascli -h` or the manual.
+* **global**: Tables fit the terminal width: text columns are wrapped. Parameter `width` of `--out.table` sets the maximum width.
+* **global**: Shell completion follows the context: options of plugin and command, values and types of options and arguments, keys of structures, aliases and abbreviations, local files for uploads, with descriptions in Zsh, Fish and PowerShell.
+* `config`: New command `completion powershell` displays the completion script of PowerShell (see manual).
+* `sync`: `target_rate` in `sync_info` accepts suffixes `k`, `m` and `g` (e.g. `100m`).
 
 ### Issues Fixed
 
-* `config completion words`: words typed on the command line were evaluated as extended values at each `Tab` (e.g. `@ruby:` code was executed, `@stdin:` waited for input).
-* **global**: Removed gem dependency on `blankslate` (JSON-RPC client of agent `desktop`).
-* **global**: Manual and command help: the type of a parameter with alternatives (`oneOf`, e.g. `allowed_ips` of `faspex5 postprocessing`) is shown (e.g. `String, Array[String]`) instead of empty, which broke the PDF manual.
-* **global**: Command help: the schema of an argument with alternatives (`oneOf` without discriminator) shows the title of each alternative.
-* **global**: Removed gem dependency on `word_wrap`: descriptions in schema tables are no longer cut at 120 characters, but wrapped to the terminal width.
-* **global**: A boolean or decimal result, or a list containing such values (for example `config echo @json:true`), failed with an internal error.
-* **global**: `--auth=web`: login could wait forever when the browser called back before the wait started, or when `redirect_uri` has a path (HTTP 404).
-* **global**: `--auth=web`: a `redirect_uri` on IPv6 loopback (`[::1]`) or on `127.0.0.0/8` other than `127.0.0.1` was refused.
-* **global**: Local web servers (`faspex5 postprocessing`, `faspex5 gateway`, `aoc gateway`, `node emulator`, `--auth=web`): a `url` with an IPv6 address (e.g. `http://[::1]:8080`) failed to start the server.
-* **global**: Ruby minimum version is now 3.2 (3.1 reached end of life in March 2025). Future minimum is 3.3. Policy: a Ruby version is supported until 18 months after its end of official support.
-* `mcp`: REST error messages were repeated once more at each tool call of the session: error handlers are now registered on load.
-* `orchestrator`: `workflows import` uploads the workflow file as a multipart form, as expected by Orchestrator, and displays the imported workflow.
-* `orchestrator`: `workflows publish` sends the workflow `id` expected by Orchestrator (also accepts the portable ID), and displays `published`.
-* `orchestrator`: `workflows import` reports an error when Orchestrator imports nothing: plugins that cannot be enabled, or dependencies not included in the file.
-* `orchestrator`: `workflows import_with_constraints` sends the ordered list expected by Orchestrator, and displays the imported workflow.
-* `orchestrator`: `workflows start` with `synchronous` and without `step` and `variable` failed to display the work order.
-* `config vault`: `system` (macOS): the password of a secret was not returned, values with special characters were stored escaped, and a missing secret failed `preset secure`.
-* `config vault`: `1password` (`cli`): a missing secret failed `preset secure`.
-* `config vault`: `vault` (HashiCorp): `list` failed after a secret was deleted.
-* `config vault`: `file`: `password` did not migrate a vault created by version 4.26.0 or earlier to the new key derivation (PBKDF2).
-* `config vault`: `@vault:` failed with a secret label containing dots (for example, a preset name secured with `preset secure`).
-* `config vault`: `system` (macOS): `show` and `@vault:` return the `username`.
-* `config vault`: `file`: The vault file is loaded with YAML safe loading: Ruby objects are refused.
-* `config vault`: `1password`: `url` is read from the website of the item (also for items created in 1Password).
-* **global**: Pseudo transfer-spec parameter `target_rate` is in bps, as documented: a value without suffix or with suffix `k` was taken as kbps. An integer value (e.g. `--ts.target_rate=1000000`) was rejected.
-* `sync`: Transfer spec parameter `target_rate` was ignored, and `target_rate_kbps` too with the `args` format of `sync_info`.
-* `config sync translate`: `-C`, `--ws-connect` and `-D` set `true` instead of `mode`=`continuous`, `connect_mode`=`ws` and `log.level`=`dbg1`, and `--scan-interval` and `--remote-scan-interval` were not converted to milliseconds.
-* `faspex5 postprocessing`: A request with a body that is not a JSON object is rejected with HTTP 400, a missing script with HTTP 404, and a script outside `script_folder` with HTTP 403, instead of HTTP 500 with the path of the script in the message.
-* `faspex5 postprocessing`: An unknown parameter, an invalid `allowed_ips` or a missing `script_folder` is reported at startup, instead of at each request.
-* `faspex5 postprocessing`: Displays `Post-processing terminated` when stopped, instead of `Gateway terminated`.
+* `config completion words`: Extended values on the command line were evaluated at each `Tab` (e.g. `@ruby:` code executed, `@stdin:` waiting for input).
+* `config completion`: Bash: words containing `=` or `:` (e.g. a URL) broke completion of the next words, and each `Tab` checked for a newer gem version on the network.
+* `node emulator`: A symbolic link in the `docroot` leading out of it was followed by transfers.
+* **global**: Local web servers (`faspex5 postprocessing`, `faspex5 gateway`, `aoc gateway`, `node emulator`, `mcp server`, `--auth=web`):
+  * Requests that a web page in the browser can send are refused: `Host` not loopback on a loopback server (DNS rebinding), `Origin` of another site.
+  * A `url` with an IPv6 address, or parameter `chain`, failed at startup.
+  * WEBrick messages are logged at debug level.
+* `faspex5 postprocessing`, `faspex5 gateway`, `aoc gateway`: Invalid requests return HTTP 400, 403 or 404 instead of 500, without stack trace or path of the script.
+* **global**: `--auth=web`:
+  * Login could wait forever when the browser called back early, or when `redirect_uri` has a path (HTTP 404).
+  * A `redirect_uri` on loopback other than `127.0.0.1` (e.g. `[::1]`) was refused.
+  * Ctrl-C ended with an internal error instead of stopping the command.
+  * The page after login, whose URL contains the authorization code, could be cached, framed, or sent as referrer.
 * **global**: Secret values of URL query parameters (e.g. `token`, `client_secret`) are hidden in logs.
-* **global**: Local web servers (`faspex5 postprocessing`, `faspex5 gateway`, `aoc gateway`, `node emulator`): parameter `chain` failed with an internal error.
-* **global**: Local web servers (`faspex5 postprocessing`, `faspex5 gateway`, `aoc gateway`, `node emulator`, `mcp server`, `--auth=web`, `@secret:` page) refuse requests that a web page open in the browser can send: header `Host` that is not loopback when the server listens on loopback (DNS rebinding), or header `Origin` of another site (HTTP 403), and a JSON body without type `application/json` (HTTP 415). `mcp server`: `allowed_hosts` and `allowed_origins` also apply to OAuth endpoints and secret pages, which also accept the origin of `public_url`.
-* **global**: `--auth=web`: The page displayed after login, whose URL contains the authorization code, is not cached, cannot be shown in a frame, and its URL is not sent to other sites (as the `@secret:` page). `mcp server`: Same for the OAuth consent page, which did not set `Referrer-Policy`.
-* **global**: `--auth=web`: Ctrl-C while waiting for the browser ended with an internal error (`No live threads left. Deadlock?`) instead of stopping the command.
-* **global**: Local web servers: messages of WEBrick (version, start, shutdown) are logged at debug level, the URL of the server is logged at info level.
-* `faspex5 gateway`, `aoc gateway`: The response to a failed request no longer contains the stack trace.
-* `mcp server`: `oauth`: Dynamic client registration is limited: at most 100 clients are kept (the least recently used is removed), and at most 10 `redirect_uris` of 2048 characters, absolute and without fragment. A body that is not a JSON object returns HTTP 400.
-* `mcp server`: `oauth`: The consent page shows where the authorization is sent (origin of `redirect_uri`).
-* `faspex5 gateway`, `aoc gateway`: An invalid request (empty or not JSON, without `delivery` or `recipients`) returns HTTP 400 instead of 500.
-* `node emulator`: A symbolic link in the `docroot` leading out of it was followed by transfers (sources of `send`, destination of `receive`): the real path of local paths shall be in the `docroot`.
-* **global**: Detection of Unicode support (`--out.utf8`) follows the precedence of locale variables: `LC_ALL=C` disables it even if `LANG` is UTF-8. A locale named `utf8` (e.g. `en_US.utf8`) is detected also when it is not installed.
-* **global**: Detection of Unicode support (`--out.utf8`) on Windows: enabled in Windows Terminal, VS Code, Git Bash, ConEmu and terminals setting `TERM` (MSYS2, Cygwin, SSH), whatever the console code page. Use `--out.utf8=no` for a legacy console with a font lacking the characters.
-* **global**: Detection of ANSI colors (`--out.colors`) follows conventions: `NO_COLOR` (set, not empty) disables colors, `CLICOLOR=0` disables them, `CLICOLOR_FORCE` enables them with any value other than `0` (was only `1`).
-* **global**: `--out.file`: results written to the file contained ANSI color codes when the terminal supports colors. Colors are disabled, unless `--out.colors=yes`.
-* **global**: Unicode characters are replaced with their ASCII equivalent when Unicode is not supported (`--out.utf8`): hidden secrets (`🔑` becomes `***`, also in logs and piped results), symbols in hints (`→`, `𓃑`, `👤`), ellipsis in shell completion. Image preview then uses full lines (`--out.img.double=no`) by default.
-* **global**: Network errors (e.g. connection refused, timeout) and resources not found by name were reported as `Other(<exception class>)`, with a hint to use `--log-level=debug`.
-* **global**: `--out.select` refused a Ruby lambda (`@ruby:`): `value at /select is not an object`.
+* **global**: Terminal output:
+  * Unicode (`--out.utf8`): detection follows the precedence of locale variables (`LC_ALL=C` disables it), and supports Windows Terminal, VS Code, Git Bash, ConEmu and terminals setting `TERM`.
+  * Colors (`--out.colors`): `NO_COLOR`, `CLICOLOR` and `CLICOLOR_FORCE` follow conventions, and results written with `--out.file` no longer contain ANSI codes.
+  * Without Unicode, symbols are replaced with ASCII (e.g. hidden secret `🔑` becomes `***`).
+* **global**: Network errors and resources not found by name were reported as `Other(<exception class>)`.
+* **global**: A boolean or decimal result (e.g. `config echo @json:true`) failed with an internal error.
+* **global**: `--out.select` refused a Ruby lambda (`@ruby:`).
+* **global**: Help and manual: a parameter with alternatives (`oneOf`) had no type (which broke the PDF manual), and alternatives had no title.
+* **global**: Transfer spec parameter `target_rate` is in bps as documented (without suffix or with `k` it was taken as kbps, an integer was rejected), and `sync` ignored it (and `target_rate_kbps` with format `args`).
+* **global**: Removed gem dependencies `blankslate` and `word_wrap`: descriptions in schema tables are wrapped to the terminal width instead of cut at 120 characters.
+* `mcp`: REST error messages were repeated once more at each tool call.
+* `orchestrator`: `workflows import`, `import_with_constraints` and `publish` sent requests rejected by Orchestrator, `import` did not report workflows not imported, and `start` with `synchronous` failed to display the work order.
+* `config vault`:
+  * `system` (macOS): the password and `username` were not returned, and special characters were stored escaped.
+  * `file`: `password` did not migrate a vault of version 4.26.0 or earlier to PBKDF2. The file is loaded with YAML safe loading.
+  * `vault` (HashiCorp): `list` failed after a secret was deleted.
+  * `1password`: `url` is read from the website of the item.
+  * `preset secure` failed on a missing secret (`system`, `1password`), and `@vault:` on a label containing dots.
+* `config sync translate`: Options `-C`, `--ws-connect`, `-D`, `--scan-interval` and `--remote-scan-interval` were translated incorrectly.
 
 ### Breaking Changes
 
-* `mcp server`: Keys of the `http` transport (e.g. `url`, `auth_token`, `oauth`) are refused with transport `stdio` (the default), and `max_line_bytes` with transport `http`: they were ignored.
-* `faspex5 postprocessing`: `secret_token` or `allowed_ips` is required when `url` is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`): anyone reaching the server could start the scripts.
-* `node emulator`: `username` and `password` are required when `url` is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`): anyone reaching the server could send the files of the `docroot` to any host. A weak `password` is refused (see `password_min_bits`).
-* `faspex5 gateway`, `aoc gateway`: `username` and `password` are required when `url` is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`): anyone reaching the gateway could send packages to anyone, as the user of the application, and get the upload transfer spec.
-* `faspex5 postprocessing`: Only webhook values whose key starts with `faspex_` (Faspex 4 post-processing variables) are passed to the script as environment variables. Other keys are ignored: they could change the behavior of the script (e.g. `PATH`, `LD_PRELOAD`). A structured value (object or array) is passed as JSON instead of Ruby format.
-* `orchestrator`: `workflows import` takes the path of a file created by `workflows export`, instead of a `Hash` (rejected by Orchestrator).
-* `orchestrator`: `workflows import_with_constraints` takes keys `filename`, `add_as_revision`, `subwf_constraints`, `action_template_constraints`, `remote_node_constraints`, `auto_enable_missing_plugins`, instead of `workflow_data` and `constraints` (rejected by Orchestrator).
-* `orchestrator`: `workorders output` displays fields of variables as plain values instead of single-element arrays (e.g. `"value":"x"` instead of `"value":["x"]`), and an empty value as `null`.
-* `config vault`: `create` fails if a secret with the same label exists, for `vault` and `1password` (as for `file`). `delete` fails if the secret does not exist, for `file`.
-* `config vault`: `1password`: `url` is stored as the website of the item instead of a custom field.
-* **global**: `@secret:` asks for the secret in the browser when option `ui` is `graphical`, the default on Windows and macOS: use `--ui=text` to enter it on terminal.
-* `config ascp spec`, `config sync spec`: `description` is a list of lines instead of a multi-line string (formats `json`, `yaml`), and absent when empty.
-* **global**: Local web servers (`faspex5 postprocessing`, `faspex5 gateway`, `aoc gateway`, `node emulator`): a JSON body requires header `Content-Type: application/json`, else HTTP 415.
-* **global**: The exit code on error is no longer always `1`, but indicates the category of error (see New Features): scripts testing for `1` shall test for a non-zero code. With `--log-level=debug`, the exit code is the same as without. With `--format=nagios`, a failed command exits with `3` (UNKNOWN) instead of `1` (WARNING). Value `help` of a structured option or argument (display of schema) exits with `0`.
+* **global**: Ruby 3.2 or later is required (3.1 reached end of life in March 2025). Future minimum is 3.3. Policy: a Ruby version is supported until 18 months after its end of official support.
+* **global**: The exit code on error indicates its category instead of always `1`: scripts shall test for a non-zero code. With `--format=nagios`, a failed command exits with `3` (UNKNOWN). Value `help` of a structured value exits with `0`.
+* **global**: Local web servers on an address that is not loopback require authentication: `auth_token` for `mcp server`, `secret_token` or `allowed_ips` for `faspex5 postprocessing`, `username` and `password` for `node emulator`, `faspex5 gateway` and `aoc gateway`.
+* **global**: Local web servers: a JSON body requires header `Content-Type: application/json`, else HTTP 415.
+* **global**: `@secret:` asks in the browser by default on Windows and macOS (option `ui` is `graphical`): use `--ui=text` for the terminal.
+* `mcp server`: Option `security` is `high` by default and cannot be changed by the client, and `@stdin:` is refused: a preset reading a private key with `@file:` requires level `medium` or `low`.
+* `mcp server`: Keys of transport `http` are refused with `stdio` (the default), and `max_line_bytes` with `http`: they were ignored.
+* `faspex5 postprocessing`, `faspex5 gateway`, `aoc gateway`: Parameters are validated at startup: unknown keys are refused instead of ignored, and a missing `script_folder` is reported.
+* `faspex5 postprocessing`: Only webhook values whose key starts with `faspex_` are passed to the script as environment variables, and a structured value as JSON.
+* `config completion`: Completion scripts saved in a folder shall be saved again (they call new command `config completion candidates`).
+* `orchestrator`: `workflows import` takes a file created by `workflows export`, and `workflows import_with_constraints` takes keys `filename`, `add_as_revision`, `subwf_constraints`, ... (see help).
+* `orchestrator`: `workorders output` displays values of variables as plain values instead of single-element arrays, and an empty value as `null`.
+* `config vault`: `create` fails if the label exists (`vault`, `1password`), `delete` fails if the secret does not exist (`file`). `1password`: `url` is stored as website of the item.
+* `config ascp spec`, `config sync spec`: `description` is a list of lines (formats `json`, `yaml`), absent when empty.
 
 ## 4.27.5
 
