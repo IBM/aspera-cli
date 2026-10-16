@@ -55,12 +55,12 @@ RSpec.describe(Aspera::Rest::List) do
     let(:items) { [{'name' => 'a', 'id' => 1}, {'name' => 'b', 'id' => 2}, {'name' => 'b', 'id' => 3}] }
 
     it 'returns exact match' do
-      expect(described_class.lookup_entity_generic(entity: 'x', value: 'a') { items }).to(eq(items.first))
+      expect(described_class.lookup_entity_generic(field: 'name', value: 'a', entity: 'x') { items }).to(eq(items.first))
     end
 
     it 'raises when not found or ambiguous' do
-      expect { described_class.lookup_entity_generic(entity: 'x', value: 'c') { items } }.to(raise_error(Aspera::Cli::BadIdentifier, /not found/))
-      expect { described_class.lookup_entity_generic(entity: 'x', value: 'b') { items } }.to(raise_error(Aspera::Cli::BadIdentifier, /found 2/))
+      expect { described_class.lookup_entity_generic(field: 'name', value: 'c', entity: 'x') { items } }.to(raise_error(Aspera::Cli::BadIdentifier, /not found/))
+      expect { described_class.lookup_entity_generic(field: 'name', value: 'b', entity: 'x') { items } }.to(raise_error(Aspera::Cli::BadIdentifier, /found 2/))
     end
   end
 end

@@ -308,7 +308,7 @@ module Aspera
             lookup_method = :"lookup_shares_#{entity_type}_#{location}_id"
             define_method(lookup_method) do |field, value, **|
               path = admin_entity_path(entity_type, location)
-              Rest::List.lookup_entity_generic(entity: entity_type, field: field, value: value) { @api_shares_admin.read(path) }['id']
+              Rest::List.lookup_entity_generic(field: field, value: value, entity: entity_type) { @api_shares_admin.read(path) }['id']
             end
             private lookup_method
           end
@@ -372,14 +372,14 @@ module Aspera
 
         # Lookup a share id by field/value using the admin API.
         def lookup_share_id(field, value, **)
-          Rest::List.lookup_entity_generic(entity: 'share', field: field, value: value) { @api_shares_admin.read('data/shares') }['id']
+          Rest::List.lookup_entity_generic(field: field, value: value, entity: 'share') { @api_shares_admin.read('data/shares') }['id']
         end
 
         # Lookup a share id by field/value using the user-level API (for share event create).
         def lookup_share_id_user(field, value, **)
           data = basic_auth_api(ADMIN_API_PATH).read('shares')
           data = data['shares'] if data.is_a?(Hash)
-          Rest::List.lookup_entity_generic(entity: 'share', field: field, value: value) { data }['id']
+          Rest::List.lookup_entity_generic(field: field, value: value, entity: 'share') { data }['id']
         end
 
         # --- health ---

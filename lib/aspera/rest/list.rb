@@ -120,19 +120,19 @@ module Aspera
           Aspera.assert_values(field, ['name']) { 'Default query field' }
           query = {'q'=> value}
         end
-        lookup_entity_generic(entity: entity, field: field, value: value) { list_entities_limit_offset_total_count(entity: entity, items_key: items_key, query: query).first }
+        lookup_entity_generic(field: field, value: value, entity: entity) { list_entities_limit_offset_total_count(entity: entity, items_key: items_key, query: query).first }
       end
 
       # Lookup entity by field and value.
       # Extracts a single result from the list returned by the block.
       #
-      # @param entity [String] Type of entity to lookup (path, and by default it is also the field name in result)
-      # @param value  [String] Value to match against the field.
-      # @param field  [String] Field to match in the hashes (defaults to 'name').
-      # @yield []              A mandatory block that returns an Array of Hashes.
+      # @param field  [String] Field to match in the hashes.
+      # @param value  [String] Value to match against the field (exact match with `eql?`: case and type sensitive).
+      # @param entity [String] Type of entity to lookup (typically, API path, only used for exception)
+      # @yieldreturn [Array<Hash>] The list of entities to search (block is mandatory).
       # @return [Hash] The unique matching object.
       # @raise  [Cli::BadIdentifier] If 0 or >1 matches are found.
-      def lookup_entity_generic(entity:, value:, field: 'name')
+      def lookup_entity_generic(field:, value:, entity:)
         Aspera.assert(block_given?, 'block required for lookup_entity_generic')
         found = yield
         Aspera.assert_array_all(found, Hash)
