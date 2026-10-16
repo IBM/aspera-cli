@@ -291,6 +291,8 @@ class DocHelper
     [/\$\(\(?t\.saved_output( :|\(')([^\)']+_id)'?.*\)/, '<id>'],
     [/\$\(t\.saved_output( :|\(')([^\)']+)'?.*\)/, '<\2>'],
     [/@preset:([^_]+)_[^ ]+\.url/, 'https://\1.example.com/path'],
+    # Value of a secret: placeholder like `ph`
+    [/((?:pass(?:word)?|secret)(?:=|":"))@preset:(?:[a-z0-9_]+|\$\([a-z_]+\)[a-z0-9_]*)\.([a-z0-9_]+)@?/, ->(m) { "#{m[1]}<#{m[2].delete_suffix('_here').upcase}>" }],
     [/@preset:(?:[a-z0-9_]+|\$\([a-z_]+\)[a-z0-9_]*)\.([a-z0-9_]+)@?/, 'my_\1'],
     [/my_link_([a-z_]+)/, 'https://app.example.com/\1_path'],
     [%r{\$\(PATH_TMP_SYNCS / '[^']+'\)}, '/data/local_sync'],
@@ -310,7 +312,7 @@ class DocHelper
     ['$(TMP / "localhost.p12")', '.../localhost.p12'],
     ['"docroot":"$(TMP)"', '"docroot":"/data"'],
     ['$(remote_host)', 'app.example.com'],
-    ['"my_password"', '"my_password_here"'],
+    ['$(TEST_SECRET)', '<PASSWORD>'],
     [/\$\((?:name|t\.resolve :[a-z0-9_]+)\) \$\(TIMESTAMP_TEST_RUN\)/, 'package title'],
     [/^--base=.*/, '--base=test'],
     [/^(--[a-z\-.]+=)?(@[a-z]+:)?(.*['"*! $\\?].*)$/, "\\1\\2'\\3'"]
@@ -325,7 +327,9 @@ class DocHelper
       line = test[:args].reject { |cmd| cmd.to_s.start_with?('--preset=') || cmd.eql?('-N') }.map do |cmd|
         next cmd unless cmd.is_a?(String)
         next "''" if cmd.empty?
-        REPLACEMENTS_YAML.each { |replace| cmd = cmd.gsub(replace.first, replace.last) }
+        REPLACEMENTS_YAML.each do |replace|
+          cmd = replace.last.is_a?(Proc) ? cmd.gsub(replace.first) { replace.last.call(Regexp.last_match) } : cmd.gsub(replace.first, replace.last)
+        end
         cmd
       end.join(' ')
       line = line.strip.squeeze(' ')

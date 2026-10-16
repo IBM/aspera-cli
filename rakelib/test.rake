@@ -58,6 +58,8 @@ PATH_FILE_PAIR_LIST2 = TMP / 'file_pair_list.txt'
 PATH_HOT_FOLDER = TMP / 'source_hot'
 PATH_SCRIPTS = TST
 PKCS_P = 'YourExportPassword'
+# Secret value used in tests (content protection, vault, presets), shown as <PASSWORD> in doc
+TEST_SECRET = 'my_secret_here'
 TEMPORIZE_CREATE = 10
 TEMPORIZE_FILE = 30
 # ------------------

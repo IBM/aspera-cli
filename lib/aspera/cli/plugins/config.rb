@@ -243,7 +243,7 @@ module Aspera
           command :delete, description: 'Delete a secret by label (or id)',
             arguments: [{name: :label}, {name: :id, mandatory: false, default: nil}]
           command(
-            :password, description: 'Change the vault password',
+            :password, description: 'Set a new password for the vault',
             arguments: [{name: :new_password}],
             action: lambda do |new_password:, **|
               Aspera.assert(vault_required.respond_to?(:change_password), 'Vault does not support password change')

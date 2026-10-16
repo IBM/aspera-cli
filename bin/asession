@@ -26,7 +26,7 @@ class SimpleTransferManager
   # Default SDK location
   SDK_DEFAULT_DIR = File.join(Dir.home, '.aspera', 'sdk')
   # Place transfer spec in that
-  SAMPLE_DEMO = '"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera"'
+  SAMPLE_DEMO = '"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"<PASSWORD>"'
   SAMPLE_DEMO2 = '"direction":"receive","destination_root":"./test.dir"'
   STDIN_INPUT = '@json:@stdin:'
   class << self

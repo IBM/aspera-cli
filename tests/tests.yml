@@ -852,7 +852,7 @@ serv_upload_ts_options:
     - --src-type=pair
     - $(PATH_TST_ASC_LCL)
     - "@extend:@preset:server.upload_folder@/other_name_5"
-    - --ts=@json:{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":"-1","exclude_older_than":"-10000","fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum"}
+    - --ts=@json:{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"$(TEST_SECRET)","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":"-1","exclude_older_than":"-10000","fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum"}
 serv_sync_pull_args_reset:
   description: Sync using args syntax (reset)
   pre: |
@@ -1142,7 +1142,8 @@ serv_key:
     - server
     - browse
     - /
-    - "--password=@none:"
+    - --password
+    - "@none:"
     - --ssh-options.number_of_password_prompts=0
     - --ssh-keys=$(t.saved_output :serv_key_path)
 serv_upload_progress_quiet:
@@ -2212,7 +2213,8 @@ nd_ak_bearer_browse:
     - -N
     - node
     - --url=@preset:tst_node_preview.url
-    - --password=Bearer $(t.saved_output :nd_bearer_token)
+    - --password
+    - Bearer $(t.saved_output :nd_bearer_token)
     - --root-id=$(t.saved_output :nd_ak_bearer_root_id)
     - access_key
     - do
@@ -2327,7 +2329,7 @@ faspex_send_via_aoc_gateway:
     - faspex
     - --url=https://localhost:12347/aspera/faspex
     - --username=_unused_
-    - --password=_unused_
+    - --password=$(TEST_SECRET)
     - --warn-insecure=yes
     - package
     - send
@@ -5512,7 +5514,7 @@ conf_vault_create:
     - create
     - "@:"
     - label=my_label
-    - password=my_password_here
+    - password=$(TEST_SECRET)
     - description=my secret
 conf_vault_info:
   depends_on:
@@ -5588,7 +5590,7 @@ conf_preset_update_auto_secure:
     - preset
     - update
     - auto_secure_test
-    - --password=cleartext_pass
+    - --password=$(TEST_SECRET)
     - --username=alice
   post: |
     config = YAML.load_file(PATH_TEST_CONFIG)
@@ -5609,11 +5611,11 @@ conf_preset_update_vault_none:
     - preset
     - update
     - vault_none_test
-    - --password=still_clear
+    - --password=$(TEST_SECRET)
   post: |
     config = YAML.load_file(PATH_TEST_CONFIG)
     preset = config['vault_none_test']
-    raise "password should stay in clear, got: #{preset['password']}" unless preset['password'] == 'still_clear'
+    raise "password should stay in clear, got: #{preset['password']}" unless preset['password'] == TEST_SECRET
 conf_vault_pass:
   tags:
     - vault
@@ -6783,7 +6785,7 @@ f5_pack_send:
     #    - metadata=@preset:f5_misc.meta
     - END
     - $(PATH_TST_ASC_LCL)
-    - --ts.content_protection_password=my_secret_here
+    - --ts.content_protection_password=$(TEST_SECRET)
 f5_pack_list:
   args:
     - faspex5
@@ -6890,7 +6892,7 @@ f5_pack_recv:
     - receive
     - $(t.saved_output :f5_pack_id)
     - --to-folder=$(TMP)
-    - --ts.content_protection_password=my_secret_here
+    - --ts.content_protection_password=$(TEST_SECRET)
 f5_pack_first_file:
   depends_on:
     - f5_pack_id
@@ -6914,7 +6916,7 @@ f5_pack_recv_file:
     - $(t.saved_output :f5_pack_id)
     - $(t.saved_output :f5_pack_first_file)
     - --to-folder=$(TMP)
-    - --ts.content_protection_password=my_secret_here
+    - --ts.content_protection_password=$(TEST_SECRET)
 f5_pack_recv_all:
   depends_on:
     - f5_pack_id
@@ -7541,7 +7543,7 @@ f5_fxgw_test:
     - faspex
     - --url=https://localhost:12346/aspera/faspex
     - --username=_unused_
-    - --password=_unused_
+    - --password=$(TEST_SECRET)
     - package
     - send
     - --delivery-info=@json:{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}

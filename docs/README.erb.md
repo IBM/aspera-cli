@@ -2738,7 +2738,7 @@ demo_server:
   _comment: "Demo server - public credentials"
   url: ssh://demo.asperasoft.com:33001
   username: asperaweb
-  password: demoaspera
+  password: <%=ph :password%>
 ```
 
 > [!NOTE]
@@ -3125,13 +3125,13 @@ Quick start macOS:
 ```shell
 brew tap hashicorp/tap
 brew install hashicorp/tap/vault
-vault server -dev -dev-root-token-id=dev-only-token
+vault server -dev -dev-root-token-id=<%=ph :token%>
 ```
 
 <%=schema_to_table(Aspera::Schema::Registry::VAULT_OPTIONS)%>
 
 ```shell
---vault=@json:'{"type":"vault","url":"http://127.0.0.1:8200"}' --vault-password=dev-only-token
+--vault=@json:'{"type":"vault","url":"http://127.0.0.1:8200"}' --vault-password=<%=ph :token%>
 ```
 
 #### Vault: System keychain
@@ -3224,7 +3224,7 @@ Secrets can be manipulated using the `config vault` command:
 - `show` : Show a secret by label (or id)
 - `create` : Add a new secret to the vault
 - `delete` : Delete a secret by label (or id)
-- `password` : Change the vault password
+- `password` : Set a new password for the vault
 - `import` : Import secrets from a JSON array (supports `--bulk`)
 
 To add a new password entry in the vault for label `<%=ph :name%>`:
@@ -3275,7 +3275,7 @@ Example:
 For more secure storage, first create a vault entry (see [Vault: Operations](#vault-operations)), then refer to it in the preset:
 
 ```shell
-<%=cmd%> config preset update <%=ph :preset_name%> --url=... --username=... --password=@val:@vault:<%=ph :vault_label%>.password
+<%=cmd%> config preset update <%=ph :preset_name%> --url=... --username=... --password=@val:@vault:<%=ph(:vault_label)%>.password
 ```
 
 > [!NOTE]
@@ -3667,7 +3667,7 @@ If the proxy found with the PAC requires credentials, then use option `proxy_cre
 ```
 
 ```shell
-<%=cmd%> --proxy-credentials=@list::<%=ph :username%>:<%=ph :password%> ...
+<%=cmd%> --proxy-credentials=@list::<%=ph(:username)%>:<%=ph(:password)%> ...
 ```
 
 #### Proxy for Legacy Aspera HTTP/S Fallback

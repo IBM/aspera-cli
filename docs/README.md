@@ -2794,7 +2794,7 @@ demo_server:
   _comment: "Demo server - public credentials"
   url: ssh://demo.asperasoft.com:33001
   username: asperaweb
-  password: demoaspera
+  password: <PASSWORD>
 ```
 
 > [!NOTE]
@@ -3031,7 +3031,7 @@ transfer list
 transfer status <conf_async_node_upload>
 transferd install
 transferd list
-vault create @: label=my_label password=my_password_here 'description=my secret'
+vault create @: label=my_label password=<PASSWORD> 'description=my secret'
 vault delete foo --vault.type=system
 vault delete my_label
 vault ids
@@ -3042,9 +3042,9 @@ wizard https://console.example.com/path console
 wizard https://f5.example.com/path faspex5 --key-path=my_private_key
 wizard https://node.example.com/path node --username=test --password=test
 wizard https://orch.example.com/path orchestrator --username=test --password=test
-wizard https://server.example.com/path server --username=my_username --password=my_password
+wizard https://server.example.com/path server --username=my_username --password=<PASSWORD>
 wizard https://shares.example.com/path shares --username=test --password=test
-wizard https://tst.example.com/path faspio --username=my_username --password=my_password
+wizard https://tst.example.com/path faspio --username=my_username --password=<PASSWORD>
 wizard https://tst.example.com/path httpgw
 wizard my_org aoc --key-path=my_private_key --username=my_user_email --use-generic-client=yes
 wizard my_org aoc mypreset --key-path=my_private_key --username=my_user_email
@@ -3310,7 +3310,7 @@ Quick start macOS:
 ```shell
 brew tap hashicorp/tap
 brew install hashicorp/tap/vault
-vault server -dev -dev-root-token-id=dev-only-token
+vault server -dev -dev-root-token-id=<TOKEN>
 ```
 
 | Field | Type | Description |
@@ -3335,7 +3335,7 @@ vault server -dev -dev-root-token-id=dev-only-token
 | `vault` | `String` | Name or ID of the 1Password vault to use with the CLI (used when `source` is `cli`). Uses the default vault if omitted. |
 
 ```shell
---vault=@json:'{"type":"vault","url":"http://127.0.0.1:8200"}' --vault-password=dev-only-token
+--vault=@json:'{"type":"vault","url":"http://127.0.0.1:8200"}' --vault-password=<TOKEN>
 ```
 
 #### Vault: System keychain
@@ -3428,7 +3428,7 @@ Secrets can be manipulated using the `config vault` command:
 - `show` : Show a secret by label (or id)
 - `create` : Add a new secret to the vault
 - `delete` : Delete a secret by label (or id)
-- `password` : Change the vault password
+- `password` : Set a new password for the vault
 - `import` : Import secrets from a JSON array (supports `--bulk`)
 
 To add a new password entry in the vault for label `<NAME>`:
@@ -7655,10 +7655,10 @@ admin application instance list --query.organization_apps=true
 admin application membership list
 admin application types
 admin ats access_key create --cloud=aws --region=my_region @json:'{"id":"ak_aws_aoc","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
-admin ats access_key create --cloud=softlayer --region=my_region @: id=ak1ibmcloud secret=my_secret_here 'name="my test key"' storage.type=ibm-s3 storage.bucket=my_bucket storage.credentials.access_key_id=my_access_key storage.credentials.secret_access_key=my_secret_key storage.path=/
+admin ats access_key create --cloud=softlayer --region=my_region @: id=ak1ibmcloud secret=<SECRET> 'name="my test key"' storage.type=ibm-s3 storage.bucket=my_bucket storage.credentials.access_key_id=my_access_key storage.credentials.secret_access_key=my_secret_key storage.path=/
 admin ats access_key delete ak1ibmcloud
 admin ats access_key list --fields=name,id
-admin ats access_key node ak1ibmcloud --secret=my_secret_here browse /
+admin ats access_key node ak1ibmcloud --secret=<SECRET> browse /
 admin ats cluster clouds
 admin ats cluster list
 admin ats cluster show --cloud=aws --region=eu-west-1
@@ -7681,15 +7681,15 @@ admin kms_profile list
 admin network_policy list
 admin network_policy show <id>
 admin node bearer_token %name:my_node_name user:all
-admin node do %name:my_node_name --secret=my_ak_secret browse /
-admin node do %name:my_node_name --secret=my_ak_secret browse /folder_sub --node-api.cache=false
-admin node do %name:my_node_name --secret=my_ak_secret delete /folder1
-admin node do %name:my_node_name --secret=my_ak_secret delete /folder_sub
-admin node do %name:my_node_name --secret=my_ak_secret mkdir /folder1
-admin node do %name:my_node_name --secret=my_ak_secret mkdir /folder_sub
-admin node do %name:my_node_name --secret=my_ak_secret v3 access_key create @json:'{"id":"testsub1","storage":{"path":"/folder_sub"}}'
-admin node do %name:my_node_name --secret=my_ak_secret v3 access_key delete testsub1
-admin node do %name:my_node_name --secret=my_ak_secret v3 events
+admin node do %name:my_node_name --secret=<AK_SECRET> browse /
+admin node do %name:my_node_name --secret=<AK_SECRET> browse /folder_sub --node-api.cache=false
+admin node do %name:my_node_name --secret=<AK_SECRET> delete /folder1
+admin node do %name:my_node_name --secret=<AK_SECRET> delete /folder_sub
+admin node do %name:my_node_name --secret=<AK_SECRET> mkdir /folder1
+admin node do %name:my_node_name --secret=<AK_SECRET> mkdir /folder_sub
+admin node do %name:my_node_name --secret=<AK_SECRET> v3 access_key create @json:'{"id":"testsub1","storage":{"path":"/folder_sub"}}'
+admin node do %name:my_node_name --secret=<AK_SECRET> v3 access_key delete testsub1
+admin node do %name:my_node_name --secret=<AK_SECRET> v3 events
 admin node do %name:my_node_name delete test_shared_folder
 admin node do %name:my_node_name mkdir test_shared_folder
 admin node do %name:my_node_name perm test_shared_folder create @json:'{"with":"","as":"other_name_shared"}' --workspace=my_workspace_shared_inbox
@@ -7728,7 +7728,7 @@ files bearer_token_node / --cache-tokens=no
 files browse /
 files browse / --url=my_private_link_shared_folder
 files browse / --url=my_public_link_folder_no_pass
-files browse / --url=my_public_link_folder_with_pass --password=my_public_link_folder_password
+files browse / --url=my_public_link_folder_with_pass --password=<PUBLIC_LINK_FOLDER_PASSWORD>
 files browse my_remote_file
 files browse my_remote_folder
 files browse my_remote_folder/
@@ -7775,7 +7775,7 @@ packages receive INIT --once-only=yes --query.dropbox_name=my_shared_inbox_name
 packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"package title","recipients":["my_shared_inbox_meta"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' test_file.bin
 packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"package title","recipients":["my_shared_inbox_meta"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' test_file.bin
 packages send --workspace=my_workspace_shared_inbox @json:'{"name":"package title","recipients":["my_shared_inbox_name"]}' test_file.bin
-packages send @: 'name=package title' END test_file.bin --url=my_public_link_send_aoc_user --password=my_public_link_send_use_pass
+packages send @: 'name=package title' END test_file.bin --url=my_public_link_send_aoc_user --password=<PUBLIC_LINK_SEND_USE_PASS>
 packages send @: 'name=package title' END test_file.bin --url=my_public_link_send_shared_inbox
 packages send @: 'name=package title' recipients.0=my_username 'note=some notes' END test_file.bin
 packages send @json:'{"name":"package title","recipients":["my_email_external"]}' --new-user-option.package_contact=true test_file.bin
@@ -7783,7 +7783,7 @@ packages shared_inboxes list
 packages shared_inboxes short_link public %name:my_shared_inbox_name create --fields=id
 packages shared_inboxes short_link public %name:my_shared_inbox_name delete <aoc_shared_inbox_short_link_create>
 packages shared_inboxes short_link public %name:my_shared_inbox_name list
-packages shared_inboxes short_link public %name:my_shared_inbox_name modify <aoc_shared_inbox_short_link_create> @: password=my_public_link_folder_password
+packages shared_inboxes short_link public %name:my_shared_inbox_name modify <aoc_shared_inbox_short_link_create> @: password=<PUBLIC_LINK_FOLDER_PASSWORD>
 packages shared_inboxes short_link public %name:my_shared_inbox_name show <aoc_shared_inbox_short_link_create>
 packages shared_inboxes show %name:my_shared_inbox_name
 packages show '%name:package title'
@@ -7933,13 +7933,13 @@ The parameters provided to ATS for access key creation are the ones of [ATS API]
 > Add `ascli ats` in front of the following commands:
 
 ```shell
-access_key cluster ak2ibmcloud --secret=my_secret_here
+access_key cluster ak2ibmcloud --secret=<SECRET>
 access_key create --cloud=aws --region=my_region @json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
-access_key create --cloud=softlayer --region=my_region @json:'{"id":"ak2ibmcloud","secret":"my_secret_here","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
+access_key create --cloud=softlayer --region=my_region @json:'{"id":"ak2ibmcloud","secret":"<SECRET>","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
 access_key delete ak2ibmcloud
 access_key entitlement ak2ibmcloud
 access_key list --fields=name,id
-access_key node ak2ibmcloud browse / --secret=my_secret_here
+access_key node ak2ibmcloud browse / --secret=<SECRET>
 access_key show ak2ibmcloud
 api_key create
 api_key instances
@@ -7982,7 +7982,7 @@ ascli server --url=ssh://hsts.example.com:33001 --username=john --ssh-keys=~/.ss
 
 ```shell
 browse /
-browse / --password=@none: --ssh-options.number_of_password_prompts=0 --ssh-keys=<serv_key_path>
+browse / --password @none: --ssh-options.number_of_password_prompts=0 --ssh-keys=<serv_key_path>
 browse my_inside_folder/test_file.bin
 browse my_upload_folder/target_hot
 cp my_inside_folder/test_file.bin my_upload_folder/200KB.2
@@ -8012,7 +8012,7 @@ upload --sources=@ts --transfer.ascp_args=@list:,--file-pair-list,file_pair_list
 upload --sources=@ts --ts=@json:'{"paths":[{"source":"test_file.bin","destination":"my_inside_folder/other_name_4"}]}' --transfer.agent=transferd
 upload --src-type=pair --sources=@json:'["test_file.bin","my_inside_folder/other_name_3"]' --transfer.quiet=false
 upload --src-type=pair test_file.bin my_inside_folder/other_name_2 --notify-to=my_email_external '--transfer.ascp_args=@list: -l 100m'
-upload --src-type=pair test_file.bin my_upload_folder/other_name_5 --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"my_secret_here","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":"-1","exclude_older_than":"-10000","fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum"}'
+upload --src-type=pair test_file.bin my_upload_folder/other_name_5 --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"<PASSWORD>","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":"-1","exclude_older_than":"-10000","fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum"}'
 upload --to-folder=my_upload_folder/target_hot --lock-port=50101 --transfer.ascp_args=@list:,--remove-after-transfer,--remove-empty-directories,--exclude-newer-than=-8,--src-base,hot_folder hot_folder
 upload /test_file.bin --to-folder=my_upload_folder --transfer.agent=node --transfer.url=http://localhost:12348 --transfer.username=sim --transfer.password=sim
 upload test_file.bin --to-folder=my_inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}' --transfer=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress-bar=yes
@@ -8578,24 +8578,24 @@ ascli node -N --url=https://... --password="Bearer $(cat bearer.txt)" --root-id=
 ```shell
 --url=http://localhost:12348 --username=sim --password=sim browse / --fields=path --format=csv --select=@json:'{"basename":"test_file.bin"}'
 --url=http://localhost:12348 --username=sim --password=sim transfer list --fields=status
---url=https://tst.example.com/path --password='Bearer <nd_bearer_token>' --root-id=<id> access_key do self browse /
-access_key create @json:'{"id":"my_username","secret":"my_password_here","storage":{"type":"local","path":"/"}}'
+--url=https://tst.example.com/path --password 'Bearer <nd_bearer_token>' --root-id=<id> access_key do self browse /
+access_key create @json:'{"id":"my_username","secret":"<PASSWORD>","storage":{"type":"local","path":"/"}}'
 access_key delete my_username
-access_key do my_ak_name browse / --secret=my_ak_secret
-access_key do my_ak_name delete /test_nd_ak2 --secret=my_ak_secret
-access_key do my_ak_name delete test_nd_ak3 --secret=my_ak_secret
-access_key do my_ak_name download test_nd_ak3 --to-folder=. --secret=my_ak_secret
-access_key do my_ak_name find my_test_folder --secret=my_ak_secret
-access_key do my_ak_name find my_test_folder @re:'\.jpg$' --secret=my_ak_secret
+access_key do my_ak_name browse / --secret=<AK_SECRET>
+access_key do my_ak_name delete /test_nd_ak2 --secret=<AK_SECRET>
+access_key do my_ak_name delete test_nd_ak3 --secret=<AK_SECRET>
+access_key do my_ak_name download test_nd_ak3 --to-folder=. --secret=<AK_SECRET>
+access_key do my_ak_name find my_test_folder --secret=<AK_SECRET>
+access_key do my_ak_name find my_test_folder @re:'\.jpg$' --secret=<AK_SECRET>
 access_key do my_ak_name find my_test_folder @ruby:'->(f){f["name"].end_with?(".jpg")}'
- --secret=my_ak_secret
-access_key do my_ak_name mkdir /tst_nd_ak --secret=my_ak_secret
-access_key do my_ak_name mkfile /mkfile.txt 'hello world' --secret=my_ak_secret
-access_key do my_ak_name mklink /mklink.txt --query=@json:'{"target":"/mkfile.txt","target_node_id":"123"}' --secret=my_ak_secret
-access_key do my_ak_name node_info / --secret=my_ak_secret
-access_key do my_ak_name rename /tst_nd_ak test_nd_ak2 --secret=my_ak_secret
-access_key do my_ak_name show %id:1 --secret=my_ak_secret
-access_key do my_ak_name upload 'faux:///test_nd_ak3?100k' --node-api.standard_ports=false --secret=my_ak_secret
+ --secret=<AK_SECRET>
+access_key do my_ak_name mkdir /tst_nd_ak --secret=<AK_SECRET>
+access_key do my_ak_name mkfile /mkfile.txt 'hello world' --secret=<AK_SECRET>
+access_key do my_ak_name mklink /mklink.txt --query=@json:'{"target":"/mkfile.txt","target_node_id":"123"}' --secret=<AK_SECRET>
+access_key do my_ak_name node_info / --secret=<AK_SECRET>
+access_key do my_ak_name rename /tst_nd_ak test_nd_ak2 --secret=<AK_SECRET>
+access_key do my_ak_name show %id:1 --secret=<AK_SECRET>
+access_key do my_ak_name upload 'faux:///test_nd_ak3?100k' --node-api.standard_ports=false --secret=<AK_SECRET>
 access_key do self permission %id:<id> create @json:'{"access_type":"user","access_id":"666"}'
 access_key do self permission / delete 1
 access_key do self permission / modify 1 @: 'access_levels=@list: read list'
@@ -8639,7 +8639,7 @@ space /
 spec
 ssync bandwidth %name:my_node_sync
 ssync counters %name:my_node_sync
-ssync create @json:'{"configuration":{"name":"my_node_sync","local":{"path":"my_local_path_real"},"remote":{"host":"my_host","port":my_port,"user":"my_username","pass":"my_password_here","path":"my_remote_path"}}}'
+ssync create @json:'{"configuration":{"name":"my_node_sync","local":{"path":"my_local_path_real"},"remote":{"host":"my_host","port":my_port,"user":"my_username","pass":"<PASSWORD>","path":"my_remote_path"}}}'
 ssync delete %name:my_node_sync
 ssync files %name:my_node_sync
 ssync list
@@ -8661,8 +8661,8 @@ transfer sessions
 transfer show <id>
 transport
 upload 'faux:///testfile1?1m' --to-folder=my_local_path
-upload --to-folder=my_upload_folder --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer.agent=node --transfer.url=https://node.example.com/path --transfer.username=my_username --transfer.password=my_password
-upload --username=my_ak_name --password=my_ak_secret test_file.bin
+upload --to-folder=my_upload_folder --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer.agent=node --transfer.url=https://node.example.com/path --transfer.username=my_username --transfer.password=<PASSWORD>
+upload --username=my_ak_name --password=<AK_SECRET> test_file.bin
 upload my_mxf my_docx --ts=@json:'{"target_rate_kbps":1000000,"resume_policy":"none"}'
 watch_folder list
 ```
@@ -9037,14 +9037,14 @@ packages receive --box=my_shared_box_name <id> --to-folder=.
 packages receive --box=my_workgroup --group-type=workgroups <id> --to-folder=.
 packages receive --url=my_public_link_recv_fr_user --to-folder=.
 packages receive --url=my_public_link_recv_fr_user ALL --to-folder=.
-packages receive <id> --to-folder=. --ts.content_protection_password=my_secret_here
-packages receive <id> <f5_pack_first_file> --to-folder=. --ts.content_protection_password=my_secret_here
+packages receive <id> --to-folder=. --ts.content_protection_password=<PASSWORD>
+packages receive <id> <f5_pack_first_file> --to-folder=. --ts.content_protection_password=<PASSWORD>
 packages receive ALL --once-only=yes --to-folder=. --query.max=5
 packages receive INIT --once-only=yes
 packages send --url=my_public_link_send_shared_box @json:'{"title":"test title"}' test_file.bin
 packages send --url=my_public_link_send_to_user @json:'{"title":"test title"}' test_file.bin
 packages send @: 'title=for shared inbox' recipients.0=my_shared_box_name metadata.Options=Opt1 'metadata.TextInput=example text' END test_file.bin
-packages send @: 'title=test title' recipients.0.name=my_username END test_file.bin --ts.content_protection_password=my_secret_here
+packages send @: 'title=test title' recipients.0.name=my_username END test_file.bin --ts.content_protection_password=<PASSWORD>
 packages send @json:'{"title":"test title","recipients":["my_workgroup"]}' test_file.bin
 packages send @json:'{"title":"test_webhook_ascli","recipients":["my_shared_box_name"]}' 'faux:///test1?1m'
 packages show --box=my_shared_box_name <id>
@@ -9621,7 +9621,7 @@ Available permissions: `browse_permission`, `download_permission`, `upload_permi
 > Add `ascli shares` in front of the following commands:
 
 ```shell
-admin authenticate @: username=my_username password=my_password
+admin authenticate @: username=my_username password=<PASSWORD>
 admin directory list
 admin group all list
 admin group search list
@@ -11608,7 +11608,7 @@ USAGE
        {"type":"START","source":"xx","destination":"yy"}
        {"type":"DONE"}
 EXAMPLES
-    asession @json:'{"spec":{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"demoaspera","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}}'
+    asession @json:'{"spec":{"remote_host":"demo.asperasoft.com","remote_user":"asperaweb","ssh_port":33001,"remote_password":"<PASSWORD>","direction":"receive","destination_root":"./test.dir","paths":[{"source":"/aspera-test-dir-tiny/200KB.1"}]}}'
     echo '{"spec":{"remote_host":...}}'|asession @json:@stdin:
 
 ```
