@@ -150,7 +150,7 @@ module Aspera
 
         commands_under :admin do
           commands_under :node do
-            crud_commands entity: 'data/nodes', api: :@api_shares_admin
+            crud_commands entity: 'data/nodes', api: :@api_shares_admin, lookup: %w[name]
           end
           commands_under :ldap_config, description: 'LDAP configuration' do
             crud_commands entity: 'data/ldap_configs', api: :@api_shares_admin
