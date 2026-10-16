@@ -40,8 +40,10 @@ module Aspera
         text.to_s.gsub(Markdown::INLINE_MARKUP_RE) do
           match = Regexp.last_match
           if match[:entity]
-            Aspera.assert_values(match[:entity], %w[bsol])
-            '\\'
+            case match[:entity]
+            when 'bsol' then '\\'
+            else Aspera.error_unexpected_value(match[:entity]) { 'HTML entity' }
+            end
           elsif match[:bold]
             match[:bold].to_s.blue
           elsif match[:code]
