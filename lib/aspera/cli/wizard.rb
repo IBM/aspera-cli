@@ -3,6 +3,7 @@
 require 'aspera/oauth/client/jwt'
 require 'aspera/assert'
 require 'aspera/environment'
+require 'aspera/id_generator'
 require 'aspera/cli/option_declarator'
 require 'aspera/cli/plugins/factory'
 require 'aspera/rainbow'
@@ -157,13 +158,12 @@ module Aspera
         Aspera.assert(WIZARD_RESULT_KEYS.eql?(wizard_result.keys.sort)) { "missing or extra keys in wizard result: #{wizard_result.keys}" }
         # Get preset name from user or default
         if wiz_preset_name.empty?
-          elements = [
+          wiz_preset_name = IdGenerator.from_list(
             identification[:product],
-            URI.parse(wiz_url).host
-          ]
-          elements.push(wizard_result[:preset_value][:username]) if wizard_result[:preset_value].key?(:username)
-          elements.push(wizard_result[:preset_value][:client_id]) if wizard_result[:preset_value].key?(:client_id) && !wizard_result[:preset_value].key?(:username)
-          wiz_preset_name = elements.join('_').strip.downcase.gsub(/[^a-z0-9]/, '_').squeeze('_')
+            wiz_url,
+            wizard_result[:preset_value][:username],
+            wizard_result[:preset_value][:client_id]
+          )
         end
         # Write configuration file
         formatter.display_status("Preparing preset: #{wiz_preset_name}")

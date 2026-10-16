@@ -15,7 +15,7 @@ module Aspera
         safe_char = Environment.instance.safe_filename_character
         # compact: remove nils
         id = ids.flatten.compact.map do |i|
-          i.is_a?(String) && i.start_with?('https://') ? URI.parse(i).host : i.to_s
+          i.is_a?(String) && i.start_with?('http://', 'https://') ? URI.parse(i).host : i.to_s
         end.join(safe_char)
         # keep dot for extension only (nicer)
         return Environment.instance.sanitized_filename(id.gsub('.', safe_char)).downcase
