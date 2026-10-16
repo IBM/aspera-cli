@@ -66,7 +66,7 @@ module Aspera
           crud_commands entity: 'bridges',
             api: :build_api,
             operations: %i[create list show delete],
-            lookup: :lookup_bridge_id,
+            lookup: %w[name],
             body_component: Schema::Registry::FASPIO
         end
 
@@ -74,19 +74,6 @@ module Aspera
         option :client_id,   description: 'OAuth client identifier'
         option :private_key, description: 'OAuth JWT RSA private key PEM **value**'
         option :passphrase,  description: 'OAuth JWT RSA private key passphrase'
-
-        # Resolve a bridge id from a percent selector: `%id:<id>` (no lookup) or `%name:<name>`.
-        # @param field [String] must be `id` or `name`
-        # @param value [String] value of the field
-        # @return [String] the bridge id
-        # @raise [Cli::BadIdentifier] if the name matches zero or several bridges
-        def lookup_bridge_id(field, value, **)
-          Aspera.assert_values(field, %w[id name], type: Cli::BadArgument) { 'search field' }
-          return value if field.eql?('id')
-          found = build_api.read('bridges').select { |bridge| bridge['name'].eql?(value) }
-          raise Cli::BadIdentifier.new('bridge', value, field: field, count: found.length) unless found.length.eql?(1)
-          found.first['id']
-        end
 
         # Build the REST API object based on the configured auth type.
         # @return [Rest::Client]

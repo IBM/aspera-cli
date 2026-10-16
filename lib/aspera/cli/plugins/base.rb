@@ -7,6 +7,7 @@ require 'aspera/cli/result'
 require 'aspera/cli/command_registry'
 require 'aspera/cli/option_declarator'
 require 'aspera/cli/special_values'
+require 'aspera/rest/list'
 require 'aspera/schema/registry'
 
 module Aspera
@@ -104,12 +105,24 @@ module Aspera
           # @param entity     [String, Symbol] REST sub-path, or ctx key Symbol resolved at runtime
           # @param operations [Array<Symbol>]  Verbs to expose; defaults to Operations::ALL
           # @param name       [String, nil]    Singular display name; defaults to last segment of entity (static only)
-          # @param lookup     [Symbol, nil]    Instance method for percent-selector resolution
+          # @param lookup     [Symbol, Proc, Array<String>, nil] Percent-selector resolution: instance method, lambda,
+          #                   or fields with unique values, looked up in the list of entities (plain Array of Hash)
           # @param id_name    [Symbol, nil]    Name of identifier argument; defaults to <name>_id, or id_as_arg field, or :id
           # @param kwargs     [Hash]           Shared params forwarded to every per-verb method
           def crud_commands(api:, entity:, operations: nil, name: nil, lookup: nil, id_name: nil, **kwargs)
             name       ||= entity_noun(entity, singular: !kwargs[:is_singleton]) unless entity.is_a?(Symbol)
             operations ||= Operations::ALL
+            if lookup.is_a?(Array)
+              unique_fields = lookup
+              # `%id:<id>` is the id itself (no lookup), other fields are looked up in the list of entities
+              lookup = lambda do |field, value, **ctx|
+                return value if field.eql?('id')
+                resolved_entity = entity.is_a?(Symbol) ? ctx.fetch(entity) : entity
+                label = name || resolved_entity
+                Aspera.assert_values(field, unique_fields, type: Cli::BadArgument) { "#{label} search field" }
+                Rest::List.lookup_entity_generic(field: field, value: value, entity: label) { crud_api(api).read(resolved_entity) }['id']
+              end
+            end
             # Body argument is named after the entity, e.g. <access_key>, and passed as data: to entity_<verb>
             data_name = name ? name.downcase.tr(' ', '_').to_sym : :data
             # Identifier argument is named after the entity, e.g. <access_key_id>, and passed as id: to entity_<verb>
@@ -139,18 +152,10 @@ module Aspera
                   id_arg ? [id_arg] : nil
                 end
               action_proc = lambda do |**ctx|
-                resolved_api =
-                  if api.is_a?(Symbol)
-                    api.to_s.start_with?('@') ? instance_variable_get(api) : send(api)
-                  elsif api.is_a?(Proc)
-                    instance_exec(&api)
-                  else
-                    api
-                  end
                 resolved_entity = entity.is_a?(Symbol) ? ctx.fetch(entity) : entity
                 ctx = ctx.merge(data: ctx[data_name]) if ctx.key?(data_name)
                 ctx = ctx.merge(id: ctx[id_name]) if ctx.key?(id_name)
-                send(:"entity_#{verb}", api: resolved_api, entity: resolved_entity, **kwargs, **ctx)
+                send(:"entity_#{verb}", api: crud_api(api), entity: resolved_entity, **kwargs, **ctx)
               end
               cmd_attrs = {description: operation_description(verb, name || entity.inspect), action: action_proc}
               cmd_attrs[:arguments] = args if args
@@ -602,6 +607,19 @@ module Aspera
             bfail:     options.get_option(:bfail),
             &block
           )
+        end
+
+        # Resolve the `api:` reference given to `crud_commands`.
+        # @param api [Symbol, Proc, Object] `:@ivar`, method name, Proc (instance_exec), or the API object itself
+        # @return [Rest::Client]
+        def crud_api(api)
+          if api.is_a?(Symbol)
+            api.to_s.start_with?('@') ? instance_variable_get(api) : send(api)
+          elsif api.is_a?(Proc)
+            instance_exec(&api)
+          else
+            api
+          end
         end
 
         # --- Per-verb entity action methods ---

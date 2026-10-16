@@ -567,6 +567,49 @@ module Aspera
           end
         end
 
+        describe '.crud_commands with lookup: unique fields' do
+          let(:options) { Parser.new('test', argv) }
+          let(:items) { [{'id' => 'i1', 'name' => 'one'}, {'id' => 'i2', 'name' => 'two'}] }
+          let(:api) do
+            double('api').tap do |a|
+              allow(a).to(receive(:read).with('items').and_return(items))
+              items.each { |item| allow(a).to(receive(:read).with("items/#{item['id']}").and_return(item)) }
+            end
+          end
+          let(:klass) do
+            test_api = api
+            Class.new(Base) do
+              crud_commands entity: 'items', api: :test_api, operations: %i[show], lookup: %w[name]
+              define_method(:test_api) { test_api }
+            end
+          end
+
+          context 'with a unique field selector' do
+            let(:argv) { %w[show %name:two] }
+
+            it 'looks up the id in the list of entities' do
+              expect(klass.new(context: context).execute_action.data).to(eq(items.last))
+            end
+          end
+
+          context 'with the id field selector' do
+            let(:argv) { %w[show %id:i1] }
+
+            it 'uses the value as id, without lookup' do
+              expect(klass.new(context: context).execute_action.data).to(eq(items.first))
+              expect(api).not_to(have_received(:read).with('items'))
+            end
+          end
+
+          context 'with a field not declared unique' do
+            let(:argv) { %w[show %other:x] }
+
+            it 'raises' do
+              expect { klass.new(context: context).execute_action }.to(raise_error(Cli::BadArgument, /item search field/))
+            end
+          end
+        end
+
         # ------------------------------------------------------------------
         # generate_help
         # ------------------------------------------------------------------
