@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'aspera/agent/factory'
 require 'aspera/command_line_builder'
 require 'aspera/assert'
 
@@ -27,6 +28,8 @@ module Aspera
       TAG_RESERVED = 'aspera'
       # Specific fields to not display
       SPECIFIC = %w{token paths direction source_root destination_root}.freeze
+      # Value of agent for documentation with one column per agent
+      DOC_OVERVIEW = :overview
       class << self
         # wrong def in transferd
         POLICY_FIX = {
@@ -74,6 +77,35 @@ module Aspera
         def fix_transferd_resume_policy(transfer_spec)
           # Fix discrepancy in transfer spec
           transfer_spec['resume_policy'] = POLICY_FIX[transfer_spec['resume_policy']] if transfer_spec.key?('resume_policy')
+        end
+
+        # Options of `Schema::Documentation` for the transfer spec: supported agents and `ascp` options
+        # @param agent [Symbol, nil] `nil`: all parameters, name of agent: parameters it supports, `DOC_OVERVIEW`: one column per agent
+        # @return [Hash] Keyword arguments of `Schema::Documentation.new`
+        def doc_options(agent = nil)
+          return {annotate: ->(node, formatter) { doc_lines(node, formatter, agent: agent) }} unless agent.eql?(DOC_OVERVIEW)
+          {
+            annotate:      ->(node, formatter) { doc_lines(node, formatter, agents_line: false) },
+            extra_columns: Agent::Factory::ALL.sort_by { |_, names| names[:short] }.to_h do |sym, names|
+              [names[:short].to_s, ->(node, formatter) { formatter.tick(CommandLineBuilder.supported_by_agent(sym, node)) }]
+            end
+          }
+        end
+
+        private
+
+        # Documentation of supported agents and command line option of a parameter: `annotate` of `Schema::Documentation`
+        # @param node        [Hash]               Schema of the parameter
+        # @param formatter   [FormatterInterface] Formatter of the documentation
+        # @param agent       [Symbol, nil]        Show only parameters supported by this agent, or all if `nil`
+        # @param agents_line [Boolean]            `true`: add a line with supported agents, if not all
+        # @return [Array<String>, nil] Lines added to the description, `nil` to hide the parameter
+        def doc_lines(node, formatter, agent: nil, agents_line: true)
+          agents = Agent::Factory::ALL.keys.select { |sym| CommandLineBuilder.supported_by_agent(sym, node) }
+          return if agents.empty? || (agent && !agents.include?(agent))
+          lines = []
+          lines.push("(#{agents.map { |i| Agent::Factory::ALL[i][:short].to_s.upcase }.sort.join(', ')})") if agents_line && !agents.length.eql?(Agent::Factory::ALL.length)
+          lines.concat(CommandLineBuilder.doc_lines(node, formatter))
         end
       end
       SCHEMA = CommandLineBuilder.read_schema(Schema::Registry::TRANSFER_SPEC, ascp: true)

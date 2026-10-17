@@ -10,8 +10,8 @@ info:
     REST API for managing IBM Aspera faspio Gateway bridges and monitoring.
 
     ## Overview
-    The faspio Gateway bridges local TCP/UDP connections over the FASP (Fast Adaptive Secure Protocol)
-    transport to a remote gateway peer. This API allows you to create, inspect, and delete **dynamic**
+    IBM Aspera faspio Gateway bridges local TCP or UDP connections over the FASP (Fast, Adaptive, and Secure Protocol)
+    transport to a remote gateway peer. You can use this API to create, inspect, and delete **dynamic**
     bridges at runtime without restarting the gateway.
 
     Static bridges (defined in `gateway.toml`) are read-only via this API — they can be retrieved
@@ -26,7 +26,7 @@ info:
     | `basic` | HTTP Basic Authentication (username + SHA-512/PBKDF2 password digest) |
     | `oauth2` | Bearer JWT token obtained via `POST /auth/token` |
 
-    ## OAuth 2.0 Quick Start
+    ## OAuth 2.0 quick start
 
     This gateway implements the **JWT Bearer grant** (RFC 7523). There is no identity provider
     involved — the gateway itself issues and verifies tokens using RSA key pairs you generate.
@@ -133,9 +133,17 @@ info:
 
     The access token expires after **1 hour** (`expires_in: 3600`). Repeat steps 3–4 to renew it.
 
-    ## Bridge Lifecycle
-    ```
-    POST /bridges  →  bridge created & started  →  GET /bridges/{id}  →  DELETE /bridges/{id}
+    ## Bridge lifecycle
+    ```text
+    POST /bridges
+        ↓
+    (bridge created and started)
+        ↓
+    GET /bridges/{id}
+        ↓
+    DELETE /bridges/{id}
+        ↓
+    (bridge stopped and removed)
     ```
 
     Bridges created via the API are **dynamic** — they are persisted to a runtime state file
@@ -431,7 +439,7 @@ paths:
       description: |
         **Not implemented.** Reserved for future use.
 
-        When implemented, this endpoint will only allow updating **dynamic** bridges.
+        When implemented, this endpoint will update only **dynamic** bridges.
         Attempting to update a **static** bridge will return `403 Forbidden`.
       requestBody:
         required: true
@@ -623,13 +631,10 @@ components:
 
     Protocol:
       description: |
-        Transport protocol used on an abutment.
-
-        | Value  | Description |
-        |--------|-------------|
-        | `tcp`  | Transmission Control Protocol — reliable, ordered byte stream |
-        | `udp`  | User Datagram Protocol — unreliable, connectionless datagrams |
-        | `fasp` | IBM Aspera FASP — high-speed UDP-based transfer protocol |
+        Transport protocol used on an abutment:
+        - `tcp`: Transmission Control Protocol (reliable, ordered byte stream)
+        - `udp`: User Datagram Protocol (unreliable, connectionless datagrams)
+        - `fasp`: IBM Aspera FASP (reliable high-speed UDP-based transfer protocol)
       type: string
       examples:
         - fasp
@@ -924,7 +929,7 @@ components:
     ErrorResponse:
       description: |
         Generic error response body. Not all error responses include a body —
-        some HTTP status codes (e.g., 204, 404) may return no content.
+        some HTTP status codes (for example, 204, 404) may return no content.
       type: object
       properties:
         message:
@@ -994,7 +999,7 @@ components:
     UnprocessableEntity:
       description: |
         Unprocessable Entity — the request body is syntactically valid JSON but
-        semantically incorrect (e.g., a required field is missing, an enum value is
+        semantically incorrect (for example, a required field is missing, an enum value is
         unrecognized, or a port range is malformed).
       content:
         application/json:

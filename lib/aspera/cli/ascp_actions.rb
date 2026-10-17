@@ -3,6 +3,7 @@
 require 'aspera/agent/factory'
 require 'aspera/schema/registry'
 require 'aspera/schema/reader'
+require 'aspera/schema/documentation'
 
 module Aspera
   module Cli
@@ -101,33 +102,18 @@ module Aspera
       def action_agents_show(agent_name:, **)
         names = Agent::Factory::ALL[agent_name]
         schema_key = AGENT_SCHEMA_KEY[agent_name]
-        agent_info = {
+        Result::SingleObject.new({
           'name'        => agent_name.to_s,
           'short'       => names[:short].to_s,
           'description' => schema_key ? Schema::Registry.instance.reader(schema_key).current['description'].to_s : '(no configurable parameters)'
-        }
-        if schema_key
-          properties = Schema::Registry.instance.reader(schema_key).current['properties'] || {}
-          rows = properties.map do |pname, pdef|
-            row = {'parameter' => pname, 'type' => pdef['type'].to_s, 'description' => pdef['description'].to_s}
-            row['required'] = (Schema::Registry.instance.reader(schema_key).current['required'] || []).include?(pname) ? 'yes' : 'no'
-            row['default']  = pdef.key?('default') ? pdef['default'].inspect : ''
-            row['enum']     = pdef.key?('enum')    ? pdef['enum'].join(', ') : ''
-            row
-          end
-          return Result::ObjectList.new(rows, fields: %w[parameter required type default enum description])
-        end
-        Result::SingleObject.new(agent_info)
+        })
       end
 
       def action_agents_parameters(agent_name:, **)
         schema_key = AGENT_SCHEMA_KEY[agent_name]
         return Result::Nothing.new if schema_key.nil?
-        properties = Schema::Registry.instance.reader(schema_key).current['properties'] || {}
-        rows = properties.map do |pname, pdef|
-          {'name' => pname, 'type' => pdef['type'].to_s, 'description' => pdef['description'].to_s}
-        end
-        Result::ObjectList.new(rows, fields: %w[name type description])
+        builder = Schema::Documentation.new(TerminalFormatter, Schema::Registry.instance.reader(schema_key)).build
+        Result::ObjectList.new(builder.rows, fields: builder.columns)
       end
     end
   end

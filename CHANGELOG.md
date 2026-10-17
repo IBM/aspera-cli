@@ -27,6 +27,8 @@ Highlights: security hardening of local web servers (authentication, minimum sec
 * **global**: Tables fit the terminal width: text columns are wrapped. Parameter `width` of `--out.table` sets the maximum width.
 * **global**: Shell completion follows the context: options of plugin and command, values and types of options and arguments, keys of structures, aliases and abbreviations, local files for uploads, with descriptions in Zsh, Fish and PowerShell.
 * `config`: New command `completion powershell` displays the completion script of PowerShell (see manual).
+* `config ascp spec`: Optional argument: name of agent, to display only the parameters it supports (as `config ascp schema`), or `overview`, for one column per agent.
+* **global**: Schema tables (value `help` of an option or argument, `config ascp spec`, `config sync spec`, `config agents parameters`, manual) indicate required fields.
 * `sync`: `target_rate` in `sync_info` accepts suffixes `k`, `m` and `g` (e.g. `100m`).
 
 ### Issues Fixed
@@ -64,6 +66,7 @@ Highlights: security hardening of local web servers (authentication, minimum sec
   * `1password`: `url` is read from the website of the item.
   * `preset secure` failed on a missing secret (`system`, `1password`), and `@vault:` on a label containing dots.
 * `config sync translate`: Options `-C`, `--ws-connect`, `-D`, `--scan-interval` and `--remote-scan-interval` were translated incorrectly.
+* **global**: Value `help` of an option or argument displays the schema as `config sync spec`: with fields of alternatives (`oneOf`), deprecations and examples, and for `--ts=help` the supported agents and `ascp` options. `config agents parameters` displays allowed values and defaults.
 
 ### Breaking Changes
 
@@ -80,7 +83,9 @@ Highlights: security hardening of local web servers (authentication, minimum sec
 * `orchestrator`: `workflows import` takes a file created by `workflows export`, and `workflows import_with_constraints` takes keys `filename`, `add_as_revision`, `subwf_constraints`, ... (see help).
 * `orchestrator`: `workorders output` displays values of variables as plain values instead of single-element arrays, and an empty value as `null`.
 * `config vault`: `create` fails if the label exists (`vault`, `1password`), `delete` fails if the secret does not exist (`file`). `1password`: `url` is stored as website of the item.
-* `config ascp spec`, `config sync spec`: `description` is a list of lines (formats `json`, `yaml`), absent when empty.
+* `config ascp spec`, `config sync spec`, `config agents parameters`, value `help` of an option or argument: Columns are `name`, `type` and `description` (no `required`), and `description` is a list of lines (formats `json`, `yaml`), absent when empty.
+* `config ascp spec`: Columns per agent are displayed with argument `overview`. By default, the description lists the supported agents, if not all (e.g. `(A, N)`).
+* `config agents show`: Displays only the agent description: parameters are displayed by `config agents parameters`.
 
 ## 4.27.5
 

@@ -202,6 +202,49 @@ RSpec.describe(Aspera::Schema::Reader) do
       expect(schemas.keys).to(eq(%w[city zip]))
       expect(schemas['city']).to(eq([{'type' => 'string'}]))
     end
+
+    describe 'required flag' do
+      def required_flags(reader)
+        flags = {}
+        reader.each_property { |_schema, _name, full, required| flags[full] = required }
+        flags
+      end
+
+      it 'is set from required of the parent object only' do
+        nested = described_class.new({
+          'required'   => ['owner'],
+          'properties' => {
+            'owner' => {'type' => 'object', 'required' => ['name'], 'properties' => {'name' => {}, 'owner' => {}}},
+            'note'  => {}
+          }
+        })
+        expect(required_flags(nested)).to(eq({'owner' => true, 'owner.name' => true, 'owner.owner' => false, 'note' => false}))
+      end
+
+      it 'is set when any allOf branch, or the allOf node, requires the property' do
+        all_of = described_class.new({
+          'required' => ['zip'],
+          'allOf'    => [
+            {'properties' => {'city' => {}, 'zip' => {}, 'street' => {}}},
+            {'required' => ['city']}
+          ]
+        })
+        expect(required_flags(all_of)).to(eq({'city' => true, 'zip' => true, 'street' => false}))
+      end
+
+      it 'is set when the oneOf node requires the property' do
+        one_of = described_class.new({
+          'required' => ['kind'],
+          'oneOf'    => [
+            {'properties' => {'kind' => {}, 'meow' => {}}},
+            {'required' => ['bark'], 'properties' => {'kind' => {}, 'bark' => {}}}
+          ]
+        })
+        flags = []
+        one_of.each_property { |_schema, name, _full, required| flags << [name, required] }
+        expect(flags).to(eq([['kind', true], ['meow', false], ['kind', true], ['bark', true]]))
+      end
+    end
   end
 
   describe '#to_rows' do

@@ -3813,7 +3813,7 @@ The list of agents and their short identifier can be displayed with:
 <%=cmd%> config agents list
 ```
 
-To display all configurable parameters for a specific agent:
+To display the configurable parameters of a specific agent (with required fields, default values, enumerated values):
 
 ```shell
 <%=cmd%> config agents parameters <agent name>
@@ -3826,7 +3826,7 @@ For example:
 <%=cmd%> config agents parameters node
 ```
 
-To display the full detail of an agent (description, required fields, default values, enumerated values):
+To display the description of an agent:
 
 ```shell
 <%=cmd%> config agents show <agent name>
@@ -4302,7 +4302,14 @@ Parameters can be displayed with commands:
 
 ```shell
 <%=cmd%> config ascp spec
-<%=cmd%> config ascp spec --select=@json:'{"d":"Y"}' --fields=-d,n,c
+```
+
+An optional parameter can be specified to display only the parameters supported by a specific transfer agent, or `overview` for one column per agent indicating which agents support each parameter:
+
+```shell
+<%=cmd%> config ascp spec direct
+<%=cmd%> config ascp spec overview
+<%=cmd%> config ascp spec overview --fields=name,a,c,d,h,n,t
 ```
 
 A JSON Schema can be generated with command:
@@ -4317,13 +4324,13 @@ An optional parameter can be specified to display the schema for a specific tran
 <%=cmd%> config ascp schema transferd --format=jsonpp
 ```
 
-The description gives the corresponding `ascp` argument or environment variable.
+The description gives the supported agents, if not all, and the corresponding `ascp` argument or environment variable.
 
 #### Transfer Specification Reference
 
 <%=agent_table%>
 
-<%=spec_to_table(Aspera::Transfer::Spec::SCHEMA, include_option: true)%>
+<%=spec_to_table(Aspera::Transfer::Spec::SCHEMA, **Aspera::Transfer::Spec.doc_options)%>
 
 #### Destination folder for transfers
 
@@ -9862,7 +9869,7 @@ The documentation is available in the terminal with:
 > <%=tool%> accepts the following fields within the `sync_info` Hash.
 > The options listed in the **Description** column correspond to the equivalent parameters used by the low-level `async` command.
 
-<%=spec_to_table(Aspera::Sync::Operations::CONF_SCHEMA, include_option: true)%>
+<%=spec_to_table(Aspera::Sync::Operations::CONF_SCHEMA, annotate: Aspera::CommandLineBuilder.method(:doc_lines))%>
 
 ##### `sync_info`: `args` format
 

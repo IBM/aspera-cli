@@ -1,10 +1,9 @@
 # frozen_string_literal: true
 
-require 'aspera/agent/factory'
-
 module Aspera
   module Schema
-    # Generate documentation from Schema, for Transfer Spec, or async Conf spec
+    # Generate documentation from a JSON Schema: in terminal and in manual.
+    # Information from `x-` extensions is provided by the caller (`annotate`).
     class Documentation
       # Map JSON Schema type names to user-friendly display names
       JSON_TYPE_TO_DOC = {
@@ -15,19 +14,21 @@ module Aspera
         'array'   => 'Array',
         'object'  => 'Hash'
       }.freeze
-      # @param formatter [Cli::Formatter] Formatter instance with methods: markdown_text, tick
-      # @param schema [Reader]
-      # @param include_option [Boolean] `true`: include CLI options (switches, env vars) in descriptions
-      # @param agent_columns  [Boolean] `true`: add separate columns for each transfer agent compatibility
+      COLUMNS = %w[name type description].freeze
+      # @param formatter      [FormatterInterface] Formatter with methods: markdown_text, special_format
+      # @param schema         [Reader]
       # @param code_highlight [Boolean] `true`: format name and type as code
-      def initialize(formatter, schema, include_option: false, agent_columns: false, code_highlight: false)
+      # @param annotate       [Proc, nil] Called with the schema of a property (`Hash`) and the formatter.
+      #   Returns lines added to the description (`Array<String>`), or `nil` to hide the property.
+      # @param extra_columns  [Hash{String => Proc}] Columns inserted before the description: name => Proc
+      #   called with the schema of a property (`Hash`) and the formatter, returns the value of the cell.
+      def initialize(formatter, schema, code_highlight: false, annotate: nil, extra_columns: {})
         @formatter = formatter
         @schema = schema
-        @include_option = include_option
-        @agent_columns = agent_columns
         @code_highlight = code_highlight
-        @columns = %w[name type description]
-        @columns.insert(-2, *Agent::Factory::ALL.values.map { |i| i[:short].to_s }.sort) if @agent_columns
+        @annotate = annotate
+        @extra_columns = extra_columns
+        @columns = COLUMNS.dup.insert(-2, *extra_columns.keys).freeze
         # Sections: each entry is {header: row_or_nil, rows: []}
         # A flat schema produces a single section with no header.
         @sections = [{header: nil, rows: []}]
@@ -49,7 +50,7 @@ module Aspera
         [@columns] + rows.map { |row| @columns.map { |field| row[field] } }
       end
 
-      # Generate a documentation table from a JSON schema for transfer specifications
+      # Generate a documentation table from a JSON schema
       #
       # Recursively processes a JSON schema to create a formatted table for manual documentation.
       # Handles nested objects, arrays, and extracts metadata (descriptions, types, enums, deprecations).
@@ -75,53 +76,24 @@ module Aspera
             end
           @sections.push({header: header, rows: []})
         end
-        schema.each_property(on_variant: on_variant) do |property_schema, _name, property_full_name|
+        schema.each_property(on_variant: on_variant) do |property_schema, _name, property_full_name, required|
           node = property_schema.current
-          # Manual table
+          annotations = @annotate ? @annotate.call(node, @formatter) : []
+          next if annotations.nil?
           item = {'name' => code.call(property_full_name)}
           item_type = type_text(node)
           item['type'] = code.call(item_type) unless item_type.nil?
-          item['description'] = []
+          @extra_columns.each { |column, value| item[column] = value.call(node, @formatter) }
+          description = []
+          description.push("DEPRECATED: #{node['x-deprecation']}") if node.key?('x-deprecation')
           # Render Markdown formatting and split lines
-          item['description'] = @formatter.markdown_text(node['description']).split("\n") if node.key?('description')
-          item['description'].unshift("DEPRECATED: #{node['x-deprecation']}") if node.key?('x-deprecation')
-          # Add flags for supported agents in doc
-          agents = []
-          Agent::Factory::ALL.each_key do |sym|
-            agents.push(sym) if node['x-agents'].nil? || node['x-agents'].include?(sym.to_s)
-          end
-          Aspera.assert(agents.include?(:direct)) { "#{property_full_name}: x-cli-option requires agent direct (or nil)" } if node['x-cli-option']
-          if @agent_columns
-            Agent::Factory::ALL.each do |sym, names|
-              item[names[:short].to_s] = @formatter.tick(agents.include?(sym))
-            end
-          else
-            item['description'].push("(#{agents.map { |i| Agent::Factory::ALL[i][:short].to_s.upcase }.sort.join(', ')})") unless agents.length.eql?(Agent::Factory::ALL.length)
-          end
-          # Only keep lines that are usable in supported agents
-          next if agents.empty?
-          item['description'].push("Allowed values: #{node['enum'].map { |v| value_text(v) }.join(', ')}.") if node.key?('enum')
-          item['description'].push("Default: #{value_text(node['default'])}.") if node.key?('default')
-          item['description'].push("Example: #{value_text(node['example'])}.") if node.key?('example')
-          if @include_option
-            envvar_prefix = ''
-            cli_option =
-              if node.key?('x-cli-envvar')
-                envvar_prefix = 'env:'
-                node['x-cli-envvar']
-              elsif node['x-cli-switch']
-                false_part = node.key?('x-cli-false') ? " / #{node['x-cli-false']}" : ''
-                "#{node['x-cli-option']}#{false_part}"
-              elsif node['x-cli-option']
-                arg_type = node.key?('enum') ? '{enum}' : "{#{[node['type']].flatten.join('|')}}"
-                conversion_tag = node.key?('x-cli-convert') ? 'conversion' : nil
-                sep = node['x-cli-option'].start_with?('--') ? '=' : ' '
-                "#{node['x-cli-option']}#{sep}#{"(#{conversion_tag})" if conversion_tag}#{arg_type}"
-              end
-            short = node.key?('x-cli-short') ? "(#{node['x-cli-short']})" : nil
-            item['description'].push("(#{'special:' if node['x-cli-special']}#{envvar_prefix}#{@formatter.markdown_text("`#{cli_option}`")})#{short}") if cli_option
-          end
-          item.delete('description') if item['description'].empty?
+          description.concat(@formatter.markdown_text(node['description']).split("\n")) if node.key?('description')
+          description.push('Required.') if required
+          description.push("Allowed values: #{node['enum'].map { |v| value_text(v) }.join(', ')}.") if node.key?('enum')
+          description.push("Default: #{value_text(node['default'])}.") if node.key?('default')
+          description.push("Example: #{value_text(node['example'])}.") if node.key?('example')
+          description.concat(annotations)
+          item['description'] = description unless description.empty?
           @sections.last[:rows].push(item)
         end
         self

@@ -3044,7 +3044,7 @@ wizard https://node.example.com/path node --username=test --password=test
 wizard https://orch.example.com/path orchestrator --username=test --password=test
 wizard https://server.example.com/path server --username=my_username --password=<PASSWORD>
 wizard https://shares.example.com/path shares --username=test --password=test
-wizard https://tst.example.com/path faspio --username=my_username --password=<PASSWORD>
+wizard https://tst.example.com/path faspio --override=yes --username=my_username --password=<PASSWORD>
 wizard https://tst.example.com/path httpgw
 wizard my_org aoc --key-path=my_private_key --username=my_user_email --use-generic-client=yes
 wizard my_org aoc mypreset --key-path=my_private_key --username=my_user_email
@@ -3317,19 +3317,19 @@ vault server -dev -dev-root-token-id=<TOKEN>
 |----------|--------|----------------------------------------------------------------------------------|
 | **type** | `String` | `vault`: IBM HashiCorp Vault secret store. |
 | `token` | `String` | Authentication token. Defaults to the value of `vault_password`.<br/>Example: `dev-only-token`. |
-| `type` | `String` | Vault type selector.<br/>Allowed values: `vault`. |
-| `url` | `String` | URL of the HashiCorp Vault server.<br/>Example: `http://127.0.0.1:8200`. |
+| `type` | `String` | Vault type selector.<br/>Required.<br/>Allowed values: `vault`. |
+| `url` | `String` | URL of the HashiCorp Vault server.<br/>Required.<br/>Example: `http://127.0.0.1:8200`. |
 | **type** | `String` | `system`: macOS system keychain secret store. |
 | `name` | `String` | Name of the keychain to use (file `<name>.keychain-db` in the keychain search list).<br/>Default: `ascli`. |
-| `type` | `String` | Vault type selector.<br/>Allowed values: `system`. |
+| `type` | `String` | Vault type selector.<br/>Required.<br/>Allowed values: `system`. |
 | **type** | `String` | `file`: Encrypted file secret store. |
 | `name` | `String` | Path to the encrypted vault file. Relative paths are resolved from the configuration folder.<br/>Default: `vault.bin`. |
-| `type` | `String` | Vault type selector.<br/>Allowed values: `file`. |
+| `type` | `String` | Vault type selector.<br/>Required.<br/>Allowed values: `file`. |
 | **type** | `String` | `1password`: 1Password secret store (Connect REST API or CLI). |
 | `account` | `String` | Account shorthand for `op` (used when `source` is `cli`). Uses the default account if omitted. |
-| `source` | `String` | Backend source. Use `api` for the Connect REST API, `cli` for the `op` CLI.<br/>Allowed values: `api`, `cli`.<br/>Default: `api`. |
+| `source` | `String` | Backend source. Use `api` for the Connect REST API, `cli` for the `op` CLI.<br/>Required.<br/>Allowed values: `api`, `cli`.<br/>Default: `api`. |
 | `token` | `String` | Bearer token for the Connect API (required when `source` is `api`). Defaults to the value of `vault_password`. |
-| `type` | `String` | Vault type selector.<br/>Allowed values: `1password`. |
+| `type` | `String` | Vault type selector.<br/>Required.<br/>Allowed values: `1password`. |
 | `url` | `String` | Base URL of the 1Password Connect server (required when `source` is `api`).<br/>Example: `http://localhost:8080`. |
 | `vault_id` | `String` | ID of the 1Password vault to use (required when `source` is `api`). |
 | `vault` | `String` | Name or ID of the 1Password vault to use with the CLI (used when `source` is `cli`). Uses the default vault if omitted. |
@@ -4042,7 +4042,7 @@ The list of agents and their short identifier can be displayed with:
 ascli config agents list
 ```
 
-To display all configurable parameters for a specific agent:
+To display the configurable parameters of a specific agent (with required fields, default values, enumerated values):
 
 ```shell
 ascli config agents parameters <agent name>
@@ -4055,7 +4055,7 @@ ascli config agents parameters direct
 ascli config agents parameters node
 ```
 
-To display the full detail of an agent (description, required fields, default values, enumerated values):
+To display the description of an agent:
 
 ```shell
 ascli config agents show <agent name>
@@ -4400,10 +4400,10 @@ Parameters provided in option `transfer` are:
 
 | Field | Type | Description |
 |----------|--------|---------------------------------------------------------------|
-| `password` | `String` | Password, secret, or bearer token. |
+| `password` | `String` | Password, secret, or bearer token.<br/>Required. |
 | `root_id` | `String` | Root file ID. Mandatory only when `password` is a bearer token. |
-| `url` | `String` | URL of the Node API. |
-| `username` | `String` | Node API user or access key. |
+| `url` | `String` | URL of the Node API.<br/>Required. |
+| `username` | `String` | Node API user or access key.<br/>Required. |
 
 Like any other option, `transfer` can get its value from a pre-configured [Option Preset](#option-preset):
 
@@ -4435,7 +4435,7 @@ Parameters provided in option `transfer` are:
 | `api_version` | `String` | Force use of a specific API version.<br/>Allowed values: `v1`, `v2`.<br/>Default: `v2`. |
 | `synchronous` | `Bool` | Wait for acknowledgment after each message.<br/>Default: `false`. |
 | `upload_chunk_size` | `Integer` | Size in bytes of each upload chunk.<br/>Default: `64000`. |
-| `url` | `String` | URL of the HTTP Gateway. |
+| `url` | `String` | URL of the HTTP Gateway.<br/>Required. |
 
 Example:
 
@@ -4561,7 +4561,14 @@ Parameters can be displayed with commands:
 
 ```shell
 ascli config ascp spec
-ascli config ascp spec --select=@json:'{"d":"Y"}' --fields=-d,n,c
+```
+
+An optional parameter can be specified to display only the parameters supported by a specific transfer agent, or `overview` for one column per agent indicating which agents support each parameter:
+
+```shell
+ascli config ascp spec direct
+ascli config ascp spec overview
+ascli config ascp spec overview --fields=name,a,c,d,h,n,t
 ```
 
 A JSON Schema can be generated with command:
@@ -4576,7 +4583,7 @@ An optional parameter can be specified to display the schema for a specific tran
 ascli config ascp schema transferd --format=jsonpp
 ```
 
-The description gives the corresponding `ascp` argument or environment variable.
+The description gives the supported agents, if not all, and the corresponding `ascp` argument or environment variable.
 
 #### Transfer Specification Reference
 
@@ -4593,7 +4600,7 @@ The description gives the corresponding `ascp` argument or environment variable.
 |--------------------------------|-----------------|----------------------------------------------------------------------------------|
 | `apply_local_docroot` | `Bool` | Apply local docroot to source paths.<br/>(A, T)<br/>(`--apply-local-docroot`) |
 | `authentication` | `String` | Set to `token` for SSH bypass keys, else password asked if not provided.<br/>(C) |
-| `cipher_allowed` | `String` | Returned by node API. Valid literals include `aes-128` and `none`.<br/>(C)<br/>Allowed values: `none`, `aes-128`, `aes-192`, `aes-256`, `aes-128-cfb`, `aes-192-cfb`, `aes-256-cfb`, `aes-128-gcm`, `aes-192-gcm`, `aes-256-gcm`. |
+| `cipher_allowed` | `String` | Returned by node API. Valid literals include `aes-128` and `none`.<br/>Allowed values: `none`, `aes-128`, `aes-192`, `aes-256`, `aes-128-cfb`, `aes-192-cfb`, `aes-256-cfb`, `aes-128-gcm`, `aes-192-gcm`, `aes-256-gcm`.<br/>(C) |
 | `cipher` | `String` | In transit encryption algorithms.<br/>Allowed values: `none`, `aes-128`, `aes-192`, `aes-256`, `aes-128-cfb`, `aes-192-cfb`, `aes-256-cfb`, `aes-128-gcm`, `aes-192-gcm`, `aes-256-gcm`.<br/>Default: `none`.<br/>(`-c (conversion){enum}`) |
 | `content_protection_password` | `String` | Password for encryption/decryption of transferred assets.<br/>(env:`ASPERA_SCP_FILEPASS`) |
 | `content_protection` | `String` | Enable client-side content protection (CSEAR, encryption-at-rest).<br/>For uploads, set to `encrypt` to transfer encrypted files and store them on the server with the extension `.aspera-env`. (`aspera.conf` parameter `transfer_encryption_content_protection_extension`). To download and decrypt encrypted files, set to `decrypt`<br/>`content_protection_password` must be specified if this option is set.<br/>Allowed values: `encrypt`, `decrypt`.<br/>(`--file-crypt={enum}`) |
@@ -4602,15 +4609,15 @@ The description gives the corresponding `ascp` argument or environment variable.
 | `delete_before_transfer` | `Bool` | Before transfer, delete files that exist at the destination but not at the source.<br/>The source and destination arguments must be directories that have matching names.<br/>Objects on the destination that have the same name but different type or size as objects on the source are not deleted.<br/>(`--delete-before-transfer`) |
 | `delete_source` | `Bool` | Remove transferred source files after transfer success. Equivalent to `remove_after_transfer` + `remove_empty_directories` + `remove_empty_source_directory`. Take precedence over those.<br/>(A, N, T) |
 | `destination_root_id` | `String` | The file ID of the destination root directory.<br/>Required when using Bearer token auth for the destination node.<br/>(T) |
-| `destination_root` | `String` | Destination root directory. |
+| `destination_root` | `String` | Destination root directory.<br/>Required. |
 | `dgram_size` | `Integer` | UDP datagram size in bytes.<br/>(`-Z {integer}`) |
-| `direction` | `String` | Direction of transfer (on client side).<br/>Allowed values: `send`, `receive`.<br/>(`--mode=(conversion){enum}`) |
+| `direction` | `String` | Direction of transfer (on client side).<br/>Required.<br/>Allowed values: `send`, `receive`.<br/>(`--mode=(conversion){enum}`) |
 | `exclude_newer_than` | `String` | Exclude files, but not directories, from the transfer if they are newer than the specified number of seconds added to the source computer's epoch.<br/>e.g. `-86400` for newer than a day back.<br/>(`--exclude-newer-than={string}`) |
 | `exclude_older_than` | `String` | Exclude files, but not directories, from the transfer if they are older than the specified number of seconds added to the source computer's epoch.<br/>e.g. `-86400` for older than a day back.<br/>(`--exclude-older-than={string}`) |
 | `fail_bad_filepass` | `Bool` | Fail on bad file decryption passphrase.<br/>(A, T)<br/>(`--fail-bad-filepass`) |
 | `fasp_port` | `Integer` | Specifies fasp (UDP) port.<br/>Default: `33001`.<br/>(`-O {integer}`) |
 | `fasp_proxy` | `Hash` | Proxy for communications between the remote server and the (local) client.<br/>(T) |
-| `file_checksum` | `String` | Enable checksum reporting for transferred files by specifying the hash to use.<br/>(A, N)<br/>Allowed values: `sha-512`, `sha-384`, `sha-256`, `sha1`, `md5`, `none`.<br/>Default: `none`.<br/>(`--file-checksum={enum}`) |
+| `file_checksum` | `String` | Enable checksum reporting for transferred files by specifying the hash to use.<br/>Allowed values: `sha-512`, `sha-384`, `sha-256`, `sha1`, `md5`, `none`.<br/>Default: `none`.<br/>(A, N)<br/>(`--file-checksum={enum}`) |
 | `http_fallback_port` | `Integer` | Specifies HTTP port when no cipher is used.<br/>(`-t {integer}`) |
 | `http_fallback` | `Bool, String` | When true(1), attempts to perform an HTTP transfer if a FASP transfer cannot be performed.<br/>(`-y (conversion){boolean\|string}`) |
 | `https_fallback_port` | `Integer` | Specifies HTTPS port when cipher is used.<br/>(`-t {integer}`) |
@@ -4629,26 +4636,26 @@ The description gives the corresponding `ascp` argument or environment variable.
 | `obfuscate_file_names` | `Bool` | HTTP Gateway obfuscates file names when set to `true`.<br/>(H) |
 | `overwrite` | `String` | Overwrite files at the destination with source files of the same name based  on the policy:<br/>- `always` : Always overwrite the file.<br/>- `never` : Never overwrite the file. If the destination contains partial files that are older or the same  as the source files and resume is enabled, the partial files resume transfer. Partial files with checksums or sizes that differ from the source files  are not overwritten.<br/>- `diff` : (default) Overwrite the file if it is different from the source,  depending on the compare method (default is size). If the destination is object storage, `diff` has the same effect as always. If resume is not enabled, partial files are overwritten if they are different  from the source, otherwise they are skipped. If resume is enabled, only partial files with different sizes or checksums  from the source are overwritten; otherwise, files resume.<br/>- `diff+older` : Overwrite the file if it is older and different from the source,  depending on the compare method (default is size). If resume is not enabled, partial files are overwritten if they are older  and different from the source, otherwise they are skipped. If resume is enabled, only partial files that are different and older than  the source are overwritten, otherwise they are resumed.<br/>- `older` : Overwrite the file if its timestamp is older than the source timestamp.<br/>If you set an overwrite policy of `diff` or `diff+older`, difference is determined  by the value set for `resume_policy`:<br/>`none` : The source and destination files are always considered different and  the destination file is always overwritten<br/>`attributes` : The source and destination files are compared based on file attributes <br/>`sparse_checksum` : The source and destination files are compared based on sparse checksums, (currently file size)<br/>`full_checksum` : The source and destination files are compared based on full checksums<br/>Allowed values: `never`, `always`, `diff`, `older`, `diff+older`.<br/>Default: `diff`.<br/>(`--overwrite={enum}`) |
 | `password` | `String` | Password for local Windows user when transfer user associated with node API user is not the same as the one running `asperanoded`.<br/>Allows impersonating the transfer user and have access to resources (e.g. network shares).<br/>Windows only, node API only.<br/>(N) |
-| `paths` | `Array` | Array of path to the source (required) and a path to the destination (optional). |
+| `paths` | `Array` | Array of path to the source (required) and a path to the destination (optional).<br/>Required. |
 | `precalculate_job_size` | `Bool` | Specifies whether to precalculate the job size.<br/>(`--precalculate-job-size / --precalculate-disable`) |
 | `preserve_access_time` | `Bool` | Preserve the source-file access timestamps at the destination.<br/>Because source access times are updated by the transfer operation, the timestamp that is preserved is the one just before to the transfer.<br/>(`--preserve-access-time`) |
-| `preserve_acls` | `String` | Preserve access control lists.<br/>(A, T)<br/>Allowed values: `none`, `native`, `metafile`.<br/>Default: `none`.<br/>(`--preserve-acls={enum}`) |
+| `preserve_acls` | `String` | Preserve access control lists.<br/>Allowed values: `none`, `native`, `metafile`.<br/>Default: `none`.<br/>(A, T)<br/>(`--preserve-acls={enum}`) |
 | `preserve_creation_time` | `Bool` | Preserve source-file creation timestamps at the destination.<br/>Only Windows systems retain information about creation time. If the destination is not a Windows computer, this option is ignored.<br/>(`--preserve-creation-time`) |
-| `preserve_extended_attrs` | `String` | Preserve the extended attributes.<br/>(A, T)<br/>Allowed values: `none`, `native`, `metafile`.<br/>Default: `none`.<br/>(`--preserve-xattrs={enum}`) |
+| `preserve_extended_attrs` | `String` | Preserve the extended attributes.<br/>Allowed values: `none`, `native`, `metafile`.<br/>Default: `none`.<br/>(A, T)<br/>(`--preserve-xattrs={enum}`) |
 | `preserve_file_owner_gid` | `Bool` | Preserve the group ID for a file owner.<br/>(A, T)<br/>(`--preserve-file-owner-gid`) |
 | `preserve_file_owner_uid` | `Bool` | Preserve the user ID for a file owner.<br/>(A, T)<br/>(`--preserve-file-owner-uid`) |
 | `preserve_modification_time` | `Bool` | Set the modification time, the last time a file or directory was modified (written), of a transferred file to the modification of the source file or directory.<br/>Preserve source-file modification timestamps at the destination.<br/>(`--preserve-modification-time`) |
-| `preserve_remote_acls` | `String` | Preserve remote access control lists.<br/>(A, T)<br/>Allowed values: `none`, `native`, `metafile`.<br/>Default: `none`.<br/>(`--remote-preserve-acls={enum}`) |
-| `preserve_remote_extended_attrs` | `String` | Preserve remote extended attributes.<br/>(A, T)<br/>Allowed values: `none`, `native`, `metafile`.<br/>Default: `none`.<br/>(`--remote-preserve-xattrs={enum}`) |
+| `preserve_remote_acls` | `String` | Preserve remote access control lists.<br/>Allowed values: `none`, `native`, `metafile`.<br/>Default: `none`.<br/>(A, T)<br/>(`--remote-preserve-acls={enum}`) |
+| `preserve_remote_extended_attrs` | `String` | Preserve remote extended attributes.<br/>Allowed values: `none`, `native`, `metafile`.<br/>Default: `none`.<br/>(A, T)<br/>(`--remote-preserve-xattrs={enum}`) |
 | `preserve_source_access_time` | `Bool` | Preserve the time logged for when the source file was accessed.<br/>(A, T)<br/>(`--preserve-source-access-time`) |
 | `preserve_times` | `Bool` | Preserve file timestamps.<br/>(A, N, T)<br/>(`-p`) |
 | `proxy` | `String` | Specify the address of the Aspera high-speed proxy server.<br/>`dnat(s)://[user[:password]@]server:port`<br/>Default ports for DNAT and DNATS protocols are 9091 and 9092.<br/>Password, if specified here, overrides the value of environment variable `ASPERA_PROXY_PASS`.<br/>(A)<br/>(`--proxy={string}`) |
-| `rate_policy_allowed` | `String` | Specifies most aggressive rate policy that is allowed. Returned by node API.<br/>(C)<br/>Allowed values: `low`, `fair`, `high`, `fixed`. |
+| `rate_policy_allowed` | `String` | Specifies most aggressive rate policy that is allowed. Returned by node API.<br/>Allowed values: `low`, `fair`, `high`, `fixed`.<br/>(C) |
 | `rate_policy` | `String` | The transfer rate policy to use when sharing bandwidth. Allowable values:<br/>- `high` : When sharing bandwidth, transfer at twice the rate of a transfer using a fair policy.<br/>- `fair` : (Default) Share bandwidth equally with other traffic.<br/>- `low` : Use only unused bandwidth.<br/>- `fixed` : Transfer at the target rate, regardless of the actual network capacity. Do not share bandwidth. Aspera recommends that you do not use this setting except under special circumstances,  otherwise the destination storage can be damaged.<br/>Allowed values: `low`, `fair`, `high`, `fixed`.<br/>(`--policy={enum}`) |
 | `remote_access_key` | `String` | The access key ID of the access key that was used to construct the bearer token that is used to authenticate to the remote node.<br/>(T) |
-| `remote_host` | `String` | IP or fully qualified domain name (FQDN) of the remote server.<br/>(`--host={string}`) |
+| `remote_host` | `String` | IP or fully qualified domain name (FQDN) of the remote server.<br/>Required.<br/>(`--host={string}`) |
 | `remote_password` | `String` | SSH session password.<br/>(env:`ASPERA_SCP_PASS`) |
-| `remote_user` | `String` | Remote user. Default value is `xfer` on node or connect.<br/>(`--user={string}`) |
+| `remote_user` | `String` | Remote user. Default value is `xfer` on node or connect.<br/>Required.<br/>(`--user={string}`) |
 | `remove_after_transfer` | `Bool` | Remove SRC files after transfer success.<br/>(A, N, T)<br/>(`--remove-after-transfer`) |
 | `remove_empty_directories` | `Bool` | Specifies whether to remove empty directories.<br/>(A, N, T)<br/>(`--remove-empty-directories`) |
 | `remove_empty_source_dir` | `Bool` | Remove empty source subdirectories and remove the source directory itself, if empty.<br/>(T) |
@@ -4677,7 +4684,7 @@ The description gives the corresponding `ascp` argument or environment variable.
 | `target_rate` | `String, Integer` | Pseudo-parameter: desired transfer rate in bps, with an optional unit suffix. Converted to `target_rate_kbps` (rounded down) before the transfer is started, overriding it if both are present. Also applies to `async` (sync). Accepted formats: integer (bps), or integer followed by `k`/`K` (x1000), `m`/`M` (x1000000), `g`/`G` (x1000000000). Examples: `100000000`, `100000k`, `100m`, `1g`. |
 | `title` | `String` | Title of the transfer.<br/>(C, N, T) |
 | `token` | `String` | Authorization token. Type is Bearer, Basic or ATM.<br/>(env:`ASPERA_SCP_TOKEN`) |
-| `use_ascp4` | `Bool` | Specify version of protocol. `ascp4` will be deprecated.<br/>(A, N, T)<br/>Default: `false`. |
+| `use_ascp4` | `Bool` | Specify version of protocol. `ascp4` will be deprecated.<br/>Default: `false`.<br/>(A, N, T) |
 | `use_system_ssh` | `Bool` | Use an external `ssh` program instead of the built-in `libssh2` implementation to establish the connection to the remote host. The desired `ssh` program must be in the environment's `PATH`.<br/>To enable debugging of the `ssh` process, supply `-DD` and `--ssh-arg=-vv` arguments to `ascp`.<br/>(A, T)<br/>(`-SSH`) |
 | `wss_enabled` | `Bool` | Server has Web Socket service enabled.<br/>(special:`--ws-connect`) |
 | `wss_port` | `Integer` | TCP port used for Web Socket service feed. |
@@ -10979,14 +10986,14 @@ ascli config sync spec
 | `exclude_dirs_older_than.absolute` | `String` | UTC timestamp. Empty value for disabled. |
 | `exclude_dirs_older_than.relative_seconds` | `Integer` | Relative to async start time. `-1` for disabled.<br/>Default: `-1`. |
 | `exclude_dirs_older_than` | `Hash` | Don't scan directories with a recursive modified time older than absolute or async start time - relative_seconds |
-| `filters[].rule` | `String` | The rule for the filter.<br/>Allowed values: `include`, `exclude`, `include_from`, `exclude_from`. |
-| `filters[].value` | `String` | On include or exclude, the filter's pattern. On include_from or exclude_from, the path containing filter specifications |
+| `filters[].rule` | `String` | The rule for the filter.<br/>Required.<br/>Allowed values: `include`, `exclude`, `include_from`, `exclude_from`. |
+| `filters[].value` | `String` | On include or exclude, the filter's pattern. On include_from or exclude_from, the path containing filter specifications<br/>Required. |
 | `filters` | `Array[Hash]` | The filters allow to further specify which files have to be excluded and included from the transfer list. Each filter is defined by a rule and a value. Order of filters matters |
 | `ignore_delete` | `Bool` | Do not copy removals to the peer.<br/>Default: `false`.<br/>(`--ignore-delete`) |
 | `ignore_mode` | `Bool` | Source files that have had their mode changed after the initial transfer will not update the destination file mode.<br/>Default: `false`.<br/>(`--ignore-mode`) |
 | `ignore_remote_host_sync_name` | `Bool` | Do not check that the remote host being used for the current transfer matches the host used when the local database was created<br/>Default: `false`. |
 | `local.pass` | `String` | Authenticate the local async with the specified password. |
-| `local.path` | `String` | The directory to be synchronized on the local host.<br/>(`--local-dir={string}`)(-d) |
+| `local.path` | `String` | The directory to be synchronized on the local host.<br/>Required.<br/>(`--local-dir={string}`)(-d) |
 | `local_apply_docroot` | `Bool` | Prepend the docroot to the directory on the local host.<br/>Default: `false`.<br/>(`--apply-local-docroot`) |
 | `local_checksum_threads` | `Integer` | Maximum number of threads to do checksum on the local host. Value must be between 1 and 99.<br/>Default: `4`.<br/>(`--local-checksum-threads={integer}`) |
 | `local_db_dir` | `String` | Use the specified database directory on the local host. Default is `.private-asp` at the root level of the synchronized directory.<br/>(`--local-db-dir={string}`)(-b) |
@@ -11001,7 +11008,7 @@ ascli config sync spec
 | `local_scan_interval_milliseconds` | `Integer` | Enable periodic scans on the local host during a continuous sync. `-1` for disabled. On the command line, the value is a duration, e.g. `1h 30m`, `2s500ms`, `5:30`, `1d 02:00:00.250`. A plain number is in seconds. Stored in milliseconds.<br/>Default: `-1`.<br/>(`--scan-interval={integer}`) |
 | `local_scan_threads` | `Integer` | Number of directory scanning threads on the local host. Value must be between 1 and 99<br/>Default: `1`.<br/>(`--scan-threads={integer}`) |
 | `local_stat_cache_size` | `Integer` | Set stat cache size on the local host. 0 for disabled.<br/>Default: `0`. |
-| `local` | `Hash` |  |
+| `local` | `Hash` | Required. |
 | `log.level` | `String` | Use the specified log level.<br/>Allowed values: `log`, `dbg1`, `dbg2`.<br/>Default: `log`.<br/>(special:`-D`) |
 | `log.local_dir` | `String` | Use the specified logging directory on the local host.<br/>(`--alt-logdir={string}`)(-L) |
 | `log.remote_dir` | `String` | Use the specified logging directory on the remote host.<br/>(`--remote-logdir={string}`)(-R) |
@@ -11010,7 +11017,7 @@ ascli config sync spec
 | `mirror` | `Bool` | Force the pulling side to be exactly like the pushing side, removing files on the destination that don't exist on the source and resending source files that don't have an exact match on the destination. Cannot be used in bi-directional mode.<br/>Default: `false`.<br/>(`--mirror`) |
 | `mode` | `String` | Specify whether async runs continuously or not. In `one_time` mode, async stops after the first full synchronization. `continuous` supported only if the source is Windows or Linux.<br/>Allowed values: `one_time`, `continuous`.<br/>Default: `one_time`.<br/>(special:`--continuous`)(-C) |
 | `monitor_buffer_size` | `Integer` | Bytes to allocate for the change monitor buffer. Applies to any Windows machine on either side. `-1` to use the computed value.<br/>Default: `-1`. |
-| `name` | `String` | Name of the synchronization pair.<br/>(`--name={string}`)(-N) |
+| `name` | `String` | Name of the synchronization pair.<br/>Required.<br/>(`--name={string}`)(-N) |
 | `no_log` | `String` | Suppress log messages for ITEM. The only currently supported ITEM is 'stats', which suppresses both STATS and PROG log messages.<br/>(`--no-log={string}`) |
 | `no_preserve_root_attrs` | `Bool` | Disable the preservation of attributes on the Sync root.<br/>Default: `false`.<br/>(`--no-preserve-root-attrs`) |
 | `no_scan` | `Bool` | Skip initial scanning.<br/>Default: `false`.<br/>(`--no-scan`) |
@@ -11028,9 +11035,9 @@ ascli config sync spec
 | `quiet` | `Bool` | Disable progress display.<br/>Default: `true`.<br/>(`--quiet`)(-q) |
 | `remote.connect_mode` | `String` | Define how to connect to the remote.<br/>Allowed values: `ssh`, `ws`.<br/>Default: `ssh`.<br/>(special:`--ws-connect`) |
 | `remote.fingerprint` | `String` | Check it against server SSH host key fingerprint. |
-| `remote.host` | `String` | Use the specified host name or address of the remote host.<br/>(`--host={string}`) |
+| `remote.host` | `String` | Use the specified host name or address of the remote host.<br/>Required.<br/>(`--host={string}`) |
 | `remote.pass` | `String` | Authenticate the transfer with the specified password.<br/>(`--pass={string}`)(-w) |
-| `remote.path` | `String` | Synchronize the specified directory on the remote host.<br/>(`--remote-dir={string}`)(-r) |
+| `remote.path` | `String` | Synchronize the specified directory on the remote host.<br/>Required.<br/>(`--remote-dir={string}`)(-r) |
 | `remote.port` | `Integer` | Use the specified TCP port for SSH. Used when connect_mode is `ssh`<br/>Default: `22`.<br/>(`--tcp-port={integer}`)(-P) |
 | `remote.private_key_paths` | `Array[String]` | Authenticate with the specified SSH private key file.<br/>(`--private-key-path={array}`)(-i) |
 | `remote.proxy.host` | `String` | Use the specified host name or address of the proxy. |
@@ -11041,7 +11048,7 @@ ascli config sync spec
 | `remote.proxy` | `Hash` | Specify the address of the Aspera high-speed proxy server.<br/>(special:`--proxy={object}`) |
 | `remote.token_node_user` | `String` | Node API user identity associated with the token. Required for node user bearer tokens |
 | `remote.token` | `String` | Token string passed to server's authentication service. |
-| `remote.user` | `String` | Authenticate the transfer with the specified username.<br/>(`--user={string}`) |
+| `remote.user` | `String` | Authenticate the transfer with the specified username.<br/>Required.<br/>(`--user={string}`) |
 | `remote.ws_port` | `Integer` | Use the specified port for Websocket. Used when connect_mode is `ws`.<br/>Default: `9093`. |
 | `remote_checksum_threads` | `Integer` | Maximum number of threads to do checksum on the remote host. Value must be between 1 and 99<br/>Default: `4`.<br/>(`--remote-checksum-threads={integer}`) |
 | `remote_db_dir` | `String` | Use the specified database directory on the remote host. Default is `.private-asp` at the root level of the synchronized directory.<br/>(`--remote-db-dir={string}`)(-B) |
@@ -11056,7 +11063,7 @@ ascli config sync spec
 | `remote_scan_interval_milliseconds` | `Integer` | Enable periodic scans on the remote host. `-1` for disabled. On the command line, the value is a duration, e.g. `1h 30m`, `2s500ms`, `5:30`, `1d 02:00:00.250`. A plain number is in seconds. Stored in milliseconds.<br/>Default: `-1`.<br/>(special:`--remote-scan-interval={integer}`) |
 | `remote_scan_threads` | `Integer` | Number of directory scanning threads on the remote host. Value must be between 1 and 99.<br/>Default: `1`.<br/>(`--remote-scan-threads={integer}`) |
 | `remote_stat_cache_size` | `Integer` | Set stat cache size on the remote host. 0 for disabled.<br/>Default: `0`. |
-| `remote` | `Hash` |  |
+| `remote` | `Hash` | Required. |
 | `remove_after_transfer` | `Bool` | Remove source files after they are successfully synchronized.<br/>Default: `false`.<br/>(`--remove-after-transfer`) |
 | `reset` | `Bool` | Clear the snapshot database and rescan the synchronized directories and files to create a fresh snapshot<br/>Default: `false`.<br/>(`--reset`)(-x) |
 | `resume.enabled` | `Bool` | Enable the possibility of resuming individual file transfers between async sessions.<br/>Default: `false`. |
@@ -11072,7 +11079,7 @@ ascli config sync spec
 | `symbolic_links` | `String` | Handle symbolic links with the specified method. Default is `skip` on windows, `copy` otherwise.<br/>Allowed values: `copy`, `skip`, `follow`.<br/>(`--symbolic-links={enum}`)(-n) |
 | `tags` | `Hash` | User-defined metadata tags.<br/>(special:`--tags64={object}`) |
 | `transfer_threads[].size` | `Integer` | Upper limit. `-1` for infinity.<br/>Default: `-1`. |
-| `transfer_threads[].threads` | `Integer` | The number of threads. |
+| `transfer_threads[].threads` | `Integer` | The number of threads.<br/>Required. |
 | `transfer_threads` | `Array[Hash]` | Use the specified number of dedicated transfer threads to process files smaller or equal to the specified size<br/>(special:`--transfer-threads={array}`) |
 | `transport.cipher` | `String` | Specify encryption algorithm for file data.<br/>Allowed values: `none`, `aes128`, `aes192`, `aes256`, `aes128cfb`, `aes192cfb`, `aes256cfb`, `aes128gcm`, `aes192gcm`, `aes256gcm`.<br/>Default: `aes128`.<br/>(`--cipher={enum}`)(-c) |
 | `transport.compression` | `String` | Compress a file before transfer using the specified MODE.<br/>Allowed values: `none`, `zlib`.<br/>Default: `none`.<br/>(`--compression={enum}`) |
@@ -11423,7 +11430,7 @@ The `smtp` option is a `Hash` ([Extended Value](#extended-value-syntax)) with th
 | `from_name` | `String` | Display name of the sender. Defaults to the local-part of `from_email`.<br/>Example: `John Wayne`. |
 | `password` | `String` | Password for the above `username`.<br/>Example: `my_password`. |
 | `port` | `Integer` | Port for the SMTP service.<br/>Defaults: `587` (TLS), `465` (SSL), `25` (plain).<br/>Example: `587`. |
-| `server` | `String` | SMTP server address.<br/>Example: `smtp.gmail.com`. |
+| `server` | `String` | SMTP server address.<br/>Required.<br/>Example: `smtp.gmail.com`. |
 | `ssl` | `Bool` | Enable `TLS/SSL` (port 465).<br/>Default: `false`. |
 | `tls` | `Bool` | Enable `STARTTLS` (port 587).<br/>Default: `true`. |
 | `username` | `String` | User to authenticate on the SMTP server. Leave empty for open (unauthenticated) relay.<br/>Example: `john@example.com`. |

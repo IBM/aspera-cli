@@ -53,6 +53,30 @@ module Aspera
         !properties.key?('x-agents') || properties['x-agents'].include?(agent.to_s)
       end
 
+      # Documentation of the command line option of a property: `annotate` of `Schema::Documentation`
+      # @param node      [Hash]               Schema of the property
+      # @param formatter [FormatterInterface] Formatter of the documentation
+      # @return [Array<String>] Lines added to the description, empty if no option
+      def doc_lines(node, formatter)
+        envvar_prefix = ''
+        cli_option =
+          if node.key?('x-cli-envvar')
+            envvar_prefix = 'env:'
+            node['x-cli-envvar']
+          elsif node['x-cli-switch']
+            false_part = node.key?('x-cli-false') ? " / #{node['x-cli-false']}" : ''
+            "#{node['x-cli-option']}#{false_part}"
+          elsif node['x-cli-option']
+            arg_type = node.key?('enum') ? '{enum}' : "{#{[node['type']].flatten.join('|')}}"
+            conversion_tag = node.key?('x-cli-convert') ? 'conversion' : nil
+            sep = node['x-cli-option'].start_with?('--') ? '=' : ' '
+            "#{node['x-cli-option']}#{sep}#{"(#{conversion_tag})" if conversion_tag}#{arg_type}"
+          end
+        return [] unless cli_option
+        short = node.key?('x-cli-short') ? "(#{node['x-cli-short']})" : nil
+        ["(#{'special:' if node['x-cli-special']}#{envvar_prefix}#{formatter.markdown_text("`#{cli_option}`")})#{short}"]
+      end
+
       private
 
       # `ascp`: mandatory type
@@ -73,6 +97,7 @@ module Aspera
           Aspera.assert(node['type'].eql?('boolean')) { "switch must be bool: #{name}" } if node['x-cli-switch'] && !node['x-cli-special']
           Aspera.assert(node['x-cli-switch']) { "boolean direct option must have x-cli-switch: #{name}" } if node['type'].eql?('boolean') && node.key?('x-cli-option') && supported_by_agent(:direct, node) && !node['x-cli-special']
           node['x-cli-option'] = "--#{name.to_s.tr('_', '-')}" if node['x-cli-option'].eql?(true) || (node['x-cli-switch'].eql?(true) && !node.key?('x-cli-option'))
+          Aspera.assert(supported_by_agent(:direct, node)) { "#{name}: x-cli-option requires agent direct (or nil)" } if node['x-cli-option']
           Aspera.assert(DIRECT_PROPERTIES.any? { |i| node.key?(i) }, name, type: :warn) if ascp && supported_by_agent(:direct, node)
           node.freeze
         end

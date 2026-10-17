@@ -5,6 +5,10 @@ module Aspera
   module Schema
     # JSON schema reader
     class Reader
+      # Keys of a schema node that provide properties
+      PROPERTY_SOURCES = %w[properties allOf oneOf].freeze
+      private_constant :PROPERTY_SOURCES
+
       attr_reader :current
 
       class << self
@@ -72,14 +76,17 @@ module Aspera
       # Recursively traverse schema properties with a block.
       # If the current node has `oneOf`, each variant is traversed in turn and
       # `on_variant` is called (if given) before each variant's properties.
-      # @param prefix     [String] Prefix for property names (e.g., 'parent.child.')
-      # @param on_variant [Proc, nil] Called with the variant Reader before its properties
-      # @yield [property_schema, name, full_name] Yields property info to block
+      # @param prefix          [String] Prefix for property names (e.g., 'parent.child.')
+      # @param on_variant      [Proc, nil] Called with the variant Reader before its properties
+      # @param parent_required [Array<String>] Names required by the enclosing `oneOf` or `allOf` node
+      # @yield [property_schema, name, full_name, required] Yields property info to block
       # @yieldparam property_schema [Reader] Schema reader for this property
       # @yieldparam name [String] Property name
       # @yieldparam full_name [String] Full property name with prefix
+      # @yieldparam required [Boolean] `true` if listed in `required` of its object, or of the `oneOf` or `allOf` node that includes it
       # @return [nil]
-      def each_property(prefix = '', on_variant: nil, &block)
+      def each_property(prefix = '', on_variant: nil, parent_required: [], &block)
+        required_names = parent_required + Array(@current['required'])
         if @current.key?('oneOf')
           # Build reverse map: $ref -> discriminant value, from discriminator.mapping if present
           discriminant_by_ref = {}
@@ -94,7 +101,7 @@ module Aspera
             variant_reader = ref ? resolve_ref(ref) : Reader.new(@root, variant_node)
             discriminant_value = ref ? discriminant_by_ref[ref] : nil
             on_variant&.call(variant_reader, discriminant_property, discriminant_value)
-            variant_reader.each_property(prefix, on_variant: on_variant, &block)
+            variant_reader.each_property(prefix, on_variant: on_variant, parent_required: required_names, &block)
           end
           return
         end
@@ -102,10 +109,15 @@ module Aspera
           # Merge all branches: each branch contributes its properties (no variants).
           # A property is listed once, with its first declaration: a later one may be empty,
           # only to allow the property under `additionalProperties: false`.
+          # A property is required if any branch requires it.
+          branches = @current['allOf'].map { |branch_node| branch_reader(branch_node) }
+          required_names += branches.flat_map { |branch| Array(branch.current['required']) }
           listed = Set.new
-          @current['allOf'].each do |branch_node|
-            branch_reader(branch_node).each_property(prefix, on_variant: on_variant) do |property_schema, name, full_name|
-              yield(property_schema, name, full_name) if listed.add?(full_name)
+          branches.each do |branch|
+            # A branch may only constrain properties of other branches, e.g. with `required`
+            next unless PROPERTY_SOURCES.any? { |key| branch.current.key?(key) }
+            branch.each_property(prefix, on_variant: on_variant, parent_required: required_names) do |property_schema, name, full_name, required|
+              yield(property_schema, name, full_name, required) if listed.add?(full_name)
             end
           end
           return
@@ -117,7 +129,7 @@ module Aspera
           node = property_schema.current
 
           # Yield current property to block
-          yield(property_schema, name, property_full_name)
+          yield(property_schema, name, property_full_name, required_names.include?(name))
 
           # Recursively process nested structures (`type` is a list for a nullable value, e.g. `[array, 'null']`)
           types = Array(node['type'])

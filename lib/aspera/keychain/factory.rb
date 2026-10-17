@@ -15,7 +15,6 @@ module Aspera
           Aspera.assert_hash_all(info, Symbol, String) { 'vault info shall have only string values' }
           info = info.symbolize_keys
           vault_type = info.delete(:type)
-          Aspera.assert_values(vault_type, LIST.map(&:to_s)) { 'vault.type' }
           case vault_type
           when 'file'
             # `name` (or `file`), default: `vault.bin`
@@ -40,7 +39,6 @@ module Aspera
             Keychain::HashicorpVault.new(**info)
           when '1password'
             source = info.delete(:source) || 'api'
-            Aspera.assert_values(source, %w[api cli]) { 'vault.source' }
             case source
             when 'api'
               require 'aspera/keychain/one_password_api'
@@ -49,8 +47,9 @@ module Aspera
             when 'cli'
               require 'aspera/keychain/one_password_cli'
               Keychain::OnePasswordCli.new(**info)
+            else Aspera.error_unexpected_value(source, type: ParameterError) { 'vault.source' }
             end
-          else Aspera.error_unexpected_value(vault_type)
+          else Aspera.error_unexpected_value(vault_type, type: ParameterError) { 'vault.type' }
           end
         end
       end

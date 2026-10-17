@@ -185,24 +185,7 @@ module Aspera
           Hints.hint_for(exception_info[:e], @context.formatter)
           if exception_info[:e].is_a?(Cli::SchemaRequest)
             Log.log.info { "#{exception_info[:t]}: #{exception_info[:e].message}" }
-            schema_path = exception_info[:e].path
-            if schema_path.nil?
-              Log.log.warn { 'Sorry, no schema provided yet. Please refer to the manual or API.' }
-            else
-              reader = Schema::Registry.instance.reader(schema_path)
-              rows   = reader.to_rows.map do |row|
-                row = row.dup
-                if row.key?('enum')
-                  row['type'] = 'enum'
-                  row['description'] = "#{row['description']}\nAllowed: #{row['enum'].join(', ')}"
-                end
-                row['description'] = "#{row['description']}\nDefault: `#{row['default'].nil? ? 'null' : row['default']}`" if row.key?('default')
-                # Render Markdown formatting (bold, code)
-                row['description'] = TerminalFormatter.markdown_text(row['description'])
-                row
-              end
-              @context.formatter.display_results(Result::ObjectList.new(rows, fields: %w[name type required description]))
-            end
+            display_schema(exception_info[:e].path)
           end
         end
         # 2- processing of unprocessed arguments (skip when help was displayed: sub-commands are not consumed)
@@ -342,7 +325,7 @@ module Aspera
       # @param arg [ArgumentSpec]
       # @return [Array<String>]
       def schema_help_lines(arg)
-        builder = Schema::Documentation.new(TerminalFormatter, Schema::Registry.instance.reader(arg.schema)).build
+        builder = schema_documentation(arg.schema)
         rows = builder.rows.map do |row|
           builder.columns.map { |column| Array(row[column]).join("\n") }
         end
@@ -350,6 +333,26 @@ module Aspera
         style[:border] = :unicode_round if Environment.terminal_supports_unicode?
         table = TableFitter.table(headings: builder.columns, rows: rows, style: style, width: Environment.terminal_columns&.-(4)).to_s
         ["\n    SCHEMA: #{arg.name}", table.lines.map { |line| "    #{line.chomp}" }.join("\n")]
+      end
+
+      # Display the documentation of a schema: value `help` given to an option or argument
+      # @param schema_path [String, nil] Path of the schema in the registry, `nil` if none
+      # @return [nil]
+      def display_schema(schema_path)
+        if schema_path.nil?
+          Log.log.warn { 'Sorry, no schema provided yet. Please refer to the manual or API.' }
+          return
+        end
+        builder = schema_documentation(schema_path)
+        @context.formatter.display_results(Result::ObjectList.new(builder.rows, fields: builder.columns))
+        nil
+      end
+
+      # @param schema_path [String] Path of the schema in the registry
+      # @return [Schema::Documentation] Documentation of the schema, for the terminal
+      def schema_documentation(schema_path)
+        options = schema_path.eql?(Schema::Registry::TRANSFER_SPEC) ? Transfer::Spec.doc_options : {}
+        Schema::Documentation.new(TerminalFormatter, Schema::Registry.instance.reader(schema_path), **options).build
       end
 
       # Initialize agents and options

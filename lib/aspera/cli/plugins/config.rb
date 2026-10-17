@@ -334,8 +334,9 @@ module Aspera
             action: ->(version: nil, **) { install_transfer_sdk(version: version) }
           command(
             :spec, description: 'Show the transfer spec schema',
-            action: lambda do |**|
-              builder = Schema::Documentation.new(TerminalFormatter, Transfer::Spec::SCHEMA, include_option: true, agent_columns: true).build
+            arguments: [{name: :agent_name, allowed: Agent::Factory::ALL.keys + [Transfer::Spec::DOC_OVERVIEW], mandatory: false, default: nil}],
+            action: lambda do |agent_name: nil, **|
+              builder = Schema::Documentation.new(TerminalFormatter, Transfer::Spec::SCHEMA, **Transfer::Spec.doc_options(agent_name)).build
               Result::ObjectList.new(builder.rows, fields: builder.columns)
             end
           )
@@ -392,7 +393,7 @@ module Aspera
           command(
             :spec, description: 'Show the sync configuration schema',
             action: lambda do |**|
-              builder = Schema::Documentation.new(TerminalFormatter, Sync::Operations::CONF_SCHEMA, include_option: true).build
+              builder = Schema::Documentation.new(TerminalFormatter, Sync::Operations::CONF_SCHEMA, annotate: CommandLineBuilder.method(:doc_lines)).build
               Result::ObjectList.new(builder.rows, fields: builder.columns)
             end
           )

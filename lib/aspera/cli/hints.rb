@@ -137,7 +137,6 @@ module Aspera
             matches = hint[:match]
             matches = [matches] unless matches.is_a?(Array)
             matches.each do |m|
-              Aspera.assert_values(m.class, [String, Regexp])
               case m
               when String
                 next unless message.eql?(m)
