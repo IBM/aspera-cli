@@ -54,8 +54,9 @@ module Aspera
 
       def get(label:, id: nil, exception: true)
         identifier = id || label
-        stdout, _stderr, status = op_capture('item', 'get', identifier, '--format=json', exception: false)
+        stdout, stderr, status = op_capture('item', 'get', identifier, '--format=json', exception: false)
         if !status.success?
+          raise "Multiple secrets found with label '#{label}': use id to disambiguate, or option vault to restrict" if stderr.to_s.match?(/more than one item/i)
           raise "Secret '#{label}' not found" if exception
           return
         end

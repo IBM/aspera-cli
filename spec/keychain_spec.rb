@@ -94,6 +94,11 @@ RSpec.describe(Aspera::Keychain) do
       expect { vault.get(label: 'missing') }.to(raise_error(RuntimeError, /not found/))
     end
 
+    it 'asks for an id when several items share the same label' do
+      stub_failed_execute('[ERROR] More than one item matches "my_label". Try again and specify the item by its ID', 1)
+      expect { described_class.new.get(label: 'my_label') }.to(raise_error(/Multiple secrets found.*use id/))
+    end
+
     it 'reads url from the website or from a custom field found by label' do
       item = {
         'id' => 'abc', 'title' => 'my_label',

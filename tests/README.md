@@ -149,7 +149,44 @@ The following environment variables control interactive test behavior:
 | `TEST_INTERACTIVE` | `auto` (default), `manual` | In `auto` mode, all interactions are handled without human intervention. In `manual` mode, the real system browser opens and waits for user input. |
 | `TEST_HEADLESS` | `false` (default), `true` | When `false`, Chrome opens visibly on screen. Set to `true` for headless execution (ideal for CI/CD). |
 | `TEST_DELAY` | `0.5` (default), float | Delay in seconds between actions (typing, clicking) in visible mode. Set to `0` for maximum speed. |
-| `ASPERA_BROWSER` | command string | Custom command or script to open URLs (defaults to `ruby tests/auto_browser.rb` during test runs). |
+| `ASCLI_UI` | `ui` option value | Set by the test runner before each test (browser command `ruby tests/auto_browser.rb`, option `ui.command`). Not to be set manually. |
+
+#### Login credentials for web pages
+
+When a web login page is displayed (e.g. OAuth login for `--auth=web`), `tests/auto_browser.rb` fills the user name and password automatically.
+Credentials differ by application, so each test selects the preset of the test configuration file that holds them (options `username` and `password`), using `select_login_preset` in `pre`.
+It adds `--login-preset=<preset>` to the browser command, set with sub-option `command` of option `ui` (env var `ASCLI_UI`), which `ascli` runs with the URL to open:
+
+```yaml
+aoc_webauth_profile:
+  tags:
+    - interactive
+  pre: select_login_preset('aoc_user')
+  args: ...
+```
+
+A test that does not call `select_login_preset` gets no automatic login.
+The selection (`ASCLI_UI`) is cleared before each test.
+
+The value is not read directly from the YAML file: it is evaluated by `ascli` itself (`ascli config echo @preset:<preset>.<option>`, using the home folder of the tests).
+So any [Extended Value](../docs/README.md#extended-value-syntax) is supported: `@vault:`, `@file:`, `@extend:`, `@preset:`...
+
+For example, to keep the password in a vault, declare the vault in the default preset (`cli_default`) of the test configuration file, and reference the secret in the preset:
+
+```yaml
+cli_default:
+  vault:
+    type: 1password
+    source: cli
+aoc_web:
+  username: my_user@example.com
+  password: "@vault:<item title or id>.password"
+```
+
+Any other vault type works the same way (e.g. `type: file` with `vault_password`).
+
+> [!NOTE]
+> With `1password` and `source: cli`, the `op` command must be signed in before running the tests.
 
 Examples:
 

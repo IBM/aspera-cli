@@ -226,6 +226,28 @@ module Aspera
         Result::Text.new(usage_text(plugin: plugin))
       end
 
+      # `on_set` callback of the `ui` option (dot-notation sub-properties): `mode`, `command`
+      # A plain value is the `mode`. Values are validated against schema `UiOptions`.
+      # @param value [Hash] sub-properties to set
+      def option_ui=(value)
+        Aspera.assert_type(value, Hash)
+        value.each do |k, v|
+          case k.to_sym
+          when :mode
+            Environment.instance.url_method =
+              case v.to_s
+              when 'auto' then Environment.instance.default_gui_mode
+              when 'terminal', 'text' then :text
+              when 'browser', 'graphical' then :graphical
+              else Aspera.error_unexpected_value(v, type: BadArgument) { 'ui.mode' }
+              end
+          when :command
+            Environment.instance.browser_command = v.nil? || v.empty? ? nil : v.map(&:to_s)
+          else Aspera.error_unexpected_value(k, type: BadArgument) { 'ui sub-option (mode, command)' }
+          end
+        end
+      end
+
       # `on_set` callback of the `log` option (dot-notation sub-properties): `level`, `type`, `format`, `secrets`
       # @param value [Hash] sub-properties to set
       def option_log=(value)
@@ -448,9 +470,9 @@ module Aspera
         @context.options.declare(:show_config, description: 'Display parameters used for the provided action', allowed: Type::NONE) { @option_show_config = true }
         @context.options.declare(:version, description: 'Display version', allowed: Type::NONE, short: 'v') { @context.formatter.display_message(:data, Cli::VERSION); Process.exit(0) } # rubocop:disable Style/Semicolon
         @context.options.declare(
-          :ui, description: 'Method to start browser',
-          allowed: USER_INTERFACES, default: Environment.instance.url_method,
-          on_set: Environment.instance.method(:url_method=)
+          :ui, description: 'User interface (dot-notation: mode, command)',
+          allowed: [Hash, String], shorthand: 'mode', schema: Schema::Registry::UI_OPTIONS,
+          on_set: method(:option_ui=)
         )
         @context.options.declare(
           :invalid_characters, description: 'Replacement character and invalid filename characters',
@@ -497,7 +519,6 @@ module Aspera
       COMPLETION_COMMAND = %w[config completion].freeze
       # Types that go to result of type = text
       SCALAR_TYPES = [String, Integer, Symbol].freeze
-      USER_INTERFACES = %i[text graphical].freeze
       EXTEND_ARGS = :''
       # Errors of name resolution, connection and timeout
       NETWORK_ERRORS = [
@@ -505,7 +526,7 @@ module Aspera
         Errno::ECONNREFUSED, Errno::ECONNRESET, Errno::EHOSTUNREACH, Errno::ENETUNREACH, Errno::ETIMEDOUT
       ].freeze
 
-      private_constant :COMMAND_CONFIG, :COMMAND_HELP, :COMPLETION_COMMAND, :SCALAR_TYPES, :USER_INTERFACES, :EXTEND_ARGS, :NETWORK_ERRORS
+      private_constant :COMMAND_CONFIG, :COMMAND_HELP, :COMPLETION_COMMAND, :SCALAR_TYPES, :EXTEND_ARGS, :NETWORK_ERRORS
     end
   end
 end

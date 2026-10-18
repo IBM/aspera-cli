@@ -1,16 +1,26 @@
 # frozen_string_literal: true
 
 require 'uri'
+require 'optparse'
+require 'aspera/environment'
 require 'aspera/rest'
 require 'aspera/mime'
+require_relative '../build/lib/paths'
 
 # Automated browser script using Google Chrome (Ferrum) with HTTP fallback.
 # Intercepts URLs opened by ascli (secrets, OAuth consent, etc.),
 # renders the HTML/CSS in Chrome, fills the forms, and submits without human interaction.
 
+# Preset of the test configuration file that holds the login credentials, see `select_login_preset` in test_helpers.rb
+login_preset = nil
+OptionParser.new do |opts|
+  opts.banner = 'Usage: auto_browser.rb [--login-preset=<preset>] <url>'
+  opts.on('--login-preset=PRESET', 'Preset with username and password for login pages') { |v| login_preset = v }
+end.parse!
+
 url_str = ARGV[0]
 if url_str.nil? || url_str.empty?
-  warn('Usage: auto_browser.rb <url>')
+  warn('Usage: auto_browser.rb [--login-preset=<preset>] <url>')
   exit(1)
 end
 
@@ -42,10 +52,39 @@ def type_slowly(element, text, delay)
   end
 end
 
+# Read one value of a preset using ascli itself: all extended values are evaluated by ascli
+# (`@vault:`, `@file:`, `@extend:`, `@preset:`...), with the same home and config file as the tests.
+# @param preset [String] Name of the preset in the test configuration file
+# @param key    [String] Name of the value in the preset
+# @return [String, nil] Evaluated value, or nil if not found
+def preset_value(preset, key)
+  stdout, _stderr, status = Aspera::Environment.secure_execute(
+    File.join(Paths::BIN, 'ascli'), "--home=#{Paths::TMP / 'ascli_home'}", '--interactive=no', 'config', 'echo', "@preset:#{preset}.#{key}",
+    mode:       :capture,
+    exception:  false,
+    stdin_data: ''
+  )
+  status.success? && !stdout.empty? ? stdout.chomp : nil
+end
+
+# Retrieve login credentials (evaluated once) from the preset given with option `--login-preset`.
+# Values in the preset may be extended values, e.g. a reference to a vault.
+# @param preset [String, nil] Name of the preset, or nil if the test did not select one
+# @return [Hash] {:username => String, :password => String}, empty if no preset
+def login_credentials(preset)
+  @login_credentials ||=
+    if preset.nil?
+      {}
+    else
+      {username: preset_value(preset, 'username'), password: preset_value(preset, 'password')}.compact
+    end
+end
+
 # Automate page with Google Chrome via Ferrum
 # @param target_uri [URI] Target URL
 # @param secret     [String] Secret value to fill
-def automate_with_chrome(target_uri, secret)
+# @param login_preset [String, nil] Preset holding the login credentials
+def automate_with_chrome(target_uri, secret, login_preset)
   headless = ENV['TEST_HEADLESS'].to_s.eql?('true')
   # Default visual delay: 0.5s pause between actions (configurable with TEST_DELAY)
   delay = ENV.fetch('TEST_DELAY', headless ? '0' : '0.5').to_f
@@ -112,6 +151,31 @@ def automate_with_chrome(target_uri, secret)
             sleep(delay) if delay.positive?
             w3id_btn.click
             w3id_clicked = true
+            sleep(1)
+          end
+        end
+
+        # Fill credentials from test configuration or vault if login fields are present
+        creds = login_credentials(login_preset)
+        if creds[:username]
+          user_field = browser.at_css('input[type="email"], input[name="username"], input[name="userid"], input[id="username"], input[id="userid"]')
+          if user_field && user_field.value.to_s.empty?
+            type_slowly(user_field, creds[:username], char_delay)
+            sleep(delay) if delay.positive?
+            next_btn = browser.at_css('button#continue-button, button[type="submit"]')
+            next_btn&.click
+            sleep(1)
+          end
+        end
+
+        if creds[:password]
+          pass_field = browser.at_css('input[type="password"]')
+          if pass_field && pass_field.value.to_s.empty?
+            type_slowly(pass_field, creds[:password], char_delay)
+            sleep(delay) if delay.positive?
+            submit_btn = browser.at_css('button#signinbutton, button[type="submit"], input[type="submit"]')
+            submit_btn&.click
+            sleep(1)
           end
         end
 
@@ -174,7 +238,7 @@ case uri.host
 when '127.0.0.1', 'localhost', '::1'
   if ferrum_available
     begin
-      automate_with_chrome(uri, test_secret)
+      automate_with_chrome(uri, test_secret, login_preset)
     rescue StandardError => e
       warn("Chrome automation failed (#{e.message}), falling back to HTTP")
       fallback_http(uri, test_secret)
@@ -185,7 +249,7 @@ when '127.0.0.1', 'localhost', '::1'
 else
   # External/Remote OAuth login URL (e.g. Aspera on Cloud / Faspex 5)
   if ferrum_available
-    automate_with_chrome(uri, test_secret)
+    automate_with_chrome(uri, test_secret, login_preset)
   elsif ENV['TEST_INTERACTIVE'].to_s.eql?('manual')
     case RbConfig::CONFIG['host_os']
     when /darwin|mac os/ then system('open', uri.to_s)

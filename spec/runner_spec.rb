@@ -58,6 +58,54 @@ module Aspera
         end
       end
 
+      describe '#option_ui=' do
+        let(:runner) { Runner.new([]) }
+        let(:environment) { Environment.instance }
+
+        around do |example|
+          saved = [environment.url_method, environment.browser_command]
+          example.run
+        ensure
+          environment.url_method, environment.browser_command = saved
+        end
+
+        {
+          'text'      => :text,
+          'terminal'  => :text,
+          'graphical' => :graphical,
+          'browser'   => :graphical
+        }.each do |mode, method|
+          it "maps mode #{mode} to #{method}" do
+            runner.send(:option_ui=, {mode: mode})
+            expect(environment.url_method).to(eq(method))
+          end
+        end
+
+        it 'maps mode auto to the default mode' do
+          runner.send(:option_ui=, {mode: 'auto'})
+          expect(environment.url_method).to(eq(environment.default_gui_mode))
+        end
+
+        it 'sets the browser command' do
+          runner.send(:option_ui=, {command: ['my_browser', '--flag']})
+          expect(environment.browser_command).to(eq(['my_browser', '--flag']))
+        end
+
+        it 'clears the browser command with an empty array' do
+          runner.send(:option_ui=, {command: ['x']})
+          runner.send(:option_ui=, {command: []})
+          expect(environment.browser_command).to(be_nil)
+        end
+
+        it 'rejects an unknown mode' do
+          expect { runner.send(:option_ui=, {mode: 'bad'}) }.to(raise_error(BadArgument))
+        end
+
+        it 'rejects an unknown sub-option' do
+          expect { runner.send(:option_ui=, {other: 'x'}) }.to(raise_error(BadArgument))
+        end
+      end
+
       describe '#display_schema' do
         let(:runner) { Runner.new([]) }
         let(:formatter) { instance_double(Formatter, display_results: nil) }

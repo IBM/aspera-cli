@@ -29,6 +29,35 @@ components:
           type: boolean
           description: Show passwords and secrets in logs.
           default: false
+    UiOptions:
+      type: object
+      description: >-
+        User interface: how URLs to open, secrets and files are presented to the user.
+        A plain value, e.g. `--ui=terminal`, is the `mode`.
+      additionalProperties: false
+      properties:
+        mode:
+          type: string
+          description: >-
+            `auto`: `browser` on Windows and macOS, or if env var `DISPLAY` is set, else `terminal`.
+            `terminal`: URLs and files to open are displayed on terminal, and secrets are entered on terminal.
+            `browser`: a browser opens URLs, secrets are entered on a web page, and a text editor opens files.
+            `text` is an alias for `terminal`, and `graphical` is an alias for `browser`.
+          enum:
+            - auto
+            - terminal
+            - browser
+            - text
+            - graphical
+          default: auto
+        command:
+          type: array
+          description: >-
+            Command that opens a URL, instead of the system default.
+            First item is the executable, then its arguments. The URL is added as last argument.
+            When set, it is used to open URLs, whatever the `mode`.
+          items:
+            type: string
     SecurityOptions:
       type: object
       description: >-

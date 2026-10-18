@@ -2464,6 +2464,7 @@ awa_ws_current:
 aoc_webauth_profile:
   tags:
     - interactive
+  pre: select_login_preset('aoc_user')
   args:
     - --preset=aoc_web
     - aoc
@@ -2474,6 +2475,7 @@ aoc_webauth_profile_refresh:
   tags:
     - interactive
     - nodoc
+  pre: select_login_preset('aoc_user')
   args:
     - --preset=aoc_web
     - aoc
@@ -7530,6 +7532,7 @@ f5_invite_delete:
 f5_webauth:
   tags:
     - interactive
+  pre: select_login_preset('f5_user')
   args:
     - --preset=f5_web
     - faspex5

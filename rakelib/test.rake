@@ -66,10 +66,9 @@ TEMPORIZE_FILE = 30
 
 # Auto-browser configuration for tests: default is auto (set TEST_INTERACTIVE=manual for user interaction)
 ENV['TEST_INTERACTIVE'] ||= 'auto'
-unless ENV['TEST_INTERACTIVE'].eql?('manual')
-  ENV['ASPERA_BROWSER'] ||= "ruby #{TST / 'auto_browser.rb'}"
-  ENV['TEST_SECRET']    ||= TEST_SECRET
-end
+ENV['TEST_SECRET'] ||= TEST_SECRET unless ENV['TEST_INTERACTIVE'].eql?('manual')
+# Browser command (option `ui.command`, see `browser_ui_option`), nil in manual mode
+BROWSER_COMMAND = ENV['TEST_INTERACTIVE'].eql?('manual') ? nil : ['ruby', (TST / 'auto_browser.rb').to_s].freeze
 
 # Give warning and stop on first warning in this gem
 RUBY_WRAPPER = ['ruby', '-w', TST / 'warning_exit_wrapper.rb'].freeze
@@ -298,6 +297,8 @@ namespace TEST_CASE_NS do
       log.info("--#{percent_completed}%-------------------------------------------------")
       log.info("[RUN]  #{name} [#{info[:tags].join(' ')}]")
       log.info("[EXEC] #{info[:args]&.join(' ')}")
+      # The login preset is selected by each test, see `select_login_preset`
+      ENV['ASCLI_UI'] = browser_ui_option
       exec_binding = binding
       t = TestEnv::Context.new(name, info[:instance_prefix], info.fetch(:siblings, []))
       (info[:vars] || {}).each { |k, v| exec_binding.local_variable_set(k.to_sym, v) }

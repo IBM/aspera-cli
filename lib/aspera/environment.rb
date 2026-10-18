@@ -285,7 +285,10 @@ module Aspera
         false
       end
     end
-    attr_accessor :url_method, :file_illegal_characters
+    # url_method:      :text or :graphical, how URLs, secrets and files are presented to the user
+    # browser_command: [Array<String>, nil] command (and arguments) that opens a URL (URL is appended), instead of
+    #                  the system default
+    attr_accessor :url_method, :browser_command, :file_illegal_characters
     attr_reader :os, :cpu, :default_gui_mode
 
     def initialize
@@ -329,6 +332,7 @@ module Aspera
           :text
         end
       @url_method = @default_gui_mode
+      @browser_command = nil
       @file_illegal_characters = REPLACE_CHARACTER + WINDOWS_FILENAME_INVALID_CHARACTERS
       nil
     end
@@ -377,13 +381,13 @@ module Aspera
       @default_gui_mode == :graphical
     end
 
-    # Open a URI in the system's default graphical browser (non-blocking)
+    # Open a URI in the browser (non-blocking).
+    # The browser is, by priority: `browser_command`, the system default.
     # @param uri [String, URI] the URI to open
     # @return [nil]
     def open_uri_graphical(uri)
-      browser_cmd = ENV['ASPERA_BROWSER'] || ENV['BROWSER']
-      if browser_cmd
-        self.class.secure_execute(*Shellwords.split(browser_cmd), uri.to_s)
+      if @browser_command
+        self.class.secure_execute(*@browser_command, uri.to_s)
       else
         case @os
         when Environment::OS_MACOS then self.class.secure_execute('open', uri.to_s)
@@ -407,11 +411,12 @@ module Aspera
     end
 
     # Allows a user to open a URL
+    # if a browser command is defined (`browser_command`), then it is used, whatever the method
     # if method is :text, then URL is displayed on terminal
     # if method is :graphical, then the URL will be opened with the default browser.
     # this is non blocking
     def open_uri(the_url)
-      if ENV.key?('ASPERA_BROWSER') || ENV.key?('BROWSER')
+      if @browser_command
         open_uri_graphical(the_url)
       else
         case @url_method

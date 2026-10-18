@@ -3214,6 +3214,18 @@ No server to deploy: authentication is handled by the 1Password desktop app (bio
 > Install `op` on macOS with `brew install 1password-cli`, then connect it to the desktop app:
 > `op signin`
 
+##### Referencing items
+
+An item can be referenced by its title (label) or by its 1Password ID, in `@vault:<item>.<field>`:
+
+```shell
+--password=@vault:<%=ph :item_id%>.password
+--password=@vault:<%=ph :item_title%>.password
+```
+
+> [!NOTE]
+> If several items share the same title, use the item ID (or the `vault` parameter to restrict the search).
+
 #### Vault: Operations
 
 Secrets can be manipulated using the `config vault` command:
@@ -3467,10 +3479,24 @@ Some actions may require the use of a graphical tool:
 - A text editor for editing the configuration file
 
 By default, <%=tool%> assumes that a graphical environment is available on Windows; on other systems, it relies on the presence of the `DISPLAY` environment variable.
-It is also possible to force the graphical mode with option `ui`:
+The composite option `ui` (use `--ui=help` to display this schema) selects the mode and the browser command:
 
-- `--ui=graphical` forces a graphical environment: a browser is opened for URLs or secrets, or a text editor for files.
-- `--ui=text` forces a text environment, the URL or file path to open is displayed on terminal, and secrets are entered on terminal.
+<%=schema_to_table(Aspera::Schema::Registry::UI_OPTIONS)%>
+
+A plain value is the `mode`:
+
+- `--ui=browser` (or `graphical`) forces a graphical environment: a browser is opened for URLs or secrets, or a text editor for files.
+- `--ui=terminal` (or `text`) forces a text environment, the URL or file path to open is displayed on terminal, and secrets are entered on terminal.
+- `--ui=auto` selects the mode from the environment (default).
+
+The browser is opened, by priority, with: `--ui.command`, or the system default.
+When a command is defined, it is used to open URLs whatever the `mode`.
+The command is an array: the URL is appended as last argument.
+For example, to use Firefox:
+
+```bash
+<%=cmd%> config echo @secret: --ui=browser --ui.command=@json:'["firefox","--private-window"]'
+```
 
 ### Logging, Debugging
 

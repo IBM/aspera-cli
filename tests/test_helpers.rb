@@ -5,6 +5,7 @@
 # Methods receive `t` (TestEnv::Context) when needed; constants (TMP, etc.) are global.
 
 require 'openssl'
+require 'shellwords'
 require 'base64'
 require 'securerandom'
 require 'aspera/rest'
@@ -21,6 +22,24 @@ MCP_MODERN_VERSION = '2026-07-28'
 
 TEST_KEYCHAIN_NAME = 'ascli'
 TEST_KEYCHAIN_PASS = 'ascli_test_pass'
+
+# Value of env var `ASCLI_UI`: sub-option `command` of option `ui` is the auto browser (`tests/auto_browser.rb`).
+# @param args [Array<String>] Additional arguments of the browser command
+# @return [String, nil] Value, or nil in manual mode (system browser)
+def browser_ui_option(*args)
+  return if BROWSER_COMMAND.nil?
+  "@json:#{JSON.generate({command: BROWSER_COMMAND + args})}"
+end
+
+# Select the preset of the test configuration file that holds the web login credentials (`username`, `password`)
+# for the current test. It is given as option to the browser command run by the CLI when a login page is displayed.
+# `ASCLI_UI` is reset before each test. Does nothing in manual mode (no auto browser).
+# @param preset [String] Name of the preset in the test configuration file
+# @return [void]
+def select_login_preset(preset)
+  return if BROWSER_COMMAND.nil?
+  ENV['ASCLI_UI'] = browser_ui_option("--login-preset=#{preset}")
+end
 
 # Ensure the test keychain is present and unlocked for tests on macOS.
 # @return [void]
