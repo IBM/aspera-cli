@@ -7,13 +7,15 @@ module Aspera
   module Cli
     # Console input
     module Prompt
+      extend self
+
       # Prompt user for console input
       # The prompt is displayed on `stderr`, like for sensitive input, so that `stdout` contains only results.
       # @param prompt [String]  prompt string to display
       # @param sensitive [Boolean] whether to hide typed input
       # @return [String] user input stripped of trailing newline
       def prompt_user_input(prompt, sensitive: false)
-        return $stdin.getpass("#{prompt}> ") if sensitive
+        return $stdin.getpass("#{prompt}> ") if sensitive && $stdin.tty?
         $stderr.print("#{prompt}> ")
         line = $stdin.gets
         Aspera.assert_type(line, String) { 'Unexpected end of standard input' }

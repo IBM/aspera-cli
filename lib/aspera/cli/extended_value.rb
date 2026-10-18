@@ -7,6 +7,7 @@ require 'aspera/yaml'
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/cli/error'
+require 'aspera/cli/prompt'
 require 'aspera/cli/security'
 require 'json'
 require 'base64'
@@ -79,7 +80,7 @@ module Aspera
         # @return [String] The secret
         def read_secret(prompt)
           prompt = 'secret' if prompt.empty?
-          return $stdin.getpass("#{prompt}> ") unless Environment.instance.url_method.eql?(:graphical)
+          return Prompt.prompt_user_input(prompt, sensitive: true) unless Environment.instance.url_method.eql?(:graphical)
           require 'aspera/cli/web_secret'
           WebSecret.ask(prompt)
         end

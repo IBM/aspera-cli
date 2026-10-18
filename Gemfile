@@ -22,6 +22,7 @@ group :development do
   gem('rubocop-shopify', '~> 2.0')
   gem('simplecov', '~> 0.22')
   gem('solargraph', '~> 0.48') unless defined?(JRUBY_VERSION)
+  gem('ferrum', '~> 0.19.1') unless defined?(JRUBY_VERSION)
 end
 
 # Optional dependency gems for runtime that can cause problems (native part to compile) but seldom used

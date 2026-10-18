@@ -381,11 +381,16 @@ module Aspera
     # @param uri [String, URI] the URI to open
     # @return [nil]
     def open_uri_graphical(uri)
-      case @os
-      when Environment::OS_MACOS then self.class.secure_execute('open', uri.to_s)
-      when Environment::OS_WINDOWS then self.class.secure_execute('start', 'explorer', %Q{"#{uri}"})
-      when Environment::OS_LINUX   then self.class.secure_execute('xdg-open', uri.to_s)
-      else Aspera.error_unexpected_value(os) { 'no graphical open method' }
+      browser_cmd = ENV['ASPERA_BROWSER'] || ENV['BROWSER']
+      if browser_cmd
+        self.class.secure_execute(*Shellwords.split(browser_cmd), uri.to_s)
+      else
+        case @os
+        when Environment::OS_MACOS then self.class.secure_execute('open', uri.to_s)
+        when Environment::OS_WINDOWS then self.class.secure_execute('start', 'explorer', %Q{"#{uri}"})
+        when Environment::OS_LINUX   then self.class.secure_execute('xdg-open', uri.to_s)
+        else Aspera.error_unexpected_value(os) { 'no graphical open method' }
+        end
       end
       nil
     end
@@ -406,17 +411,21 @@ module Aspera
     # if method is :graphical, then the URL will be opened with the default browser.
     # this is non blocking
     def open_uri(the_url)
-      case @url_method
-      when :graphical
+      if ENV.key?('ASPERA_BROWSER') || ENV.key?('BROWSER')
         open_uri_graphical(the_url)
-      when :text
-        case the_url.to_s
-        when /^http/
-          puts "USER ACTION: please enter this URL in a browser:\n#{the_url.to_s.red}\n"
-        else
-          puts "USER ACTION: open this:\n#{the_url.to_s.red}\n"
+      else
+        case @url_method
+        when :graphical
+          open_uri_graphical(the_url)
+        when :text
+          case the_url.to_s
+          when /^http/
+            puts "USER ACTION: please enter this URL in a browser:\n#{the_url.to_s.red}\n"
+          else
+            puts "USER ACTION: open this:\n#{the_url.to_s.red}\n"
+          end
+        else Aspera.error_unexpected_value(@url_method) { 'URL open method' }
         end
-      else Aspera.error_unexpected_value(@url_method) { 'URL open method' }
       end
     end
 

@@ -10,6 +10,7 @@ require 'securerandom'
 require 'aspera/rest'
 require 'aspera/mime'
 require 'aspera/json_rpc/client'
+require 'aspera/keychain/macos_security'
 
 MCP_REDIRECT_URI = 'http://127.0.0.1:19999/cb'
 MCP_INIT_PARAMS  = {protocolVersion: '2024-11-05', capabilities: {}, clientInfo: {name: 'test', version: '0'}}.freeze
@@ -18,6 +19,24 @@ MCP_AUTH_TOKEN   = 'test-secret'
 # Protocol version of stateless requests: version and client capabilities in `_meta` of each request
 MCP_MODERN_VERSION = '2026-07-28'
 
+TEST_KEYCHAIN_NAME = 'ascli'
+TEST_KEYCHAIN_PASS = 'ascli_test_pass'
+
+# Ensure the test keychain is present and unlocked for tests on macOS.
+# @return [void]
+def ensure_test_keychain
+  return unless Aspera::Environment.instance.os.eql?(Aspera::Environment::OS_MACOS)
+  kc = Aspera::Keychain::MacosSecurity::Keychain.by_name(TEST_KEYCHAIN_NAME)
+  if kc.nil?
+    kc_path = (TMP / "#{TEST_KEYCHAIN_NAME}.keychain-db").to_s
+    kc = Aspera::Keychain::MacosSecurity::Keychain.create(kc_path, password: TEST_KEYCHAIN_PASS)
+    kc.set_settings(timeout: 7200)
+    existing = Aspera::Keychain::MacosSecurity::Keychain.list
+    Aspera::Keychain::MacosSecurity::Keychain.search_list = [kc] + existing
+    kc.unlock(password: TEST_KEYCHAIN_PASS)
+  end
+end
+
 # Aspera::Rest::Client on the MCP endpoint (`/mcp`, as `/` is the discovery endpoint) that handles the MCP HTTP transport specifics:
 #   1. Requests must accept both JSON and SSE, else HTTP 406 (`create` sets JSON only).
 #   2. The Mcp-Session-Id header must be captured from the first response and replayed on subsequent calls.
@@ -25,11 +44,17 @@ MCP_MODERN_VERSION = '2026-07-28'
 class McpHttpClient < Aspera::Rest::Client
   ACCEPT = [Aspera::Mime::JSON, Aspera::Mime::EVENT_STREAM].join(', ')
 
+  # @param port          [Integer] Local port where MCP server listens
+  # @param extra_headers [Hash]    Optional additional request headers
   def initialize(port, extra_headers = {})
     super(base_url: "http://127.0.0.1:#{port}/mcp", headers: extra_headers)
     @mcp_session_id = nil
   end
 
+  # Perform an HTTP call while managing session ID and format
+  # @param ret     [Symbol] Return type (:data, :resp, :both)
+  # @param kwargs  [Hash]   Additional arguments forwarded to super
+  # @return [Object] Parsed response data, HTTP response, or both
   def call(ret: :data, **kwargs)
     headers = {'Accept' => ACCEPT}
     headers['Mcp-Session-Id'] = @mcp_session_id if @mcp_session_id
@@ -45,6 +70,10 @@ class McpHttpClient < Aspera::Rest::Client
 
   private
 
+  # Parse SSE or plain JSON responses
+  # @param result_http [Net::HTTPResponse] HTTP response object
+  # @param result_mime [String] MIME type string
+  # @return [Object] Parsed JSON data
   def parse_response(result_http, result_mime)
     return super unless result_mime.eql?(Aspera::Mime::EVENT_STREAM)
     last_frame = result_http.body.to_s.scan(/^data: (.*)$/).last
@@ -90,6 +119,8 @@ end
 # Full OAuth 2.0 / PKCE flow test against the MCP OAuth server (port 13780).
 # Covers: discovery, dynamic client registration, PKCE authorize/allow with access code, token exchange,
 # MCP call with bearer token, token refresh, and old-token revocation.
+# @param t [TestEnv::Context] Test context
+# @return [void]
 def mcp_oauth_flow_post(t)
   sleep(1)
   api = oauth_api(13780)
@@ -168,6 +199,8 @@ end
 
 # OAuth deny flow test (port 13781): registers a client, then posts decision=deny and
 # verifies the redirect carries error=access_denied with the original state.
+# @param t [TestEnv::Context] Test context
+# @return [void]
 def mcp_oauth_deny_post(t)
   sleep(1)
   api                = oauth_api(13781)
@@ -196,6 +229,8 @@ end
 # Secret entered on a web page (port 13782), with protocol 2026-07-28: a command with `@secret:` returns `input_required`
 # with the URL of the page (URL mode elicitation), the page asks for the access code, and the retried call executes the command
 # with the secret, hidden in the result.
+# @param t [TestEnv::Context] Test context
+# @return [void]
 def mcp_http_secret_post(t)
   sleep(1)
   tool_name = 'execute_ascli_command'
@@ -240,6 +275,8 @@ end
 
 # Token-auth server test (port 13779): verifies that the MCP endpoint returns 401 without
 # a bearer token and 200 with the correct token.
+# @param t [TestEnv::Context] Test context
+# @return [void]
 def mcp_auth_token_server_post(t)
   sleep(1)
   # Without token: expect 401
@@ -253,6 +290,8 @@ end
 
 # HTTP MCP server test (port 13778): calls initialize then tools/list and verifies that
 # execute_ascli_command is advertised.
+# @param t [TestEnv::Context] Test context
+# @return [void]
 def mcp_http_tools_list_post(t)
   sleep(1)
   client = McpHttpClient.new(13778)
@@ -264,6 +303,8 @@ end
 
 # HTTP MCP server test (port 13777): calls initialize then tools/call execute_ascli_command
 # and verifies the returned version matches Aspera::Cli::VERSION.
+# @param t [TestEnv::Context] Test context
+# @return [void]
 def mcp_http_server_post(t)
   sleep(1)
   client = McpHttpClient.new(13777)
@@ -275,6 +316,8 @@ end
 
 # stdio MCP server test: reads the output file and verifies initialize (id=1) and
 # tools/call (id=2) responses are present and carry the expected version.
+# @param t [TestEnv::Context] Test context
+# @return [void]
 def mcp_stdio_call_post(t)
   lines     = t.out_file.read.lines.map(&:chomp).reject(&:empty?)
   init_line = lines.find { |l| JSON.parse(l)['id'] == 1 rescue false }

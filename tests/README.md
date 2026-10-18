@@ -134,6 +134,39 @@ bundle exec rake test:run
 > Use `tag &lt;name&gt;` to filter by tag; otherwise the argument is a list of test case names.
 > Omit the argument to apply the task to all test cases.
 
+### Interactive Tests and Browser Automation
+
+Tests tagged `interactive` involve prompts (terminal stdin), macOS Keychain, or web browser interactions (secret requests, OAuth consent):
+
+* **Terminal input**: Injected automatically via test definition `stdin:`.
+* **macOS Keychain**: Managed and unlocked automatically via a dedicated test keychain (`ascli`).
+* **Web pages (`--ui=graphical`, `@secret:`)**: Handled by Google Chrome (via `ferrum`) or HTTP fallback.
+
+The following environment variables control interactive test behavior:
+
+| Variable | Values / Default | Description |
+|---|---|---|
+| `TEST_INTERACTIVE` | `auto` (default), `manual` | In `auto` mode, all interactions are handled without human intervention. In `manual` mode, the real system browser opens and waits for user input. |
+| `TEST_HEADLESS` | `false` (default), `true` | When `false`, Chrome opens visibly on screen. Set to `true` for headless execution (ideal for CI/CD). |
+| `TEST_DELAY` | `0.5` (default), float | Delay in seconds between actions (typing, clicking) in visible mode. Set to `0` for maximum speed. |
+| `ASPERA_BROWSER` | command string | Custom command or script to open URLs (defaults to `ruby tests/auto_browser.rb` during test runs). |
+
+Examples:
+
+```bash
+# Run interactive tests with Chrome visible (default settings)
+bundle exec rake "test:run[tag interactive]"
+
+# Run in headless mode (silent background execution for CI)
+TEST_HEADLESS=true bundle exec rake "test:run[tag interactive]"
+
+# Slow down web automation to observe each step (1.5s delay)
+TEST_DELAY=1.5 bundle exec rake "test:run[tag interactive]"
+
+# Manual mode (opens default system browser for user interaction)
+TEST_INTERACTIVE=manual bundle exec rake "test:run[conf_echo_secret_web]"
+```
+
 ## Pre-release tests
 
 For preparation of a release, do the following:

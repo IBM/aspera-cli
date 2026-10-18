@@ -64,6 +64,13 @@ TEMPORIZE_CREATE = 10
 TEMPORIZE_FILE = 30
 # ------------------
 
+# Auto-browser configuration for tests: default is auto (set TEST_INTERACTIVE=manual for user interaction)
+ENV['TEST_INTERACTIVE'] ||= 'auto'
+unless ENV['TEST_INTERACTIVE'].eql?('manual')
+  ENV['ASPERA_BROWSER'] ||= "ruby #{TST / 'auto_browser.rb'}"
+  ENV['TEST_SECRET']    ||= TEST_SECRET
+end
+
 # Give warning and stop on first warning in this gem
 RUBY_WRAPPER = ['ruby', '-w', TST / 'warning_exit_wrapper.rb'].freeze
 # Copy of the main configuration file to be used in tests
@@ -381,7 +388,8 @@ namespace TEST_CASE_NS do
           end
           log.info("Saved: #{saved_value}")
           if info[:expect]
-            raise "not match[#{info[:expect]}][#{t.out_file.read}]" unless info[:expect].eql?(t.out_file.read.chomp)
+            expected = eval_macro(info[:expect], exec_binding)
+            raise "not match[#{expected}][#{t.out_file.read}]" unless expected.eql?(t.out_file.read.chomp)
           end
         end
         STATES[name] = 'passed'

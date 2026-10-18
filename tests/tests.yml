@@ -2079,7 +2079,7 @@ nd_ak_show:
     - "%id:1"
     - --secret=@preset:awa.ak_secret
 nd_ak_bearer_reset:
-  $comment: Marked interactive as it requires to check if local node is running
+  $comment: Reset preview access key if present
   tags:
     - interactive
     - pre_cleanup
@@ -5423,6 +5423,7 @@ conf_opt_out_merge:
     - --format=yaml
     - --out.level=data
 conf_vault_macos:
+  pre: ensure_test_keychain
   tags:
     - vault
     - nodoc
@@ -6272,6 +6273,8 @@ conf_echo_secret:
   description: Secret entered on terminal.
   tags:
     - interactive
+  stdin: "$(TEST_SECRET)\n"
+  expect: $(TEST_SECRET)
   args:
     - config
     - echo
@@ -6282,6 +6285,7 @@ conf_echo_secret_web:
   tags:
     - interactive
     - nodoc
+  expect: $(TEST_SECRET)
   args:
     - config
     - echo
@@ -7010,6 +7014,8 @@ f5_pack_user_public:
     - '@json:@extend:{"title":"test title"}'
     - $(PATH_TST_ASC_LCL)
 f5_pack_recv_public_link_all:
+  tags:
+    - f5_pub_link
   args:
     - -N
     - faspex5
@@ -7019,6 +7025,8 @@ f5_pack_recv_public_link_all:
     - ALL
     - --to-folder=$(TMP)
 f5_pack_recv_public_link_simple:
+  tags:
+    - f5_pub_link
   args:
     - -N
     - faspex5
@@ -7027,6 +7035,8 @@ f5_pack_recv_public_link_simple:
     - --url=@preset:f5_misc.public_link_recv_fr_user
     - --to-folder=$(TMP)
 f5_pack_browse_public_link:
+  tags:
+    - f5_pub_link
   args:
     - -N
     - faspex5
@@ -7040,6 +7050,7 @@ f5_pack_browse_public_link_wrong_folder:
   tags:
     - must_fail
     - nodoc
+    - f5_pub_link
   args:
     - -N
     - faspex5
@@ -7423,6 +7434,8 @@ f5_smtp_sh:
     - smtp
     - show
 f5_smtp_tst:
+  tags:
+    - f5_pub_link
   args:
     - --preset=f5_admin
     - faspex5
