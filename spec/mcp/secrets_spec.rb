@@ -19,9 +19,12 @@ end
 require 'aspera/cli/mcp/secrets'
 require 'json'
 require 'uri'
+require 'securerandom'
 
 RSpec.describe(Aspera::Cli::Mcp::Secrets) do
   let(:web_secret) { Aspera::Cli::Mcp::Secrets.web_secret(base_url: 'http://localhost:3000') }
+  # Value of the secret is generated, none in source
+  let(:secret) { SecureRandom.alphanumeric(12) }
 
   before { require 'webrick' }
 
@@ -90,10 +93,10 @@ RSpec.describe(Aspera::Cli::Mcp::Secrets) do
       Aspera::Environment.unicode = true
       result = request_secret
       request_id = result.input_requests.keys.first
-      enter_secret(request_id, 'S3cret')
+      enter_secret(request_id, secret)
       call = described_class.new(web_secret, second_round(result))
-      expect(call.value('pw')).to(eq('S3cret'))
-      expect(call.hide({'a' => ['x S3cret y'], 'b' => 1})).to(eq({'a' => ['x 🔑 y'], 'b' => 1}))
+      expect(call.value('pw')).to(eq(secret))
+      expect(call.hide({'a' => ["x #{secret} y"], 'b' => 1})).to(eq({'a' => ['x 🔑 y'], 'b' => 1}))
       call.finish
       expect(web_secret.prompt(request_id)).to(be_nil)
     ensure
@@ -104,7 +107,7 @@ RSpec.describe(Aspera::Cli::Mcp::Secrets) do
       result = request_secret(context_class.new(client_capabilities: capabilities, modern: false))
       request_id, request = result.input_requests.first
       expect(request[:params][:elicitationId]).to(eq(request_id))
-      enter_secret(request_id, 'S3cret')
+      enter_secret(request_id, secret)
       context = second_round(result, modern: false)
       described_class.new(web_secret, context).value('pw')
       expect(context.completed).to(eq([request_id]))

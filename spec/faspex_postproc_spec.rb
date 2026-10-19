@@ -185,11 +185,12 @@ RSpec.describe(Aspera::Faspex4PostProcServlet) do
     end
 
     it 'refuses a weak secret_token' do
-      expect { described_class.normalize_parameters(secret_token: 'MySecretToken2024!') }.to(raise_error(/secret_token is too weak: about \d+ bits, minimum 80/))
+      expect { described_class.normalize_parameters(secret_token: SecureRandom.alphanumeric(8)) }.to(raise_error(/secret_token is too weak: about \d+ bits, minimum 80/))
     end
 
     it 'accepts a weak secret_token if secret_token_min_bits allows it' do
-      expect(described_class.normalize_parameters(secret_token: 'mysecret', secret_token_min_bits: 0)).to(include(secret_token: 'mysecret'))
+      weak = SecureRandom.alphanumeric(8)
+      expect(described_class.normalize_parameters(secret_token: weak, secret_token_min_bits: 0)).to(include(secret_token: weak))
     end
 
     it 'refuses an invalid IP address' do
@@ -208,7 +209,7 @@ RSpec.describe(Aspera::Faspex4PostProcServlet) do
     end
 
     it 'refuses a wrong token' do
-      expect(post('token=bad').status).to(eq(401))
+      expect(post("token=#{SecureRandom.hex(32)}").status).to(eq(401))
       expect(File.exist?(marker)).to(be(false))
     end
 

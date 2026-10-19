@@ -6,6 +6,7 @@ require 'webrick'
 require 'tmpdir'
 require 'pathname'
 require 'stringio'
+require 'securerandom'
 
 RSpec.describe(Aspera::Rest) do
   it 'build URI' do
@@ -153,11 +154,15 @@ RSpec.describe(Aspera::Rest) do
 
     describe 'OAuth' do
       let(:oauth) { double('oauth') }
+      # Values of tokens are generated, none in source
+      let(:old_token) { "Bearer #{SecureRandom.hex(16)}" }
+      let(:new_token) { "Bearer #{SecureRandom.hex(16)}" }
 
       before do
+        valid = new_token
         @url = start_server('/api' => lambda do |req, res|
           res['Content-Type'] = 'application/json'
-          res.status = req['Authorization'].eql?('Bearer new') ? 200 : 401
+          res.status = req['Authorization'].eql?(valid) ? 200 : 401
           res.body = '{}'
         end)
       end
@@ -170,27 +175,27 @@ RSpec.describe(Aspera::Rest) do
 
       it 'retries with refreshed token, even with retry_max=0' do
         @params.retry_max = 0
-        allow(oauth).to(receive(:authorization).with(no_args).and_return('Bearer old'))
-        allow(oauth).to(receive(:authorization).with(refresh: true).and_return('Bearer new'))
+        allow(oauth).to(receive(:authorization).with(no_args).and_return(old_token))
+        allow(oauth).to(receive(:authorization).with(refresh: true).and_return(new_token))
         expect(api.read('api')).to(eq({}))
       end
 
       it 'generates new token if refresh fails' do
-        allow(oauth).to(receive(:authorization).with(no_args).and_return('Bearer old'))
+        allow(oauth).to(receive(:authorization).with(no_args).and_return(old_token))
         allow(oauth).to(receive(:authorization).with(refresh: true).and_raise(Aspera::Rest::CallError, 'refresh'))
-        allow(oauth).to(receive(:authorization).with(cache: false).and_return('Bearer new'))
+        allow(oauth).to(receive(:authorization).with(cache: false).and_return(new_token))
         expect(api.read('api')).to(eq({}))
       end
 
       it 'raises original error if no new token can be obtained' do
-        allow(oauth).to(receive(:authorization).with(no_args).and_return('Bearer old'))
+        allow(oauth).to(receive(:authorization).with(no_args).and_return(old_token))
         allow(oauth).to(receive(:authorization).with(refresh: true).and_raise(Aspera::Rest::CallError, 'refresh'))
         allow(oauth).to(receive(:authorization).with(cache: false).and_raise(Aspera::Rest::CallError, 'generate'))
         expect { api.read('api') }.to(raise_error(Aspera::Rest::CallError) { |e| expect(e.response.code).to(eq('401')) })
       end
 
       it 'renews token only once' do
-        allow(oauth).to(receive(:authorization).and_return('Bearer old'))
+        allow(oauth).to(receive(:authorization).and_return(old_token))
         expect { api.read('api') }.to(raise_error(Aspera::Rest::CallError))
         expect(oauth).to(have_received(:authorization).with(refresh: true).once)
       end
@@ -221,8 +226,9 @@ RSpec.describe(Aspera::Rest) do
       end
 
       it 'keeps credentials and base headers on same server' do
-        result = api(auth: {type: :basic, username: 'u', password: 'p'}).read('same')
-        expect(result).to(eq({'authorization' => Aspera::Rest.basic_authorization('u', 'p'), 'base' => 'base', 'query' => 'r=2'}))
+        password = SecureRandom.alphanumeric(12)
+        result = api(auth: {type: :basic, username: 'u', password: password}).read('same')
+        expect(result).to(eq({'authorization' => Aspera::Rest.basic_authorization('u', password), 'base' => 'base', 'query' => 'r=2'}))
       end
 
       it 'adds URL auth query to Location query on same server' do
@@ -230,7 +236,7 @@ RSpec.describe(Aspera::Rest) do
       end
 
       it 'does not forward credentials to another server' do
-        result = api(auth: {type: :basic, username: 'u', password: 'p'}).read('other', nil, headers: {'Authorization' => 'Bearer x'})
+        result = api(auth: {type: :basic, username: 'u', password: SecureRandom.alphanumeric(12)}).read('other', nil, headers: {'Authorization' => "Bearer #{SecureRandom.hex(16)}"})
         expect(result).to(eq({'authorization' => nil, 'base' => 'base', 'query' => 'r=3'}))
       end
 

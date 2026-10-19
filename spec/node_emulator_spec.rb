@@ -348,7 +348,8 @@ module Aspera
       end
 
       describe 'transfer store' do
-        let(:transfer_spec) { {'remote_host' => 'eudemo.asperademo.com', 'remote_password' => 'secret_value', 'direction' => 'send', 'resume_policy' => 'sparse_csum'} }
+        let(:remote_password) { SecureRandom.alphanumeric(12) }
+        let(:transfer_spec) { {'remote_host' => 'eudemo.asperademo.com', 'remote_password' => remote_password, 'direction' => 'send', 'resume_policy' => 'sparse_csum'} }
 
         def wait_status(simulator, id, status)
           Timeout.timeout(2) { sleep(0.01) until simulator.transfer(id)['status'].eql?(status) }
@@ -370,11 +371,11 @@ module Aspera
           simulator = described_class.new(retention_sec: RETENTION_SEC, transfer_client: client)
           id = simulator.start(transfer_spec)
           sent = JSON.parse(client.requests.first.transferSpec)
-          expect(sent['remote_password']).to(eq('secret_value'))
+          expect(sent['remote_password']).to(eq(remote_password))
           expect(sent['resume_policy']).to(eq('sparse_checksum'))
           start_spec = simulator.transfer(id)['start_spec']
           expect(start_spec['remote_host']).to(eq('eudemo.asperademo.com'))
-          expect(start_spec['remote_password']).not_to(eq('secret_value'))
+          expect(start_spec['remote_password']).not_to(eq(remote_password))
         end
 
         it 'returns nil for an unknown transfer' do
@@ -673,7 +674,8 @@ module Aspera
     end
 
     RSpec.describe(NodeEmulatorServlet) do
-      let(:basic_sim) { "Basic #{['sim:sim'].pack('m0')}" }
+      let(:password) { SecureRandom.alphanumeric(12) }
+      let(:basic_sim) { "Basic #{["sim:#{password}"].pack('m0')}" }
       let(:fake_simulator) { FakeSimulator.new }
 
       after do
@@ -704,7 +706,7 @@ module Aspera
       end
 
       context 'with credentials' do
-        before { start_server({username: 'sim', password: 'sim'}) }
+        before { start_server({username: 'sim', password: password}) }
 
         it 'rejects a request without credentials' do
           result = call('GET', '/ops/transfers')
@@ -713,11 +715,11 @@ module Aspera
         end
 
         it 'rejects a wrong password' do
-          expect_error(call('GET', '/ops/transfers', headers: {'Authorization' => "Basic #{['sim:bad'].pack('m0')}"}), 401)
+          expect_error(call('GET', '/ops/transfers', headers: {'Authorization' => "Basic #{["sim:#{SecureRandom.alphanumeric(12)}"].pack('m0')}"}), 401)
         end
 
         it 'rejects a bearer token' do
-          expect_error(call('GET', '/ops/transfers', headers: {'Authorization' => 'Bearer abcdef', 'X-Aspera-AccessKey' => 'ak'}), 401)
+          expect_error(call('GET', '/ops/transfers', headers: {'Authorization' => "Bearer #{SecureRandom.hex(16)}", 'X-Aspera-AccessKey' => 'ak'}), 401)
         end
 
         it 'accepts the expected credentials' do
@@ -904,8 +906,10 @@ module Aspera
         end
 
         it 'refuses a weak password, unless the check is disabled' do
-          expect { emulator({'username' => 'sim', 'password' => 'sim'}) }.to(raise_error(Cli::BadArgument, /password is too weak: about \d+ bits, minimum 80 \(password_min_bits\)/))
-          expect(emulator({'username' => 'sim', 'password' => 'sim', 'password_min_bits' => 0})).to(be_a(Cli::Result::Status))
+          # Short: weak
+          weak = SecureRandom.alphanumeric(3)
+          expect { emulator({'username' => 'sim', 'password' => weak}) }.to(raise_error(Cli::BadArgument, /password is too weak: about \d+ bits, minimum 80 \(password_min_bits\)/))
+          expect(emulator({'username' => 'sim', 'password' => weak, 'password_min_bits' => 0})).to(be_a(Cli::Result::Status))
           expect(WebServerSimple).to(have_received(:new).once)
         end
 

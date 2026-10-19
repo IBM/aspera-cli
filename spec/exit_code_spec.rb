@@ -9,6 +9,7 @@ require 'net/http'
 require 'open3'
 require 'rbconfig'
 require 'tmpdir'
+require 'securerandom'
 
 module Aspera
   module Cli
@@ -55,15 +56,16 @@ module Aspera
           end
         end
 
+        password = SecureRandom.alphanumeric(12)
         {
-          %w[config echo hello]                                            => ExitCode::SUCCESS,
-          %w[config unknown_command]                                       => ExitCode::USAGE,
-          %w[config echo]                                                  => ExitCode::USAGE,
-          %w[config echo one two]                                          => ExitCode::USAGE,
-          ['config', 'echo', 'hello', '--out.query=[?']                    => ExitCode::USAGE,
-          %w[node info --url=http://127.0.0.1:1 --username=u --password=p] => ExitCode::NETWORK,
+          %w[config echo hello]                                                      => ExitCode::SUCCESS,
+          %w[config unknown_command]                                                 => ExitCode::USAGE,
+          %w[config echo]                                                            => ExitCode::USAGE,
+          %w[config echo one two]                                                    => ExitCode::USAGE,
+          ['config', 'echo', 'hello', '--out.query=[?']                              => ExitCode::USAGE,
+          %W[node info --url=http://127.0.0.1:1 --username=u --password=#{password}] => ExitCode::NETWORK,
           # Nagios reports the failure of the check as UNKNOWN
-          ['config', 'echo', '@json:{"a":1}', '--format=nagios']           => 3
+          ['config', 'echo', '@json:{"a":1}', '--format=nagios']                     => 3
         }.each do |args, code|
           it "exits with #{code} for: #{args.join(' ')}" do
             expect(exit_status(*args)).to(eq(code))

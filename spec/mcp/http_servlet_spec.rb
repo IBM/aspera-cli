@@ -2,6 +2,7 @@
 
 require 'aspera/cli/mcp/http_servlet'
 require 'json'
+require 'securerandom'
 
 RSpec.describe(Aspera::Cli::Mcp::HttpServlet) do
   subject(:servlet) { described_class.new(webrick, options) }
@@ -16,6 +17,9 @@ RSpec.describe(Aspera::Cli::Mcp::HttpServlet) do
   end
   let(:web_secret) { instance_double(Aspera::Cli::WebSecret, handle: nil) }
   let(:options) { {app: app, server_info: {name: 'test'}, web_secret: web_secret} }
+  # Values of tokens are generated, none in source
+  let(:token) { SecureRandom.hex(16) }
+  let(:access_token) { SecureRandom.hex(16) }
   # Minimal stand-in for WEBrick::HTTPRequest
   let(:request_class) do
     Struct.new(:request_method, :path, :headers) do
@@ -51,7 +55,7 @@ RSpec.describe(Aspera::Cli::Mcp::HttpServlet) do
   end
 
   it 'answers discovery without authentication' do
-    options[:auth_token] = 'tok'
+    options[:auth_token] = token
     res = request('GET', '/')
     expect(res.status).to(eq(200))
     expect(JSON.parse(res.body)).to(eq('name' => 'test'))
@@ -65,7 +69,7 @@ RSpec.describe(Aspera::Cli::Mcp::HttpServlet) do
   end
 
   context 'with a static token' do
-    before { options[:auth_token] = 'tok' }
+    before { options[:auth_token] = token }
 
     it 'refuses a request without token' do
       res = request('POST', '/mcp')
@@ -75,13 +79,13 @@ RSpec.describe(Aspera::Cli::Mcp::HttpServlet) do
     end
 
     it 'refuses a wrong token, or the token with another scheme' do
-      expect(request('POST', '/mcp', 'Authorization' => 'Bearer bad').status).to(eq(401))
-      expect(request('POST', '/mcp', 'Authorization' => 'Basic tok').status).to(eq(401))
+      expect(request('POST', '/mcp', 'Authorization' => "Bearer #{SecureRandom.hex(16)}").status).to(eq(401))
+      expect(request('POST', '/mcp', 'Authorization' => "Basic #{token}").status).to(eq(401))
     end
 
     it 'calls the MCP app with the token, scheme in any case' do
-      expect(request('POST', '/mcp', 'Authorization' => 'Bearer tok').status).to(eq(200))
-      expect(request('POST', '/mcp', 'Authorization' => 'bearer tok').status).to(eq(200))
+      expect(request('POST', '/mcp', 'Authorization' => "Bearer #{token}").status).to(eq(200))
+      expect(request('POST', '/mcp', 'Authorization' => "bearer #{token}").status).to(eq(200))
       expect(app.calls.size).to(eq(2))
     end
   end
@@ -97,7 +101,7 @@ RSpec.describe(Aspera::Cli::Mcp::HttpServlet) do
   context 'with OAuth' do
     let(:oauth_server) do
       instance_double(Aspera::OAuth::Server::Pkce, www_authenticate_header: 'Bearer realm="x"', handle_authorize: nil).tap do |oauth|
-        allow(oauth).to(receive(:access_token_valid?)) { |token| token.eql?('access') }
+        allow(oauth).to(receive(:access_token_valid?)) { |value| value.eql?(access_token) }
       end
     end
 
@@ -113,14 +117,14 @@ RSpec.describe(Aspera::Cli::Mcp::HttpServlet) do
     end
 
     it 'calls the MCP app with an OAuth access token' do
-      expect(request('POST', '/mcp', 'Authorization' => 'Bearer access').status).to(eq(200))
+      expect(request('POST', '/mcp', 'Authorization' => "Bearer #{access_token}").status).to(eq(200))
     end
 
     it 'accepts the static token or an OAuth access token' do
-      options[:auth_token] = 'tok'
-      expect(request('POST', '/mcp', 'Authorization' => 'Bearer tok').status).to(eq(200))
-      expect(request('POST', '/mcp', 'Authorization' => 'Bearer access').status).to(eq(200))
-      expect(request('POST', '/mcp', 'Authorization' => 'Bearer bad').status).to(eq(401))
+      options[:auth_token] = token
+      expect(request('POST', '/mcp', 'Authorization' => "Bearer #{token}").status).to(eq(200))
+      expect(request('POST', '/mcp', 'Authorization' => "Bearer #{access_token}").status).to(eq(200))
+      expect(request('POST', '/mcp', 'Authorization' => "Bearer #{SecureRandom.hex(16)}").status).to(eq(401))
     end
 
     it 'routes OAuth endpoints to the OAuth server' do
@@ -130,7 +134,7 @@ RSpec.describe(Aspera::Cli::Mcp::HttpServlet) do
   end
 
   it 'routes secret pages to the secret pages, without bearer token' do
-    options[:auth_token] = 'tok'
+    options[:auth_token] = token
     request('GET', '/secret/abc')
     expect(web_secret).to(have_received(:handle))
     expect(app.calls).to(be_empty)

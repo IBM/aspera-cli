@@ -6,6 +6,7 @@
 
 require 'bundler/setup'
 require 'tmpdir'
+require 'securerandom'
 require 'aspera/hash_ext'
 require 'aspera/persistency_folder'
 require 'aspera/cli/async_transfer_store'
@@ -118,7 +119,7 @@ module Aspera
               'asynchronous' => true,
               'url'          => 'https://node.example.com',
               'username'     => 'u',
-              'password'     => 'p'
+              'password'     => SecureRandom.alphanumeric(12)
             }
           ).tap { |a| a.agent_instance = agent_double }
         end

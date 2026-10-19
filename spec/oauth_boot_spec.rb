@@ -3,6 +3,7 @@
 require 'spec_helper'
 require 'aspera/rest'
 require 'aspera/oauth/client/boot'
+require 'securerandom'
 require 'base64'
 require 'json'
 
@@ -27,6 +28,7 @@ RSpec.describe(Aspera::OAuth::Boot) do
   end
 
   let(:token) { jwt({'sub' => 'user@example.com', 'exp' => Time.now.to_i + 3600}) }
+  let(:refresh_token) { SecureRandom.alphanumeric(12) }
 
   around do |example|
     factory = Aspera::OAuth::Factory.instance
@@ -38,8 +40,8 @@ RSpec.describe(Aspera::OAuth::Boot) do
   end
 
   it 'caches token and refresh token from cookie, identified by token subject' do
-    boot = described_class.new(cookie: "aoc.token=#{token}; aoc.refresh=r1", **base_params)
-    expect(store.data.values).to(eq([JSON.generate({'access_token' => token, 'refresh_token' => 'r1'})]))
+    boot = described_class.new(cookie: "aoc.token=#{token}; aoc.refresh=#{refresh_token}", **base_params)
+    expect(store.data.values).to(eq([JSON.generate({'access_token' => token, 'refresh_token' => refresh_token})]))
     expect(boot.token).to(eq(token))
     # same cache entry is found using username instead of cookie
     expect(described_class.new(username: 'user@example.com', **base_params).token).to(eq(token))
@@ -60,7 +62,7 @@ RSpec.describe(Aspera::OAuth::Boot) do
   end
 
   it 'requires a decodable JWT' do
-    expect { described_class.new(cookie: 'aoc.token=not_a_jwt', **base_params) }.to(raise_error(Aspera::AssertError, /not a decodable JWT/))
+    expect { described_class.new(cookie: "aoc.token=#{SecureRandom.alphanumeric(12)}", **base_params) }.to(raise_error(Aspera::AssertError, /not a decodable JWT/))
   end
 
   it 'requires either cookie or username' do

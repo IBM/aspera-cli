@@ -2,6 +2,7 @@
 
 require 'bundler/setup'
 require 'tmpdir'
+require 'securerandom'
 require 'aspera/persistency_folder'
 require 'aspera/cli/async_transfer_store'
 
@@ -21,7 +22,7 @@ module Aspera
           'job_id'            => job_id,
           'agent_type'        => 'node',
           'transfer_id'       => 'tid-123',
-          'agent_params'      => {'url' => 'https://node.example.com', 'username' => 'u', 'password' => 'p'},
+          'agent_params'      => {'url' => 'https://node.example.com', 'username' => 'u', 'password' => SecureRandom.alphanumeric(12)},
           'status'            => 'running',
           'bytes_transferred' => 0,
           'started_at'        => '2024-01-01T00:00:00Z',

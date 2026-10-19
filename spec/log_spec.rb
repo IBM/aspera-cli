@@ -3,6 +3,7 @@
 require 'spec_helper'
 require 'aspera/log'
 require 'stringio'
+require 'securerandom'
 
 RSpec.describe(Aspera::Log) do
   let(:log) { described_class.instance }
@@ -55,8 +56,9 @@ RSpec.describe(Aspera::Log) do
 
     it 'hides secrets' do
       log.level = :debug
-      described_class.dump(:obj, {'password' => 'my_secret'})
-      expect(output.string).not_to(include('my_secret'))
+      secret = SecureRandom.alphanumeric(12)
+      described_class.dump(:obj, {'password' => secret})
+      expect(output.string).not_to(include(secret))
     end
   end
 

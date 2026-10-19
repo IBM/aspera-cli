@@ -10,6 +10,7 @@ require 'aspera/transfer/error'
 require 'aspera/agent/node'
 require 'aspera/agent/desktop'
 require 'aspera/json_rpc/client'
+require 'securerandom'
 
 # ── Node ──────────────────────────────────────────────────────────────────────
 
@@ -33,7 +34,7 @@ RSpec.describe('Aspera::Agent::Node.transfer_status') do
     end
   end
 
-  let(:params) { {'url' => 'https://node.example.com', 'username' => 'u', 'password' => 'p'} }
+  let(:params) { {'url' => 'https://node.example.com', 'username' => 'u', 'password' => SecureRandom.alphanumeric(12)} }
 
   it 'returns running status' do
     result = Aspera::Agent::Node.transfer_status('tid-running', params)
@@ -79,7 +80,7 @@ RSpec.describe('Aspera::Agent::Node#wait_for_transfers_completion') do
     rest_double = instance_double('Aspera::Rest::Client')
     allow(Aspera::Rest::Client).to(receive(:new).and_return(rest_double))
     allow(rest_double).to(receive(:read).and_return(*statuses))
-    Aspera::Agent::Node.new(url: 'https://node.example.com', username: 'u', password: 'p', progress: progress).tap { |agent| allow(agent).to(receive(:sleep)) }
+    Aspera::Agent::Node.new(url: 'https://node.example.com', username: 'u', password: SecureRandom.alphanumeric(12), progress: progress).tap { |agent| allow(agent).to(receive(:sleep)) }
   end
 
   it 'raises when the transfer is canceled' do

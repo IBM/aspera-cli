@@ -73,7 +73,7 @@ module Aspera
           end
 
           it 'refuses a weak password' do
-            expect { gateway({'username' => 'fx4', 'password' => 'fx4'}) }.to(raise_error(ParameterError, /password_min_bits/))
+            expect { gateway({'username' => 'fx4', 'password' => SecureRandom.alphanumeric(3)}) }.to(raise_error(ParameterError, /password_min_bits/))
             expect(WebServerSimple).not_to(have_received(:new))
           end
         end
@@ -84,10 +84,11 @@ module Aspera
           end
 
           it 'is specific to each public link, without username' do
-            first = plugin([], {'passcode' => 'abc', 'package_id' => '12'}).send(:persistency_user_id)
-            second = plugin([], {'passcode' => 'xyz', 'package_id' => '12'}).send(:persistency_user_id)
+            passcode = SecureRandom.alphanumeric(12)
+            first = plugin([], {'passcode' => passcode, 'package_id' => '12'}).send(:persistency_user_id)
+            second = plugin([], {'passcode' => SecureRandom.alphanumeric(12), 'package_id' => '12'}).send(:persistency_user_id)
             expect(first).not_to(eq(second))
-            expect(first).not_to(include('abc'))
+            expect(first).not_to(include(passcode))
           end
         end
       end

@@ -44,6 +44,8 @@ end
 
 require 'aspera/cli/mcp/tool'
 require 'aspera/cli/result'
+require 'securerandom'
+require 'uri'
 
 RSpec.describe(Aspera::Cli::Mcp::Tool) do
   # Minimal formatter stub that only implements filter_columns_on_select.
@@ -99,10 +101,11 @@ RSpec.describe(Aspera::Cli::Mcp::Tool) do
     end
 
     it 'hides secrets in both text and structuredContent' do
-      data = {'username' => 'john', 'password' => 'my_secret'}
+      secret = SecureRandom.alphanumeric(12)
+      data = {'username' => 'john', 'password' => secret}
       resp = call_with_result(Aspera::Cli::Result::SingleObject.new(data))
-      expect(resp.content.first[:text]).not_to(include('my_secret'))
-      expect(resp.structured_content['password']).not_to(eq('my_secret'))
+      expect(resp.content.first[:text]).not_to(include(secret))
+      expect(resp.structured_content['password']).not_to(eq(secret))
       expect(resp.structured_content['username']).to(eq('john'))
     end
   end
@@ -276,7 +279,7 @@ RSpec.describe(Aspera::Cli::Mcp::Tool) do
       request_id, request = first.input_requests.first
       expect(request[:params][:url]).to(eq(web_secret.url(request_id)))
       # The user enters the secret on the page
-      page_request = Struct.new(:request_method, :path, :body).new('POST', "/secret/#{request_id}", 'secret=S3cret&decision=submit')
+      page_request = Struct.new(:request_method, :path, :body).new('POST', "/secret/#{request_id}", URI.encode_www_form(secret: SecureRandom.alphanumeric(12), decision: 'submit'))
       web_secret.handle(page_request, Struct.new(:status, :body) { def []=(*); end }.new)
       retry_context = context_class.new(client_capabilities: capabilities, request_state: first.request_state, input_responses: {request_id => {action: 'accept'}})
       resp = described_class.call(args: args, server_context: retry_context)

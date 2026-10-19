@@ -5,6 +5,7 @@
 require 'tmpdir'
 require 'yaml'
 require 'json'
+require 'securerandom'
 require 'aspera/hash_ext'
 require 'aspera/environment'
 require 'aspera/keychain/encrypted_hash'
@@ -14,6 +15,10 @@ require 'aspera/keychain/hashicorp_vault'
 
 RSpec.describe(Aspera::Keychain) do
   let(:success) { instance_double(Process::Status, success?: true, exitstatus: 0) }
+  # Values of secrets are generated, none in source
+  let(:secret) { SecureRandom.alphanumeric(12) }
+  let(:other) { SecureRandom.alphanumeric(12) }
+  let(:vault_password) { SecureRandom.alphanumeric(12) }
 
   def failure(code) = instance_double(Process::Status, success?: false, exitstatus: code)
 
@@ -30,12 +35,12 @@ RSpec.describe(Aspera::Keychain) do
       Dir.mktmpdir do |dir|
         path = File.join(dir, 'vault.bin')
         # v4.26.0 format: key is the password zero-padded, no kdf field
-        legacy_key = "old#{"\x00" * 32}"[0, 32]
-        data = described_class::OsslCipher.new('aes-256-cbc', legacy_key).encrypt(YAML.dump({'my_label' => {password: 'my_secret'}}))
+        legacy_key = "#{vault_password}#{"\x00" * 32}"[0, 32]
+        data = described_class::OsslCipher.new('aes-256-cbc', legacy_key).encrypt(YAML.dump({'my_label' => {password: secret}}))
         File.write(path, YAML.dump({'version' => '1.0.0', 'type' => 'encrypted_hash_vault', 'cipher' => 'aes-256-cbc', 'data' => data}))
-        described_class.new(file: path, password: 'old').change_password('new')
+        described_class.new(file: path, password: vault_password).change_password(other)
         expect(YAML.load_file(path)['kdf']).to(include('algo' => 'PBKDF2'))
-        expect(described_class.new(file: path, password: 'new').get(label: 'my_label')[:password]).to(eq('my_secret'))
+        expect(described_class.new(file: path, password: other).get(label: 'my_label')[:password]).to(eq(secret))
       end
     end
 
@@ -43,17 +48,17 @@ RSpec.describe(Aspera::Keychain) do
       Dir.mktmpdir do |dir|
         path = File.join(dir, 'vault.bin')
         File.write(path, "--- !ruby/object:OpenStruct\ntable: {}\n")
-        expect { described_class.new(file: path, password: 'pass') }.to(raise_error(Psych::DisallowedClass))
+        expect { described_class.new(file: path, password: vault_password) }.to(raise_error(Psych::DisallowedClass))
         File.write(path, "--- just a string\n")
-        expect { described_class.new(file: path, password: 'pass') }.to(raise_error(/Invalid vault file/))
+        expect { described_class.new(file: path, password: vault_password) }.to(raise_error(/Invalid vault file/))
       end
     end
 
     it 'refuses to overwrite a secret and to delete a missing one' do
       Dir.mktmpdir do |dir|
-        vault = described_class.new(file: File.join(dir, 'vault.bin'), password: 'pass')
-        vault.set({label: 'my_label', password: 'my_secret'})
-        expect { vault.set({label: 'my_label', password: 'other'}) }.to(raise_error(/already exist/))
+        vault = described_class.new(file: File.join(dir, 'vault.bin'), password: vault_password)
+        vault.set({label: 'my_label', password: secret})
+        expect { vault.set({label: 'my_label', password: other}) }.to(raise_error(/already exist/))
         expect { vault.delete(label: 'missing') }.to(raise_error(/not found/))
       end
     end
@@ -64,12 +69,13 @@ RSpec.describe(Aspera::Keychain) do
     let(:system_vault) { described_class.allocate.tap { |v| v.instance_variable_set(:@keychain, keychain) } }
 
     it 'reads the password printed on stderr' do
+      spaced = "#{SecureRandom.alphanumeric(6)} #{SecureRandom.alphanumeric(6)}"
       allow(Aspera::Environment).to(receive(:secure_execute).and_return([
         "keychain: \"/tmp/test.keychain-db\"\nattributes:\n    0x00000007 <blob>=\"my_label\"\n    \"acct\"<blob>=\"bob\"\n    \"icmt\"<blob>=\"my comment\"\n",
-        "password: \"my secret\"\n",
+        "password: \"#{spaced}\"\n",
         success
       ]))
-      expect(system_vault.get(label: 'my_label')).to(eq({label: 'my_label', username: 'bob', password: 'my secret', description: 'my comment'}))
+      expect(system_vault.get(label: 'my_label')).to(eq({label: 'my_label', username: 'bob', password: spaced, description: 'my comment'}))
     end
 
     it 'returns nil for a missing secret when exception is false' do
@@ -79,10 +85,11 @@ RSpec.describe(Aspera::Keychain) do
     end
 
     it 'passes values unescaped (no shell)' do
+      special = "#{SecureRandom.alphanumeric(4)} #{SecureRandom.alphanumeric(4)}$#{SecureRandom.alphanumeric(4)}"
       expect(Aspera::Environment).to(receive(:secure_execute)
-        .with('security', 'add-generic-password', '-s', 'my_label', '-a', 'none', '-w', 'a b$c', '/tmp/test.keychain-db', mode: :capture, exception: false)
+        .with('security', 'add-generic-password', '-s', 'my_label', '-a', 'none', '-w', special, '/tmp/test.keychain-db', mode: :capture, exception: false)
         .and_return(['', '', success]))
-      system_vault.set({label: 'my_label', password: 'a b$c'})
+      system_vault.set({label: 'my_label', password: special})
     end
   end
 
@@ -103,12 +110,12 @@ RSpec.describe(Aspera::Keychain) do
       item = {
         'id' => 'abc', 'title' => 'my_label',
         'fields' => [
-          {'id' => 'password', 'label' => 'password', 'value' => 'my_secret'},
+          {'id' => 'password', 'label' => 'password', 'value' => secret},
           {'id' => 'x7generated', 'label' => 'url', 'value' => 'https://custom.example.com'}
         ]
       }
       allow(Aspera::Environment).to(receive(:secure_execute).and_return([JSON.generate(item), '', success]))
-      expect(described_class.new.get(label: 'my_label')).to(eq({label: 'my_label', password: 'my_secret', url: 'https://custom.example.com', id: 'abc'}))
+      expect(described_class.new.get(label: 'my_label')).to(eq({label: 'my_label', password: secret, url: 'https://custom.example.com', id: 'abc'}))
       item['urls'] = [{'href' => 'https://other.example.com'}, {'href' => 'https://site.example.com', 'primary' => true}]
       allow(Aspera::Environment).to(receive(:secure_execute).and_return([JSON.generate(item), '', success]))
       expect(described_class.new.get(label: 'my_label')[:url]).to(eq('https://site.example.com'))
@@ -117,14 +124,14 @@ RSpec.describe(Aspera::Keychain) do
     it 'creates a new item with the website' do
       stub_failed_execute('[ERROR] item not found', 1)
       expect(Aspera::Environment).to(receive(:secure_execute)
-        .with('op', 'item', 'create', '--category', 'Login', '--title=my_label', '--url=https://site.example.com', 'password[password]=my_secret', mode: :capture, exception: true)
+        .with('op', 'item', 'create', '--category', 'Login', '--title=my_label', '--url=https://site.example.com', "password[password]=#{secret}", mode: :capture, exception: true)
         .and_return(['', '', success]))
-      described_class.new.set({label: 'my_label', password: 'my_secret', url: 'https://site.example.com'})
+      described_class.new.set({label: 'my_label', password: secret, url: 'https://site.example.com'})
     end
 
     it 'refuses to create a second item with the same label' do
       allow(Aspera::Environment).to(receive(:secure_execute).and_return([JSON.generate({'id' => 'abc', 'title' => 'my_label'}), '', success]))
-      expect { described_class.new.set({label: 'my_label', password: 'my_secret'}) }.to(raise_error(/already exist/))
+      expect { described_class.new.set({label: 'my_label', password: secret}) }.to(raise_error(/already exist/))
     end
   end
 
@@ -133,14 +140,14 @@ RSpec.describe(Aspera::Keychain) do
       logical = double('logical')
       allow(Vault).to(receive(:logical).and_return(logical))
       allow(logical).to(receive(:list).with('secret/metadata/').and_return(%w[kept deleted]))
-      allow(logical).to(receive(:read).with('secret/data/kept').and_return(Vault::Secret.new(data: {data: {password: 'my_secret'}})))
+      allow(logical).to(receive(:read).with('secret/data/kept').and_return(Vault::Secret.new(data: {data: {password: secret}})))
       allow(logical).to(receive(:read).with('secret/data/deleted').and_return(nil))
-      vault = described_class.new(url: 'http://127.0.0.1:8200', token: 'token')
-      expect(vault.all).to(eq([{password: 'my_secret', label: 'kept'}]))
+      vault = described_class.new(url: 'http://127.0.0.1:8200', token: SecureRandom.hex(16))
+      expect(vault.all).to(eq([{password: secret, label: 'kept'}]))
       expect(vault.get(label: 'deleted', exception: false)).to(be_nil)
-      expect { vault.set({label: 'kept', password: 'other'}) }.to(raise_error(/already exist/))
-      expect(logical).to(receive(:write).with('secret/data/deleted', data: {password: 'new'}))
-      vault.set({label: 'deleted', password: 'new'})
+      expect { vault.set({label: 'kept', password: other}) }.to(raise_error(/already exist/))
+      expect(logical).to(receive(:write).with('secret/data/deleted', data: {password: other}))
+      vault.set({label: 'deleted', password: other})
     end
   end
 end

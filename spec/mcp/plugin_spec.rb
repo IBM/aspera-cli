@@ -142,8 +142,9 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
 
     it 'refuses an empty or weak auth_token, unless min_bits allows it' do
       expect { start(auth_token: '') }.to(raise_error(Aspera::Cli::BadArgument, /must not be empty/))
-      expect { start(auth_token: 'MySecretToken2024!') }.to(raise_error(Aspera::Cli::BadArgument, /auth_token is too weak: about \d+ bits, minimum 80/))
-      expect { start(auth_token: 'tok', auth_token_min_bits: 0) }.not_to(raise_error)
+      # Short: weak
+      expect { start(auth_token: SecureRandom.alphanumeric(8)) }.to(raise_error(Aspera::Cli::BadArgument, /auth_token is too weak: about \d+ bits, minimum 80/))
+      expect { start(auth_token: SecureRandom.alphanumeric(3), auth_token_min_bits: 0) }.not_to(raise_error)
     end
 
     it 'listens on HTTPS with cert, key and chain' do
@@ -233,7 +234,7 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
   # -------------------------------------------------------------------------
   describe '#action_server options of the transport' do
     it 'refuses options of the http transport with stdio, the default' do
-      expect { plugin.action_server(mcp_options: {'url' => 'http://127.0.0.1:3000', 'auth_token' => 'x'}) }
+      expect { plugin.action_server(mcp_options: {'url' => 'http://127.0.0.1:3000', 'auth_token' => SecureRandom.hex(32)}) }
         .to(raise_error(Aspera::Cli::BadArgument, /not used with transport stdio: url, auth_token/))
       expect { plugin.action_server(mcp_options: {'transport' => 'stdio', 'allowed_hosts' => ['h']}) }
         .to(raise_error(Aspera::Cli::BadArgument, /not used with transport stdio: allowed_hosts/))
@@ -310,7 +311,7 @@ RSpec.describe(Aspera::OAuth::Server::Pkce) do
   # -------------------------------------------------------------------------
   describe '#access_token_valid?' do
     it 'returns false when no token has been issued' do
-      expect(oauth.access_token_valid?('sometoken')).to(be(false))
+      expect(oauth.access_token_valid?(SecureRandom.hex(32))).to(be(false))
     end
 
     it 'returns false for no token' do
@@ -507,7 +508,9 @@ RSpec.describe(Aspera::OAuth::Server::Pkce) do
     end
 
     context 'with a consent secret' do
-      subject(:oauth) { described_class.new(base_url: base_url, consent_secret: 'pass') }
+      subject(:oauth) { described_class.new(base_url: base_url, consent_secret: consent_secret) }
+
+      let(:consent_secret) { SecureRandom.hex(16) }
 
       def post_allow(secret)
         body = URI.encode_www_form(client_id: client_id, redirect_uri: redirect, state: 's1', code_challenge: 'c', code_challenge_method: 'S256', decision: 'allow', consent_secret: secret)
@@ -521,14 +524,14 @@ RSpec.describe(Aspera::OAuth::Server::Pkce) do
       end
 
       it 'shows the consent page again with an error on a wrong access code' do
-        post_allow('wrong')
+        post_allow(SecureRandom.hex(16))
         expect(res.status).to(eq(401))
         expect(res['Location']).to(be_nil)
         expect(res.body).to(include('Invalid access code'))
       end
 
       it 'redirects with a code on the right access code' do
-        post_allow('pass')
+        post_allow(consent_secret)
         expect(res.status).to(eq(302))
         expect(res['Location']).to(start_with("#{redirect}?code="))
       end

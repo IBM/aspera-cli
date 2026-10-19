@@ -5,6 +5,7 @@ require 'aspera/cli/vault_manager'
 require 'aspera/cli/result'
 require 'aspera/cli/parser'
 require 'aspera/log'
+require 'securerandom'
 
 # Minimal host class that includes both mixins, backed by simple test doubles.
 module Aspera
@@ -14,6 +15,9 @@ module Aspera
       # Test host: includes the mixins and exposes injectable doubles
       # -----------------------------------------------------------------------
       let(:config_presets) { {} }
+      # Values of secrets are generated, none in source
+      let(:secret) { SecureRandom.alphanumeric(12) }
+      let(:other) { SecureRandom.alphanumeric(12) }
 
       let(:presets_double) do
         double('presets', config_presets: config_presets, global_default_preset: 'GLOBAL').tap do |d|
@@ -82,9 +86,9 @@ module Aspera
       describe '#secure_preset_option (via action_preset_secure)' do
         context 'when vault is not configured' do
           it 'leaves the preset value unchanged' do
-            config_presets['mypreset'] = {'password' => 'cleartext'}
+            config_presets['mypreset'] = {'password' => secret}
             host.action_preset_secure(config_name: 'mypreset')
-            expect(config_presets['mypreset']['password']).to(eq('cleartext'))
+            expect(config_presets['mypreset']['password']).to(eq(secret))
           end
         end
 
@@ -92,14 +96,14 @@ module Aspera
           before { host.vault_double_override = vault_double }
 
           it 'moves a clear-text password into the vault and replaces it with a @vault: reference' do
-            config_presets['mypreset'] = {'password' => 'secret123'}
+            config_presets['mypreset'] = {'password' => secret}
             host.action_preset_secure(config_name: 'mypreset')
             expect(config_presets['mypreset']['password']).to(eq('@vault:mypreset.password'))
-            expect(vault_store['mypreset']).to(include(password: 'secret123'))
+            expect(vault_store['mypreset']).to(include(password: secret))
           end
 
           it 'moves a clear-text secret field into the vault' do
-            config_presets['mypreset'] = {'api_secret' => 'topsecret'}
+            config_presets['mypreset'] = {'api_secret' => secret}
             host.action_preset_secure(config_name: 'mypreset')
             expect(config_presets['mypreset']['api_secret']).to(eq('@vault:mypreset.password'))
           end
@@ -125,23 +129,23 @@ module Aspera
           end
 
           it 'increments the vault label when the base label is already taken' do
-            vault_store['mypreset'] = {label: 'mypreset', password: 'old'}
-            config_presets['mypreset'] = {'password' => 'newpass'}
+            vault_store['mypreset'] = {label: 'mypreset', password: other}
+            config_presets['mypreset'] = {'password' => secret}
             host.action_preset_secure(config_name: 'mypreset')
             expect(config_presets['mypreset']['password']).to(eq('@vault:mypreset0.password'))
-            expect(vault_store['mypreset0']).to(include(password: 'newpass'))
+            expect(vault_store['mypreset0']).to(include(password: secret))
           end
 
           it 'leaves secrets of the global preset in clear without opening the vault' do
-            config_presets['GLOBAL'] = {'secret' => 'abc'}
+            config_presets['GLOBAL'] = {'secret' => secret}
             expect(host).not_to(receive(:vault))
             host.action_preset_secure(config_name: 'GLOBAL')
-            expect(config_presets['GLOBAL']['secret']).to(eq('abc'))
+            expect(config_presets['GLOBAL']['secret']).to(eq(secret))
           end
 
           it 'processes all presets when no config_name is given' do
-            config_presets['preset_a'] = {'password' => 'passA'}
-            config_presets['preset_b'] = {'password' => 'passB'}
+            config_presets['preset_a'] = {'password' => secret}
+            config_presets['preset_b'] = {'password' => other}
             host.action_preset_secure
             expect(config_presets['preset_a']['password']).to(eq('@vault:preset_a.password'))
             expect(config_presets['preset_b']['password']).to(eq('@vault:preset_b.password'))
@@ -182,28 +186,28 @@ module Aspera
 
         context 'without vault' do
           it 'saves the password in clear' do
-            h = host_with_options({'password' => 'mypass', 'username' => 'bob'})
+            h = host_with_options({'password' => secret, 'username' => 'bob'})
             h.action_preset_update(name: 'p1')
-            expect(config_presets['p1']['password']).to(eq('mypass'))
+            expect(config_presets['p1']['password']).to(eq(secret))
           end
 
           it 'does not declare the global preset' do
             expect(presets_double).not_to(receive(:global_default_preset))
-            h = host_with_options({'password' => 'mypass'})
+            h = host_with_options({'password' => secret})
             h.action_preset_update(name: 'p1')
           end
         end
 
         context 'with vault' do
           it 'automatically moves the password to the vault' do
-            h = host_with_options({'password' => 'mypass', 'username' => 'bob'}, vault_override: vault_double)
+            h = host_with_options({'password' => secret, 'username' => 'bob'}, vault_override: vault_double)
             h.action_preset_update(name: 'p1')
             expect(config_presets['p1']['password']).to(eq('@vault:p1.password'))
-            expect(vault_store['p1']).to(include(password: 'mypass'))
+            expect(vault_store['p1']).to(include(password: secret))
           end
 
           it 'leaves non-secret fields in clear' do
-            h = host_with_options({'password' => 'mypass', 'username' => 'bob'}, vault_override: vault_double)
+            h = host_with_options({'password' => secret, 'username' => 'bob'}, vault_override: vault_double)
             h.action_preset_update(name: 'p1')
             expect(config_presets['p1']['username']).to(eq('bob'))
           end
@@ -256,7 +260,7 @@ module Aspera
           before { host.vault_double_override = vault_double }
 
           it 'automatically secures a password set via action_preset_set' do
-            host.action_preset_set(name: 'p1', param_name: 'password', param_value: 'abc')
+            host.action_preset_set(name: 'p1', param_name: 'password', param_value: secret)
             expect(config_presets['p1']['password']).to(eq('@vault:p1.password'))
           end
 
@@ -312,8 +316,8 @@ module Aspera
           end
 
           it 'accepts a label containing dots' do
-            vault_store['my.preset'] = {label: 'my.preset', password: 'my_secret'}
-            expect(includer.vault_value('my.preset.password')).to(eq('my_secret'))
+            vault_store['my.preset'] = {label: 'my.preset', password: secret}
+            expect(includer.vault_value('my.preset.password')).to(eq(secret))
           end
 
           it 'raises BadArgument without parameter' do

@@ -2,6 +2,7 @@
 
 require 'bundler/setup'
 require 'tmpdir'
+require 'securerandom'
 require 'aspera/environment'
 
 RSpec.describe(Aspera::Environment) do
@@ -194,8 +195,9 @@ RSpec.describe(Aspera::Environment) do
         path = File.join(dir, 'secret')
         # Only the mode at creation is checked
         allow(described_class).to(receive(:restrict_file_access))
-        described_class.write_file_restricted(path) { 'secret' }
-        expect(File.read(path)).to(eq('secret'))
+        secret = SecureRandom.alphanumeric(12)
+        described_class.write_file_restricted(path) { secret }
+        expect(File.read(path)).to(eq(secret))
         expect(File.stat(path).mode & 0o777).to(eq(0o600)) unless Gem.win_platform?
       end
     end

@@ -3,6 +3,7 @@
 # Unit tests for Aspera::Cli::ExtendedValue — no server, no config file needed.
 
 require 'stringio'
+require 'securerandom'
 require 'aspera/cli/extended_value'
 
 module Aspera
@@ -60,16 +61,18 @@ module Aspera
 
         it 'asks on terminal when user interface is text' do
           Environment.instance.url_method = :text
-          allow($stdin).to(receive_messages(tty?: true, getpass: 'typed'))
-          expect(evaluate('@secret:pw')).to(eq('typed'))
+          secret = SecureRandom.alphanumeric(12)
+          allow($stdin).to(receive_messages(tty?: true, getpass: secret))
+          expect(evaluate('@secret:pw')).to(eq(secret))
           expect($stdin).to(have_received(:getpass).with('pw> '))
         end
 
         it 'asks on a web page when user interface is graphical' do
           require 'aspera/cli/web_secret'
           Environment.instance.url_method = :graphical
-          allow(WebSecret).to(receive(:ask).and_return('entered'))
-          expect(evaluate('@secret:')).to(eq('entered'))
+          secret = SecureRandom.alphanumeric(12)
+          allow(WebSecret).to(receive(:ask).and_return(secret))
+          expect(evaluate('@secret:')).to(eq(secret))
           expect(WebSecret).to(have_received(:ask).with('secret'))
         end
       end

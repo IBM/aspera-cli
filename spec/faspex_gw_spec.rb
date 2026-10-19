@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/faspex_gw'
+require 'securerandom'
 
 RSpec.describe(Aspera::Faspex4GWServlet) do
   subject(:servlet) { described_class.new(webrick, described_class.normalize_parameters(parameters), app_api, nil) }
@@ -107,7 +108,7 @@ RSpec.describe(Aspera::Faspex4GWServlet) do
     end
 
     it 'refuses missing or wrong credentials' do
-      [{}, basic('fx4', 'wrong'), basic('other', password), {'Authorization' => "Bearer #{password}"}].each do |headers|
+      [{}, basic('fx4', SecureRandom.hex(32)), basic('other', password), {'Authorization' => "Bearer #{password}"}].each do |headers|
         expect(send_package(headers: headers)).to(eq([401, {'error' => 'Invalid or missing credentials'}]))
       end
       expect(app_api.packages).to(be_empty)
@@ -130,12 +131,14 @@ RSpec.describe(Aspera::Faspex4GWServlet) do
     end
 
     it 'refuses a weak password' do
-      expect { described_class.normalize_parameters({username: 'fx4', password: 'password'}) }.to(raise_error(Aspera::ParameterError, /password_min_bits/))
-      expect(described_class.normalize_parameters({username: 'fx4', password: 'password', password_min_bits: 0})).to(include(password: 'password'))
+      # Short: weak
+      weak = SecureRandom.alphanumeric(8)
+      expect { described_class.normalize_parameters({username: 'fx4', password: weak}) }.to(raise_error(Aspera::ParameterError, /password_min_bits/))
+      expect(described_class.normalize_parameters({username: 'fx4', password: weak, password_min_bits: 0})).to(include(password: weak))
     end
 
     it 'refuses an unknown parameter' do
-      expect { described_class.normalize_parameters({secret_token: 'x'}) }.to(raise_error(Aspera::ParameterError, /secret_token/))
+      expect { described_class.normalize_parameters({secret_token: SecureRandom.hex(32)}) }.to(raise_error(Aspera::ParameterError, /secret_token/))
     end
   end
 end

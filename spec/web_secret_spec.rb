@@ -1,11 +1,15 @@
 # frozen_string_literal: true
 
 require 'aspera/cli/web_secret'
+require 'securerandom'
 require 'net/http'
 require 'uri'
 
 RSpec.describe(Aspera::Cli::WebSecret) do
   subject(:web_secret) { described_class.new(base_url: 'http://localhost:3000') }
+
+  # Values of secrets are generated, none in source
+  let(:secret) { SecureRandom.alphanumeric(12) }
 
   before { require 'webrick' }
 
@@ -70,10 +74,11 @@ RSpec.describe(Aspera::Cli::WebSecret) do
     end
 
     it 'receives the secret, then the request is answered' do
-      res = page('POST', {secret: 'pass word', decision: 'submit'})
+      spaced = "#{SecureRandom.alphanumeric(6)} #{SecureRandom.alphanumeric(6)}"
+      res = page('POST', {secret: spaced, decision: 'submit'})
       expect(res.body).to(include('Secret received'))
       expect(res.body).to(include('return to your terminal'))
-      expect(web_secret.wait_value(id)).to(eq('pass word'))
+      expect(web_secret.wait_value(id)).to(eq(spaced))
       expect(page('GET').status).to(eq(404))
     end
 
@@ -94,14 +99,16 @@ RSpec.describe(Aspera::Cli::WebSecret) do
     end
 
     context 'with an access code' do
-      subject(:web_secret) { described_class.new(base_url: 'http://localhost:3000', access_code: 'code') }
+      subject(:web_secret) { described_class.new(base_url: 'http://localhost:3000', access_code: access_code) }
+
+      let(:access_code) { SecureRandom.alphanumeric(12) }
 
       it 'asks for the access code' do
         expect(page('GET').body).to(include('name="access_code"'))
       end
 
       it 'refuses a wrong access code' do
-        res = page('POST', {secret: 's', access_code: 'wrong', decision: 'submit'})
+        res = page('POST', {secret: secret, access_code: SecureRandom.alphanumeric(12), decision: 'submit'})
         expect(res.status).to(eq(401))
         expect(res.body).to(include('Invalid access code'))
         expect(web_secret.prompt(id)).to(eq('my password'))
@@ -109,8 +116,8 @@ RSpec.describe(Aspera::Cli::WebSecret) do
       end
 
       it 'receives the secret with the right access code' do
-        page('POST', {secret: 's', access_code: 'code', decision: 'submit'})
-        expect(web_secret.wait_value(id)).to(eq('s'))
+        page('POST', {secret: secret, access_code: access_code, decision: 'submit'})
+        expect(web_secret.wait_value(id)).to(eq(secret))
       end
 
       it 'does not need the access code to cancel' do
@@ -129,8 +136,8 @@ RSpec.describe(Aspera::Cli::WebSecret) do
     end
 
     it 'opens the page served by a local web server and returns the secret' do
-      browser_enters('secret' => 'S3cret', 'decision' => 'submit')
-      expect(described_class.ask('pw')).to(eq('S3cret'))
+      browser_enters('secret' => secret, 'decision' => 'submit')
+      expect(described_class.ask('pw')).to(eq(secret))
       expect(Aspera::Environment.instance).to(have_received(:open_uri).with(%r{\Ahttp://127\.0\.0\.1:\d+/secret/}))
     end
 
@@ -147,10 +154,10 @@ RSpec.describe(Aspera::Cli::WebSecret) do
 
     it 'refuses a form sent by a web page of another site, accepts the one of its page' do
       uri = URI(web_secret.url(id))
-      send_form = ->(origin) { Net::HTTP.start(uri.host, uri.port) { |http| http.post(uri.path, URI.encode_www_form('secret' => 'S3cret'), 'Origin' => origin) } }
+      send_form = ->(origin) { Net::HTTP.start(uri.host, uri.port) { |http| http.post(uri.path, URI.encode_www_form('secret' => secret), 'Origin' => origin) } }
       expect(send_form.call('https://attacker.example.com').code).to(eq('403'))
       expect(send_form.call("http://#{uri.host}:#{uri.port}").code).to(eq('200'))
-      expect(web_secret.wait_value(id)).to(eq('S3cret'))
+      expect(web_secret.wait_value(id)).to(eq(secret))
     end
   end
 end

@@ -4,17 +4,20 @@ require 'aspera/secret_strength'
 require 'securerandom'
 
 RSpec.describe(Aspera::SecretStrength) do
-  # Secrets easy to guess: repeats, sequences, keyboard rows, words, years, l33t
+  letters = ('a'..'z').to_a
+  # Secrets easy to guess, generated at each run: repeats, sequences, keyboard rows, years, short
   weak_secrets = [
-    'mysecret', 'Password123!', 'a' * 24, 'abcdefghijklmnopqrstuvwx', 'qwertyuiopasdfghjkl', 'abcabcabcabcabcabc',
-    'Tr0ub4dor&3', 'MySecretToken2024!', 'correcthorsebatterystaple', 'ThisIsMyVeryLongWebhookSecret2026', 'Summer2024!Summer2024!'
+    SecureRandom.alphanumeric(1) * 24, letters.drop(rand(3)).first(24).join, 'qwertyuiop'[rand(3), 8],
+    SecureRandom.alphanumeric(3) * 6, rand(1950..2030).to_s * 5, SecureRandom.alphanumeric(10)
   ].freeze
+  # Without dictionary, the built-in estimate takes lowercase letters as words
+  word_secrets = [Array.new(25) { letters.sample }.join, "#{Array.new(8) { letters.sample }.join.capitalize}#{rand(1950..2030)}!"].freeze
   # Random secrets generated as recommended
   random_secrets = Array.new(50) { SecureRandom.hex(32) } + Array.new(50) { SecureRandom.urlsafe_base64(32) }
 
   describe '.estimate_bits' do
     it 'is low for weak secrets' do
-      weak_secrets.each { |secret| expect(described_class.estimate_bits(secret)).to(be < 80, secret) }
+      (weak_secrets + word_secrets).each { |secret| expect(described_class.estimate_bits(secret)).to(be < 80, secret) }
     end
 
     it 'is high for random secrets of 32 bytes' do
@@ -29,12 +32,12 @@ RSpec.describe(Aspera::SecretStrength) do
   describe '.bits' do
     it 'uses the built-in estimate when zxcvbn is not installed' do
       allow(described_class).to(receive(:zxcvbn?).and_return(false))
-      expect(described_class.bits('MySecretToken2024!')).to(eq(described_class.estimate_bits('MySecretToken2024!')))
+      expect(described_class.bits(word_secrets.last)).to(eq(described_class.estimate_bits(word_secrets.last)))
     end
 
     it 'uses zxcvbn when installed' do
       skip('gem zxcvbn not installed') unless described_class.send(:zxcvbn?)
-      expect(described_class.bits('mysecret')).to(eq(Math.log2(Zxcvbn.test('mysecret').guesses)))
+      expect(described_class.bits(word_secrets.last)).to(eq(Math.log2(Zxcvbn.test(word_secrets.last).guesses)))
       weak_secrets.each { |secret| expect(described_class.bits(secret)).to(be < 90, secret) }
       random_secrets.first(10).each { |secret| expect(described_class.bits(secret)).to(be > 128, secret) }
     end
@@ -58,16 +61,16 @@ RSpec.describe(Aspera::SecretStrength) do
     end
 
     it 'refuses a weak secret, with the name of the parameter of the minimum' do
-      expect { described_class.assert_strong('MySecretToken2024!', name: 'my_token') }
+      expect { described_class.assert_strong(weak_secrets.first, name: 'my_token') }
         .to(raise_error(Aspera::ParameterError, /\Amy_token is too weak: about \d+ bits, minimum 80 \(my_token_min_bits\)\. Generate one with: openssl rand -hex 32\z/))
     end
 
     it 'accepts a weak secret if min_bits allows it' do
-      expect { described_class.assert_strong('mysecret', name: 'my_token', min_bits: 0) }.not_to(raise_error)
+      expect { described_class.assert_strong(weak_secrets.first, name: 'my_token', min_bits: 0) }.not_to(raise_error)
     end
 
     it 'raises the given exception' do
-      expect { described_class.assert_strong('mysecret', name: 'my_token', type: ArgumentError) }.to(raise_error(ArgumentError, /my_token is too weak/))
+      expect { described_class.assert_strong(weak_secrets.first, name: 'my_token', type: ArgumentError) }.to(raise_error(ArgumentError, /my_token is too weak/))
     end
   end
 end
