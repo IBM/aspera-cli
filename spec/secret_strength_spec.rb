@@ -5,8 +5,12 @@ require 'securerandom'
 
 RSpec.describe(Aspera::SecretStrength) do
   letters = ('a'..'z').to_a
-  # Secrets easy to guess, generated at each run: repeats, sequences, keyboard rows, years, short
+  # Secrets easy to guess: repeats, sequences, keyboard rows, words, years, l33t, short
   weak_secrets = [
+    # Well-known weak passwords, public examples
+    'mysecret', 'Password123!', 'a' * 24, 'abcdefghijklmnopqrstuvwx', 'qwertyuiopasdfghjkl', 'abcabcabcabcabcabc',
+    'Tr0ub4dor&3', 'MySecretToken2024!', 'correcthorsebatterystaple', 'ThisIsMyVeryLongWebhookSecret2026', 'Summer2024!Summer2024!',
+    # Generated at each run
     SecureRandom.alphanumeric(1) * 24, letters.drop(rand(3)).first(24).join, 'qwertyuiop'[rand(3), 8],
     SecureRandom.alphanumeric(3) * 6, rand(1950..2030).to_s * 5, SecureRandom.alphanumeric(10)
   ].freeze
