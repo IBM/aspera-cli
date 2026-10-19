@@ -57,16 +57,12 @@ PATH_FILE_LIST = TMP / 'file_list.txt'
 PATH_FILE_PAIR_LIST2 = TMP / 'file_pair_list.txt'
 PATH_HOT_FOLDER = TMP / 'source_hot'
 PATH_SCRIPTS = TST
-PKCS_P = 'YourExportPassword'
-# Secret value used in tests (content protection, vault, presets), shown as <PASSWORD> in doc
-TEST_SECRET = 'my_secret_here'
 TEMPORIZE_CREATE = 10
 TEMPORIZE_FILE = 30
 # ------------------
 
 # Auto-browser configuration for tests: default is auto (set TEST_INTERACTIVE=manual for user interaction)
 ENV['TEST_INTERACTIVE'] ||= 'auto'
-ENV['TEST_SECRET'] ||= TEST_SECRET unless ENV['TEST_INTERACTIVE'].eql?('manual')
 # Browser command (option `ui.command`, see `browser_ui_option`), nil in manual mode
 BROWSER_COMMAND = ENV['TEST_INTERACTIVE'].eql?('manual') ? nil : ['ruby', (TST / 'auto_browser.rb').to_s].freeze
 
@@ -297,7 +293,7 @@ namespace TEST_CASE_NS do
       log.info("--#{percent_completed}%-------------------------------------------------")
       log.info("[RUN]  #{name} [#{info[:tags].join(' ')}]")
       log.info("[EXEC] #{info[:args]&.join(' ')}")
-      # The login preset is selected by each test, see `select_login_preset`
+      # The options of the auto browser are selected by each test, see `select_browser`
       ENV['ASCLI_UI'] = browser_ui_option
       exec_binding = binding
       t = TestEnv::Context.new(name, info[:instance_prefix], info.fetch(:siblings, []))

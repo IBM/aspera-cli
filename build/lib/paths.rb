@@ -11,6 +11,8 @@ module Paths
   TOP = Pathname.new(__dir__).parent.parent
   # Subdirectories under project root.
   TMP = TOP / 'tmp'
+  # Secrets generated for tests (not checked in), see `generated_secret` in tests/test_helpers.rb
+  SECRETS = TMP / 'secrets'
   BIN = TOP / 'bin'
   LIB = TOP / 'lib'
   DOC = TOP / 'docs'

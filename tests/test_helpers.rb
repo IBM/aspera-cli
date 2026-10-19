@@ -12,16 +12,35 @@ require 'aspera/rest'
 require 'aspera/mime'
 require 'aspera/json_rpc/client'
 require 'aspera/keychain/macos_security'
+require 'aspera/environment'
+require_relative '../build/lib/paths'
+
+# Generate a secret, unless it already exists. No secret value is stored in checked-in files: the value is kept
+# in a file of the tmp folder, so that it is the same in all test runs (e.g. a vault created by a test is opened by a later run).
+# Called in `pre` of tests, the value is then used with `$(secret :name)`.
+# @param name  [Symbol] Name of the secret (file name)
+# @param value [String, nil] Value, if another form is needed (default: 20 random alphanumeric characters)
+# @return [String] Value of the secret
+def generated_secret(name, value: nil)
+  Paths::SECRETS.mkpath
+  Aspera::Environment.write_file_restricted((Paths::SECRETS / name.to_s).to_s) { value || SecureRandom.alphanumeric(20) }
+  secret(name)
+end
+
+# @param name [Symbol] Name of a secret created by `generated_secret`
+# @return [String] Value of the secret
+def secret(name)
+  path = Paths::SECRETS / name.to_s
+  raise "Secret not generated: #{name}, call `generated_secret(:#{name})` in `pre`" unless path.exist?
+  path.read
+end
 
 MCP_REDIRECT_URI = 'http://127.0.0.1:19999/cb'
 MCP_INIT_PARAMS  = {protocolVersion: '2024-11-05', capabilities: {}, clientInfo: {name: 'test', version: '0'}}.freeze
-# Static token of the MCP server, also the access code of the OAuth consent page and of secret pages
-MCP_AUTH_TOKEN   = 'test-secret'
 # Protocol version of stateless requests: version and client capabilities in `_meta` of each request
 MCP_MODERN_VERSION = '2026-07-28'
 
 TEST_KEYCHAIN_NAME = 'ascli'
-TEST_KEYCHAIN_PASS = 'ascli_test_pass'
 
 # Value of env var `ASCLI_UI`: sub-option `command` of option `ui` is the auto browser (`tests/auto_browser.rb`).
 # @param args [Array<String>] Additional arguments of the browser command
@@ -31,14 +50,17 @@ def browser_ui_option(*args)
   "@json:#{JSON.generate({command: BROWSER_COMMAND + args})}"
 end
 
-# Select the preset of the test configuration file that holds the web login credentials (`username`, `password`)
-# for the current test. It is given as option to the browser command run by the CLI when a login page is displayed.
-# `ASCLI_UI` is reset before each test. Does nothing in manual mode (no auto browser).
-# @param preset [String] Name of the preset in the test configuration file
+# Select the options of the auto browser for the current test, given as arguments to the browser command run by the CLI
+# when a web page is displayed. Only names are given, not values. `ASCLI_UI` is reset before each test.
+# Does nothing in manual mode (no auto browser).
+# @param login_preset [String, nil] Preset of the test configuration file with `username` and `password` for login pages
+# @param secret       [Symbol, nil] Secret (see `generated_secret`) entered on secret pages
+# @param access_code  [Symbol, nil] Secret (see `generated_secret`) entered as access code on consent and secret pages
 # @return [void]
-def select_login_preset(preset)
+def select_browser(login_preset: nil, secret: nil, access_code: nil)
   return if BROWSER_COMMAND.nil?
-  ENV['ASCLI_UI'] = browser_ui_option("--login-preset=#{preset}")
+  args = {'login-preset' => login_preset, 'secret' => secret, 'access-code' => access_code}.compact.map { |k, v| "--#{k}=#{v}" }
+  ENV['ASCLI_UI'] = browser_ui_option(*args)
 end
 
 # Ensure the test keychain is present and unlocked for tests on macOS.
@@ -48,11 +70,12 @@ def ensure_test_keychain
   kc = Aspera::Keychain::MacosSecurity::Keychain.by_name(TEST_KEYCHAIN_NAME)
   if kc.nil?
     kc_path = (TMP / "#{TEST_KEYCHAIN_NAME}.keychain-db").to_s
-    kc = Aspera::Keychain::MacosSecurity::Keychain.create(kc_path, password: TEST_KEYCHAIN_PASS)
+    password = generated_secret(:keychain)
+    kc = Aspera::Keychain::MacosSecurity::Keychain.create(kc_path, password: password)
     kc.set_settings(timeout: 7200)
     existing = Aspera::Keychain::MacosSecurity::Keychain.list
     Aspera::Keychain::MacosSecurity::Keychain.search_list = [kc] + existing
-    kc.unlock(password: TEST_KEYCHAIN_PASS)
+    kc.unlock(password: password)
   end
 end
 
@@ -170,10 +193,10 @@ def mcp_oauth_flow_post(t)
     code_challenge: challenge, code_challenge_method: 'S256', decision: 'allow'
   }
   # 4a. POST /oauth/authorize with a wrong access code — consent page again, no code issued
-  res_refused = api.create('oauth/authorize', consent.merge(consent_secret: 'wrong'), content_type: Aspera::Mime::WWW, exception: false, ret: :resp)
+  res_refused = api.create('oauth/authorize', consent.merge(consent_secret: SecureRandom.alphanumeric(20)), content_type: Aspera::Mime::WWW, exception: false, ret: :resp)
   raise "Expected 401 for wrong access code, got #{res_refused.code}" unless res_refused.code == '401'
   # 4b. POST /oauth/authorize (simulate Allow click) — returns 302, must not follow redirect
-  res_consent = api.create('oauth/authorize', consent.merge(consent_secret: MCP_AUTH_TOKEN), content_type: Aspera::Mime::WWW, exception: false, ret: :resp)
+  res_consent = api.create('oauth/authorize', consent.merge(consent_secret: secret(:mcp_auth_token)), content_type: Aspera::Mime::WWW, exception: false, ret: :resp)
   raise "Expected 302 redirect, got #{res_consent.code}" unless res_consent.code == '302'
   location = res_consent['Location']
   raise 'Missing Location header' unless location
@@ -256,7 +279,7 @@ def mcp_http_secret_post(t)
   # Modern requests carry protocol version, method and name in headers too
   client = McpHttpClient.new(
     13782,
-    'Authorization'        => "Bearer #{MCP_AUTH_TOKEN}",
+    'Authorization'        => "Bearer #{secret(:mcp_auth_token)}",
     'MCP-Protocol-Version' => MCP_MODERN_VERSION,
     'Mcp-Method'           => 'tools/call',
     'Mcp-Name'             => tool_name
@@ -279,10 +302,10 @@ def mcp_http_secret_post(t)
   api = oauth_api(13782)
   html = api.read(page_path)
   raise 'Expected access code field on secret page' unless html.include?('name="access_code"')
-  form = {secret: 'S3cret-value', decision: 'submit'}
-  res_refused = api.create(page_path, form.merge(access_code: 'wrong'), content_type: Aspera::Mime::WWW, exception: false, ret: :resp)
+  form = {secret: SecureRandom.alphanumeric(20), decision: 'submit'}
+  res_refused = api.create(page_path, form.merge(access_code: SecureRandom.alphanumeric(20)), content_type: Aspera::Mime::WWW, exception: false, ret: :resp)
   raise "Expected 401 for wrong access code, got #{res_refused.code}" unless res_refused.code == '401'
-  res_page = api.create(page_path, form.merge(access_code: MCP_AUTH_TOKEN), content_type: Aspera::Mime::WWW, exception: false, ret: :resp)
+  res_page = api.create(page_path, form.merge(access_code: secret(:mcp_auth_token)), content_type: Aspera::Mime::WWW, exception: false, ret: :resp)
   raise "Expected 200 for secret, got #{res_page.code}" unless res_page.code == '200'
   # 3. The client retries the call: the command is executed with the secret, hidden in the result
   final = mcp_call(client, 'tools/call', params.merge(inputResponses: {request_id => {action: 'accept'}}, requestState: first['requestState']), 2)
@@ -303,7 +326,7 @@ def mcp_auth_token_server_post(t)
   raise "Expected 401 without token, got #{res_no_auth.code}" unless res_no_auth.code == '401'
   raise 'Expected WWW-Authenticate header'                    unless res_no_auth['WWW-Authenticate']
   # With correct token: expect success
-  mcp_call(McpHttpClient.new(13779, 'Authorization' => "Bearer #{MCP_AUTH_TOKEN}"), 'initialize', MCP_INIT_PARAMS, 1)
+  mcp_call(McpHttpClient.new(13779, 'Authorization' => "Bearer #{secret(:mcp_auth_token)}"), 'initialize', MCP_INIT_PARAMS, 1)
   t.stop_process(:mcp_auth_token_server)
 end
 

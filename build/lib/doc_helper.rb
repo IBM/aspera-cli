@@ -312,7 +312,8 @@ class DocHelper
     ['$(TMP / "localhost.p12")', '.../localhost.p12'],
     ['"docroot":"$(TMP)"', '"docroot":"/data"'],
     ['$(remote_host)', 'app.example.com'],
-    ['$(TEST_SECRET)', '<PASSWORD>'],
+    # Generated secret, see `generated_secret` in tests/test_helpers.rb
+    [/\$\(secret :[a-z0-9_]+\)/, '<PASSWORD>'],
     [/\$\((?:name|t\.resolve :[a-z0-9_]+)\) \$\(TIMESTAMP_TEST_RUN\)/, 'package title'],
     [/^--base=.*/, '--base=test'],
     [/^(--[a-z\-.]+=)?(@[a-z]+:)?(.*['"*! $\\?].*)$/, "\\1\\2'\\3'"]

@@ -51,13 +51,14 @@ shares_detect:
 shares_wizard:
   tags:
     - shares
+  pre: generated_secret(:dummy)
   args:
     - config
     - wizard
     - "@preset:shares_admin.url"
     - shares
     - --username=test
-    - --password=test
+    - --password=$(secret :dummy)
 shares_admin_node_list:
   args:
     - --preset=shares_admin
@@ -714,13 +715,14 @@ serv_upload_missing_file_token:
     - must_fail
     - nodoc
   expect: No such file or directory
+  pre: generated_secret(:dummy)
   args:
     - -N
     - server
     - --url=@preset:server_user.url
     - upload
     - wrong
-    - --ts.token=test
+    - --ts.token=$(secret :dummy)
     - --transfer.resume.iter_max=0
 serv_upload_missing_file:
   description: Try to upload file that does not exist.
@@ -846,13 +848,14 @@ serv_upload_transferd:
 serv_upload_ts_options:
   depends_on:
     - serv_mkdir
+  pre: generated_secret(:content_protection)
   args:
     - server
     - upload
     - --src-type=pair
     - $(PATH_TST_ASC_LCL)
     - "@extend:@preset:server.upload_folder@/other_name_5"
-    - --ts=@json:{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"$(TEST_SECRET)","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":"-1","exclude_older_than":"-10000","fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum"}
+    - --ts=@json:{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"$(secret :content_protection)","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":"-1","exclude_older_than":"-10000","fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum"}
 serv_sync_pull_args_reset:
   description: Sync using args syntax (reset)
   pre: |
@@ -1307,13 +1310,14 @@ nd_detect:
 nd_wizard:
   tags:
     - node
+  pre: generated_secret(:dummy)
   args:
     - config
     - wizard
     - "@preset:node_user.url"
     - node
     - --username=test
-    - --password=test
+    - --password=$(secret :dummy)
 nd_info:
   args:
     - node
@@ -1656,10 +1660,11 @@ node_emulator_start:
   tags:
     - noblock
     - grpc
+  pre: generated_secret(:emulator)
   args:
     - node
     - emulator
-    - '@json:{"url":"http://localhost:12348","username":"sim","password":"sim","password_min_bits":0,"docroot":"$(TMP)"}'
+    - '@json:{"url":"http://localhost:12348","username":"sim","password":"$(secret :emulator)","password_min_bits":0,"docroot":"$(TMP)"}'
   post: |
     require 'socket'
     require 'timeout'
@@ -1679,11 +1684,12 @@ node_emulator_bad_auth:
   expect: Invalid or missing credentials
   depends_on:
     - node_emulator_start
+  pre: generated_secret(:dummy)
   args:
     - node
     - --url=http://localhost:12348
     - --username=sim
-    - --password=bad
+    - --password=$(secret :dummy)
     - transfer
     - list
 node_emulator_info:
@@ -1696,7 +1702,7 @@ node_emulator_info:
     - node
     - --url=http://localhost:12348
     - --username=sim
-    - --password=sim
+    - --password=$(secret :emulator)
     - info
 node_emulator_browse:
   description: Paths of the emulator are relative to its docroot.
@@ -1709,7 +1715,7 @@ node_emulator_browse:
     - node
     - --url=http://localhost:12348
     - --username=sim
-    - --password=sim
+    - --password=$(secret :emulator)
     - browse
     - /
     - --fields=path
@@ -1729,7 +1735,7 @@ serv_upload_via_emulator:
     - --transfer.agent=node
     - --transfer.url=http://localhost:12348
     - --transfer.username=sim
-    - --transfer.password=sim
+    - --transfer.password=$(secret :emulator)
 node_emulator_transfer_list:
   description: The transfer started by the emulator is completed.
   tags:
@@ -1741,7 +1747,7 @@ node_emulator_transfer_list:
     - node
     - --url=http://localhost:12348
     - --username=sim
-    - --password=sim
+    - --password=$(secret :emulator)
     - transfer
     - list
     - --fields=status
@@ -2324,12 +2330,13 @@ faspex_send_via_aoc_gateway:
   tags:
     - nodoc
     - fxgateway
+  pre: generated_secret(:dummy)
   args:
     - -N
     - faspex
     - --url=https://localhost:12347/aspera/faspex
     - --username=_unused_
-    - --password=$(TEST_SECRET)
+    - --password=$(secret :dummy)
     - --warn-insecure=yes
     - package
     - send
@@ -2464,7 +2471,7 @@ awa_ws_current:
 aoc_webauth_profile:
   tags:
     - interactive
-  pre: select_login_preset('aoc_user')
+  pre: "select_browser(login_preset: 'aoc_user')"
   args:
     - --preset=aoc_web
     - aoc
@@ -2475,7 +2482,7 @@ aoc_webauth_profile_refresh:
   tags:
     - interactive
     - nodoc
-  pre: select_login_preset('aoc_user')
+  pre: "select_browser(login_preset: 'aoc_user')"
   args:
     - --preset=aoc_web
     - aoc
@@ -4218,13 +4225,14 @@ orch_detect:
 orch_wizard:
   tags:
     - orchestrator
+  pre: generated_secret(:dummy)
   args:
     - config
     - wizard
     - "@preset:orch_user.url"
     - orchestrator
     - --username=test
-    - --password=test
+    - --password=$(secret :dummy)
 orch_info:
   args:
     - orchestrator
@@ -5483,6 +5491,8 @@ conf_vault_file:
   tags:
     - vault
     - tmp_conf
+  # New vault: its password is generated, and changed by a later test
+  pre: PATH_VAULT_FILE.delete if PATH_VAULT_FILE.exist?
   args:
     - config
     - preset
@@ -5498,26 +5508,28 @@ conf_vault_file_password:
   tags:
     - vault
     - tmp_conf
+  pre: generated_secret(:vault_password)
   args:
     - config
     - preset
     - set
     - GLOBAL
     - vault_password
-    - _simple_one_
+    - $(secret :vault_password)
 conf_vault_create:
   depends_on:
     - conf_vault_file_password
   tags:
     - vault
     - tmp_conf
+  pre: generated_secret(:stored_password)
   args:
     - config
     - vault
     - create
     - "@:"
     - label=my_label
-    - password=$(TEST_SECRET)
+    - password=$(secret :stored_password)
     - description=my secret
 conf_vault_info:
   depends_on:
@@ -5588,12 +5600,13 @@ conf_preset_update_auto_secure:
   tags:
     - tmp_conf
     - nodoc
+  pre: generated_secret(:stored_password)
   args:
     - config
     - preset
     - update
     - auto_secure_test
-    - --password=$(TEST_SECRET)
+    - --password=$(secret :stored_password)
     - --username=alice
   post: |
     config = YAML.load_file(PATH_TEST_CONFIG)
@@ -5608,17 +5621,18 @@ conf_preset_update_vault_none:
     - vault
     - tmp_conf
     - nodoc
+  pre: generated_secret(:stored_password)
   args:
     - "--vault=@none:"
     - config
     - preset
     - update
     - vault_none_test
-    - --password=$(TEST_SECRET)
+    - --password=$(secret :stored_password)
   post: |
     config = YAML.load_file(PATH_TEST_CONFIG)
     preset = config['vault_none_test']
-    raise "password should stay in clear, got: #{preset['password']}" unless preset['password'] == TEST_SECRET
+    raise "password should stay in clear, got: #{preset['password']}" unless preset['password'] == secret(:stored_password)
 conf_vault_pass:
   tags:
     - vault
@@ -5719,11 +5733,12 @@ conf_query_help_faspex5:
     - must_fail
     - nodoc
   expect: "Schema: option: query"
+  pre: generated_secret(:dummy)
   args:
     - faspex5
     - --url=https://fake.example.com
     - --username=u
-    - --password=p
+    - --password=$(secret :dummy)
     - admin
     - accounts
     - list
@@ -5734,11 +5749,12 @@ conf_query_help_aoc:
     - must_fail
     - nodoc
   expect: "Schema: option: query"
+  pre: generated_secret(:dummy)
   args:
     - aoc
     - --url=https://fake.ibmaspera.com
     - --username=u
-    - --password=p
+    - --password=$(secret :dummy)
     - admin
     - user
     - list
@@ -6275,8 +6291,9 @@ conf_echo_secret:
   description: Secret entered on terminal.
   tags:
     - interactive
-  stdin: "$(TEST_SECRET)\n"
-  expect: $(TEST_SECRET)
+  stdin: "$(secret :echo)\n"
+  expect: $(secret :echo)
+  pre: generated_secret(:echo)
   args:
     - config
     - echo
@@ -6287,7 +6304,8 @@ conf_echo_secret_web:
   tags:
     - interactive
     - nodoc
-  expect: $(TEST_SECRET)
+  expect: $(secret :echo)
+  pre: "generated_secret(:echo); select_browser(secret: :echo)"
   args:
     - config
     - echo
@@ -6735,6 +6753,7 @@ f5_wizard_no_key:
   tags:
     - faspex5
     - nodoc
+  pre: generated_secret(:dummy)
   args:
     - config
     - wizard
@@ -6744,7 +6763,7 @@ f5_wizard_no_key:
     - --key-path=
     - --out.secrets=yes
     - --client-id=abc
-    - --client-secret=abc
+    - --client-secret=$(secret :dummy)
 f5_detect_fail:
   tags:
     - faspex5
@@ -6781,6 +6800,7 @@ f5_pack_recv_init:
     - INIT
     - --once-only=yes
 f5_pack_send:
+  pre: generated_secret(:content_protection)
   args:
     - faspex5
     - packages
@@ -6791,7 +6811,7 @@ f5_pack_send:
     #    - metadata=@preset:f5_misc.meta
     - END
     - $(PATH_TST_ASC_LCL)
-    - --ts.content_protection_password=$(TEST_SECRET)
+    - --ts.content_protection_password=$(secret :content_protection)
 f5_pack_list:
   args:
     - faspex5
@@ -6892,13 +6912,14 @@ f5_pack_browse:
 f5_pack_recv:
   depends_on:
     - f5_pack_id
+  pre: generated_secret(:content_protection)
   args:
     - faspex5
     - packages
     - receive
     - $(t.saved_output :f5_pack_id)
     - --to-folder=$(TMP)
-    - --ts.content_protection_password=$(TEST_SECRET)
+    - --ts.content_protection_password=$(secret :content_protection)
 f5_pack_first_file:
   depends_on:
     - f5_pack_id
@@ -6915,6 +6936,7 @@ f5_pack_first_file:
 f5_pack_recv_file:
   depends_on:
     - f5_pack_first_file
+  pre: generated_secret(:content_protection)
   args:
     - faspex5
     - packages
@@ -6922,7 +6944,7 @@ f5_pack_recv_file:
     - $(t.saved_output :f5_pack_id)
     - $(t.saved_output :f5_pack_first_file)
     - --to-folder=$(TMP)
-    - --ts.content_protection_password=$(TEST_SECRET)
+    - --ts.content_protection_password=$(secret :content_protection)
 f5_pack_recv_all:
   depends_on:
     - f5_pack_id
@@ -7532,7 +7554,7 @@ f5_invite_delete:
 f5_webauth:
   tags:
     - interactive
-  pre: select_login_preset('f5_user')
+  pre: "select_browser(login_preset: 'f5_user')"
   args:
     - --preset=f5_web
     - faspex5
@@ -7554,12 +7576,13 @@ f5_fxgw_test:
     - fxgateway
   depends_on:
     - f5_fxgw_start
+  pre: generated_secret(:dummy)
   args:
     - -N
     - faspex
     - --url=https://localhost:12346/aspera/faspex
     - --username=_unused_
-    - --password=$(TEST_SECRET)
+    - --password=$(secret :dummy)
     - package
     - send
     - --delivery-info=@json:{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}
@@ -7573,8 +7596,9 @@ f5_postproc_pid:
   tags:
     - noblock
   pre: |
+    generated_secret(:pkcs12)
     run('openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-sha256', '-days', 365, '-nodes', '-keyout', TMP / 'key.pem', '-out', TMP / 'cert.pem', '-subj', '/CN=localhost')
-    run('openssl', 'pkcs12', '-export', '-out', TMP / 'localhost.p12', '-inkey', TMP / 'key.pem', '-in', TMP / 'cert.pem', '-passout', 'pass:changeit')
+    run('openssl', 'pkcs12', '-export', '-out', TMP / 'localhost.p12', '-inkey', TMP / 'key.pem', '-in', TMP / 'cert.pem', '-passout', "pass:#{secret(:pkcs12)}")
   args:
     - faspex5
     - postprocessing
@@ -7582,7 +7606,7 @@ f5_postproc_pid:
     - url=https://localhost:8553/asclihook
     - script_folder=$(PATH_SCRIPTS)
     - cert=$(TMP / "localhost.p12")
-    - key=changeit
+    - key=$(secret :pkcs12)
 f5_postproc_test:
   depends_on:
     - f5_postproc_pid
@@ -7658,11 +7682,11 @@ f5_postproc_cert_pkcs12_key:
   tags:
     - noblock
     - nodoc
-  pre: run('openssl', 'pkcs12', '-export', '-out', TMP / 'certificate.p12', '-inkey', TMP / 'private_key.pem', '-in', TMP / 'certificate.pem', '-name', 'MyCertAlias', '-passout', "pass:#{PKCS_P}")
+  pre: generated_secret(:pkcs12); run('openssl', 'pkcs12', '-export', '-out', TMP / 'certificate.p12', '-inkey', TMP / 'private_key.pem', '-in', TMP / 'certificate.pem', '-name', 'MyCertAlias', '-passout', "pass:#{secret(:pkcs12)}")
   args:
     - faspex5
     - postprocessing
-    - '@json:{"url":"https://localhost:18443/domain","cert":"$(TMP / "certificate.p12")","key":"$(PKCS_P)","script_folder":"$(PATH_SCRIPTS)"}'
+    - '@json:{"url":"https://localhost:18443/domain","cert":"$(TMP / "certificate.p12")","key":"$(secret :pkcs12)","script_folder":"$(PATH_SCRIPTS)"}'
   post: |
     sleep 2
     t.stop_process :f5_postproc_cert_pkcs12_key
@@ -7858,6 +7882,7 @@ mcp_oauth_public_url_required:
     - must_fail
     - nodoc
   expect: "public_url is required with oauth when listening on 0.0.0.0"
+  pre: generated_secret(:mcp_auth_token)
   args:
     - mcp
     - server
@@ -7865,7 +7890,7 @@ mcp_oauth_public_url_required:
     - transport=http
     - url=http://0.0.0.0:3000
     - oauth=true
-    - auth_token=test-secret
+    - auth_token=$(secret :mcp_auth_token)
     - auth_token_min_bits=0
 mcp_auth_token_server:
   description: Start MCP HTTP server with static auth_token, verify 401 without token and 200 with token.
@@ -7873,13 +7898,14 @@ mcp_auth_token_server:
     - mcp
     - noblock
     - nodoc
+  pre: generated_secret(:mcp_auth_token)
   args:
     - mcp
     - server
     - "@:"
     - transport=http
     - port=13779
-    - auth_token=test-secret
+    - auth_token=$(secret :mcp_auth_token)
     - auth_token_min_bits=0
   post: mcp_auth_token_server_post(t)
 mcp_oauth_flow:
@@ -7890,6 +7916,7 @@ mcp_oauth_flow:
     - mcp
     - noblock
     - nodoc
+  pre: generated_secret(:mcp_auth_token)
   args:
     - mcp
     - server
@@ -7897,7 +7924,7 @@ mcp_oauth_flow:
     - transport=http
     - port=13780
     - oauth=true
-    - auth_token=test-secret
+    - auth_token=$(secret :mcp_auth_token)
     - auth_token_min_bits=0
   post: mcp_oauth_flow_post(t)
 mcp_oauth_deny:
@@ -7922,12 +7949,13 @@ mcp_http_secret:
     - mcp
     - noblock
     - nodoc
+  pre: generated_secret(:mcp_auth_token)
   args:
     - mcp
     - server
     - "@:"
     - transport=http
     - port=13782
-    - auth_token=test-secret
+    - auth_token=$(secret :mcp_auth_token)
     - auth_token_min_bits=0
   post: mcp_http_secret_post(t)

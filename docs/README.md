@@ -3010,7 +3010,7 @@ preset list
 preset overview
 preset set GLOBAL sdk_folder 'product:IBM Aspera Connect'
 preset set GLOBAL vault @: type=file name=/secure/vault_file
-preset set GLOBAL vault_password _simple_one_
+preset set GLOBAL vault_password <PASSWORD>
 preset set GLOBAL version_check_days 0
 preset set conf_name param value
 preset set default shares conf_name
@@ -3040,10 +3040,10 @@ vault list
 vault show my_label
 wizard https://console.example.com/path console
 wizard https://f5.example.com/path faspex5 --key-path=my_private_key
-wizard https://node.example.com/path node --username=test --password=test
-wizard https://orch.example.com/path orchestrator --username=test --password=test
+wizard https://node.example.com/path node --username=test --password=<PASSWORD>
+wizard https://orch.example.com/path orchestrator --username=test --password=<PASSWORD>
 wizard https://server.example.com/path server --username=my_username --password=<PASSWORD>
-wizard https://shares.example.com/path shares --username=test --password=test
+wizard https://shares.example.com/path shares --username=test --password=<PASSWORD>
 wizard https://tst.example.com/path faspio --override=yes --username=my_username --password=<PASSWORD>
 wizard https://tst.example.com/path httpgw
 wizard my_org aoc --key-path=my_private_key --username=my_user_email --use-generic-client=yes
@@ -8050,7 +8050,7 @@ upload --src-type=pair --sources=@json:'["test_file.bin","my_inside_folder/other
 upload --src-type=pair test_file.bin my_inside_folder/other_name_2 --notify-to=my_email_external '--transfer.ascp_args=@list: -l 100m'
 upload --src-type=pair test_file.bin my_upload_folder/other_name_5 --ts=@json:'{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"<PASSWORD>","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":"-1","exclude_older_than":"-10000","fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum"}'
 upload --to-folder=my_upload_folder/target_hot --lock-port=50101 --transfer.ascp_args=@list:,--remove-after-transfer,--remove-empty-directories,--exclude-newer-than=-8,--src-base,hot_folder hot_folder
-upload /test_file.bin --to-folder=my_upload_folder --transfer.agent=node --transfer.url=http://localhost:12348 --transfer.username=sim --transfer.password=sim
+upload /test_file.bin --to-folder=my_upload_folder --transfer.agent=node --transfer.url=http://localhost:12348 --transfer.username=sim --transfer.password=<PASSWORD>
 upload test_file.bin --to-folder=my_inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}' --transfer=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress-bar=yes
 ```
 
@@ -8612,8 +8612,8 @@ ascli node -N --url=https://... --password="Bearer $(cat bearer.txt)" --root-id=
 > Add `ascli node` in front of the following commands:
 
 ```shell
---url=http://localhost:12348 --username=sim --password=sim browse / --fields=path --format=csv --select=@json:'{"basename":"test_file.bin"}'
---url=http://localhost:12348 --username=sim --password=sim transfer list --fields=status
+--url=http://localhost:12348 --username=sim --password=<PASSWORD> browse / --fields=path --format=csv --select=@json:'{"basename":"test_file.bin"}'
+--url=http://localhost:12348 --username=sim --password=<PASSWORD> transfer list --fields=status
 --url=https://tst.example.com/path --password 'Bearer <nd_bearer_token>' --root-id=<id> access_key do self browse /
 access_key create @json:'{"id":"my_username","secret":"<PASSWORD>","storage":{"type":"local","path":"/"}}'
 access_key delete my_username
@@ -8658,7 +8658,7 @@ central session list
 delete @list:,my_upload_folder/a_folder,my_upload_folder/tdlink,my_upload_folder/a_file
 delete my_upload_folder/test_file.bin
 download my_upload_folder/test_file.bin --to-folder=.
-emulator @json:'{"url":"http://localhost:12348","username":"sim","password":"sim","password_min_bits":0,"docroot":"/data"}'
+emulator @json:'{"url":"http://localhost:12348","username":"sim","password":"<PASSWORD>","password_min_bits":0,"docroot":"/data"}'
 health
 info --fpac='function FindProxyForURL(url,host){return "DIRECT"}'
 license
@@ -9088,7 +9088,7 @@ packages show --box=my_workgroup --group-type=workgroups <id>
 packages show <id>
 packages status <f5_pack_send_shared> @list:,failed,completed
 packages status <id>
-postprocessing @: url=https://localhost:8553/asclihook script_folder=/path/to/scripts cert=.../localhost.p12 key=changeit
+postprocessing @: url=https://localhost:8553/asclihook script_folder=/path/to/scripts cert=.../localhost.p12 key=<PASSWORD>
 shared browse %name:my_shared_folder_name
 shared list
 shared_folders browse %name:my_shared_folder_name

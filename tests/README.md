@@ -70,6 +70,24 @@ Constants and helpers are defined in `rakelib/test.rake` and are available in `p
 A `t` variable (a `TestEnv::Context` instance) is always available in `pre`/`post` and `$(...)` expressions.
 Its methods take an optional test case name (default: current test): `saved_output`, `stop_process`, `check_process`, `out_file`, `err_file`, `pid_file`, `resolve`.
 
+### Secrets
+
+No secret value is stored in checked-in files, not even a test value: secrets are generated in `pre`, and used with `$(secret :<name>)`:
+
+```yaml
+node_emulator_start:
+  pre: generated_secret(:emulator)
+  args:
+    - '@json:{"username":"sim","password":"$(secret :emulator)",...}'
+```
+
+`generated_secret(:<name>, value: nil)` creates file `tmp/secrets/<name>` (readable by the user only), unless it already exists, with `value`, or by default 20 random alphanumeric characters.
+So the value is the same in all test runs: e.g. tests that depend on `node_emulator_start` use `$(secret :emulator)` without generating it.
+`secret(:<name>)` reads the value in Ruby code, and fails if it was not generated.
+In documentation, `$(secret :<name>)` is shown as `<PASSWORD>`.
+
+In manual mode (`TEST_INTERACTIVE=manual`), the value to enter in the browser is in `tmp/secrets/<name>`: create this file beforehand to choose the value.
+
 ### Test templates
 
 Templates run the same set of tests on several systems (e.g. AoC and AoC for Enterprise).
@@ -154,18 +172,19 @@ The following environment variables control interactive test behavior:
 #### Login credentials for web pages
 
 When a web login page is displayed (e.g. OAuth login for `--auth=web`), `tests/auto_browser.rb` fills the user name and password automatically.
-Credentials differ by application, so each test selects the preset of the test configuration file that holds them (options `username` and `password`), using `select_login_preset` in `pre`.
+Credentials differ by application, so each test selects the preset of the test configuration file that holds them (options `username` and `password`), using `select_browser` in `pre`.
 It adds `--login-preset=<preset>` to the browser command, set with sub-option `command` of option `ui` (env var `ASCLI_UI`), which `ascli` runs with the URL to open:
 
 ```yaml
 aoc_webauth_profile:
   tags:
     - interactive
-  pre: select_login_preset('aoc_user')
+  pre: "select_browser(login_preset: 'aoc_user')"
   args: ...
 ```
 
-A test that does not call `select_login_preset` gets no automatic login.
+A test that does not call `select_browser` gets no automatic login.
+Likewise, `select_browser(secret: :<name>)` and `select_browser(access_code: :<name>)` select the [generated secrets](#secrets) entered on secret pages (`@secret:`) and as access code on consent pages: the browser command gets only their names (`--secret=<name>`, `--access-code=<name>`).
 The selection (`ASCLI_UI`) is cleared before each test.
 
 The value is not read directly from the YAML file: it is evaluated by `ascli` itself (`ascli config echo @preset:<preset>.<option>`, using the home folder of the tests).
