@@ -156,14 +156,14 @@ bundle exec rake test:run
 
 Tests tagged `interactive` involve prompts (terminal stdin), macOS Keychain, or web browser interactions (secret requests, OAuth consent):
 
-* **Terminal input**: Injected automatically via test definition `stdin:`.
-* **macOS Keychain**: Managed and unlocked automatically via a dedicated test keychain (`ascli`).
-* **Web pages (`--ui=graphical`, `@secret:`)**: Handled by Google Chrome (via `ferrum`) or HTTP fallback.
+- **Terminal input**: Injected automatically via test definition `stdin:`.
+- **macOS Keychain**: Managed and unlocked automatically via a dedicated test keychain (`ascli`).
+- **Web pages (`--ui=graphical`, `@secret:`)**: Handled by Google Chrome (via `ferrum`) or HTTP fallback.
 
 The following environment variables control interactive test behavior:
 
 | Variable | Values / Default | Description |
-|---|---|---|
+| --- | --- | --- |
 | `TEST_INTERACTIVE` | `auto` (default), `manual` | In `auto` mode, all interactions are handled without human intervention. In `manual` mode, the real system browser opens and waits for user input. |
 | `TEST_HEADLESS` | `false` (default), `true` | When `false`, Chrome opens visibly on screen. Set to `true` for headless execution (ideal for CI/CD). |
 | `TEST_DELAY` | `0.5` (default), float | Delay in seconds between actions (typing, clicking) in visible mode. Set to `0` for maximum speed. |
