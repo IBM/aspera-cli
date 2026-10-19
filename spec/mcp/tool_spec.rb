@@ -102,7 +102,7 @@ RSpec.describe(Aspera::Cli::Mcp::Tool) do
 
     it 'hides secrets in both text and structuredContent' do
       secret = SecureRandom.alphanumeric(12)
-      data = {'username' => 'john', 'password' => secret}
+      data = {'username' => 'john', 'password' => secret} # HashiCorpIgnore
       resp = call_with_result(Aspera::Cli::Result::SingleObject.new(data))
       expect(resp.content.first[:text]).not_to(include(secret))
       expect(resp.structured_content['password']).not_to(eq(secret))

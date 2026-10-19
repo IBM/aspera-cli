@@ -3219,8 +3219,8 @@ No server to deploy: authentication is handled by the 1Password desktop app (bio
 An item can be referenced by its title (label) or by its 1Password ID, in `@vault:<item>.<field>`:
 
 ```shell
---password=@vault:<%=ph :item_id%>.password
---password=@vault:<%=ph :item_title%>.password
+--password=@vault:<%=ph :item_id%>.password<%# HashiCorpIgnore %>
+--password=@vault:<%=ph :item_title%>.password<%# HashiCorpIgnore %>
 ```
 
 > [!NOTE]

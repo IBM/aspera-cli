@@ -139,18 +139,18 @@ it cannot retrieve sensitive values or returns a masked/redacted string.
 ## Tier 1 — Demo server (public, no account needed)
 
 These tests use the Aspera public demo server: `ssh://eudemo.asperademo.com:33001`,
-username `asperaweb`, password `demoaspera`.
+username `asperaweb`, password `<PASSWORD>` (the public password of the demo server).
 
 ### T1-1 · Browse the demo server
 
 **Human ask**: "Browse the root of the Aspera demo server at
-`ssh://eudemo.asperademo.com:33001` using username `asperaweb` and password `demoaspera`."
+`ssh://eudemo.asperademo.com:33001` using username `asperaweb` and password `<PASSWORD>`."
 
 **Expected MCP call**:
 ```json
 ["server", "browse", "/",
  "--url=ssh://eudemo.asperademo.com:33001",
- "--username=asperaweb", "--password=demoaspera"]
+ "--username=asperaweb", "--password=<PASSWORD>"]
 ```
 
 **Pass criterion**: a file and folder listing is returned without errors.
@@ -166,7 +166,7 @@ username `asperaweb`, password `demoaspera`.
 ```json
 ["server", "download", "/aspera-test-dir-small/10KB.1",
  "--url=ssh://eudemo.asperademo.com:33001",
- "--username=asperaweb", "--password=demoaspera",
+ "--username=asperaweb", "--password=<PASSWORD>",
  "--to-folder=/tmp"]
 ```
 
@@ -182,7 +182,7 @@ username `asperaweb`, password `demoaspera`.
 ```json
 ["server", "info",
  "--url=ssh://eudemo.asperademo.com:33001",
- "--username=asperaweb", "--password=demoaspera"]
+ "--username=asperaweb", "--password=<PASSWORD>"]
 ```
 
 **Pass criterion**: the AI returns server platform, OS, and version details.

@@ -86,7 +86,7 @@ module Aspera
       describe '#secure_preset_option (via action_preset_secure)' do
         context 'when vault is not configured' do
           it 'leaves the preset value unchanged' do
-            config_presets['mypreset'] = {'password' => secret}
+            config_presets['mypreset'] = {'password' => secret} # HashiCorpIgnore
             host.action_preset_secure(config_name: 'mypreset')
             expect(config_presets['mypreset']['password']).to(eq(secret))
           end
@@ -96,7 +96,7 @@ module Aspera
           before { host.vault_double_override = vault_double }
 
           it 'moves a clear-text password into the vault and replaces it with a @vault: reference' do
-            config_presets['mypreset'] = {'password' => secret}
+            config_presets['mypreset'] = {'password' => secret} # HashiCorpIgnore
             host.action_preset_secure(config_name: 'mypreset')
             expect(config_presets['mypreset']['password']).to(eq('@vault:mypreset.password'))
             expect(vault_store['mypreset']).to(include(password: secret))
@@ -129,8 +129,8 @@ module Aspera
           end
 
           it 'increments the vault label when the base label is already taken' do
-            vault_store['mypreset'] = {label: 'mypreset', password: other}
-            config_presets['mypreset'] = {'password' => secret}
+            vault_store['mypreset'] = {label: 'mypreset', password: other} # HashiCorpIgnore
+            config_presets['mypreset'] = {'password' => secret} # HashiCorpIgnore
             host.action_preset_secure(config_name: 'mypreset')
             expect(config_presets['mypreset']['password']).to(eq('@vault:mypreset0.password'))
             expect(vault_store['mypreset0']).to(include(password: secret))
@@ -144,8 +144,8 @@ module Aspera
           end
 
           it 'processes all presets when no config_name is given' do
-            config_presets['preset_a'] = {'password' => secret}
-            config_presets['preset_b'] = {'password' => other}
+            config_presets['preset_a'] = {'password' => secret} # HashiCorpIgnore
+            config_presets['preset_b'] = {'password' => other} # HashiCorpIgnore
             host.action_preset_secure
             expect(config_presets['preset_a']['password']).to(eq('@vault:preset_a.password'))
             expect(config_presets['preset_b']['password']).to(eq('@vault:preset_b.password'))
@@ -316,7 +316,7 @@ module Aspera
           end
 
           it 'accepts a label containing dots' do
-            vault_store['my.preset'] = {label: 'my.preset', password: secret}
+            vault_store['my.preset'] = {label: 'my.preset', password: secret} # HashiCorpIgnore
             expect(includer.vault_value('my.preset.password')).to(eq(secret))
           end
 

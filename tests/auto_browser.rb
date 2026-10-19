@@ -96,7 +96,7 @@ end
 # Retrieve login credentials (evaluated once) from the preset given with option `--login-preset`.
 # Values in the preset may be extended values, e.g. a reference to a vault.
 # @param preset [String, nil] Name of the preset, or nil if the test did not select one
-# @return [Hash] {:username => String, :password => String}, empty if no preset
+# @return [Hash] Keys `:username` and `:password` with String values, empty if no preset
 def login_credentials(preset)
   @login_credentials ||=
     if preset.nil?

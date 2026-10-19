@@ -58,7 +58,7 @@ RSpec.describe(Aspera::Keychain) do
       Dir.mktmpdir do |dir|
         vault = described_class.new(file: File.join(dir, 'vault.bin'), password: vault_password)
         vault.set({label: 'my_label', password: secret})
-        expect { vault.set({label: 'my_label', password: other}) }.to(raise_error(/already exist/))
+        expect { vault.set({label: 'my_label', password: other}) }.to(raise_error(/already exist/)) # HashiCorpIgnore
         expect { vault.delete(label: 'missing') }.to(raise_error(/not found/))
       end
     end
@@ -145,9 +145,9 @@ RSpec.describe(Aspera::Keychain) do
       vault = described_class.new(url: 'http://127.0.0.1:8200', token: SecureRandom.hex(16))
       expect(vault.all).to(eq([{password: secret, label: 'kept'}]))
       expect(vault.get(label: 'deleted', exception: false)).to(be_nil)
-      expect { vault.set({label: 'kept', password: other}) }.to(raise_error(/already exist/))
+      expect { vault.set({label: 'kept', password: other}) }.to(raise_error(/already exist/)) # HashiCorpIgnore
       expect(logical).to(receive(:write).with('secret/data/deleted', data: {password: other}))
-      vault.set({label: 'deleted', password: other})
+      vault.set({label: 'deleted', password: other}) # HashiCorpIgnore
     end
   end
 end

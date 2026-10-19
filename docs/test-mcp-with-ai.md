@@ -110,7 +110,9 @@ environment is available.
 ### 4.1 Demo server — browse files
 
 > "Browse the root folder of the Aspera demo server at ssh://demo.asperademo.com:33001
-> using username `asperaweb` and password `demoaspera`."
+> using username `asperaweb` and password `<PASSWORD>`."
+
+`<PASSWORD>` is the public password of the demo server.
 
 **Expected MCP calls**:
 
@@ -118,7 +120,7 @@ environment is available.
 ["server", "browse", "/",
  "--url=ssh://demo.asperademo.com:33001",
  "--username=asperaweb",
- "--password=demoaspera"]
+ "--password=<PASSWORD>"]
 ```
 
 **Pass criterion**: the AI returns a file/folder listing without errors.
@@ -134,7 +136,7 @@ environment is available.
 ["server", "download", "/aspera-test-dir-small/10KB.1",
  "--url=ssh://demo.asperademo.com:33001",
  "--username=asperaweb",
- "--password=demoaspera",
+ "--password=<PASSWORD>",
  "--to-folder=/tmp"]
 ```
 

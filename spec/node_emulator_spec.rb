@@ -908,7 +908,7 @@ module Aspera
         it 'refuses a weak password, unless the check is disabled' do
           # Short: weak
           weak = SecureRandom.alphanumeric(3)
-          expect { emulator({'username' => 'sim', 'password' => weak}) }.to(raise_error(Cli::BadArgument, /password is too weak: about \d+ bits, minimum 80 \(password_min_bits\)/))
+          expect { emulator({'username' => 'sim', 'password' => weak}) }.to(raise_error(Cli::BadArgument, /password is too weak: about \d+ bits, minimum 80 \(password_min_bits\)/)) # HashiCorpIgnore
           expect(emulator({'username' => 'sim', 'password' => weak, 'password_min_bits' => 0})).to(be_a(Cli::Result::Status))
           expect(WebServerSimple).to(have_received(:new).once)
         end

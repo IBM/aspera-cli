@@ -41,11 +41,11 @@ module Aspera
       let(:secret) { SecureRandom.alphanumeric(12) }
 
       before do
-        store.write('job1', {'job_id' => 'job1', 'agent_type' => 'node', 'transfer_id' => 't1', 'agent_params' => {'url' => 'https://node', 'username' => 'ak', 'password' => secret}, 'status' => 'running'})
+        store.write('job1', {'job_id' => 'job1', 'agent_type' => 'node', 'transfer_id' => 't1', 'agent_params' => {'url' => 'https://node', 'username' => 'ak', 'password' => secret}, 'status' => 'running'}) # HashiCorpIgnore
       end
 
       context 'with transfer options for the same agent' do
-        let(:transfer_options) { {'agent' => 'node', 'url' => 'https://other', 'password' => secret} }
+        let(:transfer_options) { {'agent' => 'node', 'url' => 'https://other', 'password' => secret} } # HashiCorpIgnore
 
         it 'queries with the secret from current options, and keeps stored parameters' do
           result = host.action_transfer_status(job_id: 'job1')

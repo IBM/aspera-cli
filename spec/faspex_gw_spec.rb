@@ -133,8 +133,8 @@ RSpec.describe(Aspera::Faspex4GWServlet) do
     it 'refuses a weak password' do
       # Short: weak
       weak = SecureRandom.alphanumeric(8)
-      expect { described_class.normalize_parameters({username: 'fx4', password: weak}) }.to(raise_error(Aspera::ParameterError, /password_min_bits/))
-      expect(described_class.normalize_parameters({username: 'fx4', password: weak, password_min_bits: 0})).to(include(password: weak))
+      expect { described_class.normalize_parameters({username: 'fx4', password: weak}) }.to(raise_error(Aspera::ParameterError, /password_min_bits/)) # HashiCorpIgnore
+      expect(described_class.normalize_parameters({username: 'fx4', password: weak, password_min_bits: 0})).to(include(password: weak)) # HashiCorpIgnore
     end
 
     it 'refuses an unknown parameter' do

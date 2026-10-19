@@ -35,7 +35,7 @@ a tool call is a FAIL.
 
 **Task 6** — Must call:
 `["server", "browse", "/", "--url=ssh://eudemo.asperademo.com:33001",
-  "--username=asperaweb", "--password=demoaspera"]`
+  "--username=asperaweb", "--password=<PASSWORD>"]`
 Must return a directory listing without errors.
 
 **Task 7** — Must call `["server", "download", ...]` with `--to-folder=/tmp` and the
