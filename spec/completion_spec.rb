@@ -22,6 +22,9 @@ module Aspera
         File.expand_path('..', __dir__)
       end
 
+      # Locale forced in the executed command, so that the output (Unicode characters, see `Environment.char`) does not depend on the actual environment
+      UTF8_LOCALE = Environment::I18N_VARS.to_h { |var| [var, var.eql?('LC_ALL') ? 'en_US.UTF-8' : nil] }.freeze
+
       # @param command [String] sub-command of `config completion`
       # @param words   [Array<String>] words given after `--`
       # @param env     [Hash] environment variables
@@ -29,7 +32,8 @@ module Aspera
       def run_completion(command, *words, env: {})
         cmd = [RbConfig.ruby, "-I#{source_root}/lib", File.join(source_root, 'bin', Info::CMD_NAME), 'config', 'completion', command]
         cmd += ['--', *words] unless words.empty?
-        output, status = Open3.capture2e(env, *cmd)
+        output, status = Open3.capture2e(UTF8_LOCALE.merge(env), *cmd, binmode: true)
+        output.force_encoding(Encoding::UTF_8)
         expect(status.exitstatus).to(eq(0), output)
         output.lines.map(&:chomp)
       end

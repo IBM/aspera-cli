@@ -28,7 +28,7 @@ module Aspera
       # The wizard displays a test command: `<plugin> <test_args>`
       plugins.select { |plugin| plugin.method_defined?(:wizard) && plugin.instance_method(:wizard).owner.eql?(plugin) }.each do |plugin|
         it "#{plugin.name.split('::').last}: wizard test_args designate a command" do
-          source = File.read(plugin.instance_method(:wizard).source_location.first)
+          source = File.read(plugin.instance_method(:wizard).source_location.first, encoding: Encoding::UTF_8)
           test_args = source.scan(/test_args:\s*'([^']*)'/).flatten
           expect(test_args).not_to(be_empty)
           test_args.each do |args|

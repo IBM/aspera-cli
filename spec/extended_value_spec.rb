@@ -60,7 +60,7 @@ module Aspera
 
         it 'asks on terminal when user interface is text' do
           Environment.instance.url_method = :text
-          allow($stdin).to(receive(:getpass).and_return('typed'))
+          allow($stdin).to(receive_messages(tty?: true, getpass: 'typed'))
           expect(evaluate('@secret:pw')).to(eq('typed'))
           expect($stdin).to(have_received(:getpass).with('pw> '))
         end

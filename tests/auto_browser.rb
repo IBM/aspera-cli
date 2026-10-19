@@ -52,6 +52,14 @@ def type_slowly(element, text, delay)
   end
 end
 
+# Check if a DOM element is visible and displayed to the user
+# @param element [Ferrum::Node] DOM element
+# @return [Boolean] true if the element is visible, false otherwise
+def element_visible?(element)
+  return false if element.nil?
+  element.evaluate('this.offsetWidth > 0 && this.offsetHeight > 0') rescue false
+end
+
 # Read one value of a preset using ascli itself: all extended values are evaluated by ascli
 # (`@vault:`, `@file:`, `@extend:`, `@preset:`...), with the same home and config file as the tests.
 # @param preset [String] Name of the preset in the test configuration file
@@ -92,7 +100,7 @@ def automate_with_chrome(target_uri, secret, login_preset)
 
   browser = Ferrum::Browser.new(
     headless:        headless,
-    slowmo:          delay.positive? ? 0.1 : 0.0,
+    slowmo:          delay.positive? ? 0.01 : 0.0,
     timeout:         15,
     process_timeout: 15,
     browser_options: {'no-sandbox' => nil, 'disable-gpu' => nil}
@@ -103,10 +111,10 @@ def automate_with_chrome(target_uri, secret, login_preset)
 
   case target_uri.path
   when %r{^/secret/}
-    secret_input = browser.at_css('input[name="secret"]')
+    secret_input = browser.css('input[name="secret"]').find(&:focusable?)
     raise "Secret input not found on page #{target_uri}" unless secret_input
 
-    access_code_input = browser.at_css('input[name="access_code"]')
+    access_code_input = browser.css('input[name="access_code"]').find(&:focusable?)
     if access_code_input
       type_slowly(access_code_input, ENV['MCP_AUTH_TOKEN'] || 'test-secret', char_delay)
       sleep(delay) if delay.positive?
@@ -120,7 +128,7 @@ def automate_with_chrome(target_uri, secret, login_preset)
     # Pause on the confirmation screen so the user can see it
     sleep(delay.positive? ? delay * 2 : 0.3)
   when %r{^/oauth/authorize}
-    access_input = browser.at_css('input[name="consent_secret"]')
+    access_input = browser.css('input[name="consent_secret"]').find(&:focusable?)
     if access_input
       type_slowly(access_input, ENV['MCP_AUTH_TOKEN'] || 'test-secret', char_delay)
       sleep(delay) if delay.positive?
@@ -139,6 +147,9 @@ def automate_with_chrome(target_uri, secret, login_preset)
       max_wait = (ENV['TEST_LOGIN_TIMEOUT'] || '120').to_i
       start_time = Time.now
       w3id_clicked = false
+      w3id_pwd_clicked = false
+      user_names = %w[email username userid]
+      user_ids = %w[username userid user-name-input]
 
       loop do
         break if browser.url.include?("localhost:#{redirect_port}") || browser.url.include?("127.0.0.1:#{redirect_port}")
@@ -146,7 +157,7 @@ def automate_with_chrome(target_uri, secret, login_preset)
 
         # Automatically click "w3id (IBM)" button if present
         unless w3id_clicked
-          w3id_btn = browser.xpath('//button[contains(translate(., "W", "w"), "w3id")] | //a[contains(translate(., "W", "w"), "w3id")] | //div[@role="button"][contains(translate(., "W", "w"), "w3id")] | //*[contains(text(), "w3id")]').first
+          w3id_btn = browser.xpath('//button[contains(translate(., "W", "w"), "w3id")] | //a[contains(translate(., "W", "w"), "w3id")] | //div[@role="button"][contains(translate(., "W", "w"), "w3id")] | //div[contains(@class, "clickable")][contains(translate(., "W", "w"), "w3id")] | //div[contains(@class, "ds-clickable")][contains(translate(., "W", "w"), "w3id")]').first
           if w3id_btn
             sleep(delay) if delay.positive?
             w3id_btn.click
@@ -155,25 +166,44 @@ def automate_with_chrome(target_uri, secret, login_preset)
           end
         end
 
-        # Fill credentials from test configuration or vault if login fields are present
-        creds = login_credentials(login_preset)
-        if creds[:username]
-          user_field = browser.at_css('input[type="email"], input[name="username"], input[name="userid"], input[id="username"], input[id="userid"]')
-          if user_field && user_field.value.to_s.empty?
-            type_slowly(user_field, creds[:username], char_delay)
+        # Automatically click "Mot de passe w3id" / "w3id password" button if present (after entering IBMid)
+        unless w3id_pwd_clicked
+          w3id_pwd_btn = browser.xpath('//div[@id="credsDiv"] | //*[@id="credentialSignin"] | //div[@role="button" or contains(@class, "clickable")][contains(translate(., "WMP", "wmp"), "w3id") and (contains(translate(., "WMP", "wmp"), "mot de passe") or contains(translate(., "WMP", "wmp"), "password"))]').first
+          if element_visible?(w3id_pwd_btn)
             sleep(delay) if delay.positive?
-            next_btn = browser.at_css('button#continue-button, button[type="submit"]')
-            next_btn&.click
+            w3id_pwd_btn.click
+            w3id_pwd_clicked = true
             sleep(1)
           end
         end
 
+        # Fill credentials from test configuration or vault if login fields are present
+        creds = login_credentials(login_preset)
+
+        # Passive/robust detection of visible inputs using offsetWidth/Height
+        visible_inputs = browser.css('input').select { |i| element_visible?(i) }
+
+        if creds[:username]
+          user_field = visible_inputs.find { |i| user_names.include?(i.attribute('name')) || user_ids.include?(i.attribute('id')) || i.attribute('type') == 'email' }
+          if user_field && user_field.value.to_s.empty?
+            type_slowly(user_field, creds[:username], char_delay)
+            sleep(delay) if delay.positive?
+            # If a password field is also visible, do not submit yet; let the password block fill it first
+            pass_field_visible = visible_inputs.any? { |i| i.attribute('type') == 'password' || i.attribute('name') == 'password' }
+            unless pass_field_visible
+              next_btn = browser.css('button#continue-button, button[type="submit"]').find { |b| element_visible?(b) }
+              next_btn&.click
+              sleep(1)
+            end
+          end
+        end
+
         if creds[:password]
-          pass_field = browser.at_css('input[type="password"]')
+          pass_field = visible_inputs.find { |i| i.attribute('type') == 'password' || i.attribute('name') == 'password' }
           if pass_field && pass_field.value.to_s.empty?
             type_slowly(pass_field, creds[:password], char_delay)
             sleep(delay) if delay.positive?
-            submit_btn = browser.at_css('button#signinbutton, button[type="submit"], input[type="submit"]')
+            submit_btn = browser.css('button#signinbutton, button[type="submit"], input[type="submit"], button#login-button').find { |b| element_visible?(b) }
             submit_btn&.click
             sleep(1)
           end
@@ -248,14 +278,14 @@ when '127.0.0.1', 'localhost', '::1'
   end
 else
   # External/Remote OAuth login URL (e.g. Aspera on Cloud / Faspex 5)
-  if ferrum_available
-    automate_with_chrome(uri, test_secret, login_preset)
-  elsif ENV['TEST_INTERACTIVE'].to_s.eql?('manual')
+  if ENV['TEST_INTERACTIVE'].to_s.eql?('manual')
     case RbConfig::CONFIG['host_os']
     when /darwin|mac os/ then system('open', uri.to_s)
     when /linux/ then system('xdg-open', uri.to_s)
     when /mswin|msys|mingw|cygwin/ then system('start', 'explorer', uri.to_s)
     end
+  elsif ferrum_available
+    automate_with_chrome(uri, test_secret, login_preset)
   else
     warn("Auto-browser: skipping external GUI browser for #{uri}")
   end
