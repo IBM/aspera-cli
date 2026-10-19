@@ -43,6 +43,7 @@ Gem::Specification.new do |spec|
     raise "Missing SIGNING_KEY file: #{spec.signing_key}" if spec.signing_key.is_a?(String) && !File.exist?(spec.signing_key)
   end
   spec.required_ruby_version = ">= #{Aspera::Cli::Info::RUBY_MINIMUM_VERSION}"
+  spec.add_dependency('base64', '~> 0.3')
   spec.add_dependency('chunky_png', '~> 1.4')
   spec.add_dependency('csv', '~> 3.0')
   spec.add_dependency('execjs', '~> 2.0')

@@ -30,7 +30,6 @@ group :optional do
   gem('mcp', '~> 1.2')  # for ascli mcp server (MCP protocol support)
   gem('rack', '~> 3.0') # for ascli mcp server HTTP transport (required by mcp StreamableHTTPTransport)
   gem('grpc', '~> 1.71') unless defined?(JRUBY_VERSION) # for Aspera Transfer Daemon
-  gem('base64', '~> 0.3') if RUBY_VERSION >= '3.4' # remove from standard gems
   gem('sqlite3', '~> 2.7') unless defined?(JRUBY_VERSION) # for async DB
   gem('jdbc-sqlite3', '~> 3.46') if defined?(JRUBY_VERSION) # for async DB
   gem('sequel', '~> 5.96') if defined?(JRUBY_VERSION) # for async DB

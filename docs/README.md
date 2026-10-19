@@ -750,7 +750,6 @@ See [Gemfile](../Gemfile):
 | mcp | ~> 1.2 | for ascli mcp server (MCP protocol support) |
 | rack | ~> 3.0 | for ascli mcp server HTTP transport (required by mcp StreamableHTTPTransport) |
 | grpc | ~> 1.71 | (no jruby) for Aspera Transfer Daemon |
-| base64 | ~> 0.3 | if RUBY_VERSION >= '3.4' remove from standard gems |
 | sqlite3 | ~> 2.7 | (no jruby) for async DB |
 | jdbc-sqlite3 | ~> 3.46 | (jruby) for async DB |
 | sequel | ~> 5.96 | (jruby) for async DB |
@@ -778,7 +777,6 @@ gem install ferrum -v '~> 0.19.1'
 gem install mcp -v '~> 1.2'
 gem install rack -v '~> 3.0'
 gem install grpc -v '~> 1.71'
-gem install base64 -v '~> 0.3'
 gem install sqlite3 -v '~> 2.7'
 gem install jdbc-sqlite3 -v '~> 3.46'
 gem install sequel -v '~> 5.96'
