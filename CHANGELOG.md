@@ -22,6 +22,7 @@ Highlights: security hardening of local web servers (authentication, minimum sec
 * **global**: Local web servers refuse a weak secret at startup (`auth_token` of `mcp server`, `secret_token` of `faspex5 postprocessing`, `password` of `node emulator` and gateways): minimum strength set by parameter `*_min_bits` (default `80`, `0` disables), estimated with gem `zxcvbn` if installed.
 * **global**: New option `security`: level `medium` or `high` restricts extended values `@ruby:`, `@uri:`, `@env:` and `@file:` (see manual).
 * **global**: `@secret:` asks for the secret on a local web page in the browser when option `ui` is `graphical`.
+* **global**: Local web pages (authentication, secret request, OAuth consent) follow the light or dark theme of the system or browser.
 * **global**: Option `ui` is extended (still compatible: `--ui=text|graphical`): sub-option `mode` (`auto`, `terminal`, `browser`) and `command` (array: browser command, URL appended). It replaces the environment variables `ASPERA_BROWSER` and `BROWSER`, which are no longer used.
 * **global**: New option `--out.query`: [JMESPath](https://jmespath.org) expression (or `@ruby:` lambda) to filter and reshape results, as `--query` of the AWS and Azure CLIs. New gem dependency: `jmespath`.
 * **global**: The exit code indicates the category of error (e.g. `3` authentication, `4` not found, `5` transfer, `6` network): see `ascli -h` or the manual.

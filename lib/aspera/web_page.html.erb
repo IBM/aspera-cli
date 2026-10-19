@@ -5,10 +5,63 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <%# Light and dark themes: the browser adapts form controls and scrollbars too %>
+    <meta name="color-scheme" content="light dark">
     <link rel="icon" type="image/svg+xml"
         href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230f62fe'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='18' font-weight='bold' fill='white' text-anchor='middle'%3E%3E_%3C/text%3E%3C/svg%3E">
     <title><%= h title %></title>
     <style>
+        /* Colors: light theme, overridden by the dark theme of the system or browser */
+        :root {
+            --page-bg-start: #f0f4f8;
+            --page-bg-end: #d9e2ec;
+            --card-bg: #ffffff;
+            --surface: #f4f4f4;
+            --border: #e0e0e0;
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+            --text: #161616;
+            --text-secondary: #525252;
+            --text-muted: #8d8d8d;
+            --accent: #0f62fe;
+            --button-bg: #0f62fe;
+            --button-bg-hover: #0043ce;
+            --on-button: #ffffff;
+            --danger: #da1e28;
+            --danger-bg: #da1e28;
+            --success: #24a148;
+            --icon-bg: #edf5ff;
+            --icon-bg-ok: #defbe6;
+            --icon-bg-ko: #fff1f1;
+            --input-bg: #ffffff;
+            --input-border: #8d8d8d;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --page-bg-start: #121619;
+                --page-bg-end: #1d2226;
+                --card-bg: #21272a;
+                --surface: #2f353a;
+                --border: #42484e;
+                --shadow: 0 4px 24px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.3);
+                --text: #f2f4f8;
+                --text-secondary: #c1c7cd;
+                --text-muted: #878d96;
+                --accent: #78a9ff;
+                --button-bg: #0f62fe;
+                --button-bg-hover: #0050e6;
+                --on-button: #ffffff;
+                --danger: #ff8389;
+                --danger-bg: #da1e28;
+                --success: #42be65;
+                --icon-bg: rgba(69, 137, 255, 0.18);
+                --icon-bg-ok: rgba(66, 190, 101, 0.18);
+                --icon-bg-ko: rgba(250, 77, 86, 0.18);
+                --input-bg: #121619;
+                --input-border: #697077;
+            }
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -17,20 +70,20 @@
 
         body {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+            background: linear-gradient(135deg, var(--page-bg-start) 0%, var(--page-bg-end) 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 1.5rem;
-            color: #161616;
+            color: var(--text);
         }
 
         .card {
-            background: #ffffff;
+            background: var(--card-bg);
             border-radius: 12px;
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
-            border: 1px solid #e0e0e0;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
             max-width: 460px;
             width: 100%;
             padding: 2.25rem 2rem;
@@ -43,19 +96,20 @@
             gap: 0.5rem;
             margin-bottom: 1.5rem;
             padding: 0.25rem 0.75rem;
-            background: #f4f4f4;
+            background: var(--surface);
             border-radius: 16px;
             font-size: 0.8rem;
-            color: #525252;
-            border: 1px solid #e0e0e0;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
         }
 
         .brand .badge {
             font-weight: 700;
-            color: #0f62fe;
+            color: var(--accent);
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
         }
 
+        /* Icons are drawn with currentColor */
         .icon-circle {
             width: 56px;
             height: 56px;
@@ -64,39 +118,42 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #edf5ff;
+            background: var(--icon-bg);
+            color: var(--accent);
         }
 
         .icon-circle.ok {
-            background: #defbe6;
+            background: var(--icon-bg-ok);
+            color: var(--success);
         }
 
         .icon-circle.ko {
-            background: #fff1f1;
+            background: var(--icon-bg-ko);
+            color: var(--danger);
         }
 
         h1 {
             font-size: 1.5rem;
             font-weight: 600;
-            color: #161616;
+            color: var(--text);
             margin-bottom: 0.5rem;
         }
 
         p {
             font-size: 0.95rem;
             line-height: 1.5;
-            color: #525252;
+            color: var(--text-secondary);
             margin-top: 0.5rem;
         }
 
         .client {
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
             font-weight: 600;
-            background: #f4f4f4;
+            background: var(--surface);
             padding: 0.15rem 0.4rem;
             border-radius: 4px;
-            color: #161616;
-            border: 1px solid #e0e0e0;
+            color: var(--text);
+            border: 1px solid var(--border);
             word-break: break-all;
         }
 
@@ -119,25 +176,26 @@
         }
 
         .allow {
-            background: #0f62fe;
-            color: #ffffff;
-            border-color: #0f62fe;
+            background: var(--button-bg);
+            color: var(--on-button);
+            border-color: var(--button-bg);
         }
 
         .allow:hover {
-            background: #0043ce;
-            border-color: #0043ce;
+            background: var(--button-bg-hover);
+            border-color: var(--button-bg-hover);
         }
 
         .deny {
-            background: #ffffff;
-            color: #da1e28;
-            border: 1px solid #da1e28;
+            background: var(--card-bg);
+            color: var(--danger);
+            border: 1px solid var(--danger);
         }
 
         .deny:hover {
-            background: #da1e28;
-            color: #ffffff;
+            background: var(--danger-bg);
+            border-color: var(--danger-bg);
+            color: var(--on-button);
         }
 
         .secret {
@@ -145,7 +203,7 @@
             margin-top: 1.25rem;
             text-align: left;
             font-size: 0.875rem;
-            color: #525252;
+            color: var(--text-secondary);
         }
 
         .secret input {
@@ -154,33 +212,35 @@
             margin-top: 0.35rem;
             padding: 0.6rem 0.75rem;
             font-size: 0.95rem;
-            border: 1px solid #8d8d8d;
+            background: var(--input-bg);
+            color: var(--text);
+            border: 1px solid var(--input-border);
             border-radius: 6px;
         }
 
         .error {
-            color: #da1e28;
+            color: var(--danger);
             font-weight: 600;
         }
 
         .info-box {
-            background: #f4f4f4;
+            background: var(--surface);
             border-radius: 6px;
             padding: 0.75rem 1rem;
             margin-top: 1.25rem;
             font-size: 0.875rem;
-            color: #161616;
+            color: var(--text);
             word-break: break-word;
-            border-left: 3px solid #0f62fe;
+            border-left: 3px solid var(--accent);
             text-align: left;
         }
 
         .footer {
             margin-top: 1.5rem;
             padding-top: 1rem;
-            border-top: 1px solid #f4f4f4;
+            border-top: 1px solid var(--surface);
             font-size: 0.75rem;
-            color: #8d8d8d;
+            color: var(--text-muted);
         }
     </style>
 </head>
