@@ -15,6 +15,7 @@ require 'socket'
 require 'securerandom'
 require 'shellwords'
 require 'English'
+require 'time'
 require 'aspera/rainbow'
 using Rainbow
 
@@ -28,7 +29,7 @@ module Aspera
         # agent_params must contain '_agent_ref' pointing to the live Direct instance.
         # @param transfer_id  [String] job_id returned by start_transfer / last_job_id
         # @param agent_params [Hash]   connection parameters; '_agent_ref' is the live agent
-        # @return [Hash] status hash with at least 'status' key
+        # @return [Hash] status hash with at least 'status' key, and `bytes_transferred`, and `ended_at` when all sessions ended
         def transfer_status(transfer_id, agent_params)
           agent = agent_params['_agent_ref']
           return {'status' => 'unknown', 'note' => 'direct agent not available (different process?)'} if agent.nil?
@@ -36,12 +37,14 @@ module Aspera
           return {'status' => 'unknown', 'note' => "no sessions found for job #{transfer_id}"} if sessions.empty?
           errors  = sessions.filter_map { |s| s[:error] }
           running = sessions.any? { |s| s[:thread]&.alive? }
+          result = {'bytes_transferred' => sessions.sum { |s| s[:last_size].to_i }}
+          result['ended_at'] = sessions.filter_map { |s| s[:ended_at] }.max unless running
           if errors.any?
-            {'status' => 'failed', 'error' => errors.first.message}
+            result.merge('status' => 'failed', 'error' => errors.first.message)
           elsif running
-            {'status' => 'running'}
+            result.merge('status' => 'running')
           else
-            {'status' => 'completed'}
+            result.merge('status' => 'completed')
           end
         end
       end
@@ -272,6 +275,7 @@ module Aspera
           session[:error] = e
           raise if Log.log.debug? || !e.is_a?(Transfer::Error)
         ensure
+          session[:ended_at] = Time.now.utc.iso8601
           TempFileManager.instance.release(session[:exec_spec].temp_files)
         end
         Log.log.debug { "EXIT (#{Thread.current[:name]})" }

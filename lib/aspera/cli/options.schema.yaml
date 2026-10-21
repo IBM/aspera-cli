@@ -839,6 +839,25 @@ components:
             Export the sub-workflows and remote nodes used by the workflow in a package (`.wkf`),
             saved in the folder given by option `to_folder` (default: current folder), instead of displaying the workflow.
           default: false
+    OrchestratorWorkflowImport:
+      type: object
+      description: Options of `orchestrator workflows import`.
+      additionalProperties: false
+      properties:
+        folder_id:
+          type: integer
+          description: >-
+            Folder of the new workflow (default: the default folder).
+            The `folder_id` of existing workflows is in `orchestrator workflows list`.
+        publish:
+          type: boolean
+          description: >-
+            Publish the workflow after import.
+            If not set, the server option `publish_api_imported_workflow` decides.
+        link_to_subworkflows:
+          type: boolean
+          description: Link to existing sub-workflows instead of importing those of the package (`.wkf`).
+          default: false
     OrchestratorImportWithConstraints:
       type: object
       description: >-

@@ -139,6 +139,23 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
       end
     end
 
+    it 'sends the folder, publication and sub-workflow options' do
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'wf.yml')
+        File.write(path, "---\n")
+        allow(orchestrator).to(receive(:call_ao).and_return({'workflow' => {'id' => 1}}))
+        file_fields = [['import_file', "---\n", {filename: 'wf.yml'}], ['import_file_name', 'wf.yml']]
+        {
+          {'folder_id' => 12, 'publish' => true, 'link_to_subworkflows' => true} => [%w[folder_id 12], %w[publish_workflow true], %w[link_to_subworkflows true]],
+          # false is sent, to override the server default, except for link_to_subworkflows (any value is true)
+          {'publish' => false, 'link_to_subworkflows' => false}                  => [%w[publish_workflow false]]
+        }.each do |import, fields|
+          orchestrator.action_workflows_import(file_path: path, import: import)
+          expect(orchestrator).to(have_received(:call_ao).with('import_workflow', body: file_fields + fields, content_type: Aspera::Mime::MULTIPART))
+        end
+      end
+    end
+
     it 'raises an error when plugins cannot be enabled' do
       Dir.mktmpdir do |dir|
         path = File.join(dir, 'wf.yml')
@@ -180,6 +197,14 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
         expect(File.binread(File.join(dir, 'Workflow_wf_v9.wkf'))).to(eq('binary'))
         expect(result.data).to(eq("Saved to: #{File.join(dir, 'Workflow_wf_v9.wkf')}"))
       end
+    end
+
+    it 'suggests an export without dependencies when the export with dependencies fails' do
+      error = Aspera::Rest::CallError.new({messages: ['Minitar::Writer::WriteBoundaryOverflow']})
+      allow(orchestrator).to(receive(:call_ao).and_raise(error))
+      allow(Aspera::Log.log).to(receive(:warn))
+      expect { orchestrator.action_workflows_export(workflow_id: '1', export: {'dependencies' => true}) }.to(raise_error(error))
+      expect(Aspera::Log.log).to(have_received(:warn).with(/export the workflow and each sub-workflow without dependencies/))
     end
   end
 
@@ -336,7 +361,21 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
     it 'lists the table of contents' do
       result = orchestrator.action_workflows_development(document: :authoring, section: 'toc')
       expect(result).to(be_a(Aspera::Cli::Result::ObjectList))
-      expect(result.data.map { |e| e[:anchor] }).to(eq(%w[guide recipes known-issues]))
+      expect(result.data.map { |e| e['anchor'] }).to(eq(%w[guide recipes known-issues]))
+    end
+
+    it 'lists the table of contents up to the level of the document, or the given level' do
+      allow(Aspera::UriReader).to(receive(:read).and_return("# Manual\n\n## Category\n\n### Plugin\n\n#### Detail\n"))
+      {nil => %w[manual category plugin], 4 => %w[manual category plugin detail], 1 => %w[manual]}.each do |level, anchors|
+        result = orchestrator.action_workflows_development(document: :manual, section: 'toc', level: level)
+        expect(result.data.map { |e| e['anchor'] }).to(eq(anchors))
+      end
+      expect(Aspera::UriReader).to(have_received(:read).with(%r{/Orchestrator_Plugin_Manual\.md$}).at_least(:once))
+    end
+
+    it 'refuses a level without toc' do
+      expect { orchestrator.action_workflows_development(document: :authoring, section: 'recipes', level: 2) }
+        .to(raise_error(Aspera::Cli::BadArgument, /level is only for toc/))
     end
 
     it 'displays one section' do

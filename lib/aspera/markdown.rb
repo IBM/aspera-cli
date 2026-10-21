@@ -13,6 +13,8 @@ module Aspera
     HTML_BREAK = '<br/>'
     # Matches a Markdown heading line (e.g. `## Title`); group 1 = `#` chars, group 2 = text.
     HEADING_RE = /^(\#{1,6})[ \t]+(\S.*)$/
+    # Matches the start or end of a fenced code block; group 1 = fence (``` or ~~~).
+    FENCE_RE = /^ {0,3}(`{3,}|~{3,})/
     # Maximum column width (in characters) for generated Markdown tables.
     COL_WIDTH = 80
     # Accepted admonition types.
@@ -43,17 +45,43 @@ module Aspera
       slug
     end
 
+    # Iterate on the lines of a Markdown document, with the heading match of each line.
+    # A line in a fenced code block is not a heading (e.g. a shell comment `# ...`).
+    # @param content [String] full Markdown source
+    # @yieldparam line    [String]           the line
+    # @yieldparam heading [MatchData, nil]   match of HEADING_RE, or nil if not a heading
+    def each_line_with_heading(content)
+      fence = nil
+      content.each_line do |line|
+        if (f = line.match(FENCE_RE))
+          # a code block ends with the same kind of fence, at least as long, without info string
+          if fence.nil?
+            fence = f[1]
+          elsif f[1].start_with?(fence) && line.strip.eql?(f[1])
+            fence = nil
+          end
+          yield(line, nil)
+        else
+          yield(line, fence.nil? ? line.match(HEADING_RE) : nil)
+        end
+      end
+    end
+
     # Extract the table of contents from a Markdown document.
-    # @param content [String]  full Markdown source
-    # @return [Array<Hash>]   array of { level, title, anchor }
-    def toc(content)
+    # @param content   [String]       full Markdown source
+    # @param max_level [Integer, nil] maximum level of headings, or nil for all
+    # @return [Array<Hash>]   array of { level, title, anchor } (String keys, as other results: `--select` applies)
+    def toc(content, max_level: nil)
       seen = {}
-      content.each_line.filter_map do |line|
-        m = line.match(HEADING_RE)
+      result = []
+      each_line_with_heading(content) do |_line, m|
         next unless m
         title = m[2].strip
-        {level: m[1].length, title: title, anchor: heading_to_anchor(title, seen: seen)}
+        # anchor of every heading, so that duplicate anchors are numbered as in the whole document
+        anchor = heading_to_anchor(title, seen: seen)
+        result.push({'level' => m[1].length, 'title' => title, 'anchor' => anchor}) if max_level.nil? || m[1].length <= max_level
       end
+      result
     end
 
     # Extract the content of a single section (heading + body until next heading of same/higher level).
@@ -64,8 +92,7 @@ module Aspera
       seen = {}
       section_level = nil
       result = []
-      content.each_line do |line|
-        m = line.match(HEADING_RE)
+      each_line_with_heading(content) do |line, m|
         if m
           slug = heading_to_anchor(m[2].strip, seen: seen)
           if section_level.nil?

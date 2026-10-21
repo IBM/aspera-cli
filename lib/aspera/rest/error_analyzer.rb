@@ -15,6 +15,10 @@ module Aspera
     class ErrorAnalyzer
       include Singleton
 
+      # Line of the backtrace of a Ruby exception (Exception#full_message), e.g. `\tfrom /app/x.rb:12:in 'y'`
+      BACKTRACE_LINE = /^\s+from \S.*:\d+:in /
+      private_constant :BACKTRACE_LINE
+
       attr_accessor :log_file
 
       # the singleton object is registered with application specific handlers
@@ -97,6 +101,11 @@ module Aspera
         # @param type    [String] type of exception, for logging purpose
         # @param message [String] one error message  to add to list
         def add_error(context, type, message)
+          # A server in Ruby (e.g. Orchestrator) can return the backtrace of the exception: in debug log only
+          if message.is_a?(String) && message.match?(BACKTRACE_LINE)
+            Log.log.debug { "Error with backtrace: #{message}" }
+            message = message.lines.grep_v(BACKTRACE_LINE).join.strip
+          end
           context[:messages].push(message)
           Log.log.trace1 { "Found error: #{type}: #{message}" }
           log_file = instance.log_file

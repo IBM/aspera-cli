@@ -48,13 +48,15 @@ require 'securerandom'
 require 'uri'
 
 RSpec.describe(Aspera::Cli::Mcp::Tool) do
-  # Minimal formatter stub that only implements filter_columns_on_select.
+  # Minimal formatter stub that only implements filter_columns_on_select and query_result.
   # When select_filter is nil the method is a no-op, otherwise it applies the Hash filter.
   let(:formatter_stub) do
     f = Object.new
     f.define_singleton_method(:filter_columns_on_select) do |data|
       # no-op by default; individual examples may re-define this
     end
+    # no query by default
+    f.define_singleton_method(:query_result) { |result| result }
     f
   end
 
@@ -170,6 +172,7 @@ RSpec.describe(Aspera::Cli::Mcp::Tool) do
       f.define_singleton_method(:filter_columns_on_select) do |arr|
         arr.select! { |i| i['keep'] }
       end
+      f.define_singleton_method(:query_result) { |result| result }
       f
     end
 
@@ -184,6 +187,25 @@ RSpec.describe(Aspera::Cli::Mcp::Tool) do
       resp = call_with_result(Aspera::Cli::Result::ObjectList.new(data))
       expect(resp.structured_content[:items].size).to(eq(2))
       expect(resp.structured_content[:items].all? { |i| i['keep'] }).to(be(true))
+    end
+  end
+
+  # -----------------------------------------------------------------------
+  # --out.query (JMESPath) applied as on the command line
+  # -----------------------------------------------------------------------
+  describe '--out.query' do
+    # Formatter with query `{s: status}`
+    let(:formatter_stub) do
+      f = Object.new
+      f.define_singleton_method(:filter_columns_on_select) { |_data| nil }
+      f.define_singleton_method(:query_result) { |result| Aspera::Cli::Result::SingleObject.new({'s' => result.data['status']}) }
+      f
+    end
+
+    it 'returns the value of the query in text and structuredContent' do
+      resp = call_with_result(Aspera::Cli::Result::SingleObject.new({'id' => '3910', 'status' => 'completed'}))
+      expect(resp.structured_content).to(eq({'s' => 'completed'}))
+      expect(JSON.parse(resp.content.first[:text])).to(eq({'s' => 'completed'}))
     end
   end
 

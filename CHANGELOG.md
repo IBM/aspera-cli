@@ -11,8 +11,9 @@ Highlights: security hardening of local web servers (authentication, minimum sec
 * `shares`: New commands `share list`, `share event create`, `admin directory`, `admin user|group search`, `admin group local users`, `admin authenticate`, and `admin user|group all transfer_settings delete` (reset to global settings).
 * `shares`: `health` uses the `/health_check` endpoint: status of each license and node.
 * `shares`: Help of `admin share user_permissions|group_permissions create|modify` shows the request body.
-* `orchestrator`: New command `workflows development` displays the Workflow Authoring Guide and the Action Template Reference (from GitHub), also used by AI assistants through `mcp server`.
+* `orchestrator`: New command `workflows development` displays the Workflow Authoring Guide, the Action Template Reference and the Plugin Manual (from GitHub), also used by AI assistants through `mcp server`: whole document, one section, or table of contents up to a level (default per document, or optional argument).
 * `orchestrator`: `workflows export` with option `dependencies` saves a package (`.wkf`) with sub-workflows and remote nodes.
+* `orchestrator`: `workflows import` takes an optional argument with options `folder_id`, `publish` and `link_to_subworkflows`. `workflows list` displays `folder_id`.
 * `orchestrator`: New command `workflows check_import` checks a workflow file (`.yml` or `.wkf`) locally before import, and reports problems with a severity, a code and a location (as the web UI import does). `workflows import` logs these problems as warnings.
 * `orchestrator`: New command `plugins spec` displays the specifications of action plugins (from GitHub, option `plugin_specs`): template attributes with their allowed values, inputs and outputs with the template settings they depend on. Used by AI assistants through `mcp server`, and by `workflows check_import` to check action templates and the inputs of steps (attributes and values, required inputs not mapped, inputs and outputs the plugin does not have).
 * `orchestrator`: New command `workflows find_constraints` lists the conflicts and missing plugins found by Orchestrator for a file already on the server. `workflows import_with_constraints` refuses an import that Orchestrator would handle incorrectly (plugins not enabled, partial resolution of conflicts).
@@ -68,6 +69,11 @@ Highlights: security hardening of local web servers (authentication, minimum sec
 * `orchestrator`: `workflows import`, `import_with_constraints` and `publish` sent requests rejected by Orchestrator, `import` did not report workflows not imported, and `start` with `synchronous` failed to display the work order.
 * `orchestrator`: `workstep status` displayed fields that are YAML dumps of Orchestrator objects (`prerequisites`, `work_outputs`...): they are removed, inputs and outputs are in `inputs` and `outputs`.
 * **global**: An asynchronous transfer with agent `direct` (default of `mcp server`) failed with `failed to open input file list`: the file list was deleted at the end of the command. Temporary files of `ascp` are now deleted when the transfer ends.
+* `faspex5 packages send`, `aoc packages send`: In asynchronous mode, the job id of the transfer was not returned: it is in field `transfer` of the result.
+* **global**: Error messages of servers in Ruby (e.g. Orchestrator) included the backtrace of the exception: it is in the debug log only.
+* `config documentation`: In `toc`, lines of code blocks (e.g. shell comments) were taken as headings, and they ended the extracted section. `--select` did not apply to `toc` (keys were symbols).
+* `mcp server`: Option `--out.query` was ignored.
+* `config transfer status`: For agent `direct`, `bytes_transferred` (sum of `TransferBytes` of the sessions) and `ended_at` were not set.
 * `shares`: The manual and the description of `admin user|group all share_permissions` (read-only) did not tell that permissions are granted with `admin share user_permissions|group_permissions`: AI assistants concluded that it was not possible. The argument of `show` is named `share_id`.
 * `config vault`:
   * `system` (macOS): the password and `username` were not returned, and special characters were stored escaped.

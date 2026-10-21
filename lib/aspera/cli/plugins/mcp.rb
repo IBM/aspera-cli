@@ -103,7 +103,10 @@ module Aspera
           template settings they depend on, read its specification (fields: section "plugin-specifications"
           of the authoring guide); without plugin name, the list of plugins:
             ["orchestrator", "plugins", "spec", "<PluginClass>"]
-          The anchor "toc" lists the sections of a document.
+          For the functional description and the setup of a plugin (for example the API client of Faspex),
+          read its section of the Plugin Manual (large: read one section):
+            ["orchestrator", "workflows", "development", "manual", "<anchor>"]
+          The anchor "toc" lists the sections of a document, up to a default level, or the level given after it.
           Before importing a workflow file, check it (graph, templates, inputs of steps) and fix all errors:
             ["orchestrator", "workflows", "check_import", "<file>"]
         INST

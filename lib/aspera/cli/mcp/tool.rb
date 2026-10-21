@@ -146,6 +146,11 @@ module Aspera
             Log.dump(:mcp_execute, effective_args)
             runner = Runner.new(effective_args)
             result = runner.run_with_result
+            # As on the command line, `--out.query` applies to the data of an object or list, after secrets are removed
+            if result.is_a?(Result::SingleObject) || result.is_a?(Result::ObjectList) || result.is_a?(Result::ValueList)
+              SecretHider.instance.deep_remove_secret(result.data)
+              result = runner.context.formatter.query_result(result)
+            end
             case result
             when Result::Nothing, Result::Empty, NilClass
               MCP::Tool::Response.new([{type: 'text', text: ''}])

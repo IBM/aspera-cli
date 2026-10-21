@@ -53,6 +53,17 @@ module Aspera
           end
         end
 
+        # Result of a command that creates an object and transfers its files, e.g. `packages send`.
+        # @param object          [Hash]             Created object
+        # @param transfer_result [Transfer::Result] Typed result from TransferAgent#start
+        # @raise [StandardError] if the transfer failed
+        # @return [Result::SingleObject] The object, with field `transfer` (`job_id`) if the transfer is asynchronous
+        def result_object_transfer(object, transfer_result)
+          status = result_transfer(transfer_result)
+          object = object.merge('transfer' => status.data) if status.is_a?(Result::SingleObject)
+          Result::SingleObject.new(object)
+        end
+
         # Used when one command executes several transfer jobs (each job being possibly multi session)
         # @param status_table [Array] [{STATUS_FIELD=>Transfer::Result,...},...]
         # @return [Result] a status object suitable as command result

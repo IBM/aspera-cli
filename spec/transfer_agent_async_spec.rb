@@ -288,6 +288,19 @@ module Aspera
           expect(result['status']).to(eq('completed'))
         end
 
+        it 'returns the bytes transferred by all sessions, and the end time of the last one' do
+          dead_thread = Thread.new {}
+          dead_thread.join
+          sessions = [
+            {thread: dead_thread, error: nil, last_size: 1000, ended_at: '2026-10-21T08:37:14Z'},
+            {thread: dead_thread, error: nil, last_size: 500, ended_at: '2026-10-21T08:37:15Z'}
+          ]
+          agent = double('Agent::Direct instance')
+          allow(agent).to(receive(:sessions_by_job).with('job-multi').and_return(sessions))
+          expect(Aspera::Agent::Direct.transfer_status('job-multi', {'_agent_ref' => agent}))
+            .to(eq({'status' => 'completed', 'bytes_transferred' => 1500, 'ended_at' => '2026-10-21T08:37:15Z'}))
+        end
+
         it 'returns failed when a session has an error' do
           dead_thread = Thread.new {}
           dead_thread.join
@@ -369,6 +382,29 @@ module Aspera
         it 'raises the exception for Transfer::Result::Error' do
           err = RuntimeError.new('transfer failed')
           expect { Aspera::Cli::Runner.result_transfer(Aspera::Transfer::Result.error(err)) }.to(raise_error(RuntimeError, 'transfer failed'))
+        end
+      end
+
+      # ── Runner.result_object_transfer: created object (e.g. package) and its transfer ──
+
+      describe 'Runner.result_object_transfer' do
+        before { require 'aspera/cli/runner' }
+
+        let(:package) { {'id' => '3909', 'title' => 'test'} }
+
+        it 'adds the job id of an asynchronous transfer to the object' do
+          result = Aspera::Cli::Runner.result_object_transfer(package, Aspera::Transfer::Result.async(job_id: 'abc-123'))
+          expect(result).to(be_a(Aspera::Cli::Result::SingleObject))
+          expect(result.data).to(eq(package.merge('transfer' => {'job_id' => 'abc-123', 'status' => 'running'})))
+        end
+
+        it 'returns the object alone after a successful transfer' do
+          expect(Aspera::Cli::Runner.result_object_transfer(package, Aspera::Transfer::Result.success).data).to(eq(package))
+        end
+
+        it 'raises the exception of a failed transfer' do
+          err = RuntimeError.new('transfer failed')
+          expect { Aspera::Cli::Runner.result_object_transfer(package, Aspera::Transfer::Result.error(err)) }.to(raise_error(RuntimeError, 'transfer failed'))
         end
       end
     end

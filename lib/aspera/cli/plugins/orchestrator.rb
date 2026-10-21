@@ -20,17 +20,24 @@ module Aspera
         # Documents of command `workflows development`: name => file
         DOC_FILES = {
           authoring: 'workflow-authoring-guide.md',
-          templates: 'action-template-reference.md'
+          templates: 'action-template-reference.md',
+          manual:    'Orchestrator_Plugin_Manual.md'
         }.freeze
         # Value of argument `section` of command `workflows development` for the table of contents
         DOC_TOC = 'toc'
+        # Default maximum level of headings in the table of contents: guide sections, one entry per plugin
+        DOC_TOC_LEVELS = {
+          authoring: 3,
+          templates: 2,
+          manual:    3
+        }.freeze
         # Sections of a plugin specification, listed by command `plugins spec`
         SPEC_SECTIONS = %i[attributes inputs outputs].freeze
         # Fields of the list of plugins of command `plugins spec`
         SPEC_LIST_FIELDS = %w[name category version display_name].freeze
         # Text value that is a YAML document (Ruby objects serialized by Orchestrator)
         YAML_DUMP = /\A---\s/
-        private_constant :STANDARD_PATH, :TEST_ENDPOINT, :DOC_BASE_URL, :DOC_FILES, :DOC_TOC, :SPEC_SECTIONS, :SPEC_LIST_FIELDS, :YAML_DUMP
+        private_constant :STANDARD_PATH, :TEST_ENDPOINT, :DOC_BASE_URL, :DOC_FILES, :DOC_TOC, :DOC_TOC_LEVELS, :SPEC_SECTIONS, :SPEC_LIST_FIELDS, :YAML_DUMP
 
         class << self
           # @return [Hash,NilClass]
@@ -157,7 +164,10 @@ module Aspera
               {name: :execution, type: Hash, mandatory: false, default: {}, schema: 'opts:components.schemas.OrchestratorWorkflowStart'}
             ]
           command :import,     description: 'Import a workflow from a file created by `workflows export`, local problems are reported as warnings (see `check_import`)',
-            arguments: [{name: :file_path}]
+            arguments: [
+              {name: :file_path},
+              {name: :import, type: Hash, mandatory: false, default: {}, schema: 'opts:components.schemas.OrchestratorWorkflowImport'}
+            ]
           command :check_import, description: 'Check a workflow file (no access to Orchestrator): rules that Orchestrator does not check on import, but that make the workflow fail to publish or to run',
             arguments: [{name: :file_path}]
           command :find_constraints, description: 'List the conflicts and missing plugins of a workflow file present on the Orchestrator host, before `import_with_constraints`',
@@ -178,10 +188,11 @@ module Aspera
           command :workorders, description: 'List work orders of a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
             action: ->(workflow_id:, **) { Result::ObjectList.new(call_ao("work_orders_list/#{workflow_id}")['work_orders']) }
-          command :development, description: "Show documentation for workflow development, from GitHub (no access to Orchestrator): whole document, its table of contents (#{DOC_TOC}), or one section (anchor)",
+          command :development, description: "Show documentation for workflow development, from GitHub (no access to Orchestrator): whole document, its table of contents (#{DOC_TOC}, headings up to level #{DOC_TOC_LEVELS.map { |d, l| "#{l} (#{d})" }.join(', ')}, or argument level), or one section (anchor)",
             arguments: [
               {name: :document, type: Symbol, mandatory: false, default: :authoring, allowed: DOC_FILES.keys},
-              {name: :section, mandatory: false}
+              {name: :section, mandatory: false},
+              {name: :level, type: Integer, mandatory: false}
             ]
           command :outputs,    description: 'Show output specification of a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
@@ -281,17 +292,19 @@ module Aspera
         def action_workflows_list(**)
           Result::ObjectList.new(
             call_ao('workflows_list')['workflows']['workflow'],
-            fields: %w[id portable_id name published_status published_revision_id latest_revision_id last_modification]
+            fields: %w[id portable_id name folder_id published_status published_revision_id latest_revision_id last_modification]
           )
         end
 
         # The document is read from GitHub: does not require access to Orchestrator
-        def action_workflows_development(document: :authoring, section: nil, **)
+        # @param level [Integer, nil] Maximum level of headings of the table of contents (default per document)
+        def action_workflows_development(document: :authoring, section: nil, level: nil, **)
           require 'aspera/markdown'
           require 'aspera/uri_reader'
+          Aspera.assert(level.nil? || section.eql?(DOC_TOC), type: Cli::BadArgument) { "argument level is only for #{DOC_TOC}" }
           content = UriReader.read("#{DOC_BASE_URL}/#{DOC_FILES[document]}")
           return Result::Text.new(content) if section.nil?
-          return Result::ObjectList.new(Markdown.toc(content), fields: %w[level title anchor]) if section.eql?(DOC_TOC)
+          return Result::ObjectList.new(Markdown.toc(content, max_level: level || DOC_TOC_LEVELS[document]), fields: %w[level title anchor]) if section.eql?(DOC_TOC)
           text = Markdown.extract_section(content, section)
           Aspera.assert(!text.nil?, type: Cli::Error) { "Section not found: #{section}, use #{DOC_TOC} to list anchors" }
           Result::Text.new(text)
@@ -327,7 +340,13 @@ module Aspera
         def action_workflows_export(workflow_id:, export:, **)
           dependencies = export.transform_keys(&:to_s)['dependencies'].eql?(true)
           # Orchestrator exports dependencies for any value of the parameter
-          resp = call_ao("export_workflow/#{workflow_id}", accept: nil, query: dependencies ? {export_with_dependencies: true} : nil, http: true)
+          begin
+            resp = call_ao("export_workflow/#{workflow_id}", accept: nil, query: dependencies ? {export_with_dependencies: true} : nil, http: true)
+          rescue Rest::CallError
+            # Orchestrator 4.1.6 fails to build the package of some workflows (it is written in the folder it packs)
+            Log.log.warn('Export with dependencies failed: export the workflow and each sub-workflow without dependencies instead') if dependencies
+            raise
+          end
           return Result::Text.new(resp.body) unless dependencies
           disposition = resp['Content-Disposition']
           file_name = disposition && Rest.parse_header(disposition)[:parameters][:filename]
@@ -421,7 +440,9 @@ module Aspera
         end
 
         # The file is uploaded as a multipart form
-        def action_workflows_import(file_path:, **)
+        # @param import [Hash] Options: `folder_id`, `publish`, `link_to_subworkflows`
+        def action_workflows_import(file_path:, import: {}, **)
+          import = import.transform_keys(&:to_s)
           check_workflow(file_path)['issues'].each do |issue|
             Log.log.warn { "#{issue['severity']}: #{[issue['file'], issue['path']].compact.join(' ')}: #{issue['message']} (#{issue['code']})" }
           end
@@ -430,6 +451,11 @@ module Aspera
             ['import_file', File.binread(file_path), {filename: file_name}],
             ['import_file_name', file_name]
           ]
+          form.push(['folder_id', import['folder_id'].to_s]) if import.key?('folder_id')
+          # `false` overrides the server option `publish_api_imported_workflow`
+          form.push(['publish_workflow', import['publish'].to_s]) if import.key?('publish')
+          # Orchestrator takes any value as true
+          form.push(%w[link_to_subworkflows true]) if import['link_to_subworkflows'].eql?(true)
           result = call_ao('import_workflow', body: form, content_type: Mime::MULTIPART)
           # Other responses: nothing was imported
           if result.key?('plugins')

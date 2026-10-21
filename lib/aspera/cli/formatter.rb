@@ -420,8 +420,9 @@ module Aspera
 
       # Apply the query of `--out.query` to the data of an object or list result
       # @param result [Result] Result of command
-      # @return [Result] Result with the value of the expression, or `result` if not an object or list
+      # @return [Result] Result with the value of the expression, or `result` if no query, or not an object or list
       def query_result(result)
+        return result if @options[:query].nil?
         data =
           case result
           when Result::SingleObject, Result::ObjectList, Result::ValueList then result.data

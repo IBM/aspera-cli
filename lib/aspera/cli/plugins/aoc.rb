@@ -1053,8 +1053,7 @@ module Aspera
           end
           package_data['encryption_at_rest'] = true if transfer.user_transfer_spec['content_protection'].eql?('encrypt')
           created_package = aoc_api.create_package_simple(package_data, option_validate, new_user_option)
-          Runner.result_transfer(transfer.start(created_package[:spec], rest_token: created_package[:node]))
-          return Result::SingleObject.new(created_package[:info])
+          return Runner.result_object_transfer(created_package[:info], transfer.start(created_package[:spec], rest_token: created_package[:node]))
         end
 
         # packages > receive — package_id: from arguments:(:identifier) (or overridden by public_link)
