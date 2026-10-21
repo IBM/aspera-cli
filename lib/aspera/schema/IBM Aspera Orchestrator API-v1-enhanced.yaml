@@ -3,12 +3,15 @@
 # https://raw.githubusercontent.com/laurent-martin/aspera-api-examples/refs/heads/main/openapi/IBM%20Aspera%20Orchestrator%20API-v1-enhanced.yaml
 # Use 'rake tools:openapi' to update this file
 
-openapi: 3.0.1
+openapi: 3.1.0
 info:
   title: Aspera Orchestrator API
   version: v1
+  license:
+    name: (c) IBM. All rights reserved
+    url: https://ibm.com
   description: |
-    API documentation for Aspera Orchestrator.
+    API documentation for Aspera Orchestrator 4.1.6, checked against its source code (`config/routes.rb` and `ApiController`).
 
     ## Authentication
 
@@ -31,34 +34,41 @@ info:
 
     **Note:** Check your Orchestrator configuration to determine which authentication mode is active.
 
-    ## API Endpoints
+    ## Routes
 
-    The Orchestrator API provides comprehensive workflow management capabilities including:
-    - Workflow management and execution
-    - Work order tracking and control
-    - Monitor management
-    - Queue & Task management
-    - Plugin and resource management
+    - Some endpoints have their own route, `/api/<endpoint>`, with the HTTP method given here.
+    - Every endpoint can also be called as `/api/<endpoint>/<id>`, with any HTTP method, where `<id>` is its main identifier.
+      Endpoints without their own route can only be called this way: when `id` is not used by the endpoint, any value works, for example `0`.
+    - Parameters can be given in the query, or in a JSON or form body.
+
+    ## Response format
+
+    Most endpoints return XML by default.
+    For JSON, add `format=json`, or the extension `.json` to the last segment of the path (e.g. `/api/work_order_status/123.json`).
+
+    ## Errors
+
+    Errors are returned with HTTP status 200, or 404 when the server option `strict_api_validation` is set.
+    The body is `<error time=... action=... id=...>message and backtrace</error>`, or in JSON `{"error": {"action": ..., "time": ..., "id": ..., "description": ...}}`.
 servers:
-- url: https://158.176.9.141/aspera/orchestrator
-  description: 'Configured host: 158.176.9.141'
-- url: https://orchestrator.aspera-emea.com/aspera/orchestrator
-  description: 'Configured host: orchestrator.aspera-emea.com'
+  - url: https://158.176.9.141/aspera/orchestrator
+    description: 'Configured host: 158.176.9.141'
+  - url: https://orchestrator.aspera-emea.com/aspera/orchestrator
+    description: 'Configured host: orchestrator.aspera-emea.com'
 paths:
-  "/api/login":
+  /api/login:
     post:
+      operationId: login
+      security: []
       summary: Authenticate and obtain JWT token
       tags:
-      - Authentication
+        - Authentication
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-              - username
-              - password
               properties:
                 username:
                   type: string
@@ -67,6 +77,9 @@ paths:
                   type: string
                   format: password
                   description: User password
+                api_key:
+                  type: string
+                  description: API key, instead of `username` and `password`
       responses:
         '200':
           description: Successfully authenticated
@@ -77,7 +90,8 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: Logged in successfully
+                    examples:
+                      - Logged in successfully
                   user:
                     type: object
                     properties:
@@ -92,196 +106,145 @@ paths:
                     description: JWT token for subsequent API calls
         '401':
           description: Invalid credentials
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Invalid credentials
         '403':
           description: Secure API auth disabled
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Secure API authentication is disabled
-  "/api/workflows_list":
+  /api/workflows_list:
     get:
+      operationId: workflows_list
       summary: List all workflows
+      description: 'JSON: `{"workflows": {"time", "action", "id", "workflow": [{"id", "name", "full_name", "folder_id", "portable_id", "published_status", "published_revision_id", "latest_revision_id", "last_modification", "comments"}]}}`.'
       tags:
-      - Workflows
+        - Workflows
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: format
-        in: query
-        schema:
-          type: string
-          enum:
-          - xml
-          - json
-          default: json
-        description: Response format (xml or json)
-        example: json
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: List of workflows
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: integer
-                      example: 123
-                    name:
-                      type: string
-                      example: Video Transcoding Workflow
-                    status:
-                      type: string
-                      example: active
-                    description:
-                      type: string
-                      example: Converts video files to multiple formats
-            application/xml:
-              schema:
-                type: string
-                example: |
-                  <?xml version="1.0"?>
-                  <workflows>
-                    <workflow>
-                      <id>123</id>
-                      <name>Video Transcoding Workflow</name>
-                    </workflow>
-                  </workflows>
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/workflows_status":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/workflows_status:
     get:
-      summary: Get workflow status
+      operationId: workflows_status
+      summary: Running status of workflows
+      description: 'JSON: `{"workflows": {"workflow": [{"id", "name", "status" (running or not running), "last_activity"}]}}`.'
       tags:
-      - Workflows
+        - Workflows
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: integer
-        description: Workflow ID
-      - name: format
-        in: query
-        schema:
-          type: string
-          enum:
-          - xml
-          - json
-          default: json
+        - name: id
+          in: query
+          schema:
+            type: string
+          description: Workflow ID or portable ID. Not set, or `0`, for all workflows.
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: Workflow status information
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-        '404':
-          description: Workflow not found
-  "/api/workflow_details":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/workflow_details/{id}:
     get:
-      summary: Get detailed workflow information
+      operationId: workflow_details
+      summary: Number of work orders of a workflow, by status
+      description: 'JSON: `{"workflows": {"workflow": {"name", "id", "statuses": [{"count", "last_activity", "workflow_name", "status"}]}}}`.'
       tags:
-      - Workflows
+        - Workflows
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: integer
-        description: Workflow ID
-      - name: format
-        in: query
-        schema:
-          type: string
-          enum:
-          - xml
-          - json
-          default: json
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Workflow ID
+        - name: start_date
+          in: query
+          schema:
+            type: string
+          description: Count work orders created after this date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+          description: Count work orders created before this date
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
-          description: Detailed workflow information
+          description: Work order counts by status
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-        '404':
-          description: Workflow not found
-  "/api/workflow_inputs_spec":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/workflow_inputs_spec/{id}:
     get:
-      summary: Get workflow input specifications
+      operationId: workflow_inputs_spec
+      summary: Runtime parameters of a workflow
+      description: 'JSON: `{"workflow_inputs_spec": {"workflow_name", "workflow_id", "parameter": [{"id", "name", "value_type", "optional", "value"}]}}`.'
       tags:
-      - Workflows
+        - Workflows
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: integer
-        description: Workflow ID
-      - name: format
-        in: query
-        schema:
-          type: string
-          enum:
-          - xml
-          - json
-          default: json
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Workflow ID or portable ID, or `0` to use `workflow_name`, or `-1` to use `portable_id`
+        - name: workflow_name
+          in: query
+          schema:
+            type: string
+          description: Workflow name, when `id` is `0`
+        - name: portable_id
+          in: query
+          schema:
+            type: string
+          description: Workflow portable ID, when `id` is `-1`
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
-          description: Workflow input specifications
+          description: Runtime parameters
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/workflow_outputs_spec":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/workflow_outputs_spec/{id}:
     get:
-      summary: Get workflow output specifications
+      operationId: workflow_outputs_spec
+      summary: Outputs of the steps of a workflow
+      description: 'JSON: `{"workflow_outputs_spec": {"output": [{"context_id", "name", "workflow_id", "step_name", "variable_name", "value_type", "variable_type"}]}}`.'
       tags:
-      - Workflows
+        - Workflows
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: integer
-        description: Workflow ID
-      - name: format
-        in: query
-        schema:
-          type: string
-          enum:
-          - xml
-          - json
-          default: json
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Workflow ID or portable ID (also accepted as query parameter `workflow_id`)
+        - name: workflow_id
+          in: query
+          schema:
+            type: string
+          description: Workflow ID or portable ID, takes precedence over `id`
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
-          description: Workflow output specifications
+          description: Outputs of the workflow
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/import_workflow":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/import_workflow:
     post:
+      operationId: import_workflow
       summary: Import a workflow
+      description: Always creates a new workflow. The response is the new workflow as JSON, whatever the format.
       tags:
-      - Workflows
+        - Workflows
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -289,70 +252,64 @@ paths:
             schema:
               type: object
               required:
-              - import_file
-              - import_file_name
+                - import_file
+                - import_file_name
               properties:
                 import_file:
                   type: string
-                  format: binary
+                  contentMediaType: application/octet-stream
                   description: The workflow file to import (.wkf or .yml)
                 import_file_name:
                   type: string
-                  description: File name including extension (.wkf or .yml)
-                  example: my_workflow.wkf
+                  description: File name ending with `wkf` or `yml`. The file is saved under this name in the import folder of the server.
+                  examples:
+                    - my_workflow.wkf
                 folder_id:
                   type: integer
-                  description: Optional folder ID to import into
+                  description: Folder of the new workflow
                 link_to_subworkflows:
-                  type: boolean
-                  description: Link to existing sub-workflows instead of importing them
-                  default: false
+                  type: string
+                  description: Link to existing sub-workflows instead of importing them. Any value, including `false`, is taken as true.
                 publish_workflow:
-                  type: boolean
-                  description: Publish the workflow after import
-                  default: false
+                  type: string
+                  description: '`true` or `1` to publish the workflow after import. Default: server option `publish_api_imported_workflow`.'
                 format:
                   type: string
                   enum:
-                  - xml
-                  - json
+                    - xml
+                    - json
                   default: xml
       responses:
         '200':
-          description: Workflow imported successfully
-        '400':
-          description: Invalid workflow data or missing parameters
+          description: The new workflow (JSON)
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/find_constraints":
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          description: 'Import failed: `{"error", "message", "details"}`'
+  /api/find_constraints:
     get:
+      operationId: find_constraints
       summary: Find workflow import constraints
-      description: >-
-        Analyzes a workflow file present on the Orchestrator host, and returns the list expected by `import_with_constraints`,
-        with the possible choices for each conflict with existing sub-workflows, global templates and remote nodes, and the plugins that are not enabled.
-        The file existence is not checked: a wrong path returns the same empty lists as a file without conflict.
+      description: 'Analyzes a workflow file present on the Orchestrator host, and returns the list expected by `import_with_constraints`, with the possible choices for each conflict with existing sub-workflows, global templates and remote nodes, and the plugins that are not enabled. The file existence is not checked: a wrong path returns the same empty lists as a file without conflict.'
       tags:
-      - Workflows
+        - Workflows
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: file
-        in: query
-        required: true
-        schema:
-          type: string
-        description: Path of the workflow file (`.yml` or `.wkf`) on the Orchestrator host
-      - name: wf_id
-        in: query
-        schema:
-          type: integer
-        description: ID of an existing workflow, to import the file as a new revision of it
+        - name: file
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Path of the workflow file (`.yml` or `.wkf`) on the Orchestrator host
+        - name: wf_id
+          in: query
+          schema:
+            type: integer
+          description: ID of an existing workflow, to import the file as a new revision of it
       responses:
         '200':
-          description: >-
-            Array of six objects, in the order expected by `import_with_constraints`:
-            `filename`, `add as revision`, `subwf constraints`, `action template constraints`, `remote node constraints`,
-            and `missing plugins` with `Auto-enable missing plugins?`.
+          description: 'Array of six objects, in the order expected by `import_with_constraints`: `filename`, `add as revision`, `subwf constraints`, `action template constraints`, `remote node constraints`, and `missing plugins` with `Auto-enable missing plugins?`.'
           content:
             application/json:
               schema:
@@ -360,20 +317,16 @@ paths:
                 items:
                   type: object
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/import_with_constraints":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/import_with_constraints:
     post:
+      operationId: import_with_constraints
       summary: Import workflow with constraint resolution
-      description: >-
-        Imports a workflow file present on the Orchestrator host, as a new workflow or as a new revision of an existing workflow.
-        The workflow is not published.
-        Orchestrator does not check what `find_constraints` reports: if plugins to enable are listed and `Auto-enable missing plugins?` is not `true`,
-        the call fails with an internal error; a conflict without choice is imported as a copy, without error.
-        `Auto-enable missing plugins?` must be a JSON boolean: the string `"false"` is taken as true.
+      description: 'Imports a workflow file present on the Orchestrator host, as a new workflow or as a new revision of an existing workflow. The workflow is not published. Orchestrator does not check what `find_constraints` reports: if plugins to enable are listed and `Auto-enable missing plugins?` is not `true`, the call fails with an internal error; a conflict without choice is imported as a copy, without error. `Auto-enable missing plugins?` must be a JSON boolean: the string `"false"` is taken as true.'
       tags:
-      - Workflows
+        - Workflows
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -385,261 +338,442 @@ paths:
               maxItems: 6
               items:
                 type: object
-              example:
-              - filename: /opt/aspera/orchestrator/var/run/orchestrator/workflows/import/my_workflow.yml
-              - add as revision: 239
-              - subwf constraints: {}
-              - action template constraints:
-                  Search Files: Map to the existing Global Template
-              - remote node constraints:
-                  Baton: Map to the existing Remote Node
-              - Auto-enable missing plugins?: true
+              examples:
+                - - filename: /opt/aspera/orchestrator/var/run/orchestrator/workflows/import/my_workflow.yml
+                  - add as revision: 239
+                  - subwf constraints: {}
+                  - action template constraints:
+                      Search Files: Map to the existing Global Template
+                  - remote node constraints:
+                      Baton: Map to the existing Remote Node
+                  - Auto-enable missing plugins?: true
       responses:
         '200':
-          description: The workflow that was imported
+          description: The workflow that was imported (JSON)
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
+          $ref: '#/components/responses/UnauthorizedError'
         '500':
           description: Internal error, e.g. plugins to enable and not auto-enabled, or a file that cannot be read
-  "/api/publish_workflow":
+  /api/publish_workflow:
     post:
+      operationId: publish_workflow
       summary: Publish a workflow
+      description: Publishes the last whiteboard revision. The result is `true`, or `false` when the whiteboard has no `error_free` value.
       tags:
-      - Workflows
+        - Workflows
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: string
-        description: Workflow ID or portable ID
-        example: '123'
-      - name: format
-        in: query
-        schema:
-          type: string
-          enum:
-          - xml
-          - json
-          default: xml
-        description: Response format
+        - name: id
+          in: query
+          schema:
+            type: string
+          description: Workflow ID or portable ID (also accepted in a JSON body, or in the path `/api/publish_workflow/<id>`)
+          example: '123'
+        - $ref: '#/components/parameters/Format'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: Workflow ID or portable ID
       responses:
         '200':
-          description: Workflow published successfully
-        '400':
-          description: Invalid workflow ID
+          description: '`true` or `false` (JSON), or `<WorkflowPublish><Success>true</Success></WorkflowPublish>` (XML)'
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-        '404':
-          description: Workflow not found
-  "/api/work_orders_list":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/export_workflow/{id}:
     get:
-      summary: List work orders
+      operationId: export_workflow
+      summary: Export a workflow
+      description: Returns the workflow file (`.yml`), or a package (`.wkf`) with its sub-workflows and remote nodes.
       tags:
-      - Work Orders
+        - Workflows
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: workflow_id
-        in: query
-        schema:
-          type: integer
-        description: Filter by workflow ID
-        example: 123
-      - name: status
-        in: query
-        schema:
-          type: string
-          enum:
-          - queued
-          - running
-          - completed
-          - failed
-          - cancelled
-        description: Filter by work order status
-        example: running
-      - name: format
-        in: query
-        schema:
-          type: string
-          enum:
-          - xml
-          - json
-          default: json
-        description: Response format
-        example: json
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Workflow ID or portable ID
+        - name: export_with_dependencies
+          in: query
+          schema:
+            type: string
+          description: Export a package with dependencies. Any non-empty value, including `false`, enables it.
+      responses:
+        '200':
+          description: The workflow file
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/list_by_subworkflow/{id}:
+    get:
+      operationId: list_by_subworkflow
+      summary: Published workflows that use a sub-workflow
+      description: 'JSON: `{"parent_workflows": [<workflow id>...]}`.'
+      tags:
+        - Workflows
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Sub-workflow ID (or query parameter `sub_wf_id`, which takes precedence)
+        - name: sub_wf_id
+          in: query
+          schema:
+            type: integer
+          description: Sub-workflow ID
+        - $ref: '#/components/parameters/Format'
+      responses:
+        '200':
+          description: IDs of the parent workflows
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/retrieve_steps/{id}:
+    get:
+      operationId: retrieve_steps
+      summary: Steps of a type in published workflows, with their work orders
+      description: 'JSON: `[{"step_id", "step_name", "step_status", "wf_id", "wo_id", "wo_status"}]`.'
+      tags:
+        - Workflows
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AnyId'
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Step type (plugin class name), e.g. `CustomRuby`
+        - $ref: '#/components/parameters/Format'
+      responses:
+        '200':
+          description: List of steps
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/work_orders_list/{id}:
+    get:
+      operationId: work_orders_list
+      summary: List work orders of a workflow
+      description: 'JSON: `{"work_orders": [...]}`.'
+      tags:
+        - Work Orders
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Workflow ID, portable ID or name, or `all` for all workflows
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: Filter by work order status, e.g. `Failed`
+        - name: priority
+          in: query
+          schema:
+            type: string
+          description: Filter by priority
+        - name: from_date
+          in: query
+          schema:
+            type: string
+          description: Work orders updated after this date, e.g. `'06-27-2015 02:40:59'`
+        - name: to_date
+          in: query
+          schema:
+            type: string
+          description: Work orders updated before this date
+        - name: tag
+          in: query
+          schema:
+            type: string
+          description: Comma-separated list of tags, all required
+        - name: max_results
+          in: query
+          schema:
+            type: integer
+          description: Maximum number of work orders
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: List of work orders
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: integer
-                      example: 456
-                    workflow_id:
-                      type: integer
-                      example: 123
-                    status:
-                      type: string
-                      example: running
-                    created_at:
-                      type: string
-                      format: date-time
-                      example: '2026-06-11T10:30:00Z'
-                    progress:
-                      type: integer
-                      example: 75
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/work_order_status/{id}":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/work_order_status/{id}:
     get:
+      operationId: work_order_status
       summary: Get work order status
       description: |
         Returns the status of a work order and its work steps.
+        JSON: `{"work_order": {..., "percent_complete"}, "work_steps": [...]}`.
 
         If the work order includes sub-workflows, only the sub-workflow status is displayed, not the steps within the sub-workflow.
-
-        **Response format:** defaults to XML. To receive JSON, use the `.json` extension (e.g. `/api/work_order_status/123.json`) or append `?format=json`.
       tags:
-      - Work Orders
+        - Work Orders
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
-        description: Work order ID
-      - name: format
-        in: query
-        schema:
-          type: string
-          enum:
-          - xml
-          - json
-          default: xml
-        description: Response format. Defaults to xml.
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Work order ID
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: Work order status
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-        '404':
-          description: Work order not found
-  "/api/work_order_output":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/work_order_output/{id}:
     get:
-      summary: Get work order output
+      operationId: work_order_output
+      summary: Outputs of a work order
+      description: |
+        All outputs, the outputs of a step (`step_name`), or the outputs of a given name (`variable_name`).
+        With both `step_name` and `variable_name`, JSON returns the value only.
+        Format `text` (or `string`) returns the values, one per line.
       tags:
-      - Work Orders
+        - Work Orders
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: integer
-        description: Work order ID
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Work order ID (or query parameter `workorder_id`, which takes precedence)
+        - name: workorder_id
+          in: query
+          schema:
+            type: integer
+          description: Work order ID
+        - name: step_name
+          in: query
+          schema:
+            type: string
+          description: Only the outputs of this step
+        - name: variable_name
+          in: query
+          schema:
+            type: string
+          description: Only the outputs with this name
+        - name: detailed
+          in: query
+          schema:
+            type: string
+            enum:
+              - 'true'
+              - 'false'
+          description: 'JSON: also the variable type, value type, work order ID and status of each output'
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum:
+              - xml
+              - json
+              - text
+              - string
+            default: xml
+          description: Response format
       responses:
         '200':
-          description: Work order output data
+          description: Outputs
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/work_order_cancel":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/work_order_cancel/{id}:
     get:
+      operationId: work_order_cancel
       summary: Cancel a work order
       tags:
-      - Work Orders
+        - Work Orders
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: integer
-        description: Work order ID
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Work order ID
+        - name: force
+          in: query
+          schema:
+            type: string
+          description: Force the cancellation (any value except `false`)
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
-          description: Work order cancelled successfully
+          description: The work order
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-        '404':
-          description: Work order not found
-  "/api/work_order_reset":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/work_order_reset/{id}:
     get:
+      operationId: work_order_reset
       summary: Reset a work order
+      description: 'JSON: `{"work_order": {...}, "work_steps": [...]}`.'
       tags:
-      - Work Orders
+        - Work Orders
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: integer
-        description: Work order ID
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Work order ID
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
-          description: Work order reset successfully
+          description: The work order and its work steps
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-        '404':
-          description: Work order not found
-  "/api/work_order_destroy":
-    get:
-      summary: Destroy a work order
-      tags:
-      - Work Orders
-      security:
-      - bearerAuth: []
-      parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: integer
-        description: Work order ID
-      responses:
-        '200':
-          description: Work order destroyed successfully
-        '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/initiate":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/reset/{id}.{format}:
     post:
+      operationId: reset
+      summary: Reset a work order (XML result)
+      description: Same as `work_order_reset`, implemented by the work order pages. The response is always XML.
+      tags:
+        - Work Orders
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Work order ID
+        - name: format
+          in: path
+          required: true
+          schema:
+            type: string
+            const: xml
+          description: Required by the route
+      responses:
+        '200':
+          description: The work order (XML)
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/work_order_destroy/{id}:
+    get:
+      operationId: work_order_destroy
+      summary: Delete a work order and its dependents
+      tags:
+        - Work Orders
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Work order ID
+        - $ref: '#/components/parameters/Format'
+      responses:
+        '200':
+          description: Confirmation message
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/initiate:
+    post:
+      operationId: initiate
       summary: Initiate a new work order
       description: |
         Starts a new work order for the specified workflow.
 
-        Runtime input values must be passed under the `external_parameters` key.
-        To discover what parameters a workflow accepts, call `/api/workflow_inputs_spec?id={workflow_id}` first.
+        Runtime input values are passed under the `external_parameters` key.
+        To discover what parameters a workflow accepts, call `/api/workflow_inputs_spec/{workflow_id}` first.
+        With format `json`, the keys of a JSON body are also merged into the runtime parameters.
 
-        **Response format:** defaults to XML. To receive JSON, append `?format=json` to the URL or use the `.json` extension (e.g. `/api/initiate.json`).
-
-        Error responses follow the same format as success responses (XML or JSON depending on the requested format).
-      parameters:
-      - name: format
-        in: query
-        schema:
-          type: string
-          enum:
-          - xml
-          - json
-          default: xml
-        description: Response format. Defaults to xml. Can also be set via URL extension (e.g. /api/initiate.json).
+        JSON response: `{"work_order": {...}, "work_steps": [...], "parameters": {...}}`,
+        or `{"work_order": {..., "status": "Not started"}, "missing_parameters": [...]}` (status 400) when required parameters are missing.
       tags:
-      - Work Orders
+        - Work Orders
       security:
-      - bearerAuth: []
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Format'
+        - name: synchronous
+          in: query
+          schema:
+            type: string
+            enum:
+              - 'true'
+              - 'false'
+          description: '`true`: wait for the end of the work order'
+        - name: timeout
+          in: query
+          schema:
+            type: integer
+          description: 'With `synchronous`, maximum wait in seconds (0 or not set: no limit)'
+        - name: explicit_output
+          in: query
+          schema:
+            type: string
+          description: Return only this output, as `<step name>:<output name>`
+        - name: explicit_output_step
+          in: query
+          schema:
+            type: string
+          description: Return only an output of this step (with `explicit_output_variable`)
+        - name: explicit_output_variable
+          in: query
+          schema:
+            type: string
+          description: Name of the output to return (with `explicit_output_step`)
+        - name: on_error_return_code
+          in: query
+          schema:
+            type: integer
+          description: HTTP status to return when the work order ends with status `Error`
+        - name: on_failed_return_code
+          in: query
+          schema:
+            type: integer
+          description: HTTP status to return when the work order ends with status `Failed`
+        - name: tags
+          in: query
+          schema:
+            type: string
+          description: Comma-separated tags of the work order
+        - name: preemptive_level
+          in: query
+          schema:
+            type: integer
+          description: Priority of the work order (its opposite is used)
+        - name: wo_id_only
+          in: query
+          schema:
+            type: string
+            enum:
+              - 'true'
+              - 'false'
+          description: '`true`: return only the work order ID'
       requestBody:
         required: true
         content:
@@ -647,496 +781,622 @@ paths:
             schema:
               type: object
               required:
-              - workflow_id
+                - workflow_id
               properties:
                 workflow_id:
-                  type: integer
-                  description: ID of the workflow to execute
-                  example: 123
+                  type: string
+                  description: ID, portable ID or name of the workflow to execute
+                  examples:
+                    - '123'
                 external_parameters:
                   type: object
-                  description: |
-                    Input parameters for the workflow (key-value pairs).
-                    Valid keys are defined by the workflow's input specification.
-                    Use `/api/workflow_inputs_spec?id={workflow_id}` to discover required parameters.
+                  description: Runtime parameters of the workflow (name to value)
                   additionalProperties: true
-                  example:
-                    input_file: "/path/to/source/video.mp4"
-                    output_format: mp4
-                    quality: high
-                    bitrate: 5000k
       responses:
         '200':
-          description: Work order initiated successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  work_order_id:
-                    type: integer
-                    description: ID of the newly created work order
-                    example: 456
-                  status:
-                    type: string
-                    description: Initial status of the work order
-                    example: queued
-                    enum:
-                    - queued
-                    - running
-              example:
-                work_order_id: 456
-                status: queued
+          description: Work order initiated (or the status given by `on_error_return_code`, `on_failed_return_code`)
         '400':
-          description: Invalid request or missing required workflow parameters
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: 'Missing required parameter: input_file'
+          description: Workflow not found or not published, or missing required parameters
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-        '404':
-          description: Workflow not found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Workflow with ID 123 not found
-  "/api/work_step_status":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/work_step_status/{id}:
     get:
-      summary: Get work step status
+      operationId: work_step_status
+      summary: Status, inputs and outputs of a work step, or change its status
+      description: |
+        Returns `{"work_step": {...}, "outputs": [...], "inputs": [...], "carry_thrus": [...]}`,
+        or only the value of an output (`output_name`), or only the status (`status_only`).
+        With `set_status` or `set_status_details`, modifies the work step and returns its new status.
       tags:
-      - Work Steps
+        - Work Steps
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: integer
-        description: Work step ID
-      - name: format
-        in: query
-        schema:
-          type: string
-          enum:
-          - xml
-          - json
-          default: json
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Work step ID, or `work_order` to use `work_order_id` and `step_name`
+        - name: work_order_id
+          in: query
+          schema:
+            type: integer
+          description: Work order ID, when `id` is `work_order`
+        - name: step_name
+          in: query
+          schema:
+            type: string
+          description: Step name, when `id` is `work_order`
+        - name: output_name
+          in: query
+          schema:
+            type: string
+          description: Return only the value of this output
+        - name: status_only
+          in: query
+          schema:
+            type: string
+          description: Return only the status (any value except `false`)
+        - name: set_status
+          in: query
+          schema:
+            type: string
+          description: New status of the work step
+        - name: set_status_details
+          in: query
+          schema:
+            type: string
+          description: New status details of the work step
+        - name: set_percent_complete
+          in: query
+          schema:
+            type: integer
+          description: New percentage of completion, with `set_status` or `set_status_details`
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum:
+              - xml
+              - json
+              - txt
+            default: xml
+          description: Response format (`txt` for a value or a status as plain text)
       responses:
         '200':
           description: Work step status
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/work_step_cancel":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/work_step_cancel/{id}:
     get:
+      operationId: work_step_cancel
       summary: Cancel a work step
       tags:
-      - Work Steps
+        - Work Steps
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: integer
-        description: Work step ID
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Work step ID
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
-          description: Work step cancelled successfully
+          description: The work step
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/workstep_reset":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/workstep_reset/{id}:
     get:
-      summary: Reset a work step
+      operationId: workstep_reset
+      summary: Restart work orders from work steps
+      description: 'JSON: `{"workstep_reset": true, "work_order": {...}, "work_steps": [...]}`, or a list of them for several IDs.'
       tags:
-      - Work Steps
+        - Work Steps
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: integer
-        description: Work step ID
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Work step ID, or comma-separated list of IDs
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
-          description: Work step reset successfully
+          description: The restarted work orders
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/queued_items":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/queues_list:
     get:
-      summary: List queued items
-      tags:
-      - Queues
-      security:
-      - bearerAuth: []
-      parameters:
-      - name: queue_id
-        in: query
-        schema:
-          type: integer
-        description: Filter by queue ID
-      - name: format
-        in: query
-        schema:
-          type: string
-          enum:
-          - xml
-          - json
-          default: json
-      responses:
-        '200':
-          description: List of queued items
-        '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/queues_list":
-    get:
+      operationId: queues_list
       summary: List all queues
+      description: 'JSON: `{"Queues": {"queue": [{"id", "name", "displayed_name", "update_at", "created_at"}]}}`.'
       tags:
-      - Queues
+        - Queues
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: format
-        in: query
-        schema:
-          type: string
-          enum:
-          - xml
-          - json
-          default: json
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: List of queues
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/queue_item":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/queued_items/{id}:
     get:
-      summary: Add item to queue
+      operationId: queued_items
+      summary: Items of a queue
+      description: 'JSON: `{"queued_items": [{"id", "queued_item", "item_description", "priority", "weight", "position", "rank", ...}], "queue_metadata": {"id", "name", "comments", "administrators", "paused"}}`.'
       tags:
-      - Queues
+        - Queues
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: queue_id
-        in: query
-        required: true
-        schema:
-          type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Queue name
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
-          description: Item queued successfully
+          description: Queued items
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/lookup_queued_item":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/queue_item/{id}:
     get:
-      summary: Lookup a specific queued item
+      operationId: queue_item
+      summary: Add an item to a queue
+      description: 'JSON: `{"item", "description", "rank", "priority", "weight", "id"}`.'
       tags:
-      - Queues
+        - Queues
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: integer
-        description: Queued item ID
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Queue name
+        - name: queued_item
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Item to queue
+        - name: description
+          in: query
+          schema:
+            type: string
+          description: Description of the item
+        - name: priority
+          in: query
+          schema:
+            type: integer
+          description: Priority of the item
+        - name: weight
+          in: query
+          schema:
+            type: integer
+          description: Weight of the item
+        - name: tags
+          in: query
+          schema:
+            type: string
+          description: Comma-separated tags
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
-          description: Queued item details
+          description: The queued item
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/reorder_queued_item":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/lookup_queued_item:
     get:
-      summary: Reorder a queued item
+      operationId: lookup_queued_item
+      summary: Find queued items
+      description: By item ID, by item (optionally in a queue), or by description (optionally in a queue). Same response as `queued_items`.
       tags:
-      - Queues
+        - Queues
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: integer
-        description: Queued item ID
-      - name: position
-        in: query
-        required: true
-        schema:
-          type: integer
-        description: New position in queue
+        - name: queued_item_id
+          in: query
+          schema:
+            type: integer
+          description: ID of the queued item
+        - name: queued_item
+          in: query
+          schema:
+            type: string
+          description: Queued item
+        - name: queue_desc
+          in: query
+          schema:
+            type: string
+          description: Description of the queued item
+        - name: queue_name
+          in: query
+          schema:
+            type: string
+          description: Queue name, to restrict the search by `queued_item` or `queue_desc`
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
-          description: Item reordered successfully
+          description: Queued items found
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/bulk_reorder_queue":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/reorder_queued_item:
     get:
-      summary: Bulk reorder queue items
+      operationId: reorder_queued_item
+      summary: Move a queued item
       tags:
-      - Queues
+        - Queues
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: queue_id
-        in: query
-        required: true
-        schema:
-          type: integer
+        - name: operation
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - up
+              - down
+              - first
+              - last
+          description: Move
+        - name: queued_item_id
+          in: query
+          schema:
+            type: integer
+          description: ID of the queued item
+        - name: queued_item
+          in: query
+          schema:
+            type: string
+          description: Queued item, when `queued_item_id` is not given
+        - name: queue_name
+          in: query
+          schema:
+            type: string
+          description: Queue name, to find `queued_item`
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
-          description: Queue reordered successfully
+          description: The moved item
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/delete_queued_item":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/bulk_reorder_queue:
     get:
+      operationId: bulk_reorder_queue
+      summary: Move several queued items
+      tags:
+        - Queues
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: queued_item_ids
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Comma-separated IDs of queued items
+        - name: operation
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - up
+              - down
+              - first
+              - last
+          description: Move
+        - $ref: '#/components/parameters/Format'
+      responses:
+        '200':
+          description: The moved items
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/delete_queued_item:
+    get:
+      operationId: delete_queued_item
       summary: Delete a queued item
       tags:
-      - Queues
+        - Queues
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: integer
-        description: Queued item ID
+        - name: queue_name
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Queue name
+        - name: queued_item_id
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: ID of the queued item
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
-          description: Item deleted successfully
+          description: Confirmation message
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/monitor_snapshot":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/monitor_snapshot:
     get:
-      summary: Get monitor snapshot
+      operationId: monitor_snapshot
+      summary: Status of the monitors
+      description: 'JSON: `{"monitor": {"monitor_workflows", "monitor_workorders", "monitor_folders", "monitor_nodes", "monitor_scripts"}}`.'
       tags:
-      - Monitors
+        - Monitors
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: integer
-        description: Monitor ID
-      - name: format
-        in: query
-        schema:
-          type: string
-          enum:
-          - xml
-          - json
-          default: json
+        - name: id
+          in: query
+          schema:
+            type: string
+            enum:
+              - workflows
+              - workorders
+              - folders
+              - nodes
+              - scripts
+          description: 'Only monitors of this type (also in the path `/api/monitor_snapshot/<type>`). Not set: all.'
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: Monitor snapshot data
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-        '404':
-          description: Monitor not found
-  "/api/list_monitors":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/list_monitors/{id}:
     get:
-      summary: List all monitors
+      operationId: list_monitors
+      summary: List the monitors of a type
+      description: 'JSON: list of monitors (all their attributes). Remote node monitors give the names of the monitored remote nodes (`remote_node_name`).'
       tags:
-      - Monitors
+        - Monitors
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: format
-        in: query
-        schema:
-          type: string
-          enum:
-          - xml
-          - json
-          default: json
+        - $ref: '#/components/parameters/AnyId'
+        - $ref: '#/components/parameters/MonitorType'
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: List of monitors
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/activate_monitor":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/activate_monitor/{id}:
     get:
+      operationId: activate_monitor
       summary: Activate a monitor
+      description: 'JSON: `{"action", "time", "id", "description"}`.'
       tags:
-      - Monitors
+        - Monitors
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: integer
-        description: Monitor ID
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Monitor ID or portable ID
+        - name: portable_id
+          in: query
+          schema:
+            type: string
+          description: Portable ID of the monitor, used when the `id` segment is empty
+        - $ref: '#/components/parameters/MonitorType'
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
-          description: Monitor activated successfully
+          description: Monitor activated
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-        '404':
-          description: Monitor not found
-  "/api/deactivate_monitor":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/deactivate_monitor/{id}:
     get:
+      operationId: deactivate_monitor
       summary: Deactivate a monitor
+      description: 'JSON: `{"action", "time", "id", "description"}`.'
       tags:
-      - Monitors
+        - Monitors
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: integer
-        description: Monitor ID
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Monitor ID or portable ID
+        - name: portable_id
+          in: query
+          schema:
+            type: string
+          description: Portable ID of the monitor, used when the `id` segment is empty
+        - $ref: '#/components/parameters/MonitorType'
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
-          description: Monitor deactivated successfully
+          description: Monitor deactivated
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-        '404':
-          description: Monitor not found
-  "/api/list_tasks":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/list_tasks/{id}:
     get:
-      summary: List available tasks
+      operationId: list_tasks
+      summary: Tasks (user inputs) waiting for a user
+      description: 'JSON: `{"user", "tasks": [{..., "event", "group", "user", "requested_user_inputs"}]}`.'
       tags:
-      - Tasks
+        - Tasks
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: format
-        in: query
-        schema:
-          type: string
-          enum:
-          - xml
-          - json
-          default: json
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User login or ID, or `self`. Only an administrator can list the tasks of another user.
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: List of tasks
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/task_details":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/task_details/{id}:
     get:
-      summary: Get task details
+      operationId: task_details
+      summary: Details of a task
+      description: 'JSON: `{"task", "task_inputs", "user_inputs": [{"name", "type", "value", "required"}]}`.'
       tags:
-      - Tasks
+        - Tasks
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: integer
-        description: Task ID
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Task ID, or `WO<work order ID>` for the user input of a work order
+        - name: step_name
+          in: query
+          schema:
+            type: string
+          description: 'With `WO<id>`, step of the user input when the work order has several. Orchestrator 4.1.6 checks that `Step_name` is set and compares `step_name`: give both.'
+        - name: Step_name
+          in: query
+          schema:
+            type: string
+          description: Same value as `step_name` (see `step_name`)
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: Task details
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/submit_task":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/submit_task/{id}:
     get:
-      summary: Submit a task for execution
+      operationId: submit_task
+      summary: Complete a task with the user inputs
+      description: 'JSON: `{"task", "user_inputs", "input_provider"}`.'
       tags:
-      - Tasks
+        - Tasks
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: task_id
-        in: query
-        required: true
-        schema:
-          type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Task ID
+        - name: outputs
+          in: query
+          style: deepObject
+          explode: true
+          schema:
+            type: object
+            additionalProperties: true
+          description: Values of the user inputs, e.g. `outputs[Filename]=tron.avi`. All required inputs must be given.
+        - name: input_provider
+          in: query
+          schema:
+            type: string
+          description: Login of the user who provides the inputs (administrator only)
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
-          description: Task submitted successfully
+          description: The completed task
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/search_tasks":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/search_tasks/{id}:
     get:
-      summary: Search for tasks
+      operationId: search_tasks
+      summary: Search the tasks of the current user
       tags:
-      - Tasks
+        - Tasks
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: query
-        in: query
-        required: true
-        schema:
-          type: string
+        - $ref: '#/components/parameters/AnyId'
+        - name: value
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search key
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
-          description: Search results
+          description: List of `{"id", "task", "task_inputs", "user_inputs"}`, or `{"id", "error"}` for a task without access
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/plugin_version":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/plugin_version:
     get:
-      summary: Get plugin version information
+      operationId: plugin_version
+      summary: Versions of the plugins
+      description: 'JSON: `{"Plugin": [{"name", "version"}]}`.'
       tags:
-      - Plugins
+        - Plugins
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: plugin_name
-        in: query
-        required: true
-        schema:
-          type: string
-        description: Plugin name
+        - name: id
+          in: query
+          schema:
+            type: string
+          description: Only this plugin (action type), e.g. `ascp client` (also in the path `/api/plugin_version/<name>`)
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
-          description: Plugin version information
+          description: Plugin versions
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-        '404':
-          description: Plugin not found
-  "/api/reload_plugin":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/reload_plugin:
     get:
-      summary: Reload a plugin
+      operationId: reload_plugin
+      summary: Reload a plugin, or all enabled plugins
       tags:
-      - Plugins
+        - Plugins
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: plugin_name
-        in: query
-        required: true
-        schema:
-          type: string
-        description: Plugin name
+        - name: action_type
+          in: query
+          schema:
+            type: string
+          description: 'Plugin class name, e.g. `Adi3Parser`. Not set: all enabled plugins.'
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
-          description: Plugin reloaded successfully
+          description: Reload status of each plugin
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-        '404':
-          description: Plugin not found
-  "/api/reload_plugin_set":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/reload_plugin_set:
     post:
+      operationId: reload_plugin_set
       summary: Reload a set of plugins
+      description: 'With format `json`, the body is `{"plugin_set": [...]}`; with format `xml`, `<plugin_set><action_type>...</action_type>...</plugin_set>`.'
       tags:
-      - Plugins
+        - Plugins
       security:
-      - bearerAuth: []
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Format'
       requestBody:
         required: true
         content:
@@ -1144,697 +1404,623 @@ paths:
             schema:
               type: object
               required:
-              - plugin_names
+                - plugin_set
               properties:
-                plugin_names:
+                plugin_set:
                   type: array
-                  description: List of plugin names to reload
+                  description: Plugin class names
                   items:
                     type: string
-                  example:
-                  - soap_requests
-                  - frameio_operations
-      responses:
-        '200':
-          description: Plugins reloaded successfully
-        '400':
-          description: Invalid plugin names
-        '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/enable_plugin":
-    post:
-      summary: Enable a plugin
-      tags:
-      - Plugins
-      security:
-      - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
+                  examples:
+                    - - Adi3Parser
+                      - AdiParser
+          application/xml:
             schema:
-              type: object
-              required:
-              - plugin_name
-              properties:
-                plugin_name:
-                  type: string
-                  description: Name of the plugin to enable
-                  example: soap_requests
+              type: string
+              examples:
+                - <plugin_set><action_type>Adi3Parser</action_type></plugin_set>
       responses:
         '200':
-          description: Plugin enabled successfully
-        '400':
-          description: Invalid plugin name
+          description: Reload status of each plugin
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-        '404':
-          description: Plugin not found
-  "/api/import_plugin":
-    post:
-      summary: Import a plugin
-      tags:
-      - Plugins
-      security:
-      - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              required:
-              - plugin_file
-              properties:
-                plugin_file:
-                  type: string
-                  format: binary
-                  description: Plugin archive file (zip or tar.gz)
-      responses:
-        '200':
-          description: Plugin imported successfully
-        '400':
-          description: Invalid plugin file
-        '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/portlet_version":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/enable_plugin/{id}:
     get:
-      summary: Get portlet version information
+      operationId: enable_plugin
+      summary: Enable a plugin, or all plugins
+      description: 'JSON: `{"install_id"}`.'
       tags:
-      - Portlets
+        - Plugins
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: portlet_name
-        in: query
-        required: true
-        schema:
-          type: string
-        description: Portlet name
+        - $ref: '#/components/parameters/AnyId'
+        - name: action_type
+          in: query
+          schema:
+            type: string
+          description: 'Plugin class name. Not set: all plugins.'
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
-          description: Portlet version information
+          description: Installation ID
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/processes_status":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/import_plugin/{id}:
     get:
-      summary: Get process status information
+      operationId: import_plugin
+      summary: Import a plugin from a file on the Orchestrator host
+      description: 'JSON: `{"action_type"}`.'
       tags:
-      - System
+        - Plugins
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: format
-        in: query
-        schema:
-          type: string
-          enum:
-          - xml
-          - json
-          default: json
+        - $ref: '#/components/parameters/AnyId'
+        - name: file
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Path of the plugin archive on the Orchestrator host
+        - $ref: '#/components/parameters/Format'
+      responses:
+        '200':
+          description: Class name of the imported plugin
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/portlet_version:
+    get:
+      operationId: portlet_version
+      summary: Versions of the portlets
+      description: 'JSON: `{"Portlet": [{"name", "version"}]}`.'
+      tags:
+        - Portlets
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: query
+          schema:
+            type: string
+          description: Only this portlet (name), also in the path `/api/portlet_version/<name>`
+        - $ref: '#/components/parameters/Format'
+      responses:
+        '200':
+          description: Portlet versions
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/processes_status:
+    get:
+      operationId: processes_status
+      summary: Status of the processes (engine, monitor, workers)
+      tags:
+        - System
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: Process status information
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/control_process":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/control_process/{id}:
     get:
-      summary: Control orchestrator processes
+      operationId: control_process
+      summary: Start, stop or kill a process
+      description: 'Returns the status of the processes (as `processes_status`). JSON: `{"processes": {"process": [{"class", "id", "pid", "status", "type"}]}}`.'
       tags:
-      - System
+        - System
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: action
-        in: query
-        required: true
-        schema:
-          type: string
-          enum:
-          - start
-          - stop
-          - restart
-          - status
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - engine
+              - monitor
+              - worker
+          description: Process type
+        - name: command
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - start
+              - stop
+              - kill
+              - status
+          description: Command (`status` does nothing but returns the status)
+        - name: worker_id
+          in: query
+          schema:
+            type: string
+          description: Comma-separated worker IDs, required for type `worker`
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
-          description: Process control command executed
+          description: Status of the processes
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/custom_api_call":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/custom_api_call:
     get:
-      summary: Execute custom API call
+      operationId: custom_api_call
+      summary: Store data in the shared state, for a database trigger
+      description: The query parameters and the request body are stored in table `SharedState`, where a workflow can watch them with a database trigger. The response is always XML.
       tags:
-      - System
+        - System
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: call_name
-        in: query
-        required: true
-        schema:
-          type: string
+        - name: identifier
+          in: query
+          schema:
+            type: string
+          description: 'Aggregate type of the shared state (default: `custom_api_call`)'
+        - name: uniq_id
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: Aggregate ID of the shared state, an integer
+        - name: object
+          in: query
+          schema:
+            type: string
+          description: JSON text of the object to store
       responses:
         '200':
-          description: Custom call executed
+          description: ID of the shared state (XML)
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/execution_queue_stats":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/execution_queue_stats/{id}:
     get:
-      summary: Get execution queue statistics
+      operationId: execution_queue_stats
+      summary: Statistics of the execution queue of the engine
       tags:
-      - System
+        - System
       security:
-      - bearerAuth: []
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AnyId'
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: Queue statistics
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/alerts":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/alerts/{id}:
     get:
-      summary: Get system alerts
+      operationId: alerts
+      summary: Alerts of the categories the user is subscribed to
       tags:
-      - System
+        - System
       security:
-      - bearerAuth: []
-      responses:
-        '200':
-          description: List of alerts
-        '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/remote_node_ping":
-    get:
-      summary: Ping a remote node
-      tags:
-      - Remote Nodes
-      security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: integer
-        description: Remote node ID
+        - $ref: '#/components/parameters/AnyId'
+        - name: count_only
+          in: query
+          schema:
+            type: string
+            enum:
+              - 'true'
+              - 'false'
+          description: 'Return only the number of alerts: `{"count"}`'
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Only alerts of this category, e.g. `user`
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
-          description: Ping successful
+          description: List of alerts, or their number
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-        '404':
-          description: Remote node not found
-  "/api/test_step":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/remote_node_ping:
     get:
+      operationId: remote_node_ping
+      summary: Version and platform of this Orchestrator
+      description: 'JSON: `{"remote_orchestrator_info": {"orchestrator-version", "platform", "engine_id"}}`.'
+      tags:
+        - Remote Nodes
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Format'
+      responses:
+        '200':
+          description: Orchestrator information
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/test_step/{id}:
+    get:
+      operationId: test_step
       summary: Launch test cases for a workflow step
       description: |
         Launches test cases against a workflow and returns a **Test_run_id** UUID.
         Pass that UUID to `/api/test_step_status` to poll for results.
       tags:
-      - Testing
+        - Testing
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: string
-        description: Workflow ID or portable ID to test
-        example: my_workflow
-      - name: step
-        in: query
-        schema:
-          type: string
-        description: Comma-separated step name(s) to test. Omit to test all steps.
-        example: Get file size
-      - name: case
-        in: query
-        schema:
-          type: string
-        description: Test case name to run. Omit to run all cases for the step.
-        example: File doesnt exist
-      - name: synchronous
-        in: query
-        schema:
-          type: boolean
-          default: false
-        description: Wait for all test cases to complete before returning
-      - name: format
-        in: query
-        schema:
-          type: string
-          enum:
-          - xml
-          - json
-          default: xml
-        description: Response format
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Workflow ID or portable ID to test
+          example: my_workflow
+        - name: step
+          in: query
+          schema:
+            type: string
+          description: Comma-separated step name(s) to test. Omit to test all steps.
+          example: Get file size
+        - name: case
+          in: query
+          schema:
+            type: string
+          description: Test case name to run. Omit to run all cases for the step.
+          example: File doesnt exist
+        - name: synchronous
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Wait for all test cases to complete before returning
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: Test run launched. Response contains `Test_run_id` UUID to use with `/api/test_step_status`.
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/test_step_status":
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Workflow not found
+  /api/test_step_status/{id}:
     get:
+      operationId: test_step_status
       summary: Get test step status
       description: |
         Poll the status of a test run previously launched by `/api/test_step`.
-        The `id` parameter must be the **Test_run_id UUID** returned by that call â€” not a numeric workflow or step ID.
+        The `id` parameter must be the **Test_run_id UUID** returned by that call, not a numeric workflow or step ID.
       tags:
-      - Testing
+        - Testing
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: string
-        description: Test run UUID returned by /api/test_step (e.g. 935e0080-97f5-0135-26f8-34363bc6aedc)
-        example: 935e0080-97f5-0135-26f8-34363bc6aedc
-      - name: format
-        in: query
-        schema:
-          type: string
-          enum:
-          - xml
-          - json
-          default: xml
-        description: Response format
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Test run UUID returned by /api/test_step (e.g. 935e0080-97f5-0135-26f8-34363bc6aedc)
+          example: 935e0080-97f5-0135-26f8-34363bc6aedc
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: Test status
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-        '404':
-          description: No test run found for the given UUID
-  "/api/work_order_stats":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/work_order_stats/{id}:
     get:
-      summary: Get work order statistics
+      operationId: work_order_stats
+      summary: Work order statistics, monthly or for a day
+      description: Returns the text `No Statistics found. Change the filter and try again.` when there is none.
       tags:
-      - Statistics
+        - Statistics
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: workflow_id
-        in: query
-        schema:
-          type: integer
+        - $ref: '#/components/parameters/AnyId'
+        - name: workflow_id
+          in: query
+          schema:
+            type: integer
+          description: Only this workflow
+        - name: label
+          in: query
+          schema:
+            type: string
+          description: Only work orders with this label
+        - name: date
+          in: query
+          schema:
+            type: string
+          description: 'Statistics of this day, e.g. `2017-04-04`. Not set: monthly statistics.'
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: Work order statistics
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/work_step_stats":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/work_step_stats/{id}:
     get:
-      summary: Get work step statistics
+      operationId: work_step_stats
+      summary: Work step statistics, monthly or for a day
+      description: 'Returns the text `No Statistics found. Change the filter and try again.` when there is none. The filters are inserted as is in an SQL condition (`workflow_id in (...)`): give comma-separated numbers or quoted values.'
       tags:
-      - Statistics
+        - Statistics
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: workflow_id
-        in: query
-        schema:
-          type: integer
+        - $ref: '#/components/parameters/AnyId'
+        - name: workflow_id
+          in: query
+          schema:
+            type: string
+          description: Comma-separated workflow IDs
+        - name: step_id
+          in: query
+          schema:
+            type: string
+          description: Comma-separated step IDs
+        - name: step_type
+          in: query
+          schema:
+            type: string
+          description: Comma-separated step types, quoted (e.g. `'CustomRuby'`)
+        - name: date
+          in: query
+          schema:
+            type: string
+          description: 'Statistics of this day, e.g. `2017-04-04`. Not set: monthly statistics.'
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: Work step statistics
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/journal_files":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/journal_files/{id}:
     get:
-      summary: Get journal files
+      operationId: journal_files
+      summary: Files recorded in a journal book
+      description: 'JSON: `{"Journal": {"name", "id", "description", "active"}, "Packages": [{"name", "id", "files": [...]}], "Files": [...]}`; each file has `file_id`, `file`, `status`, `status_details`, `created_at`, `updated_at`, and `states` when detailed.'
       tags:
-      - Journals
+        - Journals
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       parameters:
-      - name: work_order_id
-        in: query
-        schema:
-          type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Journal book name or ID
+        - name: details
+          in: query
+          schema:
+            type: string
+            enum:
+              - 'true'
+              - 'false'
+          description: '`false`: without the states (steps) of each file'
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: Comma-separated statuses, e.g. `In Progress,Processing complete`
+        - name: file
+          in: query
+          schema:
+            type: string
+          description: Comma-separated file paths
+        - name: package
+          in: query
+          schema:
+            type: string
+          description: Comma-separated package names (not with `package_id`)
+        - name: package_id
+          in: query
+          schema:
+            type: string
+          description: Comma-separated package IDs (not with `package`)
+        - $ref: '#/components/parameters/Format'
       responses:
         '200':
-          description: List of journal files
+          description: Journal entries
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/add_resource":
-    post:
-      summary: Add a managed resource
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/add_resource/{id}:
+    get:
+      operationId: add_resource
+      summary: Add a resource to a resource pool
+      description: 'JSON: `{"ManagedResource": {...}}`.'
       tags:
-      - Resources
+        - Resources
       security:
-      - bearerAuth: []
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AnyId'
+        - $ref: '#/components/parameters/PoolName'
+        - $ref: '#/components/parameters/ResourceName'
+        - name: capacity
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Capacity of the resource
+        - name: tags
+          in: query
+          schema:
+            type: string
+          description: Comma-separated tags
+        - $ref: '#/components/parameters/Format'
+      responses:
+        '200':
+          description: The new resource
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/edit_resource_capacity/{id}:
+    get:
+      operationId: edit_resource_capacity
+      summary: Change the capacity of a resource
+      description: 'JSON: `{"ManagedResource": {...}}`.'
+      tags:
+        - Resources
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: New capacity, a positive integer
+        - $ref: '#/components/parameters/PoolName'
+        - $ref: '#/components/parameters/ResourceName'
+        - $ref: '#/components/parameters/Format'
+      responses:
+        '200':
+          description: The resource
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/edit_pool_capacity/{id}:
+    get:
+      operationId: edit_pool_capacity
+      summary: Change the capacity of a resource pool
+      description: 'JSON: `{"ManagedResource": [...]}`.'
+      tags:
+        - Resources
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: New capacity, a positive integer
+        - $ref: '#/components/parameters/PoolName'
+        - $ref: '#/components/parameters/Format'
+      responses:
+        '200':
+          description: The resources of the pool
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/resource_online/{id}:
+    get:
+      operationId: resource_online
+      summary: Take a resource online
+      tags:
+        - Resources
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AnyId'
+        - $ref: '#/components/parameters/PoolName'
+        - $ref: '#/components/parameters/ResourceName'
+        - $ref: '#/components/parameters/Format'
+      responses:
+        '200':
+          description: 'JSON: `{"ManagedResource": {"resource_id": "Online"}}`'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/resource_offline/{id}:
+    get:
+      operationId: resource_offline
+      summary: Take a resource offline
+      tags:
+        - Resources
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AnyId'
+        - $ref: '#/components/parameters/PoolName'
+        - $ref: '#/components/parameters/ResourceName'
+        - $ref: '#/components/parameters/Format'
+      responses:
+        '200':
+          description: 'JSON: `{"ManagedResource": {"resource_id": "Offline"}}`'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/pool_status/{id}:
+    get:
+      operationId: pool_status
+      summary: Resources of a resource pool and their status
+      description: 'JSON: `{"ManagedResource": [{"id", ...}]}`.'
+      tags:
+        - Resources
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AnyId'
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Name of the resource pool (with or without the suffix `__a` of the database)
+        - $ref: '#/components/parameters/Format'
+      responses:
+        '200':
+          description: Pool status
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/create_user/{id}:
+    post:
+      operationId: create_user
+      summary: Create a user
+      description: 'The response is JSON unless format is `xml`: `{"create_user": {"success": "..."}}`.'
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AnyId'
+        - $ref: '#/components/parameters/Format'
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-              - pool_id
-              - resource_name
-              - capacity
               properties:
-                pool_id:
-                  type: integer
-                  description: ID of the resource pool
-                  example: 1
-                resource_name:
+                login:
                   type: string
-                  description: Name of the resource to add
-                  example: encoder-01
-                capacity:
-                  type: integer
-                  description: Resource capacity (number of concurrent jobs)
-                  example: 5
-                  minimum: 0
-      responses:
-        '200':
-          description: Resource added successfully
-        '400':
-          description: Invalid resource data
-        '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-        '404':
-          description: Resource pool not found
-  "/api/edit_resource_capacity":
-    post:
-      summary: Edit resource capacity
-      tags:
-      - Resources
-      security:
-      - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-              - resource_id
-              - capacity
-              properties:
-                resource_id:
-                  type: integer
-                  description: ID of the resource to modify
-                  example: 42
-                capacity:
-                  type: integer
-                  description: New capacity value
-                  example: 10
-                  minimum: 0
-      responses:
-        '200':
-          description: Resource capacity updated
-        '400':
-          description: Invalid capacity value
-        '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-        '404':
-          description: Resource not found
-  "/api/edit_pool_capacity":
-    post:
-      summary: Edit resource pool capacity
-      tags:
-      - Resources
-      security:
-      - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-              - pool_id
-              - capacity
-              properties:
-                pool_id:
-                  type: integer
-                  description: ID of the resource pool to modify
-                  example: 1
-                capacity:
-                  type: integer
-                  description: New pool capacity value
-                  example: 20
-                  minimum: 0
-      responses:
-        '200':
-          description: Pool capacity updated
-        '400':
-          description: Invalid capacity value
-        '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-        '404':
-          description: Resource pool not found
-  "/api/resource_online":
-    post:
-      summary: Bring resource online
-      tags:
-      - Resources
-      security:
-      - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-              - resource_id
-              properties:
-                resource_id:
-                  type: integer
-                  description: ID of the resource to bring online
-                  example: 42
-      responses:
-        '200':
-          description: Resource brought online
-        '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-        '404':
-          description: Resource not found
-  "/api/resource_offline":
-    post:
-      summary: Take resource offline
-      tags:
-      - Resources
-      security:
-      - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-              - resource_id
-              properties:
-                resource_id:
-                  type: integer
-                  description: ID of the resource to take offline
-                  example: 42
-      responses:
-        '200':
-          description: Resource taken offline
-        '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-        '404':
-          description: Resource not found
-  "/api/pool_status":
-    get:
-      summary: Get resource pool status
-      tags:
-      - Resources
-      security:
-      - bearerAuth: []
-      parameters:
-      - name: pool_id
-        in: query
-        required: true
-        schema:
-          type: integer
-      responses:
-        '200':
-          description: Pool status information
-        '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/export_workflow":
-    get:
-      summary: Export a workflow
-      tags:
-      - Workflows
-      security:
-      - bearerAuth: []
-      parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: integer
-        description: Workflow ID to export
-      - name: format
-        in: query
-        schema:
-          type: string
-          enum:
-          - xml
-          - json
-          - yaml
-          default: json
-        description: Export format
-      responses:
-        '200':
-          description: Workflow exported successfully
-          content:
-            application/xml:
-              schema:
-                type: string
-            application/json:
-              schema:
-                type: object
-        '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-        '404':
-          description: Workflow not found
-  "/api/list_by_subworkflow":
-    get:
-      summary: List workflows by subworkflow
-      tags:
-      - Workflows
-      security:
-      - bearerAuth: []
-      parameters:
-      - name: id
-        in: query
-        required: true
-        schema:
-          type: integer
-        description: Subworkflow ID
-      - name: format
-        in: query
-        schema:
-          type: string
-          enum:
-          - xml
-          - json
-          default: json
-        description: Response format
-      responses:
-        '200':
-          description: List of parent workflows containing the subworkflow
-          content:
-            application/xml:
-              schema:
-                type: string
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: integer
-                    name:
-                      type: string
-        '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/retrieve_steps":
-    get:
-      summary: Retrieve steps by type
-      tags:
-      - Workflows
-      security:
-      - bearerAuth: []
-      parameters:
-      - name: type
-        in: query
-        required: true
-        schema:
-          type: string
-        description: Step type to retrieve
-      - name: format
-        in: query
-        schema:
-          type: string
-          enum:
-          - xml
-          - json
-          default: json
-        description: Response format
-      responses:
-        '200':
-          description: List of steps matching the type
-          content:
-            application/xml:
-              schema:
-                type: string
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-        '401':
-          "$ref": "#/components/responses/UnauthorizedError"
-  "/api/create_user":
-    post:
-      summary: Create a new user
-      tags:
-      - Users
-      security:
-      - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-              - username
-              - password
-              - email
-              properties:
-                username:
-                  type: string
-                  description: Unique username for login
-                  example: john.doe
-                  minLength: 3
-                  maxLength: 50
+                  description: Login of the user
                 password:
                   type: string
                   format: password
-                  description: User password (must meet security requirements)
-                  example: "*********"
-                  minLength: 8
+                first_name:
+                  type: string
+                last_name:
+                  type: string
                 email:
                   type: string
-                  format: email
-                  description: User email address
-                  example: john.doe@example.com
-                full_name:
+                phone:
                   type: string
-                  description: Full name of the user
-                  example: John Doe
-                  maxLength: 100
+                SMS:
+                  type: string
+                is_active:
+                  type: boolean
+                  default: false
+                require_password_change_on_login:
+                  type: boolean
+                  default: false
+                alternate_emails:
+                  type: array
+                  items:
+                    type: string
+                groups:
+                  type: array
+                  description: Names of existing groups
+                  items:
+                    type: string
       responses:
         '200':
-          description: User created successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  user_id:
-                    type: integer
-                    example: 789
-                  message:
-                    type: string
-                    example: User created successfully
-        '400':
-          description: Invalid user data or username already exists
+          description: Confirmation message
         '401':
-          "$ref": "#/components/responses/UnauthorizedError"
+          $ref: '#/components/responses/UnauthorizedError'
 components:
   securitySchemes:
     bearerAuth:
@@ -1842,6 +2028,52 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: JWT token obtained from /api/login endpoint
+  parameters:
+    Format:
+      name: format
+      in: query
+      schema:
+        type: string
+        enum:
+          - xml
+          - json
+        default: xml
+      description: Response format (also given by the extension `.json` or `.xml` of the path)
+    AnyId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        default: '0'
+      description: Not used by the endpoint, but required by the route (any value, e.g. `0`)
+    MonitorType:
+      name: monitor_type
+      in: query
+      required: true
+      schema:
+        type: string
+        enum:
+          - workflow
+          - workorder
+          - folder
+          - node
+          - script
+      description: Type of monitor (also accepted `work_order`, `remotenode`, `remote_node`, `remotescript`, `remote_script`)
+    PoolName:
+      name: pool_name
+      in: query
+      required: true
+      schema:
+        type: string
+      description: Name of the resource pool
+    ResourceName:
+      name: resource_name
+      in: query
+      required: true
+      schema:
+        type: string
+      description: Name of the resource, e.g. an IP address
   responses:
     UnauthorizedError:
       description: Authentication required or token invalid
@@ -1852,37 +2084,38 @@ components:
             properties:
               error:
                 type: string
-                example: Unauthorized
+                examples:
+                  - Unauthorized
 tags:
-- name: Authentication
-  description: Obtain JWT tokens for API access. All other endpoints require authentication.
-- name: Workflows
-  description: Create, import, export, and manage workflow definitions. Workflows define the automation logic.
-- name: Work Orders
-  description: Initiate and track workflow executions. Each work order represents a single workflow run.
-- name: Work Steps
-  description: Monitor and control individual steps within work orders. Steps are the atomic units of workflow execution.
-- name: Queues
-  description: Manage execution queues and prioritize work items. Control the order and timing of workflow execution.
-- name: Monitors
-  description: Configure and control workflow monitors. Monitors automatically trigger workflows based on events or schedules.
-- name: Tasks
-  description: Submit and track one-off tasks. Tasks are standalone operations not tied to workflows.
-- name: Plugins
-  description: Install, enable, and reload action plugins. Plugins extend Orchestrator with new capabilities.
-- name: Portlets
-  description: Query portlet version information. Portlets provide UI components for the Orchestrator interface.
-- name: System
-  description: Monitor system health, control processes, and access system-wide information.
-- name: Remote Nodes
-  description: Test connectivity and manage remote Orchestrator nodes in distributed deployments.
-- name: Testing
-  description: Test workflow steps in isolation before deploying to production workflows.
-- name: Statistics
-  description: Retrieve execution statistics and performance metrics for workflows and work orders.
-- name: Journals
-  description: Access detailed execution logs and journal files for troubleshooting and auditing.
-- name: Resources
-  description: Manage resource pools and capacity allocation for workflow execution. Control concurrency limits.
-- name: Users
-  description: Create and manage user accounts for Orchestrator access.
+  - name: Authentication
+    description: Obtain JWT tokens for API access. All other endpoints require authentication.
+  - name: Workflows
+    description: Import, export, publish and inspect workflow definitions.
+  - name: Work Orders
+    description: Initiate and track workflow executions. Each work order is one execution of a workflow.
+  - name: Work Steps
+    description: Status and control of the steps of a work order.
+  - name: Queues
+    description: Managed queues (plugin Queue stager) and their items.
+  - name: Monitors
+    description: Monitors of workflows, work orders, folders, remote nodes and scripts.
+  - name: Tasks
+    description: User inputs (tasks) waiting for an operator.
+  - name: Plugins
+    description: Versions, import, enabling and reloading of action plugins.
+  - name: Portlets
+    description: Versions of the portlets of the web interface.
+  - name: System
+    description: Processes, execution queue, alerts, and shared state for external applications.
+  - name: Remote Nodes
+    description: Information on this Orchestrator, used by remote Orchestrator nodes.
+  - name: Testing
+    description: Test cases of workflow steps.
+  - name: Statistics
+    description: Statistics of work orders and work steps.
+  - name: Journals
+    description: Journal books and the files recorded in them.
+  - name: Resources
+    description: Resource pools (plugin Load manager) and their resources.
+  - name: Users
+    description: User accounts.

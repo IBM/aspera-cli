@@ -487,4 +487,39 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
       }))
     end
   end
+
+  describe '#action_monitors_list' do
+    it 'calls list_monitors with an id in the path, and unwraps monitors of work orders' do
+      allow(orchestrator).to(receive(:call_ao).and_return([{'monitor-workorder' => {'id' => 1}}, {'id' => 2, 'remote_node_name' => 'localhost'}]))
+      expect(orchestrator.action_monitors_list(type: :node).data).to(eq([{'id' => 1}, {'id' => 2, 'remote_node_name' => 'localhost'}]))
+      expect(orchestrator).to(have_received(:call_ao).with('list_monitors/0', query: {monitor_type: :node}))
+    end
+  end
+
+  describe '#action_journal_files' do
+    it 'lists the files of the packages, with the package name, and the files without package' do
+      report = {
+        'Journal'  => {'name' => 'journal', 'id' => 1},
+        'Packages' => [{'name' => 'pkg', 'id' => 7, 'files' => [{'file_id' => 1, 'file' => '/a.mp4'}]}],
+        'Files'    => [{'file_id' => 2, 'file' => '/b.xml'}]
+      }
+      allow(orchestrator).to(receive(:call_ao).with('journal_files/journal').and_return(report))
+      expect(orchestrator.action_journal_files(book: 'journal').data)
+        .to(eq([{'package' => 'pkg', 'file_id' => 1, 'file' => '/a.mp4'}, {'file_id' => 2, 'file' => '/b.xml'}]))
+    end
+  end
+
+  describe '#api_query_schema' do
+    it 'finds the path of the endpoint in the OpenAPI description, with or without id' do
+      expect(orchestrator.send(:api_query_schema, 'journal_files/journal', 'GET')).to(eq('orchestrator:paths./api/journal_files/{id}.get.parameters'))
+      expect(orchestrator.send(:api_query_schema, 'workflows_list', 'GET')).to(eq('orchestrator:paths./api/workflows_list.get.parameters'))
+      expect(orchestrator.send(:api_query_schema, 'workflows_status/12', 'GET')).to(eq('orchestrator:paths./api/workflows_status.get.parameters'))
+      expect(orchestrator.send(:api_query_schema, 'no_such_endpoint', 'GET')).to(be_nil)
+    end
+
+    it 'gives the query parameters, including shared ones' do
+      properties = Aspera::Schema::Registry.instance.reader(orchestrator.send(:api_query_schema, 'journal_files/journal', 'GET'))['properties']
+      expect(properties.keys).to(include('status', 'file', 'package', 'package_id', 'details', 'format'))
+    end
+  end
 end

@@ -6,6 +6,7 @@ require 'aspera/nagios'
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/transfer/spec'
+require 'aspera/schema/registry'
 require 'xmlsimple'
 
 module Aspera
@@ -37,7 +38,13 @@ module Aspera
         SPEC_LIST_FIELDS = %w[name category version display_name].freeze
         # Text value that is a YAML document (Ruby objects serialized by Orchestrator)
         YAML_DUMP = /\A---\s/
-        private_constant :STANDARD_PATH, :TEST_ENDPOINT, :DOC_BASE_URL, :DOC_FILES, :DOC_TOC, :DOC_TOC_LEVELS, :SPEC_SECTIONS, :SPEC_LIST_FIELDS, :YAML_DUMP
+        # Types of monitors of `list_monitors` (`monitor_type`) and of `monitor_snapshot` (path)
+        MONITOR_TYPES = %i[workflow workorder folder node script].freeze
+        MONITOR_SNAPSHOT_TYPES = %i[workflows workorders folders nodes scripts].freeze
+        # Id segment of the path, for endpoints routed only as `api/<endpoint>/<id>` that do not use it
+        ANY_ID = '0'
+        private_constant :STANDARD_PATH, :TEST_ENDPOINT, :DOC_BASE_URL, :DOC_FILES, :DOC_TOC, :DOC_TOC_LEVELS, :SPEC_SECTIONS, :SPEC_LIST_FIELDS, :YAML_DUMP,
+          :MONITOR_TYPES, :MONITOR_SNAPSHOT_TYPES, :ANY_ID
 
         class << self
           # @return [Hash,NilClass]
@@ -114,7 +121,7 @@ module Aspera
             else Aspera.error_unexpected_value(ret_style) { 'ret_style' }
             end
           end
-          add_query = query_read_delete
+          add_query = query_read_delete(schema: api_query_schema(endpoint, call_args[:operation]))
           call_args[:query].merge!(add_query.symbolize_keys) unless add_query.nil?
           data, resp = api_orch.call(**call_args)
           return resp if http
@@ -123,16 +130,58 @@ module Aspera
           return result
         end
 
-        private :call_ao
+        # Schema of the query parameters of an endpoint, in the OpenAPI description of Orchestrator (for `--query=help`)
+        # @param endpoint  [String] Endpoint, with an id or not, e.g. `journal_files/journal`
+        # @param operation [String] HTTP method
+        # @return [String, nil] Schema path, or `nil` if the endpoint is not described
+        def api_query_schema(endpoint, operation)
+          name, id = endpoint.split('/', 2)
+          paths = Schema::Registry.instance.reader(Schema::Registry::ORCHESTRATOR)['paths']
+          # Orchestrator routes both `api/<name>` and `api/<name>/<id>`: prefer the form used
+          candidates = ["api/#{name}", "api/#{name}/{id}"]
+          candidates.reverse! unless id.nil?
+          path = candidates.find { |candidate| paths.dig("/#{candidate}", operation.downcase) }
+          path && Schema::Registry.query_params(Schema::Registry::ORCHESTRATOR, path, method: operation.downcase)
+        end
+
+        private :call_ao, :api_query_schema
 
         # --- DSL ---
 
         command :health,     description: 'Check Orchestrator API health'
         command :info,       description: 'Check that Orchestrator responds (ping)', action: ->(**) { Result::SingleObject.new(call_ao('remote_node_ping', accept: Mime::XML, xml_opts: {'ForceArray' => false})) }
         command :processes,  description: 'Show Orchestrator background process status', action: ->(**) { Result::ObjectList.new(call_ao('processes_status', accept: Mime::XML, xml_opts: {'ForceArray' => %w[node process]})['node'].flat_map { |n| n['process'] }) }
-        command :monitors,   description: 'Show Orchestrator monitor snapshot', action: ->(**) { Result::SingleObject.new(call_ao('monitor_snapshot')['monitor']) }
+        command :monitors,   description: 'Monitors of workflows, work orders, folders, remote nodes and scripts'
+        command :queues,     description: 'Managed queues'
+        command :pools,      description: 'Resource pools'
+        command :journal,    description: 'Journal books'
         command :workorders, description: 'Manage work orders'
         command :workstep,   description: 'Manage work steps'
+
+        commands_under :monitors do
+          command :snapshot, description: 'Show status of monitors, of all types or of one type',
+            arguments: [{name: :type, type: Symbol, mandatory: false, allowed: MONITOR_SNAPSHOT_TYPES}],
+            action: ->(type: nil, **) { Result::SingleObject.new(call_ao(type.nil? ? 'monitor_snapshot' : "monitor_snapshot/#{type}")['monitor']) }
+          command :list, description: 'List monitors of a type: remote node monitors give the names of remote nodes',
+            arguments: [{name: :type, type: Symbol, allowed: MONITOR_TYPES}]
+        end
+
+        commands_under :queues do
+          command :list, description: 'List managed queues',
+            action: ->(**) { Result::ObjectList.new(call_ao('queues_list').dig('Queues', 'queue') || []) }
+        end
+
+        commands_under :pools do
+          command :status, description: 'Show resources of a resource pool and their status',
+            arguments: [{name: :pool_name}],
+            action: ->(pool_name:, **) { Result::ObjectList.new(call_ao("pool_status/#{ANY_ID}", query: {name: pool_name})['ManagedResource'] || []) }
+        end
+
+        commands_under :journal do
+          command :files, description: 'List files recorded in a journal book (filters with option query)',
+            arguments: [{name: :book}],
+            query_schema: Schema::Registry.query_params(Schema::Registry::ORCHESTRATOR, 'api/journal_files/{id}')
+        end
 
         commands_under :plugins do
           command :list,       description: 'Show Orchestrator plugin versions', action: ->(**) { Result::ObjectList.new(call_ao('plugin_version')['Plugin']) }
@@ -278,6 +327,19 @@ module Aspera
             nagios.add_critical('node api', e.to_s)
           end
           Result::ObjectList.new(nagios.status_list)
+        end
+
+        # Monitors of work orders are wrapped in `monitor-workorder`
+        def action_monitors_list(type:, **)
+          monitors = call_ao("list_monitors/#{ANY_ID}", query: {monitor_type: type})
+          Result::ObjectList.new(monitors.map { |monitor| monitor.is_a?(Hash) && monitor.size.eql?(1) && monitor.key?('monitor-workorder') ? monitor['monitor-workorder'] : monitor })
+        end
+
+        # Files of the packages, and files without package, with the name of their package
+        def action_journal_files(book:, **)
+          report = call_ao("journal_files/#{book}")
+          files = Array(report['Packages']).flat_map { |package| Array(package['files']).map { |file| {'package' => package['name']}.merge(file) } }
+          Result::ObjectList.new(files + Array(report['Files']))
         end
 
         # Fields of the work step that Orchestrator returns as YAML dumps of its Ruby objects (`prerequisites`, `work_outputs`...)

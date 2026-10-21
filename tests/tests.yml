@@ -4345,6 +4345,25 @@ orch_monitors:
   args:
     - orchestrator
     - monitors
+    - snapshot
+orch_monitors_list:
+  args:
+    - orchestrator
+    - monitors
+    - list
+    - node
+orch_queues_list:
+  args:
+    - orchestrator
+    - queues
+    - list
+orch_journal_files:
+  args:
+    - orchestrator
+    - journal
+    - files
+    - journal
+    - --query=@json:{"details":"false"}
 orch_wf_details:
   args:
     - orchestrator
