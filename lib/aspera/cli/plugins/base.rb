@@ -108,10 +108,12 @@ module Aspera
           # @param lookup     [Symbol, Proc, Array<String>, nil] Percent-selector resolution: instance method, lambda,
           #                   or fields with unique values, looked up in the list of entities (plain Array of Hash)
           # @param id_name    [Symbol, nil]    Name of identifier argument; defaults to <name>_id, or id_as_arg field, or :id
+          # @param schema_entity [String, nil] REST sub-path in the API schema (body_component), when entity is a ctx key Symbol
           # @param kwargs     [Hash]           Shared params forwarded to every per-verb method
-          def crud_commands(api:, entity:, operations: nil, name: nil, lookup: nil, id_name: nil, **kwargs)
+          def crud_commands(api:, entity:, operations: nil, name: nil, lookup: nil, id_name: nil, schema_entity: nil, **kwargs)
             name       ||= entity_noun(entity, singular: !kwargs[:is_singleton]) unless entity.is_a?(Symbol)
             operations ||= Operations::ALL
+            schema_entity ||= entity if entity.is_a?(String)
             if lookup.is_a?(Array)
               unique_fields = lookup
               # `%id:<id>` is the id itself (no lookup), other fields are looked up in the list of entities
@@ -134,10 +136,10 @@ module Aspera
             operations.each do |verb|
               id_arg = ({name: id_name, type: :identifier, lookup: lookup} if Operations::INSTANCE.include?(verb) && !kwargs[:is_singleton])
               schema_val =
-                if kwargs[:body_component] && entity.is_a?(String)
+                if kwargs[:body_component] && schema_entity
                   case verb
-                  when :create then Schema::Registry.req_body(kwargs[:body_component], "#{entity}.post")
-                  when :modify then Schema::Registry.req_body(kwargs[:body_component], "#{entity}/{id}.put")
+                  when :create then Schema::Registry.req_body(kwargs[:body_component], "#{schema_entity}.post")
+                  when :modify then Schema::Registry.req_body(kwargs[:body_component], "#{schema_entity}/{id}.put")
                   end
                 end
               args =

@@ -10,6 +10,7 @@ Highlights: security hardening of local web servers (authentication, minimum sec
 
 * `shares`: New commands `share list`, `share event create`, `admin directory`, `admin user|group search`, `admin group local users`, `admin authenticate`, and `admin user|group all transfer_settings delete` (reset to global settings).
 * `shares`: `health` uses the `/health_check` endpoint: status of each license and node.
+* `shares`: Help of `admin share user_permissions|group_permissions create|modify` shows the request body.
 * `orchestrator`: New command `workflows development` displays the Workflow Authoring Guide and the Action Template Reference (from GitHub), also used by AI assistants through `mcp server`.
 * `orchestrator`: `workflows export` with option `dependencies` saves a package (`.wkf`) with sub-workflows and remote nodes.
 * `orchestrator`: New command `workflows check_import` checks a workflow file (`.yml` or `.wkf`) locally before import, and reports problems with a severity, a code and a location (as the web UI import does). `workflows import` logs these problems as warnings.
@@ -67,6 +68,7 @@ Highlights: security hardening of local web servers (authentication, minimum sec
 * `orchestrator`: `workflows import`, `import_with_constraints` and `publish` sent requests rejected by Orchestrator, `import` did not report workflows not imported, and `start` with `synchronous` failed to display the work order.
 * `orchestrator`: `workstep status` displayed fields that are YAML dumps of Orchestrator objects (`prerequisites`, `work_outputs`...): they are removed, inputs and outputs are in `inputs` and `outputs`.
 * **global**: An asynchronous transfer with agent `direct` (default of `mcp server`) failed with `failed to open input file list`: the file list was deleted at the end of the command. Temporary files of `ascp` are now deleted when the transfer ends.
+* `shares`: The manual and the description of `admin user|group all share_permissions` (read-only) did not tell that permissions are granted with `admin share user_permissions|group_permissions`: AI assistants concluded that it was not possible. The argument of `show` is named `share_id`.
 * `config vault`:
   * `system` (macOS): the password and `username` were not returned, and special characters were stored escaped.
   * `file`: `password` did not migrate a vault of version 4.26.0 or earlier to PBKDF2. The file is loaded with YAML safe loading.

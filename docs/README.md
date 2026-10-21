@@ -9644,12 +9644,24 @@ ascli shares admin share user_permissions %name:test1 create @json:'{"user_id":'
 ascli shares admin share user_permissions %name:test1 list
 ```
 
-Share permissions (`user_permissions`, `group_permissions`) are identified by the user or group identifier: e.g. `show %username:john@example.com`.
+Share permissions are granted, modified and revoked on the share, with `share user_permissions` and `share group_permissions` (`create`, `list`, `show`, `modify`, `delete`).
+They are identified by the user or group identifier: e.g. `show %username:john@example.com`.
 Permissions not specified on creation take their default value.
 Available permissions: `browse_permission`, `download_permission`, `upload_permission`, `mkdir_permission`, `delete_permission`, `rename_permission`, `content_availability_permission`, `manage_permission`.
 
 > [!NOTE]
-> Permissions of a user or group on all shares (`user all share_permissions`, `group all share_permissions`) are read-only: only `list` and `show` are available.
+> The permissions of a user or group on all shares are listed with `user all share_permissions` and `group all share_permissions`.
+> These are read-only (`list` and `show`): to change them, use `share user_permissions` and `share group_permissions`.
+
+Example: Give a user (`jane@example.com`) the same share permissions as another user (`john@example.com`), using `jq`.
+
+```shell
+new_user_id=$(ascli shares admin user all show %username:jane@example.com --fields=id --out.level=data)
+ascli shares admin user all share_permissions %username:john@example.com list --format=json --out.level=data |
+  jq -c '.[]' | while read -r permission; do
+    ascli shares admin share user_permissions "$(jq .share_id <<< "$permission")" create @json:"$(jq -c --argjson id "$new_user_id" '{user_id: $id} + with_entries(select(.key | endswith("_permission")))' <<< "$permission")"
+  done
+```
 
 ### Tested commands for `shares`
 

@@ -201,6 +201,8 @@ module Aspera
                   operations:     Operations::ALL - %i[create modify],
                   lookup:         lookup_method_all,
                   display_fields: user_fields && (user_fields + %w[directory_user])
+                # share_permissions are read-only: tell where they are granted
+                grant_hint = "read-only, grant with: admin share #{entity_type}_permissions"
                 USR_GRP_SETTINGS.each do |setting|
                   # choose the operations set for this setting
                   setting_ops =
@@ -210,19 +212,23 @@ module Aspera
                     else %i[show modify]
                     end
                   command setting,
-                    description: "Manage #{entity_noun(setting, singular: false)} for a #{entity_type}",
+                    description: setting.eql?(:share_permissions) ? "Permissions of a #{entity_type} on shares (#{grant_hint})" : "Manage #{entity_noun(setting, singular: false)} for a #{entity_type}",
                     arguments: [{name: :"#{entity_type}_id", type: :identifier, lookup: lookup_method_all}]
                   commands_under setting do
                     setting_ops.each do |op|
-                      # share_permissions > show needs a permission identifier (list does not), modify needs data
+                      # share_permissions > show needs a share identifier (list does not), modify needs data
                       op_args =
                         case op
-                        when :show   then setting.eql?(:share_permissions) ? [{name: :permission_id, type: :identifier, lookup: :lookup_share_id}] : nil
+                        when :show   then setting.eql?(:share_permissions) ? [{name: :share_id, type: :identifier, lookup: :lookup_share_id}] : nil
                         when :modify then [{name: setting, type: Hash}]
                         end
-                      command op,
-                        description: "#{op.capitalize} #{entity_noun(setting, singular: false)} for a #{entity_type}",
-                        arguments: op_args
+                      op_description =
+                        case [setting, op]
+                        when %i[share_permissions list] then "List permissions of a #{entity_type} on shares (#{grant_hint})"
+                        when %i[share_permissions show] then "Show permission of a #{entity_type} on a share (#{grant_hint})"
+                        else "#{op.capitalize} #{entity_noun(setting, singular: false)} for a #{entity_type}"
+                        end
+                      command op, description: op_description, arguments: op_args
                     end
                   end
                 end
@@ -334,10 +340,12 @@ module Aspera
         {user_permissions: :user, group_permissions: :group}.each do |perm_type, entity_type|
           commands_under [:admin, :share, perm_type] do
             crud_commands entity: :"share_#{perm_type}",
-              api:     :@api_shares_admin,
-              name:    entity_noun(perm_type),
-              id_name: :"#{entity_type}_id",
-              lookup:  :"lookup_shares_#{entity_type}_all_id"
+              api:            :@api_shares_admin,
+              name:           entity_noun(perm_type),
+              id_name:        :"#{entity_type}_id",
+              lookup:         :"lookup_shares_#{entity_type}_all_id",
+              body_component: Schema::Registry::SHARES,
+              schema_entity:  "data/shares/{share_id}/#{perm_type}"
           end
         end
 
@@ -437,10 +445,10 @@ module Aspera
         # @param setting     [Symbol] one of USR_GRP_SETTINGS
         # @param op          [Symbol] CRUD operation
         # entity_id: resolved via arguments:(:identifier) on the setting node
-        # permission_id: (share_permissions show) and data: (modify) resolved via arguments: on the leaf
-        def admin_entity_setting(entity_type, location, setting, op, entity_id:, permission_id: nil, data: nil)
+        # share_id: (share_permissions show) and data: (modify) resolved via arguments: on the leaf
+        def admin_entity_setting(entity_type, location, setting, op, entity_id:, share_id: nil, data: nil)
           entity_path = "#{admin_entity_path(entity_type, location)}/#{entity_id}/#{setting}"
-          send(:"entity_#{op}", api: @api_shares_admin, entity: entity_path, id: permission_id, is_singleton: !setting.eql?(:share_permissions), data: data)
+          send(:"entity_#{op}", api: @api_shares_admin, entity: entity_path, id: share_id, is_singleton: !setting.eql?(:share_permissions), data: data)
         end
 
         # Shared handler for :users (group only)
@@ -468,7 +476,7 @@ module Aspera
                   end
                 setting_ops.each do |op|
                   define_action_method([:admin, entity_type, location, setting, op]) do |**kwargs|
-                    admin_entity_setting(entity_type, location, setting, op, entity_id: kwargs[:"#{entity_type}_id"], permission_id: kwargs[:permission_id], data: kwargs[setting])
+                    admin_entity_setting(entity_type, location, setting, op, entity_id: kwargs[:"#{entity_type}_id"], share_id: kwargs[:share_id], data: kwargs[setting])
                   end
                 end
               end
