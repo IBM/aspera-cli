@@ -338,5 +338,16 @@ RSpec.describe(Aspera::Rest) do
           .to(eq({'type' => 'multipart/form-data', 'file' => "a: 1\n", 'filename' => 'a.yml', 'name' => 'a.yml'}))
       end
     end
+
+    describe 'json_parser' do
+      it 'passes options to JSON.parse' do
+        url = start_server('/duplicate' => lambda do |_req, res|
+          res['Content-Type'] = 'application/json'
+          res.body = '{"id":"a","id":2}'
+        end)
+        expect(Aspera::Rest::Client.new(base_url: url).call(operation: 'GET', subpath: 'duplicate', json_parser: {allow_duplicate_key: true}))
+          .to(eq({'id' => 2}))
+      end
+    end
   end
 end

@@ -102,9 +102,10 @@ module Aspera
         # @param accept       [String]      the response type to request (Mime::JSON or Mime::XML), or nil
         # @param query        [Hash]        the arguments to pass as query parameters
         # @param xml_opts     [Hash]        options of `XmlSimple.xml_in` to parse an XML response
+        # @param json_parser  [Hash]        options of `JSON.parse` to parse a JSON response
         # @param http         [Boolean]     if true, returns the HttpResponse, else
-        def call_ao(endpoint, body: nil, content_type: Mime::JSON, accept: Mime::JSON, query: nil, xml_opts: {}, http: false)
-          call_args = {operation: body.nil? ? 'GET' : 'POST', subpath: "api/#{endpoint}", ret: :both, query: {}}
+        def call_ao(endpoint, body: nil, content_type: Mime::JSON, accept: Mime::JSON, query: nil, xml_opts: {}, json_parser: {}, http: false)
+          call_args = {operation: body.nil? ? 'GET' : 'POST', subpath: "api/#{endpoint}", ret: :both, query: {}, json_parser: json_parser}
           call_args.merge!(body: body, content_type: content_type) unless body.nil? # rubocop:disable Performance/RedundantMerge
           ret_style = options.get_option(:ret_style, mandatory: true)
           call_args[:query].merge!(query) unless query.nil?
@@ -174,7 +175,8 @@ module Aspera
         commands_under :pools do
           command :status, description: 'Show resources of a resource pool and their status',
             arguments: [{name: :pool_name}],
-            action: ->(pool_name:, **) { Result::ObjectList.new(call_ao("pool_status/#{ANY_ID}", query: {name: pool_name})['ManagedResource'] || []) }
+            # Orchestrator repeats key `id` in each resource
+            action: ->(pool_name:, **) { Result::ObjectList.new(call_ao("pool_status/#{ANY_ID}", query: {name: pool_name}, json_parser: {allow_duplicate_key: true})['ManagedResource'] || []) }
         end
 
         commands_under :journal do
