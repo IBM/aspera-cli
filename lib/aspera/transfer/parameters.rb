@@ -80,6 +80,8 @@ module Aspera
         Aspera.assert_values(@client_ssh_key, Ascp::Installation::CLIENT_SSH_KEY_OPTIONS)
         @check_ignore_cb = check_ignore_cb
         @builder = CommandLineBuilder.new(@job_spec, Spec::SCHEMA, CommandLineConverter)
+        # temporary files used by `ascp`: given to the agent in the ExecSpec
+        @temp_files = []
       end
 
       # Place source files on command line or in a temp file list, controlled by @file_list and file_list_folder
@@ -112,6 +114,7 @@ module Aspera
               lines = ts_paths_array.map { |i| i['source'] }
             end
             file_list_file = TempFileManager.instance.new_file_path_in_folder(self.class.file_list_folder)
+            @temp_files.push(file_list_file)
             Log.dump(:file_list, lines)
             File.write(file_list_file, lines.join("\n"), encoding: 'UTF-8')
             Log.log.debug { "#{file_list_option}=\n#{File.read(file_list_file)}".red }
@@ -137,6 +140,7 @@ module Aspera
           # ignore cert for wss ?
           if @check_ignore_cb&.call(@job_spec['remote_host'], @job_spec['wss_port'])
             wss_cert_file = TempFileManager.instance.new_file_path_global('wss_cert')
+            @temp_files.push(wss_cert_file)
             wss_url = "https://#{@job_spec['remote_host']}:#{@job_spec['wss_port']}"
             File.write(wss_cert_file, Rest.remote_certificate_chain(wss_url))
             # place in front, as more priority
@@ -213,6 +217,7 @@ module Aspera
         end
         # disable redis in client, only for ascp, this makes ascp4 fail
         exec_spec.env['ASPERA_TEST_REDIS_DISABLE'] = 'true' if exec_spec.exec.eql?(:ascp)
+        exec_spec.temp_files.concat(@temp_files)
         Log.log.debug { "ascp args: #{exec_spec}" }
         return exec_spec
       end

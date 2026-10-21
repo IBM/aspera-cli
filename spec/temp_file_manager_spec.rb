@@ -43,4 +43,41 @@ RSpec.describe(Aspera::TempFileManager) do
     manager.cleanup
     expect(File.exist?(path)).to(be(false))
   end
+
+  it 'keeps a held file on cleanup, and deletes it when released' do
+    path = manager.new_file_path_in_folder(@dir)
+    manager.hold([path])
+    manager.cleanup
+    expect(File.file?(path)).to(be(true))
+    manager.release([path])
+    expect(File.exist?(path)).to(be(false))
+  end
+
+  it 'deletes a file held several times when the last holder releases it' do
+    path = manager.new_file_path_in_folder(@dir)
+    2.times { manager.hold([path]) }
+    manager.release([path])
+    manager.cleanup
+    expect(File.file?(path)).to(be(true))
+    manager.release([path])
+    expect(File.exist?(path)).to(be(false))
+  end
+
+  it 'ignores files it did not create' do
+    path = File.join(@dir, 'other.txt')
+    File.write(path, 'x')
+    manager.hold([path])
+    manager.release([path])
+    expect(File.file?(path)).to(be(true))
+  end
+
+  it 'deletes a released file once only' do
+    path = manager.new_file_path_in_folder(@dir)
+    manager.hold([path])
+    manager.release([path])
+    File.write(path, 'reused name')
+    manager.release([path])
+    manager.cleanup
+    expect(File.file?(path)).to(be(true))
+  end
 end

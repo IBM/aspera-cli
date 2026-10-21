@@ -125,6 +125,19 @@ module Aspera
           expect(security.level).to(eq(:medium))
         end
       end
+
+      describe 'error message' do
+        it 'gives the level that allows a refused extended value, and where to set it' do
+          security.options = {'level' => 'high'}
+          expect { evaluate("@file:#{other_file}") }.to(raise_error(BadArgument, /use level medium with the file in security.allowed_paths \(option security\), or give the value itself/))
+          expect { evaluate('@env:HOME') }.to(raise_error(BadArgument, /use level low \(option security\)/))
+        end
+
+        it 'says that a locked level is set when starting' do
+          security.lock('in test', default: :high)
+          expect { evaluate("@file:#{other_file}") }.to(raise_error(BadArgument, /option security when starting, as it cannot be changed in test/))
+        end
+      end
     end
   end
 end

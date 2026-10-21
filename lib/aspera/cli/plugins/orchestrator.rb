@@ -28,7 +28,9 @@ module Aspera
         SPEC_SECTIONS = %i[attributes inputs outputs].freeze
         # Fields of the list of plugins of command `plugins spec`
         SPEC_LIST_FIELDS = %w[name category version display_name].freeze
-        private_constant :STANDARD_PATH, :TEST_ENDPOINT, :DOC_BASE_URL, :DOC_FILES, :DOC_TOC, :SPEC_SECTIONS, :SPEC_LIST_FIELDS
+        # Text value that is a YAML document (Ruby objects serialized by Orchestrator)
+        YAML_DUMP = /\A---\s/
+        private_constant :STANDARD_PATH, :TEST_ENDPOINT, :DOC_BASE_URL, :DOC_FILES, :DOC_TOC, :SPEC_SECTIONS, :SPEC_LIST_FIELDS, :YAML_DUMP
 
         class << self
           # @return [Hash,NilClass]
@@ -203,8 +205,7 @@ module Aspera
 
         commands_under :workstep do
           command :status, description: 'Show status of a work step',
-            arguments: [{name: :workstep_id, type: :identifier}],
-            action: ->(workstep_id:, **) { Result::SingleObject.new(call_ao("work_step_status/#{workstep_id}")) }
+            arguments: [{name: :workstep_id, type: :identifier}]
           command :cancel, description: 'Cancel a work step',
             arguments: [{name: :workstep_id, type: :identifier}],
             action: ->(workstep_id:, **) { Result::SingleObject.new(call_ao("work_step_cancel/#{workstep_id}")) }
@@ -266,6 +267,14 @@ module Aspera
             nagios.add_critical('node api', e.to_s)
           end
           Result::ObjectList.new(nagios.status_list)
+        end
+
+        # Fields of the work step that Orchestrator returns as YAML dumps of its Ruby objects (`prerequisites`, `work_outputs`...)
+        # are removed: they are not readable, and the inputs and outputs are also given as `inputs` and `outputs`.
+        def action_workstep_status(workstep_id:, **)
+          status = call_ao("work_step_status/#{workstep_id}")
+          status['work_step']&.reject! { |_name, value| value.is_a?(String) && value.match?(YAML_DUMP) }
+          Result::SingleObject.new(status)
         end
 
         # 2.1/2.2 Initiate a workorder (async / synchronous)

@@ -428,4 +428,24 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
       end
     end
   end
+
+  describe '#action_workstep_status' do
+    it 'removes the fields that are YAML dumps of Ruby objects' do
+      outputs = [{'value' => nil, 'name' => 'Title', 'id' => 9547, 'type' => 'string'}]
+      response = {
+        'work_step' => {
+          'id' => 3994, 'status' => 'In Progress', 'status_details' => 'Faspex inbox watcher started',
+          'prerequisites' => "---\n- !ruby/object:Prerequisite\n", 'work_inputs' => "--- []\n", 'journaling' => "---\n"
+        },
+        'outputs'   => outputs,
+        'inputs'    => []
+      }
+      allow(orchestrator).to(receive(:call_ao).with('work_step_status/3994').and_return(response))
+      expect(orchestrator.action_workstep_status(workstep_id: '3994').data).to(eq({
+        'work_step' => {'id' => 3994, 'status' => 'In Progress', 'status_details' => 'Faspex inbox watcher started'},
+        'outputs'   => outputs,
+        'inputs'    => []
+      }))
+    end
+  end
 end

@@ -26,6 +26,10 @@ module Aspera
 
     def initialize
       @created_files = []
+      # Number of holders of a created file: not deleted by cleanup while held
+      @hold_counts = {}
+      # Files are created and released by transfer threads
+      @mutex = Mutex.new
       @cleanup_on_exit = true
       @global_temp = Etc.systmpdir
     end
@@ -44,12 +48,42 @@ module Aspera
       Log.log.warn { "Problem deleting file: #{filepath}: #{e.message}" }
     end
 
-    # Call this on process exit
+    # Call this on process exit, or at the end of a command.
+    # Held files are kept: they are deleted when released.
     def cleanup
-      @created_files.each do |filepath|
-        delete_file(filepath) if File.file?(filepath)
+      @mutex.synchronize do
+        @created_files.each do |filepath|
+          delete_file(filepath) if !@hold_counts.key?(filepath) && File.file?(filepath)
+        end
+        @created_files.select! { |filepath| @hold_counts.key?(filepath) }
       end
-      @created_files = []
+    end
+
+    # Keep created files after `cleanup`, until released, for example a file list used by a transfer
+    # that ends after the command (asynchronous transfer).
+    # A file can be held several times (multi-session): it is deleted when the last holder releases it.
+    # @param paths [Array<String>] Files created by this manager (others are ignored)
+    def hold(paths)
+      @mutex.synchronize do
+        paths.each do |filepath|
+          @hold_counts[filepath] = @hold_counts.fetch(filepath, 0) + 1 if @created_files.include?(filepath)
+        end
+      end
+    end
+
+    # Release files held with `hold`, and delete those that are no longer held.
+    # @param paths [Array<String>] Files given to `hold`
+    def release(paths)
+      @mutex.synchronize do
+        paths.each do |filepath|
+          next unless @hold_counts.key?(filepath)
+          @hold_counts[filepath] -= 1
+          next if @hold_counts[filepath].positive?
+          @hold_counts.delete(filepath)
+          @created_files.delete(filepath)
+          delete_file(filepath) if File.file?(filepath)
+        end
+      end
     end
 
     # Ensure that provided folder exists, or create it, atomically create and reserve a unique file.
@@ -63,7 +97,7 @@ module Aspera
       new_file = Dir::Tmpname.create([basename, suffix ? "-#{suffix}" : ''], temp_folder) do |path|
         File.open(path, File::WRONLY | File::CREAT | File::EXCL, 0o600) { nil }
       end
-      @created_files.push(new_file)
+      @mutex.synchronize { @created_files.push(new_file) }
       new_file
     end
 

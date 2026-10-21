@@ -82,11 +82,14 @@ module Aspera
       end
 
       # @param handler [Symbol] Extended-value handler
-      # @raise [BadArgument] If the handler is refused at current level
+      # @raise [BadArgument] If the handler is refused at current level, with the level that allows it and where to set it
       def check_extended_value(handler)
         allowed = EXTENDED_VALUE_LEVELS[handler]
         return if allowed.nil? || allowed.include?(level)
-        raise BadArgument, "@#{handler}: extended value is disabled by security level #{level}"
+        # the least permissive level that allows it
+        needed = handler.eql?(:file) ? "level #{allowed.last} with the file in security.allowed_paths" : "level #{allowed.last}"
+        where = @locked.nil? ? 'option security' : "option security when starting, as it cannot be changed #{@locked}"
+        raise BadArgument, "@#{handler}: extended value is disabled by security level #{level}: use #{needed} (#{where}), or give the value itself"
       end
 
       # At level `medium`, the real path is checked, so that neither `..` nor a symbolic link leads outside of allowed paths.

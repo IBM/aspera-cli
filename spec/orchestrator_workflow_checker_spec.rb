@@ -256,6 +256,40 @@ RSpec.describe(Aspera::OrchestratorWorkflowChecker) do
       mapped = declared.sub('<Map_to type="parameter" name="who"/>', '<Map_to type="output" name="message" step_type="CustomRuby" action_id="1" step_name="Say hello"/>')
       expect(codes(check_with_specs(mapped))).to(eq(['step.output_not_produced']))
     end
+
+    context 'when names of inputs and outputs are the value of an attribute (<attribute>)' do
+      # inputs and outputs named by the value of attribute `table`, as `parameters_associations` of `SimpleParameterLookup`
+      let(:table_specs) do
+        custom = specs['CustomRuby']
+        {
+          'CustomRuby' => custom.merge(
+            'attributes' => custom['attributes'].merge('table' => {'type' => 'text'}),
+            'inputs'     => custom['inputs'].merge('<table>' => {'type' => 'string', 'required' => false}),
+            'outputs'    => custom['outputs'].merge('<table>' => {'type' => 'string'})
+          )
+        }
+      end
+
+      # @return [String] the workflow where the input of the step maps output `name` of the step
+      def map_output(content, name)
+        content.sub('<Map_to type="parameter" name="who"/>', %Q(<Map_to type="output" name="#{name}" step_type="CustomRuby" action_id="1" step_name="Say hello"/>))
+      end
+
+      it 'takes a single name' do
+        expect(check_with_specs(map_output(with_attributes('table: person'), 'person'), table_specs)['issues']).to(be_empty)
+      end
+
+      it 'takes the columns of the first line of a table, separated by :::' do
+        table = with_attributes(%q(table: "person:::greeting\r\nworld:::Hello"))
+        expect(check_with_specs(map_output(table, 'greeting'), table_specs)['issues']).to(be_empty)
+        expect(codes(check_with_specs(map_output(table, 'greting'), table_specs))).to(eq(['step.output_not_produced']))
+      end
+
+      it 'does not warn when the format of the value is not known' do
+        other = with_attributes(%q(table: "{'name'=>'x'}"))
+        expect(check_with_specs(map_output(other, 'message'), table_specs)['issues']).to(be_empty)
+      end
+    end
   end
 
   describe 'package' do

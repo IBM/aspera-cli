@@ -58,11 +58,15 @@ module Aspera
     PARTLY_DEFINED = {inputs: /\AInputs are partly defined/, outputs: /\AOutputs are partly defined/}.freeze
     # Placeholder that creates a required input: <%= variable %>
     PLACEHOLDER = /<%=\s*([A-Za-z_]\w*)\s*%>/
+    # Value of a template attribute that is a single name (of an input or an output): no line break, no structure (type map, list)
+    SINGLE_NAME = /\A[^\r\n{}\[\],:=]+\z/
+    # Column separator of a table (attribute `parameters_associations` of `SimpleParameterLookup`), whose first line holds the column names
+    TABLE_SEPARATOR = ':::'
     # Elements of a step that a `Map_to` of type `output` gives as attributes (in lower case)
     STEP_IDENTITY = %w[Step_name Step_type Action_id].freeze
     private_constant :WORKFLOW_ATTRIBUTES, :WHITEBOARD_ATTRIBUTES, :VALUE_TYPES, :ELEMENT_COUNTS, :TRUE_VALUES, :UNNAMED, :SUCCESS_STATUSES,
       :BOOLEAN_TEXT, :STEP_CHILDREN, :PARAMETER_MAPPINGS, :TEMPLATE_COLUMNS, :FALSE_VALUES, :INTEGER_TYPES, :SPEC_CODE, :PARTLY_DEFINED, :PLACEHOLDER,
-      :STEP_IDENTITY
+      :STEP_IDENTITY, :SINGLE_NAME, :TABLE_SEPARATOR
 
     class << self
       # @param file_name [String] Name of the file, ending with `yml` or `wkf`
@@ -457,6 +461,17 @@ module Aspera
       []
     end
 
+    # Names given by the value of a template attribute, for a name in angle brackets (`<attribute>`) in the specification
+    # @return [Array<String>, nil] The names, or `nil` if they cannot be found in the value
+    def names_in_value(value)
+      text = value.to_s.strip
+      return [] if text.empty?
+      return [text] if text.match?(SINGLE_NAME)
+      header = text.lines.first.strip
+      return header.split(TABLE_SEPARATOR).map(&:strip) if header.include?(TABLE_SEPARATOR)
+      nil
+    end
+
     # Inputs and outputs of a step, for the attributes of its template
     # @return [Hash] `:inputs` and `:outputs`: name => {`exists`, `required`} (true, false or nil if unknown),
     #   and `:complete`: kind => true if all inputs (or outputs) are known, so that an other one does not exist
@@ -464,17 +479,25 @@ module Aspera
       values = effective_values(spec, attributes)
       interface = {inputs: {}, outputs: {}, complete: {}}
       %i[inputs outputs].each do |kind|
+        # false when names come from an attribute value whose format is not known
+        names_known = true
         (spec[kind.to_s] || {}).each do |name, info|
-          # a name in angle brackets is the value of that attribute
-          name = values[Regexp.last_match(1)]&.to_s if name =~ /\A<(\w+)>\z/
           exists = met(info, values)
-          next if name.nil? || exists.eql?(false)
+          next if exists.eql?(false)
+          names = [name]
+          # a name in angle brackets comes from the value of that attribute
+          if name =~ /\A<(\w+)>\z/
+            names = names_in_value(values[Regexp.last_match(1)])
+            names_known = false if names.nil?
+          end
           required = info['required'].is_a?(Hash) ? met(info['required'], values) : info['required']
-          interface[kind][name] = {'exists' => exists, 'required' => required.eql?('depends') ? nil : required}
+          Array(names).each do |each_name|
+            interface[kind][each_name] = {'exists' => exists, 'required' => required.eql?('depends') ? nil : required}
+          end
         end
         declared = (spec['attributes'] || {}).values.any? { |attribute| attribute['declares'].to_s.end_with?(kind.to_s) }
         partly = Array(spec['notes']).any? { |note| note.match?(PARTLY_DEFINED[kind]) }
-        interface[:complete][kind] = (declared || !partly) && blank?(attributes[SPEC_CODE[kind]])
+        interface[:complete][kind] = names_known && (declared || !partly) && blank?(attributes[SPEC_CODE[kind]])
       end
       (spec['attributes'] || {}).each do |name, attribute|
         value = attributes[name]

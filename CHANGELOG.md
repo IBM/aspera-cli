@@ -65,6 +65,8 @@ Highlights: security hardening of local web servers (authentication, minimum sec
 * `mcp`: REST error messages were repeated once more at each tool call.
 * `orchestrator`: `workflows import_with_constraints` failed with an internal error of Orchestrator (plugins not enabled), or silently imported copies (partial resolution of conflicts). The OpenAPI description of `find_constraints` and `import_with_constraints` was wrong.
 * `orchestrator`: `workflows import`, `import_with_constraints` and `publish` sent requests rejected by Orchestrator, `import` did not report workflows not imported, and `start` with `synchronous` failed to display the work order.
+* `orchestrator`: `workstep status` displayed fields that are YAML dumps of Orchestrator objects (`prerequisites`, `work_outputs`...): they are removed, inputs and outputs are in `inputs` and `outputs`.
+* **global**: An asynchronous transfer with agent `direct` (default of `mcp server`) failed with `failed to open input file list`: the file list was deleted at the end of the command. Temporary files of `ascp` are now deleted when the transfer ends.
 * `config vault`:
   * `system` (macOS): the password and `username` were not returned, and special characters were stored escaped.
   * `file`: `password` did not migrate a vault of version 4.26.0 or earlier to PBKDF2. The file is loaded with YAML safe loading.

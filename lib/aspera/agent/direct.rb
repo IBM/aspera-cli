@@ -4,6 +4,7 @@ require 'aspera/agent/base'
 require 'aspera/ascp/installation'
 require 'aspera/ascp/management'
 require 'aspera/exec_spec'
+require 'aspera/temp_file_manager'
 require 'aspera/transfer/parameters'
 require 'aspera/transfer/error'
 require 'aspera/transfer/spec'
@@ -171,6 +172,10 @@ module Aspera
           exec_spec:         Transfer::Parameters.new(transfer_spec, **@tr_opts).ascp_args
         }
 
+        # Temporary files of `ascp` (file list) are deleted when the last session ends,
+        # also after the end of the command (asynchronous transfer): hold them once per session, before any session starts
+        (multi_session_info.nil? ? 1 : multi_session_info[:count]).times { TempFileManager.instance.hold(session[:exec_spec].temp_files) }
+
         if multi_session_info.nil?
           Log.log.debug('Starting single session thread')
           # single session for transfer : simple
@@ -266,6 +271,8 @@ module Aspera
         rescue => e
           session[:error] = e
           raise if Log.log.debug? || !e.is_a?(Transfer::Error)
+        ensure
+          TempFileManager.instance.release(session[:exec_spec].temp_files)
         end
         Log.log.debug { "EXIT (#{Thread.current[:name]})" }
       end
