@@ -119,6 +119,11 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
   end
 
   describe '#action_workflows_import' do
+    # plugin specifications are read from GitHub: not in unit tests
+    before do
+      allow(orchestrator).to(receive(:plugin_specs).and_return({}))
+    end
+
     it 'uploads the file as a multipart form' do
       Dir.mktmpdir do |dir|
         path = File.join(dir, 'wf.yml')
@@ -178,9 +183,27 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
     end
   end
 
+  # Response of find_constraints: array of single-key objects
+  def constraints_response(subwf: {}, templates: {}, nodes: {}, plugins: nil)
+    [
+      {'filename' => '/tmp/wf.yml'},
+      {'add as revision' => nil},
+      {'subwf constraints' => subwf},
+      {'action template constraints' => templates},
+      {'remote node constraints' => nodes},
+      {'missing plugins' => plugins, 'Auto-enable missing plugins?' => plugins && [true, false]}
+    ]
+  end
+
+  def stub_server(constraints, imported = {'workflow' => {'id' => 239}})
+    allow(orchestrator).to(receive(:call_ao)) do |endpoint, **|
+      endpoint.eql?('find_constraints') ? constraints : imported
+    end
+  end
+
   describe '#action_workflows_import_with_constraints' do
     it 'sends the ordered array expected by the API' do
-      allow(orchestrator).to(receive(:call_ao).and_return({'workflow' => {'id' => 239}}))
+      stub_server(constraints_response)
       result = orchestrator.action_workflows_import_with_constraints(payload: {'filename' => '/tmp/wf.yml', 'add_as_revision' => 239})
       expect(orchestrator).to(have_received(:call_ao).with('import_with_constraints', body: [
         {'filename' => '/tmp/wf.yml'},
@@ -191,6 +214,104 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
         {'Auto-enable missing plugins?' => nil}
       ]))
       expect(result.data).to(eq({'id' => 239}))
+    end
+
+    it 'refuses to import when plugins are not enabled and not auto-enabled' do
+      stub_server(constraints_response(plugins: ['Missing']))
+      expect { orchestrator.action_workflows_import_with_constraints(payload: {'filename' => '/tmp/wf.yml'}) }
+        .to(raise_error(Aspera::Cli::BadArgument, /plugins are not enabled: Missing/))
+      expect(orchestrator).not_to(have_received(:call_ao).with('import_with_constraints', anything))
+    end
+
+    it 'imports when missing plugins are auto-enabled' do
+      stub_server(constraints_response(plugins: ['Missing']))
+      orchestrator.action_workflows_import_with_constraints(payload: {'filename' => '/tmp/wf.yml', 'auto_enable_missing_plugins' => true})
+      expect(orchestrator).to(have_received(:call_ao).with('import_with_constraints', anything))
+    end
+
+    it 'refuses to import when some conflicts are not resolved' do
+      stub_server(constraints_response(templates: {'Search Files' => ['Map'], 'Log' => ['Map']}))
+      payload = {'filename' => '/tmp/wf.yml', 'action_template_constraints' => {'Search Files' => 'Map to the existing Global Template'}}
+      expect { orchestrator.action_workflows_import_with_constraints(payload: payload) }
+        .to(raise_error(Aspera::Cli::BadArgument, /action_template_constraints not resolved for: Log/))
+    end
+
+    it 'passes the file and the target workflow to find_constraints' do
+      stub_server(constraints_response)
+      orchestrator.action_workflows_import_with_constraints(payload: {'filename' => '/tmp/wf.yml', 'add_as_revision' => 239})
+      expect(orchestrator).to(have_received(:call_ao).with('find_constraints', query: {file: '/tmp/wf.yml', wf_id: 239}))
+    end
+  end
+
+  describe '#action_workflows_find_constraints' do
+    it 'lists one row per conflict and per missing plugin' do
+      stub_server(constraints_response(subwf: {'Sub' => ['Map']}, nodes: {'Baton' => ['Map']}, plugins: ['Missing']))
+      result = orchestrator.action_workflows_find_constraints(filename: '/tmp/wf.yml')
+      expect(result.data.map { |row| row.values_at('type', 'name') }).to(eq([
+        %w[subwf_constraints Sub], %w[remote_node_constraints Baton], %w[missing_plugins Missing]
+      ]))
+    end
+
+    it 'reports that nothing was found' do
+      stub_server(constraints_response)
+      result = orchestrator.action_workflows_find_constraints(filename: '/tmp/wf.yml')
+      expect(result).to(be_a(Aspera::Cli::Result::Status))
+      expect(result.data).to(match(/no conflict found/))
+    end
+
+    it 'fails on an unexpected response' do
+      stub_server({'error' => 'x'})
+      expect { orchestrator.action_workflows_find_constraints(filename: '/tmp/wf.yml') }.to(raise_error(Aspera::Cli::Error, /find_constraints/))
+    end
+  end
+
+  describe '#action_workflows_check_import' do
+    let(:specs) { {'CustomRuby' => {'attributes' => {}, 'inputs' => {}, 'outputs' => {}}} }
+
+    # plugin specifications are read from GitHub: not in unit tests
+    before do
+      allow(orchestrator).to(receive(:plugin_specs).and_return(specs))
+    end
+
+    it 'checks templates and inputs with the plugin specifications' do
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'wf.yml')
+        File.write(path, "---\n")
+        allow(Aspera::OrchestratorWorkflowChecker).to(receive(:check).and_call_original)
+        orchestrator.action_workflows_check_import(file_path: path)
+        expect(Aspera::OrchestratorWorkflowChecker).to(have_received(:check).with(hash_including(file_name: 'wf.yml', specs: specs)))
+      end
+    end
+
+    it 'warns when the plugin specifications cannot be read' do
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'wf.yml')
+        File.write(path, "---\n")
+        allow(orchestrator).to(receive(:plugin_specs).and_raise(StandardError, 'offline'))
+        result = orchestrator.action_workflows_check_import(file_path: path)
+        expect(result.data.last).to(include('severity' => 'warning', 'code' => 'plugins.specs_unavailable'))
+        expect(result.data.last['message']).to(include('offline'))
+      end
+    end
+
+    it 'reports a valid file and an invalid file' do
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'wf.yml')
+        File.write(path, "---\n")
+        result = orchestrator.action_workflows_check_import(file_path: path)
+        expect(result).to(be_a(Aspera::Cli::Result::ObjectList))
+        expect(result.data.first.keys).to(include('severity', 'code', 'message'))
+      end
+    end
+
+    it 'does not call Orchestrator' do
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'wf.yml')
+        File.write(path, "---\n")
+        allow(orchestrator).to(receive(:call_ao))
+        orchestrator.action_workflows_check_import(file_path: path)
+        expect(orchestrator).not_to(have_received(:call_ao))
+      end
     end
   end
 
@@ -226,6 +347,70 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
     it 'fails on an unknown section' do
       expect { orchestrator.action_workflows_development(document: :authoring, section: 'nope') }
         .to(raise_error(Aspera::Cli::Error, /Section not found: nope/))
+    end
+  end
+
+  describe '#action_plugins_spec' do
+    let(:content) do
+      <<~YAML
+        # header
+        ---
+        AscpClient:
+          display_name: Ascp client
+          category: File Transfer
+          version: 1.6.2
+          attributes:
+            operation: {type: string, widget: select, values: [Download, Upload]}
+          inputs:
+            Operation: {type: string, required: true, if_blank: operation}
+            Token: {type: string, required: true, if_blank: token, when: {use_token_authentication: {in: [true]}}}
+          outputs:
+            Session ID: {type: string}
+          notes:
+            - a note
+        LocalFileWatcher:
+          display_name: Local file watcher
+          category: Triggers
+          version: 1.9.3
+          attributes: {}
+          inputs: {}
+          outputs: {}
+      YAML
+    end
+
+    before do
+      allow(Aspera::UriReader).to(receive(:read).and_return(content))
+    end
+
+    it 'reads the specifications of GitHub' do
+      orchestrator.action_plugins_spec
+      expect(Aspera::UriReader).to(have_received(:read).with(%r{^https://raw\.githubusercontent\.com/.+/plugins\.yml$}))
+    end
+
+    it 'lists the plugins without their sections' do
+      result = orchestrator.action_plugins_spec
+      expect(result).to(be_a(Aspera::Cli::Result::ObjectList))
+      expect(result.data.map { |e| e['name'] }).to(eq(%w[AscpClient LocalFileWatcher]))
+      expect(result.data.first.keys).to(eq(%w[name display_name category version]))
+    end
+
+    it 'displays one plugin, with a case insensitive name' do
+      result = orchestrator.action_plugins_spec(plugin: 'ascpclient')
+      expect(result).to(be_a(Aspera::Cli::Result::SingleObject))
+      expect(result.data['name']).to(eq('AscpClient'))
+      expect(result.data['inputs']['Token']['when']).to(eq({'use_token_authentication' => {'in' => [true]}}))
+    end
+
+    it 'lists one section of a plugin' do
+      result = orchestrator.action_plugins_spec(plugin: 'AscpClient', section: :inputs)
+      expect(result).to(be_a(Aspera::Cli::Result::ObjectList))
+      expect(result.data.map { |e| e['name'] }).to(eq(%w[Operation Token]))
+      expect(result.data.first).to(eq({'name' => 'Operation', 'type' => 'string', 'required' => true, 'if_blank' => 'operation'}))
+    end
+
+    it 'fails on an unknown plugin, with similar names' do
+      expect { orchestrator.action_plugins_spec(plugin: 'Ascp') }
+        .to(raise_error(Aspera::Cli::BadArgument, /Unknown plugin: Ascp, similar: AscpClient/))
     end
   end
 

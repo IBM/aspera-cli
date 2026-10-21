@@ -12,6 +12,9 @@ Highlights: security hardening of local web servers (authentication, minimum sec
 * `shares`: `health` uses the `/health_check` endpoint: status of each license and node.
 * `orchestrator`: New command `workflows development` displays the Workflow Authoring Guide and the Action Template Reference (from GitHub), also used by AI assistants through `mcp server`.
 * `orchestrator`: `workflows export` with option `dependencies` saves a package (`.wkf`) with sub-workflows and remote nodes.
+* `orchestrator`: New command `workflows check_import` checks a workflow file (`.yml` or `.wkf`) locally before import, and reports problems with a severity, a code and a location (as the web UI import does). `workflows import` logs these problems as warnings.
+* `orchestrator`: New command `plugins spec` displays the specifications of action plugins (from GitHub, option `plugin_specs`): template attributes with their allowed values, inputs and outputs with the template settings they depend on. Used by AI assistants through `mcp server`, and by `workflows check_import` to check action templates and the inputs of steps (attributes and values, required inputs not mapped, inputs and outputs the plugin does not have).
+* `orchestrator`: New command `workflows find_constraints` lists the conflicts and missing plugins found by Orchestrator for a file already on the server. `workflows import_with_constraints` refuses an import that Orchestrator would handle incorrectly (plugins not enabled, partial resolution of conflicts).
 * `mcp server`:
   * `http` transport: authentication with a static token (`auth_token`) or OAuth 2.0 (`oauth`), new option `public_url`.
   * `http` transport: HTTPS with options `url`, `cert`, `key` and `chain`. Options `bind` and `port` are deprecated: use `url`.
@@ -60,6 +63,7 @@ Highlights: security hardening of local web servers (authentication, minimum sec
 * **global**: Transfer spec parameter `target_rate` is in bps as documented (without suffix or with `k` it was taken as kbps, an integer was rejected), and `sync` ignored it (and `target_rate_kbps` with format `args`).
 * **global**: Removed gem dependencies `blankslate` and `word_wrap`: descriptions in schema tables are wrapped to the terminal width instead of cut at 120 characters.
 * `mcp`: REST error messages were repeated once more at each tool call.
+* `orchestrator`: `workflows import_with_constraints` failed with an internal error of Orchestrator (plugins not enabled), or silently imported copies (partial resolution of conflicts). The OpenAPI description of `find_constraints` and `import_with_constraints` was wrong.
 * `orchestrator`: `workflows import`, `import_with_constraints` and `publish` sent requests rejected by Orchestrator, `import` did not report workflows not imported, and `start` with `synchronous` failed to display the work order.
 * `config vault`:
   * `system` (macOS): the password and `username` were not returned, and special characters were stored escaped.

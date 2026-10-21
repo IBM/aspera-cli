@@ -4251,6 +4251,26 @@ orch_wf_dev_section:
     - development
     - templates
     - customruby
+orch_plugin_spec_list:
+  args:
+    - orchestrator
+    - plugins
+    - spec
+    - --select=@json:{"category":"Triggers"}
+orch_plugin_spec_show:
+  args:
+    - orchestrator
+    - plugins
+    - spec
+    - AmazonS3Operation
+    - --format=yaml
+orch_plugin_spec_section:
+  args:
+    - orchestrator
+    - plugins
+    - spec
+    - ascpclient
+    - inputs
 orch_wf_list:
   args:
 #    - -N
@@ -4349,6 +4369,43 @@ orch_wf_export:
     - workflow
     - export
     - "@preset:orch.workflow_id"
+orch_wf_check_import:
+  pre: |
+    (TMP / 'orch_wf_check.yml').write(<<~YAML)
+      ---
+      - !ruby/object:Workflow
+        attributes:
+          name: check_import_test
+          run_as: SYSTEM
+      - !ruby/object:Whiteboard
+        attributes:
+          error_free: true
+          xml_export: |
+            <?xml version="1.0" encoding="UTF-8"?>
+            <Workflow id="0">
+            <Start x="100" y="50" id="start"><Parameters></Parameters></Start>
+            <Error x="900" y="350" id="error"><Synch_factor>0</Synch_factor><Prerequisites></Prerequisites></Error>
+            <End x="900" y="50" id="end"><Synch_factor>0</Synch_factor><Prerequisites><Prerequisite id="step1" status="Complete"/></Prerequisites></End>
+            <Fail x="900" y="200" id="fail"><Synch_factor>0</Synch_factor><Prerequisites></Prerequisites></Fail>
+            <Steps>
+            <Step x="400" y="50" id="step1"><Action_id>1</Action_id><Step_name>Say hello</Step_name><Step_type>CustomRuby</Step_type><Synch_factor>0</Synch_factor><Prerequisites><Prerequisite id="start" status="true"/></Prerequisites><Parameters></Parameters><Inputs></Inputs><Outputs></Outputs></Step>
+            </Steps>
+            <Parameters></Parameters>
+            <Notes></Notes>
+            </Workflow>
+      - CustomRuby__1: !ruby/object:CustomRuby
+          attributes:
+            name: W0__Say hello
+            execute_code: "outputs['message'] = 'Hello'"
+      - CustomRuby__1: []
+      - {}
+      - CustomRuby: 0.7.0
+    YAML
+  args:
+    - orchestrator
+    - workflow
+    - check_import
+    - $(TMP / 'orch_wf_check.yml')
 orch_workorder_id:
   tags:
     - save_output

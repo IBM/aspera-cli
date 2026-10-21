@@ -99,10 +99,13 @@ module Aspera
           Before writing or modifying an Orchestrator workflow, read the documentation for workflow
           development (file format, graph, execution, recipes, authoring checklist):
             ["orchestrator", "workflows", "development", "authoring"]
-          For the template attributes, inputs and outputs of an action plugin, read only its section
-          of the template reference (anchor: plugin name in lowercase, e.g. "customruby"):
-            ["orchestrator", "workflows", "development", "templates", "<anchor>"]
+          For the template attributes (allowed values), inputs and outputs of an action plugin, and the
+          template settings they depend on, read its specification (fields: section "plugin-specifications"
+          of the authoring guide); without plugin name, the list of plugins:
+            ["orchestrator", "plugins", "spec", "<PluginClass>"]
           The anchor "toc" lists the sections of a document.
+          Before importing a workflow file, check it (graph, templates, inputs of steps) and fix all errors:
+            ["orchestrator", "workflows", "check_import", "<file>"]
         INST
 
         # Keys forwarded to MCP::Server constructor (symbolized)

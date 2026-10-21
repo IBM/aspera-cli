@@ -845,6 +845,7 @@ components:
         Import of a workflow file present on the Orchestrator host, as a new workflow or as a new revision of an existing workflow.
         `orchestrator workflows import` stores each uploaded file in `<run_dir>/workflows/import/`.
         Conflicts with existing global templates, sub-workflows and remote nodes are resolved by name.
+        Use `orchestrator workflows find_constraints` to list the conflicts, and `orchestrator workflows check_import` to check the file beforehand.
       additionalProperties: false
       required:
         - filename

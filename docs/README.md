@@ -9736,6 +9736,20 @@ ascli orchestrator workflows development authoring toc
 ascli orchestrator workflows development templates customruby
 ```
 
+Command `plugins spec` displays the specifications of action plugins, read from GitHub: [plugins.yml](https://github.com/laurent-martin/aspera-orchestrator-plugins-doc/blob/main/docs/plugins.yml).
+For each plugin: template attributes (label, allowed values, defaults), and inputs and outputs of its steps, with the template settings they depend on.
+The fields are described in section [Plugin specifications](https://github.com/laurent-martin/aspera-orchestrator-plugins-doc/blob/main/docs/workflow-authoring-guide.md#plugin-specifications) of the guide.
+Without argument, it lists the plugins.
+With a plugin name (class name, case insensitive), it displays its specification, or one section: `attributes`, `inputs` or `outputs`.
+It does not require access to Orchestrator.
+Option `plugin_specs` gives another URL or path of the file, for example for another version of Orchestrator.
+
+```shell
+ascli orchestrator plugins spec --select=@json:'{"category":"Triggers"}'
+ascli orchestrator plugins spec AmazonS3Operation --format=yaml
+ascli orchestrator plugins spec ascpclient inputs
+```
+
 ### Authentication
 
 The Orchestrator plugin supports different credentials and authentication styles configured via `--auth_style`:
@@ -9811,6 +9825,66 @@ ascli orchestrator workflows import_with_constraints @json:'{"filename":"/opt/as
 ascli orchestrator workflows publish 1234
 ```
 
+#### Check a workflow before import
+
+Orchestrator does not validate the graph of a workflow on import: an invalid workflow is imported, then fails to publish, or at run time.
+Command `workflows check_import` checks a workflow file (`.yml`) or package (`.wkf`) with the rules of the workflow designer, and does not need access to Orchestrator:
+
+```shell
+ascli orchestrator workflows check_import my_workflow.yml
+```
+
+It displays one line per issue, or `no problem found`.
+An issue has these fields:
+
+| Field      | Description |
+|------------|-------------|
+| `severity` | `error`: the workflow will not import, publish or run correctly. `warning`: to check. |
+| `code`     | Stable identifier of the rule, for programs, for example `graph.step_orphan`. |
+| `file`     | File of the package where the issue is (only for a `.wkf`). |
+| `path`     | Where in the file, for example `graph/Step[Say hello]`. |
+| `message`  | Description. |
+
+Checked: format of the file (YAML, number of elements, plain format layout), attributes, `error_free`, action template keys, XML of the graph, `Start`, `End`, `Fail` and `Error` nodes, unique step names, step template, prerequisites, `Synch_factor`, steps that have no output or no prerequisite, references to outputs and parameters.
+
+With the specifications of plugins (see `plugins spec`), it also checks action templates and the inputs of steps, for the settings of each template:
+
+- plugin class name, attributes of the template, and their values (type, allowed values),
+- required inputs not mapped (`step.input_missing`),
+- inputs that the plugin does not have with this template, which Orchestrator ignores (`step.input_unknown`),
+- mapped outputs that the source step does not produce (`step.output_not_produced`).
+
+If the specifications cannot be read (option `plugin_specs`), these checks are skipped, with a warning (`plugins.specs_unavailable`).
+Not checked: the plugins enabled on the server (see `workflows find_constraints`).
+
+Command `workflows import` runs the same check, and logs the issues as warnings; it does not stop the import.
+Use `--log-level=warn` to see them.
+
+The check is done by `ascli`, behind one method that has the shape of a REST operation: the file goes in, a structure with `valid`, `file_name` and the list of `issues` comes out.
+It can be replaced by a call to Orchestrator if such an API becomes available.
+
+#### Resolve conflicts before import
+
+The web interface of Orchestrator lists the conflicts with existing sub-workflows, global templates and remote nodes, and the plugins to enable, and asks for a choice for each of them.
+Command `workflows find_constraints` does the same for a file present on the Orchestrator host (see `workflows import_with_constraints`):
+
+```shell
+ascli orchestrator workflows find_constraints /opt/aspera/orchestrator/var/run/orchestrator/workflows/import/my_workflow.yml
+ascli orchestrator workflows find_constraints /opt/aspera/orchestrator/var/run/orchestrator/workflows/import/my_workflow.yml 1234
+```
+
+The optional second argument is the id of the workflow that receives the file as a new revision.
+Each line is a conflict (`type`: `subwf_constraints`, `action_template_constraints`, `remote_node_constraints`), with its `name` and the possible `choices`, or a plugin to enable (`missing_plugins`).
+The `type` is the key to use in the argument of `import_with_constraints`.
+Orchestrator does not check that the file exists: a wrong path gives the same answer as a file without conflict.
+
+Orchestrator does not refuse an incomplete resolution: `workflows import_with_constraints` checks with `find_constraints` first, and refuses to import in these cases:
+
+- Plugins are not enabled and `auto_enable_missing_plugins` is not `true` (Orchestrator fails with an internal error).
+- A resolution is given for some conflicts of a type, but not all (Orchestrator imports the others as copies, without error).
+
+`auto_enable_missing_plugins` must be a boolean (`true` or `false`): Orchestrator takes the string `"false"` as true, and `ascli` refuses a string.
+
 ### Tested commands for `orchestrator`
 
 > [!NOTE]
@@ -9823,7 +9897,11 @@ health
 info
 monitors
 plugins list
+plugins spec --select=@json:'{"category":"Triggers"}'
+plugins spec AmazonS3Operation --format=yaml
+plugins spec ascpclient inputs
 processes
+workflow check_import orch_wf_check.yml
 workflow details my_workflow_id
 workflow export my_workflow_id
 workflow inputs my_workflow_id

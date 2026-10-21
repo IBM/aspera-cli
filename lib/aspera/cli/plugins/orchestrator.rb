@@ -24,7 +24,11 @@ module Aspera
         }.freeze
         # Value of argument `section` of command `workflows development` for the table of contents
         DOC_TOC = 'toc'
-        private_constant :STANDARD_PATH, :TEST_ENDPOINT, :DOC_BASE_URL, :DOC_FILES, :DOC_TOC
+        # Sections of a plugin specification, listed by command `plugins spec`
+        SPEC_SECTIONS = %i[attributes inputs outputs].freeze
+        # Fields of the list of plugins of command `plugins spec`
+        SPEC_LIST_FIELDS = %w[name category version display_name].freeze
+        private_constant :STANDARD_PATH, :TEST_ENDPOINT, :DOC_BASE_URL, :DOC_FILES, :DOC_TOC, :SPEC_SECTIONS, :SPEC_LIST_FIELDS
 
         class << self
           # @return [Hash,NilClass]
@@ -73,6 +77,7 @@ module Aspera
         option :ret_style,   description: 'Method to specify the expected response format ("Accept")', allowed: %i[header query path], default: :query
         option :result,      description: "Specify result value as: 'work_step:parameter'", deprecation: {last: '4.27.2', message: 'use keys `step` and `variable` of argument `execution` of `workflows start`'}
         option :synchronous, description: 'Wait for completion', allowed: Type::BOOLEAN, deprecation: {last: '4.27.2', message: 'use key `synchronous` of argument `execution` of `workflows start`'}
+        option :plugin_specs, description: 'URL or path of the plugin specifications (YAML) used by `plugins spec`', default: "#{DOC_BASE_URL}/plugins.yml"
 
         # Call orchestrator API (handles ret_style negotiation and XML parsing)
         # @param endpoint     [String]      the endpoint to call
@@ -125,6 +130,11 @@ module Aspera
           command :reload_set, description: 'Reload a set of plugins',
             arguments: [{name: :plugin_set, type: Hash, schema: 'opts:components.schemas.OrchestratorReloadPluginSet'}],
             action: ->(plugin_set:, **) { Result::SingleObject.new(call_ao('reload_plugin_set', body: plugin_set.transform_keys(&:to_sym))) }
+          command :spec, description: "Show specifications of action plugins, from GitHub (no access to Orchestrator): list of plugins, one plugin, or its #{SPEC_SECTIONS.join(', ')}",
+            arguments: [
+              {name: :plugin, mandatory: false},
+              {name: :section, type: Symbol, mandatory: false, allowed: SPEC_SECTIONS}
+            ]
         end
 
         commands_under :workflows do
@@ -144,8 +154,15 @@ module Aspera
               {name: :parameters, type: Hash, mandatory: false, default: {}, schema: 'opts:components.schemas.OrchestratorInitiateParameters'},
               {name: :execution, type: Hash, mandatory: false, default: {}, schema: 'opts:components.schemas.OrchestratorWorkflowStart'}
             ]
-          command :import,     description: 'Import a workflow from a file created by `workflows export`',
+          command :import,     description: 'Import a workflow from a file created by `workflows export`, local problems are reported as warnings (see `check_import`)',
             arguments: [{name: :file_path}]
+          command :check_import, description: 'Check a workflow file (no access to Orchestrator): rules that Orchestrator does not check on import, but that make the workflow fail to publish or to run',
+            arguments: [{name: :file_path}]
+          command :find_constraints, description: 'List the conflicts and missing plugins of a workflow file present on the Orchestrator host, before `import_with_constraints`',
+            arguments: [
+              {name: :filename},
+              {name: :add_as_revision, type: :identifier, mandatory: false}
+            ]
           command :publish,    description: 'Publish a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
             action: ->(workflow_id:, **) { Result::Status.new(call_ao('publish_workflow', body: {id: workflow_id}).eql?(true) ? 'published' : 'not published') }
@@ -271,6 +288,31 @@ module Aspera
           Result::Text.new(text)
         end
 
+        # Specifications of action plugins, read from GitHub, or from option `plugin_specs`: does not require access to Orchestrator
+        # @return [Hash] Class name of plugin => attributes, inputs, outputs
+        def plugin_specs
+          return @plugin_specs if @plugin_specs
+          require 'aspera/uri_reader'
+          require 'aspera/yaml'
+          specs = Yaml.safe_load(UriReader.read(options.get_option(:plugin_specs, mandatory: true)))
+          Aspera.assert_type(specs, Hash, type: Cli::Error) { 'plugin specifications' }
+          @plugin_specs = specs
+        end
+
+        # @param plugin  [String, nil] Class name of the plugin (case insensitive), or nil to list plugins
+        # @param section [Symbol, nil] One of SPEC_SECTIONS, or nil for the whole specification
+        def action_plugins_spec(plugin: nil, section: nil, **)
+          specs = plugin_specs
+          return Result::ObjectList.new(specs.map { |name, spec| {'name' => name}.merge(spec.except(*SPEC_SECTIONS.map(&:to_s), 'notes')) }, fields: SPEC_LIST_FIELDS) if plugin.nil?
+          name = specs.keys.find { |key| key.casecmp?(plugin) }
+          if name.nil?
+            similar = specs.keys.select { |key| key.downcase.include?(plugin.downcase) }
+            raise Cli::BadArgument, "Unknown plugin: #{plugin}#{", similar: #{similar.join(', ')}" unless similar.empty?}, use `plugins spec` to list plugins"
+          end
+          return Result::SingleObject.new({'name' => name}.merge(specs[name])) if section.nil?
+          Result::ObjectList.new(specs[name][section.to_s].map { |key, value| {'name' => key}.merge(value) })
+        end
+
         # Without dependencies, the workflow file (YAML) is displayed.
         # With dependencies, the package (binary) is saved in the destination folder.
         def action_workflows_export(workflow_id:, export:, **)
@@ -285,8 +327,95 @@ module Aspera
           Result::Status.new("Saved to: #{file_path}")
         end
 
+        # Check of a workflow file, for problems that Orchestrator does not detect on import: it imports an invalid workflow, which then fails to publish or to run.
+        # This is the only place that knows how the check is done: it is done locally, because Orchestrator has no such API.
+        # When it has one (same request as `import_workflow`), replace the body by a call, e.g.
+        # `call_ao('check_workflow', body: [['import_file', content, {filename: file_name}], ['import_file_name', file_name]], content_type: Mime::MULTIPART)`
+        # The response is a Hash, see {OrchestratorWorkflowChecker}.
+        # Templates and inputs of steps are checked with the specifications of plugins (see `plugins spec`), when they can be read.
+        # @param file_path [String] Workflow file (`.yml` or `.wkf`)
+        # @return [Hash] `valid` (Boolean), `file_name`, `issues` (list of Hash: `severity`, `code`, `file`, `path`, `message`)
+        def check_workflow(file_path)
+          require 'aspera/orchestrator_workflow_checker'
+          specs = nil
+          specs_error = nil
+          begin
+            specs = plugin_specs
+          rescue StandardError => e
+            specs_error = e.message
+          end
+          response = OrchestratorWorkflowChecker.check(file_name: File.basename(file_path), content: File.binread(file_path), specs: specs)
+          unless specs_error.nil?
+            response['issues'].push({
+              'severity' => 'warning',
+              'code'     => 'plugins.specs_unavailable',
+              'path'     => 'templates',
+              'message'  => "plugin specifications not read (#{specs_error}): templates and inputs of steps are not checked"
+            })
+          end
+          response
+        end
+
+        # @param file_path [String] Workflow file
+        # @return [Result] The issues found, or a status if none
+        def action_workflows_check_import(file_path:, **)
+          response = check_workflow(file_path)
+          return Result::Status.new('no problem found') if response['issues'].empty?
+          Result::ObjectList.new(response['issues'], fields: %w[severity code file path message])
+        end
+
+        # Conflicts and missing plugins found by Orchestrator, as one row per name to resolve.
+        # Orchestrator does not check that the file exists: for a wrong path, it returns the same empty result as for a file without conflict.
+        # @return [Hash{String=>Object}] Items returned by Orchestrator, by name (`subwf constraints`, `missing plugins`...)
+        def server_constraints(filename, add_as_revision = nil)
+          list = call_ao('find_constraints', query: {file: filename, wf_id: add_as_revision}.compact)
+          Aspera.assert_type(list, Array, type: Cli::Error) { 'response of find_constraints' }
+          list.grep(Hash).reduce({}, :merge)
+        end
+
+        # Keys of the conflicts in Orchestrator response => keys of the argument of `import_with_constraints`
+        CONSTRAINT_KEYS = {
+          'subwf constraints'           => 'subwf_constraints',
+          'action template constraints' => 'action_template_constraints',
+          'remote node constraints'     => 'remote_node_constraints'
+        }.freeze
+        private_constant :CONSTRAINT_KEYS
+
+        def action_workflows_find_constraints(filename:, add_as_revision: nil, **)
+          found = server_constraints(filename, add_as_revision)
+          rows = CONSTRAINT_KEYS.flat_map do |api_key, key|
+            (found[api_key] || {}).map { |name, choices| {'type' => key, 'name' => name, 'choices' => choices} }
+          end
+          Array(found['missing plugins']).each do |name|
+            rows.push({'type' => 'missing_plugins', 'name' => name, 'choices' => 'auto_enable_missing_plugins: true'})
+          end
+          return Result::Status.new('no conflict found (Orchestrator gives the same answer if the file does not exist)') if rows.empty?
+          Result::ObjectList.new(rows, fields: %w[type name choices])
+        end
+
+        # Orchestrator fails or decides silently in these cases, which the web interface prevents:
+        # - plugins to enable but `auto_enable_missing_plugins` not true: the import fails with an internal error
+        # - resolution given for some conflicts only: the others are imported as copies, without error
+        # @param payload [Hash] Argument of `import_with_constraints`, with string keys
+        def check_import_constraints(payload)
+          found = server_constraints(payload['filename'], payload['add_as_revision'])
+          problems = []
+          missing = Array(found['missing plugins'])
+          problems.push("plugins are not enabled: #{missing.join(', ')}, set auto_enable_missing_plugins to true") unless missing.empty? || payload['auto_enable_missing_plugins'].eql?(true)
+          CONSTRAINT_KEYS.each do |api_key, key|
+            chosen = payload[key]
+            next if chosen.nil? || chosen.empty?
+            unresolved = (found[api_key] || {}).keys - chosen.keys.map(&:to_s)
+            problems.push("#{key} not resolved for: #{unresolved.join(', ')} (see `workflows find_constraints`)") unless unresolved.empty?
+          end
+          raise Cli::BadArgument, "Import refused: #{problems.join('; ')}" unless problems.empty?
+        end
+
         # The file is uploaded as a multipart form
         def action_workflows_import(file_path:, **)
+          check_workflow(file_path)['issues'].each do |issue|
+            Log.log.warn { "#{issue['severity']}: #{[issue['file'], issue['path']].compact.join(' ')}: #{issue['message']} (#{issue['code']})" }
+          end
           file_name = File.basename(file_path)
           form = [
             ['import_file', File.binread(file_path), {filename: file_name}],
@@ -319,6 +448,7 @@ module Aspera
         # The API expects an array of single-key objects, in a fixed order
         def action_workflows_import_with_constraints(payload:, **)
           payload = payload.transform_keys(&:to_s)
+          check_import_constraints(payload)
           body = IMPORT_CONSTRAINT_ITEMS.map { |key, api_key| {api_key => payload.fetch(key) { key.end_with?('_constraints') ? {} : nil }} }
           Result::SingleObject.new(call_ao('import_with_constraints', body: body)['workflow'])
         end
