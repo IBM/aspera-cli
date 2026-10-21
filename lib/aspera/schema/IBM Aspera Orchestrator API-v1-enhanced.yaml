@@ -25,12 +25,13 @@ info:
     2. Include the token in subsequent requests using the Authorization header:
        `Authorization: Bearer <your_token>`
 
-    ### Basic Authentication (When JWT is Disabled)
+    ### Credentials in Each Request (When JWT is Disabled)
 
-    If JWT authentication is disabled in your Orchestrator configuration:
+    If JWT authentication is disabled in your Orchestrator configuration (`/api/login` then returns 403), give the credentials with every API request, either:
 
-    - Add query parameters to every API request: `?login=username&password=password`
-    - Example: `/api/workflows_list?login=admin&password=mypassword&format=json`
+    - as query parameters `login` and `password`, e.g. `/api/workflows_list?login=admin&password=mypassword&format=json`
+    - as query parameters `login` and `api_key` (the API key of the user)
+    - with HTTP Basic authentication
 
     **Note:** Check your Orchestrator configuration to determine which authentication mode is active.
 
@@ -55,6 +56,13 @@ servers:
     description: 'Configured host: 158.176.9.141'
   - url: https://orchestrator.aspera-emea.com/aspera/orchestrator
     description: 'Configured host: orchestrator.aspera-emea.com'
+security:
+  - bearerAuth: []
+  - basicAuth: []
+  - loginQuery: []
+    passwordQuery: []
+  - loginQuery: []
+    apiKeyQuery: []
 paths:
   /api/login:
     post:
@@ -68,18 +76,46 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                username:
-                  type: string
-                  description: User login name
-                password:
-                  type: string
-                  format: password
-                  description: User password
-                api_key:
-                  type: string
-                  description: API key, instead of `username` and `password`
+              description: '`username`, with either `password` or `api_key` (the API key of that user)'
+              oneOf:
+                - title: Username and password
+                  type: object
+                  required:
+                    - username
+                    - password
+                  properties:
+                    username:
+                      type: string
+                      description: User login name
+                    password:
+                      type: string
+                      format: password
+                      description: User password
+                  additionalProperties: false
+                - title: Username and API key
+                  type: object
+                  required:
+                    - username
+                    - api_key
+                  properties:
+                    username:
+                      type: string
+                      description: User login name
+                    api_key:
+                      type: string
+                      description: API key of the user
+                  additionalProperties: false
+            examples:
+              credentials:
+                summary: Username and password
+                value:
+                  username: admin
+                  password: mypassword
+              api_key:
+                summary: Username and API key
+                value:
+                  username: admin
+                  api_key: my_api_key
       responses:
         '200':
           description: Successfully authenticated
@@ -112,27 +148,71 @@ paths:
     get:
       operationId: workflows_list
       summary: List all workflows
-      description: 'JSON: `{"workflows": {"time", "action", "id", "workflow": [{"id", "name", "full_name", "folder_id", "portable_id", "published_status", "published_revision_id", "latest_revision_id", "last_modification", "comments"}]}}`.'
       tags:
         - Workflows
-      security:
-        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: List of workflows
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  workflows:
+                    type: object
+                    properties:
+                      time:
+                        type: string
+                        description: UTC time
+                      action:
+                        type: string
+                        const: list
+                      id:
+                        type: integer
+                      workflow:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                            name:
+                              type: string
+                            full_name:
+                              type: string
+                              description: Name with the folder path
+                            folder_id:
+                              type: [integer, 'null']
+                            portable_id:
+                              type: [string, 'null']
+                            published_status:
+                              type: string
+                              enum:
+                                - published
+                                - draft
+                            published_revision_id:
+                              type: [integer, string]
+                              description: '`-` when not published'
+                            latest_revision_id:
+                              type: [integer, string]
+                              description: '`-` when there is no whiteboard'
+                            last_modification:
+                              type: string
+                              format: date-time
+                            comments:
+                              type: [string, 'null']
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/workflows_status:
     get:
       operationId: workflows_status
       summary: Running status of workflows
-      description: 'JSON: `{"workflows": {"workflow": [{"id", "name", "status" (running or not running), "last_activity"}]}}`.'
       tags:
         - Workflows
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: query
@@ -143,17 +223,49 @@ paths:
       responses:
         '200':
           description: Workflow status information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  workflows:
+                    type: object
+                    properties:
+                      time:
+                        type: string
+                        description: UTC time
+                      action:
+                        type: string
+                        const: status
+                      id:
+                        type: integer
+                      workflow:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                            name:
+                              type: string
+                            status:
+                              type: string
+                              enum:
+                                - running
+                                - not running
+                            last_activity:
+                              type: string
+                              description: Last update of the running work orders, or `-`
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/workflow_details/{id}:
     get:
       operationId: workflow_details
       summary: Number of work orders of a workflow, by status
-      description: 'JSON: `{"workflows": {"workflow": {"name", "id", "statuses": [{"count", "last_activity", "workflow_name", "status"}]}}}`.'
       tags:
         - Workflows
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -175,17 +287,53 @@ paths:
       responses:
         '200':
           description: Work order counts by status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  workflows:
+                    type: object
+                    properties:
+                      time:
+                        type: string
+                        description: UTC time
+                      action:
+                        type: string
+                        const: status
+                      id:
+                        type: integer
+                      workflow:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          id:
+                            type: integer
+                          statuses:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                count:
+                                  type: integer
+                                last_activity:
+                                  type: string
+                                  format: date-time
+                                workflow_name:
+                                  type: string
+                                status:
+                                  type: string
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/workflow_inputs_spec/{id}:
     get:
       operationId: workflow_inputs_spec
       summary: Runtime parameters of a workflow
-      description: 'JSON: `{"workflow_inputs_spec": {"workflow_name", "workflow_id", "parameter": [{"id", "name", "value_type", "optional", "value"}]}}`.'
       tags:
         - Workflows
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -207,17 +355,50 @@ paths:
       responses:
         '200':
           description: Runtime parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  workflow_inputs_spec:
+                    type: object
+                    properties:
+                      time:
+                        type: string
+                        description: UTC time
+                      action:
+                        type: string
+                        const: inputs_spec
+                      workflow_name:
+                        type: string
+                      workflow_id:
+                        type: integer
+                      parameter:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                            name:
+                              type: string
+                            value_type:
+                              type: string
+                            optional:
+                              type: [boolean, 'null']
+                            value:
+                              type: string
+                              description: Default value, for an optional parameter
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/workflow_outputs_spec/{id}:
     get:
       operationId: workflow_outputs_spec
       summary: Outputs of the steps of a workflow
-      description: 'JSON: `{"workflow_outputs_spec": {"output": [{"context_id", "name", "workflow_id", "step_name", "variable_name", "value_type", "variable_type"}]}}`.'
       tags:
         - Workflows
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -234,8 +415,44 @@ paths:
       responses:
         '200':
           description: Outputs of the workflow
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  workflow_outputs_spec:
+                    type: object
+                    properties:
+                      time:
+                        type: string
+                        description: UTC time
+                      action:
+                        type: string
+                        const: outputs_spec
+                      output:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            context_id:
+                              type: integer
+                            name:
+                              type: string
+                              description: '`<step name>:<output name>`'
+                            workflow_id:
+                              type: integer
+                            step_name:
+                              type: string
+                            variable_name:
+                              type: string
+                            value_type:
+                              type: string
+                            variable_type:
+                              type: string
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/import_workflow:
     post:
       operationId: import_workflow
@@ -243,8 +460,6 @@ paths:
       description: Always creates a new workflow. The response is the new workflow as JSON, whatever the format.
       tags:
         - Workflows
-      security:
-        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -261,6 +476,7 @@ paths:
                   description: The workflow file to import (.wkf or .yml)
                 import_file_name:
                   type: string
+                  pattern: (wkf|yml)$
                   description: File name ending with `wkf` or `yml`. The file is saved under this name in the import folder of the server.
                   examples:
                     - my_workflow.wkf
@@ -282,10 +498,28 @@ paths:
       responses:
         '200':
           description: The new workflow (JSON)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
         '500':
-          description: 'Import failed: `{"error", "message", "details"}`'
+          description: Import failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                  details:
+                    type: string
+                    description: Error message
   /api/find_constraints:
     get:
       operationId: find_constraints
@@ -293,8 +527,6 @@ paths:
       description: 'Analyzes a workflow file present on the Orchestrator host, and returns the list expected by `import_with_constraints`, with the possible choices for each conflict with existing sub-workflows, global templates and remote nodes, and the plugins that are not enabled. The file existence is not checked: a wrong path returns the same empty lists as a file without conflict.'
       tags:
         - Workflows
-      security:
-        - bearerAuth: []
       parameters:
         - name: file
           in: query
@@ -314,10 +546,58 @@ paths:
             application/json:
               schema:
                 type: array
-                items:
-                  type: object
+                minItems: 6
+                maxItems: 6
+                prefixItems:
+                  - type: object
+                    properties:
+                      filename:
+                        type: string
+                  - type: object
+                    properties:
+                      add as revision:
+                        type: [string, 'null']
+                        description: The `wf_id` parameter
+                  - type: object
+                    properties:
+                      subwf constraints:
+                        type: object
+                        description: Sub-workflow name to possible choices
+                        additionalProperties:
+                          type: array
+                          items:
+                            type: string
+                  - type: object
+                    properties:
+                      action template constraints:
+                        type: object
+                        description: Global template name to possible choices
+                        additionalProperties:
+                          type: array
+                          items:
+                            type: string
+                  - type: object
+                    properties:
+                      remote node constraints:
+                        type: object
+                        description: Remote node name to possible choices
+                        additionalProperties:
+                          type: array
+                          items:
+                            type: string
+                  - type: object
+                    properties:
+                      missing plugins:
+                        type: [array, 'null']
+                        description: Plugins to enable, or `null`
+                      Auto-enable missing plugins?:
+                        type: [array, 'null']
+                        description: '`[true, false]` when plugins are missing, else `null`'
+                items: false
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/import_with_constraints:
     post:
       operationId: import_with_constraints
@@ -325,8 +605,6 @@ paths:
       description: 'Imports a workflow file present on the Orchestrator host, as a new workflow or as a new revision of an existing workflow. The workflow is not published. Orchestrator does not check what `find_constraints` reports: if plugins to enable are listed and `Auto-enable missing plugins?` is not `true`, the call fails with an internal error; a conflict without choice is imported as a copy, without error. `Auto-enable missing plugins?` must be a JSON boolean: the string `"false"` is taken as true.'
       tags:
         - Workflows
-      security:
-        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -336,8 +614,73 @@ paths:
               description: Array of six objects with one key each, in this order
               minItems: 6
               maxItems: 6
-              items:
-                type: object
+              prefixItems:
+                - type: object
+                  required:
+                    - filename
+                  properties:
+                    filename:
+                      type: string
+                      description: Path of the workflow file on the Orchestrator host
+                  additionalProperties: false
+                - type: object
+                  required:
+                    - add as revision
+                  properties:
+                    add as revision:
+                      type: [integer, string, 'null']
+                      description: ID or portable ID of the workflow to add a revision to, or `null` for a new workflow
+                  additionalProperties: false
+                - type: object
+                  required:
+                    - subwf constraints
+                  properties:
+                    subwf constraints:
+                      type: object
+                      description: Sub-workflow name to choice
+                      additionalProperties:
+                        type: string
+                        enum:
+                          - Map to the Existing Sub-Workflow
+                          - Create a new Sub-Workflow with a unique name
+                          - Add a new revision to the existing Sub-Workflow
+                  additionalProperties: false
+                - type: object
+                  required:
+                    - action template constraints
+                  properties:
+                    action template constraints:
+                      type: object
+                      description: Global template name to choice
+                      additionalProperties:
+                        type: string
+                        enum:
+                          - Map to the existing Global Template
+                          - Create a new Global Template with a different name
+                          - Override the existing Global Template with this new template
+                  additionalProperties: false
+                - type: object
+                  required:
+                    - remote node constraints
+                  properties:
+                    remote node constraints:
+                      type: object
+                      description: Remote node name to choice
+                      additionalProperties:
+                        type: string
+                        enum:
+                          - Map to the existing Remote Node
+                          - Create a new Remote Node with a different name
+                          - Override the Existing Remote Node with this importing node
+                  additionalProperties: false
+                - type: object
+                  required:
+                    - Auto-enable missing plugins?
+                  properties:
+                    Auto-enable missing plugins?:
+                      type: boolean
+                  additionalProperties: false
+              items: false
               examples:
                 - - filename: /opt/aspera/orchestrator/var/run/orchestrator/workflows/import/my_workflow.yml
                   - add as revision: 239
@@ -350,8 +693,14 @@ paths:
       responses:
         '200':
           description: The workflow that was imported (JSON)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
         '500':
           description: Internal error, e.g. plugins to enable and not auto-enabled, or a file that cannot be read
   /api/publish_workflow:
@@ -361,8 +710,6 @@ paths:
       description: Publishes the last whiteboard revision. The result is `true`, or `false` when the whiteboard has no `error_free` value.
       tags:
         - Workflows
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: query
@@ -383,8 +730,14 @@ paths:
       responses:
         '200':
           description: '`true` or `false` (JSON), or `<WorkflowPublish><Success>true</Success></WorkflowPublish>` (XML)'
+          content:
+            application/json:
+              schema:
+                type: boolean
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/export_workflow/{id}:
     get:
       operationId: export_workflow
@@ -392,8 +745,6 @@ paths:
       description: Returns the workflow file (`.yml`), or a package (`.wkf`) with its sub-workflows and remote nodes.
       tags:
         - Workflows
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -416,15 +767,14 @@ paths:
                 format: binary
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/list_by_subworkflow/{id}:
     get:
       operationId: list_by_subworkflow
       summary: Published workflows that use a sub-workflow
-      description: 'JSON: `{"parent_workflows": [<workflow id>...]}`.'
       tags:
         - Workflows
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -441,17 +791,25 @@ paths:
       responses:
         '200':
           description: IDs of the parent workflows
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  parent_workflows:
+                    type: array
+                    items:
+                      type: string
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/retrieve_steps/{id}:
     get:
       operationId: retrieve_steps
       summary: Steps of a type in published workflows, with their work orders
-      description: 'JSON: `[{"step_id", "step_name", "step_status", "wf_id", "wo_id", "wo_status"}]`.'
       tags:
         - Workflows
-      security:
-        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/AnyId'
         - name: type
@@ -464,17 +822,36 @@ paths:
       responses:
         '200':
           description: List of steps
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    step_id:
+                      type: string
+                    step_name:
+                      type: string
+                    step_status:
+                      type: [string, 'null']
+                      description: Status of the first prerequisite of the step
+                    wf_id:
+                      type: string
+                    wo_id:
+                      type: integer
+                    wo_status:
+                      type: string
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/work_orders_list/{id}:
     get:
       operationId: work_orders_list
       summary: List work orders of a workflow
-      description: 'JSON: `{"work_orders": [...]}`.'
       tags:
         - Work Orders
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -504,8 +881,12 @@ paths:
           description: Work orders updated before this date
         - name: tag
           in: query
+          style: form
+          explode: false
           schema:
-            type: string
+            type: array
+            items:
+              type: string
           description: Comma-separated list of tags, all required
         - name: max_results
           in: query
@@ -516,21 +897,29 @@ paths:
       responses:
         '200':
           description: List of work orders
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  work_orders:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WorkOrder'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/work_order_status/{id}:
     get:
       operationId: work_order_status
       summary: Get work order status
       description: |
         Returns the status of a work order and its work steps.
-        JSON: `{"work_order": {..., "percent_complete"}, "work_steps": [...]}`.
 
         If the work order includes sub-workflows, only the sub-workflow status is displayed, not the steps within the sub-workflow.
       tags:
         - Work Orders
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -542,8 +931,28 @@ paths:
       responses:
         '200':
           description: Work order status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  work_order:
+                    allOf:
+                      - $ref: '#/components/schemas/WorkOrder'
+                    properties:
+                      percent_complete:
+                        type: integer
+                        minimum: 0
+                        maximum: 100
+                  work_steps:
+                    type: array
+                    description: Steps with `step_id` greater than 0
+                    items:
+                      $ref: '#/components/schemas/WorkStepStatus'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/work_order_output/{id}:
     get:
       operationId: work_order_output
@@ -554,8 +963,6 @@ paths:
         Format `text` (or `string`) returns the values, one per line.
       tags:
         - Work Orders
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -600,16 +1007,27 @@ paths:
       responses:
         '200':
           description: Outputs
+          content:
+            application/json:
+              schema:
+                description: |
+                  - Without both `step_name` and `variable_name`: object `{"<step name>:<output name>": <value>}`
+                  - With `detailed=true`: array of `{"<step name>:<output name>": <value>, "variable_type", "value_type", "<work order name>:WorkOrder_ID", "<work order name>:WorkOrder_Status"}`
+                  - With both `step_name` and `variable_name`: the value only
+            text/plain:
+              schema:
+                type: string
+                description: Format `text` or `string`, one value per line
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/work_order_cancel/{id}:
     get:
       operationId: work_order_cancel
       summary: Cancel a work order
       tags:
         - Work Orders
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -626,17 +1044,20 @@ paths:
       responses:
         '200':
           description: The work order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkOrder'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/work_order_reset/{id}:
     get:
       operationId: work_order_reset
       summary: Reset a work order
-      description: 'JSON: `{"work_order": {...}, "work_steps": [...]}`.'
       tags:
         - Work Orders
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -648,8 +1069,14 @@ paths:
       responses:
         '200':
           description: The work order and its work steps
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkOrderWithSteps'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/reset/{id}.{format}:
     post:
       operationId: reset
@@ -657,8 +1084,6 @@ paths:
       description: Same as `work_order_reset`, implemented by the work order pages. The response is always XML.
       tags:
         - Work Orders
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -684,8 +1109,6 @@ paths:
       summary: Delete a work order and its dependents
       tags:
         - Work Orders
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -697,8 +1120,16 @@ paths:
       responses:
         '200':
           description: Confirmation message
+          content:
+            application/json:
+              schema:
+                type: string
+                examples:
+                  - " Work order '123' was deleted"
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/initiate:
     post:
       operationId: initiate
@@ -709,13 +1140,8 @@ paths:
         Runtime input values are passed under the `external_parameters` key.
         To discover what parameters a workflow accepts, call `/api/workflow_inputs_spec/{workflow_id}` first.
         With format `json`, the keys of a JSON body are also merged into the runtime parameters.
-
-        JSON response: `{"work_order": {...}, "work_steps": [...], "parameters": {...}}`,
-        or `{"work_order": {..., "status": "Not started"}, "missing_parameters": [...]}` (status 400) when required parameters are missing.
       tags:
         - Work Orders
-      security:
-        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/Format'
         - name: synchronous
@@ -730,6 +1156,7 @@ paths:
           in: query
           schema:
             type: integer
+            minimum: 0
           description: 'With `synchronous`, maximum wait in seconds (0 or not set: no limit)'
         - name: explicit_output
           in: query
@@ -758,8 +1185,12 @@ paths:
           description: HTTP status to return when the work order ends with status `Failed`
         - name: tags
           in: query
+          style: form
+          explode: false
           schema:
-            type: string
+            type: array
+            items:
+              type: string
           description: Comma-separated tags of the work order
         - name: preemptive_level
           in: query
@@ -795,8 +1226,44 @@ paths:
       responses:
         '200':
           description: Work order initiated (or the status given by `on_error_return_code`, `on_failed_return_code`)
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - title: Work order
+                    allOf:
+                      - $ref: '#/components/schemas/WorkOrderWithSteps'
+                    properties:
+                      parameters:
+                        type: object
+                        description: Runtime parameters of the work order
+                  - title: Output value
+                    description: With `explicit_output`, or `explicit_output_step` and `explicit_output_variable`
         '400':
           description: Workflow not found or not published, or missing required parameters
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Error'
+                  - title: Missing parameters
+                    type: object
+                    required:
+                      - work_order
+                      - missing_parameters
+                    properties:
+                      work_order:
+                        allOf:
+                          - $ref: '#/components/schemas/WorkOrder'
+                        properties:
+                          status:
+                            const: Not started
+                          status_details:
+                            const: Missing required parameters
+                      missing_parameters:
+                        type: array
+                        items:
+                          type: string
         '401':
           $ref: '#/components/responses/UnauthorizedError'
   /api/work_step_status/{id}:
@@ -804,13 +1271,11 @@ paths:
       operationId: work_step_status
       summary: Status, inputs and outputs of a work step, or change its status
       description: |
-        Returns `{"work_step": {...}, "outputs": [...], "inputs": [...], "carry_thrus": [...]}`,
-        or only the value of an output (`output_name`), or only the status (`status_only`).
+        Returns the work step with its inputs and outputs,
+        or only the value of an output (`output_name`), or only the status (`status_only`, as plain text).
         With `set_status` or `set_status_details`, modifies the work step and returns its new status.
       tags:
         - Work Steps
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -852,6 +1317,8 @@ paths:
           in: query
           schema:
             type: integer
+            minimum: 0
+            maximum: 100
           description: New percentage of completion, with `set_status` or `set_status_details`
         - name: format
           in: query
@@ -866,16 +1333,56 @@ paths:
       responses:
         '200':
           description: Work step status
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - title: Work step
+                    type: object
+                    properties:
+                      work_step:
+                        $ref: '#/components/schemas/WorkStep'
+                      outputs:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/StepVariable'
+                      inputs:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/StepVariable'
+                      carry_thrus:
+                        type: array
+                        description: Variables of other steps
+                        items:
+                          $ref: '#/components/schemas/StepVariable'
+                  - title: New status
+                    description: With `set_status` or `set_status_details`
+                    type: object
+                    properties:
+                      Work_step_id:
+                        type: integer
+                      Work_step_status:
+                        type: string
+                      Work_step_status_details:
+                        type: [string, 'null']
+                      Work_step_percent_complete:
+                        type: [integer, 'null']
+                  - title: Output value
+                    description: With `output_name`
+            text/plain:
+              schema:
+                type: string
+                description: 'Format `txt`: a value or a status. With `status_only`, the status is also plain text in format `json`.'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/work_step_cancel/{id}:
     get:
       operationId: work_step_cancel
       summary: Cancel a work step
       tags:
         - Work Steps
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -887,55 +1394,92 @@ paths:
       responses:
         '200':
           description: The work step
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkStep'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/workstep_reset/{id}:
     get:
       operationId: workstep_reset
       summary: Restart work orders from work steps
-      description: 'JSON: `{"workstep_reset": true, "work_order": {...}, "work_steps": [...]}`, or a list of them for several IDs.'
       tags:
         - Work Steps
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
           required: true
           schema:
-            type: string
+            type: array
+            items:
+              type: integer
           description: Work step ID, or comma-separated list of IDs
         - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: The restarted work orders
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/WorkstepReset'
+                  - type: array
+                    description: For several work step IDs
+                    items:
+                      $ref: '#/components/schemas/WorkstepReset'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/queues_list:
     get:
       operationId: queues_list
       summary: List all queues
-      description: 'JSON: `{"Queues": {"queue": [{"id", "name", "displayed_name", "update_at", "created_at"}]}}`.'
       tags:
         - Queues
-      security:
-        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: List of queues
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Queues:
+                    type: object
+                    properties:
+                      queue:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                            name:
+                              type: string
+                            displayed_name:
+                              type: [string, 'null']
+                            update_at:
+                              type: string
+                              format: date-time
+                            created_at:
+                              type: string
+                              format: date-time
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/queued_items/{id}:
     get:
       operationId: queued_items
       summary: Items of a queue
-      description: 'JSON: `{"queued_items": [{"id", "queued_item", "item_description", "priority", "weight", "position", "rank", ...}], "queue_metadata": {"id", "name", "comments", "administrators", "paused"}}`.'
       tags:
         - Queues
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -947,17 +1491,20 @@ paths:
       responses:
         '200':
           description: Queued items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueuedItems'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/queue_item/{id}:
     get:
       operationId: queue_item
       summary: Add an item to a queue
-      description: 'JSON: `{"item", "description", "rank", "priority", "weight", "id"}`.'
       tags:
         - Queues
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -988,15 +1535,38 @@ paths:
           description: Weight of the item
         - name: tags
           in: query
+          style: form
+          explode: false
           schema:
-            type: string
+            type: array
+            items:
+              type: string
           description: Comma-separated tags
         - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: The queued item
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  item:
+                    description: The queued item
+                  description:
+                    type: string
+                  rank:
+                    type: integer
+                  priority:
+                    type: integer
+                  weight:
+                    type: integer
+                  id:
+                    type: integer
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/lookup_queued_item:
     get:
       operationId: lookup_queued_item
@@ -1004,8 +1574,6 @@ paths:
       description: By item ID, by item (optionally in a queue), or by description (optionally in a queue). Same response as `queued_items`.
       tags:
         - Queues
-      security:
-        - bearerAuth: []
       parameters:
         - name: queued_item_id
           in: query
@@ -1031,16 +1599,20 @@ paths:
       responses:
         '200':
           description: Queued items found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueuedItems'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/reorder_queued_item:
     get:
       operationId: reorder_queued_item
       summary: Move a queued item
       tags:
         - Queues
-      security:
-        - bearerAuth: []
       parameters:
         - name: operation
           in: query
@@ -1072,22 +1644,30 @@ paths:
       responses:
         '200':
           description: The moved item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueuedItems'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/bulk_reorder_queue:
     get:
       operationId: bulk_reorder_queue
       summary: Move several queued items
       tags:
         - Queues
-      security:
-        - bearerAuth: []
       parameters:
         - name: queued_item_ids
           in: query
+          style: form
+          explode: false
           required: true
           schema:
-            type: string
+            type: array
+            items:
+              type: integer
           description: Comma-separated IDs of queued items
         - name: operation
           in: query
@@ -1104,16 +1684,30 @@ paths:
       responses:
         '200':
           description: The moved items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  queued_items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        queued_item:
+                          $ref: '#/components/schemas/QueuedItem'
+                        queue_data:
+                          $ref: '#/components/schemas/QueueMetadata'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/delete_queued_item:
     get:
       operationId: delete_queued_item
       summary: Delete a queued item
       tags:
         - Queues
-      security:
-        - bearerAuth: []
       parameters:
         - name: queue_name
           in: query
@@ -1131,17 +1725,23 @@ paths:
       responses:
         '200':
           description: Confirmation message
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Plain text, not JSON-encoded, although the content type is `application/json`
+                examples:
+                  - Item with id 21 was succesfully deleted.
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/monitor_snapshot:
     get:
       operationId: monitor_snapshot
       summary: Status of the monitors
-      description: 'JSON: `{"monitor": {"monitor_workflows", "monitor_workorders", "monitor_folders", "monitor_nodes", "monitor_scripts"}}`.'
       tags:
         - Monitors
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: query
@@ -1158,17 +1758,151 @@ paths:
       responses:
         '200':
           description: Monitor snapshot data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  monitor:
+                    type: object
+                    properties:
+                      monitor_workflows:
+                        type: object
+                        description: Empty when there is no monitor
+                        properties:
+                          monitor_workflow:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: integer
+                                workflow_id:
+                                  type: integer
+                                workflow_name:
+                                  type: string
+                                last_activity:
+                                  description: Only when active
+                                active:
+                                  type: boolean
+                                status:
+                                  type: string
+                                status_report:
+                                  description: Only when active
+                                last_polled:
+                                  description: Only when active
+                      monitor_workorders:
+                        type: object
+                        description: Empty when there is no monitor
+                        properties:
+                          monitor_workorder:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: integer
+                                workflow_id:
+                                  type: integer
+                                workflow_name:
+                                  type: string
+                                last_activity:
+                                  description: Only when active
+                                active:
+                                  type: boolean
+                                status:
+                                  type: string
+                                status_report:
+                                  description: Only when active
+                                last_polled:
+                                  description: Only when active
+                      monitor_folders:
+                        type: object
+                        description: Empty when there is no monitor
+                        properties:
+                          monitor_folder:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: integer
+                                folder:
+                                  type: string
+                                  description: Description of the monitor
+                                path:
+                                  type: string
+                                content:
+                                  description: Only when active
+                                age_range:
+                                  description: Only when active
+                                active:
+                                  type: boolean
+                                status:
+                                  type: string
+                                status_report:
+                                  description: Only when active
+                                last_polled:
+                                  description: Only when active
+                      monitor_nodes:
+                        type: object
+                        description: Empty when there is no monitor
+                        properties:
+                          monitor_node:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: integer
+                                name:
+                                  type: string
+                                remote_node:
+                                  type: string
+                                active:
+                                  type: boolean
+                                status:
+                                  type: string
+                                status_report:
+                                  description: Only when active
+                                last_polled:
+                                  description: Only when active
+                      monitor_scripts:
+                        type: object
+                        description: Empty when there is no monitor
+                        properties:
+                          monitor_script:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: integer
+                                script:
+                                  type: string
+                                  description: Description of the monitor
+                                node:
+                                  type: string
+                                path:
+                                  type: string
+                                active:
+                                  type: boolean
+                                status:
+                                  type: string
+                                status_report:
+                                  description: Only when active
+                                last_polled:
+                                  description: Only when active
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/list_monitors/{id}:
     get:
       operationId: list_monitors
       summary: List the monitors of a type
-      description: 'JSON: list of monitors (all their attributes). Remote node monitors give the names of the monitored remote nodes (`remote_node_name`).'
       tags:
         - Monitors
-      security:
-        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/AnyId'
         - $ref: '#/components/parameters/MonitorType'
@@ -1176,17 +1910,23 @@ paths:
       responses:
         '200':
           description: List of monitors
+          content:
+            application/json:
+              schema:
+                type: array
+                description: All the attributes of the monitors. For type `workorder`, each monitor is in an object with key `monitor-workorder`. Remote node monitors give the names of the monitored remote nodes (`remote_node_name`).
+                items:
+                  type: object
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/activate_monitor/{id}:
     get:
       operationId: activate_monitor
       summary: Activate a monitor
-      description: 'JSON: `{"action", "time", "id", "description"}`.'
       tags:
         - Monitors
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -1204,17 +1944,20 @@ paths:
       responses:
         '200':
           description: Monitor activated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonitorChange'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/deactivate_monitor/{id}:
     get:
       operationId: deactivate_monitor
       summary: Deactivate a monitor
-      description: 'JSON: `{"action", "time", "id", "description"}`.'
       tags:
         - Monitors
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -1232,17 +1975,20 @@ paths:
       responses:
         '200':
           description: Monitor deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonitorChange'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/list_tasks/{id}:
     get:
       operationId: list_tasks
       summary: Tasks (user inputs) waiting for a user
-      description: 'JSON: `{"user", "tasks": [{..., "event", "group", "user", "requested_user_inputs"}]}`.'
       tags:
         - Tasks
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -1254,23 +2000,56 @@ paths:
       responses:
         '200':
           description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: string
+                    description: Login of the user
+                  tasks:
+                    type: array
+                    items:
+                      allOf:
+                        - $ref: '#/components/schemas/Task'
+                      properties:
+                        event:
+                          type: string
+                        group:
+                          type: string
+                          description: Group the task is assigned to
+                        user:
+                          type: string
+                          description: User the task is assigned to
+                        requested_user_inputs:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                              required:
+                                type: boolean
+                              value_type:
+                                type: string
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/task_details/{id}:
     get:
       operationId: task_details
       summary: Details of a task
-      description: 'JSON: `{"task", "task_inputs", "user_inputs": [{"name", "type", "value", "required"}]}`.'
       tags:
         - Tasks
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            pattern: ^(WO)?[0-9]+$
           description: Task ID, or `WO<work order ID>` for the user input of a work order
         - name: step_name
           in: query
@@ -1286,17 +2065,30 @@ paths:
       responses:
         '200':
           description: Task details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task:
+                    $ref: '#/components/schemas/Task'
+                  task_inputs:
+                    type: object
+                    description: Parameters received by the task (name to value)
+                  user_inputs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserInput'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/submit_task/{id}:
     get:
       operationId: submit_task
       summary: Complete a task with the user inputs
-      description: 'JSON: `{"task", "user_inputs", "input_provider"}`.'
       tags:
         - Tasks
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -1321,16 +2113,28 @@ paths:
       responses:
         '200':
           description: The completed task
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task:
+                    $ref: '#/components/schemas/Task'
+                  user_inputs:
+                    type: object
+                    description: Values of the user inputs (name to value)
+                  input_provider:
+                    type: string
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/search_tasks/{id}:
     get:
       operationId: search_tasks
       summary: Search the tasks of the current user
       tags:
         - Tasks
-      security:
-        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/AnyId'
         - name: value
@@ -1342,18 +2146,44 @@ paths:
         - $ref: '#/components/parameters/Format'
       responses:
         '200':
-          description: List of `{"id", "task", "task_inputs", "user_inputs"}`, or `{"id", "error"}` for a task without access
+          description: Tasks found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  anyOf:
+                    - title: Task
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        task:
+                          $ref: '#/components/schemas/Task'
+                        task_inputs:
+                          type: object
+                          description: Parameters received by the task (name to value)
+                        user_inputs:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/UserInput'
+                    - title: Task without access
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        error:
+                          type: string
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/plugin_version:
     get:
       operationId: plugin_version
       summary: Versions of the plugins
-      description: 'JSON: `{"Plugin": [{"name", "version"}]}`.'
       tags:
         - Plugins
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: query
@@ -1364,16 +2194,32 @@ paths:
       responses:
         '200':
           description: Plugin versions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Plugin:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        version:
+                          type: string
+                          examples:
+                            - 1.2.3
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/reload_plugin:
     get:
       operationId: reload_plugin
       summary: Reload a plugin, or all enabled plugins
       tags:
         - Plugins
-      security:
-        - bearerAuth: []
       parameters:
         - name: action_type
           in: query
@@ -1384,8 +2230,14 @@ paths:
       responses:
         '200':
           description: Reload status of each plugin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PluginReloadStatus'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/reload_plugin_set:
     post:
       operationId: reload_plugin_set
@@ -1393,8 +2245,6 @@ paths:
       description: 'With format `json`, the body is `{"plugin_set": [...]}`; with format `xml`, `<plugin_set><action_type>...</action_type>...</plugin_set>`.'
       tags:
         - Plugins
-      security:
-        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/Format'
       requestBody:
@@ -1422,17 +2272,20 @@ paths:
       responses:
         '200':
           description: Reload status of each plugin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PluginReloadStatus'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/enable_plugin/{id}:
     get:
       operationId: enable_plugin
       summary: Enable a plugin, or all plugins
-      description: 'JSON: `{"install_id"}`.'
       tags:
         - Plugins
-      security:
-        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/AnyId'
         - name: action_type
@@ -1444,17 +2297,24 @@ paths:
       responses:
         '200':
           description: Installation ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  install_id:
+                    type: integer
+                    description: '`0` for all plugins'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/import_plugin/{id}:
     get:
       operationId: import_plugin
       summary: Import a plugin from a file on the Orchestrator host
-      description: 'JSON: `{"action_type"}`.'
       tags:
         - Plugins
-      security:
-        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/AnyId'
         - name: file
@@ -1467,17 +2327,23 @@ paths:
       responses:
         '200':
           description: Class name of the imported plugin
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  action_type:
+                    type: string
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/portlet_version:
     get:
       operationId: portlet_version
       summary: Versions of the portlets
-      description: 'JSON: `{"Portlet": [{"name", "version"}]}`.'
       tags:
         - Portlets
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: query
@@ -1488,32 +2354,71 @@ paths:
       responses:
         '200':
           description: Portlet versions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Portlet:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        version:
+                          type: string
+                          examples:
+                            - 1.2.3
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/processes_status:
     get:
       operationId: processes_status
       summary: Status of the processes (engine, monitor, workers)
       tags:
         - System
-      security:
-        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: Process status information
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Conversion of the XML, so all values are strings
+                properties:
+                  processes:
+                    type: object
+                    properties:
+                      time:
+                        type: string
+                      action:
+                        type: string
+                        const: status
+                      engine_id:
+                        type: string
+                      node:
+                        description: A node, or a list when there are several
+                        oneOf:
+                          - $ref: '#/components/schemas/ProcessNode'
+                          - type: array
+                            items:
+                              $ref: '#/components/schemas/ProcessNode'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/control_process/{id}:
     get:
       operationId: control_process
       summary: Start, stop or kill a process
-      description: 'Returns the status of the processes (as `processes_status`). JSON: `{"processes": {"process": [{"class", "id", "pid", "status", "type"}]}}`.'
+      description: Returns the status of the processes (in XML, the same as `processes_status`).
       tags:
         - System
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -1538,15 +2443,66 @@ paths:
           description: Command (`status` does nothing but returns the status)
         - name: worker_id
           in: query
+          style: form
+          explode: false
           schema:
-            type: string
+            type: array
+            items:
+              type: integer
           description: Comma-separated worker IDs, required for type `worker`
         - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: Status of the processes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  processes:
+                    type: object
+                    properties:
+                      time:
+                        type: string
+                      action:
+                        type: string
+                        const: status
+                      engine_id:
+                        type: integer
+                      process:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            class:
+                              type: string
+                              enum:
+                                - engine
+                                - monitor
+                                - node_mesh
+                                - worker
+                            id:
+                              type: integer
+                              description: Worker ID
+                            pid:
+                              type: [integer, string]
+                              description: '`-` when not running'
+                            status:
+                              type: string
+                              enum:
+                                - running
+                                - not running
+                            type:
+                              type: string
+                              description: Worker type
+                              enum:
+                                - normal
+                                - asynchronous
+                                - dedicated
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/custom_api_call:
     get:
       operationId: custom_api_call
@@ -1554,8 +2510,6 @@ paths:
       description: The query parameters and the request body are stored in table `SharedState`, where a workflow can watch them with a database trigger. The response is always XML.
       tags:
         - System
-      security:
-        - bearerAuth: []
       parameters:
         - name: identifier
           in: query
@@ -1578,30 +2532,65 @@ paths:
           description: ID of the shared state (XML)
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/execution_queue_stats/{id}:
     get:
       operationId: execution_queue_stats
       summary: Statistics of the execution queue of the engine
       tags:
         - System
-      security:
-        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/AnyId'
         - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: Queue statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  next_polling_due:
+                    type: [integer, string]
+                    description: Seconds until the next polling, or `-`
+                  completed_items:
+                    type: integer
+                  unassigned_items:
+                    type: integer
+                  error_items:
+                    type: integer
+                  inprogress_synch_count:
+                    type: integer
+                  inprogress_asynch_count:
+                    type: integer
+                  created:
+                    type: integer
+                    description: Number of work orders with this status
+                  ready:
+                    type: integer
+                  initializing:
+                    type: integer
+                  initialized:
+                    type: integer
+                  in_progress:
+                    type: integer
+                  paused:
+                    type: integer
+                  time_executed:
+                    type: string
+                  engine_id:
+                    type: integer
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/alerts/{id}:
     get:
       operationId: alerts
       summary: Alerts of the categories the user is subscribed to
       tags:
         - System
-      security:
-        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/AnyId'
         - name: count_only
@@ -1621,24 +2610,52 @@ paths:
       responses:
         '200':
           description: List of alerts, or their number
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - title: Count
+                    description: With `count_only=true`
+                    type: object
+                    properties:
+                      count:
+                        type: integer
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/AlertNotification'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/remote_node_ping:
     get:
       operationId: remote_node_ping
       summary: Version and platform of this Orchestrator
-      description: 'JSON: `{"remote_orchestrator_info": {"orchestrator-version", "platform", "engine_id"}}`.'
       tags:
         - Remote Nodes
-      security:
-        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: Orchestrator information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  remote_orchestrator_info:
+                    type: object
+                    properties:
+                      orchestrator-version:
+                        type: string
+                      platform:
+                        type: string
+                      engine_id:
+                        type: integer
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/test_step/{id}:
     get:
       operationId: test_step
@@ -1648,8 +2665,6 @@ paths:
         Pass that UUID to `/api/test_step_status` to poll for results.
       tags:
         - Testing
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -1660,10 +2675,15 @@ paths:
           example: my_workflow
         - name: step
           in: query
+          style: form
+          explode: false
           schema:
-            type: string
+            type: array
+            items:
+              type: string
           description: Comma-separated step name(s) to test. Omit to test all steps.
-          example: Get file size
+          example:
+            - Get file size
         - name: case
           in: query
           schema:
@@ -1673,15 +2693,23 @@ paths:
         - name: synchronous
           in: query
           schema:
-            type: boolean
-            default: false
-          description: Wait for all test cases to complete before returning
+            type: string
+            enum:
+              - 'true'
+              - 'false'
+          description: '`true`: wait for all test cases to complete before returning'
         - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: Test run launched. Response contains `Test_run_id` UUID to use with `/api/test_step_status`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRun'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
         '404':
           description: Workflow not found
   /api/test_step_status/{id}:
@@ -1693,22 +2721,27 @@ paths:
         The `id` parameter must be the **Test_run_id UUID** returned by that call, not a numeric workflow or step ID.
       tags:
         - Testing
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
           description: Test run UUID returned by /api/test_step (e.g. 935e0080-97f5-0135-26f8-34363bc6aedc)
           example: 935e0080-97f5-0135-26f8-34363bc6aedc
         - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: Test status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRun'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/work_order_stats/{id}:
     get:
       operationId: work_order_stats
@@ -1716,8 +2749,6 @@ paths:
       description: Returns the text `No Statistics found. Change the filter and try again.` when there is none.
       tags:
         - Statistics
-      security:
-        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/AnyId'
         - name: workflow_id
@@ -1734,13 +2765,61 @@ paths:
           in: query
           schema:
             type: string
+            format: date
           description: 'Statistics of this day, e.g. `2017-04-04`. Not set: monthly statistics.'
         - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: Work order statistics
+          content:
+            application/json:
+              schema:
+                type: array
+                description: By day (monthly statistics of the last 30 days), or by hour (statistics of a day). The sums are decimal strings.
+                items:
+                  type: object
+                  properties:
+                    Date:
+                      type: string
+                    Last_hour:
+                      type: string
+                      format: date-time
+                    Complete_Work_Orders:
+                      type: [string, integer]
+                    Failed_Work_Orders:
+                      type: [string, integer]
+                    Errored_Work_Orders:
+                      type: [string, integer]
+                    Canceled_Work_Orders:
+                      type: [string, integer]
+                    Rolled_Back_Work_Orders:
+                      type: [string, integer]
+                    Destroyed_Work_Orders:
+                      type: [string, integer]
+                    Cleared_Work_Orders:
+                      type: [string, integer]
+                    Flagged_Work_Orders:
+                      type: [string, integer]
+                    Initializing_Work_Orders:
+                      type: [string, integer]
+                    Initialized_Work_Orders:
+                      type: [string, integer]
+                    Created_Work_Orders:
+                      type: [string, integer]
+                    Ready_Work_Orders:
+                      type: [string, integer]
+                    In_Progress_Work_Orders:
+                      type: [string, integer]
+                    Unknown_Work_Orders:
+                      type: [string, integer]
+            text/plain:
+              schema:
+                type: string
+                const: No Statistics found. Change the filter and try again.
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/work_step_stats/{id}:
     get:
       operationId: work_step_stats
@@ -1748,45 +2827,96 @@ paths:
       description: 'Returns the text `No Statistics found. Change the filter and try again.` when there is none. The filters are inserted as is in an SQL condition (`workflow_id in (...)`): give comma-separated numbers or quoted values.'
       tags:
         - Statistics
-      security:
-        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/AnyId'
         - name: workflow_id
           in: query
+          style: form
+          explode: false
           schema:
-            type: string
+            type: array
+            items:
+              type: integer
           description: Comma-separated workflow IDs
         - name: step_id
           in: query
+          style: form
+          explode: false
           schema:
-            type: string
+            type: array
+            items:
+              type: integer
           description: Comma-separated step IDs
         - name: step_type
           in: query
+          style: form
+          explode: false
           schema:
-            type: string
+            type: array
+            items:
+              type: string
           description: Comma-separated step types, quoted (e.g. `'CustomRuby'`)
         - name: date
           in: query
           schema:
             type: string
+            format: date
           description: 'Statistics of this day, e.g. `2017-04-04`. Not set: monthly statistics.'
         - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: Work step statistics
+          content:
+            application/json:
+              schema:
+                type: array
+                description: By day (monthly statistics of the last 30 days), or by hour (statistics of a day). The sums are decimal strings.
+                items:
+                  type: object
+                  properties:
+                    Date:
+                      type: string
+                    Last_hour:
+                      type: string
+                      format: date-time
+                    Completed_Steps:
+                      type: [string, integer]
+                    Failed_Steps:
+                      type: [string, integer]
+                    Errored_steps:
+                      type: [string, integer]
+                    Obsolete_Steps:
+                      type: [string, integer]
+                    Activating_Steps:
+                      type: [string, integer]
+                    In_Progress_Steps:
+                      type: [string, integer]
+                    Paused_Steps:
+                      type: [string, integer]
+                    Pausing_Steps:
+                      type: [string, integer]
+                    Canceling_Steps:
+                      type: [string, integer]
+                    Resuming_Steps:
+                      type: [string, integer]
+                    Rolling_Back_Steps:
+                      type: [string, integer]
+                    Undefined_Steps:
+                      type: [string, integer]
+            text/plain:
+              schema:
+                type: string
+                const: No Statistics found. Change the filter and try again.
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/journal_files/{id}:
     get:
       operationId: journal_files
       summary: Files recorded in a journal book
-      description: 'JSON: `{"Journal": {"name", "id", "description", "active"}, "Packages": [{"name", "id", "files": [...]}], "Files": [...]}`; each file has `file_id`, `file`, `status`, `status_details`, `created_at`, `updated_at`, and `states` when detailed.'
       tags:
         - Journals
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -1804,39 +2934,89 @@ paths:
           description: '`false`: without the states (steps) of each file'
         - name: status
           in: query
+          style: form
+          explode: false
           schema:
-            type: string
+            type: array
+            items:
+              type: string
           description: Comma-separated statuses, e.g. `In Progress,Processing complete`
         - name: file
           in: query
+          style: form
+          explode: false
           schema:
-            type: string
+            type: array
+            items:
+              type: string
           description: Comma-separated file paths
         - name: package
           in: query
+          style: form
+          explode: false
           schema:
-            type: string
+            type: array
+            items:
+              type: string
           description: Comma-separated package names (not with `package_id`)
         - name: package_id
           in: query
+          style: form
+          explode: false
           schema:
-            type: string
+            type: array
+            items:
+              type: integer
           description: Comma-separated package IDs (not with `package`)
         - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: Journal entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Journal:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      id:
+                        type: integer
+                      description:
+                        type: [string, 'null']
+                      active:
+                        type: [boolean, 'null']
+                  Packages:
+                    type: array
+                    description: Only when the journal has packages
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        id:
+                          type: integer
+                        files:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/JournalFile'
+                  Files:
+                    type: array
+                    description: Files without package
+                    items:
+                      $ref: '#/components/schemas/JournalFile'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/add_resource/{id}:
     get:
       operationId: add_resource
       summary: Add a resource to a resource pool
-      description: 'JSON: `{"ManagedResource": {...}}`.'
       tags:
         - Resources
-      security:
-        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/AnyId'
         - $ref: '#/components/parameters/PoolName'
@@ -1849,24 +3029,34 @@ paths:
           description: Capacity of the resource
         - name: tags
           in: query
+          style: form
+          explode: false
           schema:
-            type: string
+            type: array
+            items:
+              type: string
           description: Comma-separated tags
         - $ref: '#/components/parameters/Format'
       responses:
         '200':
           description: The new resource
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ManagedResource:
+                    $ref: '#/components/schemas/ManagedResource'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/edit_resource_capacity/{id}:
     get:
       operationId: edit_resource_capacity
       summary: Change the capacity of a resource
-      description: 'JSON: `{"ManagedResource": {...}}`.'
       tags:
         - Resources
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -1881,17 +3071,23 @@ paths:
       responses:
         '200':
           description: The resource
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ManagedResource:
+                    $ref: '#/components/schemas/ManagedResource'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/edit_pool_capacity/{id}:
     get:
       operationId: edit_pool_capacity
       summary: Change the capacity of a resource pool
-      description: 'JSON: `{"ManagedResource": [...]}`.'
       tags:
         - Resources
-      security:
-        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -1905,16 +3101,25 @@ paths:
       responses:
         '200':
           description: The resources of the pool
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ManagedResource:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ManagedResource'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/resource_online/{id}:
     get:
       operationId: resource_online
       summary: Take a resource online
       tags:
         - Resources
-      security:
-        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/AnyId'
         - $ref: '#/components/parameters/PoolName'
@@ -1922,17 +3127,27 @@ paths:
         - $ref: '#/components/parameters/Format'
       responses:
         '200':
-          description: 'JSON: `{"ManagedResource": {"resource_id": "Online"}}`'
+          description: The resource is online
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ManagedResource:
+                    type: object
+                    description: Resource ID (with `>` replaced by `-`) to new status
+                    additionalProperties:
+                      const: Online
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/resource_offline/{id}:
     get:
       operationId: resource_offline
       summary: Take a resource offline
       tags:
         - Resources
-      security:
-        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/AnyId'
         - $ref: '#/components/parameters/PoolName'
@@ -1940,18 +3155,27 @@ paths:
         - $ref: '#/components/parameters/Format'
       responses:
         '200':
-          description: 'JSON: `{"ManagedResource": {"resource_id": "Offline"}}`'
+          description: The resource is offline
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ManagedResource:
+                    type: object
+                    description: Resource ID (with `>` replaced by `-`) to new status
+                    additionalProperties:
+                      const: Offline
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/pool_status/{id}:
     get:
       operationId: pool_status
       summary: Resources of a resource pool and their status
-      description: 'JSON: `{"ManagedResource": [{"id", ...}]}`.'
       tags:
         - Resources
-      security:
-        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/AnyId'
         - name: name
@@ -1964,17 +3188,36 @@ paths:
       responses:
         '200':
           description: Pool status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ManagedResource:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: Resource name
+                        taken:
+                          type: integer
+                        capacity:
+                          type: integer
+                        status:
+                          type: string
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
   /api/create_user/{id}:
     post:
       operationId: create_user
       summary: Create a user
-      description: 'The response is JSON unless format is `xml`: `{"create_user": {"success": "..."}}`.'
+      description: The response is JSON unless format is `xml`.
       tags:
         - Users
-      security:
-        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/AnyId'
         - $ref: '#/components/parameters/Format'
@@ -1984,6 +3227,10 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - login
+                - password
+                - email
               properties:
                 login:
                   type: string
@@ -1997,6 +3244,8 @@ paths:
                   type: string
                 email:
                   type: string
+                  format: email
+                  description: Email of the user, unique
                 phone:
                   type: string
                 SMS:
@@ -2011,6 +3260,7 @@ paths:
                   type: array
                   items:
                     type: string
+                    format: email
                 groups:
                   type: array
                   description: Names of existing groups
@@ -2019,8 +3269,22 @@ paths:
       responses:
         '200':
           description: Confirmation message
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  create_user:
+                    type: object
+                    properties:
+                      success:
+                        type: string
+                        examples:
+                          - User 'jdoe' was successfully created.
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     bearerAuth:
@@ -2028,6 +3292,25 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: JWT token obtained from /api/login endpoint
+    basicAuth:
+      type: http
+      scheme: basic
+      description: Login and password, when JWT authentication is disabled
+    loginQuery:
+      type: apiKey
+      in: query
+      name: login
+      description: User login, with `password` or `api_key`, when JWT authentication is disabled
+    passwordQuery:
+      type: apiKey
+      in: query
+      name: password
+      description: User password, when JWT authentication is disabled
+    apiKeyQuery:
+      type: apiKey
+      in: query
+      name: api_key
+      description: API key of the user, when JWT authentication is disabled
   parameters:
     Format:
       name: format
@@ -2074,18 +3357,615 @@ components:
       schema:
         type: string
       description: Name of the resource, e.g. an IP address
+  schemas:
+    Error:
+      type: object
+      description: 'Error of an API call in format `json`. In format `xml`: `<error time="..." action="..." id="...">message</error>`.'
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - action
+            - time
+            - id
+            - description
+          properties:
+            action:
+              type: string
+              description: Called endpoint
+            time:
+              type: string
+              description: UTC time
+              examples:
+                - '2026-10-21 08:30:00'
+            id:
+              type: string
+              description: The `id` of the call, or `0`
+            description:
+              type: string
+              description: Error message and backtrace
+    Workflow:
+      type: object
+      description: Workflow (database record)
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        portable_id:
+          type: [string, 'null']
+        created_by:
+          type: [integer, 'null']
+          description: User ID
+        folder_id:
+          type: [integer, 'null']
+        generated_from:
+          type: [integer, 'null']
+          description: Published whiteboard, `null` for a draft
+        revision_id:
+          type: [integer, 'null']
+          description: Published revision
+        label:
+          type: [string, 'null']
+        run_as:
+          type: [string, 'null']
+        source_revision:
+          type: [string, 'null']
+        comments:
+          type: [string, 'null']
+        description:
+          type: [string, 'null']
+        tags:
+          type: [string, 'null']
+        templates:
+          type: [string, 'null']
+        max_running:
+          type: [integer, 'null']
+        cleanup_after_days:
+          type: [integer, 'null']
+        purge_after_days:
+          type: [integer, 'null']
+        user_lock:
+          type: [boolean, 'null']
+        locked_by:
+          type: [integer, 'null']
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    WorkOrder:
+      type: object
+      description: Work order (database record)
+      properties:
+        id:
+          type: integer
+        name:
+          type: [string, 'null']
+        monitor_id:
+          type: [integer, 'null']
+        workflow_id:
+          type: [integer, 'null']
+        workflow_revision_id:
+          type: [integer, 'null']
+        workflow_name:
+          type: [string, 'null']
+        branched_from_order:
+          type: [integer, 'null']
+          description: Parent work order, for a sub-workflow
+        branched_from:
+          type: [integer, 'null']
+          description: Parent work step, for a sub-workflow
+        forked_at:
+          type: [integer, 'null']
+        derived_from:
+          type: [integer, 'null']
+        master_id:
+          type: [integer, 'null']
+        launched_by:
+          type: [integer, 'null']
+          description: User ID
+        initiated_by:
+          type: [integer, 'null']
+          description: User ID
+        running_as:
+          type: [integer, 'null']
+        priority:
+          type: [integer, 'null']
+        exec_priority:
+          type: [number, 'null']
+        higher_priority:
+          type: [boolean, 'null']
+        label:
+          type: [string, 'null']
+        status:
+          type: [string, 'null']
+          examples:
+            - In Progress
+        status_details:
+          type: [string, 'null']
+        comments:
+          type: [string, 'null']
+        tags:
+          type: [string, 'null']
+          description: Tags separated by `|`, e.g. `|tag1|tag2|`
+        initiate_date:
+          type: [string, 'null']
+          format: date-time
+        completion_date:
+          type: [string, 'null']
+          format: date-time
+        max_running:
+          type: [integer, 'null']
+        cleanup_after_days:
+          type: [integer, 'null']
+        purge_after_days:
+          type: [integer, 'null']
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    WorkStepBase:
+      type: object
+      description: Work step (database record), common columns
+      properties:
+        id:
+          type: integer
+        action_id:
+          type: [integer, 'null']
+        step_id:
+          type: [integer, 'null']
+        step_type:
+          type: [string, 'null']
+          description: Plugin class name, e.g. `CustomRuby`
+        step_name:
+          type: [string, 'null']
+        work_step_name:
+          type: [string, 'null']
+        attempt:
+          type: [integer, 'null']
+        execution_timeout:
+          type: [integer, 'null']
+        group:
+          type: [integer, 'null']
+        percent_complete:
+          type: [integer, 'null']
+        rank:
+          type: [integer, 'null']
+        running_as:
+          type: [integer, 'null']
+        synch_filter:
+          type: [integer, 'null']
+        timeout:
+          type: [integer, 'null']
+        weight:
+          type: [integer, 'null']
+        activation_time:
+          type: [number, 'null']
+        on_timeout:
+          type: [string, 'null']
+        status:
+          type: [string, 'null']
+        status_details:
+          type: [string, 'null']
+        prerequisites:
+          type: [string, 'null']
+        episteps:
+          type: [string, 'null']
+        journaling:
+          type: [string, 'null']
+        work_inputs:
+          type: [string, 'null']
+        work_outputs:
+          type: [string, 'null']
+        activable_date:
+          type: [string, 'null']
+          format: date-time
+        activation_date:
+          type: [string, 'null']
+          format: date-time
+        original_activation_date:
+          type: [string, 'null']
+          format: date-time
+        completion_date:
+          type: [string, 'null']
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    WorkStep:
+      description: Work step (database record)
+      allOf:
+        - $ref: '#/components/schemas/WorkStepBase'
+      properties:
+        work_order_id:
+          type: [integer, 'null']
+        workflow_id:
+          type: [integer, 'null']
+        pre_processing:
+          type: [string, 'null']
+        post_processing:
+          type: [string, 'null']
+    WorkStepStatus:
+      description: Work step in `work_order_status`, without `workflow_id`, `pre_processing` and `post_processing`
+      allOf:
+        - $ref: '#/components/schemas/WorkStepBase'
+      properties:
+        percent_complete:
+          type: integer
+          description: 0 for a running step, 100 for a finished step, when not set
+        category:
+          type: string
+          description: Category of the plugin, e.g. `Basic/Ruby`, or `-`
+        work_order_id:
+          type: [integer, string]
+          description: 'Only for steps of type `SubWorkflow`, `WorkflowLauncher` and `FederatedWorkflow`: the launched work order, or `-`'
+        node_id:
+          type: string
+          description: 'Only for `FederatedWorkflow`: execution node, or `-`'
+        address:
+          type: string
+          description: 'Only for `FederatedWorkflow`: execution address, or `-`'
+    WorkOrderWithSteps:
+      type: object
+      properties:
+        work_order:
+          $ref: '#/components/schemas/WorkOrder'
+        work_steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkStep'
+    WorkstepReset:
+      allOf:
+        - $ref: '#/components/schemas/WorkOrderWithSteps'
+      properties:
+        workstep_reset:
+          const: true
+    StepVariable:
+      type: object
+      description: Input or output of a work step
+      properties:
+        value:
+          description: Value, of any type
+        name:
+          type: string
+        id:
+          type: integer
+        type:
+          type: string
+          description: Value type
+    QueuedItem:
+      type: object
+      description: Item of a queue (database record, without the columns of the queue)
+      properties:
+        id:
+          type: integer
+        queued_item:
+          description: The queued item
+        item_description:
+          type: [string, 'null']
+        priority:
+          type: [integer, 'null']
+        weight:
+          type: [integer, 'null']
+        position:
+          type: [integer, 'null']
+        rank:
+          type: [integer, 'null']
+          description: Position in the queue, from 0
+        originator_type:
+          type: [string, 'null']
+        originator_id:
+          type: [integer, 'null']
+        tags:
+          type: [string, 'null']
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    QueueMetadata:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Queue name given in the call (`queued_items` only)
+        name:
+          type: string
+          description: Displayed name of the queue
+        comments:
+          type: [string, 'null']
+        administrators:
+          type: object
+          properties:
+            groups:
+              type: array
+              items:
+                type: integer
+            users:
+              type: array
+              items:
+                type: integer
+        paused:
+          type: [boolean, 'null']
+    QueuedItems:
+      type: object
+      properties:
+        queued_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueuedItem'
+        queue_metadata:
+          $ref: '#/components/schemas/QueueMetadata'
+    Task:
+      type: object
+      description: Task, i.e. a user input waiting for a user (database record)
+      properties:
+        id:
+          type: integer
+        state_id:
+          type: [integer, 'null']
+          description: Work step ID
+        user_input_id:
+          type: [integer, 'null']
+        role_id:
+          type: [integer, 'null']
+          description: Group ID
+        user_id:
+          type: [integer, 'null']
+        status:
+          type: [string, 'null']
+        completed_by:
+          type: [integer, 'null']
+          description: User ID
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    UserInput:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          description: Value type
+        value:
+          description: Current value
+        required:
+          type: boolean
+    MonitorChange:
+      type: object
+      properties:
+        action:
+          type: string
+          enum:
+            - activate_monitor
+            - deactivate_monitor
+        time:
+          type: string
+          description: Local time
+        id:
+          type: string
+          description: Monitor ID
+        description:
+          type: string
+          enum:
+            - activated
+            - deactivated
+    PluginReloadStatus:
+      type: object
+      description: 'Plugin class name, or `All Plugins`, to `true`, `false` or an error message'
+      additionalProperties:
+        type: [boolean, string]
+    ProcessNode:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        current:
+          type: string
+          enum:
+            - 'true'
+            - 'false'
+        process:
+          type: array
+          items:
+            type: object
+            properties:
+              class:
+                type: string
+                enum:
+                  - engine
+                  - monitor
+                  - process_manager
+                  - node_mesh
+                  - worker
+              id:
+                type: string
+                description: Worker ID
+              pid:
+                type: string
+                description: '`-` when not running'
+              status:
+                type: string
+              type:
+                type: string
+                description: Worker type
+                enum:
+                  - normal
+                  - asynchronous
+                  - dedicated
+    AlertNotification:
+      type: object
+      properties:
+        id:
+          type: integer
+        category_id:
+          type: [integer, 'null']
+        alert_header:
+          type: [string, 'null']
+        alert_description:
+          type: [string, 'null']
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    TestRun:
+      type: object
+      properties:
+        Test_run_id:
+          type: string
+          format: uuid
+        Workflow_id:
+          type: [integer, 'null']
+        Test_cases_launched:
+          type: integer
+        Steps:
+          type: array
+          description: Only when synchronous, and in `test_step_status`
+          items:
+            type: object
+            properties:
+              Step_name:
+                type: string
+              Result:
+                type: boolean
+              Test_cases:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    Id:
+                      type: integer
+                    Name:
+                      type: string
+                    status:
+                      type: string
+                    Status_details:
+                      type: [string, 'null']
+                    Result_message:
+                      type: [string, 'null']
+                    Last_update:
+                      type: string
+                      format: date-time
+                    Inputs:
+                      description: Inputs of the test case
+                    Outputs:
+                      description: Outputs of the test case
+                    Result:
+                      type: [boolean, 'null']
+        Result:
+          type: boolean
+          description: Only when synchronous, and in `test_step_status`
+    JournalFile:
+      type: object
+      properties:
+        file_id:
+          type: integer
+        file:
+          type: string
+        status:
+          type: [string, 'null']
+        status_details:
+          type: [string, 'null']
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        states:
+          type: array
+          description: Steps that processed the file, unless `details=false`
+          items:
+            type: object
+            properties:
+              path:
+                type: [string, 'null']
+              status:
+                type: [string, 'null']
+              status_details:
+                type: [string, 'null']
+              progress:
+                type: [integer, 'null']
+              work_step_id:
+                type: [integer, 'null']
+              work_order_id:
+                type: [integer, 'null']
+              step_name:
+                type: [string, 'null']
+              workflow_id:
+                type: [integer, 'null']
+              workflow_name:
+                type: [string, 'null']
+              created_at:
+                type: string
+                format: date-time
+    ManagedResource:
+      type: object
+      description: Resource of a resource pool (database record)
+      properties:
+        id:
+          type: integer
+        resource_id:
+          type: string
+        resource_name:
+          type: string
+          description: Pool name, with the suffix `__a`
+        status:
+          type: [string, 'null']
+        max:
+          type: [integer, 'null']
+          description: Capacity
+        reserved:
+          type: [integer, 'null']
+        properties:
+          type: [string, 'null']
+        tags:
+          type: [string, 'null']
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
   responses:
     UnauthorizedError:
       description: Authentication required or token invalid
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              error:
-                type: string
-                examples:
-                  - Unauthorized
+            anyOf:
+              - title: JWT authentication
+                type: object
+                properties:
+                  error:
+                    type: string
+                    examples:
+                      - Unauthorized
+              - $ref: '#/components/schemas/Error'
+    Error:
+      description: 'Error: status 403 when access is denied, else 404 when the server option `strict_api_validation` is set, else 200 (see Errors in the introduction)'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
 tags:
   - name: Authentication
     description: Obtain JWT tokens for API access. All other endpoints require authentication.
