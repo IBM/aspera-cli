@@ -97,23 +97,43 @@ Example implementations can be found at: <https://github.com/laurent-martin/aspe
 For scripting and ad hoc command-line tasks, `ascli` is ideal.
 It is developer-friendly and well-suited for testing and learning Aspera APIs (see [Logging, Debugging](#logging-debugging)).
 
-### CLI landscape overview: `ascp`
+### `ascli` or `ascp`?
 
 `ascp` is the low-level command-line utility that implements the FASP protocol and is used for actual data transfers.
 Every Aspera transfer involves an `ascp` process on both the client and server sides.
-While `ascp` can be used directly, it is limited to basic send/receive operations and lacks features like configuration management, automatic resume, and remote file listing.
-`ascli` provides a higher-level interface that encompasses all `ascp` capabilities and adds significant usability improvements.
+`ascli` is not an alternative transfer engine: it starts `ascp` (directly or through another [transfer agent](#agent-direct)), so transfer performance is identical.
+
+Other low-level command line tools are included with Aspera transfer products, and `ascli` is a front end for them too:
+
+- `async`: the IBM Aspera Sync utility, to synchronize folders (see [IBM Aspera Sync](#ibm-aspera-sync)).
+- `ascp4`: an alternate transfer engine, selected with transfer spec parameter `use_ascp4`. `ascp4` will be deprecated: use `ascp` unless one of its specific features is needed.
+
+Used directly, `ascp` is limited to sending and receiving files:
+
+- Connection parameters (address, ports, user, credentials) must be provided on each command line: there are no connection profiles.
+- The remote server cannot be browsed: remote paths must be known in advance.
+- With Aspera applications (AoC, Faspex, Shares, Node API), the transfer address and token must first be obtained through the application's REST API.
+- Multi-session requires starting and monitoring one `ascp` process per session (option `-C`).
+- On interruption, `ascp` exits with an error: data already at destination is skipped on the next run (option `-k`), but restarting is up to the caller.
+
+`ascli` adds:
+
+- Configuration presets, with secrets protected in a vault (see [Option Preset](#option-preset) and [Secret Vault](#secret-vault))
+- Detection of the Aspera application from its URL, and automatic retrieval of transfer parameters and tokens (see [Wizard](#wizard))
+- Remote file browsing and management: list, create folder, rename, copy, delete, checksum
+- Built-in multi-session, with an aggregated progress bar (see [Multi-session transfer](#multi-session-transfer))
+- Automatic resume on retry-able errors, with increasing delay and token renewal (see [Agent: Direct](#agent-direct))
+- Choice of transfer agents: Direct, Node, Connect, HTTP Gateway, Transfer Daemon
+- Structured output (table, JSON, YAML, CSV) for scripting (see [Output](#output))
+
+All `ascp` options remain available, either through transfer spec parameters (listed with `config ascp spec`), or by passing `ascp` arguments directly when using the `direct` agent (via `ascp_args` in option `transfer`).
+
+Using `ascp` directly remains relevant when:
+
+- `ascli` cannot be installed: `ascp` is included with every Aspera transfer product.
+- The need is limited to simple transfers with an HSTS using SSH credentials.
 
 To use `ascp` directly as a command line, refer to the IBM Aspera documentation of either [Desktop Client](https://www.ibm.com/docs/en/asdc), [Endpoint](https://www.ibm.com/docs/en/ahte) or [Transfer Server](https://www.ibm.com/docs/en/ahts) - each of which includes [a dedicated section on `ascp`](https://www.ibm.com/docs/en/ahts/4.4?topic=linux-ascp-transferring-from-command-line).
-
-Using `ascli` with the `server` plugin instead of raw `ascp` provides several advantages:
-
-- Automatic resume on error
-- Configuration file support
-- Choice of transfer agents
-- Built-in multi-session support
-
-All `ascp` options are supported, either through transfer spec parameters (listed with `config ascp spec`), or by passing `ascp` arguments directly when using the `direct` agent (via `ascp_args` in option `transfer`).
 
 ### Notations, Shell, Examples
 
@@ -9907,12 +9927,15 @@ Orchestrator does not refuse an incomplete resolution: `workflows import_with_co
 --auth_style=token workflow list
 health
 info
-monitors
+journal files journal --query=@json:'{"details":"false"}'
+monitors list node
+monitors snapshot
 plugins list
 plugins spec --select=@json:'{"category":"Triggers"}'
 plugins spec AmazonS3Operation --format=yaml
 plugins spec ascpclient inputs
 processes
+queues list
 workflow check_import orch_wf_check.yml
 workflow details my_workflow_id
 workflow export my_workflow_id
