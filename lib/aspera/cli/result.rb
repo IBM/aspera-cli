@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/assert'
+require 'aspera/secret_hider'
 require 'aspera/nagios'
 require 'aspera/log'
 require 'aspera/environment'
@@ -176,13 +177,24 @@ module Aspera
 
       # Text result
       class Text < Result
-        def initialize(data)
+        # @return [Boolean] `true` if the text is a secret value (not detectable by its content, as it has no key name)
+        attr_reader :secret
+
+        # @param data   [String, Numeric, Symbol, Boolean] The value
+        # @param secret [Boolean] `true` if the value is a secret: displayed on command line, but never sent to an AI client (MCP)
+        def initialize(data, secret: false)
           Aspera.assert_type(data, *SCALAR_TYPES, type: ArgumentError) { 'text result data' }
           super(data: data)
+          @secret = secret
         end
 
         def format(formatter)
-          data = @data.is_a?(String) && formatter.hide_secrets? ? formatter.hide_secrets_in_string(@data) : @data
+          data = @data
+          if data.is_a?(String) && formatter.hide_secrets?
+            # A secret value has no key name, so it cannot be detected by pattern: the command flags it
+            data = SecretHider.instance.deep_hide_values(data, [data]) if @secret
+            data = formatter.hide_secrets_in_string(data)
+          end
           case formatter.format_type
           when :text, :nagios
             formatter.display_message(:data, data.to_s)

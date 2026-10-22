@@ -2010,7 +2010,6 @@ The option `--out.level` controls the level of output:
 
 - If value is `no` (default), then secrets are redacted from command results: replaced with `🔑`, or `***` if the terminal does not support Unicode (see [`--out.utf8`](#terminal-rendering-colors-and-utf-8)).
 - If value is `yes`, then secrets are shown in clear in results.
-- If `--out.level` is `data`, secrets are included to allow piping results.
 
 #### Terminal rendering: Colors and UTF-8
 
@@ -3283,7 +3282,7 @@ To migrate all secrets from one vault backend to another (for example, from the 
 > Use `list` (not `ids`) as the source: `ids` returns only labels, while `list` returns the full secret details needed for import.
 
 ```shell
-<%=cmd%> config vault list --format=json --out.level=data \
+<%=cmd%> config vault list --format=json --out.level=data --out.secrets=yes \
   --vault=@json:'{"type":"file","name":"<%=ph :source_vault_file%>"}' \
   --vault-password=<%=ph :source_password%> | \
 <%=cmd%> config vault import @json:@stdin: --bulk=yes \
@@ -3292,7 +3291,7 @@ To migrate all secrets from one vault backend to another (for example, from the 
 ```
 
 > [!TIP]
-> Use `--out.level=data` on the `list` command so that only the raw JSON array is written to stdout, with no table headers or status lines.
+> Use `--out.level=data` on the `list` command so that only the raw JSON array is written to stdout, with no table headers or status lines, and `--out.secrets=yes` so that secrets are not replaced by a placeholder.
 
 The `import` command accepts a JSON array where each element is a vault secret object (same schema as `create`).
 `--bulk` makes each entry reported individually in the result table; omit it to get a single-line summary.
@@ -5974,11 +5973,12 @@ empty
 
 The command `<%=cmd%> aoc bearer_token` can be used to generate an OAuth token suitable to call any AoC API.
 This can be useful when a command is not yet available.
+The token is a secret: it is hidden in the output, unless option `--out.secrets=yes` is used.
 
 Example:
 
 ```shell
-curl -s -H "Authorization: $(<%=cmd%> aoc bearer_token)" 'https://api.ibmaspera.com/api/v1/group_memberships?embed[]=dropbox&embed[]=workspace'|jq -r '.[]|(.workspace.name + " -> " + .dropbox.name)'
+curl -s -H "Authorization: $(<%=cmd%> aoc bearer_token --out.secrets=yes)" 'https://api.ibmaspera.com/api/v1/group_memberships?embed[]=dropbox&embed[]=workspace'|jq -r '.[]|(.workspace.name + " -> " + .dropbox.name)'
 ```
 
 It is also possible to get the bearer token for node, as user or as admin using:
@@ -6717,7 +6717,7 @@ Find files in Files app:
 To send a package with the file `10M.dat` from subfolder /src_folder:
 
 ```shell
-<%=cmd%> aoc files node_info /src_folder --format=json --out.level=data | <%=cmd%> aoc packages send @json:'{"name":"test","recipients":["someuser@example.com"]}' 10M.dat --transfer=@json:@stdin: --transfer.agent=node
+<%=cmd%> aoc files node_info /src_folder --format=json --out.level=data --out.secrets=yes | <%=cmd%> aoc packages send @json:'{"name":"test","recipients":["someuser@example.com"]}' 10M.dat --transfer=@json:@stdin: --transfer.agent=node
 ```
 
 #### Receive packages
@@ -7185,7 +7185,7 @@ Procedure to send a file from org1 to org2:
 - Execute the following:
 
 ```shell
-<%=cmd%> -Porg1 aoc files node_info <%=ph :source_folder%> --format=json --out.level=data | <%=cmd%> -Porg2 aoc files upload <%=ph :source_file%> --to-folder=<%=ph :dest_folder%> --transfer=@json:@stdin: --transfer.agent=node
+<%=cmd%> -Porg1 aoc files node_info <%=ph :source_folder%> --format=json --out.level=data --out.secrets=yes | <%=cmd%> -Porg2 aoc files upload <%=ph :source_file%> --to-folder=<%=ph :dest_folder%> --transfer=@json:@stdin: --transfer.agent=node
 ```
 
 Explanation:
@@ -7902,7 +7902,7 @@ Alternatively, use the following equivalent command, as `config genkey` also sav
 - Create a Bearer token for the user:
 
   ```shell
-  <%=cmd%> node bearer_token @file:./myorgkey.pem @json:'{"user_id":"'$my_user_id'","_validity":3600}' --out.file=bearer.txt
+  <%=cmd%> node bearer_token @file:./myorgkey.pem @json:'{"user_id":"'$my_user_id'","_validity":3600}' --out.secrets=yes --out.file=bearer.txt
   ```
 
 > [!NOTE]
@@ -8715,7 +8715,7 @@ The calling client uses this to start a transfer to HSTS, which is managed by Fa
 If a command is missing, then it is still possible to call the API directly on the command line using `curl`:
 
 ```shell
-curl -H "Authorization: $(<%=cmd%> faspex5 bearer_token)" https://faspex5.example.com/aspera/faspex/api/v5/<%=ph :api_endpoint%>
+curl -H "Authorization: $(<%=cmd%> faspex5 bearer_token --out.secrets=yes)" https://faspex5.example.com/aspera/faspex/api/v5/<%=ph :api_endpoint%>
 ```
 
 ## Plugin: `shares`: IBM Aspera Shares v1

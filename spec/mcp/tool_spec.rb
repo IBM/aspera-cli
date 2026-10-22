@@ -231,6 +231,12 @@ RSpec.describe(Aspera::Cli::Mcp::Tool) do
       expect(resp.content).to(eq([{type: 'text', text: 'hello'}]))
       expect(resp.structured_content).to(be_nil)
     end
+
+    it 'hides a text flagged as secret, even without key name' do
+      Aspera::Environment.unicode = true
+      resp = call_with_result(Aspera::Cli::Result::Text.new('RAW_SECRET_VALUE', secret: true))
+      expect(resp.content).to(eq([{type: 'text', text: '🔑'}]))
+    end
   end
 
   # -----------------------------------------------------------------------

@@ -599,7 +599,7 @@ module Aspera
           end
         )
         command :bearer_token,      description: 'Show bearer token',
-          action: ->(**) { Result::Text.new(aoc_api.oauth.authorization) }
+          action: ->(**) { Result::Text.new(aoc_api.oauth.authorization, secret: true) }
         command :organization,      description: 'Show organization info',
           action: ->(**) { Result::SingleObject.new(aoc_api.read('organization')) }
         command :tier_restrictions, description: 'Show tier restrictions',
@@ -613,7 +613,7 @@ module Aspera
         command :admin, description: 'Administer AoC', setup: :setup_admin_scope
         commands_under :admin do
           command :bearer_token,   description: 'Show admin bearer token',
-            action: ->(**) { Result::Text.new(aoc_api.oauth.authorization) }
+            action: ->(**) { Result::Text.new(aoc_api.oauth.authorization, secret: true) }
           command :application,    description: 'Manage applications'
           command :ats, description: 'Manage ATS (Aspera Transfer Service)',
             mount: {plugin: Ats, instance: :build_ats_plugin}
@@ -1535,7 +1535,7 @@ module Aspera
         def action_admin_node_bearer_token(scope:, node_id:, **)
           scope ||= Api::Node::Scope::ADMIN
           node_api = aoc_api.node_api_from(node_id: node_id, scope: scope)
-          Result::Text.new(node_api.oauth.authorization)
+          Result::Text.new(node_api.oauth.authorization, secret: true)
         end
 
         # admin > node > update_status

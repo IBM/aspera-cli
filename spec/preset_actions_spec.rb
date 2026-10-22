@@ -229,6 +229,23 @@ module Aspera
       end
 
       # -----------------------------------------------------------------------
+      # action_preset_get — scalar secret is flagged (no key name in Result::Text)
+      # -----------------------------------------------------------------------
+      describe '#action_preset_get' do
+        before { config_presets['p1'] = {'username' => 'bob', 'password' => 'RAW_SECRET_VALUE'} }
+
+        it 'flags a secret value' do
+          result = host.action_preset_get(name: 'p1', param_name: 'password')
+          expect(result.data).to(eq('RAW_SECRET_VALUE'))
+          expect(result.secret).to(be(true))
+        end
+
+        it 'does not flag a non-secret value' do
+          expect(host.action_preset_get(name: 'p1', param_name: 'username').secret).to(be(false))
+        end
+      end
+
+      # -----------------------------------------------------------------------
       # GLOBAL keyword: global default preset, created only by actions writing in it
       # -----------------------------------------------------------------------
       describe 'GLOBAL preset name' do

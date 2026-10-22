@@ -178,7 +178,10 @@ module Aspera
               end
               MCP::Tool::Response.new(content, structured_content: structured)
             else
-              MCP::Tool::Response.new([{type: 'text', text: SecretHider.instance.hide_secrets_in_string(result.data.to_s, all: true)}])
+              text = result.data.to_s
+              # A scalar secret has no key name, so it cannot be detected by pattern: the command flags it
+              text = SecretHider.instance.deep_hide_values(text, [text]) if result.is_a?(Result::Text) && result.secret
+              MCP::Tool::Response.new([{type: 'text', text: SecretHider.instance.hide_secrets_in_string(text, all: true)}])
             end
           rescue Cli::SchemaRequest => e
             schema_path = e.path

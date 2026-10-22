@@ -2212,6 +2212,7 @@ nd_bearer_token:
     - "@file:@preset:file.private_key"
     - "@:"
     - user_id=@val:666
+    - --out.secrets=yes
 nd_ak_bearer_browse:
   depends_on:
     - nd_ak_bearer_create
@@ -2387,6 +2388,7 @@ awa_bearer:
   args:
     - bearer_token
     - --out.level=data
+    - --out.secrets=yes
 awa_admin_bearer:
   template: awa_user_suite
   args:
@@ -2394,6 +2396,7 @@ awa_admin_bearer:
     - admin
     - bearer_token
     - --out.level=data
+    - --out.secrets=yes
 awa_org:
   template: awa_user_suite
   args:
@@ -2676,6 +2679,7 @@ aoc_files_node_info:
     - /testdst
     - --format=json
     - --out.level=data
+    - --out.secrets=yes
 aoc_files_upload_other_ws:
   tags:
     - nodoc

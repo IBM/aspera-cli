@@ -271,9 +271,9 @@ module Aspera
         display_message(:info, status, **kwargs)
       end
 
-      # Check if secrets should be hidden
+      # Check if secrets should be hidden: always, unless explicitly requested (`--out.secrets=yes`)
       def hide_secrets?
-        !@options[:show_secrets] && !@options[:display].eql?(:data)
+        !@options[:show_secrets]
       end
 
       # Hides secrets in Hash or Array

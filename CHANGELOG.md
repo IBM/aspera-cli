@@ -42,6 +42,8 @@ Highlights: security hardening of local web servers (authentication, minimum sec
 
 ### Issues Fixed
 
+* `config preset get`: The value of a secret option (e.g. `password`) was displayed, and returned to the AI client by `mcp server`. It is now hidden, unless `--out.secrets=yes` (command line only, never in `mcp server`).
+* **global**: Tokens displayed by `bearer_token`, `bearer_token_node` (`aoc`, `faspex5`, `node`), `aoc admin node bearer_token` and `node basic_token` were returned to the AI client by `mcp server`. They are now hidden.
 * `config completion words`: Extended values on the command line were evaluated at each `Tab` (e.g. `@ruby:` code executed, `@stdin:` waiting for input).
 * `config completion`: Bash: words containing `=` or `:` (e.g. a URL) broke completion of the next words, and each `Tab` checked for a newer gem version on the network.
 * `node emulator`: A symbolic link in the `docroot` leading out of it was followed by transfers.
@@ -89,6 +91,7 @@ Highlights: security hardening of local web servers (authentication, minimum sec
 
 ### Breaking Changes
 
+* **global**: Secrets are hidden in results, whatever the output level or format (`--out.level=data`, `--format=json`...), unless `--out.secrets=yes`: before, `--out.level=data` (default with `--format=json`, `csv`...) showed them. This includes tokens displayed by `bearer_token`, `bearer_token_node`, `basic_token` and `config preset get <secret>`. Add `--out.secrets=yes` to scripts that use them (e.g. `$(ascli aoc bearer_token --out.secrets=yes)`).
 * **global**: Ruby 3.2 or later is required (3.1 reached end of life in March 2025). Future minimum is 3.3. Policy: a Ruby version is supported until 18 months after its end of official support.
 * **global**: The exit code on error indicates its category instead of always `1`: scripts shall test for a non-zero code. With `--format=nagios`, a failed command exits with `3` (UNKNOWN). Value `help` of a structured value exits with `0`.
 * **global**: Local web servers on an address that is not loopback require authentication: `auth_token` for `mcp server`, `secret_token` or `allowed_ips` for `faspex5 postprocessing`, `username` and `password` for `node emulator`, `faspex5 gateway` and `aoc gateway`.

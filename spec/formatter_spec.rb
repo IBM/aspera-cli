@@ -160,6 +160,48 @@ module Aspera
         end
       end
 
+      describe 'secret text result' do
+        # @return [String] standard output of the display of result
+        def output_of(result, *argv)
+          formatter = build_formatter(argv)
+          saved = $stdout
+          $stdout = StringIO.new
+          formatter.display_results(result)
+          $stdout.string
+        ensure
+          $stdout = saved
+        end
+
+        let(:result) { Result::Text.new('RAW_SECRET_VALUE', secret: true) }
+
+        it 'is hidden by default' do
+          Environment.unicode = false
+          expect(output_of(result).chomp).to(eq('***'))
+        end
+
+        it 'is shown with --show-secrets=yes' do
+          expect(output_of(result, '--show-secrets=yes').chomp).to(eq('RAW_SECRET_VALUE'))
+        end
+
+        it 'is shown with --out.secrets=yes' do
+          expect(output_of(result, '--out.secrets=yes').chomp).to(eq('RAW_SECRET_VALUE'))
+        end
+
+        it 'is hidden with --out.level=data' do
+          Environment.unicode = false
+          expect(output_of(result, '--out.level=data').chomp).to(eq('***'))
+        end
+
+        it 'is hidden with --format=json' do
+          Environment.unicode = false
+          expect(output_of(result, '--format=json').chomp).to(eq('"***"'))
+        end
+
+        it 'is shown when not flagged as secret' do
+          expect(output_of(Result::Text.new('RAW_VALUE')).chomp).to(eq('RAW_VALUE'))
+        end
+      end
+
       describe 'option out query' do
         let(:users) do
           [

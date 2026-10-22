@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/assert'
+require 'aspera/secret_hider'
 require 'aspera/cli/preset_manager'
 
 module Aspera
@@ -117,7 +118,8 @@ module Aspera
         value = cp[name][param_name]
         raise Cli::BadArgument, "no such option in preset #{name}: #{param_name}" if value.nil?
         case value
-        when Numeric, String then return Result::Text.new(ExtendedValue.instance.evaluate(value.to_s, context: 'preset'))
+        when Numeric, String
+          return Result::Text.new(ExtendedValue.instance.evaluate(value.to_s, context: 'preset'), secret: SecretHider.instance.secret?(param_name, value))
         end
         Result::SingleObject.new(value)
       end
