@@ -5,7 +5,7 @@ servers:
   version: SaaS
 - plugin: console
   product: IBM Aspera Console
-  version: 3.4.4
+  version: 3.4.11
 - plugin: faspex5
   product: Faspex v5
   version: F5.0.17
@@ -20,7 +20,7 @@ servers:
   version: 4.1.6.2036-00000
 - plugin: shares
   product: IBM Aspera Shares
-  version: 1.9.14
+  version: 1.11.5
 agents:
 - agent: connect
   product: IBM Aspera Connect Client
