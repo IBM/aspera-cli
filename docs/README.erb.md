@@ -3118,6 +3118,8 @@ Instead, they shall be hidden (logs, output) or encrypted (configuration).
 
 Terminal output (command result) secret removal is controlled by option `--out.secrets` (default: `no`).
 Log secret removal is controlled by option `log_secrets` (default: `no`).
+Secrets are identified by the name of their field (for example, `password`, `token`), and by their value: values of secret options, of [Extended Values](#extended-value-syntax) `@secret:` and `@vault:`, tokens obtained or generated, and secrets of transfer specs are hidden wherever they appear.
+A value shorter than 8 characters is hidden only when it is the whole value, not inside a text.
 Mandatory command line options can be requested interactively (for example, password) using option `interactive`.
 It is possible to use [Extended Value](#extended-value-syntax) `@secret:[name]` to ask for a secret interactively.
 If option `ui` is `graphical` (see [Graphical Interactions](#graphical-interactions-browser-and-text-editor)), the secret is entered on a web page opened in the browser, served by a local web server on `127.0.0.1`, else on terminal.

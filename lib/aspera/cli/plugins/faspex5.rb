@@ -498,7 +498,7 @@ module Aspera
         # :health and :postprocessing work without authentication: they do not use api_v5.
         command :health,         description: 'Check Faspex 5 health'
         command :version,        description: 'Show Faspex 5 version', action: ->(**) { Result::SingleObject.new(api_v5.read('version')) }
-        command :bearer_token,   description: 'Show OAuth bearer token', action: ->(**) { Result::Text.new(api_v5.oauth.authorization, secret: true) }
+        command :bearer_token,   description: 'Show OAuth bearer token', action: ->(**) { Result::Text.new(api_v5.oauth.authorization) }
         # Package id argument; with a public link to a package, setup_package_id provides it instead
         PACKAGE_ID_ARG = [{name: :package_id, type: :identifier}].freeze
         private_constant :PACKAGE_ID_ARG

@@ -160,7 +160,7 @@ module Aspera
         end
       end
 
-      describe 'secret text result' do
+      describe 'declared secret value' do
         # @return [String] standard output of the display of result
         def output_of(result, *argv)
           formatter = build_formatter(argv)
@@ -172,7 +172,11 @@ module Aspera
           $stdout = saved
         end
 
-        let(:result) { Result::Text.new('RAW_SECRET_VALUE', secret: true) }
+        # Values of secrets are generated, none in source
+        let(:secret) { SecureRandom.alphanumeric(12) }
+        let(:result) { Result::Text.new(secret) }
+
+        before { SecretHider.instance.add_secret_values(secret) }
 
         it 'is hidden by default' do
           Environment.unicode = false
@@ -180,11 +184,11 @@ module Aspera
         end
 
         it 'is shown with --show-secrets=yes' do
-          expect(output_of(result, '--show-secrets=yes').chomp).to(eq('RAW_SECRET_VALUE'))
+          expect(output_of(result, '--show-secrets=yes').chomp).to(eq(secret))
         end
 
         it 'is shown with --out.secrets=yes' do
-          expect(output_of(result, '--out.secrets=yes').chomp).to(eq('RAW_SECRET_VALUE'))
+          expect(output_of(result, '--out.secrets=yes').chomp).to(eq(secret))
         end
 
         it 'is hidden with --out.level=data' do
@@ -197,8 +201,45 @@ module Aspera
           expect(output_of(result, '--format=json').chomp).to(eq('"***"'))
         end
 
-        it 'is shown when not flagged as secret' do
+        it 'is hidden inside a string, and in an object' do
+          Environment.unicode = false
+          expect(output_of(Result::Text.new("Bearer #{secret}")).chomp).to(eq('Bearer ***'))
+          expect(output_of(Result::SingleObject.new({'info' => "x #{secret} y"}), '--format=json').chomp).to(eq('{"info":"x *** y"}'))
+        end
+
+        it 'is shown when not declared' do
           expect(output_of(Result::Text.new('RAW_VALUE')).chomp).to(eq('RAW_VALUE'))
+        end
+      end
+
+      describe 'display of results' do
+        # @return [String] standard output of the display of result
+        def output_of(result, *argv)
+          formatter = build_formatter(argv)
+          saved = $stdout
+          $stdout = StringIO.new
+          formatter.display_results(result)
+          $stdout.string
+        ensure
+          $stdout = saved
+        end
+
+        let(:object) { {'name' => 'a', 'none' => nil, 'tags' => %w[x y], 'sub' => {'list' => [{'v' => nil}], 'empty' => {}}} }
+        let(:list) { [object, object.merge('name' => 'b')] }
+
+        it 'does not modify the data, whatever the format and options' do
+          original = Marshal.load(Marshal.dump(list))
+          [%w[--format=table --out.flat=no], %w[--format=table], %w[--format=csv --out.flat=no], %w[--format=json]].each do |argv|
+            output_of(Result::SingleObject.new(list.first), *argv, '--out.secrets=yes')
+            output_of(Result::ObjectList.new(list), *argv, '--out.secrets=yes', '--out.select=@json:{"name":"a"}')
+          end
+          expect(list).to(eq(original))
+        end
+
+        it 'selects items' do
+          output = output_of(Result::ObjectList.new(list), '--format=json', '--out.select=@json:{"name":"b"}')
+          expect(output).to(include('"name":"b"'))
+          expect(output).not_to(include('"name":"a"'))
         end
       end
 

@@ -3,6 +3,7 @@
 require 'aspera/rest/parameters'
 require 'aspera/log'
 require 'aspera/assert'
+require 'aspera/secret_hider'
 require 'net/http'
 require 'net/https'
 require 'uri'
@@ -16,7 +17,12 @@ module Aspera
       # @param user [String] Username
       # @param pass [String] Password
       # @return [String] Basic auth token
-      def basic_authorization(user, pass) = "Basic #{Base64.strict_encode64("#{user}:#{pass}")}"
+      def basic_authorization(user, pass)
+        credentials = Base64.strict_encode64("#{user}:#{pass}")
+        # Hidden wherever it appears (logs, results)
+        SecretHider.instance.add_secret_values(credentials)
+        "Basic #{credentials}"
+      end
 
       # Indicate that the given Hash query uses php style for array parameters
       # @param query [Hash] A key can have Array value and result will use PHP format: a[]=1&a[]=2

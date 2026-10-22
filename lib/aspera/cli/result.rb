@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'aspera/assert'
-require 'aspera/secret_hider'
 require 'aspera/nagios'
 require 'aspera/log'
 require 'aspera/environment'
@@ -28,6 +27,12 @@ module Aspera
         Aspera.assert_array_all(fields, String) if fields.is_a?(Array)
         @data = data
         @fields = fields
+      end
+
+      # @param data [Object] New data
+      # @return [Result] Copy of this result, with other data (e.g. with secrets hidden)
+      def with_data(data)
+        dup.tap { |r| r.data = data }
       end
 
       # Format this result using the provided formatter
@@ -84,6 +89,11 @@ module Aspera
       STRUCTURED_FORMATS = %i[ruby json jsonpp yaml].freeze
       # Types of a single value result (Text), or of items of a value list
       SCALAR_TYPES = [String, Integer, Float, Symbol, TrueClass, FalseClass].freeze
+
+      protected
+
+      # Used by `with_data`
+      attr_writer :data
 
       private
 
@@ -177,24 +187,14 @@ module Aspera
 
       # Text result
       class Text < Result
-        # @return [Boolean] `true` if the text is a secret value (not detectable by its content, as it has no key name)
-        attr_reader :secret
-
-        # @param data   [String, Numeric, Symbol, Boolean] The value
-        # @param secret [Boolean] `true` if the value is a secret: displayed on command line, but never sent to an AI client (MCP)
-        def initialize(data, secret: false)
+        # @param data [String, Numeric, Symbol, Boolean] The value, hidden if it is a secret declared to `SecretHider`
+        def initialize(data)
           Aspera.assert_type(data, *SCALAR_TYPES, type: ArgumentError) { 'text result data' }
           super(data: data)
-          @secret = secret
         end
 
         def format(formatter)
-          data = @data
-          if data.is_a?(String) && formatter.hide_secrets?
-            # A secret value has no key name, so it cannot be detected by pattern: the command flags it
-            data = SecretHider.instance.deep_hide_values(data, [data]) if @secret
-            data = formatter.hide_secrets_in_string(data)
-          end
+          data = @data.is_a?(String) && formatter.hide_secrets? ? formatter.hide_secrets_in_string(@data) : @data
           case formatter.format_type
           when :text, :nagios
             formatter.display_message(:data, data.to_s)

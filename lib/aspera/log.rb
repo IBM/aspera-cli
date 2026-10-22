@@ -110,11 +110,8 @@ module Aspera
         return unless instance.logger.send(:"#{level}?")
         Aspera.assert(object.nil? || block.nil?, 'Use either object, or block, not both')
         object = yield if block_given?
-        instance.logger.send(level, obj_dump(name, object))
-      end
-
-      # @return [String] Dump of object
-      def obj_dump(name, object)
+        # Secrets hidden by key name in the structure, whatever the dump format (the log formatter then hides secrets in text)
+        object = SecretHider.instance.hidden_copy(object) unless SecretHider.instance.log_secrets
         dump_text =
           case instance.dump_format
           when :json
@@ -123,7 +120,7 @@ module Aspera
             PP.pp(object, +'')
           else Aspera.error_unexpected_value(instance.dump_format) { 'dump format' }
           end
-        "#{name.to_s.green}(#{instance.dump_format})#{object.class}=\n#{dump_text}"
+        instance.logger.send(level, "#{name.to_s.green}(#{instance.dump_format})#{object.class}=\n#{dump_text}")
       end
 
       # Capture the output of $stderr and log it at debug level

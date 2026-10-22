@@ -6,6 +6,7 @@ require 'aspera/rest'
 require 'aspera/oauth/client/factory'
 require 'aspera/log'
 require 'aspera/assert'
+require 'aspera/secret_hider'
 require 'aspera/environment'
 require 'base64'
 require 'openssl'
@@ -173,12 +174,15 @@ module Aspera
           payload['auth_type'] ||= 'access_key'
           payload['expires_at'] ||= (Time.now + expiration_sec).utc.strftime('%FT%TZ')
           payload_json = JSON.generate(payload)
-          return Base64.strict_encode64(Zlib::Deflate.deflate([
+          token = Base64.strict_encode64(Zlib::Deflate.deflate([
             payload_json,
             SIGNATURE_DELIMITER,
             Base64.strict_encode64(private_key.sign(OpenSSL::Digest.new('sha512'), payload_json)).scan(/.{1,60}/).join("\n"),
             ''
           ].join("\n")))
+          # Hidden wherever it appears (logs, results)
+          SecretHider.instance.add_secret_values(token)
+          return token
         end
 
         # Decode an Aspera Node bearer token

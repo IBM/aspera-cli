@@ -75,6 +75,17 @@ module Aspera
           expect(evaluate('@secret:')).to(eq(secret))
           expect(WebSecret).to(have_received(:ask).with('secret'))
         end
+
+        it 'declares the secret, so that it is hidden wherever it appears' do
+          Environment.instance.url_method = :text
+          Environment.unicode = false
+          secret = SecureRandom.alphanumeric(12)
+          allow($stdin).to(receive_messages(tty?: true, getpass: secret))
+          evaluate('@secret:pw')
+          expect(SecretHider.instance.hidden_copy({'a' => ["x #{secret} y"]})).to(eq({'a' => ['x *** y']}))
+        ensure
+          Environment.unicode = nil
+        end
       end
     end
   end

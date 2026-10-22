@@ -96,7 +96,7 @@ RSpec.describe(Aspera::Cli::Mcp::Secrets) do
       enter_secret(request_id, secret)
       call = described_class.new(web_secret, second_round(result))
       expect(call.value('pw')).to(eq(secret))
-      expect(call.hide({'a' => ["x #{secret} y"], 'b' => 1})).to(eq({'a' => ['x 🔑 y'], 'b' => 1}))
+      expect(Aspera::SecretHider.instance.hidden_copy({'a' => ["x #{secret} y"], 'b' => 1})).to(eq({'a' => ['x 🔑 y'], 'b' => 1}))
       call.finish
       expect(web_secret.prompt(request_id)).to(be_nil)
     ensure

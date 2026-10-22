@@ -2057,7 +2057,6 @@ The option `--out.level` controls the level of output:
 
 - If value is `no` (default), then secrets are redacted from command results: replaced with `🔑`, or `***` if the terminal does not support Unicode (see [`--out.utf8`](#terminal-rendering-colors-and-utf-8)).
 - If value is `yes`, then secrets are shown in clear in results.
-- If `--out.level` is `data`, secrets are included to allow piping results.
 
 #### Terminal rendering: Colors and UTF-8
 
@@ -3308,6 +3307,8 @@ Instead, they shall be hidden (logs, output) or encrypted (configuration).
 
 Terminal output (command result) secret removal is controlled by option `--out.secrets` (default: `no`).
 Log secret removal is controlled by option `log_secrets` (default: `no`).
+Secrets are identified by the name of their field (for example, `password`, `token`), and by their value: values of secret options, of [Extended Values](#extended-value-syntax) `@secret:` and `@vault:`, tokens obtained or generated, and secrets of transfer specs are hidden wherever they appear.
+A value shorter than 8 characters is hidden only when it is the whole value, not inside a text.
 Mandatory command line options can be requested interactively (for example, password) using option `interactive`.
 It is possible to use [Extended Value](#extended-value-syntax) `@secret:[name]` to ask for a secret interactively.
 If option `ui` is `graphical` (see [Graphical Interactions](#graphical-interactions-browser-and-text-editor)), the secret is entered on a web page opened in the browser, served by a local web server on `127.0.0.1`, else on terminal.
@@ -3491,7 +3492,7 @@ To migrate all secrets from one vault backend to another (for example, from the 
 > Use `list` (not `ids`) as the source: `ids` returns only labels, while `list` returns the full secret details needed for import.
 
 ```shell
-ascli config vault list --format=json --out.level=data \
+ascli config vault list --format=json --out.level=data --out.secrets=yes \
   --vault=@json:'{"type":"file","name":"<SOURCE_VAULT_FILE>"}' \
   --vault-password=<SOURCE_PASSWORD> | \
 ascli config vault import @json:@stdin: --bulk=yes \
@@ -3500,7 +3501,7 @@ ascli config vault import @json:@stdin: --bulk=yes \
 ```
 
 > [!TIP]
-> Use `--out.level=data` on the `list` command so that only the raw JSON array is written to stdout, with no table headers or status lines.
+> Use `--out.level=data` on the `list` command so that only the raw JSON array is written to stdout, with no table headers or status lines, and `--out.secrets=yes` so that secrets are not replaced by a placeholder.
 
 The `import` command accepts a JSON array where each element is a vault secret object (same schema as `create`).
 `--bulk` makes each entry reported individually in the result table; omit it to get a single-line summary.
@@ -6465,11 +6466,12 @@ empty
 
 The command `ascli aoc bearer_token` can be used to generate an OAuth token suitable to call any AoC API.
 This can be useful when a command is not yet available.
+The token is a secret: it is hidden in the output, unless option `--out.secrets=yes` is used.
 
 Example:
 
 ```shell
-curl -s -H "Authorization: $(ascli aoc bearer_token)" 'https://api.ibmaspera.com/api/v1/group_memberships?embed[]=dropbox&embed[]=workspace'|jq -r '.[]|(.workspace.name + " -> " + .dropbox.name)'
+curl -s -H "Authorization: $(ascli aoc bearer_token --out.secrets=yes)" 'https://api.ibmaspera.com/api/v1/group_memberships?embed[]=dropbox&embed[]=workspace'|jq -r '.[]|(.workspace.name + " -> " + .dropbox.name)'
 ```
 
 It is also possible to get the bearer token for node, as user or as admin using:
@@ -7208,7 +7210,7 @@ ascli aoc files browse /src_folder
 To send a package with the file `10M.dat` from subfolder /src_folder:
 
 ```shell
-ascli aoc files node_info /src_folder --format=json --out.level=data | ascli aoc packages send @json:'{"name":"test","recipients":["someuser@example.com"]}' 10M.dat --transfer=@json:@stdin: --transfer.agent=node
+ascli aoc files node_info /src_folder --format=json --out.level=data --out.secrets=yes | ascli aoc packages send @json:'{"name":"test","recipients":["someuser@example.com"]}' 10M.dat --transfer=@json:@stdin: --transfer.agent=node
 ```
 
 #### Receive packages
@@ -7681,7 +7683,7 @@ Procedure to send a file from org1 to org2:
 - Execute the following:
 
 ```shell
-ascli -Porg1 aoc files node_info <SOURCE_FOLDER> --format=json --out.level=data | ascli -Porg2 aoc files upload <SOURCE_FILE> --to-folder=<DEST_FOLDER> --transfer=@json:@stdin: --transfer.agent=node
+ascli -Porg1 aoc files node_info <SOURCE_FOLDER> --format=json --out.level=data --out.secrets=yes | ascli -Porg2 aoc files upload <SOURCE_FILE> --to-folder=<DEST_FOLDER> --transfer=@json:@stdin: --transfer.agent=node
 ```
 
 Explanation:
@@ -7735,7 +7737,7 @@ admin ats cluster list
 admin ats cluster show --cloud=aws --region=eu-west-1
 admin ats cluster show 1f412ae7-869a-445c-9c05-02ad16813be2
 admin auth_providers list
-admin bearer_token --out.level=data
+admin bearer_token --out.level=data --out.secrets=yes
 admin client list
 admin client_access_key list
 admin client_registration_token create @json:'{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
@@ -7793,7 +7795,7 @@ automation workflow delete <id>
 automation workflow list
 automation workflow list --query.show_org_workflows=@val:true
 automation workflow list --select.name=test_workflow --fields=id
-bearer_token --out.level=data
+bearer_token --out.level=data --out.secrets=yes
 files bearer /
 files bearer_token_node / --cache-tokens=no
 files browse /
@@ -8619,7 +8621,7 @@ ascli node access_keys modify %id:self @ruby:'{token_verification_key: File.read
 - Create a Bearer token for the user:
 
   ```shell
-  ascli node bearer_token @file:./myorgkey.pem @json:'{"user_id":"'$my_user_id'","_validity":3600}' --out.file=bearer.txt
+  ascli node bearer_token @file:./myorgkey.pem @json:'{"user_id":"'$my_user_id'","_validity":3600}' --out.secrets=yes --out.file=bearer.txt
   ```
 
 > [!NOTE]
@@ -9640,7 +9642,7 @@ The calling client uses this to start a transfer to HSTS, which is managed by Fa
 If a command is missing, then it is still possible to call the API directly on the command line using `curl`:
 
 ```shell
-curl -H "Authorization: $(ascli faspex5 bearer_token)" https://faspex5.example.com/aspera/faspex/api/v5/<API_ENDPOINT>
+curl -H "Authorization: $(ascli faspex5 bearer_token --out.secrets=yes)" https://faspex5.example.com/aspera/faspex/api/v5/<API_ENDPOINT>
 ```
 
 ## Plugin: `shares`: IBM Aspera Shares v1

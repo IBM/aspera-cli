@@ -27,8 +27,9 @@ RSpec.describe(Aspera::SecretHider) do
   it 'uses an ASCII placeholder when Unicode is not supported' do
     Aspera::Environment.unicode = false
     expect(log(%Q({"password":"#{secret}"}))).to(eq('{"password":"***"}'))
-    expect(hider.deep_remove_secret({'password' => secret})).to(eq({'password' => '***'}))
-    expect(hider.deep_hide_values("a #{secret} b", [secret])).to(eq('a *** b'))
+    expect(hider.hidden_copy({'password' => secret})).to(eq({'password' => '***'}))
+    hider.add_secret_values(secret)
+    expect(hider.hidden_copy("a #{secret} b")).to(eq('a *** b'))
   end
 
   describe '#log_formatter' do
@@ -68,6 +69,11 @@ RSpec.describe(Aspera::SecretHider) do
     it 'hides secrets in URL query parameters' do
       expect(log(%Q("POST /processing/x.sh?token=#{secret} HTTP/1.1" 200))).to(eq('"POST /processing/x.sh?token=🔑 HTTP/1.1" 200'))
       expect(log(%Q("GET /cb?code=#{other}&client_secret=#{secret}&state=1 HTTP/1.1" 200))).to(eq(%Q("GET /cb?code=#{other}&client_secret=🔑&state=1 HTTP/1.1" 200)))
+    end
+
+    it 'hides rendered Ruby Struct and object' do
+      expect(log(%Q(#<struct O user="john", password="#{secret}">))).to(eq('#<struct O user="john", password="🔑">'))
+      expect(log(%Q(#<C:0x0001 @user="john", @password="#{secret}">))).to(eq('#<C:0x0001 @user="john", @password="🔑">'))
     end
 
     it 'hides get/set options' do
@@ -130,10 +136,58 @@ RSpec.describe(Aspera::SecretHider) do
     end
   end
 
-  describe '#deep_remove_secret' do
-    it 'hides secrets in arrays nested in hashes' do
+  describe '#add_secret_values' do
+    it 'hides a declared value in logs, strings and structures' do
+      hider.add_secret_values(secret)
+      expect(log("got: #{secret} end")).to(eq('got: 🔑 end'))
+      expect(hider.hide_secrets_in_string("Bearer #{secret}")).to(eq('Bearer 🔑'))
+      expect(hider.hidden_copy({'a' => ["x #{secret} y", 1], 'b' => {'c' => secret}})).to(eq({'a' => ['x 🔑 y', 1], 'b' => {'c' => '🔑'}}))
+    end
+
+    it 'hides escaped forms of a declared value' do
+      value = "#{secret}\"/ &#{other}"
+      hider.add_secret_values(value)
+      expect(log(JSON.generate({'v' => value}))).to(eq('{"v":"🔑"}'))
+      expect(log("?q=#{URI.encode_www_form_component(value)}&r=1")).to(eq('?q=🔑&r=1'))
+      expect(log(value.inspect)).to(eq('"🔑"'))
+    end
+
+    it 'hides a short value only as a whole string' do
+      short = SecureRandom.alphanumeric(6)
+      hider.add_secret_values(short)
+      expect(hider.hidden_copy(short)).to(eq('🔑'))
+      expect(hider.hidden_copy("x#{short}y")).to(eq("x#{short}y"))
+    end
+
+    it 'hides the longest declared value first' do
+      hider.add_secret_values(secret, "#{secret}#{other}")
+      expect(hider.hidden_copy("a #{secret}#{other} b")).to(eq('a 🔑 b'))
+    end
+
+    it 'ignores empty and non-string values' do
+      expect { hider.add_secret_values('', nil, 12_345_678, true) }.not_to(change { hider.hidden_copy('') })
+    end
+  end
+
+  describe '#add_secrets_in' do
+    it 'declares values found by key name' do
+      hider.add_secrets_in({'list' => [{'remote_password' => secret, 'remote_user' => other}]})
+      expect(hider.hidden_copy("#{secret} #{other}")).to(eq("🔑 #{other}"))
+    end
+  end
+
+  describe '#hidden_copy' do
+    it 'hides secrets in arrays nested in hashes, without modifying them' do
       data = {'items' => [{'name' => 'a', 'password' => secret}], 'sub' => {'Token' => other}}
-      expect(hider.deep_remove_secret(data)).to(eq({'items' => [{'name' => 'a', 'password' => '🔑'}], 'sub' => {'Token' => '🔑'}}))
+      original = Marshal.load(Marshal.dump(data))
+      expect(hider.hidden_copy(data)).to(eq({'items' => [{'name' => 'a', 'password' => '🔑'}], 'sub' => {'Token' => '🔑'}}))
+      expect(data).to(eq(original))
+    end
+
+    it 'hides secrets in a Struct, without modifying it' do
+      data = Struct.new(:user, :password).new('a', secret)
+      expect(hider.hidden_copy(data).to_a).to(eq(['a', '🔑']))
+      expect(data.password).to(eq(secret))
     end
   end
 end

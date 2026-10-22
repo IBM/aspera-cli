@@ -42,7 +42,7 @@ module Aspera
             next unless File.directory?(folder)
             # TODO: add gem root to load path ? and require short folder ?
             # $LOAD_PATH.push(folder) if i[:add_path]
-            Dir.entries(folder).each do |source|
+            Dir.children(folder).each do |source|
               next unless source.end_with?(Environment::RB_EXT)
               path = File.join(folder, source)
               plugin_symbol = File.basename(path, Environment::RB_EXT).to_sym

@@ -14,10 +14,8 @@ module Aspera
       CONF_OVERVIEW_KEYS = %w[preset parameter value].freeze
 
       def action_preset_overview(**)
-        cp = presets.config_presets
-        # Display process modifies the value (hide secrets): we do not want to save removed secrets
-        data = PresetManager.deep_clone(cp)
-        formatter.hide_secrets(data)
+        # Secrets hidden by key name here: the key becomes the value of column `parameter`
+        data = formatter.hide_secrets(presets.config_presets)
         result = []
         data.each do |config, preset|
           preset.each do |parameter, value|
@@ -94,7 +92,7 @@ module Aspera
         name = preset_name(name)
         cp = presets.config_presets
         raise Cli::BadArgument, "no such preset: #{name}" unless cp.key?(name)
-        Result::SingleObject.new(PresetManager.deep_clone(cp[name]))
+        Result::SingleObject.new(cp[name])
       end
 
       def action_preset_delete(name:, **)
@@ -119,7 +117,10 @@ module Aspera
         raise Cli::BadArgument, "no such option in preset #{name}: #{param_name}" if value.nil?
         case value
         when Numeric, String
-          return Result::Text.new(ExtendedValue.instance.evaluate(value.to_s, context: 'preset'), secret: SecretHider.instance.secret?(param_name, value))
+          value = ExtendedValue.instance.evaluate(value.to_s, context: 'preset')
+          # A secret has no key name in a text result: declared, so that it is hidden
+          SecretHider.instance.add_secret_values(value) if SecretHider.instance.secret?(param_name, value)
+          return Result::Text.new(value)
         end
         Result::SingleObject.new(value)
       end

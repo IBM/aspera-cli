@@ -6,6 +6,7 @@ require 'aspera/environment'
 require 'aspera/yaml'
 require 'aspera/log'
 require 'aspera/assert'
+require 'aspera/secret_hider'
 require 'aspera/cli/error'
 require 'aspera/cli/prompt'
 require 'aspera/cli/security'
@@ -185,6 +186,10 @@ module Aspera
         handlers_reversed.each do |handler|
           Security.instance.check_extended_value(handler)
           value = @handlers[handler].call(value)
+          # Values read from a secret source are hidden wherever they appear: logs, results
+          if SECRET_HANDLERS.include?(handler)
+            value.is_a?(String) ? SecretHider.instance.add_secret_values(value) : SecretHider.instance.add_secrets_in(value)
+          end
         rescue => e
           raise BadArgument, "Evaluation of #{handler} for #{context}: #{e.message}"
         end
@@ -212,10 +217,12 @@ module Aspera
       # :extend includes processing of other handlers in itself
       # :val keeps the value intact
       SPECIAL_HANDLERS = %i[extend val].freeze
+      # Handlers that read a secret
+      SECRET_HANDLERS = %i[secret vault].freeze
 
       # Array and Hash types:
       DEFAULT_PARSER_TYPES = [Array, Hash].freeze
-      private_constant :MARKER_START, :MARKER_END, :MARKER_IN_END, :SPECIAL_HANDLERS, :DEFAULT_PARSER_TYPES
+      private_constant :MARKER_START, :MARKER_END, :MARKER_IN_END, :SPECIAL_HANDLERS, :SECRET_HANDLERS, :DEFAULT_PARSER_TYPES
     end
   end
 end

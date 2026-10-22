@@ -59,7 +59,6 @@ module Aspera
             @server_context = server_context
             @ids            = request_ids(server_context&.request_state)
             @next           = 0
-            @values         = []
           end
 
           # @param prompt [String] Name of the secret
@@ -79,7 +78,8 @@ module Aspera
             end
             # Clients of protocol 2025-11-25: completion of the out-of-band interaction
             @server_context.notify_elicitation_complete(elicitation_id: id) unless action.nil? || @server_context.modern?
-            @values.push(value)
+            # Never reaches the client, even if displayed by the command
+            SecretHider.instance.add_secret_values(value)
             value
           end
 
@@ -111,12 +111,6 @@ module Aspera
           # Forget the secrets of this call
           def finish
             @web_secret&.delete(@ids)
-          end
-
-          # @param obj [Object] Hash or Array (modified in place), or String
-          # @return [Object] obj with the secrets of this call hidden
-          def hide(obj)
-            SecretHider.instance.deep_hide_values(obj, @values)
           end
 
           private

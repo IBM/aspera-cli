@@ -47,6 +47,7 @@ Highlights: security hardening of local web servers (authentication, minimum sec
 * `config completion words`: Extended values on the command line were evaluated at each `Tab` (e.g. `@ruby:` code executed, `@stdin:` waiting for input).
 * `config completion`: Bash: words containing `=` or `:` (e.g. a URL) broke completion of the next words, and each `Tab` checked for a newer gem version on the network.
 * `node emulator`: A symbolic link in the `docroot` leading out of it was followed by transfers.
+* `node emulator`: A `POST` with an empty body returned HTTP 500 instead of 400.
 * **global**: Local web servers (`faspex5 postprocessing`, `faspex5 gateway`, `aoc gateway`, `node emulator`, `mcp server`, `--auth=web`):
   * Requests that a web page in the browser can send are refused: `Host` not loopback on a loopback server (DNS rebinding), `Origin` of another site.
   * A `url` with an IPv6 address, or parameter `chain`, failed at startup.
@@ -58,6 +59,8 @@ Highlights: security hardening of local web servers (authentication, minimum sec
   * Ctrl-C ended with an internal error instead of stopping the command.
   * The page after login, whose URL contains the authorization code, could be cached, framed, or sent as referrer.
 * **global**: Secret values of URL query parameters (e.g. `token`, `client_secret`) are hidden in logs.
+* **global**: Secrets are also hidden by value, wherever they appear in logs, results and `mcp server` responses (e.g. in an error message): values of secret options (e.g. `password`), of `@secret:` and `@vault:`, OAuth tokens, generated bearer and basic tokens, secrets of transfer specs.
+* **global**: Logs: secrets in a Ruby `Struct` or object (`password="..."`) were shown. Secrets of a dumped structure are now hidden by field name before it is rendered, whatever `log.format`.
 * **global**: Terminal output:
   * Unicode (`--out.utf8`): detection follows the precedence of locale variables (`LC_ALL=C` disables it), and supports Windows Terminal, VS Code, Git Bash, ConEmu and terminals setting `TERM`.
   * Colors (`--out.colors`): `NO_COLOR`, `CLICOLOR` and `CLICOLOR_FORCE` follow conventions, and results written with `--out.file` no longer contain ANSI codes.

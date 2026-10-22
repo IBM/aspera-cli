@@ -34,7 +34,7 @@ module Aspera
         # keep only errors in case of problem, other ok are assumed so
         data = res_errors unless res_errors.empty?
         # first is most critical
-        data.sort! { |a, b| LEVELS.index(a['status'].to_sym) <=> LEVELS.index(b['status'].to_sym) }
+        data = data.sort { |a, b| LEVELS.index(a['status'].to_sym) <=> LEVELS.index(b['status'].to_sym) }
         # build message: if multiple components: concatenate
         # message = data.map{|i|"#{i['component']}:#{i['message']}"}.join(', ').gsub("\n",' ')
         message = data

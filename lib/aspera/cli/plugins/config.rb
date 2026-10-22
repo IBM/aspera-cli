@@ -64,11 +64,6 @@ module Aspera
             File.expand_path(Module.nesting[2].to_s.gsub('::', '/').gsub(%r{[^/]+}, '..'), gem_plugins_folder)
           end
 
-          # Deep clone hash so that it does not get modified in case of display and secret hide
-          def deep_clone(val)
-            return Marshal.load(Marshal.dump(val))
-          end
-
           # @return [String] product family folder (~/.aspera)
           def module_family_folder
             user_home_folder = Dir.home

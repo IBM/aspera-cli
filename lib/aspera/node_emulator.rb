@@ -318,59 +318,25 @@ module Aspera
       Aspera.assert(in_docroot?(File.realpath(folder_path))) { "Path outside docroot: #{path}" }
       Aspera.assert(File.directory?(folder_path)) { "Not a folder: #{path}" }
       folder_virtual = virtual_path(folder_path)
-
-      # Build self structure
-      folder_stat = File.stat(folder_path)
-      structure = {
-        'self'  => {
-          'path'        => folder_virtual,
-          'basename'    => File.basename(folder_path),
-          'type'        => 'directory',
-          # Node API reports 0 for folders
-          'size'        => 0,
-          'mtime'       => folder_stat.mtime.utc.iso8601,
-          'permissions' => permissions(folder_path)
-        },
-        'items' => []
-      }
-
-      # Iterate over folder contents
-      Dir.foreach(folder_path) do |entry|
-        next if entry == '.' || entry == '..' # Skip current and parent directory
-
-        item_path = File.join(folder_path, entry)
-        item_type = File.ftype(item_path) rescue 'unknown' # Get the type of file
-        item_type = FILE_TYPES.fetch(item_type, item_type)
-        item_stat = File.lstat(item_path) # Use lstat to handle symbolic links correctly
-
-        item = {
-          'path'        => File.join(folder_virtual, entry),
-          'basename'    => entry,
-          'type'        => item_type,
-          'size'        => item_type.eql?('directory') ? 0 : item_stat.size,
-          'mtime'       => item_stat.mtime.utc.iso8601,
-          'permissions' => permissions(item_path)
-        }
-
-        # Add additional details for specific types
-        case item_type
-        when 'file'
-          item['partial_file'] = false
-        when 'symbolic_link'
-          item['target'] = link_target(item_path)
-        when 'unknown'
-          item['note'] = 'File type could not be determined'
+      # stable order for paging: only the items of the page are read
+      names = Dir.children(folder_path).sort
+      items = names.drop(skip).first(count || names.length).map do |name|
+        item_path = File.join(folder_path, name)
+        # a symbolic link is not followed
+        item = item_info(item_path, File.join(folder_virtual, name), File.lstat(item_path))
+        case item['type']
+        when 'file' then item['partial_file'] = false
+        when 'symbolic_link' then item['target'] = link_target(item_path)
+        when 'unknown' then item['note'] = 'File type could not be determined'
         end
-
-        structure['items'] << item
+        item
       end
-
-      # stable order for paging
-      all_items = structure['items'].sort_by { |item| item['basename'] }
-      structure['items'] = all_items.drop(skip).first(count || all_items.length)
-      structure['item_count'] = structure['items'].length
-      structure['total_count'] = all_items.length
-      structure
+      {
+        'self'        => item_info(folder_path, folder_virtual, File.stat(folder_path)),
+        'items'       => items,
+        'item_count'  => items.length,
+        'total_count' => names.length
+      }
     end
 
     # Start a transfer, and monitor it in a thread until terminated
@@ -378,8 +344,8 @@ module Aspera
     # @return [String] transfer id
     def start(transfer_spec)
       Transfer::Spec.fix_transferd_resume_policy(transfer_spec)
-      # deep copy, returned in transfer `start_spec`
-      start_spec = SecretHider.instance.deep_remove_secret(JSON.parse(transfer_spec.to_json))
+      # copy without secrets, returned in transfer `start_spec`
+      start_spec = SecretHider.instance.hidden_copy(transfer_spec)
       Log.dump(:start_spec, start_spec)
       request = ::Transferd::Api::TransferRequest.new(
         transferType: ::Transferd::Api::TransferType::FILE_REGULAR,
@@ -506,6 +472,23 @@ module Aspera
     # @return [Boolean] `true` if the path is the docroot or inside it
     def in_docroot?(real)
       real.eql?(@docroot) || real.start_with?(@docroot.end_with?('/') ? @docroot : "#{@docroot}/")
+    end
+
+    # Get the Node API fields of a folder or of an item of a folder
+    # @param real    [String]     real path within the docroot
+    # @param virtual [String]     Node API path
+    # @param stat    [File::Stat] information on the item
+    # @return [Hash] Node API fields common to a folder and its items
+    def item_info(real, virtual, stat)
+      {
+        'path'        => virtual,
+        'basename'    => File.basename(real),
+        'type'        => FILE_TYPES.fetch(stat.ftype, stat.ftype),
+        # Node API reports 0 for folders
+        'size'        => stat.directory? ? 0 : stat.size,
+        'mtime'       => stat.mtime.utc.iso8601,
+        'permissions' => permissions(real)
+      }
     end
 
     # Get the Node API permissions of an item
@@ -637,40 +620,35 @@ module Aspera
     # @param request  [WEBrick::HTTPRequest]
     # @param response [WEBrick::HTTPResponse]
     def do_POST(request, response)
-      case request.path
-      when PATH_TRANSFERS
-        set_json_response(request, response, @simulator.transfer(@simulator.start(JSON.parse(request.body))))
-      when PATH_BROWSE
-        req = JSON.parse(request.body)
-        set_json_response(request, response, @simulator.browse(req['path'] || '/', skip: req['skip'].to_i, count: req['count']&.to_i))
-      else
-        set_error(request, response, 404, "Unknown path: #{request.path}")
-      end
+      json =
+        case request.path
+        when PATH_TRANSFERS
+          @simulator.transfer(@simulator.start(JSON.parse(request.body.to_s)))
+        when PATH_BROWSE
+          req = JSON.parse(request.body.to_s)
+          @simulator.browse(req['path'] || '/', skip: req['skip'].to_i, count: req['count']&.to_i)
+        else raise WEBrick::HTTPStatus::NotFound, "Unknown path: #{request.path}"
+        end
+      set_json_response(request, response, json)
     end
 
     # Get the node information, the list of transfers, or one transfer
     # @param request  [WEBrick::HTTPRequest]
     # @param response [WEBrick::HTTPResponse]
     def do_GET(request, response)
-      case request.path
-      when '/info'
-        set_json_response(request, response, @simulator.info)
-      when PATH_TRANSFERS
-        set_json_response(request, response, @simulator.transfers(
-          active_only: query_boolean(request, 'active_only'),
-          direction:   request.query['direction']&.to_s,
-          count:       query_positive(request, 'count')
-        ))
-      when PATH_ONE_TRANSFER
-        transfer = @simulator.transfer(request.path.match(PATH_ONE_TRANSFER)[1])
-        if transfer.nil?
-          set_error(request, response, 404, 'Unknown transfer')
-        else
-          set_json_response(request, response, transfer)
+      json =
+        case request.path
+        when '/info' then @simulator.info
+        when PATH_TRANSFERS
+          @simulator.transfers(
+            active_only: query_boolean(request, 'active_only'),
+            direction:   request.query['direction']&.to_s,
+            count:       query_positive(request, 'count')
+          )
+        when PATH_ONE_TRANSFER then known_transfer(@simulator.transfer(transfer_id(request)))
+        else raise WEBrick::HTTPStatus::NotFound, "Unknown path: #{request.path}"
         end
-      else
-        set_error(request, response, 404, "Unknown path: #{request.path}")
-      end
+      set_json_response(request, response, json)
     end
 
     # Modify a transfer, or cancel it with `status`
@@ -690,7 +668,7 @@ module Aspera
         raise WEBrick::HTTPStatus::BadRequest, "Unsupported status: #{status}" unless CANCEL_STATUSES.include?(status)
         found = @simulator.cancel(id)
       end
-      return set_error(request, response, 404, 'Unknown transfer') unless found
+      known_transfer(found)
       set_json_response(request, response, @simulator.transfer(id))
     end
 
@@ -698,7 +676,7 @@ module Aspera
     # @param request  [WEBrick::HTTPRequest]
     # @param response [WEBrick::HTTPResponse]
     def do_CANCEL(request, response)
-      return set_error(request, response, 404, 'Unknown transfer') unless @simulator.cancel(transfer_id(request))
+      known_transfer(@simulator.cancel(transfer_id(request)))
       response.status = 204
     end
 
@@ -712,6 +690,14 @@ module Aspera
       match = request.path.match(PATH_ONE_TRANSFER)
       raise WEBrick::HTTPStatus::NotFound, "Unknown path: #{request.path}" if match.nil?
       match[1]
+    end
+
+    # @param found [Object] Result of the emulator for a transfer: `nil` or `false` if unknown
+    # @return [Object] found
+    # @raise [WEBrick::HTTPStatus::NotFound] if the transfer is unknown
+    def known_transfer(found)
+      raise WEBrick::HTTPStatus::NotFound, 'Unknown transfer' unless found
+      found
     end
 
     # Read a boolean query parameter
@@ -764,7 +750,7 @@ module Aspera
     # @param headers  [Hash{String => String}] Other headers of the response
     def set_json_response(request, response, json, code: 200, headers: {})
       json_response(response, code, json, headers: headers)
-      Log.log.trace1 { Log.obj_dump("response for #{request.request_method} #{request.path}", json) }
+      Log.dump("response for #{request.request_method} #{request.path}", json, level: :trace1)
     end
   end
 end

@@ -49,12 +49,10 @@ require 'uri'
 
 RSpec.describe(Aspera::Cli::Mcp::Tool) do
   # Minimal formatter stub that only implements filter_columns_on_select and query_result.
-  # When select_filter is nil the method is a no-op, otherwise it applies the Hash filter.
   let(:formatter_stub) do
     f = Object.new
-    f.define_singleton_method(:filter_columns_on_select) do |data|
-      # no-op by default; individual examples may re-define this
-    end
+    # no selection by default; individual examples may re-define this
+    f.define_singleton_method(:filter_columns_on_select) { |data| data }
     # no query by default
     f.define_singleton_method(:query_result) { |result| result }
     f
@@ -170,7 +168,7 @@ RSpec.describe(Aspera::Cli::Mcp::Tool) do
     let(:formatter_stub) do
       f = Object.new
       f.define_singleton_method(:filter_columns_on_select) do |arr|
-        arr.select! { |i| i['keep'] }
+        arr.select { |i| i['keep'] }
       end
       f.define_singleton_method(:query_result) { |result| result }
       f
@@ -197,7 +195,7 @@ RSpec.describe(Aspera::Cli::Mcp::Tool) do
     # Formatter with query `{s: status}`
     let(:formatter_stub) do
       f = Object.new
-      f.define_singleton_method(:filter_columns_on_select) { |_data| nil }
+      f.define_singleton_method(:filter_columns_on_select) { |data| data }
       f.define_singleton_method(:query_result) { |result| Aspera::Cli::Result::SingleObject.new({'s' => result.data['status']}) }
       f
     end
@@ -232,10 +230,12 @@ RSpec.describe(Aspera::Cli::Mcp::Tool) do
       expect(resp.structured_content).to(be_nil)
     end
 
-    it 'hides a text flagged as secret, even without key name' do
+    it 'hides a declared secret value, even without key name' do
       Aspera::Environment.unicode = true
-      resp = call_with_result(Aspera::Cli::Result::Text.new('RAW_SECRET_VALUE', secret: true))
-      expect(resp.content).to(eq([{type: 'text', text: '🔑'}]))
+      secret = SecureRandom.alphanumeric(12)
+      Aspera::SecretHider.instance.add_secret_values(secret)
+      resp = call_with_result(Aspera::Cli::Result::Text.new("Bearer #{secret}"))
+      expect(resp.content).to(eq([{type: 'text', text: 'Bearer 🔑'}]))
     end
   end
 

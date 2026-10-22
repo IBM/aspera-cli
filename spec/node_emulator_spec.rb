@@ -761,6 +761,8 @@ module Aspera
 
         it 'returns 400 for invalid JSON' do
           expect_error(call('POST', '/ops/transfers', body: 'not json'), 400)
+          expect_error(call('POST', '/ops/transfers', body: ''), 400)
+          expect_error(call('POST', '/files/browse', body: ''), 400)
         end
 
         it 'returns 405 for an unsupported verb' do

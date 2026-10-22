@@ -142,7 +142,7 @@ module Aspera
     def cleanup_expired(temp_folder)
       return if @expiry_sec.nil?
       now = Time.now
-      Dir.entries(temp_folder).each do |name|
+      Dir.children(temp_folder).each do |name|
         file_path = File.join(temp_folder, name)
         # check age of file, delete too old
         next unless File.file?(file_path) && (now - File.mtime(file_path)) >= @expiry_sec

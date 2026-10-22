@@ -229,19 +229,23 @@ module Aspera
       end
 
       # -----------------------------------------------------------------------
-      # action_preset_get — scalar secret is flagged (no key name in Result::Text)
+      # action_preset_get — scalar secret is declared (no key name in Result::Text)
       # -----------------------------------------------------------------------
       describe '#action_preset_get' do
-        before { config_presets['p1'] = {'username' => 'bob', 'password' => 'RAW_SECRET_VALUE'} }
+        # Values of secrets are generated, none in source: short, so hidden only as a whole string
+        let(:secret) { SecureRandom.alphanumeric(6) }
+        let(:username) { SecureRandom.alphanumeric(6) }
 
-        it 'flags a secret value' do
-          result = host.action_preset_get(name: 'p1', param_name: 'password')
-          expect(result.data).to(eq('RAW_SECRET_VALUE'))
-          expect(result.secret).to(be(true))
+        before { config_presets['p1'] = {'username' => username, 'password' => secret} }
+
+        it 'declares a secret value' do
+          expect(host.action_preset_get(name: 'p1', param_name: 'password').data).to(eq(secret))
+          expect(SecretHider.instance.hidden_copy(secret)).not_to(eq(secret))
         end
 
-        it 'does not flag a non-secret value' do
-          expect(host.action_preset_get(name: 'p1', param_name: 'username').secret).to(be(false))
+        it 'does not declare a non-secret value' do
+          expect(host.action_preset_get(name: 'p1', param_name: 'username').data).to(eq(username))
+          expect(SecretHider.instance.hidden_copy(username)).to(eq(username))
         end
       end
 

@@ -58,35 +58,23 @@ module Aspera
 
       class << self
         # Replace special values with a readable version on terminal
+        # @param input_hash            [Hash]   Object to display (not modified)
+        # @param string_list_separator [String] Separator of the items of a list of strings
+        # @return [Hash] Copy of input_hash with special values replaced, also in nested objects
         def replace_specific_for_terminal(input_hash, string_list_separator)
-          hash_to_process = [input_hash]
-          until hash_to_process.empty?
-            current = hash_to_process.pop
-            current.each do |key, value|
-              case value
-              when NilClass
-                current[key] = TerminalFormatter.special_format('null')
-              when String
-                current[key] = TerminalFormatter.special_format('empty string') if value.empty?
-              when Proc
-                current[key] = TerminalFormatter.special_format('lambda')
-              when Array
-                if value.empty?
-                  current[key] = TerminalFormatter.special_format('empty list')
-                elsif value.all?(String)
-                  current[key] = value.join(string_list_separator)
-                else
-                  value.each do |item|
-                    hash_to_process.push(item) if item.is_a?(Hash)
-                  end
-                end
-              when Hash
-                if value.empty?
-                  current[key] = TerminalFormatter.special_format('empty dict')
-                else
-                  hash_to_process.push(value)
-                end
+          input_hash.transform_values do |value|
+            case value
+            when NilClass then TerminalFormatter.special_format('null')
+            when String then value.empty? ? TerminalFormatter.special_format('empty string') : value
+            when Proc then TerminalFormatter.special_format('lambda')
+            when Array
+              if value.empty? then TerminalFormatter.special_format('empty list')
+              elsif value.all?(String) then value.join(string_list_separator)
+              else value.map { |item| item.is_a?(Hash) ? replace_specific_for_terminal(item, string_list_separator) : item }
               end
+            when Hash
+              value.empty? ? TerminalFormatter.special_format('empty dict') : replace_specific_for_terminal(value, string_list_separator)
+            else value
             end
           end
         end
@@ -276,9 +264,10 @@ module Aspera
         !@options[:show_secrets]
       end
 
-      # Hides secrets in Hash or Array
+      # @param data [Object] Data of a result
+      # @return [Object] Copy of data with secrets hidden (by key name, and declared values), or data itself if secrets are shown
       def hide_secrets(data)
-        SecretHider.instance.deep_remove_secret(data) if hide_secrets?
+        hide_secrets? ? SecretHider.instance.hidden_copy(data) : data
       end
 
       # Display results using the Visitor pattern
@@ -293,8 +282,8 @@ module Aspera
         Log.dump(:data, result.data, level: :trace1)
         Log.dump(:fields, result.fields, level: :trace1)
 
-        # Hide secrets in data
-        hide_secrets(result.data)
+        # Hide secrets in a copy of data: it may be shared (e.g. a preset of the configuration)
+        result = result.with_data(hide_secrets(result.data)) if hide_secrets?
         # Secrets are hidden before the expression may rename their keys
         result = query_result(result) unless @options[:query].nil?
 
@@ -394,7 +383,7 @@ module Aspera
         # by default, keep all data intact
         return data if @options[:fields].eql?(SpecialValues::DEF) && [nil, {}].include?(@options[:select])
         Aspera.assert_array_all(data, Hash) { 'filter or select' }
-        filter_columns_on_select(data)
+        data = filter_columns_on_select(data)
         return data if @options[:fields].eql?(SpecialValues::DEF)
         selected_fields = compute_fields(data, @options[:fields])
         return data.map { |i| i[selected_fields.first] } if selected_fields.length == 1
@@ -402,20 +391,20 @@ module Aspera
       end
 
       # Filter the list of items on the select option
-      # @param data [Array<Hash>] List of items
-      # @return [nil]
+      # @param data [Array<Hash>] List of items (not modified)
+      # @return [Array<Hash>] Selected items
       def filter_columns_on_select(data)
         case @options[:select]
         when Proc
           begin
-            data.select! { |i| @options[:select].call(i) }
+            data.select { |i| @options[:select].call(i) }
           rescue StandardError => e
             raise Cli::BadArgument, "Error in user-provided ruby lambda code during select: #{e.message}"
           end
         when Hash
-          @options[:select].each { |k, v| data.select! { |i| i[k].eql?(v) } }
+          @options[:select].reduce(data) { |items, (k, v)| items.select { |i| i[k].eql?(v) } }
+        else data
         end
-        nil
       end
 
       # Apply the query of `--out.query` to the data of an object or list result
@@ -465,11 +454,11 @@ module Aspera
           display_message(:info, TerminalFormatter.special_format('empty')) if @options[:format].eql?(:table)
           return
         end
-        filter_columns_on_select(object_array)
+        object_array = filter_columns_on_select(object_array)
         format_style = @options[:table_style].symbolize_keys
         string_list_separator = format_style.delete(:str_lst_sep) || STR_LST_SEP_VERT
         # convert data to string, and keep only display fields
-        object_array.each { |i| self.class.replace_specific_for_terminal(i, string_list_separator) }
+        object_array = object_array.map { |i| self.class.replace_specific_for_terminal(i, string_list_separator) }
         # if table has only one element, and only one field, display the value
         if object_array.length == 1 && fields.length == 1
           Log.log.debug("single element, field: #{fields.first}")

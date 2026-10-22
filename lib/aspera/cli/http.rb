@@ -149,7 +149,7 @@ module Aspera
           paths_to_add.each do |p|
             pp = [File.realpath(p)]
             if File.directory?(p)
-              pp = Dir.entries(p)
+              pp = Dir.children(p)
                 .map { |e| File.realpath(File.join(p, e)) }
                 .select { |entry| File.file?(entry) }
                 .select { |entry| CERT_EXT.any? { |ext| entry.end_with?(ext) } }

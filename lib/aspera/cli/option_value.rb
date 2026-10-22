@@ -271,6 +271,12 @@ module Aspera
       # @param new_value [Object] value to store
       # @param source [Symbol, nil] `OptionSource` of value
       def store(new_value, source)
+        # Secret values are hidden wherever they appear: logs, results
+        if @sensitive
+          SecretHider.instance.add_secret_values(new_value)
+        else
+          SecretHider.instance.add_secrets_in(new_value)
+        end
         @value = new_value
         @source = source
         @on_set&.call(new_value)

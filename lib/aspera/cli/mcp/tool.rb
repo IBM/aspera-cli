@@ -127,10 +127,13 @@ module Aspera
             prompt = catch(Secrets::THROW_TAG) do
               response = Secrets.with_call(secret_call) { execute(args) }
               secret_call.finish
-              # Secrets entered by the user never reach the client, even if displayed by the command
-              secret_call.hide(response.content)
-              secret_call.hide(response.structured_content)
-              return response
+              # Secret values (e.g. entered by the user, tokens) never reach the client, even if displayed by the command
+              hider = SecretHider.instance
+              return MCP::Tool::Response.new(
+                hider.hidden_copy(response.content),
+                structured_content: hider.hidden_copy(response.structured_content),
+                error:              response.error?
+              )
             end
             return secret_call.input_required(prompt) if secret_call.url_elicitation?
             secret_call.finish
@@ -146,19 +149,18 @@ module Aspera
             Log.dump(:mcp_execute, effective_args)
             runner = Runner.new(effective_args)
             result = runner.run_with_result
+            # Secrets never reach the AI client, whatever the output format requested in args.
             # As on the command line, `--out.query` applies to the data of an object or list, after secrets are removed
             if result.is_a?(Result::SingleObject) || result.is_a?(Result::ObjectList) || result.is_a?(Result::ValueList)
-              SecretHider.instance.deep_remove_secret(result.data)
+              result = result.with_data(SecretHider.instance.hidden_copy(result.data))
               result = runner.context.formatter.query_result(result)
             end
             case result
             when Result::Nothing, Result::Empty, NilClass
               MCP::Tool::Response.new([{type: 'text', text: ''}])
             when Result::SingleObject, Result::ObjectList, Result::ValueList
-              # Secrets never reach the AI client, whatever the output format requested in args.
-              SecretHider.instance.deep_remove_secret(result.data)
-              # Apply --select filter in place (affects both text and structuredContent).
-              runner.context.formatter.filter_columns_on_select(result.data) if result.data.is_a?(Array)
+              # Apply --select filter (affects both text and structuredContent).
+              result = result.with_data(runner.context.formatter.filter_columns_on_select(result.data)) if result.data.is_a?(Array)
               # MCP spec requires structuredContent to be a JSON object (not an array).
               structured = result.data.is_a?(Array) ? {items: result.data} : result.data
               content = if result.data.is_a?(Array)
@@ -178,10 +180,7 @@ module Aspera
               end
               MCP::Tool::Response.new(content, structured_content: structured)
             else
-              text = result.data.to_s
-              # A scalar secret has no key name, so it cannot be detected by pattern: the command flags it
-              text = SecretHider.instance.deep_hide_values(text, [text]) if result.is_a?(Result::Text) && result.secret
-              MCP::Tool::Response.new([{type: 'text', text: SecretHider.instance.hide_secrets_in_string(text, all: true)}])
+              MCP::Tool::Response.new([{type: 'text', text: SecretHider.instance.hide_secrets_in_string(result.data.to_s, all: true)}])
             end
           rescue Cli::SchemaRequest => e
             schema_path = e.path
@@ -195,7 +194,7 @@ module Aspera
           rescue SystemExit => e
             MCP::Tool::Response.new([{type: 'text', text: "exited with status #{e.status}"}], error: !e.status.zero?)
           rescue => e
-            MCP::Tool::Response.new([{type: 'text', text: "#{e.class}: #{dedupe_lines(e.message)}"}], error: true)
+            MCP::Tool::Response.new([{type: 'text', text: SecretHider.instance.hide_secrets_in_string("#{e.class}: #{dedupe_lines(e.message)}", all: true)}], error: true)
           end
 
           # Delegate to Schema::Reader#to_rows — semantic fields, no ANSI, MCP/JSON-ready.

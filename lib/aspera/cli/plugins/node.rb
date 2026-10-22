@@ -580,14 +580,14 @@ module Aspera
         end
         # Standalone leaf commands
         command :asperabrowser, description: 'Open Aspera browser'
-        command :basic_token,   description: 'Generate basic auth token', action: ->(**) { Result::Text.new(Rest.basic_authorization(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true)), secret: true) }
+        command :basic_token,   description: 'Generate basic auth token', action: ->(**) { Result::Text.new(Rest.basic_authorization(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true))) }
         command(
           :bearer_token, description: 'Generate bearer token',
           arguments: [{name: :private_key_pem}, {name: :token, type: Hash, schema: 'opts:components.schemas.NodeBearerTokenOptions'}],
           action: lambda do |private_key_pem:, token:, **|
             private_key = OpenSSL::PKey::RSA.new(private_key_pem)
             access_key  = options.get_option(:username, mandatory: true)
-            Result::Text.new(Api::Node.bearer_token(payload: token, access_key: access_key, private_key: private_key), secret: true)
+            Result::Text.new(Api::Node.bearer_token(payload: token, access_key: access_key, private_key: private_key))
           end
         )
         command :emulator,      description: 'Start node emulator',
@@ -873,7 +873,7 @@ module Aspera
           Log.dump(:result, result)
           Aspera.assert(apifid.node_api.auth_params[:type].eql?(:oauth2), type: BadArgument) { "Cannot get bearer token if authenticating with secret (#{apifid.node_api.auth_params[:type]})" }
           Aspera.assert(OAuth::Factory.bearer_auth?(result[:password]), 'Not using bearer token auth')
-          Result::Text.new(result[:password], secret: true)
+          Result::Text.new(result[:password])
         end
 
         # access_keys > do > mkdir / mklink / mkfile — shared helper: resolve parent folder,

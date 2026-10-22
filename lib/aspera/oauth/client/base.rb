@@ -3,6 +3,7 @@
 require 'aspera/oauth/client/factory'
 require 'aspera/log'
 require 'aspera/assert'
+require 'aspera/secret_hider'
 require 'aspera/mime'
 require 'date'
 require 'aspera/rainbow'
@@ -132,7 +133,8 @@ module Aspera
           Factory.instance.get_token_info(@token_cache_id, token_field: @token_field)
         end
         Aspera.assert(token_data.key?(@token_field)) { "API error: No such field in answer: #{@token_field}" } unless token_data.nil?
-        # Ok we shall have a token here
+        # Ok we shall have a token here: hidden wherever it appears (logs, results)
+        SecretHider.instance.add_secret_values(token_data[@token_field], token_data['refresh_token'])
         return token_data[@token_field]
       end
     end
