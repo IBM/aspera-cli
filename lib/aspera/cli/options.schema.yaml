@@ -83,6 +83,44 @@ components:
             A symbolic link leading outside of them is refused.
           items:
             type: string
+    TempOptions:
+      type: object
+      description: >-
+        Temporary files.
+        A plain value, e.g. `--temp=/tmp`, is the `folder`.
+      additionalProperties: false
+      properties:
+        folder:
+          type: string
+          description: >-
+            Folder for temporary files, e.g. certificate for WSS transfers, logs of `transferd`.
+            `@sys`: temporary folder of the system for the current user (Ruby `Etc.systmpdir`).
+            `@env`: from environment variables, e.g. `TMPDIR` (Ruby `Dir.tmpdir`).
+          default: '@sys'
+        clean:
+          type: boolean
+          description: >-
+            Delete temporary files created by the command when it ends.
+            `false` keeps them, e.g. for debugging.
+            Files left by previous commands are still deleted according to `expiry`.
+          default: true
+        expiry:
+          oneOf:
+            - type: string
+            - type: number
+              minimum: 0
+            - type: boolean
+              enum:
+                - false
+          description: >-
+            Age after which file lists of `ascp` left by previous commands (e.g. interrupted) are deleted, when a command starts.
+            They are in folder `filelists` of the main folder (option `home`).
+            A duration, e.g. `5d`, `12h`, `1w`, `1h 30m`, `1d 02:00:00`, a plain number is seconds.
+            `false` or `null` (`@none:`): never delete them.
+            `0`: delete all of them, including file lists of transfers in progress in other executions of ascli.
+            Such a transfer fails if `ascp` reads its file list again: next session of a multi-session transfer, or resume after an error.
+            Use `0` only when no other transfer is in progress, not in a permanent configuration.
+          default: 5d
     McpServerOptions:
       type: object
       description: MCP server configuration for the `mcp server` command.

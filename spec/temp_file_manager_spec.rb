@@ -80,4 +80,54 @@ RSpec.describe(Aspera::TempFileManager) do
     manager.cleanup
     expect(File.file?(path)).to(be(true))
   end
+
+  describe '#cleanup_expired' do
+    let(:old_file) { File.join(@dir, 'old') }
+    let(:new_file) { File.join(@dir, 'new') }
+
+    around(:each) do |example|
+      saved = [manager.expiry_sec, manager.cleanup_on_exit]
+      File.write(old_file, '')
+      File.utime(Time.now - (6 * 86_400), Time.now - (6 * 86_400), old_file)
+      File.write(new_file, '')
+      example.run
+    ensure
+      manager.expiry_sec, manager.cleanup_on_exit = saved
+    end
+
+    it 'deletes files older than 5 days by default' do
+      manager.cleanup_expired(@dir)
+      expect(File.exist?(old_file)).to(be(false))
+      expect(File.file?(new_file)).to(be(true))
+    end
+
+    it 'keeps all files when expiry is nil' do
+      manager.expiry_sec = nil
+      manager.cleanup_expired(@dir)
+      expect(File.file?(old_file)).to(be(true))
+      expect(File.file?(new_file)).to(be(true))
+    end
+
+    it 'deletes all files when expiry is 0' do
+      manager.expiry_sec = 0
+      manager.cleanup_expired(@dir)
+      expect(Dir.children(@dir)).to(be_empty)
+    end
+
+    it 'deletes old files even if files of this execution are kept' do
+      manager.cleanup_on_exit = false
+      manager.cleanup_expired(@dir)
+      expect(File.exist?(old_file)).to(be(false))
+    end
+
+    it 'ignores a file deleted meanwhile by another execution' do
+      allow(File).to(receive(:mtime).and_call_original)
+      allow(File).to(receive(:mtime).with(old_file).and_raise(Errno::ENOENT))
+      expect { manager.cleanup_expired(@dir) }.not_to(raise_error)
+    end
+
+    it 'refuses a negative expiry' do
+      expect { manager.expiry_sec = -1 }.to(raise_error(Aspera::ParameterError))
+    end
+  end
 end

@@ -38,6 +38,7 @@ Highlights: security hardening of local web servers (authentication, minimum sec
 * `config ascp spec`: Optional argument: name of agent, to display only the parameters it supports (as `config ascp schema`), or `overview`, for one column per agent.
 * **global**: Schema tables (value `help` of an option or argument, `config ascp spec`, `config sync spec`, `config agents parameters`, manual) indicate required fields.
 * `sync`: `target_rate` in `sync_info` accepts suffixes `k`, `m` and `g` (e.g. `100m`).
+* **global**: New composite option `--temp` with sub-options `folder`, `clean` and `expiry`: age of `ascp` file lists left by interrupted commands, deleted when a command starts (a duration, e.g. `30d`, default `5d`, `false`: never, `0`: all). Options `--temp-folder` and `--clean-temp` are deprecated.
 
 ### Issues Fixed
 
@@ -84,6 +85,7 @@ Highlights: security hardening of local web servers (authentication, minimum sec
   * `preset secure` failed on a missing secret (`system`, `1password`), and `@vault:` on a label containing dots.
 * `config sync translate`: Options `-C`, `--ws-connect`, `-D`, `--scan-interval` and `--remote-scan-interval` were translated incorrectly.
 * **global**: Value `help` of an option or argument displays the schema as `config sync spec`: with fields of alternatives (`oneOf`), deprecations and examples, and for `--ts=help` the supported agents and `ascp` options. `config agents parameters` displays allowed values and defaults.
+* **global**: `--clean-temp=no` also kept the old `ascp` file lists left by interrupted commands, and two commands starting at the same time could fail when deleting the same old file list.
 
 ### Breaking Changes
 

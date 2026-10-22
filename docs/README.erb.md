@@ -2832,11 +2832,21 @@ The default value is `_<>:"/\|?*`, corresponding to replacement character `_` an
 
 ### Managing temporary files
 
-Some temporary files may be needed during runtime.
-The temporary folder may be specified with option: `temp_folder`.
-Temporary files are deleted at the end of execution unless option: `clean_temp` is set to `no`.
-By default (`@sys`), the temporary folder is the system's temporary folder for the current user (Ruby `Etc.systmpdir`).
-A special value of `@env` sets the folder to Ruby `Dir.tmpdir`, which uses the usual environment variables (for example, `TMPDIR`).
+Some temporary files may be needed during runtime, for example the file list of `ascp`.
+The composite option `temp` (use `--temp=help` to display this schema) controls them:
+
+<%=schema_to_table(Aspera::Schema::Registry::TEMP_OPTIONS)%>
+
+A plain value is the `folder`, for example: `--temp=/data/tmp`.
+
+Temporary files of a command are deleted when it ends, unless `clean` is `false`.
+If a command is interrupted (for example, killed), its `ascp` file lists remain: a later command deletes them when they are older than `expiry`.
+
+> [!WARNING]
+> `--temp.expiry=0` also deletes the file lists of transfers in progress in other executions of <%=tool%>, which may then fail: use it only when no other transfer is in progress.
+
+> [!TIP]
+> Options `temp_folder` and `clean_temp` are deprecated aliases for `temp.folder` and `temp.clean`.
 
 ### Plugin: `config`: Configuration
 

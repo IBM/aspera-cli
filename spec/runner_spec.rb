@@ -106,6 +106,50 @@ module Aspera
         end
       end
 
+      describe '#option_temp=' do
+        let(:runner) { Runner.new([]) }
+        let(:manager) { TempFileManager.instance }
+
+        around do |example|
+          saved = [manager.global_temp, manager.cleanup_on_exit, manager.expiry_sec]
+          example.run
+        ensure
+          manager.global_temp, manager.cleanup_on_exit, manager.expiry_sec = saved
+        end
+
+        it 'sets the folder' do
+          runner.send(:option_temp=, {'folder' => '/tmp/x'})
+          expect(manager.global_temp).to(eq('/tmp/x'))
+        end
+
+        it 'sets clean' do
+          runner.send(:option_temp=, {'clean' => false})
+          expect(manager.cleanup_on_exit).to(be(false))
+        end
+
+        {
+          '30d'    => 2_592_000,
+          '1h 30m' => 5_400,
+          3600     => 3600,
+          0        => 0,
+          false    => nil,
+          nil      => nil
+        }.each do |expiry, seconds|
+          it "maps expiry #{expiry.inspect} to #{seconds.inspect}" do
+            runner.send(:option_temp=, {'expiry' => expiry})
+            expect(manager.expiry_sec).to(eq(seconds))
+          end
+        end
+
+        it 'rejects an invalid expiry' do
+          expect { runner.send(:option_temp=, {'expiry' => '5x'}) }.to(raise_error(BadArgument, /Invalid duration/))
+        end
+
+        it 'rejects an unknown sub-option' do
+          expect { runner.send(:option_temp=, {other: 'x'}) }.to(raise_error(BadArgument))
+        end
+      end
+
       describe '#display_schema' do
         let(:runner) { Runner.new([]) }
         let(:formatter) { instance_double(Formatter, display_results: nil) }

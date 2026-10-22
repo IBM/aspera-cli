@@ -90,6 +90,7 @@ module Aspera
       LOG_OPTIONS             = "#{OPTIONS}:components.schemas.LogOptions"
       UI_OPTIONS              = "#{OPTIONS}:components.schemas.UiOptions"
       SECURITY_OPTIONS        = "#{OPTIONS}:components.schemas.SecurityOptions"
+      TEMP_OPTIONS            = "#{OPTIONS}:components.schemas.TempOptions"
       DIRECT_AGENT_OPTIONS    = "#{OPTIONS}:components.schemas.DirectAgentOptions"
       NODE_AGENT_OPTIONS      = "#{OPTIONS}:components.schemas.NodeAgentOptions"
       NODE_EMULATOR_OPTIONS   = "#{OPTIONS}:components.schemas.NodeEmulatorOptions"

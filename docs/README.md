@@ -2888,11 +2888,25 @@ The default value is `_<>:"/\|?*`, corresponding to replacement character `_` an
 
 ### Managing temporary files
 
-Some temporary files may be needed during runtime.
-The temporary folder may be specified with option: `temp_folder`.
-Temporary files are deleted at the end of execution unless option: `clean_temp` is set to `no`.
-By default (`@sys`), the temporary folder is the system's temporary folder for the current user (Ruby `Etc.systmpdir`).
-A special value of `@env` sets the folder to Ruby `Dir.tmpdir`, which uses the usual environment variables (for example, `TMPDIR`).
+Some temporary files may be needed during runtime, for example the file list of `ascp`.
+The composite option `temp` (use `--temp=help` to display this schema) controls them:
+
+| Field | Type | Description |
+|--------|----------------------|----------------------------------------------------------------------------------|
+| `clean` | `Bool` | Delete temporary files created by the command when it ends. `false` keeps them, e.g. for debugging. Files left by previous commands are still deleted according to `expiry`.<br/>Default: `true`. |
+| `expiry` | `String, Number, Bool` | Age after which file lists of `ascp` left by previous commands (e.g. interrupted) are deleted, when a command starts. They are in folder `filelists` of the main folder (option `home`). A duration, e.g. `5d`, `12h`, `1w`, `1h 30m`, `1d 02:00:00`, a plain number is seconds. `false` or `null` (`@none:`): never delete them. `0`: delete all of them, including file lists of transfers in progress in other executions of ascli. Such a transfer fails if `ascp` reads its file list again: next session of a multi-session transfer, or resume after an error. Use `0` only when no other transfer is in progress, not in a permanent configuration.<br/>Default: `5d`. |
+| `folder` | `String` | Folder for temporary files, e.g. certificate for WSS transfers, logs of `transferd`. `@sys`: temporary folder of the system for the current user (Ruby `Etc.systmpdir`). `@env`: from environment variables, e.g. `TMPDIR` (Ruby `Dir.tmpdir`).<br/>Default: `@sys`. |
+
+A plain value is the `folder`, for example: `--temp=/data/tmp`.
+
+Temporary files of a command are deleted when it ends, unless `clean` is `false`.
+If a command is interrupted (for example, killed), its `ascp` file lists remain: a later command deletes them when they are older than `expiry`.
+
+> [!WARNING]
+> `--temp.expiry=0` also deletes the file lists of transfers in progress in other executions of `ascli`, which may then fail: use it only when no other transfer is in progress.
+
+> [!TIP]
+> Options `temp_folder` and `clean_temp` are deprecated aliases for `temp.folder` and `temp.clean`.
 
 ### Plugin: `config`: Configuration
 
@@ -5610,8 +5624,9 @@ OPTIONS: global
     --lock-port=INT                Prevent dual execution of a command, e.g. in cron
     --once-only=yes|no             Process only new items (some commands)
     --log-secrets=yes|no           Show passwords in logs
-    --clean-temp=yes|no            Cleanup temporary files on exit
-    --temp-folder=VALUE            Temporary folder
+    --temp=HASH                    Temporary files (dot-notation: folder, clean, expiry)
+    --clean-temp=yes|no            Cleanup temporary files on exit (deprecated after 4.27.5: use --temp.clean)
+    --temp-folder=VALUE            Temporary folder (deprecated after 4.27.5: use --temp.folder)
     --pid-file=VALUE               Write process identifier to file, delete on exit
     --parser=none|json|ruby|yaml   Default parser for structured parameters and options
     --home=VALUE                   Home folder for tool

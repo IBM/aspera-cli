@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'aspera/assert'
+require 'aspera/log'
 require 'singleton'
 require 'fileutils'
 require 'etc'
@@ -15,13 +17,15 @@ module Aspera
   class TempFileManager
     include Singleton
 
-    SEC_IN_DAY = 86_400
-    # assume no transfer last longer than this
-    # (garbage collect file list which were not deleted after transfer)
-    FILE_LIST_AGE_MAX_SEC = SEC_IN_DAY * 5
-    private_constant :SEC_IN_DAY, :FILE_LIST_AGE_MAX_SEC
+    # Assume no transfer lasts longer than this
+    # (garbage collect file lists which were not deleted after transfer)
+    EXPIRY_DEFAULT_SEC = 5 * 86_400
+    private_constant :EXPIRY_DEFAULT_SEC
 
+    # @return [Boolean] `true`: files created by this execution are deleted by `cleanup`
     attr_accessor :cleanup_on_exit
+    # @return [Numeric, nil] Age in seconds of files deleted by `cleanup_expired`, `nil`: never deleted
+    attr_reader :expiry_sec
     attr_reader :global_temp
 
     def initialize
@@ -31,7 +35,14 @@ module Aspera
       # Files are created and released by transfer threads
       @mutex = Mutex.new
       @cleanup_on_exit = true
+      @expiry_sec = EXPIRY_DEFAULT_SEC
       @global_temp = Etc.systmpdir
+    end
+
+    # @param value [Numeric, nil] Age in seconds, `0`: all files, `nil`: never delete
+    def expiry_sec=(value)
+      Aspera.assert(value.nil? || (value.is_a?(Numeric) && !value.negative?), type: ParameterError) { "Expiry must be a positive duration: #{value}" }
+      @expiry_sec = value
     end
 
     def global_temp=(value)
@@ -43,9 +54,7 @@ module Aspera
     end
 
     def delete_file(filepath)
-      File.delete(filepath) if @cleanup_on_exit
-    rescue => e
-      Log.log.warn { "Problem deleting file: #{filepath}: #{e.message}" }
+      remove_file(filepath) if @cleanup_on_exit
     end
 
     # Call this on process exit, or at the end of a command.
@@ -127,17 +136,33 @@ module Aspera
       File.join(@global_temp, dir_name)
     end
 
-    # Garbage collect undeleted files
+    # Garbage collect files not deleted by previous executions (e.g. killed), older than `expiry_sec`.
+    # Not disabled by `cleanup_on_exit`, which applies to files of this execution.
+    # @param temp_folder [String] Folder that contains only temporary files
     def cleanup_expired(temp_folder)
+      return if @expiry_sec.nil?
+      now = Time.now
       Dir.entries(temp_folder).each do |name|
         file_path = File.join(temp_folder, name)
-        age_sec = (Time.now - File.stat(file_path).mtime).to_i
         # check age of file, delete too old
-        if File.file?(file_path) && (age_sec > FILE_LIST_AGE_MAX_SEC)
-          Log.log.debug { "garbage collecting #{name}" }
-          delete_file(file_path)
-        end
+        next unless File.file?(file_path) && (now - File.mtime(file_path)) >= @expiry_sec
+        Log.log.debug { "garbage collecting #{name}" }
+        remove_file(file_path)
+      rescue Errno::ENOENT
+        # deleted meanwhile by another execution
+        nil
       end
+    end
+
+    private
+
+    # Delete a file, a failure is logged
+    def remove_file(filepath)
+      File.delete(filepath)
+    rescue Errno::ENOENT
+      nil
+    rescue => e
+      Log.log.warn { "Problem deleting file: #{filepath}: #{e.message}" }
     end
   end
 end

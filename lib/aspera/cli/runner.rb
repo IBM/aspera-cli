@@ -19,6 +19,7 @@ require 'aspera/cli/info'
 require 'aspera/cli/hints'
 require 'aspera/cli/result'
 require 'aspera/transfer/result'
+require 'aspera/duration'
 require 'aspera/secret_hider'
 require 'aspera/log'
 require 'aspera/assert'
@@ -274,6 +275,29 @@ module Aspera
         end
       end
 
+      # `on_set` callback of the `temp` option (dot-notation sub-properties): `folder`, `clean`, `expiry`
+      # A plain value is the `folder`. Values are validated against schema `TempOptions`.
+      # @param value [Hash] sub-properties to set
+      def option_temp=(value)
+        Aspera.assert_type(value, Hash)
+        value.each do |k, v|
+          case k.to_sym
+          when :folder then TempFileManager.instance.global_temp = v
+          when :clean  then TempFileManager.instance.cleanup_on_exit = Parser.get_from_list(v.to_s, 'temp clean', BoolValue::ALL)
+          when :expiry
+            TempFileManager.instance.expiry_sec =
+              case v
+              when nil, false then nil
+              when Numeric then v
+              else Duration.to_unit(v, 's')
+              end
+          else Aspera.error_unexpected_value(k, type: BadArgument) { 'temp sub-option (folder, clean, expiry)' }
+          end
+        end
+      rescue ParameterError => e
+        raise BadArgument, "Option temp: #{e.message}"
+      end
+
       private
 
       # Build the usage/help text.
@@ -498,8 +522,13 @@ module Aspera
         @context.options.declare(:lock_port, description: 'Prevent dual execution of a command, e.g. in cron', allowed: Type::INTEGER)
         @context.options.declare(:once_only, description: 'Process only new items (some commands)', allowed: Type::BOOLEAN, default: false)
         @context.options.declare(:log_secrets, description: 'Show passwords in logs', allowed: Type::BOOLEAN, default: SecretHider.instance.log_secrets, on_set: SecretHider.instance.method(:log_secrets=))
-        @context.options.declare(:clean_temp, description: 'Cleanup temporary files on exit', allowed: Type::BOOLEAN, default: TempFileManager.instance.cleanup_on_exit, on_set: TempFileManager.instance.method(:cleanup_on_exit=))
-        @context.options.declare(:temp_folder, description: 'Temporary folder', default: TempFileManager.instance.global_temp, on_set: TempFileManager.instance.method(:global_temp=))
+        @context.options.declare(
+          :temp, description: 'Temporary files (dot-notation: folder, clean, expiry)',
+          allowed: [Hash, String], shorthand: 'folder', schema: Schema::Registry::TEMP_OPTIONS,
+          on_set: method(:option_temp=)
+        )
+        @context.options.declare(:clean_temp, description: 'Cleanup temporary files on exit', allowed: Type::BOOLEAN, on_set: TempFileManager.instance.method(:cleanup_on_exit=), deprecation: {last: '4.27.5', message: 'use --temp.clean'})
+        @context.options.declare(:temp_folder, description: 'Temporary folder', on_set: TempFileManager.instance.method(:global_temp=), deprecation: {last: '4.27.5', message: 'use --temp.folder'})
         @context.options.declare(:pid_file, description: 'Write process identifier to file, delete on exit')
         @context.options.declare(
           :parser, description: 'Default parser for structured parameters and options',
