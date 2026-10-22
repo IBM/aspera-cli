@@ -236,7 +236,7 @@ module Aspera
         let(:secret) { SecureRandom.alphanumeric(6) }
         let(:username) { SecureRandom.alphanumeric(6) }
 
-        before { config_presets['p1'] = {'username' => username, 'password' => secret} }
+        before { config_presets['p1'] = {'username' => username, 'password' => secret} } # HashiCorpIgnore
 
         it 'declares a secret value' do
           expect(host.action_preset_get(name: 'p1', param_name: 'password').data).to(eq(secret))
@@ -289,6 +289,27 @@ module Aspera
             host.action_preset_set(name: 'p1', param_name: 'url', param_value: 'https://example.com')
             expect(config_presets['p1']['url']).to(eq('https://example.com'))
             expect(vault_store).to(be_empty)
+          end
+        end
+
+        # Converted, or split with dot-notation, a secret as key name would not be hidden in results
+        context 'with a secret as parameter name' do
+          before { SecretHider.instance.add_secret_values(secret) }
+
+          after { Security.instance.reset }
+
+          %w[medium high].each do |level|
+            it "is refused with level #{level}" do
+              Security.instance.options = {'level' => level}
+              expect { host.action_preset_set(name: 'p1', param_name: secret, param_value: 'v') }
+                .to(raise_error(BadArgument, /preset parameter name: cannot process a secret at security level #{level}.*give a name that is not a secret/))
+              expect(config_presets['p1']).to(be_empty)
+            end
+          end
+
+          it 'is allowed with level low' do
+            host.action_preset_set(name: 'p1', param_name: secret, param_value: 'v')
+            expect(config_presets['p1']).to(eq({secret => 'v'}))
           end
         end
       end

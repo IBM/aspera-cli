@@ -29,6 +29,17 @@ RSpec.describe(Aspera::Cli::PresetManager) do
       expect(Aspera::SecretHider.instance.contains_secret?({'note' => secret})).to(be(true))
     end
 
+    it 'converts a number under a secret key to a String, so that it is hidden, without saving the file' do
+      number = SecureRandom.random_number(10**8...10**9)
+      pm = manager("config: {version: '#{Aspera::Cli::VERSION}'}\nnode: {port: 33001, password: #{number}, ts: {remote_password: #{number + 1}}}\n") # HashiCorpIgnore
+      expect(pm.config_presets['node']).to(eq({'port' => 33_001, 'password' => number.to_s, 'ts' => {'remote_password' => (number + 1).to_s}}))
+      hidden = Aspera::SecretHider.instance.hidden_copy(pm.config_presets['node'])
+      expect(hidden['port']).to(eq(33_001))
+      expect(JSON.generate(hidden)).not_to(match(/#{number}|#{number + 1}/))
+      expect(Aspera::SecretHider.instance.contains_secret?({'note' => number.to_s})).to(be(true))
+      expect(pm.save_if_needed).to(be(false))
+    end
+
     it 'starts with a new configuration when there is no file' do
       pm = manager
       expect(pm.config_presets.keys).to(eq(['config']))
@@ -94,6 +105,14 @@ RSpec.describe(Aspera::Cli::PresetManager) do
     it 'creates the preset if needed' do
       pm.set_key('q', 'k', 'v')
       expect(pm.config_presets['q']).to(eq({'k' => 'v'}))
+    end
+
+    it 'converts a number under a secret key to a String, also with dot notation or in a Hash' do
+      number = SecureRandom.random_number(10**8...10**9)
+      pm.set_key('q', 'password', number)
+      pm.set_key('q', 'ts.remote_password', number)
+      pm.set_key('q', 'sub', {'secret' => number, 'port' => 22})
+      expect(pm.config_presets['q']).to(eq({'password' => number.to_s, 'ts' => {'remote_password' => number.to_s}, 'sub' => {'secret' => number.to_s, 'port' => 22}}))
     end
   end
 

@@ -25,7 +25,7 @@ module Aspera
         env:  %i[low],
         file: %i[low medium]
       }.freeze
-      # Levels that allow an extended value to process a secret: the result could reveal it, as only declared values are hidden
+      # Levels that allow processing a secret (e.g. by an extended value): the result could reveal it, as only declared values are hidden
       SECRET_PROCESSING_LEVELS = %i[low].freeze
       private_constant :EXTENDED_VALUE_LEVELS, :SECRET_PROCESSING_LEVELS
 
@@ -93,15 +93,15 @@ module Aspera
         raise BadArgument, "@#{handler}: extended value is disabled by security level #{level}: use #{needed} (#{where_to_set}), or give the value itself"
       end
 
-      # A secret (e.g. read by `@vault:`, `@secret:`, `@preset:`) is hidden in results only as declared: the result of an extended value
-      # processing it could reveal it (e.g. split by `@list:`, in an error message of `@json:`, short value in a text by `@extend:`).
-      # @param handler [Symbol] Extended-value handler that processes the value
+      # A secret (e.g. read by `@vault:`, `@secret:`, `@preset:`) is hidden in results only as declared: the result of processing it
+      # could reveal it (e.g. split by `@list:`, in an error message of `@json:`, short value in a text by `@extend:`, converted as name of parameter).
+      # @param what [String] What processes the value, e.g. `@list`
+      # @param hint [String] What to do instead
       # @yieldreturn [Boolean] `true` if the value contains a secret, evaluated only if the level refuses it
       # @raise [BadArgument] If the value contains a secret and processing it is refused at current level
-      def check_secret_processing(handler)
+      def check_secret_processing(what, hint: 'give the secret as the whole value')
         return if SECRET_PROCESSING_LEVELS.include?(level) || !yield
-        raise BadArgument, "@#{handler}: cannot process a secret at security level #{level}, as the result could reveal it: " \
-          "give the secret as the whole value, or use level low (#{where_to_set})"
+        raise BadArgument, "#{what}: cannot process a secret at security level #{level}, as the result could reveal it: #{hint}, or use level low (#{where_to_set})"
       end
 
       # At level `medium`, the real path is checked, so that neither `..` nor a symbolic link leads outside of allowed paths.

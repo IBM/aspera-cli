@@ -67,7 +67,8 @@ module Aspera
         if File.exist?(@config_file)
           Log.log.debug { "loading #{@config_file}" }
           begin
-            @config_presets = Yaml.safe_load(File.read(@config_file))
+            # Before checksum: the conversion alone does not save the file
+            @config_presets = self.class.stringify_secrets(nil, Yaml.safe_load(File.read(@config_file)))
           rescue Psych::SyntaxError
             Log.log.error { "YAML error in config file: #{@config_file}" }
             raise
@@ -167,6 +168,7 @@ module Aspera
       def set_key(preset, param_name, param_value)
         Aspera.assert_type(param_name, String, Symbol) { 'parameter' }
         param_name = param_name.to_s
+        param_value = self.class.stringify_secrets(param_name.split(DotContainer::SEPARATOR).last, param_value)
         selected = @config_presets[preset]
         if selected.nil?
           Log.log.debug { "Unknown preset name: #{preset}, initializing" }
@@ -281,6 +283,20 @@ module Aspera
             end
           end
           dst
+        end
+
+        # A secret is a String: a number under a secret key name (e.g. password `12345678`, unquoted in YAML or set on command line)
+        # is converted, else it is not identified as a secret, and is shown in results
+        # @param key   [String, nil] Key name of value
+        # @param value [Object]      Value: containers are modified in place
+        # @return [Object] Value, or its String if it is a secret
+        def stringify_secrets(key, value)
+          case value
+          when Hash then value.each { |k, v| value[k] = stringify_secrets(k, v) }
+          when Array then value.map! { |v| stringify_secrets(nil, v) }
+          when Numeric then value = value.to_s if SecretHider.instance.secret?(key, value.to_s)
+          end
+          value
         end
       end
 

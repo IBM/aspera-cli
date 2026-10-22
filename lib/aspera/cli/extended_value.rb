@@ -186,7 +186,7 @@ module Aspera
         handlers_reversed.each_with_index do |handler, index|
           Security.instance.check_extended_value(handler)
           # The value read by the previous handler may be a secret
-          Security.instance.check_secret_processing(handler) { SecretHider.instance.contains_secret?(value) } if index.positive?
+          Security.instance.check_secret_processing("@#{handler}") { SecretHider.instance.contains_secret?(value) } if index.positive?
           value = @handlers[handler].call(value)
           # Values read from a secret source are hidden wherever they appear: logs, results
           if SECRET_HANDLERS.include?(handler)
@@ -206,7 +206,7 @@ module Aspera
           Log.log.debug { "evaluating #{sub_value}" }
           sub_value = evaluate(sub_value, context: 'composite extended value')
           # In a text, a secret is not the whole value
-          Security.instance.check_secret_processing(:extend) { SecretHider.instance.contains_secret?(sub_value) }
+          Security.instance.check_secret_processing('@extend') { SecretHider.instance.contains_secret?(sub_value) }
           value = "#{m[1]}#{sub_value}#{m[4]}"
         end
         return value

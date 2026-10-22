@@ -159,6 +159,17 @@ RSpec.describe(Aspera::SecretHider) do
       expect(hider.hidden_copy("x#{short}y")).to(eq("x#{short}y"))
     end
 
+    it 'hides a short value also as a word in a text, with short_in_text' do
+      short = SecureRandom.alphanumeric(6)
+      hider.add_secret_values(short, "#{short}-#{other}")
+      expect(hider.hidden_copy("no such preset: #{short}")).to(eq("no such preset: #{short}"))
+      expect(hider.hidden_copy("no such preset: #{short}", short_in_text: true)).to(eq('no such preset: 🔑'))
+      expect(hider.hidden_copy({"a_#{short}" => ["#{short}.b", "x#{short}y", "1#{short}"]}, short_in_text: true))
+        .to(eq({'a_🔑' => ['🔑.b', "x#{short}y", "1#{short}"]}))
+      # A long value that contains a short one is hidden whole
+      expect(hider.hidden_copy("a #{short}-#{other} b", short_in_text: true)).to(eq('a 🔑 b'))
+    end
+
     it 'hides the longest declared value first' do
       hider.add_secret_values(secret, "#{secret}#{other}")
       expect(hider.hidden_copy("a #{secret}#{other} b")).to(eq('a 🔑 b'))
@@ -182,6 +193,12 @@ RSpec.describe(Aspera::SecretHider) do
       original = Marshal.load(Marshal.dump(data))
       expect(hider.hidden_copy(data)).to(eq({'items' => [{'name' => 'a', 'password' => '🔑'}], 'sub' => {'Token' => '🔑'}}))
       expect(data).to(eq(original))
+    end
+
+    it 'hides declared values in key names' do
+      hider.add_secret_values(secret)
+      expect(hider.hidden_copy({secret => 'a', "x #{secret}" => 1, other: 2})).to(eq({'🔑' => 'a', 'x 🔑' => 1, other: 2}))
+      expect(hider.contains_secret?({'a' => {secret => 1}})).to(be(true))
     end
 
     it 'hides secrets in a Struct, without modifying it' do

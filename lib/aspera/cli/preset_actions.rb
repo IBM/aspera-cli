@@ -2,6 +2,7 @@
 
 require 'aspera/assert'
 require 'aspera/secret_hider'
+require 'aspera/cli/security'
 require 'aspera/cli/preset_manager'
 
 module Aspera
@@ -82,7 +83,7 @@ module Aspera
           incr += 1
         end
         Log.log.info { "Securing #{preset_name}.#{option_name} -> vault label: #{vault_label}" }
-        vault.set({label: vault_label, password: value})
+        vault.set({label: vault_label, password: value}) # HashiCorpIgnore
         preset[option_name] = "@vault:#{vault_label}.password"
       end
 
@@ -135,6 +136,10 @@ module Aspera
 
       def action_preset_set(name:, param_name:, param_value:, **)
         name = preset_name(name, create: true)
+        # Key names are not secrets: converted, or split with dot-notation, a secret would not be hidden in results
+        Security.instance.check_secret_processing('preset parameter name', hint: 'give a name that is not a secret') do
+          SecretHider.instance.contains_secret?(param_name)
+        end
         param_name = Parser.option_line_to_name(param_name)
         presets.set_key(name, param_name, Parser.smart_convert(param_value))
         secure_preset_option(presets.config_presets[name], name, param_name)

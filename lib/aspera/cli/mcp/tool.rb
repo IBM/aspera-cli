@@ -128,11 +128,12 @@ module Aspera
             prompt = catch(Secrets::THROW_TAG) do
               response = Secrets.with_call(secret_call) { execute(args) }
               secret_call.finish
-              # Secret values (e.g. entered by the user, tokens) never reach the client, even if displayed by the command
+              # Secret values (e.g. entered by the user, tokens) never reach the client, even if displayed by the command,
+              # also short ones in a text (e.g. a short password in an error message)
               hider = SecretHider.instance
               return MCP::Tool::Response.new(
-                hider.hidden_copy(response.content),
-                structured_content: hider.hidden_copy(response.structured_content),
+                hider.hidden_copy(response.content, short_in_text: true),
+                structured_content: hider.hidden_copy(response.structured_content, short_in_text: true),
                 error:              response.error?
               )
             end

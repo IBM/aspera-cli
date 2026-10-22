@@ -33,7 +33,7 @@ module Aspera
     # min length of hidden secrets, use `+` or `{n,}`
     SECRET_LENGTH = '{5,}'
     # min length of a declared secret value to be hidden inside a string: shorter ones are hidden only when they are the whole string,
-    # else common words would be hidden (e.g. password `aspera` in URLs)
+    # else common words would be hidden (e.g. password `aspera` in URLs), or optionally as a word (`short_in_text`)
     VALUE_IN_STRING_LENGTH = 8
     # regex that define named captures :begin and :end
     REGEX_LOG_REPLACES = [
@@ -99,16 +99,21 @@ module Aspera
       ALL_SECRETS.any? { |kw| keyword.include?(kw.downcase) }
     end
 
-    # Hides secrets in a structure: by key name, and declared values.
+    # Hides secrets in a structure: by key name, and declared values, also in key names (e.g. a secret given as name of a parameter).
     # Containers are copied, not modified: the structure may be shared (e.g. configuration, transfer spec).
-    # @param obj [Object] Hash, Array, Struct, String, or other value (returned as is)
+    # @param obj           [Object]  Hash, Array, Struct, String, or other value (returned as is)
+    # @param short_in_text [Boolean] `true`: a declared value shorter than 8 characters is also hidden inside a text, as a word
+    #   (not next to a letter or digit), e.g. a short password in an error message of `mcp server`
     # @return [Object] Copy of obj with secrets replaced by placeholder
-    def hidden_copy(obj)
+    def hidden_copy(obj, short_in_text: false)
       case obj
-      when Hash then obj.to_h { |k, v| [k, secret?(k, v) ? hidden_marker : hidden_copy(v)] }
-      when Array then obj.map { |i| hidden_copy(i) }
-      when Struct then obj.dup.tap { |s| s.each_pair { |k, v| s[k] = secret?(k, v) ? hidden_marker : hidden_copy(v) } }
-      when String then hide_values_in_string(obj, hidden_marker)
+      when Hash
+        obj.to_h do |k, v|
+          [k.is_a?(String) ? hidden_copy(k, short_in_text: short_in_text) : k, secret?(k, v) ? hidden_marker : hidden_copy(v, short_in_text: short_in_text)]
+        end
+      when Array then obj.map { |i| hidden_copy(i, short_in_text: short_in_text) }
+      when Struct then obj.dup.tap { |s| s.each_pair { |k, v| s[k] = secret?(k, v) ? hidden_marker : hidden_copy(v, short_in_text: short_in_text) } }
+      when String then hide_values_in_string(obj, hidden_marker, short_in_text: short_in_text)
       else obj
       end
     end
@@ -129,9 +134,10 @@ module Aspera
       @mutex.synchronize do
         values = @values | forms
         next if values.size.eql?(@values.size)
-        long = values.select { |v| v.length >= VALUE_IN_STRING_LENGTH }
+        long, short = values.partition { |v| v.length >= VALUE_IN_STRING_LENGTH }
         # Longest first, so that a secret is not partly hidden by another one that it contains
         @values_regex = long.empty? ? nil : Regexp.union(long.sort_by { |v| -v.length })
+        @short_values_regex = short.empty? ? nil : /(?<![[:alnum:]])#{Regexp.union(short.sort_by { |v| -v.length })}(?![[:alnum:]])/
         # Replaced, not modified, for readers in other threads
         @values = values.freeze
       end
@@ -161,16 +167,23 @@ module Aspera
       @values = Set.new.freeze
       # Matches declared values long enough to be hidden inside a string
       @values_regex = nil
+      # Matches shorter declared values as a word
+      @short_values_regex = nil
       @mutex = Mutex.new
     end
 
-    # @param value  [String] Input string
-    # @param marker [String] Placeholder
+    # @param value         [String]  Input string
+    # @param marker        [String]  Placeholder
+    # @param short_in_text [Boolean] `true`: also hide short values as a word
     # @return [String] value with declared secret values replaced by placeholder
-    def hide_values_in_string(value, marker)
+    def hide_values_in_string(value, marker, short_in_text: false)
       return marker if @values.include?(value)
-      regex = @values_regex
-      regex.nil? ? value : value.gsub(regex, marker)
+      long_regex = @values_regex
+      short_regex = @short_values_regex if short_in_text
+      # Long values first, as they may contain short ones
+      value = value.gsub(long_regex, marker) unless long_regex.nil?
+      value = value.gsub(short_regex, marker) unless short_regex.nil?
+      value
     end
 
     # @return [String] Placeholder for hidden secrets, in ASCII when Unicode is not supported
