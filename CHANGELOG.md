@@ -1,8 +1,8 @@
 # Changes (Release notes)
 
-## 4.28.0.pre
+## 4.28.0
 
-Released: [Place date of release here]
+Released: 2026-10-22
 
 Highlights: security hardening of local web servers (authentication, minimum secret strength, cross-site requests refused), new option `security`, `mcp server` over HTTPS with token or OAuth authentication, JMESPath queries (`--out.query`), exit code by category of error, context-aware shell completion (also PowerShell), tables fitted to the terminal width. Ruby 3.2 or later is required.
 
@@ -132,6 +132,29 @@ Highlights: security hardening of local web servers (authentication, minimum sec
   * `workflows import` takes a file created by `workflows export`, and `workflows import_with_constraints` takes keys `filename`, `add_as_revision`, `subwf_constraints`, ... (see help).
   * `monitors` is now `monitors snapshot`, with an optional type of monitors.
   * `workorders output` displays values of variables as plain values instead of single-element arrays, and an empty value as `null`.
+
+### Server Versions
+
+| Plugin | Product | Version |
+|--------------|--------------------|------------------|
+| `aoc` | Aspera on Cloud | SaaS |
+| `console` | IBM Aspera Console | 3.4.11 |
+| `faspex5` | Faspex v5 | F5.0.17 |
+| `httpgw` | HTTP Gateway | 2.3.4 |
+| `node` | HSTS Node API | 4.4.8.2596 |
+| `orchestrator` | Orchestrator | 4.1.6.2036-00000 |
+| `shares` | IBM Aspera Shares | 1.11.5 |
+
+### Transfer Agent Versions
+
+| Agent | Product | Version |
+|-----------|--------------------------------|---------|
+| `connect` | IBM Aspera Connect Client | 4.2.14 |
+| `desktop` | IBM Aspera Desktop Client | 4.4.3 |
+| `direct` | IBM Aspera Transfer SDK (ascp) | 1.1.9 |
+| `httpgw` | IBM Aspera HTTP Gateway Agent | 1.3.0 |
+| `node` | IBM Aspera Node API Agent | 4.4.3 |
+| `transferd` | IBM Aspera transferd daemon | 1.1.9 |
 
 ## 4.27.5
 
