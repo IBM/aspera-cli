@@ -130,7 +130,7 @@ module Aspera
       # @param save_to      [String, Pathname, IO, nil] File path or IO object to save response body; progress bar is used when set
       # @param exception    [Boolean] Whether to raise an exception on HTTP error
       # @param ret          [Symbol] One of :data, :resp, :both - controls return value
-      # @param json_parser  [Hash] Options of `JSON.parse` for a JSON response, e.g. `{allow_duplicate_key: true}`
+      # @param json_opts    [Hash] Options of `JSON.parse` for a JSON response, e.g. `{allow_duplicate_key: true}`
       # @return [Array(Hash, Net::HTTPResponse)] When `ret` is :both
       # @return [Net::HTTPResponse] When `ret` is :resp
       # @return [Hash] When `ret` is :data
@@ -145,7 +145,7 @@ module Aspera
         save_to: nil,
         exception: true,
         ret: :data,
-        json_parser: {}
+        json_opts: {}
       )
         subpath = subpath.to_s if subpath.is_a?(Symbol)
         subpath = '' if subpath.nil?
@@ -186,7 +186,7 @@ module Aspera
           # TODO : related to mime type encoding ?
           # result_http.body.force_encoding('UTF-8') if result_http.body.is_a?(String)
           # Log.log.debug{"result: body=#{result_http.body}"}
-          result_data = parse_response(result_http, result_mime, json_parser)
+          result_data = parse_response(result_http, mime_type: result_mime, json_opts: json_opts)
           ErrorAnalyzer.instance.raise_on_error(req, result_data, result_http)
           unless file_saved || save_to.nil?
             raise 'save_to: IO object requires a streaming response' if save_to.respond_to?(:write)
@@ -224,7 +224,8 @@ module Aspera
               save_to:      save_to,
               exception:    exception,
               headers:      headers,
-              ret:          ret
+              ret:          ret,
+              json_opts:    json_opts
             )
           end
           # raise exception if could not retry and not return error in result
@@ -443,18 +444,18 @@ module Aspera
       end
 
       # Parse response body, according to media type
-      # @param result_http [Net::HTTPResponse] Response
-      # @param result_mime [String]            Media type of response
-      # @param json_parser [Hash]              Options of `JSON.parse`
+      # @param http_res  [Net::HTTPResponse] Response
+      # @param mime_type [String]            Media type of response
+      # @param json_opts [Hash]              Options of `JSON.parse`
       # @return [Hash, Array, String, nil] Parsed JSON, or raw body
-      def parse_response(result_http, result_mime, json_parser)
-        result_data = result_http.body
+      def parse_response(http_res, mime_type:, json_opts: {})
+        result_data = http_res.body
         Log.dump(:result_data_raw, result_data, level: :trace1)
         # TODO: Remove next 2 lines when bug in async node api is fixed. (Aspera/core/issues/4490)
         node_api_bug = result_data&.index('}HTTP/1.1 400 Bad Request') if result_data.is_a?(String)
         result_data = result_data[0..node_api_bug] if node_api_bug
-        result_mime = 'application/xml' if result_data.is_a?(String) && result_data.start_with?('<?xml')
-        result_data = JSON.parse(result_data, **json_parser) if Mime.json?(result_mime) && !result_data.nil? && !result_data.empty?
+        mime_type = 'application/xml' if result_data.is_a?(String) && result_data.start_with?('<?xml')
+        result_data = JSON.parse(result_data, **json_opts) if Mime.json?(mime_type) && !result_data.nil? && !result_data.empty?
         Log.dump(:result_data, result_data)
         result_data
       end

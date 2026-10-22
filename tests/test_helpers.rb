@@ -113,13 +113,14 @@ class McpHttpClient < Aspera::Rest::Client
   private
 
   # Parse SSE or plain JSON responses
-  # @param result_http [Net::HTTPResponse] HTTP response object
-  # @param result_mime [String] MIME type string
+  # @param http_res  [Net::HTTPResponse] HTTP response object
+  # @param mime_type [String] MIME type string
+  # @param json_opts [Hash] Options of `JSON.parse`
   # @return [Object] Parsed JSON data
-  def parse_response(result_http, result_mime)
-    return super unless result_mime.eql?(Aspera::Mime::EVENT_STREAM)
-    last_frame = result_http.body.to_s.scan(/^data: (.*)$/).last
-    last_frame && JSON.parse(last_frame.first)
+  def parse_response(http_res, mime_type:, json_opts: {})
+    return super unless mime_type.eql?(Aspera::Mime::EVENT_STREAM)
+    last_frame = http_res.body.to_s.scan(/^data: (.*)$/).last
+    last_frame && JSON.parse(last_frame.first, **json_opts)
   end
 end
 

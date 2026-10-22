@@ -339,13 +339,13 @@ RSpec.describe(Aspera::Rest) do
       end
     end
 
-    describe 'json_parser' do
+    describe 'json_opts' do
       it 'passes options to JSON.parse' do
         url = start_server('/duplicate' => lambda do |_req, res|
           res['Content-Type'] = 'application/json'
           res.body = '{"id":"a","id":2}'
         end)
-        expect(Aspera::Rest::Client.new(base_url: url).call(operation: 'GET', subpath: 'duplicate', json_parser: {allow_duplicate_key: true}))
+        expect(Aspera::Rest::Client.new(base_url: url).call(operation: 'GET', subpath: 'duplicate', json_opts: {allow_duplicate_key: true}))
           .to(eq({'id' => 2}))
       end
     end
