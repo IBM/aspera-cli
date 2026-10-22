@@ -2533,13 +2533,16 @@ It is a `Hash` with the following keys:
 | `level` | `string` | `low` | `low`, `medium`, or `high` |
 | `allowed_paths` | `Array<string>` | - | With level `medium`: files and folders that `@file:` can read |
 
-| Level | `@file:` | `@ruby:`, `@uri:`, and `@env:` |
-|---|---|---|
-| `low` | Allowed | Allowed |
-| `medium` | Only files in `allowed_paths` | Refused |
-| `high` | Refused | Refused |
+| Level | `@file:` | `@ruby:`, `@uri:`, and `@env:` | Secret processed by another extended value |
+|---|---|---|---|
+| `low` | Allowed | Allowed | Allowed |
+| `medium` | Only files in `allowed_paths` | Refused | Refused |
+| `high` | Refused | Refused | Refused |
 
 With level `medium`, the real path of the file is checked: a symbolic link leading outside of `allowed_paths` is refused.
+
+A secret (read by `@secret:`, `@vault:`, or `@preset:`) is hidden in results by its value: processed by another extended value, it could be revealed (for example, split by `@list:@vault:...`, or with a short value in a text by `@extend:`).
+With levels `medium` and `high`, a secret must be the whole value of an option or argument, for example `@preset:<%=ph :preset_name%>.password` for option `password`.
 
 Options are evaluated in the order of the command line: place `--security` before options that use extended values.
 
@@ -3118,7 +3121,7 @@ Instead, they shall be hidden (logs, output) or encrypted (configuration).
 
 Terminal output (command result) secret removal is controlled by option `--out.secrets` (default: `no`).
 Log secret removal is controlled by option `log_secrets` (default: `no`).
-Secrets are identified by the name of their field (for example, `password`, `token`), and by their value: values of secret options, of [Extended Values](#extended-value-syntax) `@secret:` and `@vault:`, tokens obtained or generated, and secrets of transfer specs are hidden wherever they appear.
+Secrets are identified by the name of their field (for example, `password`, `token`), and by their value: values of secret options and of presets, of [Extended Values](#extended-value-syntax) `@secret:` and `@vault:`, tokens obtained or generated, and secrets of transfer specs are hidden wherever they appear.
 A value shorter than 8 characters is hidden only when it is the whole value, not inside a text.
 Mandatory command line options can be requested interactively (for example, password) using option `interactive`.
 It is possible to use [Extended Value](#extended-value-syntax) `@secret:[name]` to ask for a secret interactively.
@@ -9527,7 +9530,7 @@ With both transports:
 
 - Extended value `@stdin:` is refused.
 - `@secret:` is entered by the user on a web page, see [Secrets entered in a web page](#secrets-entered-in-a-web-page).
-- The [Security Level](#security-level) is `high` by default: `@ruby:`, `@file:`, `@uri:`, and `@env:` are refused.
+- The [Security Level](#security-level) is `high` by default: `@ruby:`, `@file:`, `@uri:`, and `@env:` are refused, and a secret must be the whole value: hidden in results, it cannot be processed by another extended value.
   It applies to commands sent by the client, and to presets, because the client can modify presets.
   Commands sent by the client cannot change option `security`.
 

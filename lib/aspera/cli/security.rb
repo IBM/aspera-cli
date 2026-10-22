@@ -25,7 +25,9 @@ module Aspera
         env:  %i[low],
         file: %i[low medium]
       }.freeze
-      private_constant :EXTENDED_VALUE_LEVELS
+      # Levels that allow an extended value to process a secret: the result could reveal it, as only declared values are hidden
+      SECRET_PROCESSING_LEVELS = %i[low].freeze
+      private_constant :EXTENDED_VALUE_LEVELS, :SECRET_PROCESSING_LEVELS
 
       def initialize
         reset
@@ -88,8 +90,18 @@ module Aspera
         return if allowed.nil? || allowed.include?(level)
         # the least permissive level that allows it
         needed = handler.eql?(:file) ? "level #{allowed.last} with the file in security.allowed_paths" : "level #{allowed.last}"
-        where = @locked.nil? ? 'option security' : "option security when starting, as it cannot be changed #{@locked}"
-        raise BadArgument, "@#{handler}: extended value is disabled by security level #{level}: use #{needed} (#{where}), or give the value itself"
+        raise BadArgument, "@#{handler}: extended value is disabled by security level #{level}: use #{needed} (#{where_to_set}), or give the value itself"
+      end
+
+      # A secret (e.g. read by `@vault:`, `@secret:`, `@preset:`) is hidden in results only as declared: the result of an extended value
+      # processing it could reveal it (e.g. split by `@list:`, in an error message of `@json:`, short value in a text by `@extend:`).
+      # @param handler [Symbol] Extended-value handler that processes the value
+      # @yieldreturn [Boolean] `true` if the value contains a secret, evaluated only if the level refuses it
+      # @raise [BadArgument] If the value contains a secret and processing it is refused at current level
+      def check_secret_processing(handler)
+        return if SECRET_PROCESSING_LEVELS.include?(level) || !yield
+        raise BadArgument, "@#{handler}: cannot process a secret at security level #{level}, as the result could reveal it: " \
+          "give the secret as the whole value, or use level low (#{where_to_set})"
       end
 
       # At level `medium`, the real path is checked, so that neither `..` nor a symbolic link leads outside of allowed paths.
@@ -109,6 +121,13 @@ module Aspera
           real_path
         else raise BadArgument, "reading files is disabled by security level #{level}"
         end
+      end
+
+      private
+
+      # @return [String] Where to set the level, for error messages
+      def where_to_set
+        @locked.nil? ? 'option security' : "option security when starting, as it cannot be changed #{@locked}"
       end
     end
   end

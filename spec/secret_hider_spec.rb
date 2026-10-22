@@ -190,4 +190,15 @@ RSpec.describe(Aspera::SecretHider) do
       expect(data.password).to(eq(secret))
     end
   end
+
+  describe '#contains_secret?' do
+    it 'detects a secret by key name, or declared value, also nested' do
+      expect(hider.contains_secret?({'a' => [{'password' => secret}]})).to(be(true)) # HashiCorpIgnore
+      expect(hider.contains_secret?({'a' => ["x #{other} y", 1]})).to(be(false))
+      hider.add_secret_values(other)
+      expect(hider.contains_secret?({'a' => ["x #{other} y", 1]})).to(be(true))
+      expect(hider.contains_secret?(other)).to(be(true))
+      expect(hider.contains_secret?(12)).to(be(false))
+    end
+  end
 end

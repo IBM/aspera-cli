@@ -6,6 +6,7 @@ require 'aspera/cli/version'
 require 'aspera/cli/info'
 require 'aspera/log'
 require 'aspera/assert'
+require 'aspera/secret_hider'
 require 'aspera/yaml'
 require 'digest'
 require 'yaml'
@@ -91,6 +92,8 @@ module Aspera
           end
           raise Cli::Error, e.to_s
         end
+        # Hidden wherever they appear (logs, results), also when copied under another key name
+        SecretHider.instance.add_secrets_in(@config_presets)
       end
 
       # Save to disk only if content changed since last load/save.
@@ -152,7 +155,10 @@ module Aspera
         end
         current = self.class.deep_clone(current) unless current.is_a?(String)
         current.delete_if { |k, _| k.to_s.start_with?(Key::META_PREFIX) } if current.is_a?(Hash)
-        ExtendedValue.instance.evaluate(current, context: 'preset')
+        current = ExtendedValue.instance.evaluate(current, context: 'preset')
+        # A secret read alone has no key name: declared, so that it is hidden wherever it appears
+        SecretHider.instance.add_secret_values(current) if SecretHider.instance.secret?(names.last, current)
+        current
       end
 
       # Set a single key in a preset hash (creates the preset if absent).

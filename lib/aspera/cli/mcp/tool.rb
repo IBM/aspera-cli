@@ -51,6 +51,7 @@ module Aspera
               "@secret:name"  — secret entered by the user on a web page, never visible to you:
                                 use it for a secret the user did not give, e.g. "--password=@secret:password"
             Note: @stdin: is disabled; @ruby:, @file:, @uri:, @env: depend on the security level of the server.
+            A secret (from @secret:, @vault:, @preset:) must be the whole value: no other prefix before it, not in @extend:.
 
           AUTOMATIC FLAGS
             The server prepends extra_args to every call (default: #{DEFAULT_EXTRA_ARGS.join(' ')}).

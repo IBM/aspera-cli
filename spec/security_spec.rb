@@ -4,6 +4,7 @@
 
 require 'base64'
 require 'fileutils'
+require 'securerandom'
 require 'tmpdir'
 require 'aspera/cli/security'
 require 'aspera/cli/extended_value'
@@ -88,6 +89,48 @@ module Aspera
           ['@ruby:1+1', "@uri:file://#{allowed_file}", '@env:HOME'].each do |value|
             expect { evaluate(value) }.to(raise_error(BadArgument, /extended value is disabled by security level medium/))
           end
+        end
+      end
+
+      # Secret read by @secret: on terminal
+      describe 'secret processed by another extended value' do
+        let(:secret) { SecureRandom.alphanumeric(12) }
+
+        around do |example|
+          saved = Environment.instance.url_method
+          Environment.instance.url_method = :text
+          example.run
+        ensure
+          Environment.instance.url_method = saved
+        end
+
+        before { allow($stdin).to(receive_messages(tty?: true, getpass: secret)) }
+
+        it 'is allowed with level low' do
+          expect(evaluate('@list:@secret:pw')).to(eq(secret[1..].split(secret[0])))
+          expect(evaluate('@extend:<@secret:pw@>')).to(eq("<#{secret}>"))
+        end
+
+        %w[medium high].each do |level|
+          it "is refused with level #{level}, also in @extend: (a short secret is hidden only as whole value)" do
+            security.options = {'level' => level}
+            expect { evaluate('@list:@secret:pw') }.to(raise_error(BadArgument, /@list: cannot process a secret at security level #{level}/))
+            expect { evaluate('@json:@secret:pw') }.to(raise_error(BadArgument, /@json: cannot process a secret/))
+            allow($stdin).to(receive_messages(tty?: true, getpass: SecureRandom.alphanumeric(6)))
+            expect { evaluate('@extend:<@secret:pw@>') }.to(raise_error(BadArgument, /@extend: cannot process a secret/))
+          end
+        end
+
+        it 'is allowed with level high as whole value, and other values can be processed' do
+          security.options = {'level' => 'high'}
+          expect(evaluate('@secret:pw')).to(eq(secret))
+          expect(evaluate("@json:@base64:#{Base64.strict_encode64('{"a":1}')}")).to(eq({'a' => 1}))
+          expect(evaluate('@extend:<@base64:YQ==@>')).to(eq('<a>'))
+        end
+
+        it 'gives how to use the secret, and where to set the level' do
+          security.lock('in test', default: :high)
+          expect { evaluate('@list:@secret:pw') }.to(raise_error(BadArgument, /give the secret as the whole value, or use level low \(option security when starting/))
         end
       end
 

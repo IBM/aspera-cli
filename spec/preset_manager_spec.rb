@@ -3,6 +3,8 @@
 require 'spec_helper'
 require 'aspera/cli/preset_manager'
 require 'aspera/cli/error'
+require 'base64'
+require 'securerandom'
 require 'tmpdir'
 
 RSpec.describe(Aspera::Cli::PresetManager) do
@@ -21,6 +23,12 @@ RSpec.describe(Aspera::Cli::PresetManager) do
   end
 
   describe 'config file' do
+    it 'declares the secrets of presets, so that they are hidden also under another key' do
+      secret = SecureRandom.alphanumeric(12)
+      manager("config: {version: '1'}\nnode: {url: a, password: '#{secret}'}\n") # HashiCorpIgnore
+      expect(Aspera::SecretHider.instance.contains_secret?({'note' => secret})).to(be(true))
+    end
+
     it 'starts with a new configuration when there is no file' do
       pm = manager
       expect(pm.config_presets.keys).to(eq(['config']))
@@ -153,6 +161,14 @@ RSpec.describe(Aspera::Cli::PresetManager) do
 
     it 'raises for an unknown preset' do
       expect { pm.by_name('mine.nope') }.to(raise_error(Aspera::Cli::Error, /Unknown config preset/))
+    end
+
+    it 'declares a secret read alone, also given by an extended value' do
+      secret = SecureRandom.alphanumeric(12)
+      encoded = manager("config: {version: '1'}\nnode: {password: '@base64:#{Base64.strict_encode64(secret)}'}\n") # HashiCorpIgnore
+      expect(Aspera::SecretHider.instance.contains_secret?(secret)).to(be(false))
+      expect(encoded.by_name('node.password')).to(eq(secret))
+      expect(Aspera::SecretHider.instance.contains_secret?(secret)).to(be(true))
     end
   end
 

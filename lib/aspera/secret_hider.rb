@@ -113,6 +113,12 @@ module Aspera
       end
     end
 
+    # @param obj [Object] Hash, Array, Struct, String, or other value
+    # @return [Boolean] `true` if obj contains a secret: by key name, or declared value
+    def contains_secret?(obj)
+      !hidden_copy(obj).eql?(obj)
+    end
+
     # Declare secret values: hidden wherever they appear (logs, results), also when escaped in JSON, Ruby or URL
     # @param values [Array<Object>] Secret values: only non-empty Strings are retained
     def add_secret_values(*values)
