@@ -127,14 +127,16 @@ Add one bullet under `### New Features` (or `### Issues Fixed` / `### Breaking C
 
 Style rules:
 
-- Plugin name in backticks: `` `config` ``, `` `aoc` ``, or `**global**` for cross-cutting changes.
+- Entries are grouped by plugin: one first-level bullet per plugin, `` `ascli` `` (cross-cutting changes) first, then `` `config` ``, `` `mcp` ``, then the other plugins in alphabetical order.
+- The entry is a second-level bullet under its plugin, prefixed with the command path inside the plugin, if any.
 - Command path and argument names in backticks.
 - One sentence per bullet; end without a period.
 
 Example:
 
 ```markdown
-* `config`: New commands `agents list`, `agents show <name>` and `agents parameters <name>` to discover available transfer agents, their short identifier and their configurable parameters
+* `config`:
+  * `agents`: New commands `list`, `show <name>` and `parameters <name>` to discover available transfer agents, their short identifier and their configurable parameters
 ```
 
 #### 5 — Static analysis
