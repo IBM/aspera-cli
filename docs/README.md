@@ -2133,7 +2133,7 @@ In the above example, the same result is obtained with option:
 
 Option `select` applies the filter after a possible "flattening" with option `--out.flat`.
 
-For comparisons, functions or reshaping of results, use [`--out.query`](#option---outquery).
+For comparisons, functions or reshaping of results, use option `--out.query`.
 
 #### Option: `--out.query`
 
