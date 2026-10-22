@@ -38,7 +38,8 @@ module Aspera
         case name
         when :dsa, :rsa
           # generate PEM from DER
-          OpenSSL::PKey.read(raw_data).to_pem
+          # Class of key, not `OpenSSL::PKey.read`: on JRuby (jruby-openssl 0.16), it fails on these keys (DER, traditional format)
+          {dsa: OpenSSL::PKey::DSA, rsa: OpenSSL::PKey::RSA}[name].new(raw_data).to_pem
         when :license
           Zlib::Inflate.inflate(raw_data)
         when :uuid
