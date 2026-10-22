@@ -6379,6 +6379,7 @@ conf_echo_secret:
     - echo
     - "@secret:"
     - --ui=text
+    - --out.secrets=yes
 conf_echo_secret_web:
   description: Secret entered on a web page opened in the browser.
   tags:
@@ -6391,6 +6392,7 @@ conf_echo_secret_web:
     - echo
     - "@secret:"
     - --ui=graphical
+    - --out.secrets=yes
 conf_hint:
   description: REST error with expired signature hint
   tags:
