@@ -25,7 +25,7 @@ module Aspera
       # Suffix of the RubyInstaller release of `RUBY_TESTED_VERSION`, packaged in the Windows zip
       # (release tag: `RubyInstaller-<Ruby version><suffix>`)
       # https://github.com/oneclick/rubyinstaller2/releases
-      WINDOWS_RUBY_INSTALLER_EXT = '-1'
+      WINDOWS_RUBY_INSTALLER_EXT = '-2'
     end
   end
 end

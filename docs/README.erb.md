@@ -566,7 +566,7 @@ If your Linux distribution provides a standard Ruby package, you can use it prov
 - Enable the Ruby version you selected:
 
   ```shell
-  dnf module -y enable ruby:3.2
+  dnf module -y enable ruby:3.3
 
   dnf install -y ruby-devel
   ```

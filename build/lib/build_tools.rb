@@ -106,7 +106,7 @@ module BuildTools
   # Versions of SDK and Ruby tested with the packaged gem version
   # @param gem_file    [Pathname] Path to aspera-cli .gem file
   # @param gem_version [String]   Version of gem
-  # @return [Array(String, String, String)] SDK version, Ruby version (e.g. `4.0.7`), RubyInstaller version (e.g. `4.0.7-1`)
+  # @return [Array(String, String, String)] SDK version, Ruby version (e.g. `4.0.x`), RubyInstaller version (e.g. `4.0.x-1`)
   def package_versions(gem_file, gem_version)
     info_rb = gem_file_content(gem_file, 'lib/aspera/cli/info.rb')
     sdk_version = info_rb[/SDK_VERSION = '([^']+)'/, 1] || raise("SDK_VERSION not found in gem #{gem_version}")

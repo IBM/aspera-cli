@@ -570,7 +570,7 @@ If your Linux distribution provides a standard Ruby package, you can use it prov
 - Enable the Ruby version you selected:
 
   ```shell
-  dnf module -y enable ruby:3.2
+  dnf module -y enable ruby:3.3
 
   dnf install -y ruby-devel
   ```
@@ -3010,7 +3010,7 @@ echo @json:'[{"user":{"id":1,"name":"foo"},"project":"bar"}]' --out.table.pivot=
 echo @json:'{"empty":"","bool":true}' --out.colors=yes --out.utf8=yes
 echo @lines:@stdin:
 echo @list:,1,2,3
-echo @secret: --ui=text
+echo @secret: --ui=text --out.secrets=yes
 echo @stdin:bin
 echo @uri:/etc/hosts
 echo @uri:file:/etc/hosts

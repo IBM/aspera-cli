@@ -36,7 +36,7 @@ The launcher sets `GEM_HOME` and `GEM_PATH` to folder `gems` and clears the sett
 
 ## Ruby version
 
-Same as the Windows package: `RUBY_TESTED_VERSION` in `Aspera::Cli::Info` of the packaged gem version, e.g. `4.0.7`.
+Same as the Windows package: `RUBY_TESTED_VERSION` in `Aspera::Cli::Info` of the packaged gem version, e.g. `4.0.x`.
 
 ## Aspera SDK version
 

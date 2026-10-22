@@ -21,6 +21,9 @@ CLEAN.push(Paths::TMP)
 CLOBBER.push(Paths::GEMFILE_LOCK)
 CLOBBER.push(Paths::RELEASE)
 
+# Check consistency of Ruby versions (including .ruby-version) before building the gem
+Rake::Task['build'].enhance(['tools:check_ruby'])
+
 # default gem file build tasks
 task default: [:signed]
 
