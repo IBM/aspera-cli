@@ -449,12 +449,13 @@ module Aspera
       def display_table(object_array, fields, single: false)
         Aspera.assert_array_all(object_array, Hash)
         Aspera.assert_array_all(fields, String)
+        # select before the empty check: no item may remain
+        object_array = filter_columns_on_select(object_array)
         if object_array.empty?
           # no  display for csv
           display_message(:info, TerminalFormatter.special_format('empty')) if @options[:format].eql?(:table)
           return
         end
-        object_array = filter_columns_on_select(object_array)
         format_style = @options[:table_style].symbolize_keys
         string_list_separator = format_style.delete(:str_lst_sep) || STR_LST_SEP_VERT
         # convert data to string, and keep only display fields

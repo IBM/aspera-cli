@@ -241,6 +241,12 @@ module Aspera
           expect(output).to(include('"name":"b"'))
           expect(output).not_to(include('"name":"a"'))
         end
+
+        it 'shows empty when select matches no item' do
+          output = output_of(Result::ObjectList.new(list), '--format=table', '--out.select=@json:{"name":"z"}')
+          expect(output).to(include('<empty>'))
+          expect(output).not_to(include('name'))
+        end
       end
 
       describe 'option out query' do

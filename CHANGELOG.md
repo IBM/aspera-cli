@@ -71,6 +71,7 @@ Highlights: security hardening of local web servers (authentication, minimum sec
     * Without Unicode, symbols are replaced with ASCII (e.g. hidden secret `🔑` becomes `***`).
   * A boolean or decimal result (e.g. `config echo @json:true`) failed with an internal error.
   * `--out.select` refused a Ruby lambda (`@ruby:`).
+  * `--out.select` matching no item displayed a table with headings only, instead of `<empty>`.
   * Help and manual: a parameter with alternatives (`oneOf`) had no type (which broke the PDF manual), and alternatives had no title.
   * Value `help` of an option or argument displays the schema as `config sync spec`: with fields of alternatives (`oneOf`), deprecations and examples, and for `--ts=help` the supported agents and `ascp` options. `config agents parameters` displays allowed values and defaults.
   * Removed gem dependencies `blankslate` and `word_wrap`: descriptions in schema tables are wrapped to the terminal width instead of cut at 120 characters.
