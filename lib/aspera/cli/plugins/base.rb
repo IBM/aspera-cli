@@ -81,7 +81,7 @@ module Aspera
             return "#{verb.capitalize} #{noun}" unless verb.eql?(:list)
             plural =
               case noun
-              when /[^aeiou]y\z/ then noun.sub(/y\z/, 'ies')
+              when /[^aeiou]y\z/ then noun.sub(/y\z/, 'ies') # cspell:disable-line
               when /(s|x|sh|ch)\z/ then "#{noun}es"
               else "#{noun}s"
               end

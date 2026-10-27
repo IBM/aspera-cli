@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-# cspell:ignore ascli jsonrpc pkce
-
 require 'aspera/cli/plugins/base'
 require 'aspera/cli/info'
 require 'aspera/cli/version'

@@ -321,7 +321,7 @@ module Aspera
         describe '#vault' do
           it 'returns nil when not configured and caches the result' do
             # host.vault already overridden by the test double mechanism above;
-            # test the real behaviour via a raw includer
+            # test the real behavior via a raw includer
             includer = Class.new do
               include VaultManager
 

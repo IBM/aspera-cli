@@ -48,7 +48,7 @@ properties:
     type: string
     enum: [reencode, blend, clips]
     default: reencode
-  video_png_conv:
+  video_png_conv: # cspell:disable-line
     description: >-
       PNG thumbnail of video: generation method.
       `fixed`: single frame,
@@ -92,12 +92,12 @@ properties:
     type: integer
     minimum: 1
     default: 30
-  blend_pauseframes:
+  blend_pauseframes: # cspell:disable-line
     description: 'MP4 video preview (`blend`): number of pause frames (repetitions of each key frame).'
     type: integer
     minimum: 0
     default: 3
-  blend_transframes:
+  blend_transframes: # cspell:disable-line
     description: 'MP4 video preview (`blend`): number of transition frames between key frames.'
     type: integer
     minimum: 0

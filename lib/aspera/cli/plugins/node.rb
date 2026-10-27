@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# cspell:ignore snid fnid bidi ssync asyncs rund asnodeadmin mkfile mklink asperabrowser asperabrowserurl watchfolders watchfolderd entsrv
+# cspell:ignore asperabrowserurl
 require 'aspera/schema/registry'
 require 'aspera/cli/plugins/basic_auth'
 require 'aspera/cli/sync_actions'

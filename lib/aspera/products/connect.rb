@@ -79,7 +79,7 @@ module Aspera
       end
 
       CDN_BASE_URL = 'https://d3gcli72yxqn2z.cloudfront.net/connect'
-      VERSION_INFO_FILE = 'connectversions.js' # cspell: disable-line
+      VERSION_INFO_FILE = 'connectversions.js'
 
       private_constant :CDN_BASE_URL, :VERSION_INFO_FILE
     end

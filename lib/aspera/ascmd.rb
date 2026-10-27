@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# cspell:ignore ascmd smode errstr zstr zmode zuid zgid zctime zatime zmtime fcount dcount btype blist codeset lc_ctype ascmdtypes
+# cspell:ignore smode errstr zstr zmode zuid zgid zctime zatime zmtime fcount dcount btype blist ascmdtypes
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/rainbow'

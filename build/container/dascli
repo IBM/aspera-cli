@@ -3,7 +3,7 @@
 : "${image:=docker.io/martinlaurent/ascli}"
 # set env var version to specify another image version (default: latest version)
 : "${version:=latest}"
-# set env var imgtag to specify a specific image/version
+# set env var `imgtag` to specify a specific image/version
 : "${imgtag=$image:$version}"
 # set env var `docker` to podman, to use podman
 : "${docker:=docker}"

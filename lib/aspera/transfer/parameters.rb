@@ -89,7 +89,7 @@ module Aspera
         # is the file list provided through ascp parameters?
         ascp_file_list_provided = self.class.ascp_args_file_list?(@ascp_args)
         # set if paths is mandatory in ts
-        @builder.required('paths', !@job_spec.key?('keepalive') && !ascp_file_list_provided) # cspell:words keepalive
+        @builder.required('paths', !@job_spec.key?('keepalive') && !ascp_file_list_provided)
         # get paths in transfer spec (after setting if it is mandatory)
         ts_paths_array = @builder.read_param('paths')
         file_list_option = nil

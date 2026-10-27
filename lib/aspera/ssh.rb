@@ -99,7 +99,7 @@ module Aspera
             Log.dump(:data, data, level: :trace1)
             exit_code = data.read_long
           end
-          # send command to SSH channel (execute) cspell: disable-next-line
+          # send command to SSH channel (execute)
           channel.send('cexe'.reverse, cmd) do |_ch, success|
             raise Error, "could not execute command: #{cmd}" unless success
             channel.send_data(input) unless input.nil?

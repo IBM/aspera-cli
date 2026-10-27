@@ -1,6 +1,6 @@
 Now review your own work from the session above.
 
-For each of the 20 tasks, compare what you actually did against the expected behaviour
+For each of the 20 tasks, compare what you actually did against the expected behavior
 listed below. Output a single markdown table with columns:
 
 | Task | Status | MCP call used | Expected call | Notes |
@@ -11,7 +11,7 @@ Use these values for Status:
 - `SKIP` — task was skipped because no matching preset or credentials exist
 - `PARTIAL` — the right call was made but the result was incomplete or misread
 
-Expected behaviour for each task:
+Expected behavior for each task:
 
 **Task 1** — Must call `["config", "commands"]`. Must report the correct total count
 of commands by reading `structuredContent` (the real total is 780+; the text block is

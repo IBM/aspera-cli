@@ -14,7 +14,7 @@
 5. Throughout the session, keep a running log of every problem encountered that led
    to an incorrect, failed, or outdated command. For each problem record:
    - the task number and the exact command attempted,
-   - the error or unexpected behaviour observed,
+   - the error or unexpected behavior observed,
    - the root cause (wrong argument, obsolete syntax, missing introspection step,
      misleading MCP prompt / description, gap in the README, etc.),
    - a suggested improvement (MCP tool description, `help` output, README section,
@@ -93,13 +93,13 @@ Using the same `server` preset, show me the system information for that server
 **Task 9 — List AoC admin users**
 
 Look up the preset configured for the AoC plugin (`config preset list`), then list all
-users in the AoC organisation. Show at minimum their email address and role.
+users in the AoC organization. Show at minimum their email address and role.
 
 ---
 
 **Task 10 — List AoC workspaces**
 
-Using the same AoC preset, list all workspaces in the organisation.
+Using the same AoC preset, list all workspaces in the organization.
 
 ---
 

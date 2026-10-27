@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# cspell:words Magick MAGICKCORE ITERM mintty winsize termcap
+# cspell:words MAGICKCORE ITERM
 
 require 'base64'
 require 'io/console'

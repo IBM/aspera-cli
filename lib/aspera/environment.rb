@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# cspell:ignore USERPROFILE HOMEDRIVE HOMEPATH LC_CTYPE msys aarch
 require 'aspera/log'
 require 'aspera/assert'
 require 'rbconfig'
@@ -13,7 +12,7 @@ require 'shellwords'
 require 'aspera/rainbow'
 using Rainbow
 
-# cspell:words mswin bccwin conhost mintty Cmder
+# cspell:words bccwin conhost Cmder
 
 module Aspera
   # detect OS, architecture, and specific stuff

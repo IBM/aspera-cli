@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-# cspell:ignore jsonrpc
-
 require 'aspera/rest/error_analyzer'
 require 'aspera/rest/call_error'
 require 'aspera/assert'

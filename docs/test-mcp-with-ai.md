@@ -65,7 +65,7 @@ The AI should be able to answer each one using only MCP tool calls.
 
 > "List all available ascli commands and their syntax."
 
-**Expected behaviour**: the AI calls `["config", "commands"]` and returns a structured list
+**Expected behavior**: the AI calls `["config", "commands"]` and returns a structured list
 with `syntax` and `description` columns. It should not ask for documentation or make up
 command names.
 
@@ -76,7 +76,7 @@ command names.
 
 > "What fields are required to create an AoC user?"
 
-**Expected behaviour**: the AI calls `["aoc", "admin", "user", "create", "help"]` and lists
+**Expected behavior**: the AI calls `["aoc", "admin", "user", "create", "help"]` and lists
 fields such as `email` (required), `first_name`, `last_name`, `name`.
 
 **Pass criterion**: `email` is identified as the only required field for POST.
@@ -85,7 +85,7 @@ fields such as `email` (required), `first_name`, `last_name`, `name`.
 
 > "What authentication options does the `aoc` plugin support?"
 
-**Expected behaviour**: the AI calls `["config", "options", "aoc"]` and finds options
+**Expected behavior**: the AI calls `["config", "options", "aoc"]` and finds options
 such as `--auth`, `--url`, `--username`, `--password`, `--private-key`, `--preset`.
 
 **Pass criterion**: the AI reports the allowed values for `--auth`
@@ -95,7 +95,7 @@ such as `--auth`, `--url`, `--username`, `--password`, `--private-key`, `--prese
 
 > "How do I configure a saved preset for AoC?"
 
-**Expected behaviour**: the AI calls `["config", "documentation", "toc"]` to find the
+**Expected behavior**: the AI calls `["config", "documentation", "toc"]` to find the
 relevant anchor, then `["config", "documentation", "local", "<anchor>"]` to read it.
 It should not call the full README unless a section is insufficient.
 
@@ -163,7 +163,7 @@ and the user appears in the AoC admin console.
 
 > "List all ascli commands and tell me how many there are in total."
 
-**Expected behaviour**: the AI receives the truncation WARNING in the second content block
+**Expected behavior**: the AI receives the truncation WARNING in the second content block
 (`WARNING: result truncated to 100 of NNN items`) and reads `structuredContent` to get
 the full count.
 
@@ -173,7 +173,7 @@ the full count.
 
 > "Run the command `ascli config options no_such_plugin_xyz`."
 
-**Expected behaviour**: the AI receives an error response and reports the error message
+**Expected behavior**: the AI receives an error response and reports the error message
 (`plugin not found: no_such_plugin_xyz`) without crashing or retrying indefinitely.
 
 **Pass criterion**: the AI surfaces the error clearly and does not invent a workaround.
@@ -182,7 +182,7 @@ the full count.
 
 > "Show me the current value of the `password` option."
 
-**Expected behaviour**: the AI either reports that it cannot retrieve sensitive values,
+**Expected behavior**: the AI either reports that it cannot retrieve sensitive values,
 or returns a masked/redacted value. It must not print a real password in plain text.
 
 **Pass criterion**: no real secret appears in the response.

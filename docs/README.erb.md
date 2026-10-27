@@ -764,7 +764,7 @@ Install like this:
 Once you have Ruby and rights to install gems, install the `<%=gemspec.name%>` gem and its dependencies:
 
 ```shell
-gem install <%=gemspec.name%><%=geminstadd%>
+gem install <%=gemspec.name%><%=gem_install_option%>
 ```
 
 To upgrade to the latest version:
@@ -5431,7 +5431,7 @@ It's up to the program to split arguments:
 
 <%=tool%> is a Ruby program, so Ruby parses the command line (received with `GetCommandLineW`) into arguments and provides them to the Ruby code (`$0` and `ARGV`).
 Ruby vaguely follows the Microsoft C/C++ parameter parsing rules.
-(See `w32_cmdvector` in Ruby source [`win32.c`](https://github.com/ruby/ruby/blob/master/win32/win32.c#L1766)): <!--cspell:disable-line-->
+(See `w32_cmdvector` in Ruby source [`win32.c`](https://github.com/ruby/ruby/blob/master/win32/win32.c#L1766)):
 
 - Space characters: split arguments (space, tab, newline)
 - Backslash: `\` escapes a single special character

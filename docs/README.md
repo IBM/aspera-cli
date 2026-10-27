@@ -3190,7 +3190,7 @@ wizard https://shares.example.com/path shares --username=test --password=<PASSWO
 wizard https://tst.example.com/path faspio --override=yes --username=my_username --password=<PASSWORD>
 wizard https://tst.example.com/path httpgw
 wizard my_org aoc --key-path=my_private_key --username=my_user_email --use-generic-client=yes
-wizard my_org aoc mypreset --key-path=my_private_key --username=my_user_email
+wizard my_org aoc my_preset --key-path=my_private_key --username=my_user_email
 ```
 
 #### Evaluation order of options
@@ -5922,7 +5922,7 @@ It's up to the program to split arguments:
 
 `ascli` is a Ruby program, so Ruby parses the command line (received with `GetCommandLineW`) into arguments and provides them to the Ruby code (`$0` and `ARGV`).
 Ruby vaguely follows the Microsoft C/C++ parameter parsing rules.
-(See `w32_cmdvector` in Ruby source [`win32.c`](https://github.com/ruby/ruby/blob/master/win32/win32.c#L1766)): <!--cspell:disable-line-->
+(See `w32_cmdvector` in Ruby source [`win32.c`](https://github.com/ruby/ruby/blob/master/win32/win32.c#L1766)):
 
 - Space characters: split arguments (space, tab, newline)
 - Backslash: `\` escapes a single special character
@@ -7852,8 +7852,8 @@ admin node do %name:my_node_name --secret=<AK_SECRET> delete /folder1
 admin node do %name:my_node_name --secret=<AK_SECRET> delete /folder_sub
 admin node do %name:my_node_name --secret=<AK_SECRET> mkdir /folder1
 admin node do %name:my_node_name --secret=<AK_SECRET> mkdir /folder_sub
-admin node do %name:my_node_name --secret=<AK_SECRET> v3 access_key create @json:'{"id":"testsub1","storage":{"path":"/folder_sub"}}'
-admin node do %name:my_node_name --secret=<AK_SECRET> v3 access_key delete testsub1
+admin node do %name:my_node_name --secret=<AK_SECRET> v3 access_key create @json:'{"id":"test-sub-1","storage":{"path":"/folder_sub"}}'
+admin node do %name:my_node_name --secret=<AK_SECRET> v3 access_key delete test-sub-1
 admin node do %name:my_node_name --secret=<AK_SECRET> v3 events
 admin node do %name:my_node_name delete test_shared_folder
 admin node do %name:my_node_name mkdir test_shared_folder
@@ -7897,33 +7897,33 @@ files browse / --url=my_public_link_folder_with_pass --password=<PUBLIC_LINK_FOL
 files browse my_remote_file
 files browse my_remote_folder
 files browse my_remote_folder/
-files cat testdst/test_file.bin
-files delete /testsrc
-files download --to-folder=. testdst/test_file.bin testdst/test_file.bin
-files download --transfer.agent=connect testdst/test_file.bin
-files download --transfer.agent=desktop testdst/test_file.bin
+files cat test-dst/test_file.bin
+files delete /test-src
+files download --to-folder=. test-dst/test_file.bin test-dst/test_file.bin
+files download --transfer.agent=connect test-dst/test_file.bin
+files download --transfer.agent=desktop test-dst/test_file.bin
 files find /sample_video
 files find /sample_video '\.partial$'
 files find /sample_video @ruby:'->(f){f["type"].eql?("file")}'
-files mkdir /testsrc
+files mkdir /test-src
 files modify /some_folder @: mount_point=false
 files permission my_test_folder list
-files rename /some_folder testdst
-files short_link /testdst private create
-files short_link /testdst private list
-files short_link /testdst public create @: access_levels.0=mkdir access_levels.1=write --fields=id
-files short_link /testdst public modify <aoc_short_link_pub_create> @: access_levels=edit
+files rename /some_folder test-dst
+files short_link /test-dst private create
+files short_link /test-dst private list
+files short_link /test-dst public create @: access_levels.0=mkdir access_levels.1=write --fields=id
+files short_link /test-dst public modify <aoc_short_link_pub_create> @: access_levels=edit
 files show %id:<id>
 files show /
-files show testdst/test_file.bin
+files show test-dst/test_file.bin
 files sync admin status /data/local_sync
-files sync pull /testdst --to-folder=/data/local_sync @json:'{"reset":true,"transport":{"target_rate":my_bps}}'
+files sync pull /test-dst --to-folder=/data/local_sync @json:'{"reset":true,"transport":{"target_rate":my_bps}}'
 files thumbnail my_test_folder/video_file.mpg
 files thumbnail my_test_folder/video_file.mpg --query.text=true --query.double=true
-files transfer push /testsrc --to-folder=/testdst test_file.bin
+files transfer push /test-src --to-folder=/test-dst test_file.bin
 files upload --to-folder=/ test_file.bin --url=my_public_link_folder_no_pass
-files upload --to-folder=/testsrc test_file.bin
-files upload --to-folder=/testsrc test_file.bin test_file.bin
+files upload --to-folder=/test-src test_file.bin
+files upload --to-folder=/test-src test_file.bin test_file.bin
 files v3 info
 gateway @: url=https://localhost:12347/aspera/faspex
 organization
@@ -9825,7 +9825,7 @@ files download --to-folder=. my_share_folder/test_file.bin my_share_folder/test_
 files mkdir my_share_folder/new_folder
 files sync push /data/local_sync --to-folder=my_share_folder/synctst
 files sync push /data/local_sync --to-folder=my_share_folder/synctst @: reset=true
-files upload 'faux:///testfile?1m' --to-folder=my_share_folder --transfer.agent=httpgw --transfer.url=https://tst.example.com/path --transfer.synchronous=true --transfer.api_version=v1 --transfer.upload_chunk_size=100000
+files upload 'faux:///test-file?1m' --to-folder=my_share_folder --transfer.agent=httpgw --transfer.url=https://tst.example.com/path --transfer.synchronous=true --transfer.api_version=v1 --transfer.upload_chunk_size=100000
 files upload --to-folder=my_share_folder test_file.bin
 files upload --to-folder=my_share_folder test_file.bin --transfer.agent=httpgw --transfer.url=https://tst.example.com/path
 files upload send_folder --to-folder=my_share_folder --transfer.agent=httpgw --transfer.url=https://tst.example.com/path --transfer.synchronous=true --transfer.api_version=v1 --transfer.upload_chunk_size=100000

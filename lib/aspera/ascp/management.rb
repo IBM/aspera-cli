@@ -9,7 +9,6 @@ module Aspera
     # processing of ascp management port events
     # Reference: `mgmtmess.c`
     class Management
-      # cspell:ignore asmgmt faspmgmt
       # References:
       # https://www.ibm.com/support/pages/error-code-reference-tables
       # `asmgmt_err.h` : codes, mnemonics and messages
@@ -98,7 +97,6 @@ module Aspera
         69 => {r: true,  c: 'MAX_ASCP',                    m: 'Maximum ascp processes on a node exceeded',
                                                            a: 'Failed to start session maximum transfer sessions exceeded'}
       }.freeze
-      # cspell: disable
       # Same as `as_mgmt_cmd_name_str` (`NOTIFICATION` is twice there too)
       OPERATIONS = %w[
         NOP
@@ -309,7 +307,6 @@ module Aspera
 
       private_constant :OPERATIONS, :PARAMETERS, :MGT_HEADER, :MGT_FRAME_SEPARATOR, :INTEGER_FIELDS, :BOOLEAN_FIELDS, :BOOLEAN_TRUE, :INTEGER_VALUE,
         :PATH_FIELDS, :PATH_ESCAPE, :PATH_ESCAPES
-      # cspell: enable
 
       class << self
         # Translate native event name to snake case

@@ -55,7 +55,7 @@ module Aspera
             if !url.nil?
               uri = URI.parse(url)
               Aspera.assert(uri.scheme.eql?('https'), 'only https')
-              options[:protocol] = 'htps' # cspell: disable-line
+              options[:protocol] = 'htps'
               Aspera.assert(!uri.host.nil?, type: Error) { 'host required in URL' }
               options[:server] = uri.host
               options[:path] = uri.path unless ['', '/'].include?(uri.path)
@@ -262,7 +262,7 @@ module Aspera
           label:       label,
           username:    (info['acct'] unless info['acct'].eql?(NO_ACCOUNT)),
           password:    info['password'],
-          description: info['icmt'] # cspell: disable-line
+          description: info['icmt']
         }.compact
       end
 

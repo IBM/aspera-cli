@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# cspell:ignore precalc noxfer euid gettime
 require 'aspera/assert'
 require 'aspera/ascp/installation'
 require 'aspera/agent/transferd'

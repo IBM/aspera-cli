@@ -63,7 +63,7 @@ module Aspera
       # Keys whose name starts with '_' are in-process references (e.g. '_agent_ref'), and secrets (e.g. agent `password`)
       # are not written on disk: they are intentionally excluded from the JSON serialization — at every nesting level.
       # @param job_id [String] the ascli-generated UUID
-      # @param data   [Hash]   fields to store (will be JSON-serialised)
+      # @param data   [Hash]   fields to store (will be JSON-serialized)
       def write(job_id, data)
         Aspera.assert_type(job_id, String) { 'job_id' }
         Aspera.assert_type(data, Hash) { 'data' }

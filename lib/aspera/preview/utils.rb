@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# cspell:ignore ffprobe optipng unoconv soffice
 require 'aspera/log'
 require 'aspera/assert'
 require 'English'
@@ -105,7 +104,7 @@ module Aspera
             :ffprobe,
             '-loglevel', 'error',
             '-show_entries', 'format=duration',
-            '-print_format', 'default=noprint_wrappers=1:nokey=1', # cspell:disable-line
+            '-print_format', 'default=noprint_wrappers=1:nokey=1',
             input_file,
             mode: :capture
           ).first.to_f

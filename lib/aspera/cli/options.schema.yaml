@@ -711,7 +711,7 @@ components:
         user_id:
           type: string
           description: Identifier of the user for whom the token is generated.
-          example: jdoe
+          example: jdoe # cspell:disable-line
         _validity:
           type: integer
           description: Token lifetime in seconds (convenience key, removed before signing).
@@ -961,7 +961,7 @@ components:
             type: string
           example:
             - soap_requests
-            - frameio_operations
+            - frameio_operations # cspell:disable-line
     TableOptions:
       type: object
       description: Terminal table rendering options.

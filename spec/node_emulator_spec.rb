@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# cspell:ignore precalc noxfer
 # Tests for NodeEmulator: mapping of transferd messages to Node API, and transfer store.
 # transferd is replaced by a fake gRPC client — no daemon required.
 # Test values are the ones seen on real transfers (time stamps in milliseconds).

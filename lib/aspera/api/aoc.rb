@@ -62,7 +62,7 @@ module Aspera
       # `''` Use default workspace if it is set, else none
       DEFAULT_WORKSPACE = ''
       # Production domain of AoC
-      SAAS_DOMAIN_PROD = 'ibmaspera.com' # cspell:disable-line
+      SAAS_DOMAIN_PROD = 'ibmaspera.com'
       # To avoid infinite loop in pub link redirection
       MAX_AOC_URL_REDIRECT = 10
       CLIENT_ID_PREFIX = 'aspera.'

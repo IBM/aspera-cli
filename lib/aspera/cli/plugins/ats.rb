@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-# cspell:ignore trustpolicy
-
 require 'aspera/cli/plugins/base'
 require 'aspera/cli/plugins/node'
 require 'aspera/api/ats'

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# cspell:ignore protobuf ckpt
+# cspell:ignore ckpt
 require 'aspera/yaml'
 require 'aspera/environment'
 require 'aspera/data_repository'

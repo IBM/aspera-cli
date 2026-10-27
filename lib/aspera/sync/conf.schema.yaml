@@ -692,11 +692,11 @@ properties:
       `vhigh` maximizes system activity by continuously scanning files without rest.
     type: string
     enum:
-      - vlow
+      - vlow # cspell:disable-line
       - low
       - medium
       - high
-      - vhigh
+      - vhigh # cspell:disable-line
     default: medium
     x-cli-option: true
     x-cli-short: -H
@@ -806,7 +806,7 @@ properties:
         type: integer
         x-cli-option: true
         x-cli-short: -g
-      rexmsg_size:
+      rexmsg_size: # cspell:disable-line
         description:
           Use the specified size (in bytes) for a retransmission request.
           Default is determined by `aspera.conf`.
@@ -846,7 +846,7 @@ properties:
         enum:
           - none
           - redis
-          - scalekv
+          - scalekv # cspell:disable-line
         default: none
       domain:
         description: Specify the domain.

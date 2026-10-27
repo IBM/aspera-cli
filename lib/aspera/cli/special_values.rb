@@ -5,7 +5,7 @@ module Aspera
     # base class for plugins modules
     module SpecialValues
       # special values
-      # `INIT` to unitialize with all current IDs
+      # `INIT` to initialize with all current IDs
       INIT = 'INIT'
       # `ALL` means "all ids"
       ALL = 'ALL'

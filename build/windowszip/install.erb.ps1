@@ -18,7 +18,7 @@ if ($AllUsers) {
     }
     $systemWide = $true
 } elseif ($isAdmin) {
-    $choice = Read-Host "Install for (A)ll users (system-wide) or (C)urrent user? [A/C]"
+    $choice = Read-Host "Install for (A)ll users (system-wide) or (C)urrent user? [A/C]" <%# cspell:disable-line %>
     $systemWide = $choice -match '^[Aa]'
 } else {
     Write-Host "Running without admin rights: installing for current user only." -ForegroundColor Yellow

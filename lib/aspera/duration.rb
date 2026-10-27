@@ -29,7 +29,7 @@ module Aspera
           scanner = StringScanner.new(value)
           units = []
           until scanner.eos?
-            Aspera.assert(scanner.scan(/(\d+)(ms|us|[wdhms])/), type: ParameterError) { "Invalid duration: #{value}" }
+            Aspera.assert(scanner.scan(/(\d+)(ms|us|[wdhms])/), type: ParameterError) { "Invalid duration: #{value}" } # cspell:disable-line
             units.push([scanner[1], scanner[2]])
           end
           Aspera.assert(!units.empty?, type: ParameterError) { "Invalid duration: #{value}" }

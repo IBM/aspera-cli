@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-# cspell:ignore webrick
-
 require 'aspera/log'
 require 'aspera/servlet_helpers'
 require 'aspera/cli/web_secret'

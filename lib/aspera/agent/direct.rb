@@ -463,12 +463,10 @@ module Aspera
           total_size = session[:last_size] + session[:last_skipped]
           notify_progress(:session_size, session_id: progress_id, info: total_size) if !session[:size_sent] && !total_size.zero?
           notify_progress(:session_end, session_id: progress_id)
-          # cspell:disable
         when 'SESSION'
         when 'ARGSTOP'
         when 'FILEERROR'
           Log.log.error { "#{event['Type']} #{event['Description']}" }
-          # cspell:enable
         else
           Log.log.debug { "Unknown event type for progress: #{event['Type']}" }
         end

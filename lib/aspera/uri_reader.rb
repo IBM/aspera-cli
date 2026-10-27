@@ -31,7 +31,7 @@ module Aspera
     SCHEME_FILE_PFX2 = "#{SCHEME_FILE_PFX1}///"
     private_constant :SCHEME_FILE, :SCHEME_FILE_PFX1, :SCHEME_FILE_PFX2
     class << self
-      # @return [Boolean] true if `url` uses the file: scheme recognised by this module
+      # @return [Boolean] true if `url` uses the file: scheme recognized by this module
       def file?(url)
         url.start_with?(SCHEME_FILE_PFX1)
       end

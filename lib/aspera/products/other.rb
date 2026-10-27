@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# cspell:ignore LOCALAPPDATA
 require 'aspera/environment'
 
 module Aspera

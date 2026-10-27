@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-# cspell:words logdir bidi watchd cooloff asyncadmin
-
 require 'aspera/ascp/installation'
 require 'aspera/agent/direct'
 require 'aspera/transfer/spec'

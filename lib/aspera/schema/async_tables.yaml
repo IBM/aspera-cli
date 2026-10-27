@@ -1,3 +1,4 @@
+# cspell:ignore cksum parentrid peerxfer SSDB SSSTATE xferres
 # Schema for the SQLite tables inside the Async snap database (snap.db).
 # Sources:
 #   include/async/session/Sqlite3_SSDB.h  (SYNC_SQLITE3_META_SCHEMA, SYNC_SQLITE3_COUNTERS_SCHEMA, SYNC_SQLITE3_SCHEMA_1_0)
@@ -14,19 +15,19 @@ properties:
     description: One row per session, written at start and updated at stop.
     type: object
     properties:
-      dbversion:
+      dbversion: # cspell:disable-line
         description: Database schema version.
         type: string
-      pairname:
+      pairname: # cspell:disable-line
         description: Sync session name.
         type: string
-      ldir:
+      ldir: # cspell:disable-line
         description: Local directory path.
         type: string
-      rhost:
+      rhost: # cspell:disable-line
         description: Remote host.
         type: string
-      rdir:
+      rdir: # cspell:disable-line
         description: Remote directory path.
         type: string
       direction:
@@ -68,7 +69,7 @@ properties:
       sync_point:
         description: Synchronization point sequence number.
         type: integer
-      max_recid:
+      max_recid: # cspell:disable-line
         description: Highest record ID allocated in the snapshot table.
         type: integer
       sync_uuid:
@@ -308,7 +309,7 @@ properties:
       f_cont_timestamp:
         description: Filesystem content — internal timestamp.
         type: integer
-      pcr_reqno:
+      pcr_reqno: # cspell:disable-line
         description: Peer content request sequence number.
         type: integer
       pp_cont_size:
@@ -323,7 +324,7 @@ properties:
       pp_cont_timestamp:
         description: Peer pending content — internal timestamp.
         type: integer
-      tobe_deleted:
+      tobe_deleted: # cspell:disable-line
         description: Set to 1 when the record is flagged for deletion (garbage collection pending).
         type: integer
       scn_not_visited:
@@ -338,10 +339,10 @@ properties:
       candidate_in_prog:
         description: Set to 1 when this record is currently in the candidate transfer list.
         type: integer
-      meta_lastreq_no:
+      meta_lastreq_no: # cspell:disable-line
         description: Sequence number of the last metadata request sent.
         type: integer
-      meta_lastresp_no:
+      meta_lastresp_no: # cspell:disable-line
         description: Sequence number of the last metadata response received.
         type: integer
       commit_version:

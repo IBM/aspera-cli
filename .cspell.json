@@ -2,6 +2,8 @@
   "version": "0.2",
   "ignorePaths": [
     ".cspell.json",
+    ".git",
+    ".secrets.baseline",
     "lib/aspera/data",
     "lib/transfer_pb.rb",
     "lib/transfer_services_pb.rb",
@@ -19,34 +21,34 @@
   ],
   "dictionaryDefinitions": [
     {
-      "name": "aspera",
+      "name": "project-aspera",
       "path": "./.cspell/aspera.dict",
       "addWords": true
     },
     {
-      "name": "ruby",
+      "name": "project-ruby",
       "path": "./.cspell/ruby.dict",
       "addWords": true
     },
     {
-      "name": "tools",
+      "name": "project-tools",
       "path": "./.cspell/tools.dict",
       "addWords": true
     }
   ],
   "useGitignore": true,
-  "dictionaries": ["aspera", "ruby", "tools", "technical", "shell"],
+  "dictionaries": ["project-aspera", "project-ruby", "project-tools", "ruby", "bash", "powershell", "html", "css", "fonts"],
   "words": [],
   "ignoreWords": [],
   "import": [],
-  "enableFiletypes": ["makefile", "markdown", "shellscript"],
+  "enableFiletypes": ["markdown", "shellscript"],
   "patterns": [
     {
       "name": "markdown_code_block",
       "pattern": "/^\\s*```(.|\\n)+?^\\s*```/gm"
     },
     {
-      "name": "markdown_code_inline",
+      "name": "code_inline",
       "pattern": "/`.*?`/g"
     },
     {
@@ -62,32 +64,42 @@
       "pattern": "/<%[^%]*%>/g"
     },
     {
-      "name": "makefile_only_comments",
-      "pattern": "/^[^#]/"
+      "name": "single_token_string",
+      "pattern": "/([\"'])[^\\s\"']+\\1/g"
+    },
+    {
+      "name": "ruby_percent_array",
+      "pattern": "/%[iIwW]\\[[^\\]]*\\]/g"
+    },
+    {
+      "name": "command_option",
+      "pattern": "/(?<![\\w-])--?[a-zA-Z][\\w.-]*(=\\S*)?/g"
+    },
+    {
+      "name": "snake_case_identifier",
+      "pattern": "/\\b[a-zA-Z0-9]+(_[a-zA-Z0-9]+)+\\b/g"
+    },
+    {
+      "name": "data_uri",
+      "pattern": "/\\bdata:[\\w.+-]+\\/[\\w.+-]+[;,][^\"]*/g"
     }
   ],
+  "ignoreRegExpList": ["code_inline", "single_token_string", "ruby_percent_array", "command_option", "data_uri"],
   "languageSettings": [
     {
       "languageId": "markdown",
       "ignoreRegExpList": [
         "markdown_code_block",
-        "markdown_code_inline",
         "quoted_special_words",
         "embedded_ruby_code_block",
         "markdown_reference"
       ]
-    },
-    {
-      "languageId": "makefile",
-      "ignoreRegExpList": ["makefile_only_comments"]
     }
   ],
   "overrides": [
     {
-      "filename": "**/Makefile",
-      "languageId": "cpp",
-      "enabled": true
-      // Add any other specific configurations for Makefiles
+      "filename": "tests/tests.yml",
+      "ignoreRegExpList": ["snake_case_identifier"]
     }
   ]
 }

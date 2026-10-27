@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-# cspell:ignore urlsafe
-
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/environment'

@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# cspell:ignore initdemo genkey pubkey asperasoft filelists
 require 'aspera/cli/bootstrapper'
 require 'aspera/cli/plugins/basic_auth'
 require 'aspera/cli/plugins/factory'
@@ -545,7 +544,7 @@ module Aspera
             cp[DEMO_PRESET] = {
               'url'                                    => "ssh://#{DEMO_SERVER}.asperasoft.com:33001",
               'username'                               => ASPERA,
-              'ssAP'.downcase.reverse + 'drow'.reverse => DEMO_SERVER + ASPERA # cspell:disable-line
+              'ssAP'.downcase.reverse + 'drow'.reverse => DEMO_SERVER + ASPERA
             }
           end
           cp[PresetManager::Key::DEFAULTS] ||= {}
@@ -645,7 +644,7 @@ module Aspera
         ASPERA = 'aspera'
         SERVER_COMMAND = 'server'
         DEMO_SERVER = 'demo'
-        DEMO_PRESET = 'demoserver' # cspell: disable-line
+        DEMO_PRESET = 'demoserver'
         EMAIL_TEST_TEMPLATE = <<~END_OF_TEMPLATE
           From: <%=from_name%> <<%=from_email%>>
           To: <<%=to%>>

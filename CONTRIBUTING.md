@@ -96,7 +96,7 @@ conf_agents_show_bad:
     - config
     - agents
     - show
-    - badagent
+    - bad-agent
 ```
 
 Run only the new tests to validate quickly:
@@ -147,10 +147,15 @@ bundle exec rake tools:reek      # code smell detection
 bundle exec rake tools:spell     # spelling (cspell)
 ```
 
-Project words for `cspell` are in the dictionaries of folder `.cspell/` (`aspera.dict`, `ruby.dict`, `tools.dict`), declared in `.cspell.json`.
+`cspell` (configuration: `.cspell.json`) does not check code in backticks, quoted strings without space (values, identifiers), command line options, and `%w[]`/`%i[]` arrays.
+An unknown word that is a general term goes to a dictionary of folder `.cspell/`: `aspera.dict` (Aspera products and this project), `ruby.dict` (Ruby and gems), `tools.dict` (other tools and technical terms).
+For test data, prefer names made of words (e.g. `test-file`, `bad-agent`): they need no exception.
+A word specific to one file (column names, abbreviations, names imposed by a server) is an exception in that file:
+on a single line, a trailing comment of `cspell` disables the check of that line (as in `lib/aspera/cli/plugins/base.rb`);
+on several lines, an ignore comment of `cspell` at the top of the file lists the words (as in `lib/aspera/cli/plugins/node.rb`).
 
-Fix any new offence introduced by your changes before committing.
-Pre-existing offences listed in `.rubocop_todo.yml` can be left as-is.
+Fix any new offense introduced by your changes before committing.
+Pre-existing offenses listed in `.rubocop_todo.yml` can be left as-is.
 
 #### 6 — Full test suite
 

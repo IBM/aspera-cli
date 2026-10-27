@@ -283,7 +283,7 @@ shares_upload_httpgw_v1_sync:
     - shares
     - files
     - upload
-    - faux:///testfile?1m
+    - faux:///test-file?1m
     - --to-folder=@preset:shares.share_folder
     - --transfer.agent=httpgw
     - --transfer.url=@preset:tst_httpgw.url
@@ -1592,7 +1592,7 @@ nd_xfer_upload_bg:
     - upload
     - --to-folder=@preset:server.upload_folder
     - --ts=@json:{"target_rate_kbps":1000,"resume_policy":"none"}
-    - faux:///bigfile?10G
+    - faux:///big-file?10G
     - --progress=no
   post: sleep 5
 nd_xfer_active_id:
@@ -2311,14 +2311,14 @@ aoc_wizard_preset:
     - wizard
     - "@preset:awa.org"
     - aoc
-    - mypreset
+    - my_preset
     - --key-path=@preset:file.private_key
     - --username=@preset:awa.user_email
 aoc_gateway_set_faspex_url:
   description: Configure gateway URL via AOC plugin
   tags:
     - noblock
-    - fxgateway
+    - fx_gateway
   args:
     - aoc
     - gateway
@@ -2330,7 +2330,7 @@ faspex_send_via_aoc_gateway:
     - aoc_gateway_set_faspex_url
   tags:
     - nodoc
-    - fxgateway
+    - fx_gateway
   pre: generated_secret(:dummy)
   args:
     - -N
@@ -2552,7 +2552,7 @@ awa_testsrc_cleanup:
   args:
     - files
     - delete
-    - /testsrc
+    - /test-src
   post: sleep TEMPORIZE_CREATE
 aoc_some_folder_cleanup:
   tags:
@@ -2571,7 +2571,7 @@ aoc_testdst_cleanup:
   args:
     - files
     - delete
-    - /testdst
+    - /test-dst
   post: sleep TEMPORIZE_FILE
 aoc_testsrc_create:
   depends_on:
@@ -2580,7 +2580,7 @@ aoc_testsrc_create:
   args:
     - files
     - mkdir
-    - /testsrc
+    - /test-src
 aoc_some_folder_create:
   depends_on:
     - aoc_some_folder_cleanup
@@ -2624,7 +2624,7 @@ aoc_rename_testdst:
     - files
     - rename
     - /some_folder
-    - testdst
+    - test-dst
 aoc_testsrc_upload:
   depends_on:
     - aoc_testsrc_create
@@ -2632,7 +2632,7 @@ aoc_testsrc_upload:
   args:
     - files
     - upload
-    - --to-folder=/testsrc
+    - --to-folder=/test-src
     - $(PATH_TST_ASC_LCL)
 aoc_testsrc_upload_utf:
   depends_on:
@@ -2641,7 +2641,7 @@ aoc_testsrc_upload_utf:
   args:
     - files
     - upload
-    - --to-folder=/testsrc
+    - --to-folder=/test-src
     - $(PATH_TST_ASC_LCL)
     - $(PATH_TST_UTF_LCL)
 aoc_files_transfer:
@@ -2652,8 +2652,8 @@ aoc_files_transfer:
     - files
     - transfer
     - push
-    - /testsrc
-    - --to-folder=/testdst
+    - /test-src
+    - --to-folder=/test-dst
     - $(FILENAME_ASCII)
 aoc_files_upload_utf:
   depends_on:
@@ -2664,7 +2664,7 @@ aoc_files_upload_utf:
   args:
     - files
     - upload
-    - --to-folder=/testdst
+    - --to-folder=/test-dst
     - $(PATH_TST_UTF_LCL)
 aoc_files_node_info:
   depends_on:
@@ -2676,7 +2676,7 @@ aoc_files_node_info:
   args:
     - files
     - node_info
-    - /testdst
+    - /test-dst
     - --format=json
     - --out.level=data
     - --out.secrets=yes
@@ -2702,7 +2702,7 @@ awa_files_delete_folder:
   args:
     - files
     - delete
-    - /testsrc
+    - /test-src
 aoc_files_bearer:
   template: awa_user_suite
   args:
@@ -2717,8 +2717,8 @@ aoc_files_download_multi:
     - files
     - download
     - --to-folder=$(TMP)
-    - testdst/$(FILENAME_ASCII)
-    - testdst/$(FILENAME_UNICODE)
+    - test-dst/$(FILENAME_ASCII)
+    - test-dst/$(FILENAME_UNICODE)
 aoc_files_download_ascii:
   tags:
     - nodoc
@@ -2727,7 +2727,7 @@ aoc_files_download_ascii:
     - files
     - download
     - --to-folder=$(TMP)
-    - testdst/$(FILENAME_ASCII)
+    - test-dst/$(FILENAME_ASCII)
 aoc_files_download_connect:
   depends_on:
     - aoc_testdst_cleanup
@@ -2740,7 +2740,7 @@ aoc_files_download_connect:
     - files
     - download
     - --transfer.agent=connect
-    - testdst/$(FILENAME_ASCII)
+    - test-dst/$(FILENAME_ASCII)
 aoc_files_download_desktop:
   depends_on:
     - aoc_testdst_cleanup
@@ -2750,7 +2750,7 @@ aoc_files_download_desktop:
     - files
     - download
     - --transfer.agent=desktop
-    - testdst/$(FILENAME_ASCII)
+    - test-dst/$(FILENAME_ASCII)
 aoc_files_cat:
   depends_on:
     - aoc_files_transfer
@@ -2758,7 +2758,7 @@ aoc_files_cat:
   args:
     - files
     - cat
-    - testdst/$(FILENAME_ASCII)
+    - test-dst/$(FILENAME_ASCII)
 aoc_files_v3_info:
   template: awa_user_suite
   args:
@@ -2774,7 +2774,7 @@ aoc_sync_pull_conf_params:
     - files
     - sync
     - pull
-    - /testdst
+    - /test-dst
     - --to-folder=$(PATH_TMP_SYNCS / 'aoc_sync_pull_conf_params')
     - '@json:@extend:{"reset":true,"transport":{"target_rate":@preset:sync.bps@}}'
 aoc_sync_pull_conf_params_status:
@@ -2794,7 +2794,7 @@ aoc_sync_conf_pull_params_alt:
     - files
     - sync
     - pull
-    - /testdst
+    - /test-dst
     - --to-folder=$(PATH_TMP_SYNCS / 'aoc_sync_conf_pull_params_alt')
     - '@json:@extend:{"reset":true,"transport":{"target_rate":@preset:sync.bps@}}'
 aoc_sync_conf_pull_params_alt_status:
@@ -2815,7 +2815,7 @@ aoc_file_browse_id:
   args:
     - files
     - br
-    - testdst/$(FILENAME_ASCII)
+    - test-dst/$(FILENAME_ASCII)
     - --fields=id
     - --format=csv
     - --out.level=data
@@ -2842,7 +2842,7 @@ aoc_file_show_by_path:
   args:
     - files
     - show
-    - testdst/$(FILENAME_ASCII)
+    - test-dst/$(FILENAME_ASCII)
 aoc_testfolder_cleanup:
   tags:
     - pre_cleanup
@@ -2990,7 +2990,7 @@ aoc_short_link_priv_create:
   args:
     - files
     - short_link
-    - /testdst
+    - /test-dst
     - private
     - create
 aoc_short_link_pub_create:
@@ -3001,7 +3001,7 @@ aoc_short_link_pub_create:
   args:
     - files
     - short_link
-    - /testdst
+    - /test-dst
     - public
     - create
     - "@:"
@@ -3015,7 +3015,7 @@ aoc_short_link_pub_modify:
   args:
     - files
     - short_link
-    - /testdst
+    - /test-dst
     - public
     - modify
     - $(t.saved_output :aoc_short_link_pub_create)
@@ -3029,7 +3029,7 @@ aoc_short_link_priv_list:
   args:
     - files
     - short_link
-    - /testdst
+    - /test-dst
     - private
     - list
 aoc_shared_inbox_short_link_create:
@@ -3428,7 +3428,7 @@ aoc_adm_ak_sub_ak:
     - v3
     - access_key
     - create
-    - '@json:{"id":"testsub1","storage":{"path":"/folder_sub"}}'
+    - '@json:{"id":"test-sub-1","storage":{"path":"/folder_sub"}}'
 aoc_adm_ak_delete:
   depends_on:
     - aoc_adm_ak_create
@@ -3445,7 +3445,7 @@ aoc_adm_ak_delete:
     - v3
     - access_key
     - delete
-    - testsub1
+    - test-sub-1
 aoc_adm_ak_dir_delete:
   depends_on:
     - aoc_adm_ak_delete
@@ -4254,7 +4254,7 @@ orch_wf_dev_section:
     - workflows
     - development
     - templates
-    - customruby
+    - customruby # cspell:disable-line
 orch_plugin_spec_list:
   args:
     - orchestrator
@@ -4273,7 +4273,7 @@ orch_plugin_spec_section:
     - orchestrator
     - plugins
     - spec
-    - ascpclient
+    - ascpclient # cspell:disable-line
     - inputs
 orch_wf_list:
   args:
@@ -4930,7 +4930,7 @@ conf_sync_trans:
     - --out.secrets=yes
     - --
     - -L
-    - /optlogs/
+    - /opt/logs/
     - -N
     - transfer_test
     - -x
@@ -5119,7 +5119,7 @@ conf_agents_show_bad:
     - config
     - agents
     - show
-    - badagent
+    - bad-agent
 # Async transfer tests (config transfer sub-commands)
 conf_async_node_upload:
   description: Start an async transfer via node agent and capture the job_id.
@@ -6191,7 +6191,7 @@ conf_echo_fail_json_invalid:
   args:
     - config
     - echo
-    - '@json:{"ok":1,"bad":mauvais}'
+    - '@json:{"ok":1,"bad":mauvais}' # cspell:disable-line
 conf_echo_stdin:
   stdin: "1\n2\n3"
   args:
@@ -6410,13 +6410,13 @@ conf_hint_a:
   tags:
     - must_fail
     - nodoc
-  expect: "Transfer: Remote host is not who weexpected"
+  expect: "Transfer: Remote host is not who we expected"
   args:
     - config
     - test
     - throw
     - Aspera::Transfer::Error
-    - Remote host is not who weexpected
+    - Remote host is not who we expected
 conf_hint_transfer_error:
   description: SSL error with certificate CN mismatch hint
   tags:
@@ -7645,7 +7645,7 @@ f5_fxgw_start:
   description: Start a faspex4->faspex5 gateway in background.
   tags:
     - noblock
-    - fxgateway
+    - fx_gateway
   args:
     - faspex5
     - gateway
@@ -7655,7 +7655,7 @@ f5_fxgw_test:
   description: Test the faspex4->faspex5 gateway.
   tags:
     - nodoc
-    - fxgateway
+    - fx_gateway
   depends_on:
     - f5_fxgw_start
   pre: generated_secret(:dummy)

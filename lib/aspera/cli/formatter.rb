@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# cspell:ignore jsonpp
 require 'aspera/schema/registry'
 require 'aspera/cli/option_declarator'
 require 'aspera/cli/special_values'

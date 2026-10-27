@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-# cspell:ignore ascli
-
 require 'json'
 require 'aspera/log'
 require 'aspera/secret_hider'

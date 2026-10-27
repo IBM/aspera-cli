@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# cspell:ignore FILEPASS
 require 'logger'
 require 'set'
 require 'singleton'

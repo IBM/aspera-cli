@@ -115,7 +115,7 @@ namespace :tools do
   end
   desc 'Check spelling (cspell): configuration .cspell.json, project dictionaries in .cspell/'
   task spell: [] do
-    run('cspell', '--no-progress', '**')
+    run('cspell', '--no-progress', '--dot', '**')
   end
 
   desc 'Remove all installed gems'

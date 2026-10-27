@@ -118,7 +118,7 @@ def automate_with_chrome(target_uri, login_preset, names)
 
   browser = Ferrum::Browser.new(
     headless:        headless,
-    slowmo:          delay.positive? ? 0.01 : 0.0,
+    slowmo:          delay.positive? ? 0.01 : 0.0, # cspell:disable-line
     timeout:         15,
     process_timeout: 15,
     browser_options: {'no-sandbox' => nil, 'disable-gpu' => nil}
@@ -221,7 +221,7 @@ def automate_with_chrome(target_uri, login_preset, names)
           if pass_field && pass_field.value.to_s.empty?
             type_slowly(pass_field, creds[:password], char_delay)
             sleep(delay) if delay.positive?
-            submit_btn = browser.css('button#signinbutton, button[type="submit"], input[type="submit"], button#login-button').find { |b| element_visible?(b) }
+            submit_btn = browser.css('button#signinbutton, button[type="submit"], input[type="submit"], button#login-button').find { |b| element_visible?(b) } # cspell:disable-line
             submit_btn&.click
             sleep(1)
           end

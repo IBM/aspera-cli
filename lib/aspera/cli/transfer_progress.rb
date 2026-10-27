@@ -251,7 +251,7 @@ module Aspera
       # Update the progress bar with current state
       def display
         if @progress_bar.nil?
-          @progress_bar = ProgressBar.create(output: @output, format: '%a %B', total: nil, autofinish: false, throttle_rate: 0)
+          @progress_bar = ProgressBar.create(output: @output, format: '%a %B', total: nil, autofinish: false, throttle_rate: 0) # cspell:disable-line
           @format = '%a %B'
         end
         current = current_bytes

@@ -983,7 +983,7 @@ module Aspera
         end
 
         def action_postprocessing(parameters: {}, **)
-          require 'aspera/faspex_postproc' # cspell:disable-line
+          require 'aspera/faspex_postproc'
           Faspex4PostProcServlet.serve(parameters.symbolize_keys, type: Cli::BadArgument)
           Result::Status.new('Post-processing terminated')
         end

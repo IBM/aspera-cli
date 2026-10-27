@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-# cspell:ignore INCMAN geminstadd transferspec passcode emea
-
 # Tools used in README.erb.md
 
 # get transfer spec parameter description
@@ -183,7 +181,7 @@ class DocHelper
   end
 
   # If version contains other characters than digit and dot, it is pre-release
-  def geminstadd; /[^\.0-9]/.match?(gemspec.version.to_s) ? ' --pre' : ''; end
+  def gem_install_option; /[^\.0-9]/.match?(gemspec.version.to_s) ? ' --pre' : ''; end
 
   # Build markdown table with optional gems
   def gem_opt_md_list

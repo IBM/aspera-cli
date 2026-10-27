@@ -119,7 +119,7 @@ module Aspera
 
       # Read schema from file or from cache.
       # When name_path ends with QUERY_PARAMS_SUFFIX, the OAS `parameters` array at that path
-      # is synthesised into an object schema via Reader.from_query_params instead of navigating
+      # is synthesized into an object schema via Reader.from_query_params instead of navigating
       # into the tree.
       # @param name_path [String] registry key with optional colon-separated dotted path suffix,
       #   e.g. "faspex:paths./packages.get.parameters" or "faspex:paths./packages.post.requestBody..."
