@@ -25,6 +25,7 @@ The foundation layer consists of the local execution environment:
   - Transfer SDK (trSDK): gRPC-based transfer daemon (`transferd`)
   - Connect: Browser-based transfer client (`connect`)
   - Desktop: Aspera Desktop Client integration, over JSON-RPC; the client runs the Transfer SDK underneath (`desktop`)
+- **`async`** (Aspera Sync): FASP client started by the `sync` commands, see [Async Sync](#async-sync)
 - **Remote Transfer Agents**: The transfer runs on a server, see [Remote Systems Layer](#remote-systems-layer)
   - HTTPGW: HTTP Gateway for firewall-friendly transfers (`httpgw`)
   - Node: Direct Node API transfers (`node`)
@@ -507,8 +508,8 @@ Transfer outcomes are typed ([`transfer/result.rb`](../lib/aspera/transfer/resul
 - **Connect**: Aspera Connect browser plugin
 - **Node**: Node API-based transfers
 - **Desktop**: Aspera Desktop Client, which runs the Transfer SDK underneath
-- **Desktop**: Aspera Desktop Client
 - **Transfer Daemon (trSDK)**: gRPC-based transfer service ([`transferd.rb`](../lib/aspera/agent/transferd.rb))
+- **HTTPGW**: HTTP Gateway, transfers over HTTPS and WebSocket ([`httpgw.rb`](../lib/aspera/agent/httpgw.rb))
 
 ### API Communication Layer
 
@@ -643,7 +644,7 @@ Communication via:
 
 - FASP protocol (TCP/UDP) for data transfer
 - Node API (HTTPS) for control operations, and transfers started on the server (agent `node`)
-- SSH for authentication and session management (and `ascmd` file operations)
+- SSH for authentication and session management (and `ascmd` file operations on HSTS, plugin `server`)
 
 #### Third-Party Integrations
 
