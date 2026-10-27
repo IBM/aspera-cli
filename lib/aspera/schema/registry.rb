@@ -67,11 +67,12 @@ module Aspera
         node:         'aspera/schema/IBM Aspera Node API-4.4.6.yaml',
         shares:       'aspera/schema/IBM_Aspera_Shares.yaml',
         orchestrator: 'aspera/schema/IBM Aspera Orchestrator API-v1-enhanced.yaml',
-        async_tables: 'aspera/schema/async_tables.yaml'
+        async_tables: 'aspera/schema/async_tables.yaml',
+        ascp_log:     'aspera/ascp/log.schema.yaml'
       }
 
       # Schemas owned by ascli: values are validated against them (vendor API schemas are validated by the API)
-      OWNED = %i[spec args conf opts preview async_tables].freeze
+      OWNED = %i[spec args conf opts preview async_tables ascp_log].freeze
 
       OPTIONS = 'opts'
       TRANSFER_SPEC = 'spec'
@@ -87,6 +88,7 @@ module Aspera
       ORCHESTRATOR = 'orchestrator'
       SHARES = 'shares+/api/v1'
       ASYNC_TABLES = 'async_tables'
+      ASCP_LOG = 'ascp_log'
       LOG_OPTIONS             = "#{OPTIONS}:components.schemas.LogOptions"
       UI_OPTIONS              = "#{OPTIONS}:components.schemas.UiOptions"
       SECURITY_OPTIONS        = "#{OPTIONS}:components.schemas.SecurityOptions"

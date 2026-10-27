@@ -21,9 +21,16 @@ module Aspera
         licenses:          ['Licenses of local and peer systems',                                   nil],
         overdrives:        ['Sessions with loss due to overdriving of network or storage, by peer', nil]
       }.freeze
+      # Kind of record of log lines => description, and default fields
+      RECORDS = {
+        samples:   ['Periodic statistics of sessions: `Receiver bl` or `Sender bl` line, with its `DS Qs` line', %w[time pid side rate.t rate.c rate.n prog.t prog.e]],
+        sessions:  ['Sessions: `Session Start`, `Params`, `Stop` and `Statistics` lines', %w[uuid pid start stop op status errstr user peer targetrate effective_rate]],
+        transfers: ['Files: `Transfer Start` and `Transfer Stop` lines', %w[uuid start stop op status file size rate]]
+      }.freeze
+      RECORD_KIND = {name: :kind, description: RECORDS.map { |kind, (description, _)| "#{kind}: #{description}" }.join(', '), allowed: RECORDS.keys}.freeze
       # Default values of option `ascp_logs` (see schema `AscpLogsOptions`)
       DEFAULTS = {'period' => 1, 'zero_bytes' => false, 'mtu' => nil, 'resolve' => false}.freeze
-      private_constant :LOG_FILES, :LISTS, :DEFAULTS
+      private_constant :LOG_FILES, :LISTS, :RECORDS, :RECORD_KIND, :DEFAULTS
       # When a plugin class includes AscpLogsActions, register the :ascp_logs option
       # in that class's DSL registry so Base#initialize auto-declares it,
       # and add the class-level DSL methods of ClassMethods.
@@ -44,12 +51,27 @@ module Aspera
             LISTS.each do |name, (description, fields)|
               command(name, description: description, arguments: LOG_FILES, action: ->(paths:, **) { Result::ObjectList.new(analyze_ascp_logs(paths).public_send(name), fields: fields) })
             end
+            command(:records, description: 'Log lines parsed into records, with the field names of the log', arguments: [RECORD_KIND] + LOG_FILES, action: :action_ascp_logs_records)
+            command(:fields, description: 'Description of the fields of records', arguments: [RECORD_KIND], action: :action_ascp_logs_fields)
           end
         end
       end
 
       def action_ascp_logs_summary(paths:, **)
         Result::SingleObject.new(analyze_ascp_logs(paths).summary)
+      end
+
+      def action_ascp_logs_records(kind:, paths:, **)
+        require 'aspera/ascp/log_analyzer'
+        paths.each { |path| Aspera.assert(File.exist?(path), type: BadArgument) { "No such file or folder: #{path}" } }
+        Result::ObjectList.new(Ascp::LogAnalyzer::Records.list(kind, paths), fields: RECORDS[kind].last)
+      end
+
+      def action_ascp_logs_fields(kind:, **)
+        require 'aspera/ascp/log_analyzer'
+        require 'aspera/schema/documentation'
+        builder = Schema::Documentation.new(TerminalFormatter, Schema::Registry.instance.reader(Ascp::LogAnalyzer::Records::SCHEMAS[kind])).build
+        Result::ObjectList.new(builder.rows, fields: builder.columns)
       end
 
       private

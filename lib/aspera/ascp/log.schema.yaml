@@ -1,0 +1,1006 @@
+# cspell:ignore abrtxfer blks bwmeas drate dups mgmt peeros peerlic peerver rcvd rcvD rcvr rexreqs sndr srcbase userid xmit xmtD xnf
+# Records of ascp log lines, output by `config ascp logs records`: field names are the ones of the log lines.
+# Values are numbers when the log value is a number: rates in bps, durations in ms, s or µs, percentages without `%`.
+# Sources (ascp 4): `fasp_session_rx_stats_to_str` (Receiver bl), `fasp_session_tx_stats_to_str` (Sender bl),
+#   `sink_sess_stats_log` and `source_sess_stats_log` (DS Qs), `as_mgmt_backlog_status` (mgmt backlog),
+#   `fasp_session_log` (Session Start/Stop/Params),
+#   `fasp_ds_util.c` (Session Statistics), `action.c` (Transfer Start/Stop).
+openapi: 3.0.0
+info:
+  title: Ascp log records
+  version: 1.0.0
+  description: Lines of ascp logs parsed into records, with the field names of the log lines.
+paths: {}
+components:
+  schemas:
+    LogFile:
+      type: string
+      description: Log file of the record, when several log files are analyzed.
+    Pid:
+      type: string
+      description: Process identifier of `ascp`.
+    Sample:
+      description: >-
+        Statistics of a session, logged periodically: a `Receiver bl` or `Sender bl` line, with its `DS Qs` line in `DS`.
+        Counters are totals since the start of the session, except the minimum and maximum values of the period.
+      oneOf:
+        - $ref: "#/components/schemas/ReceiverSample"
+        - $ref: "#/components/schemas/SenderSample"
+      discriminator:
+        propertyName: side
+        mapping:
+          Receiver: "#/components/schemas/ReceiverSample"
+          Sender: "#/components/schemas/SenderSample"
+    SampleControl:
+      type: object
+      description: Control messages rejected.
+      additionalProperties: false
+      properties:
+        bm:
+          type: integer
+          description: With a bad MAC.
+        bs:
+          type: integer
+          description: With a bad sequence number.
+    SampleProgress:
+      type: object
+      description: Progress of the session.
+      additionalProperties: false
+      properties:
+        t:
+          type: integer
+          description: Bytes transferred, without duplicates (bytes).
+        f:
+          type: integer
+          description: File bytes transferred (bytes).
+        e:
+          type: integer
+          description: Time since the first data packet (µs).
+    MgmtBacklog:
+      type: array
+      description: Data waiting to be written to each management socket.
+      items:
+        type: object
+        additionalProperties: false
+        properties:
+          i:
+            type: integer
+            description: Index of the management socket.
+          s:
+            type: integer
+            description: Socket descriptor.
+          n:
+            type: integer
+            description: Bytes waiting to be written (bytes).
+    ReceiverSample:
+      title: Sample of the receiver
+      type: object
+      additionalProperties: false
+      properties:
+        log_file:
+          $ref: "#/components/schemas/LogFile"
+        time:
+          type: string
+          format: date-time
+          description: Time of the line.
+        pid:
+          $ref: "#/components/schemas/Pid"
+        uuid:
+          type: string
+          description: Identifier of the session of the process, when logged before the line.
+        side:
+          type: string
+          description: Side of the session.
+          enum:
+            - Receiver
+        bl:
+          type: object
+          description: Data blocks.
+          additionalProperties: false
+          properties:
+            t:
+              type: integer
+              description: 'Blocks received: `o` + `r` + `d` (± 1, counters are read while blocks arrive).'
+            o:
+              type: integer
+              description: Original blocks received (first transmission).
+            r:
+              type: integer
+              description: Retransmitted blocks received.
+            d:
+              type: integer
+              description: 'Blocks discarded: duplicates and drops, `d` + `r` + `a` + `x` + `dl` of `bl2`.'
+            ts:
+              type: integer
+              description: Blocks sent by the sender, as reported by the sender (0 if not reported).
+            c:
+              type: integer
+              description: Lowest block number not received yet (all blocks before it are received).
+            h:
+              type: integer
+              description: Next block number expected.
+        rex_rtt:
+          type: object
+          description: Round-trip time of retransmission requests (ms).
+          additionalProperties: false
+          properties:
+            l:
+              type: integer
+              description: Minimum during the period (ms).
+            h:
+              type: integer
+              description: Maximum during the period (ms).
+            s:
+              type: integer
+              description: Smoothed (ms).
+            o:
+              type: integer
+              description: Retransmission timeout (ms).
+        ooo_rtt:
+          type: object
+          description: Round-trip time of out-of-order blocks (ms).
+          additionalProperties: false
+          properties:
+            l:
+              type: integer
+              description: Minimum during the period (ms).
+            h:
+              type: integer
+              description: Maximum during the period (ms).
+            s:
+              type: integer
+              description: Smoothed (ms).
+            o:
+              type: integer
+              description: Out-of-order timeout (ms).
+        rate_rtt:
+          type: object
+          description: Network round-trip time, used by the rate controller (ms).
+          additionalProperties: false
+          properties:
+            b:
+              type: integer
+              description: Base (minimum) (ms).
+            l:
+              type: integer
+              description: Minimum during the period (ms).
+            h:
+              type: integer
+              description: Maximum during the period (ms).
+            s:
+              type: integer
+              description: Smoothed (ms).
+            r:
+              type: integer
+              description: Resets of the base round-trip time during the period.
+            f:
+              type: integer
+              description: Rate adaptation mode.
+        ctl:
+          $ref: "#/components/schemas/SampleControl"
+        rex:
+          type: object
+          description: Retransmission requests.
+          additionalProperties: false
+          properties:
+            n:
+              type: integer
+              description: 'Retransmission requests outstanding: blocks in the retransmission queue.'
+            s:
+              type: integer
+              description: Blocks requested for retransmission.
+            q:
+              type: integer
+              description: Messages of retransmission requests sent (a message carries several requests).
+            v:
+              type: integer
+              description: Requests removed from the queue, because the block was received.
+            a:
+              type: integer
+              description: Failures to add a request to the queue (queue full).
+            r:
+              type: integer
+              description: Failures to remove a request from the queue (duplicate retransmissions).
+        bl2:
+          type: object
+          description: Data blocks lost, duplicated or dropped (second `bl` group of the line).
+          additionalProperties: false
+          properties:
+            l:
+              type: integer
+              description: Original blocks lost.
+            d:
+              type: integer
+              description: Duplicate blocks.
+            o:
+              type: integer
+              description: Blocks received out of order.
+            r:
+              type: integer
+              description: Dropped, because the ring buffer is full.
+            a:
+              type: integer
+              description: Dropped, because the file transfer is aborted.
+            x:
+              type: integer
+              description: Dropped, because the file transfer is not found or not ready.
+            dl:
+              type: integer
+              description: Duplicate last blocks.
+            df:
+              type: integer
+              description: Dropped, because of a bad format.
+            dm:
+              type: integer
+              description: Dropped, because of a bad MAC.
+            ds:
+              type: integer
+              description: Dropped, because of a bad sequence number.
+        disk:
+          type: object
+          description: Ring buffer between network and storage.
+          additionalProperties: false
+          properties:
+            l:
+              type: integer
+              description: Minimum of buffers occupied during the period.
+            h:
+              type: integer
+              description: Maximum of buffers occupied during the period.
+            b:
+              type: integer
+              description: 'Buffers occupied: backlog of writes to storage (blocks queued for storage, without ring buffer).'
+        vlink:
+          type: object
+          description: Virtual links.
+          additionalProperties: false
+          properties:
+            lq:
+              type: integer
+              description: Queuing delay of the local virtual link (ms).
+            lo:
+              type: integer
+              description: Occupancy of the local virtual link (%).
+            rq:
+              type: integer
+              description: Queuing delay of the remote virtual link (ms).
+            ro:
+              type: integer
+              description: Occupancy of the remote virtual link (%).
+        rate:
+          type: object
+          description: >-
+            Rates (bps). A rate controller that is not active (policy `fixed`, no virtual link) shows the target rate.
+          additionalProperties: false
+          properties:
+            t:
+              type: integer
+              description: Target rate (bps).
+            m:
+              type: integer
+              description: Minimum rate (bps).
+            c:
+              type: integer
+              description: 'Calculated rate, sent to the sender: the minimum of `n`, `vl`, `vr` and `r` (bps).'
+            n:
+              type: integer
+              description: Rate computed from network congestion (bps).
+            vl:
+              type: integer
+              description: Rate computed for the local virtual link (bps).
+            vr:
+              type: integer
+              description: Rate computed for the remote virtual link (bps).
+            r:
+              type: integer
+              description: Rate computed from storage input/output (bps).
+        prog:
+          $ref: "#/components/schemas/SampleProgress"
+        rcvD:
+          type: integer
+          description: Files received.
+        DS:
+          type: object
+          description: '`Receiver DS Qs` line: files (data sessions) at each stage of reception.'
+          additionalProperties: false
+          properties:
+            Qs:
+              type: object
+              description: Files in each queue.
+              additionalProperties: false
+              properties:
+                ds:
+                  type: integer
+                  description: Active files.
+                pn:
+                  type: integer
+                  description: Before new.
+                n:
+                  type: integer
+                  description: New.
+                rq:
+                  type: integer
+                  description: Request received.
+                pa:
+                  type: integer
+                  description: Before preparation of attributes.
+                ao:
+                  type: integer
+                  description: Opening (asynchronous).
+                ap:
+                  type: integer
+                  description: Preparation of attributes.
+                rd:
+                  type: integer
+                  description: Ready.
+                ru:
+                  type: integer
+                  description: Running.
+                'no':
+                  type: integer
+                  description: Dispatch without transfer of data.
+                po:
+                  type: integer
+                  description: Post-processing.
+                pc:
+                  type: integer
+                  description: Post-processing complete.
+                do:
+                  type: integer
+                  description: Done.
+                tv:
+                  type: integer
+                  description: Validation at threshold.
+                sv:
+                  type: integer
+                  description: Validation at stop.
+            Rs:
+              type: object
+              description: Requests of files.
+              additionalProperties: false
+              properties:
+                i:
+                  type: integer
+                  description: Requests received from the sender.
+                o:
+                  type: integer
+                  description: Responses sent to the sender.
+            mgmt_backlog:
+              $ref: "#/components/schemas/MgmtBacklog"
+    SenderSample:
+      title: Sample of the sender
+      type: object
+      additionalProperties: false
+      properties:
+        log_file:
+          $ref: "#/components/schemas/LogFile"
+        time:
+          type: string
+          format: date-time
+          description: Time of the line.
+        pid:
+          $ref: "#/components/schemas/Pid"
+        uuid:
+          type: string
+          description: Identifier of the session of the process, when logged before the line.
+        side:
+          type: string
+          description: Side of the session.
+          enum:
+            - Sender
+        bl:
+          type: object
+          description: Data blocks.
+          additionalProperties: false
+          properties:
+            t:
+              type: integer
+              description: Blocks sent.
+            o:
+              type: integer
+              description: Original blocks sent (first transmission).
+            r:
+              type: integer
+              description: Retransmitted blocks sent.
+            dl:
+              type: integer
+              description: Duplicate last blocks.
+            c:
+              type: integer
+              description: Lowest block number not received yet by the receiver.
+            h:
+              type: integer
+              description: Next block number.
+        ctl:
+          $ref: "#/components/schemas/SampleControl"
+        rex:
+          type: object
+          description: Retransmission requests.
+          additionalProperties: false
+          properties:
+            b:
+              type: integer
+              description: Blocks requested for retransmission.
+            r:
+              type: integer
+              description: Retransmission requests received.
+            n:
+              type: integer
+              description: Size of the retransmission table.
+        r_ott:
+          type: object
+          description: Reverse one-way trip time (receiver to sender).
+          additionalProperties: false
+          properties:
+            q:
+              type: integer
+              description: 'Queuing delay: current minus minimum (ms).'
+            s:
+              type: integer
+              description: Clock skew between receiver and sender (× 10000).
+            n:
+              type: integer
+              description: Number of samples.
+        rate:
+          type: object
+          description: >-
+            Rates (bps). The rates of the receiver are reported by the receiver (ascp 4).
+            A rate controller that is not active (no virtual link) shows the target rate.
+          additionalProperties: false
+          properties:
+            t:
+              type: integer
+              description: Target rate (bps).
+            m:
+              type: integer
+              description: Minimum rate (bps).
+            c:
+              type: integer
+              description: 'Calculated rate: the sending rate (bps).'
+            rc:
+              type: integer
+              description: 'Calculated rate of the receiver: the minimum of `n`, `vl`, `vr` and `r` (bps).'
+            n:
+              type: integer
+              description: Rate computed by the receiver from network congestion (bps).
+            vl:
+              type: integer
+              description: Rate computed by the receiver for its local virtual link (bps).
+            vr:
+              type: integer
+              description: Rate computed by the receiver for its remote virtual link (bps).
+            r:
+              type: integer
+              description: Rate computed by the receiver from storage input/output (bps).
+        prog:
+          $ref: "#/components/schemas/SampleProgress"
+        xmtD:
+          type: integer
+          description: Files sent.
+        drate:
+          type: integer
+          description: Rate of reading from storage (bps).
+        DS:
+          type: object
+          description: '`Sender DS Qs` line: files (data sessions) at each stage of sending.'
+          additionalProperties: false
+          properties:
+            Qs:
+              type: object
+              description: Files in each queue.
+              additionalProperties: false
+              properties:
+                ds:
+                  type: integer
+                  description: Active files.
+                re:
+                  type: integer
+                  description: Retry.
+                a:
+                  type: integer
+                  description: Source arguments.
+                d:
+                  type: integer
+                  description: Folders.
+                ao:
+                  type: integer
+                  description: Opening (asynchronous).
+                eo:
+                  type: integer
+                  description: Error at opening.
+                n:
+                  type: integer
+                  description: New.
+                ap:
+                  type: integer
+                  description: Preparation of attributes.
+                rq:
+                  type: integer
+                  description: Request sent.
+                rd:
+                  type: integer
+                  description: Ready.
+                ru:
+                  type: integer
+                  description: Running.
+                cl:
+                  type: integer
+                  description: Clean-up.
+                di:
+                  type: integer
+                  description: Dispatch.
+                do:
+                  type: integer
+                  description: Done.
+            Rs:
+              type: object
+              description: Requests of files.
+              additionalProperties: false
+              properties:
+                o:
+                  type: integer
+                  description: Requests sent to the receiver.
+                i:
+                  type: integer
+                  description: Responses received from the receiver.
+            mgmt_backlog:
+              $ref: "#/components/schemas/MgmtBacklog"
+    Session:
+      type: object
+      description: >-
+        A session: `Session Start`, `Session Params`, `Session Stop` and `Session Statistics` lines.
+        `Session Stop` has the fields of `Session Start`, with their final values.
+        Field `cookie` of `Session Params` is never output.
+      additionalProperties: false
+      properties:
+        log_file:
+          $ref: "#/components/schemas/LogFile"
+        uuid:
+          type: string
+          description: Identifier of the session.
+        pid:
+          $ref: "#/components/schemas/Pid"
+        start:
+          type: string
+          format: date-time
+          description: Time of `Session Start`.
+        stop:
+          type: string
+          format: date-time
+          description: Time of `Session Stop`.
+        op:
+          type: string
+          description: Direction of the session.
+          enum:
+            - send
+            - recv
+        status:
+          type: string
+          description: Status of the session.
+          enum:
+            - started
+            - success
+            - failed
+            - timeout
+        errcode:
+          type: integer
+          description: Error code, when failed (see `config ascp errors session`).
+        errstr:
+          type: string
+          description: Error message, when failed.
+        peer_errcode:
+          type: integer
+          description: Error code of the peer, when the peer aborted the session.
+        peer_errstr:
+          type: string
+          description: Error message of the peer, when the peer aborted the session.
+        source:
+          type: string
+          description: First source path, `-` if none.
+        dest:
+          type: string
+          description: Destination path, `-` if none.
+        source_prefix:
+          type: string
+          description: Prefix of source paths, `-` if none.
+        local:
+          type: string
+          description: 'Local address: IP:port.'
+        peer:
+          type: string
+          description: 'Address of the peer: IP:port.'
+        tcp_port:
+          type: integer
+          description: TCP port of the session (SSH or FASP).
+        wss_port:
+          type: integer
+          description: Port of the WebSocket session, instead of `tcp_port`.
+        os:
+          type: string
+          description: Local operating system.
+        ver:
+          type: string
+          description: Local version of `ascp`, and build.
+        lic:
+          type: string
+          description: 'Local license: product:account:license.'
+        peeros:
+          type: string
+          description: Operating system of the peer.
+        peerver:
+          type: string
+          description: Version of `ascp` of the peer, and build.
+        peerlic:
+          type: string
+          description: 'License of the peer: product:account:license.'
+        proto_sess:
+          type: string
+          description: Version of the session protocol (hexadecimal).
+        proto_udp:
+          type: string
+          description: Version of the UDP protocol (hexadecimal).
+        proto_bwmeas:
+          type: string
+          description: Version of the bandwidth measurement protocol (hexadecimal).
+        proto_data:
+          type: string
+          description: Version of the data protocol (hexadecimal).
+        userid:
+          type: integer
+          description: Identifier of the transfer user.
+        user:
+          type: string
+          description: Transfer user, `-` if none.
+        targetrate:
+          type: integer
+          description: Target rate (bps).
+        minrate:
+          type: integer
+          description: Minimum rate (bps).
+        rate_policy:
+          type: string
+          description: 'Rate policy: `fixed`, `high`, `fair` or `low`.'
+        cipher:
+          type: string
+          description: Transport encryption cipher.
+        resume:
+          type: integer
+          description: 'Resume policy: 0 none, 1 file attributes, 2 sparse checksum, 3 full checksum.'
+        create:
+          type: integer
+          description: Create policy.
+        extra_create:
+          type: integer
+          description: Extra create policy.
+        ovr:
+          type: integer
+          description: Overwrite policy.
+        times:
+          type: integer
+          description: Policy of file times (preserve times).
+        precalc:
+          type: string
+          description: 'Size of the transfer calculated before the transfer: `yes` or `no`.'
+        precalc_disable:
+          type: string
+          description: 'Calculation of the size before the transfer is disabled: `true` or `false`.'
+        mf:
+          type: integer
+          description: Manifest policy.
+        mf_path:
+          type: string
+          description: Folder of the manifest, `-` if none.
+        mf_suffix:
+          type: string
+          description: Suffix of the manifest file while the transfer is in progress.
+        partial_file_suffix:
+          type: string
+          description: Suffix of partial files, `-` if none.
+        files_encrypt:
+          type: string
+          description: 'Encryption of files at rest: `yes` or `no`.'
+        files_decrypt:
+          type: string
+          description: 'Decryption of files at rest: `yes` or `no`.'
+        file_csum:
+          type: string
+          description: Type of file checksum, `NONE` if none.
+        fips_enabled:
+          type: string
+          description: 'FIPS mode: `yes` or `no`.'
+        dgram_sz:
+          type: integer
+          description: Datagram size requested, 0 for automatic (bytes).
+        tcp_mode:
+          type: string
+          description: 'TCP friendly mode: `yes` or `no`.'
+        rtt_auto:
+          type: string
+          description: 'Automatic correction of the base round-trip time: `yes` or `no`.'
+        vl_proto_ver:
+          type: integer
+          description: Local version of the virtual link protocol.
+        peer_vl_proto_ver:
+          type: integer
+          description: Version of the virtual link protocol of the peer.
+        vl_local:
+          type: integer
+          description: Capacity of the local virtual link, 0 if none (bps).
+        vlink_remote:
+          type: integer
+          description: Capacity of the remote virtual link, 0 if none (bps).
+        vl_sess_id:
+          type: integer
+          description: Identifier of the session in virtual links.
+        srcbase:
+          type: string
+          description: Base of source paths, `-` if none.
+        rd_sz:
+          type: integer
+          description: Size of read blocks, 0 for default (bytes).
+        wr_sz:
+          type: integer
+          description: Size of write blocks, 0 for default (bytes).
+        cluster_num_nodes:
+          type: integer
+          description: Number of sessions of a multi-session transfer.
+        cluster_node_id:
+          type: integer
+          description: Index of the session in a multi-session transfer.
+        cluster_multi_session_threshold:
+          type: integer
+          description: Minimum size of a file split across the sessions of a multi-session transfer, -1 if not set (bytes).
+        range:
+          type: string
+          description: 'Byte range of the transfer: low-high, 0-0 if none.'
+        keepalive:
+          type: string
+          description: 'Keepalive mode (persistent session): `yes` or `no`.'
+        test_login:
+          type: string
+          description: 'Test of login only: `yes` or `no`.'
+        proxy_ip:
+          type: string
+          description: Address of the proxy, `-` if none.
+        net_rc_alg:
+          type: string
+          description: Algorithm of network rate control.
+        exclude_older_than:
+          type: integer
+          description: Files older than this are excluded, 0 if not set (s, from `exclude_older/newer_than`).
+        exclude_newer_than:
+          type: integer
+          description: Files newer than this are excluded, 0 if not set (s, from `exclude_older/newer_than`).
+        xfer_id:
+          type: string
+          description: Identifier of the transfer, `-` if none.
+        job_id:
+          type: string
+          description: Identifier of the job.
+        delay:
+          type: integer
+          description: Network round-trip time (ms).
+        rex_delay:
+          type: integer
+          description: Retransmission timeout (ms).
+        ooo_delay:
+          type: integer
+          description: Out-of-order timeout (ms, receiver).
+        solicited_rex:
+          type: number
+          description: Blocks retransmitted on request of the receiver (%).
+        unsolicited_rex:
+          type: number
+          description: Blocks retransmitted without request (%, sender).
+        rcvd_rex:
+          type: number
+          description: Retransmitted blocks received (%, receiver).
+        rcvd_dups:
+          type: number
+          description: Duplicate blocks received (%, receiver).
+        ave_xmit_rate:
+          type: integer
+          description: Average rate of transmission (bps).
+        effective:
+          type: number
+          description: 'Efficiency: useful blocks among the blocks sent (%).'
+        effective_rate:
+          type: integer
+          description: Rate of useful data (bps).
+        detail:
+          type: object
+          description: Data blocks.
+          additionalProperties: false
+          properties:
+            good_blks:
+              type: integer
+              description: Useful blocks.
+            bl_total:
+              type: integer
+              description: Blocks sent or received.
+            bl_orig:
+              type: integer
+              description: Original blocks (first transmission).
+            bl_rex:
+              type: integer
+              description: Retransmitted blocks.
+            dup_blks:
+              type: integer
+              description: Duplicate blocks (receiver).
+            dup_last_blks:
+              type: integer
+              description: Duplicate last blocks.
+            drop_blks_xnf:
+              type: integer
+              description: Blocks dropped, because the file transfer is not found (receiver).
+        sndr_ctl:
+          type: object
+          description: Control messages from the sender (`sndr ctl`).
+          additionalProperties: false
+          properties:
+            sent:
+              type: integer
+              description: Messages sent by the sender.
+            rcvd:
+              type: integer
+              description: Messages received by the receiver.
+            lost:
+              type: integer
+              description: Messages lost.
+            lost_pct:
+              type: number
+              description: Messages lost (%, second `lost` of the group).
+        rcvr_ctl:
+          type: object
+          description: Control messages from the receiver (`rcvr ctl`).
+          additionalProperties: false
+          properties:
+            sent:
+              type: integer
+              description: Messages sent by the receiver.
+            rcvd:
+              type: integer
+              description: Messages received by the sender.
+            lost:
+              type: integer
+              description: Messages lost.
+            lost_pct:
+              type: number
+              description: Messages lost (%, second `lost` of the group).
+        rex_ctl:
+          type: object
+          description: Retransmission requests from the receiver (`rex  ctl`).
+          additionalProperties: false
+          properties:
+            sent:
+              type: integer
+              description: Messages sent by the receiver.
+            rcvd:
+              type: integer
+              description: Messages received by the sender.
+            lost:
+              type: integer
+              description: Messages lost.
+            lost_pct:
+              type: number
+              description: Messages lost (%, second `lost` of the group).
+        progress:
+          type: object
+          description: Progress of the session.
+          additionalProperties: false
+          properties:
+            tx_bytes:
+              type: integer
+              description: Bytes transferred, without duplicates (bytes).
+            file_bytes:
+              type: integer
+              description: File bytes transferred (bytes).
+            tx_time:
+              type: integer
+              description: Duration of the data transfer (µs).
+        estimate_transfer_size:
+          type: integer
+          description: Size of the source files (bytes, sender).
+        num_rex_xfer_not_found:
+          type: integer
+          description: Retransmission requests of a file transfer not found (sender).
+        num_rex_abrtxfer_not_found:
+          type: integer
+          description: Retransmission requests of an aborted file transfer not found (sender).
+        rex_xmit_blks:
+          type: integer
+          description: Blocks retransmitted by the sender (receiver).
+        xmit_total:
+          type: integer
+          description: Blocks sent by the sender (receiver).
+        rex_xmit_pct:
+          type: number
+          description: Blocks retransmitted by the sender (%, receiver).
+    Transfer:
+      type: object
+      description: >-
+        A file transfer: `Transfer Start` and `Transfer Stop` lines of a file.
+        `Transfer Stop` has the fields of `Transfer Start`, with their final values.
+      additionalProperties: false
+      properties:
+        log_file:
+          $ref: "#/components/schemas/LogFile"
+        uuid:
+          type: string
+          description: Identifier of the session.
+        pid:
+          $ref: "#/components/schemas/Pid"
+        start:
+          type: string
+          format: date-time
+          description: Time of `Transfer Start`.
+        stop:
+          type: string
+          format: date-time
+          description: Time of `Transfer Stop`.
+        op:
+          type: string
+          description: Direction of the session.
+          enum:
+            - send
+            - recv
+        status:
+          type: string
+          description: Status of the file transfer.
+          enum:
+            - started
+            - success
+            - failed
+        errcode:
+          type: integer
+          description: Error code, when failed.
+        errstr:
+          type: string
+          description: Error message, when failed.
+        file:
+          type: string
+          description: Path of the file.
+        size:
+          type: integer
+          description: Size of the file (bytes).
+        start_byte:
+          type: integer
+          description: Offset where the transfer starts, when resumed (bytes).
+        rate:
+          type: integer
+          description: Rate of the file transfer (bps).
+        elapsed:
+          type: number
+          description: Duration of the file transfer (s, `Transfer Stop`).
+        loss:
+          type: number
+          description: Blocks lost (%).
+        rexreqs:
+          type: integer
+          description: Retransmitted blocks.
+        overhead:
+          type: integer
+          description: Duplicate blocks.
+        csum:
+          type: string
+          description: Checksum of the file, when requested (`Transfer Stop`).
+        mtime:
+          type: string
+          description: Modification time of the file, when preserved.
+        ctime:
+          type: string
+          description: Creation time of the file, when preserved.
+        ol_legal_hold:
+          type: string
+          description: 'Object lock legal hold: `on` or `off`.'
+        ol_retention:
+          type: object
+          description: Object lock retention.
+          additionalProperties: false
+          properties:
+            mode:
+              type: string
+              description: 'Retention mode: `governance` or `compliance`.'
+            until:
+              type: string
+              description: End of retention.

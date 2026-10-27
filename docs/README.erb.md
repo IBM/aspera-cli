@@ -4150,6 +4150,8 @@ To analyze `ascp` log files (`ascp` 4.0 and later), give log files, or folders w
 | `transfers`         | Transferred files.                                              |
 | `licenses`          | Licenses of local and peer systems.                             |
 | `overdrives`        | Sessions with loss due to overdriving of network or storage.    |
+| `records`           | Log lines parsed into records: `samples`, `sessions` or `transfers` (see below). |
+| `fields`            | Description of the fields of records: `samples`, `sessions` or `transfers`. |
 
 When logs of both sides of a session are analyzed (client and server), each session includes the status, error and diagnostics of the other side (`peer_side`, `peer_diagnostics`).
 
@@ -4162,6 +4164,35 @@ For example, to list only errors:
 Diagnostics of a session include: category of error (e.g. `udp_setup`, `storage`, `authentication`) with a hint, retry of a failed session, parameters set by the server (cipher, resume policy, virtual link), efficiency and loss of control messages, and for a sender, which limit of the receiver (network, disk, virtual link) or reading from storage limits the rate.
 
 Option `ascp_logs` (dot-notation) sets `period` (snapshot period in minutes, default `1`), `zero_bytes` (include sessions without transferred bytes), `mtu` (when not found in logs) and `resolve` (host names of peers), e.g. `--ascp-logs.period=5`.
+
+Command `records` gives the log lines parsed into records, with the field names of the log lines, to filter them with `--out.query` (JMESPath):
+
+| Record      | Log lines                                                                                       |
+|-------------|-------------------------------------------------------------------------------------------------|
+| `samples`   | `Receiver bl` or `Sender bl` line, with the `DS Qs` line that follows it in field `DS`.          |
+| `sessions`  | `Session Start`, `Session Params`, `Session Stop` and `Session Statistics` lines of a session.   |
+| `transfers` | `Transfer Start` and `Transfer Stop` lines of a file.                                           |
+
+A group of a log line becomes an object: for example, `rate t/m/c/n/vl/vr/r=...` becomes `rate.t`, `rate.m`, `rate.c`, etc.
+Values are numbers when the log value is a number: rates in bps, durations in ms, s or µs, and percentages without `%`.
+`Session Stop` and `Transfer Stop` have the fields of `Session Start` and `Transfer Start`, with their final values.
+When several log files are read, field `log_file` gives the log file of each record.
+Field `cookie` of `Session Params` is never output.
+
+For example, samples where the calculated rate is lower than the target rate, and sessions with loss of control messages from the receiver:
+
+```shell
+<%=cmd%> config ascp logs records samples /path/to/aspera-scp-transfer.log --out.query='[?rate.c < rate.t].{time: time, session: uuid, calculated: rate.c, network: rate.n, lost: bl2.l}'
+<%=cmd%> config ascp logs records sessions /path/to/folder --out.query='[?rcvr_ctl.lost_pct > `1`]'
+```
+
+Command `fields` gives the type and description (with unit) of each field of a kind of record (`samples`, `sessions` or `transfers`), with its path as used in `--out.query` (e.g. `rate.c`):
+
+```shell
+<%=cmd%> config ascp logs fields samples
+<%=cmd%> config ascp logs fields sessions
+<%=cmd%> config ascp logs fields transfers
+```
 
 > [!NOTE]
 > When transfer agent [`direct`](#agent-direct) is used, the list of files to transfer is provided to `ascp` using either `--file-list` or `--file-pair-list` and a temp file list, unless `--file-list` or `--file-pair-list` is already provided via `transfer` parameter `ascp_args`.

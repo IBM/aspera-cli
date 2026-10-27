@@ -5,6 +5,7 @@ require 'resolv'
 require 'set'
 require 'time'
 require 'aspera/ascp/log_analyzer/log_file'
+require 'aspera/ascp/log_analyzer/records'
 
 module Aspera
   module Ascp
@@ -41,15 +42,36 @@ module Aspera
         @log_files = []
       end
 
+      class << self
+        # @param path [String] log file, or folder
+        # @return [Array<String>] the log file, or the log files in the folder (recursively)
+        def log_paths(path)
+          return [path] unless File.directory?(path)
+          scan_folder(path, path, [])
+        end
+
+        private
+
+        # @return [Array<String>] files, with the log files of folder added
+        def scan_folder(root, folder, files)
+          Dir.children(folder).sort.each do |name|
+            next if name.start_with?('.')
+            path = File.join(folder, name)
+            if File.directory?(path)
+              scan_folder(root, path, files) unless name.match?(EXCLUDED_FOLDERS)
+            elsif name.match?(INCLUDED_FILES) && !path.delete_prefix(root).match?(EXCLUDED_FILES)
+              files.push(path)
+            end
+          end
+          files
+        end
+      end
+
       # Analyze a log file, or the log files in a folder (recursively)
       # @param path [String] file or folder
       # @return [self]
       def add(path)
-        if File.directory?(path)
-          scan_folder(path, path)
-        else
-          @log_files.push(LogFile.new(path, **@options).analyze)
-        end
+        self.class.log_paths(path).each { |file| @log_files.push(LogFile.new(file, **@options).analyze) }
         self
       end
 
@@ -233,18 +255,6 @@ module Aspera
           ''
         end
         @hostnames[address].empty? ? {} : {'hostname' => @hostnames[address]}
-      end
-
-      def scan_folder(root, folder)
-        Dir.children(folder).sort.each do |name|
-          next if name.start_with?('.')
-          path = File.join(folder, name)
-          if File.directory?(path)
-            scan_folder(root, path) unless name.match?(EXCLUDED_FOLDERS)
-          elsif name.match?(INCLUDED_FILES) && !path.delete_prefix(root).match?(EXCLUDED_FILES)
-            add(path)
-          end
-        end
       end
     end
   end
