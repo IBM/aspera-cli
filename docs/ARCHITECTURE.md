@@ -6,9 +6,10 @@ The IBM Aspera CLI (`ascli`) is a Ruby-based command-line interface that provide
 
 ## System Architecture
 
-![Architecture Diagram](architecture.png)
+![Architecture Diagram](architecture.svg)
 
 The architecture diagram illustrates the layered structure of `ascli` and its interactions with external components.
+Source: [`architecture.drawio`](architecture.drawio), exported by `rake doc:diagrams`.
 
 ## Architectural Layers
 
@@ -19,13 +20,14 @@ The foundation layer consists of the local execution environment:
 - **Operating System**: Cross-platform support (Linux, macOS, Windows)
 - **Ruby Runtime**: Ruby interpreter, minimum version `RUBY_MINIMUM_VERSION` in [`lib/aspera/cli/info.rb`](../lib/aspera/cli/info.rb) (CI tests: matrix in [`.github/workflows/test.yml`](../.github/workflows/test.yml))
 - **Ruby Gems**: Third-party dependencies managed via Bundler
-- **Transfer Agents**: Multiple FASP client implementations
-  - `ascp` (client): The core FASP protocol implementation
-  - Transfer SDK (trSDK): gRPC-based transfer daemon
-  - Connect: Browser-based transfer client
-  - HTTPGW: HTTP Gateway for firewall-friendly transfers
-  - Desktop: Aspera Desktop Client integration
-  - Node: Direct Node API transfers
+- **Transfer Agents**: Multiple FASP client implementations, selected with option `--transfer`
+  - `ascp` (client): The core FASP protocol implementation (`direct`)
+  - Transfer SDK (trSDK): gRPC-based transfer daemon (`transferd`)
+  - Connect: Browser-based transfer client (`connect`)
+  - Desktop: Aspera Desktop Client integration, over JSON-RPC; the client runs the Transfer SDK underneath (`desktop`)
+- **Remote Transfer Agents**: The transfer runs on a server, see [Remote Systems Layer](#remote-systems-layer)
+  - HTTPGW: HTTP Gateway for firewall-friendly transfers (`httpgw`)
+  - Node: Direct Node API transfers (`node`)
 
 ### Core Application Layer (`aspera-cli` gem)
 
@@ -504,7 +506,7 @@ Transfer outcomes are typed ([`transfer/result.rb`](../lib/aspera/transfer/resul
 - **Direct**: Direct `ascp` execution (default)
 - **Connect**: Aspera Connect browser plugin
 - **Node**: Node API-based transfers
-- **HTTPGW**: HTTP Gateway for restricted networks
+- **Desktop**: Aspera Desktop Client, which runs the Transfer SDK underneath
 - **Desktop**: Aspera Desktop Client
 - **Transfer Daemon (trSDK)**: gRPC-based transfer service ([`transferd.rb`](../lib/aspera/agent/transferd.rb))
 
@@ -621,6 +623,9 @@ The CLI communicates with various IBM Aspera components:
 - **Shares**: File sharing and synchronization
 - **Console**: Central management console
 - **Orchestrator**: Workflow automation
+- **faspio Gateway**: FASP acceleration of TCP traffic
+- **Aspera License Entitlement Engine (ALEE)**: Entitlement and metering
+- **HTTP Gateway**: Transfers over HTTPS and WebSocket, the gateway transfers with FASP to the transfer server (agent `httpgw`)
 
 Communication via:
 
@@ -637,7 +642,7 @@ Communication via:
 Communication via:
 
 - FASP protocol (TCP/UDP) for data transfer
-- Node API (HTTPS) for control operations
+- Node API (HTTPS) for control operations, and transfers started on the server (agent `node`)
 - SSH for authentication and session management (and `ascmd` file operations)
 
 #### Third-Party Integrations
