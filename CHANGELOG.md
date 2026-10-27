@@ -8,6 +8,9 @@ Released: [Place date of release here]
 
 ### Issues Fixed
 
+* `ascli`:
+  * `--out.select` with a dot-path key (e.g. `directory_user.type`) selected no item with formats `json`, `jsonpp`, `yaml` and `ruby`: it now matches as with `table` and `csv`.
+
 ### Breaking Changes
 
 ## 4.28.0

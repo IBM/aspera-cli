@@ -242,6 +242,15 @@ module Aspera
           expect(output).not_to(include('"name":"a"'))
         end
 
+        it 'selects items on a dot-path key with all formats' do
+          users = [{'name' => 'ann', 'dir' => {'type' => 'ad'}}, {'name' => 'bob', 'dir' => nil}, {'name' => 'cid'}]
+          select = '--out.select=@json:{"dir.type":"ad"}'
+          expect(JSON.parse(output_of(Result::ObjectList.new(users), '--format=json', select))).to(eq([users.first]))
+          expect(YAML.safe_load(output_of(Result::ObjectList.new(users), '--format=yaml', select))).to(eq([users.first]))
+          expect(output_of(Result::ObjectList.new(users), '--format=csv', select, '--out.fields=name').split).to(eq(['ann']))
+          expect(JSON.parse(output_of(Result::ObjectList.new(users), '--format=json', '--out.select=@json:{"dir":{"type":"ad"}}'))).to(eq([users.first]))
+        end
+
         it 'shows empty when select matches no item' do
           output = output_of(Result::ObjectList.new(list), '--format=table', '--out.select=@json:{"name":"z"}')
           expect(output).to(include('<empty>'))

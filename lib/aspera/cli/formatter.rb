@@ -402,7 +402,11 @@ module Aspera
             raise Cli::BadArgument, "Error in user-provided ruby lambda code during select: #{e.message}"
           end
         when Hash
-          @options[:select].reduce(data) { |items, (k, v)| items.select { |i| i[k].eql?(v) } }
+          data.select do |item|
+            # Not flattened with a structured format: a dot-path key is looked up in the flattened item, as in a table
+            flat = nil
+            @options[:select].all? { |k, v| (item.key?(k) ? item[k] : (flat ||= DotContainer.new(item).to_dotted)[k]).eql?(v) }
+          end
         else data
         end
       end

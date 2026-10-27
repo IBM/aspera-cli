@@ -1955,8 +1955,7 @@ In the above example, the same result is obtained with option:
 --out.select=@ruby:'->(i){i["ats_admin"]}'
 ```
 
-With `--format=table` or `csv`, items are selected after flattening by option `--out.flat`: a key can be a [dot-path](#dot-path-notation), for example, `directory_user.type`.
-With other formats, keys are the fields of the first level.
+A key can be a [dot-path](#dot-path-notation), for example, `directory_user.type`: it designates a field of the item flattened as by option `--out.flat`, with all formats.
 
 ##### Option: `--out.fields`: Selection of fields
 
@@ -1985,13 +1984,13 @@ Examples:
 
 ##### `--out.select` or `--out.query`
 
-Option `--out.select` is shorter for a test of equality, while option `--out.query` accepts any condition, the same way with all formats.
+Option `--out.select` is shorter for a test of equality, while option `--out.query` accepts any condition.
 
 | Condition                | `--out.select`                                     | `--out.query`                                    |
 |--------------------------|----------------------------------------------------|--------------------------------------------------|
 | Equal to a `Boolean`     | `@json:'{"ats_admin":true}'`                       | `'[?ats_admin]'`                                 |
 | Equal to a `String`      | `@json:'{"name":"Ann"}'`                           | `"[?name=='Ann']"`                               |
-| Field of a nested object | `@json:'{"directory_user.type":"active_directory"}'`<br/>(only `table` and `csv`) | `"[?directory_user.type=='active_directory']"` |
+| Field of a nested object | `@json:'{"directory_user.type":"active_directory"}'` | `"[?directory_user.type=='active_directory']"` |
 | Several conditions (and) | `@json:'{"ats_admin":true,"name":"Ann"}'`          | `"[?ats_admin && name=='Ann']"`                  |
 | Negation, or             | Ruby lambda (`@ruby:`)                             | `'[?!ats_admin]'`, or: see [Recipes](#recipes)   |
 | Number comparison        | Ruby lambda (`@ruby:`)                             | ``'[?size > `1000000`]'``                        |
@@ -2001,7 +2000,6 @@ Option `--out.select` is shorter for a test of equality, while option `--out.que
 
 > [!WARNING]
 >
-> - With option `--out.select`, a dot-path key (for example, `directory_user.type`) matches only with `--format=table` or `csv`: with `json`, `yaml`, ..., no item is selected. Option `--out.query` works the same way with all formats.
 > - Values are compared with their type. With `--out.select`, `"true"` (`String`) does not match `true` (`Boolean`). In JMESPath, ``[?ats_admin == `true`]`` matches, but `[?ats_admin == 'true']` does not: `'...'` is a string literal.
 > - After `--out.query`, the default fields of the command no longer apply: all the fields of the result are displayed. Choose fields in the expression (multi-select hash), or with option `--out.fields`.
 > - Secrets are hidden before `--out.query` is applied, so that the expression cannot reveal them.
