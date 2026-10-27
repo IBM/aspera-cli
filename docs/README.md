@@ -1852,10 +1852,9 @@ Options are evaluated in this order:
 1. `--query`: parameters sent to the API.
 2. `--out.secrets`: secrets are hidden first, so that an expression cannot reveal them.
 3. `--out.query`: JMESPath expression or Ruby lambda, applied to the data as returned by the API.
-4. `--out.flat`: nested keys become [dot-path](#dot-path-notation) keys (`a.b`), only with `--format=table` or `csv` (see option `--out.flat` below).
-5. `--out.select`: selection of items (rows).
-6. `--out.fields`: selection of fields (columns).
-7. Display in the format set by `--out.format`.
+4. `--out.select`: selection of items (rows).
+5. `--out.fields`: selection of fields (columns).
+6. Display in the format set by `--out.format`.
 
 | To                                       | Use                                      |
 |------------------------------------------|------------------------------------------|
@@ -1893,7 +1892,7 @@ For example: `--query.max=10` reads the first 10 items.
 Option `--out.query` applies a [JMESPath](https://jmespath.org) expression to the result of a command, when it is an object or a list.
 JMESPath is a standard query language for JSON, also used by option `--query` of the AWS and Azure CLIs.
 
-The expression is applied to the data as returned by the API (secrets hidden), before options `--out.flat`, `--out.select` and `--out.fields`.
+The expression is applied to the data as returned by the API (secrets hidden), before options `--out.select` and `--out.fields`.
 Its syntax is checked before the command is executed.
 Results of other types (status, no result) are not changed.
 
@@ -1957,7 +1956,7 @@ In the above example, the same result is obtained with option:
 --out.select=@ruby:'->(i){i["ats_admin"]}'
 ```
 
-A key can be a [dot-path](#dot-path-notation), for example, `directory_user.type`: it designates a field of the item flattened as by option `--out.flat`, with all formats.
+A key can be a [dot-path](#dot-path-notation), for example, `directory_user.type`, with all formats.
 
 ##### Option: `--out.fields`: Selection of fields
 
@@ -1974,7 +1973,8 @@ Individual elements of the list can be:
 - `ALL`: all fields
 - A Ruby `RegEx`: using `@ruby:'/.../'`, or `@re:...` add those matching to the list
 
-To display a **property** inside a complex structure (`Hash`, `Array`) use [dot-path](#dot-path-notation) notation.
+To display a **property** inside a complex structure (`Hash`, `Array`), use [dot-path](#dot-path-notation) notation, only with `--format=table` or `csv` (see option `--out.flat`).
+With other formats, use a JMESPath multi-select hash with option `--out.query`, for example: `--out.query='[].{name: name, type: directory_user.type}'`.
 
 Examples:
 
