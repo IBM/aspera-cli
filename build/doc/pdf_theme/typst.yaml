@@ -1,0 +1,4 @@
+# Pandoc defaults of the theme, for PDF with Typst, see gfm2pdf-toolchain (themes)
+variables:
+  mainfont: "IBM Plex Sans"
+  codefont: "IBM Plex Mono"

@@ -1,0 +1,4 @@
+# Pandoc defaults of the theme, for PDF with LuaLaTeX, see gfm2pdf-toolchain (themes)
+variables:
+  mainfont: "IBM Plex Sans"
+  monofont: "IBM Plex Mono"

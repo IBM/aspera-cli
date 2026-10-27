@@ -1,0 +1,5 @@
+% Background of the cover and last pages, for PDF with LuaLaTeX, see gfm2pdf-toolchain (themes)
+\renewcommand{\gfmcoverbackground}{\AddToShipoutPictureBG*{
+    \AtPageUpperLeft{\raisebox{-\height}{\includegraphics[width=\paperwidth]{cover_top.png}}}
+    \AtPageLowerLeft{\includegraphics[width=\paperwidth]{cover_bottom.png}}
+  }}
