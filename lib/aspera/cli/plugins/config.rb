@@ -12,6 +12,7 @@ require 'aspera/cli/info'
 require 'aspera/cli/wizard'
 require 'aspera/cli/sync_actions'
 require 'aspera/cli/ascp_actions'
+require 'aspera/cli/ascp_logs_actions'
 require 'aspera/cli/preset_actions'
 require 'aspera/cli/completion_actions'
 require 'aspera/cli/vault_manager'
@@ -46,6 +47,7 @@ module Aspera
         include VaultManager
         include GemChecker
         include AscpActions
+        include AscpLogsActions
         include PresetActions
         include TransferActions
         include CompletionActions
@@ -336,7 +338,9 @@ module Aspera
           )
           command :schema, description: 'Show the transfer spec JSON schema',
             arguments: [{name: :agent_name, allowed: Agent::Factory::ALL.keys, mandatory: false, default: nil}]
-          command :errors,   description: 'Show FASP error codes'
+          command :errors,   description: 'Show FASP error codes: of the management port (default), or of sessions (errcode in logs)',
+            arguments: [{name: :kind, allowed: %i[management session], mandatory: false, default: :management}]
+          ascp_logs_commands :logs
           command :products, description: 'Manage installed Aspera products'
           commands_under :products do
             command :list, description: 'List installed Aspera products',

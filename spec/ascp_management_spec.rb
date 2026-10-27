@@ -15,6 +15,21 @@ RSpec.describe(Aspera::Ascp::Management) do
       retryable = described_class::ERRORS.select { |_, info| info[:r] }.keys
       expect(retryable).to(eq([12, 13, 14, 15, 16, 17, 18, 23, 32, 33, 35, 36, 37, 39, 40, 44, 45, 47, 61, 69]))
     end
+
+    it 'has unique mnemonics' do
+      mnemonics = described_class::ERRORS.values.map { |info| info[:c] }
+      expect(mnemonics).to(eq(mnemonics.uniq))
+    end
+  end
+
+  describe '.error_by_mnemonic' do
+    it 'finds error of management port' do
+      expect(described_class.error_by_mnemonic('CONNECTION_LOST')).to(eq(described_class::ERRORS[16]))
+    end
+
+    it 'returns nil for unknown mnemonic' do
+      expect(described_class.error_by_mnemonic('FOO')).to(be_nil)
+    end
   end
 
   describe '.field_snake_to_native' do

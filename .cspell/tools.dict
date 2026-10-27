@@ -69,6 +69,7 @@ libglib
 libreadline
 librsvg
 libruby
+libssh
 libyaml
 linkname
 lualatex

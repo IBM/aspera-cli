@@ -4107,6 +4107,12 @@ The list of known protocol errors and retry level can be listed:
 <%=cmd%> config ascp errors
 ```
 
+Error codes of sessions (`errcode` in `ascp` logs) are a different numbering, listed with their category and the corresponding error above:
+
+```shell
+<%=cmd%> config ascp errors session
+```
+
 Examples:
 
 ```shell
@@ -4124,6 +4130,38 @@ For example, to activate debug level 2 for `ascp` (`DD`), and display those logs
 This is useful to debug if a transfer fails.
 
 To store `ascp` logs in file `aspera-scp-transfer.log` in a folder, use `--transfer=@json:'{"ascp_args":["-L","/path/to/folder"]}'`.
+
+To analyze `ascp` log files (`ascp` 4.0 and later), give log files, or folders with log files, to `config ascp logs`:
+
+```shell
+<%=cmd%> config ascp logs summary /path/to/folder
+<%=cmd%> config ascp logs sessions /path/to/folder/aspera-scp-transfer.log
+```
+
+| Command             | Result                                                          |
+|---------------------|-----------------------------------------------------------------|
+| `summary`           | Statistics of sessions, errors by category, maximum throughput, findings. |
+| `sessions`          | One row per session, with diagnostics.                          |
+| `diagnostics`       | One row per diagnostic of a session: `id`, `severity` (`error`, `warning`, `info`) and `message`. |
+| `multi_sessions`    | Multi-session transfers: sessions grouped by transfer, with aggregate rate. |
+| `snapshots`         | Aggregate rates per period.                                     |
+| `snapshot_sessions` | Rates of each session per period.                               |
+| `peers`             | Sessions and errors by peer address.                            |
+| `transfers`         | Transferred files.                                              |
+| `licenses`          | Licenses of local and peer systems.                             |
+| `overdrives`        | Sessions with loss due to overdriving of network or storage.    |
+
+When logs of both sides of a session are analyzed (client and server), each session includes the status, error and diagnostics of the other side (`peer_side`, `peer_diagnostics`).
+
+For example, to list only errors:
+
+```shell
+<%=cmd%> config ascp logs diagnostics /path/to/folder --select=@json:'{"severity":"error"}'
+```
+
+Diagnostics of a session include: category of error (e.g. `udp_setup`, `storage`, `authentication`) with a hint, retry of a failed session, parameters set by the server (cipher, resume policy, virtual link), efficiency and loss of control messages, and for a sender, which limit of the receiver (network, disk, virtual link) or reading from storage limits the rate.
+
+Option `ascp_logs` (dot-notation) sets `period` (snapshot period in minutes, default `1`), `zero_bytes` (include sessions without transferred bytes), `mtu` (when not found in logs) and `resolve` (host names of peers), e.g. `--ascp-logs.period=5`.
 
 > [!NOTE]
 > When transfer agent [`direct`](#agent-direct) is used, the list of files to transfer is provided to `ascp` using either `--file-list` or `--file-pair-list` and a temp file list, unless `--file-list` or `--file-pair-list` is already provided via `transfer` parameter `ascp_args`.

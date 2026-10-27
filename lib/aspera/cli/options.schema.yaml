@@ -665,6 +665,26 @@ components:
           format: float
           description: Terminal font aspect ratio (height divided by width).
           default: 2.3
+    AscpLogsOptions:
+      type: object
+      description: Analysis of `ascp` log files (`config ascp logs`).
+      additionalProperties: false
+      properties:
+        period:
+          type: integer
+          description: Snapshot period, in minutes.
+          default: 1
+        zero_bytes:
+          type: boolean
+          description: Include sessions without transferred bytes.
+          default: false
+        mtu:
+          type: integer
+          description: MTU, when not found in logs.
+        resolve:
+          type: boolean
+          description: Resolve peer addresses to host names.
+          default: false
     PackageFolderOptions:
       type: object
       title: Package download folder organization

@@ -14,6 +14,7 @@ aslmcli
 asnodeadmin
 aspera
 asperabrowser
+asperacentral
 asperaconnect
 asperadaemon
 asperademo
@@ -21,6 +22,7 @@ asperalee
 asperanoded
 asperaredisd
 asperasoft
+asssh
 asyncadmin
 asyncs
 belgique
@@ -42,6 +44,8 @@ docroot
 dropboxes
 ecdsha
 endef
+errcode
+errstr
 eudemo
 FASP
 faspe
@@ -88,14 +92,19 @@ nodeapi
 nodegen
 NOTIF
 openssldir
+overdriving
 passcode
 paygo
 Pconf
+peerlic
+peeros
+peerver
 pingfile
 pkce
 pmax
 Portlet
 postproc
+prepost
 PVCL
 reencode
 rescan
@@ -104,6 +113,8 @@ rubyc
 sedemo
 sendfolder
 serban
+sess
+srtt
 sshfp
 sstate
 ssync
@@ -116,6 +127,7 @@ transferd
 transfersdk
 trevents
 tspec
+vlinks
 watchd
 watchfolder
 watchfolderd

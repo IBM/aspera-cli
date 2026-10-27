@@ -97,6 +97,8 @@ module Aspera
         69 => {r: true,  c: 'MAX_ASCP',                    m: 'Maximum ascp processes on a node exceeded',
                                                            a: 'Failed to start session maximum transfer sessions exceeded'}
       }.freeze
+      # Mnemonic => error, see ERRORS
+      ERRORS_BY_MNEMONIC = ERRORS.values.to_h { |error| [error[:c], error] }.freeze
       # Same as `as_mgmt_cmd_name_str` (`NOTIFICATION` is twice there too)
       OPERATIONS = %w[
         NOP
@@ -305,10 +307,16 @@ module Aspera
       PATH_ESCAPE = "\e"
       PATH_ESCAPES = {"\n" => 'n', "\r" => 'r', PATH_ESCAPE => PATH_ESCAPE}.freeze
 
-      private_constant :OPERATIONS, :PARAMETERS, :MGT_HEADER, :MGT_FRAME_SEPARATOR, :INTEGER_FIELDS, :BOOLEAN_FIELDS, :BOOLEAN_TRUE, :INTEGER_VALUE,
+      private_constant :ERRORS_BY_MNEMONIC, :OPERATIONS, :PARAMETERS, :MGT_HEADER, :MGT_FRAME_SEPARATOR, :INTEGER_FIELDS, :BOOLEAN_FIELDS, :BOOLEAN_TRUE, :INTEGER_VALUE,
         :PATH_FIELDS, :PATH_ESCAPE, :PATH_ESCAPES
 
       class << self
+        # @param mnemonic [String] mnemonic of error, e.g. `CONNECTION_LOST`
+        # @return [Hash, nil] error of management port (see ERRORS), nil if unknown
+        def error_by_mnemonic(mnemonic)
+          ERRORS_BY_MNEMONIC[mnemonic]
+        end
+
         # Translate native event name to snake case
         def field_native_to_snake(name)
           case name

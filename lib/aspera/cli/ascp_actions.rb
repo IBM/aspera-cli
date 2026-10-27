@@ -4,6 +4,7 @@ require 'aspera/agent/factory'
 require 'aspera/schema/registry'
 require 'aspera/schema/reader'
 require 'aspera/schema/documentation'
+require 'aspera/ascp/session_errors'
 
 module Aspera
   module Cli
@@ -73,7 +74,9 @@ module Aspera
         Result::SingleObject.new(schema)
       end
 
-      def action_ascp_errors(**)
+      # @param kind [Symbol] `management`: codes of the management port, `session`: codes of sessions, as `errcode` in logs
+      def action_ascp_errors(kind: :management, **)
+        return Result::ObjectList.new(Ascp::SessionErrors.list) if kind.eql?(:session)
         error_data = []
         Ascp::Management::ERRORS.each_pair do |code, prop|
           error_data.push(code: code, mnemonic: prop[:c], retry: prop[:r], info: prop[:a])
