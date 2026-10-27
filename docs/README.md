@@ -10,13 +10,15 @@ EDITING GUIDELINES:
     ellipsis   : ... (not U+2026)
 - Emphasis style: use **bold** (double asterisks) only. Do not use *single asterisk italic*, _underscore_, or __double underscore__ style.
 DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md.
-PANDOC_DEFAULTS_BEGIN
-metadata:
-  subtitle: "ascli 4.29.0.pre"
-  author: "Laurent Martin"
-PANDOC_DEFAULTS_END
 -->
 <!-- markdownlint-disable MD033 -->
+
+<!-- gfm2pdf
+common:
+  metadata:
+    subtitle: "ascli 4.29.0.pre"
+    author: "Laurent Martin"
+-->
 
 <!-- Admonitions: NOTE CAUTION WARNING IMPORTANT TIP INFO -->
 

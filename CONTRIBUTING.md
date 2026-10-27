@@ -226,7 +226,19 @@ export RUBYLIB=$dev_ascli/lib:$RUBYLIB
 
 ### Documentation
 
-Documentation is generated with `pandoc` and `LaTeX`.
+The PDF manual is generated from `docs/README.md` by [gfm2pdf-toolchain](https://github.com/laurent-martin/gfm2pdf-toolchain) (version 1.x), with `pandoc` and LuaLaTeX.
+Clone it, and set the environment variable `GFM2PDF_HOME` to its folder (only the `doc` tasks need it):
+
+```shell
+git clone https://github.com/laurent-martin/gfm2pdf-toolchain.git
+export GFM2PDF_HOME=$PWD/gfm2pdf-toolchain
+```
+
+See its `README.md` for the tools it requires.
+
+- The look of the PDF manual (cover, fonts) comes from the theme `build/doc/pdf_theme`, also used by other IBM Aspera projects (`GFM2PDF_THEME`).
+- Options of the PDF manual: comment `<!-- gfm2pdf` in `docs/README.erb.md` (subtitle, author), and `docs/README.gfm2pdf.yaml` (page after the cover: `docs/README.preface.tex`).
+- draw.io diagrams of the manual (`docs/*.drawio`): their images (SVG for GitHub, PDF for the PDF manual) are committed, export them again with `rake doc:diagrams` (requires draw.io desktop).
 
 The project utilizes the **IBM Plex font**.
 Installation instructions can be found at [IBM Plex](https://www.ibm.com/plex/).

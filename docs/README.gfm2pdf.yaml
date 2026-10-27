@@ -1,0 +1,5 @@
+# Options of the PDF manual for gfm2pdf-toolchain, in addition to the comment `<!-- gfm2pdf` of README.md
+latex:
+  # Page after the cover: mascot
+  include-before-body:
+    - README.preface.tex

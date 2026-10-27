@@ -20,6 +20,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       BUNDLE_WITHOUT: optional:development:special
+      # Tools of the PDF manual
+      GFM2PDF_VERSION: "1.0.0"
+      PANDOC_VERSION: "3.12.1"
     permissions:
       contents: write
     steps:
@@ -34,10 +37,17 @@ jobs:
         with:
           bundler-cache: true
 
+      # PDF manual: gfm2pdf-toolchain, outside the workspace (committed with `git add -A`), and pandoc from its GitHub
+      # release (the package of Ubuntu is too old)
       - name: Install documentation dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y pandoc inkscape texlive-luatex texlive-fonts-extra texlive-latex-extra fonts-ibm-plex librsvg2-bin
+          sudo apt-get install -y inkscape texlive-luatex texlive-fonts-extra texlive-latex-extra fonts-ibm-plex fonts-noto-color-emoji librsvg2-bin
+          curl -fsSL -o "$RUNNER_TEMP/pandoc.deb" "https://github.com/jgm/pandoc/releases/download/${PANDOC_VERSION}/pandoc-${PANDOC_VERSION}-1-amd64.deb"
+          sudo dpkg -i "$RUNNER_TEMP/pandoc.deb"
+          pandoc --version | head -1
+          git clone --depth 1 --branch "v${GFM2PDF_VERSION}" https://github.com/laurent-martin/gfm2pdf-toolchain.git "$RUNNER_TEMP/gfm2pdf-toolchain"
+          echo "GFM2PDF_HOME=$RUNNER_TEMP/gfm2pdf-toolchain" >> "$GITHUB_ENV"
 
       - name: Configure git
         run: |

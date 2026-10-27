@@ -10,11 +10,13 @@ EDITING GUIDELINES:
     ellipsis   : ... (not U+2026)
 - Emphasis style: use **bold** (double asterisks) only. Do not use *single asterisk italic*, _underscore_, or __double underscore__ style.
 <%=doc_warn('Yes edit this file!')%>
-PANDOC_DEFAULTS_BEGIN
-metadata:
-  subtitle: "<%=cmd%> <%=build_version%>"
-  author: "<%=gemspec.authors.join(', ')%>"
-PANDOC_DEFAULTS_END
+-->
+
+<!-- gfm2pdf
+common:
+  metadata:
+    subtitle: "<%=cmd%> <%=build_version%>"
+    author: "<%=gemspec.authors.join(', ')%>"
 -->
 
 <!-- Admonitions: NOTE CAUTION WARNING IMPORTANT TIP INFO -->

@@ -3,19 +3,34 @@
 require 'aspera/cli/info'
 require 'digest'
 require_relative '../build/lib/build_tools'
-require_relative '../build/lib/pandoc'
 require_relative '../build/lib/doc_helper'
 require_relative '../build/lib/doc_command_checker'
 require_relative '../build/lib/test_env'
 require_relative '../build/lib/asperaconf'
-require_relative '../build/lib/drawio'
 include BuildTools
 
 PATH_TMP_DOT = Paths::TMP / 'uml.dot'
 
+# gfm2pdf-toolchain: PDF manual, check of internal links, export of draw.io diagrams, see CONTRIBUTING.md
+# Folder in env var GFM2PDF_HOME: required by the doc tasks that use it, not by the other tasks (tests, packages)
+GFM2PDF_HOME = ENV.fetch('GFM2PDF_HOME', nil)
+# Toolchain with themes and options of documents in a comment `<!-- gfm2pdf`
+GFM2PDF_VERSION_REQUIRED = '>= 1.0.0.pre, < 2'
+if GFM2PDF_HOME
+  require File.join(GFM2PDF_HOME, 'lib', 'pandoc')
+  require File.join(GFM2PDF_HOME, 'lib', 'drawio')
+end
+
+# @return [Module] Gfm2Pdf, once checked: env var GFM2PDF_HOME set, version of the toolchain
+def gfm2pdf
+  raise 'The environment variable GFM2PDF_HOME is not set: folder of gfm2pdf-toolchain, see CONTRIBUTING.md' if GFM2PDF_HOME.nil?
+  Gfm2Pdf.check_version(GFM2PDF_VERSION_REQUIRED)
+  Gfm2Pdf
+end
+
 # Images of the tabs of the draw.io diagrams of the manual: SVG for the online manual, PDF for the PDF manual
 # (draw.io SVG has HTML labels, dropped by Inkscape). They are committed: building the manual does not need draw.io.
-DIAGRAM_IMAGES = Paths::DOC.glob('*.drawio').to_h do |drawio|
+DIAGRAM_IMAGES = (GFM2PDF_HOME ? Paths::DOC.glob('*.drawio') : []).to_h do |drawio|
   [drawio, tab_names(drawio).product(%w[svg pdf]).map { |tab, ext| Paths::DOC / "#{tab}.#{ext}" }]
 end.freeze
 
@@ -41,15 +56,15 @@ ensure
   $stdout = real_stdout
 end
 
-# Declare a PDF build rule
-# Also depends on companion files of the Markdown file: `.<md name>.pdf.*` (pandoc defaults, LaTeX)
+# Declare a PDF build rule, with the theme of aspera-cli
+# Also depends on the files of the toolchain and of the theme, and on the options file of the Markdown file:
+# `<md name>.gfm2pdf.yaml`, if any
 # @param extra [Array] Additional dependencies, e.g. images
 def pdf_rule(pdf, md = nil, extra: [])
-  # pdf = File.expand_path(pdf)
-  md ||= pdf.sub(/\.pdf$/, '.md')
-  companions = Pathname(md).dirname.glob(".#{Pathname(md).basename}.pdf.*")
-  file(pdf => [md, Paths::BUILD / 'lib' / 'pandoc.rb'] + PANDOC_DEPS + companions + extra) do
-    markdown_to_pdf(md: md, pdf: pdf)
+  md = Pathname(md || pdf.sub(/\.pdf$/, '.md'))
+  toolchain = GFM2PDF_HOME ? Gfm2Pdf.dependencies(Paths::PDF_THEME) + [Gfm2Pdf.options_file(md)].select(&:exist?) : []
+  file(pdf => [md] + toolchain + extra) do
+    gfm2pdf.markdown_to_pdf(md: md, pdf: pdf, theme: Paths::PDF_THEME)
   end
 end
 
@@ -71,7 +86,7 @@ namespace :doc do
     pdf_rule(t.name, t.source)
   end
 
-  pdf_rule(Paths::PDF_MANUAL, Paths::MD_MANUAL, extra: [Paths::MASCOT_SVG] + DIAGRAM_IMAGES.values.flatten.select { |i| i.extname.eql?('.pdf') })
+  pdf_rule(Paths::PDF_MANUAL, Paths::MD_MANUAL, extra: [Paths::PDF_PREFACE, Paths::MASCOT_SVG] + DIAGRAM_IMAGES.values.flatten.select { |i| i.extname.eql?('.pdf') })
 
   file Paths::TMPL_CONF_FILE => [Paths::BUILD_TOOLS, Paths::CONF_SIGNATURE] do
     config = TestEnv.configuration
@@ -105,9 +120,9 @@ namespace :doc do
     DocCommandChecker.new(template: Paths::MD_ERB, ascli: Paths::COMMAND).check
   end
 
-  desc 'Check internal links (#anchor) in manual, for GitHub and PDF (requires pandoc)'
+  desc 'Check internal links (#anchor) in manual, for GitHub and PDF (requires gfm2pdf-toolchain)'
   task check_anchors: Paths::MD_MANUAL do
-    check_markdown_anchors(Paths::MD_MANUAL)
+    gfm2pdf.check_markdown_anchors(Paths::MD_MANUAL)
   end
 
   desc 'Generate PDF Manual'
@@ -146,13 +161,14 @@ namespace :doc do
   task uml: Paths::UML_PNG
 
   # Not a dependency of the manual, so that building it does not need draw.io desktop
-  desc 'Export draw.io diagrams of the manual (requires draw.io desktop)'
+  desc 'Export draw.io diagrams of the manual (requires gfm2pdf-toolchain and draw.io desktop)'
   task :diagrams do
+    gfm2pdf
     DIAGRAM_IMAGES.each do |drawio, images|
       images.each do |image|
         next if uptodate?(image.to_s, [drawio.to_s])
         Aspera::Log.log.info { "Generating: #{image}" }
-        export_tab(drawio.to_s, image.to_s, *('--crop' if image.extname.eql?('.pdf')))
+        export_tab(drawio.to_s, image.to_s)
       end
     end
   end

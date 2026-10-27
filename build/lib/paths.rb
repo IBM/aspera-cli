@@ -19,7 +19,8 @@ module Paths
   TST = TOP / 'tests'
   BUILD = TOP / 'build'
   RELEASE = TOP / 'pkg'
-  PANDOC = BUILD / 'doc' / 'pandoc'
+  # Theme of gfm2pdf-toolchain: look of the PDF manual
+  PDF_THEME = BUILD / 'doc' / 'pdf_theme'
   MKDOCS = BUILD / 'doc' / 'mkdocs'
   BUILD_TOOLS = BUILD / 'lib' / 'build_tools.rb'
   DOC_HELPER = BUILD / 'lib' / 'doc_helper.rb'
@@ -47,6 +48,8 @@ module Paths
   MASCOT_PDF = DOC / 'mascot.pdf'
   MD_MANUAL = DOC / 'README.md'
   MD_ERB = DOC / 'README.erb.md'
+  # Page of the PDF manual after the cover, see docs/README.gfm2pdf.yaml
+  PDF_PREFACE = DOC / 'README.preface.tex'
   TSPEC_YAML_SCHEMA = LIB / 'aspera/transfer/spec.schema.yaml'
   ASYNC_YAML_SCHEMA        = LIB / 'aspera/sync/conf.schema.yaml'
   ASYNC_TABLES_YAML_SCHEMA = LIB / 'aspera/schema/async_tables.yaml'
