@@ -113,6 +113,10 @@ namespace :tools do
   task semgrep: [] do
     run('semgrep', 'scan', '--config', 'auto')
   end
+  desc 'Check spelling (cspell): configuration .cspell.json, project dictionaries in .cspell/'
+  task spell: [] do
+    run('cspell', '--no-progress', '**')
+  end
 
   desc 'Remove all installed gems'
   task clean_gems: [] do

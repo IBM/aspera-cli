@@ -7,24 +7,30 @@
     "lib/transfer_services_pb.rb",
     "lib/transferd_pb.rb",
     "lib/transferd_services_pb.rb",
+    "lib/aspera/schema/IBM*",
+    "docs/README.md",
+    "docs/aspera.conf.xsd",
+    "docs/spec.schema.json",
+    "docs/test_env.conf",
     "**/*.tex",
     "**/*.html",
-    "**/*.pptx"
+    "**/*.pptx",
+    "**/*.svg"
   ],
   "dictionaryDefinitions": [
     {
       "name": "aspera",
-      "path": "./docs/dict/aspera.dict",
+      "path": "./.cspell/aspera.dict",
       "addWords": true
     },
     {
       "name": "ruby",
-      "path": "./docs/dict/ruby.dict",
+      "path": "./.cspell/ruby.dict",
       "addWords": true
     },
     {
       "name": "tools",
-      "path": "./docs/dict/tools.dict",
+      "path": "./.cspell/tools.dict",
       "addWords": true
     }
   ],

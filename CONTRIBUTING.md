@@ -144,7 +144,10 @@ Example:
 ```shell
 bundle exec rake tools:rubocop   # Ruby style guide
 bundle exec rake tools:reek      # code smell detection
+bundle exec rake tools:spell     # spelling (cspell)
 ```
+
+Project words for `cspell` are in the dictionaries of folder `.cspell/` (`aspera.dict`, `ruby.dict`, `tools.dict`), declared in `.cspell.json`.
 
 Fix any new offence introduced by your changes before committing.
 Pre-existing offences listed in `.rubocop_todo.yml` can be left as-is.
