@@ -1602,7 +1602,7 @@ Understanding this concept once makes it immediately usable everywhere it appear
 | [Option](#options) names  | `--opt.key.sub=value` | Input  | write     |
 | [Positional arguments](#positional-arguments) | `@: key.sub=value ... [END]` | Input | write |
 | [Extended value](#extended-value-syntax) `@preset:` | `@preset:key.sub` | Input | read  |
-| [Output field names](#option-fields-selection-of-output-object-fields) | `--fields=key.sub`    | Output | read |
+| [Output field names](#filtering-results) | `--fields=key.sub`    | Output | read |
 
 A [dot-path](#dot-path-notation) is a `String` where segments are separated by `.` (dot), each segment designating a key in a nested structure:
 
@@ -1838,9 +1838,214 @@ ascli config echo @json:'{"ni":null,"es":"","ea":[],"eh":{}}'
 ╰───────┴────────────────╯
 ```
 
-#### Option: `format`
+#### Filtering results
 
-The style of output can be set using the `format` option:
+The result of a command can be filtered on the server side, by the API, and then on the client side, by `ascli`.
+Filtering on the server side reduces the data transferred, while filtering on the client side accepts any condition.
+
+Options are evaluated in this order:
+
+![Order of evaluation of the options that filter results](filtering-order.svg)
+
+1. `--query`: parameters sent to the API.
+2. `--out.secrets`: secrets are hidden first, so that an expression cannot reveal them.
+3. `--out.query`: JMESPath expression or Ruby lambda, applied to the data as returned by the API.
+4. `--out.flat`: nested keys become [dot-path](#dot-path-notation) keys (`a.b`), only with `--format=table` or `csv` (see option `--out.flat` below).
+5. `--out.select`: selection of items (rows).
+6. `--out.fields`: selection of fields (columns).
+7. Display in the format set by `--out.format`.
+
+| To                                       | Use                                      |
+|------------------------------------------|------------------------------------------|
+| Limit what the API returns               | `--query`, with parameters `max` and `pmax` |
+| Filter on any condition, reshape, count  | `--out.query`                            |
+| Select items by the value of fields      | `--out.select`                           |
+| Choose the fields displayed              | `--out.fields`                           |
+
+##### Option: `--query`: Parameters of the API
+
+The `query` option can generally be used to add URL parameters to commands that list resources.
+It takes a `Hash`, corresponding to key/value pairs that appear in the query part of the request.
+
+For example: `--query=@json:'{"p1":"v1","p2":"v2"}'` leads to query: `?p1=v1&p2=v2`.
+
+If the same parameter needs to be provided several times, then it is also possible to provide an `Array`.
+
+For example: `--query=@json:'{"p":["v1","v2"]}'` leads to query: `?p=v1&p=v2`.
+
+If PHP-style arrays are expected in the API, add `[]` to the name of the parameter.
+
+For example: `--query=@json:'{"p[]":["v1","v2"]}'` leads to query: `?p[]=v1&p[]=v2`.
+
+Commands that read a list by pages (for example, `aoc admin user list`) also accept parameters `max` and `pmax`.
+They are processed by `ascli`, not sent to the API: they limit the number of items (`max`) and of pages (`pmax`) requested.
+
+For example: `--query.max=10` reads the first 10 items.
+
+> [!TIP]
+> Use `--query=help` on any `list` command to display the available query parameters and their types, as documented in the API.
+> For example: `ascli faspex5 admin accounts list --query=help`
+
+##### Option: `--out.query`: JMESPath expression
+
+Option `--out.query` applies a [JMESPath](https://jmespath.org) expression to the result of a command, when it is an object or a list.
+JMESPath is a standard query language for JSON, also used by option `--query` of the AWS and Azure CLIs.
+
+The expression is applied to the data as returned by the API (secrets hidden), before options `--out.flat`, `--out.select` and `--out.fields`.
+Its syntax is checked before the command is executed.
+Results of other types (status, no result) are not changed.
+
+Examples:
+
+```shell
+# Name and email of ATS administrators
+ascli aoc admin user list --out.query='[?ats_admin].{name: name, email: email}'
+# Number of users
+ascli aoc admin user list --out.query='length(@)'
+# Email of users, one per line, for use in a shell loop
+ascli aoc admin user list --out.query='[].email' --format=text
+```
+
+> [!TIP]
+> Enclose the expression in single quotes for the shell.
+> In JMESPath, literal values are enclosed in backticks, for example: ``[?size > `1000`]``.
+> An expression with string literals in single quotes (`'...'`) is enclosed in double quotes, for example: `"[?name=='Ann']"`.
+
+For processing that JMESPath does not provide (regular expressions, string manipulation, grouping), the value can be a Ruby lambda (`@ruby:`): it is called with the data, and returns the new data, converted to JSON data (for example, symbols and dates become strings).
+It is refused at [Security Level](#security-level) `medium` and `high`.
+
+```shell
+# Number of users per email domain
+ascli aoc admin user list --out.query=@ruby:'->(users){users.group_by{|u|u["email"].split("@").last}.transform_values(&:count)}'
+```
+
+The result of the query is displayed according to its type: a list of objects as a table, a list of values with one value per line, a single value as is.
+A list of lists (for example, `[].[name, email]`) is displayed only with a structured format (`json`, `yaml`, ...): to display a table, or CSV, use a multi-select hash instead, for example, `[].{name: name, email: email}`.
+
+> [!NOTE]
+> Option `--query` gives filtering parameters to the API, while option `--out.query` filters and reshapes the result received.
+> Option `--out.query` is the equivalent of option `--query` of the AWS and Azure CLIs.
+
+##### Option: `--out.select`: Selection of items
+
+A list of objects (`object_list`) can be filtered with option `--out.select` (or `--select`).
+Its value is either a `Hash` or a `Proc`:
+
+- `Hash`: an item is selected if each key of the `Hash` is a field of the item with the same value, and the same type: `true` (`Boolean`) is not `"true"` (`String`).
+- `Proc`: a Ruby lambda called with each item (`Hash`), that returns `true` to select it, or `false` to remove it.
+
+Example:
+
+```shell
+ascli aoc admin user list --out.fields=name,email,ats_admin --query=@json:'{"sort":"name"}' --out.select=@json:'{"ats_admin":true}'
+```
+
+```text
+╭────────────────┬─────────────────────┬───────────╮
+│ name           │ email               │ ats_admin │
+╞════════════════╪═════════════════════╪═══════════╡
+│ John Curtis    │ john@example.com    │ true      │
+│ Laurent Martin │ laurent@example.com │ true      │
+╰────────────────┴─────────────────────┴───────────╯
+```
+
+In the above example, the same result is obtained with option:
+
+```shell
+--out.select=@ruby:'->(i){i["ats_admin"]}'
+```
+
+With `--format=table` or `csv`, items are selected after flattening by option `--out.flat`: a key can be a [dot-path](#dot-path-notation), for example, `directory_user.type`.
+With other formats, keys are the fields of the first level.
+
+##### Option: `--out.fields`: Selection of fields
+
+Depending on the command, results may include by default all fields, or only some selected fields.
+It is possible to define specific columns to be displayed, by setting option `--out.fields` (or `--fields`).
+
+The `--out.fields` option is a list that can be either a comma-separated list or an [Extended Value](#extended-value-syntax) `Array`.
+
+Individual elements of the list can be:
+
+- **property**: add property to the current list
+- `-`**property**: remove property from the current list
+- `DEF`: default list of fields (that is the default, when not set)
+- `ALL`: all fields
+- A Ruby `RegEx`: using `@ruby:'/.../'`, or `@re:...` add those matching to the list
+
+To display a **property** inside a complex structure (`Hash`, `Array`) use [dot-path](#dot-path-notation) notation.
+
+Examples:
+
+- `a,b,c`: the list of attributes specified as a comma-separated list (overrides the default)
+- `@list:,a,b,c`: `Array` [Extended Value](#extended-value-syntax): same as above
+- `@json:'["a","b","c"]'`: `Array` [Extended Value](#extended-value-syntax): same as above
+- `b,DEF,-a`: default property list, remove `a` and add `b` in first position
+- `@ruby:'/^server/'`: Display all fields whose name begins with `server`
+
+##### `--out.select` or `--out.query`
+
+Option `--out.select` is shorter for a test of equality, while option `--out.query` accepts any condition, the same way with all formats.
+
+| Condition                | `--out.select`                                     | `--out.query`                                    |
+|--------------------------|----------------------------------------------------|--------------------------------------------------|
+| Equal to a `Boolean`     | `@json:'{"ats_admin":true}'`                       | `'[?ats_admin]'`                                 |
+| Equal to a `String`      | `@json:'{"name":"Ann"}'`                           | `"[?name=='Ann']"`                               |
+| Field of a nested object | `@json:'{"directory_user.type":"active_directory"}'`<br/>(only `table` and `csv`) | `"[?directory_user.type=='active_directory']"` |
+| Several conditions (and) | `@json:'{"ats_admin":true,"name":"Ann"}'`          | `"[?ats_admin && name=='Ann']"`                  |
+| Negation, or             | Ruby lambda (`@ruby:`)                             | `'[?!ats_admin]'`, or: see [Recipes](#recipes)   |
+| Number comparison        | Ruby lambda (`@ruby:`)                             | ``'[?size > `1000000`]'``                        |
+| Substring                | Ruby lambda (`@ruby:`)                             | ``'[?contains(email, `@example`)]'``             |
+| Choice of fields         | With option `--out.fields`                         | `'[].{name: name, email: email}'`                |
+| Count                    | Not possible                                       | `'length(@)'`                                    |
+
+> [!WARNING]
+>
+> - With option `--out.select`, a dot-path key (for example, `directory_user.type`) matches only with `--format=table` or `csv`: with `json`, `yaml`, ..., no item is selected. Option `--out.query` works the same way with all formats.
+> - Values are compared with their type. With `--out.select`, `"true"` (`String`) does not match `true` (`Boolean`). In JMESPath, ``[?ats_admin == `true`]`` matches, but `[?ats_admin == 'true']` does not: `'...'` is a string literal.
+> - After `--out.query`, the default fields of the command no longer apply: all the fields of the result are displayed. Choose fields in the expression (multi-select hash), or with option `--out.fields`.
+> - Secrets are hidden before `--out.query` is applied, so that the expression cannot reveal them.
+
+##### Recipes
+
+```shell
+# Users of Active Directory, with user name and email
+ascli shares admin user all list --out.query="[?directory_user.type=='active_directory'].{username: username, email: email}"
+# Users without directory (field missing or null)
+ascli shares admin user all list --out.query='[?directory_user == null].username'
+# Number of ATS administrators
+ascli aoc admin user list --out.query='length([?ats_admin])'
+# Users who are ATS administrators, or have no email
+ascli aoc admin user list --out.query='[?ats_admin || !email].name'
+# Emails of a domain, one per line
+ascli aoc admin user list --out.query='[?ends_with(email, `@example.com`)].email' --format=text
+# Largest file of a folder
+ascli node browse / --out.query='max_by([?type==`file`], &size).path'
+# Files larger than 1 MB
+ascli node browse / --out.query='[?size > `1000000`].{path: path, size: size}'
+# Files modified since a date
+ascli node browse / --out.query='[?mtime >= `"2025-06-01"`].path'
+```
+
+> [!NOTE]
+> The JMESPath implementation of `ascli` (gem `jmespath`) also compares strings with `<`, `<=`, `>` and `>=`, which the JMESPath specification defines only for numbers.
+> Dates in ISO 8601 format, in the same time zone, are compared in chronological order.
+
+The result in JSON (`--format=json`) can also be processed by other tools, such as [`jq`](https://jqlang.org), whose language differs from JMESPath: for example, `jq 'map(select(.directory_user.type == "active_directory"))'`.
+
+##### Other filters
+
+Some commands provide their own filters:
+
+- [Percent selector](#percent-selector) `%<field>:<value>`: selects a single resource by the value of one of its fields.
+- `find` of plugin `node` (gen4) and `aoc files find`: recursive search of files on the client side, with a glob or a Ruby lambda (see [Operation `find`](#operation-find-on-gen4access-key)).
+- `faspex5 packages list`: a Ruby lambda as last argument (see [Faspex 5: List packages](#faspex-5-list-packages)).
+- `console transfer`: query parameter `filter` (see [Transfer filter](#transfer-filter)).
+- `preview`: options `--filter` and `--skip-folders` (see [Candidate detection](#candidate-detection-for-creation-or-update-or-deletion)).
+
+#### Option: `--out.format`
+
+The style of output can be set using option `--out.format` (or `--format`):
 
 | `format` | Output formatting         |
 | -------- | -------- |
@@ -1894,7 +2099,7 @@ ascli config echo @json:'[{"name":"foo","id":1},{"name":"bar","id":8}]' --format
 
 This option controls how object fields are displayed for complex objects.
 
-Effective only when `format` is `table` to display `single_object` or `object_list`.
+Effective only when `format` is `table` or `csv` to display `single_object` or `object_list`.
 
 If value is `no`, then object's `field` names are only the first level keys of the `Hash` result and values that are `Hash` are displayed as such in Ruby syntax.
 
@@ -2075,104 +2280,6 @@ ascli config preset overview --out.colors=no --out.utf8=no
 
 > [!NOTE]
 > Logs issued before the option is processed (e.g. at startup) use the detected value.
-
-#### Option: `fields`: Selection of output object fields
-
-Depending on the command, results may include by default all fields, or only some selected fields.
-It is possible to define specific columns to be displayed, by setting the `fields` option.
-
-The `fields` option is a list that can be either a comma-separated list or an [Extended Value](#extended-value-syntax) `Array`.
-
-Individual elements of the list can be:
-
-- **property**: add property to the current list
-- `-`**property**: remove property from the current list
-- `DEF`: default list of fields (that is the default, when not set)
-- `ALL`: all fields
-- A Ruby `RegEx`: using `@ruby:'/.../'`, or `@re:...` add those matching to the list
-
-To display a **property** inside a complex structure (`Hash`, `Array`) use [dot-path](#dot-path-notation) notation.
-
-Examples:
-
-- `a,b,c`: the list of attributes specified as a comma-separated list (overrides the default)
-- `@list:,a,b,c`: `Array` [Extended Value](#extended-value-syntax): same as above
-- `@json:'["a","b","c"]'`: `Array` [Extended Value](#extended-value-syntax): same as above
-- `b,DEF,-a`: default property list, remove `a` and add `b` in first position
-- `@ruby:'/^server/'`: Display all fields whose name begins with `server`
-
-#### Option: `select`
-
-Table output (`object_list`) can be filtered using option `select`.
-This option is either a `Hash` or `Proc`.
-The `Proc` takes as argument a line (`Hash`) in the table and is a Ruby lambda expression that shall return `true` to select or `false` to remove an entry.
-
-Example:
-
-```shell
-ascli aoc admin user list --fields=name,email,ats_admin --query=@json:'{"sort":"name"}' --select=@json:'{"ats_admin":true}'
-```
-
-```text
-╭────────────────┬─────────────────────┬───────────╮
-│ name           │ email               │ ats_admin │
-╞════════════════╪═════════════════════╪═══════════╡
-│ John Curtis    │ john@example.com    │ true      │
-│ Laurent Martin │ laurent@example.com │ true      │
-╰────────────────┴─────────────────────┴───────────╯
-```
-
-> [!NOTE]
-> Option `select` filters elements from the result of command, while the `query` option gives filtering parameters to the API when listing elements.
-
-In the above example, the same result is obtained with option:
-
-```shell
---select=@ruby:'->(i){i["ats_admin"]}'
-```
-
-Option `select` applies the filter after a possible "flattening" with option `--out.flat`.
-
-For comparisons, functions or reshaping of results, use option `--out.query`.
-
-#### Option: `--out.query`
-
-Option `--out.query` applies a [JMESPath](https://jmespath.org) expression to the result of a command, when it is an object or a list.
-JMESPath is a standard query language for JSON, also used by option `--query` of the AWS and Azure CLIs.
-
-The expression is applied to the data as returned by the API, before the options `select` and `fields`, and before flattening with `--out.flat`.
-Its syntax is checked before the command is executed.
-Results of other types (status, no result) are not changed.
-
-Examples:
-
-```shell
-# Name and email of ATS administrators
-ascli aoc admin user list --out.query='[?ats_admin].{name: name, email: email}'
-# Number of users
-ascli aoc admin user list --out.query='length(@)'
-# Email of users, one per line, for use in a shell loop
-ascli aoc admin user list --out.query='[].email' --format=text
-```
-
-> [!TIP]
-> Enclose the expression in single quotes for the shell.
-> In JMESPath, literal values are enclosed in backticks, for example: ``[?size > `1000`]``.
-
-For processing that JMESPath does not provide (regular expressions, string manipulation, grouping), the value can be a Ruby lambda (`@ruby:`): it is called with the data, and returns the new data, converted to JSON data (for example, symbols and dates become strings).
-It is refused at [Security Level](#security-level) `medium` and `high`.
-
-```shell
-# Number of users per email domain
-ascli aoc admin user list --out.query=@ruby:'->(users){users.group_by{|u|u["email"].split("@").last}.transform_values(&:count)}'
-```
-
-The result of the query is displayed according to its type: a list of objects as a table, a list of values with one value per line, a single value as is.
-A list of lists (for example, `[].[name, email]`) is displayed only with a structured format (`json`, `yaml`, ...): to display a table, or CSV, use a multi-select hash instead, for example, `[].{name: name, email: email}`.
-
-> [!NOTE]
-> Option `--query` gives filtering parameters to the API, while option `--out.query` filters and reshapes the result received.
-> Option `--out.query` is the equivalent of option `--query` of the AWS and Azure CLIs.
 
 ### Exit status
 
@@ -5699,25 +5806,6 @@ Bulk creation and deletion of resources are possible using option `bulk` (`yes`,
 In that case, the operation expects an `Array` of `Hash` instead of a simple `Hash` using the [Extended Value](#extended-value-syntax) syntax.
 This option is available only for some resources: if you need it, try and see if the entities you create or delete support this option.
 
-### Option: `query`
-
-The `query` option can generally be used to add URL parameters to commands that list resources.
-It takes a `Hash`, corresponding to key/value pairs that appear in the query part of the request.
-
-For example: `--query=@json:'{"p1":"v1","p2":"v2"}'` leads to query: `?p1=v1&p2=v2`.
-
-If the same parameter needs to be provided several times, then it is also possible to provide an `Array`.
-
-For example: `--query=@json:'{"p":["v1","v2"]}'` leads to query: `?p=v1&p=v2`.
-
-If PHP-style arrays are expected in the API, add `[]` to the name of the parameter.
-
-For example: `--query=@json:'{"p[]":["v1","v2"]}'` leads to query: `?p[]=v1&p[]=v2`.
-
-> [!TIP]
-> Use `--query=help` on any `list` command to display the available query parameters and their types, as documented in the API.
-> For example: `ascli faspex5 admin accounts list --query=help`
-
 ### Plugins
 
 `ascli` uses a plugin mechanism.
@@ -6518,7 +6606,7 @@ The following parameters are supported:
 | other     | Native | Other specific parameters depending on resource type. |
 
 > [!NOTE]
-> Both `max` and `pmax` are processed internally in `ascli`, not included in actual API call and limit the number of successive pages requested to API.
+> Both `max` and `pmax` are processed by `ascli` (see [option `--query`](#option---query-parameters-of-the-api)).
 > `ascli` will return all values using paging if not provided.
 > `page` and `per_page` are normally added by `ascli` to build successive API calls to get all values if there are more than 1000
 > (AoC allows a maximum page size of 1000).
@@ -6529,7 +6617,7 @@ The following parameters are supported:
 > For example: `ascli aoc admin user list --query=help`
 
 > [!TIP]
-> The option `select` can also be used to further refine selection, refer to [section earlier](#option-select).
+> Options `--out.query` and `--out.select` can also be used to further refine selection, refer to [Filtering results](#filtering-results).
 
 Examples:
 

@@ -8,9 +8,16 @@ require_relative '../build/lib/doc_helper'
 require_relative '../build/lib/doc_command_checker'
 require_relative '../build/lib/test_env'
 require_relative '../build/lib/asperaconf'
+require_relative '../build/lib/drawio'
 include BuildTools
 
 PATH_TMP_DOT = Paths::TMP / 'uml.dot'
+
+# Images of the tabs of the draw.io diagrams of the manual: SVG for the online manual, PDF for the PDF manual
+# (draw.io SVG has HTML labels, dropped by Inkscape). They are committed: building the manual does not need draw.io.
+DIAGRAM_IMAGES = Paths::DOC.glob('*.drawio').to_h do |drawio|
+  [drawio, tab_names(drawio).product(%w[svg pdf]).map { |tab, ext| Paths::DOC / "#{tab}.#{ext}" }]
+end.freeze
 
 # Update signature file if configuration has changed
 if Paths::CONF_SIGNATURE.exist? && TestEnv.configuration.any?
@@ -64,7 +71,7 @@ namespace :doc do
     pdf_rule(t.name, t.source)
   end
 
-  pdf_rule(Paths::PDF_MANUAL, Paths::MD_MANUAL, extra: [Paths::MASCOT_SVG])
+  pdf_rule(Paths::PDF_MANUAL, Paths::MD_MANUAL, extra: [Paths::MASCOT_SVG] + DIAGRAM_IMAGES.values.flatten.select { |i| i.extname.eql?('.pdf') })
 
   file Paths::TMPL_CONF_FILE => [Paths::BUILD_TOOLS, Paths::CONF_SIGNATURE] do
     config = TestEnv.configuration
@@ -137,4 +144,16 @@ namespace :doc do
 
   desc 'Generate uml'
   task uml: Paths::UML_PNG
+
+  # Not a dependency of the manual, so that building it does not need draw.io desktop
+  desc 'Export draw.io diagrams of the manual (requires draw.io desktop)'
+  task :diagrams do
+    DIAGRAM_IMAGES.each do |drawio, images|
+      images.each do |image|
+        next if uptodate?(image.to_s, [drawio.to_s])
+        Aspera::Log.log.info { "Generating: #{image}" }
+        export_tab(drawio.to_s, image.to_s, *('--crop' if image.extname.eql?('.pdf')))
+      end
+    end
+  end
 end

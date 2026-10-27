@@ -85,8 +85,9 @@ end
 
 ATTRS = %i{width height}
 
-# Convert HTML <img> to format expected in pandoc
-# @param content [String] HTML content to convert
+# Convert HTML <img> to format expected in pandoc, and use the PDF next to an SVG image, if any:
+# SVG exported by draw.io has HTML labels (`<foreignObject>`), dropped by Inkscape (LaTeX package `svg`)
+# @param content [String] HTML content to convert, paths relative to current folder
 # @return [String] Converted content with Markdown image syntax
 def convert_img_for_pandoc(content)
   content.gsub(%r{<img\s+([^>]*?)/?>}) do
@@ -94,6 +95,9 @@ def convert_img_for_pandoc(content)
     src = attrs[/src=["']([^"']*)["']/, 1]
     alt = attrs[/alt=["']([^"']*)["']/, 1] || ''
     "![#{alt}](#{src})"
+  end.gsub(/(!\[[^\]]*\]\()([^)\s]+)\.svg\)/) do
+    pdf = "#{Regexp.last_match(2)}.pdf"
+    File.exist?(pdf) ? "#{Regexp.last_match(1)}#{pdf})" : Regexp.last_match(0)
   end
 end
 

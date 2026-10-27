@@ -13,6 +13,8 @@ function BlockQuote(el)
     local title_text = tag:sub(1, 1):upper() .. tag:sub(2):lower()
     table.remove(inlines, 1)
     if #inlines > 0 and inlines[1].t == "SoftBreak" then table.remove(inlines, 1) end
+    -- tag alone in its paragraph: e.g. followed by an empty line, required before a list
+    if #inlines == 0 then table.remove(el.content, 1) end
     local final_content = { pandoc.Div(
         { pandoc.Para({ pandoc.Str(title_text) }) },
         { id = "", class = "title" }
