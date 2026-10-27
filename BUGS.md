@@ -17,7 +17,7 @@ IMPORTANT: Remove any confidential information from the logs before posting them
 ## Scope of Support
 
 Architecture of `ascli` :
-![architecture](docs/architecture.png)
+![architecture](docs/architecture.svg)
 
 The scope is exclusively the Ruby gem `aspera-cli` (green) and its **_interactions_** with IBM components:
 

@@ -169,7 +169,7 @@ All tests must pass (status `passed`) before opening a pull request.
 
 The `aspera-cli` architecture is designed to be modular and extensible.
 
-![Architecture](docs/architecture.png)
+![Architecture](docs/architecture.svg)
 
 ### Structure Highlights
 
