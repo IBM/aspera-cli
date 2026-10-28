@@ -26,9 +26,10 @@ module Aspera
       # @param deprecation [Hash, nil]               Deprecation `{last:, message:}` forwarded to options.declare (see `Deprecation`)
       # @param schema      [String, nil]             Schema reference (e.g. "opts:components.schemas.Foo");
       #                                              when description: is nil, the schema title or first description line is used
+      # @param complete    [Symbol, nil]             Values proposed by shell completion, one of `Complete::KINDS`
       def option(name, description: nil,
         short: nil, allowed: nil, default: nil,
-        on_set: nil, shorthand: nil, deprecation: nil, schema: nil)
+        on_set: nil, shorthand: nil, deprecation: nil, schema: nil, complete: nil)
         register_option_spec(
           OptionSpec.new(
             name:        name,
@@ -39,7 +40,8 @@ module Aspera
             on_set:      on_set,
             shorthand:   shorthand,
             deprecation: deprecation,
-            schema:      schema
+            schema:      schema,
+            complete:    complete
           )
         )
       end

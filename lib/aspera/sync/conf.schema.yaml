@@ -17,6 +17,7 @@ properties:
   ascp_dir:
     description: Directory containing ascp executable to use.
     type: string
+    x-cli-complete: folder
   assume_no_mods:
     description: Assume that the directory structure has not been modified.
     type: boolean
@@ -186,6 +187,7 @@ properties:
       path:
         description: The directory to be synchronized on the local host.
         type: string
+        x-cli-complete: folder
         x-cli-option: --local-dir
         x-cli-short: -d
   local_apply_docroot:
@@ -198,6 +200,7 @@ properties:
     description: Use the specified database directory on the local host.
       Default is `.private-asp` at the root level of the synchronized directory.
     type: string
+    x-cli-complete: folder
     x-cli-option: true
     x-cli-short: -b
   local_checksum_threads:
@@ -228,6 +231,7 @@ properties:
   local_keep_dir:
     description: Move deleted files into the specified directory on the local host.
     type: string
+    x-cli-complete: folder
     x-cli-option: --keep-dir-local
   local_mount_signature:
     description: Verify that the file system is mounted by the existence of this file on the local host.
@@ -296,6 +300,7 @@ properties:
       local_dir:
         description: Use the specified logging directory on the local host.
         type: string
+        x-cli-complete: folder
         x-cli-option: --alt-logdir
         x-cli-short: -L
       remote_dir:

@@ -229,6 +229,11 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
         registry.register(spec(id: :leaf, action: leaf_action, arguments: [{name: :a, multiple: '--'}, {name: :b}]))
         expect { registry.validate! }.not_to(raise_error)
       end
+
+      it 'raises for an unknown kind of completion' do
+        registry.register(spec(id: :leaf, action: leaf_action, arguments: [{name: :a, complete: :file}, {name: :b, complete: :nope}]))
+        expect { registry.validate! }.to(raise_error(ArgumentError, /argument b: complete: :nope is not one of/))
+      end
     end
 
     context 'aliases' do

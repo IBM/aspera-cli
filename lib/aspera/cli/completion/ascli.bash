@@ -21,7 +21,9 @@ _ascli_complete() {
     # Readline replaces only the text after the last word break character
     local prefix=${cur%"${line##*["$COMP_WORDBREAKS"]}"}
     # words[0] is the program name itself: pass the words before the cursor, then the word at cursor
-    local output directive entry
+    local output directive entry files_prefix
+    # A word that continues is not followed by a space: `key=`, `key.`, `folder/`, `@modifier:`
+    local continues='([=./]|@[a-z0-9_]+:)$'
     output=$(ascli config completion candidates -- "${words[@]:1:${#words[@]}-2}" "$cur" 2>/dev/null)
     directive=${output##*$'\n'}
     output=${output%"$directive"}
@@ -29,12 +31,23 @@ _ascli_complete() {
     while IFS= read -r entry; do
         # Remove the description
         word=${entry%%$'\t'*}
-        [[ -n $word && $word == "$cur"* ]] && COMPREPLY+=("${word#"$prefix"}")
+        [[ -n $word && $word == "$cur"* ]] || continue
+        COMPREPLY+=("${word#"$prefix"}")
+        [[ $word =~ $continues ]] && compopt -o nospace 2>/dev/null
     done <<<"$output"
     case $directive in
-    :files)
+    :files | ":files "* | :folders | ":folders "*)
+        # Beginning of the word that is not part of the path, e.g. `--key=@file:`
+        files_prefix=${directive#:files}
+        files_prefix=${files_prefix#:folders}
+        files_prefix=${files_prefix# }
+        local kind=file
+        [[ $directive == :folders* ]] && kind=directory
         compopt -o filenames 2>/dev/null
-        while IFS= read -r word; do COMPREPLY+=("$word"); done < <(compgen -f -- "${cur#"$prefix"}")
+        while IFS= read -r word; do
+            word=$files_prefix$word
+            COMPREPLY+=("${word#"$prefix"}")
+        done < <(compgen -A "$kind" -- "${cur#"$files_prefix"}")
         ;;
     ":hint "*)
         # Two entries: bash displays them, but inserts nothing

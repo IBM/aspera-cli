@@ -6,10 +6,12 @@
 
 require 'aspera/cli/runner'
 require 'aspera/cli/plugins/config'
+require 'fileutils'
 require 'open3'
 require 'rbconfig'
 require 'shellwords'
 require 'tmpdir'
+require 'yaml'
 
 module Aspera
   module Cli
@@ -26,6 +28,14 @@ module Aspera
       # Locale forced in the executed command, so that the output (Unicode characters, see `Environment.char`) does not depend on the actual environment
       UTF8_LOCALE = Environment::I18N_VARS.to_h { |var| [var, var.eql?('LC_ALL') ? 'en_US.UTF-8' : nil] }.freeze
 
+      # Home folder of the executed command: a configuration file with preset `mypreset`
+      before(:all) do
+        @home = Dir.mktmpdir
+        File.write(File.join(@home, 'config.yaml'), {'config' => {'version' => Cli::VERSION}, 'mypreset' => {'url' => 'https://example.com', 'username' => 'myuser'}}.to_yaml)
+      end
+
+      after(:all) { FileUtils.remove_entry(@home) }
+
       # @param command [String] sub-command of `config completion`
       # @param words   [Array<String>] words given after `--`
       # @param env     [Hash] environment variables
@@ -33,7 +43,7 @@ module Aspera
       def run_completion(command, *words, env: {})
         cmd = [RbConfig.ruby, "-I#{source_root}/lib", File.join(source_root, 'bin', Info::CMD_NAME), 'config', 'completion', command]
         cmd += ['--', *words] unless words.empty?
-        output, status = Open3.capture2e(UTF8_LOCALE.merge(env), *cmd, binmode: true)
+        output, status = Open3.capture2e(UTF8_LOCALE.merge('ASCLI_HOME' => @home).merge(env), *cmd, binmode: true)
         output.force_encoding(Encoding::UTF_8)
         expect(status.exitstatus).to(eq(0), output)
         output.lines.map(&:chomp)
@@ -46,7 +56,7 @@ module Aspera
           wrapper = File.join(dir, Info::CMD_NAME)
           File.write(wrapper, %Q(#!/bin/sh\nexec "#{RbConfig.ruby}" -I"#{source_root}/lib" "#{source_root}/bin/#{Info::CMD_NAME}" "$@"\n))
           File.chmod(0o755, wrapper)
-          yield({'PATH' => [dir, ENV.fetch('PATH', '')].join(File::PATH_SEPARATOR)})
+          yield({'PATH' => [dir, ENV.fetch('PATH', '')].join(File::PATH_SEPARATOR), 'ASCLI_HOME' => @home})
         end
       end
 
@@ -107,8 +117,8 @@ module Aspera
         end
 
         it 'proposes placeholder for positional arguments with type' do
-          expect(run_words('config', 'preset', 'show')).to(eq(['<identifier>']))
-          expect(run_words('config', 'preset', 'get', 'mypreset')).to(eq(['<String>']))
+          expect(run_words('node', 'access_keys', 'do')).to(eq(['<identifier>']))
+          expect(run_words('config', 'preset', 'set', 'mypreset', 'url')).to(eq(['<String>']))
           expect(run_words('config', 'vault', 'create')).to(eq(['<Hash> label*, username, password, url, description']))
           expect(run_words('config', 'vault', 'import')).to(eq(['<Array>']))
         end
@@ -147,7 +157,7 @@ module Aspera
         it 'accepts a unique prefix of plugin, command or alias, and proposes aliases' do
           expect(run_words('serv')).to(include('ls', 'browse', 'rm', 'delete'))
           expect(run_words('serv', 'br')).to(eq(['<String>']))
-          expect(run_words('conf', 'pres', 'sh')).to(eq(['<identifier>']))
+          expect(run_words('conf', 'pres', 'sh')).to(include('mypreset'))
         end
       end
 
@@ -173,7 +183,7 @@ module Aspera
         end
 
         it 'gives the type of an expected value as hint' do
-          expect(run_candidates('config', 'preset', 'show', '')).to(eq([':hint <identifier>']))
+          expect(run_candidates('node', 'access_keys', 'do', '')).to(eq([':hint <identifier>']))
           expect(run_candidates('server', '--url=')).to(eq([':hint <String>']))
         end
 
@@ -187,9 +197,21 @@ module Aspera
           expect(run_candidates('@env:COMPLETION_TEST_WORD', '', env: {'COMPLETION_TEST_WORD' => 'server'})).to(eq([':']))
         end
 
-        it 'proposes the keys of an option with dotted notation, from its schema' do
-          expect(run_candidates('--ts.dir')).to(include("--ts.direction\tDirection of transfer (on client side)"))
-          expect(run_candidates('--out.table.')).to(include(start_with("--out.table.pivot\t")))
+        it 'proposes the keys of an option with dotted notation, from its schema, followed by = or .' do
+          expect(run_candidates('--ts.dir')).to(include("--ts.direction=\tDirection of transfer (on client side)"))
+          expect(run_candidates('--out.t')).to(include(start_with("--out.table.\t"), start_with("--out.format=\t")))
+          expect(run_candidates('--out.table.')).to(include(start_with("--out.table.pivot=\t")))
+        end
+
+        it 'proposes the keys of option query from the schema of the command' do
+          expect(run_candidates('faspex5', 'admin', 'accounts', 'list', '--query.')).to(include(start_with("--query.limit=\t")))
+          expect(run_candidates('faspex5', 'admin', 'accounts', 'list', '--query.expand=')).to(eq(['--query.expand=true', '--query.expand=false', ':']))
+        end
+
+        it 'proposes the values of the key given by a plain value of an option' do
+          expect(run_candidates('--ui=')).to(include('--ui=terminal', '--ui=browser'))
+          expect(run_candidates('--transfer=')).to(include('--transfer=direct', '--transfer=node'))
+          expect(run_candidates('--temp=')).to(eq([':folders --temp=']))
         end
 
         it 'proposes the values of a key of an option, from its schema' do
@@ -202,13 +224,58 @@ module Aspera
           expect(run_candidates('aoc', 'packages', 'send', '')).to(eq([':hint <Hash> name*, workspace_id*, archived, bcc_recipients, …']))
         end
 
-        it 'proposes the end marker of a structure built with @:' do
-          expect(run_candidates('aoc', 'packages', 'send', '@:', '')).to(eq([':hint <path=value> name*, workspace_id*, archived, bcc_recipients, …']))
-          expect(run_candidates('aoc', 'packages', 'send', '@:', 'name=x', '')).to(eq(["END\tEnd of structure built with @:", ':']))
-          expect(run_candidates('aoc', 'packages', 'send', '@:STOP', 'name=x', '')).to(eq(["STOP\tEnd of structure built with @:", ':']))
+        it 'proposes the keys of a structure built with @:, required ones first, then its end marker' do
+          lines = run_candidates('aoc', 'packages', 'send', '@:', '')
+          expect(lines.first(2)).to(eq(["name=\tPackage name (required)", "workspace_id=\tThe ID of the workspace from which this package was sent (required)"]))
+          expect(lines).to(include(start_with("archived=\t"), start_with("recipients.0.\t")))
+          expect(lines).not_to(include(start_with('END')))
+          lines = run_candidates('aoc', 'packages', 'send', '@:', 'name=x', '')
+          expect(lines.first).to(eq("END\tEnd of structure built with @:"))
+          expect(lines).to(include(start_with("workspace_id=\t")))
+          expect(lines).not_to(include(start_with('name=')))
+          expect(run_candidates('aoc', 'packages', 'send', '@:', 'recipients.0.')).to(include(start_with("recipients.0.id=\t")))
+          expect(run_candidates('aoc', 'packages', 'send', '@:STOP', 'name=x', '').first).to(eq("STOP\tEnd of structure built with @:"))
+          # Without schema: end marker only
           expect(run_candidates('aoc', 'tier_restrictions', '--query=@:', 'a=b', '')).to(eq(["END\tEnd of structure built with @:", ':']))
           # Words of the structure are not arguments
           expect(run_candidates('aoc', 'packages', 'send', '@:', 'name=x', 'END', '')).to(eq([':files']))
+        end
+
+        it 'proposes the values of a key of a structure built with @:' do
+          expect(run_candidates('aoc', 'packages', 'send', '@:', 'archived=')).to(eq(['archived=true', 'archived=false', ':']))
+          expect(run_candidates('aoc', 'packages', 'send', '@:', 'name=')).to(eq([':hint <String> Package name']))
+        end
+
+        it 'proposes extended value modifiers, and the values they read' do
+          lines = run_candidates('--ts=@')
+          expect(lines).to(include("--ts=@json:\tDecode JSON", "--ts=@file:\tContent of local file", start_with("--ts=@:\t"), start_with("--ts=@preset:\t")))
+          expect(run_candidates('--ts=@json:')).to(include(start_with("--ts=@json:@file:\t")))
+          expect(run_candidates('--private-key=@file:')).to(eq([':files --private-key=@file:']))
+          expect(run_candidates('config', 'echo', '@json:@file:')).to(eq([':files @json:@file:']))
+          expect(run_candidates('--ts=@preset:')).to(include('--ts=@preset:mypreset'))
+          expect(run_candidates('--ts=@preset:mypreset.')).to(include('--ts=@preset:mypreset.url', '--ts=@preset:mypreset.username'))
+          expect(run_candidates('--password=@env:', env: {'COMPLETION_TEST_VAR' => 'x'})).to(include('--password=@env:COMPLETION_TEST_VAR'))
+          expect(run_candidates('--password=@val:@')).to(eq([":hint #{ExtendedValue.instance.description(:val)}"]))
+          # Argument not evaluated as extended value
+          expect(run_candidates('config', 'completion', 'words', '@')).to(eq([':hint <String>']))
+        end
+
+        it 'asks for local files or folders where a path is expected' do
+          expect(run_candidates('config', 'genkey', '')).to(eq([':files']))
+          expect(run_candidates('--pid-file=')).to(eq([':files --pid-file=']))
+          expect(run_candidates('--out.file=')).to(eq([':files --out.file=']))
+          expect(run_candidates('--temp.folder=')).to(eq([':folders --temp.folder=']))
+          # Destination of a download is local, of an upload remote
+          expect(run_candidates('server', 'download', '--to-folder', '')).to(eq([':folders']))
+          expect(run_candidates('server', 'upload', '--to-folder', '')).to(eq([':hint <String>']))
+          # Remote path
+          expect(run_candidates('server', 'ls', '')).to(eq([':hint <String>']))
+        end
+
+        it 'proposes presets, and their parameters' do
+          expect(run_candidates('-P', '')).to(include('mypreset'))
+          expect(run_candidates('config', 'preset', 'show', '')).to(include('mypreset'))
+          expect(run_candidates('config', 'preset', 'get', 'mypreset', '')).to(eq(%w[url username :]))
         end
       end
 
@@ -248,15 +315,46 @@ module Aspera
         end
 
         it 'completes the end marker of a structure built with @:, split on @ and :' do
-          expect(complete_bash(bash, 'ascli aoc packages send @: name=x ', ['ascli', 'aoc', 'packages', 'send', '@', ':', 'name', '=', 'x', ''])).to(eq(['END']))
+          expect(complete_bash(bash, 'ascli aoc packages send @: name=x E', %w[ascli aoc packages send @ : name = x E])).to(eq(['END']))
         end
 
         it 'displays a hint without inserting it' do
-          expect(complete_bash(bash, 'ascli config preset show ', ['ascli', 'config', 'preset', 'show', ''])).to(eq(['<identifier>', ' ']))
+          expect(complete_bash(bash, 'ascli node access_keys do ', ['ascli', 'node', 'access_keys', 'do', ''])).to(eq(['<identifier>', ' ']))
         end
 
         it 'completes local files where expected' do
           expect(complete_bash(bash, 'ascli server upload READ', %w[ascli server upload READ])).to(include('README.md'))
+        end
+
+        it 'completes local paths after the beginning of a word, split on = @ and :' do
+          expect(complete_bash(bash, 'ascli --private-key=@file:READ', %w[ascli --private-key = @ file : READ])).to(eq(['README.md']))
+          expect(complete_bash(bash, 'ascli --temp=li', %w[ascli --temp = li])).to(eq(['lib']))
+        end
+
+        it 'completes extended value modifiers and keys of structures' do
+          expect(complete_bash(bash, 'ascli --ts=@js', %w[ascli --ts = @ js])).to(eq(['json:']))
+          expect(complete_bash(bash, 'ascli aoc packages send @: arch', %w[ascli aoc packages send @ : arch])).to(eq(['archived=']))
+        end
+      end
+
+      describe 'Fish completion script', :fish do
+        fish = executable.call('fish')
+
+        it 'completes words, option values, extended value modifiers and local paths' do
+          skip('fish not found') if fish.nil?
+          # Activated as documented, then one line of completions per command line, with the cursor at the end, without descriptions
+          script = <<~FISH
+            ascli config completion fish | source
+            for line in 'ascli serv' 'ascli --format=js' 'ascli --ts=@js' 'ascli --private-key=@file:READ' 'ascli --temp=li'
+                # `string join` fails when given a single word
+                complete --do-complete "$line" | string replace -r '\\t.*' '' | string join ' '; or true
+            end
+          FISH
+          with_ascli_in_path do |env|
+            output, status = Open3.capture2e(env, fish, '--no-config', '-c', script, chdir: source_root)
+            expect(status).to(be_success, output)
+            expect(output.lines.map(&:chomp)).to(eq(['server', '--format=json --format=jsonpp', '--ts=@json:', '--private-key=@file:README.md', '--temp=lib/']))
+          end
         end
       end
 
@@ -269,7 +367,7 @@ module Aspera
           # Activated as documented, then one line of completions per command line, with the cursor at the end (the word completed is compared without case)
           script = <<~PS1
             ascli config completion powershell | Out-String | Invoke-Expression
-            foreach ($line in 'ascli conf', 'ascli config completion ', 'ascli config COMPL', 'ascli --format=js', 'ascli config preset show ', 'ascli --ts.dire', "ascli aoc packages send '@:' name=x ") {
+            foreach ($line in 'ascli conf', 'ascli config completion ', 'ascli config COMPL', 'ascli --format=js', 'ascli node access_keys do ', 'ascli --ts.dire', "ascli aoc packages send '@:' name=x ", "ascli config echo '@js", "ascli config echo '@file:READ", 'ascli --private-key=@file:READ') {
                 $matches = (TabExpansion2 -inputScript $line -cursorColumn $line.Length).CompletionMatches
                 ($matches.CompletionText -join ' ') + '|' + ($matches.ListItemText -join ' ')
             }
@@ -284,9 +382,14 @@ module Aspera
             expect(lines[3]).to(eq('--format=json --format=jsonpp|--format=json --format=jsonpp'))
             # Not changed, so that no file path is completed
             expect(lines[4]).to(eq(' |<identifier>'))
-            expect(lines[5]).to(eq('--ts.direction|--ts.direction'))
+            expect(lines[5]).to(eq('--ts.direction=|--ts.direction='))
             # Quoted word, as required for @: in PowerShell
-            expect(lines[6]).to(eq('END|END'))
+            expect(lines[6].split('|').first.split).to(include('END', 'workspace_id='))
+            # A word starting with @ is quoted: else it is splatting
+            expect(lines[7]).to(eq("'@json:'|@json:"))
+            # Local files after the beginning of the word
+            expect(lines[8]).to(eq("'@file:README.md'|README.md"))
+            expect(lines[9]).to(eq('--private-key=@file:README.md|README.md'))
           end
         end
       end

@@ -22,6 +22,10 @@ module Aspera
       # [Symbol, nil] `OptionSource` of current value, `nil` if never set
       attr_reader :source
       attr_reader :sensitive, :schema, :deprecation
+      # [String, nil] For a `Hash` option: key of a `String` value
+      attr_reader :shorthand
+      # [Symbol, nil] Values proposed by shell completion, one of `Complete::KINDS`
+      attr_reader :complete
       # [Array] List of allowed values (Symbols and specific values)
       attr_accessor :values
       # [String] Help section group name (set by OptionRegistry)
@@ -38,12 +42,13 @@ module Aspera
       # @param shorthand [String, nil] For a `Hash` option: a `String` value is stored as `{shorthand => value}`
       # @param deprecation [Hash, Deprecation, nil] Deprecation: `{last:, message:}`, see `Deprecation`
       # @param schema [String] Declaration of schema
+      # @param complete [Symbol, nil] Values proposed by shell completion, one of `Complete::KINDS`
       # `allowed`:
       # - `nil` No validation, so just a string
       # - `Class` The single allowed Class
       # - `Array<Class>` Multiple allowed classes
       # - `Array<Symbol>` List of allowed values
-      def initialize(option:, description: nil, allowed: Type::STRING, on_set: nil, shorthand: nil, deprecation: nil, schema: nil)
+      def initialize(option:, description: nil, allowed: Type::STRING, on_set: nil, shorthand: nil, deprecation: nil, schema: nil, complete: nil)
         Log.log.trace1 { "option: #{option}, allowed: #{allowed}" }
         @option = option
         @description = description
@@ -55,6 +60,8 @@ module Aspera
         @deprecation = Deprecation.create(deprecation)
         @schema = schema
         @shorthand = shorthand
+        Aspera.assert_values(complete, Complete::KINDS + [nil]) { "#{@option}: complete" }
+        @complete = complete
         @source = nil
         @value = nil
         Aspera.assert(on_set.nil? || on_set.respond_to?(:call)) { "#{@option}: on_set callback must respond to call" }

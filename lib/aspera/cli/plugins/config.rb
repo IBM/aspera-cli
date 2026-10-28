@@ -83,12 +83,12 @@ module Aspera
         DEFAULT_CHECK_NEW_VERSION_DAYS = 7
         private_constant :DEFAULT_CHECK_NEW_VERSION_DAYS
 
-        option :preset,             description: 'Load the named option preset from current config file',             short: 'P', on_set: :load_preset
+        option :preset,             description: 'Load the named option preset from current config file',             short: 'P', on_set: :load_preset, complete: :preset
         option :version_check_days, description: 'Period in days to check new version (zero to disable)',             allowed: Type::INTEGER, default: DEFAULT_CHECK_NEW_VERSION_DAYS
-        option :plugin_folder,      description: 'Folder where to find additional plugins',                           on_set: :add_plugin_folders
+        option :plugin_folder,      description: 'Folder where to find additional plugins',                           on_set: :add_plugin_folders, complete: :folder
         option :sdk_url,            description: 'Ascp: URL to get Aspera Transfer Executables',                      default: SpecialValues::DEF
         option :locations_url,      description: 'Ascp: URLs to get download locations of Aspera Transfer Daemon',   allowed: Type::STRING_ARRAY, default: Ascp::Installation.instance.transferd_urls, on_set: Ascp::Installation.instance.method(:transferd_urls=)
-        option :sdk_folder,         description: 'Ascp: Path to folder with ascp (or product with "product:")',      on_set: Ascp::Installation.instance.method(:sdk_folder=)
+        option :sdk_folder,         description: 'Ascp: Path to folder with ascp (or product with "product:")',      on_set: Ascp::Installation.instance.method(:sdk_folder=), complete: :folder
         option :smtp,               schema: Schema::Registry::SMTP_OPTIONS
         option :notify_to,          description: 'Email: Recipient for notification of transfers'
         option :notify_template,    description: 'Email: ERB template for notification of transfers'
@@ -115,24 +115,24 @@ module Aspera
           command :overview, description: 'Show all options from all presets'
           command :lookup,   description: 'Find preset matching URL and username'
           command :secure,   description: 'Move secrets to vault',
-            arguments: [{name: :config_name, mandatory: false}]
+            arguments: [{name: :config_name, mandatory: false, complete: :preset}]
           command :show,       description: 'Show a preset',
-            arguments: [{name: :name, type: :identifier}]
+            arguments: [{name: :name, type: :identifier, complete: :preset}]
           command :delete,     description: 'Delete a preset',
-            arguments: [{name: :name, type: :identifier}]
+            arguments: [{name: :name, type: :identifier, complete: :preset}]
           command :get,        description: 'Show a single parameter of a preset',
-            arguments: [{name: :name, type: :identifier}, {name: :param_name}]
+            arguments: [{name: :name, type: :identifier, complete: :preset}, {name: :param_name, complete: :preset_parameter}]
           command :unset,      description: 'Remove a parameter from a preset',
-            arguments: [{name: :name, type: :identifier}, {name: :param_name}]
+            arguments: [{name: :name, type: :identifier, complete: :preset}, {name: :param_name, complete: :preset_parameter}]
           command :set, description: 'Set a parameter in a preset',
-            arguments: [{name: :name, type: :identifier}, {name: :param_name},
+            arguments: [{name: :name, type: :identifier, complete: :preset}, {name: :param_name, complete: :preset_parameter},
                         {name: :param_value, type: nil}]
           command :initialize, description: 'Initialize a preset with a value',
-            arguments: [{name: :name, type: :identifier}, {name: :preset, type: Hash}]
+            arguments: [{name: :name, type: :identifier, complete: :preset}, {name: :preset, type: Hash}]
           command :update,     description: 'Update a preset with current option values',
-            arguments: [{name: :name, type: :identifier}]
+            arguments: [{name: :name, type: :identifier, complete: :preset}]
           command :ask,        description: 'Ask for option values interactively',
-            arguments: [{name: :name, type: :identifier},
+            arguments: [{name: :name, type: :identifier, complete: :preset},
                         {name: :option_names, multiple: true, interactive: true}]
         end
         command(
@@ -150,7 +150,7 @@ module Aspera
         command(
           :genkey, description: 'Generate a new RSA private key',
           arguments: [
-            {name: :private_key_path},
+            {name: :private_key_path, complete: :file},
             {name: :private_key_length, type: Integer, mandatory: false, default: OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH}
           ],
           action: lambda do |private_key_path:, private_key_length: OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH, **|
@@ -168,7 +168,7 @@ module Aspera
         command :download, description: 'Download a file from a URL',
           arguments: [
             {name: :file_url},
-            {name: :file_dest, mandatory: false}
+            {name: :file_dest, mandatory: false, complete: :file}
           ]
         command :tokens, description: 'Manage OAuth tokens'
         command :plugins, description: 'Manage CLI plugins'
@@ -316,7 +316,7 @@ module Aspera
           command :create, description: 'Create a new plugin skeleton file',
             arguments: [
               {name: :name},
-              {name: :folder, mandatory: false}
+              {name: :folder, mandatory: false, complete: :folder}
             ]
         end
 
@@ -369,7 +369,7 @@ module Aspera
             end
           )
           command :status,  description: 'Show status of an async transfer job',
-            arguments: [{name: :job_id}]
+            arguments: [{name: :job_id, complete: :transfer_job}]
           command :cleanup, description: 'Remove completed/failed/cancelled transfer entries'
         end
 

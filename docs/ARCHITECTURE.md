@@ -199,6 +199,7 @@ All plugins declare their command tree using a class-level DSL defined in `Base`
 | `lookup` | `Symbol \| Proc \| nil` | Percent-selector resolver for `:identifier`: `send(lookup, field, value, **ctx)` or `instance_exec(field, value, **ctx, &lookup)` |
 | `allowed` | `Array<Symbol> \| nil` | Allowed values (accept list) |
 | `interactive` | `Boolean` | Prompt for the value when missing, for this argument only (`options.with_interactive`): an action that prompts for other values uses `options.with_interactive` explicitly |
+| `complete` | `Symbol \| nil` | Values proposed by shell completion, one of `Complete::KINDS`: `:file`, `:folder` (local paths), `:destination_folder` (local folder unless the command sends files), `:preset`, `:preset_parameter`, `:transfer_job`. Also a parameter of `option`, and `x-cli-complete` (`file`, `folder`) for a key of a schema |
 
 Arguments already present in `ctx` are not read from the command line: this is how a caller (e.g. a mount seed) or a leaf `setup:` provides a value. If the next argument on the command line is that same value, or `ALL`, it is skipped (e.g. `faspex5 packages receive ALL` with a public link to a package): other arguments are left for the following declared arguments, or for `transfer_paths:`.
 
@@ -221,7 +222,7 @@ end
 - the parent of each `commands_under` is declared
 - each leaf has an action (explicit, or method `action_<path>`) accepting any keyword (`**`)
 - the methods named by `setup:`, `condition:`, `lookup:` and mount `instance:` exist
-- arguments are readable: no mandatory argument after an optional one, no argument after a `multiple: true` one, `lookup:` only with `type: :identifier`
+- arguments are readable: no mandatory argument after an optional one, no argument after a `multiple: true` one, `lookup:` only with `type: :identifier`, `complete:` one of `Complete::KINDS`
 - an alias designates a single command, and does not hide a sibling command
 - mounts are consistent (see [Mounting another plugin's commands](#mounting-another-plugins-commands))
 

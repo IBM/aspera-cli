@@ -322,6 +322,7 @@ module Aspera
           # Rule: an argument following an optional one, or one that takes all remaining arguments, is never read reliably
           raise ArgumentError, "#{where}: mandatory after optional #{previous.name}" if previous && arg.mandatory && !previous.mandatory
           raise ArgumentError, "#{where}: after #{previous.name}, which takes all remaining arguments" if previous&.multiple.eql?(true)
+          raise ArgumentError, "#{where}: complete: #{arg.complete.inspect} is not one of #{Complete::KINDS.inspect}" unless arg.complete.nil? || Complete::KINDS.include?(arg.complete)
           unless arg.lookup.nil?
             # Rule: the percent-selector lookup is only used for identifiers
             raise ArgumentError, "#{where}: lookup: requires type: :identifier" unless arg.type.eql?(:identifier)

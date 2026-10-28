@@ -92,6 +92,7 @@ components:
       properties:
         folder:
           type: string
+          x-cli-complete: folder
           description: >-
             Folder for temporary files, e.g. certificate for WSS transfers, logs of `transferd`.
             `@sys`: temporary folder of the system for the current user (Ruby `Etc.systmpdir`).
@@ -547,6 +548,7 @@ components:
           example: dev-only-token
         token_file:
           type: string
+          x-cli-complete: file
           description: >-
             File with the authentication token (e.g. written and renewed by Vault Agent).
             It is read again when modified.
@@ -564,6 +566,7 @@ components:
               description: Secret ID (if the role requires one).
             secret_id_file:
               type: string
+              x-cli-complete: file
               description: File with the Secret ID, instead of `secret_id`.
             mount:
               type: string
@@ -576,6 +579,7 @@ components:
           description: Namespace (Vault Enterprise).
         ca_file:
           type: string
+          x-cli-complete: file
           description: File with the CA certificates that verify the certificate of the server (HTTPS).
     VaultSystemOptions:
       type: object
@@ -635,6 +639,7 @@ components:
           enum: [file]
         name:
           type: string
+          x-cli-complete: file
           description: >-
             Path to the encrypted vault file.
             Relative paths are resolved from the configuration folder.
@@ -808,21 +813,25 @@ components:
           default: http://localhost:8080
         cert:
           type: string
+          x-cli-complete: file
           description: >-
             Path to the TLS certificate file.
             Accepted formats: PEM (`.pem`) or PKCS12 (`.p12` / `.pfx`).
           example: /path/to/cert.pem
         key:
           type: string
+          x-cli-complete: file
           description: >-
             Path to the PEM private key file, or the PKCS12 passphrase when `cert` is a `.p12`/`.pfx` file.
           example: /path/to/key.pem
         chain:
           type: string
+          x-cli-complete: file
           description: Path to the PEM certificate chain file (appended as extra chain certificates).
           example: /path/to/chain.pem
         docroot:
           type: string
+          x-cli-complete: folder
           description: >-
             Local folder of the node files.
             Paths of `/files/browse` and local paths of transfers (sources of `send`, destination of `receive`) are relative to it, and confined in it.
@@ -1038,6 +1047,7 @@ components:
           default: data
         file:
           type: string
+          x-cli-complete: file
           description: Destination file for results (use `-` for stdout).
         fields:
           description: >-
@@ -1091,17 +1101,20 @@ components:
           default: http://localhost:8080
         cert:
           type: string
+          x-cli-complete: file
           description: >-
             Path to the TLS certificate file.
             Accepted formats: PEM (`.pem`) or PKCS12 (`.p12` / `.pfx`).
           example: /path/to/cert.pem
         key:
           type: string
+          x-cli-complete: file
           description: >-
             Path to the PEM private key file, or the PKCS12 passphrase when `cert` is a `.p12`/`.pfx` file.
           example: /path/to/key.pem
         chain:
           type: string
+          x-cli-complete: file
           description: Path to the PEM certificate chain file (appended as extra chain certificates).
           example: /path/to/chain.pem
     Faspex4GatewayOptions:
@@ -1167,6 +1180,7 @@ components:
             chain: {}
             script_folder:
               type: string
+              x-cli-complete: folder
               description: >-
                 Folder containing the post-processing scripts.
                 The URL path (after the base path) is appended to this folder to locate the script to execute.

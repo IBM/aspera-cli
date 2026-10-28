@@ -3301,19 +3301,34 @@ ascli server <Tab>                     # sub-commands and options of plugin: upl
 ascli aoc admin <Tab>                  # sub-commands at any depth: user, node, ...
 ascli server ls --u<Tab>               # options, after any command: --url, --username, ...
 ascli --format=<Tab>                   # values of option: --format=json, --format=table, ...
-ascli --ts.<Tab>                       # keys of option, from its schema: --ts.direction, --ts.target_rate_kbps, ...
+ascli --ts.<Tab>                       # keys of option, from its schema: --ts.direction=, --ts.target_rate_kbps=, ...
+ascli --out.t<Tab>                     # a sub-structure is followed by a dot: --out.table.
 ascli --ts.direction=<Tab>             # values of key: --ts.direction=send, --ts.direction=receive
+ascli --transfer=<Tab>                 # plain value of option, key agent: --transfer=direct, --transfer=node, ...
+ascli faspex5 admin accounts list --query.<Tab> # keys of --query, from the command: --query.limit=, ...
 ascli server upload <Tab>              # local files
-ascli config preset show <Tab>         # type of expected value, not inserted: <identifier>
+ascli server download --to-folder <Tab> # local folders
+ascli config genkey <Tab>              # local files, where a local path is expected
+ascli --temp.folder=<Tab>              # local folders, for a key of option
+ascli --ts=@<Tab>                      # extended value modifiers: @json:, @file:, @preset:, @:, ...
+ascli --private-key=@file:<Tab>        # local files, after @file: or @path:
+ascli -P <Tab>                         # presets: also for config preset show, @preset:
+ascli config preset get myconf <Tab>   # parameters of preset: url, username, ...
+ascli config transfer status <Tab>     # asynchronous transfer jobs
+ascli node access_keys do <Tab>        # type of expected value, not inserted: <identifier>
 ascli aoc packages send <Tab>          # type, and keys of structure (required ones with *): <Hash> name*, workspace_id*, ...
-ascli aoc packages send @: name=x <Tab> # end marker of structure built with @: END
+ascli aoc packages send @: <Tab>       # keys of structure built with @:, from its schema: name=, workspace_id=, recipients.0., ...
+ascli aoc packages send @: archived=<Tab> # values of key: archived=true, archived=false
+ascli aoc packages send @: name=x <Tab> # end marker of structure built with @: END, and the other keys
 ```
 
-Zsh, Fish and PowerShell also display the description of commands and options.
+No space is inserted after a word that continues: `key=`, `key.`, `@file:`, or a folder.
+Zsh, Fish and PowerShell also display the description of commands, options, keys and extended value modifiers.
+In PowerShell, a word starting with `@` is inserted with quotes (e.g. `'@file:README.md'`), as required by PowerShell.
 Zsh lists options once `-` is typed (zsh style `prefix-needed`).
 The type of an expected value is displayed by Bash and Zsh, and by PowerShell in the list of `MenuComplete` (`Ctrl+Space`).
 
-The scripts call `ascli config completion candidates -- [<word>...] <current word>`, which lists the candidates for the word at the cursor, with their description, followed by a directive for the shell.
+The scripts call `ascli config completion candidates -- [<word>...] <current word>`, which lists the candidates for the word at the cursor, with their description, followed by a directive for the shell: `:files` or `:folders` (local paths, followed by the beginning of the word that is not part of the path, if any, e.g. `:files --private-key=@file:`), `:hint <text>` or `:`.
 The words are not evaluated (e.g. `@env:` is not replaced).
 The command `ascli config completion words [<word>...]` lists the words that can follow the given ones.
 It can be used directly to inspect available commands:

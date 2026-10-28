@@ -44,7 +44,7 @@ module Aspera
       option :out,          description: "Output rendering options (dot-notation: #{OUT_SUB_OPTIONS})", schema: Schema::Registry::OUT_OPTIONS
       option :display,      description: 'Output only some information', allowed: DISPLAY_LEVELS, default: :data, deprecation: {last: '4.27.0', message: 'use --out.level'}
       option :format,       description: 'Output format (also: --out.format)', allowed: DISPLAY_FORMATS, default: :table
-      option :output,       description: 'Destination for results', deprecation: {last: '4.27.0', message: 'use --out.file'}
+      option :output,       description: 'Destination for results', deprecation: {last: '4.27.0', message: 'use --out.file'}, complete: :file
       option :fields,       description: "Comma separated list of: fields, or #{SpecialValues::ALL}, or #{SpecialValues::DEF} (also: --out.fields)", allowed: [String, Array, Regexp, Proc], default: SpecialValues::DEF
       option :select,       description: 'Select only some items in lists: column, value (also: --out.select)', allowed: [Hash, Proc]
       option :table_style,  description: '(Table) Display style',                                                                             allowed: [Hash], deprecation: {last: '4.27.0', message: 'use --out.table'}

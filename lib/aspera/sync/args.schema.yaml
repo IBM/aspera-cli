@@ -10,6 +10,7 @@ type: object
 properties:
   alt_logdir:
     type: string
+    x-cli-complete: folder
     x-cli-option: true
   watchd:
     type: string
@@ -37,12 +38,14 @@ properties:
           x-cli-option: true
         local_dir:
           type: string
+          x-cli-complete: folder
           x-cli-option: true
         remote_dir:
           type: string
           x-cli-option: true
         local_db_dir:
           type: string
+          x-cli-complete: folder
           x-cli-option: true
         remote_db_dir:
           type: string

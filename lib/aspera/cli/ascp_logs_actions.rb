@@ -8,7 +8,7 @@ module Aspera
   module Cli
     # Mixin for Config plugin: commands of `ascp logs`, analysis of `ascp` log files (sessions, statistics and diagnostics)
     module AscpLogsActions
-      LOG_FILES = [{name: :paths, description: 'Log files, or folders with log files', multiple: true}].freeze
+      LOG_FILES = [{name: :paths, description: 'Log files, or folders with log files', multiple: true, complete: :file}].freeze
       # Command => description, and default fields
       LISTS = {
         sessions:          ['Sessions, with diagnostics',                                           %w[pid session user direction peer status error error_category start transmitted_bytes average_rate loss_rate diagnostics]],

@@ -216,11 +216,11 @@ module Aspera
             ]
           command :import,     description: 'Import a workflow from a file created by `workflows export`, local problems are reported as warnings (see `check_import`)',
             arguments: [
-              {name: :file_path},
+              {name: :file_path, complete: :file},
               {name: :import, type: Hash, mandatory: false, default: {}, schema: 'opts:components.schemas.OrchestratorWorkflowImport'}
             ]
           command :check_import, description: 'Check a workflow file (no access to Orchestrator): rules that Orchestrator does not check on import, but that make the workflow fail to publish or to run',
-            arguments: [{name: :file_path}]
+            arguments: [{name: :file_path, complete: :file}]
           command :find_constraints, description: 'List the conflicts and missing plugins of a workflow file present on the Orchestrator host, before `import_with_constraints`',
             arguments: [
               {name: :filename},

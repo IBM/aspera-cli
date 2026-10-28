@@ -94,7 +94,7 @@ module Aspera
       def setup_main_folder
         @context.options.declare(
           :home, description: 'Home folder for tool',
-          on_set: @context.method(:main_folder=),
+          on_set: @context.method(:main_folder=), complete: :folder,
           default: default_app_main_folder(app_name: Info::CMD_NAME)
         )
         @context.options.parse_options!
@@ -111,7 +111,7 @@ module Aspera
       # Declare + parse :config_file option: sets context.presets + context.http_config
       def setup_config_file
         @context.options.declare(
-          :config_file, description: 'Path to YAML file with preset configuration',
+          :config_file, description: 'Path to YAML file with preset configuration', complete: :file,
           default: File.join(@context.main_folder, DEFAULT_CONFIG_FILENAME)
         )
         @context.options.parse_options!
@@ -126,8 +126,8 @@ module Aspera
         @context.options.declare(:vault_password, description: 'Vault password')
         # Register @preset and @vault handlers BEFORE parse_options! so that
         # values like --secret=@preset:name are correctly evaluated at parse time.
-        ExtendedValue.instance.on(EXTEND_PRESET) { |v| @context.presets.by_name(v) }
-        ExtendedValue.instance.on(EXTEND_VAULT, &vault_value_cb)
+        ExtendedValue.instance.on(EXTEND_PRESET, description: 'Option preset, or its parameter: <name>[.<parameter>]') { |v| @context.presets.by_name(v) }
+        ExtendedValue.instance.on(EXTEND_VAULT, description: 'Secret from vault: <label>.<field>', &vault_value_cb)
         @context.options.parse_options!
         # Load global config default preset (equivalent of add_plugin_default_preset(:config))
         default_config_name = @context.presets.plugin_default_name(CONF_GLOBAL_SYM)

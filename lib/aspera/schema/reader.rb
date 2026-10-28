@@ -155,6 +155,7 @@ module Aspera
       #   description [String]  human description (may contain Markdown **bold** / `code`)
       #   default     [Object]  (optional) default value as native Ruby type
       #   enum        [Array]   (optional) list of allowed string values
+      #   complete    [String]  (optional) kind of value proposed by shell completion (`x-cli-complete`), e.g. `file`
       #
       # @return [Array<Hash>]
       def to_rows
@@ -204,6 +205,7 @@ module Aspera
           }
           row['default'] = node['default'] if node.key?('default')
           row['enum']    = node['enum']    if node.key?('enum')
+          row['complete'] = node['x-cli-complete'] if node.key?('x-cli-complete')
           rows << row
           # Recurse into nested object or array-of-objects (`type` is a list for a nullable value)
           types = Array(node['type'])

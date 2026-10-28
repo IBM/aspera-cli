@@ -6,6 +6,8 @@ Released: [Place date of release here]
 
 ### New Features
 
+* `ascli`:
+  * Shell completion proposes the keys of a structure built with `@:` from its schema (followed by `=`, or `.` for a sub-structure), then their values, and the end marker; the values of keys given with an option `--name.key=`; extended value modifiers (`@file:`, `@json:`, ...); local files and folders where a local path is expected (e.g. `config genkey`, `--to-folder` of a download, `--temp.folder`, `@file:`); presets (`-P`, `config preset`, `@preset:`) and their parameters; asynchronous transfer jobs; the keys of `--query` from the schema of the command; agents of `--transfer=`. No space is inserted after a word that continues (`key=`, `key.`, `@file:`).
 * `config`:
   * New command `ascp logs`: analysis of `ascp` log files (`ascp` 4.0 and later): statistics, sessions with diagnostics, multi-session transfers, rates per period, errors by peer, transferred files, licenses. Diagnostics have an identifier and a severity, and include error category with hint, retries of failed sessions, parameters set by the server, efficiency, and the limit of the rate on the sender. Logs of client and server are joined by session. New option `ascp_logs` (dot-notation: `period`, `zero_bytes`, `mtu`, `resolve`). Command `ascp logs records` gives log lines parsed into records (`samples`, `sessions`, `transfers`), with the field names of the log, for use with `--out.query`, and `ascp logs fields` describes their fields.
   * `ascp errors`: optional argument `session` lists error codes of sessions (`errcode` in logs), with category and corresponding error of the management port (default: `management`).
@@ -23,6 +25,7 @@ Released: [Place date of release here]
 
 ### Breaking Changes
 
+* `config completion candidates`: the directive `:files` may be followed by the beginning of the word that is not part of the path (e.g. `:files --to-folder=`), and the new directive `:folders` completes folders only: a completion script saved in a file must be saved again (see manual). Keys of an option are proposed with a trailing `=` or `.`.
 * **library**: Modules about secrets are in `Aspera::Secret` (files `aspera/secret/...`): `SecretHider` is renamed `Secret::Hider`, `SecretStrength` is renamed `Secret::Strength`, and `Keychain` (backends of option `vault`) is renamed `Secret::Store`.
 
 ## 4.28.0

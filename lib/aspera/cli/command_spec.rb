@@ -25,6 +25,7 @@ module Aspera
     # @!attribute allowed     [Array<Symbol>, nil]        Allowed Symbol values; when set, type is forced to Symbol and accept_list is applied
     # @!attribute interactive [Boolean]                   When true, prompts for this argument (only) when no CLI args are provided
     # @!attribute raw         [Boolean]                   When true, the value is not evaluated as extended value (e.g. `@env:`)
+    # @!attribute complete    [Symbol, nil]               Values proposed by shell completion, one of `Complete::KINDS` (e.g. `:file`)
     ArgumentSpec = Struct.new(
       :name,
       :description,
@@ -38,6 +39,7 @@ module Aspera
       :allowed,
       :interactive,
       :raw,
+      :complete,
       keyword_init: true
     ) do
       def initialize(**kwargs)
@@ -80,6 +82,7 @@ module Aspera
     # @!attribute shorthand   [String, nil]          For a `Hash` option: a `String` value is stored as `{shorthand => value}`
     # @!attribute deprecation [Hash, nil]            Forwarded to options.declare as deprecation: `{last:, message:}`
     # @!attribute schema      [String, nil]          JSON schema name; also derives description when nil
+    # @!attribute complete    [Symbol, nil]          Values proposed by shell completion, one of `Complete::KINDS` (e.g. `:file`)
     OptionSpec = Struct.new(
       :name,
       :description,
@@ -90,6 +93,7 @@ module Aspera
       :shorthand,
       :deprecation,
       :schema,
+      :complete,
       keyword_init: true
     ) do
       # Declare this option on a parser, resolving the `on_set` callback.
@@ -106,7 +110,8 @@ module Aspera
           on_set:      resolved_on_set(target),
           shorthand:   shorthand,
           deprecation: deprecation,
-          schema:      schema
+          schema:      schema,
+          complete:    complete
         )
       end
 

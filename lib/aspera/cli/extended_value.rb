@@ -123,18 +123,42 @@ module Aspera
           zlib:   lambda { |i| Zlib::Inflate.inflate(i) },
           extend: lambda { |i| ExtendedValue.instance.evaluate_extend(i) }
         }
+        # Descriptions of handlers, for shell completion
+        # @type [Hash{Symbol => String}]
+        @descriptions = {
+          val:    'Value as is: modifiers on the right are not evaluated',
+          base64: 'Decode Base64',
+          csvt:   'Decode titled CSV: Array of Hash',
+          env:    'Value of environment variable',
+          file:   'Content of local file',
+          uri:    'Content of URL: http:, https:, data:, file:',
+          json:   'Decode JSON',
+          lines:  'Split lines: Array',
+          list:   'Split on first character: Array',
+          none:   'Null value',
+          path:   'Local path, with ~ expanded',
+          re:     'Regular expression',
+          ruby:   'Evaluate Ruby code',
+          s:      'Convert to String',
+          secret: 'Ask secret, with prompt',
+          stdin:  'Read standard input: empty, bin or chomp',
+          yaml:   'Decode YAML',
+          zlib:   'Decompress zlib',
+          extend: 'Evaluate embedded @<modifier>:<value>@'
+        }
         @regex_single = nil
-        @regex_extend = nil
+        @regex_inner = nil
         @default_decoder = nil
         update_regex
       end
 
       # Update the Regex to match an extended value based on @handlers
-      # Anchored on the whole value (`\A`, `\z`), not on lines: a multi-line value is extended only if it starts with a modifier.
+      # Single: anchored on the whole value (`\A`, `\z`), not on lines: a multi-line value is extended only if it starts with a modifier.
+      # Inner: an extended value embedded in a text, for `@extend:`
       def update_regex
-        handler_regex = "#{MARKER_START}(#{modifiers.join('|')})#{MARKER_END}"
+        handler_regex = "#{MARKER_START}(#{Regexp.union(modifiers.map(&:to_s)).source})#{MARKER_END}"
         @regex_single = Regexp.new("\\A#{handler_regex}(.*)\\z", Regexp::MULTILINE)
-        @regex_extend = Regexp.new("\\A(.*)#{handler_regex}([^#{MARKER_IN_END}]*)#{MARKER_IN_END}(.*)\\z", Regexp::MULTILINE)
+        @regex_inner = Regexp.new("#{handler_regex}([^#{MARKER_IN_END}]*)#{MARKER_IN_END}")
       end
 
       public
@@ -151,12 +175,19 @@ module Aspera
       # List of Extended Value methods
       def modifiers; @handlers.keys; end
 
-      # Add a new handler
-      def on(name, &block)
+      # @param name [Symbol] Extended Value method
+      # @return [String, nil] description of the method, for shell completion
+      def description(name) = @descriptions[name]
+
+      # Add a new handler, or replace one
+      # @param name        [Symbol]      method, used as `@<name>:`
+      # @param description [String, nil] description, for shell completion; `nil` keeps the current one
+      def on(name, description: nil, &block)
         Aspera.assert_type(name, Symbol) { 'name' }
         Aspera.assert(block) { "block required when registering handler for #{name}" }
         Log.log.debug { "Setting handler for #{name}" }
         @handlers[name] = block
+        @descriptions[name] = description unless description.nil?
         update_regex
       end
 
@@ -198,17 +229,18 @@ module Aspera
       end
 
       # Find inner extended values
+      # Evaluated values are inserted as is: not evaluated again
       # Only used in above lambda
       def evaluate_extend(value)
-        while (m = value.match(@regex_extend))
-          sub_value = "@#{m[2]}:#{m[3]}"
+        value.gsub(@regex_inner) do
+          m = Regexp.last_match
+          sub_value = "@#{m[1]}:#{m[2]}"
           Log.log.debug { "evaluating #{sub_value}" }
           sub_value = evaluate(sub_value, context: 'composite extended value')
           # In a text, a secret is not the whole value
           Security.instance.check_secret_processing('@extend') { Secret::Hider.instance.contains_secret?(sub_value) }
-          value = "#{m[1]}#{sub_value}#{m[4]}"
+          sub_value.to_s
         end
-        return value
       end
       # marker "@"
       MARKER_START = '@'

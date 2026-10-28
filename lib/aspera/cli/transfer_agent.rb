@@ -46,7 +46,7 @@ module Aspera
       extend OptionDeclarator
 
       option :ts,            description: 'Override transfer spec values', schema: Schema::Registry::TRANSFER_SPEC, on_set: :user_transfer_spec=
-      option :to_folder,     description: 'Destination folder for transferred files'
+      option :to_folder,     description: 'Destination folder for transferred files', complete: :destination_folder
       option :sources,       description: "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})",               default: FILE_LIST_FROM_ARGS
       option :src_type,      description: 'Type of file list',                                                                        allowed: %i[list pair], default: :list
       option :transfer,      description: 'Transfer agent type, or agent parameters with optional agent key',                         allowed: [Hash, String], shorthand: 'agent', schema: Schema::Registry::TRANSFER_AGENT_OPTIONS
