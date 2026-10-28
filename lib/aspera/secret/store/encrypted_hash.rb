@@ -25,19 +25,109 @@ module Aspera
         KDF_SALT_BYTES = 16
         private_constant :LEGACY_CIPHER_NAME, :DEFAULT_CIPHER_NAME, :FILE_TYPE, :FILE_KEYS, :FILE_KEYS_KDF,
           :KDF_ITERATIONS, :KDF_DIGEST, :KDF_SALT_BYTES
+        REFERENCE_PARAMETERS = %i[file password_file].freeze
 
-        def initialize(file:, password:)
+        # One of `password` or `password_file` opens the file
+        # @param file          [String]      Vault file
+        # @param password      [String, nil] Password of vault file
+        # @param password_file [String, nil] File with password of vault file: the vault file is read when used, and again when it, or the password file, is modified
+        def initialize(file:, password: nil, password_file: nil)
           super()
           Aspera.assert_type(file, String) { 'path to vault file' }
+          Aspera.assert([password, password_file].compact.size.eql?(1)) { 'vault file: one of password or password_file is required' }
           @path = file
-          Log.dump(:vault_file, @path)
+          @password_file = password_file
+          # Modification times of vault file and password file, when read with password file
+          @mtimes = nil
+          @lock = Mutex.new
+          Log.dump(:vault_file, File.expand_path(@path))
+          load_file(password) unless password.nil?
+        end
+
+        def info
+          return {
+            file: @path
+          }
+        end
+
+        def all
+          result = []
+          secrets.each do |label, values|
+            normal = values.symbolize_keys
+            normal[:label] = label
+            CONTENT_KEYS.each { |k| normal[k] = '' unless normal.key?(k) }
+            result.push(normal)
+          end
+          return result
+        end
+
+        # set a secret
+        # @param options [Hash] with keys :label, :username, :password, :url, :description
+        def set(options)
+          validate_set(options)
+          label = options.delete(:label)
+          assert_new_label(label)
+          secrets[label] = options.symbolize_keys
+          save
+        end
+
+        def get(label:, exception: true)
+          Aspera.assert(secrets.key?(label)) { "Label not found: #{label}" } if exception
+          result = secrets[label].clone
+          result[:label] = label if result.is_a?(Hash)
+          return result
+        end
+
+        def delete(label:)
+          Aspera.assert(secrets.key?(label)) { "Label not found: #{label}" }
+          secrets.delete(label)
+          save
+        end
+
+        def change_password(password)
+          secrets
+          # Generate new KDF params so a password change also re-salts the vault
+          # (and migrates a legacy vault to PBKDF2)
+          @legacy_key = false
+          @kdf_params = nil
+          @cipher = cipher(password)
+          save
+        end
+
+        # Modification time of vault file, when read with password file
+        def read_reference(ref)
+          super.merge(updated_time: @mtimes&.first)
+        end
+
+        private
+
+        # @return [Hash] Secrets: label → fields
+        def secrets
+          return @all_secrets if @password_file.nil?
+          @lock.synchronize do
+            mtimes = [@path, @password_file].map { |f| File.mtime(f) }
+            unless mtimes.eql?(@mtimes)
+              load_file(Secret.read_file(@password_file))
+              @mtimes = mtimes
+            end
+          end
+          @all_secrets
+        rescue SystemCallError => e
+          raise Error, e.message
+        rescue OpenSSL::Cipher::CipherError, Psych::Exception
+          # Psych: rarely, a wrong key gives valid padding, then garbage
+          raise Error, "cannot decrypt #{@path} (password?)"
+        end
+
+        # Read and decrypt vault file, if it exists
+        # @param password [String] Password of vault file
+        def load_file(password)
           @all_secrets = {}
           @cipher_name = DEFAULT_CIPHER_NAME
           @kdf_params = nil
           # true when the vault was created by v4.26.0 (password padded with zeros, no KDF)
           @legacy_key = false
           vault_encrypted_data = nil
-          Log.dump(:vault_file, File.expand_path(@path))
           if File.exist?(@path)
             vault_file = File.read(@path)
             if vault_file.start_with?('---')
@@ -61,57 +151,6 @@ module Aspera
           @cipher = cipher(password)
           @all_secrets = Yaml.safe_load(@cipher.decrypt(vault_encrypted_data)) || {} if !vault_encrypted_data.nil?
         end
-
-        def info
-          return {
-            file: @path
-          }
-        end
-
-        def all
-          result = []
-          @all_secrets.each do |label, values|
-            normal = values.symbolize_keys
-            normal[:label] = label
-            CONTENT_KEYS.each { |k| normal[k] = '' unless normal.key?(k) }
-            result.push(normal)
-          end
-          return result
-        end
-
-        # set a secret
-        # @param options [Hash] with keys :label, :username, :password, :url, :description
-        def set(options)
-          validate_set(options)
-          label = options.delete(:label)
-          assert_new_label(label)
-          @all_secrets[label] = options.symbolize_keys
-          save
-        end
-
-        def get(label:, exception: true)
-          Aspera.assert(@all_secrets.key?(label)) { "Label not found: #{label}" } if exception
-          result = @all_secrets[label].clone
-          result[:label] = label if result.is_a?(Hash)
-          return result
-        end
-
-        def delete(label:)
-          Aspera.assert(@all_secrets.key?(label)) { "Label not found: #{label}" }
-          @all_secrets.delete(label)
-          save
-        end
-
-        def change_password(password)
-          # Generate new KDF params so a password change also re-salts the vault
-          # (and migrates a legacy vault to PBKDF2)
-          @legacy_key = false
-          @kdf_params = nil
-          @cipher = cipher(password)
-          save
-        end
-
-        private
 
         # Minimal cipher wrapper using OpenSSL, compatible with the SymmetricEncryption
         # binary format: a 6-byte header "@EnC\x00\x00" followed by AES ciphertext

@@ -777,19 +777,24 @@ presets:
 
 ### Secret Management
 
-**Directory**: [`lib/aspera/secret/store/`](../lib/aspera/secret/store/) (selected by `Secret::Store::Factory`, managed by `VaultManager`)
+**Directory**: [`lib/aspera/secret/`](../lib/aspera/secret/), module `Secret`: hiding of secrets in output (`Hider`), strength of secrets (`Strength`), stores of secrets (`Store`), secret references (`Reference`, `Resolver`).
 
-- **file**: Built-in encrypted hash
-- **system**: macOS Keychain
-- **vault**: HashiCorp Vault (authentication by `token`, `token_file` or `approle`, own `Vault::Client`)
-- **1password**: 1Password (API or CLI)
+**Stores** ([`secret/store/`](../lib/aspera/secret/store/)): subclasses of `Secret::Store::Base`, used in two ways:
 
-**Secret references** ([`secret/reference.rb`](../lib/aspera/secret/reference.rb), [`secret/resolver.rb`](../lib/aspera/secret/resolver.rb), [`secret/ref_store/`](../lib/aspera/secret/ref_store/)): library for applications that store a reference instead of a secret (e.g. Orchestrator), not used by `ascli` options.
+- Option `vault` (selected by `Secret::Store::Factory`, managed by `VaultManager`): management by label (`get`, `set`, `delete`, `all`)
+  - **file**: Built-in encrypted hash
+  - **system**: macOS Keychain
+  - **vault**: HashiCorp Vault (authentication by `token`, `token_file` or `approle`, own `Vault::Client`)
+  - **1password**: 1Password (API or CLI)
+- Secret references (selected by `Secret::Resolver`): read by reference (`check_reference`, `read_reference`), parameters limited to `REFERENCE_PARAMETERS`
+  - **file**: `EncryptedHash` with `password_file`, read again when the file or the password file is modified
+  - **vault**: `HashicorpVault`, KV v2 (mount, version), `allowed_prefixes`
+
+**Secret references** ([`secret/reference.rb`](../lib/aspera/secret/reference.rb), [`secret/resolver.rb`](../lib/aspera/secret/resolver.rb)): library for applications that store a reference instead of a secret (e.g. Orchestrator), not used by `ascli` options.
 
 - `Secret.parse_reference`: `secret://<store>/<path>[?<options>][#<field>]` into a `Reference`
-- `Secret::Resolver`: named stores from a configuration (`Hash`), `resolve` (value, TTL cache), `metadata` (version, time, no value), `invalidate`; errors give the reference and the reason, never a value; values are declared to `Secret::Hider`
-- `Secret::RefStore::Base` (`check!`, `fetch`, `metadata`), `RefStore::Vault` (KV v2 with `Secret::Store::HashicorpVault`, `allowed_prefixes`), `RefStore::EncryptedFile` (`Secret::Store::EncryptedHash`, read again when modified); the application adds types with `Resolver.register_type`
-- Bootstrap secrets of stores are read from files (`*_file` keys, `Secret.read_file`), never in the configuration
+- `Secret::Resolver`: named stores from a configuration (`Hash`), `resolve` (value, TTL cache), `metadata` (version, time, no value), `invalidate`; errors give the reference and the reason, never a value; values are declared to `Secret::Hider`; the application adds types with `Resolver.register_type` (a subclass of `Store::Base` with `REFERENCE_PARAMETERS`)
+- Bootstrap secrets of stores are read from files (`*_file` keys, `Secret.read_file`), never in the configuration: other parameters are refused
 
 ## Error Handling
 

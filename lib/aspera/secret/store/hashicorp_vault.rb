@@ -20,8 +20,23 @@ module Aspera
         # The AppRole token is renewed after this part of its lease
         RENEW_RATIO = 2.0 / 3
         HTTP_FORBIDDEN = 403
+        # Invalid segments of path of reference
+        INVALID_SEGMENTS = ['', '.', '..'].freeze
 
-        private_constant :STORE_PATH, :APPROLE_KEYS, :APPROLE_MOUNT, :RENEW_RATIO, :HTTP_FORBIDDEN
+        private_constant :STORE_PATH, :APPROLE_KEYS, :APPROLE_MOUNT, :RENEW_RATIO, :HTTP_FORBIDDEN, :INVALID_SEGMENTS
+
+        # Reference: `secret://<store>/<mount>/<path>#<field>` in a KV v2 secrets engine, options: `version=<n>`, `mount=<mount>` (when the mount contains `/`).
+        # Authentication by `token_file` or `approle` (with `secret_id_file`): no secret in parameters.
+        REFERENCE_PARAMETERS = %i[url token_file approle namespace ca_file allowed_prefixes].freeze
+        REFERENCE_OPTIONS = %w[version mount].freeze
+
+        class << self
+          def check_reference_parameters(params)
+            super
+            raise Error, 'either token_file or approle' unless [params[:token_file], params[:approle]].compact.size.eql?(1)
+            raise Error, 'approle: secret_id_file instead of secret_id' if params[:approle].is_a?(Hash) && params[:approle].transform_keys(&:to_sym).key?(:secret_id)
+          end
+        end
 
         # `Vault::Client` (gem `vault` 0.20.1) gives the options of `JSON.parse` as a positional Hash,
         # refused by gem `json` 3 (`ArgumentError`), with option `create_additions` (removed, `false` by default in gem `json` 2):
@@ -66,10 +81,13 @@ module Aspera
         # @param approle    [Hash, nil]   AppRole: `role_id`, `secret_id` or `secret_id_file`, `mount` (default: `approle`)
         # @param namespace  [String, nil] Namespace (Vault Enterprise)
         # @param ca_file    [String, nil] File with CA certificates of server
-        def initialize(url:, token: nil, token_file: nil, approle: nil, namespace: nil, ca_file: nil)
+        # @param allowed_prefixes [Array<String>, nil] Allowed prefixes of `<mount>/<path>` of references, `nil`: all
+        def initialize(url:, token: nil, token_file: nil, approle: nil, namespace: nil, ca_file: nil, allowed_prefixes: nil)
           super()
           Aspera.assert_type(url, String, type: ParameterError) { 'vault url' }
           Aspera.assert([token, token_file, approle].compact.size.eql?(1), type: ParameterError) { 'vault: one of token, token_file or approle is required' }
+          Aspera.assert(allowed_prefixes.nil? || (allowed_prefixes.is_a?(Array) && allowed_prefixes.all?(String)), type: ParameterError) { 'vault allowed_prefixes: list of strings' }
+          @allowed_prefixes = allowed_prefixes
           @token_file = token_file
           @token_file_mtime = nil
           @approle = approle.nil? ? nil : approle_parameters(approle)
@@ -145,10 +163,57 @@ module Aspera
           }
         end
 
+        def check_reference(ref)
+          super
+          mount, path = mount_and_path(ref)
+          full_path = "#{mount}/#{path}"
+          raise Error, "invalid path: #{full_path}" if full_path.split('/', -1).any? { |s| INVALID_SEGMENTS.include?(s) }
+          raise Error, "path not allowed: #{full_path}" unless allowed?(full_path)
+          reference_version(ref)
+          nil
+        end
+
+        # The field is required
+        def read_reference(ref)
+          mount, path = mount_and_path(ref)
+          secret = read(path: path, mount: mount, version: reference_version(ref))
+          raise Error, 'not found' if secret.nil?
+          {value: field_value(secret[:data], ref), version: secret[:version], updated_time: secret[:created_time]}
+        end
+
         private
 
         def path(label)
           "#{STORE_PATH}#{label}"
+        end
+
+        # @return [Array<String>] Mount and path in mount of reference
+        def mount_and_path(ref)
+          mount = ref.options['mount']
+          if mount.nil?
+            mount, path = ref.path.split('/', 2)
+            raise Error, "path shall be <mount>/<path>: #{ref.path}" if path.nil?
+            return [mount, path]
+          end
+          raise Error, "path shall start with mount #{mount}/" unless ref.path.start_with?("#{mount}/")
+          [mount, ref.path.delete_prefix("#{mount}/")]
+        end
+
+        # @return [Integer, nil] Version of secret of reference, `nil` for current
+        def reference_version(ref)
+          value = ref.options['version']
+          return if value.nil?
+          raise Error, "version shall be a positive integer: #{value}" unless value.match?(/\A[1-9][0-9]*\z/)
+          value.to_i
+        end
+
+        # A prefix ending with `/` is a folder, else it is a path or folder
+        # @param full_path [String] `<mount>/<path>`
+        def allowed?(full_path)
+          return true if @allowed_prefixes.nil?
+          @allowed_prefixes.any? do |prefix|
+            prefix.end_with?('/') ? full_path.start_with?(prefix) : full_path.eql?(prefix) || full_path.start_with?("#{prefix}/")
+          end
         end
 
         # @return [String] Authentication method

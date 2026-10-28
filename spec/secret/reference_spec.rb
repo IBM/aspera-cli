@@ -65,26 +65,25 @@ RSpec.describe(Aspera::Secret) do
 
   describe Aspera::Secret::Resolver do
     # Store in memory: path → fields; counts reads
-    fake_store = Class.new(Aspera::Secret::RefStore::Base) do
-      self::OPTIONS = %w[flavor].freeze
+    fake_store = Class.new(Aspera::Secret::Store::Base) do
+      self::REFERENCE_PARAMETERS = %i[allowed].freeze
+      self::REFERENCE_OPTIONS = %w[flavor].freeze
       attr_reader :reads
       attr_accessor :secrets
 
-      def initialize(name:, allowed: nil)
-        super(name: name)
+      def initialize(allowed: nil)
+        super()
         @allowed = allowed
         @secrets = {}
         @reads = 0
       end
 
-      def check!(ref)
+      def check_reference(ref)
         super
         raise Aspera::Secret::Error, "path not allowed: #{ref.path}" unless @allowed.nil? || ref.path.start_with?(@allowed)
       end
 
-      private
-
-      def read(ref)
+      def read_reference(ref)
         @reads += 1
         fields = @secrets[ref.path]
         raise Aspera::Secret::Error, 'not found' if fields.nil?
@@ -92,7 +91,11 @@ RSpec.describe(Aspera::Secret) do
       end
     end
 
-    before(:all) { described_class.register_type('fake', fake_store) }
+    before(:all) do
+      described_class.register_type('fake', fake_store)
+      # Without REFERENCE_PARAMETERS
+      described_class.register_type('plain', Class.new(Aspera::Secret::Store::Base))
+    end
 
     let(:resolver) { described_class.new({'cache_ttl' => 60, 'stores' => {'mem' => {'type' => 'fake', 'allowed' => 'app/'}, 'other' => {'type' => 'fake'}}}) }
     let(:store) { resolver.instance_variable_get(:@stores)['mem'] }
@@ -167,9 +170,11 @@ RSpec.describe(Aspera::Secret) do
         [{'cache_ttl' => -1}, /cache_ttl/],
         [{'stores' => {'mem' => {'type' => 'none'}}}, /store mem: type: unknown none, use one of: .*vault/],
         [{'stores' => {'mem' => {}}}, /store mem: type: missing/],
-        [{'stores' => {'mem' => {'type' => 'fake', 'bad' => 1}}}, /store mem: unknown keyword: :bad/],
+        [{'stores' => {'mem' => {'type' => 'fake', 'bad' => 1}}}, /store mem: unsupported keys: bad\z/],
         [{'stores' => {'m/n' => {'type' => 'fake'}}}, %r{store m/n: invalid name}],
-        [{'stores' => {'mem' => {'type' => 'fake', 'name' => 'x'}}}, /store mem: unsupported key: name/],
+        [{'stores' => {'p' => {'type' => 'plain'}}}, /store p: not usable for secret references/],
+        [{'stores' => {'f' => {'type' => 'file', 'file' => 'f', 'password' => secret}}}, /store f: unsupported keys: password\z/],
+        [{'stores' => {'v' => {'type' => 'vault', 'url' => 'http://127.0.0.1:8200', 'token' => secret}}}, /store v: unsupported keys: token\z/],
         [{'stores' => {'v' => {'type' => 'vault', 'url' => 'http://127.0.0.1:8200'}}}, /store v: either token_file or approle/],
         [{'stores' => {'v' => {'type' => 'vault', 'url' => 'http://127.0.0.1:8200', 'approle' => {'role_id' => 'r', 'secret_id' => 'x'}}}}, /secret_id_file/]
       ].each do |config, message|
@@ -179,7 +184,7 @@ RSpec.describe(Aspera::Secret) do
 
     it 'registers only subclasses of store' do
       expect { described_class.register_type('bad', String) }.to(raise_error(Aspera::AssertError))
-      expect(described_class.types.keys).to(include('vault', 'encrypted_file', 'fake'))
+      expect(described_class.types.keys).to(include('vault', 'file', 'fake'))
     end
   end
 end

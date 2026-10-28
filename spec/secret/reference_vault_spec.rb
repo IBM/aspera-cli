@@ -8,7 +8,7 @@ require 'webrick'
 require 'json'
 require 'aspera/secret/resolver'
 
-RSpec.describe(Aspera::Secret::RefStore::Vault) do
+RSpec.describe(Aspera::Secret::Store::HashicorpVault) do
   before(:all) do
     # Shared with server: valid tokens, secrets (URL path after `/v1/` → versions), AppRole, counters
     @state = {}
@@ -125,8 +125,8 @@ RSpec.describe(Aspera::Secret::RefStore::Vault) do
       @state[:secrets]['secret/data/app/one'] = [{password: secret}]
       expect(r.resolve('secret://vault_prod/secret/app/one#password')).to(eq(secret))
       {
-        'secret://vault_prod/secret/other#password'                    => 'path not allowed in store vault_prod: secret/other',
-        'secret://vault_prod/secret/application#password'              => 'path not allowed in store vault_prod: secret/application',
+        'secret://vault_prod/secret/other#password'                    => 'path not allowed: secret/other',
+        'secret://vault_prod/secret/application#password'              => 'path not allowed: secret/application',
         'secret://vault_prod/secret/orchestrator/../other#password'    => 'invalid path: secret/orchestrator/../other',
         'secret://vault_prod/secret/orchestrator//x#password'          => 'invalid path: secret/orchestrator//x',
         'secret://vault_prod/secret#password'                          => 'path shall be <mount>/<path>: secret',

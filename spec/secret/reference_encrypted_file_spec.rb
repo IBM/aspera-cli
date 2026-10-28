@@ -6,7 +6,7 @@ require 'tmpdir'
 require 'securerandom'
 require 'aspera/secret/resolver'
 
-RSpec.describe(Aspera::Secret::RefStore::EncryptedFile) do
+RSpec.describe(Aspera::Secret::Store::EncryptedHash) do
   # Values of secrets are generated, none in source
   let(:secret) { SecureRandom.alphanumeric(16) }
   let(:rotated) { SecureRandom.alphanumeric(16) }
@@ -15,7 +15,7 @@ RSpec.describe(Aspera::Secret::RefStore::EncryptedFile) do
   let(:dir) { Dir.mktmpdir }
   let(:file) { File.join(dir, 'ops_vault.bin') }
   let(:password_file) { File.join(dir, 'ops_vault.pass') }
-  let(:resolver) { Aspera::Secret::Resolver.new({'cache_ttl' => 0, 'stores' => {'ops' => {'type' => 'encrypted_file', 'file' => file, 'password_file' => password_file}}}) }
+  let(:resolver) { Aspera::Secret::Resolver.new({'cache_ttl' => 0, 'stores' => {'ops' => {'type' => 'file', 'file' => file, 'password_file' => password_file}}}) }
 
   before do
     File.write(password_file, "#{vault_password}\n")
