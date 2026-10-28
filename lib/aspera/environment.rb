@@ -157,7 +157,7 @@ module Aspera
           # https://docs.ruby-lang.org/en/master/Process.html#method-c-spawn
           # https://docs.ruby-lang.org/en/master/Process.html#module-Process-label-Execution+Options
           kwargs[:close_others] = true unless kwargs.key?(:close_others)
-          pid = Process.spawn(*build_spawn_argv(cmd, kwargs), **kwargs)
+          pid = ::Process.spawn(*build_spawn_argv(cmd, kwargs), **kwargs)
           Log.dump(:pid, pid)
           pid
         when :capture

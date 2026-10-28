@@ -151,7 +151,7 @@ module Aspera
       end
 
       def monotonic_time
-        Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        ::Process.clock_gettime(::Process::CLOCK_MONOTONIC)
       end
     end
   end
