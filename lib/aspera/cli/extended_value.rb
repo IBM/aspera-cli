@@ -223,7 +223,7 @@ module Aspera
             value.is_a?(String) ? Secret::Hider.instance.add_secret_values(value) : Secret::Hider.instance.add_secrets_in(value)
           end
         rescue => e
-          raise BadArgument, "Evaluation of #{handler} for #{context}: #{e.message}"
+          raise BadArgument, "Evaluation of #{MARKER_START}#{handler}#{MARKER_END} for #{context}: #{e.message}"
         end
         return value
       end

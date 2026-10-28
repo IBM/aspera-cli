@@ -473,7 +473,7 @@ module Aspera
         result = nil
         @command_line.with_arguments_after_current_option do
           get_next_argument('args', multiple: end_marker).each do |argument|
-            Aspera.assert(argument.include?(Option::VALUE_SEP)) { "Positional argument: #{argument} does not include #{Option::VALUE_SEP}" }
+            Aspera.assert(argument.include?(Option::VALUE_SEP), type: BadArgument) { "Argument collected by @: does not include #{Option::VALUE_SEP}: #{argument} (end marker: #{end_marker})" }
             path, value = argument.split(Option::VALUE_SEP, 2)
             result = DotContainer.dotted_to_container(path.split(DotContainer::SEPARATOR), Parser.smart_convert(value), result)
           end

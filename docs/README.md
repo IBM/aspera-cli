@@ -1606,7 +1606,7 @@ Understanding this concept once makes it immediately usable everywhere it appear
 | [Option](#options) names  | `--opt.key.sub=value` | Input  | write     |
 | [Positional arguments](#positional-arguments) | `@: key.sub=value ... [END]` | Input | write |
 | [Extended value](#extended-value-syntax) `@preset:` | `@preset:key.sub` | Input | read  |
-| [Output field names](#filtering-results) | `--fields=key.sub`    | Output | read |
+| [Output field names](#filtering-results) | `--out.fields=key.sub` | Output | read |
 
 A [dot-path](#dot-path-notation) is a `String` where segments are separated by `.` (dot), each segment designating a key in a nested structure:
 
@@ -1670,6 +1670,8 @@ The general syntax for this argument is:
   The optional text after `:` sets the end marker. If it is empty, the marker is `END`.
 
 - `<DOT_PATH>=<VALUE>`: An assignment using the standard [dot-path](#dot-path-notation) notation. Multiple assignments can be provided in sequence to build a complex object.
+  The value is converted like any [dot-path](#dot-path-notation) value, and can be an [Extended Value](#extended-value-syntax), for example `public_key=@file:~/.ssh/id_rsa.pub`.
+  Options placed among the assignments are not collected: they are processed as usual, for example `@: a=1 --format=json b=2`.
 
 - `<MARKER>` (`END` by default): An optional argument that ends the collection.
 
@@ -2368,7 +2370,7 @@ The following decoders are supported:
 | `vault`  | `String` | `String` | Read a secret from the [Secret Vault](#secret-vault): `<label>.<field>`. For example, `--password=@vault:my_label.password` |
 | `yaml`   | `String` | Any      | Decode YAML. |
 | `zlib`   | `String` | `String` | Decompress data using zlib. |
-| `<empty>`| None     | Any      | The **dot-path** modifier: argument `@:` collects the following positional arguments as `key.subkey=value` assignments and builds a `Hash` or `Array` using [dot-path](#dot-path-notation) notation. Shell-friendly alternative to `@json:` for structured values.<br/>See [Positional Arguments with Dot-path](#positional-arguments-with-dot-path) for full syntax. Use `END` to stop collection when further positional arguments must follow. |
+| `<empty>`| `String` | Any      | The **dot-path** modifier: argument `@:` collects the following positional arguments as `key.subkey=value` assignments and builds a `Hash` or `Array` using [dot-path](#dot-path-notation) notation. Shell-friendly alternative to `@json:` for structured values.<br/>Argument is the end marker: `<empty>` for `END`, or a custom marker (e.g. `@:STOP`). Use the end marker to stop collection when further positional arguments must follow.<br/>See [Positional Arguments with Dot-path](#positional-arguments-with-dot-path) for full syntax. |
 
 > [!NOTE]
 > A few commands support a value of type `Proc` (lambda expression).
@@ -2716,7 +2718,7 @@ ascli config echo @file:/etc/hosts --security.level=high
 ```
 
 ```text
-ERRR Argument: Evaluation of file for argument: value: @file: extended value is disabled by security level high
+ERRR Argument: Evaluation of @file: for argument: value: @file: extended value is disabled by security level high: use level medium with the file in security.allowed_paths (option security), or give the value itself
 ```
 
 ### Main, configuration and Persistency Folder

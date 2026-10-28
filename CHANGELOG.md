@@ -22,6 +22,8 @@ Released: [Place date of release here]
   * `vault` (HashiCorp): Responses of Vault failed with `wrong number of arguments` with gem `json` 3. `vault info` shows the authentication method (`token`, `token_file`, `approle`) instead of an internal object. The configuration of Vault is no longer global (`Vault.configure`).
 * `ascli`:
   * `--out.select` with a dot-path key (e.g. `directory_user.type`) selected no item with formats `json`, `jsonpp`, `yaml` and `ruby`: it now matches as with `table` and `csv`.
+  * An argument without `=` collected by `@:` is reported as a bad argument with the end marker, instead of an assertion failure. An error of an extended value names its modifier as `@<name>:` (e.g. `@file:`, `@:`).
+  * `@extend:` no longer evaluates again the values it inserts: a value read by an embedded extended value (e.g. `@env:`, `@file:`, `@base64:`) that contains `@<modifier>:...@` is inserted as is.
 
 ### Breaking Changes
 
