@@ -293,6 +293,9 @@ module Aspera
         add(ERROR, 'graph.synch_factor', path, 'Synch_factor is missing or not an integer')
       elsif factor.to_i.negative?
         add(ERROR, 'graph.synch_factor_negative', path, 'negative Synch_factor is never met')
+      elsif factor.to_i.positive? && %w[x y].any? { |name| node.elements['Synch_factor'].attributes[name].to_s.empty? }
+        # the designer writes the position of the join symbol, and draws the workflow with it (WhiteboardsHelper#draw_operator)
+        add(WARNING, 'graph.synch_factor_position', path, 'Synch_factor is not 0 and has no attributes x and y (position of the join symbol): the designer shows an empty canvas')
       end
       node.get_elements('Prerequisites/Prerequisite').each do |pre|
         add(ERROR, 'graph.prerequisite_unknown', path, "prerequisite refers to unknown node '#{pre.attributes['id']}'") unless ids.include?(pre.attributes['id'])

@@ -153,6 +153,17 @@ RSpec.describe(Aspera::OrchestratorWorkflowChecker) do
       expect(codes(check(workflow.sub('<Synch_factor>0</Synch_factor><Prerequisites><Prerequisite id="start"', '<Synch_factor>-1</Synch_factor><Prerequisites><Prerequisite id="start"')))).to(eq(['graph.synch_factor_negative']))
     end
 
+    it 'warns on a join without position' do
+      response = check(workflow.sub('<Synch_factor>0</Synch_factor><Prerequisites><Prerequisite id="step1"', '<Synch_factor>1</Synch_factor><Prerequisites><Prerequisite id="step1"'))
+      expect(response['issues'].map { |issue| issue.values_at('severity', 'code', 'path') }).to(eq([%w[warning graph.synch_factor_position graph/End]]))
+      expect(response['valid']).to(be(true))
+    end
+
+    it 'accepts a join with position' do
+      joined = workflow.sub('<Synch_factor>0</Synch_factor><Prerequisites><Prerequisite id="step1"', '<Synch_factor x="820" y="70">1</Synch_factor><Prerequisites><Prerequisite id="step1"')
+      expect(check(joined)['issues']).to(eq([]))
+    end
+
     it 'reports an input mapped to an undefined parameter' do
       expect(codes(check(workflow.sub('name="who"/>', 'name="other"/>')))).to(eq(['graph.parameter_undefined']))
     end

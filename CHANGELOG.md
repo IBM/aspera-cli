@@ -9,6 +9,8 @@ Released: [Place date of release here]
 * `config`:
   * New command `ascp logs`: analysis of `ascp` log files (`ascp` 4.0 and later): statistics, sessions with diagnostics, multi-session transfers, rates per period, errors by peer, transferred files, licenses. Diagnostics have an identifier and a severity, and include error category with hint, retries of failed sessions, parameters set by the server, efficiency, and the limit of the rate on the sender. Logs of client and server are joined by session. New option `ascp_logs` (dot-notation: `period`, `zero_bytes`, `mtu`, `resolve`). Command `ascp logs records` gives log lines parsed into records (`samples`, `sessions`, `transfers`), with the field names of the log, for use with `--out.query`, and `ascp logs fields` describes their fields.
   * `ascp errors`: optional argument `session` lists error codes of sessions (`errcode` in logs), with category and corresponding error of the management port (default: `management`).
+* `orchestrator`:
+  * `workflows check_import`: warning `graph.synch_factor_position` when a `Synch_factor` other than `0` has no attributes `x` and `y` (position of the join symbol): opened from the list of workflows, the designer of Orchestrator then shows an empty canvas.
 
 ### Issues Fixed
 

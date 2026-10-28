@@ -7,8 +7,8 @@ module Aspera
   module Ascp
     # Error codes of FASP sessions: `errcode` in log lines `Session Start` and `Session Stop` of `ascp`.
     # Not the same numbering as errors of the management port (`Management::ERRORS`): each code maps to one of them.
-    # References (`ascp` sources):
-    # `asconstants/fasp_errno.h` : codes (enum `fasp_errno_e`)
+    # References:
+    # `fasp_errno.h` : codes (enum `fasp_errno_e`)
     # `fasp_errno.c` : messages (`fasp_errno2str`)
     # `asmgmt_err.c` : code of management port (`mgmt_fasperr2mgmterr`)
     module SessionErrors
