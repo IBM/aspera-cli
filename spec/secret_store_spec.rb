@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Unit tests for Aspera::Keychain backends — no server, keychain or `op` needed.
+# Unit tests for Aspera::SecretStore backends — no server, keychain or `op` needed.
 
 require 'tmpdir'
 require 'yaml'
@@ -8,12 +8,12 @@ require 'json'
 require 'securerandom'
 require 'aspera/hash_ext'
 require 'aspera/environment'
-require 'aspera/keychain/encrypted_hash'
-require 'aspera/keychain/macos_security'
-require 'aspera/keychain/one_password_cli'
-require 'aspera/keychain/hashicorp_vault'
+require 'aspera/secret_store/encrypted_hash'
+require 'aspera/secret_store/macos_security'
+require 'aspera/secret_store/one_password_cli'
+require 'aspera/secret_store/hashicorp_vault'
 
-RSpec.describe(Aspera::Keychain) do
+RSpec.describe(Aspera::SecretStore) do
   let(:success) { instance_double(Process::Status, success?: true, exitstatus: 0) }
   # Values of secrets are generated, none in source
   let(:secret) { SecureRandom.alphanumeric(12) }
@@ -30,7 +30,7 @@ RSpec.describe(Aspera::Keychain) do
     end
   end
 
-  describe Aspera::Keychain::EncryptedHash do
+  describe Aspera::SecretStore::EncryptedHash do
     it 'migrates a legacy vault (no kdf) to PBKDF2 on password change' do
       Dir.mktmpdir do |dir|
         path = File.join(dir, 'vault.bin')
@@ -64,8 +64,8 @@ RSpec.describe(Aspera::Keychain) do
     end
   end
 
-  describe Aspera::Keychain::MacosSystem do
-    let(:keychain) { Aspera::Keychain::MacosSecurity::Keychain.new('/tmp/test.keychain-db') }
+  describe Aspera::SecretStore::MacosSystem do
+    let(:keychain) { Aspera::SecretStore::MacosSecurity::Keychain.new('/tmp/test.keychain-db') }
     let(:system_vault) { described_class.allocate.tap { |v| v.instance_variable_set(:@keychain, keychain) } }
 
     it 'reads the password printed on stderr' do
@@ -93,7 +93,7 @@ RSpec.describe(Aspera::Keychain) do
     end
   end
 
-  describe Aspera::Keychain::OnePasswordCli do
+  describe Aspera::SecretStore::OnePasswordCli do
     it 'returns nil for a missing secret when exception is false' do
       stub_failed_execute('[ERROR] item not found', 1)
       vault = described_class.new
@@ -135,7 +135,7 @@ RSpec.describe(Aspera::Keychain) do
     end
   end
 
-  describe Aspera::Keychain::HashicorpVault do
+  describe Aspera::SecretStore::HashicorpVault do
     it 'skips secrets deleted but still listed in metadata (KV v2)' do
       logical = double('logical')
       allow(Vault::Client).to(receive(:new).and_return(instance_double(Vault::Client, logical: logical)))

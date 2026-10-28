@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Aspera
-  module Keychain
+  module SecretStore
     class Base
       CONTENT_KEYS = %i[label username password url description].freeze
 

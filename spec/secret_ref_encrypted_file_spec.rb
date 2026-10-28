@@ -19,7 +19,7 @@ RSpec.describe(Aspera::SecretRef::Store::EncryptedFile) do
 
   before do
     File.write(password_file, "#{vault_password}\n")
-    Aspera::Keychain::EncryptedHash.new(file: file, password: vault_password).set({label: 'faspex5', username: username, password: secret})
+    Aspera::SecretStore::EncryptedHash.new(file: file, password: vault_password).set({label: 'faspex5', username: username, password: secret})
   end
 
   after { FileUtils.rm_rf(dir) }
@@ -40,9 +40,9 @@ RSpec.describe(Aspera::SecretRef::Store::EncryptedFile) do
   it 'reads the file again when it is modified' do
     expect(resolver.resolve('secret://ops/faspex5')).to(eq(secret))
     rewrite(file) do
-      keychain = Aspera::Keychain::EncryptedHash.new(file: file, password: vault_password)
-      keychain.delete(label: 'faspex5')
-      keychain.set({label: 'faspex5', password: rotated})
+      vault = Aspera::SecretStore::EncryptedHash.new(file: file, password: vault_password)
+      vault.delete(label: 'faspex5')
+      vault.set({label: 'faspex5', password: rotated})
     end
     expect(resolver.resolve('secret://ops/faspex5')).to(eq(rotated))
   end
@@ -50,7 +50,7 @@ RSpec.describe(Aspera::SecretRef::Store::EncryptedFile) do
   it 'reads the password file again when the password changes' do
     expect(resolver.resolve('secret://ops/faspex5')).to(eq(secret))
     new_password = SecureRandom.alphanumeric(16)
-    rewrite(file) { Aspera::Keychain::EncryptedHash.new(file: file, password: vault_password).change_password(new_password) }
+    rewrite(file) { Aspera::SecretStore::EncryptedHash.new(file: file, password: vault_password).change_password(new_password) }
     expect { resolver.resolve('secret://ops/faspex5') }.to(raise_error(Aspera::SecretRef::Error, /: cannot decrypt .*ops_vault.bin/))
     rewrite(password_file) { File.write(password_file, new_password) }
     expect(resolver.resolve('secret://ops/faspex5')).to(eq(secret))

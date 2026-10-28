@@ -33,7 +33,7 @@ if ENV.key?('ENABLE_COVERAGE')
       false
     end
     # no coverage in these files
-    add_filter 'lib/aspera/keychain/macos_security.rb'
+    add_filter 'lib/aspera/secret_store/macos_security.rb'
     add_filter 'lib/aspera/assert.rb'
   end
 end

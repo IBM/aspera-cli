@@ -23,6 +23,8 @@ Released: [Place date of release here]
 
 ### Breaking Changes
 
+* **library**: Module `Aspera::Keychain` is renamed `Aspera::SecretStore` (files `aspera/secret_store/...`), backends of option `vault`.
+
 ## 4.28.0
 
 Released: 2026-10-22

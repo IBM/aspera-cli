@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
 require 'aspera/rest'
-require 'aspera/keychain/one_password_base'
+require 'aspera/secret_store/one_password_base'
 
 module Aspera
-  module Keychain
+  module SecretStore
     # Manage secrets using the 1Password Connect REST API
     # https://developer.1password.com/docs/connect/connect-api-reference/
     class OnePasswordApi < Base

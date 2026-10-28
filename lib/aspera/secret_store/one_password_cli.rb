@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 require 'aspera/environment'
-require 'aspera/keychain/one_password_base'
+require 'aspera/secret_store/one_password_base'
 require 'json'
 
 module Aspera
-  module Keychain
+  module SecretStore
     # Manage secrets using the 1Password CLI (`op`)
     # https://developer.1password.com/docs/cli/
     class OnePasswordCli < Base

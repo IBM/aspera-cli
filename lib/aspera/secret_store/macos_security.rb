@@ -5,11 +5,11 @@ require 'aspera/cli/info'
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/environment'
-require 'aspera/keychain/base'
+require 'aspera/secret_store/base'
 
 # enhance the gem to support other key chains
 module Aspera
-  module Keychain
+  module SecretStore
     module MacosSecurity
       # keychain based on macOS keychain, using `security` command line
       class Keychain

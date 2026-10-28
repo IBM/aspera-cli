@@ -4,13 +4,13 @@ require 'aspera/hash_ext'
 require 'aspera/environment'
 require 'aspera/log'
 require 'aspera/assert'
-require 'aspera/keychain/base'
+require 'aspera/secret_store/base'
 require 'aspera/yaml'
 require 'openssl'
 require 'yaml'
 
 module Aspera
-  module Keychain
+  module SecretStore
     # Manage secrets in a simple Hash
     class EncryptedHash < Base
       LEGACY_CIPHER_NAME = 'aes-256-cbc'

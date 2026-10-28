@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
-# Unit tests for Aspera::Keychain::Factory — no server needed.
+# Unit tests for Aspera::SecretStore::Factory — no server needed.
 
 require 'tmpdir'
 require 'securerandom'
 require 'aspera/hash_ext'
 require 'aspera/environment'
-require 'aspera/keychain/factory'
+require 'aspera/secret_store/factory'
 
-RSpec.describe(Aspera::Keychain::Factory) do
+RSpec.describe(Aspera::SecretStore::Factory) do
   # Values of secrets are generated, none in source
   let(:secret) { SecureRandom.alphanumeric(12) }
   let(:vault_password) { SecureRandom.alphanumeric(12) }

@@ -142,7 +142,7 @@ RSpec.describe(Aspera::SecretRef::Store::Vault) do
 
   describe 'with AppRole' do
     let(:secret_id_file) { secret_file('secret_id', approle['secret_id']) }
-    let(:vault) { Aspera::Keychain::HashicorpVault.new(url: @url, approle: {'role_id' => approle['role_id'], 'secret_id_file' => secret_id_file}) }
+    let(:vault) { Aspera::SecretStore::HashicorpVault.new(url: @url, approle: {'role_id' => approle['role_id'], 'secret_id_file' => secret_id_file}) }
 
     before { @state[:secrets]['secret/data/app'] = [{password: secret}] }
 

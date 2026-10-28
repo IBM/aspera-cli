@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/secret_ref/store/base'
-require 'aspera/keychain/encrypted_hash'
+require 'aspera/secret_store/encrypted_hash'
 require 'openssl'
 
 module Aspera
@@ -23,28 +23,28 @@ module Aspera
           @password_file = password_file
           # Modification times of files, and decrypted file
           @mtimes = nil
-          @keychain = nil
+          @vault = nil
           @lock = Mutex.new
         end
 
         private
 
         def read(ref)
-          keychain, mtime = current_keychain
-          entry = keychain.get(label: ref.path, exception: false)
+          vault, mtime = current_vault
+          entry = vault.get(label: ref.path, exception: false)
           raise Error, "no label: #{ref.path}" if entry.nil?
           {value: field_value(entry, ref, default: DEFAULT_FIELD), version: nil, updated_time: mtime}
         end
 
-        # @return [Array] Keychain and modification time of encrypted file
-        def current_keychain
+        # @return [Array] Vault and modification time of encrypted file
+        def current_vault
           @lock.synchronize do
             mtimes = [@file, @password_file].map { |f| File.mtime(f) }
             unless mtimes.eql?(@mtimes)
-              @keychain = Keychain::EncryptedHash.new(file: @file, password: SecretRef.read_file_secret(@password_file))
+              @vault = SecretStore::EncryptedHash.new(file: @file, password: SecretRef.read_file_secret(@password_file))
               @mtimes = mtimes
             end
-            [@keychain, @mtimes.first]
+            [@vault, @mtimes.first]
           end
         rescue SystemCallError => e
           raise Error, e.message

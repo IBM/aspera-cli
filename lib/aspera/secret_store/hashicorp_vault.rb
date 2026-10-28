@@ -5,12 +5,12 @@ require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/secret_hider'
 require 'aspera/secret_ref'
-require 'aspera/keychain/base'
+require 'aspera/secret_store/base'
 require 'vault'
 require 'time'
 
 module Aspera
-  module Keychain
+  module SecretStore
     # Manage secrets in a Hashicorp Vault
     class HashicorpVault < Base
       STORE_PATH = 'secret/data/'

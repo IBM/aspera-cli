@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require 'aspera/keychain/base'
+require 'aspera/secret_store/base'
 
 module Aspera
-  module Keychain
+  module SecretStore
     # Shared field constants and item_to_secret conversion for 1Password backends.
     # Both the REST (Connect) and CLI (`op`) backends use the same JSON item schema.
     module OnePasswordBase
@@ -17,7 +17,7 @@ module Aspera
 
       private
 
-      # Convert a 1Password item JSON object to a keychain secret Hash.
+      # Convert a 1Password item JSON object to a vault secret Hash.
       # Same JSON schema for API Connect and CLI items.
       # Built-in fields are found by `id`, custom fields (generated `id`) by `label`.
       # URL is the website of the item, or a custom field `url` (created by previous versions).

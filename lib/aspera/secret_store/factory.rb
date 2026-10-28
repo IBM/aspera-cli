@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 module Aspera
-  module Keychain
-    # Factory to create vault/keychain instances
+  module SecretStore
+    # Factory to create vault instances
     class Factory
       LIST = %i[file system vault 1password].freeze
       class << self
@@ -24,30 +24,30 @@ module Aspera
             Aspera.assert(!password.nil?, 'please provide password')
             info[:password] = password
             # this module requires compilation, so it is optional
-            require 'aspera/keychain/encrypted_hash'
-            Keychain::EncryptedHash.new(**info)
+            require 'aspera/secret_store/encrypted_hash'
+            SecretStore::EncryptedHash.new(**info)
           when 'system'
             case Environment.instance.os
             when Environment::OS_MACOS
               info[:name] ||= name
-              Keychain::MacosSystem.new(**info)
+              SecretStore::MacosSystem.new(**info)
             else
               raise Error, 'not implemented for this OS'
             end
           when 'vault'
-            require 'aspera/keychain/hashicorp_vault'
+            require 'aspera/secret_store/hashicorp_vault'
             info[:token] ||= password unless info.key?(:token_file) || info.key?(:approle)
-            Keychain::HashicorpVault.new(**info)
+            SecretStore::HashicorpVault.new(**info)
           when '1password'
             source = info.delete(:source) || 'api'
             case source
             when 'api'
-              require 'aspera/keychain/one_password_api'
+              require 'aspera/secret_store/one_password_api'
               info[:token] ||= password
-              Keychain::OnePasswordApi.new(**info)
+              SecretStore::OnePasswordApi.new(**info)
             when 'cli'
-              require 'aspera/keychain/one_password_cli'
-              Keychain::OnePasswordCli.new(**info)
+              require 'aspera/secret_store/one_password_cli'
+              SecretStore::OnePasswordCli.new(**info)
             else Aspera.error_unexpected_value(source, type: ParameterError) { 'vault.source' }
             end
           else Aspera.error_unexpected_value(vault_type, type: ParameterError) { 'vault.type' }

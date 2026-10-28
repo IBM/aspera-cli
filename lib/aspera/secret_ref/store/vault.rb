@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/secret_ref/store/base'
-require 'aspera/keychain/hashicorp_vault'
+require 'aspera/secret_store/hashicorp_vault'
 
 module Aspera
   module SecretRef
@@ -28,7 +28,7 @@ module Aspera
           raise Error, 'approle: secret_id_file instead of secret_id' if approle.is_a?(Hash) && approle.transform_keys(&:to_sym).key?(:secret_id)
           raise Error, 'allowed_prefixes: list of strings' unless allowed_prefixes.nil? || (allowed_prefixes.is_a?(Array) && allowed_prefixes.all?(String))
           @allowed_prefixes = allowed_prefixes
-          @vault = Keychain::HashicorpVault.new(url: url, token_file: token_file, approle: approle, namespace: namespace, ca_file: ca_file)
+          @vault = SecretStore::HashicorpVault.new(url: url, token_file: token_file, approle: approle, namespace: namespace, ca_file: ca_file)
         end
 
         def check!(ref)
