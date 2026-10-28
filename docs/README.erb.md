@@ -32,6 +32,8 @@ common:
 The IBM Aspera Command Line Interface (<%=tool%>) is an enterprise-grade tool that provides comprehensive command-line access to IBM Aspera's suite of high-speed file transfer products and services.
 Designed for automation, scripting, and integration scenarios, <%=tool%> enables organizations to leverage Aspera's FASP technology within their existing workflows and DevOps pipelines.
 
+![Architecture: transfer agents, IBM Aspera applications and transfer servers](<%=link_repo('docs/architecture.svg')%>)
+
 ### Key Features
 
 **Multi-Product Integration**
@@ -3274,6 +3276,18 @@ vault server -dev -dev-root-token-id=<%=ph :token%>
 
 ```shell
 --vault=@json:'{"type":"vault","url":"http://127.0.0.1:8200"}' --vault-password=<%=ph :token%>
+```
+
+With a token in a file (for example, written and renewed by Vault Agent), read again when the file is modified:
+
+```shell
+--vault=@json:'{"type":"vault","url":"https://vault.example.com:8200","token_file":"/run/vault/token"}'
+```
+
+With AppRole authentication, the token is obtained by login, and renewed:
+
+```shell
+--vault=@json:'{"type":"vault","url":"https://vault.example.com:8200","approle":{"role_id":"<%=ph :role_id%>","secret_id_file":"/etc/vault/secret_id"}}'
 ```
 
 #### Vault: System keychain

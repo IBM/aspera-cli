@@ -781,8 +781,15 @@ presets:
 
 - **file**: Built-in encrypted hash
 - **system**: macOS Keychain
-- **vault**: HashiCorp Vault
+- **vault**: HashiCorp Vault (authentication by `token`, `token_file` or `approle`, own `Vault::Client`)
 - **1password**: 1Password (API or CLI)
+
+**Secret references** ([`secret_ref.rb`](../lib/aspera/secret_ref.rb), [`lib/aspera/secret_ref/`](../lib/aspera/secret_ref/)): library for applications that store a reference instead of a secret (e.g. Orchestrator), not used by `ascli` options.
+
+- `SecretRef.parse`: `secret://<store>/<path>[?<options>][#<field>]` into a `Reference`
+- `SecretRef::Resolver`: named stores from a configuration (`Hash`), `resolve` (value, TTL cache), `metadata` (version, time, no value), `invalidate`; errors give the reference and the reason, never a value; values are declared to `SecretHider`
+- `SecretRef::Store::Base` (`check!`, `fetch`, `metadata`), `Store::Vault` (KV v2 with `Keychain::HashicorpVault`, `allowed_prefixes`), `Store::EncryptedFile` (`Keychain::EncryptedHash`, read again when modified); the application adds types with `Resolver.register_type`
+- Bootstrap secrets of stores are read from files (`*_file` keys, `SecretRef.read_file_secret`), never in the configuration
 
 ## Error Handling
 
@@ -851,6 +858,7 @@ Analyzes API errors and provides:
   - `plugin_registry_spec.rb` — `validate!(plugin_class:)` consistency of every plugin registry (every leaf has an action or a matching `action_*` method, and every action accepts `**`)
   - `parser_spec.rb`, `option_declarator_spec.rb`, `preset_actions_spec.rb`, `runner_spec.rb`, `mcp/tool_spec.rb`, `formatter_spec.rb`, `http_spec.rb`
   - `async_transfer_store_spec.rb`, `transfer_agent_async_spec.rb`, `transfer_agent_options_spec.rb`, `transfer_result_spec.rb`, `agent_transfer_status_spec.rb`
+  - `keychain_spec.rb`, `keychain_factory_spec.rb`, `secret_ref_spec.rb`, `secret_ref_vault_spec.rb` (fake Vault server), `secret_ref_encrypted_file_spec.rb`
   - `rest/client_spec.rb`, `secret_hider_spec.rb`, `proxy_auto_config_spec.rb`, `schema_reader_spec.rb`, `string_ext_spec.rb`, `uri_reader_spec.rb`, `temp_file_manager_spec.rb`, `assert_spec.rb`, `environment_spec.rb`, `version_spec.rb`, …
 - Live tests requiring a server, tagged `:live` (e.g. `ascmd_ssh_live_spec.rb`)
 

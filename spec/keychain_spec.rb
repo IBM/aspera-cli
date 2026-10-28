@@ -138,7 +138,7 @@ RSpec.describe(Aspera::Keychain) do
   describe Aspera::Keychain::HashicorpVault do
     it 'skips secrets deleted but still listed in metadata (KV v2)' do
       logical = double('logical')
-      allow(Vault).to(receive(:logical).and_return(logical))
+      allow(Vault::Client).to(receive(:new).and_return(instance_double(Vault::Client, logical: logical)))
       allow(logical).to(receive(:list).with('secret/metadata/').and_return(%w[kept deleted]))
       allow(logical).to(receive(:read).with('secret/data/kept').and_return(Vault::Secret.new(data: {data: {password: secret}})))
       allow(logical).to(receive(:read).with('secret/data/deleted').and_return(nil))
@@ -148,6 +148,19 @@ RSpec.describe(Aspera::Keychain) do
       expect { vault.set({label: 'kept', password: other}) }.to(raise_error(/already exist/)) # HashiCorpIgnore
       expect(logical).to(receive(:write).with('secret/data/deleted', data: {password: other}))
       vault.set({label: 'deleted', password: other}) # HashiCorpIgnore
+    end
+
+    it 'uses its own client, not the global configuration' do
+      address = Vault.address
+      vault = described_class.new(url: 'http://127.0.0.1:8201', token: SecureRandom.hex(16), namespace: 'media')
+      expect(vault.info).to(eq({url: 'http://127.0.0.1:8201', namespace: 'media', auth: 'token'}))
+      expect(Vault.address).to(eq(address))
+    end
+
+    it 'requires one authentication' do
+      expect { described_class.new(url: 'http://127.0.0.1:8200') }.to(raise_error(Aspera::ParameterError, /one of token/))
+      expect { described_class.new(url: 'http://127.0.0.1:8200', token: SecureRandom.hex(16), token_file: '/x') }.to(raise_error(Aspera::ParameterError, /one of token/))
+      expect { described_class.new(url: 'http://127.0.0.1:8200', approle: {'role_id' => 'r', 'other' => 'x'}) }.to(raise_error(Aspera::ParameterError, /unsupported keys: other/))
     end
   end
 end

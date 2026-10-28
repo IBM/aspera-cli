@@ -175,6 +175,16 @@ module Aspera
       nil
     end
 
+    # Send logs to the logger of a host application (e.g. `Rails.logger`), until `logger_type` is set.
+    # Its level and formatter are not changed: secrets are hidden in dumps (`Log.dump`), not in log lines.
+    # @param logger [Logger] Logger of the host application
+    # @return [nil]
+    def logger=(logger)
+      Aspera.assert(%i[add level].all? { |m| logger.respond_to?(m) }) { "not a logger: #{logger.class}" }
+      @logger = logger
+      nil
+    end
+
     # Set log level of underlying logger given symbol level
     # @param new_level [Symbol] One of LEVELS
     def level=(new_level)

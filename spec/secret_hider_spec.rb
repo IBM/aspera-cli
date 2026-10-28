@@ -125,6 +125,8 @@ RSpec.describe(Aspera::SecretHider) do
       expect(hider.secret?('username', secret)).to(be(false))
       expect(hider.secret?('public_key', secret)).to(be(false))
       expect(hider.secret?('token_type', 'Bearer')).to(be(false))
+      expect(hider.secret?('token_file', '/run/vault/token')).to(be(false))
+      expect(hider.secret?('Secret_ID_File', '/etc/vault/secret_id')).to(be(false))
     end
 
     it 'matches additional exact keys' do

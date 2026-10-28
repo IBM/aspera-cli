@@ -33,6 +33,8 @@ common:
 The IBM Aspera Command Line Interface (`ascli`) is an enterprise-grade tool that provides comprehensive command-line access to IBM Aspera's suite of high-speed file transfer products and services.
 Designed for automation, scripting, and integration scenarios, `ascli` enables organizations to leverage Aspera's FASP technology within their existing workflows and DevOps pipelines.
 
+![Architecture: transfer agents, IBM Aspera applications and transfer servers](architecture.svg)
+
 ### Key Features
 
 **Multi-Product Integration**
@@ -3460,9 +3462,17 @@ vault server -dev -dev-root-token-id=<TOKEN>
 ```
 
 | Field | Type | Description |
-|----------|--------|----------------------------------------------------------------------------------|
+|------------------------|--------|----------------------------------------------------------------------------------|
 | **type** | `String` | `vault`: IBM HashiCorp Vault secret store. |
-| `token` | `String` | Authentication token. Defaults to the value of `vault_password`.<br/>Example: `dev-only-token`. |
+| `approle.mount` | `String` | Mount path of the AppRole auth method.<br/>Default: `approle`. |
+| `approle.role_id` | `String` | Role ID.<br/>Required. |
+| `approle.secret_id_file` | `String` | File with the Secret ID, instead of `secret_id`. |
+| `approle.secret_id` | `String` | Secret ID (if the role requires one). |
+| `approle` | `Hash` | AppRole authentication: the token is obtained by login, renewed, and obtained again when refused. |
+| `ca_file` | `String` | File with the CA certificates that verify the certificate of the server (HTTPS). |
+| `namespace` | `String` | Namespace (Vault Enterprise). |
+| `token_file` | `String` | File with the authentication token (e.g. written and renewed by Vault Agent). It is read again when modified.<br/>Example: `/run/vault/token`. |
+| `token` | `String` | Authentication token. Defaults to the value of `vault_password`, unless `token_file` or `approle` is set.<br/>Example: `dev-only-token`. |
 | `type` | `String` | Vault type selector.<br/>Required.<br/>Allowed values: `vault`. |
 | `url` | `String` | URL of the HashiCorp Vault server.<br/>Required.<br/>Example: `http://127.0.0.1:8200`. |
 | **type** | `String` | `system`: macOS system keychain secret store. |
@@ -3482,6 +3492,18 @@ vault server -dev -dev-root-token-id=<TOKEN>
 
 ```shell
 --vault=@json:'{"type":"vault","url":"http://127.0.0.1:8200"}' --vault-password=<TOKEN>
+```
+
+With a token in a file (for example, written and renewed by Vault Agent), read again when the file is modified:
+
+```shell
+--vault=@json:'{"type":"vault","url":"https://vault.example.com:8200","token_file":"/run/vault/token"}'
+```
+
+With AppRole authentication, the token is obtained by login, and renewed:
+
+```shell
+--vault=@json:'{"type":"vault","url":"https://vault.example.com:8200","approle":{"role_id":"<ROLE_ID>","secret_id_file":"/etc/vault/secret_id"}}'
 ```
 
 #### Vault: System keychain

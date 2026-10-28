@@ -543,8 +543,40 @@ components:
           example: "http://127.0.0.1:8200"
         token:
           type: string
-          description: Authentication token. Defaults to the value of `vault_password`.
+          description: Authentication token. Defaults to the value of `vault_password`, unless `token_file` or `approle` is set.
           example: dev-only-token
+        token_file:
+          type: string
+          description: >-
+            File with the authentication token (e.g. written and renewed by Vault Agent).
+            It is read again when modified.
+          example: /run/vault/token
+        approle:
+          type: object
+          description: >-
+            AppRole authentication: the token is obtained by login, renewed, and obtained again when refused.
+          properties:
+            role_id:
+              type: string
+              description: Role ID.
+            secret_id:
+              type: string
+              description: Secret ID (if the role requires one).
+            secret_id_file:
+              type: string
+              description: File with the Secret ID, instead of `secret_id`.
+            mount:
+              type: string
+              description: Mount path of the AppRole auth method.
+              default: approle
+          required:
+            - role_id
+        namespace:
+          type: string
+          description: Namespace (Vault Enterprise).
+        ca_file:
+          type: string
+          description: File with the CA certificates that verify the certificate of the server (HTTPS).
     VaultSystemOptions:
       type: object
       description: macOS system keychain secret store.
