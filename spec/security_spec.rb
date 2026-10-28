@@ -28,7 +28,7 @@ module Aspera
 
       def evaluate(value) = ExtendedValue.instance.evaluate(value, context: 'test')
 
-      # Value that decodes to an extended value, evaluated again by @extend:
+      # Value that decodes to an extended value: inserted as is by @extend:, not evaluated again
       def extend_file(path) = "@extend:@base64:#{Base64.strict_encode64("@file:#{path}@")}@"
 
       describe 'level low (default)' do
@@ -36,7 +36,7 @@ module Aspera
           ENV['ASCLI_TEST_SECURITY'] = 'value'
           expect(security.level).to(eq(:low))
           expect(evaluate("@file:#{other_file}")).to(eq('other'))
-          expect(evaluate(extend_file(other_file))).to(eq('other'))
+          expect(evaluate(extend_file(other_file))).to(eq("@file:#{other_file}@"))
           expect(evaluate('@ruby:1+1')).to(eq(2))
           expect(evaluate('@env:ASCLI_TEST_SECURITY')).to(eq('value'))
         ensure
@@ -53,8 +53,8 @@ module Aspera
           end
         end
 
-        it 'refuses @file: in a value decoded by @extend:' do
-          expect { evaluate(extend_file(other_file)) }.to(raise_error(BadArgument, /@file: extended value is disabled by security level high/))
+        it 'does not evaluate @file: in a value decoded by @extend:' do
+          expect(evaluate(extend_file(other_file))).to(eq("@file:#{other_file}@"))
         end
 
         it 'refuses @file: in a preset written with an encoded value' do
@@ -74,7 +74,6 @@ module Aspera
         it 'reads files in allowed paths' do
           expect(evaluate("@file:#{allowed_file}")).to(eq('in folder'))
           expect(evaluate("@file:#{other_file}")).to(eq('other'))
-          expect(evaluate(extend_file(allowed_file))).to(eq('in folder'))
         end
 
         it 'refuses files outside of allowed paths, also with .. or a symbolic link, and missing files' do

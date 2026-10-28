@@ -31,6 +31,13 @@ module Aspera
         ensure
           ENV.delete('ASCLI_TEST_EXTEND')
         end
+
+        it 'does not evaluate again a value inserted by @extend:' do
+          ENV['ASCLI_TEST_EXTEND'] = '@env:HOME@'
+          expect(evaluate('@extend:a=@env:ASCLI_TEST_EXTEND@ b')).to(eq('a=@env:HOME@ b'))
+        ensure
+          ENV.delete('ASCLI_TEST_EXTEND')
+        end
       end
 
       describe '@stdin:' do
