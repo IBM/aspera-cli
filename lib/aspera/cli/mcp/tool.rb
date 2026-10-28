@@ -2,7 +2,7 @@
 
 require 'json'
 require 'aspera/log'
-require 'aspera/secret_hider'
+require 'aspera/secret/hider'
 require 'aspera/cli/runner'
 require 'aspera/cli/error'
 require 'aspera/cli/mcp/secrets'
@@ -128,7 +128,7 @@ module Aspera
               secret_call.finish
               # Secret values (e.g. entered by the user, tokens) never reach the client, even if displayed by the command,
               # also short ones in a text (e.g. a short password in an error message)
-              hider = SecretHider.instance
+              hider = Secret::Hider.instance
               return MCP::Tool::Response.new(
                 hider.hidden_copy(response.content, short_in_text: true),
                 structured_content: hider.hidden_copy(response.structured_content, short_in_text: true),
@@ -152,7 +152,7 @@ module Aspera
             # Secrets never reach the AI client, whatever the output format requested in args.
             # As on the command line, `--out.query` applies to the data of an object or list, after secrets are removed
             if result.is_a?(Result::SingleObject) || result.is_a?(Result::ObjectList) || result.is_a?(Result::ValueList)
-              result = result.with_data(SecretHider.instance.hidden_copy(result.data))
+              result = result.with_data(Secret::Hider.instance.hidden_copy(result.data))
               result = runner.context.formatter.query_result(result)
             end
             case result
@@ -180,7 +180,7 @@ module Aspera
               end
               MCP::Tool::Response.new(content, structured_content: structured)
             else
-              MCP::Tool::Response.new([{type: 'text', text: SecretHider.instance.hide_secrets_in_string(result.data.to_s, all: true)}])
+              MCP::Tool::Response.new([{type: 'text', text: Secret::Hider.instance.hide_secrets_in_string(result.data.to_s, all: true)}])
             end
           rescue Cli::SchemaRequest => e
             schema_path = e.path
@@ -194,7 +194,7 @@ module Aspera
           rescue SystemExit => e
             MCP::Tool::Response.new([{type: 'text', text: "exited with status #{e.status}"}], error: !e.status.zero?)
           rescue => e
-            MCP::Tool::Response.new([{type: 'text', text: SecretHider.instance.hide_secrets_in_string("#{e.class}: #{dedupe_lines(e.message)}", all: true)}], error: true)
+            MCP::Tool::Response.new([{type: 'text', text: Secret::Hider.instance.hide_secrets_in_string("#{e.class}: #{dedupe_lines(e.message)}", all: true)}], error: true)
           end
 
           # Delegate to Schema::Reader#to_rows — semantic fields, no ANSI, MCP/JSON-ready.

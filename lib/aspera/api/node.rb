@@ -6,7 +6,7 @@ require 'aspera/rest'
 require 'aspera/oauth/client/factory'
 require 'aspera/log'
 require 'aspera/assert'
-require 'aspera/secret_hider'
+require 'aspera/secret/hider'
 require 'aspera/environment'
 require 'base64'
 require 'openssl'
@@ -181,7 +181,7 @@ module Aspera
             ''
           ].join("\n")))
           # Hidden wherever it appears (logs, results)
-          SecretHider.instance.add_secret_values(token)
+          Secret::Hider.instance.add_secret_values(token)
           return token
         end
 

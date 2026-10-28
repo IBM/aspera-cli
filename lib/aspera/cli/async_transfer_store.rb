@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/log'
-require 'aspera/secret_hider'
+require 'aspera/secret/hider'
 require 'json'
 require 'securerandom'
 
@@ -113,7 +113,7 @@ module Aspera
         case value
         when Hash
           value.each_with_object({}) do |(k, v), h|
-            h[k] = persistable(v) unless k.to_s.start_with?('_') || SecretHider.instance.secret?(k, v)
+            h[k] = persistable(v) unless k.to_s.start_with?('_') || Secret::Hider.instance.secret?(k, v)
           end
         when Array
           value.map { |v| persistable(v) }

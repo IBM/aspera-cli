@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require 'aspera/secret_ref'
+require 'aspera/secret/reference'
 
 module Aspera
-  module SecretRef
-    module Store
+  module Secret
+    module RefStore
       # Base class of stores of secrets.
       # A subclass implements `read`, and may extend `check!` and `OPTIONS`.
       # Errors are raised with the reason only, `Resolver` adds the reference.

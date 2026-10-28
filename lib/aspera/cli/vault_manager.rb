@@ -25,7 +25,7 @@ module Aspera
         Result::Status.new("Secret deleted: #{label}")
       end
 
-      # @return [SecretStore::Base] vault instance, raises if not configured
+      # @return [Secret::Store::Base] vault instance, raises if not configured
       def vault_required
         Aspera.assert(!vault.nil?, type: Cli::BadArgument) { 'Missing mandatory option: vault' }
         vault
@@ -42,7 +42,7 @@ module Aspera
         return value
       end
 
-      # @return [SecretStore::Base, nil] vault instance, lazily created from options, or nil if not configured
+      # @return [Secret::Store::Base, nil] vault instance, lazily created from options, or nil if not configured
       def vault
         return @vault_instance if @vault_instance_initialized
         @vault_instance_initialized = true
@@ -50,8 +50,8 @@ module Aspera
         return @vault_instance = nil if info.nil? || (info.is_a?(Hash) && info.empty?)
         info = info.symbolize_keys
         info[:type] ||= 'file'
-        require 'aspera/secret_store/factory'
-        @vault_instance = SecretStore::Factory.create(
+        require 'aspera/secret/store/factory'
+        @vault_instance = Secret::Store::Factory.create(
           info,
           Info::CMD_NAME,
           context.main_folder,

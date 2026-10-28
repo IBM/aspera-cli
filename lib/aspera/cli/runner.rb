@@ -20,7 +20,7 @@ require 'aspera/cli/hints'
 require 'aspera/cli/result'
 require 'aspera/transfer/result'
 require 'aspera/duration'
-require 'aspera/secret_hider'
+require 'aspera/secret/hider'
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/schema/documentation'
@@ -269,7 +269,7 @@ module Aspera
           when :level   then Log.instance.level = v.to_sym
           when :type    then Log.instance.logger_type = v.to_sym
           when :format  then Log.instance.formatter = v
-          when :secrets then SecretHider.instance.log_secrets = Parser.get_from_list(v.to_s, 'log secrets', BoolValue::ALL)
+          when :secrets then Secret::Hider.instance.log_secrets = Parser.get_from_list(v.to_s, 'log secrets', BoolValue::ALL)
           else Aspera.error_unexpected_value(k) { 'log sub-option (level, type, format, secrets)' }
           end
         end
@@ -521,7 +521,7 @@ module Aspera
         @context.options.declare(:security, description: 'Security restrictions (dot-notation: level, allowed_paths)', on_set: Security.instance.method(:options=), schema: Schema::Registry::SECURITY_OPTIONS)
         @context.options.declare(:lock_port, description: 'Prevent dual execution of a command, e.g. in cron', allowed: Type::INTEGER)
         @context.options.declare(:once_only, description: 'Process only new items (some commands)', allowed: Type::BOOLEAN, default: false)
-        @context.options.declare(:log_secrets, description: 'Show passwords in logs', allowed: Type::BOOLEAN, default: SecretHider.instance.log_secrets, on_set: SecretHider.instance.method(:log_secrets=))
+        @context.options.declare(:log_secrets, description: 'Show passwords in logs', allowed: Type::BOOLEAN, default: Secret::Hider.instance.log_secrets, on_set: Secret::Hider.instance.method(:log_secrets=))
         @context.options.declare(
           :temp, description: 'Temporary files (dot-notation: folder, clean, expiry)',
           allowed: [Hash, String], shorthand: 'folder', schema: Schema::Registry::TEMP_OPTIONS,

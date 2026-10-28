@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require 'aspera/secret_strength'
+require 'aspera/secret/strength'
 require 'securerandom'
 
-RSpec.describe(Aspera::SecretStrength) do
+RSpec.describe(Aspera::Secret::Strength) do
   letters = ('a'..'z').to_a
   # Secrets easy to guess: repeats, sequences, keyboard rows, words, years, l33t, short
   weak_secrets = [

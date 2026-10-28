@@ -5496,7 +5496,7 @@ conf_opt_log_secrets:
   args:
     - config
     - echo
-    - "@ruby:Aspera::SecretHider.instance.log_secrets.to_s"
+    - "@ruby:Aspera::Secret::Hider.instance.log_secrets.to_s"
     - --log.secrets=yes
     - --log.level=info
     - --format=text

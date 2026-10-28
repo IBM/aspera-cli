@@ -5,7 +5,7 @@ require 'aspera/ascp/installation'
 require 'aspera/agent/transferd'
 require 'aspera/transfer/spec'
 require 'aspera/transfer/error'
-require 'aspera/secret_hider'
+require 'aspera/secret/hider'
 require 'aspera/string_ext'
 require 'aspera/log'
 require 'aspera/servlet_helpers'
@@ -344,7 +344,7 @@ module Aspera
     def start(transfer_spec)
       Transfer::Spec.fix_transferd_resume_policy(transfer_spec)
       # copy without secrets, returned in transfer `start_spec`
-      start_spec = SecretHider.instance.hidden_copy(transfer_spec)
+      start_spec = Secret::Hider.instance.hidden_copy(transfer_spec)
       Log.dump(:start_spec, start_spec)
       request = ::Transferd::Api::TransferRequest.new(
         transferType: ::Transferd::Api::TransferType::FILE_REGULAR,

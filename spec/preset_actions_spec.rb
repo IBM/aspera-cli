@@ -240,12 +240,12 @@ module Aspera
 
         it 'declares a secret value' do
           expect(host.action_preset_get(name: 'p1', param_name: 'password').data).to(eq(secret))
-          expect(SecretHider.instance.hidden_copy(secret)).not_to(eq(secret))
+          expect(Secret::Hider.instance.hidden_copy(secret)).not_to(eq(secret))
         end
 
         it 'does not declare a non-secret value' do
           expect(host.action_preset_get(name: 'p1', param_name: 'username').data).to(eq(username))
-          expect(SecretHider.instance.hidden_copy(username)).to(eq(username))
+          expect(Secret::Hider.instance.hidden_copy(username)).to(eq(username))
         end
       end
 
@@ -294,7 +294,7 @@ module Aspera
 
         # Converted, or split with dot-notation, a secret as key name would not be hidden in results
         context 'with a secret as parameter name' do
-          before { SecretHider.instance.add_secret_values(secret) }
+          before { Secret::Hider.instance.add_secret_values(secret) }
 
           after { Security.instance.reset }
 

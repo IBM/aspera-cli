@@ -95,12 +95,12 @@ Key responsibilities:
 
 - Declare and validate CLI options (boolean, string, integer, array, hash types)
 - Composite options with dot-notation sub-keys (e.g. `--out.format=json`, `--log.level=debug`)
-- Handle sensitive data (passwords, secrets) with masking ([`secret_hider.rb`](../lib/aspera/secret_hider.rb))
+- Handle sensitive data (passwords, secrets) with masking ([`secret/hider.rb`](../lib/aspera/secret/hider.rb))
 - Provide option inheritance and defaults from presets
 
 Options are declared with the `option` DSL of [`OptionDeclarator`](../lib/aspera/cli/option_declarator.rb), not only by plugins: `Formatter`, `TransferAgent`, `Http` and `Wizard` `extend OptionDeclarator` (plugins include it through `Base`). `Formatter` and `TransferAgent` declare their options on the parser with `declare_options(parser, target: self)`, so that `on_set:` callbacks are methods of that instance. `Config` includes the options of `Wizard` and `Http` with `use_options` (for `Http`, `target:` gives the object of the `on_set:` callbacks: `Context#http_config`).
 
-Global and bootstrap options (`Runner#declare_global_options`, `Bootstrapper`, `Parser#initialize`) are intentionally declared with `options.declare`, not with the `option` DSL: their defaults are read at runtime (current state of `Log`, `TempFileManager`, `SecretHider` and `Environment` singletons, `config_file` under the `home` folder, `home` after `Environment#fix_home`), and each bootstrap phase parses its options right before using them.
+Global and bootstrap options (`Runner#declare_global_options`, `Bootstrapper`, `Parser#initialize`) are intentionally declared with `options.declare`, not with the `option` DSL: their defaults are read at runtime (current state of `Log`, `TempFileManager`, `Secret::Hider` and `Environment` singletons, `config_file` under the `home` folder, `home` after `Environment#fix_home`), and each bootstrap phase parses its options right before using them.
 
 #### Plugin System
 
@@ -777,19 +777,19 @@ presets:
 
 ### Secret Management
 
-**Directory**: [`lib/aspera/secret_store/`](../lib/aspera/secret_store/) (selected by `SecretStore::Factory`, managed by `VaultManager`)
+**Directory**: [`lib/aspera/secret/store/`](../lib/aspera/secret/store/) (selected by `Secret::Store::Factory`, managed by `VaultManager`)
 
 - **file**: Built-in encrypted hash
 - **system**: macOS Keychain
 - **vault**: HashiCorp Vault (authentication by `token`, `token_file` or `approle`, own `Vault::Client`)
 - **1password**: 1Password (API or CLI)
 
-**Secret references** ([`secret_ref.rb`](../lib/aspera/secret_ref.rb), [`lib/aspera/secret_ref/`](../lib/aspera/secret_ref/)): library for applications that store a reference instead of a secret (e.g. Orchestrator), not used by `ascli` options.
+**Secret references** ([`secret/reference.rb`](../lib/aspera/secret/reference.rb), [`secret/resolver.rb`](../lib/aspera/secret/resolver.rb), [`secret/ref_store/`](../lib/aspera/secret/ref_store/)): library for applications that store a reference instead of a secret (e.g. Orchestrator), not used by `ascli` options.
 
-- `SecretRef.parse`: `secret://<store>/<path>[?<options>][#<field>]` into a `Reference`
-- `SecretRef::Resolver`: named stores from a configuration (`Hash`), `resolve` (value, TTL cache), `metadata` (version, time, no value), `invalidate`; errors give the reference and the reason, never a value; values are declared to `SecretHider`
-- `SecretRef::Store::Base` (`check!`, `fetch`, `metadata`), `Store::Vault` (KV v2 with `SecretStore::HashicorpVault`, `allowed_prefixes`), `Store::EncryptedFile` (`SecretStore::EncryptedHash`, read again when modified); the application adds types with `Resolver.register_type`
-- Bootstrap secrets of stores are read from files (`*_file` keys, `SecretRef.read_file_secret`), never in the configuration
+- `Secret.parse_reference`: `secret://<store>/<path>[?<options>][#<field>]` into a `Reference`
+- `Secret::Resolver`: named stores from a configuration (`Hash`), `resolve` (value, TTL cache), `metadata` (version, time, no value), `invalidate`; errors give the reference and the reason, never a value; values are declared to `Secret::Hider`
+- `Secret::RefStore::Base` (`check!`, `fetch`, `metadata`), `RefStore::Vault` (KV v2 with `Secret::Store::HashicorpVault`, `allowed_prefixes`), `RefStore::EncryptedFile` (`Secret::Store::EncryptedHash`, read again when modified); the application adds types with `Resolver.register_type`
+- Bootstrap secrets of stores are read from files (`*_file` keys, `Secret.read_file`), never in the configuration
 
 ## Error Handling
 
@@ -844,7 +844,7 @@ Analyzes API errors and provides:
 - Transfer specification display
 - API call tracing
 - Progress monitoring
-- Secrets are masked in logs ([`secret_hider.rb`](../lib/aspera/secret_hider.rb))
+- Secrets are masked in logs ([`secret/hider.rb`](../lib/aspera/secret/hider.rb))
 
 ## Testing Architecture
 
@@ -858,8 +858,8 @@ Analyzes API errors and provides:
   - `plugin_registry_spec.rb` — `validate!(plugin_class:)` consistency of every plugin registry (every leaf has an action or a matching `action_*` method, and every action accepts `**`)
   - `parser_spec.rb`, `option_declarator_spec.rb`, `preset_actions_spec.rb`, `runner_spec.rb`, `mcp/tool_spec.rb`, `formatter_spec.rb`, `http_spec.rb`
   - `async_transfer_store_spec.rb`, `transfer_agent_async_spec.rb`, `transfer_agent_options_spec.rb`, `transfer_result_spec.rb`, `agent_transfer_status_spec.rb`
-  - `secret_store_spec.rb`, `secret_store_factory_spec.rb`, `secret_ref_spec.rb`, `secret_ref_vault_spec.rb` (fake Vault server), `secret_ref_encrypted_file_spec.rb`
-  - `rest/client_spec.rb`, `secret_hider_spec.rb`, `proxy_auto_config_spec.rb`, `schema_reader_spec.rb`, `string_ext_spec.rb`, `uri_reader_spec.rb`, `temp_file_manager_spec.rb`, `assert_spec.rb`, `environment_spec.rb`, `version_spec.rb`, …
+  - `secret/store_spec.rb`, `secret/store/factory_spec.rb`, `secret/reference_spec.rb`, `secret/reference_vault_spec.rb` (fake Vault server), `secret/reference_encrypted_file_spec.rb`, `secret/strength_spec.rb`
+  - `rest/client_spec.rb`, `secret/hider_spec.rb`, `proxy_auto_config_spec.rb`, `schema_reader_spec.rb`, `string_ext_spec.rb`, `uri_reader_spec.rb`, `temp_file_manager_spec.rb`, `assert_spec.rb`, `environment_spec.rb`, `version_spec.rb`, …
 - Live tests requiring a server, tagged `:live` (e.g. `ascmd_ssh_live_spec.rb`)
 
 ### CI/CD Integration

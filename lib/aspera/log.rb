@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/assert'
-require 'aspera/secret_hider'
+require 'aspera/secret/hider'
 require 'logger'
 require 'pp'
 require 'json'
@@ -111,7 +111,7 @@ module Aspera
         Aspera.assert(object.nil? || block.nil?, 'Use either object, or block, not both')
         object = yield if block_given?
         # Secrets hidden by key name in the structure, whatever the dump format (the log formatter then hides secrets in text)
-        object = SecretHider.instance.hidden_copy(object) unless SecretHider.instance.log_secrets
+        object = Secret::Hider.instance.hidden_copy(object) unless Secret::Hider.instance.log_secrets
         dump_text =
           case instance.dump_format
           when :json
@@ -203,7 +203,7 @@ module Aspera
         raise Error, 'Formatter must be a String, a Logger::Formatter or a Proc'
       end
       # Update formatter with password hiding
-      @logger.formatter = SecretHider.instance.log_formatter(formatter)
+      @logger.formatter = Secret::Hider.instance.log_formatter(formatter)
       nil
     end
 

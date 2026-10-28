@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require 'aspera/secret_ref/store/base'
-require 'aspera/secret_store/encrypted_hash'
+require 'aspera/secret/ref_store/base'
+require 'aspera/secret/store/encrypted_hash'
 require 'openssl'
 
 module Aspera
-  module SecretRef
-    module Store
+  module Secret
+    module RefStore
       # Secrets in an encrypted file of `ascli` (vault of type `file`, `config vault create`).
       # Reference: `secret://<store>/<label>#<field>`, field default: `password`.
       # The file is read again when it is modified, or its password file.
@@ -41,7 +41,7 @@ module Aspera
           @lock.synchronize do
             mtimes = [@file, @password_file].map { |f| File.mtime(f) }
             unless mtimes.eql?(@mtimes)
-              @vault = SecretStore::EncryptedHash.new(file: @file, password: SecretRef.read_file_secret(@password_file))
+              @vault = Secret::Store::EncryptedHash.new(file: @file, password: Secret.read_file(@password_file))
               @mtimes = mtimes
             end
             [@vault, @mtimes.first]

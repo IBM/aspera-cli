@@ -9,7 +9,7 @@ require 'aspera/cli/info'
 require 'aspera/cli/async_transfer_store'
 require 'aspera/log'
 require 'aspera/assert'
-require 'aspera/secret_hider'
+require 'aspera/secret/hider'
 require 'securerandom'
 
 module Aspera
@@ -259,7 +259,7 @@ module Aspera
         # if TS from app has content_protection (e.g. F5), that means content is protected: ask password if not provided
         transfer_spec['content_protection_password'] = @context.options.prompt_user_input('content protection password', sensitive: true) if transfer_spec['content_protection'].eql?('decrypt') && !transfer_spec.key?('content_protection_password')
         # Secrets of transfer spec (e.g. `token` from the application) are hidden wherever they appear (logs, results)
-        SecretHider.instance.add_secrets_in(transfer_spec)
+        Secret::Hider.instance.add_secrets_in(transfer_spec)
         # create transfer agent
         agent_instance.start_transfer(transfer_spec, token_regenerator: rest_token)
         # --- async mode ---

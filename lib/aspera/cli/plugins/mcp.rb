@@ -6,7 +6,7 @@ require 'aspera/cli/version'
 require 'aspera/oauth/server/pkce'
 require 'aspera/cli/security'
 require 'aspera/cli/deprecation'
-require 'aspera/secret_strength'
+require 'aspera/secret/strength'
 require 'securerandom'
 
 module Aspera
@@ -247,8 +247,8 @@ module Aspera
           oauth_enabled     = mcp_options.fetch(:oauth, false)
           access_token_ttl  = mcp_options.fetch(:oauth_access_token_ttl, OAuth::Server::Pkce.default_access_token_ttl)
           refresh_token_ttl = mcp_options.fetch(:oauth_refresh_token_ttl, OAuth::Server::Pkce.default_refresh_token_ttl)
-          min_bits          = mcp_options.fetch(:auth_token_min_bits, SecretStrength::DEFAULT_MIN_BITS)
-          SecretStrength.assert_strong(auth_token, name: 'auth_token', min_bits: min_bits, type: Cli::BadArgument) unless auth_token.nil?
+          min_bits          = mcp_options.fetch(:auth_token_min_bits, Secret::Strength::DEFAULT_MIN_BITS)
+          Secret::Strength.assert_strong(auth_token, name: 'auth_token', min_bits: min_bits, type: Cli::BadArgument) unless auth_token.nil?
           base_url = http_base_url(uri, mcp_options[:public_url], oauth_enabled)
           what = "auth_token#{' (asked on the consent page)' if oauth_enabled}"
           # Clients reach the server at public_url (e.g. through a reverse proxy), whatever the address it listens on

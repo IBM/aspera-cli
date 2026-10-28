@@ -1132,7 +1132,7 @@ module Aspera
         end
 
         def action_emulator(parameters: {}, **)
-          require 'aspera/secret_strength'
+          require 'aspera/secret/strength'
           require 'aspera/web_server_simple'
           require 'aspera/node_emulator'
           # missing parameters take the default of the schema
@@ -1145,7 +1145,7 @@ module Aspera
           retention_sec = config.delete(:retention_sec)
           password_min_bits = config.delete(:password_min_bits)
           Aspera.assert(config[:username].nil? == config[:password].nil?, type: Cli::BadArgument) { 'Parameters username and password must be set together' }
-          SecretStrength.assert_strong(config[:password], name: 'password', min_bits: password_min_bits, type: Cli::BadArgument) unless config[:password].nil?
+          Secret::Strength.assert_strong(config[:password], name: 'password', min_bits: password_min_bits, type: Cli::BadArgument) unless config[:password].nil?
           # Files of the docroot can be sent to, or received from, any host by anyone who can reach the server
           WebServerSimple.serve(parameters, NodeEmulatorServlet, protected: !config[:username].nil?, what: 'username and password', type: Cli::BadArgument) do
             Log.log.warn('No username and password: emulator accepts requests without authentication') if config[:username].nil?

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/secret_hider'
+require 'aspera/secret/hider'
 require 'aspera/cli/error'
 require 'aspera/cli/info'
 require 'aspera/cli/web_secret'
@@ -79,7 +79,7 @@ module Aspera
             # Clients of protocol 2025-11-25: completion of the out-of-band interaction
             @server_context.notify_elicitation_complete(elicitation_id: id) unless action.nil? || @server_context.modern?
             # Never reaches the client, even if displayed by the command
-            SecretHider.instance.add_secret_values(value)
+            Secret::Hider.instance.add_secret_values(value)
             value
           end
 

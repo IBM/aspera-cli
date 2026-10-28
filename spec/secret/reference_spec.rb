@@ -1,19 +1,19 @@
 # frozen_string_literal: true
 
-# Unit tests for Aspera::SecretRef: parsing of references, resolver with a fake store — no server needed.
+# Unit tests for Aspera::Secret: parsing of references, resolver with a fake store — no server needed.
 
 require 'tmpdir'
 require 'securerandom'
-require 'aspera/secret_ref/resolver'
+require 'aspera/secret/resolver'
 
-RSpec.describe(Aspera::SecretRef) do
+RSpec.describe(Aspera::Secret) do
   # Values of secrets are generated, none in source
   let(:secret) { SecureRandom.alphanumeric(16) }
   let(:other) { SecureRandom.alphanumeric(16) }
 
-  describe '.parse' do
+  describe '.parse_reference' do
     it 'parses store, path, options and field' do
-      ref = described_class.parse('secret://vault_prod/secret/orchestrator/faspex5?version=2&mount=secret#private_key')
+      ref = described_class.parse_reference('secret://vault_prod/secret/orchestrator/faspex5?version=2&mount=secret#private_key')
       expect(ref.to_h).to(eq({
         text:    'secret://vault_prod/secret/orchestrator/faspex5?version=2&mount=secret#private_key',
         store:   'vault_prod',
@@ -24,21 +24,21 @@ RSpec.describe(Aspera::SecretRef) do
     end
 
     it 'decodes spaces and percent-encoding of path and field' do
-      expect(described_class.parse('secret://nodes/Baton QC#password').path).to(eq('Baton QC'))
-      ref = described_class.parse('secret://nodes/Baton%20QC#certificate%5Fpassphrase')
+      expect(described_class.parse_reference('secret://nodes/Baton QC#password').path).to(eq('Baton QC'))
+      ref = described_class.parse_reference('secret://nodes/Baton%20QC#certificate%5Fpassphrase')
       expect([ref.path, ref.field]).to(eq(['Baton QC', 'certificate_passphrase']))
       # `+` is a space only in options
-      expect(described_class.parse('secret://ops/a+b?mount=c+d').to_h.slice(:path, :options)).to(eq({path: 'a+b', options: {'mount' => 'c d'}}))
+      expect(described_class.parse_reference('secret://ops/a+b?mount=c+d').to_h.slice(:path, :options)).to(eq({path: 'a+b', options: {'mount' => 'c d'}}))
     end
 
     it 'has no field when absent' do
-      ref = described_class.parse('secret://ops/faspex5')
+      ref = described_class.parse_reference('secret://ops/faspex5')
       expect([ref.path, ref.options, ref.field]).to(eq(['faspex5', {}, nil]))
     end
 
     it 'refuses invalid references' do
       ['secret://ops', 'secret://ops/', 'secret://op s/a', 'secret://ops/a#', 'vault://ops/a', 'secret://ops/a%ZZ', nil].each do |text|
-        expect { described_class.parse(text) }.to(raise_error(Aspera::SecretRef::Error, /\Asecret reference /))
+        expect { described_class.parse_reference(text) }.to(raise_error(Aspera::Secret::Error, /\Asecret reference /))
       end
     end
 
@@ -49,23 +49,23 @@ RSpec.describe(Aspera::SecretRef) do
     end
   end
 
-  describe '.read_file_secret' do
+  describe '.read_file' do
     it 'reads a file without trailing newline and hides its value' do
       Dir.mktmpdir do |dir|
         path = File.join(dir, 'token')
         File.write(path, "#{secret}\n")
-        expect(described_class.read_file_secret(path)).to(eq(secret))
-        expect(Aspera::SecretHider.instance.hide_secrets_in_string("token is #{secret}")).not_to(include(secret))
+        expect(described_class.read_file(path)).to(eq(secret))
+        expect(Aspera::Secret::Hider.instance.hide_secrets_in_string("token is #{secret}")).not_to(include(secret))
         File.write(path, "\n")
-        expect { described_class.read_file_secret(path) }.to(raise_error(Aspera::SecretRef::Error, /empty/))
-        expect { described_class.read_file_secret(File.join(dir, 'missing')) }.to(raise_error(Aspera::SecretRef::Error, /No such file/))
+        expect { described_class.read_file(path) }.to(raise_error(Aspera::Secret::Error, /empty/))
+        expect { described_class.read_file(File.join(dir, 'missing')) }.to(raise_error(Aspera::Secret::Error, /No such file/))
       end
     end
   end
 
-  describe Aspera::SecretRef::Resolver do
+  describe Aspera::Secret::Resolver do
     # Store in memory: path → fields; counts reads
-    fake_store = Class.new(Aspera::SecretRef::Store::Base) do
+    fake_store = Class.new(Aspera::Secret::RefStore::Base) do
       self::OPTIONS = %w[flavor].freeze
       attr_reader :reads
       attr_accessor :secrets
@@ -79,7 +79,7 @@ RSpec.describe(Aspera::SecretRef) do
 
       def check!(ref)
         super
-        raise Aspera::SecretRef::Error, "path not allowed: #{ref.path}" unless @allowed.nil? || ref.path.start_with?(@allowed)
+        raise Aspera::Secret::Error, "path not allowed: #{ref.path}" unless @allowed.nil? || ref.path.start_with?(@allowed)
       end
 
       private
@@ -87,7 +87,7 @@ RSpec.describe(Aspera::SecretRef) do
       def read(ref)
         @reads += 1
         fields = @secrets[ref.path]
-        raise Aspera::SecretRef::Error, 'not found' if fields.nil?
+        raise Aspera::Secret::Error, 'not found' if fields.nil?
         {value: field_value(fields, ref, default: 'value'), version: 3, updated_time: Time.at(0)}
       end
     end
@@ -107,7 +107,7 @@ RSpec.describe(Aspera::SecretRef) do
       expect(resolver.resolve('secret://mem/app/one')).to(eq(secret))
       expect(resolver.resolve('secret://mem/app/one#user')).to(eq(other))
       expect(resolver.metadata('secret://mem/app/one')).to(eq({store: 'mem', version: 3, updated_time: Time.at(0)}))
-      expect(Aspera::SecretHider.instance.hide_secrets_in_string("value: #{secret}")).not_to(include(secret))
+      expect(Aspera::Secret::Hider.instance.hide_secrets_in_string("value: #{secret}")).not_to(include(secret))
     end
 
     it 'caches values until TTL expires' do
@@ -155,7 +155,7 @@ RSpec.describe(Aspera::SecretRef) do
         'secret://mem/app/one#user'      => 'no field: user',
         'secret://mem/app/one#list'      => 'field list is not a string'
       }.each do |text, reason|
-        expect { resolver.resolve(text) }.to(raise_error(Aspera::SecretRef::Error, "secret reference #{text}: #{reason}"))
+        expect { resolver.resolve(text) }.to(raise_error(Aspera::Secret::Error, "secret reference #{text}: #{reason}"))
       end
       expect(store.reads).to(eq(3))
     end
@@ -173,7 +173,7 @@ RSpec.describe(Aspera::SecretRef) do
         [{'stores' => {'v' => {'type' => 'vault', 'url' => 'http://127.0.0.1:8200'}}}, /store v: either token_file or approle/],
         [{'stores' => {'v' => {'type' => 'vault', 'url' => 'http://127.0.0.1:8200', 'approle' => {'role_id' => 'r', 'secret_id' => 'x'}}}}, /secret_id_file/]
       ].each do |config, message|
-        expect { described_class.new(config) }.to(raise_error(Aspera::SecretRef::Error, message))
+        expect { described_class.new(config) }.to(raise_error(Aspera::Secret::Error, message))
       end
     end
 

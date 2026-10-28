@@ -111,7 +111,7 @@ RSpec.describe(Aspera::Cli::Mcp::Tool) do
 
     it 'hides a declared secret used as key name, in both text and structuredContent' do
       secret = SecureRandom.alphanumeric(12)
-      Aspera::SecretHider.instance.add_secret_values(secret)
+      Aspera::Secret::Hider.instance.add_secret_values(secret)
       resp = call_with_result(Aspera::Cli::Result::SingleObject.new({secret => 'value'}))
       expect(resp.content.first[:text]).not_to(include(secret))
       expect(resp.structured_content.keys.join).not_to(include(secret))
@@ -242,7 +242,7 @@ RSpec.describe(Aspera::Cli::Mcp::Tool) do
     it 'hides a declared secret value, even without key name' do
       Aspera::Environment.unicode = true
       secret = SecureRandom.alphanumeric(12)
-      Aspera::SecretHider.instance.add_secret_values(secret)
+      Aspera::Secret::Hider.instance.add_secret_values(secret)
       resp = call_with_result(Aspera::Cli::Result::Text.new("Bearer #{secret}"))
       expect(resp.content).to(eq([{type: 'text', text: 'Bearer 🔑'}]))
     end
@@ -261,7 +261,7 @@ RSpec.describe(Aspera::Cli::Mcp::Tool) do
 
     it 'hides a declared short secret in the message' do
       short = SecureRandom.alphanumeric(6)
-      Aspera::SecretHider.instance.add_secret_values(short)
+      Aspera::Secret::Hider.instance.add_secret_values(short)
       allow(Aspera::Cli::Runner).to(receive(:new).and_raise(RuntimeError, "no such preset: #{short}"))
       resp = described_class.call(args: ['bad'])
       expect(resp.content.first[:text]).to(start_with('RuntimeError: no such preset: '))

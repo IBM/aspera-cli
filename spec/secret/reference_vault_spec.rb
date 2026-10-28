@@ -6,9 +6,9 @@ require 'tmpdir'
 require 'securerandom'
 require 'webrick'
 require 'json'
-require 'aspera/secret_ref/resolver'
+require 'aspera/secret/resolver'
 
-RSpec.describe(Aspera::SecretRef::Store::Vault) do
+RSpec.describe(Aspera::Secret::RefStore::Vault) do
   before(:all) do
     # Shared with server: valid tokens, secrets (URL path after `/v1/` → versions), AppRole, counters
     @state = {}
@@ -77,7 +77,7 @@ RSpec.describe(Aspera::SecretRef::Store::Vault) do
     File.join(dir, name).tap { |path| File.write(path, "#{content}\n") }
   end
 
-  def resolver(store) = Aspera::SecretRef::Resolver.new({'cache_ttl' => 0, 'stores' => {'vault_prod' => {'type' => 'vault', 'url' => @url}.merge(store)}})
+  def resolver(store) = Aspera::Secret::Resolver.new({'cache_ttl' => 0, 'stores' => {'vault_prod' => {'type' => 'vault', 'url' => @url}.merge(store)}})
 
   describe 'with token file' do
     let(:token_file) { secret_file('token', token) }
@@ -88,8 +88,8 @@ RSpec.describe(Aspera::SecretRef::Store::Vault) do
       expect(r.resolve('secret://vault_prod/secret/orchestrator/faspex5#private_key')).to(eq(secret))
       expect(r.resolve('secret://vault_prod/secret/orchestrator/faspex5?version=1#private_key')).to(eq(other))
       expect(r.metadata('secret://vault_prod/secret/orchestrator/faspex5#username')).to(eq({store: 'vault_prod', version: 2, updated_time: Time.utc(2026, 10, 2, 10, 0, Rational(123_456_789, 1_000_000_000))}))
-      expect { r.resolve('secret://vault_prod/secret/orchestrator/faspex5?version=3#private_key') }.to(raise_error(Aspera::SecretRef::Error, /: not found\z/))
-      expect { r.resolve('secret://vault_prod/secret/orchestrator/faspex5') }.to(raise_error(Aspera::SecretRef::Error, /: field required/))
+      expect { r.resolve('secret://vault_prod/secret/orchestrator/faspex5?version=3#private_key') }.to(raise_error(Aspera::Secret::Error, /: not found\z/))
+      expect { r.resolve('secret://vault_prod/secret/orchestrator/faspex5') }.to(raise_error(Aspera::Secret::Error, /: field required/))
     end
 
     it 'reads a secret of a mount with slash' do
@@ -111,13 +111,13 @@ RSpec.describe(Aspera::SecretRef::Store::Vault) do
       # Revoked, file unchanged: no retry
       @state[:tokens] = []
       requests = @state[:requests]
-      expect { r.resolve('secret://vault_prod/secret/app#password') }.to(raise_error(Aspera::SecretRef::Error, /: Vault: 403 permission denied\z/))
+      expect { r.resolve('secret://vault_prod/secret/app#password') }.to(raise_error(Aspera::Secret::Error, /: Vault: 403 permission denied\z/))
       expect(@state[:requests]).to(eq(requests + 1))
     end
 
     it 'fails on missing token file, with reference' do
       expect { resolver('token_file' => File.join(dir, 'missing')).resolve('secret://vault_prod/secret/app#password') }
-        .to(raise_error(Aspera::SecretRef::Error, %r{\Asecret reference secret://vault_prod/secret/app#password: .*No such file}))
+        .to(raise_error(Aspera::Secret::Error, %r{\Asecret reference secret://vault_prod/secret/app#password: .*No such file}))
     end
 
     it 'checks paths before access' do
@@ -134,7 +134,7 @@ RSpec.describe(Aspera::SecretRef::Store::Vault) do
         'secret://vault_prod/secret/orchestrator/a?version=0#password' => 'version shall be a positive integer: 0',
         'secret://vault_prod/secret/orchestrator/a?flavor=1#password'  => 'unsupported options: flavor'
       }.each do |text, reason|
-        expect { r.resolve(text) }.to(raise_error(Aspera::SecretRef::Error, "secret reference #{text}: #{reason}"))
+        expect { r.resolve(text) }.to(raise_error(Aspera::Secret::Error, "secret reference #{text}: #{reason}"))
       end
       expect(@state[:requests]).to(eq(1))
     end
@@ -142,7 +142,7 @@ RSpec.describe(Aspera::SecretRef::Store::Vault) do
 
   describe 'with AppRole' do
     let(:secret_id_file) { secret_file('secret_id', approle['secret_id']) }
-    let(:vault) { Aspera::SecretStore::HashicorpVault.new(url: @url, approle: {'role_id' => approle['role_id'], 'secret_id_file' => secret_id_file}) }
+    let(:vault) { Aspera::Secret::Store::HashicorpVault.new(url: @url, approle: {'role_id' => approle['role_id'], 'secret_id_file' => secret_id_file}) }
 
     before { @state[:secrets]['secret/data/app'] = [{password: secret}] }
 

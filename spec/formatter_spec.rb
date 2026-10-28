@@ -176,7 +176,7 @@ module Aspera
         let(:secret) { SecureRandom.alphanumeric(12) }
         let(:result) { Result::Text.new(secret) }
 
-        before { SecretHider.instance.add_secret_values(secret) }
+        before { Secret::Hider.instance.add_secret_values(secret) }
 
         it 'is hidden by default' do
           Environment.unicode = false

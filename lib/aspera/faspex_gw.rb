@@ -4,7 +4,7 @@ require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/hash_ext'
 require 'aspera/mime'
-require 'aspera/secret_strength'
+require 'aspera/secret/strength'
 require 'aspera/servlet_helpers'
 require 'aspera/web_server_simple'
 require 'webrick'
@@ -38,8 +38,8 @@ module Aspera
         not_allowed = parameters.keys - ALLOWED_PARAMETERS
         Aspera.assert(not_allowed.empty?, type: ParameterError) { "unsupported parameters: #{not_allowed.join(', ')}" }
         Aspera.assert(parameters[:username].nil? == parameters[:password].nil?, type: ParameterError) { 'Parameters username and password must be set together' }
-        parameters[:password_min_bits] ||= SecretStrength::DEFAULT_MIN_BITS
-        SecretStrength.assert_strong(parameters[:password], name: 'password', min_bits: parameters[:password_min_bits]) unless parameters[:password].nil?
+        parameters[:password_min_bits] ||= Secret::Strength::DEFAULT_MIN_BITS
+        Secret::Strength.assert_strong(parameters[:password], name: 'password', min_bits: parameters[:password_min_bits]) unless parameters[:password].nil?
         parameters
       end
 

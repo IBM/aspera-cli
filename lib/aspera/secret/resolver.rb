@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require 'aspera/secret_ref'
-require 'aspera/secret_ref/store/vault'
-require 'aspera/secret_ref/store/encrypted_file'
-require 'aspera/secret_hider'
+require 'aspera/secret/reference'
+require 'aspera/secret/ref_store/vault'
+require 'aspera/secret/ref_store/encrypted_file'
+require 'aspera/secret/hider'
 
 module Aspera
-  module SecretRef
+  module Secret
     # Reads the values of references from named stores, with a cache.
     #
     # Configuration (e.g. from a YAML file):
@@ -23,16 +23,16 @@ module Aspera
 
       # Types of store: name → class
       @types = {
-        'vault'          => Store::Vault,
-        'encrypted_file' => Store::EncryptedFile
+        'vault'          => RefStore::Vault,
+        'encrypted_file' => RefStore::EncryptedFile
       }
 
       class << self
         # Add a type of store, e.g. from the host application
         # @param name  [String] Value of `type` in configuration
-        # @param klass [Class]  Subclass of `Store::Base`, created with `name:` and parameters of store as keyword arguments
+        # @param klass [Class]  Subclass of `RefStore::Base`, created with `name:` and parameters of store as keyword arguments
         def register_type(name, klass)
-          Aspera.assert(klass <= Store::Base) { "#{klass} shall be a subclass of #{Store::Base}" }
+          Aspera.assert(klass <= RefStore::Base) { "#{klass} shall be a subclass of #{RefStore::Base}" }
           @types[name.to_s] = klass
           nil
         end
@@ -69,7 +69,7 @@ module Aspera
       # @return [String] Value of secret, from cache if not expired
       # @raise [Error] Invalid reference, not allowed, or not readable
       def resolve(text)
-        ref = SecretRef.parse(text)
+        ref = Secret.parse_reference(text)
         access(ref) do |store|
           key = ref.to_h.except(:text)
           cached(key) || cache(key, ref.store, store.fetch(ref))
@@ -81,7 +81,7 @@ module Aspera
       # @return [Hash] `store`, `version` (`nil` if store has no version), `updated_time` (`Time` or `nil`)
       # @raise [Error] Invalid reference, not allowed, or not readable
       def metadata(text)
-        ref = SecretRef.parse(text)
+        ref = Secret.parse_reference(text)
         access(ref) { |store| {store: ref.store}.merge(store.metadata(ref)) }
       end
 
@@ -96,7 +96,7 @@ module Aspera
 
       private
 
-      # @return [Store::Base] New store from its parameters
+      # @return [RefStore::Base] New store from its parameters
       def create_store(name, params)
         raise Error, 'invalid name' unless STORE_NAME.match?(name)
         raise Error, 'expecting a Hash' unless params.is_a?(Hash)
@@ -111,7 +111,7 @@ module Aspera
       end
 
       # Checks reference and calls block with its store
-      # @yieldparam store [Store::Base]
+      # @yieldparam store [RefStore::Base]
       # @return [Object] Value of block
       def access(ref)
         store = @stores[ref.store]
@@ -128,7 +128,7 @@ module Aspera
         when Error then error.message
         when ::Vault::HTTPError then "Vault: #{error.code}#{" #{error.errors.join(', ')}" unless error.errors.empty?}"
         when ::Vault::HTTPConnectionError then "Vault: cannot connect to #{error.address}: #{error.original_exception.message}"
-        else SecretHider.instance.hide_secrets_in_string("#{error.class}: #{error.message}", all: true)
+        else Secret::Hider.instance.hide_secrets_in_string("#{error.class}: #{error.message}", all: true)
         end
       end
 
@@ -143,9 +143,9 @@ module Aspera
         end
       end
 
-      # @return [String] Value, after cache and declaration to `SecretHider`
+      # @return [String] Value, after cache and declaration to `Secret::Hider`
       def cache(key, store_name, value)
-        SecretHider.instance.add_secret_values(value)
+        Secret::Hider.instance.add_secret_values(value)
         @lock.synchronize { @cache[key] = {value: value, store: store_name, expiry: monotonic_time + @cache_ttl} } if @cache_ttl.positive?
         value
       end

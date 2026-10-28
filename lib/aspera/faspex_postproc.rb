@@ -10,7 +10,7 @@ require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/environment'
 require 'aspera/hash_ext'
-require 'aspera/secret_strength'
+require 'aspera/secret/strength'
 require 'aspera/servlet_helpers'
 require 'aspera/web_server_simple'
 
@@ -49,9 +49,9 @@ module Aspera
         parameters[:script_folder] ||= '.'
         parameters[:fail_on_error] ||= false
         parameters[:timeout_seconds] ||= 60
-        parameters[:secret_token_min_bits] ||= SecretStrength::DEFAULT_MIN_BITS
+        parameters[:secret_token_min_bits] ||= Secret::Strength::DEFAULT_MIN_BITS
         Aspera.assert(File.directory?(parameters[:script_folder])) { "script_folder not found: #{parameters[:script_folder]}" }
-        SecretStrength.assert_strong(parameters[:secret_token], name: 'secret_token', min_bits: parameters[:secret_token_min_bits]) if parameters.key?(:secret_token)
+        Secret::Strength.assert_strong(parameters[:secret_token], name: 'secret_token', min_bits: parameters[:secret_token_min_bits]) if parameters.key?(:secret_token)
         # allowed_ips: optional IP addresses or networks (CIDR); nil means no restriction
         parameters[:allowed_ips] = Array(parameters[:allowed_ips]).map { |ip| ip_address(ip) } if parameters.key?(:allowed_ips)
         parameters

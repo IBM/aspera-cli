@@ -10,7 +10,7 @@ Released: [Place date of release here]
   * New command `ascp logs`: analysis of `ascp` log files (`ascp` 4.0 and later): statistics, sessions with diagnostics, multi-session transfers, rates per period, errors by peer, transferred files, licenses. Diagnostics have an identifier and a severity, and include error category with hint, retries of failed sessions, parameters set by the server, efficiency, and the limit of the rate on the sender. Logs of client and server are joined by session. New option `ascp_logs` (dot-notation: `period`, `zero_bytes`, `mtu`, `resolve`). Command `ascp logs records` gives log lines parsed into records (`samples`, `sessions`, `transfers`), with the field names of the log, for use with `--out.query`, and `ascp logs fields` describes their fields.
   * `ascp errors`: optional argument `session` lists error codes of sessions (`errcode` in logs), with category and corresponding error of the management port (default: `management`).
   * `vault` (HashiCorp): New parameters `token_file` (token read again when the file is modified, e.g. by Vault Agent), `approle` (AppRole login, with `secret_id` or `secret_id_file`: the token is renewed, and obtained again when refused), `namespace` and `ca_file`.
-* **library**: New module `Aspera::SecretRef`: references `secret://<store>/<path>[?<options>][#<field>]` to secrets of named stores (HashiCorp Vault KV v2, encrypted file of `ascli`, or a type registered by the application), read when used, with a cache. For applications that store references instead of secrets (e.g. Orchestrator): `ascli` options do not accept `secret://`. `Aspera::Log#logger=` sends logs to the logger of the application.
+* **library**: New class `Aspera::Secret::Resolver`: references `secret://<store>/<path>[?<options>][#<field>]` to secrets of named stores (HashiCorp Vault KV v2, encrypted file of `ascli`, or a type registered by the application), read when used, with a cache. For applications that store references instead of secrets (e.g. Orchestrator): `ascli` options do not accept `secret://`. `Aspera::Log#logger=` sends logs to the logger of the application.
 * `orchestrator`:
   * `workflows check_import`: warning `graph.synch_factor_position` when a `Synch_factor` other than `0` has no attributes `x` and `y` (position of the join symbol): opened from the list of workflows, the designer of Orchestrator then shows an empty canvas.
 
@@ -23,7 +23,7 @@ Released: [Place date of release here]
 
 ### Breaking Changes
 
-* **library**: Module `Aspera::Keychain` is renamed `Aspera::SecretStore` (files `aspera/secret_store/...`), backends of option `vault`.
+* **library**: Modules about secrets are in `Aspera::Secret` (files `aspera/secret/...`): `SecretHider` is renamed `Secret::Hider`, `SecretStrength` is renamed `Secret::Strength`, and `Keychain` (backends of option `vault`) is renamed `Secret::Store`.
 
 ## 4.28.0
 

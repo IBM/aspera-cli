@@ -5,7 +5,7 @@ require 'aspera/environment'
 require 'aspera/yaml'
 require 'aspera/log'
 require 'aspera/assert'
-require 'aspera/secret_hider'
+require 'aspera/secret/hider'
 require 'aspera/cli/error'
 require 'aspera/cli/prompt'
 require 'aspera/cli/security'
@@ -185,11 +185,11 @@ module Aspera
         handlers_reversed.each_with_index do |handler, index|
           Security.instance.check_extended_value(handler)
           # The value read by the previous handler may be a secret
-          Security.instance.check_secret_processing("@#{handler}") { SecretHider.instance.contains_secret?(value) } if index.positive?
+          Security.instance.check_secret_processing("@#{handler}") { Secret::Hider.instance.contains_secret?(value) } if index.positive?
           value = @handlers[handler].call(value)
           # Values read from a secret source are hidden wherever they appear: logs, results
           if SECRET_HANDLERS.include?(handler)
-            value.is_a?(String) ? SecretHider.instance.add_secret_values(value) : SecretHider.instance.add_secrets_in(value)
+            value.is_a?(String) ? Secret::Hider.instance.add_secret_values(value) : Secret::Hider.instance.add_secrets_in(value)
           end
         rescue => e
           raise BadArgument, "Evaluation of #{handler} for #{context}: #{e.message}"
@@ -205,7 +205,7 @@ module Aspera
           Log.log.debug { "evaluating #{sub_value}" }
           sub_value = evaluate(sub_value, context: 'composite extended value')
           # In a text, a secret is not the whole value
-          Security.instance.check_secret_processing('@extend') { SecretHider.instance.contains_secret?(sub_value) }
+          Security.instance.check_secret_processing('@extend') { Secret::Hider.instance.contains_secret?(sub_value) }
           value = "#{m[1]}#{sub_value}#{m[4]}"
         end
         return value

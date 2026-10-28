@@ -3,7 +3,7 @@
 require 'aspera/cli/option_types'
 require 'aspera/cli/extended_value'
 require 'aspera/cli/deprecation'
-require 'aspera/secret_hider'
+require 'aspera/secret/hider'
 require 'aspera/schema/registry'
 require 'aspera/schema/validator'
 require 'aspera/log'
@@ -51,7 +51,7 @@ module Aspera
         @short = nil
         @block = nil
         # by default passwords and secrets are sensitive, else specify when declaring the option
-        @sensitive = SecretHider.instance.secret?(@option, '')
+        @sensitive = Secret::Hider.instance.secret?(@option, '')
         @deprecation = Deprecation.create(deprecation)
         @schema = schema
         @shorthand = shorthand
@@ -273,9 +273,9 @@ module Aspera
       def store(new_value, source)
         # Secret values are hidden wherever they appear: logs, results
         if @sensitive
-          SecretHider.instance.add_secret_values(new_value)
+          Secret::Hider.instance.add_secret_values(new_value)
         else
-          SecretHider.instance.add_secrets_in(new_value)
+          Secret::Hider.instance.add_secrets_in(new_value)
         end
         @value = new_value
         @source = source

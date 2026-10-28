@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/assert'
-require 'aspera/secret_hider'
+require 'aspera/secret/hider'
 require 'aspera/cli/security'
 require 'aspera/cli/preset_manager'
 
@@ -120,7 +120,7 @@ module Aspera
         when Numeric, String
           value = ExtendedValue.instance.evaluate(value.to_s, context: 'preset')
           # A secret has no key name in a text result: declared, so that it is hidden
-          SecretHider.instance.add_secret_values(value) if SecretHider.instance.secret?(param_name, value)
+          Secret::Hider.instance.add_secret_values(value) if Secret::Hider.instance.secret?(param_name, value)
           return Result::Text.new(value)
         end
         Result::SingleObject.new(value)
@@ -138,7 +138,7 @@ module Aspera
         name = preset_name(name, create: true)
         # Key names are not secrets: converted, or split with dot-notation, a secret would not be hidden in results
         Security.instance.check_secret_processing('preset parameter name', hint: 'give a name that is not a secret') do
-          SecretHider.instance.contains_secret?(param_name)
+          Secret::Hider.instance.contains_secret?(param_name)
         end
         param_name = Parser.option_line_to_name(param_name)
         presets.set_key(name, param_name, Parser.smart_convert(param_value))

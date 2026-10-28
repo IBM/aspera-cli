@@ -6,7 +6,7 @@ require 'aspera/cli/version'
 require 'aspera/cli/info'
 require 'aspera/log'
 require 'aspera/assert'
-require 'aspera/secret_hider'
+require 'aspera/secret/hider'
 require 'aspera/yaml'
 require 'digest'
 require 'yaml'
@@ -94,7 +94,7 @@ module Aspera
           raise Cli::Error, e.to_s
         end
         # Hidden wherever they appear (logs, results), also when copied under another key name
-        SecretHider.instance.add_secrets_in(@config_presets)
+        Secret::Hider.instance.add_secrets_in(@config_presets)
       end
 
       # Save to disk only if content changed since last load/save.
@@ -158,7 +158,7 @@ module Aspera
         current.delete_if { |k, _| k.to_s.start_with?(Key::META_PREFIX) } if current.is_a?(Hash)
         current = ExtendedValue.instance.evaluate(current, context: 'preset')
         # A secret read alone has no key name: declared, so that it is hidden wherever it appears
-        SecretHider.instance.add_secret_values(current) if SecretHider.instance.secret?(names.last, current)
+        Secret::Hider.instance.add_secret_values(current) if Secret::Hider.instance.secret?(names.last, current)
         current
       end
 
@@ -294,7 +294,7 @@ module Aspera
           case value
           when Hash then value.each { |k, v| value[k] = stringify_secrets(k, v) }
           when Array then value.map! { |v| stringify_secrets(nil, v) }
-          when Numeric then value = value.to_s if SecretHider.instance.secret?(key, value.to_s)
+          when Numeric then value = value.to_s if Secret::Hider.instance.secret?(key, value.to_s)
           end
           value
         end

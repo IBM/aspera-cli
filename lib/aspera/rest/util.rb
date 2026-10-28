@@ -3,7 +3,7 @@
 require 'aspera/rest/parameters'
 require 'aspera/log'
 require 'aspera/assert'
-require 'aspera/secret_hider'
+require 'aspera/secret/hider'
 require 'net/http'
 require 'net/https'
 require 'uri'
@@ -20,7 +20,7 @@ module Aspera
       def basic_authorization(user, pass)
         credentials = Base64.strict_encode64("#{user}:#{pass}")
         # Hidden wherever it appears (logs, results)
-        SecretHider.instance.add_secret_values(credentials)
+        Secret::Hider.instance.add_secret_values(credentials)
         "Basic #{credentials}"
       end
 

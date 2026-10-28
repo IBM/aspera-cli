@@ -4,9 +4,9 @@
 
 require 'tmpdir'
 require 'securerandom'
-require 'aspera/secret_ref/resolver'
+require 'aspera/secret/resolver'
 
-RSpec.describe(Aspera::SecretRef::Store::EncryptedFile) do
+RSpec.describe(Aspera::Secret::RefStore::EncryptedFile) do
   # Values of secrets are generated, none in source
   let(:secret) { SecureRandom.alphanumeric(16) }
   let(:rotated) { SecureRandom.alphanumeric(16) }
@@ -15,11 +15,11 @@ RSpec.describe(Aspera::SecretRef::Store::EncryptedFile) do
   let(:dir) { Dir.mktmpdir }
   let(:file) { File.join(dir, 'ops_vault.bin') }
   let(:password_file) { File.join(dir, 'ops_vault.pass') }
-  let(:resolver) { Aspera::SecretRef::Resolver.new({'cache_ttl' => 0, 'stores' => {'ops' => {'type' => 'encrypted_file', 'file' => file, 'password_file' => password_file}}}) }
+  let(:resolver) { Aspera::Secret::Resolver.new({'cache_ttl' => 0, 'stores' => {'ops' => {'type' => 'encrypted_file', 'file' => file, 'password_file' => password_file}}}) }
 
   before do
     File.write(password_file, "#{vault_password}\n")
-    Aspera::SecretStore::EncryptedHash.new(file: file, password: vault_password).set({label: 'faspex5', username: username, password: secret})
+    Aspera::Secret::Store::EncryptedHash.new(file: file, password: vault_password).set({label: 'faspex5', username: username, password: secret})
   end
 
   after { FileUtils.rm_rf(dir) }
@@ -40,7 +40,7 @@ RSpec.describe(Aspera::SecretRef::Store::EncryptedFile) do
   it 'reads the file again when it is modified' do
     expect(resolver.resolve('secret://ops/faspex5')).to(eq(secret))
     rewrite(file) do
-      vault = Aspera::SecretStore::EncryptedHash.new(file: file, password: vault_password)
+      vault = Aspera::Secret::Store::EncryptedHash.new(file: file, password: vault_password)
       vault.delete(label: 'faspex5')
       vault.set({label: 'faspex5', password: rotated})
     end
@@ -50,8 +50,8 @@ RSpec.describe(Aspera::SecretRef::Store::EncryptedFile) do
   it 'reads the password file again when the password changes' do
     expect(resolver.resolve('secret://ops/faspex5')).to(eq(secret))
     new_password = SecureRandom.alphanumeric(16)
-    rewrite(file) { Aspera::SecretStore::EncryptedHash.new(file: file, password: vault_password).change_password(new_password) }
-    expect { resolver.resolve('secret://ops/faspex5') }.to(raise_error(Aspera::SecretRef::Error, /: cannot decrypt .*ops_vault.bin/))
+    rewrite(file) { Aspera::Secret::Store::EncryptedHash.new(file: file, password: vault_password).change_password(new_password) }
+    expect { resolver.resolve('secret://ops/faspex5') }.to(raise_error(Aspera::Secret::Error, /: cannot decrypt .*ops_vault.bin/))
     rewrite(password_file) { File.write(password_file, new_password) }
     expect(resolver.resolve('secret://ops/faspex5')).to(eq(secret))
   end
@@ -62,9 +62,9 @@ RSpec.describe(Aspera::SecretRef::Store::EncryptedFile) do
       'secret://ops/faspex5#url'       => 'no field: url',
       'secret://ops/faspex5?version=1' => 'unsupported options: version'
     }.each do |text, reason|
-      expect { resolver.resolve(text) }.to(raise_error(Aspera::SecretRef::Error, "secret reference #{text}: #{reason}"))
+      expect { resolver.resolve(text) }.to(raise_error(Aspera::Secret::Error, "secret reference #{text}: #{reason}"))
     end
     File.delete(password_file)
-    expect { resolver.resolve('secret://ops/faspex5') }.to(raise_error(Aspera::SecretRef::Error, /: No such file .*ops_vault.pass/))
+    expect { resolver.resolve('secret://ops/faspex5') }.to(raise_error(Aspera::Secret::Error, /: No such file .*ops_vault.pass/))
   end
 end

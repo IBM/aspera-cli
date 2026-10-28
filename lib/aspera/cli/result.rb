@@ -187,7 +187,7 @@ module Aspera
 
       # Text result
       class Text < Result
-        # @param data [String, Numeric, Symbol, Boolean] The value, hidden if it is a secret declared to `SecretHider`
+        # @param data [String, Numeric, Symbol, Boolean] The value, hidden if it is a secret declared to `Secret::Hider`
         def initialize(data)
           Aspera.assert_type(data, *SCALAR_TYPES, type: ArgumentError) { 'text result data' }
           super(data: data)

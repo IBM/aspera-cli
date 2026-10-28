@@ -6,7 +6,7 @@ require 'aspera/cli/special_values'
 require 'aspera/cli/terminal_formatter'
 require 'aspera/cli/table_fitter'
 require 'aspera/preview/terminal'
-require 'aspera/secret_hider'
+require 'aspera/secret/hider'
 require 'aspera/environment'
 require 'aspera/log'
 require 'aspera/assert'
@@ -245,7 +245,7 @@ module Aspera
       #   - `:info` messages are only displayed when display level is `:info`
       #   - `:error` messages are always displayed on `stderr`
       def display_message(message_level, message, hide_secrets: true)
-        message = SecretHider.instance.hide_secrets_in_string(message) if hide_secrets && message.is_a?(String) && hide_secrets?
+        message = Secret::Hider.instance.hide_secrets_in_string(message) if hide_secrets && message.is_a?(String) && hide_secrets?
         case message_level
         when :data then $stdout.puts(message) unless @options[:display].eql?(:error)
         when :info then $stdout.puts(message) if @options[:display].eql?(:info)
@@ -266,7 +266,7 @@ module Aspera
       # @param data [Object] Data of a result
       # @return [Object] Copy of data with secrets hidden (by key name, and declared values), or data itself if secrets are shown
       def hide_secrets(data)
-        hide_secrets? ? SecretHider.instance.hidden_copy(data) : data
+        hide_secrets? ? Secret::Hider.instance.hidden_copy(data) : data
       end
 
       # Display results using the Visitor pattern
@@ -303,7 +303,7 @@ module Aspera
 
       # Hide secrets in a string
       def hide_secrets_in_string(string)
-        SecretHider.instance.hide_secrets_in_string(string)
+        Secret::Hider.instance.hide_secrets_in_string(string)
       end
 
       # Get special format string

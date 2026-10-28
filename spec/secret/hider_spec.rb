@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 require 'bundler/setup'
-require 'aspera/secret_hider'
+require 'aspera/secret/hider'
 require 'aspera/environment'
 require 'securerandom'
 
-RSpec.describe(Aspera::SecretHider) do
+RSpec.describe(Aspera::Secret::Hider) do
   let(:hider) { described_class.instance }
   let(:formatter) { hider.log_formatter(proc { |_s, _d, _p, m| m }) }
   # Values of secrets are generated, none in source

@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-require 'aspera/secret_ref/store/base'
-require 'aspera/secret_store/hashicorp_vault'
+require 'aspera/secret/ref_store/base'
+require 'aspera/secret/store/hashicorp_vault'
 
 module Aspera
-  module SecretRef
-    module Store
+  module Secret
+    module RefStore
       # Secrets in a KV v2 secrets engine of HashiCorp Vault.
       # Reference: `secret://<store>/<mount>/<path>#<field>`, options: `version=<n>`, `mount=<mount>` (when the mount contains `/`).
       # Authentication by `token_file` or `approle` (with `secret_id_file`): no secret in configuration.
@@ -28,7 +28,7 @@ module Aspera
           raise Error, 'approle: secret_id_file instead of secret_id' if approle.is_a?(Hash) && approle.transform_keys(&:to_sym).key?(:secret_id)
           raise Error, 'allowed_prefixes: list of strings' unless allowed_prefixes.nil? || (allowed_prefixes.is_a?(Array) && allowed_prefixes.all?(String))
           @allowed_prefixes = allowed_prefixes
-          @vault = SecretStore::HashicorpVault.new(url: url, token_file: token_file, approle: approle, namespace: namespace, ca_file: ca_file)
+          @vault = Secret::Store::HashicorpVault.new(url: url, token_file: token_file, approle: approle, namespace: namespace, ca_file: ca_file)
         end
 
         def check!(ref)

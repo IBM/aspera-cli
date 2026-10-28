@@ -1,17 +1,17 @@
 # frozen_string_literal: true
 
 require 'aspera/assert'
-require 'aspera/secret_hider'
+require 'aspera/secret/hider'
 require 'uri'
 
 module Aspera
   # Reference to a secret held in a store: `secret://<store>/<path>[?<options>][#<field>]`
   #
-  # The reference is stored instead of the value, the value is read when used (see `SecretRef::Resolver`).
+  # The reference is stored instead of the value, the value is read when used (see `Secret::Resolver`).
   # A reference is a whole value, it is not searched in a text.
   # Path and field are percent-decoded (`%20` or a space), options are a URL query (`version=2&mount=a/b`).
   # Library only: `ascli` options do not accept `secret://`.
-  module SecretRef
+  module Secret
     # Error on a reference: the message gives the reference, never a value
     class Error < Aspera::Error
     end
@@ -31,7 +31,7 @@ module Aspera
 
     class << self
       # @param value [Object] Any value
-      # @return [Boolean] `true` if value is a String starting with `secret://` (then `parse` checks it)
+      # @return [Boolean] `true` if value is a String starting with `secret://` (then `parse_reference` checks it)
       def reference?(value)
         value.is_a?(String) && value.start_with?(SCHEME)
       end
@@ -39,7 +39,7 @@ module Aspera
       # @param text [String] Reference
       # @return [Reference] Parsed reference
       # @raise [Error] Invalid syntax
-      def parse(text)
+      def parse_reference(text)
         match = SYNTAX.match(text) if text.is_a?(String)
         raise Error, "secret reference #{text}: expected #{SCHEME}<store>/<path>[?<options>][#<field>]" if match.nil?
         Reference.new(
@@ -54,14 +54,14 @@ module Aspera
       end
 
       # Read a bootstrap secret from a file (`*_file` keys of configuration, e.g. a systemd credential).
-      # The value is declared to `SecretHider`.
+      # The value is declared to `Secret::Hider`.
       # @param path [String] Path of file
       # @return [String] Content of file without trailing newline
       # @raise [Error] Missing, unreadable or empty file
-      def read_file_secret(path)
+      def read_file(path)
         value = File.read(path).chomp
         raise Error, "empty secret file: #{path}" if value.empty?
-        SecretHider.instance.add_secret_values(value)
+        Secret::Hider.instance.add_secret_values(value)
         value
       rescue SystemCallError => e
         raise Error, "secret file: #{e.message}"

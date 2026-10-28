@@ -26,17 +26,17 @@ RSpec.describe(Aspera::Cli::PresetManager) do
     it 'declares the secrets of presets, so that they are hidden also under another key' do
       secret = SecureRandom.alphanumeric(12)
       manager("config: {version: '1'}\nnode: {url: a, password: '#{secret}'}\n") # HashiCorpIgnore
-      expect(Aspera::SecretHider.instance.contains_secret?({'note' => secret})).to(be(true))
+      expect(Aspera::Secret::Hider.instance.contains_secret?({'note' => secret})).to(be(true))
     end
 
     it 'converts a number under a secret key to a String, so that it is hidden, without saving the file' do
       number = SecureRandom.random_number(10**8...10**9)
       pm = manager("config: {version: '#{Aspera::Cli::VERSION}'}\nnode: {port: 33001, password: #{number}, ts: {remote_password: #{number + 1}}}\n") # HashiCorpIgnore
       expect(pm.config_presets['node']).to(eq({'port' => 33_001, 'password' => number.to_s, 'ts' => {'remote_password' => (number + 1).to_s}}))
-      hidden = Aspera::SecretHider.instance.hidden_copy(pm.config_presets['node'])
+      hidden = Aspera::Secret::Hider.instance.hidden_copy(pm.config_presets['node'])
       expect(hidden['port']).to(eq(33_001))
       expect(JSON.generate(hidden)).not_to(match(/#{number}|#{number + 1}/))
-      expect(Aspera::SecretHider.instance.contains_secret?({'note' => number.to_s})).to(be(true))
+      expect(Aspera::Secret::Hider.instance.contains_secret?({'note' => number.to_s})).to(be(true))
       expect(pm.save_if_needed).to(be(false))
     end
 
@@ -185,9 +185,9 @@ RSpec.describe(Aspera::Cli::PresetManager) do
     it 'declares a secret read alone, also given by an extended value' do
       secret = SecureRandom.alphanumeric(12)
       encoded = manager("config: {version: '1'}\nnode: {password: '@base64:#{Base64.strict_encode64(secret)}'}\n") # HashiCorpIgnore
-      expect(Aspera::SecretHider.instance.contains_secret?(secret)).to(be(false))
+      expect(Aspera::Secret::Hider.instance.contains_secret?(secret)).to(be(false))
       expect(encoded.by_name('node.password')).to(eq(secret))
-      expect(Aspera::SecretHider.instance.contains_secret?(secret)).to(be(true))
+      expect(Aspera::Secret::Hider.instance.contains_secret?(secret)).to(be(true))
     end
   end
 

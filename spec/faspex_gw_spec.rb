@@ -123,7 +123,7 @@ RSpec.describe(Aspera::Faspex4GWServlet) do
 
   describe '.normalize_parameters' do
     it 'sets the default minimum strength of the password' do
-      expect(described_class.normalize_parameters({})).to(eq({password_min_bits: Aspera::SecretStrength::DEFAULT_MIN_BITS}))
+      expect(described_class.normalize_parameters({})).to(eq({password_min_bits: Aspera::Secret::Strength::DEFAULT_MIN_BITS}))
     end
 
     it 'refuses username without password' do

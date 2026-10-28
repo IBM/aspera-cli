@@ -66,7 +66,7 @@ RSpec.describe(Aspera::Log) do
       secret = SecureRandom.alphanumeric(12)
       # An additional key is not known by the patterns applied to text
       key = "k#{SecureRandom.hex(4)}"
-      Aspera::SecretHider.instance.add_secret_keys([key])
+      Aspera::Secret::Hider.instance.add_secret_keys([key])
       data = {key => secret, 'list' => [Struct.new(:password).new(secret)]}
       %i[json ruby].each do |format|
         log.dump_format = format
@@ -76,17 +76,17 @@ RSpec.describe(Aspera::Log) do
       expect(data[key]).to(eq(secret))
       expect(data['list'].first.password).to(eq(secret))
     ensure
-      Aspera::SecretHider.instance.instance_variable_get(:@additional_keys).delete(key)
+      Aspera::Secret::Hider.instance.instance_variable_get(:@additional_keys).delete(key)
     end
 
     it 'shows secrets when log_secrets is set' do
       log.level = :debug
       secret = SecureRandom.alphanumeric(12)
-      Aspera::SecretHider.instance.log_secrets = true
+      Aspera::Secret::Hider.instance.log_secrets = true
       described_class.dump(:obj, {'password' => secret})
       expect(output.string).to(include(secret))
     ensure
-      Aspera::SecretHider.instance.log_secrets = false
+      Aspera::Secret::Hider.instance.log_secrets = false
     end
   end
 

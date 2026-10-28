@@ -11,7 +11,7 @@ require 'securerandom'
 require 'aspera/rest'
 require 'aspera/mime'
 require 'aspera/json_rpc/client'
-require 'aspera/secret_store/macos_security'
+require 'aspera/secret/store/macos_security'
 require 'aspera/environment'
 require_relative '../build/lib/paths'
 
@@ -67,14 +67,14 @@ end
 # @return [void]
 def ensure_test_keychain
   return unless Aspera::Environment.instance.os.eql?(Aspera::Environment::OS_MACOS)
-  kc = Aspera::SecretStore::MacosSecurity::Keychain.by_name(TEST_KEYCHAIN_NAME)
+  kc = Aspera::Secret::Store::MacosSecurity::Keychain.by_name(TEST_KEYCHAIN_NAME)
   if kc.nil?
     kc_path = (TMP / "#{TEST_KEYCHAIN_NAME}.keychain-db").to_s
     password = generated_secret(:keychain)
-    kc = Aspera::SecretStore::MacosSecurity::Keychain.create(kc_path, password: password)
+    kc = Aspera::Secret::Store::MacosSecurity::Keychain.create(kc_path, password: password)
     kc.set_settings(timeout: 7200)
-    existing = Aspera::SecretStore::MacosSecurity::Keychain.list
-    Aspera::SecretStore::MacosSecurity::Keychain.search_list = [kc] + existing
+    existing = Aspera::Secret::Store::MacosSecurity::Keychain.list
+    Aspera::Secret::Store::MacosSecurity::Keychain.search_list = [kc] + existing
     kc.unlock(password: password)
   end
 end
