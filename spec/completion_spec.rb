@@ -332,7 +332,9 @@ module Aspera
         end
 
         it 'completes extended value modifiers and keys of structures' do
-          expect(complete_bash(bash, 'ascli --ts=@js', %w[ascli --ts = @ js])).to(eq(['json:']))
+          # Readline replaces the word with `@`, a word break character that it keeps in the word (special prefix)
+          expect(complete_bash(bash, 'ascli --ts=@js', %w[ascli --ts = @ js])).to(eq(['@json:']))
+          expect(complete_bash(bash, 'ascli config echo @file:READ', %w[ascli config echo @ file : READ])).to(eq(['README.md']))
           expect(complete_bash(bash, 'ascli aoc packages send @: arch', %w[ascli aoc packages send @ : arch])).to(eq(['archived=']))
         end
       end

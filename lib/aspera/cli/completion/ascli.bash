@@ -18,8 +18,9 @@ _ascli_complete() {
         rest=${rest#"$word"}
     done
     local cur=${words[${#words[@]} - 1]}
-    # Readline replaces only the text after the last word break character
+    # Readline replaces only the text after the last word break character, but with it if it is `@` or `$` (special prefixes)
     local prefix=${cur%"${line##*["$COMP_WORDBREAKS"]}"}
+    [[ $prefix == *[@\$] ]] && prefix=${prefix%?}
     # words[0] is the program name itself: pass the words before the cursor, then the word at cursor
     local output directive entry files_prefix
     # A word that continues is not followed by a space: `key=`, `key.`, `folder/`, `@modifier:`

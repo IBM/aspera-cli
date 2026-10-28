@@ -3251,6 +3251,9 @@ ascli -N --preset=@json:'{"url":"<URL>","password":"<PASSWORD>","username":"<USE
 `ascli` supports shell tab-completion for **Bash**, **Zsh**, **Fish**, and **PowerShell** (Windows PowerShell 5.1 and PowerShell 7, on any OS).
 The command `ascli config completion <shell>` displays the completion script for the given shell.
 
+The default shell is Zsh on macOS, Bash on most Linux distributions, and PowerShell on Windows (its prompt starts with `PS`).
+In Bash and Zsh, `echo $0` displays the name of the running shell.
+
 To activate completion, add the line for your shell to its startup file:
 
 ```bash
@@ -3324,7 +3327,7 @@ ascli aoc packages send @: archived=<Tab> # values of key: archived=true, archiv
 ascli aoc packages send @: name=x <Tab> # end marker of structure built with @: END, and the other keys
 ```
 
-No space is inserted after a word that continues: `key=`, `key.`, `@file:`, or a folder.
+No space is inserted after a word that continues: `key=`, `key.`, `@file:`, or a folder (Bash 4 and later).
 Zsh, Fish and PowerShell also display the description of commands, options, keys and extended value modifiers.
 In PowerShell, a word starting with `@` is inserted with quotes (e.g. `'@file:README.md'`), as required by PowerShell.
 Zsh lists options once `-` is typed (zsh style `prefix-needed`).
