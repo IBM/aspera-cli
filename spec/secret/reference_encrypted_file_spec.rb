@@ -5,6 +5,7 @@
 require 'tmpdir'
 require 'securerandom'
 require 'aspera/secret/resolver'
+require 'aspera/secret/store/encrypted_hash'
 
 RSpec.describe(Aspera::Secret::Store::EncryptedHash) do
   # Values of secrets are generated, none in source
@@ -67,10 +68,10 @@ RSpec.describe(Aspera::Secret::Store::EncryptedHash) do
     end
   end
 
-  it 'refuses a missing or empty password' do
+  it 'refuses a missing or empty password, when used' do
     [nil, '', '@file:'].each do |value|
       config = {'stores' => {'ops' => {'type' => 'file', 'file' => file, 'password' => value}.compact}}
-      expect { Aspera::Secret::Resolver.new(config) }.to(raise_error(Aspera::Secret::Error, /store ops: password: expecting /))
+      expect { Aspera::Secret::Resolver.new(config).resolve('secret://ops/faspex5') }.to(raise_error(Aspera::Secret::Error, /: store ops: password: expecting /))
     end
   end
 

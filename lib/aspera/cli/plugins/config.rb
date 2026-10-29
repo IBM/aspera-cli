@@ -248,7 +248,7 @@ module Aspera
           )
           command :import, description: 'Import secrets from a JSON array (supports --bulk)',
             arguments: [{name: :secrets, type: Array, schema: {type: 'array', items: {'$ref' => Schema::Registry::VAULT_SECRET}}}]
-          command :check, description: 'Check that a reference of option vault_references can be read, without its value',
+          command :check, description: 'Check that a reference to a store of option vault can be read, without its value',
             arguments: [{name: :reference, raw: true}]
         end
         command :commands, description: 'List all available commands, of all plugins or only the given one, optionally under a command path',

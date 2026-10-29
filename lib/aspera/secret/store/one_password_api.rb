@@ -11,6 +11,8 @@ module Aspera
       class OnePasswordApi < Base
         include OnePasswordBase
 
+        PARAMETERS = %i[url token vault_id].freeze
+
         # @param url      [String] Base URL of the 1Password Connect server (e.g. http://localhost:8080)
         # @param token    [String] Bearer token (Connect token or service-account token)
         # @param vault_id [String] ID of the 1Password vault to operate on

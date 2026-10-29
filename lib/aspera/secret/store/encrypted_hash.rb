@@ -25,29 +25,28 @@ module Aspera
         KDF_SALT_BYTES = 16
         private_constant :LEGACY_CIPHER_NAME, :DEFAULT_CIPHER_NAME, :FILE_TYPE, :FILE_KEYS, :FILE_KEYS_KDF,
           :KDF_ITERATIONS, :KDF_DIGEST, :KDF_SALT_BYTES
-        REFERENCE_PARAMETERS = %i[file password].freeze
+        PARAMETERS = %i[file password].freeze
 
         class << self
-          # Secret references: `password` is the value, or `@file:<path>`
-          def reference_arguments(params)
+          # `password` is the value, or `@file:<path>`
+          def arguments(params)
             params.merge(password: Bootstrap.new('password', params[:password]))
           end
         end
 
+        # The vault file is read when used, and again when it, or the file of the password, is modified.
+        # It is created by the first `set`.
         # @param file     [String]            Vault file
-        # @param password [String, Bootstrap] Password of vault file.
-        #   A `Bootstrap` (secret references): the vault file is read when used, and again when it, or the file of the password, is modified
+        # @param password [String, Bootstrap] Password of vault file: the value, or a `Bootstrap`
         def initialize(file:, password:)
           super()
           Aspera.assert_type(file, String) { 'path to vault file' }
           @path = file
-          # Password of vault file, for secret references
-          @password = password if password.is_a?(Bootstrap)
-          # Modification times of vault file and file of password, when read with `Bootstrap`
+          @password = password.is_a?(Bootstrap) ? password : Bootstrap.new('password', password)
+          # Modification times of vault file (`nil` if absent) and file of password, when read, `nil` before
           @mtimes = nil
           @lock = Mutex.new
           Log.dump(:vault_file, File.expand_path(@path))
-          load_file(password) if @password.nil?
         end
 
         def info
@@ -97,11 +96,13 @@ module Aspera
           @legacy_key = false
           @kdf_params = nil
           @cipher = cipher(password)
+          @password = Bootstrap.new('password', password)
           save
         end
 
-        # Modification time of vault file, when read with `Bootstrap`
+        # Modification time of vault file
         def read_reference(ref)
+          raise Error, "no vault file: #{@path}" unless File.exist?(@path)
           super.merge(updated_time: @mtimes&.first)
         end
 
@@ -109,9 +110,8 @@ module Aspera
 
         # @return [Hash] Secrets: label → fields
         def secrets
-          return @all_secrets if @password.nil?
           @lock.synchronize do
-            mtimes = [File.mtime(@path), @password.mtime]
+            mtimes = current_mtimes
             unless mtimes.eql?(@mtimes)
               load_file(@password.value)
               @mtimes = mtimes
@@ -120,9 +120,11 @@ module Aspera
           @all_secrets
         rescue SystemCallError => e
           raise Error, e.message
-        rescue OpenSSL::Cipher::CipherError, Psych::Exception
-          # Psych: rarely, a wrong key gives valid padding, then garbage
-          raise Error, "cannot decrypt #{@path} (password?)"
+        end
+
+        # @return [Array<Time, nil>] Modification times of vault file (`nil` if absent) and file of password (`nil` for a value)
+        def current_mtimes
+          [File.exist?(@path) ? File.mtime(@path) : nil, @password.mtime]
         end
 
         # Read and decrypt vault file, if it exists
@@ -155,7 +157,17 @@ module Aspera
           end
           # setting password also creates the cipher
           @cipher = cipher(password)
-          @all_secrets = Yaml.safe_load(@cipher.decrypt(vault_encrypted_data)) || {} if !vault_encrypted_data.nil?
+          @all_secrets = decrypt(vault_encrypted_data) unless vault_encrypted_data.nil?
+        end
+
+        # @param data [String] Encrypted secrets
+        # @return [Hash] Secrets
+        # @raise [Error] Wrong password
+        def decrypt(data)
+          Yaml.safe_load(@cipher.decrypt(data)) || {}
+        rescue OpenSSL::Cipher::CipherError, Psych::Exception
+          # Psych: rarely, a wrong key gives valid padding, then garbage
+          raise Error, "cannot decrypt #{@path} (password?)"
         end
 
         # Minimal cipher wrapper using OpenSSL, compatible with the SymmetricEncryption
@@ -232,6 +244,8 @@ module Aspera
             'data'    => @cipher.encrypt(YAML.dump(@all_secrets))
           }
           Environment.write_file_restricted(@path, force: true) { YAML.dump(vault_info) }
+          # Secrets in memory are those of the file
+          @mtimes = current_mtimes
         end
       end
     end

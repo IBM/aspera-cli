@@ -10,7 +10,7 @@ module Aspera
   # The reference is stored instead of the value, the value is read when used (see `Secret::Resolver`).
   # A reference is a whole value, it is not searched in a text.
   # Path and field are percent-decoded (`%20` or a space), options are a URL query (`version=2&mount=a/b`).
-  # In `ascli`: `@vault://<store>/<path>[?<options>][#<field>]`, stores of option `vault_references`.
+  # In `ascli`: `@vault://<store>/<path>[?<options>][#<field>]`, stores of option `vault`.
   module Secret
     # Error on a reference: the message gives the reference, never a value
     class Error < Aspera::Error

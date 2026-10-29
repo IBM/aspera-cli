@@ -2708,7 +2708,7 @@ It is a `Hash` with the following keys:
 
 With level `medium`, the real path of the file is checked: a symbolic link leading outside of `allowed_paths` is refused.
 
-The same applies to `@file:<path>` in the parameters of options `vault`, `vault_password`, and `vault_references` (for example, `token`), although the file is read when used, not when the option is evaluated.
+The same applies to `@file:<path>` in the parameters of stores of option `vault`, and in option `vault_password` (for example, `token`), although the file is read when used, not when the option is evaluated.
 
 A secret (read by `@secret:`, `@vault:`, or `@preset:`) is hidden in results by its value: processed by another extended value, it could be revealed (for example, split by `@list:@vault:...`, or with a short value in a text by `@extend:`).
 With levels `medium` and `high`, a secret must be the whole value of an option or argument, for example `@preset:<PRESET_NAME>.password` for option `password`, and it cannot be a parameter name of `config preset set`.
@@ -3158,7 +3158,7 @@ preset initialize conf_name @json:'{"p1":"v1","p2":"v2"}'
 preset list
 preset overview
 preset set GLOBAL sdk_folder 'product:IBM Aspera Connect'
-preset set GLOBAL vault @: type=file name=/secure/vault_file
+preset set GLOBAL vault @: default=local stores.local.type=file stores.local.file=/secure/vault_file
 preset set GLOBAL vault_password <PASSWORD>
 preset set GLOBAL version_check_days 0
 preset set conf_name param value
@@ -3180,7 +3180,7 @@ transfer list
 transfer status <conf_async_node_upload>
 transferd install
 transferd list
-vault check @vault://local/my_label --vault-references=@json:'{"stores":{"local":{"type":"file","file":"/secure/vault_file","password":"<PASSWORD>"}}}'
+vault check @vault://local/my_label
 vault create @: label=my_label password=<PASSWORD> 'description=my secret'
 vault delete foo --vault.type=system
 vault delete my_label
@@ -3458,7 +3458,64 @@ export ASCLI_PASSWORD
 
 Another possibility is to retrieve values from a secret vault.
 
-The vault is configured with option `vault` (a `Hash` describing the vault type and parameters, see sections below) and unlocked with option `vault_password`.
+Option `vault` declares named secret stores (`stores`), and the name of the default store (`default`):
+
+- `@vault:<label>.<field>` reads field `<field>` of secret `<label>` of the default store, managed with command `config vault` (see [Vault: Operations](#vault-operations)).
+- `@vault://<store>/<path>[?<options>][#<field>]` reads a secret of any store (see [Vault: Secret references](#vault-secret-references)).
+
+| Field | Type | Description |
+|-----------|--------|----------------------------------------------------------------------------------|
+| `cache_ttl` | `Number` | Time in seconds a value read by reference is kept in memory, `0` for no cache.<br/>Default: `60`. |
+| `default` | `String` | Name of the default store, in `stores`: read by `@vault:<label>.<field>`, managed by `config vault`, unlocked with option `vault_password`. No default store if not set. |
+| `stores` | `Hash` | Name of store (letters, digits, `_`, `.`, `-`) → parameters of store, with `type`. Secrets are read by reference with `@vault://<store>/<path>[?<options>][#<field>]` from any store.<br/>Required. |
+
+For example, to use as default store an encrypted file `vault.bin` in the configuration folder (see [Vault: Encrypted file](#vault-encrypted-file)):
+
+```shell
+ascli config preset set GLOBAL vault @json:'{"default":"local","stores":{"local":{"type":"file","file":"vault.bin"}}}'
+```
+
+Parameters of a store, with `type` (see sections below):
+
+| Field | Type | Description |
+|-------------------|---------------|----------------------------------------------------------------------------------|
+| **type** | `String` | `vault`: IBM HashiCorp Vault secret store. Labels of `config vault` and `@vault:<label>.<field>` are in mount `secret` (KV v2). Reference `@vault://<store>/<mount>/<path>#<field>` (field required) in any KV v2 mount, options `version=<n>`, `mount=<mount>` (when the mount contains `/`). |
+| `allowed_prefixes` | `Array[String]` | Allowed prefixes of `<mount>/<path>` of references: a prefix ending with `/` is a folder, else a path or a folder. All paths are allowed if not set. |
+| `approle.mount` | `String` | Mount path of the AppRole auth method.<br/>Default: `approle`. |
+| `approle.role_id` | `String` | Role ID.<br/>Required. |
+| `approle.secret_id` | `String` | Secret ID (if the role requires one): the value, or `@file:<path>`. |
+| `approle` | `Hash` | AppRole authentication: the token is obtained by login, renewed, and obtained again when refused. |
+| `ca_file` | `String` | File with the CA certificates that verify the certificate of the server (HTTPS). |
+| `namespace` | `String` | Namespace (Vault Enterprise). |
+| `token` | `String` | Authentication token: the value, or `@file:<path>` (e.g. written and renewed by Vault Agent), read again when modified. One of `token` or `approle` is required. For the default store, defaults to the value of `vault_password`, unless `approle` is set.<br/>Example: `dev-only-token`. |
+| `type` | `String` | Vault type selector.<br/>Required.<br/>Allowed values: `vault`. |
+| `url` | `String` | URL of the HashiCorp Vault server.<br/>Required.<br/>Example: `http://127.0.0.1:8200`. |
+| **type** | `String` | `system`: macOS system keychain secret store. |
+| `name` | `String` | Name of the keychain to use (file `<name>.keychain-db` in the keychain search list).<br/>Default: `ascli`. |
+| `type` | `String` | Vault type selector.<br/>Required.<br/>Allowed values: `system`. |
+| **type** | `String` | `file`: Encrypted file secret store. Reference `@vault://<store>/<label>[#<field>]`, field `password` by default. |
+| `file` | `String` | Path to the encrypted vault file, created when the first secret is added. Relative paths are resolved from the configuration folder. Read when used, and again when modified.<br/>Default: `vault.bin`. |
+| `name` | `String` | Same as `file` (compatibility). |
+| `password` | `String` | Password of the vault file: the value, or `@file:<path>`, read again when modified. For the default store, defaults to the value of `vault_password`. |
+| `type` | `String` | Vault type selector.<br/>Required.<br/>Allowed values: `file`. |
+| **type** | `String` | `1password`: 1Password secret store (Connect REST API or CLI). |
+| `account` | `String` | Account shorthand for `op` (used when `source` is `cli`). Uses the default account if omitted. |
+| `source` | `String` | Backend source. Use `api` for the Connect REST API, `cli` for the `op` CLI.<br/>Required.<br/>Allowed values: `api`, `cli`.<br/>Default: `api`. |
+| `token` | `String` | Bearer token for the Connect API (required when `source` is `api`). For the default store, defaults to the value of `vault_password`. |
+| `type` | `String` | Vault type selector.<br/>Required.<br/>Allowed values: `1password`. |
+| `url` | `String` | Base URL of the 1Password Connect server (required when `source` is `api`).<br/>Example: `http://localhost:8080`. |
+| `vault_id` | `String` | ID of the 1Password vault to use (required when `source` is `api`). |
+| `vault` | `String` | Name or ID of the 1Password vault to use with the CLI (used when `source` is `cli`). Uses the default vault if omitted. |
+
+> [!NOTE]
+> The parameters of one store, without `stores` (for example, `{"type":"file","name":"vault.bin"}`), are deprecated: they define a store named after its type (for example, `file`), which is the default store.
+> Set the store in `stores`, and its name in `default` instead: `{"default":"local","stores":{"local":{"type":"file","file":"vault.bin"}}}`.
+
+Secrets used to access a store (`token`, `approle.secret_id`, `password`) are the value, or `@file:<path>` (for example, a credential of `systemd`, or a token written by Vault Agent): the file is read when used, and again when it is modified.
+As for extended value `@file:`, reading the file is restricted by option `security` (see [Security Level](#security-level)).
+In a YAML file, quote the value: `@` cannot start a plain scalar.
+
+The secret of the default store (`password` of type `file`, `token` of type `vault` without `approle`, and of type `1password` with `source` `api`), if not in its parameters, is the value of option `vault_password`.
 To avoid exposing the vault password in the shell history, provide it via an environment variable:
 
 ```shell
@@ -3484,47 +3541,20 @@ brew install hashicorp/tap/vault
 vault server -dev -dev-root-token-id=<TOKEN>
 ```
 
-| Field | Type | Description |
-|-------------------|--------|----------------------------------------------------------------------------------|
-| **type** | `String` | `vault`: IBM HashiCorp Vault secret store. |
-| `approle.mount` | `String` | Mount path of the AppRole auth method.<br/>Default: `approle`. |
-| `approle.role_id` | `String` | Role ID.<br/>Required. |
-| `approle.secret_id` | `String` | Secret ID (if the role requires one): the value, or `@file:<path>`. |
-| `approle` | `Hash` | AppRole authentication: the token is obtained by login, renewed, and obtained again when refused. |
-| `ca_file` | `String` | File with the CA certificates that verify the certificate of the server (HTTPS). |
-| `namespace` | `String` | Namespace (Vault Enterprise). |
-| `token` | `String` | Authentication token: the value, or `@file:<path>` (e.g. written and renewed by Vault Agent), read again when modified. Defaults to the value of `vault_password`, unless `approle` is set.<br/>Example: `dev-only-token`. |
-| `type` | `String` | Vault type selector.<br/>Required.<br/>Allowed values: `vault`. |
-| `url` | `String` | URL of the HashiCorp Vault server.<br/>Required.<br/>Example: `http://127.0.0.1:8200`. |
-| **type** | `String` | `system`: macOS system keychain secret store. |
-| `name` | `String` | Name of the keychain to use (file `<name>.keychain-db` in the keychain search list).<br/>Default: `ascli`. |
-| `type` | `String` | Vault type selector.<br/>Required.<br/>Allowed values: `system`. |
-| **type** | `String` | `file`: Encrypted file secret store. |
-| `name` | `String` | Path to the encrypted vault file. Relative paths are resolved from the configuration folder.<br/>Default: `vault.bin`. |
-| `type` | `String` | Vault type selector.<br/>Required.<br/>Allowed values: `file`. |
-| **type** | `String` | `1password`: 1Password secret store (Connect REST API or CLI). |
-| `account` | `String` | Account shorthand for `op` (used when `source` is `cli`). Uses the default account if omitted. |
-| `source` | `String` | Backend source. Use `api` for the Connect REST API, `cli` for the `op` CLI.<br/>Required.<br/>Allowed values: `api`, `cli`.<br/>Default: `api`. |
-| `token` | `String` | Bearer token for the Connect API (required when `source` is `api`). Defaults to the value of `vault_password`. |
-| `type` | `String` | Vault type selector.<br/>Required.<br/>Allowed values: `1password`. |
-| `url` | `String` | Base URL of the 1Password Connect server (required when `source` is `api`).<br/>Example: `http://localhost:8080`. |
-| `vault_id` | `String` | ID of the 1Password vault to use (required when `source` is `api`). |
-| `vault` | `String` | Name or ID of the 1Password vault to use with the CLI (used when `source` is `cli`). Uses the default vault if omitted. |
-
 ```shell
---vault=@json:'{"type":"vault","url":"http://127.0.0.1:8200"}' --vault-password=<TOKEN>
+--vault=@json:'{"default":"corp","stores":{"corp":{"type":"vault","url":"http://127.0.0.1:8200"}}}' --vault-password=<TOKEN>
 ```
 
-With a token in a file (for example, written and renewed by Vault Agent), read again when the file is modified (restricted by option `security` as extended value `@file:`, see [Security Level](#security-level)):
+With a token in a file (for example, written and renewed by Vault Agent), read again when the file is modified:
 
 ```shell
---vault=@json:'{"type":"vault","url":"https://vault.example.com:8200","token":"@file:/run/vault/token"}'
+--vault=@json:'{"default":"corp","stores":{"corp":{"type":"vault","url":"https://vault.example.com:8200","token":"@file:/run/vault/token"}}}'
 ```
 
 With AppRole authentication, the token is obtained by login, and renewed:
 
 ```shell
---vault=@json:'{"type":"vault","url":"https://vault.example.com:8200","approle":{"role_id":"<ROLE_ID>","secret_id":"@file:/etc/vault/secret_id"}}'
+--vault=@json:'{"default":"corp","stores":{"corp":{"type":"vault","url":"https://vault.example.com:8200","approle":{"role_id":"<ROLE_ID>","secret_id":"@file:/etc/vault/secret_id"}}}}'
 ```
 
 #### Vault: System keychain
@@ -3536,28 +3566,29 @@ It is possible to manage secrets in macOS keychain.
 Commands `list`, `ids` and `delete` are not supported: use the **Keychain Access** app.
 
 ```shell
---vault=@json:'{"type":"system","name":"ascli"}'
+--vault=@json:'{"default":"keychain","stores":{"keychain":{"type":"system","name":"ascli"}}}'
 ```
 
 #### Vault: Encrypted file
 
-It is possible to store and use secrets encrypted in a file using option `vault` set to:
+It is possible to store and use secrets encrypted in a file, with a store of type `file`:
 
 ```json
-{"type":"file","name":"vault.bin"}
+{"default":"local","stores":{"local":{"type":"file","file":"vault.bin"}}}
 ```
 
-To configure the encrypted file vault as the default, set the `vault` option in the global preset:
+To configure the encrypted file vault as the default store, set the `vault` option in the global preset:
 
 ```shell
-ascli config preset set GLOBAL vault @: type=file name=vault.bin
+ascli config preset set GLOBAL vault @json:'{"default":"local","stores":{"local":{"type":"file","file":"vault.bin"}}}'
 ```
 
-The vault file is created automatically on first use - no explicit initialization is needed.
+The vault file is created automatically when the first secret is added - no explicit initialization is needed.
+It is read when used, and again when it is modified.
 
 > [!WARNING]
 > The `vault_password` option should **not** be stored in the config file: doing so would protect secrets with a password that is itself stored in plain text, defeating the purpose of the vault.
-> Use an environment variable as described above.
+> Use an environment variable as described above, or parameter `password` with `@file:<path>` (for example, a credential of `systemd`).
 
 #### Vault: 1Password
 
@@ -3578,7 +3609,7 @@ docker run -d --name op-connect \
 ```
 
 ```shell
---vault=@json:'{"type":"1password","source":"api","url":"http://localhost:8080","vault_id":"<VAULT_ID>"}' \
+--vault=@json:'{"default":"op","stores":{"op":{"type":"1password","source":"api","url":"http://localhost:8080","vault_id":"<VAULT_ID>"}}}' \
 --vault-password=<CONNECT_TOKEN>
 ```
 
@@ -3598,9 +3629,9 @@ Requires the `op` CLI to be installed and signed in.
 No server to deploy: authentication is handled by the 1Password desktop app (biometric unlock) or by `op signin`.
 
 ```shell
---vault=@json:'{"type":"1password","source":"cli"}'
+--vault=@json:'{"default":"op","stores":{"op":{"type":"1password","source":"cli"}}}'
 # or, to target a specific vault and account:
---vault=@json:'{"type":"1password","source":"cli","vault":"<VAULT_NAME>","account":"<ACCOUNT_SHORTHAND>"}'
+--vault=@json:'{"default":"op","stores":{"op":{"type":"1password","source":"cli","vault":"<VAULT_NAME>","account":"<ACCOUNT_SHORTHAND>"}}}'
 ```
 
 > [!TIP]
@@ -3621,7 +3652,7 @@ An item can be referenced by its title (label) or by its 1Password ID, in `@vaul
 
 #### Vault: Operations
 
-Secrets can be manipulated using the `config vault` command:
+Secrets of the default store can be manipulated using the `config vault` command:
 
 - `info` : Show vault information
 - `ids` : List secret labels in the vault
@@ -3648,10 +3679,10 @@ To migrate all secrets from one vault backend to another (for example, from the 
 
 ```shell
 ascli config vault list --format=json --out.level=data --out.secrets=yes \
-  --vault=@json:'{"type":"file","name":"<SOURCE_VAULT_FILE>"}' \
+  --vault=@json:'{"default":"local","stores":{"local":{"type":"file","file":"<SOURCE_VAULT_FILE>"}}}' \
   --vault-password=<SOURCE_PASSWORD> | \
 ascli config vault import @json:@stdin: --bulk=yes \
-  --vault=@json:'{"type":"1password","url":"<CONNECT_URL>","vault_id":"<VAULT_ID>"}' \
+  --vault=@json:'{"default":"op","stores":{"op":{"type":"1password","url":"<CONNECT_URL>","vault_id":"<VAULT_ID>"}}}' \
   --vault-password=<CONNECT_TOKEN>
 ```
 
@@ -3665,53 +3696,27 @@ Pass `--bfail=no` to skip failures and continue with the remaining entries.
 
 #### Vault: Secret references
 
-Secrets can also be read by reference, from stores declared in option `vault_references` (independent of option `vault`):
+Secrets can also be read by reference, from any store of option `vault`:
 
 ```text
 @vault://<store>/<path>[?<options>][#<field>]
 ```
 
-- `<store>`: name of a store in option `vault_references`.
+- `<store>`: name of a store in `stores` of option `vault`.
 - `<path>`: path of the secret in the store, and `<field>`: field of the secret. Both are percent-decoded (for example, `%20` for a space).
+  For most types, the path is the label, and the field is `password` by default.
+  For type `vault`, the path is `<mount>/<path>` in a KV v2 secrets engine, and the field is required.
 - `<options>`: options of the store, as a URL query (for example, `version=2`).
 
-Stores are read only: secrets are managed with the tools of the store (for example, `vault kv put` for HashiCorp Vault, `config vault` for an encrypted file).
-Compared to `@vault:<label>.<field>`, several stores can be used in the same command, and a HashiCorp Vault store reads any KV v2 mount, a given version, and limits the paths that can be read (`allowed_prefixes`).
-The configuration is the same as in applications that use the library with references `secret://<store>/<path>` (for example, IBM Aspera Orchestrator).
+References only read secrets: they are managed with the tools of the store (for example, `vault kv put` for HashiCorp Vault), or with `config vault` for the default store.
+Compared to `@vault:<label>.<field>`, several stores can be used in the same command, and a HashiCorp Vault store reads any KV v2 mount, a given version, and limits the paths that can be read by reference (`allowed_prefixes`).
+Values read by reference are kept in memory for `cache_ttl` seconds.
+The configuration of stores is the same as in applications that use the library with references `secret://<store>/<path>` (for example, IBM Aspera Orchestrator).
 
-| Field | Type | Description |
-|-----------|--------|----------------------------------------------------------------------------------|
-| `cache_ttl` | `Number` | Time in seconds a value is kept in memory, `0` for no cache.<br/>Default: `60`. |
-| `stores` | `Hash` | Name of store (letters, digits, `_`, `.`, `-`) → parameters of store, with `type`: `vault` (HashiCorp Vault, KV v2) or `file` (encrypted file of `config vault`). |
-
-Parameters of a store:
-
-| Field | Type | Description |
-|-------------------|---------------|----------------------------------------------------------------------------------|
-| **type** | `String` | `vault`: IBM HashiCorp Vault, secrets engine KV v2. Reference `@vault://<store>/<mount>/<path>#<field>` (field required), options `version=<n>`, `mount=<mount>` (when the mount contains `/`). |
-| `allowed_prefixes` | `Array[String]` | Allowed prefixes of `<mount>/<path>` of references: a prefix ending with `/` is a folder, else a path or a folder. All paths are allowed if not set. |
-| `approle.mount` | `String` | Mount path of the AppRole auth method.<br/>Default: `approle`. |
-| `approle.role_id` | `String` | Role ID.<br/>Required. |
-| `approle.secret_id` | `String` | Secret ID (if the role requires one): the value, or `@file:<path>`. |
-| `approle` | `Hash` | AppRole authentication, the token is obtained by login, renewed, and obtained again when refused. |
-| `ca_file` | `String` | File with the CA certificates that verify the certificate of the server (HTTPS). |
-| `namespace` | `String` | Namespace (Vault Enterprise). |
-| `token` | `String` | Authentication token: the value, or `@file:<path>` (e.g. written and renewed by Vault Agent), read again when modified. One of `token` or `approle` is required. |
-| `type` | `String` | Store type selector.<br/>Required.<br/>Allowed values: `vault`. |
-| `url` | `String` | URL of the HashiCorp Vault server.<br/>Required.<br/>Example: `https://vault.example.com:8200`. |
-| **type** | `String` | `file`: Encrypted file of `config vault` (option `vault` of type `file`). Reference `@vault://<store>/<label>[#<field>]`, field `password` by default. |
-| `file` | `String` | Path to the encrypted vault file, relative to the configuration folder. Read when used, and again when modified.<br/>Required.<br/>Example: `vault.bin`. |
-| `password` | `String` | Password of the vault file: the value, or `@file:<path>`, read again when modified.<br/>Required. |
-| `type` | `String` | Store type selector.<br/>Required.<br/>Allowed values: `file`. |
-
-Secrets used to access a store (`token`, `approle.secret_id`, `password`) are the value, or `@file:<path>` (for example, a credential of `systemd`, or a token written by Vault Agent): the file is read when used, and again when it is modified.
-As for extended value `@file:`, reading the file is restricted by option `security` (see [Security Level](#security-level)).
-In a YAML file, quote the value: `@` cannot start a plain scalar.
-
-For example, a HashiCorp Vault server with AppRole authentication, limited to secrets under `kv/aspera/`, and the encrypted file of `config vault`:
+For example, a HashiCorp Vault server with AppRole authentication, limited to secrets under `kv/aspera/`, and the encrypted file of `config vault` as default store, unlocked with option `vault_password`:
 
 ```shell
---vault-references=@json:'{"stores":{"corp":{"type":"vault","url":"https://vault.example.com:8200","approle":{"role_id":"<ROLE_ID>","secret_id":"@file:/etc/vault/secret_id"},"allowed_prefixes":["kv/aspera/"]},"local":{"type":"file","file":"vault.bin","password":"@file:<VAULT_PASSWORD_FILE>"}}}'
+--vault=@json:'{"default":"local","stores":{"corp":{"type":"vault","url":"https://vault.example.com:8200","approle":{"role_id":"<ROLE_ID>","secret_id":"@file:/etc/vault/secret_id"},"allowed_prefixes":["kv/aspera/"]},"local":{"type":"file","file":"vault.bin"}}}'
 ```
 
 References in a preset: to field `password` of secret `aspera/faspex` in mount `kv`, and to field `password` (default field of type `file`) of label `<VAULT_LABEL>` in the encrypted file:
@@ -5923,7 +5928,6 @@ OPTIONS: global
     --secret=VALUE                 Secret for access keys
     --vault=HASH                   Secret vault configuration
     --vault-password=VALUE         Vault password
-    --vault-references=HASH        Stores of secret references
     --progress-bar=yes|no          Display progress bar
     --fpac=VALUE                   Proxy auto configuration script
     --proxy-credentials=LIST       HTTP proxy credentials for fpac: user, password
@@ -10903,7 +10907,7 @@ With both transports:
 - Extended value `@stdin:` is refused.
 - `@secret:` is entered by the user on a web page, see [Secrets entered in a web page](#secrets-entered-in-a-web-page).
 - Secrets are hidden in responses, also a value shorter than 8 characters as a word in a text (for example, a short password in an error message).
-- The [Security Level](#security-level) is `high` by default: `@ruby:`, `@file:` (also in the parameters of options `vault` and `vault_references`), `@uri:`, and `@env:` are refused, and a secret must be the whole value: hidden in results, it cannot be processed by another extended value.
+- The [Security Level](#security-level) is `high` by default: `@ruby:`, `@file:` (also in the parameters of stores of option `vault`), `@uri:`, and `@env:` are refused, and a secret must be the whole value: hidden in results, it cannot be processed by another extended value.
   It applies to commands sent by the client, and to presets, because the client can modify presets.
   Commands sent by the client cannot change option `security`.
 

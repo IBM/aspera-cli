@@ -94,7 +94,7 @@ RSpec.describe(Aspera::Secret) do
   describe Aspera::Secret::Resolver do
     # Store in memory: path → fields; counts reads
     fake_store = Class.new(Aspera::Secret::Store::Base) do
-      self::REFERENCE_PARAMETERS = %i[allowed].freeze
+      self::PARAMETERS = %i[allowed].freeze
       self::REFERENCE_OPTIONS = %w[flavor].freeze
       attr_reader :reads
       attr_accessor :secrets
@@ -120,17 +120,31 @@ RSpec.describe(Aspera::Secret) do
     end
 
     before(:all) do
-      described_class.register_type('fake', fake_store)
-      # Without REFERENCE_PARAMETERS
-      described_class.register_type('plain', Class.new(Aspera::Secret::Store::Base))
+      Aspera::Secret::Store::Factory.register_type('fake', fake_store)
+      # Without parameters, read by label
+      Aspera::Secret::Store::Factory.register_type('plain', Class.new(Aspera::Secret::Store::Base) do
+        def get(label:, **) = {password: "value of #{label}"}
+      end)
     end
 
     let(:resolver) { described_class.new({'cache_ttl' => 60, 'stores' => {'mem' => {'type' => 'fake', 'allowed' => 'app/'}, 'other' => {'type' => 'fake'}}}) }
-    let(:store) { resolver.instance_variable_get(:@stores)['mem'] }
+    let(:store) { resolver.store('mem') }
 
     # Monotonic time seen by the resolver
     def at_time(seconds)
       allow(resolver).to(receive(:monotonic_time).and_return(seconds))
+    end
+
+    it 'gives a store by name' do
+      expect(resolver.store('mem')).to(be(store))
+      expect(resolver.store_names).to(eq(%w[mem other]))
+      expect { resolver.store('none') }.to(raise_error(Aspera::Secret::Error, 'unknown store none'))
+    end
+
+    it 'reads a store without reference methods by label, field password by default' do
+      plain = described_class.new({'stores' => {'p' => {'type' => 'plain'}}})
+      expect(plain.resolve('secret://p/my_label')).to(eq('value of my_label'))
+      expect(plain.metadata('secret://p/my_label')).to(eq({store: 'p', version: nil, updated_time: nil}))
     end
 
     it 'resolves a reference, with default field' do
@@ -170,7 +184,7 @@ RSpec.describe(Aspera::Secret) do
 
     it 'does not cache when TTL is 0' do
       resolver = described_class.new({cache_ttl: 0, stores: {mem: {type: 'fake'}}})
-      store = resolver.instance_variable_get(:@stores)['mem']
+      store = resolver.store('mem')
       store.secrets['one'] = {value: secret}
       2.times { resolver.resolve('secret://mem/one') }
       expect(store.reads).to(eq(2))
@@ -200,21 +214,34 @@ RSpec.describe(Aspera::Secret) do
         [{'stores' => {'mem' => {}}}, /store mem: type: missing/],
         [{'stores' => {'mem' => {'type' => 'fake', 'bad' => 1}}}, /store mem: unsupported keys: bad\z/],
         [{'stores' => {'m/n' => {'type' => 'fake'}}}, %r{store m/n: invalid name}],
-        [{'stores' => {'p' => {'type' => 'plain'}}}, /store p: not usable for secret references/],
+        [{'stores' => {'p' => {'type' => 'plain', 'x' => 1}}}, /store p: unsupported keys: x\z/],
+        [{'stores' => {'o' => {'type' => '1password', 'source' => 'web'}}}, /store o: source: unknown web, use one of: api, cli/],
         [{'stores' => {'f' => {'type' => 'file', 'file' => 'f', 'password_file' => 'p'}}}, /store f: unsupported keys: password_file\z/],
-        [{'stores' => {'v' => {'type' => 'vault', 'url' => 'http://127.0.0.1:8200', 'token_file' => 't'}}}, /store v: unsupported keys: token_file\z/],
-        [{'stores' => {'v' => {'type' => 'vault', 'url' => 'http://127.0.0.1:8200'}}}, /store v: vault: one of token or approle is required/],
-        [{'stores' => {'v' => {'type' => 'vault', 'url' => 'http://127.0.0.1:8200', 'token' => '@file:'}}}, /store v: token: expecting @file:<path>/],
-        [{'stores' => {'v' => {'type' => 'vault', 'url' => 'http://127.0.0.1:8200', 'approle' => {'role_id' => 'r', 'secret_id_file' => 's'}}}}, /unsupported keys: secret_id_file/],
-        [{'stores' => {'v' => {'type' => 'vault', 'url' => 'http://127.0.0.1:8200', 'approle' => {'role_id' => 'r', 'secret_id' => ''}}}}, /store v: approle secret_id: expecting /]
+        [{'stores' => {'v' => {'type' => 'vault', 'url' => 'http://127.0.0.1:8200', 'token_file' => 't'}}}, /store v: unsupported keys: token_file\z/]
       ].each do |config, message|
-        expect { described_class.new(config) }.to(raise_error(Aspera::Secret::Error, message))
+        expect { described_class.new(config) }.to(raise_error(Aspera::Secret::Error, /\Asecret references configuration: #{message}/))
+      end
+    end
+
+    it 'creates a store when first used, and reports its errors with the reference' do
+      [
+        [{}, 'vault: one of token or approle is required'],
+        [{'token' => '@file:'}, 'token: expecting @file:<path>'],
+        [{'approle' => {'role_id' => 'r', 'secret_id_file' => 's'}}, 'vault approle: unsupported keys: secret_id_file'],
+        [{'approle' => {'role_id' => 'r', 'secret_id' => ''}}, 'approle secret_id: expecting ']
+      ].each do |params, message|
+        vault = params.merge('type' => 'vault', 'url' => 'http://127.0.0.1:8200')
+        resolver = described_class.new({'stores' => {'v' => vault, 'mem' => {'type' => 'fake'}}})
+        resolver.store('mem').secrets['one'] = {value: secret}
+        expect(resolver.resolve('secret://mem/one')).to(eq(secret))
+        expect { resolver.resolve('secret://v/kv/app#password') }.to(raise_error(Aspera::Secret::Error, %r{\Asecret reference secret://v/kv/app#password: store v: #{Regexp.escape(message)}}))
+        expect { resolver.store('v') }.to(raise_error(Aspera::Secret::Error, /\Astore v: #{Regexp.escape(message)}/))
       end
     end
 
     it 'registers only subclasses of store' do
-      expect { described_class.register_type('bad', String) }.to(raise_error(Aspera::AssertError))
-      expect(described_class.types.keys).to(include('vault', 'file', 'fake'))
+      expect { Aspera::Secret::Store::Factory.register_type('bad', String) }.to(raise_error(Aspera::AssertError))
+      expect(Aspera::Secret::Store::Factory.types).to(include('vault', 'file', 'system', '1password', 'fake'))
     end
   end
 end

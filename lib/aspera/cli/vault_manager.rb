@@ -3,6 +3,7 @@
 require 'aspera/cli/error'
 require 'aspera/cli/info'
 require 'aspera/cli/security'
+require 'aspera/cli/deprecation'
 require 'aspera/secret/reference'
 require 'aspera/log'
 require 'aspera/assert'
@@ -10,39 +11,66 @@ require 'aspera/assert'
 module Aspera
   module Cli
     # Secrets of the vault, shared in `Context#vault`: read by `@vault:`, managed by `config vault`, written by presets.
-    # - `<label>.<field>`: store of option `vault` (unlocked with option `vault_password`), managed by label
-    # - `//<store>/<path>[?<options>][#<field>]`: reference to a store of option `vault_references` (`Secret::Resolver`), read only
+    # Option `vault`: named stores (`stores`), the name of the default store (`default`) and the cache of references (`cache_ttl`), see `Secret::Resolver`.
+    # - `<label>.<field>`: secret of the default store, unlocked with option `vault_password`, managed by label
+    # - `//<store>/<path>[?<options>][#<field>]`: reference to a secret of a store, read only
     #
     # Values `@file:<path>` in these options (e.g. `token`) are read by `Secret::Bootstrap`, not by `ExtendedValue`:
     # they are checked here as extended value `@file:`, so that option `security` applies (e.g. in MCP server mode).
     class VaultManager
       # Beginning of a reference after `@vault:`, `secret://` without `secret:`
       REFERENCE_PREFIX = '//'
+      # File of type `file`, in the configuration folder
+      DEFAULT_FILE = 'vault.bin'
+      # Name of the default store, not given to `Secret::Resolver`
+      DEFAULT_KEY = 'default'
+      STORES_KEY = 'stores'
+      # Keys of option `vault`, others are parameters of a store (deprecated form)
+      OPTION_KEYS = [DEFAULT_KEY, 'cache_ttl', STORES_KEY].freeze
+      private_constant :DEFAULT_FILE, :DEFAULT_KEY, :STORES_KEY, :OPTION_KEYS
 
-      # @param options     [Parser] Options `vault`, `vault_password` and `vault_references`
+      class << self
+        # Value of option `vault` when set (`convert` of option): the parameters of one store (deprecated) are
+        # a store named after its type, which is the default store.
+        # @param value [Hash] Value of option `vault`
+        # @return [Hash] Value with `stores`
+        def convert_option(value)
+          value = value.transform_keys(&:to_s)
+          params = value.except(*OPTION_KEYS)
+          return value if params.empty?
+          params['type'] ||= 'file'
+          name = params['type'].to_s
+          Log.log.warn do
+            "option vault: parameters of one store are #{Deprecation.new(last: '4.28.0', message: "set a store in #{STORES_KEY}, and its name in #{DEFAULT_KEY}: {\"#{DEFAULT_KEY}\":\"#{name}\",\"#{STORES_KEY}\":{\"#{name}\":{...}}}")}"
+          end
+          value.slice(*OPTION_KEYS).merge(DEFAULT_KEY => name, STORES_KEY => (value[STORES_KEY] || {}).merge(name => params))
+        end
+      end
+
+      # @param options     [Parser] Options `vault` and `vault_password`
       # @param main_folder [String] Folder of relative paths of vault files
       def initialize(options, main_folder)
         @options = options
         @main_folder = main_folder
-        @store = nil
         @resolver = nil
+        # Name of the default store, `nil` if none
+        @default = nil
       end
 
-      # Store of option `vault`, opened when first used.
-      # Not kept when not configured: options may be set later (e.g. by the global preset).
+      # Default store, opened when first used.
       # @param mandatory [Boolean] Raise if not configured
       # @return [Secret::Store::Base, nil] Store, `nil` if not configured
       def store(mandatory: false)
-        @store ||= open_store
-        Aspera.assert(!mandatory || !@store.nil?, type: BadArgument) { 'Missing mandatory option: vault' }
-        @store
+        return if resolver(mandatory: mandatory).nil?
+        Aspera.assert(!mandatory || !@default.nil?, type: BadArgument) { "option vault: no default store: set #{DEFAULT_KEY}" }
+        @resolver.store(@default) unless @default.nil?
       end
 
       # Value of `@vault:`
       # @param name [String] `<label>.<field>` or `//<store>/<path>[?<options>][#<field>]`
       # @return [String] Value of secret
       def value(name)
-        return resolver.resolve(reference_text(name)) if name.start_with?(REFERENCE_PREFIX)
+        return resolver(mandatory: true).resolve(reference_text(name)) if name.start_with?(REFERENCE_PREFIX)
         # Label may contain dots (e.g. preset name)
         label, _, param = name.rpartition('.')
         Aspera.assert(!label.empty? && !param.empty?, type: BadArgument) { 'vault name shall match <name>.<param>' }
@@ -57,49 +85,72 @@ module Aspera
       # @return [Hash] `store`, `version`, `updated_time`
       def metadata(name)
         Aspera.assert(name.start_with?(REFERENCE_PREFIX), type: BadArgument) { "expecting a reference: @vault:#{REFERENCE_PREFIX}<store>/<path>[?<options>][#<field>]" }
-        resolver.metadata(reference_text(name))
+        resolver(mandatory: true).metadata(reference_text(name))
       end
 
       private
 
-      # @return [Secret::Store::Base, nil] Store of option `vault`, `nil` if not configured
-      def open_store
-        info = @options.get_option(:vault, mandatory: false)
-        return if info.nil? || (info.is_a?(Hash) && info.empty?)
-        info = info.transform_keys(&:to_sym)
-        info[:type] ||= 'file'
-        password = @options.get_option(:vault_password)
-        check_file_values(:vault, info)
-        # Token of type `vault` when not in `vault`
-        check_file_values(:vault_password, password)
-        require 'aspera/secret/store/factory'
-        Secret::Store::Factory.create(info, Info::CMD_NAME, @main_folder, password)
+      # Resolver of the stores of option `vault`, created when first used.
+      # Not kept when not configured: options may be set later (e.g. by the global preset).
+      # @param mandatory [Boolean] Raise if not configured
+      # @return [Secret::Resolver, nil] Resolver, `nil` if not configured
+      def resolver(mandatory: false)
+        @resolver ||= create_resolver
+        Aspera.assert(!mandatory || !@resolver.nil?, type: BadArgument) { 'Missing mandatory option: vault' }
+        @resolver
       end
 
-      # @return [Secret::Resolver] Resolver of option `vault_references`, created when first used
-      def resolver
-        return @resolver unless @resolver.nil?
-        config = @options.get_option(:vault_references, mandatory: false)
-        Aspera.assert(config.is_a?(Hash) && !config.empty?, type: BadArgument) { 'Missing mandatory option: vault_references' }
-        check_file_values(:vault_references, config)
-        require 'aspera/secret/resolver'
-        @resolver = Secret::Resolver.new(resolver_config(config))
-      end
-
-      # Relative paths of stores of type `file` are relative to the configuration folder, as for option `vault`
-      # @param config [Hash] Value of option `vault_references`
-      # @return [Hash] Configuration of `Secret::Resolver`
-      def resolver_config(config)
+      # @return [Secret::Resolver, nil] Resolver of option `vault`, `nil` if not configured
+      def create_resolver
+        config = @options.get_option(:vault, mandatory: false)
+        return if config.nil? || (config.is_a?(Hash) && config.empty?)
+        Aspera.assert_type(config, Hash, type: BadArgument) { 'option vault' }
         config = config.transform_keys(&:to_s)
-        return config unless config['stores'].is_a?(Hash)
-        stores = config['stores'].transform_values do |params|
-          next params unless params.is_a?(Hash)
-          params = params.transform_keys(&:to_s)
-          file = params['file']
-          next params unless params['type'].to_s.eql?('file') && file.is_a?(String) && !File.absolute_path?(file)
-          params.merge('file' => File.join(@main_folder, file))
+        stores = config[STORES_KEY]
+        Aspera.assert_type(stores, Hash, type: BadArgument) { "option vault: #{STORES_KEY}" }
+        stores = stores.to_h { |name, params| [name.to_s, store_parameters(params)] }
+        default = config.delete(DEFAULT_KEY)&.to_s
+        Aspera.assert(default.nil? || stores.key?(default), type: BadArgument) { "option vault: #{DEFAULT_KEY}: no store #{default}" }
+        check_file_values(:vault, stores)
+        add_vault_password(stores[default]) unless default.nil?
+        require 'aspera/secret/resolver'
+        resolver = Secret::Resolver.new(config.merge(STORES_KEY => stores))
+        @default = default
+        resolver
+      end
+
+      # Parameters of a store, with the defaults of `ascli`
+      # @param params [Hash] Parameters of a store of option `vault`
+      # @return [Hash] Parameters of `Secret::Store::Factory`, Symbol keys
+      def store_parameters(params)
+        Aspera.assert_type(params, Hash, type: BadArgument) { 'option vault: store' }
+        params = params.transform_keys(&:to_sym)
+        case params[:type]
+        when 'file'
+          # `name`: same as `file`, for compatibility
+          file = params.delete(:name) || params[:file] || DEFAULT_FILE
+          params[:file] = file.is_a?(String) && !File.absolute_path?(file) ? File.join(@main_folder, file) : file
+        when 'system'
+          params[:name] ||= Info::CMD_NAME
         end
-        config.merge('stores' => stores)
+        params
+      end
+
+      # Option `vault_password` is the secret of the default store, if not in its parameters
+      # @param params [Hash] Parameters of the default store, modified
+      def add_vault_password(params)
+        key =
+          case params[:type]
+          when 'file' then :password
+          when 'vault' then :token unless params.key?(:approle)
+          when '1password' then :token unless params[:source].eql?('cli')
+          end
+        return if key.nil? || params.key?(key)
+        password = @options.get_option(:vault_password)
+        Aspera.assert(!password.nil? || !params[:type].eql?('file'), type: BadArgument) { 'Missing mandatory option: vault_password' }
+        return if password.nil?
+        check_file_values(:vault_password, password)
+        params[key] = password
       end
 
       # Values `@file:<path>` are read like extended value `@file:`, see `Security`

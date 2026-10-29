@@ -40,6 +40,7 @@ module Aspera
       # @param allowed [nil,Class,Array<Class>,Array<Symbol>] Allowed values
       # @param on_set [#call, nil] Called with the new value each time the value is set
       # @param shorthand [String, nil] For a `Hash` option: a `String` value is stored as `{shorthand => value}`
+      # @param convert [#call, nil] For a `Hash` option: called with a new `Hash` value, returns the value to store, before merge (e.g. conversion of a deprecated form)
       # @param deprecation [Hash, Deprecation, nil] Deprecation: `{last:, message:}`, see `Deprecation`
       # @param schema [String] Declaration of schema
       # @param complete [Symbol, nil] Values proposed by shell completion, one of `Complete::KINDS`
@@ -48,7 +49,7 @@ module Aspera
       # - `Class` The single allowed Class
       # - `Array<Class>` Multiple allowed classes
       # - `Array<Symbol>` List of allowed values
-      def initialize(option:, description: nil, allowed: Type::STRING, on_set: nil, shorthand: nil, deprecation: nil, schema: nil, complete: nil)
+      def initialize(option:, description: nil, allowed: Type::STRING, on_set: nil, shorthand: nil, convert: nil, deprecation: nil, schema: nil, complete: nil)
         Log.log.trace1 { "option: #{option}, allowed: #{allowed}" }
         @option = option
         @description = description
@@ -60,6 +61,8 @@ module Aspera
         @deprecation = Deprecation.create(deprecation)
         @schema = schema
         @shorthand = shorthand
+        Aspera.assert(convert.nil? || convert.respond_to?(:call)) { "#{@option}: convert must respond to call" }
+        @convert = convert
         Aspera.assert_values(complete, Complete::KINDS + [nil]) { "#{@option}: complete" }
         @complete = complete
         @source = nil
@@ -139,6 +142,7 @@ module Aspera
         new_value = {@shorthand => new_value} if @shorthand && new_value.is_a?(String)
         Log.log.trace1 { "#{source}: #{@option} <- (#{new_value.class})#{new_value}" }
         Aspera.assert_type(new_value, *@types, type: BadArgument) { "Option #{@option}" } if @types
+        new_value = @convert.call(new_value) if @convert && new_value.is_a?(Hash)
         if merge && (new_value.is_a?(Hash) || new_value.is_a?(Array))
           current_value = @value
           # An `Array` default value is replaced, not appended to

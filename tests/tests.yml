@@ -5580,8 +5580,9 @@ conf_vault_file:
     - GLOBAL
     - vault
     - "@:"
-    - type=file
-    - name=$(PATH_VAULT_FILE)
+    - default=local
+    - stores.local.type=file
+    - stores.local.file=$(PATH_VAULT_FILE)
 conf_vault_file_password:
   depends_on:
     - conf_vault_file
@@ -5655,7 +5656,7 @@ conf_vault_show:
     - show
     - my_label
 conf_vault_references_check:
-  description: Check a reference to a label of the encrypted file, without its value
+  description: Check a reference to a label of the default store, without its value
   depends_on:
     - conf_vault_create
   tags:
@@ -5666,9 +5667,8 @@ conf_vault_references_check:
     - vault
     - check
     - "@vault://local/my_label"
-    - --vault-references=@json:{"stores":{"local":{"type":"file","file":"$(PATH_VAULT_FILE)","password":"$(secret :vault_password)"}}}
 conf_vault_references_echo:
-  description: "@vault:// reads the secret of a label of the encrypted file, field password by default"
+  description: "@vault:// reads the secret of a label of another store, with its password, field password by default"
   depends_on:
     - conf_vault_create
   tags:
@@ -5679,8 +5679,8 @@ conf_vault_references_echo:
   args:
     - config
     - echo
-    - "@vault://local/my_label"
-    - --vault-references=@json:{"stores":{"local":{"type":"file","file":"$(PATH_VAULT_FILE)","password":"$(secret :vault_password)"}}}
+    - "@vault://other/my_label"
+    - --vault=@json:{"stores":{"other":{"type":"file","file":"$(PATH_VAULT_FILE)","password":"$(secret :vault_password)"}}}
     - --out.secrets=yes
 conf_vault_references_fail_label:
   description: "@vault:// with a label that does not exist"
@@ -5696,7 +5696,21 @@ conf_vault_references_fail_label:
     - config
     - echo
     - "@vault://local/bad"
-    - --vault-references=@json:{"stores":{"local":{"type":"file","file":"$(PATH_VAULT_FILE)","password":"$(secret :vault_password)"}}}
+conf_vault_deprecated_store:
+  description: "Deprecated: option vault with the parameters of one store, the default store, named after its type"
+  depends_on:
+    - conf_vault_create
+  tags:
+    - vault
+    - tmp_conf
+    - nodoc
+  expect: $(secret :stored_password)
+  args:
+    - config
+    - echo
+    - "@vault:my_label.password"
+    - --vault=@json:{"type":"file","name":"$(PATH_VAULT_FILE)"}
+    - --out.secrets=yes
 conf_preset_ask:
   stdin: "username\npassword\n\nthe_user\nthe_pass\n"
   tags:

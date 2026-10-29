@@ -6,13 +6,13 @@ require 'aspera/secret/reference'
 module Aspera
   module Secret
     module Store
-      # Base class of stores of secrets: management by label (option `vault`), and read by reference (`Secret::Resolver`).
+      # Base class of stores of secrets, created by `Factory` from parameters: management by label, and read by reference (`Secret::Resolver`).
       # For references, errors are raised with the reason only, `Resolver` adds the reference.
       class Base
         CONTENT_KEYS = %i[label username password url description].freeze
-        # Parameters of a store of secret references, `nil`: type not usable for references.
-        # Secrets to access the store: the value, or `@file:<path>` (`Secret::Bootstrap`).
-        REFERENCE_PARAMETERS = nil
+        # Parameters of store: keyword arguments of `new`.
+        # Secrets to access the store: the value, or `@file:<path>` (`Secret::Bootstrap`), when the type supports it.
+        PARAMETERS = [].freeze
         # Options accepted in references
         REFERENCE_OPTIONS = [].freeze
         # Field of secret when the reference has none
@@ -20,20 +20,25 @@ module Aspera
         private_constant :DEFAULT_FIELD
 
         class << self
-          # Checks the parameters of a store of secret references
+          # Checks the parameters of store
           # @param params [Hash] Parameters, Symbol keys
-          # @raise [Error] Type not usable for references, or unsupported parameter
-          def check_reference_parameters(params)
-            raise Error, 'not usable for secret references' if self::REFERENCE_PARAMETERS.nil?
-            unsupported = params.keys - self::REFERENCE_PARAMETERS
+          # @raise [Error] Unsupported parameter
+          def check_parameters(params)
+            unsupported = params.keys - self::PARAMETERS
             raise Error, "unsupported keys: #{unsupported.join(', ')}" unless unsupported.empty?
           end
 
-          # @param params [Hash] Parameters of a store of secret references, checked, Symbol keys
+          # @param params [Hash] Parameters of store, checked, Symbol keys
           # @return [Hash] Keyword arguments of `new`
           # @raise [Error] Invalid parameter
-          def reference_arguments(params)
+          def arguments(params)
             params
+          end
+
+          # @param _error [StandardError] Error raised by the store
+          # @return [String, nil] Reason of failure without secret, `nil` if the error is not specific to the type
+          def error_reason(_error)
+            nil
           end
         end
 

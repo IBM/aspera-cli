@@ -44,20 +44,47 @@ RSpec.describe(Aspera::Secret::Store) do
       end
     end
 
-    it 'refuses a vault file with Ruby objects' do
+    it 'refuses a vault file with Ruby objects, when used' do
       Dir.mktmpdir do |dir|
         path = File.join(dir, 'vault.bin')
         File.write(path, "--- !ruby/object:OpenStruct\ntable: {}\n")
-        expect { described_class.new(file: path, password: vault_password) }.to(raise_error(Psych::DisallowedClass))
+        expect { described_class.new(file: path, password: vault_password).get(label: 'my_label') }.to(raise_error(Psych::DisallowedClass))
         File.write(path, "--- just a string\n")
-        expect { described_class.new(file: path, password: vault_password) }.to(raise_error(/Invalid vault file/))
+        expect { described_class.new(file: path, password: vault_password).get(label: 'my_label') }.to(raise_error(/Invalid vault file/))
+      end
+    end
+
+    it 'decrypts the file once for several changes, and again when modified by another process' do
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'vault.bin')
+        vault = described_class.new(file: path, password: vault_password)
+        expect(vault).to(receive(:load_file).twice.and_call_original)
+        vault.set({label: 'one', password: secret}) # HashiCorpIgnore
+        vault.set({label: 'two', password: other}) # HashiCorpIgnore
+        expect(vault.get(label: 'two')[:password]).to(eq(other))
+        mtime = File.mtime(path)
+        described_class.new(file: path, password: vault_password).delete(label: 'one')
+        File.utime(mtime + 1, mtime + 1, path)
+        expect(vault.get(label: 'one', exception: false)).to(be_nil)
+      end
+    end
+
+    it 'reads secrets after a password change' do
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'vault.bin')
+        vault = described_class.new(file: path, password: vault_password)
+        vault.set({label: 'my_label', password: secret}) # HashiCorpIgnore
+        vault.change_password(other)
+        expect(vault.get(label: 'my_label')[:password]).to(eq(secret))
+        expect(described_class.new(file: path, password: other).get(label: 'my_label')[:password]).to(eq(secret))
+        expect { described_class.new(file: path, password: vault_password).get(label: 'my_label') }.to(raise_error(Aspera::Secret::Error, /cannot decrypt/))
       end
     end
 
     it 'refuses to overwrite a secret and to delete a missing one' do
       Dir.mktmpdir do |dir|
         vault = described_class.new(file: File.join(dir, 'vault.bin'), password: vault_password)
-        vault.set({label: 'my_label', password: secret})
+        vault.set({label: 'my_label', password: secret}) # HashiCorpIgnore
         expect { vault.set({label: 'my_label', password: other}) }.to(raise_error(/already exist/)) # HashiCorpIgnore
         expect { vault.delete(label: 'missing') }.to(raise_error(/not found/))
       end

@@ -146,11 +146,12 @@ module Aspera
       # @param on_set       [#call]  Called with the new value each time the value is set (e.g. a `Method`, or a lambda).
       #   For a flag (`Type::NONE`): called without argument when the flag is found
       # @param shorthand     [String] For a `Hash` option: a `String` value is stored as `{shorthand => value}`
+      # @param convert       [#call]  For a `Hash` option: called with a new `Hash` value, returns the value to store, before merge (e.g. conversion of a deprecated form)
       # @param deprecation   [Hash, nil] deprecation: `{last:, message:}`, see `Deprecation`
       # @param schema        [String] schema path documenting the Hash form of this option
       # @param complete      [Symbol, nil] values proposed by shell completion, one of `Complete::KINDS`
       # @param block [Proc] Block to execute when option is found
-      def declare(option_symbol, description: nil, short: nil, allowed: nil, default: nil, on_set: nil, shorthand: nil, deprecation: nil, schema: nil, complete: nil, &block)
+      def declare(option_symbol, description: nil, short: nil, allowed: nil, default: nil, on_set: nil, shorthand: nil, convert: nil, deprecation: nil, schema: nil, complete: nil, &block)
         Aspera.assert_type(option_symbol, Symbol)
         Aspera.assert(!@registry.declared?(option_symbol)) { "#{option_symbol} already declared" }
         if on_set && allowed.eql?(Type::NONE)
@@ -171,6 +172,7 @@ module Aspera
             allowed:     allowed,
             on_set:      on_set,
             shorthand:   shorthand,
+            convert:     convert,
             deprecation: deprecation,
             schema:      schema,
             complete:    complete

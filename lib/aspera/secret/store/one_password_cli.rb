@@ -14,6 +14,7 @@ module Aspera
 
         OP_EXECUTABLE = 'op'
         private_constant :OP_EXECUTABLE
+        PARAMETERS = %i[vault account].freeze
 
         # @param vault   [String, nil] Name or ID of the 1Password vault (optional, uses default vault if omitted)
         # @param account [String, nil] Account shorthand for `op` (optional, uses default account if omitted)

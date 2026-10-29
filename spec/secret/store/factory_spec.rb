@@ -4,7 +4,6 @@
 
 require 'tmpdir'
 require 'securerandom'
-require 'aspera/hash_ext'
 require 'aspera/environment'
 require 'aspera/secret/store/factory'
 
@@ -13,34 +12,53 @@ RSpec.describe(Aspera::Secret::Store::Factory) do
   let(:secret) { SecureRandom.alphanumeric(12) }
   let(:vault_password) { SecureRandom.alphanumeric(12) }
 
-  describe '.create file vault' do
-    it 'uses vault.bin in the given folder by default, created with restricted access' do
+  describe '.create file' do
+    it 'creates the vault file with restricted access on first secret' do
       Dir.mktmpdir do |dir|
-        vault = described_class.create({type: 'file'}, 'ascli', dir, vault_password)
-        vault.set({label: 'my_label', password: secret})
         path = File.join(dir, 'vault.bin')
-        expect(File.exist?(path)).to(be(true))
+        vault = described_class.create({'type' => 'file', 'file' => path, 'password' => vault_password}) # HashiCorpIgnore
+        expect(File.exist?(path)).to(be(false))
+        vault.set({label: 'my_label', password: secret})
         expect(File.stat(path).mode & 0o777).to(eq(0o600)) unless Gem.win_platform?
-        expect(vault.get(label: 'my_label')[:password]).to(eq(secret))
+        expect(described_class.create({type: 'file', file: path, password: vault_password}).get(label: 'my_label')[:password]).to(eq(secret))
       end
     end
 
-    it 'resolves a relative name in the given folder' do
-      Dir.mktmpdir do |dir|
-        described_class.create({type: 'file', name: 'other.bin'}, 'ascli', dir, vault_password).set({label: 'my_label', password: secret})
-        expect(File.exist?(File.join(dir, 'other.bin'))).to(be(true))
-      end
+    it 'refuses a missing password, and parameters of other types' do
+      expect { described_class.create({type: 'file', file: 'vault.bin'}) }.to(raise_error(Aspera::Secret::Error, /\Apassword: expecting /))
+      expect { described_class.create({type: 'file', name: 'vault.bin', password: vault_password}) }.to(raise_error(Aspera::Secret::Error, 'unsupported keys: name')) # HashiCorpIgnore
     end
   end
 
   describe '.create vault' do
-    def create(info) = described_class.create({type: 'vault', url: 'http://127.0.0.1:8200'}.merge(info), 'ascli', '.', vault_password)
+    def create(params) = described_class.create({type: 'vault', url: 'http://127.0.0.1:8200'}.merge(params))
 
-    it 'uses the vault password as token, unless token or approle is set' do
-      expect(create({}).info[:auth]).to(eq('token'))
+    it 'authenticates with token or approle' do
+      expect(create({token: SecureRandom.hex(16)}).info[:auth]).to(eq('token'))
       expect(create({token: '@file:/run/vault/token'}).info[:auth]).to(eq('token file'))
       expect(create({approle: {'role_id' => 'my_role'}}).info[:auth]).to(eq('approle'))
-      expect { create({namespace: {}}) }.to(raise_error(/only string values/))
+      expect { create({}) }.to(raise_error(Aspera::ParameterError, /one of token or approle/))
     end
+  end
+
+  describe '.create 1password' do
+    it 'selects the class from source, api by default' do
+      expect(described_class.create({type: '1password', source: 'cli', vault: 'ops'})).to(be_a(Aspera::Secret::Store::OnePasswordCli))
+      expect(described_class.create({type: '1password', url: 'http://localhost:8080', token: SecureRandom.hex(16), vault_id: 'v'})).to(be_a(Aspera::Secret::Store::OnePasswordApi))
+      expect { described_class.create({type: '1password', source: 'cli', token: 't'}) }.to(raise_error(Aspera::Secret::Error, 'unsupported keys: token'))
+    end
+  end
+
+  describe '.create system' do
+    it 'is only on macOS' do
+      allow(Aspera::Environment.instance).to(receive(:os).and_return(Aspera::Environment::OS_LINUX))
+      expect { described_class.create({type: 'system'}) }.to(raise_error(Aspera::Secret::Error, 'type system: only on macOS'))
+    end
+  end
+
+  it 'refuses an unknown or missing type' do
+    expect { described_class.create({type: 'none'}) }.to(raise_error(Aspera::Secret::Error, /\Atype: unknown none, use one of: file, vault, system, 1password/))
+    expect { described_class.create({}) }.to(raise_error(Aspera::Secret::Error, /\Atype: missing/))
+    expect { described_class.create('file') }.to(raise_error(Aspera::Secret::Error, 'expecting a Hash'))
   end
 end

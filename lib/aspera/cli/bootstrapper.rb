@@ -122,14 +122,13 @@ module Aspera
       # context.vault + register @preset and @vault extended-value handlers + global config default preset
       def setup_extended_value_handlers
         @context.options.declare(:secret, description: 'Secret for access keys')
-        @context.options.declare(:vault, schema: Schema::Registry::VAULT_OPTIONS)
+        @context.options.declare(:vault, schema: Schema::Registry::VAULT_OPTIONS, convert: VaultManager.method(:convert_option))
         @context.options.declare(:vault_password, description: 'Vault password')
-        @context.options.declare(:vault_references, schema: Schema::Registry::VAULT_REFERENCES_OPTIONS)
         @context.vault = VaultManager.new(@context.options, @context.main_folder)
         # Register @preset and @vault handlers BEFORE parse_options! so that
         # values like --secret=@preset:name are correctly evaluated at parse time.
         ExtendedValue.instance.on(EXTEND_PRESET, description: 'Option preset, or its parameter: <name>[.<parameter>]') { |v| @context.presets.by_name(v) }
-        ExtendedValue.instance.on(EXTEND_VAULT, description: 'Secret from vault: <label>.<field>, or //<store>/<path>[#<field>]') { |v| @context.vault.value(v) }
+        ExtendedValue.instance.on(EXTEND_VAULT, description: 'Secret from vault: <label>.<field> of the default store, or //<store>/<path>[#<field>]') { |v| @context.vault.value(v) }
         @context.options.parse_options!
         # Load global config default preset (equivalent of add_plugin_default_preset(:config))
         default_config_name = @context.presets.plugin_default_name(CONF_GLOBAL_SYM)

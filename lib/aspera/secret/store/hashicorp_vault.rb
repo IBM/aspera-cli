@@ -27,8 +27,18 @@ module Aspera
 
         # Reference: `secret://<store>/<mount>/<path>#<field>` in a KV v2 secrets engine, options: `version=<n>`, `mount=<mount>` (when the mount contains `/`).
         # Authentication by `token` or `approle`: secrets are the value, or `@file:<path>` (`Bootstrap`).
-        REFERENCE_PARAMETERS = %i[url token approle namespace ca_file allowed_prefixes].freeze
+        PARAMETERS = %i[url token approle namespace ca_file allowed_prefixes].freeze
         REFERENCE_OPTIONS = %w[version mount].freeze
+
+        class << self
+          # Errors of gem `vault`: code and errors of response, or address of server
+          def error_reason(error)
+            case error
+            when ::Vault::HTTPError then "Vault: #{error.code}#{" #{error.errors.join(', ')}" unless error.errors.empty?}"
+            when ::Vault::HTTPConnectionError then "Vault: cannot connect to #{error.address}: #{error.original_exception.message}"
+            end
+          end
+        end
 
         # `Vault::Client` (gem `vault` 0.20.1) gives the options of `JSON.parse` as a positional Hash,
         # refused by gem `json` 3 (`ArgumentError`), with option `create_additions` (removed, `false` by default in gem `json` 2):

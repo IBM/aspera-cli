@@ -529,7 +529,11 @@ components:
           default: 120
     VaultHashicorpOptions:
       type: object
-      description: IBM HashiCorp Vault secret store.
+      description: >-
+        IBM HashiCorp Vault secret store.
+        Labels of `config vault` and `@vault:<label>.<field>` are in mount `secret` (KV v2).
+        Reference `@vault://<store>/<mount>/<path>#<field>` (field required) in any KV v2 mount, options `version=<n>`, `mount=<mount>` (when the mount contains `/`).
+      additionalProperties: false
       required:
         - type
         - url
@@ -546,7 +550,8 @@ components:
           type: string
           description: >-
             Authentication token: the value, or `@file:<path>` (e.g. written and renewed by Vault Agent), read again when modified.
-            Defaults to the value of `vault_password`, unless `approle` is set.
+            One of `token` or `approle` is required.
+            For the default store, defaults to the value of `vault_password`, unless `approle` is set.
           example: dev-only-token
         approle:
           type: object
@@ -572,9 +577,15 @@ components:
           type: string
           x-cli-complete: file
           description: File with the CA certificates that verify the certificate of the server (HTTPS).
+        allowed_prefixes:
+          type: array
+          description: "Allowed prefixes of `<mount>/<path>` of references: a prefix ending with `/` is a folder, else a path or a folder. All paths are allowed if not set."
+          items:
+            type: string
     VaultSystemOptions:
       type: object
       description: macOS system keychain secret store.
+      additionalProperties: false
       required:
         - type
       properties:
@@ -589,6 +600,7 @@ components:
     VaultOnePasswordOptions:
       type: object
       description: 1Password secret store (Connect REST API or CLI).
+      additionalProperties: false
       required:
         - type
         - source
@@ -611,7 +623,7 @@ components:
           description: ID of the 1Password vault to use (required when `source` is `api`).
         token:
           type: string
-          description: Bearer token for the Connect API (required when `source` is `api`). Defaults to the value of `vault_password`.
+          description: Bearer token for the Connect API (required when `source` is `api`). For the default store, defaults to the value of `vault_password`.
         vault:
           type: string
           description: Name or ID of the 1Password vault to use with the CLI (used when `source` is `cli`). Uses the default vault if omitted.
@@ -620,7 +632,8 @@ components:
           description: Account shorthand for `op` (used when `source` is `cli`). Uses the default account if omitted.
     VaultFileOptions:
       type: object
-      description: Encrypted file secret store.
+      description: Encrypted file secret store. Reference `@vault://<store>/<label>[#<field>]`, field `password` by default.
+      additionalProperties: false
       required:
         - type
       properties:
@@ -628,13 +641,23 @@ components:
           type: string
           description: Vault type selector.
           enum: [file]
-        name:
+        file:
           type: string
           x-cli-complete: file
           description: >-
-            Path to the encrypted vault file.
+            Path to the encrypted vault file, created when the first secret is added.
             Relative paths are resolved from the configuration folder.
+            Read when used, and again when modified.
           default: vault.bin
+        name:
+          type: string
+          x-cli-complete: file
+          description: Same as `file` (compatibility).
+        password:
+          type: string
+          description: >-
+            Password of the vault file: the value, or `@file:<path>`, read again when modified.
+            For the default store, defaults to the value of `vault_password`.
     VaultSecret:
       type: object
       description: Secret entry in the vault
@@ -656,9 +679,10 @@ components:
         description:
           type: string
           description: Human-readable description of this secret
-    VaultOptions:
-      title: Secret vault configuration
-      description: Secret vault configuration. Set `type` to select the vault backend.
+    VaultStore:
+      type: object
+      title: Secret store
+      description: Parameters of a secret store. Set `type` to select the store type.
       oneOf:
         - $ref: "#/components/schemas/VaultHashicorpOptions"
         - $ref: "#/components/schemas/VaultSystemOptions"
@@ -670,104 +694,39 @@ components:
           vault:      "#/components/schemas/VaultHashicorpOptions"
           system:     "#/components/schemas/VaultSystemOptions"
           file:       "#/components/schemas/VaultFileOptions"
-          1password:  "#/components/schemas/VaultOnePasswordOptions"
-    VaultReferenceHashicorp:
+          1password:  "#/components/schemas/VaultOnePasswordOptions" # HashiCorpIgnore
+    VaultStores:
       type: object
-      description: IBM HashiCorp Vault, secrets engine KV v2. Reference `@vault://<store>/<mount>/<path>#<field>` (field required), options `version=<n>`, `mount=<mount>` (when the mount contains `/`).
+      title: Secret stores
+      description: Named secret stores, and the default store.
       additionalProperties: false
       required:
-        - type
-        - url
+        - stores
       properties:
-        type:
+        default:
           type: string
-          description: Store type selector.
-          enum:
-            - vault
-        url:
-          type: string
-          description: URL of the HashiCorp Vault server.
-          example: "https://vault.example.com:8200"
-        token:
-          type: string
-          description: "Authentication token: the value, or `@file:<path>` (e.g. written and renewed by Vault Agent), read again when modified. One of `token` or `approle` is required."
-        approle:
-          type: object
-          description: AppRole authentication, the token is obtained by login, renewed, and obtained again when refused.
-          properties:
-            role_id:
-              type: string
-              description: Role ID.
-            secret_id:
-              type: string
-              description: "Secret ID (if the role requires one): the value, or `@file:<path>`."
-            mount:
-              type: string
-              description: Mount path of the AppRole auth method.
-              default: approle
-          required:
-            - role_id
-        namespace:
-          type: string
-          description: Namespace (Vault Enterprise).
-        ca_file:
-          type: string
-          x-cli-complete: file
-          description: File with the CA certificates that verify the certificate of the server (HTTPS).
-        allowed_prefixes:
-          type: array
-          description: "Allowed prefixes of `<mount>/<path>` of references: a prefix ending with `/` is a folder, else a path or a folder. All paths are allowed if not set."
-          items:
-            type: string
-    VaultReferenceFile:
-      type: object
-      description: Encrypted file of `config vault` (option `vault` of type `file`). Reference `@vault://<store>/<label>[#<field>]`, field `password` by default.
-      additionalProperties: false
-      required:
-        - type
-        - file
-        - password
-      properties:
-        type:
-          type: string
-          description: Store type selector.
-          enum:
-            - file
-        file:
-          type: string
-          x-cli-complete: file
-          description: Path to the encrypted vault file, relative to the configuration folder. Read when used, and again when modified.
-          example: vault.bin
-        password:
-          type: string
-          description: "Password of the vault file: the value, or `@file:<path>`, read again when modified."
-    VaultReferenceStore:
-      title: Store of secret references
-      description: Parameters of a store of option `vault_references`. Set `type` to select the store type.
-      oneOf:
-        - $ref: "#/components/schemas/VaultReferenceHashicorp"
-        - $ref: "#/components/schemas/VaultReferenceFile"
-      discriminator:
-        propertyName: type
-        mapping:
-          vault: "#/components/schemas/VaultReferenceHashicorp"
-          file: "#/components/schemas/VaultReferenceFile"
-    VaultReferencesOptions:
-      type: object
-      title: Stores of secret references
-      description: "Stores of secrets read by reference with `@vault://<store>/<path>[?<options>][#<field>]` (read only)."
-      additionalProperties: false
-      properties:
+          description: >-
+            Name of the default store, in `stores`: read by `@vault:<label>.<field>`, managed by `config vault`, unlocked with option `vault_password`.
+            No default store if not set.
         cache_ttl:
           type: number
           minimum: 0
-          description: Time in seconds a value is kept in memory, `0` for no cache.
+          description: Time in seconds a value read by reference is kept in memory, `0` for no cache.
           default: 60
         stores:
           type: object
-          description: "Name of store (letters, digits, `_`, `.`, `-`) → parameters of store, with `type`: `vault` (HashiCorp Vault, KV v2) or `file` (encrypted file of `config vault`)."
+          description: >-
+            Name of store (letters, digits, `_`, `.`, `-`) → parameters of store, with `type`.
+            Secrets are read by reference with `@vault://<store>/<path>[?<options>][#<field>]` from any store.
           additionalProperties:
-            $ref: "#/components/schemas/VaultReferenceStore"
+            $ref: "#/components/schemas/VaultStore"
+    VaultOptions:
+      type: object
+      title: Secret vault configuration
+      description: Named secret stores (`stores`), or (deprecated) the parameters of one store, which is the default store, named after its type.
+      oneOf:
+        - $ref: "#/components/schemas/VaultStores"
+        - $ref: "#/components/schemas/VaultStore"
     ImageOptions:
       type: object
       description: Options for displaying images and thumbnails in the terminal.

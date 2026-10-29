@@ -1,8 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/secret/reference'
-require 'aspera/secret/store/hashicorp_vault'
-require 'aspera/secret/store/encrypted_hash'
+require 'aspera/secret/store/factory'
 require 'aspera/secret/hider'
 
 module Aspera
@@ -11,8 +10,10 @@ module Aspera
     #
     # Configuration (e.g. from a YAML file):
     # - `cache_ttl`: time in seconds a value is kept in memory (default: 60, 0: no cache)
-    # - `stores`: name of store → parameters of store, with `type` (see `register_type`), parameters: `REFERENCE_PARAMETERS` of class of type
+    # - `stores`: name of store → parameters of store, with `type` (see `Store::Factory`)
     #
+    # The type and the names of parameters are checked by `new`, a store is created when first used:
+    # a store not used (e.g. its secret is not available) is not an error.
     # Bootstrap secrets of stores (`password` of type `file`, `token` and `secret_id` of type `vault`): the value, or `@file:<path>` (`Bootstrap`).
     # Error messages give the reference, never a value.
     class Resolver
@@ -20,28 +21,6 @@ module Aspera
       CONFIG_KEYS = %w[cache_ttl stores].freeze
       STORE_NAME = /\A[A-Za-z0-9_.-]+\z/
       private_constant :CONFIG_KEYS, :STORE_NAME
-
-      # Types of store: name → class
-      @types = {
-        'vault' => Store::HashicorpVault,
-        'file'  => Store::EncryptedHash
-      }
-
-      class << self
-        # Add a type of store, e.g. from the host application
-        # @param name  [String] Value of `type` in configuration
-        # @param klass [Class]  Subclass of `Store::Base` with `REFERENCE_PARAMETERS`, created with parameters of store as keyword arguments
-        def register_type(name, klass)
-          Aspera.assert(klass <= Store::Base) { "#{klass} shall be a subclass of #{Store::Base}" }
-          @types[name.to_s] = klass
-          nil
-        end
-
-        # @return [Hash<String,Class>] Types of store
-        def types
-          @types.dup
-        end
-      end
 
       # @param config [Hash] Configuration, keys String or Symbol
       # @raise [Error] Invalid configuration
@@ -54,7 +33,10 @@ module Aspera
         raise Error, 'secret references configuration: cache_ttl: expecting a number >= 0' unless @cache_ttl.is_a?(Numeric) && !@cache_ttl.negative?
         stores = config.fetch('stores', nil) || {}
         raise Error, 'secret references configuration: stores: expecting a Hash' unless stores.is_a?(Hash)
-        @stores = stores.to_h { |name, params| [name.to_s, create_store(name.to_s, params)] }.freeze
+        # Name of store → parameters, checked
+        @parameters = stores.to_h { |name, params| [name.to_s, check_store(name.to_s, params)] }.freeze
+        # Name of store → store, created when first used
+        @stores = {}
         # Key of reference → [value, monotonic time of expiry]
         @cache = {}
         @lock = Mutex.new
@@ -62,7 +44,15 @@ module Aspera
 
       # @return [Array<String>] Names of stores
       def store_names
-        @stores.keys
+        @parameters.keys
+      end
+
+      # @param name [String] Name of store
+      # @return [Store::Base] Store, created when first used, e.g. to manage its secrets by label
+      # @raise [Error] Unknown store, or invalid parameter
+      def store(name)
+        params = @parameters.fetch(name) { raise Error, "unknown store #{name}" }
+        @lock.synchronize { @stores[name] ||= create_store(name, params) }
       end
 
       # @param text [String] Reference
@@ -96,40 +86,39 @@ module Aspera
 
       private
 
-      # @return [Store::Base] New store from its parameters
-      def create_store(name, params)
+      # @return [Hash] Parameters of store, checked
+      def check_store(name, params)
         raise Error, 'invalid name' unless STORE_NAME.match?(name)
-        raise Error, 'expecting a Hash' unless params.is_a?(Hash)
-        params = params.transform_keys(&:to_sym)
-        type = params.delete(:type).to_s
-        klass = self.class.types[type]
-        raise Error, "type: #{type.empty? ? 'missing' : "unknown #{type}"}, use one of: #{self.class.types.keys.join(', ')}" if klass.nil?
-        klass.check_reference_parameters(params)
-        klass.new(**klass.reference_arguments(params))
+        Store::Factory.check(params)
+        params
       rescue StandardError => e
         raise Error, "secret references configuration: store #{name}: #{e.message}"
+      end
+
+      # @return [Store::Base] New store from its parameters
+      def create_store(name, params)
+        Store::Factory.create(params)
+      rescue StandardError => e
+        raise Error, "store #{name}: #{e.message}"
       end
 
       # Checks reference and calls block with its store
       # @yieldparam store [Store::Base]
       # @return [Object] Value of block
       def access(ref)
-        store = @stores[ref.store]
-        raise Error, "unknown store #{ref.store}" if store.nil?
-        store.check_reference(ref)
-        yield(store)
+        found = store(ref.store)
+        found.check_reference(ref)
+        yield(found)
       rescue StandardError => e
-        raise Error, "secret reference #{ref.text}: #{reason(e)}"
+        raise Error, "secret reference #{ref.text}: #{reason(e, found)}"
       end
 
+      # @param error [StandardError]   Error
+      # @param store [Store::Base, nil] Store that raised the error
       # @return [String] Reason of failure, without secret
-      def reason(error)
-        case error
-        when Error then error.message
-        when ::Vault::HTTPError then "Vault: #{error.code}#{" #{error.errors.join(', ')}" unless error.errors.empty?}"
-        when ::Vault::HTTPConnectionError then "Vault: cannot connect to #{error.address}: #{error.original_exception.message}"
-        else Secret::Hider.instance.hide_secrets_in_string("#{error.class}: #{error.message}", all: true)
-        end
+      def reason(error, store)
+        return error.message if error.is_a?(Error)
+        store&.class&.error_reason(error) || Secret::Hider.instance.hide_secrets_in_string("#{error.class}: #{error.message}", all: true)
       end
 
       # @return [String, nil] Value from cache, `nil` if absent or expired

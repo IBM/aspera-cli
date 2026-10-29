@@ -5,7 +5,7 @@ require 'aspera/assert'
 
 module Aspera
   module Cli
-    # Mixin for Config plugin: `config vault` actions, on the store of `context.vault` (`VaultManager`)
+    # Mixin for Config plugin: `config vault` actions, on the default store of `context.vault` (`VaultManager`)
     module VaultActions
       # Import secrets from a JSON array; skips entries missing :label
       def action_vault_import(secrets:, **)
@@ -22,18 +22,18 @@ module Aspera
         Result::Status.new("Secret deleted: #{label}")
       end
 
-      # Checks a reference of option `vault_references`, without its value
+      # Checks a reference to a store of option `vault`, without its value
       # @param reference [String] `@vault://<store>/<path>[?<options>][#<field>]`, or without `@vault:`
       def action_vault_check(reference:, **)
         Result::SingleObject.new(context.vault.metadata(reference.delete_prefix('@vault:')))
       end
 
-      # @return [Secret::Store::Base, nil] Store of option `vault`, `nil` if not configured
+      # @return [Secret::Store::Base, nil] Default store of option `vault`, `nil` if not configured
       def vault
         context.vault.store
       end
 
-      # @return [Secret::Store::Base] Store of option `vault`, raises if not configured
+      # @return [Secret::Store::Base] Default store of option `vault`, raises if not configured
       def vault_required
         context.vault.store(mandatory: true)
       end

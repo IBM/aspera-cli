@@ -7,6 +7,7 @@ require 'securerandom'
 require 'webrick'
 require 'json'
 require 'aspera/secret/resolver'
+require 'aspera/secret/store/hashicorp_vault'
 
 RSpec.describe(Aspera::Secret::Store::HashicorpVault) do
   before(:all) do

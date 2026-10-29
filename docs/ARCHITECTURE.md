@@ -73,7 +73,7 @@ Members: `options` (`Parser`), `transfer` (`TransferAgent`), `config` (`Plugins:
 
 1. `Formatter` and `Parser`, then global options
 2. [`Bootstrapper`](../lib/aspera/cli/bootstrapper.rb) (`run`): one-time setup of shared services, before any plugin is instantiated:
-   - `main_folder` (option `home`), `persistency`, `presets` (config file), `vault` (options `vault`, `vault_password`, `vault_references`), `http_config`, `progress_bar`
+   - `main_folder` (option `home`), `persistency`, `presets` (config file), `vault` (options `vault`, `vault_password`), `http_config`, `progress_bar`
    - plugin lookup folders
    - `@preset:` and `@vault:` extended-value handlers
    - global singletons: `Rest::Parameters`, `OAuth::Factory`, SSL, `Transfer::Parameters`, `Rest::ErrorAnalyzer`
@@ -780,29 +780,30 @@ presets:
 
 **Directory**: [`lib/aspera/secret/`](../lib/aspera/secret/), module `Secret`: hiding of secrets in output (`Hider`), strength of secrets (`Strength`), stores of secrets (`Store`), secret references (`Reference`, `Resolver`).
 
-**Stores** ([`secret/store/`](../lib/aspera/secret/store/)): subclasses of `Secret::Store::Base`, used in two ways:
+**Stores** ([`secret/store/`](../lib/aspera/secret/store/)): subclasses of `Secret::Store::Base`, created by `Secret::Store::Factory.create` from parameters: `type`, and the keyword arguments of `new` of the class of type (`PARAMETERS`, converted by `arguments`). Each store is used in two ways: management by label (`get`, `set`, `delete`, `all`), and read by reference (`check_reference`, `read_reference`: by default, the path is the label and the field is `password`).
 
-- Option `vault` (selected by `Secret::Store::Factory`, opened by `VaultManager`, commands of `VaultActions`): management by label (`get`, `set`, `delete`, `all`)
-  - **file**: Built-in encrypted hash
-  - **system**: macOS Keychain
-  - **vault**: HashiCorp Vault (authentication by `token` or `approle`, own `Vault::Client`)
-  - **1password**: 1Password (API or CLI)
-- Secret references (selected by `Secret::Resolver`, option `vault_references` of `ascli`): read by reference (`check_reference`, `read_reference`), parameters limited to `REFERENCE_PARAMETERS`
-  - **file**: `EncryptedHash` with `password`: the value, or `@file:<path>`; the file is read again when it, or the file of the password, is modified
-  - **vault**: `HashicorpVault`, KV v2 (mount, version), `allowed_prefixes`
+- **file**: `EncryptedHash`, `file` and `password`; the file is read when used, and again when it, or the file of the password, is modified
+- **system**: `MacosSystem`, macOS Keychain
+- **vault**: `HashicorpVault`, authentication by `token` or `approle`, own `Vault::Client`; labels in mount `secret`, references in any KV v2 mount (version), limited by `allowed_prefixes`; `error_reason` gives the reason of errors of gem `vault`
+- **1password**: `OnePasswordApi` or `OnePasswordCli`, selected by `source`
+- Types added by the application: `Factory.register_type` (a subclass of `Store::Base` with `PARAMETERS`)
 
-**Secret references** ([`secret/reference.rb`](../lib/aspera/secret/reference.rb), [`secret/resolver.rb`](../lib/aspera/secret/resolver.rb)): library for applications that store a reference instead of a secret (e.g. Orchestrator), and `@vault://` of `ascli`.
+**Secret references** ([`secret/reference.rb`](../lib/aspera/secret/reference.rb), [`secret/resolver.rb`](../lib/aspera/secret/resolver.rb)): library for applications that store a reference instead of a secret (e.g. Orchestrator), and `@vault:` of `ascli`.
 
 - `Secret.parse_reference`: `secret://<store>/<path>[?<options>][#<field>]` into a `Reference`
-- `Secret::Resolver`: named stores from a configuration (`Hash`), `resolve` (value, TTL cache), `metadata` (version, time, no value), `invalidate`; errors give the reference and the reason, never a value; values are declared to `Secret::Hider`; the application adds types with `Resolver.register_type` (a subclass of `Store::Base` with `REFERENCE_PARAMETERS`)
-- Bootstrap secrets of stores (`password` of `file`, `token` and `approle.secret_id` of `vault`): `Secret::Bootstrap`, the value or `@file:<path>` (syntax of extended values, only `@file:`), the file read again when modified; `file` converts `password` in `reference_arguments` (option `vault` gives the password itself), `vault` in its constructor (also for option `vault`); other parameters are refused
+- `Secret::Resolver`: named stores from a configuration (`Hash`: `cache_ttl`, `stores`): type and names of parameters checked by `new` (`Store::Factory.check`), store created when first used (`Store::Factory.create`), so that a store not used is not an error (e.g. its secret is not available); `store` (by name), `resolve` (value, TTL cache), `metadata` (version, time, no value), `invalidate`; errors give the reference and the reason, never a value; values are declared to `Secret::Hider`
+- Bootstrap secrets of stores (`password` of `file`, `token` and `approle.secret_id` of `vault`): `Secret::Bootstrap`, the value or `@file:<path>` (syntax of extended values, only `@file:`), the file read again when modified; `file` converts `password` in `arguments`, `vault` in its constructor
 
 **Vault of `ascli`** ([`vault_manager.rb`](../lib/aspera/cli/vault_manager.rb), [`vault_actions.rb`](../lib/aspera/cli/vault_actions.rb)): `VaultManager` in `Context#vault`, created by `Bootstrapper`, used by `@vault:`, `config vault` (`VaultActions`) and presets (`PresetActions`):
 
-- `store`: store of option `vault`, opened when first used (kept once opened, not when absent: the global preset is loaded after the handler is registered)
-- `value`: `@vault:<label>.<field>` from the store, `@vault://<store>/<path>[?<options>][#<field>]` from a `Secret::Resolver` created with option `vault_references` (same configuration, relative `file` of type `file` in the configuration folder)
+- One `Secret::Resolver` from option `vault`, created when first used (kept once created, not when absent: the global preset is loaded after the handler is registered): `stores` and `cache_ttl`, and `default`, the name of the default store (none if not set)
+  - Deprecated form: the parameters of one store, converted by `VaultManager.convert_option` (`convert:` of the option, applied to each value before merge of sources) to a store named after its type (`file` by default), which is the default store, with a warning
+  - Defaults of `ascli` for all stores (`store_parameters`): type `file`: `name` (same as `file`), `vault.bin`, relative path in the configuration folder; type `system`: keychain `ascli`
+  - Secret of the default store, if not in its parameters (`password` of `file`, `token` of `vault` without `approle`, and of `1password` `api`): the value of option `vault_password`
+- `store`: the default store (`nil` if none)
+- `value`: `@vault:<label>.<field>` from the default store, `@vault://<store>/<path>[?<options>][#<field>]` from any store
 - `metadata`: `config vault check`, version and time of a reference, without value
-- Values `@file:<path>` of options `vault`, `vault_password` and `vault_references` are read by `Secret::Bootstrap`, not by `ExtendedValue`: checked as extended value `@file:` (`Security#check_extended_value`, `Security#readable_path`) before the store or the resolver is created
+- Values `@file:<path>` of options `vault` and `vault_password` are read by `Secret::Bootstrap`, not by `ExtendedValue`: checked as extended value `@file:` (`Security#check_extended_value`, `Security#readable_path`) before the resolver is created
 
 ## Error Handling
 

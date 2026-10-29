@@ -529,6 +529,14 @@ module Aspera
           expect(opts.get_option(:transfer)).to(eq({'url' => 'u', 'agent' => 'node'}))
         end
 
+        it 'converts a Hash before merge' do
+          opts = build_parser(['--opt=@json:{"old":1}', '--opt.new.b=2'])
+          opts.declare(:opt, description: 'Opt', allowed: Hash, convert: ->(v) { v.key?('old') ? {'new' => {'a' => v['old']}} : v })
+          opts.add_option_preset({opt: {'new' => {'c' => 3}}}, 'test')
+          opts.parse_options!
+          expect(opts.get_option(:opt)).to(eq({'new' => {'a' => 1, 'b' => 2, 'c' => 3}}))
+        end
+
         it 'clears an option and calls its on_set callback' do
           target = Struct.new(:val).new('x')
           opts = build_parser([])

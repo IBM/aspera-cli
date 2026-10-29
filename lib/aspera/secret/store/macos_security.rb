@@ -215,10 +215,12 @@ module Aspera
         # Account is mandatory in keychain: used when no username is provided
         NO_ACCOUNT = 'none'
         private_constant :NO_ACCOUNT
+        PARAMETERS = %i[name].freeze
 
         # @param name [String, nil] Specific keychain name, or nil for default
         def initialize(name: nil)
           super()
+          raise Error, 'type system: only on macOS' unless Environment.instance.os.eql?(Environment::OS_MACOS)
           @keychain_name = name.nil? ? 'default keychain' : name
           @keychain = name.nil? ? MacosSecurity::Keychain.default : MacosSecurity::Keychain.by_name(name)
           Aspera.assert(!@keychain.nil?) { "no such keychain #{name}" }
