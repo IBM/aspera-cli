@@ -25,23 +25,29 @@ module Aspera
         KDF_SALT_BYTES = 16
         private_constant :LEGACY_CIPHER_NAME, :DEFAULT_CIPHER_NAME, :FILE_TYPE, :FILE_KEYS, :FILE_KEYS_KDF,
           :KDF_ITERATIONS, :KDF_DIGEST, :KDF_SALT_BYTES
-        REFERENCE_PARAMETERS = %i[file password_file].freeze
+        REFERENCE_PARAMETERS = %i[file password].freeze
 
-        # One of `password` or `password_file` opens the file
-        # @param file          [String]      Vault file
-        # @param password      [String, nil] Password of vault file
-        # @param password_file [String, nil] File with password of vault file: the vault file is read when used, and again when it, or the password file, is modified
-        def initialize(file:, password: nil, password_file: nil)
+        class << self
+          # Secret references: `password` is the value, or `@file:<path>`
+          def reference_arguments(params)
+            params.merge(password: Bootstrap.new('password', params[:password]))
+          end
+        end
+
+        # @param file     [String]            Vault file
+        # @param password [String, Bootstrap] Password of vault file.
+        #   A `Bootstrap` (secret references): the vault file is read when used, and again when it, or the file of the password, is modified
+        def initialize(file:, password:)
           super()
           Aspera.assert_type(file, String) { 'path to vault file' }
-          Aspera.assert([password, password_file].compact.size.eql?(1)) { 'vault file: one of password or password_file is required' }
           @path = file
-          @password_file = password_file
-          # Modification times of vault file and password file, when read with password file
+          # Password of vault file, for secret references
+          @password = password if password.is_a?(Bootstrap)
+          # Modification times of vault file and file of password, when read with `Bootstrap`
           @mtimes = nil
           @lock = Mutex.new
           Log.dump(:vault_file, File.expand_path(@path))
-          load_file(password) unless password.nil?
+          load_file(password) if @password.nil?
         end
 
         def info
@@ -94,7 +100,7 @@ module Aspera
           save
         end
 
-        # Modification time of vault file, when read with password file
+        # Modification time of vault file, when read with `Bootstrap`
         def read_reference(ref)
           super.merge(updated_time: @mtimes&.first)
         end
@@ -103,11 +109,11 @@ module Aspera
 
         # @return [Hash] Secrets: label → fields
         def secrets
-          return @all_secrets if @password_file.nil?
+          return @all_secrets if @password.nil?
           @lock.synchronize do
-            mtimes = [@path, @password_file].map { |f| File.mtime(f) }
+            mtimes = [File.mtime(@path), @password.mtime]
             unless mtimes.eql?(@mtimes)
-              load_file(Secret.read_file(@password_file))
+              load_file(@password.value)
               @mtimes = mtimes
             end
           end

@@ -13,7 +13,7 @@ module Aspera
     # - `cache_ttl`: time in seconds a value is kept in memory (default: 60, 0: no cache)
     # - `stores`: name of store → parameters of store, with `type` (see `register_type`), parameters: `REFERENCE_PARAMETERS` of class of type
     #
-    # Bootstrap secrets of stores (token, password) are read from files (`*_file` keys), not given in configuration.
+    # Bootstrap secrets of stores (`password` of type `file`, `token` and `secret_id` of type `vault`): the value, or `@file:<path>` (`Bootstrap`).
     # Error messages give the reference, never a value.
     class Resolver
       DEFAULT_CACHE_TTL = 60
@@ -105,7 +105,7 @@ module Aspera
         klass = self.class.types[type]
         raise Error, "type: #{type.empty? ? 'missing' : "unknown #{type}"}, use one of: #{self.class.types.keys.join(', ')}" if klass.nil?
         klass.check_reference_parameters(params)
-        klass.new(**params)
+        klass.new(**klass.reference_arguments(params))
       rescue StandardError => e
         raise Error, "secret references configuration: store #{name}: #{e.message}"
       end

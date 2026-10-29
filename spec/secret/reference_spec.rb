@@ -63,6 +63,34 @@ RSpec.describe(Aspera::Secret) do
     end
   end
 
+  describe Aspera::Secret::Bootstrap do
+    it 'gives the value and hides it' do
+      bootstrap = described_class.new('password', secret)
+      expect([bootstrap.value, bootstrap.mtime]).to(eq([secret, nil]))
+      expect(bootstrap.inspect).not_to(include(secret))
+      expect(Aspera::Secret::Hider.instance.hide_secrets_in_string("password is #{secret}")).not_to(include(secret))
+    end
+
+    it 'reads the file at each call, with its modification time' do
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'password')
+        File.write(path, "#{secret}\n")
+        bootstrap = described_class.new('password', "@file:#{path}")
+        expect([bootstrap.value, bootstrap.mtime]).to(eq([secret, File.mtime(path)]))
+        File.write(path, other)
+        expect(bootstrap.value).to(eq(other))
+        File.delete(path)
+        expect { bootstrap.mtime }.to(raise_error(Aspera::Secret::Error, /secret file: No such file/))
+      end
+    end
+
+    it 'refuses a missing or empty value' do
+      [nil, '', '@file:', 42].each do |text|
+        expect { described_class.new('password', text) }.to(raise_error(Aspera::Secret::Error, /\Apassword: expecting /))
+      end
+    end
+  end
+
   describe Aspera::Secret::Resolver do
     # Store in memory: path → fields; counts reads
     fake_store = Class.new(Aspera::Secret::Store::Base) do
@@ -173,10 +201,12 @@ RSpec.describe(Aspera::Secret) do
         [{'stores' => {'mem' => {'type' => 'fake', 'bad' => 1}}}, /store mem: unsupported keys: bad\z/],
         [{'stores' => {'m/n' => {'type' => 'fake'}}}, %r{store m/n: invalid name}],
         [{'stores' => {'p' => {'type' => 'plain'}}}, /store p: not usable for secret references/],
-        [{'stores' => {'f' => {'type' => 'file', 'file' => 'f', 'password' => secret}}}, /store f: unsupported keys: password\z/],
-        [{'stores' => {'v' => {'type' => 'vault', 'url' => 'http://127.0.0.1:8200', 'token' => secret}}}, /store v: unsupported keys: token\z/],
-        [{'stores' => {'v' => {'type' => 'vault', 'url' => 'http://127.0.0.1:8200'}}}, /store v: either token_file or approle/],
-        [{'stores' => {'v' => {'type' => 'vault', 'url' => 'http://127.0.0.1:8200', 'approle' => {'role_id' => 'r', 'secret_id' => 'x'}}}}, /secret_id_file/]
+        [{'stores' => {'f' => {'type' => 'file', 'file' => 'f', 'password_file' => 'p'}}}, /store f: unsupported keys: password_file\z/],
+        [{'stores' => {'v' => {'type' => 'vault', 'url' => 'http://127.0.0.1:8200', 'token_file' => 't'}}}, /store v: unsupported keys: token_file\z/],
+        [{'stores' => {'v' => {'type' => 'vault', 'url' => 'http://127.0.0.1:8200'}}}, /store v: vault: one of token or approle is required/],
+        [{'stores' => {'v' => {'type' => 'vault', 'url' => 'http://127.0.0.1:8200', 'token' => '@file:'}}}, /store v: token: expecting @file:<path>/],
+        [{'stores' => {'v' => {'type' => 'vault', 'url' => 'http://127.0.0.1:8200', 'approle' => {'role_id' => 'r', 'secret_id_file' => 's'}}}}, /unsupported keys: secret_id_file/],
+        [{'stores' => {'v' => {'type' => 'vault', 'url' => 'http://127.0.0.1:8200', 'approle' => {'role_id' => 'r', 'secret_id' => ''}}}}, /store v: approle secret_id: expecting /]
       ].each do |config, message|
         expect { described_class.new(config) }.to(raise_error(Aspera::Secret::Error, message))
       end

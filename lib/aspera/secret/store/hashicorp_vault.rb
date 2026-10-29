@@ -15,7 +15,7 @@ module Aspera
       # Manage secrets in a Hashicorp Vault
       class HashicorpVault < Base
         STORE_PATH = 'secret/data/'
-        APPROLE_KEYS = %i[mount role_id secret_id secret_id_file].freeze
+        APPROLE_KEYS = %i[mount role_id secret_id].freeze
         APPROLE_MOUNT = 'approle'
         # The AppRole token is renewed after this part of its lease
         RENEW_RATIO = 2.0 / 3
@@ -26,17 +26,9 @@ module Aspera
         private_constant :STORE_PATH, :APPROLE_KEYS, :APPROLE_MOUNT, :RENEW_RATIO, :HTTP_FORBIDDEN, :INVALID_SEGMENTS
 
         # Reference: `secret://<store>/<mount>/<path>#<field>` in a KV v2 secrets engine, options: `version=<n>`, `mount=<mount>` (when the mount contains `/`).
-        # Authentication by `token_file` or `approle` (with `secret_id_file`): no secret in parameters.
-        REFERENCE_PARAMETERS = %i[url token_file approle namespace ca_file allowed_prefixes].freeze
+        # Authentication by `token` or `approle`: secrets are the value, or `@file:<path>` (`Bootstrap`).
+        REFERENCE_PARAMETERS = %i[url token approle namespace ca_file allowed_prefixes].freeze
         REFERENCE_OPTIONS = %w[version mount].freeze
-
-        class << self
-          def check_reference_parameters(params)
-            super
-            raise Error, 'either token_file or approle' unless [params[:token_file], params[:approle]].compact.size.eql?(1)
-            raise Error, 'approle: secret_id_file instead of secret_id' if params[:approle].is_a?(Hash) && params[:approle].transform_keys(&:to_sym).key?(:secret_id)
-          end
-        end
 
         # `Vault::Client` (gem `vault` 0.20.1) gives the options of `JSON.parse` as a positional Hash,
         # refused by gem `json` 3 (`ArgumentError`), with option `create_additions` (removed, `false` by default in gem `json` 2):
@@ -74,27 +66,28 @@ module Aspera
         end
         private_constant :Client
 
-        # One of `token`, `token_file` or `approle` authenticates the client
-        # @param url        [String]      URL of Vault server
-        # @param token      [String, nil] Token
-        # @param token_file [String, nil] File with token (e.g. written by Vault Agent): read again when it is modified
-        # @param approle    [Hash, nil]   AppRole: `role_id`, `secret_id` or `secret_id_file`, `mount` (default: `approle`)
-        # @param namespace  [String, nil] Namespace (Vault Enterprise)
-        # @param ca_file    [String, nil] File with CA certificates of server
+        # One of `token` or `approle` authenticates the client
+        # @param url       [String]      URL of Vault server
+        # @param token     [String, nil] Token: the value, or `@file:<path>` (e.g. written by Vault Agent), read again when it is modified
+        # @param approle   [Hash, nil]   AppRole: `role_id`, `secret_id` (the value, or `@file:<path>`), `mount` (default: `approle`)
+        # @param namespace [String, nil] Namespace (Vault Enterprise)
+        # @param ca_file   [String, nil] File with CA certificates of server
         # @param allowed_prefixes [Array<String>, nil] Allowed prefixes of `<mount>/<path>` of references, `nil`: all
-        def initialize(url:, token: nil, token_file: nil, approle: nil, namespace: nil, ca_file: nil, allowed_prefixes: nil)
+        def initialize(url:, token: nil, approle: nil, namespace: nil, ca_file: nil, allowed_prefixes: nil)
           super()
           Aspera.assert_type(url, String, type: ParameterError) { 'vault url' }
-          Aspera.assert([token, token_file, approle].compact.size.eql?(1), type: ParameterError) { 'vault: one of token, token_file or approle is required' }
+          Aspera.assert([token, approle].compact.size.eql?(1), type: ParameterError) { 'vault: one of token or approle is required' }
           Aspera.assert(allowed_prefixes.nil? || (allowed_prefixes.is_a?(Array) && allowed_prefixes.all?(String)), type: ParameterError) { 'vault allowed_prefixes: list of strings' }
           @allowed_prefixes = allowed_prefixes
-          @token_file = token_file
-          @token_file_mtime = nil
+          @token = Bootstrap.new('token', token) unless token.nil?
+          # Modification time of file of token when read, `nil` before
+          @token_mtime = nil
           @approle = approle.nil? ? nil : approle_parameters(approle)
           # Monotonic time of renewal of the AppRole token, `nil` before login
           @renew_at = nil
           @auth_lock = Mutex.new
-          options = {address: url, token: token}
+          options = {address: url}
+          options[:token] = @token.value unless @token.nil? || @token.file?
           options[:namespace] = namespace unless namespace.nil?
           options[:ssl_ca_cert] = ca_file unless ca_file.nil?
           @client = Client.new(options)
@@ -219,8 +212,7 @@ module Aspera
         # @return [String] Authentication method
         def auth_method
           return 'approle' unless @approle.nil?
-          return 'token_file' unless @token_file.nil?
-          'token'
+          @token.file? ? 'token file' : 'token'
         end
 
         # @param approle [Hash] AppRole parameters, keys String or Symbol
@@ -231,8 +223,7 @@ module Aspera
           unsupported = approle.keys - APPROLE_KEYS
           Aspera.assert(unsupported.empty?, type: ParameterError) { "vault approle: unsupported keys: #{unsupported.join(', ')}, use #{APPROLE_KEYS.join(', ')}" }
           Aspera.assert_type(approle[:role_id], String, type: ParameterError) { 'vault approle role_id' }
-          Aspera.assert(approle[:secret_id].nil? || approle[:secret_id_file].nil?, type: ParameterError) { 'vault approle: either secret_id or secret_id_file' }
-          Secret::Hider.instance.add_secret_values(approle[:secret_id])
+          approle[:secret_id] = Bootstrap.new('approle secret_id', approle[:secret_id]) unless approle[:secret_id].nil?
           {mount: APPROLE_MOUNT}.merge(approle)
         end
 
@@ -256,11 +247,11 @@ module Aspera
 
         # Set the token of client, if needed
         def authenticate
-          if !@token_file.nil?
-            mtime = File.mtime(@token_file)
-            return if mtime.eql?(@token_file_mtime)
-            @client.token = Secret.read_file(@token_file)
-            @token_file_mtime = mtime
+          if @token&.file?
+            mtime = @token.mtime
+            return if mtime.eql?(@token_mtime)
+            @client.token = @token.value
+            @token_mtime = mtime
           elsif !@approle.nil?
             if @renew_at.nil?
               login
@@ -273,9 +264,9 @@ module Aspera
         # After a `403`
         # @return [Boolean] `true` if credentials changed
         def reauthenticate
-          if !@token_file.nil?
+          if @token&.file?
             previous = @client.token
-            @token_file_mtime = nil
+            @token_mtime = nil
             authenticate
             return !@client.token.eql?(previous)
           elsif !@approle.nil?
@@ -287,8 +278,7 @@ module Aspera
 
         # AppRole login: sets the token of client
         def login
-          secret_id = @approle[:secret_id]
-          secret_id = Secret.read_file(@approle[:secret_id_file]) unless @approle[:secret_id_file].nil?
+          secret_id = @approle[:secret_id]&.value
           @renew_at = nil
           # Sets the token of client
           auth = @client.auth.approle(@approle[:role_id], secret_id, mount: @approle[:mount]).auth

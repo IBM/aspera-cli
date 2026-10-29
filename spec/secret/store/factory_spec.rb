@@ -36,9 +36,9 @@ RSpec.describe(Aspera::Secret::Store::Factory) do
   describe '.create vault' do
     def create(info) = described_class.create({type: 'vault', url: 'http://127.0.0.1:8200'}.merge(info), 'ascli', '.', vault_password)
 
-    it 'uses the vault password as token, unless token_file or approle is set' do
+    it 'uses the vault password as token, unless token or approle is set' do
       expect(create({}).info[:auth]).to(eq('token'))
-      expect(create({token_file: '/run/vault/token'}).info[:auth]).to(eq('token_file'))
+      expect(create({token: '@file:/run/vault/token'}).info[:auth]).to(eq('token file'))
       expect(create({approle: {'role_id' => 'my_role'}}).info[:auth]).to(eq('approle'))
       expect { create({namespace: {}}) }.to(raise_error(/only string values/))
     end

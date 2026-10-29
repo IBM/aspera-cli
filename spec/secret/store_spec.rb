@@ -159,7 +159,7 @@ RSpec.describe(Aspera::Secret::Store) do
 
     it 'requires one authentication' do
       expect { described_class.new(url: 'http://127.0.0.1:8200') }.to(raise_error(Aspera::ParameterError, /one of token/))
-      expect { described_class.new(url: 'http://127.0.0.1:8200', token: SecureRandom.hex(16), token_file: '/x') }.to(raise_error(Aspera::ParameterError, /one of token/))
+      expect { described_class.new(url: 'http://127.0.0.1:8200', token: SecureRandom.hex(16), approle: {'role_id' => 'r'}) }.to(raise_error(Aspera::ParameterError, /one of token/))
       expect { described_class.new(url: 'http://127.0.0.1:8200', approle: {'role_id' => 'r', 'other' => 'x'}) }.to(raise_error(Aspera::ParameterError, /unsupported keys: other/))
     end
   end

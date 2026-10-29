@@ -84,7 +84,7 @@ RSpec.describe(Aspera::Secret::Store::HashicorpVault) do
 
     it 'reads a field of the current or given version, and metadata' do
       @state[:secrets]['secret/data/orchestrator/faspex5'] = [{private_key: other}, {private_key: secret, username: SecureRandom.alphanumeric(16)}]
-      r = resolver('token_file' => token_file)
+      r = resolver('token' => "@file:#{token_file}")
       expect(r.resolve('secret://vault_prod/secret/orchestrator/faspex5#private_key')).to(eq(secret))
       expect(r.resolve('secret://vault_prod/secret/orchestrator/faspex5?version=1#private_key')).to(eq(other))
       expect(r.metadata('secret://vault_prod/secret/orchestrator/faspex5#username')).to(eq({store: 'vault_prod', version: 2, updated_time: Time.utc(2026, 10, 2, 10, 0, Rational(123_456_789, 1_000_000_000))}))
@@ -94,12 +94,12 @@ RSpec.describe(Aspera::Secret::Store::HashicorpVault) do
 
     it 'reads a secret of a mount with slash' do
       @state[:secrets]['kv/team/data/app'] = [{password: secret}]
-      expect(resolver('token_file' => token_file).resolve('secret://vault_prod/kv/team/app?mount=kv/team#password')).to(eq(secret))
+      expect(resolver('token' => "@file:#{token_file}").resolve('secret://vault_prod/kv/team/app?mount=kv/team#password')).to(eq(secret))
     end
 
     it 'reads the token file again when it changes' do
       @state[:secrets]['secret/data/app'] = [{password: secret}]
-      r = resolver('token_file' => token_file)
+      r = resolver('token' => "@file:#{token_file}")
       expect(r.resolve('secret://vault_prod/secret/app#password')).to(eq(secret))
       # Rotation by Vault Agent: new token, same modification time, old token revoked
       new_token = SecureRandom.hex(16)
@@ -116,12 +116,12 @@ RSpec.describe(Aspera::Secret::Store::HashicorpVault) do
     end
 
     it 'fails on missing token file, with reference' do
-      expect { resolver('token_file' => File.join(dir, 'missing')).resolve('secret://vault_prod/secret/app#password') }
+      expect { resolver('token' => "@file:#{File.join(dir, 'missing')}").resolve('secret://vault_prod/secret/app#password') }
         .to(raise_error(Aspera::Secret::Error, %r{\Asecret reference secret://vault_prod/secret/app#password: .*No such file}))
     end
 
     it 'checks paths before access' do
-      r = resolver('token_file' => token_file, 'allowed_prefixes' => ['secret/orchestrator/', 'secret/app'])
+      r = resolver('token' => "@file:#{token_file}", 'allowed_prefixes' => ['secret/orchestrator/', 'secret/app'])
       @state[:secrets]['secret/data/app/one'] = [{password: secret}]
       expect(r.resolve('secret://vault_prod/secret/app/one#password')).to(eq(secret))
       {
@@ -140,9 +140,16 @@ RSpec.describe(Aspera::Secret::Store::HashicorpVault) do
     end
   end
 
+  describe 'with token value' do
+    it 'reads a field' do
+      @state[:secrets]['secret/data/app'] = [{password: secret}]
+      expect(resolver('token' => token).resolve('secret://vault_prod/secret/app#password')).to(eq(secret))
+    end
+  end
+
   describe 'with AppRole' do
     let(:secret_id_file) { secret_file('secret_id', approle['secret_id']) }
-    let(:vault) { Aspera::Secret::Store::HashicorpVault.new(url: @url, approle: {'role_id' => approle['role_id'], 'secret_id_file' => secret_id_file}) }
+    let(:vault) { Aspera::Secret::Store::HashicorpVault.new(url: @url, approle: {'role_id' => approle['role_id'], 'secret_id' => "@file:#{secret_id_file}"}) }
 
     before { @state[:secrets]['secret/data/app'] = [{password: secret}] }
 
@@ -174,10 +181,11 @@ RSpec.describe(Aspera::Secret::Store::HashicorpVault) do
       expect { read_at(1002) }.to(raise_error(Vault::HTTPClientError, /invalid role or secret ID/))
     end
 
-    it 'resolves through the store, with secret_id file' do
-      r = resolver('approle' => {'role_id' => approle['role_id'], 'secret_id_file' => secret_id_file})
-      expect(r.resolve('secret://vault_prod/secret/app#password')).to(eq(secret))
-      expect(@state[:logins]).to(eq(1))
+    it 'resolves through the store, with secret_id in a file or as value' do
+      [{'role_id' => approle['role_id'], 'secret_id' => "@file:#{secret_id_file}"}, approle].each do |parameters|
+        expect(resolver('approle' => parameters).resolve('secret://vault_prod/secret/app#password')).to(eq(secret))
+      end
+      expect(@state[:logins]).to(eq(2))
     end
   end
 end

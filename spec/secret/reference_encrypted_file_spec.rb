@@ -16,7 +16,8 @@ RSpec.describe(Aspera::Secret::Store::EncryptedHash) do
   let(:dir) { Dir.mktmpdir }
   let(:file) { File.join(dir, 'ops_vault.bin') }
   let(:password_file) { File.join(dir, 'ops_vault.pass') }
-  let(:resolver) { Aspera::Secret::Resolver.new({'cache_ttl' => 0, 'stores' => {'ops' => {'type' => 'file', 'file' => file, 'password_file' => password_file}}}) }
+  let(:password) { "@file:#{password_file}" }
+  let(:resolver) { Aspera::Secret::Resolver.new({'cache_ttl' => 0, 'stores' => {'ops' => {'type' => 'file', 'file' => file, 'password' => password}}}) }
 
   before do
     File.write(password_file, "#{vault_password}\n")
@@ -54,6 +55,23 @@ RSpec.describe(Aspera::Secret::Store::EncryptedHash) do
     expect { resolver.resolve('secret://ops/faspex5') }.to(raise_error(Aspera::Secret::Error, /: cannot decrypt .*ops_vault.bin/))
     rewrite(password_file) { File.write(password_file, new_vault_password) }
     expect(resolver.resolve('secret://ops/faspex5')).to(eq(secret))
+  end
+
+  context 'with the password as value' do
+    let(:password) { vault_password }
+
+    it 'reads the file when used, and again when it is modified' do
+      expect(resolver.resolve('secret://ops/faspex5')).to(eq(secret))
+      rewrite(file) { Aspera::Secret::Store::EncryptedHash.new(file: file, password: vault_password).set({label: 'aoc', password: rotated}) }
+      expect(resolver.resolve('secret://ops/aoc')).to(eq(rotated))
+    end
+  end
+
+  it 'refuses a missing or empty password' do
+    [nil, '', '@file:'].each do |value|
+      config = {'stores' => {'ops' => {'type' => 'file', 'file' => file, 'password' => value}.compact}}
+      expect { Aspera::Secret::Resolver.new(config) }.to(raise_error(Aspera::Secret::Error, /store ops: password: expecting /))
+    end
   end
 
   it 'gives the reference and the reason in errors' do

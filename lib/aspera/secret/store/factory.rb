@@ -37,7 +37,7 @@ module Aspera
               end
             when 'vault'
               require 'aspera/secret/store/hashicorp_vault'
-              info[:token] ||= password unless info.key?(:token_file) || info.key?(:approle)
+              info[:token] ||= password unless info.key?(:approle)
               Secret::Store::HashicorpVault.new(**info)
             when '1password'
               source = info.delete(:source) || 'api'

@@ -3301,13 +3301,13 @@ vault server -dev -dev-root-token-id=<%=ph :token%>
 With a token in a file (for example, written and renewed by Vault Agent), read again when the file is modified:
 
 ```shell
---vault=@json:'{"type":"vault","url":"https://vault.example.com:8200","token_file":"/run/vault/token"}'
+--vault=@json:'{"type":"vault","url":"https://vault.example.com:8200","token":"@file:/run/vault/token"}'
 ```
 
 With AppRole authentication, the token is obtained by login, and renewed:
 
 ```shell
---vault=@json:'{"type":"vault","url":"https://vault.example.com:8200","approle":{"role_id":"<%=ph :role_id%>","secret_id_file":"/etc/vault/secret_id"}}'
+--vault=@json:'{"type":"vault","url":"https://vault.example.com:8200","approle":{"role_id":"<%=ph :role_id%>","secret_id":"@file:/etc/vault/secret_id"}}'
 ```
 
 #### Vault: System keychain

@@ -29,7 +29,7 @@ module Aspera
       HTTP_SECRETS = %w[Authorization].freeze
       ALL_SECRETS = (ASCP_ENV_SECRETS + KEY_SECRETS + HTTP_SECRETS).freeze
       NON_ENV_SECRETS = (KEY_SECRETS + HTTP_SECRETS).freeze
-      # not secrets: `*_file` is the path of a file with the secret (e.g. `token_file`, `password_file`)
+      # not secrets: `*_file` is the path of a file (e.g. `ca_file`)
       KEY_FALSE_POSITIVES = [/^access_key$/, /^fallback_private_key$/, /public_key$/, /^token_type$/, /_file$/].freeze
       # min length of hidden secrets, use `+` or `{n,}`
       SECRET_LENGTH = '{5,}'

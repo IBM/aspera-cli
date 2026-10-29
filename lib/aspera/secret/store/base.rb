@@ -11,7 +11,7 @@ module Aspera
       class Base
         CONTENT_KEYS = %i[label username password url description].freeze
         # Parameters of a store of secret references, `nil`: type not usable for references.
-        # No secret in parameters: secrets to access the store are read from files (`*_file`).
+        # Secrets to access the store: the value, or `@file:<path>` (`Secret::Bootstrap`).
         REFERENCE_PARAMETERS = nil
         # Options accepted in references
         REFERENCE_OPTIONS = [].freeze
@@ -27,6 +27,13 @@ module Aspera
             raise Error, 'not usable for secret references' if self::REFERENCE_PARAMETERS.nil?
             unsupported = params.keys - self::REFERENCE_PARAMETERS
             raise Error, "unsupported keys: #{unsupported.join(', ')}" unless unsupported.empty?
+          end
+
+          # @param params [Hash] Parameters of a store of secret references, checked, Symbol keys
+          # @return [Hash] Keyword arguments of `new`
+          # @raise [Error] Invalid parameter
+          def reference_arguments(params)
+            params
           end
         end
 

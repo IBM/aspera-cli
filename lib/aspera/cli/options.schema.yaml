@@ -544,15 +544,10 @@ components:
           example: "http://127.0.0.1:8200"
         token:
           type: string
-          description: Authentication token. Defaults to the value of `vault_password`, unless `token_file` or `approle` is set.
-          example: dev-only-token
-        token_file:
-          type: string
-          x-cli-complete: file
           description: >-
-            File with the authentication token (e.g. written and renewed by Vault Agent).
-            It is read again when modified.
-          example: /run/vault/token
+            Authentication token: the value, or `@file:<path>` (e.g. written and renewed by Vault Agent), read again when modified.
+            Defaults to the value of `vault_password`, unless `approle` is set.
+          example: dev-only-token
         approle:
           type: object
           description: >-
@@ -563,11 +558,7 @@ components:
               description: Role ID.
             secret_id:
               type: string
-              description: Secret ID (if the role requires one).
-            secret_id_file:
-              type: string
-              x-cli-complete: file
-              description: File with the Secret ID, instead of `secret_id`.
+              description: "Secret ID (if the role requires one): the value, or `@file:<path>`."
             mount:
               type: string
               description: Mount path of the AppRole auth method.
