@@ -14,6 +14,10 @@ include Paths
 SECRETS_EXCLUDED_FILES = ['^\.secrets\.baseline$', '^spec/', '^lib/aspera/schema/IBM.*\.yaml$'].freeze
 # Scan of secrets: fake secrets in documentation, examples and integration tests
 SECRETS_EXCLUDED_VALUES = ['^my_[a-z_]+_here$', '^your value here$', '^Bearer ', '^your-', '^sim$', '^S3cret', '^password$', '^DOCKERHUB_'].freeze
+# CodeQL: workflow and configuration of GitHub code scanning, and folder of local analysis
+CODEQL_WORKFLOW = TOP / '.github/workflows/codeql-analysis.yml'
+CODEQL_CONFIG = TOP / '.github/codeql-config.yml'
+CODEQL_TMP = TMP / 'codeql'
 # Ruby versions available in ruby/setup-ruby (CI)
 RUBY_SETUP_VERSIONS_URL = 'https://raw.githubusercontent.com/ruby/setup-ruby/refs/heads/master/ruby-builder-versions.json'
 # Tags of the Ruby container image
@@ -112,6 +116,33 @@ namespace :tools do
   desc 'Semgrep'
   task semgrep: [] do
     run('semgrep', 'scan', '--config', 'auto')
+  end
+  desc 'CodeQL, as GitHub code scanning: tracked files, languages of its workflow, .github/codeql-config.yml, default query suite'
+  task codeql: [] do
+    languages = YAML.load_file(CODEQL_WORKFLOW).dig('jobs', 'analyze', 'strategy', 'matrix', 'language')
+    # Files of the checkout in CI: tracked files, with changes of the working tree
+    source = CODEQL_TMP / 'src'
+    source.rmtree if source.exist?
+    run('git', 'ls-files', '-z', mode: :capture, chdir: TOP).first.split("\0").each do |path|
+      next unless (TOP / path).file?
+      (source / path).dirname.mkpath
+      FileUtils.cp(TOP / path, source / path)
+    end
+    results = languages.flat_map do |language|
+      database = CODEQL_TMP / "db-#{language}"
+      sarif = CODEQL_TMP / "#{language}.sarif"
+      run('codeql', 'database', 'create', database, "--language=#{language}", "--source-root=#{source}", "--codescanning-config=#{CODEQL_CONFIG}", '--overwrite', '--threads=0')
+      run('codeql', 'database', 'analyze', database, "codeql/#{language}-queries:codeql-suites/#{language}-code-scanning.qls", '--download', '--format=sarif-latest', "--output=#{sarif}", '--threads=0')
+      JSON.parse(sarif.read)['runs'].flat_map { |r| r['results'] }
+    end
+    results.each do |result|
+      location = result.dig('locations', 0, 'physicalLocation')
+      # Links of message to related locations: `[text](1)` -> `text`
+      message = result.dig('message', 'text').gsub(/\[([^\]]*)\]\(\d+\)/, '\1')
+      log.error("#{location.dig('artifactLocation', 'uri')}:#{location.dig('region', 'startLine')}: #{result['ruleId']}: #{message}")
+    end
+    raise "CodeQL: #{results.size} result(s)" unless results.empty?
+    log.info("CodeQL: no result (#{languages.join(', ')})")
   end
   desc 'Check spelling (cspell): configuration .cspell.json, project dictionaries in .cspell/'
   task spell: [] do

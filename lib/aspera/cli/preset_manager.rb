@@ -53,9 +53,9 @@ module Aspera
       # File I/O
       # ------------------------------------------------------------------
 
-      # @return [String] SHA1 of current in-memory presets
+      # @return [String] SHA256 of current in-memory presets
       def checksum
-        Digest::SHA1.hexdigest(JSON.generate(@config_presets))
+        Digest::SHA256.hexdigest(JSON.generate(@config_presets))
       end
 
       # Read and validate the YAML config file.

@@ -27,9 +27,9 @@ module Aspera
       SESSION_START_STOP = /#{STAMP.source}.*?Session\s+(Start|Stop)/
       # `key=value` or `key="value"` in `Session Start`, `Session Stop` and `Session Params` lines
       KEY_VALUE = /(\w+)=("[^"]*"|\S*)/
-      ERRSTR = /errstr="(.*?)"(?:.*?errstr="(.*?)")?/
+      ERRSTR = /errstr="([^"]*)"(?:.*?errstr="([^"]*)")?/
       # Error code and message of `Session Stop`: local, then peer
-      ERRCODE = /errcode=(\d+) errstr="(.*?)"/
+      ERRCODE = /errcode=(\d+) errstr="([^"]*)"/
       # Transport ciphers (`FASP_TRANSPORT_CIPHER_*` of ascp), by identifier
       CIPHERS = %w[none aes-128 aes-192 aes-256 aes-128-cfb aes-192-cfb aes-256-cfb aes-128-gcm aes-192-gcm aes-256-gcm].freeze
       # `Session Params` field => session data

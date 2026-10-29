@@ -145,7 +145,11 @@ Example:
 bundle exec rake tools:rubocop   # Ruby style guide
 bundle exec rake tools:reek      # code smell detection
 bundle exec rake tools:spell     # spelling (cspell)
+bundle exec rake tools:codeql    # security (CodeQL, as GitHub code scanning)
 ```
+
+`tools:codeql` requires the `codeql` CLI (macOS: `brew install --cask codeql`), it downloads the query packs on first use.
+It analyzes the tracked files, with their changes, for the languages of `.github/workflows/codeql-analysis.yml`, and fails if CodeQL reports any result.
 
 `cspell` (configuration: `.cspell.json`) does not check code in backticks, quoted strings without space (values, identifiers), command line options, and `%w[]`/`%i[]` arrays.
 An unknown word that is a general term goes to a dictionary of folder `.cspell/`: `aspera.dict` (Aspera products and this project), `ruby.dict` (Ruby and gems), `tools.dict` (other tools and technical terms).

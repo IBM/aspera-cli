@@ -12,6 +12,7 @@ RSpec.describe(Aspera::Secret::Store::EncryptedHash) do
   let(:rotated) { SecureRandom.alphanumeric(16) }
   let(:username) { SecureRandom.alphanumeric(16) }
   let(:vault_password) { SecureRandom.alphanumeric(16) }
+  let(:new_vault_password) { SecureRandom.alphanumeric(16) }
   let(:dir) { Dir.mktmpdir }
   let(:file) { File.join(dir, 'ops_vault.bin') }
   let(:password_file) { File.join(dir, 'ops_vault.pass') }
@@ -49,10 +50,9 @@ RSpec.describe(Aspera::Secret::Store::EncryptedHash) do
 
   it 'reads the password file again when the password changes' do
     expect(resolver.resolve('secret://ops/faspex5')).to(eq(secret))
-    new_password = SecureRandom.alphanumeric(16)
-    rewrite(file) { Aspera::Secret::Store::EncryptedHash.new(file: file, password: vault_password).change_password(new_password) }
+    rewrite(file) { Aspera::Secret::Store::EncryptedHash.new(file: file, password: vault_password).change_password(new_vault_password) }
     expect { resolver.resolve('secret://ops/faspex5') }.to(raise_error(Aspera::Secret::Error, /: cannot decrypt .*ops_vault.bin/))
-    rewrite(password_file) { File.write(password_file, new_password) }
+    rewrite(password_file) { File.write(password_file, new_vault_password) }
     expect(resolver.resolve('secret://ops/faspex5')).to(eq(secret))
   end
 

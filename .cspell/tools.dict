@@ -126,6 +126,7 @@ rmtree
 routable
 rubyinstaller
 safelisted
+sarif
 scrollbars
 semgrep
 setremotelogin

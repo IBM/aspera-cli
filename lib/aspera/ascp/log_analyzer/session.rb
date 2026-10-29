@@ -103,7 +103,7 @@ module Aspera
 
           # @return [Integer, nil] rate in bps, from text with unit, e.g. `3.33Mbps`
           def rate_bps(text)
-            m = text.to_s.match(/(\d+\.\d+)(\w+)/) or return
+            m = text.to_s.match(/\A(\d+\.\d+)([A-Za-z]+)/) or return
             (m[1].to_f * {'Kbps' => 1e3, 'Mbps' => 1e6, 'Gbps' => 1e9}.fetch(m[2], 1)).round
           end
         end
