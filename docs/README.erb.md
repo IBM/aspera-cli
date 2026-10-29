@@ -2310,7 +2310,7 @@ The following decoders are supported:
 | `stdin`  | `String` | `String` | Read from stdin in text mode. Argument: `<empty>`, `bin` or `chomp`. |
 | `uri`    | `String` | `String` | Read value from specified URL. Supported schemes: `http:`, `https:`, `data:`, `file:`. For example, `--fpac=@uri:http://serv/f.pac` or `--key=@uri:file:/path/to/key.pem` |
 | `val`    | `String` | `String` | Prevent decoding by the decoders on the right. For example, `--key=@val:@file:foo` sets the option `key` to value `@file:foo`. |
-| `vault`  | `String` | `String` | Read a secret from the [Secret Vault](#secret-vault): `<label>.<field>`. For example, `--password=@vault:my_label.password` |
+| `vault`  | `String` | `String` | Read a secret from the [Secret Vault](#secret-vault): `<label>.<field>`, or a [reference](#vault-secret-references) `//<store>/<path>[?<options>][#<field>]`. For example, `--password=@vault:my_label.password` |
 | `yaml`   | `String` | Any      | Decode YAML. |
 | `zlib`   | `String` | `String` | Decompress data using zlib. |
 | `<empty>`| `String` | Any      | The **dot-path** modifier: argument `@:` collects the following positional arguments as `key.subkey=value` assignments and builds a `Hash` or `Array` using [dot-path](#dot-path-notation) notation. Shell-friendly alternative to `@json:` for structured values.<%=br%>Argument is the end marker: `<empty>` for `END`, or a custom marker (e.g. `@:STOP`). Use the end marker to stop collection when further positional arguments must follow.<%=br%>See [Positional Arguments with Dot-path](#positional-arguments-with-dot-path) for full syntax. |
@@ -3414,6 +3414,7 @@ Secrets can be manipulated using the `config vault` command:
 - `delete` : Delete a secret by label (or id)
 - `password` : Set a new password for the vault
 - `import` : Import secrets from a JSON array (supports `--bulk`)
+- `check` : Check that a [Secret Reference](#vault-secret-references) can be read, without its value
 
 To add a new password entry in the vault for label `<%=ph :name%>`:
 
@@ -3444,6 +3445,50 @@ The `import` command accepts a JSON array where each element is a vault secret o
 `--bulk` makes each entry reported individually in the result table; omit it to get a single-line summary.
 On error (for example a duplicate label), the default behavior is to stop (`--bfail=yes`).
 Pass `--bfail=no` to skip failures and continue with the remaining entries.
+
+#### Vault: Secret references
+
+Secrets can also be read by reference, from stores declared in option `vault_references` (independent of option `vault`):
+
+```text
+@vault://<store>/<path>[?<options>][#<field>]
+```
+
+- `<store>`: name of a store in option `vault_references`.
+- `<path>`: path of the secret in the store, and `<field>`: field of the secret. Both are percent-decoded (for example, `%20` for a space).
+- `<options>`: options of the store, as a URL query (for example, `version=2`).
+
+Stores are read only: secrets are managed with the tools of the store (for example, `vault kv put` for HashiCorp Vault, `config vault` for an encrypted file).
+Compared to `@vault:<label>.<field>`, several stores can be used in the same command, and a HashiCorp Vault store reads any KV v2 mount, a given version, and limits the paths that can be read (`allowed_prefixes`).
+The configuration is the same as in applications that use the library with references `secret://<store>/<path>` (for example, IBM Aspera Orchestrator).
+
+<%=schema_to_table(Aspera::Schema::Registry::VAULT_REFERENCES_OPTIONS)%>
+
+Parameters of a store:
+
+<%=schema_to_table(Aspera::Schema::Registry::VAULT_REFERENCE_STORE)%>
+
+Secrets used to access a store (`token`, `approle.secret_id`, `password`) are the value, or `@file:<path>` (for example, a credential of `systemd`, or a token written by Vault Agent): the file is read when used, and again when it is modified.
+In a YAML file, quote the value: `@` cannot start a plain scalar.
+
+For example, a HashiCorp Vault server with AppRole authentication, limited to secrets under `kv/aspera/`, and the encrypted file of `config vault`:
+
+```shell
+--vault-references=@json:'{"stores":{"corp":{"type":"vault","url":"https://vault.example.com:8200","approle":{"role_id":"<%=ph :role_id%>","secret_id":"@file:/etc/vault/secret_id"},"allowed_prefixes":["kv/aspera/"]},"local":{"type":"file","file":"vault.bin","password":"@file:<%=ph :vault_password_file%>"}}}'
+```
+
+References in a preset: to field `password` of secret `aspera/faspex` in mount `kv`, and to field `password` (default field of type `file`) of label `<%=ph :vault_label%>` in the encrypted file:
+
+```shell
+<%=cmd%> config preset update <%=ph :preset_name%> --url=... --username=... --password=@val:@vault://corp/kv/aspera/faspex#password
+<%=cmd%> config preset update <%=ph :preset_name%> --url=... --username=... --password=@val:@vault://local/<%=ph :vault_label%>
+```
+
+To check that a reference can be read, without its value (store, version, time of update):
+
+```shell
+<%=cmd%> config vault check @vault://corp/kv/aspera/faspex#password
+```
 
 #### Configuration Finder
 

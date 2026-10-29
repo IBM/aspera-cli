@@ -10,7 +10,7 @@ module Aspera
     class Context
       # @type [Array<Symbol>]
       # Members that must be non-nil after bootstrap (validated in #validate)
-      MEMBERS = %i[options transfer config formatter persistency man_header presets http_config main_folder mailer secret_finder].freeze
+      MEMBERS = %i[options transfer config formatter persistency man_header presets vault http_config main_folder mailer secret_finder].freeze
       # @!attribute [rw] options
       #   @return [Parser] the command line options manager
       # @!attribute [rw] transfer
@@ -25,6 +25,8 @@ module Aspera
       #   @return [Boolean] whether to display the manual header in plugin help
       # @!attribute [rw] presets
       #   @return [PresetManager] manages the YAML config file and preset resolution
+      # @!attribute [rw] vault
+      #   @return [VaultManager] secrets of the vault: `@vault:`, `config vault`, presets
       # @!attribute [rw] http_config
       #   @return [Http] manages HTTP/S and TLS runtime options
       # @!attribute [rw] mailer

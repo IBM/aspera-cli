@@ -67,13 +67,13 @@ The `Runner` class orchestrates the full command lifecycle:
 - **`run_with_result`**: Pure computation entry point — initializes all agents and options, resolves the target plugin, executes the action, and returns a `Result` object. Raises on error. Used by the MCP server ([`mcp/tool.rb`](../lib/aspera/cli/mcp/tool.rb)) to run commands in-process.
 
 All shared objects are held in a `Context` instance and passed to plugins by reference.
-Members: `options` (`Parser`), `transfer` (`TransferAgent`), `config` (`Plugins::Config`), `formatter`, `persistency`, `man_header`, `presets` (`PresetManager`), `http_config` (`Http`), `main_folder`, `mailer` (`Mailer`), `secret_finder`, plus `progress_bar`, `pac_executor` and `help_requested`.
+Members: `options` (`Parser`), `transfer` (`TransferAgent`), `config` (`Plugins::Config`), `formatter`, `persistency`, `man_header`, `presets` (`PresetManager`), `vault` (`VaultManager`), `http_config` (`Http`), `main_folder`, `mailer` (`Mailer`), `secret_finder`, plus `progress_bar`, `pac_executor` and `help_requested`.
 
 `Runner#init_agents_and_options` builds the context in this order:
 
 1. `Formatter` and `Parser`, then global options
 2. [`Bootstrapper`](../lib/aspera/cli/bootstrapper.rb) (`run`): one-time setup of shared services, before any plugin is instantiated:
-   - `main_folder` (option `home`), `persistency`, `presets` (config file), `http_config`, `progress_bar`
+   - `main_folder` (option `home`), `persistency`, `presets` (config file), `vault` (options `vault`, `vault_password`, `vault_references`), `http_config`, `progress_bar`
    - plugin lookup folders
    - `@preset:` and `@vault:` extended-value handlers
    - global singletons: `Rest::Parameters`, `OAuth::Factory`, SSL, `Transfer::Parameters`, `Rest::ErrorAnalyzer`
@@ -135,7 +135,7 @@ The Faspex 4 plugin was removed (end of support).
 
 **Utility Plugins** (registered commands but not product-specific):
 
-- [`config.rb`](../lib/aspera/cli/plugins/config.rb) - Configuration management (includes `SyncActions`, `VaultManager`, `GemChecker`, `AscpActions`, `PresetActions`, `TransferActions` mixins)
+- [`config.rb`](../lib/aspera/cli/plugins/config.rb) - Configuration management (includes `SyncActions`, `VaultActions`, `GemChecker`, `AscpActions`, `PresetActions`, `TransferActions` mixins)
 - [`preview.rb`](../lib/aspera/cli/plugins/preview.rb) - File preview generation
 - [`mcp.rb`](../lib/aspera/cli/plugins/mcp.rb) - Model Context Protocol server (exposes `ascli` to AI assistants)
 
@@ -744,7 +744,7 @@ Each plugin declares its command tree at class level (see [Command DSL](#command
 
 Large classes are decomposed into focused mixins included by the host class:
 
-- `Config` plugin includes `SyncActions`, `VaultManager`, `GemChecker`, `AscpActions`, `PresetActions`, `TransferActions`
+- `Config` plugin includes `SyncActions`, `VaultActions`, `GemChecker`, `AscpActions`, `PresetActions`, `TransferActions`
 - Each mixin owns a single responsibility and depends on `options`, `context`, and other accessors provided by the host
 - A mixin that declares commands adds class-level DSL methods with `extend` in its `included` hook (e.g. `SyncActions::ClassMethods#sync_admin_commands`), called inside `commands_under` like the other DSL methods
 
@@ -782,20 +782,26 @@ presets:
 
 **Stores** ([`secret/store/`](../lib/aspera/secret/store/)): subclasses of `Secret::Store::Base`, used in two ways:
 
-- Option `vault` (selected by `Secret::Store::Factory`, managed by `VaultManager`): management by label (`get`, `set`, `delete`, `all`)
+- Option `vault` (selected by `Secret::Store::Factory`, opened by `VaultManager`, commands of `VaultActions`): management by label (`get`, `set`, `delete`, `all`)
   - **file**: Built-in encrypted hash
   - **system**: macOS Keychain
   - **vault**: HashiCorp Vault (authentication by `token` or `approle`, own `Vault::Client`)
   - **1password**: 1Password (API or CLI)
-- Secret references (selected by `Secret::Resolver`): read by reference (`check_reference`, `read_reference`), parameters limited to `REFERENCE_PARAMETERS`
+- Secret references (selected by `Secret::Resolver`, option `vault_references` of `ascli`): read by reference (`check_reference`, `read_reference`), parameters limited to `REFERENCE_PARAMETERS`
   - **file**: `EncryptedHash` with `password`: the value, or `@file:<path>`; the file is read again when it, or the file of the password, is modified
   - **vault**: `HashicorpVault`, KV v2 (mount, version), `allowed_prefixes`
 
-**Secret references** ([`secret/reference.rb`](../lib/aspera/secret/reference.rb), [`secret/resolver.rb`](../lib/aspera/secret/resolver.rb)): library for applications that store a reference instead of a secret (e.g. Orchestrator), not used by `ascli` options.
+**Secret references** ([`secret/reference.rb`](../lib/aspera/secret/reference.rb), [`secret/resolver.rb`](../lib/aspera/secret/resolver.rb)): library for applications that store a reference instead of a secret (e.g. Orchestrator), and `@vault://` of `ascli`.
 
 - `Secret.parse_reference`: `secret://<store>/<path>[?<options>][#<field>]` into a `Reference`
 - `Secret::Resolver`: named stores from a configuration (`Hash`), `resolve` (value, TTL cache), `metadata` (version, time, no value), `invalidate`; errors give the reference and the reason, never a value; values are declared to `Secret::Hider`; the application adds types with `Resolver.register_type` (a subclass of `Store::Base` with `REFERENCE_PARAMETERS`)
 - Bootstrap secrets of stores (`password` of `file`, `token` and `approle.secret_id` of `vault`): `Secret::Bootstrap`, the value or `@file:<path>` (syntax of extended values, only `@file:`), the file read again when modified; `file` converts `password` in `reference_arguments` (option `vault` gives the password itself), `vault` in its constructor (also for option `vault`); other parameters are refused
+
+**Vault of `ascli`** ([`vault_manager.rb`](../lib/aspera/cli/vault_manager.rb), [`vault_actions.rb`](../lib/aspera/cli/vault_actions.rb)): `VaultManager` in `Context#vault`, created by `Bootstrapper`, used by `@vault:`, `config vault` (`VaultActions`) and presets (`PresetActions`):
+
+- `store`: store of option `vault`, opened when first used (kept once opened, not when absent: the global preset is loaded after the handler is registered)
+- `value`: `@vault:<label>.<field>` from the store, `@vault://<store>/<path>[?<options>][#<field>]` from a `Secret::Resolver` created with option `vault_references` (same configuration, relative `file` of type `file` in the configuration folder)
+- `metadata`: `config vault check`, version and time of a reference, without value
 
 ## Error Handling
 
@@ -862,7 +868,7 @@ Analyzes API errors and provides:
   - `base_dsl_spec.rb` — `Base` DSL dispatcher
   - `command_registry_spec.rb` — `CommandRegistry` validation rules
   - `plugin_registry_spec.rb` — `validate!(plugin_class:)` consistency of every plugin registry (every leaf has an action or a matching `action_*` method, and every action accepts `**`)
-  - `parser_spec.rb`, `option_declarator_spec.rb`, `preset_actions_spec.rb`, `runner_spec.rb`, `mcp/tool_spec.rb`, `formatter_spec.rb`, `http_spec.rb`
+  - `parser_spec.rb`, `option_declarator_spec.rb`, `preset_actions_spec.rb`, `vault_manager_spec.rb`, `runner_spec.rb`, `mcp/tool_spec.rb`, `formatter_spec.rb`, `http_spec.rb`
   - `async_transfer_store_spec.rb`, `transfer_agent_async_spec.rb`, `transfer_agent_options_spec.rb`, `transfer_result_spec.rb`, `agent_transfer_status_spec.rb`
   - `secret/store_spec.rb`, `secret/store/factory_spec.rb`, `secret/reference_spec.rb`, `secret/reference_vault_spec.rb` (fake Vault server), `secret/reference_encrypted_file_spec.rb`, `secret/strength_spec.rb`
   - `rest/client_spec.rb`, `secret/hider_spec.rb`, `proxy_auto_config_spec.rb`, `schema_reader_spec.rb`, `string_ext_spec.rb`, `uri_reader_spec.rb`, `temp_file_manager_spec.rb`, `assert_spec.rb`, `environment_spec.rb`, `version_spec.rb`, …

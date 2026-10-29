@@ -6,6 +6,7 @@ require 'aspera/cli/special_values'
 require 'aspera/cli/info'
 require 'aspera/cli/transfer_progress'
 require 'aspera/cli/preset_manager'
+require 'aspera/cli/vault_manager'
 require 'aspera/cli/http'
 require 'aspera/ascp/installation'
 require 'aspera/products/transferd'
@@ -28,7 +29,7 @@ module Aspera
     #
     # Responsibilities:
     #   - resolve context.main_folder (option :home)
-    #   - populate context.persistency, context.presets, context.http_config, context.progress_bar
+    #   - populate context.persistency, context.presets, context.vault, context.http_config, context.progress_bar
     #   - register plugin lookup folders
     #   - register @preset / @vault extended-value handlers
     #   - configure global singletons: Rest::Parameters, OAuth::Factory, SSL, Transfer::Parameters,
@@ -73,16 +74,15 @@ module Aspera
 
       # Run the full bootstrap sequence.
       # Must be called after context.options and context.formatter are set.
-      # On return, context.persistency, context.presets, context.http_config and
+      # On return, context.persistency, context.presets, context.vault, context.http_config and
       # context.progress_bar are populated and all global singletons are configured.
       #
       # @param gem_plugins_folder [String]  folder of built-in plugins (from Plugins::Config)
-      # @param vault_value_cb     [Proc]    block(name): secret value (from VaultManager)
-      def run(gem_plugins_folder:, vault_value_cb:)
+      def run(gem_plugins_folder:)
         setup_main_folder
         setup_persistency_and_plugin_folders(gem_plugins_folder)
         setup_config_file
-        setup_extended_value_handlers(vault_value_cb)
+        setup_extended_value_handlers
         setup_progress_bar
         setup_pac_executor
         setup_rest_and_transfer_runtime
@@ -119,15 +119,17 @@ module Aspera
         @context.http_config = Http.new
       end
 
-      # Register @preset and @vault extended-value handlers + global config default preset
-      def setup_extended_value_handlers(vault_value_cb)
+      # context.vault + register @preset and @vault extended-value handlers + global config default preset
+      def setup_extended_value_handlers
         @context.options.declare(:secret, description: 'Secret for access keys')
         @context.options.declare(:vault, schema: Schema::Registry::VAULT_OPTIONS)
         @context.options.declare(:vault_password, description: 'Vault password')
+        @context.options.declare(:vault_references, schema: Schema::Registry::VAULT_REFERENCES_OPTIONS)
+        @context.vault = VaultManager.new(@context.options, @context.main_folder)
         # Register @preset and @vault handlers BEFORE parse_options! so that
         # values like --secret=@preset:name are correctly evaluated at parse time.
         ExtendedValue.instance.on(EXTEND_PRESET, description: 'Option preset, or its parameter: <name>[.<parameter>]') { |v| @context.presets.by_name(v) }
-        ExtendedValue.instance.on(EXTEND_VAULT, description: 'Secret from vault: <label>.<field>', &vault_value_cb)
+        ExtendedValue.instance.on(EXTEND_VAULT, description: 'Secret from vault: <label>.<field>, or //<store>/<path>[#<field>]') { |v| @context.vault.value(v) }
         @context.options.parse_options!
         # Load global config default preset (equivalent of add_plugin_default_preset(:config))
         default_config_name = @context.presets.plugin_default_name(CONF_GLOBAL_SYM)

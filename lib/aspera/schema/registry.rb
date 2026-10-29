@@ -103,6 +103,8 @@ module Aspera
       HTTP_OPTIONS            = "#{OPTIONS}:components.schemas.HttpOptions"
       VAULT_OPTIONS           = "#{OPTIONS}:components.schemas.VaultOptions"
       VAULT_SECRET            = "#{OPTIONS}:components.schemas.VaultSecret"
+      VAULT_REFERENCES_OPTIONS = "#{OPTIONS}:components.schemas.VaultReferencesOptions"
+      VAULT_REFERENCE_STORE   = "#{OPTIONS}:components.schemas.VaultReferenceStore"
       IMAGE_OPTIONS           = "#{OPTIONS}:components.schemas.ImageOptions"
       ASCP_LOGS_OPTIONS       = "#{OPTIONS}:components.schemas.AscpLogsOptions"
       OUT_OPTIONS             = "#{OPTIONS}:components.schemas.OutOptions"

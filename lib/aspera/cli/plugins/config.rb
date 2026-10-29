@@ -15,7 +15,7 @@ require 'aspera/cli/ascp_actions'
 require 'aspera/cli/ascp_logs_actions'
 require 'aspera/cli/preset_actions'
 require 'aspera/cli/completion_actions'
-require 'aspera/cli/vault_manager'
+require 'aspera/cli/vault_actions'
 require 'aspera/cli/transfer_actions'
 require 'aspera/cli/gem_checker'
 require 'aspera/ascp/installation'
@@ -44,7 +44,7 @@ module Aspera
       # Manage the CLI config file
       class Config < Base
         include SyncActions
-        include VaultManager
+        include VaultActions
         include GemChecker
         include AscpActions
         include AscpLogsActions
@@ -101,7 +101,6 @@ module Aspera
 
         def initialize(**_)
           super
-          @vault_instance = nil
           @sdk_default_location = false
           @wizard = Wizard.new(self, context.main_folder)
           # Values set through `on_set` callbacks are used below (sdk_folder)
@@ -249,6 +248,8 @@ module Aspera
           )
           command :import, description: 'Import secrets from a JSON array (supports --bulk)',
             arguments: [{name: :secrets, type: Array, schema: {type: 'array', items: {'$ref' => Schema::Registry::VAULT_SECRET}}}]
+          command :check, description: 'Check that a reference of option vault_references can be read, without its value',
+            arguments: [{name: :reference, raw: true}]
         end
         command :commands, description: 'List all available commands, of all plugins or only the given one, optionally under a command path',
           arguments: [{name: :plugin_name, mandatory: false, default: nil},

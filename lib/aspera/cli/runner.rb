@@ -429,15 +429,10 @@ module Aspera
         Aspera.assert(current_prog_name.eql?(Info::CMD_NAME), type: :warn) { "Please use '#{Info::CMD_NAME}' instead of '#{current_prog_name}'" }
         # Declare and parse global options
         declare_global_options
-        # Bootstrap: populate context services (main_folder, persistency, presets, http_config,
+        # Bootstrap: populate context services (main_folder, persistency, presets, vault, http_config,
         # progress_bar) and configure global singletons before any plugin is instantiated.
-        # The vault callback is lazy: @vault extended-values are only resolved after Config.new,
-        # so @context.config is always set by the time it is called.
         @bootstrapper = Bootstrapper.new(@context)
-        @bootstrapper.run(
-          gem_plugins_folder: Plugins::Config.gem_plugins_folder,
-          vault_value_cb:     ->(v) { @context.config.vault_value(v) }
-        )
+        @bootstrapper.run(gem_plugins_folder: Plugins::Config.gem_plugins_folder)
         # Do not display config commands if help is asked
         @context.man_header = false
         # Config declares remaining plugin options on top of what Bootstrapper already parsed

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/cli/preset_actions'
-require 'aspera/cli/vault_manager'
+require 'aspera/cli/vault_actions'
 require 'aspera/cli/result'
 require 'aspera/cli/parser'
 require 'aspera/log'
@@ -47,7 +47,7 @@ module Aspera
 
         Class.new do
           include PresetActions
-          include VaultManager
+          include VaultActions
 
           define_method(:presets) { presets_captured }
 
@@ -164,7 +164,7 @@ module Aspera
 
           Class.new do
             include PresetActions
-            include VaultManager
+            include VaultActions
 
             define_method(:presets) { presets_captured }
 
@@ -310,60 +310,6 @@ module Aspera
           it 'is allowed with level low' do
             host.action_preset_set(name: 'p1', param_name: secret, param_value: 'v')
             expect(config_presets['p1']).to(eq({secret => 'v'}))
-          end
-        end
-      end
-
-      # -----------------------------------------------------------------------
-      # VaultManager#vault — lazy init and nil handling
-      # -----------------------------------------------------------------------
-      describe VaultManager do
-        describe '#vault' do
-          it 'returns nil when not configured and caches the result' do
-            # host.vault already overridden by the test double mechanism above;
-            # test the real behavior via a raw includer
-            includer = Class.new do
-              include VaultManager
-
-              def options
-                Object.new.tap do |o|
-                  o.define_singleton_method(:get_option) { |*| nil }
-                end
-              end
-            end.new
-            expect(includer.vault).to(be_nil)
-            # second call must not re-invoke get_option (cached)
-            expect(includer.vault).to(be_nil)
-          end
-        end
-
-        describe '#vault_required' do
-          it 'raises BadArgument when vault is nil' do
-            includer = Class.new do
-              include VaultManager
-
-              def vault; nil; end
-            end.new
-            expect { includer.vault_required }.to(raise_error(Aspera::Cli::BadArgument, /vault/))
-          end
-        end
-
-        describe '#vault_value' do
-          let(:includer) do
-            Class.new do
-              include VaultManager
-
-              attr_accessor :vault
-            end.new.tap { |i| i.vault = vault_double }
-          end
-
-          it 'accepts a label containing dots' do
-            vault_store['my.preset'] = {label: 'my.preset', password: secret} # HashiCorpIgnore
-            expect(includer.vault_value('my.preset.password')).to(eq(secret))
-          end
-
-          it 'raises BadArgument without parameter' do
-            expect { includer.vault_value('my_preset') }.to(raise_error(Aspera::Cli::BadArgument, /<name>.<param>/))
           end
         end
       end

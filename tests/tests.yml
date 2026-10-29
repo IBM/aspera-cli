@@ -5654,6 +5654,49 @@ conf_vault_show:
     - vault
     - show
     - my_label
+conf_vault_references_check:
+  description: Check a reference to a label of the encrypted file, without its value
+  depends_on:
+    - conf_vault_create
+  tags:
+    - vault
+    - tmp_conf
+  args:
+    - config
+    - vault
+    - check
+    - "@vault://local/my_label"
+    - --vault-references=@json:{"stores":{"local":{"type":"file","file":"$(PATH_VAULT_FILE)","password":"$(secret :vault_password)"}}}
+conf_vault_references_echo:
+  description: "@vault:// reads the secret of a label of the encrypted file, field password by default"
+  depends_on:
+    - conf_vault_create
+  tags:
+    - vault
+    - tmp_conf
+    - nodoc
+  expect: $(secret :stored_password)
+  args:
+    - config
+    - echo
+    - "@vault://local/my_label"
+    - --vault-references=@json:{"stores":{"local":{"type":"file","file":"$(PATH_VAULT_FILE)","password":"$(secret :vault_password)"}}}
+    - --out.secrets=yes
+conf_vault_references_fail_label:
+  description: "@vault:// with a label that does not exist"
+  depends_on:
+    - conf_vault_create
+  tags:
+    - vault
+    - must_fail
+    - tmp_conf
+    - nodoc
+  expect: "secret reference secret://local/bad: no label: bad"
+  args:
+    - config
+    - echo
+    - "@vault://local/bad"
+    - --vault-references=@json:{"stores":{"local":{"type":"file","file":"$(PATH_VAULT_FILE)","password":"$(secret :vault_password)"}}}
 conf_preset_ask:
   stdin: "username\npassword\n\nthe_user\nthe_pass\n"
   tags:
