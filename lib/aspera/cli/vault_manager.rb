@@ -2,6 +2,7 @@
 
 require 'aspera/cli/error'
 require 'aspera/cli/info'
+require 'aspera/cli/security'
 require 'aspera/secret/reference'
 require 'aspera/log'
 require 'aspera/assert'
@@ -11,6 +12,9 @@ module Aspera
     # Secrets of the vault, shared in `Context#vault`: read by `@vault:`, managed by `config vault`, written by presets.
     # - `<label>.<field>`: store of option `vault` (unlocked with option `vault_password`), managed by label
     # - `//<store>/<path>[?<options>][#<field>]`: reference to a store of option `vault_references` (`Secret::Resolver`), read only
+    #
+    # Values `@file:<path>` in these options (e.g. `token`) are read by `Secret::Bootstrap`, not by `ExtendedValue`:
+    # they are checked here as extended value `@file:`, so that option `security` applies (e.g. in MCP server mode).
     class VaultManager
       # Beginning of a reference after `@vault:`, `secret://` without `secret:`
       REFERENCE_PREFIX = '//'
@@ -64,8 +68,12 @@ module Aspera
         return if info.nil? || (info.is_a?(Hash) && info.empty?)
         info = info.transform_keys(&:to_sym)
         info[:type] ||= 'file'
+        password = @options.get_option(:vault_password)
+        check_file_values(:vault, info)
+        # Token of type `vault` when not in `vault`
+        check_file_values(:vault_password, password)
         require 'aspera/secret/store/factory'
-        Secret::Store::Factory.create(info, Info::CMD_NAME, @main_folder, @options.get_option(:vault_password))
+        Secret::Store::Factory.create(info, Info::CMD_NAME, @main_folder, password)
       end
 
       # @return [Secret::Resolver] Resolver of option `vault_references`, created when first used
@@ -73,6 +81,7 @@ module Aspera
         return @resolver unless @resolver.nil?
         config = @options.get_option(:vault_references, mandatory: false)
         Aspera.assert(config.is_a?(Hash) && !config.empty?, type: BadArgument) { 'Missing mandatory option: vault_references' }
+        check_file_values(:vault_references, config)
         require 'aspera/secret/resolver'
         @resolver = Secret::Resolver.new(resolver_config(config))
       end
@@ -91,6 +100,30 @@ module Aspera
           params.merge('file' => File.join(@main_folder, file))
         end
         config.merge('stores' => stores)
+      end
+
+      # Values `@file:<path>` are read like extended value `@file:`, see `Security`
+      # @param option [Symbol] Name of option, for errors
+      # @param value  [Object] Value of option
+      # @raise [BadArgument] Reading a file is refused at current security level
+      def check_file_values(option, value)
+        file_paths(value).each do |path|
+          Security.instance.check_extended_value(:file)
+          Security.instance.readable_path(path)
+        end
+      rescue BadArgument => e
+        raise BadArgument, "option #{option}: #{e.message}"
+      end
+
+      # @param value [Object] Value of option
+      # @return [Array<String>] Paths of values `@file:<path>`, also in nested values
+      def file_paths(value)
+        case value
+        when Hash then value.values.flat_map { |v| file_paths(v) }
+        when Array then value.flat_map { |v| file_paths(v) }
+        when String then value.start_with?(Secret::Bootstrap::FILE_PREFIX) ? [value.delete_prefix(Secret::Bootstrap::FILE_PREFIX)] : []
+        else []
+        end
       end
 
       # @return [String] Reference `secret://...` of value of `@vault://...`

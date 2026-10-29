@@ -2708,6 +2708,8 @@ It is a `Hash` with the following keys:
 
 With level `medium`, the real path of the file is checked: a symbolic link leading outside of `allowed_paths` is refused.
 
+The same applies to `@file:<path>` in the parameters of options `vault`, `vault_password`, and `vault_references` (for example, `token`), although the file is read when used, not when the option is evaluated.
+
 A secret (read by `@secret:`, `@vault:`, or `@preset:`) is hidden in results by its value: processed by another extended value, it could be revealed (for example, split by `@list:@vault:...`, or with a short value in a text by `@extend:`).
 With levels `medium` and `high`, a secret must be the whole value of an option or argument, for example `@preset:<PRESET_NAME>.password` for option `password`, and it cannot be a parameter name of `config preset set`.
 
@@ -3513,7 +3515,7 @@ vault server -dev -dev-root-token-id=<TOKEN>
 --vault=@json:'{"type":"vault","url":"http://127.0.0.1:8200"}' --vault-password=<TOKEN>
 ```
 
-With a token in a file (for example, written and renewed by Vault Agent), read again when the file is modified:
+With a token in a file (for example, written and renewed by Vault Agent), read again when the file is modified (restricted by option `security` as extended value `@file:`, see [Security Level](#security-level)):
 
 ```shell
 --vault=@json:'{"type":"vault","url":"https://vault.example.com:8200","token":"@file:/run/vault/token"}'
@@ -3703,6 +3705,7 @@ Parameters of a store:
 | `type` | `String` | Store type selector.<br/>Required.<br/>Allowed values: `file`. |
 
 Secrets used to access a store (`token`, `approle.secret_id`, `password`) are the value, or `@file:<path>` (for example, a credential of `systemd`, or a token written by Vault Agent): the file is read when used, and again when it is modified.
+As for extended value `@file:`, reading the file is restricted by option `security` (see [Security Level](#security-level)).
 In a YAML file, quote the value: `@` cannot start a plain scalar.
 
 For example, a HashiCorp Vault server with AppRole authentication, limited to secrets under `kv/aspera/`, and the encrypted file of `config vault`:
@@ -10900,7 +10903,7 @@ With both transports:
 - Extended value `@stdin:` is refused.
 - `@secret:` is entered by the user on a web page, see [Secrets entered in a web page](#secrets-entered-in-a-web-page).
 - Secrets are hidden in responses, also a value shorter than 8 characters as a word in a text (for example, a short password in an error message).
-- The [Security Level](#security-level) is `high` by default: `@ruby:`, `@file:`, `@uri:`, and `@env:` are refused, and a secret must be the whole value: hidden in results, it cannot be processed by another extended value.
+- The [Security Level](#security-level) is `high` by default: `@ruby:`, `@file:` (also in the parameters of options `vault` and `vault_references`), `@uri:`, and `@env:` are refused, and a secret must be the whole value: hidden in results, it cannot be processed by another extended value.
   It applies to commands sent by the client, and to presets, because the client can modify presets.
   Commands sent by the client cannot change option `security`.
 
@@ -10916,6 +10919,8 @@ ascli mcp server --security.level=medium --security.allowed_paths.0=$HOME/.asper
 >
 > A preset created by `aoc wizard` or `faspex5 wizard` reads the private key with `@file:`.
 > With level `high`, either store the key in the preset (`ascli config preset set <AOC_ORG> private_key @file:<PATH>`, without `@val:`), or use level `medium` with the key in `allowed_paths`.
+>
+> In the same way, a secret of a vault read from a file (for example, `token` of HashiCorp Vault: `@file:<path>`) requires level `medium` with the file in `allowed_paths`.
 
 ### HTTP endpoints
 

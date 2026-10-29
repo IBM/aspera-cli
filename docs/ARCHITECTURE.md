@@ -802,6 +802,7 @@ presets:
 - `store`: store of option `vault`, opened when first used (kept once opened, not when absent: the global preset is loaded after the handler is registered)
 - `value`: `@vault:<label>.<field>` from the store, `@vault://<store>/<path>[?<options>][#<field>]` from a `Secret::Resolver` created with option `vault_references` (same configuration, relative `file` of type `file` in the configuration folder)
 - `metadata`: `config vault check`, version and time of a reference, without value
+- Values `@file:<path>` of options `vault`, `vault_password` and `vault_references` are read by `Secret::Bootstrap`, not by `ExtendedValue`: checked as extended value `@file:` (`Security#check_extended_value`, `Security#readable_path`) before the store or the resolver is created
 
 ## Error Handling
 

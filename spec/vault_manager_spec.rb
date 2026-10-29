@@ -87,6 +87,44 @@ module Aspera
         end
       end
 
+      # `@file:` in parameters of stores is read by the library: checked as extended value `@file:`
+      describe 'option security' do
+        let(:password_file) { File.join(main_folder, 'ops.pass') }
+        let(:other_file) { File.join(main_folder, 'other') }
+
+        before do
+          File.write(password_file, vault_password)
+          File.write(other_file, 'x')
+          values[:vault_references] = {'cache_ttl' => 0, 'stores' => {'ops' => {'type' => 'file', 'file' => 'ops.bin', 'password' => "@file:#{password_file}"}}}
+        end
+
+        after { Security.instance.reset }
+
+        it 'reads @file: with level low' do
+          expect(manager.value('//ops/my.preset')).to(eq(secret))
+        end
+
+        it 'refuses @file: with level high' do
+          Security.instance.options = {'level' => 'high'}
+          expect { manager.value('//ops/my.preset') }.to(raise_error(BadArgument, /\Aoption vault_references: @file: extended value is disabled by security level high/))
+        end
+
+        it 'reads @file: with level medium only in allowed paths' do
+          Security.instance.options = {'level' => 'medium', 'allowed_paths' => [other_file]}
+          expect { manager.value('//ops/my.preset') }.to(raise_error(BadArgument, /\Aoption vault_references: no such file in security.allowed_paths/))
+          Security.instance.options = {'level' => 'medium', 'allowed_paths' => [password_file]}
+          expect(described_class.new(options, main_folder).value('//ops/my.preset')).to(eq(secret))
+        end
+
+        it 'refuses @file: in option vault, also as token from vault_password, with level high' do
+          Security.instance.options = {'level' => 'high'}
+          values[:vault] = {'type' => 'vault', 'url' => 'https://127.0.0.1:8200', 'token' => "@file:#{password_file}"}
+          expect { manager.store }.to(raise_error(BadArgument, /\Aoption vault: @file: extended value is disabled/))
+          values.merge!(vault: {'type' => 'vault', 'url' => 'https://127.0.0.1:8200'}, vault_password: "@file:#{password_file}")
+          expect { manager.store }.to(raise_error(BadArgument, /\Aoption vault_password: @file: extended value is disabled/))
+        end
+      end
+
       describe '#metadata' do
         before do
           values[:vault_references] = {'stores' => {'ops' => {'type' => 'file', 'file' => File.join(main_folder, 'ops.bin'), 'password' => vault_password}}}
