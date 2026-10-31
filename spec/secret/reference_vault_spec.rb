@@ -36,6 +36,21 @@ RSpec.describe(Aspera::Secret::Store::HashicorpVault) do
         in ['PUT', 'auth/token/renew-self']
           state[:renewals] += 1
           [200, {auth: {client_token: token, lease_duration: state[:lease], renewable: true, policies: []}}]
+        in [('POST' | 'PUT'), %r{\A([^/]+)/data/(.+)\z}]
+          # KV v2 write (gem vault uses PUT)
+          mount = Regexp.last_match(1)
+          kv_path = Regexp.last_match(2)
+          body_json = JSON.parse(req.body, symbolize_names: true)
+          cas = body_json.dig(:options, :cas)
+          full = "#{mount}/data/#{kv_path}"
+          if cas == 0 && state[:secrets].key?(full)
+            [400, {errors: ['check-and-set parameter did not match the current version']}]
+          else
+            version = (state[:secrets][full]&.size || 0) + 1
+            state[:secrets][full] ||= []
+            state[:secrets][full].push(body_json[:data])
+            [200, {data: {metadata: {version: version, created_time: '2026-10-31T10:00:00.000000000Z'}}}]
+          end
         in ['GET', _]
           versions = state[:secrets][path]
           version = (req.query['version'] || versions&.size).to_i
@@ -187,6 +202,56 @@ RSpec.describe(Aspera::Secret::Store::HashicorpVault) do
         expect(resolver('approle' => parameters).resolve('secret://vault_prod/secret/app#password')).to(eq(secret))
       end
       expect(@state[:logins]).to(eq(2))
+    end
+  end
+
+  describe '#write_reference' do
+    let(:token_file) { secret_file('token', token) }
+    # Resolver with writable store and allowed_prefixes restriction
+    let(:rw) do
+      Aspera::Secret::Resolver.new({
+        'cache_ttl' => 0,
+        'stores'    => {
+          'vault_prod' => {
+            'type'             => 'vault',
+            'url'              => @url,
+            'token'            => "@file:#{token_file}",
+            'allowed_prefixes' => ['secret/orchestrator/'],
+            'writable'         => true
+          }
+        }
+      })
+    end
+
+    it 'creates a new secret and returns version and time' do
+      result = rw.write('secret://vault_prod/secret/orchestrator/new_app', {'username' => SecureRandom.alphanumeric(8), 'password' => secret})
+      expect(result[:version]).to(eq(1))
+      expect(result[:updated_time]).to(be_a(Time))
+      # Readable at once (cache was cleared)
+      expect(rw.resolve('secret://vault_prod/secret/orchestrator/new_app#password')).to(eq(secret))
+    end
+
+    it 'sends cas:0 in the request body (refuses an existing path)' do
+      rw.write('secret://vault_prod/secret/orchestrator/cas_test', {'password' => secret})
+      expect { rw.write('secret://vault_prod/secret/orchestrator/cas_test', {'password' => other}) }
+        .to(raise_error(Aspera::Secret::Error, %r{secret exists: secret/orchestrator/cas_test}))
+    end
+
+    it 'reports 403 as a Vault error' do
+      @state[:tokens] = []
+      expect { rw.write('secret://vault_prod/secret/orchestrator/forbidden', {'password' => secret}) }
+        .to(raise_error(Aspera::Secret::Error, /Vault: 403/))
+    end
+
+    it 'refuses a path outside allowed_prefixes' do
+      expect { rw.write('secret://vault_prod/secret/other/app', {'password' => secret}) }
+        .to(raise_error(Aspera::Secret::Error, /path not allowed/))
+    end
+
+    it 'refuses a store not marked writable' do
+      read_only = resolver('token' => "@file:#{token_file}")
+      expect { read_only.write('secret://vault_prod/secret/orchestrator/x', {'password' => secret}) }
+        .to(raise_error(Aspera::Secret::Error, /store vault_prod is not writable/))
     end
   end
 end

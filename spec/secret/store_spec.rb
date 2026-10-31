@@ -58,7 +58,8 @@ RSpec.describe(Aspera::Secret::Store) do
       Dir.mktmpdir do |dir|
         path = File.join(dir, 'vault.bin')
         vault = described_class.new(file: path, password: vault_password)
-        expect(vault).to(receive(:load_file).twice.and_call_original)
+        # with_lock reloads inside the lock before each write (to detect concurrent changes)
+        expect(vault).to(receive(:load_file).exactly(3).times.and_call_original)
         vault.set({label: 'one', password: secret}) # HashiCorpIgnore
         vault.set({label: 'two', password: other}) # HashiCorpIgnore
         expect(vault.get(label: 'two')[:password]).to(eq(other))

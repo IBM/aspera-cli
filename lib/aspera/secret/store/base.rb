@@ -80,6 +80,16 @@ module Aspera
           {value: field_value(entry, ref, default: DEFAULT_FIELD), version: nil, updated_time: nil}
         end
 
+        # Write a new secret by reference.
+        # Subclasses that support writing must override this method.
+        # @param _ref    [Reference]          Reference (field is nil)
+        # @param _fields [Hash<String,String>] Field name → value
+        # @return [Hash] `version` (`Integer` or `nil`), `updated_time` (`Time` or `nil`)
+        # @raise [Error] Always — writing is not supported by this store type
+        def write_reference(_ref, _fields)
+          raise Error, 'writing not supported by store type'
+        end
+
         private
 
         # @param data    [Hash]        Fields of secret, keys String or Symbol

@@ -2,6 +2,7 @@
 
 # Unit tests for secret references in an encrypted file of ascli (vault of type `file`).
 
+require 'English'
 require 'tmpdir'
 require 'securerandom'
 require 'aspera/secret/resolver'
@@ -19,6 +20,7 @@ RSpec.describe(Aspera::Secret::Store::EncryptedHash) do
   let(:password_file) { File.join(dir, 'ops_vault.pass') }
   let(:password) { "@file:#{password_file}" }
   let(:resolver) { Aspera::Secret::Resolver.new({'cache_ttl' => 0, 'stores' => {'ops' => {'type' => 'file', 'file' => file, 'password' => password}}}) }
+  let(:writable_resolver) { Aspera::Secret::Resolver.new({'cache_ttl' => 0, 'stores' => {'ops' => {'type' => 'file', 'file' => file, 'password' => password, 'writable' => true}}}) }
 
   before do
     File.write(password_file, "#{vault_password}\n")
@@ -65,6 +67,47 @@ RSpec.describe(Aspera::Secret::Store::EncryptedHash) do
       expect(resolver.resolve('secret://ops/faspex5')).to(eq(secret))
       rewrite(file) { Aspera::Secret::Store::EncryptedHash.new(file: file, password: vault_password).set({label: 'aoc', password: rotated}) }
       expect(resolver.resolve('secret://ops/aoc')).to(eq(rotated))
+    end
+  end
+
+  describe '#write_reference' do
+    it 'writes a new secret and makes it readable at once' do
+      result = writable_resolver.write('secret://ops/new_label', {'password' => secret, 'username' => SecureRandom.alphanumeric(8)})
+      expect(result).to(eq({version: nil, updated_time: nil}))
+      expect(writable_resolver.resolve('secret://ops/new_label')).to(eq(secret))
+    end
+
+    it 'refuses an existing label' do
+      expect { writable_resolver.write('secret://ops/faspex5', {'password' => secret}) }
+        .to(raise_error(Aspera::Secret::Error, %r{secret reference secret://ops/faspex5: .*faspex5 already exist}))
+    end
+
+    it 'refuses unsupported fields' do
+      expect { writable_resolver.write('secret://ops/new_label', {'api_key' => secret}) }
+        .to(raise_error(Aspera::Secret::Error, /unsupported fields: api_key/))
+    end
+
+    it 'two processes writing concurrently keep both labels and the file is never empty during writes',
+      skip: RUBY_PLATFORM.include?('mingw') || RUBY_PLATFORM.include?('mswin') do
+      parent_read_errors = []
+      # Child writes a second label while parent reads in a loop
+      child = fork do
+        1_000.times do
+          vault = Aspera::Secret::Store::EncryptedHash.new(file: file, password: vault_password)
+          vault.write_reference(Aspera::Secret.parse_reference("secret://ops/child_#{SecureRandom.alphanumeric(4)}"), {'password' => SecureRandom.alphanumeric(16)})
+        rescue Aspera::Secret::Error, Aspera::AssertError
+          # label collision: fine (two processes may pick the same random suffix)
+        end
+        exit!(0)
+      end
+      200.times do
+        resolver.resolve('secret://ops/faspex5')
+      rescue Aspera::Secret::Error => e
+        parent_read_errors << e.message
+      end
+      Process.wait(child)
+      expect($CHILD_STATUS.exitstatus).to(eq(0))
+      expect(parent_read_errors).to(be_empty)
     end
   end
 

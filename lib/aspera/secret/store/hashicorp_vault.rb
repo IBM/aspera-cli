@@ -184,6 +184,30 @@ module Aspera
           {value: field_value(secret[:data], ref), version: secret[:version], updated_time: secret[:created_time]}
         end
 
+        # Write a new secret (KV v2, check-and-set: refuses if the path already exists)
+        # @param ref    [Reference]          Reference without field
+        # @param fields [Hash<String,String>] Field name → value
+        # @return [Hash] `version` (`Integer`), `updated_time` (`Time`)
+        # @raise [Error] Path already exists ("secret exists: <mount>/<path>"), or Vault error
+        def write_reference(ref, fields)
+          mount, path = mount_and_path(ref)
+          symbol_fields = fields.transform_keys(&:to_sym)
+          response = call do |client|
+            client.logical.write(
+              "#{mount}/data/#{path}",
+              options: {cas: 0},
+              data:    symbol_fields
+            )
+          end
+          metadata = response.data[:metadata] || response.data
+          version = metadata[:version]
+          created_time = metadata[:created_time]
+          {version: version, updated_time: created_time.nil? ? nil : Time.iso8601(created_time)}
+        rescue ::Vault::HTTPClientError => e
+          raise Error, "secret exists: #{mount}/#{path}" if e.code == 400
+          raise
+        end
+
         private
 
         def path(label)

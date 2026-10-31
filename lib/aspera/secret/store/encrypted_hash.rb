@@ -71,9 +71,11 @@ module Aspera
         def set(options)
           validate_set(options)
           label = options.delete(:label)
-          assert_new_label(label)
-          secrets[label] = options.symbolize_keys
-          save
+          with_lock do
+            assert_new_label(label)
+            secrets_unlocked[label] = options.symbolize_keys
+            save
+          end
         end
 
         def get(label:, exception: true)
@@ -84,9 +86,11 @@ module Aspera
         end
 
         def delete(label:)
-          Aspera.assert(secrets.key?(label)) { "Label not found: #{label}" }
-          secrets.delete(label)
-          save
+          with_lock do
+            Aspera.assert(secrets_unlocked.key?(label)) { "Label not found: #{label}" }
+            secrets_unlocked.delete(label)
+            save
+          end
         end
 
         def change_password(password)
@@ -106,9 +110,30 @@ module Aspera
           super.merge(updated_time: @mtimes&.first)
         end
 
+        # Write a new secret by reference: label = path of reference, fields within CONTENT_KEYS
+        # @param ref    [Reference]          Reference without field
+        # @param fields [Hash<String,String>] Field name → value
+        # @return [Hash] `version: nil`, `updated_time: nil`
+        def write_reference(ref, fields)
+          symbol_fields = fields.transform_keys(&:to_sym)
+          unsupported = symbol_fields.keys - CONTENT_KEYS
+          raise Error, "unsupported fields: #{unsupported.join(', ')}, use #{CONTENT_KEYS.join(', ')}" unless unsupported.empty?
+          with_lock do
+            assert_new_label(ref.path)
+            secrets_unlocked[ref.path] = symbol_fields
+            save
+          end
+          {version: nil, updated_time: nil}
+        end
+
         private
 
-        # @return [Hash] Secrets: label → fields
+        # @return [Hash] Secrets: label → fields (caller must hold file lock)
+        def secrets_unlocked
+          @all_secrets
+        end
+
+        # @return [Hash] Secrets: label → fields, reloaded if file changed
         def secrets
           @lock.synchronize do
             mtimes = current_mtimes
@@ -118,6 +143,21 @@ module Aspera
             end
           end
           @all_secrets
+        rescue SystemCallError => e
+          raise Error, e.message
+        end
+
+        # Acquire a file lock and reload secrets, then yield, then save.
+        # Prevents two concurrent processes (web + ascli) from overwriting each other.
+        def with_lock
+          lock_path = "#{@path}.lock"
+          File.open(lock_path, File::CREAT | File::RDWR, 0o600) do |lf|
+            lf.flock(File::LOCK_EX)
+            # Reload inside the lock so we see any write done by another process
+            load_file(@password.value)
+            @mtimes = current_mtimes
+            yield
+          end
         rescue SystemCallError => e
           raise Error, e.message
         end
@@ -234,7 +274,8 @@ module Aspera
           OsslCipher.new(@cipher_name, key)
         end
 
-        # save current data to file with format
+        # Save current data to file atomically (temp file + rename) so a concurrent reader
+        # never sees a partial file.
         def save
           vault_info = {
             'version' => '1.1.0',
@@ -243,7 +284,15 @@ module Aspera
             'kdf'     => @kdf_params,
             'data'    => @cipher.encrypt(YAML.dump(@all_secrets))
           }
-          Environment.write_file_restricted(@path, force: true) { YAML.dump(vault_info) }
+          content = YAML.dump(vault_info)
+          tmp = "#{@path}.tmp#{Process.pid}"
+          begin
+            File.write(tmp, content, perm: 0o600)
+            File.rename(tmp, @path)
+          rescue SystemCallError
+            File.unlink(tmp) rescue nil
+            raise
+          end
           # Secrets in memory are those of the file
           @mtimes = current_mtimes
         end

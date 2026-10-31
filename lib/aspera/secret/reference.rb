@@ -82,6 +82,22 @@ module Aspera
         value.is_a?(String) && value.start_with?(SCHEME)
       end
 
+      # Build a reference string from its components (inverse of `parse_reference`).
+      # Path segments are percent-encoded individually so `/` separators are preserved.
+      # Field and option values are fully percent-encoded.
+      # @param store   [String]            Name of store
+      # @param path    [String]            Path of secret in store
+      # @param options [Hash<String,String>] Options (e.g. `{'mount' => 'kv/team'}`)
+      # @param field   [String, nil]       Field of secret, `nil` for none
+      # @return [String] Reference
+      def reference_text(store:, path:, options: {}, field: nil)
+        encoded_path = path.split('/', -1).map { |seg| encode(seg) }.join('/')
+        text = "#{SCHEME}#{store}/#{encoded_path}"
+        text += "?#{URI.encode_www_form(options)}" unless options.empty?
+        text += "##{encode(field)}" unless field.nil?
+        text
+      end
+
       # @param text [String] Reference
       # @return [Reference] Parsed reference
       # @raise [Error] Invalid syntax
@@ -120,6 +136,11 @@ module Aspera
         URI.decode_uri_component(part)
       rescue ArgumentError
         raise Error, "secret reference #{text}: invalid percent-encoding: #{part}"
+      end
+
+      # @return [String] Percent-encoded part of reference (encodes all reserved URI characters including `#`, `?`, `&`)
+      def encode(part)
+        URI.encode_uri_component(part)
       end
     end
   end

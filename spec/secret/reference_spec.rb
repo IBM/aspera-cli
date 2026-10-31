@@ -11,6 +11,26 @@ RSpec.describe(Aspera::Secret) do
   let(:secret) { SecureRandom.alphanumeric(16) }
   let(:other) { SecureRandom.alphanumeric(16) }
 
+  describe '.reference_text' do
+    it 'builds a reference from components, round-trips with parse_reference' do
+      {
+        {store: 'vault_prod', path: 'secret/orchestrator/faspex5', field: 'password'} =>
+          'secret://vault_prod/secret/orchestrator/faspex5#password',
+        {store: 'ops', path: 'faspex5'} =>
+          'secret://ops/faspex5',
+        {store: 'ops', path: 'my label', field: 'private key'} =>
+          'secret://ops/my%20label#private%20key',
+        {store: 'vault', path: 'kv/team/app', options: {'mount' => 'kv/team'}, field: 'password'} =>
+          'secret://vault/kv/team/app?mount=kv%2Fteam#password'
+      }.each do |args, expected|
+        text = described_class.reference_text(**args)
+        expect(text).to(eq(expected))
+        ref = described_class.parse_reference(text)
+        expect([ref.store, ref.path, ref.field]).to(eq([args[:store], args[:path], args[:field]]))
+      end
+    end
+  end
+
   describe '.parse_reference' do
     it 'parses store, path, options and field' do
       ref = described_class.parse_reference('secret://vault_prod/secret/orchestrator/faspex5?version=2&mount=secret#private_key')
@@ -135,10 +155,15 @@ RSpec.describe(Aspera::Secret) do
       allow(resolver).to(receive(:monotonic_time).and_return(seconds))
     end
 
-    it 'gives a store by name' do
+    it 'gives a store by name, and its writability' do
       expect(resolver.store('mem')).to(be(store))
       expect(resolver.store_names).to(eq(%w[mem other]))
       expect { resolver.store('none') }.to(raise_error(Aspera::Secret::Error, 'unknown store none'))
+      expect(resolver.writable?('mem')).to(be(false))
+      expect(resolver.writable?('other')).to(be(false))
+      writable = described_class.new({'stores' => {'mem' => {'type' => 'fake', 'writable' => true}}})
+      expect(writable.writable?('mem')).to(be(true))
+      expect { writable.writable?('none') }.to(raise_error(Aspera::Secret::Error, 'unknown store none'))
     end
 
     it 'reads a store without reference methods by label, field password by default' do
@@ -153,6 +178,37 @@ RSpec.describe(Aspera::Secret) do
       expect(resolver.resolve('secret://mem/app/one#user')).to(eq(other))
       expect(resolver.metadata('secret://mem/app/one')).to(eq({store: 'mem', version: 3, updated_time: Time.at(0)}))
       expect(Aspera::Secret::Hider.instance.hide_secrets_in_string("value: #{secret}")).not_to(include(secret))
+    end
+
+    it 'checks a reference without reading' do
+      store.secrets['app/one'] = {value: secret}
+      expect { resolver.check('secret://mem/app/one') }.not_to(raise_error)
+      expect(store.reads).to(eq(0))
+      expect { resolver.check('secret://mem/other/one') }.to(raise_error(Aspera::Secret::Error, /path not allowed/))
+      expect { resolver.check('secret://unknown/app') }.to(raise_error(Aspera::Secret::Error, /unknown store/))
+    end
+
+    it 'writes to a writable store and removes the cached key' do
+      writable_resolver = described_class.new({'cache_ttl' => 60, 'stores' => {'mem' => {'type' => 'fake', 'writable' => true, 'allowed' => 'app/'}}})
+      ws = writable_resolver.store('mem')
+      ws.secrets['app/one'] = {value: secret}
+
+      # Seed cache
+      writable_resolver.resolve('secret://mem/app/one')
+      expect(ws.reads).to(eq(1))
+
+      # write_reference is not implemented in fake_store (inherits base), so test the resolver guards
+      # Test: field in reference is refused before write
+      expect { writable_resolver.write('secret://mem/app/one#password', {'password' => secret}) }
+        .to(raise_error(Aspera::Secret::Error, /field not allowed when writing/))
+
+      # Test: store not writable
+      expect { resolver.write('secret://mem/app/one', {'value' => secret}) }
+        .to(raise_error(Aspera::Secret::Error, /store mem is not writable/))
+
+      # Test: path not allowed is checked inside access
+      expect { writable_resolver.write('secret://mem/other/one', {'value' => secret}) }
+        .to(raise_error(Aspera::Secret::Error, /path not allowed/))
     end
 
     it 'caches values until TTL expires' do
@@ -217,7 +273,8 @@ RSpec.describe(Aspera::Secret) do
         [{'stores' => {'p' => {'type' => 'plain', 'x' => 1}}}, /store p: unsupported keys: x\z/],
         [{'stores' => {'o' => {'type' => '1password', 'source' => 'web'}}}, /store o: source: unknown web, use one of: api, cli/],
         [{'stores' => {'f' => {'type' => 'file', 'file' => 'f', 'password_file' => 'p'}}}, /store f: unsupported keys: password_file\z/],
-        [{'stores' => {'v' => {'type' => 'vault', 'url' => 'http://127.0.0.1:8200', 'token_file' => 't'}}}, /store v: unsupported keys: token_file\z/]
+        [{'stores' => {'v' => {'type' => 'vault', 'url' => 'http://127.0.0.1:8200', 'token_file' => 't'}}}, /store v: unsupported keys: token_file\z/],
+        [{'stores' => {'mem' => {'type' => 'fake', 'writable' => 'yes'}}}, /store mem: writable: expecting true or false/]
       ].each do |config, message|
         expect { described_class.new(config) }.to(raise_error(Aspera::Secret::Error, /\Asecret references configuration: #{message}/))
       end

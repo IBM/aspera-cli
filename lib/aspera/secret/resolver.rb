@@ -11,6 +11,7 @@ module Aspera
     # Configuration (e.g. from a YAML file):
     # - `cache_ttl`: time in seconds a value is kept in memory (default: 60, 0: no cache)
     # - `stores`: name of store → parameters of store, with `type` (see `Store::Factory`)
+    #   - `writable: true`: allow `write` to this store (default: false)
     #
     # The type and the names of parameters are checked by `new`, a store is created when first used:
     # a store not used (e.g. its secret is not available) is not an error.
@@ -20,7 +21,8 @@ module Aspera
       DEFAULT_CACHE_TTL = 60
       CONFIG_KEYS = %w[cache_ttl stores].freeze
       STORE_NAME = /\A[A-Za-z0-9_.-]+\z/
-      private_constant :CONFIG_KEYS, :STORE_NAME
+      WRITABLE_KEY = 'writable'
+      private_constant :CONFIG_KEYS, :STORE_NAME, :WRITABLE_KEY
 
       # @param config [Hash] Configuration, keys String or Symbol
       # @raise [Error] Invalid configuration
@@ -33,9 +35,9 @@ module Aspera
         raise Error, 'secret references configuration: cache_ttl: expecting a number >= 0' unless @cache_ttl.is_a?(Numeric) && !@cache_ttl.negative?
         stores = config.fetch('stores', nil) || {}
         raise Error, 'secret references configuration: stores: expecting a Hash' unless stores.is_a?(Hash)
-        # Name of store → parameters, checked
-        @parameters = stores.to_h { |name, params| [name.to_s, check_store(name.to_s, params)] }.freeze
-        # Name of store → store, created when first used
+        # Name of store → {params: ..., writable: bool}, checked
+        @store_configs = stores.to_h { |name, params| [name.to_s, check_store(name.to_s, params)] }.freeze
+        # Name of store → store instance, created when first used
         @stores = {}
         # Key of reference → [value, monotonic time of expiry]
         @cache = {}
@@ -44,15 +46,29 @@ module Aspera
 
       # @return [Array<String>] Names of stores
       def store_names
-        @parameters.keys
+        @store_configs.keys
+      end
+
+      # @param name [String] Name of store
+      # @return [Boolean] `true` if the store is declared writable in the configuration
+      def writable?(name)
+        @store_configs.fetch(name) { raise Error, "unknown store #{name}" }[:writable]
       end
 
       # @param name [String] Name of store
       # @return [Store::Base] Store, created when first used, e.g. to manage its secrets by label
       # @raise [Error] Unknown store, or invalid parameter
       def store(name)
-        params = @parameters.fetch(name) { raise Error, "unknown store #{name}" }
-        @lock.synchronize { @stores[name] ||= create_store(name, params) }
+        config = @store_configs.fetch(name) { raise Error, "unknown store #{name}" }
+        @lock.synchronize { @stores[name] ||= create_store(name, config[:params]) }
+      end
+
+      # Checks that a reference is valid and reachable, without reading its value
+      # @param text [String] Reference
+      # @raise [Error] Invalid reference, not allowed, or not readable
+      def check(text)
+        ref = Secret.parse_reference(text)
+        access(ref) { nil }
       end
 
       # @param text [String] Reference
@@ -75,6 +91,22 @@ module Aspera
         access(ref) { |store| {store: ref.store}.merge(store.read_reference(ref).except(:value)) }
       end
 
+      # Write a new secret to a writable store
+      # @param text   [String] Reference (without field: the field names are given in `fields`)
+      # @param fields [Hash<String,String>] Field name → value
+      # @return [Hash] `version` (`Integer` or `nil`), `updated_time` (`Time` or `nil`)
+      # @raise [Error] Store not writable, reference has a field, unknown store, not allowed, or write failed
+      def write(text, fields)
+        ref = Secret.parse_reference(text)
+        raise Error, "secret reference #{ref.text}: field not allowed when writing (use field names in fields)" unless ref.field.nil?
+        raise Error, "secret reference #{ref.text}: store #{ref.store} is not writable" unless writable?(ref.store)
+        result = access(ref) { |store| store.write_reference(ref, fields) }
+        # Invalidate cache for this reference so it is readable at once
+        key = ref.to_h.except(:text)
+        @lock.synchronize { @cache.delete(key) }
+        result
+      end
+
       # Remove values from cache, e.g. after a rotation
       # @param store_name [String, nil] Name of store, `nil`: all stores
       def invalidate(store_name = nil)
@@ -86,11 +118,19 @@ module Aspera
 
       private
 
-      # @return [Hash] Parameters of store, checked
+      # @return [Hash] `{params:, writable:}`, parameters checked
       def check_store(name, params)
-        raise Error, 'invalid name' unless STORE_NAME.match?(name)
+        raise Error, "secret references configuration: store #{name}: invalid name" unless STORE_NAME.match?(name)
+        raise Error, "secret references configuration: store #{name}: parameters: expecting a Hash" unless params.is_a?(Hash)
+        params = params.transform_keys(&:to_s)
+        writable = params.delete(WRITABLE_KEY) || false
+        raise Error, "secret references configuration: store #{name}: writable: expecting true or false" unless [true, false].include?(writable)
         Store::Factory.check(params)
-        params
+        {params: params, writable: writable}
+      rescue Aspera::Secret::Error => e
+        # Re-raise with store context if the message doesn't already include it
+        raise e if e.message.start_with?('secret references configuration:')
+        raise Error, "secret references configuration: store #{name}: #{e.message}"
       rescue StandardError => e
         raise Error, "secret references configuration: store #{name}: #{e.message}"
       end
