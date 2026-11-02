@@ -400,9 +400,9 @@ module Aspera
           session.delete(:io)
           # if command was successfully started, check its status
           unless command_pid.nil?
-            Process.kill(:INT, command_pid) if @monitor && !Environment.instance.os.eql?(Environment::OS_WINDOWS)
+            ::Process.kill(:INT, command_pid) if @monitor && !Environment.instance.os.eql?(Environment::OS_WINDOWS)
             # collect process exit status or wait for termination
-            _, status = Process.wait2(command_pid)
+            _, status = ::Process.wait2(command_pid)
             if capture_stderr
               # process stderr of ascp
               stderr_flag = false

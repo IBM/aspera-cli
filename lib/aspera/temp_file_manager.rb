@@ -114,7 +114,7 @@ module Aspera
     def new_file_path_global(prefix = nil, suffix: nil)
       username =
         begin
-          Etc.getlogin || Etc.getpwuid(Process.uid).name || 'unknown_user'
+          Etc.getlogin || Etc.getpwuid(::Process.uid).name || 'unknown_user'
         rescue StandardError
           'unknown_user'
         end
@@ -128,7 +128,7 @@ module Aspera
     def new_dir_path_global(prefix = nil)
       username =
         begin
-          Etc.getlogin || Etc.getpwuid(Process.uid).name || 'unknown_user'
+          Etc.getlogin || Etc.getpwuid(::Process.uid).name || 'unknown_user'
         rescue StandardError
           'unknown_user'
         end

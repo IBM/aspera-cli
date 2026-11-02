@@ -122,14 +122,14 @@ module Aspera
             # wait for process to initialize, max 2 seconds
             Timeout.timeout(2.0) do
               # this returns if process dies (within 2 seconds)
-              _, status = Process.wait2(@daemon_pid)
+              _, status = ::Process.wait2(@daemon_pid)
               raise "Transfer daemon exited with status #{status.exitstatus}. Check files: #{log_stdout} and #{log_stderr}"
             end
           rescue Timeout::Error
             nil
           end
           Log.log.debug { "Daemon started with pid #{@daemon_pid}" }
-          Process.detach(@daemon_pid) unless @stop
+          ::Process.detach(@daemon_pid) unless @stop
           at_exit { shutdown }
           # update port for next connection attempt (if auto high port was requested)
           daemon_endpoint = "#{LOCAL_SOCKET_ADDR}#{PORT_SEP}#{Products::Transferd.daemon_port_from_log(log_stdout)}" if is_local_auto_port
@@ -206,8 +206,8 @@ module Aspera
       def stop_daemon
         if !@daemon_pid.nil?
           Log.log.debug("Stopping daemon #{@daemon_pid}")
-          Process.kill(:KILL, @daemon_pid)
-          _, status = Process.wait2(@daemon_pid)
+          ::Process.kill(:KILL, @daemon_pid)
+          _, status = ::Process.wait2(@daemon_pid)
           Log.log.debug("daemon stopped #{status}")
           @daemon_pid = nil
         end

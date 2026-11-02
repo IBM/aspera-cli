@@ -46,7 +46,7 @@ module Aspera
         # display status for nagios
         puts("#{status} - [#{message}]\n")
         # provide exit code to nagios
-        Process.exit(LEVELS.index(data.first['status'].to_sym))
+        ::Process.exit(LEVELS.index(data.first['status'].to_sym))
       end
     end
 

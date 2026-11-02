@@ -71,7 +71,7 @@ module Aspera
         completion.candidates.each { |candidate| puts candidate.first }
         puts completion.hint unless completion.hint.nil?
         puts "<#{completion.files}>" unless completion.files.nil?
-        Process.exit(0)
+        ::Process.exit(0)
       end
 
       # Complete the word at cursor, for completion scripts: candidates, one per line: `word`, or `word<TAB>description`,
@@ -88,7 +88,7 @@ module Aspera
           elsif completion.hint then "hint #{completion.hint}"
           end
         puts ":#{directive}"
-        Process.exit(0)
+        ::Process.exit(0)
       end
 
       private
@@ -574,7 +574,7 @@ module Aspera
       # @param shell [Symbol] One of `COMPLETION_SHELLS`
       def completion_script(shell)
         $stdout.write(File.read(File.join(COMPLETION_FOLDER, "#{Info::CMD_NAME}.#{COMPLETION_SHELLS[shell]}")))
-        Process.exit(0)
+        ::Process.exit(0)
       end
     end
   end

@@ -294,7 +294,7 @@ module Aspera
       @node_id = SecureRandom.uuid
       @cluster_id = SecureRandom.uuid
       # transferd runs as the user of the emulator
-      @transfer_user = Etc.getpwuid(Process.euid)&.name || Etc.getlogin.to_s
+      @transfer_user = Etc.getpwuid(::Process.euid)&.name || Etc.getlogin.to_s
     end
 
     # Get the node information
@@ -433,7 +433,7 @@ module Aspera
 
     # @return [Float] current time in seconds, for durations
     def monotonic_time
-      Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      ::Process.clock_gettime(::Process::CLOCK_MONOTONIC)
     end
 
     # Convert a Node API path to a real path

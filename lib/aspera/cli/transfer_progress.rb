@@ -217,7 +217,7 @@ module Aspera
 
       # @return [Float] Monotonic time in seconds
       def now
-        Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        ::Process.clock_gettime(::Process::CLOCK_MONOTONIC)
       end
 
       # Record transferred bytes for rate computation

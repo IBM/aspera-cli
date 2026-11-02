@@ -60,3 +60,10 @@ Style/OneClassPerFile:
   Enabled: false
 Lint/RedundantCopDisableDirective:
   Enabled: true
+# The gem is loaded by Orchestrator, which defines its own Process: use ::Process in lib
+Lint/ConstantResolution:
+  Enabled: true
+  Only:
+    - Process
+  Include:
+    - "lib/**/*.rb"

@@ -153,7 +153,7 @@ module Aspera
           post_proc_pid = Environment.secure_execute(script_path, mode: :background, env: script_environment(webhook_parameters))
           Timeout.timeout(@parameters[:timeout_seconds]) do
             # "wait" for process to avoid zombie
-            Process.wait(post_proc_pid)
+            ::Process.wait(post_proc_pid)
             post_proc_pid = nil
           end
           process_status = $CHILD_STATUS
@@ -223,8 +223,8 @@ module Aspera
     # Kill the script after a timeout or an error
     # @param pid [Integer] Process id of the script
     def kill_script(pid)
-      Process.kill('SIGKILL', pid)
-      Process.wait(pid)
+      ::Process.kill('SIGKILL', pid)
+      ::Process.wait(pid)
       Log.log.error("Killed process: #{pid}")
     rescue SystemCallError
       # already terminated

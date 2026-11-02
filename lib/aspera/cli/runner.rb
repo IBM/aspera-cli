@@ -152,8 +152,8 @@ module Aspera
         end
         pid_file = @context.options.get_option(:pid_file)
         if !pid_file.nil?
-          File.write(pid_file, Process.pid)
-          Log.log.debug { "Wrote pid #{Process.pid} to #{pid_file}" }
+          File.write(pid_file, ::Process.pid)
+          Log.log.debug { "Wrote pid #{::Process.pid} to #{pid_file}" }
           at_exit { File.delete(pid_file) }
         end
         begin
@@ -218,7 +218,7 @@ module Aspera
           exit_code = exception_info[:exit]
           # Nagios plugins report the failure of the check itself as UNKNOWN
           exit_code = Nagios::UNKNOWN if !exit_code.eql?(ExitCode::SUCCESS) && @context.formatter&.format_type.eql?(:nagios)
-          Process.exit(exit_code)
+          ::Process.exit(exit_code)
         end
         return
       end
@@ -228,7 +228,7 @@ module Aspera
       # @return [nil]
       def show_usage(plugin: nil)
         @context.formatter.display_message(:error, usage_text(plugin: plugin))
-        Process.exit(0)
+        ::Process.exit(0)
       end
 
       # Return usage as a Result::Text (used by run_with_result, no display, no exit).
@@ -498,7 +498,7 @@ module Aspera
           @context.help_requested = true
         end
         @context.options.declare(:show_config, description: 'Display parameters used for the provided action', allowed: Type::NONE) { @option_show_config = true }
-        @context.options.declare(:version, description: 'Display version', allowed: Type::NONE, short: 'v') { @context.formatter.display_message(:data, Cli::VERSION); Process.exit(0) } # rubocop:disable Style/Semicolon
+        @context.options.declare(:version, description: 'Display version', allowed: Type::NONE, short: 'v') { @context.formatter.display_message(:data, Cli::VERSION); ::Process.exit(0) } # rubocop:disable Style/Semicolon
         @context.options.declare(
           :ui, description: 'User interface (dot-notation: mode, command)',
           allowed: [Hash, String], shorthand: 'mode', schema: Schema::Registry::UI_OPTIONS,
