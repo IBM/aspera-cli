@@ -285,7 +285,7 @@ module Aspera
             'data'    => @cipher.encrypt(YAML.dump(@all_secrets))
           }
           content = YAML.dump(vault_info)
-          tmp = "#{@path}.tmp#{Process.pid}"
+          tmp = "#{@path}.tmp#{::Process.pid}"
           begin
             File.write(tmp, content, perm: 0o600)
             File.rename(tmp, @path)
