@@ -42,6 +42,25 @@ RSpec.describe(Aspera::Secret::Store::EncryptedHash) do
     expect(resolver.metadata('secret://ops/faspex5')).to(eq({store: 'ops', version: nil, updated_time: File.mtime(file)}))
   end
 
+  it 'lists the labels, and gives the field names of a label, never a value' do
+    Aspera::Secret::Store::EncryptedHash.new(file: file, password: vault_password).set({label: 'aoc', password: rotated, url: ''})
+    expect(resolver.list('ops')).to(eq([{name: 'aoc', folder: false}, {name: 'faspex5', folder: false}]))
+    fields = resolver.fields('secret://ops/faspex5#username')
+    expect(fields).to(eq({store: 'ops', fields: %w[username password], version: nil, updated_time: File.mtime(file)}))
+    expect(fields.to_s).not_to(include(secret, username))
+    # Field without value: not given
+    expect(resolver.fields('secret://ops/aoc')[:fields]).to(eq(%w[password]))
+    {
+      -> { resolver.list('ops', 'team') }               => 'secret store ops, folder team: labels have no folder: team',
+      -> { resolver.list('ops', '', {'mount' => 'x'}) } => 'secret store ops: unsupported options: mount',
+      -> { resolver.fields('secret://ops/missing') }    => 'secret reference secret://ops/missing: no label: missing'
+    }.each do |call, message|
+      expect(&call).to(raise_error(Aspera::Secret::Error, message))
+    end
+    File.delete(file)
+    expect { resolver.fields('secret://ops/faspex5') }.to(raise_error(Aspera::Secret::Error, /: no vault file: .*ops_vault.bin\z/))
+  end
+
   it 'reads the file again when it is modified' do
     expect(resolver.resolve('secret://ops/faspex5')).to(eq(secret))
     rewrite(file) do

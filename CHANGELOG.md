@@ -18,6 +18,7 @@ Released: [Place date of release here]
   * `Aspera::Secret.reference_text(store:, path:, options: {}, field: nil)`: builds a reference string from its components (inverse of `parse_reference`), with percent-encoding of path segments and field.
   * `Store::HashicorpVault#write_reference`: creates a new KV v2 secret with `cas: 0` (check-and-set; refuses if the path already exists). Returns version and creation time.
   * `Store::EncryptedHash#write_reference`: creates a new label in the encrypted file. `save` is now atomic (write to a temp file, then `File.rename`). `flock` on `<file>.lock` prevents concurrent writes from two processes from losing a secret.
+  * `Resolver#list(name, path, options)`: secrets and folders of a store that references can read, without reading them (`Store::Base#list_folder`: labels; `Store::HashicorpVault#list_folder`: list of the metadata of a folder of a KV v2 mount, capability `list`, filtered by `allowed_prefixes`). `Resolver#fields(text)`: field names, version and time of a secret, never its values (`read_fields` of the store), e.g. to build references.
 * `orchestrator`:
   * `workflows check_import`: warning `graph.synch_factor_position` when a `Synch_factor` other than `0` has no attributes `x` and `y` (position of the join symbol): opened from the list of workflows, the designer of Orchestrator then shows an empty canvas.
 

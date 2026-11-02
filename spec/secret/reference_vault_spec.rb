@@ -51,6 +51,11 @@ RSpec.describe(Aspera::Secret::Store::HashicorpVault) do
             state[:secrets][full].push(body_json[:data])
             [200, {data: {metadata: {version: version, created_time: '2026-10-31T10:00:00.000000000Z'}}}]
           end
+        in ['GET', %r{\A(.+?)/metadata/(.*)\z}] if req.query['list'].eql?('true')
+          # KV v2 list (gem vault uses GET with list=true): next segment of each secret below the folder, `/` at the end for a folder
+          prefix = "#{Regexp.last_match(1)}/data/#{Regexp.last_match(2)}"
+          keys = state[:secrets].keys.filter_map { |key| key.delete_prefix(prefix).sub(%r{/.*}, '/') if key.start_with?(prefix) }.uniq
+          keys.empty? ? [404, {errors: []}] : [200, {data: {keys: keys}}]
         in ['GET', _]
           versions = state[:secrets][path]
           version = (req.query['version'] || versions&.size).to_i
@@ -153,6 +158,48 @@ RSpec.describe(Aspera::Secret::Store::HashicorpVault) do
         expect { r.resolve(text) }.to(raise_error(Aspera::Secret::Error, "secret reference #{text}: #{reason}"))
       end
       expect(@state[:requests]).to(eq(1))
+    end
+
+    it 'lists the secrets and folders that references can read, and the field names of a secret, never a value' do
+      @state[:secrets].merge!(
+        'secret/data/orchestrator/faspex5'     => [{username: SecureRandom.alphanumeric(8), password: secret, empty: ''}],
+        'secret/data/orchestrator/team/shares' => [{password: other}],
+        'secret/data/finance/db'               => [{password: other}],
+        'secret/data/app'                      => [{password: other}],
+        'secret/data/application'              => [{password: other}],
+        'kv/team/data/app'                     => [{api_key: other}]
+      )
+      r = resolver('token' => "@file:#{token_file}", 'allowed_prefixes' => ['secret/orchestrator/', 'secret/app', 'kv/team/'])
+      expect(r.list('vault_prod', 'secret')).to(eq([{name: 'app', folder: false}, {name: 'orchestrator', folder: true}]))
+      expect(r.list('vault_prod', 'secret/orchestrator/')).to(eq([{name: 'faspex5', folder: false}, {name: 'team', folder: true}]))
+      expect(r.list('vault_prod', 'secret/orchestrator/team')).to(eq([{name: 'shares', folder: false}]))
+      expect(r.list('vault_prod', 'kv/team', {'mount' => 'kv/team'})).to(eq([{name: 'app', folder: false}]))
+      # Folder without secret
+      expect(r.list('vault_prod', 'secret/orchestrator/none')).to(eq([]))
+      fields = r.fields('secret://vault_prod/secret/orchestrator/faspex5')
+      expect(fields).to(eq({store: 'vault_prod', fields: %w[username password], version: 1, updated_time: Time.utc(2026, 10, 1, 10, 0, Rational(123_456_789, 1_000_000_000))}))
+      expect(r.fields('secret://vault_prod/kv/team/app?mount=kv/team')[:fields]).to(eq(%w[api_key]))
+      expect(fields.to_s).not_to(include(secret))
+      expect { r.fields('secret://vault_prod/secret/orchestrator/missing') }.to(raise_error(Aspera::Secret::Error, /missing: not found\z/))
+      expect { r.fields('secret://vault_prod/secret/finance/db') }.to(raise_error(Aspera::Secret::Error, %r{path not allowed: secret/finance/db\z}))
+    end
+
+    it 'refuses to list a folder that references cannot read, before access' do
+      r = resolver('token' => "@file:#{token_file}", 'allowed_prefixes' => ['secret/orchestrator/'])
+      {
+        ['secret/finance']                 => 'path not allowed: secret/finance/',
+        ['secret/orchestrator/../finance'] => 'invalid path: secret/orchestrator/../finance',
+        ['/']                              => 'path shall be <mount>[/<path>]',
+        ['kv/team', {'mount' => 'other'}]  => 'path shall start with mount other/',
+        ['secret', {'version' => '1'}]     => 'unsupported options: version'
+      }.each do |(path, options), reason|
+        expect { r.list('vault_prod', path, options || {}) }.to(raise_error(Aspera::Secret::Error, "secret store vault_prod, folder #{path}: #{reason}"))
+      end
+      expect { r.list('other') }.to(raise_error(Aspera::Secret::Error, 'secret store other: unknown store other'))
+      expect(@state[:requests]).to(eq(0))
+      # Policy without capability list
+      @state[:tokens] = []
+      expect { r.list('vault_prod', 'secret/orchestrator') }.to(raise_error(Aspera::Secret::Error, 'secret store vault_prod, folder secret/orchestrator: Vault: 403 permission denied'))
     end
   end
 

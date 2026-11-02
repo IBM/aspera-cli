@@ -110,6 +110,12 @@ module Aspera
           super.merge(updated_time: @mtimes&.first)
         end
 
+        # Modification time of vault file
+        def read_fields(ref)
+          raise Error, "no vault file: #{@path}" unless File.exist?(@path)
+          super.merge(updated_time: @mtimes&.first)
+        end
+
         # Write a new secret by reference: label = path of reference, fields within CONTENT_KEYS
         # @param ref    [Reference]          Reference without field
         # @param fields [Hash<String,String>] Field name → value

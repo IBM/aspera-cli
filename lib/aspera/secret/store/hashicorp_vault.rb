@@ -29,6 +29,8 @@ module Aspera
         # Authentication by `token` or `approle`: secrets are the value, or `@file:<path>` (`Bootstrap`).
         PARAMETERS = %i[url token approle namespace ca_file allowed_prefixes].freeze
         REFERENCE_OPTIONS = %w[version mount].freeze
+        # Options of a listing of a folder (`list_folder`)
+        LIST_OPTIONS = %w[mount].freeze
 
         class << self
           # Errors of gem `vault`: code and errors of response, or address of server
@@ -184,6 +186,39 @@ module Aspera
           {value: field_value(secret[:data], ref), version: secret[:version], updated_time: secret[:created_time]}
         end
 
+        # Secrets and folders of a folder of a KV v2 secrets engine that references can read (`allowed_prefixes`): list of its metadata,
+        # with capability `list` on `<mount>/metadata/<path>`
+        # @param path    [String]              Folder `<mount>[/<path>]`, `/` at the end optional
+        # @param options [Hash<String,String>] `mount`, when it contains `/`: the folder starts with it
+        # @return [Array<Hash>] `name`, `folder` (`true` for a folder), by name
+        # @raise [Error] Invalid folder, not allowed, or Vault error
+        def list_folder(path, options = {})
+          unsupported = options.keys - LIST_OPTIONS
+          raise Error, "unsupported options: #{unsupported.join(', ')}" unless unsupported.empty?
+          folder = path.delete_suffix('/')
+          raise Error, 'path shall be <mount>[/<path>]' if folder.empty?
+          raise Error, "invalid path: #{path}" if folder.split('/', -1).any? { |s| INVALID_SEGMENTS.include?(s) }
+          mount = options['mount'] || folder.split('/').first
+          raise Error, "path shall start with mount #{mount}/" unless folder.eql?(mount) || folder.start_with?("#{mount}/")
+          raise Error, "path not allowed: #{folder}/" unless browsable?("#{folder}/")
+          sub = folder.delete_prefix(mount).delete_prefix('/')
+          keys = call { |client| client.kv(mount).list(sub.empty? ? '' : "#{sub}/") }
+          entries = keys.filter_map do |key|
+            full = "#{folder}/#{key}"
+            is_folder = key.end_with?('/')
+            {name: key.delete_suffix('/'), folder: is_folder} if is_folder ? browsable?(full) : allowed?(full)
+          end
+          entries.sort_by { |entry| [entry[:name], entry[:folder] ? 0 : 1] }
+        end
+
+        # Field names of a secret, version and time of creation: the secret is read, its values are not returned
+        def read_fields(ref)
+          mount, path = mount_and_path(ref)
+          secret = read(path: path, mount: mount, version: reference_version(ref))
+          raise Error, 'not found' if secret.nil?
+          {fields: field_names(secret[:data]), version: secret[:version], updated_time: secret[:created_time]}
+        end
+
         # Write a new secret (KV v2, check-and-set: refuses if the path already exists)
         # @param ref    [Reference]          Reference without field
         # @param fields [Hash<String,String>] Field name → value
@@ -241,6 +276,12 @@ module Aspera
           @allowed_prefixes.any? do |prefix|
             prefix.end_with?('/') ? full_path.start_with?(prefix) : full_path.eql?(prefix) || full_path.start_with?("#{prefix}/")
           end
+        end
+
+        # @param folder [String] `<mount>/<path>/`
+        # @return [Boolean] `true` if the folder holds paths that references can read: in an allowed prefix, or above one
+        def browsable?(folder)
+          allowed?(folder) || @allowed_prefixes.any? { |prefix| prefix.start_with?(folder) }
         end
 
         # @return [String] Authentication method

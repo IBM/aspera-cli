@@ -91,6 +91,28 @@ module Aspera
         access(ref) { |store| {store: ref.store}.merge(store.read_reference(ref).except(:value)) }
       end
 
+      # Field names of a secret, without values, e.g. to choose the field of a reference
+      # @param text [String] Reference, its field is not used
+      # @return [Hash] `store`, `fields` (`Array<String>`), `version` (`nil` if store has no version), `updated_time` (`Time` or `nil`)
+      # @raise [Error] Invalid reference, not allowed, or not readable
+      def fields(text)
+        ref = Secret.parse_reference(text)
+        access(ref) { |store| {store: ref.store}.merge(store.read_fields(ref)) }
+      end
+
+      # Secrets and folders of a store that references can read, without reading the secrets, e.g. to build references
+      # @param name    [String]              Name of store
+      # @param path    [String]              Folder, empty for a store without folders (labels)
+      # @param options [Hash<String,String>] Options of references that select the folder (`mount` of type `vault`)
+      # @return [Array<Hash>] `name` (last segment of path, or label), `folder` (`true` for a folder), by name
+      # @raise [Error] Unknown store, folder not allowed, listing not supported by the type, or store not readable
+      def list(name, path = '', options = {})
+        found = store(name)
+        found.list_folder(path, options)
+      rescue StandardError => e
+        raise Error, "secret store #{name}#{", folder #{path}" unless path.empty?}: #{reason(e, found)}"
+      end
+
       # Write a new secret to a writable store
       # @param text   [String] Reference (without field: the field names are given in `fields`)
       # @param fields [Hash<String,String>] Field name → value

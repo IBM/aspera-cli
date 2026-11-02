@@ -80,6 +80,27 @@ module Aspera
           {value: field_value(entry, ref, default: DEFAULT_FIELD), version: nil, updated_time: nil}
         end
 
+        # Secrets of the store that references can read, without their values: labels, no folder
+        # @param path    [String]              Folder: empty, labels have no folder
+        # @param options [Hash<String,String>] Options of references
+        # @return [Array<Hash>] `name` (label), `folder` (`false`), by name
+        # @raise [Error] Unsupported option, or a folder
+        def list_folder(path, options = {})
+          check_list_options(options)
+          raise Error, "labels have no folder: #{path}" unless path.empty?
+          ids.map { |item| {name: item[:label].to_s, folder: false} }.sort_by { |entry| entry[:name] }
+        end
+
+        # Field names of a secret by reference, without values: the path is the label
+        # @param ref [Reference] Reference, its field is not used
+        # @return [Hash] `fields` (`Array<String>`, fields that a reference can read), `version` (`nil`), `updated_time` (`nil`)
+        # @raise [Error] No secret
+        def read_fields(ref)
+          entry = get(label: ref.path, exception: false)
+          raise Error, "no label: #{ref.path}" if entry.nil?
+          {fields: field_names(entry.reject { |name, _| name.to_s.eql?('label') }), version: nil, updated_time: nil}
+        end
+
         # Write a new secret by reference.
         # Subclasses that support writing must override this method.
         # @param _ref    [Reference]          Reference (field is nil)
@@ -91,6 +112,22 @@ module Aspera
         end
 
         private
+
+        # @param options [Hash<String,String>] Options of a listing: those of references
+        # @raise [Error] Unsupported option
+        def check_list_options(options)
+          unsupported = options.keys - self.class::REFERENCE_OPTIONS
+          raise Error, "unsupported options: #{unsupported.join(', ')}" unless unsupported.empty?
+        end
+
+        # @param data [Hash] Fields of secret, keys String or Symbol
+        # @return [Array<String>] Names of the fields that `field_value` reads: String not empty, number or Boolean
+        def field_names(data)
+          data.filter_map do |name, value|
+            readable = value.is_a?(String) ? !value.empty? : [Numeric, TrueClass, FalseClass].any? { |type| value.is_a?(type) }
+            name.to_s if readable
+          end
+        end
 
         # @param data    [Hash]        Fields of secret, keys String or Symbol
         # @param ref     [Reference]   Reference with field
