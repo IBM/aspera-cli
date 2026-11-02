@@ -52,13 +52,19 @@ end
 
 # Select the options of the auto browser for the current test, given as arguments to the browser command run by the CLI
 # when a web page is displayed. Only names are given, not values. `ASCLI_UI` is reset before each test.
-# Does nothing in manual mode (no auto browser).
+# In manual mode (no auto browser), displays the values of generated secrets that the operator enters on the web page:
+# with `puts`, as the log hides secrets.
 # @param login_preset [String, nil] Preset of the test configuration file with `username` and `password` for login pages
 # @param secret       [Symbol, nil] Secret (see `generated_secret`) entered on secret pages
 # @param access_code  [Symbol, nil] Secret (see `generated_secret`) entered as access code on consent and secret pages
 # @return [void]
 def select_browser(login_preset: nil, secret: nil, access_code: nil)
-  return if BROWSER_COMMAND.nil?
+  if BROWSER_COMMAND.nil?
+    {'secret' => secret, 'access code' => access_code}.compact.each do |field, name|
+      puts("USER ACTION: on the web page, enter #{field}: #{secret(name)}")
+    end
+    return
+  end
   args = {'login-preset' => login_preset, 'secret' => secret, 'access-code' => access_code}.compact.map { |k, v| "--#{k}=#{v}" }
   ENV['ASCLI_UI'] = browser_ui_option(*args)
 end

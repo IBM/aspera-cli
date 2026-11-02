@@ -6438,7 +6438,7 @@ conf_echo_secret:
     - --ui=text
     - --out.secrets=yes
 conf_echo_secret_web:
-  description: Secret entered on a web page opened in the browser.
+  description: Secret entered on a web page opened in the browser, the prompt shows the value to enter (manual mode).
   tags:
     - interactive
     - nodoc
@@ -6447,7 +6447,7 @@ conf_echo_secret_web:
   args:
     - config
     - echo
-    - "@secret:"
+    - "@secret:value $(secret :echo)"
     - --ui=graphical
     - --out.secrets=yes
 conf_hint:

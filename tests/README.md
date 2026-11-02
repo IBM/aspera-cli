@@ -87,6 +87,7 @@ So the value is the same in all test runs: e.g. tests that depend on `node_emula
 In documentation, `$(secret :<name>)` is shown as `<PASSWORD>`.
 
 In manual mode (`TEST_INTERACTIVE=manual`), the value to enter in the browser is in `tmp/secrets/<name>`: create this file beforehand to choose the value.
+`select_browser` displays it on terminal, and test `conf_echo_secret_web` also shows it on the web page, in the prompt of `@secret:`.
 
 ### Test templates
 
