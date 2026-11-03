@@ -5,8 +5,8 @@
             </svg>
         </div>
 
-        <h1>Authentication Successful</h1>
-        <p>You can close this window and return to your terminal.</p>
+        <h1>Authentication Received</h1>
+        <p>Return to your terminal: it completes the login and shows the result. You can then close this window.</p>
 
 <% unless additional_info.to_s.empty? %>
         <div class="info-box">
@@ -14,3 +14,7 @@
         </div>
 <% end %>
 
+        <%# The callback URL may contain a code or tokens: remove the query from the address bar and from the entry of the session history %>
+        <script>
+            if (window.history && history.replaceState) history.replaceState(null, '', location.pathname);
+        </script>

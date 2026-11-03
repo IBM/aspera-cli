@@ -29,7 +29,8 @@ module Aspera
           RelayState: Rest.build_uri(@redirect_uri, state: random_state).to_s
         )
         Log.log.debug { "login_page_url=#{login_page_url}" }
-        web_server = WebAuth::Server.new(@redirect_uri, Web.additional_info)
+        # the page shows where the user is logged in
+        web_server = WebAuth::Server.new(@redirect_uri, [Web.additional_info, URI.parse(api.base_url).host].compact.join(' - '))
         Environment.instance.open_uri(login_page_url)
         received_params = web_server.received_request
         Aspera.assert(random_state.eql?(received_params['state'])) { 'wrong received state' }

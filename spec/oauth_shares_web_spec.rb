@@ -38,6 +38,8 @@ RSpec.describe(Aspera::OAuth::SharesWeb) do
     create_args = nil
     allow(oauth.api).to(receive(:create)) { |*args, **kwargs| create_args = [args, kwargs]; instance_double(Net::HTTPResponse, body: token_json) } # rubocop:disable Style/Semicolon
     expect(oauth.token(cache: false)).to(eq('new_access'))
+    # the page of the browser shows the Shares server
+    expect(Aspera::WebAuth::Server).to(have_received(:new).with('http://localhost:12345/', include('shares.example.com')))
     login = URI.parse(opened.first)
     expect([login.host, login.path]).to(eq(['shares.example.com', '/auth/saml']))
     relay_state = URI.decode_www_form(login.query).to_h['RelayState']

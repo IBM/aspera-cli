@@ -24,8 +24,10 @@ RSpec.describe(Aspera::WebAuth::Servlet) do
     expect(response['X-Frame-Options']).to(eq('DENY'))
     expect(response['Cache-Control']).to(eq('no-store'))
     expect(response['Referrer-Policy']).to(eq('same-origin'))
-    expect(response.body).to(include('Authentication Successful'))
+    expect(response.body).to(include('Authentication Received'))
     expect(response.body).to(include('&lt;b&gt;info&lt;/b&gt;'))
+    # the query of the callback URL (code, tokens) is removed from the address bar
+    expect(response.body).to(include('history.replaceState(null, \'\', location.pathname)'))
     expect(web_auth).to(have_received(:signal_request).with(request))
   end
 
