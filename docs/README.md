@@ -9975,6 +9975,25 @@ ascli shares admin user all share_permissions %username:john@example.com list --
   done
 ```
 
+### Authentication of SAML users
+
+By default, `shares` authenticates with `username` and `password`.
+A user that has only a SAML identity (no local password) can authenticate with a web browser: `--auth=saml`.
+
+```shell
+ascli shares --url=https://shares.example.com --auth=saml files browse /
+```
+
+`ascli` listens on a local port (`--redirect-uri`, default: `http://localhost:12345`), opens the SAML login page of Shares (`/auth/saml`) in the browser, and receives the OAuth tokens there.
+The host of `redirect_uri` shall be loopback: `localhost`, an address of `127.0.0.0/8`, or `[::1]`.
+The token is saved, and renewed with its refresh token: the browser is opened again only if this fails.
+Option `username` is optional: with it, the token is saved for this user.
+
+> [!IMPORTANT]
+> Shares does not have the OAuth authorization code grant: it accepts a loopback URL in `RelayState` of SAML only with a patch (see the request to the Shares team).
+> With a Shares that does not accept it, the browser stays on the SAML login and `ascli` reports that no token was received.
+> Shares returns the tokens in the URL of the browser, `ascli` immediately exchanges the refresh token for a new token, so that the tokens that were visible in the URL are not valid any more.
+
 ### Tested commands for `shares`
 
 > [!NOTE]

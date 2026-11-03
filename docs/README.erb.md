@@ -9038,10 +9038,10 @@ new_user_id=$(<%=cmd%> shares admin user all show %username:jane@example.com --f
 ### Authentication of SAML users
 
 By default, `shares` authenticates with `username` and `password`.
-A user that has only a SAML identity (no local password) can authenticate with a web browser: `--auth=web`.
+A user that has only a SAML identity (no local password) can authenticate with a web browser: `--auth=saml`.
 
 ```shell
-<%=cmd%> shares --url=https://shares.example.com --auth=web files browse /
+<%=cmd%> shares --url=https://shares.example.com --auth=saml files browse /
 ```
 
 <%=tool%> listens on a local port (`--redirect-uri`, default: `http://localhost:12345`), opens the SAML login page of Shares (`/auth/saml`) in the browser, and receives the OAuth tokens there.

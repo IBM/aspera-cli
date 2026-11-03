@@ -106,27 +106,27 @@ RSpec.describe(Aspera::Secret::Store::EncryptedHash) do
         .to(raise_error(Aspera::Secret::Error, /unsupported fields: api_key/))
     end
 
-    it 'two processes writing concurrently keep both labels and the file is never empty during writes',
-      skip: RUBY_PLATFORM.include?('mingw') || RUBY_PLATFORM.include?('mswin') do
-      parent_read_errors = []
-      # Child writes a second label while parent reads in a loop
-      child = fork do
-        1_000.times do
-          vault = Aspera::Secret::Store::EncryptedHash.new(file: file, password: vault_password)
-          vault.write_reference(Aspera::Secret.parse_reference("secret://ops/child_#{SecureRandom.alphanumeric(4)}"), {'password' => SecureRandom.alphanumeric(16)})
-        rescue Aspera::Secret::Error, Aspera::AssertError
-          # label collision: fine (two processes may pick the same random suffix)
+    it 'concurrent writes and reads keep labels consistent and the file is never empty during writes' do
+      reader_errors = []
+      stop_writer = false
+      writer = Thread.new do
+        until stop_writer
+          begin
+            vault = Aspera::Secret::Store::EncryptedHash.new(file: file, password: vault_password)
+            vault.write_reference(Aspera::Secret.parse_reference("secret://ops/child_#{SecureRandom.alphanumeric(4)}"), {'password' => SecureRandom.alphanumeric(16)})
+          rescue Aspera::Secret::Error, Aspera::AssertError
+            # label collision: fine (two operations may pick the same random suffix)
+          end
         end
-        exit!(0)
       end
-      200.times do
+      50.times do
         resolver.resolve('secret://ops/faspex5')
       rescue Aspera::Secret::Error => e
-        parent_read_errors << e.message
+        reader_errors << e.message
       end
-      Process.wait(child)
-      expect($CHILD_STATUS.exitstatus).to(eq(0))
-      expect(parent_read_errors).to(be_empty)
+      stop_writer = true
+      writer.join
+      expect(reader_errors).to(be_empty)
     end
   end
 

@@ -16,11 +16,11 @@ module Aspera
         ADMIN_API_PATH = 'api/v1'
         # path for authentication (SAML login page, OAuth token) after base url
         AUTH_API_PATH = 'auth'
-        # default URL that receives the tokens, with auth `web`
+        # default URL that receives the tokens, with auth `saml`
         REDIRECT_LOCALHOST = 'http://localhost:12345'
-        AUTH_TYPES = %i[basic web].freeze
-        option :auth,         description: 'Type of authentication: user and password, or web browser (SAML)', allowed: AUTH_TYPES, default: :basic
-        option :redirect_uri, description: "Web authentication: loopback URL that receives the tokens (default: #{REDIRECT_LOCALHOST})"
+        AUTH_TYPES = %i[basic saml].freeze
+        option :auth,         description: 'Type of authentication: user and password, or SAML (browser)', allowed: AUTH_TYPES, default: :basic
+        option :redirect_uri, description: "SAML authentication: loopback URL that receives the tokens (default: #{REDIRECT_LOCALHOST})"
         class << self
           # Check various endpoints on Shares
           # @return [Hash] with version, ping, api
@@ -40,6 +40,7 @@ module Aspera
                     version = "#{version} #{m[0]}"
                   end
                 end
+                result[:saml] = login_page.include?('/auth/saml')
                 version.nil? ? 'no version' : version
               rescue => e
                 e
@@ -86,7 +87,8 @@ module Aspera
             return unless health[:api].is_a?(String)
             return {
               version: health[:version].is_a?(String) ? health[:version] : 'unknown',
-              url:     address_or_url
+              url:     address_or_url,
+              saml:    health[:saml] || false
             }
           end
         end
@@ -95,16 +97,53 @@ module Aspera
         # @param app_url [String] Tested URL
         # @return [Hash] :preset_value, :test_args
         def wizard(wizard, app_url)
-          username = options.get_option(:username, mandatory: true)
-          return {
-            preset_ids:   [username],
-            preset_value: {
-              url:      app_url,
-              username: username,
-              password: options.get_option(:password, mandatory: true)
-            },
-            test_args:    'files browse /'
-          }
+          auth_type = if !options.option_def(:auth).source.eql?(:default)
+            options.get_option(:auth)
+          elsif options.get_option(:password)
+            :basic
+          else
+            saml_detected = begin
+              self.class.health_check(app_url)[:saml] || false
+            rescue StandardError
+              false
+            end
+            formatter.display_status('SAML authentication is available.') if saml_detected
+            if wizard.required
+              formatter.display_status('Select authentication method:')
+              options.prompt_user_input_in_list('auth', AUTH_TYPES)
+            else
+              saml_detected ? :saml : :basic
+            end
+          end
+
+          case auth_type
+          when :saml
+            username = options.get_option(:username)
+            preset_ids = username && !username.empty? ? [username] : ['saml']
+            preset_value = {
+              url:  app_url,
+              auth: :saml.to_s
+            }
+            preset_value[:username] = username if username && !username.empty?
+            redirect_uri = options.get_option(:redirect_uri)
+            preset_value[:redirect_uri] = redirect_uri if redirect_uri
+            {
+              preset_ids:   preset_ids,
+              preset_value: preset_value,
+              test_args:    'files browse /'
+            }
+          when :basic
+            username = options.get_option(:username, mandatory: true)
+            {
+              preset_ids:   [username],
+              preset_value: {
+                url:      app_url,
+                username: username,
+                password: options.get_option(:password, mandatory: true)
+              },
+              test_args:    'files browse /'
+            }
+          end
         end
 
         def initialize(**_)
@@ -112,12 +151,12 @@ module Aspera
           @api_shares_admin = nil
         end
 
-        # With `auth` `web`, the user authenticates with a browser (SAML), and the REST API uses the OAuth token.
+        # With `auth` `saml`, the user authenticates with a browser (SAML), and the REST API uses the OAuth token.
         # Otherwise: user and password.
         # @param subpath [String, nil] Path of API after base URL
         # @return [Hash] Parameters of `Rest::Client`
         def basic_auth_params(subpath = nil)
-          return super unless options.get_option(:auth).eql?(:web)
+          return super unless options.get_option(:auth).eql?(:saml)
           url = options.get_option(:url, mandatory: true)
           username = options.get_option(:username)
           return {
