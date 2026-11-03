@@ -191,6 +191,19 @@ RSpec.describe(Aspera::OrchestratorWorkflowChecker) do
       end
     end
 
+    it 'reports a link back to a previous step' do
+      check_step = '<Step x="600" y="50" id="step2"><Action_id>1</Action_id><Step_name>Check</Step_name><Step_type>CustomRuby</Step_type><Synch_factor>0</Synch_factor>' \
+        '<Prerequisites><Prerequisite id="step1" status="Complete"/></Prerequisites><Inputs></Inputs><Outputs></Outputs></Step>'
+      graph = workflow
+        .sub('</Steps>', "#{check_step}</Steps>")
+        .sub('<Prerequisite id="step1" status="Complete"/></Prerequisites></End>', '<Prerequisite id="step2" status="Complete"/></Prerequisites></End>')
+        .sub('<Synch_factor>0</Synch_factor><Prerequisites><Prerequisite id="start" status="true"/>',
+          '<Synch_factor x="300" y="50">1</Synch_factor><Prerequisites><Prerequisite id="start" status="true"/><Prerequisite id="step2" status="Failed"/>')
+      response = check(graph)
+      expect(response['issues'].map { |issue| issue.values_at('code', 'path') }).to(eq([%w[graph.loop graph/Step[Check]]]))
+      expect(response['issues'].first['message']).to(include("link back to 'Say hello'"))
+    end
+
     it 'reports an input mapped to an undefined parameter' do
       expect(codes(check(workflow.sub('name="who"/>', 'name="other"/>')))).to(eq(['graph.parameter_undefined']))
     end

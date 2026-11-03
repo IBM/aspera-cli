@@ -278,7 +278,8 @@ module Aspera
       closing = terminals.values_at('End', 'Fail', 'Error').flatten
       (closing + steps).each { |node| check_node(node, ids) }
       check_branches(closing, steps)
-      check_starvation(terminals['Start'].first&.attributes&.[]('id'), closing, steps)
+      # starvation is computed on a graph without loop
+      check_starvation(terminals['Start'].first&.attributes&.[]('id'), closing, steps) unless check_loops(closing, steps)
       check_parameters(root, steps)
       check_step_interfaces(steps) unless @specs.nil?
     end
@@ -392,6 +393,33 @@ module Aspera
           )
         end
       end
+    end
+
+    # Loop: a link back to a node it comes from. A step runs once in a work order: it does not run again.
+    # @return [Boolean] true if a loop was found
+    def check_loops(closing, steps)
+      found = false
+      nodes = (closing + steps).to_h { |node| [node.attributes['id'], node] }
+      sources = nodes.transform_values { |node| node.get_elements('Prerequisites/Prerequisite').map { |pre| pre.attributes['id'] }.uniq & nodes.keys }
+      state = {}
+      visit = lambda do |id|
+        state[id] = :visiting
+        sources[id].each do |source|
+          if state[source].eql?(:visiting)
+            found = true
+            add(
+              ERROR, 'graph.loop', node_path(nodes[source]),
+              "link back to '#{text_of(nodes[id], 'Step_name') || nodes[id].name}' (loop): a step runs only once in a work order; " \
+                'to repeat, use a sub-workflow with retries, or an ArrayFanout'
+            )
+          elsif state[source].nil?
+            visit.call(source)
+          end
+        end
+        state[id] = :done
+      end
+      nodes.each_key { |id| visit.call(id) if state[id].nil? }
+      found
     end
 
     def check_parameters(root, steps)
