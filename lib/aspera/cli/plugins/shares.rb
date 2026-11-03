@@ -14,6 +14,13 @@ module Aspera
         NODE_API_PATH = 'node_api'
         # path for node admin after base url
         ADMIN_API_PATH = 'api/v1'
+        # path for authentication (SAML login page, OAuth token) after base url
+        AUTH_API_PATH = 'auth'
+        # default URL that receives the tokens, with auth `web`
+        REDIRECT_LOCALHOST = 'http://localhost:12345'
+        AUTH_TYPES = %i[basic web].freeze
+        option :auth,         description: 'Type of authentication: user and password, or web browser (SAML)', allowed: AUTH_TYPES, default: :basic
+        option :redirect_uri, description: "Web authentication: loopback URL that receives the tokens (default: #{REDIRECT_LOCALHOST})"
         class << self
           # Check various endpoints on Shares
           # @return [Hash] with version, ping, api
@@ -103,6 +110,27 @@ module Aspera
         def initialize(**_)
           super
           @api_shares_admin = nil
+        end
+
+        # With `auth` `web`, the user authenticates with a browser (SAML), and the REST API uses the OAuth token.
+        # Otherwise: user and password.
+        # @param subpath [String, nil] Path of API after base URL
+        # @return [Hash] Parameters of `Rest::Client`
+        def basic_auth_params(subpath = nil)
+          return super unless options.get_option(:auth).eql?(:web)
+          url = options.get_option(:url, mandatory: true)
+          username = options.get_option(:username)
+          return {
+            base_url: subpath.nil? ? url : "#{url}/#{subpath}",
+            auth:     {
+              type:         :oauth2,
+              base_url:     "#{url}/#{AUTH_API_PATH}",
+              grant_method: :shares_web,
+              redirect_uri: options.get_option(:redirect_uri) || REDIRECT_LOCALHOST,
+              # a token is cached for each user, if known
+              cache_ids:    [username].compact
+            }
+          }
         end
 
         SAML_IMPORT_MANDATORY = %w[id name_id].freeze
