@@ -281,7 +281,23 @@ module Aspera
       # starvation is computed on a graph without loop
       check_starvation(terminals['Start'].first&.attributes&.[]('id'), closing, steps) unless check_loops(closing, steps)
       check_parameters(root, steps)
+      check_routers(root)
       check_step_interfaces(steps) unless @specs.nil?
+    end
+
+    # Line styles of links in the designer: it writes `new <router>()` in the page to draw each link (WhiteboardsHelper#connect_xmlsteps)
+    ROUTERS = %w[Manhattan Bezier Null Fan].map { |name| "draw2d.#{name}ConnectionRouter" }.freeze
+
+    # Links: prerequisites of nodes and links of parameters (Parameter in Start or Step); absent router: Manhattan
+    def check_routers(root)
+      root.each_element('//Prerequisite[@router] | //Start/Parameters/Parameter[@router] | //Step/Parameters/Parameter[@router]') do |link|
+        router = link.attributes['router']
+        next if ROUTERS.include?(router)
+        add(
+          ERROR, 'graph.router', node_path(link.parent.parent),
+          "router '#{router}' of the link from '#{link.attributes['id']}' is not one of #{ROUTERS.join(', ')}: the designer cannot draw the workflow"
+        )
+      end
     end
 
     def node_path(node)

@@ -204,6 +204,20 @@ RSpec.describe(Aspera::OrchestratorWorkflowChecker) do
       expect(response['issues'].first['message']).to(include("link back to 'Say hello'"))
     end
 
+    it 'accepts the four line styles of links' do
+      styled = workflow
+        .sub('<Prerequisite id="start" status="true"/>', '<Prerequisite id="start" status="true" router="draw2d.FanConnectionRouter"/>')
+        .sub('<Prerequisite id="step1" status="Complete"/>', '<Prerequisite id="step1" status="Complete" router="draw2d.BezierConnectionRouter"/>')
+        .sub('<Parameter id="p_who"/>', '<Parameter id="p_who" router="draw2d.NullConnectionRouter"/>')
+      expect(codes(check(styled))).to(eq([]))
+    end
+
+    it 'reports an unknown line style of a link' do
+      response = check(workflow.sub('<Prerequisite id="step1" status="Complete"/>', '<Prerequisite id="step1" status="Complete" router="draw2d.CurveConnectionRouter"/>'))
+      expect(response['issues'].map { |issue| issue.values_at('code', 'path') }).to(eq([%w[graph.router graph/End]]))
+      expect(codes(check(workflow.sub('<Parameter id="p_who"/>', '<Parameter id="p_who" router="bezier"/>')))).to(eq(['graph.router']))
+    end
+
     it 'reports an input mapped to an undefined parameter' do
       expect(codes(check(workflow.sub('name="who"/>', 'name="other"/>')))).to(eq(['graph.parameter_undefined']))
     end

@@ -24,6 +24,7 @@ Released: [Place date of release here]
   * `workflows check_import`: warning `graph.synch_factor_position` when a `Synch_factor` other than `0` has no attributes `x` and `y` (position of the join symbol): opened from the list of workflows, the designer of Orchestrator then shows an empty canvas.
   * `workflows check_import`: error `graph.starvation` when a node waits for exclusive conditions (AND of two exits of the same step, for example the `Failed` and `Error` exits, or an if and an else branch joined without OR): it never starts, and the work order never ends. Steps after an `ArrayFanout` are not checked.
   * `workflows check_import`: error `graph.loop` when a link goes back to a node it comes from: a step runs only once in a work order.
+  * `workflows check_import`: error `graph.router` when the line style (`router`) of a link is not one of `draw2d.ManhattanConnectionRouter`, `draw2d.BezierConnectionRouter`, `draw2d.NullConnectionRouter`, `draw2d.FanConnectionRouter`: the designer of Orchestrator cannot draw the workflow.
 
 ### Issues Fixed
 
