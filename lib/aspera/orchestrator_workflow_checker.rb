@@ -278,6 +278,7 @@ module Aspera
       closing = terminals.values_at('End', 'Fail', 'Error').flatten
       (closing + steps).each { |node| check_node(node, ids) }
       check_branches(closing, steps)
+      check_starvation(terminals['Start'].first&.attributes&.[]('id'), closing, steps)
       check_parameters(root, steps)
       check_step_interfaces(steps) unless @specs.nil?
     end
@@ -348,6 +349,49 @@ module Aspera
       end
       return unless closing.all? { |node| node.get_elements('Prerequisites/Prerequisite').empty? }
       add(ERROR, 'graph.no_termination', 'graph', 'workflow does not terminate: End, Fail and Error have no prerequisite')
+    end
+
+    # Starvation: a node that waits for exclusive conditions never starts, and the work order never ends.
+    # Conditions of a node: pairs [step id, status] that must all be true for the node to start.
+    # With Synch_factor 0 (AND), those of all its prerequisites; otherwise (OR), those common to all its prerequisites.
+    # A prerequisite on a step adds its status to the conditions of that step.
+    # A step ends with one status: two statuses of the same step in the conditions of a node are exclusive,
+    # for example the Complete and Failed exits of a step, or an if and an else branch joined without OR.
+    # Not checked: steps after an ArrayFanout (one execution per element, with different statuses).
+    def check_starvation(start_id, closing, steps)
+      nodes = (closing + steps).to_h { |node| [node.attributes['id'], node] }
+      fanned = steps.select do |step|
+        step.get_elements('Prerequisites/Prerequisite').any? { |pre| text_of(nodes[pre.attributes['id']] || step, 'Step_type').eql?('ArrayFanout') }
+      end.map { |step| step.attributes['id'] }
+      memo = {}
+      conditions = lambda do |id, visiting|
+        return [] if id.eql?(start_id) || !nodes.key?(id) || visiting.include?(id)
+        return memo[id] if memo.key?(id)
+        node = nodes[id]
+        branches = node.get_elements('Prerequisites/Prerequisite').map do |pre|
+          source = pre.attributes['id']
+          own = source.eql?(start_id) || fanned.include?(source) ? [] : [[source, pre.attributes['status'].to_s.downcase]]
+          (own + conditions.call(source, visiting + [id])).uniq
+        end
+        memo[id] = if branches.empty? then []
+        elsif text_of(node, 'Synch_factor').to_i.zero? then branches.reduce(:|)
+        else branches.reduce(:&)
+        end
+      end
+      exclusive = ->(list) { list.group_by(&:first).select { |_, pairs| pairs.size > 1 }.transform_values { |pairs| pairs.map(&:last) } }
+      nodes.each do |id, node|
+        conflicts = exclusive.call(conditions.call(id, []))
+        # report where the conflict starts, not on the nodes that follow
+        inherited = node.get_elements('Prerequisites/Prerequisite').flat_map { |pre| exclusive.call(conditions.call(pre.attributes['id'], [])).keys }
+        conflicts.except(*inherited).each do |step_id, statuses|
+          step_name = text_of(nodes[step_id], 'Step_name')
+          add(
+            ERROR, 'graph.starvation', node_path(node),
+            "never starts: it waits for step '#{step_name}' to end with #{statuses.map(&:capitalize).join(' and ')}, which are exclusive; " \
+              'join exclusive branches with an OR (Synch_factor 1), otherwise the work order never ends'
+          )
+        end
+      end
     end
 
     def check_parameters(root, steps)

@@ -2,6 +2,7 @@
 
 require_relative 'spec_helper'
 require 'aspera/orchestrator_workflow_checker'
+require 'json'
 require 'stringio'
 require 'zlib'
 require 'rubygems/package'
@@ -162,6 +163,32 @@ RSpec.describe(Aspera::OrchestratorWorkflowChecker) do
     it 'accepts a join with position' do
       joined = workflow.sub('<Synch_factor>0</Synch_factor><Prerequisites><Prerequisite id="step1"', '<Synch_factor x="820" y="70">1</Synch_factor><Prerequisites><Prerequisite id="step1"')
       expect(check(joined)['issues']).to(eq([]))
+    end
+
+    describe 'starvation' do
+      let(:exclusive_exits) { '<Prerequisite id="step1" status="Failed"/><Prerequisite id="step1" status="Error"/>' }
+
+      it 'reports a node waiting for two exits of the same step' do
+        response = check(workflow.sub('<Synch_factor>0</Synch_factor><Prerequisites></Prerequisites></Fail>', "<Synch_factor>0</Synch_factor><Prerequisites>#{exclusive_exits}</Prerequisites></Fail>"))
+        expect(response['issues'].map { |issue| issue.values_at('severity', 'code', 'path') }).to(eq([%w[error graph.starvation graph/Fail]]))
+        expect(response['issues'].first['message']).to(include("step 'Say hello' to end with Failed and Error"))
+      end
+
+      it 'accepts the exits of a step joined with an OR' do
+        joined = workflow.sub('<Synch_factor>0</Synch_factor><Prerequisites></Prerequisites></Fail>', %Q(<Synch_factor x="820" y="220">1</Synch_factor><Prerequisites>#{exclusive_exits}</Prerequisites></Fail>))
+        expect(check(joined)['issues']).to(eq([]))
+      end
+
+      it 'reports an if and an else branch joined without OR, only where they join' do
+        step2 = '<Step x="600" y="50" id="step2"><Action_id>1</Action_id><Step_name>Then</Step_name><Step_type>CustomRuby</Step_type><Synch_factor>0</Synch_factor>' \
+          '<Prerequisites><Prerequisite id="step1" status="Complete"/></Prerequisites><Inputs></Inputs><Outputs></Outputs></Step>'
+        after = '<Step x="800" y="50" id="step3"><Action_id>1</Action_id><Step_name>After</Step_name><Step_type>CustomRuby</Step_type><Synch_factor>0</Synch_factor>' \
+          '<Prerequisites><Prerequisite id="step2" status="Complete"/><Prerequisite id="step1" status="Failed"/></Prerequisites><Inputs></Inputs><Outputs></Outputs></Step>'
+        graph = workflow.sub('</Steps>', "#{step2}#{after}</Steps>").sub('<Prerequisite id="step1" status="Complete"/></Prerequisites></End>', '<Prerequisite id="step3" status="Complete"/></Prerequisites></End>')
+        response = check(graph)
+        expect(response['issues'].map { |issue| issue.values_at('code', 'path') }).to(eq([%w[graph.starvation graph/Step[After]]]))
+        expect(response['issues'].first['message']).to(include("step 'Say hello' to end with Complete and Failed"))
+      end
     end
 
     it 'reports an input mapped to an undefined parameter' do
