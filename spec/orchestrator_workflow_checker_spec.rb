@@ -218,6 +218,19 @@ RSpec.describe(Aspera::OrchestratorWorkflowChecker) do
       expect(codes(check(workflow.sub('<Parameter id="p_who"/>', '<Parameter id="p_who" router="bezier"/>')))).to(eq(['graph.router']))
     end
 
+    it 'reports a lookup table step without key' do
+      # the fixture with a SimpleParameterLookup step: table with columns SOURCE and FOLDER
+      lookup = lambda do |input, extra = ''|
+        workflow.gsub('CustomRuby', 'SimpleParameterLookup')
+          .sub(%q(execute_code: "outputs['message'] = 'Hello'"), %Q(parameters_associations: "SOURCE:::FOLDER\\r\\na:::/data/a/"#{extra}))
+          .sub('<Input name="person">', %Q(<Input name="#{input}">))
+      end
+      expect(codes(check(lookup.call('ColumnToListValueFrom')))).to(eq(['step.lookup_without_key']))
+      expect(codes(check(lookup.call('SOURCE')))).to(eq([]))
+      expect(codes(check(lookup.call('ColumnToListValueFrom', "\n      return_array_of_rows: 1")))).to(eq([]))
+      expect(codes(check(lookup.call('KeyForTableIndexing')))).to(eq([]))
+    end
+
     it 'reports an input mapped to an undefined parameter' do
       expect(codes(check(workflow.sub('name="who"/>', 'name="other"/>')))).to(eq(['graph.parameter_undefined']))
     end

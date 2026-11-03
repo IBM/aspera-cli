@@ -25,6 +25,7 @@ Released: [Place date of release here]
   * `workflows check_import`: error `graph.starvation` when a node waits for exclusive conditions (AND of two exits of the same step, for example the `Failed` and `Error` exits, or an if and an else branch joined without OR): it never starts, and the work order never ends. Steps after an `ArrayFanout` are not checked.
   * `workflows check_import`: error `graph.loop` when a link goes back to a node it comes from: a step runs only once in a work order.
   * `workflows check_import`: error `graph.router` when the line style (`router`) of a link is not one of `draw2d.ManhattanConnectionRouter`, `draw2d.BezierConnectionRouter`, `draw2d.NullConnectionRouter`, `draw2d.FanConnectionRouter`: the designer of Orchestrator cannot draw the workflow.
+  * `workflows check_import`: error `step.lookup_without_key` when a `SimpleParameterLookup` step has no input named as a column of its table, nor `KeyForTableIndexing`, and `return_array_of_rows` is not set: no row matches and the step ends with `Failed` (`No configuration match`).
 
 ### Issues Fixed
 

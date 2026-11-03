@@ -42,6 +42,9 @@ module Aspera
     # Element 6 (plugin versions) is informational: Orchestrator 4.1.6 only reads elements 1 to 5
     ELEMENT_COUNTS = [5, 6].freeze
     TRUE_VALUES = %w[true 1 t].freeze
+    # SimpleParameterLookup: separator of the columns of the table, input that returns the table indexed by a column
+    LOOKUP_DELIMITER = ':::'
+    LOOKUP_INDEX_INPUT = 'KeyForTableIndexing'
     UNNAMED = ['', 'undefined', 'null'].freeze
     SUCCESS_STATUSES = %w[complete true].freeze
     BOOLEAN_TEXT = %w[true false].freeze
@@ -66,7 +69,7 @@ module Aspera
     STEP_IDENTITY = %w[Step_name Step_type Action_id].freeze
     private_constant :WORKFLOW_ATTRIBUTES, :WHITEBOARD_ATTRIBUTES, :VALUE_TYPES, :ELEMENT_COUNTS, :TRUE_VALUES, :UNNAMED, :SUCCESS_STATUSES,
       :BOOLEAN_TEXT, :STEP_CHILDREN, :PARAMETER_MAPPINGS, :TEMPLATE_COLUMNS, :FALSE_VALUES, :INTEGER_TYPES, :SPEC_CODE, :PARTLY_DEFINED, :PLACEHOLDER,
-      :STEP_IDENTITY, :SINGLE_NAME, :TABLE_SEPARATOR
+      :STEP_IDENTITY, :SINGLE_NAME, :TABLE_SEPARATOR, :LOOKUP_DELIMITER, :LOOKUP_INDEX_INPUT
 
     class << self
       # @param file_name [String] Name of the file, ending with `yml` or `wkf`
@@ -282,7 +285,28 @@ module Aspera
       check_starvation(terminals['Start'].first&.attributes&.[]('id'), closing, steps) unless check_loops(closing, steps)
       check_parameters(root, steps)
       check_routers(root)
+      check_lookups(steps)
       check_step_interfaces(steps) unless @specs.nil?
+    end
+
+    # SimpleParameterLookup returns a row only if an input selects it: an input named as a column of the header of the table.
+    # Without one, no row matches and the step ends with Failed (No configuration match), unless it returns the array of rows
+    # (SimpleParameterLookup#execute). The header of a table in a file (param_file_name) is not known.
+    def check_lookups(steps)
+      steps.each do |step|
+        next unless text_of(step, 'Step_type').eql?('SimpleParameterLookup')
+        values = @template_attributes["SimpleParameterLookup__#{text_of(step, 'Action_id')}"]
+        next if values.nil? || blank?(values['parameters_associations']) || !blank?(values['param_file_name'])
+        next if TRUE_VALUES.include?(values['return_array_of_rows'].to_s.downcase)
+        header = values['parameters_associations'].lines.first.to_s.strip.split(LOOKUP_DELIMITER, -1).map(&:strip)
+        # a carried variable is also given to the step under its name
+        provided = step.get_elements('Inputs/Input').map { |input| input.attributes['name'] } + step.get_elements('Outputs/Carry_thru').map { |carry| carry.attributes['name'] }
+        next if provided.include?(LOOKUP_INDEX_INPUT) || provided.intersect?(header)
+        add(
+          ERROR, 'step.lookup_without_key', node_path(step),
+          "no input is mapped to a column of the table (#{header.join(', ')}): no row matches and the step ends with Failed, unless return_array_of_rows is set"
+        )
+      end
     end
 
     # Line styles of links in the designer: it writes `new <router>()` in the page to draw each link (WhiteboardsHelper#connect_xmlsteps)
