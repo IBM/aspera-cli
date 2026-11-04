@@ -10133,9 +10133,9 @@ transfer smart sub my_smart_id @: source.paths.0=my_smart_file source_type=user_
 
 ## Plugin: `orchestrator`: IBM Aspera Orchestrator
 
-To write workflow files without the designer, refer to the [Workflow Authoring Guide](https://github.com/laurent-martin/aspera-orchestrator-plugins-doc/blob/main/docs/workflow-authoring-guide.md): file format, graph, execution, examples and REST API.
+To write workflow files without the designer, refer to the [Aspera Orchestrator Development Guide](https://github.com/laurent-martin/aspera-orchestrator-plugins-doc/blob/main/docs/orchestrator-development-guide.md): file format, graph, execution, examples and REST API.
 
-Command `workflows development` displays the documentation for workflow development, read from GitHub: this guide (`authoring`), or the [Action Template Reference](https://github.com/laurent-martin/aspera-orchestrator-plugins-doc/blob/main/docs/action-template-reference.md) (`templates`).
+Command `workflows development` displays the documentation for workflow development, read from GitHub: this guide (`guide`, or `authoring`), or the [Action Template Reference](https://github.com/laurent-martin/aspera-orchestrator-plugins-doc/blob/main/docs/action-template-reference.md) (`templates`).
 With `toc`, it lists the sections of the document, and with the anchor of a section, it displays only that section.
 It does not require access to Orchestrator.
 The [MCP server](#plugin-mcp-model-context-protocol-server) instructs AI assistants to read it before writing or modifying a workflow.
@@ -10147,7 +10147,7 @@ ascli orchestrator workflows development templates customruby
 
 Command `plugins spec` displays the specifications of action plugins, read from GitHub: [plugins.yml](https://github.com/laurent-martin/aspera-orchestrator-plugins-doc/blob/main/docs/plugins.yml).
 For each plugin: template attributes (label, allowed values, defaults), and inputs and outputs of its steps, with the template settings they depend on.
-The fields are described in section [Plugin specifications](https://github.com/laurent-martin/aspera-orchestrator-plugins-doc/blob/main/docs/workflow-authoring-guide.md#plugin-specifications) of the guide.
+The fields are described in section [Plugin specifications](https://github.com/laurent-martin/aspera-orchestrator-plugins-doc/blob/main/docs/orchestrator-development-guide.md#plugin-specifications) of the guide.
 Without argument, it lists the plugins.
 With a plugin name (class name, case insensitive), it displays its specification, or one section: `attributes`, `inputs` or `outputs`.
 It does not require access to Orchestrator.

@@ -403,7 +403,7 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
       it 'falls back to GitHub on error' do
         result = orchestrator.action_workflows_development(document: :guide)
         expect(result.data).to(eq(content))
-        expect(Aspera::UriReader).to(have_received(:read).with(%r{^https://raw\.githubusercontent\.com/.+/workflow-authoring-guide\.md$}))
+        expect(Aspera::UriReader).to(have_received(:read).with(%r{^https://raw\.githubusercontent\.com/.+/orchestrator-development-guide\.md$}))
       end
 
       it 'falls back to GitHub on HTML page' do

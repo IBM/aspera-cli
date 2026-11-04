@@ -23,8 +23,8 @@ module Aspera
         # Documents of command `workflows development`: name => URLs, tried in order
         # `guide` is the same document as `authoring`, which is its former name
         DOC_URLS = {
-          authoring: [DOC_GUIDE_LINK, "#{DOC_BASE_URL}/workflow-authoring-guide.md"].freeze,
-          guide:     [DOC_GUIDE_LINK, "#{DOC_BASE_URL}/workflow-authoring-guide.md"].freeze,
+          authoring: [DOC_GUIDE_LINK, "#{DOC_BASE_URL}/orchestrator-development-guide.md"].freeze,
+          guide:     [DOC_GUIDE_LINK, "#{DOC_BASE_URL}/orchestrator-development-guide.md"].freeze,
           templates: ["#{DOC_BASE_URL}/action-template-reference.md"].freeze,
           manual:    ["#{DOC_BASE_URL}/Orchestrator_Plugin_Manual.md"].freeze
         }.freeze
