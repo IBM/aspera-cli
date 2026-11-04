@@ -1,83 +1,109 @@
 <mxfile host="Electron" compressed="false" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/26.1.1 Chrome/132.0.6834.210 Electron/34.3.3 Safari/537.36" version="26.1.1">
   <diagram name="login-flow" id="login-flow">
-    <mxGraphModel dx="1593" dy="812" grid="1" gridSize="4" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="800" pageHeight="700" background="#FFFFFF" math="0" shadow="0">
+    <mxGraphModel dx="1434" dy="731" grid="1" gridSize="4" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="800" pageHeight="700" background="#FFFFFF" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
         <mxCell id="h-ascli" value="&lt;b&gt;ascli&lt;/b&gt;" style="rounded=1;arcSize=12;html=1;whiteSpace=wrap;fontSize=13;fillColor=#5E35B1;strokeColor=#5E35B1;fontColor=#FFFFFF;" parent="1" vertex="1">
-          <mxGeometry x="16" width="160" height="48" as="geometry" />
+          <mxGeometry x="32" width="128" height="48" as="geometry" />
         </mxCell>
-        <mxCell id="life-ascli" style="endArrow=none;dashed=1;html=1;strokeColor=#5E35B1;strokeWidth=1.5;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="1" edge="1" target="n10" source="h-ascli">
+        <mxCell id="life-ascli" style="endArrow=none;dashed=1;html=1;strokeColor=#5E35B1;strokeWidth=1.5;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="1" source="n1" target="n10" edge="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="96" y="56" as="sourcePoint" />
             <mxPoint x="96" y="708" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="h-browser" value="&lt;b&gt;Web browser&lt;br&gt;(user)&lt;/b&gt;" style="rounded=1;arcSize=12;html=1;whiteSpace=wrap;fontSize=13;fillColor=#455A64;strokeColor=#455A64;fontColor=#FFFFFF;" parent="1" vertex="1">
-          <mxGeometry x="256" width="160" height="48" as="geometry" />
-        </mxCell>
-        <mxCell id="life-browser" style="endArrow=none;dashed=1;html=1;strokeColor=#455A64;strokeWidth=1.5;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="1" edge="1" source="h-browser">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="390" y="48" as="sourcePoint" />
-            <mxPoint x="336" y="496" as="targetPoint" />
-          </mxGeometry>
+          <mxGeometry x="224" width="128" height="48" as="geometry" />
         </mxCell>
         <mxCell id="h-server" value="&lt;b&gt;Server&lt;br&gt;(Aspera application)&lt;/b&gt;" style="rounded=1;arcSize=12;html=1;whiteSpace=wrap;fontSize=13;fillColor=#00796B;strokeColor=#00796B;fontColor=#FFFFFF;" parent="1" vertex="1">
-          <mxGeometry x="496" width="160" height="48" as="geometry" />
+          <mxGeometry x="416" width="128" height="48" as="geometry" />
         </mxCell>
-        <mxCell id="life-server" style="endArrow=none;dashed=1;html=1;strokeColor=#00796B;strokeWidth=1.5;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="1" edge="1" source="h-server">
+        <mxCell id="life-server" style="endArrow=none;dashed=1;html=1;strokeColor=#00796B;strokeWidth=1.5;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="1" source="h-server" edge="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="670" y="48" as="sourcePoint" />
-            <mxPoint x="576" y="496" as="targetPoint" />
+            <mxPoint x="480" y="416" as="targetPoint" />
           </mxGeometry>
-        </mxCell>
-        <mxCell id="n1" value="&lt;b&gt;1&lt;/b&gt; Generate random &lt;font face=&quot;Courier New&quot;&gt;state&lt;/font&gt;.&lt;br&gt;Listen on the loopback &lt;font face=&quot;Courier New&quot;&gt;redirect_uri&lt;/font&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontSize=11;fillColor=#D1C4E9;strokeColor=#5E35B1;fontColor=#000000;" parent="1" vertex="1">
-          <mxGeometry x="16" y="72" width="160" height="48" as="geometry" />
         </mxCell>
         <mxCell id="m2" value="&lt;b&gt;2&lt;/b&gt; Open login URL" style="endArrow=block;endFill=1;html=1;strokeColor=#424242;strokeWidth=1.5;fontSize=11;labelBackgroundColor=#FFFFFF;verticalAlign=bottom;" parent="1" edge="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="96" y="144" as="sourcePoint" />
-            <mxPoint x="336" y="144" as="targetPoint" />
+            <mxPoint x="96" y="128" as="sourcePoint" />
+            <mxPoint x="288" y="128" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="m3" value="&lt;b&gt;3&lt;/b&gt; GET login page" style="endArrow=block;endFill=1;html=1;strokeColor=#424242;strokeWidth=1.5;fontSize=11;labelBackgroundColor=#FFFFFF;verticalAlign=bottom;" parent="1" edge="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="336" y="176" as="sourcePoint" />
-            <mxPoint x="576" y="176" as="targetPoint" />
+            <mxPoint x="288" y="144" as="sourcePoint" />
+            <mxPoint x="480" y="144" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="n4" value="&lt;b&gt;4&lt;/b&gt; User logs in&lt;br&gt;(password, SSO, SAML IdP)" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontSize=11;fillColor=#CFD8DC;strokeColor=#455A64;fontColor=#000000;" parent="1" vertex="1">
-          <mxGeometry x="256" y="208" width="160" height="48" as="geometry" />
+          <mxGeometry x="208" y="160" width="160" height="48" as="geometry" />
         </mxCell>
         <mxCell id="m5" value="&lt;b&gt;5&lt;/b&gt; HTTP 302 to &lt;font face=&quot;Courier New&quot;&gt;redirect_uri&lt;/font&gt;" style="endArrow=block;endFill=1;html=1;strokeColor=#424242;strokeWidth=1.5;fontSize=11;labelBackgroundColor=#FFFFFF;verticalAlign=bottom;" parent="1" edge="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="576" y="288" as="sourcePoint" />
-            <mxPoint x="336" y="288" as="targetPoint" />
+            <mxPoint x="480" y="240" as="sourcePoint" />
+            <mxPoint x="288" y="240" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="m6" value="&lt;b&gt;6&lt;/b&gt; GET &lt;font face=&quot;Courier New&quot;&gt;localhost:12345/?code=...&amp;amp;state=...&lt;/font&gt;" style="endArrow=block;endFill=1;html=1;strokeColor=#424242;strokeWidth=1.5;fontSize=11;labelBackgroundColor=#FFFFFF;verticalAlign=bottom;" parent="1" edge="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="336" y="320" as="sourcePoint" />
-            <mxPoint x="96" y="320" as="targetPoint" />
+            <mxPoint x="288" y="272" as="sourcePoint" />
+            <mxPoint x="96" y="272" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="n7" value="&lt;b&gt;7&lt;/b&gt; Check &lt;font face=&quot;Courier New&quot;&gt;state&lt;/font&gt;; browser shows &quot;you can close&quot;; stop listening" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontSize=11;fillColor=#D1C4E9;strokeColor=#5E35B1;fontColor=#000000;" parent="1" vertex="1">
-          <mxGeometry x="16" y="352" width="160" height="48" as="geometry" />
+        <mxCell id="n7" value="&lt;b&gt;7&lt;/b&gt; Check &lt;font face=&quot;Courier New&quot;&gt;state&lt;/font&gt;; generate completion page; stop listening" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontSize=11;fillColor=#D1C4E9;strokeColor=#5E35B1;fontColor=#000000;" parent="1" vertex="1">
+          <mxGeometry x="16" y="288" width="160" height="48" as="geometry" />
         </mxCell>
-        <mxCell id="m8" value="&lt;b&gt;8&lt;/b&gt; POST token request (&lt;font face=&quot;Courier New&quot;&gt;code&lt;/font&gt;)" style="endArrow=block;endFill=1;html=1;strokeColor=#424242;strokeWidth=1.5;fontSize=11;labelBackgroundColor=#FFFFFF;verticalAlign=bottom;" parent="1" edge="1">
+        <mxCell id="m8" value="&lt;b&gt;9&lt;/b&gt; POST token request (&lt;font face=&quot;Courier New&quot;&gt;code&lt;/font&gt;)" style="endArrow=block;endFill=1;html=1;strokeColor=#424242;strokeWidth=1.5;fontSize=11;labelBackgroundColor=#FFFFFF;verticalAlign=bottom;" parent="1" edge="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="96" y="432" as="sourcePoint" />
-            <mxPoint x="576" y="432" as="targetPoint" />
+            <mxPoint x="96" y="368" as="sourcePoint" />
+            <mxPoint x="480" y="368" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="m9" value="&lt;b&gt;9&lt;/b&gt; Access token (and refresh token)" style="endArrow=block;endFill=1;html=1;strokeColor=#424242;strokeWidth=1.5;fontSize=11;labelBackgroundColor=#FFFFFF;verticalAlign=bottom;dashed=1;" parent="1" edge="1">
+        <mxCell id="m9" value="&lt;b&gt;10&lt;/b&gt;&amp;nbsp;Access token (and refresh token)" style="endArrow=block;endFill=1;html=1;strokeColor=#424242;strokeWidth=1.5;fontSize=11;labelBackgroundColor=#FFFFFF;verticalAlign=bottom;dashed=1;" parent="1" edge="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="576" y="464" as="sourcePoint" />
-            <mxPoint x="96" y="464" as="targetPoint" />
+            <mxPoint x="480" y="400" as="sourcePoint" />
+            <mxPoint x="96" y="400" as="targetPoint" />
+            <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="n10" value="&lt;b&gt;10&lt;/b&gt; Token saved in cache,&lt;br&gt;refreshed without browser" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontSize=11;fillColor=#D1C4E9;strokeColor=#5E35B1;fontColor=#000000;" parent="1" vertex="1">
-          <mxGeometry x="16" y="496" width="160" height="48" as="geometry" />
+        <mxCell id="n10" value="&lt;b&gt;11&lt;/b&gt;&amp;nbsp;Token saved in cache,&lt;br&gt;refreshed without browser" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontSize=11;fillColor=#D1C4E9;strokeColor=#5E35B1;fontColor=#000000;" parent="1" vertex="1">
+          <mxGeometry x="16" y="416" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="lQrL3Vyv8khMU4NB2XPa-2" value="" style="endArrow=none;dashed=1;html=1;strokeColor=#5E35B1;strokeWidth=1.5;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="h-ascli" target="n1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="96" y="48" as="sourcePoint" />
+            <mxPoint x="96" y="496" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="n1" value="&lt;b&gt;1&lt;/b&gt; Generate random &lt;font face=&quot;Courier New&quot;&gt;state&lt;/font&gt;.&lt;br&gt;Listen on the loopback &lt;font face=&quot;Courier New&quot;&gt;redirect_uri&lt;/font&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontSize=11;fillColor=#D1C4E9;strokeColor=#5E35B1;fontColor=#000000;" parent="1" vertex="1">
+          <mxGeometry x="16" y="64" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="lQrL3Vyv8khMU4NB2XPa-3" value="" style="endArrow=none;dashed=1;html=1;strokeColor=#455A64;strokeWidth=1.5;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="h-browser">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="336" y="48" as="sourcePoint" />
+            <mxPoint x="288" y="416" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lQrL3Vyv8khMU4NB2XPa-1" value="&lt;b&gt;8&lt;/b&gt;&amp;nbsp;Browser shows &quot;Authentication Complete&quot;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fontSize=11;fillColor=#CFD8DC;strokeColor=#455A64;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="208" y="288" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="lQrL3Vyv8khMU4NB2XPa-4" value="&lt;b&gt;IdP&lt;/b&gt;&lt;div&gt;&lt;b&gt;(SAML)&lt;/b&gt;&lt;/div&gt;" style="rounded=1;arcSize=12;html=1;whiteSpace=wrap;fontSize=13;fillColor=#E65100;strokeColor=#E65100;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="608" width="128" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="lQrL3Vyv8khMU4NB2XPa-5" style="endArrow=none;dashed=1;html=1;strokeColor=#E65100;strokeWidth=1.5;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="lQrL3Vyv8khMU4NB2XPa-4">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="724" y="104" as="sourcePoint" />
+            <mxPoint x="672" y="416" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lQrL3Vyv8khMU4NB2XPa-6" value="&lt;b&gt;Redirect to Auth site&lt;/b&gt;" style="startArrow=block;startFill=1;endArrow=block;endFill=1;html=1;strokeColor=#424242;strokeWidth=1.5;fontSize=11;labelBackgroundColor=#FFFFFF;verticalAlign=bottom;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="n4">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="792" y="276" as="sourcePoint" />
+            <mxPoint x="672" y="184" as="targetPoint" />
+            <mxPoint as="offset" />
+          </mxGeometry>
         </mxCell>
       </root>
     </mxGraphModel>
