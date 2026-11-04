@@ -1237,6 +1237,7 @@ paths:
                       parameters:
                         type: object
                         description: Runtime parameters of the work order
+                        additionalProperties: true
                   - title: Output value
                     description: With `explicit_output`, or `explicit_output_step` and `explicit_output_variable`
         '400':
@@ -1552,7 +1553,8 @@ paths:
                 type: object
                 properties:
                   item:
-                    description: The queued item
+                    type: string
+                    description: The queued item, as given in `queued_item`
                   description:
                     type: string
                   rank:
@@ -1782,15 +1784,22 @@ paths:
                                 workflow_name:
                                   type: string
                                 last_activity:
-                                  description: Only when active
+                                  type: string
+                                  description: Last activity of the workflow or work order (`YYYY-MM-DD HH:MM:SS`), `-` if none. Only when active.
                                 active:
                                   type: boolean
                                 status:
                                   type: string
+                                  description: 'Status of the monitor: `Monitoring Off`, `No Issues`, `Alerts`, `Warnings`, or `Fetching` (remote node monitor)'
+                                  examples:
+                                    - No Issues
                                 status_report:
-                                  description: Only when active
+                                  type: string
+                                  description: Status text of the monitor, `-` when there is nothing to report. Only when active.
                                 last_polled:
-                                  description: Only when active
+                                  type: [string, 'null']
+                                  format: date-time
+                                  description: Time of the last refresh of the status. Only when active.
                       monitor_workorders:
                         type: object
                         description: Empty when there is no monitor
@@ -1807,15 +1816,22 @@ paths:
                                 workflow_name:
                                   type: string
                                 last_activity:
-                                  description: Only when active
+                                  type: string
+                                  description: Last activity of the workflow or work order (`YYYY-MM-DD HH:MM:SS`), `-` if none. Only when active.
                                 active:
                                   type: boolean
                                 status:
                                   type: string
+                                  description: 'Status of the monitor: `Monitoring Off`, `No Issues`, `Alerts`, `Warnings`, or `Fetching` (remote node monitor)'
+                                  examples:
+                                    - No Issues
                                 status_report:
-                                  description: Only when active
+                                  type: string
+                                  description: Status text of the monitor, `-` when there is nothing to report. Only when active.
                                 last_polled:
-                                  description: Only when active
+                                  type: [string, 'null']
+                                  format: date-time
+                                  description: Time of the last refresh of the status. Only when active.
                       monitor_folders:
                         type: object
                         description: Empty when there is no monitor
@@ -1833,17 +1849,25 @@ paths:
                                 path:
                                   type: string
                                 content:
-                                  description: Only when active
+                                  type: string
+                                  description: Number of files and folders, e.g. `3 files, 1 folders`, or `-`. Only when active.
                                 age_range:
-                                  description: Only when active
+                                  type: string
+                                  description: Age of the youngest and oldest entries, with the aging unit of the monitor, or `-`. Only when active.
                                 active:
                                   type: boolean
                                 status:
                                   type: string
+                                  description: 'Status of the monitor: `Monitoring Off`, `No Issues`, `Alerts`, `Warnings`, or `Fetching` (remote node monitor)'
+                                  examples:
+                                    - No Issues
                                 status_report:
-                                  description: Only when active
+                                  type: string
+                                  description: Status text of the monitor, `-` when there is nothing to report. Only when active.
                                 last_polled:
-                                  description: Only when active
+                                  type: [string, 'null']
+                                  format: date-time
+                                  description: Time of the last refresh of the status. Only when active.
                       monitor_nodes:
                         type: object
                         description: Empty when there is no monitor
@@ -1863,10 +1887,16 @@ paths:
                                   type: boolean
                                 status:
                                   type: string
+                                  description: 'Status of the monitor: `Monitoring Off`, `No Issues`, `Alerts`, `Warnings`, or `Fetching` (remote node monitor)'
+                                  examples:
+                                    - No Issues
                                 status_report:
-                                  description: Only when active
+                                  type: string
+                                  description: Status text of the monitor, `-` when there is nothing to report. Only when active.
                                 last_polled:
-                                  description: Only when active
+                                  type: [string, 'null']
+                                  format: date-time
+                                  description: Time of the last refresh of the status. Only when active.
                       monitor_scripts:
                         type: object
                         description: Empty when there is no monitor
@@ -1889,10 +1919,16 @@ paths:
                                   type: boolean
                                 status:
                                   type: string
+                                  description: 'Status of the monitor: `Monitoring Off`, `No Issues`, `Alerts`, `Warnings`, or `Fetching` (remote node monitor)'
+                                  examples:
+                                    - No Issues
                                 status_report:
-                                  description: Only when active
+                                  type: string
+                                  description: Status text of the monitor, `-` when there is nothing to report. Only when active.
                                 last_polled:
-                                  description: Only when active
+                                  type: [string, 'null']
+                                  format: date-time
+                                  description: Time of the last refresh of the status. Only when active.
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         default:
@@ -1917,6 +1953,8 @@ paths:
                 description: All the attributes of the monitors. For type `workorder`, each monitor is in an object with key `monitor-workorder`. Remote node monitors give the names of the monitored remote nodes (`remote_node_name`).
                 items:
                   type: object
+                  description: Attributes of one monitor (depend on the monitor type)
+                  additionalProperties: true
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         default:
@@ -2075,6 +2113,7 @@ paths:
                   task_inputs:
                     type: object
                     description: Parameters received by the task (name to value)
+                    additionalProperties: true
                   user_inputs:
                     type: array
                     items:
@@ -2101,8 +2140,7 @@ paths:
           style: deepObject
           explode: true
           schema:
-            type: object
-            additionalProperties: true
+            $ref: '#/components/schemas/TaskUserInputs'
           description: Values of the user inputs, e.g. `outputs[Filename]=tron.avi`. All required inputs must be given.
         - name: input_provider
           in: query
@@ -2123,6 +2161,7 @@ paths:
                   user_inputs:
                     type: object
                     description: Values of the user inputs (name to value)
+                    additionalProperties: true
                   input_provider:
                     type: string
         '401':
@@ -2163,6 +2202,7 @@ paths:
                         task_inputs:
                           type: object
                           description: Parameters received by the task (name to value)
+                          additionalProperties: true
                         user_inputs:
                           type: array
                           items:
@@ -3634,7 +3674,8 @@ components:
       description: Input or output of a work step
       properties:
         value:
-          description: Value, of any type
+          type: [string, integer, number, boolean, array, object, 'null']
+          description: 'Value, of the type given by `type`: integer for `int`, number for `float`, boolean for `flag`, array for `array`, object for `hash`, string for the others'
         name:
           type: string
         id:
@@ -3649,7 +3690,8 @@ components:
         id:
           type: integer
         queued_item:
-          description: The queued item
+          type: [string, integer, number, boolean, array, object, 'null']
+          description: The queued item, decoded from YAML. A string for an item added with `queue_item`, any type for an item added by a workflow.
         item_description:
           type: [string, 'null']
         priority:
@@ -3741,10 +3783,34 @@ components:
         type:
           type: string
           description: Value type
+          enum: [int, float, string, array, hash, flag, date, object, pwd, attachment]
         value:
-          description: Current value
+          type: [string, integer, number, boolean, array, object, 'null']
+          description: 'Current value, of the type given by `type`: integer for `int`, number for `float`, boolean for `flag`, array for `array`, object for `hash`, string for the others'
         required:
           type: boolean
+    TaskUserInputs:
+      type: object
+      description: >-
+        Values of the user inputs of a task: one key per user input, as listed in `user_inputs` of `task_details` (`name`, `type`, `required`).
+        All inputs with `required: true` must be given, else Orchestrator refuses with `Missing data for <names>`.
+        Values are sent as text and converted by Orchestrator to the type of the input:
+        `int` (e.g. `-12`), `float` (e.g. `1.5`), `flag` (`true` or `false`), `date` (e.g. `2026-01-31 10:00:00`),
+        `hash` (JSON or Ruby hash, starts with `{`), `array` (JSON array, or items separated by `;`),
+        `string`, `object` (YAML), `pwd` (password).
+        For an input with `required: true`, a value that does not match the type is refused (`Invalid output type(s)`).
+        An input not given is overwritten with the conversion of the text `nil` (e.g. `0` for an `int`).
+      additionalProperties: true
+      examples:
+        - Retries: '3'
+          Ratio: '1.5'
+          Filename: tron.avi
+          Files: '["a.mov","b.mov"]'
+          Options: '{"quality":"high"}'
+          Approved: 'true'
+          Deadline: '2026-01-31 10:00:00'
+          Metadata: 'title: Tron'
+          Secret: <SECRET>
     MonitorChange:
       type: object
       properties:
@@ -3865,9 +3931,13 @@ components:
                       type: string
                       format: date-time
                     Inputs:
-                      description: Inputs of the test case
+                      type: object
+                      description: Inputs of the test case (name to value), empty if none
+                      additionalProperties: true
                     Outputs:
-                      description: Outputs of the test case
+                      type: object
+                      description: Outputs of the test case (name to value), `null` values until the test case has run
+                      additionalProperties: true
                     Result:
                       type: [boolean, 'null']
         Result:
