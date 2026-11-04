@@ -10236,6 +10236,7 @@ Orchestrator does not refuse an incomplete resolution: `workflows import_with_co
 ```shell
 --auth_style=query workflow list
 --auth_style=token workflow list
+alerts list
 health
 info
 journal files journal --query=@json:'{"details":"false"}'
@@ -10245,7 +10246,9 @@ plugins list
 plugins spec --select=@json:'{"category":"Triggers"}'
 plugins spec AmazonS3Operation --format=yaml
 plugins spec ascpclient inputs
+portlets
 processes
+queue_stats
 queues list
 workflow check_import orch_wf_check.yml
 workflow details my_workflow_id
@@ -10265,10 +10268,13 @@ workflows development templates customruby
 workorder cancel <id>
 workorder output <id>
 workorder reset <id>
+workorder stats
 workorder status <id>
 workorder status <orch_wf_start_sleep> --fields=status_details
 workstep cancel <id>
+workstep stats
 workstep status <id>
+tasks list
 ```
 
 ## Plugin: `cos`: IBM Cloud Object Storage

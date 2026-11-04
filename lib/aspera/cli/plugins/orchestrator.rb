@@ -41,10 +41,21 @@ module Aspera
         # Types of monitors of `list_monitors` (`monitor_type`) and of `monitor_snapshot` (path)
         MONITOR_TYPES = %i[workflow workorder folder node script].freeze
         MONITOR_SNAPSHOT_TYPES = %i[workflows workorders folders nodes scripts].freeze
+        # Processes and commands of `control_process`
+        PROCESS_TYPES = %i[engine monitor worker].freeze
+        PROCESS_COMMANDS = %i[start stop kill].freeze
+        # XML options for the status of processes (`processes_status` and `control_process`)
+        PROCESSES_XML_OPTS = {'ForceArray' => %w[node process]}.freeze
+        # Moves of `reorder_queued_item` and `bulk_reorder_queue`
+        QUEUE_MOVES = %i[up down first last].freeze
+        # `ManagedResource` of Orchestrator repeats key `id` in each resource
+        RESOURCE_JSON_OPTS = {allow_duplicate_key: true}.freeze
         # Id segment of the path, for endpoints routed only as `api/<endpoint>/<id>` that do not use it
         ANY_ID = '0'
+        # Login of the current user, for `list_tasks`
+        SELF_USER = 'self'
         private_constant :STANDARD_PATH, :TEST_ENDPOINT, :DOC_BASE_URL, :DOC_FILES, :DOC_TOC, :DOC_TOC_LEVELS, :SPEC_SECTIONS, :SPEC_LIST_FIELDS, :YAML_DUMP,
-          :MONITOR_TYPES, :MONITOR_SNAPSHOT_TYPES, :ANY_ID
+          :MONITOR_TYPES, :MONITOR_SNAPSHOT_TYPES, :PROCESS_TYPES, :PROCESS_COMMANDS, :PROCESSES_XML_OPTS, :QUEUE_MOVES, :RESOURCE_JSON_OPTS, :ANY_ID, :SELF_USER
 
         class << self
           # @return [Hash,NilClass]
@@ -151,7 +162,21 @@ module Aspera
 
         command :health,     description: 'Check Orchestrator API health'
         command :info,       description: 'Check that Orchestrator responds (ping)', action: ->(**) { Result::SingleObject.new(call_ao('remote_node_ping', accept: Mime::XML, xml_opts: {'ForceArray' => false})) }
-        command :processes,  description: 'Show Orchestrator background process status', action: ->(**) { Result::ObjectList.new(call_ao('processes_status', accept: Mime::XML, xml_opts: {'ForceArray' => %w[node process]})['node'].flat_map { |n| n['process'] }) }
+        command :processes,  description: 'Show Orchestrator background process status', action: ->(**) { processes_result(call_ao('processes_status', accept: Mime::XML, xml_opts: PROCESSES_XML_OPTS)) }
+        command :control,    description: 'Start, stop or kill the engine, the monitor or workers of Orchestrator, and show the process status',
+          arguments: [
+            {name: :process, type: Symbol, allowed: PROCESS_TYPES},
+            {name: :operation, type: Symbol, allowed: PROCESS_COMMANDS},
+            {name: :worker_ids, mandatory: false}
+          ],
+          action: ->(process:, operation:, worker_ids: nil, **) { processes_result(call_ao("control_process/#{process}", query: {command: operation, worker_id: worker_ids}.compact, accept: Mime::XML, xml_opts: PROCESSES_XML_OPTS)) }
+        command :queue_stats, description: 'Statistics of the execution queue of the engine',
+          action: ->(**) { Result::SingleObject.new(call_ao("execution_queue_stats/#{ANY_ID}")) }
+        command :portlets,   description: 'Show Orchestrator portlet versions',
+          action: ->(**) { Result::ObjectList.new(call_ao('portlet_version')['Portlet'] || []) }
+        command :users,      description: 'Manage users'
+        command :alerts,     description: 'Alerts of the categories the user is subscribed to'
+        command :tasks,      description: 'Tasks: user inputs waiting for a user'
         command :monitors,   description: 'Monitors of workflows, work orders, folders, remote nodes and scripts'
         command :queues,     description: 'Managed queues'
         command :pools,      description: 'Resource pools'
@@ -159,24 +184,95 @@ module Aspera
         command :workorders, description: 'Manage work orders'
         command :workstep,   description: 'Manage work steps'
 
+        commands_under :alerts do
+          command :list, description: 'List alerts (option query: `category`, `count_only`)',
+            query_schema: Schema::Registry.query_params(Schema::Registry::ORCHESTRATOR, 'api/alerts/{id}'),
+            action: ->(**) { Result.auto(call_ao("alerts/#{ANY_ID}")) }
+        end
+
+        commands_under :tasks do
+          command :list, description: 'List tasks waiting for a user (only an administrator can list the tasks of another user)',
+            arguments: [{name: :user, mandatory: false, default: SELF_USER}],
+            action: ->(user:, **) { Result::ObjectList.new(call_ao("list_tasks/#{URI.encode_uri_component(user)}")['tasks'] || []) }
+          command :show, description: 'Show a task: its user inputs and its parameters. Id is a task id, or WO<work order id> with the step name when the work order has several',
+            arguments: [
+              {name: :task_id},
+              {name: :step_name, mandatory: false}
+            ],
+            action: ->(task_id:, step_name: nil, **) { Result::SingleObject.new(call_ao("task_details/#{task_id}", query: {step_name: step_name, Step_name: step_name}.compact)) }
+          command :submit, description: 'Complete a task with values of its user inputs (all required inputs must be given)',
+            arguments: [
+              {name: :task_id, type: :identifier},
+              {name: :outputs, type: Hash}
+            ],
+            action: ->(task_id:, outputs:, **) { Result::SingleObject.new(call_ao("submit_task/#{task_id}", query: outputs.transform_keys { |name| :"outputs[#{name}]" })) }
+        end
+
         commands_under :monitors do
           command :snapshot, description: 'Show status of monitors, of all types or of one type',
             arguments: [{name: :type, type: Symbol, mandatory: false, allowed: MONITOR_SNAPSHOT_TYPES}],
             action: ->(type: nil, **) { Result::SingleObject.new(call_ao(type.nil? ? 'monitor_snapshot' : "monitor_snapshot/#{type}")['monitor']) }
           command :list, description: 'List monitors of a type: remote node monitors give the names of remote nodes',
             arguments: [{name: :type, type: Symbol, allowed: MONITOR_TYPES}]
+          command :activate, description: 'Activate a monitor',
+            arguments: [{name: :type, type: Symbol, allowed: MONITOR_TYPES}, {name: :monitor_id, type: :identifier}],
+            action: ->(type:, monitor_id:, **) { Result::SingleObject.new(call_ao("activate_monitor/#{monitor_id}", query: {monitor_type: type})) }
+          command :deactivate, description: 'Deactivate a monitor',
+            arguments: [{name: :type, type: Symbol, allowed: MONITOR_TYPES}, {name: :monitor_id, type: :identifier}],
+            action: ->(type:, monitor_id:, **) { Result::SingleObject.new(call_ao("deactivate_monitor/#{monitor_id}", query: {monitor_type: type})) }
+        end
+
+        commands_under :users do
+          command :create, description: 'Create a user',
+            arguments: [{name: :user, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::ORCHESTRATOR, 'api/create_user/{id}.post')}],
+            action: ->(user:, **) { Result::Status.new(call_ao("create_user/#{ANY_ID}", body: user).dig('create_user', 'success').to_s) }
         end
 
         commands_under :queues do
           command :list, description: 'List managed queues',
             action: ->(**) { Result::ObjectList.new(call_ao('queues_list').dig('Queues', 'queue') || []) }
+          command :items, description: 'List items of a queue',
+            arguments: [{name: :queue}],
+            action: ->(queue:, **) { Result::ObjectList.new(call_ao("queued_items/#{URI.encode_uri_component(queue)}")['queued_items'] || []) }
+          command :lookup, description: 'Find queued items, with option query: by item id, by item or by description (optionally in a queue)',
+            query_schema: Schema::Registry.query_params(Schema::Registry::ORCHESTRATOR, 'api/lookup_queued_item'),
+            action: ->(**) { Result::ObjectList.new(call_ao('lookup_queued_item')['queued_items'] || []) }
+          command :add, description: 'Add an item to a queue (priority, weight, description and tags with option query)',
+            arguments: [{name: :queue}, {name: :item}],
+            query_schema: Schema::Registry.query_params(Schema::Registry::ORCHESTRATOR, 'api/queue_item/{id}'),
+            action: ->(queue:, item:, **) { Result::SingleObject.new(call_ao("queue_item/#{URI.encode_uri_component(queue)}", query: {queued_item: item})) }
+          command :move, description: "Move a queued item: #{QUEUE_MOVES.join(', ')}",
+            arguments: [{name: :operation, type: Symbol, allowed: QUEUE_MOVES}, {name: :item_id, type: :identifier}],
+            action: ->(operation:, item_id:, **) { Result::ObjectList.new(call_ao('reorder_queued_item', query: {operation: operation, queued_item_id: item_id})['queued_items'] || []) }
+          command :bulk_move, description: "Move several queued items (comma-separated ids): #{QUEUE_MOVES.join(', ')}",
+            arguments: [{name: :operation, type: Symbol, allowed: QUEUE_MOVES}, {name: :item_ids}],
+            action: ->(operation:, item_ids:, **) { Result::ObjectList.new(call_ao('bulk_reorder_queue', query: {operation: operation, queued_item_ids: item_ids})['queued_items'].map { |entry| entry['queued_item'] }) }
+          # Asks for XML: on success, the JSON response of this endpoint is a plain text that is not valid JSON
+          command :delete, description: 'Delete a queued item',
+            arguments: [{name: :queue}, {name: :item_id, type: :identifier}],
+            action: ->(queue:, item_id:, **) { Result::Status.new(call_ao('delete_queued_item', query: {queue_name: queue, queued_item_id: item_id}, accept: Mime::XML, xml_opts: {'ForceArray' => false}).fetch('Success')) }
         end
 
         commands_under :pools do
           command :status, description: 'Show resources of a resource pool and their status',
             arguments: [{name: :pool_name}],
-            # Orchestrator repeats key `id` in each resource
-            action: ->(pool_name:, **) { Result::ObjectList.new(call_ao("pool_status/#{ANY_ID}", query: {name: pool_name}, json_opts: {allow_duplicate_key: true})['ManagedResource'] || []) }
+            action: ->(pool_name:, **) { Result::ObjectList.new(call_ao("pool_status/#{ANY_ID}", query: {name: pool_name}, json_opts: RESOURCE_JSON_OPTS)['ManagedResource'] || []) }
+          command :add_resource, description: 'Add a resource to a resource pool (capacity and tags with option query)',
+            arguments: [{name: :pool_name}, {name: :resource_name}],
+            query_schema: Schema::Registry.query_params(Schema::Registry::ORCHESTRATOR, 'api/add_resource/{id}'),
+            action: ->(pool_name:, resource_name:, **) { Result::SingleObject.new(call_ao("add_resource/#{ANY_ID}", query: {pool_name: pool_name, resource_name: resource_name}, json_opts: RESOURCE_JSON_OPTS)['ManagedResource']) }
+          command :resource_capacity, description: 'Change the capacity of a resource',
+            arguments: [{name: :pool_name}, {name: :resource_name}, {name: :capacity, type: Integer}],
+            action: ->(pool_name:, resource_name:, capacity:, **) { Result::SingleObject.new(call_ao("edit_resource_capacity/#{capacity}", query: {pool_name: pool_name, resource_name: resource_name}, json_opts: RESOURCE_JSON_OPTS)['ManagedResource']) }
+          command :capacity, description: 'Change the capacity of a resource pool',
+            arguments: [{name: :pool_name}, {name: :capacity, type: Integer}],
+            action: ->(pool_name:, capacity:, **) { Result::ObjectList.new(call_ao("edit_pool_capacity/#{capacity}", query: {pool_name: pool_name}, json_opts: RESOURCE_JSON_OPTS)['ManagedResource']) }
+          command :online, description: 'Take a resource online',
+            arguments: [{name: :pool_name}, {name: :resource_name}],
+            action: ->(pool_name:, resource_name:, **) { Result::SingleObject.new(call_ao("resource_online/#{ANY_ID}", query: {pool_name: pool_name, resource_name: resource_name})['ManagedResource']) }
+          command :offline, description: 'Take a resource offline',
+            arguments: [{name: :pool_name}, {name: :resource_name}],
+            action: ->(pool_name:, resource_name:, **) { Result::SingleObject.new(call_ao("resource_offline/#{ANY_ID}", query: {pool_name: pool_name, resource_name: resource_name})['ManagedResource']) }
         end
 
         commands_under :journal do
@@ -186,7 +282,16 @@ module Aspera
         end
 
         commands_under :plugins do
-          command :list,       description: 'Show Orchestrator plugin versions', action: ->(**) { Result::ObjectList.new(call_ao('plugin_version')['Plugin']) }
+          command :list, description: 'Show Orchestrator plugin versions', action: ->(**) { Result::ObjectList.new(call_ao('plugin_version')['Plugin']) }
+          command :reload, description: 'Reload a plugin (class name), or all enabled plugins',
+            arguments: [{name: :plugin, mandatory: false}],
+            action: ->(plugin: nil, **) { Result::SingleObject.new(call_ao('reload_plugin', query: {action_type: plugin}.compact)) }
+          command :enable, description: 'Enable a plugin (class name), or all plugins',
+            arguments: [{name: :plugin, mandatory: false}],
+            action: ->(plugin: nil, **) { Result::SingleObject.new(call_ao("enable_plugin/#{ANY_ID}", query: {action_type: plugin}.compact)) }
+          command :import, description: 'Import a plugin from an archive present on the Orchestrator host',
+            arguments: [{name: :file_path}],
+            action: ->(file_path:, **) { Result::SingleObject.new(call_ao("import_plugin/#{ANY_ID}", query: {file: file_path})) }
           command :reload_set, description: 'Reload a set of plugins',
             arguments: [{name: :plugin_set, type: Hash, schema: 'opts:components.schemas.OrchestratorReloadPluginSet'}],
             action: ->(plugin_set:, **) { Result::SingleObject.new(call_ao('reload_plugin_set', body: plugin_set.transform_keys(&:to_sym))) }
@@ -248,6 +353,19 @@ module Aspera
           command :outputs,    description: 'Show output specification of a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
             action: ->(workflow_id:, **) { Result::ObjectList.new(call_ao("workflow_outputs_spec/#{workflow_id}")['workflow_outputs_spec']['output']) }
+          command :parents,    description: 'List published workflows that use a sub-workflow',
+            arguments: [{name: :workflow_id, type: :identifier}],
+            action: ->(workflow_id:, **) { Result::ValueList.new(call_ao("list_by_subworkflow/#{workflow_id}")['parent_workflows'] || [], name: 'workflow') }
+          command :steps,      description: 'List steps of a type (plugin class, e.g. CustomRuby) in published workflows, with their work orders',
+            arguments: [{name: :step_type}],
+            action: ->(step_type:, **) { Result::ObjectList.new(call_ao("retrieve_steps/#{ANY_ID}", query: {type: step_type})) }
+          command :test_step,  description: 'Launch the test cases of workflow steps: returns the id of the test run (`synchronous`, `step`, `case` with option query)',
+            arguments: [{name: :workflow_id, type: :identifier}],
+            query_schema: Schema::Registry.query_params(Schema::Registry::ORCHESTRATOR, 'api/test_step/{id}'),
+            action: ->(workflow_id:, **) { Result::SingleObject.new(call_ao("test_step/#{workflow_id}")) }
+          command :test_status, description: 'Show the status of a test run launched by `test_step`',
+            arguments: [{name: :test_run_id}],
+            action: ->(test_run_id:, **) { Result::SingleObject.new(call_ao("test_step_status/#{test_run_id}")) }
         end
 
         commands_under :workorders do
@@ -263,6 +381,12 @@ module Aspera
           command :output, description: 'Show output of a work order',
             arguments: [{name: :workorder_id, type: :identifier}],
             action: ->(workorder_id:, **) { Result::ObjectList.new(call_ao("work_order_output/#{workorder_id}", accept: Mime::XML, xml_opts: {'ForceArray' => %w[variable], 'SuppressEmpty' => nil})['variable']) }
+          command :delete, description: 'Delete a work order and its dependents',
+            arguments: [{name: :workorder_id, type: :identifier}],
+            action: ->(workorder_id:, **) { Result::Status.new(call_ao("work_order_destroy/#{workorder_id}").strip) }
+          command :stats, description: 'Statistics of work orders: of the last 30 days, or of one day (filters `workflow_id`, `label`, `date` with option query)',
+            query_schema: Schema::Registry.query_params(Schema::Registry::ORCHESTRATOR, 'api/work_order_stats/{id}'),
+            action: ->(**) { statistics_result(call_ao("work_order_stats/#{ANY_ID}")) }
         end
 
         commands_under :workstep do
@@ -271,6 +395,18 @@ module Aspera
           command :cancel, description: 'Cancel a work step',
             arguments: [{name: :workstep_id, type: :identifier}],
             action: ->(workstep_id:, **) { Result::SingleObject.new(call_ao("work_step_cancel/#{workstep_id}")) }
+          command :reset, description: 'Restart the work order from a work step (several work steps: comma-separated ids)',
+            arguments: [{name: :workstep_id, type: :identifier}],
+            action: ->(workstep_id:, **) { Result.auto(call_ao("workstep_reset/#{workstep_id}")) }
+          command :stats, description: 'Statistics of work steps: of the last 30 days, or of one day (filters `workflow_id`, `step_id`, `step_type`, `date` with option query)',
+            query_schema: Schema::Registry.query_params(Schema::Registry::ORCHESTRATOR, 'api/work_step_stats/{id}'),
+            action: ->(**) { statistics_result(call_ao("work_step_stats/#{ANY_ID}")) }
+        end
+
+        # Statistics are a list, or a message in `text/plain` when there is none
+        # @param stats [Array<Hash>, String]
+        def statistics_result(stats)
+          stats.is_a?(String) ? Result::Status.new(stats) : Result::ObjectList.new(stats)
         end
 
         # --- API ---
@@ -331,6 +467,12 @@ module Aspera
           Result::ObjectList.new(nagios.status_list)
         end
 
+        # Processes of all nodes
+        # @param status [Hash] Response of `processes_status` or `control_process` (XML)
+        def processes_result(status)
+          Result::ObjectList.new(status['node'].flat_map { |node| node['process'] })
+        end
+
         # Monitors of work orders are wrapped in `monitor-workorder`
         def action_monitors_list(type:, **)
           monitors = call_ao("list_monitors/#{ANY_ID}", query: {monitor_type: type})
@@ -339,7 +481,7 @@ module Aspera
 
         # Files of the packages, and files without package, with the name of their package
         def action_journal_files(book:, **)
-          report = call_ao("journal_files/#{book}")
+          report = call_ao("journal_files/#{URI.encode_uri_component(book)}")
           files = Array(report['Packages']).flat_map { |package| Array(package['files']).map { |file| {'package' => package['name']}.merge(file) } }
           Result::ObjectList.new(files + Array(report['Files']))
         end

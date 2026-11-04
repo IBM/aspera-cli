@@ -389,6 +389,177 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
     end
   end
 
+  describe 'commands calling one endpoint' do
+    # Run the action of a command of the registry
+    def run(path, **args)
+      spec = described_class.command_registry[path]
+      orchestrator.invoke_action(orchestrator.action_for(spec), [], args)
+    end
+
+    before do
+      allow(orchestrator).to(receive(:call_ao))
+    end
+
+    it 'deletes a work order, whose answer is a JSON string with a leading space' do
+      allow(orchestrator).to(receive(:call_ao).and_return(" Work order '12' was deleted"))
+      result = run(%i[workorders delete], workorder_id: '12')
+      expect(orchestrator).to(have_received(:call_ao).with('work_order_destroy/12'))
+      expect(result).to(be_a(Aspera::Cli::Result::Status))
+      expect(result.data).to(eq("Work order '12' was deleted"))
+    end
+
+    it 'resets a work step' do
+      allow(orchestrator).to(receive(:call_ao).and_return({'workstep_reset' => true}))
+      run(%i[workstep reset], workstep_id: '5,6')
+      expect(orchestrator).to(have_received(:call_ao).with('workstep_reset/5,6'))
+    end
+
+    it 'activates and deactivates a monitor of a type' do
+      allow(orchestrator).to(receive(:call_ao).and_return({'description' => 'activated'}))
+      run(%i[monitors activate], type: :workflow, monitor_id: 'abc')
+      run(%i[monitors deactivate], type: :node, monitor_id: 'def')
+      expect(orchestrator).to(have_received(:call_ao).with('activate_monitor/abc', query: {monitor_type: :workflow}))
+      expect(orchestrator).to(have_received(:call_ao).with('deactivate_monitor/def', query: {monitor_type: :node}))
+    end
+
+    it 'lists the tasks of the current user by default' do
+      allow(orchestrator).to(receive(:call_ao).and_return({'user' => 'admin', 'tasks' => [{'id' => 1}]}))
+      result = run(%i[tasks list], user: 'self')
+      expect(orchestrator).to(have_received(:call_ao).with('list_tasks/self'))
+      expect(result.data).to(eq([{'id' => 1}]))
+    end
+
+    it 'shows a task, with the step name given twice as expected by Orchestrator' do
+      allow(orchestrator).to(receive(:call_ao).and_return({'task' => {'id' => 1}}))
+      run(%i[tasks show], task_id: 'WO3', step_name: 'Ask')
+      expect(orchestrator).to(have_received(:call_ao).with('task_details/WO3', query: {step_name: 'Ask', Step_name: 'Ask'}))
+      run(%i[tasks show], task_id: '4')
+      expect(orchestrator).to(have_received(:call_ao).with('task_details/4', query: {}))
+    end
+
+    it 'submits the values of the user inputs of a task' do
+      allow(orchestrator).to(receive(:call_ao).and_return({'task' => {'id' => 1}}))
+      run(%i[tasks submit], task_id: '1', outputs: {'Filename' => 'tron.avi'})
+      expect(orchestrator).to(have_received(:call_ao).with('submit_task/1', query: {'outputs[Filename]': 'tron.avi'}))
+    end
+
+    it 'controls a process and shows the processes of all nodes' do
+      allow(orchestrator).to(receive(:call_ao).and_return({'node' => [{'process' => [{'class' => 'engine'}]}, {'process' => [{'class' => 'worker'}]}]}))
+      result = run(%i[control], process: :worker, operation: :stop, worker_ids: '1,2')
+      expect(orchestrator).to(have_received(:call_ao).with('control_process/worker', query: {command: :stop, worker_id: '1,2'}, accept: Aspera::Mime::XML, xml_opts: {'ForceArray' => %w[node process]}))
+      expect(result.data).to(eq([{'class' => 'engine'}, {'class' => 'worker'}]))
+    end
+
+    it 'lists alerts' do
+      allow(orchestrator).to(receive(:call_ao).and_return([{'id' => 1}]))
+      result = run(%i[alerts list])
+      expect(orchestrator).to(have_received(:call_ao).with('alerts/0'))
+      expect(result.data).to(eq([{'id' => 1}]))
+    end
+
+    it 'gives the statistics, or the message when there is none' do
+      allow(orchestrator).to(receive(:call_ao).and_return([{'Date' => '2026-11-01'}], 'No Statistics found. Change the filter and try again.'))
+      expect(run(%i[workorders stats]).data).to(eq([{'Date' => '2026-11-01'}]))
+      result = run(%i[workstep stats])
+      expect(orchestrator).to(have_received(:call_ao).with('work_order_stats/0'))
+      expect(orchestrator).to(have_received(:call_ao).with('work_step_stats/0'))
+      expect(result).to(be_a(Aspera::Cli::Result::Status))
+      expect(result.data).to(eq('No Statistics found. Change the filter and try again.'))
+    end
+
+    it 'manages the items of a queue' do
+      allow(orchestrator).to(receive(:call_ao).and_return({'queued_items' => [{'id' => 21}]}))
+      expect(run(%i[queues items], queue: 'q1').data).to(eq([{'id' => 21}]))
+      run(%i[queues add], queue: 'q1', item: 'file.txt')
+      run(%i[queues move], operation: :first, item_id: '21')
+      run(%i[queues lookup])
+      expect(orchestrator).to(have_received(:call_ao).with('queued_items/q1'))
+      expect(orchestrator).to(have_received(:call_ao).with('queue_item/q1', query: {queued_item: 'file.txt'}))
+      expect(orchestrator).to(have_received(:call_ao).with('reorder_queued_item', query: {operation: :first, queued_item_id: '21'}))
+      expect(orchestrator).to(have_received(:call_ao).with('lookup_queued_item'))
+    end
+
+    it 'encodes the name of a queue or a user in the path' do
+      allow(orchestrator).to(receive(:call_ao).and_return({}))
+      run(%i[queues items], queue: 'my queue')
+      run(%i[queues add], queue: 'my queue', item: 'file.txt')
+      run(%i[tasks list], user: 'my user')
+      expect(orchestrator).to(have_received(:call_ao).with('queued_items/my%20queue'))
+      expect(orchestrator).to(have_received(:call_ao).with('queue_item/my%20queue', query: {queued_item: 'file.txt'}))
+      expect(orchestrator).to(have_received(:call_ao).with('list_tasks/my%20user'))
+    end
+
+    it 'moves several queued items and lists the moved items' do
+      allow(orchestrator).to(receive(:call_ao).and_return({'queued_items' => [{'queued_item' => {'id' => 1}, 'queue_data' => {}}, {'queued_item' => {'id' => 2}, 'queue_data' => {}}]}))
+      result = run(%i[queues bulk_move], operation: :last, item_ids: '1,2')
+      expect(orchestrator).to(have_received(:call_ao).with('bulk_reorder_queue', query: {operation: :last, queued_item_ids: '1,2'}))
+      expect(result.data).to(eq([{'id' => 1}, {'id' => 2}]))
+    end
+
+    it 'deletes a queued item, using the XML answer because the JSON one is not valid JSON' do
+      xml = "<?xml version=\"1.0\"?>\n<DeleteQueuedItem>\n  <Success>Item with id 21 was succesfully deleted.</Success>\n</DeleteQueuedItem>\n"
+      api = instance_double(Aspera::Rest::Client, call: [nil, instance_double(Net::HTTPResponse, body: xml)])
+      allow(orchestrator).to(receive(:api_orch).and_return(api))
+      allow(orchestrator).to(receive(:call_ao).and_call_original)
+      result = run(%i[queues delete], queue: 'q1', item_id: '21')
+      expect(api).to(have_received(:call).with(hash_including(subpath: 'api/delete_queued_item', query: {queue_name: 'q1', queued_item_id: '21', format: 'xml'})))
+      expect(result).to(be_a(Aspera::Cli::Result::Status))
+      expect(result.data).to(eq('Item with id 21 was succesfully deleted.'))
+    end
+
+    it 'changes resources and capacity of a pool' do
+      allow(orchestrator).to(receive(:call_ao).and_return({'ManagedResource' => {'id' => 1}}))
+      run(%i[pools add_resource], pool_name: 'p', resource_name: '10.0.0.1')
+      run(%i[pools resource_capacity], pool_name: 'p', resource_name: '10.0.0.1', capacity: 3)
+      run(%i[pools online], pool_name: 'p', resource_name: '10.0.0.1')
+      run(%i[pools offline], pool_name: 'p', resource_name: '10.0.0.1')
+      query = {pool_name: 'p', resource_name: '10.0.0.1'}
+      expect(orchestrator).to(have_received(:call_ao).with('add_resource/0', query: query, json_opts: {allow_duplicate_key: true}))
+      expect(orchestrator).to(have_received(:call_ao).with('edit_resource_capacity/3', query: query, json_opts: {allow_duplicate_key: true}))
+      expect(orchestrator).to(have_received(:call_ao).with('resource_online/0', query: query))
+      expect(orchestrator).to(have_received(:call_ao).with('resource_offline/0', query: query))
+      allow(orchestrator).to(receive(:call_ao).and_return({'ManagedResource' => [{'id' => 1}]}))
+      expect(run(%i[pools capacity], pool_name: 'p', capacity: 5).data).to(eq([{'id' => 1}]))
+      expect(orchestrator).to(have_received(:call_ao).with('edit_pool_capacity/5', query: {pool_name: 'p'}, json_opts: {allow_duplicate_key: true}))
+    end
+
+    it 'reloads, enables and imports plugins' do
+      allow(orchestrator).to(receive(:call_ao).and_return({'All Plugins' => true}))
+      run(%i[plugins reload])
+      run(%i[plugins reload], plugin: 'Adi3Parser')
+      run(%i[plugins enable])
+      run(%i[plugins import], file_path: '/tmp/p.zip')
+      expect(orchestrator).to(have_received(:call_ao).with('reload_plugin', query: {}))
+      expect(orchestrator).to(have_received(:call_ao).with('reload_plugin', query: {action_type: 'Adi3Parser'}))
+      expect(orchestrator).to(have_received(:call_ao).with('enable_plugin/0', query: {}))
+      expect(orchestrator).to(have_received(:call_ao).with('import_plugin/0', query: {file: '/tmp/p.zip'}))
+    end
+
+    it 'queries workflows by sub-workflow, step type and test run' do
+      allow(orchestrator).to(receive(:call_ao).and_return({'parent_workflows' => %w[A B]}, [{'wf_id' => '1'}], {'Test_run_id' => 'u'}, {'Test_run_id' => 'u'}))
+      expect(run(%i[workflows parents], workflow_id: '7').data).to(eq(%w[A B]))
+      expect(run(%i[workflows steps], step_type: 'CustomRuby').data).to(eq([{'wf_id' => '1'}]))
+      run(%i[workflows test_step], workflow_id: '7')
+      run(%i[workflows test_status], test_run_id: 'u')
+      expect(orchestrator).to(have_received(:call_ao).with('list_by_subworkflow/7'))
+      expect(orchestrator).to(have_received(:call_ao).with('retrieve_steps/0', query: {type: 'CustomRuby'}))
+      expect(orchestrator).to(have_received(:call_ao).with('test_step/7'))
+      expect(orchestrator).to(have_received(:call_ao).with('test_step_status/u'))
+    end
+
+    it 'creates a user, and shows the portlets and the statistics of the execution queue' do
+      allow(orchestrator).to(receive(:call_ao).and_return({'create_user' => {'success' => "User 'jdoe' was successfully created."}}))
+      result = run(%i[users create], user: {'login' => 'jdoe'})
+      expect(orchestrator).to(have_received(:call_ao).with('create_user/0', body: {'login' => 'jdoe'}))
+      expect(result.data).to(eq("User 'jdoe' was successfully created."))
+      allow(orchestrator).to(receive(:call_ao).and_return({'Portlet' => [{'name' => 'x'}]}))
+      expect(run(%i[portlets]).data).to(eq([{'name' => 'x'}]))
+      allow(orchestrator).to(receive(:call_ao).and_return({'ready' => 1}))
+      run(%i[queue_stats])
+      expect(orchestrator).to(have_received(:call_ao).with('execution_queue_stats/0'))
+    end
+  end
+
   describe '#action_plugins_spec' do
     let(:content) do
       <<~YAML
@@ -506,6 +677,11 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
       allow(orchestrator).to(receive(:call_ao).with('journal_files/journal').and_return(report))
       expect(orchestrator.action_journal_files(book: 'journal').data)
         .to(eq([{'package' => 'pkg', 'file_id' => 1, 'file' => '/a.mp4'}, {'file_id' => 2, 'file' => '/b.xml'}]))
+    end
+
+    it 'encodes the name of the book in the path' do
+      allow(orchestrator).to(receive(:call_ao).with('journal_files/my%20book').and_return({}))
+      expect(orchestrator.action_journal_files(book: 'my book').data).to(eq([]))
     end
   end
 

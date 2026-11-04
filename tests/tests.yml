@@ -4345,6 +4345,34 @@ orch_processes:
   args:
     - orchestrator
     - processes
+orch_portlets:
+  args:
+    - orchestrator
+    - portlets
+orch_queue_stats:
+  args:
+    - orchestrator
+    - queue_stats
+orch_workorder_stats:
+  args:
+    - orchestrator
+    - workorders
+    - stats
+orch_workstep_stats:
+  args:
+    - orchestrator
+    - workstep
+    - stats
+orch_alerts_list:
+  args:
+    - orchestrator
+    - alerts
+    - list
+orch_tasks_list:
+  args:
+    - orchestrator
+    - tasks
+    - list
 orch_monitors:
   args:
     - orchestrator

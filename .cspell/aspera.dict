@@ -103,6 +103,8 @@ pingfile
 pkce
 pmax
 Portlet
+portlet
+portlets
 postproc
 prepost
 PVCL
@@ -122,6 +124,7 @@ Streamable
 subfolders
 subwf
 subworkflows
+succesfully
 Syncd
 transferd
 transfersdk
