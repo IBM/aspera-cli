@@ -69,6 +69,24 @@ RSpec.describe(Aspera::Cli::PresetManager) do
       expect(pm.save_if_needed).to(be(false))
       expect(manager.config_presets['config']['version']).to(eq(Aspera::Cli::VERSION))
     end
+
+    it 'migrates deprecated vault options, creates a backup file, and rewrites the config file' do
+      content = "config: {version: '4.27.0'}\nglobal_common_defaults:\n  vault:\n    name: ops.bin\n    type: file\n"
+      backup_path = "#{config_file}.pre#{Aspera::Cli::VERSION}.bak"
+      expect(Aspera::Log.log).to(receive(:warn)).with(no_args) { |&block| expect(block.call).to(match(/option vault: parameters of one store are deprecated/)) }
+      expect(Aspera::Log.log).to(receive(:warn)).with(no_args) { |&block| expect(block.call).to(match(/Migrated vault option in .*backup saved to/)) }
+      pm = manager(content)
+      expect(File.exist?(backup_path)).to(be(true))
+      expect(File.read(backup_path)).to(eq(content))
+      expect(pm.config_presets['global_common_defaults']['vault']).to(eq({'default' => 'file', 'stores' => {'file' => {'name' => 'ops.bin', 'type' => 'file'}}}))
+      # Rewritten file on disk is migrated
+      reloaded = Aspera::Yaml.safe_load(File.read(config_file))
+      expect(reloaded['global_common_defaults']['vault']).to(eq({'default' => 'file', 'stores' => {'file' => {'name' => 'ops.bin', 'type' => 'file'}}}))
+      # Second load does not re-warn or re-migrate
+      expect(Aspera::Log.log).not_to(receive(:warn))
+      pm2 = described_class.new(config_file: config_file)
+      expect(pm2.config_presets['global_common_defaults']['vault']).to(eq({'default' => 'file', 'stores' => {'file' => {'name' => 'ops.bin', 'type' => 'file'}}}))
+    end
   end
 
   describe '#plugin_default_name' do

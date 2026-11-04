@@ -1,14 +1,17 @@
 # frozen_string_literal: true
 
 require 'aspera/cli/extended_value'
+require 'aspera/cli/vault_manager'
 require 'aspera/dot_container'
 require 'aspera/cli/version'
 require 'aspera/cli/info'
+require 'aspera/environment'
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/secret/hider'
 require 'aspera/yaml'
 require 'digest'
+require 'fileutils'
 require 'yaml'
 require 'aspera/rainbow'
 using Rainbow
@@ -317,8 +320,34 @@ module Aspera
         Log.log.debug { "conf version: #{version}" }
         # Fix bug in 4.4 (creating key "true" in "default" preset)
         @config_presets[Key::DEFAULTS].delete(true) if @config_presets[Key::DEFAULTS].is_a?(Hash)
+        # Migrate deprecated vault format in presets if present
+        migrate_vault_configs!
         # Stamp with current version
         @config_presets[Key::CONFIG][Key::VERSION] = Cli::VERSION
+      end
+
+      # Migrates deprecated vault options in presets to the new format (stores and default)
+      # and saves a backup of the original config file.
+      def migrate_vault_configs!
+        migrated = false
+        @config_presets.each_value do |preset|
+          next unless preset.is_a?(Hash)
+          vault_config = preset['vault'] || preset[:vault]
+          next unless vault_config.is_a?(Hash)
+          converted = VaultManager.convert_option(vault_config)
+          if converted != vault_config
+            preset['vault'] = converted
+            preset.delete(:vault) if preset.key?(:vault)
+            migrated = true
+          end
+        end
+        return unless migrated && File.exist?(@config_file)
+        backup_file = "#{@config_file}.pre#{Cli::VERSION}.bak"
+        FileUtils.cp(@config_file, backup_file)
+        Environment.restrict_file_access(backup_file)
+        Log.log.warn { "Migrated vault option in #{@config_file} (backup saved to #{backup_file})" }
+        Environment.write_file_restricted(@config_file, force: true) { @config_presets.to_yaml }
+        @checksum_on_disk = checksum
       end
     end
   end
