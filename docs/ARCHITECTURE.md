@@ -775,6 +775,7 @@ presets:
 
 - `config preset set` accepts dot-notation keys (deep-merged, with type coercion)
 - Keys starting with `_` (e.g. `_comment`) are ignored
+- **Option changes and migrations**: when an option syntax changes and an automatic conversion is possible (e.g. deprecated option format), `PresetManager#validate_config_presets!` inspects the presets, converts them to the new syntax, creates a backup copy of the original file (`<config_file>.pre<VERSION>.bak`), and immediately saves the rewritten configuration file to disk.
 
 ### Secret Management
 
