@@ -1,8 +1,11 @@
-openapi: 3.0.0
+openapi: 3.1.0
 info:
   title: Aspera CLI Options Schema
   version: 1.0.0
   description: Schema definitions for Aspera CLI options
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
 paths: {}
 components:
   schemas:
@@ -430,7 +433,8 @@ components:
         server:
           type: string
           description: SMTP server address.
-          example: smtp.gmail.com
+          examples:
+            - smtp.gmail.com
         tls:
           type: boolean
           description: Enable `STARTTLS` (port 587).
@@ -445,29 +449,35 @@ components:
             Port for the SMTP service.
 
             Defaults: `587` (TLS), `465` (SSL), `25` (plain).
-          example: 587
+          examples:
+            - 587
         domain:
           type: string
           description: Email domain of the user. Defaults to the domain part of `server`.
-          example: gmail.com
+          examples:
+            - gmail.com
         username:
           type: string
           description: >-
             User to authenticate on the SMTP server.
             Leave empty for open (unauthenticated) relay.
-          example: john@example.com
+          examples:
+            - john@example.com
         password:
           type: string
           description: Password for the above `username`.
-          example: my_password
+          examples:
+            - my_password
         from_email:
           type: string
           description: Sender address (used in `From:` header and as reply-to). Defaults to `username` when defined.
-          example: johnny@example.com
+          examples:
+            - johnny@example.com
         from_name:
           type: string
           description: Display name of the sender. Defaults to the local-part of `from_email`.
-          example: John Wayne
+          examples:
+            - John Wayne
     HttpOptions:
       type: object
       description: >-
@@ -554,14 +564,16 @@ components:
         url:
           type: string
           description: URL of the HashiCorp Vault server.
-          example: "http://127.0.0.1:8200"
+          examples:
+            - "http://127.0.0.1:8200"
         token:
           type: string
           description: >-
             Authentication token: the value, or `@file:<path>` (e.g. written and renewed by Vault Agent), read again when modified.
             One of `token` or `approle` is required.
             For the default store, defaults to the value of `vault_password`, unless `approle` is set.
-          example: dev-only-token
+          examples:
+            - dev-only-token
         approle:
           type: object
           description: >-
@@ -626,7 +638,8 @@ components:
         url:
           type: string
           description: Base URL of the 1Password Connect server (required when `source` is `api`).
-          example: "http://localhost:8080"
+          examples:
+            - "http://localhost:8080"
         vault_id:
           type: string
           description: ID of the 1Password vault to use (required when `source` is `api`).
@@ -793,7 +806,9 @@ components:
           items:
             type: string
           maxItems: 2
-          example: ["name", "id"]
+          examples:
+            - - name
+              - id
         seq:
           type: boolean
           description: >-
@@ -824,7 +839,8 @@ components:
         user_id:
           type: string
           description: Identifier of the user for whom the token is generated.
-          example: jdoe # cspell:disable-line
+          examples:
+            - jdoe # cspell:disable-line
         _validity:
           type: integer
           description: Token lifetime in seconds (convenience key, removed before signing).
@@ -850,7 +866,8 @@ components:
           description: >-
             Token expiry timestamp in ISO 8601 format (`YYYY-MM-DDTHH:MM:SSZ`).
             Computed automatically from `_validity` when absent.
-          example: "2030-01-01T00:00:00Z"
+          examples:
+            - "2030-01-01T00:00:00Z"
     NodeEmulatorOptions:
       type: object
       description: >-
@@ -873,18 +890,21 @@ components:
           description: >-
             Path to the TLS certificate file.
             Accepted formats: PEM (`.pem`) or PKCS12 (`.p12` / `.pfx`).
-          example: /path/to/cert.pem
+          examples:
+            - /path/to/cert.pem
         key:
           type: string
           x-cli-complete: file
           description: >-
             Path to the PEM private key file, or the PKCS12 passphrase when `cert` is a `.p12`/`.pfx` file.
-          example: /path/to/key.pem
+          examples:
+            - /path/to/key.pem
         chain:
           type: string
           x-cli-complete: file
           description: Path to the PEM certificate chain file (appended as extra chain certificates).
-          example: /path/to/chain.pem
+          examples:
+            - /path/to/chain.pem
         docroot:
           type: string
           x-cli-complete: folder
@@ -892,7 +912,8 @@ components:
             Local folder of the node files.
             Paths of `/files/browse` and local paths of transfers (sources of `send`, destination of `receive`) are relative to it, and confined in it.
             Defaults to the current working directory.
-          example: /data/aspera
+          examples:
+            - /data/aspera
         retention_sec:
           type: integer
           minimum: 1
@@ -905,13 +926,15 @@ components:
             Set together with `password`.
             When not set, requests are accepted without authentication.
             Mandatory when `url` is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`).
-          example: node_user
+          examples:
+            - node_user
         password:
           type: string
           description: >-
             Password expected from clients in HTTP Basic authentication, for the above `username`.
             Generate it with `openssl rand -hex 32`: a weak password is refused (see `password_min_bits`).
-          example: my_password
+          examples:
+            - my_password
         password_min_bits:
           type: integer
           minimum: 0
@@ -935,11 +958,13 @@ components:
         url:
           type: string
           description: Base URL of the Instana backend (without `/v1`).
-          example: https://my-instana.example.com
+          examples:
+            - https://my-instana.example.com
         key:
           type: string
           description: Instana API key sent in the `x-instana-key` header.
-          example: my-instana-api-key
+          examples:
+            - my-instana-api-key
         interval:
           type: number
           format: float
@@ -951,7 +976,8 @@ components:
           description: >-
             Value sent in the `x-instana-host` header.
             Defaults to the local machine's hostname.
-          example: hsts-prod-01
+          examples:
+            - hsts-prod-01
     OrchestratorWorkflowStart:
       type: object
       description: >-
@@ -969,13 +995,15 @@ components:
           description: >-
             Name of the work step providing the result.
             Requires `variable`, and implies `synchronous`.
-          example: ResultStep
+          examples:
+            - ResultStep
         variable:
           type: string
           description: >-
             Name of the output variable of `step` returned as result.
             Requires `step`, and implies `synchronous`.
-          example: Complete_status_message
+          examples:
+            - Complete_status_message
     OrchestratorInitiateParameters:
       type: object
       description: >-
@@ -1027,13 +1055,15 @@ components:
         filename:
           type: string
           description: Path of the workflow file (`.yml` or `.wkf`) on the Orchestrator host.
-          example: /opt/aspera/orchestrator/var/run/orchestrator/workflows/import/my_workflow.yml
+          examples:
+            - /opt/aspera/orchestrator/var/run/orchestrator/workflows/import/my_workflow.yml
         add_as_revision:
           type: integer
           description: >-
             ID of an existing workflow: the file is imported as a new revision of this workflow (to be published).
             If not set, a new workflow is created.
-          example: 123
+          examples:
+            - 123
         subwf_constraints:
           type: object
           description: 'Resolution for each sub-workflow, by name: `Map to the Existing Sub-Workflow`, `Create a new Sub-Workflow with a unique name`, or `Add a new revision to the existing Sub-Workflow`.'
@@ -1076,9 +1106,9 @@ components:
           description: List of plugin names to reload.
           items:
             type: string
-          example:
-            - soap_requests
-            - frameio_operations # cspell:disable-line
+          examples:
+            - - soap_requests
+              - frameio_operations # cspell:disable-line
     TableOptions:
       type: object
       description: Terminal table rendering options.
@@ -1161,18 +1191,21 @@ components:
           description: >-
             Path to the TLS certificate file.
             Accepted formats: PEM (`.pem`) or PKCS12 (`.p12` / `.pfx`).
-          example: /path/to/cert.pem
+          examples:
+            - /path/to/cert.pem
         key:
           type: string
           x-cli-complete: file
           description: >-
             Path to the PEM private key file, or the PKCS12 passphrase when `cert` is a `.p12`/`.pfx` file.
-          example: /path/to/key.pem
+          examples:
+            - /path/to/key.pem
         chain:
           type: string
           x-cli-complete: file
           description: Path to the PEM certificate chain file (appended as extra chain certificates).
-          example: /path/to/chain.pem
+          examples:
+            - /path/to/chain.pem
     Faspex4GatewayOptions:
       description: >-
         Configuration for the Faspex 4 gateway emulator (`faspex5 gateway`, `aoc gateway`).
@@ -1199,13 +1232,15 @@ components:
                 Set together with `password`.
                 When not set, requests are accepted without authentication.
                 Mandatory when `url` is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`).
-              example: fx4_user
+              examples:
+                - fx4_user
             password:
               type: string
               description: >-
                 Password expected from clients in HTTP Basic authentication, for the above `username`.
                 Generate it with `openssl rand -hex 32`: a weak password is refused (see `password_min_bits`).
-              example: my_password
+              examples:
+                - my_password
             password_min_bits:
               type: integer
               minimum: 0
@@ -1241,7 +1276,8 @@ components:
                 Folder containing the post-processing scripts.
                 The URL path (after the base path) is appended to this folder to locate the script to execute.
               default: "."
-              example: /opt/faspex/scripts
+              examples:
+                - /opt/faspex/scripts
             fail_on_error:
               type: boolean
               description: >-
@@ -1282,10 +1318,11 @@ components:
                 This parameter or `secret_token` is required when `url` is not a local address.
               oneOf:
                 - type: string
-                  example: "192.168.1.10"
+                  examples:
+                    - "192.168.1.10"
                 - type: array
                   items:
                     type: string
-                  example:
-                    - "192.168.1.10"
-                    - "10.89.0.0/24"
+                  examples:
+                    - - "192.168.1.10"
+                      - "10.89.0.0/24"

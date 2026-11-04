@@ -1,0 +1,5 @@
+# Lint config for `redocly lint lib/aspera/cli/options.schema.yaml`
+# The file only holds schemas (no API): components are referenced from Ruby code, not from paths.
+rules:
+  no-empty-servers: 'off'
+  no-unused-components: 'off'

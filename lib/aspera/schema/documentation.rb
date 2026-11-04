@@ -92,7 +92,9 @@ module Aspera
           description.push('Required.') if required
           description.push("Allowed values: #{node['enum'].map { |v| value_text(v) }.join(', ')}.") if node.key?('enum')
           description.push("Default: #{value_text(node['default'])}.") if node.key?('default')
-          description.push("Example: #{value_text(node['example'])}.") if node.key?('example')
+          # OpenAPI 3.1: `examples` array (3.0: `example`)
+          example = node.key?('examples') ? Array(node['examples']).first : node['example']
+          description.push("Example: #{value_text(example)}.") unless example.nil?
           description.concat(annotations)
           item['description'] = description unless description.empty?
           @sections.last[:rows].push(item)
