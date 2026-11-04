@@ -3719,18 +3719,28 @@ Some actions may require the use of a graphical tool:
 - A browser to enter a secret requested with `@secret:`
 - A text editor for editing the configuration file
 
-By default, <%=tool%> assumes that a graphical environment is available on Windows; on other systems, it relies on the presence of the `DISPLAY` environment variable.
+By default, <%=tool%> assumes that a graphical environment is available on Windows and macOS; on other systems, it relies on the presence of the `DISPLAY` environment variable.
 The composite option `ui` (use `--ui=help` to display this schema) selects the mode and the browser command:
 
 <%=schema_to_table(Aspera::Schema::Registry::UI_OPTIONS)%>
 
 A plain value is the `mode`:
 
-- `--ui=browser` (or `graphical`) forces a graphical environment: a browser is opened for URLs or secrets, or a text editor for files.
-- `--ui=terminal` (or `text`) forces a text environment, the URL or file path to open is displayed on terminal, and secrets are entered on terminal.
+- `--ui=browser` (or `graphical`) forces a graphical environment: a browser is opened for URLs or secrets.
+- `--ui=terminal` (or `text`) forces a text environment: the URL to open is displayed on terminal, and secrets are entered on terminal.
 - `--ui=auto` selects the mode from the environment (default).
 
 The browser is opened, by priority, with: `--ui.command`, or the system default.
+The system default is opened with the following command:
+
+| OS      | Command                |
+|---------|------------------------|
+| macOS   | `open <url>`           |
+| Windows | `start explorer "<url>"` |
+| Linux   | `xdg-open <url>`       |
+
+To edit a file (for example `config open`), whatever the `mode`, the editor is, by priority: the command in the environment variable `EDITOR`, else `notepad.exe` on Windows, else the system default above (or `--ui.command` if defined).
+
 When a command is defined, it is used to open URLs whatever the `mode`.
 The command is an array: the URL is appended as last argument.
 For example, to use Firefox:

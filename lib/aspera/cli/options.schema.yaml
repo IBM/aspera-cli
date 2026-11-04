@@ -40,8 +40,9 @@ components:
           type: string
           description: >-
             `auto`: `browser` on Windows and macOS, or if env var `DISPLAY` is set, else `terminal`.
-            `terminal`: URLs and files to open are displayed on terminal, and secrets are entered on terminal.
-            `browser`: a browser opens URLs, secrets are entered on a web page, and a text editor opens files.
+            `terminal`: URLs to open are displayed on terminal, and secrets are entered on terminal.
+            `browser`: a browser opens URLs, and secrets are entered on a web page.
+            Files to edit are always opened with a text editor, whatever the `mode`.
             `text` is an alias for `terminal`, and `graphical` is an alias for `browser`.
           enum:
             - auto

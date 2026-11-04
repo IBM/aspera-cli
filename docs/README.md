@@ -3946,21 +3946,31 @@ Some actions may require the use of a graphical tool:
 - A browser to enter a secret requested with `@secret:`
 - A text editor for editing the configuration file
 
-By default, `ascli` assumes that a graphical environment is available on Windows; on other systems, it relies on the presence of the `DISPLAY` environment variable.
+By default, `ascli` assumes that a graphical environment is available on Windows and macOS; on other systems, it relies on the presence of the `DISPLAY` environment variable.
 The composite option `ui` (use `--ui=help` to display this schema) selects the mode and the browser command:
 
 | Field | Type | Description |
 |---------|---------------|----------------------------------------------------------------------------------|
 | `command` | `Array[String]` | Command that opens a URL, instead of the system default. First item is the executable, then its arguments. The URL is added as last argument. When set, it is used to open URLs, whatever the `mode`. |
-| `mode` | `String` | `auto`: `browser` on Windows and macOS, or if env var `DISPLAY` is set, else `terminal`. `terminal`: URLs and files to open are displayed on terminal, and secrets are entered on terminal. `browser`: a browser opens URLs, secrets are entered on a web page, and a text editor opens files. `text` is an alias for `terminal`, and `graphical` is an alias for `browser`.<br/>Allowed values: `auto`, `terminal`, `browser`, `text`, `graphical`.<br/>Default: `auto`. |
+| `mode` | `String` | `auto`: `browser` on Windows and macOS, or if env var `DISPLAY` is set, else `terminal`. `terminal`: URLs to open are displayed on terminal, and secrets are entered on terminal. `browser`: a browser opens URLs, and secrets are entered on a web page. Files to edit are always opened with a text editor, whatever the `mode`. `text` is an alias for `terminal`, and `graphical` is an alias for `browser`.<br/>Allowed values: `auto`, `terminal`, `browser`, `text`, `graphical`.<br/>Default: `auto`. |
 
 A plain value is the `mode`:
 
-- `--ui=browser` (or `graphical`) forces a graphical environment: a browser is opened for URLs or secrets, or a text editor for files.
-- `--ui=terminal` (or `text`) forces a text environment, the URL or file path to open is displayed on terminal, and secrets are entered on terminal.
+- `--ui=browser` (or `graphical`) forces a graphical environment: a browser is opened for URLs or secrets.
+- `--ui=terminal` (or `text`) forces a text environment: the URL to open is displayed on terminal, and secrets are entered on terminal.
 - `--ui=auto` selects the mode from the environment (default).
 
 The browser is opened, by priority, with: `--ui.command`, or the system default.
+The system default is opened with the following command:
+
+| OS      | Command                |
+|---------|------------------------|
+| macOS   | `open <url>`           |
+| Windows | `start explorer "<url>"` |
+| Linux   | `xdg-open <url>`       |
+
+To edit a file (for example `config open`), whatever the `mode`, the editor is, by priority: the command in the environment variable `EDITOR`, else `notepad.exe` on Windows, else the system default above (or `--ui.command` if defined).
+
 When a command is defined, it is used to open URLs whatever the `mode`.
 The command is an array: the URL is appended as last argument.
 For example, to use Firefox:
@@ -10250,6 +10260,7 @@ portlets
 processes
 queue_stats
 queues list
+tasks list
 workflow check_import orch_wf_check.yml
 workflow details my_workflow_id
 workflow export my_workflow_id
@@ -10268,13 +10279,12 @@ workflows development templates customruby
 workorder cancel <id>
 workorder output <id>
 workorder reset <id>
-workorder stats
 workorder status <id>
 workorder status <orch_wf_start_sleep> --fields=status_details
+workorders stats
 workstep cancel <id>
 workstep stats
 workstep status <id>
-tasks list
 ```
 
 ## Plugin: `cos`: IBM Cloud Object Storage
