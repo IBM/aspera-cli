@@ -863,22 +863,33 @@ paths:
           in: query
           schema:
             type: string
-          description: Filter by work order status, e.g. `Failed`
+          description: 'Filter by work order status, comma-separated (case insensitive): `Initializing`, `Initialized`, `Created`, `Ready`, `In Progress`, `Complete`, `Rolled-back`, `Canceled`, `Paused`, `Cut-off`, `Failed`, `Error`, `Destroyed`, `Cleared`, `Flagged`. Not set: all but `Rolled-back`, `Cut-off`, `Ready`, `Destroyed`, `Cleared`, `Flagged` and `Unknown`.'
+          examples:
+            - Failed,Canceled
         - name: priority
           in: query
           schema:
             type: string
-          description: Filter by priority
+            enum:
+              - low
+              - medium
+              - high
+              - preemptive
+          description: 'Filter by priority (case insensitive): `low` (1), `medium` (2), `high` (3) or `preemptive` (below 1). Another value is ignored.'
         - name: from_date
           in: query
           schema:
             type: string
-          description: Work orders updated after this date, e.g. `'06-27-2015 02:40:59'`
+          description: 'Work orders updated after this date. Format `<date> HH:MM:SS`, with `<date>` as `mm-dd-yyyy` (default), `mm/dd/yyyy` (server date format `american`), `dd-mm-yyyy` (`continental`) or `yyyy-mm-dd` (`swedish`). Another format is ignored.'
+          examples:
+            - 06-27-2015 02:40:59
         - name: to_date
           in: query
           schema:
             type: string
-          description: Work orders updated before this date
+          description: 'Work orders updated before this date. Format `<date> HH:MM:SS`, with `<date>` as `mm-dd-yyyy` (default), `mm/dd/yyyy` (server date format `american`), `dd-mm-yyyy` (`continental`) or `yyyy-mm-dd` (`swedish`). Another format is ignored.'
+          examples:
+            - 06-29-2015 02:40:59
         - name: tag
           in: query
           style: form
@@ -2645,7 +2656,13 @@ paths:
           in: query
           schema:
             type: string
-          description: Only alerts of this category, e.g. `user`
+            enum:
+              - WorkflowAlerts
+              - UserAlerts
+              - WorkorderAlerts
+              - MonitorAlerts
+              - PluginAlerts
+          description: Only alerts of this category (case sensitive). With another value, no alert is returned.
         - $ref: '#/components/parameters/Format'
       responses:
         '200':
@@ -3882,6 +3899,7 @@ components:
           type: integer
         category_id:
           type: [integer, 'null']
+          description: 'Category: 1 `WorkflowAlerts`, 2 `UserAlerts`, 3 `WorkorderAlerts`, 4 `MonitorAlerts`, 5 `PluginAlerts`'
         alert_header:
           type: [string, 'null']
         alert_description:
