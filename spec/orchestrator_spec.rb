@@ -470,7 +470,7 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
 
     it 'submits the values of the user inputs of a task' do
       allow(orchestrator).to(receive(:call_ao).and_return({'task' => {'id' => 1}}))
-      run(%i[tasks submit], task_id: '1', outputs: {'Filename' => 'tron.avi'})
+      run(%i[tasks submit], task_id: '1', inputs: {'Filename' => 'tron.avi'})
       expect(orchestrator).to(have_received(:call_ao).with('submit_task/1', query: {'outputs[Filename]': 'tron.avi'}))
     end
 

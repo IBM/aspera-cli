@@ -337,7 +337,7 @@ paths:
               examples:
                 success:
                   summary: Successful Authorization
-                  value: https://example.com/callback?code=abc123def456&state=random_state_string_123
+                  value: https://example.com/callback?code=<AUTHORIZATION_CODE>&state=random_state_string_123
                 error:
                   summary: Authorization Error
                   value: >-
@@ -481,7 +481,7 @@ paths:
                 code:
                   type: string
                   description: Authorization code (required for authorization_code grant)
-                  example: abc123def456
+                  example: <AUTHORIZATION_CODE>
                 redirect_uri:
                   type: string
                   format: uri
@@ -492,7 +492,7 @@ paths:
                 refresh_token:
                   type: string
                   description: Refresh token (required for refresh_token grant)
-                  example: refresh_abc123
+                  example: <REFRESH_TOKEN>
                 assertion:
                   type: string
                   description: JWT assertion (required for jwt-bearer grant)
@@ -500,13 +500,13 @@ paths:
                 url_token:
                   type: string
                   description: URL token identifier (required for url_token grant)
-                  example: token_abc123
+                  example: <URL_TOKEN>
                 password:
                   type: string
                   description: >-
                     Password for password-protected URL tokens (optional, required only if URL token is
                     password-protected)
-                  example: secret123
+                  example: <PASSWORD>
                 scope:
                   type: string
                   description: Requested scope (optional)
@@ -518,13 +518,13 @@ paths:
                 summary: Authorization Code Grant
                 value:
                   grant_type: authorization_code
-                  code: abc123def456
+                  code: <AUTHORIZATION_CODE>
                   redirect_uri: https://example.com/callback
               refresh_token:
                 summary: Refresh Token Grant
                 value:
                   grant_type: refresh_token
-                  refresh_token: refresh_abc123
+                  refresh_token: <REFRESH_TOKEN>
               jwt_bearer:
                 summary: JWT Bearer Grant
                 value:
@@ -534,13 +534,13 @@ paths:
                 summary: URL Token Grant
                 value:
                   grant_type: url_token
-                  url_token: token_abc123
+                  url_token: <URL_TOKEN>
               url_token_with_password:
                 summary: URL Token Grant (Password Protected)
                 value:
                   grant_type: url_token
-                  url_token: token_abc123
-                  password: secret123
+                  url_token: <URL_TOKEN>
+                  password: <PASSWORD>
       responses:
         '200':
           description: Successfully obtained access token
@@ -564,7 +564,7 @@ paths:
                   refresh_token:
                     type: string
                     description: Refresh token (only for certain grant types)
-                    example: refresh_abc123
+                    example: <REFRESH_TOKEN>
                   scope:
                     type: string
                     description: Granted scope

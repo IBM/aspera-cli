@@ -29,7 +29,7 @@ info:
 
     If JWT authentication is disabled in your Orchestrator configuration (`/api/login` then returns 403), give the credentials with every API request, either:
 
-    - as query parameters `login` and `password`, e.g. `/api/workflows_list?login=admin&password=mypassword&format=json`
+    - as query parameters `login` and `password`, e.g. `/api/workflows_list?login=admin&password=<PASSWORD>&format=json`
     - as query parameters `login` and `api_key` (the API key of the user)
     - with HTTP Basic authentication
 
@@ -110,12 +110,12 @@ paths:
                 summary: Username and password
                 value:
                   username: admin
-                  password: mypassword
+                  password: <PASSWORD>
               api_key:
                 summary: Username and API key
                 value:
                   username: admin
-                  api_key: my_api_key
+                  api_key: <API_KEY>
       responses:
         '200':
           description: Successfully authenticated

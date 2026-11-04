@@ -39576,13 +39576,13 @@ components:
           description: JWT access token used to authorize access to protected endpoints.
           type: string
           examples:
-            - eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzY29wZSI6IiIsImV4cCI6MTYwMzI3MDIxNywiYXVkIjoiZThiM2Q2OGEtYmNlOC00OTQzLWExY2EtMjliZWQxMzRhZWQxIiwianRpIjoiZ2VyYXJkOGEtYmNlOC00OTQzLWExY2EtMjliZWQxMzRhZWQxIiwiaWF0IjoxNjAzMjI3MDE3LCJzdWIiOiJjbGllbnQ6ZThiM2Q2OGEtYmNlOC00OTQzLWExY2EtMjliZWQxMzRhZWQxIn0.dsXeTd4USW0MS6N265fdPhZZo4YsnIPyKVDVJ0sHwg9bI5DH5alesqKqjyZSNo7fQ0EZXlbtVuSlX0geYXSE4PnaMnIv5vH1D9OnMtfj1ms3u1DI2ee_1bVvgCb3g3uA81etnRTwzn9e1RuXjpe4_kAiOOURGPRJMTbjju2GFErAFFunZavaw-e3VdHDIvhmKgJIGuGzqPJSs1n10RixJocSQsve-S0c3UYcY5kES8MmqZk9Ap5iYskak8gK5JO3BT1-GNydG11RpDbGg-7mDd3s4IhRGRnBCYBCfdqwfWohGOpecV6NNlA6N8w0k7Hs1aNXEZO-yYE-dIPkEezOvQ
+            - <ACCESS_TOKEN>
           minLength: 1
         refresh_token:
           description: The refresh token used to request a new access token. This is required when `grant_type = refresh_token`.
           type: string
           examples:
-            - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMj
+            - <REFRESH_TOKEN>
           maxLength: 255
           minLength: 1
     JwtGetTokenRequest:
@@ -39604,7 +39604,7 @@ components:
           description: JWT access token used to authorize access to protected endpoints.
           type: string
           examples:
-            - eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzY29wZSI6IiIsImV4cCI6MTYwMzI3MDIxNywiYXVkIjoiZThiM2Q2OGEtYmNlOC00OTQzLWExY2EtMjliZWQxMzRhZWQxIiwianRpIjoiZ2VyYXJkOGEtYmNlOC00OTQzLWExY2EtMjliZWQxMzRhZWQxIiwiaWF0IjoxNjAzMjI3MDE3LCJzdWIiOiJjbGllbnQ6ZThiM2Q2OGEtYmNlOC00OTQzLWExY2EtMjliZWQxMzRhZWQxIn0.dsXeTd4USW0MS6N265fdPhZZo4YsnIPyKVDVJ0sHwg9bI5DH5alesqKqjyZSNo7fQ0EZXlbtVuSlX0geYXSE4PnaMnIv5vH1D9OnMtfj1ms3u1DI2ee_1bVvgCb3g3uA81etnRTwzn9e1RuXjpe4_kAiOOURGPRJMTbjju2GFErAFFunZavaw-e3VdHDIvhmKgJIGuGzqPJSs1n10RixJocSQsve-S0c3UYcY5kES8MmqZk9Ap5iYskak8gK5JO3BT1-GNydG11RpDbGg-7mDd3s4IhRGRnBCYBCfdqwfWohGOpecV6NNlA6N8w0k7Hs1aNXEZO-yYE-dIPkEezOvQ
+            - <ACCESS_TOKEN>
           minLength: 1
     WebPostTokenRequest:
       description: Parameters to authorize to an OAuth 2 client.
@@ -39637,7 +39637,7 @@ components:
           description: JWT access token used to authorize access to protected endpoints.
           type: string
           examples:
-            - eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzY29wZSI6IiIsImV4cCI6MTYwMzI3MDIxNywiYXVkIjoiZThiM2Q2OGEtYmNlOC00OTQzLWExY2EtMjliZWQxMzRhZWQxIiwianRpIjoiZ2VyYXJkOGEtYmNlOC00OTQzLWExY2EtMjliZWQxMzRhZWQxIiwiaWF0IjoxNjAzMjI3MDE3LCJzdWIiOiJjbGllbnQ6ZThiM2Q2OGEtYmNlOC00OTQzLWExY2EtMjliZWQxMzRhZWQxIn0.dsXeTd4USW0MS6N265fdPhZZo4YsnIPyKVDVJ0sHwg9bI5DH5alesqKqjyZSNo7fQ0EZXlbtVuSlX0geYXSE4PnaMnIv5vH1D9OnMtfj1ms3u1DI2ee_1bVvgCb3g3uA81etnRTwzn9e1RuXjpe4_kAiOOURGPRJMTbjju2GFErAFFunZavaw-e3VdHDIvhmKgJIGuGzqPJSs1n10RixJocSQsve-S0c3UYcY5kES8MmqZk9Ap5iYskak8gK5JO3BT1-GNydG11RpDbGg-7mDd3s4IhRGRnBCYBCfdqwfWohGOpecV6NNlA6N8w0k7Hs1aNXEZO-yYE-dIPkEezOvQ
+            - <ACCESS_TOKEN>
           minLength: 1
         redirect_uri:
           description: The URL to redirect users to after successful authentication. Must use the HTTPS protocol.
@@ -39674,7 +39674,7 @@ components:
           description: The refresh token used to request a new access token. This is required when `grant_type = refresh_token`.
           type: string
           examples:
-            - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMj
+            - <REFRESH_TOKEN>
           maxLength: 255
           minLength: 1
         client_secret:
@@ -39719,7 +39719,7 @@ components:
           description: JWT access token used to authorize access to protected endpoints.
           type: string
           examples:
-            - eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzY29wZSI6IiIsImV4cCI6MTYwMzI3MDIxNywiYXVkIjoiZThiM2Q2OGEtYmNlOC00OTQzLWExY2EtMjliZWQxMzRhZWQxIiwianRpIjoiZ2VyYXJkOGEtYmNlOC00OTQzLWExY2EtMjliZWQxMzRhZWQxIiwiaWF0IjoxNjAzMjI3MDE3LCJzdWIiOiJjbGllbnQ6ZThiM2Q2OGEtYmNlOC00OTQzLWExY2EtMjliZWQxMzRhZWQxIn0.dsXeTd4USW0MS6N265fdPhZZo4YsnIPyKVDVJ0sHwg9bI5DH5alesqKqjyZSNo7fQ0EZXlbtVuSlX0geYXSE4PnaMnIv5vH1D9OnMtfj1ms3u1DI2ee_1bVvgCb3g3uA81etnRTwzn9e1RuXjpe4_kAiOOURGPRJMTbjju2GFErAFFunZavaw-e3VdHDIvhmKgJIGuGzqPJSs1n10RixJocSQsve-S0c3UYcY5kES8MmqZk9Ap5iYskak8gK5JO3BT1-GNydG11RpDbGg-7mDd3s4IhRGRnBCYBCfdqwfWohGOpecV6NNlA6N8w0k7Hs1aNXEZO-yYE-dIPkEezOvQ
+            - <ACCESS_TOKEN>
           minLength: 1
         redirect_uri:
           description: The URL to redirect users to after successful authentication. Must use the HTTPS protocol.
@@ -39756,7 +39756,7 @@ components:
           description: The refresh token used to request a new access token. This is required when `grant_type = refresh_token`.
           type: string
           examples:
-            - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMj
+            - <REFRESH_TOKEN>
           maxLength: 255
           minLength: 1
         client_secret:
@@ -39795,7 +39795,7 @@ components:
           description: The assertion for the urn:ietf:params:oauth:grant-type:jwt-bearer grant_type.
           type: string
           examples:
-            - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+            - <JWT>
           maxLength: 255
           minLength: 1
       required:
@@ -39826,7 +39826,7 @@ components:
           description: The refresh token used to request a new access token. This is required when `grant_type = refresh_token`.
           type: string
           examples:
-            - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMj
+            - <REFRESH_TOKEN>
           maxLength: 255
           minLength: 1
       required:

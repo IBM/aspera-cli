@@ -210,9 +210,9 @@ module Aspera
           command :submit, description: 'Complete a task with values of its user inputs (all required inputs must be given)',
             arguments: [
               {name: :task_id, type: :identifier},
-              {name: :outputs, type: Hash}
+              {name: :inputs, type: Hash, schema: 'orchestrator:components.schemas.TaskUserInputs'}
             ],
-            action: ->(task_id:, outputs:, **) { Result::SingleObject.new(call_ao("submit_task/#{task_id}", query: outputs.transform_keys { |name| :"outputs[#{name}]" })) }
+            action: ->(task_id:, inputs:, **) { Result::SingleObject.new(call_ao("submit_task/#{task_id}", query: inputs.transform_keys { |name| :"outputs[#{name}]" })) }
         end
 
         commands_under :monitors do
@@ -317,8 +317,9 @@ module Aspera
           command :inputs,     description: 'Show input specification of a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
             action: ->(workflow_id:, **) { Result::SingleObject.new(call_ao("workflow_inputs_spec/#{workflow_id}")['workflow_inputs_spec']) }
-          command :details,    description: 'Show detailed running status of a workflow',
+          command :details,    description: 'Show detailed running status of a workflow (period with option query: `start_date`, `end_date`)',
             arguments: [{name: :workflow_id, type: :identifier}],
+            query_schema: Schema::Registry.query_params(Schema::Registry::ORCHESTRATOR, 'api/workflow_details/{id}'),
             action: ->(workflow_id:, **) { Result::ObjectList.new(call_ao("workflow_details/#{workflow_id}")['workflows']['workflow']['statuses']) }
           command :start,      description: 'Start a workflow: create a work order (sync or async)',
             arguments: [
@@ -348,8 +349,9 @@ module Aspera
               {name: :workflow_id, type: :identifier},
               {name: :export, type: Hash, mandatory: false, default: {}, schema: 'opts:components.schemas.OrchestratorWorkflowExport'}
             ]
-          command :workorders, description: 'List work orders of a workflow',
+          command :workorders, description: 'List work orders of a workflow (filters with option query)',
             arguments: [{name: :workflow_id, type: :identifier}],
+            query_schema: Schema::Registry.query_params(Schema::Registry::ORCHESTRATOR, 'api/work_orders_list/{id}'),
             action: ->(workflow_id:, **) { Result::ObjectList.new(call_ao("work_orders_list/#{workflow_id}")['work_orders']) }
           command :development, description: "Show documentation for workflow development, from GitHub (no access to Orchestrator): whole document, its table of contents (#{DOC_TOC}, headings up to level #{DOC_TOC_LEVELS.map { |d, l| "#{l} (#{d})" }.join(', ')}, or argument level), or one section (anchor)",
             arguments: [
@@ -379,14 +381,16 @@ module Aspera
           command :status, description: 'Show status of a work order',
             arguments: [{name: :workorder_id, type: :identifier}],
             action: ->(workorder_id:, **) { Result::SingleObject.new(call_ao("work_order_status/#{workorder_id}")['work_order']) }
-          command :cancel, description: 'Cancel a work order',
+          command :cancel, description: 'Cancel a work order (option query: `force`)',
             arguments: [{name: :workorder_id, type: :identifier}],
+            query_schema: Schema::Registry.query_params(Schema::Registry::ORCHESTRATOR, 'api/work_order_cancel/{id}'),
             action: ->(workorder_id:, **) { Result::SingleObject.new(call_ao("work_order_cancel/#{workorder_id}")['work_order']) }
           command :reset,  description: 'Reset a work order',
             arguments: [{name: :workorder_id, type: :identifier}],
             action: ->(workorder_id:, **) { Result::SingleObject.new(call_ao("work_order_reset/#{workorder_id}")['work_order']) }
-          command :output, description: 'Show output of a work order',
+          command :output, description: 'Show output of a work order (filters with option query: `step_name`, `variable_name`)',
             arguments: [{name: :workorder_id, type: :identifier}],
+            query_schema: Schema::Registry.query_params(Schema::Registry::ORCHESTRATOR, 'api/work_order_output/{id}'),
             action: ->(workorder_id:, **) { Result::ObjectList.new(call_ao("work_order_output/#{workorder_id}", accept: Mime::XML, xml_opts: {'ForceArray' => %w[variable], 'SuppressEmpty' => nil})['variable']) }
           command :delete, description: 'Delete a work order and its dependents',
             arguments: [{name: :workorder_id, type: :identifier}],

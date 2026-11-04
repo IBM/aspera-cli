@@ -382,6 +382,8 @@ module Aspera
       # @param arg [ArgumentSpec]
       # @return [Array<String>]
       def schema_help_lines(arg)
+        description = free_form_description(arg.schema)
+        return ["\n    SCHEMA: #{arg.name}", description.lines.map { |line| "    #{line.chomp}" }.join("\n")] unless description.nil?
         builder = schema_documentation(arg.schema)
         rows = builder.rows.map do |row|
           builder.columns.map { |column| Array(row[column]).join("\n") }
@@ -400,9 +402,27 @@ module Aspera
           Log.log.warn { 'Sorry, no schema provided yet. Please refer to the manual or API.' }
           return
         end
+        description = free_form_description(schema_path)
+        unless description.nil?
+          @context.formatter.display_message(:data, description)
+          return
+        end
         builder = schema_documentation(schema_path)
         @context.formatter.display_results(Result::ObjectList.new(builder.rows, fields: builder.columns))
         nil
+      end
+
+      # A free-form structure (`additionalProperties`, no `properties`) has no property to list: its description is the help.
+      # @param schema_path [String] Path of the schema in the registry
+      # @return [String, nil] Description of the schema for the terminal, followed by its examples (JSON), `nil` if the schema has properties to list
+      def free_form_description(schema_path)
+        node = Schema::Registry.instance.reader(schema_path).current
+        return if %w[properties allOf oneOf].any? { |key| node.key?(key) }
+        # OpenAPI 3.1: `examples` array (3.0: `example`)
+        examples = node.key?('examples') ? Array(node['examples']) : [node['example']].compact
+        text = TerminalFormatter.markdown_text(node['description'])
+        examples.each { |example| text += "\nExample: #{JSON.generate(example)}" }
+        text
       end
 
       # @param schema_path [String] Path of the schema in the registry
