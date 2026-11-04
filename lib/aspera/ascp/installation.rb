@@ -57,18 +57,10 @@ module Aspera
       def sdk_locations
         Aspera.assert_type(@transferd_urls, Array) { 'locations_url' }
         location_urls = @transferd_urls.empty? ? TRANSFERD_ARCHIVE_LOCATION_URLS : @transferd_urls
-        location_urls.each_with_index do |location_url, index|
-          last = index.eql?(location_urls.length - 1)
-          Log.log.debug { "Retrieving SDK locations from #{location_url}" }
-          begin
-            transferd_locations = last ? UriReader.read(location_url) : read_fail_fast(location_url)
-            locations = Yaml.safe_load(transferd_locations)
-            Aspera.assert_type(locations, Array) { "SDK locations from #{location_url}" }
-            return locations
-          rescue StandardError => e
-            raise if last
-            Log.log.warn { "Failed to retrieve SDK locations from #{location_url}: #{e.message}, trying next" }
-          end
+        return UriReader.read_first(location_urls, what: 'SDK locations') do |content|
+          locations = Yaml.safe_load(content)
+          Aspera.assert_type(locations, Array) { 'SDK locations' }
+          locations
         end
       end
 
@@ -449,10 +441,8 @@ module Aspera
         'https://ibm.biz/sdk_location',
         'https://raw.githubusercontent.com/IBM/aspera-cli/refs/heads/main/docs/sdk_location.yaml'
       ].freeze
-      # Timeout in seconds when another location URL remains to be tried
-      LOCATION_FAIL_FAST_TIMEOUT = 10
       # filename for ascp with optional extension (Windows)
-      private_constant :DEFAULT_ASPERA_CONF, :EXE_FILES, :SDK_FILES, :TRANSFERD_ARCHIVE_LOCATION_URLS, :LOCATION_FAIL_FAST_TIMEOUT
+      private_constant :DEFAULT_ASPERA_CONF, :EXE_FILES, :SDK_FILES, :TRANSFERD_ARCHIVE_LOCATION_URLS
 
       def initialize
         # cache for installed products found
@@ -463,25 +453,6 @@ module Aspera
         @ascp_product = nil
         # cache for folder of `ascp` of selected product
         @ascp_folder = nil
-      end
-
-      # Read URL with a short timeout and no retry (temporarily changes global HTTP parameters)
-      # @param url [String] URL to read
-      # @return [String] content
-      def read_fail_fast(url)
-        parameters = Rest::Parameters.instance
-        session_cb = parameters.session_cb
-        retry_max = parameters.retry_max
-        parameters.retry_max = 0
-        parameters.session_cb = lambda do |http_session|
-          session_cb&.call(http_session)
-          http_session.open_timeout = [http_session.open_timeout, LOCATION_FAIL_FAST_TIMEOUT].compact.min
-          http_session.read_timeout = [http_session.read_timeout, LOCATION_FAIL_FAST_TIMEOUT].compact.min
-        end
-        UriReader.read(url)
-      ensure
-        parameters.session_cb = session_cb
-        parameters.retry_max = retry_max
       end
 
       # @param file_type [Symbol] one of EXE_FILES

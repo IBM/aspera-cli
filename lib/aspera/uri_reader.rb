@@ -3,6 +3,7 @@
 require 'uri'
 require 'base64'
 require 'aspera/assert'
+require 'aspera/log'
 require 'aspera/rest'
 require 'aspera/temp_file_manager'
 
@@ -29,7 +30,9 @@ module Aspera
     # Canonical prefix for file: URLs (no host, three slashes).
     # What follows is the literal path: relative or absolute (starting with a second slash).
     SCHEME_FILE_PFX2 = "#{SCHEME_FILE_PFX1}///"
-    private_constant :SCHEME_FILE, :SCHEME_FILE_PFX1, :SCHEME_FILE_PFX2
+    # Timeout in seconds when another URL remains to be tried
+    FAIL_FAST_TIMEOUT = 10
+    private_constant :SCHEME_FILE, :SCHEME_FILE_PFX1, :SCHEME_FILE_PFX2, :FAIL_FAST_TIMEOUT
     class << self
       # @return [Boolean] true if `url` uses the file: scheme recognized by this module
       def file?(url)
@@ -84,6 +87,50 @@ module Aspera
           local_file_path = File.expand_path(local_file_path.gsub(%r{^/}, '')) if %r{^/(~|.|..)/}.match?(local_file_path)
           return File.read(local_file_path)
         else Aspera.error_unexpected_value(uri.scheme) { "scheme for [#{uri_to_read}]" }
+        end
+      end
+
+      # Read URL with a short timeout and no retry (temporarily changes global HTTP parameters)
+      # @param url [String] URL to read
+      # @return [String] content
+      def read_fail_fast(url)
+        parameters = Rest::Parameters.instance
+        session_cb = parameters.session_cb
+        retry_max = parameters.retry_max
+        parameters.retry_max = 0
+        parameters.session_cb = lambda do |http_session|
+          session_cb&.call(http_session)
+          http_session.open_timeout = [http_session.open_timeout, FAIL_FAST_TIMEOUT].compact.min
+          http_session.read_timeout = [http_session.read_timeout, FAIL_FAST_TIMEOUT].compact.min
+        end
+        read(url)
+      ensure
+        parameters.session_cb = session_cb
+        parameters.retry_max = retry_max
+      end
+
+      # Read the first URL that provides valid content.
+      # All but the last URL are read with a short timeout and no retry, so that fallback is quick.
+      # On failure of a URL (read error, or validation error), a warning is logged and the next URL is tried.
+      # The failure of the last URL is raised.
+      # @param urls [Array<String>] URLs, in order of preference
+      # @param what [String] description of the content, for messages
+      # @yield [content] Optional: validates and converts content, shall raise on invalid content
+      # @yieldparam content [String] content read
+      # @yieldreturn [Object] value returned by this method
+      # @return [Object] result of block if given, else content
+      def read_first(urls, what: 'content')
+        Aspera.assert(!urls.empty?) { "no URL for #{what}" }
+        urls.each_with_index do |url, index|
+          last = index.eql?(urls.length - 1)
+          Log.log.debug { "Retrieving #{what} from #{url}" }
+          begin
+            content = last ? read(url) : read_fail_fast(url)
+            return block_given? ? yield(content) : content
+          rescue StandardError => e
+            raise if last
+            Log.log.warn { "Failed to retrieve #{what} from #{url}: #{e.message}, trying next" }
+          end
         end
       end
 

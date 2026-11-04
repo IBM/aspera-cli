@@ -18,17 +18,24 @@ module Aspera
         TEST_ENDPOINT = 'api/remote_node_ping'
         # Raw Markdown of the workflow authoring documents
         DOC_BASE_URL = 'https://raw.githubusercontent.com/laurent-martin/aspera-orchestrator-plugins-doc/main/docs'
-        # Documents of command `workflows development`: name => file
-        DOC_FILES = {
-          authoring: 'workflow-authoring-guide.md',
-          templates: 'action-template-reference.md',
-          manual:    'Orchestrator_Plugin_Manual.md'
+        # Short link to the development guide: tried first, so that the location of the document can change
+        DOC_GUIDE_LINK = 'https://ibm.biz/aspera-orchestrator-book'
+        # Documents of command `workflows development`: name => URLs, tried in order
+        # `guide` is the same document as `authoring`, which is its former name
+        DOC_URLS = {
+          authoring: [DOC_GUIDE_LINK, "#{DOC_BASE_URL}/workflow-authoring-guide.md"].freeze,
+          guide:     [DOC_GUIDE_LINK, "#{DOC_BASE_URL}/workflow-authoring-guide.md"].freeze,
+          templates: ["#{DOC_BASE_URL}/action-template-reference.md"].freeze,
+          manual:    ["#{DOC_BASE_URL}/Orchestrator_Plugin_Manual.md"].freeze
         }.freeze
+        # An unknown short link ends on a HTML page, but the documents are Markdown (they may start with a comment)
+        HTML_PAGE = /\A\s*<(!doctype|html)/i
         # Value of argument `section` of command `workflows development` for the table of contents
         DOC_TOC = 'toc'
         # Default maximum level of headings in the table of contents: guide sections, one entry per plugin
         DOC_TOC_LEVELS = {
-          authoring: 3,
+          authoring: 4,
+          guide:     4,
           templates: 2,
           manual:    3
         }.freeze
@@ -54,7 +61,7 @@ module Aspera
         ANY_ID = '0'
         # Login of the current user, for `list_tasks`
         SELF_USER = 'self'
-        private_constant :STANDARD_PATH, :TEST_ENDPOINT, :DOC_BASE_URL, :DOC_FILES, :DOC_TOC, :DOC_TOC_LEVELS, :SPEC_SECTIONS, :SPEC_LIST_FIELDS, :YAML_DUMP,
+        private_constant :STANDARD_PATH, :TEST_ENDPOINT, :DOC_BASE_URL, :DOC_GUIDE_LINK, :DOC_URLS, :HTML_PAGE, :DOC_TOC, :DOC_TOC_LEVELS, :SPEC_SECTIONS, :SPEC_LIST_FIELDS, :YAML_DUMP,
           :MONITOR_TYPES, :MONITOR_SNAPSHOT_TYPES, :PROCESS_TYPES, :PROCESS_COMMANDS, :PROCESSES_XML_OPTS, :QUEUE_MOVES, :RESOURCE_JSON_OPTS, :ANY_ID, :SELF_USER
 
         class << self
@@ -346,7 +353,7 @@ module Aspera
             action: ->(workflow_id:, **) { Result::ObjectList.new(call_ao("work_orders_list/#{workflow_id}")['work_orders']) }
           command :development, description: "Show documentation for workflow development, from GitHub (no access to Orchestrator): whole document, its table of contents (#{DOC_TOC}, headings up to level #{DOC_TOC_LEVELS.map { |d, l| "#{l} (#{d})" }.join(', ')}, or argument level), or one section (anchor)",
             arguments: [
-              {name: :document, type: Symbol, mandatory: false, default: :authoring, allowed: DOC_FILES.keys},
+              {name: :document, type: Symbol, mandatory: false, default: :authoring, allowed: DOC_URLS.keys},
               {name: :section, mandatory: false},
               {name: :level, type: Integer, mandatory: false}
             ]
@@ -508,7 +515,10 @@ module Aspera
           require 'aspera/markdown'
           require 'aspera/uri_reader'
           Aspera.assert(level.nil? || section.eql?(DOC_TOC), type: Cli::BadArgument) { "argument level is only for #{DOC_TOC}" }
-          content = UriReader.read("#{DOC_BASE_URL}/#{DOC_FILES[document]}")
+          content = UriReader.read_first(DOC_URLS[document], what: "document #{document}") do |text|
+            Aspera.assert(!HTML_PAGE.match?(text), type: Cli::Error) { 'HTML page instead of Markdown' }
+            text
+          end
           return Result::Text.new(content) if section.nil?
           return Result::ObjectList.new(Markdown.toc(content, max_level: level || DOC_TOC_LEVELS[document]), fields: %w[level title anchor]) if section.eql?(DOC_TOC)
           text = Markdown.extract_section(content, section)

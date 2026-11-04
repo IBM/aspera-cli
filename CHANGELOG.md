@@ -28,6 +28,8 @@ Released: [Place date of release here]
   * `workflows check_import`: error `graph.loop` when a link goes back to a node it comes from: a step runs only once in a work order.
   * `workflows check_import`: error `graph.router` when the line style (`router`) of a link is not one of `draw2d.ManhattanConnectionRouter`, `draw2d.BezierConnectionRouter`, `draw2d.NullConnectionRouter`, `draw2d.FanConnectionRouter`: the designer of Orchestrator cannot draw the workflow.
   * `workflows check_import`: error `step.lookup_without_key` when a `SimpleParameterLookup` step has no input named as a column of its table, nor `KeyForTableIndexing`, and `return_array_of_rows` is not set: no row matches and the step ends with `Failed` (`No configuration match`).
+  * `workflows development`: the guide is read through the short link `https://ibm.biz/aspera-orchestrator-book`, then from GitHub if the link is unreachable or does not give a Markdown document (an unknown link ends on a HTML page). New document name `guide` (same as `authoring`), and `authoring` and `guide` list headings up to level 4 in `toc`.
+* **library**: `Aspera::UriReader.read_first` reads the first of several URLs that gives valid content, with a short timeout and no retry for all but the last, and a warning before trying the next one. It is used for the locations of the SDK and for the documents of `orchestrator workflows development`.
 
 ### Issues Fixed
 

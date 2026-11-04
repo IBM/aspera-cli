@@ -387,6 +387,37 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
       expect { orchestrator.action_workflows_development(document: :authoring, section: 'nope') }
         .to(raise_error(Aspera::Cli::Error, /Section not found: nope/))
     end
+
+    it 'reads the guide through the short link first' do
+      %i[authoring guide].each do |document|
+        orchestrator.action_workflows_development(document: document)
+      end
+      expect(Aspera::UriReader).to(have_received(:read).with('https://ibm.biz/aspera-orchestrator-book').twice)
+    end
+
+    context 'when the short link fails' do
+      before do
+        allow(Aspera::UriReader).to(receive(:read_fail_fast).and_raise(StandardError, 'unreachable'))
+      end
+
+      it 'falls back to GitHub on error' do
+        result = orchestrator.action_workflows_development(document: :guide)
+        expect(result.data).to(eq(content))
+        expect(Aspera::UriReader).to(have_received(:read).with(%r{^https://raw\.githubusercontent\.com/.+/workflow-authoring-guide\.md$}))
+      end
+
+      it 'falls back to GitHub on HTML page' do
+        allow(Aspera::UriReader).to(receive(:read_fail_fast).and_return("<!DOCTYPE html>\n<html></html>"))
+        result = orchestrator.action_workflows_development(document: :authoring)
+        expect(result.data).to(eq(content))
+      end
+
+      it 'accepts a document starting with a comment' do
+        allow(Aspera::UriReader).to(receive(:read_fail_fast).and_return("<!-- gfm2pdf\n-->\n# Guide\n"))
+        result = orchestrator.action_workflows_development(document: :authoring)
+        expect(result.data).to(start_with('<!-- gfm2pdf'))
+      end
+    end
   end
 
   describe 'commands calling one endpoint' do

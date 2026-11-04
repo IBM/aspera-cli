@@ -29,4 +29,38 @@ RSpec.describe(Aspera::UriReader) do
   it 'decodes data scheme' do
     expect(Aspera::UriReader.read('data:text/plain;base64,SGVsbG8gd29ybGQh')).to(eq('Hello world!'))
   end
+
+  describe '.read_first' do
+    let(:urls) { %w[https://first.example/doc https://second.example/doc] }
+
+    before do
+      allow(Aspera::UriReader).to(receive(:read_fail_fast).with(urls.first).and_raise(StandardError, 'unreachable'))
+      allow(Aspera::UriReader).to(receive(:read).with(urls.last).and_return('last content'))
+    end
+
+    it 'uses the next URL on read error' do
+      expect(Aspera::UriReader.read_first(urls)).to(eq('last content'))
+      expect(Aspera::UriReader).to(have_received(:read_fail_fast).with(urls.first))
+    end
+
+    it 'uses the next URL when validation fails' do
+      allow(Aspera::UriReader).to(receive(:read_fail_fast).with(urls.first).and_return('<html>'))
+      result = Aspera::UriReader.read_first(urls) do |content|
+        raise 'invalid' if content.start_with?('<')
+        content.upcase
+      end
+      expect(result).to(eq('LAST CONTENT'))
+    end
+
+    it 'does not read further URLs when the first is valid' do
+      allow(Aspera::UriReader).to(receive(:read_fail_fast).with(urls.first).and_return('first content'))
+      expect(Aspera::UriReader.read_first(urls)).to(eq('first content'))
+      expect(Aspera::UriReader).not_to(have_received(:read).with(urls.last))
+    end
+
+    it 'raises the failure of the last URL' do
+      allow(Aspera::UriReader).to(receive(:read).with(urls.last).and_raise(StandardError, 'down'))
+      expect { Aspera::UriReader.read_first(urls) }.to(raise_error(StandardError, 'down'))
+    end
+  end
 end
