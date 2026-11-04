@@ -16,7 +16,7 @@ RSpec.describe(Aspera::OAuth::SharesWeb) do
   let(:token_json) { JSON.generate({'token_type' => 'bearer', 'access_token' => 'new_access', 'refresh_token' => 'new_refresh', 'expires_in' => 86400}) }
 
   before do
-    allow(Aspera::Environment.instance).to(receive(:open_uri)) { |url| opened.push(url) }
+    allow(Aspera::Environment.instance).to(receive(:open_uri)) { |url| opened.push(url.to_s) }
   end
 
   # @param extra [Hash] Parameters received on the loopback URL, in addition to the state sent in RelayState
