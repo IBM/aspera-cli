@@ -39,7 +39,7 @@ RSpec.describe(Aspera::Schema::Documentation) do
 
   it 'lists properties sorted, with nested ones' do
     expect(build.rows.map { |row| [row['name'], row['type']] }).to(eq([
-      %w[mode String], %w[name String], %w[owner Hash], %w[owner.id Integer], %w[speed Integer]
+      %w[mode Enum[String]], %w[name String], %w[owner Hash], %w[owner.id Integer], %w[speed Integer]
     ]))
   end
 
@@ -66,10 +66,10 @@ RSpec.describe(Aspera::Schema::Documentation) do
   it 'inserts extra columns before the description' do
     documentation = build(extra_columns: {'kind' => ->(node, _formatter) { node['type'][0] }})
     expect(documentation.columns).to(eq(%w[name type kind description]))
-    expect(documentation.table[1]).to(eq(['mode', 'String', 's', descriptions(documentation)['mode']]))
+    expect(documentation.table[1]).to(eq(['mode', 'Enum[String]', 's', descriptions(documentation)['mode']]))
   end
 
   it 'formats name and type as code' do
-    expect(build(code_highlight: true).rows.first.slice('name', 'type')).to(eq({'name' => '`mode`', 'type' => '`String`'}))
+    expect(build(code_highlight: true).rows.first.slice('name', 'type')).to(eq({'name' => '`mode`', 'type' => '`Enum[String]`'}))
   end
 end

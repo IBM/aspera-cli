@@ -82,6 +82,7 @@ module Aspera
           next if annotations.nil?
           item = {'name' => code.call(property_full_name)}
           item_type = type_text(node)
+          item_type = "Enum[#{item_type}]" if node.key?('enum') && !item_type.nil?
           item['type'] = code.call(item_type) unless item_type.nil?
           @extra_columns.each { |column, value| item[column] = value.call(node, @formatter) }
           description = []

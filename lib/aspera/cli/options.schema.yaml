@@ -39,11 +39,15 @@ components:
         mode:
           type: string
           description: >-
-            `auto`: `browser` on Windows and macOS, or if env var `DISPLAY` is set, else `terminal`.
-            `terminal`: URLs to open are displayed on terminal, and secrets are entered on terminal.
-            `browser`: a browser opens URLs, and secrets are entered on a web page.
-            Files to edit are always opened with a text editor, whatever the `mode`.
+            - `auto`: `browser` on Windows and macOS, or if env var `DISPLAY` is set, else `terminal`.
+
+            - `terminal`: URLs to open are displayed on terminal, and secrets are entered on terminal.
+
+            - `browser`: a browser opens URLs, and secrets are entered on a web page.
+
             `text` is an alias for `terminal`, and `graphical` is an alias for `browser`.
+
+            Files to edit are always opened with a text editor, whatever the `mode`.
           enum:
             - auto
             - terminal
@@ -70,9 +74,11 @@ components:
         level:
           type: string
           description: >-
-            `low`: no restriction.
-            `medium`: `@file:` reads only files in `allowed_paths`, `@ruby:`, `@uri:` and `@env:` are refused.
-            `high`: `@ruby:`, `@file:`, `@uri:` and `@env:` are refused.
+            - `low`: no restriction.
+
+            - `medium`: `@file:` reads only files in `allowed_paths`, `@ruby:`, `@uri:` and `@env:` are refused.
+
+            - `high`: `@ruby:`, `@file:`, `@uri:` and `@env:` are refused.
           enum:
             - low
             - medium
@@ -96,8 +102,10 @@ components:
           x-cli-complete: folder
           description: >-
             Folder for temporary files, e.g. certificate for WSS transfers, logs of `transferd`.
-            `@sys`: temporary folder of the system for the current user (Ruby `Etc.systmpdir`).
-            `@env`: from environment variables, e.g. `TMPDIR` (Ruby `Dir.tmpdir`).
+
+            - `@sys`: temporary folder of the system for the current user (Ruby `Etc.systmpdir`).
+
+            - `@env`: from environment variables, e.g. `TMPDIR` (Ruby `Dir.tmpdir`).
           default: '@sys'
         clean:
           type: boolean
