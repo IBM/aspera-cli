@@ -3980,6 +3980,59 @@ For example, to use Firefox:
 ascli config echo @secret: --ui=browser --ui.command=@json:'["firefox","--private-window"]'
 ```
 
+### Web login flow
+
+Authentication methods that need a user login in a browser (`--auth=web`, and `--auth=saml` for Shares) all work the same way: `ascli` listens on a local port, the browser is redirected to it after login.
+
+![Web login flow: `ascli` listens on a loopback port and receives the result of the login from the browser](login-flow.svg)
+
+1. `ascli` generates a random `state` and starts a local HTTP server on the loopback address of `redirect_uri` (default: `http://localhost:12345`).
+2. `ascli` opens the login URL in the browser (see [Graphical Interactions](#graphical-interactions-browser-and-text-editor)): the authorization endpoint with `redirect_uri` and `state` for `web`, or the SAML login page with `RelayState` for `saml`.
+   If no graphical environment is available, the URL is displayed, to be opened on any browser of the same host.
+3. The user logs in on the server, possibly redirected to an identity provider.
+4. The server redirects the browser to `redirect_uri`, with the OAuth code (`web`), or the tokens (`saml`), and the `state`.
+5. The browser sends this request to `ascli`, which checks that `state` is the one it generated, and stops listening.
+6. `ascli` requests the token to the server: exchange of the code (`web`) or of the refresh token (`saml`), and saves it in the cache.
+   Next calls use the cached token, renewed if needed without a browser.
+
+The code or tokens never go to another host than the local one: the host of `redirect_uri` shall be loopback.
+
+#### Web login when the browser is on another system
+
+The browser sends the result of the login to `redirect_uri`, on the loopback address of the system where the browser runs.
+If `ascli` runs on another system than the browser (for example, `ascli` is installed on a server, and the user is connected with SSH from a workstation), the redirection does not reach `ascli`.
+
+To solve this, forward the port of `redirect_uri` from the workstation to the server with an SSH tunnel, and open the login URL in the browser of the workstation:
+
+1. On the workstation, open the SSH session with a tunnel (same port on both sides, default `12345`):
+
+   ```shell
+   ssh -L 127.0.0.1:12345:127.0.0.1:12345 <SERVER_USER>@<SERVER_HOST>
+   ```
+
+2. In this session, run the command with `--ui=terminal`, so that the login URL is displayed instead of opening a browser on the server (this is the default if the server has no graphical environment):
+
+   ```shell
+   ascli <PLUGIN> <COMMAND> --ui=terminal
+   ```
+
+3. Copy the displayed URL in the browser of the workstation, and log in.
+4. The browser is redirected to `http://localhost:12345`: the tunnel sends the request to `ascli` on the server, and the flow continues as described above.
+
+The tunnel only exists as long as the SSH session is open.
+Notes:
+
+- The port must be free on the workstation.
+  To use another port, change it in the tunnel and in `--redirect-uri`, for example `--redirect-uri=http://localhost:23456` and `-L 127.0.0.1:23456:127.0.0.1:23456`.
+  For Aspera on Cloud, this `redirect_uri` shall also be declared in the API client (see [API Client Registration](#api-client-registration)).
+- The tunnel listens on `127.0.0.1`: if the browser resolves `localhost` to `::1`, use `--redirect-uri=http://127.0.0.1:12345`.
+- For Shares with `--auth=saml`, the same procedure applies; the tokens go through the browser of the workstation and the tunnel, then `ascli` immediately exchanges the refresh token.
+- On Windows, `ssh` is the OpenSSH client provided with the system; with PuTTY, add a local port forwarding (Connection &rarr; SSH &rarr; Tunnels) from `127.0.0.1:12345` to `127.0.0.1:12345`.
+- Another solution is X11 forwarding: run an X server on the workstation (for example VcXsrv or X410 on Windows) and connect with `ssh -X`.
+  The browser then runs on the server and is displayed on the workstation, so no tunnel is needed.
+  It is heavier (X server to install, slower display), and the browser is the one of the server.
+- Without interaction (automation), prefer a method that needs no browser, such as `--auth=jwt` for Aspera on Cloud.
+
 ### Logging, Debugging
 
 The gem is equipped with traces, mainly for debugging and learning APIs.
@@ -6544,6 +6597,7 @@ To register with web-based authentication (auth=web):
 
 > [!NOTE]
 > For web based authentication, `ascli` listens on a local port (for example, specified by the `redirect_uri` parameter, in this example: `12345`), and the browser will provide the OAuth code there.
+> See [Web login flow](#web-login-flow).
 > For `ascli`, HTTP is required, and `12345` is the default port.
 > The host of `redirect_uri` shall be loopback: `localhost`, an address of `127.0.0.0/8`, or `[::1]`.
 
@@ -9995,6 +10049,7 @@ A user that has only a SAML identity (no local password) can authenticate with a
 ascli shares --url=https://shares.example.com --auth=saml files browse /
 ```
 
+See [Web login flow](#web-login-flow).
 `ascli` listens on a local port (`--redirect-uri`, default: `http://localhost:12345`), opens the SAML login page of Shares (`/auth/saml`) in the browser, and receives the OAuth tokens there.
 The host of `redirect_uri` shall be loopback: `localhost`, an address of `127.0.0.0/8`, or `[::1]`.
 The token is saved, and renewed with its refresh token: the browser is opened again only if this fails.
