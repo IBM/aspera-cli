@@ -3743,6 +3743,7 @@ To edit a file (for example `config open`), whatever the `mode`, the editor is, 
 
 When a command is defined, it is used to open URLs whatever the `mode`.
 The command is an array: the URL is appended as last argument.
+The executable is either a full path, or the name of an executable found in the `PATH`.
 For example, to use Firefox:
 
 ```bash

@@ -3951,7 +3951,7 @@ The composite option `ui` (use `--ui=help` to display this schema) selects the m
 
 | Field | Type | Description |
 |---------|---------------|----------------------------------------------------------------------------------|
-| `command` | `Array[String]` | Command that opens a URL, instead of the system default. First item is the executable, then its arguments. The URL is added as last argument. When set, it is used to open URLs, whatever the `mode`. |
+| `command` | `Array[String]` | Command that opens a URL, instead of the system default. First item is the executable (full path, or name of an executable found in `PATH`), then its arguments. The URL is added as last argument. When set, it is used to open URLs, whatever the `mode`. |
 | `mode` | `Enum[String]` | - `auto`: `browser` on Windows and macOS, or if env var `DISPLAY` is set, else `terminal`.<br/>- `terminal`: URLs to open are displayed on terminal, and secrets are entered on terminal.<br/>- `browser`: a browser opens URLs, and secrets are entered on a web page.<br/>`text` is an alias for `terminal`, and `graphical` is an alias for `browser`.<br/>Files to edit are always opened with a text editor, whatever the `mode`.<br/>Allowed values: `auto`, `terminal`, `browser`, `text`, `graphical`.<br/>Default: `auto`. |
 
 A plain value is the `mode`:
@@ -3973,6 +3973,7 @@ To edit a file (for example `config open`), whatever the `mode`, the editor is, 
 
 When a command is defined, it is used to open URLs whatever the `mode`.
 The command is an array: the URL is appended as last argument.
+The executable is either a full path, or the name of an executable found in the `PATH`.
 For example, to use Firefox:
 
 ```bash

@@ -386,7 +386,11 @@ module Aspera
     # @return [nil]
     def open_uri_graphical(uri)
       if @browser_command
-        self.class.secure_execute(*@browser_command, uri.to_s)
+        begin
+          self.class.secure_execute(*@browser_command, uri.to_s)
+        rescue Errno::ENOENT
+          raise ParameterError, "Browser command not found (option ui.command): #{@browser_command.first}. Check that it is in PATH, or use its full path."
+        end
       else
         case @os
         when Environment::OS_MACOS then self.class.secure_execute('open', uri.to_s)
