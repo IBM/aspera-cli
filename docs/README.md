@@ -758,7 +758,7 @@ Those are not installed as part of dependencies because they involve compilation
 See [Gemfile](../Gemfile):
 
 | name | version | comment |
-|---------------------|-----------|-------------------------------------------------------------------------------|
+|------------------------|-----------|-------------------------------------------------------------------------------|
 | rake | ~> 13.0 |  |
 | debug | ~> 1.11 | (no jruby) |
 | grpc-tools | ~> 1.67 |  |
@@ -781,6 +781,7 @@ See [Gemfile](../Gemfile):
 | bcrypt_pbkdf | ~> 1.1 | (no jruby) for ed25519 and OpenSSH file format |
 | syslog | ~> 0.3 | (no jruby) for logger=syslog |
 | zxcvbn | ~> 1.0 | for better estimate of secret strength (faspex5 postprocessing secret_token) |
+| keeper_secrets_manager | ~> 17.2 | for vault of type keeper (Keeper Secrets Manager) |
 | rmagick | ~> 6.1 | (no jruby) for terminal view |
 
 Install like this:
@@ -808,6 +809,7 @@ gem install ed25519 -v '~> 1.4'
 gem install bcrypt_pbkdf -v '~> 1.1'
 gem install syslog -v '~> 0.3'
 gem install zxcvbn -v '~> 1.0'
+gem install keeper_secrets_manager -v '~> 17.2'
 gem install rmagick -v '~> 6.1'
 ```
 
@@ -3493,6 +3495,9 @@ Parameters of a store, with `type` (see sections below):
 | **type** | `String` | `system`: macOS system keychain secret store. |
 | `name` | `String` | Name of the keychain to use (file `<name>.keychain-db` in the keychain search list).<br/>Default: `ascli`. |
 | `type` | `Enum[String]` | Vault type selector.<br/>Required.<br/>Allowed values: `system`. |
+| **type** | `String` | `secret_service`: Linux Secret Service secret store (GNOME Keyring, KWallet, KeePassXC...), using `secret-tool`. |
+| `name` | `String` | Name of the group of secrets (attribute `service` of the items).<br/>Default: `ascli`. |
+| `type` | `Enum[String]` | Vault type selector.<br/>Required.<br/>Allowed values: `secret_service`. |
 | **type** | `String` | `file`: Encrypted file secret store. Reference `@vault://<store>/<label>[#<field>]`, field `password` by default. |
 | `file` | `String` | Path to the encrypted vault file, created when the first secret is added. Relative paths are resolved from the configuration folder. Read when used, and again when modified.<br/>Default: `vault.bin`. |
 | `name` | `String` | Same as `file` (compatibility). |
@@ -3506,6 +3511,10 @@ Parameters of a store, with `type` (see sections below):
 | `url` | `String` | Base URL of the 1Password Connect server (required when `source` is `api`).<br/>Example: `http://localhost:8080`. |
 | `vault_id` | `String` | ID of the 1Password vault to use (required when `source` is `api`). |
 | `vault` | `String` | Name or ID of the 1Password vault to use with the CLI (used when `source` is `cli`). Uses the default vault if omitted. |
+| **type** | `String` | `keeper`: Keeper Secrets Manager secret store (Keeper Vault), using gem `keeper_secrets_manager`. A secret is a record shared with the application: its label is its title or its UID. Reference `@vault://<store>/<title or uid>[#<field>]`, field `password` by default: standard field by type (`login`, `password`, `url`...), custom field by label, or `notes`. |
+| `config` | `String` | Configuration of the client device (base64 or JSON, e.g. from `ksm profile export`): the value, or `@file:<path>`. For the default store, defaults to the value of `vault_password`. |
+| `folder_uid` | `String` | UID of the shared folder where `config vault create` adds records (not needed to read). |
+| `type` | `Enum[String]` | Vault type selector.<br/>Required.<br/>Allowed values: `keeper`. |
 
 > [!NOTE]
 > The parameters of one store, without `stores` (for example, `{"type":"file","name":"vault.bin"}`), are deprecated: they define a store named after its type (for example, `file`), which is the default store.
@@ -3515,7 +3524,7 @@ Secrets used to access a store (`token`, `approle.secret_id`, `password`) are th
 As for extended value `@file:`, reading the file is restricted by option `security` (see [Security Level](#security-level)).
 In a YAML file, quote the value: `@` cannot start a plain scalar.
 
-The secret of the default store (`password` of type `file`, `token` of type `vault` without `approle`, and of type `1password` with `source` `api`), if not in its parameters, is the value of option `vault_password`.
+The secret of the default store (`password` of type `file`, `token` of type `vault` without `approle`, of type `1password` with `source` `api`, and `config` of type `keeper`), if not in its parameters, is the value of option `vault_password`.
 To avoid exposing the vault password in the shell history, provide it via an environment variable:
 
 ```shell
@@ -3567,6 +3576,19 @@ Commands `list`, `ids` and `delete` are not supported: use the **Keychain Access
 
 ```shell
 --vault=@json:'{"default":"keychain","stores":{"keychain":{"type":"system","name":"ascli"}}}'
+```
+
+#### Vault: Linux Secret Service
+
+> [!WARNING]
+> **Linux only**
+
+It is possible to manage secrets in the Linux Secret Service (GNOME Keyring, KWallet, KeePassXC...), using the `secret-tool` command of libsecret (for example, package `libsecret-tools` on Debian and Ubuntu).
+A session with an unlocked keyring is required.
+Secrets are grouped with attribute `service`, which is parameter `name` (default: `ascli`).
+
+```shell
+--vault=@json:'{"default":"keyring","stores":{"keyring":{"type":"secret_service","name":"ascli"}}}'
 ```
 
 #### Vault: Encrypted file
@@ -3649,6 +3671,42 @@ An item can be referenced by its title (label) or by its 1Password ID, in `@vaul
 
 > [!NOTE]
 > If several items share the same title, use the item ID (or the `vault` parameter to restrict the search).
+
+#### Vault: Keeper
+
+<https://docs.keeper.io/keeperpam/secrets-manager/overview>
+
+Keeper Secrets Manager (KSM) gives an application access to the records of shared folders of a Keeper vault, without the credentials of a user.
+It requires the optional gem `keeper_secrets_manager`:
+
+```shell
+gem install keeper_secrets_manager
+```
+
+Create an application and a client device in Keeper (see the [Quick Start Guide](https://docs.keeper.io/keeperpam/secrets-manager/quick-start-guide)), share the folders of secrets with the application, and get the configuration of the device (base64 or JSON, for example with `ksm profile export`).
+Parameter `config` is the value, or `@file:<path>`:
+
+```shell
+--vault=@json:'{"default":"keeper","stores":{"keeper":{"type":"keeper","config":"@file:<KSM_CONFIG_FILE>"}}}'
+```
+
+If `config` is not set in the default store, it is the value of option `vault_password`.
+
+A secret is a record of the vault: its label is its title, or its UID.
+The field of a reference is `password` by default: standard field of the record (`login`, `password`, `url`...), custom field by its label, or `notes`.
+Field `username` is an alias of `login`.
+
+```shell
+--password=@vault:<RECORD_TITLE>.password
+--password=@vault://keeper/<RECORD_TITLE>#<FIELD>
+```
+
+To create records with `config vault create` (type `login`), set parameter `folder_uid`: UID of the shared folder where records are added.
+Reading does not need it.
+
+> [!NOTE]
+> If several records share the same title, use the UID.
+> Deleting a record with `config vault delete` requires that the application has edit permission.
 
 #### Vault: Operations
 
