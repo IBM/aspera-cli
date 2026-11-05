@@ -8,6 +8,7 @@ require 'aspera/log'
 require 'aspera/cli/plugins/factory'
 require 'aspera/cli/plugins/config'
 require_relative 'paths'
+require_relative 'doc_helper'
 
 # Check hand-written command examples of the manual template against the commands and options of plugins.
 # Checked: code lines starting with the command (after an optional prompt), commands after a pipe or in `$(...)`,
@@ -29,6 +30,7 @@ class DocCommandChecker
   PROMPT = /\A(?:\$|PS[^>]*>|C:[^>]*>)\s+/
   private_constant :CMD_ERB, :PIPE, :SUBSHELL, :INLINE, :PROMPT
 
+  # Load plugins and collect the commands and options they declare.
   # @param template [Pathname] ERB template of the manual
   # @param ascli    [Pathname] executable of the CLI
   def initialize(template:, ascli:)
@@ -43,6 +45,7 @@ class DocCommandChecker
     @options = declared_options
   end
 
+  # Check all command examples of the template, log each error, and fail if there is at least one.
   # @raise [RuntimeError] if an example uses an unknown command or option
   def check
     errors = examples.flat_map do |example|
@@ -55,7 +58,8 @@ class DocCommandChecker
 
   private
 
-  # Options declared for all plugins (including global options), from `config options <plugin>`
+  # Options declared for all plugins (including global options), from `config options <plugin>`.
+  # The CLI is run once per plugin, in parallel threads, with a temporary home folder.
   # @return [Hash{String => String, nil}] option name with `_` => replacement if deprecated
   def declared_options
     Dir.mktmpdir do |home|
@@ -71,6 +75,8 @@ class DocCommandChecker
     end
   end
 
+  # Extract command examples from the template: lines of code blocks (continued lines are joined)
+  # and inline code spans, except those excluded by `SKIP_MARKER`.
   # @return [Array<Hash>] command examples: `{line:, text:}`
   def examples
     result = []
@@ -102,27 +108,34 @@ class DocCommandChecker
     result
   end
 
+  # Find the commands in a logical line of code.
   # @param code [String] logical line of code
   # @return [Array<String>] commands: at beginning of line (after optional prompt), after a pipe, or in `$(...)`
   def code_commands(code)
     code.scan(SUBSHELL).flatten + code.sub(PROMPT, '').split(PIPE).select { |c| c.start_with?("#{CMD_ERB} ") }
   end
 
+  # Tell if a word is a placeholder (e.g. `<id>`, `[opt]`, `...`, `a|b`) that can not be checked.
   # @param word [String] command line word
   # @return [Boolean] `true` if word is a placeholder, not an actual value
   def placeholder?(word)
-    word.match?(/\A[<\[]|\.\.\.|\||\AX\z/)
+    word.match?(/\A[<\[#{Regexp.escape(DocHelper::PH_CHARS[:b])}]|\.\.\.|\||\AX\z/)
   end
 
+  # Split a command line into words: remove trailing comment, replace ERB expressions
+  # (`ph` placeholders keep their name, others become `X`), then split like a shell.
   # @param text [String] command line from the template
   # @return [Array<String>] words, after rendering ERB placeholders
   def words(text)
-    text = text.sub(/\s+#\s.*\z/, '').gsub(/<%=\s*ph\s+:(\w+)\s*%>/) { "<#{Regexp.last_match(1).upcase}>" }.gsub(/<%=[^%]*%>/, 'X')
+    text = text.sub(/\s+#\s.*\z/, '')
+      .gsub(/<%=\s*ph\s+:(\w+)\s*%>/) { "#{DocHelper::PH_CHARS[:b]}#{Regexp.last_match(1).upcase}#{DocHelper::PH_CHARS[:e]}" }
+      .gsub(/<%=[^%]*%>/, 'X')
     Shellwords.split(text)
   rescue ArgumentError
     text.split
   end
 
+  # Check options and positional arguments (plugin and commands) of one command line.
   # @param text [String] command line from the template
   # @return [Array<String>] errors
   def check_command(text)
@@ -142,6 +155,7 @@ class DocCommandChecker
     errors.concat(check_positional(positional))
   end
 
+  # Check that an option is declared and not deprecated.
   # @param word [String] option on command line, e.g. `--out.level=data`
   # @return [Array<String>] errors
   def check_option(word)
@@ -152,6 +166,8 @@ class DocCommandChecker
     []
   end
 
+  # Check that the plugin exists and that following words are valid commands of its command tree.
+  # Stops at the first placeholder or when the command has no sub-command.
   # @param positional [Array<String>] positional arguments: plugin, commands and arguments
   # @return [Array<String>] errors
   def check_positional(positional)
@@ -173,6 +189,7 @@ class DocCommandChecker
     end
   end
 
+  # Find the identifier of a command from its name or one of its aliases.
   # @param children [Hash{Symbol => CommandSpec}] commands
   # @param word     [String] command on command line
   # @return [Symbol, nil] command identifier, if word is the command or one of its aliases

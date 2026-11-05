@@ -58,6 +58,8 @@ class DocHelper
   SAMPLE_EMAIL = 'my_user@example.com'
   SHORT_LINK = 'https://aspera.pub/MyShOrTlInK'
   SECRET_QUERIES = %w[token passcode context].freeze
+  # Characters surrounding a placeholder (`b`: begin, `e`: end), see `ph`
+  PH_CHARS = {b: '<', e: '>'}.freeze
   class << self
     # Generate template configuration file for tests
     # Hide sensitive information
@@ -138,7 +140,7 @@ class DocHelper
 
   # Place Holder
   # @param name name or description of parameter
-  def ph(name); "<#{name.upcase}>"; end
+  def ph(name); "#{PH_CHARS[:b]}#{name.upcase}#{PH_CHARS[:e]}"; end
 
   # To the power of
   def pow(value); "<sup>#{value}</sup>"; end
