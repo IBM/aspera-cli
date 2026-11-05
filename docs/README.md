@@ -3982,17 +3982,17 @@ ascli config echo @secret: --ui=browser --ui.command=@json:'["firefox","--privat
 
 ### Web login flow
 
-Authentication methods that need a user login in a browser (`--auth=web`, and `--auth=saml` for Shares) all work the same way: `ascli` listens on a local port, the browser is redirected to it after login.
+Authentication methods that need a user login in a browser (`--auth=web`, including for Shares) all work the same way: `ascli` listens on a local port, the browser is redirected to it after login.
 
 ![Web login flow: `ascli` listens on a loopback port and receives the result of the login from the browser](login-flow.svg)
 
 1. `ascli` generates a random `state` and starts a local HTTP server on the loopback address of `redirect_uri` (default: `http://localhost:12345`).
-2. `ascli` opens the login URL in the browser (see [Graphical Interactions](#graphical-interactions-browser-and-text-editor)): the authorization endpoint with `redirect_uri` and `state` for `web`, or the SAML login page with `RelayState` for `saml`.
+2. `ascli` opens the login URL in the browser (see [Graphical Interactions](#graphical-interactions-browser-and-text-editor)): the authorization endpoint with `redirect_uri` and `state` for `web`, or, for Shares, the SAML login page with `RelayState`.
    If no graphical environment is available, the URL is displayed, to be opened on any browser of the same host.
 3. The user logs in on the server, possibly redirected to an identity provider.
-4. The server redirects the browser to `redirect_uri`, with the OAuth code (`web`), or the tokens (`saml`), and the `state`.
+4. The server redirects the browser to `redirect_uri`, with the OAuth code (`web`), or, for Shares, the tokens, and the `state`.
 5. The browser sends this request to `ascli`, which checks that `state` is the one it generated, and stops listening.
-6. `ascli` requests the token to the server: exchange of the code (`web`) or of the refresh token (`saml`), and saves it in the cache.
+6. `ascli` requests the token to the server: exchange of the code (`web`) or, for Shares, of the refresh token, and saves it in the cache.
    Next calls use the cached token, renewed if needed without a browser.
 
 The code or tokens never go to another host than the local one: the host of `redirect_uri` shall be loopback.
@@ -4026,7 +4026,7 @@ Notes:
   To use another port, change it in the tunnel and in `--redirect-uri`, for example `--redirect-uri=http://localhost:23456` and `-L 127.0.0.1:23456:127.0.0.1:23456`.
   For Aspera on Cloud, this `redirect_uri` shall also be declared in the API client (see [API Client Registration](#api-client-registration)).
 - The tunnel listens on `127.0.0.1`: if the browser resolves `localhost` to `::1`, use `--redirect-uri=http://127.0.0.1:12345`.
-- For Shares with `--auth=saml`, the same procedure applies; the tokens go through the browser of the workstation and the tunnel, then `ascli` immediately exchanges the refresh token.
+- For Shares with `--auth=web`, the same procedure applies; the tokens go through the browser of the workstation and the tunnel, then `ascli` immediately exchanges the refresh token.
 - On Windows, `ssh` is the OpenSSH client provided with the system; with PuTTY, add a local port forwarding (Connection &rarr; SSH &rarr; Tunnels) from `127.0.0.1:12345` to `127.0.0.1:12345`.
 - Another solution is X11 forwarding: run an X server on the workstation (for example VcXsrv or X410 on Windows) and connect with `ssh -X`.
   The browser then runs on the server and is displayed on the workstation, so no tunnel is needed.
@@ -10043,10 +10043,10 @@ ascli shares admin user all share_permissions %username:john@example.com list --
 ### Authentication of SAML users
 
 By default, `shares` authenticates with `username` and `password`.
-A user that has only a SAML identity (no local password) can authenticate with a web browser: `--auth=saml`.
+A user that has only a SAML identity (no local password) can authenticate with a web browser: `--auth=web`.
 
 ```shell
-ascli shares --url=https://shares.example.com --auth=saml files browse /
+ascli shares --url=https://shares.example.com --auth=web files browse /
 ```
 
 See [Web login flow](#web-login-flow).

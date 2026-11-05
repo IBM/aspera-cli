@@ -78,16 +78,16 @@ module Aspera
           expect(params).to(eq(base_url: 'https://shares.example.com/api/v1', auth: {type: :basic, username: 'u', password: 'p'}))
         end
 
-        it 'uses OAuth with a web browser for auth=saml' do
-          params = plugin('--url=https://shares.example.com', '--auth=saml', '--username=u').basic_auth_params('node_api')
+        it 'uses OAuth with a web browser for auth=web' do
+          params = plugin('--url=https://shares.example.com', '--auth=web', '--username=u').basic_auth_params('node_api')
           expect(params).to(eq(
             base_url: 'https://shares.example.com/node_api',
             auth:     {type: :oauth2, base_url: 'https://shares.example.com/auth', grant_method: :shares_web, redirect_uri: 'http://localhost:12345', cache_ids: ['u']}
           ))
         end
 
-        it 'does not need a user for auth=saml, and accepts another redirect_uri' do
-          params = plugin('--url=https://shares.example.com', '--auth=saml', '--redirect-uri=http://127.0.0.1:45678/cb').basic_auth_params
+        it 'does not need a user for auth=web, and accepts another redirect_uri' do
+          params = plugin('--url=https://shares.example.com', '--auth=web', '--redirect-uri=http://127.0.0.1:45678/cb').basic_auth_params
           expect(params).to(include(base_url: 'https://shares.example.com'))
           expect(params[:auth]).to(include(redirect_uri: 'http://127.0.0.1:45678/cb', cache_ids: []))
         end
@@ -105,37 +105,37 @@ module Aspera
             ))
           end
 
-          it 'generates a saml auth preset with username when auth=saml' do
-            p = plugin('--auth=saml', '--username=alice')
+          it 'generates a web auth preset with username when auth=web' do
+            p = plugin('--auth=web', '--username=alice')
             result = p.wizard(wizard_mock, 'https://shares.example.com')
             expect(result).to(eq(
               preset_ids:   ['alice'],
-              preset_value: {url: 'https://shares.example.com', auth: 'saml', username: 'alice'},
+              preset_value: {url: 'https://shares.example.com', auth: 'web', username: 'alice'},
               test_args:    'files browse /'
             ))
           end
 
-          it 'generates a saml auth preset with saml preset_id when username is not provided' do
-            p = plugin('--auth=saml')
+          it 'generates a web auth preset with web preset_id when username is not provided' do
+            p = plugin('--auth=web')
             result = p.wizard(wizard_mock, 'https://shares.example.com')
             expect(result).to(eq(
-              preset_ids:   ['saml'],
-              preset_value: {url: 'https://shares.example.com', auth: 'saml'},
+              preset_ids:   ['web'],
+              preset_value: {url: 'https://shares.example.com', auth: 'web'},
               test_args:    'files browse /'
             ))
           end
 
-          it 'includes redirect_uri in saml auth preset when provided' do
-            p = plugin('--auth=saml', '--redirect-uri=http://localhost:54321')
+          it 'includes redirect_uri in web auth preset when provided' do
+            p = plugin('--auth=web', '--redirect-uri=http://localhost:54321')
             result = p.wizard(wizard_mock, 'https://shares.example.com')
             expect(result[:preset_value]).to(include(redirect_uri: 'http://localhost:54321'))
           end
 
-          it 'defaults to saml auth when SAML is detected and auth is not specified' do
+          it 'defaults to web auth when SAML is detected and auth is not specified' do
             allow(described_class).to(receive(:health_check).with('https://shares.example.com').and_return({saml: true}))
             p = plugin
             result = p.wizard(wizard_mock, 'https://shares.example.com')
-            expect(result[:preset_value]).to(include(auth: 'saml'))
+            expect(result[:preset_value]).to(include(auth: 'web'))
           end
 
           it 'defaults to basic auth when password is provided even if auth is not specified' do
@@ -148,9 +148,9 @@ module Aspera
             allow(described_class).to(receive(:health_check).with('https://shares.example.com').and_return({saml: true}))
             interactive_wiz = instance_double(Aspera::Cli::Wizard, required: true)
             p = plugin
-            allow(p.options).to(receive(:prompt_user_input_in_list).with('auth', described_class::AUTH_TYPES).and_return(:saml))
+            allow(p.options).to(receive(:prompt_user_input_in_list).with('auth', described_class::AUTH_TYPES).and_return(:web))
             result = p.wizard(interactive_wiz, 'https://shares.example.com')
-            expect(result[:preset_value]).to(include(auth: 'saml'))
+            expect(result[:preset_value]).to(include(auth: 'web'))
           end
         end
 
