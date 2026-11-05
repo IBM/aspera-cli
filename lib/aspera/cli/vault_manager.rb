@@ -144,6 +144,7 @@ module Aspera
           when 'file' then :password
           when 'vault' then :token unless params.key?(:approle)
           when '1password' then :token unless params[:source].eql?('cli')
+          when 'keeper' then :config
           end
         return if key.nil? || params.key?(key)
         password = @options.get_option(:vault_password)

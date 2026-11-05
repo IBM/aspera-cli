@@ -667,6 +667,28 @@ components:
         account:
           type: string
           description: Account shorthand for `op` (used when `source` is `cli`). Uses the default account if omitted.
+    VaultKeeperOptions:
+      type: object
+      description: >-
+        Keeper Secrets Manager secret store (Keeper Vault), using gem `keeper_secrets_manager`.
+        A secret is a record shared with the application: its label is its title or its UID.
+        Reference `@vault://<store>/<title or uid>[#<field>]`, field `password` by default: standard field by type (`login`, `password`, `url`...), custom field by label, or `notes`.
+      additionalProperties: false
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          description: Vault type selector.
+          enum: [keeper]
+        config:
+          type: string
+          description: >-
+            Configuration of the client device (base64 or JSON, e.g. from `ksm profile export`): the value, or `@file:<path>`.
+            For the default store, defaults to the value of `vault_password`.
+        folder_uid:
+          type: string
+          description: UID of the shared folder where `config vault create` adds records (not needed to read).
     VaultFileOptions:
       type: object
       description: Encrypted file secret store. Reference `@vault://<store>/<label>[#<field>]`, field `password` by default.
@@ -726,6 +748,7 @@ components:
         - $ref: "#/components/schemas/VaultSecretServiceOptions"
         - $ref: "#/components/schemas/VaultFileOptions"
         - $ref: "#/components/schemas/VaultOnePasswordOptions"
+        - $ref: "#/components/schemas/VaultKeeperOptions"
       discriminator:
         propertyName: type
         mapping:
@@ -734,6 +757,7 @@ components:
           secret_service: "#/components/schemas/VaultSecretServiceOptions"
           file:       "#/components/schemas/VaultFileOptions"
           1password:  "#/components/schemas/VaultOnePasswordOptions" # HashiCorpIgnore
+          keeper:     "#/components/schemas/VaultKeeperOptions"
     VaultStores:
       type: object
       title: Secret stores

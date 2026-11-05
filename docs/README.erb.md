@@ -3293,7 +3293,7 @@ Secrets used to access a store (`token`, `approle.secret_id`, `password`) are th
 As for extended value `@file:`, reading the file is restricted by option `security` (see [Security Level](#security-level)).
 In a YAML file, quote the value: `@` cannot start a plain scalar.
 
-The secret of the default store (`password` of type `file`, `token` of type `vault` without `approle`, and of type `1password` with `source` `api`), if not in its parameters, is the value of option `vault_password`.
+The secret of the default store (`password` of type `file`, `token` of type `vault` without `approle`, of type `1password` with `source` `api`, and `config` of type `keeper`), if not in its parameters, is the value of option `vault_password`.
 To avoid exposing the vault password in the shell history, provide it via an environment variable:
 
 ```shell
@@ -3440,6 +3440,42 @@ An item can be referenced by its title (label) or by its 1Password ID, in `@vaul
 
 > [!NOTE]
 > If several items share the same title, use the item ID (or the `vault` parameter to restrict the search).
+
+#### Vault: Keeper
+
+<https://docs.keeper.io/keeperpam/secrets-manager/overview>
+
+Keeper Secrets Manager (KSM) gives an application access to the records of shared folders of a Keeper vault, without the credentials of a user.
+It requires the optional gem `keeper_secrets_manager`:
+
+```shell
+gem install keeper_secrets_manager
+```
+
+Create an application and a client device in Keeper (see the [Quick Start Guide](https://docs.keeper.io/keeperpam/secrets-manager/quick-start-guide)), share the folders of secrets with the application, and get the configuration of the device (base64 or JSON, for example with `ksm profile export`).
+Parameter `config` is the value, or `@file:<path>`:
+
+```shell
+--vault=@json:'{"default":"keeper","stores":{"keeper":{"type":"keeper","config":"@file:<%=ph :ksm_config_file%>"}}}'
+```
+
+If `config` is not set in the default store, it is the value of option `vault_password`.
+
+A secret is a record of the vault: its label is its title, or its UID.
+The field of a reference is `password` by default: standard field of the record (`login`, `password`, `url`...), custom field by its label, or `notes`.
+Field `username` is an alias of `login`.
+
+```shell
+--password=@vault:<%=ph :record_title%>.password
+--password=@vault://keeper/<%=ph :record_title%>#<%=ph :field%>
+```
+
+To create records with `config vault create` (type `login`), set parameter `folder_uid`: UID of the shared folder where records are added.
+Reading does not need it.
+
+> [!NOTE]
+> If several records share the same title, use the UID.
+> Deleting a record with `config vault delete` requires that the application has edit permission.
 
 #### Vault: Operations
 

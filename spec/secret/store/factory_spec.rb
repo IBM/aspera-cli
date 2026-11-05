@@ -69,7 +69,7 @@ RSpec.describe(Aspera::Secret::Store::Factory) do
   end
 
   it 'refuses an unknown or missing type' do
-    expect { described_class.create({type: 'none'}) }.to(raise_error(Aspera::Secret::Error, /\Atype: unknown none, use one of: file, vault, system, secret_service, 1password/))
+    expect { described_class.create({type: 'none'}) }.to(raise_error(Aspera::Secret::Error, /\Atype: unknown none, use one of: file, vault, system, secret_service, 1password, keeper/))
     expect { described_class.create({}) }.to(raise_error(Aspera::Secret::Error, /\Atype: missing/))
     expect { described_class.create('file') }.to(raise_error(Aspera::Secret::Error, 'expecting a Hash'))
   end
