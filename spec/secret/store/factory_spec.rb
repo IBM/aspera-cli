@@ -56,8 +56,20 @@ RSpec.describe(Aspera::Secret::Store::Factory) do
     end
   end
 
+  describe '.create secret_service' do
+    it 'is only on Linux' do
+      allow(Aspera::Environment.instance).to(receive(:os).and_return(Aspera::Environment::OS_MACOS))
+      expect { described_class.create({type: 'secret_service'}) }.to(raise_error(Aspera::Secret::Error, 'type secret_service: only on Linux'))
+    end
+
+    it 'creates the store on Linux' do
+      allow(Aspera::Environment.instance).to(receive(:os).and_return(Aspera::Environment::OS_LINUX))
+      expect(described_class.create({type: 'secret_service', name: 'ops'}).info).to(eq({service: 'ops'}))
+    end
+  end
+
   it 'refuses an unknown or missing type' do
-    expect { described_class.create({type: 'none'}) }.to(raise_error(Aspera::Secret::Error, /\Atype: unknown none, use one of: file, vault, system, 1password/))
+    expect { described_class.create({type: 'none'}) }.to(raise_error(Aspera::Secret::Error, /\Atype: unknown none, use one of: file, vault, system, secret_service, 1password/))
     expect { described_class.create({}) }.to(raise_error(Aspera::Secret::Error, /\Atype: missing/))
     expect { described_class.create('file') }.to(raise_error(Aspera::Secret::Error, 'expecting a Hash'))
   end

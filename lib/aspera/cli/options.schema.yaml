@@ -618,6 +618,21 @@ components:
           type: string
           description: Name of the keychain to use (file `<name>.keychain-db` in the keychain search list).
           default: ascli
+    VaultSecretServiceOptions:
+      type: object
+      description: Linux Secret Service secret store (GNOME Keyring, KWallet, KeePassXC...), using `secret-tool`.
+      additionalProperties: false
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          description: Vault type selector.
+          enum: [secret_service]
+        name:
+          type: string
+          description: Name of the group of secrets (attribute `service` of the items).
+          default: ascli
     VaultOnePasswordOptions:
       type: object
       description: 1Password secret store (Connect REST API or CLI).
@@ -708,6 +723,7 @@ components:
       oneOf:
         - $ref: "#/components/schemas/VaultHashicorpOptions"
         - $ref: "#/components/schemas/VaultSystemOptions"
+        - $ref: "#/components/schemas/VaultSecretServiceOptions"
         - $ref: "#/components/schemas/VaultFileOptions"
         - $ref: "#/components/schemas/VaultOnePasswordOptions"
       discriminator:
@@ -715,6 +731,7 @@ components:
         mapping:
           vault:      "#/components/schemas/VaultHashicorpOptions"
           system:     "#/components/schemas/VaultSystemOptions"
+          secret_service: "#/components/schemas/VaultSecretServiceOptions"
           file:       "#/components/schemas/VaultFileOptions"
           1password:  "#/components/schemas/VaultOnePasswordOptions" # HashiCorpIgnore
     VaultStores:

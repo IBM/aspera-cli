@@ -8,9 +8,9 @@ module Aspera
   module Secret
     module Store
       # Creates stores of secrets from their parameters: `type`, and parameters of the class of type (`PARAMETERS`).
-      # Types: `file`, `vault`, `system` (macOS), `1password` (`source`: `api` or `cli`), and types added with `register_type`.
+      # Types: `file`, `vault`, `system` (macOS), `secret_service` (Linux), `1password` (`source`: `api` or `cli`), and types added with `register_type`.
       class Factory
-        BUILTIN_TYPES = %w[file vault system 1password].freeze
+        BUILTIN_TYPES = %w[file vault system secret_service 1password].freeze
         ONE_PASSWORD_SOURCES = %w[api cli].freeze
         private_constant :BUILTIN_TYPES, :ONE_PASSWORD_SOURCES
 
@@ -78,6 +78,9 @@ module Aspera
             when 'system'
               require 'aspera/secret/store/macos_security'
               MacosSystem
+            when 'secret_service'
+              require 'aspera/secret/store/secret_service'
+              SecretService
             when '1password'
               source ||= 'api'
               raise Error, "source: unknown #{source}, use one of: #{ONE_PASSWORD_SOURCES.join(', ')}" unless ONE_PASSWORD_SOURCES.include?(source)

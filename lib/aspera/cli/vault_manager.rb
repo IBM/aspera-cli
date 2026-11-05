@@ -130,7 +130,7 @@ module Aspera
           # `name`: same as `file`, for compatibility
           file = params.delete(:name) || params[:file] || DEFAULT_FILE
           params[:file] = file.is_a?(String) && !File.absolute_path?(file) ? File.join(@main_folder, file) : file
-        when 'system'
+        when 'system', 'secret_service'
           params[:name] ||= Info::CMD_NAME
         end
         params

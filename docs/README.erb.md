@@ -3347,6 +3347,19 @@ Commands `list`, `ids` and `delete` are not supported: use the **Keychain Access
 --vault=@json:'{"default":"keychain","stores":{"keychain":{"type":"system","name":"<%=cmd%>"}}}'
 ```
 
+#### Vault: Linux Secret Service
+
+> [!WARNING]
+> **Linux only**
+
+It is possible to manage secrets in the Linux Secret Service (GNOME Keyring, KWallet, KeePassXC...), using the `secret-tool` command of libsecret (for example, package `libsecret-tools` on Debian and Ubuntu).
+A session with an unlocked keyring is required.
+Secrets are grouped with attribute `service`, which is parameter `name` (default: `<%=cmd%>`).
+
+```shell
+--vault=@json:'{"default":"keyring","stores":{"keyring":{"type":"secret_service","name":"<%=cmd%>"}}}'
+```
+
 #### Vault: Encrypted file
 
 It is possible to store and use secrets encrypted in a file, with a store of type `file`:

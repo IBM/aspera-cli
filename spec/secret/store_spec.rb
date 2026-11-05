@@ -10,6 +10,7 @@ require 'aspera/hash_ext'
 require 'aspera/environment'
 require 'aspera/secret/store/encrypted_hash'
 require 'aspera/secret/store/macos_security'
+require 'aspera/secret/store/secret_service'
 require 'aspera/secret/store/one_password_cli'
 require 'aspera/secret/store/hashicorp_vault'
 
@@ -118,6 +119,42 @@ RSpec.describe(Aspera::Secret::Store) do
         .with('security', 'add-generic-password', '-s', 'my_label', '-a', 'none', '-w', special, '/tmp/test.keychain-db', mode: :capture, exception: false)
         .and_return(['', '', success]))
       system_vault.set({label: 'my_label', password: special})
+    end
+  end
+
+  describe Aspera::Secret::Store::SecretService do
+    let(:store) do
+      allow(Aspera::Environment.instance).to(receive(:os).and_return(Aspera::Environment::OS_LINUX))
+      described_class.new(name: 'ops')
+    end
+
+    it 'reads the password and the attributes' do
+      # `secret-tool search` writes label and secret on stdout, and attributes on stderr
+      found = ["[/1]\nlabel = my_label\nsecret = hidden\n", "attribute.service = ops\nattribute.label = my_label\nattribute.username = bob\n", success]
+      allow(Aspera::Environment).to(receive(:secure_execute)) do |_cmd, *args, **|
+        args.first.eql?('lookup') ? [secret, '', success] : found
+      end
+      expect(store.get(label: 'my_label')).to(eq({label: 'my_label', username: 'bob', password: secret}))
+      expect(store.ids).to(eq([{label: 'my_label'}]))
+    end
+
+    it 'returns nil for a missing secret when exception is false' do
+      allow(Aspera::Environment).to(receive(:secure_execute).and_return(['', '', failure(1)]))
+      expect(store.get(label: 'missing', exception: false)).to(be_nil)
+      expect { store.get(label: 'missing') }.to(raise_error(RuntimeError, /not found/))
+    end
+
+    it 'sends the password on stdin, not in arguments' do
+      allow(store).to(receive(:get).and_return(nil))
+      expect(Aspera::Environment).to(receive(:secure_execute)
+        .with('secret-tool', 'store', '--label=my_label', 'service', 'ops', 'label', 'my_label', 'username', 'bob', mode: :capture, exception: false, stdin_data: secret)
+        .and_return(['', '', success]))
+      store.set({label: 'my_label', username: 'bob', password: secret})
+    end
+
+    it 'explains that secret-tool is missing' do
+      allow(Aspera::Environment).to(receive(:secure_execute).and_raise(Errno::ENOENT))
+      expect { store.ids }.to(raise_error(Aspera::Secret::Error, /secret-tool not found/))
     end
   end
 

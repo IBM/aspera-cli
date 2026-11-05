@@ -785,6 +785,7 @@ presets:
 
 - **file**: `EncryptedHash`, `file` and `password`; the file is read when used, and again when it, or the file of the password, is modified
 - **system**: `MacosSystem`, macOS Keychain
+- **secret_service**: `SecretService`, Linux Secret Service (GNOME Keyring, KWallet...), with `secret-tool`; the password is sent on stdin
 - **vault**: `HashicorpVault`, authentication by `token` or `approle`, own `Vault::Client`; labels in mount `secret`, references in any KV v2 mount (version), limited by `allowed_prefixes`; `error_reason` gives the reason of errors of gem `vault`
 - **1password**: `OnePasswordApi` or `OnePasswordCli`, selected by `source`
 - Types added by the application: `Factory.register_type` (a subclass of `Store::Base` with `PARAMETERS`)
@@ -799,7 +800,7 @@ presets:
 
 - One `Secret::Resolver` from option `vault`, created when first used (kept once created, not when absent: the global preset is loaded after the handler is registered): `stores` and `cache_ttl`, and `default`, the name of the default store (none if not set)
   - Deprecated form: the parameters of one store, converted by `VaultManager.convert_option` (`convert:` of the option, applied to each value before merge of sources) to a store named after its type (`file` by default), which is the default store, with a warning
-  - Defaults of `ascli` for all stores (`store_parameters`): type `file`: `name` (same as `file`), `vault.bin`, relative path in the configuration folder; type `system`: keychain `ascli`
+  - Defaults of `ascli` for all stores (`store_parameters`): type `file`: `name` (same as `file`), `vault.bin`, relative path in the configuration folder; types `system` (keychain) and `secret_service` (group of secrets): name `ascli`
   - Secret of the default store, if not in its parameters (`password` of `file`, `token` of `vault` without `approle`, and of `1password` `api`): the value of option `vault_password`
 - `store`: the default store (`nil` if none)
 - `value`: `@vault:<label>.<field>` from the default store, `@vault://<store>/<path>[?<options>][#<field>]` from any store
