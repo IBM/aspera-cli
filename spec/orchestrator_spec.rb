@@ -340,26 +340,38 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
     end
   end
 
-  describe '#action_workflows_development' do
+  describe 'command workflows development' do
     let(:content) { "# Guide\n\nIntro\n\n## Recipes\n\nRecipe text\n\n## Known issues\n\nNone\n" }
+
+    # Run the action of a command of the registry
+    def run_doc(document, command, **args)
+      spec = described_class.command_registry[[:workflows, :development, document, command]]
+      orchestrator.invoke_action(orchestrator.action_for(spec), [], args)
+    end
 
     before do
       allow(Aspera::UriReader).to(receive(:read).and_return(content))
     end
 
+    it 'lists the documents' do
+      registry = described_class.command_registry
+      expect(registry.children_of(%i[workflows development]).keys).to(eq(%i[guide templates manual]))
+      expect(registry.children_of(%i[workflows development guide]).keys).to(eq(%i[toc full section]))
+    end
+
     it 'reads the raw document of GitHub' do
-      orchestrator.action_workflows_development(document: :templates)
+      run_doc(:templates, :full)
       expect(Aspera::UriReader).to(have_received(:read).with(%r{^https://raw\.githubusercontent\.com/.+/action-template-reference\.md$}))
     end
 
-    it 'displays the whole document without section' do
-      result = orchestrator.action_workflows_development(document: :authoring)
+    it 'displays the whole document' do
+      result = run_doc(:guide, :full)
       expect(result).to(be_a(Aspera::Cli::Result::Text))
       expect(result.data).to(eq(content))
     end
 
     it 'lists the table of contents' do
-      result = orchestrator.action_workflows_development(document: :authoring, section: 'toc')
+      result = run_doc(:guide, :toc)
       expect(result).to(be_a(Aspera::Cli::Result::ObjectList))
       expect(result.data.map { |e| e['anchor'] }).to(eq(%w[guide recipes known-issues]))
     end
@@ -367,32 +379,25 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
     it 'lists the table of contents up to the level of the document, or the given level' do
       allow(Aspera::UriReader).to(receive(:read).and_return("# Manual\n\n## Category\n\n### Plugin\n\n#### Detail\n"))
       {nil => %w[manual category plugin], 4 => %w[manual category plugin detail], 1 => %w[manual]}.each do |level, anchors|
-        result = orchestrator.action_workflows_development(document: :manual, section: 'toc', level: level)
+        result = run_doc(:manual, :toc, level: level)
         expect(result.data.map { |e| e['anchor'] }).to(eq(anchors))
       end
       expect(Aspera::UriReader).to(have_received(:read).with(%r{/Orchestrator_Plugin_Manual\.md$}).at_least(:once))
     end
 
-    it 'refuses a level without toc' do
-      expect { orchestrator.action_workflows_development(document: :authoring, section: 'recipes', level: 2) }
-        .to(raise_error(Aspera::Cli::BadArgument, /level is only for toc/))
-    end
-
     it 'displays one section' do
-      result = orchestrator.action_workflows_development(document: :authoring, section: 'recipes')
+      result = run_doc(:guide, :section, name: 'recipes')
       expect(result.data).to(eq("## Recipes\n\nRecipe text\n\n"))
     end
 
     it 'fails on an unknown section' do
-      expect { orchestrator.action_workflows_development(document: :authoring, section: 'nope') }
+      expect { run_doc(:guide, :section, name: 'nope') }
         .to(raise_error(Aspera::Cli::Error, /Section not found: nope/))
     end
 
     it 'reads the guide through the short link first' do
-      %i[authoring guide].each do |document|
-        orchestrator.action_workflows_development(document: document)
-      end
-      expect(Aspera::UriReader).to(have_received(:read).with('https://ibm.biz/aspera-orchestrator-book').twice)
+      run_doc(:guide, :full)
+      expect(Aspera::UriReader).to(have_received(:read).with('https://ibm.biz/aspera-orchestrator-book'))
     end
 
     context 'when the short link fails' do
@@ -401,20 +406,20 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
       end
 
       it 'falls back to GitHub on error' do
-        result = orchestrator.action_workflows_development(document: :guide)
+        result = run_doc(:guide, :full)
         expect(result.data).to(eq(content))
         expect(Aspera::UriReader).to(have_received(:read).with(%r{^https://raw\.githubusercontent\.com/.+/orchestrator-development-guide\.md$}))
       end
 
       it 'falls back to GitHub on HTML page' do
         allow(Aspera::UriReader).to(receive(:read_fail_fast).and_return("<!DOCTYPE html>\n<html></html>"))
-        result = orchestrator.action_workflows_development(document: :authoring)
+        result = run_doc(:guide, :full)
         expect(result.data).to(eq(content))
       end
 
       it 'accepts a document starting with a comment' do
         allow(Aspera::UriReader).to(receive(:read_fail_fast).and_return("<!-- gfm2pdf\n-->\n# Guide\n"))
-        result = orchestrator.action_workflows_development(document: :authoring)
+        result = run_doc(:guide, :full)
         expect(result.data).to(start_with('<!-- gfm2pdf'))
       end
     end
@@ -591,7 +596,7 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
     end
   end
 
-  describe '#action_plugins_spec' do
+  describe 'command plugins spec' do
     let(:content) do
       <<~YAML
         # header
@@ -600,6 +605,7 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
           display_name: Ascp client
           category: File Transfer
           version: 1.6.2
+          manual_anchor: ascp-client
           attributes:
             operation: {type: string, widget: select, values: [Download, Upload]}
           inputs:
@@ -619,38 +625,48 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
       YAML
     end
 
+    # Run the action of a command of the registry
+    def run_spec(command, **args)
+      spec = described_class.command_registry[[:plugins, :spec, command]]
+      orchestrator.invoke_action(orchestrator.action_for(spec), [], args)
+    end
+
     before do
       allow(Aspera::UriReader).to(receive(:read).and_return(content))
     end
 
+    it 'has commands toc and show' do
+      expect(described_class.command_registry.children_of(%i[plugins spec]).keys).to(eq(%i[toc show]))
+    end
+
     it 'reads the specifications of GitHub' do
-      orchestrator.action_plugins_spec
+      run_spec(:toc)
       expect(Aspera::UriReader).to(have_received(:read).with(%r{^https://raw\.githubusercontent\.com/.+/plugins\.yml$}))
     end
 
     it 'lists the plugins without their sections' do
-      result = orchestrator.action_plugins_spec
+      result = run_spec(:toc)
       expect(result).to(be_a(Aspera::Cli::Result::ObjectList))
       expect(result.data.map { |e| e['name'] }).to(eq(%w[AscpClient LocalFileWatcher]))
-      expect(result.data.first.keys).to(eq(%w[name display_name category version]))
+      expect(result.data.first.keys).to(eq(%w[name display_name category version manual_anchor]))
     end
 
     it 'displays one plugin, with a case insensitive name' do
-      result = orchestrator.action_plugins_spec(plugin: 'ascpclient')
+      result = run_spec(:show, plugin: 'ascpclient')
       expect(result).to(be_a(Aspera::Cli::Result::SingleObject))
       expect(result.data['name']).to(eq('AscpClient'))
       expect(result.data['inputs']['Token']['when']).to(eq({'use_token_authentication' => {'in' => [true]}}))
     end
 
     it 'lists one section of a plugin' do
-      result = orchestrator.action_plugins_spec(plugin: 'AscpClient', section: :inputs)
+      result = run_spec(:show, plugin: 'AscpClient', section: :inputs)
       expect(result).to(be_a(Aspera::Cli::Result::ObjectList))
       expect(result.data.map { |e| e['name'] }).to(eq(%w[Operation Token]))
       expect(result.data.first).to(eq({'name' => 'Operation', 'type' => 'string', 'required' => true, 'if_blank' => 'operation'}))
     end
 
     it 'fails on an unknown plugin, with similar names' do
-      expect { orchestrator.action_plugins_spec(plugin: 'Ascp') }
+      expect { run_spec(:show, plugin: 'Ascp') }
         .to(raise_error(Aspera::Cli::BadArgument, /Unknown plugin: Ascp, similar: AscpClient/))
     end
   end

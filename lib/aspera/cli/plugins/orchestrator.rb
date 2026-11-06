@@ -21,28 +21,29 @@ module Aspera
         # Short link to the development guide: tried first, so that the location of the document can change
         DOC_GUIDE_LINK = 'https://ibm.biz/aspera-orchestrator-book'
         # Documents of command `workflows development`: name => URLs, tried in order
-        # `guide` is the same document as `authoring`, which is its former name
         DOC_URLS = {
-          authoring: [DOC_GUIDE_LINK, "#{DOC_BASE_URL}/orchestrator-development-guide.md"].freeze,
           guide:     [DOC_GUIDE_LINK, "#{DOC_BASE_URL}/orchestrator-development-guide.md"].freeze,
           templates: ["#{DOC_BASE_URL}/action-template-reference.md"].freeze,
           manual:    ["#{DOC_BASE_URL}/Orchestrator_Plugin_Manual.md"].freeze
         }.freeze
+        # Description of the documents of command `workflows development`
+        DOC_DESCRIPTIONS = {
+          guide:     'Aspera Orchestrator Development Guide: concepts, designer, workflow files, recipes, plugins and portlets (large: use `toc` and `section`)',
+          templates: 'Action Template Reference: template attributes, inputs and outputs of each action plugin',
+          manual:    'Orchestrator Plugin Manual: functional description and setup of each plugin (large: use `toc` and `section`)'
+        }.freeze
         # An unknown short link ends on a HTML page, but the documents are Markdown (they may start with a comment)
         HTML_PAGE = /\A\s*<(!doctype|html)/i
-        # Value of argument `section` of command `workflows development` for the table of contents
-        DOC_TOC = 'toc'
         # Default maximum level of headings in the table of contents: guide sections, one entry per plugin
         DOC_TOC_LEVELS = {
-          authoring: 4,
-          guide:     4,
+          guide:     3,
           templates: 2,
           manual:    3
         }.freeze
-        # Sections of a plugin specification, listed by command `plugins spec`
+        # Sections of a plugin specification, listed by command `plugins spec show`
         SPEC_SECTIONS = %i[attributes inputs outputs].freeze
-        # Fields of the list of plugins of command `plugins spec`
-        SPEC_LIST_FIELDS = %w[name category version display_name].freeze
+        # Fields of the list of plugins of command `plugins spec toc`
+        SPEC_LIST_FIELDS = %w[name category version display_name manual_anchor].freeze
         # Text value that is a YAML document (Ruby objects serialized by Orchestrator)
         YAML_DUMP = /\A---\s/
         # Types of monitors of `list_monitors` (`monitor_type`) and of `monitor_snapshot` (path)
@@ -61,7 +62,7 @@ module Aspera
         ANY_ID = '0'
         # Login of the current user, for `list_tasks`
         SELF_USER = 'self'
-        private_constant :STANDARD_PATH, :TEST_ENDPOINT, :DOC_BASE_URL, :DOC_GUIDE_LINK, :DOC_URLS, :HTML_PAGE, :DOC_TOC, :DOC_TOC_LEVELS, :SPEC_SECTIONS, :SPEC_LIST_FIELDS, :YAML_DUMP,
+        private_constant :STANDARD_PATH, :TEST_ENDPOINT, :DOC_BASE_URL, :DOC_GUIDE_LINK, :DOC_URLS, :DOC_DESCRIPTIONS, :HTML_PAGE, :DOC_TOC_LEVELS, :SPEC_SECTIONS, :SPEC_LIST_FIELDS, :YAML_DUMP,
           :MONITOR_TYPES, :MONITOR_SNAPSHOT_TYPES, :PROCESS_TYPES, :PROCESS_COMMANDS, :PROCESSES_XML_OPTS, :QUEUE_MOVES, :RESOURCE_JSON_OPTS, :ANY_ID, :SELF_USER
 
         class << self
@@ -302,11 +303,17 @@ module Aspera
           command :reload_set, description: 'Reload a set of plugins',
             arguments: [{name: :plugin_set, type: Hash, schema: 'opts:components.schemas.OrchestratorReloadPluginSet'}],
             action: ->(plugin_set:, **) { Result::SingleObject.new(call_ao('reload_plugin_set', body: plugin_set.transform_keys(&:to_sym))) }
-          command :spec, description: "Show specifications of action plugins, from GitHub (no access to Orchestrator): list of plugins, one plugin, or its #{SPEC_SECTIONS.join(', ')}",
-            arguments: [
-              {name: :plugin, mandatory: false},
-              {name: :section, type: Symbol, mandatory: false, allowed: SPEC_SECTIONS}
-            ]
+          # Specifications of action plugins, read from GitHub (no access to Orchestrator)
+          commands_under :spec, description: 'Specifications of action plugins, from GitHub (no access to Orchestrator)' do
+            command :toc, description: 'List the plugins: name, category, version, display name, anchor of the section in the Plugin Manual (filter with option select)',
+              action: ->(**) { plugin_spec_toc }
+            command :show, description: "Show the specification of a plugin, with `manual_anchor` for `workflows development manual section`: whole, or one section (#{SPEC_SECTIONS.join(', ')})",
+              arguments: [
+                {name: :plugin},
+                {name: :section, type: Symbol, mandatory: false, allowed: SPEC_SECTIONS}
+              ],
+              action: ->(plugin:, section: nil, **) { plugin_spec_show(plugin, section) }
+          end
         end
 
         commands_under :workflows do
@@ -353,12 +360,22 @@ module Aspera
             arguments: [{name: :workflow_id, type: :identifier}],
             query_schema: Schema::Registry.query_params(Schema::Registry::ORCHESTRATOR, 'api/work_orders_list/{id}'),
             action: ->(workflow_id:, **) { Result::ObjectList.new(call_ao("work_orders_list/#{workflow_id}")['work_orders']) }
-          command :development, description: "Show documentation for workflow development, from GitHub (no access to Orchestrator): whole document, its table of contents (#{DOC_TOC}, headings up to level #{DOC_TOC_LEVELS.map { |d, l| "#{l} (#{d})" }.join(', ')}, or argument level), or one section (anchor)",
-            arguments: [
-              {name: :document, type: Symbol, mandatory: false, default: :authoring, allowed: DOC_URLS.keys},
-              {name: :section, mandatory: false},
-              {name: :level, type: Integer, mandatory: false}
-            ]
+          # Documentation for workflow development, read from GitHub (no access to Orchestrator)
+          commands_under :development, description: 'Documentation for workflow development, from GitHub (no access to Orchestrator): choose a document' do
+            DOC_URLS.each_key do |document|
+              command document, description: DOC_DESCRIPTIONS[document]
+              commands_under document do
+                command :toc, description: "List the sections of the document: level, title, anchor (headings up to level #{DOC_TOC_LEVELS[document]}, or argument level)",
+                  arguments: [{name: :level, type: Integer, mandatory: false}],
+                  action: ->(level: nil, **) { development_toc(document, level) }
+                command :full, description: 'Display the whole document',
+                  action: ->(**) { Result::Text.new(development_document(document)) }
+                command :section, description: 'Display one section of the document (anchor given by `toc`)',
+                  arguments: [{name: :name}],
+                  action: ->(name:, **) { development_section(document, name) }
+              end
+            end
+          end
           command :outputs,    description: 'Show output specification of a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
             action: ->(workflow_id:, **) { Result::ObjectList.new(call_ao("workflow_outputs_spec/#{workflow_id}")['workflow_outputs_spec']['output']) }
@@ -513,20 +530,28 @@ module Aspera
           )
         end
 
-        # The document is read from GitHub: does not require access to Orchestrator
-        # @param level [Integer, nil] Maximum level of headings of the table of contents (default per document)
-        def action_workflows_development(document: :authoring, section: nil, level: nil, **)
-          require 'aspera/markdown'
+        # The documents of `workflows development` are read from GitHub: does not require access to Orchestrator
+        # @param document [Symbol] One of DOC_URLS keys
+        # @return [String] Markdown
+        def development_document(document)
           require 'aspera/uri_reader'
-          Aspera.assert(level.nil? || section.eql?(DOC_TOC), type: Cli::BadArgument) { "argument level is only for #{DOC_TOC}" }
-          content = UriReader.read_first(DOC_URLS[document], what: "document #{document}") do |text|
+          UriReader.read_first(DOC_URLS[document], what: "document #{document}") do |text|
             Aspera.assert(!HTML_PAGE.match?(text), type: Cli::Error) { 'HTML page instead of Markdown' }
             text
           end
-          return Result::Text.new(content) if section.nil?
-          return Result::ObjectList.new(Markdown.toc(content, max_level: level || DOC_TOC_LEVELS[document]), fields: %w[level title anchor]) if section.eql?(DOC_TOC)
-          text = Markdown.extract_section(content, section)
-          Aspera.assert(!text.nil?, type: Cli::Error) { "Section not found: #{section}, use #{DOC_TOC} to list anchors" }
+        end
+
+        # @param level [Integer, nil] Maximum level of headings of the table of contents (default per document)
+        def development_toc(document, level)
+          require 'aspera/markdown'
+          Result::ObjectList.new(Markdown.toc(development_document(document), max_level: level || DOC_TOC_LEVELS[document]), fields: %w[level title anchor])
+        end
+
+        # @param anchor [String] Anchor of the section, see `toc`
+        def development_section(document, anchor)
+          require 'aspera/markdown'
+          text = Markdown.extract_section(development_document(document), anchor)
+          Aspera.assert(!text.nil?, type: Cli::Error) { "Section not found: #{anchor}, use `toc` to list anchors" }
           Result::Text.new(text)
         end
 
@@ -541,15 +566,18 @@ module Aspera
           @plugin_specs = specs
         end
 
-        # @param plugin  [String, nil] Class name of the plugin (case insensitive), or nil to list plugins
+        def plugin_spec_toc
+          Result::ObjectList.new(plugin_specs.map { |name, spec| {'name' => name}.merge(spec.except(*SPEC_SECTIONS.map(&:to_s), 'notes')) }, fields: SPEC_LIST_FIELDS)
+        end
+
+        # @param plugin  [String] Class name of the plugin (case insensitive)
         # @param section [Symbol, nil] One of SPEC_SECTIONS, or nil for the whole specification
-        def action_plugins_spec(plugin: nil, section: nil, **)
+        def plugin_spec_show(plugin, section)
           specs = plugin_specs
-          return Result::ObjectList.new(specs.map { |name, spec| {'name' => name}.merge(spec.except(*SPEC_SECTIONS.map(&:to_s), 'notes')) }, fields: SPEC_LIST_FIELDS) if plugin.nil?
           name = specs.keys.find { |key| key.casecmp?(plugin) }
           if name.nil?
             similar = specs.keys.select { |key| key.downcase.include?(plugin.downcase) }
-            raise Cli::BadArgument, "Unknown plugin: #{plugin}#{", similar: #{similar.join(', ')}" unless similar.empty?}, use `plugins spec` to list plugins"
+            raise Cli::BadArgument, "Unknown plugin: #{plugin}#{", similar: #{similar.join(', ')}" unless similar.empty?}, use `plugins spec toc` to list plugins"
           end
           return Result::SingleObject.new({'name' => name}.merge(specs[name])) if section.nil?
           Result::ObjectList.new(specs[name][section.to_s].map { |key, value| {'name' => key}.merge(value) })
@@ -580,7 +608,7 @@ module Aspera
         # When it has one (same request as `import_workflow`), replace the body by a call, e.g.
         # `call_ao('check_workflow', body: [['import_file', content, {filename: file_name}], ['import_file_name', file_name]], content_type: Mime::MULTIPART)`
         # The response is a Hash, see {OrchestratorWorkflowChecker}.
-        # Templates and inputs of steps are checked with the specifications of plugins (see `plugins spec`), when they can be read.
+        # Templates and inputs of steps are checked with the specifications of plugins (see `plugins spec show`), when they can be read.
         # @param file_path [String] Workflow file (`.yml` or `.wkf`)
         # @return [Hash] `valid` (Boolean), `file_name`, `issues` (list of Hash: `severity`, `code`, `file`, `path`, `message`)
         def check_workflow(file_path)

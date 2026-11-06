@@ -4246,7 +4246,7 @@ orch_wf_dev_toc:
     - orchestrator
     - workflows
     - development
-    - authoring
+    - guide
     - toc
 orch_wf_dev_section:
   args:
@@ -4254,18 +4254,21 @@ orch_wf_dev_section:
     - workflows
     - development
     - templates
+    - section
     - customruby # cspell:disable-line
 orch_plugin_spec_list:
   args:
     - orchestrator
     - plugins
     - spec
+    - toc
     - --select=@json:{"category":"Triggers"}
 orch_plugin_spec_show:
   args:
     - orchestrator
     - plugins
     - spec
+    - show
     - AmazonS3Operation
     - --format=yaml
 orch_plugin_spec_section:
@@ -4273,6 +4276,7 @@ orch_plugin_spec_section:
     - orchestrator
     - plugins
     - spec
+    - show
     - ascpclient # cspell:disable-line
     - inputs
 orch_wf_list:

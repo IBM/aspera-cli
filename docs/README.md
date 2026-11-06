@@ -10193,28 +10193,29 @@ transfer smart sub my_smart_id @: source.paths.0=my_smart_file source_type=user_
 
 To write workflow files without the designer, refer to the [Aspera Orchestrator Development Guide](https://github.com/laurent-martin/aspera-orchestrator-plugins-doc/blob/main/docs/orchestrator-development-guide.md): file format, graph, execution, examples and REST API.
 
-Command `workflows development` displays the documentation for workflow development, read from GitHub: this guide (`guide`, or `authoring`), or the [Action Template Reference](https://github.com/laurent-martin/aspera-orchestrator-plugins-doc/blob/main/docs/action-template-reference.md) (`templates`).
-With `toc`, it lists the sections of the document, and with the anchor of a section, it displays only that section.
+Command `workflows development` gives access to the documentation for workflow development, read from GitHub.
+Without argument, it lists the documents: the guide (`guide`), the [Action Template Reference](https://github.com/laurent-martin/aspera-orchestrator-plugins-doc/blob/main/docs/action-template-reference.md) (`templates`) and the Plugin Manual (`manual`).
+After the name of a document: `toc` lists its sections, `full` displays the whole document, and `section <anchor>` displays only one section: the guide and the manual are large, use `toc` first.
 It does not require access to Orchestrator.
 The [MCP server](#plugin-mcp-model-context-protocol-server) instructs AI assistants to read it before writing or modifying a workflow.
 
 ```shell
-ascli orchestrator workflows development authoring toc
-ascli orchestrator workflows development templates customruby
+ascli orchestrator workflows development guide toc
+ascli orchestrator workflows development templates section customruby
 ```
 
-Command `plugins spec` displays the specifications of action plugins, read from GitHub: [plugins.yml](https://github.com/laurent-martin/aspera-orchestrator-plugins-doc/blob/main/docs/plugins.yml).
+Commands `plugins spec` display the specifications of action plugins, read from GitHub: [plugins.yml](https://github.com/laurent-martin/aspera-orchestrator-plugins-doc/blob/main/docs/plugins.yml).
 For each plugin: template attributes (label, allowed values, defaults), and inputs and outputs of its steps, with the template settings they depend on.
 The fields are described in section [Plugin specifications](https://github.com/laurent-martin/aspera-orchestrator-plugins-doc/blob/main/docs/orchestrator-development-guide.md#plugin-specifications) of the guide.
-Without argument, it lists the plugins.
-With a plugin name (class name, case insensitive), it displays its specification, or one section: `attributes`, `inputs` or `outputs`.
+`toc` lists the plugins, with the anchor of their section in the Plugin Manual (`manual_anchor`, for `workflows development manual section`).
+`show` with a plugin name (class name, case insensitive) displays its specification, or one section: `attributes`, `inputs` or `outputs`.
 It does not require access to Orchestrator.
 Option `plugin_specs` gives another URL or path of the file, for example for another version of Orchestrator.
 
 ```shell
-ascli orchestrator plugins spec --select=@json:'{"category":"Triggers"}'
-ascli orchestrator plugins spec AmazonS3Operation --format=yaml
-ascli orchestrator plugins spec ascpclient inputs
+ascli orchestrator plugins spec toc --select=@json:'{"category":"Triggers"}'
+ascli orchestrator plugins spec show AmazonS3Operation --format=yaml
+ascli orchestrator plugins spec show ascpclient inputs
 ```
 
 ### Authentication
@@ -10314,7 +10315,7 @@ An issue has these fields:
 
 Checked: format of the file (YAML, number of elements, plain format layout), attributes, `error_free`, action template keys, XML of the graph, `Start`, `End`, `Fail` and `Error` nodes, unique step names, step template, prerequisites, `Synch_factor`, steps that have no output or no prerequisite, references to outputs and parameters.
 
-With the specifications of plugins (see `plugins spec`), it also checks action templates and the inputs of steps, for the settings of each template:
+With the specifications of plugins (see `plugins spec show`), it also checks action templates and the inputs of steps, for the settings of each template:
 
 - plugin class name, attributes of the template, and their values (type, allowed values),
 - required inputs not mapped (`step.input_missing`),
@@ -10367,9 +10368,9 @@ journal files journal --query=@json:'{"details":"false"}'
 monitors list node
 monitors snapshot
 plugins list
-plugins spec --select=@json:'{"category":"Triggers"}'
-plugins spec AmazonS3Operation --format=yaml
-plugins spec ascpclient inputs
+plugins spec toc --select=@json:'{"category":"Triggers"}'
+plugins spec show AmazonS3Operation --format=yaml
+plugins spec show ascpclient inputs
 portlets
 processes
 queue_stats
@@ -10388,8 +10389,8 @@ workflow status ALL
 workflow status my_workflow_id
 workflow workorders my_workflow_id
 workflow workorders my_workflow_id --fields=id --query.max_results=1
-workflows development authoring toc
-workflows development templates customruby
+workflows development guide toc
+workflows development templates section customruby
 workorder cancel <id>
 workorder output <id>
 workorder reset <id>

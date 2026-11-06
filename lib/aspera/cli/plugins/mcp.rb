@@ -94,17 +94,22 @@ module Aspera
             cleanup → ["config", "transfer", "cleanup"]
 
           ORCHESTRATOR WORKFLOW DEVELOPMENT
-          Before writing or modifying an Orchestrator workflow, read the documentation for workflow
-          development (file format, graph, execution, recipes, authoring checklist):
-            ["orchestrator", "workflows", "development", "authoring"]
+          Before writing or modifying an Orchestrator workflow, read the development guide (large: read
+          sections, not the whole document). Start with the sections "quick-start" and "authoring-checklist":
+            ["orchestrator", "workflows", "development", "guide", "section", "authoring-checklist"]
+          then the sections you need (file format, graph, inputs of steps, execution, recipes, known issues):
+          "workflow-file", "graph-xml", "inputs-of-a-step", "execution", "recipes", "known-issues".
+          Command "toc" lists the anchors of the sections of a document, up to a default level, or the level
+          given after it:
+            ["orchestrator", "workflows", "development", "guide", "toc"]
           For the template attributes (allowed values), inputs and outputs of an action plugin, and the
           template settings they depend on, read its specification (fields: section "plugin-specifications"
-          of the authoring guide); without plugin name, the list of plugins:
-            ["orchestrator", "plugins", "spec", "<PluginClass>"]
+          of the development guide); the list of plugins is given by ["orchestrator", "plugins", "spec", "toc"]:
+            ["orchestrator", "plugins", "spec", "show", "<PluginClass>"]
           For the functional description and the setup of a plugin (for example the API client of Faspex),
-          read its section of the Plugin Manual (large: read one section):
-            ["orchestrator", "workflows", "development", "manual", "<anchor>"]
-          The anchor "toc" lists the sections of a document, up to a default level, or the level given after it.
+          read its section of the Plugin Manual (large: read one section only). The anchor of the section is
+          field "manual_anchor" of the specification of the plugin (also in the list of plugins):
+            ["orchestrator", "workflows", "development", "manual", "section", "<manual_anchor>"]
           Before importing a workflow file, check it (graph, templates, inputs of steps) and fix all errors:
             ["orchestrator", "workflows", "check_import", "<file>"]
         INST
