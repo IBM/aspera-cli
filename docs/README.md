@@ -33,6 +33,10 @@ common:
 The IBM Aspera Command Line Interface (`ascli`) is an enterprise-grade tool that provides comprehensive command-line access to IBM Aspera's suite of high-speed file transfer products and services.
 Designed for automation, scripting, and integration scenarios, `ascli` enables organizations to leverage Aspera's FASP technology within their existing workflows and DevOps pipelines.
 
+> [!TIP]
+> For any question about `ascli` (behavior, options), or to build a command line, give this manual to an AI assistant as a reference and ask it.
+> See [Leveraging AI Assistance](#leveraging-ai-assistance).
+
 ![Architecture: transfer agents, IBM Aspera applications and transfer servers](architecture.svg)
 
 ### Key Features
