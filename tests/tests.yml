@@ -5777,6 +5777,9 @@ conf_preset_ask:
     - ask
     - my_preset
 conf_preset_secure:
+  depends_on:
+    - conf_preset_ask
+    - conf_vault_file_password
   tags:
     - tmp_conf
     - nodoc
