@@ -2,6 +2,13 @@
 
 # Unit tests for Aspera::Secret::Store::Keeper — SDK client is faked, no Keeper account needed.
 
+begin
+  require 'keeper_secrets_manager'
+rescue LoadError => e
+  # optional gem keeper_secrets_manager not installed (e.g. in CI)
+  RSpec.describe('Aspera::Secret::Store::Keeper') { it('requires gem keeper_secrets_manager') { skip(e.message) } }
+  return
+end
 require 'securerandom'
 require 'aspera/secret/store/factory'
 require 'aspera/secret/store/keeper'
