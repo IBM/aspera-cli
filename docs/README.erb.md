@@ -3488,6 +3488,8 @@ Secrets of the default store can be manipulated using the `config vault` command
 - `info` : Show vault information
 - `ids` : List secret labels in the vault
 - `list` : List all secrets with full details
+- `overview` : List labels of all secrets with their field names, without values
+- `field` : List field names of a secret by label, without values
 - `show` : Show a secret by label (or id)
 - `create` : Add a new secret to the vault
 - `delete` : Delete a secret by label (or id)

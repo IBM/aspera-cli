@@ -88,6 +88,15 @@ module Aspera
         resolver(mandatory: true).metadata(reference_text(name))
       end
 
+      # Field names of a secret of the default store, without values
+      # @param label [String] Label of secret
+      # @return [Array<String>] Names of fields that a reference can read
+      def fields(label)
+        store(mandatory: true)
+        reference = Secret.reference_text(store: @default, path: label)
+        resolver(mandatory: true).fields(reference)[:fields]
+      end
+
       private
 
       # Resolver of the stores of option `vault`, created when first used.

@@ -218,6 +218,13 @@ module Aspera
             action: ->(**) { Result::ObjectList.new(vault_required.ids) }
           command :list,     description: 'List all secrets with full details',
             action: ->(**) { Result::ObjectList.new(vault_required.all) }
+          command :overview, description: 'List labels of all secrets with their field names, without values',
+            action: ->(**) { Result::ObjectList.new(vault_required.ids.map { |i| {'label' => i[:label], 'fields' => context.vault.fields(i[:label])} }) }
+          command(
+            :field,    description: 'List field names of a secret by label, without values',
+            arguments: [{name: :label}],
+            action: ->(label:, **) { Result::ValueList.new(context.vault.fields(label), name: 'field') }
+          )
           command(
             :show,     description: 'Show a secret by label (or id)',
             arguments: [{name: :label}, {name: :id, mandatory: false, default: nil}],

@@ -5676,6 +5676,29 @@ conf_vault_list_after_create:
     - config
     - vault
     - list
+conf_vault_overview:
+  description: vault overview returns labels with their field names, without values
+  depends_on:
+    - conf_vault_create
+  tags:
+    - vault
+    - tmp_conf
+  args:
+    - config
+    - vault
+    - overview
+conf_vault_field:
+  description: vault field returns field names of one label, without values
+  depends_on:
+    - conf_vault_create
+  tags:
+    - vault
+    - tmp_conf
+  args:
+    - config
+    - vault
+    - field
+    - my_label
 conf_vault_show:
   depends_on:
     - conf_vault_create
