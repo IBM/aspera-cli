@@ -332,8 +332,10 @@ module Aspera
         # @return [Integer] size in bytes
         def read_remote_log(executor, remote, local, limit)
           quoted = Shellwords.escape(remote)
+          # Force an integer: the value comes from a user option and is interpolated in a shell command
+          max_bytes = Integer(limit) + 1
           # First line: modification time (0 if unknown), then the content, read up to one byte over the limit
-          output = executor.execute("(stat -c %Y -- #{quoted} 2>/dev/null || echo 0); head -c #{limit + 1} -- #{quoted}").b
+          output = executor.execute("(stat -c %Y -- #{quoted} 2>/dev/null || echo 0); head -c #{max_bytes} -- #{quoted}").b
           mtime, _, content = output.partition("\n")
           Aspera.assert(content.bytesize <= limit, type: Cli::BadArgument) do
             "Log files from the server exceed the limit of #{ascp_logs_params['remote_max_size']} bytes (option ascp_logs.remote_max_size), at: #{remote}"
