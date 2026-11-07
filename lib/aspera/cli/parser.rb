@@ -367,8 +367,9 @@ module Aspera
       end
 
       # Check for unprocessed options or arguments error messages
+      # @param after_error [Boolean] `true` if an error was already reported: positional arguments are then not consumed because of this error, not reported
       # @return [Array<String>] list of error messages for unprocessed tokens
-      def final_errors
+      def final_errors(after_error: false)
         begin
           ensure_parsed
         rescue StandardError => e
@@ -377,7 +378,7 @@ module Aspera
         end
         result = []
         result.push("unprocessed options: #{@command_line.pending_options}") unless @command_line.pending_options.empty?
-        result.push("unprocessed values: #{@command_line.pending_arguments}") unless @command_line.pending_arguments.empty?
+        result.push("unprocessed values: #{@command_line.pending_arguments}") unless after_error || @command_line.pending_arguments.empty?
         result
       end
 

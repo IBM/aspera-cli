@@ -13,7 +13,8 @@ module Aspera
     class LogAnalyzer
       # Lines of an ascp log file parsed into records, with the field names of the log lines:
       # - samples: `Receiver bl` or `Sender bl` line, merged with the `DS Qs` line that follows it
-      # - sessions: `Session Start`, `Session Params`, `Session Stop` and `Session Statistics` lines of a session
+      # - sessions: `Session Start`, `Session Params`, `Session Stop` and `Session Statistics` lines of a session,
+      #   and the lines of the process about the session: license (`Initializing FASP version`), MTU and rate parameters of the peer
       # - transfers: `Transfer Start` and `Transfer Stop` lines of a file
       # Fields are described in schema `ascp_log`.
       class Records
@@ -29,12 +30,16 @@ module Aspera
         MESSAGE = /\]:?\s+LOG\s+(.*?)\s*\z/
         # Line message => method called with (pid, time, MatchData)
         MESSAGES = {
-          /\A(Receiver|Sender) (bl .*)/            => :sample_line,
-          /\A(Receiver|Sender) DS (.*)/            => :queues_line,
-          /\AFASP Session (Start|Stop) (.*)/       => :session_line,
-          /\AFASP Session Params (.*)/             => :params_line,
-          /\AFASP Session Statistics \[\w+\] (.*)/ => :statistics_line,
-          /\AFASP Transfer (Start|Stop) (.*)/      => :transfer_line
+          /\A(Receiver|Sender) (bl .*)/                                                                    => :sample_line,
+          /\A(Receiver|Sender) DS (.*)/                                                                    => :queues_line,
+          /\AFASP Session (Start|Stop) (.*)/                                                               => :session_line,
+          /\AFASP Session Params (.*)/                                                                     => :params_line,
+          /\AFASP Session Statistics \[\w+\] (.*)/                                                         => :statistics_line,
+          /\AInitializing FASP version (.+?), license\b/                                                   => :initializing_line,
+          /\AMeasured pMTU: (\d+) Bytes, start_brtt: (\d+) ms/                                             => :measured_mtu_line,
+          /\Adatagram size (\d+)B, block size (\d+)B(?:, path MTU (\d+)B)?/                                => :datagram_line,
+          /\APeer requested rate params adopted,\s+target_rate (\d+) min_rate (\d+) transfer_policy (\w+)/ => :peer_rate_params_line,
+          /\AFASP Transfer (Start|Stop) (.*)/                                                              => :transfer_line
         }.freeze
         # Group of a sample line: `name k1/k2=v1/v2`, or `key=value` alone
         GROUP_FIELDS = %r{(?:([A-Za-z_]+)\s+)?([A-Za-z_]+(?:/[A-Za-z_]+)*)=(-?\d+(?:/-?\d+)*)}
@@ -45,7 +50,7 @@ module Aspera
         KEY = %r{([A-Za-z_][\w/]*)=}
         # Value of `key=value`: quoted, in brackets, or up to the next key (it may contain spaces, e.g. `ver=4.4.8.2596 b12cd13`)
         QUOTED = /"(.*?)"(?=\s|\z)/
-        BRACKETS = /\[([^\]]*)\]/
+        BRACKETS = /\[([^\]]*)\](?=\s|\z)/
         UNQUOTED = %r{.*?(?=\s+(?:\[\w+\s|[A-Za-z_][\w/]*=)|\s*\z)}
         # Group of `Session Statistics`: `(name: key value key value)`, or `(name: value unit)`
         STATISTICS_GROUP = /\(([a-z ]+):\s*([^()]*)\)/
@@ -96,6 +101,118 @@ module Aspera
             number = m[1].to_f * RATE_UNITS.fetch(m[2], 1)
             type.eql?('integer') ? number.round : number
           end
+
+          # @param text [String] groups of a sample line: `name k1/k2=v1/v2`, or `key=value`
+          # @return [Hash] name => {key => value}, and key => value. A repeated group gets a number: `bl`, `bl2`
+          def group_fields(text)
+            seen = Hash.new(0)
+            text.scan(GROUP_FIELDS).each_with_object({}) do |(group, keys, numbers), result|
+              values = keys.split('/').zip(numbers.split('/').map(&:to_i)).to_h
+              if group.nil?
+                result.merge!(values)
+              else
+                seen[group] += 1
+                result[seen[group] > 1 ? "#{group}#{seen[group]}" : group] = values
+              end
+            end
+          end
+
+          # @param text [String] `Qs ... mgmt backlog ...` of a `DS Qs` line
+          # @return [Hash] queue groups and `mgmt_backlog` array
+          def queues_fields(text)
+            backlog = text.match(MGMT_BACKLOG)
+            text = backlog.pre_match + backlog.post_match if backlog
+            queues = group_fields(text)
+            if backlog
+              keys = backlog[1].split('/')
+              queues['mgmt_backlog'] = backlog[2].split.map { |values| keys.zip(values.split('/').map(&:to_i)).to_h }
+            end
+            queues
+          end
+
+          # @param text [String] `key=value key="value" key=[k=v,k=v] [prefix key=value]`
+          # @return [Hash] key => value (String), or Hash for brackets
+          def key_values(text)
+            fields = {}
+            scanner = StringScanner.new(text)
+            loop do
+              scanner.skip(/\s+/)
+              break if scanner.eos?
+              if scanner.scan(PREFIXED)
+                prefix = scanner[1]
+                key_values(scanner[2]).each { |key, value| fields["#{prefix}_#{key}"] = value }
+              elsif scanner.scan(KEY)
+                key = scanner[1]
+                value =
+                  if scanner.scan(QUOTED)
+                    scanner[1]
+                  elsif scanner.scan(BRACKETS)
+                    scanner[1].include?('=') ? scanner[1].split(',').to_h { |pair| pair.split('=', 2) } : scanner[1]
+                  else
+                    scanner.scan(UNQUOTED)
+                  end
+                add_field(fields, key, value)
+              else
+                scanner.skip(/\S+/)
+              end
+            end
+            fields.except(*HIDDEN_FIELDS)
+          end
+
+          # A key with a slash has one value per name: `exclude_older/newer_than=0/0`
+          def add_field(fields, key, value)
+            if key.include?('/') && value.is_a?(String)
+              SPLIT_KEYS.fetch(key) { key.split('/') }.zip(value.split('/')) { |name, part| fields[name] = part }
+            else
+              fields[key] = value
+            end
+          end
+
+          # @param text [String] `key=value`, `key value` and `(group: key value key value)` of `Session Statistics`
+          # @return [Hash] key => value, group => {key => value}. Key of `a->b.key`: `key`
+          def statistics_fields(text)
+            fields = {}
+            scanner = StringScanner.new(text)
+            loop do
+              scanner.skip(/\s+/)
+              break if scanner.eos?
+              if scanner.scan(STATISTICS_GROUP)
+                tokens = scanner[2].split
+                fields[scanner[1].split.join('_')] = tokens.first&.match?(/\A-?\d/) ? tokens.first : pairs(tokens)
+              elsif scanner.scan(/([^\s=]+)=(\S*)/) || scanner.scan(/(\S+)\s+(-?\d\S*)/)
+                fields[scanner[1].split(/->|\./).last] = scanner[2]
+              else
+                scanner.skip(/\S+/)
+              end
+            end
+            fields
+          end
+
+          # @param tokens [Array<String>] `key value key value`
+          # @return [Hash] key => value. A repeated key with a percentage: `<key>_pct`, e.g. `lost 1 lost 1.47%`
+          def pairs(tokens)
+            tokens.each_slice(2).with_object({}) do |(key, value), result|
+              key = "#{key}_pct" if result.key?(key) && value.to_s.end_with?('%')
+              result[key] = value
+            end
+          end
+
+          # @param fields [Hash]   Values from log line (String)
+          # @param kind   [Symbol] Kind of record
+          # @return [Hash] values with the type of the field in the schema
+          def typed(fields, kind, prefix = '')
+            types = field_types(kind)
+            fields.to_h do |key, value|
+              path = "#{prefix}#{key}"
+              value =
+                case value
+                when Hash then typed(value, kind, "#{path}.")
+                when String then self.value(value, types[path])
+                else value
+                end
+              [key, value]
+            end
+          end
         end
 
         # @return [String] Log file
@@ -118,6 +235,8 @@ module Aspera
           @last_sample = {}
           # [uuid, file] => transfer record, until its `Transfer Stop` line
           @open_transfers = {}
+          # PID => fields of lines logged before the `Session Start` line of the process
+          @pending = {}
         end
 
         # Read and parse the log file
@@ -164,21 +283,14 @@ module Aspera
 
         # `Receiver bl ...` or `Sender bl ...`
         def sample_line(pid, time, m)
-          record = sample_record(pid, time, m[1]).merge(group_fields(m[2]))
+          record = sample_record(pid, time, m[1]).merge(self.class.group_fields(m[2]))
           @samples.push(record)
           @last_sample[pid] = record
         end
 
         # `Receiver DS Qs ...` or `Sender DS Qs ...`: in the sample logged before
         def queues_line(pid, time, m)
-          text = m[2]
-          backlog = text.match(MGMT_BACKLOG)
-          text = backlog.pre_match + backlog.post_match if backlog
-          queues = group_fields(text)
-          if backlog
-            keys = backlog[1].split('/')
-            queues['mgmt_backlog'] = backlog[2].split.map { |values| keys.zip(values.split('/').map(&:to_i)).to_h }
-          end
+          queues = self.class.queues_fields(m[2])
           record = @last_sample.delete(pid)
           if record.nil? || record['side'] != m[1]
             record = sample_record(pid, time, m[1])
@@ -190,33 +302,62 @@ module Aspera
         # @return [Hash] session record of uuid: created on first line
         def session_record(uuid, pid)
           @uuids[pid] = uuid
-          @sessions[uuid] ||= {'uuid' => uuid, 'pid' => pid, 'start' => nil, 'stop' => nil}
+          @sessions[uuid] ||= {'uuid' => uuid, 'pid' => pid, 'start' => nil, 'stop' => nil}.merge(@pending.delete(pid) || {})
+        end
+
+        # @return [Hash] fields kept until the `Session Start` line of the process, else the session record of the process
+        def process_session(pid)
+          @pending[pid] || (@uuids.key?(pid) ? @sessions[@uuids[pid]] : (@pending[pid] = {}))
+        end
+
+        # `Initializing FASP version`: starts a process. License fields are only the version, the maximum rate and the expiry date:
+        # `account no.` and `license no.` are not output.
+        def initializing_line(pid, _time, m)
+          rate = m.string[LICENSE_RATE, 1]
+          @pending[pid] = {
+            'fasp_version' => m[1], 'license_max_rate' => rate && (rate.to_i * 1_000_000), 'license_expires' => m.string[LICENSE_EXPIRES, 1]
+          }.compact
+        end
+
+        # `Measured pMTU: 1492 Bytes, start_brtt: 56 ms`
+        def measured_mtu_line(pid, _time, m)
+          process_session(pid).merge!('pMTU' => m[1].to_i, 'start_brtt' => m[2].to_i)
+        end
+
+        # `datagram size 1472B, block size 1408B, path MTU 1492B` (no path MTU in old versions)
+        def datagram_line(pid, _time, m)
+          process_session(pid).merge!({'datagram_size' => m[1].to_i, 'block_size' => m[2].to_i, 'path_mtu' => m[3]&.to_i}.compact)
+        end
+
+        # `Peer requested rate params adopted,  target_rate 100000000 min_rate 0 transfer_policy fair`: one item per change
+        def peer_rate_params_line(pid, time, m)
+          (process_session(pid)['peer_rate_params'] ||= []).push({'time' => time, 'target_rate' => m[1].to_i, 'min_rate' => m[2].to_i, 'transfer_policy' => m[3]})
         end
 
         # `Session Start` or `Session Stop`: same fields, the ones of `Session Stop` replace the ones of `Session Start`
         def session_line(pid, time, m)
-          fields = key_values(m[2])
+          fields = self.class.key_values(m[2])
           uuid = fields['uuid'] or return
           record = session_record(uuid, pid)
           record[m[1].downcase] = time
-          record.merge!(typed(fields, :sessions))
+          record.merge!(self.class.typed(fields, :sessions))
         end
 
         def params_line(pid, _time, m)
-          fields = key_values(m[1])
+          fields = self.class.key_values(m[1])
           uuid = fields['uuid'] or return
-          session_record(uuid, pid).merge!(typed(fields, :sessions))
+          session_record(uuid, pid).merge!(self.class.typed(fields, :sessions))
         end
 
         def statistics_line(pid, _time, m)
-          fields = statistics_fields(m[1])
+          fields = self.class.statistics_fields(m[1])
           uuid = fields.delete('id') or return
-          session_record(uuid, pid).merge!(typed(fields, :sessions))
+          session_record(uuid, pid).merge!(self.class.typed(fields, :sessions))
         end
 
         # `Transfer Start` or `Transfer Stop`: same fields, the ones of `Transfer Stop` replace the ones of `Transfer Start`
         def transfer_line(pid, time, m)
-          fields = key_values(m[2])
+          fields = self.class.key_values(m[2])
           uuid = fields['uuid'] or return
           @uuids[pid] = uuid
           key = [uuid, fields['file']]
@@ -227,103 +368,7 @@ module Aspera
             @open_transfers[key] = record if m[1].eql?('Start')
           end
           record[m[1].downcase] = time
-          record.merge!(typed(fields, :transfers))
-        end
-
-        # @param text [String] groups of a sample line: `name k1/k2=v1/v2`, or `key=value`
-        # @return [Hash] name => {key => value}, and key => value. A repeated group gets a number: `bl`, `bl2`
-        def group_fields(text)
-          seen = Hash.new(0)
-          text.scan(GROUP_FIELDS).each_with_object({}) do |(group, keys, numbers), result|
-            values = keys.split('/').zip(numbers.split('/').map(&:to_i)).to_h
-            if group.nil?
-              result.merge!(values)
-            else
-              seen[group] += 1
-              result[seen[group] > 1 ? "#{group}#{seen[group]}" : group] = values
-            end
-          end
-        end
-
-        # @param text [String] `key=value key="value" key=[k=v,k=v] [prefix key=value]`
-        # @return [Hash] key => value (String), or Hash for brackets
-        def key_values(text)
-          fields = {}
-          scanner = StringScanner.new(text)
-          loop do
-            scanner.skip(/\s+/)
-            break if scanner.eos?
-            if scanner.scan(PREFIXED)
-              prefix = scanner[1]
-              key_values(scanner[2]).each { |key, value| fields["#{prefix}_#{key}"] = value }
-            elsif scanner.scan(KEY)
-              key = scanner[1]
-              value =
-                if scanner.scan(QUOTED) then scanner[1]
-                elsif scanner.scan(BRACKETS) then scanner[1].split(',').to_h { |pair| pair.split('=', 2) }
-                else scanner.scan(UNQUOTED)
-                end
-              add_field(fields, key, value)
-            else
-              scanner.skip(/\S+/)
-            end
-          end
-          fields.except(*HIDDEN_FIELDS)
-        end
-
-        # A key with a slash has one value per name: `exclude_older/newer_than=0/0`
-        def add_field(fields, key, value)
-          if key.include?('/') && value.is_a?(String)
-            SPLIT_KEYS.fetch(key) { key.split('/') }.zip(value.split('/')) { |name, part| fields[name] = part }
-          else
-            fields[key] = value
-          end
-        end
-
-        # @param text [String] `key=value`, `key value` and `(group: key value key value)` of `Session Statistics`
-        # @return [Hash] key => value, group => {key => value}. Key of `a->b.key`: `key`
-        def statistics_fields(text)
-          fields = {}
-          scanner = StringScanner.new(text)
-          loop do
-            scanner.skip(/\s+/)
-            break if scanner.eos?
-            if scanner.scan(STATISTICS_GROUP)
-              tokens = scanner[2].split
-              fields[scanner[1].split.join('_')] = tokens.first&.match?(/\A-?\d/) ? tokens.first : pairs(tokens)
-            elsif scanner.scan(/([^\s=]+)=(\S*)/) || scanner.scan(/(\S+)\s+(-?\d\S*)/)
-              fields[scanner[1].split(/->|\./).last] = scanner[2]
-            else
-              scanner.skip(/\S+/)
-            end
-          end
-          fields
-        end
-
-        # @param tokens [Array<String>] `key value key value`
-        # @return [Hash] key => value. A repeated key with a percentage: `<key>_pct`, e.g. `lost 1 lost 1.47%`
-        def pairs(tokens)
-          tokens.each_slice(2).with_object({}) do |(key, value), result|
-            key = "#{key}_pct" if result.key?(key) && value.to_s.end_with?('%')
-            result[key] = value
-          end
-        end
-
-        # @param fields [Hash]   Values from log line (String)
-        # @param kind   [Symbol] Kind of record
-        # @return [Hash] values with the type of the field in the schema
-        def typed(fields, kind, prefix = '')
-          types = self.class.field_types(kind)
-          fields.to_h do |key, value|
-            path = "#{prefix}#{key}"
-            value =
-              case value
-              when Hash then typed(value, kind, "#{path}.")
-              when String then self.class.value(value, types[path])
-              else value
-              end
-            [key, value]
-          end
+          record.merge!(self.class.typed(fields, :transfers))
         end
       end
     end

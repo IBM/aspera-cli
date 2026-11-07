@@ -170,6 +170,38 @@ module Aspera
           expect(formatter).not_to(have_received(:display_results))
         end
       end
+
+      describe '#run: unprocessed values after an error' do
+        # Error messages logged by a complete execution of the command line
+        def logged_errors(*argv)
+          messages = []
+          allow(Log.log).to(receive(:error)) { |*args, &block| messages.push(block ? block.call : args.first) }
+          Dir.mktmpdir do |home|
+            # Home folder by env var: an option on command line may not be consumed yet when the error occurs
+            stub_const('ENV', ENV.to_h.merge('ASCLI_HOME' => home))
+            expect { Runner.new(argv).run }.to(raise_error(SystemExit))
+          end
+          messages
+        end
+
+        %w[ascp-logs temp ui].each do |name|
+          it "reports only the schema error for an unknown key of --#{name}" do
+            messages = logged_errors('config', 'ascp', 'logs', 'summary', "--#{name}.foo=1")
+            expect(messages.size).to(eq(1))
+            expect(messages.first).to(include('is a disallowed additional property'))
+          end
+        end
+
+        it 'does not change the message of an error on a normal option' do
+          messages = logged_errors('config', 'ascp', 'logs', 'summary', '--format=foo')
+          expect(messages.first).to(start_with('Argument: unknown value for format: foo'))
+          expect(messages.size).to(eq(1))
+        end
+
+        it 'still reports unprocessed values without error' do
+          expect(logged_errors('config', 'echo', '1', '2')).to(eq(['Argument: unprocessed values: ["2"]']))
+        end
+      end
     end
   end
 end

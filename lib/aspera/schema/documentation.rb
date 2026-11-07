@@ -36,7 +36,7 @@ module Aspera
 
       def rows
         @sections.flat_map do |section|
-          sorted = section[:rows].sort_by { |i| i['name'] }
+          sorted = section[:rows].sort_by { |i| i['name'].delete('`') }
           section[:header] ? [section[:header]] + sorted : sorted
         end
       end

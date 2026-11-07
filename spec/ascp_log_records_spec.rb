@@ -120,6 +120,86 @@ RSpec.describe(Aspera::Ascp::LogAnalyzer::Records) do
     expect(transfers.first['start']).to(start_with('2026-01-10T10:00:00'))
   end
 
+  describe 'lines of the process about the session' do
+    # Lines of a client process, as logged by ascp: before and after `Session Start`
+    process_lines = lambda do |license, extra = []|
+      [
+        ['10:00:00', "LOG Initializing FASP version 4.4.8.2596 b12cd13, license #{license}, account no.=1002, license no.=52873 product=10"],
+        ['10:00:00', "LOG FASP Session Start #{session_fields.call(rx, 'send', 'started')}"],
+        ['10:00:01', 'LOG Measured pMTU: 1492 Bytes, start_brtt: 56 ms'],
+        ['10:00:01', 'LOG datagram size 1472B, block size 1408B, path MTU 1492B']
+      ].concat(extra).map { |time, text| "2026-01-10 #{time}.000 [3c4d-140001] #{text}\n" }.join
+    end
+
+    def session(content)
+      records(content).sessions.first
+    end
+
+    it 'reads the license, MTU and datagram lines, and does not output account and license numbers' do
+      record = session(process_lines.call('expires on Sat Oct  3 08:59:59 2026, max rate=100 Mbps'))
+      expect(record).to(include(
+        'fasp_version' => '4.4.8.2596 b12cd13', 'license_max_rate' => 100_000_000, 'license_expires' => 'Sat Oct  3 08:59:59 2026',
+        'pMTU' => 1492, 'start_brtt' => 56, 'datagram_size' => 1472, 'block_size' => 1408, 'path_mtu' => 1492
+      ))
+      expect(record.to_json).not_to(match(/1002|52873|account no|license no/))
+    end
+
+    it 'has no maximum rate nor expiry date for an unlimited license without expiry' do
+      record = session(process_lines.call('max rate=(unlimited)'))
+      expect(record).to(include('fasp_version' => '4.4.8.2596 b12cd13'))
+      expect(record).not_to(include('license_max_rate', 'license_expires', 'peer_rate_params'))
+    end
+
+    it 'has none of these fields when the log has none of these lines' do
+      record = session(log)
+      expect(record).not_to(include('fasp_version', 'license_max_rate', 'license_expires', 'pMTU', 'start_brtt', 'datagram_size', 'block_size', 'path_mtu', 'peer_rate_params'))
+    end
+
+    it 'reads the datagram line of old versions, without path MTU' do
+      record = session("2026-01-10 10:00:00.000 [3c4d-1] LOG datagram size 1484B, block size 1424B\n2026-01-10 10:00:00.000 [3c4d-1] LOG FASP Session Start #{session_fields.call(rx, 'send', 'started')}\n")
+      expect(record).to(include('datagram_size' => 1484, 'block_size' => 1424))
+      expect(record).not_to(include('path_mtu'))
+    end
+
+    it 'lists the rate parameters adopted at the request of the peer, with their time' do
+      record = session(process_lines.call(
+        'max rate=(unlimited)',
+        [
+          ['10:00:05', 'LOG Peer requested rate params adopted,  target_rate 100000000 min_rate 0 transfer_policy fair'],
+          ['10:00:09', 'LOG Negotiated rate params, target_rate 10000000 min_rate 0 transfer_policy fair'],
+          ['10:00:15', 'LOG Peer requested rate params adopted,  target_rate 631205000 min_rate 1000000 transfer_policy fixed']
+        ]
+      ))
+      expect(record['peer_rate_params'].map { |change| change.except('time') }).to(eq([
+        {'target_rate' => 100_000_000, 'min_rate' => 0, 'transfer_policy' => 'fair'},
+        {'target_rate' => 631_205_000, 'min_rate' => 1_000_000, 'transfer_policy' => 'fixed'}
+      ]))
+      expect(record['peer_rate_params'].map { |change| change['time'][0, 19] }).to(eq(%w[2026-01-10T10:00:05 2026-01-10T10:00:15]))
+    end
+
+    it 'reads the lines of syslog logs, one process after the other' do
+      syslog = [
+        'Oct 26 09:35:56 host ascp[62699]: LOG Initializing FASP version 4.4.8.2596 b12cd13, license max rate=10 Mbps, account no.=1, license no.=2 product=10',
+        "Oct 26 09:35:56 host ascp[62699]: LOG FASP Session Start #{session_fields.call(rx, 'recv', 'started')}",
+        'Oct 26 09:35:57 host ascp[62699]: LOG Peer requested rate params adopted,  target_rate 5000000 min_rate 0 transfer_policy fair',
+        'Oct 26 09:36:00 host ascp[62700]: LOG Initializing FASP version 4.4.9.1, license max rate=(unlimited), account no.=1, license no.=2 product=10',
+        "Oct 26 09:36:00 host ascp[62700]: LOG FASP Session Start #{session_fields.call(tx, 'send', 'started')}",
+        'Oct 26 09:36:01 host ascp[62700]: LOG datagram size 1472B, block size 1408B, path MTU 1006B'
+      ].join("\n")
+      sessions = records("#{syslog}\n").sessions
+      expect(sessions.find { |s| s['uuid'] == rx }).to(include('license_max_rate' => 10_000_000, 'peer_rate_params' => [include('target_rate' => 5_000_000)]))
+      expect(sessions.find { |s| s['uuid'] == tx }).to(include('fasp_version' => '4.4.9.1', 'path_mtu' => 1006))
+      expect(sessions.find { |s| s['uuid'] == tx }).not_to(include('license_max_rate', 'peer_rate_params'))
+    end
+
+    it 'produces records described by the schema' do
+      content = process_lines.call('expires on Sat Oct  3 08:59:59 2026, max rate=100 Mbps', [['10:00:05', 'LOG Peer requested rate params adopted,  target_rate 100000000 min_rate 0 transfer_policy fair']])
+      record = session(content)
+      expect(record).to(include('peer_rate_params', 'license_expires'))
+      expect(Aspera::Schema::Validator.instance.errors(record, described_class::SCHEMAS[:sessions])).to(be_empty)
+    end
+  end
+
   it 'reads syslog lines' do
     syslog = "Oct 26 09:35:57 host ascp[62699]: LOG Receiver bl t/o/r/d/ts/c/h=1/1/0/0/0/0/0 prog t/f/e=10/10/20 rcvD=0\n" \
       "Oct 26 09:35:57 host asperanoded[100]: LOG Receiver bl t/o/r/d/ts/c/h=2/2/0/0/0/0/0\n"

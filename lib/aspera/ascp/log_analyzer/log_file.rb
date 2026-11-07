@@ -68,26 +68,18 @@ module Aspera
           @stats[:error_categories] = Hash.new(0)
           # Start time => {start:, stop:, slots: {Session => Hash}, totals: Hash}
           @periods = {}
+          # Start time of the latest period with samples
+          @bucket = nil
           # [license number, IP] => {product:, account:, os:}
           @licenses = {}
-          # Sample lines of current period
-          @pending = []
-          # Sample line that starts the next period
-          @held = nil
-          @period_start = nil
-          @period_end = nil
         end
 
         # Read and analyze the log file
         # @return [self]
         def analyze
           LogAnalyzer.read_lines(@path, Encoding::BINARY) { |line| parse_line(normalize(line)) }
-          process_samples unless @pending.empty?
-          if @held
-            start_period(@held)
-            @pending.push(@held)
-            process_samples
-          end
+          @sessions.each(&:evaluate_atm)
+          @periods.sort.each { |time, period| end_of_period(time, period) }
           compute_statistics
           self
         end
@@ -230,11 +222,6 @@ module Aspera
           line.match?(OTHER_PROCESSES) && line.match?(/(?:#{OTHER_PROCESSES.source}).*?#{pid}/)
         end
 
-        # @return [Hash] key=value from line
-        def key_values(line)
-          line.scan(KEY_VALUE).to_h { |k, v| [k, v.delete_prefix('"').delete_suffix('"')] }
-        end
-
         def parse_line(line)
           track_ascp(line)
           pid = line[PID, 1] or return
@@ -265,8 +252,7 @@ module Aspera
             license(@config[pid], line)
           end
           return if line.include?('ascmd') || line.include?('aspshell')
-          # Other processes (e.g. asperanoded): only time is used
-          return next_period(line, time) unless ascp
+          return unless ascp
           s = session(pid)
           if line.include?('ERR') && (error = line[LOG_ERROR, 1])
             s[:last_error] = error.strip
@@ -282,13 +268,12 @@ module Aspera
             s[:gap_last] = time
           end
           s[:last] = time
-          s.session_params(key_values(line)) if line.include?('FASP Session Params')
+          s.session_params(Records.key_values(line[/Session\s+Params\s+(.*)/, 1] || line)) if line.include?('FASP Session Params')
           if line.include?(' DS Qs ')
             parse_ds_qs(pid, line)
           else
             apply_rules(s, line)
           end
-          next_period(line, time)
         end
 
         # Apply the first matching rule of LINE_RULES
@@ -308,11 +293,13 @@ module Aspera
         # `Session Start` or `Session Stop` line
         # @return [Session] session of line: a new one if the process starts another session
         def session_line(s, pid, kind, stamp, line)
-          fields = key_values(line)
+          fields = Records.key_values(line[/Session\s+(?:Start|Stop)\s+(.*)/, 1] || line)
           f = {
-            uuid: fields['uuid'] || fields['id'], op: fields['op'], user: fields['user'], source: fields['source'], dest: fields['dest'],
+            uuid: fields['uuid'] || fields['id'], op: fields['op'], user: fields['user'],
+            source: (fields['source']&.match?(/\s/) ? fields['source'].split.first : fields['source']),
+            dest: (fields['dest']&.match?(/\s/) ? fields['dest'].split.first : fields['dest']),
             transport: (fields.key?('wss_port') ? 'wss' : ('ssh' if fields.key?('tcp_port'))),
-            os: fields['os'], ver: fields['ver'], peeros: fields['peeros'], peerver: fields['peerver'], lic: fields['lic'], peerlic: fields['peerlic']
+            os: fields['os'], ver: fields['ver']&.split&.first, peeros: fields['peeros'], peerver: fields['peerver']&.split&.first, lic: fields['lic'], peerlic: fields['peerlic']
           }.compact
           if f[:uuid] && s[:uuid] && s[:uuid] != f[:uuid]
             role = s[:role]
@@ -350,14 +337,10 @@ module Aspera
           s.delete(:last)
         end
 
-        def queue_sample(_s, m)
-          @pending.push(m.string)
-        end
-
         def transfer_stop(s, m)
-          uuid, op, status, file, size, start_byte = m.captures
-          s[:uuid] ||= uuid
-          @stats[:filename_too_long] += 1 if s.transfer_stop(op, status, file, size.to_i, start_byte.to_i, m.string)
+          fields = Records.key_values(m[1])
+          s[:uuid] ||= fields['uuid']
+          @stats[:filename_too_long] += 1 if s.transfer_stop(fields['op'], fields['status'], fields['file'], fields['size'].to_i, fields['start_byte'].to_i, fields['errstr'])
         end
 
         def brtt_reset(s, _m)
@@ -377,6 +360,7 @@ module Aspera
         def datagram_size(s, m)
           s[:mtu] = m[1].to_i
           s[:payload] = m[2].to_i
+          s[:path_mtu] = m[3].to_i if m[3]
         end
 
         def conf_parse_error(s, m)
@@ -424,13 +408,16 @@ module Aspera
         end
 
         def session_statistics(s, m)
+          fields = Records.statistics_fields(m[1])
           s.set(:statistics)
-          s[:effective_rate] = m[1]
-          s[:tx_bytes] = m[2].to_i
-          s[:tx_time] = m[3].to_i
-          STATISTICS_RATES.each { |name, regex| s[name] = m.string[regex, 1]&.to_f }
-          # Direction => [sent, lost percent]
-          s[:control_loss] = m.string.scan(CONTROL_MESSAGES).to_h { |direction, sent, _received, lost| [direction, [sent.to_i, lost.to_f]] }
+          s[:effective_rate] = fields['effective_rate']
+          progress = fields['progress'] || {}
+          s[:tx_bytes] = progress['tx_bytes'].to_i
+          s[:tx_time] = progress['tx_time'].to_i
+          s[:retransmitted] = fields['solicited_rex']&.to_f
+          s[:duplicates] = fields['rcvd_dups']&.to_f
+          s[:efficiency] = fields['effective']&.to_f
+          s[:control_loss] = %w[sndr rcvr rex].filter_map { |dir| (ctl = fields["#{dir}_ctl"]) && [dir, [ctl['sent'].to_i, ctl['lost_pct'].to_f]] }.to_h
         end
 
         # Cipher of server configuration replaces the requested one
@@ -453,81 +440,37 @@ module Aspera
 
         # --- Snapshot periods ---
 
-        # Process samples when the line is after the end of current period
-        def next_period(line, time)
-          if @held
-            start_period(@held)
-            @pending.push(@held)
-            @held = nil
-          elsif @period_start.nil?
-            start_period(line)
-          elsif time && time > @period_end
-            last = @pending.last
-            @held = @pending.pop if last && (last_time = parse_time(last[LINE_TIME, 1])) && last_time > @period_end
-            process_samples unless @pending.empty?
-          end
-        end
-
-        def start_period(line)
-          @period_start = parse_time(line[STAMP, 1])
-          @period_end = @period_start.to_i + @period
-        end
-
-        def process_samples
-          period = (@periods[@period_start] ||= {slots: {}})
-          @pending.each { |line| add_sample(line, period) }
-          @pending.clear
-          end_of_period(period)
-        end
-
-        # @return [Hash] values from sample line
-        def sample_values(line)
-          seen = Hash.new(0)
-          values = {}
-          line.scan(SAMPLE_GROUP) do |group, keys, numbers|
-            seen[group] += 1
-            group = "#{group}#{seen[group]}" if seen[group] > 1
-            keys.split('/').zip(numbers.split('/')) { |key, value| values["#{group}.#{key}"] = value&.to_i }
-          end
-          values
-        end
-
-        def add_sample(line, period)
-          m = line.match(SAMPLE) or return
-          receiver = m[3].eql?('Receiver')
-          values = sample_values(line)
-          s = (receiver ? RECEIVER_SAMPLE : SENDER_SAMPLE).transform_values { |key| values[key] }
-          return if s.values_at(:tx_bytes, :written, :elapsed_us).any?(&:nil?)
-          s[:disk_read_rate] = line[DISK_READ_RATE, 1]&.to_i unless receiver
-          session = session(m[2])
+        def add_sample(_s, m)
+          sample_match = m.string.match(SAMPLE) or return
+          receiver = sample_match[3].eql?('Receiver')
+          values = Records.group_fields(sample_match[4])
+          data = (receiver ? RECEIVER_SAMPLE : SENDER_SAMPLE).transform_values { |path| values.dig(*path) }
+          return if data.values_at(:tx_bytes, :written, :elapsed_us).any?(&:nil?)
+          data[:disk_read_rate] = values['drate'] unless receiver
+          session = session(sample_match[2])
           session[:dir] = receiver ? 'receive' : 'send'
-          time = parse_time(m[1]) or return
-          s.merge!(time: time, receiver: receiver, elapsed: format('%.2f', s[:elapsed_us] / 1_000_000.0).to_f)
+          time = parse_time(sample_match[1]) or return
+          data.merge!(time: time, receiver: receiver, elapsed: format('%.2f', data[:elapsed_us] / 1_000_000.0).to_f)
+          bucket = (time / @period) * @period
+          # The previous period is complete: ATM detection works on consecutive periods, in log order
+          @sessions.each(&:evaluate_atm) if @bucket && bucket > @bucket
+          @bucket = bucket if @bucket.nil? || bucket > @bucket
+          period = (@periods[bucket] ||= {slots: {}})
           period[:start] ||= time
           period[:stop] = time
-          @stats[:smart_reset] += s[:brtt_resets] if s[:brtt_resets].to_i.positive?
+          @stats[:smart_reset] += data[:brtt_resets] if data[:brtt_resets].to_i.positive?
           first = !period[:slots].key?(session)
           slot = (period[:slots][session] ||= {})
-          session.add_sample(s, slot, first: first, smart_reset: @stats[:smart_reset].positive?, mtu: @mtu)
+          session.add_sample(data, slot, first: first, smart_reset: @stats[:smart_reset].positive?, mtu: @mtu)
           @stats[:last] = time
         end
 
-        # Parse and accumulate a `DS Qs` line into the current session (called directly, not via `@pending`)
+        # Parse and accumulate a `DS Qs` line into the current session
         def parse_ds_qs(pid, line)
-          m = line.match(DS_QS_LINE) or return
-          rest = m[3]
-          # Extract named group k1/k2=v1/v2: pick only the `Qs` group (the first)
-          qs = {}
-          rest.scan(DS_QS_GROUPS) do |group, keys, numbers|
-            next unless group == 'Qs'
-            keys.split('/').zip(numbers.split('/').map(&:to_i)) { |k, v| qs[k] = v }
-            break
-          end
-          # Management backlog: sum of buffered bytes across all sockets
-          if (bl = rest.match(DS_QS_MGMT))
-            backlog = bl[1].split.sum { |triplet| triplet.split('/').last.to_i }
-            qs['mgmt_backlog'] = backlog
-          end
+          text = line[/(?:Receiver|Sender)\s+DS\s+(.*)/, 1] or return
+          queues = Records.queues_fields(text)
+          qs = queues['Qs'] || {}
+          qs['mgmt_backlog'] = queues['mgmt_backlog'].sum { |h| h['n'].to_i } if queues['mgmt_backlog']
           session(pid).add_ds_qs_sample(qs) unless qs.empty?
         end
 
@@ -537,8 +480,7 @@ module Aspera
         end
 
         # Totals of period, concurrency of sessions, maximum throughputs
-        def end_of_period(period)
-          date = @period_start
+        def end_of_period(date, period)
           slots = period[:slots]
           active = active_sessions(slots)
           totals = period[:totals] = Hash.new(0)
@@ -576,7 +518,6 @@ module Aspera
             @stats[key] = value
             @stats[:"#{key}_time"] = date
           end
-          @sessions.each(&:evaluate_atm)
         end
 
         # @return [Array] periods with traffic

@@ -3489,10 +3489,10 @@ Parameters of a store, with `type` (see sections below):
 |-------------------|---------------|----------------------------------------------------------------------------------|
 | **type** | `String` | `vault`: IBM HashiCorp Vault secret store. Labels of `config vault` and `@vault:<label>.<field>` are in mount `secret` (KV v2). Reference `@vault://<store>/<mount>/<path>#<field>` (field required) in any KV v2 mount, options `version=<n>`, `mount=<mount>` (when the mount contains `/`). |
 | `allowed_prefixes` | `Array[String]` | Allowed prefixes of `<mount>/<path>` of references: a prefix ending with `/` is a folder, else a path or a folder. All paths are allowed if not set. |
+| `approle` | `Hash` | AppRole authentication: the token is obtained by login, renewed, and obtained again when refused. |
 | `approle.mount` | `String` | Mount path of the AppRole auth method.<br/>Default: `approle`. |
 | `approle.role_id` | `String` | Role ID.<br/>Required. |
 | `approle.secret_id` | `String` | Secret ID (if the role requires one): the value, or `@file:<path>`. |
-| `approle` | `Hash` | AppRole authentication: the token is obtained by login, renewed, and obtained again when refused. |
 | `ca_file` | `String` | File with the CA certificates that verify the certificate of the server (HTTPS). |
 | `namespace` | `String` | Namespace (Vault Enterprise). |
 | `token` | `String` | The authentication token. Its value, or `@file:<path>` (e.g. written and renewed by Vault Agent), read again when modified. One of `token` or `approle` is required. For the default store, defaults to the value of `vault_password`, unless `approle` is set.<br/>Example: `dev-only-token`. |
@@ -3515,8 +3515,8 @@ Parameters of a store, with `type` (see sections below):
 | `token` | `String` | Bearer token for the Connect API (required when `source` is `api`). For the default store, defaults to the value of `vault_password`. |
 | `type` | `Enum[String]` | Vault type selector.<br/>Required.<br/>Allowed values: `1password`. |
 | `url` | `String` | Base URL of the 1Password Connect server (required when `source` is `api`).<br/>Example: `http://localhost:8080`. |
-| `vault_id` | `String` | ID of the 1Password vault to use (required when `source` is `api`). |
 | `vault` | `String` | Name or ID of the 1Password vault to use with the CLI (used when `source` is `cli`). Uses the default vault if omitted. |
+| `vault_id` | `String` | ID of the 1Password vault to use (required when `source` is `api`). |
 | **type** | `String` | `keeper`: Keeper Secrets Manager secret store (Keeper Vault), using gem `keeper_secrets_manager`. A secret is a record shared with the application: its label is its title or its UID. Reference `@vault://<store>/<title or uid>[#<field>]`, field `password` by default: standard field by type (`login`, `password`, `url`...), custom field by label, or `notes`. |
 | `config` | `String` | Configuration of the client device (base64 or JSON, e.g. from `ksm profile export`): the value, or `@file:<path>`. For the default store, defaults to the value of `vault_password`. |
 | `folder_uid` | `String` | UID of the shared folder where `config vault create` adds records (not needed to read). |
@@ -4557,11 +4557,11 @@ The `transfer` option accepts the following optional parameters to control multi
 | `monitor` | `Bool` | Enable use of the `ascp` management port for transfer monitoring.<br/>Default: `true`. |
 | `multi_incr_udp` | `Bool` | Multi session - Increment UDP port for each session.<br/>If `true`, each session uses a different UDP port starting at `fasp_port` (default: 33001).<br/>If `false`, all sessions use the same `fasp_port` (or `ascp` default).<br/>Default: `true` on Windows, `false` on other platforms. |
 | `quiet` | `Bool` | Suppress the `ascp` progress bar display.<br/>If `false`, the progress bar of option `progress_bar` is not displayed, unless that option is set.<br/>Default: `true`. |
+| `resume` | `Hash` | Configuration for automatic transfer resume on interruption. |
 | `resume.iter_max` | `Integer` | Maximum number of retry attempts on error.<br/>Default: `7`. |
 | `resume.sleep_factor` | `Integer` | Multiplier applied to sleep duration between consecutive retry attempts.<br/>Default: `2`. |
 | `resume.sleep_initial` | `Integer` | Initial sleep duration (in seconds) before first retry.<br/>Default: `2`. |
 | `resume.sleep_max` | `Integer` | Maximum sleep duration (in seconds) between retry attempts.<br/>Default: `60`. |
-| `resume` | `Hash` | Configuration for automatic transfer resume on interruption. |
 | `spawn_delay_sec` | `Number` | Multi session - Delay (in seconds) between starting each `ascp` session.<br/>Default: `2`. |
 | `spawn_timeout_sec` | `Number` | Multi session - Maximum time (in seconds) to verify that `ascp` is running.<br/>Default: `2`. |
 | `trusted_certs` | `Array[String]` | List of trusted certificate repositories. |
@@ -4636,6 +4636,7 @@ ascli config ascp logs sessions /path/to/folder/aspera-scp-transfer.log
 | Command             | Result                                                          |
 |---------------------|-----------------------------------------------------------------|
 | `summary`           | Statistics of sessions, errors by category, maximum throughput, findings. |
+| `health`            | Health check for monitoring in Nagios format (failed sessions and low efficiency over last N minutes). |
 | `sessions`          | One row per session, with diagnostics.                          |
 | `diagnostics`       | One row per diagnostic of a session: `id`, `severity` (`error`, `warning`, `info`), `message` and `recommendation` (action to take, when the diagnostic has one). |
 | `multi_sessions`    | Multi-session transfers: sessions grouped by transfer, with aggregate rate. |
@@ -4654,6 +4655,8 @@ Log files compressed with gzip (e.g. rotations `aspera.log-20261101.gz`, `aspera
 ascli config ascp logs summary /var/log/aspera.log-20261101.gz
 zcat /var/log/aspera.log-2026*.gz | ascli config ascp logs summary -
 ```
+
+To analyze the logs of an HSTS read over SSH, instead of files of the local machine, use command `logs` of the plugin [`server`](#analyze-ascp-logs-of-the-server).
 
 A file must contain `ascp` log lines (`FASP` messages, or lines of process `ascp` in syslog): in a folder, other files are ignored; a file given as argument that is not an `ascp` log is refused.
 
@@ -4675,11 +4678,11 @@ Besides the default columns, `sessions` rows have context columns to filter sess
 | `proxy`          | Address of the proxy (`proxy_ip` of `Session Params`), absent if there is none.                                     |
 | `fips`           | `true` or `false` (`fips_enabled` of `Session Params`).                                                             |
 
-Diagnostics of a session include: category of error (e.g. `udp_setup`, `storage`, `authentication`) with a hint, retry of a failed session, parameters set by the server (cipher, resume policy, virtual link), efficiency and loss of control messages, decline of the rate during the transfer (`rate_decline`: second half of the samples below 70% of the first half, not evaluated if the peer changes the rate, if another transfer session starts meanwhile, or if the session failed), and for a sender, which limit of the receiver (network, disk, virtual link) or reading from storage limits the rate. Other diagnostics: no packet received for some seconds, by the receiver (`reception_interruption`) or by the sender, which gets no feedback of the receiver (`feedback_interruption`); overflow of the retransmission timer (`rex_timer_overflow`: the retransmission RTT is very large); maximum rate of the license of `ascp` below the target rate (`license_rate_limit`); license that expires within `license_expiry_days` (default `30`) of the start of the session, or has expired (`license_expiry`); and many small files transferred (`small_files`): at least `small_files_min_count` (default 100) files with a mean size below `small_files_max_mean` (default 1 MB). Two configuration messages, which have no effect on the transfer, are not diagnostics but only appear in `findings` of `summary`: OpenSSL modules folder not found (`ossl-modules not found`), and a schedule of virtual link capacity that could not be registered (`unable to submit change event`).
+Diagnostics of a session include: category of error (e.g. `udp_setup`, `storage`, `authentication`) with a hint, retry of a failed session, parameters set by the server (cipher, resume policy, virtual link), efficiency and loss of control messages, decline of the rate during the transfer (`rate_decline`: second half of the samples below 70% of the first half, not evaluated if the peer changes the rate, if another transfer session starts meanwhile, or if the session failed), and for a sender, which limit of the receiver (network, disk, virtual link) or reading from storage limits the rate. Other diagnostics: no packet received for some seconds, by the receiver (`reception_interruption`) or by the sender, which gets no feedback of the receiver (`feedback_interruption`); overflow of the retransmission timer (`rex_timer_overflow`: the retransmission RTT is very large); maximum rate of the license of `ascp` below the target rate (`license_rate_limit`); license that expires within `license_expiry_days` (default `30`) of the start of the session, or has expired (`license_expiry`); and many small files transferred (`small_files`): at least `small_files_min_count` (default 100) files with a mean size below `small_files_max_mean` (default 1 MB); path MTU measured by `ascp` below `small_mtu_max` (default 1400, `ascp` measures 1492, 1006, 508 or 296), which suggests a VPN or a tunnel (`small_mtu`). Two configuration messages, which have no effect on the transfer, are not diagnostics but only appear in `findings` of `summary`: OpenSSL modules folder not found (`ossl-modules not found`), and a schedule of virtual link capacity that could not be registered (`unable to submit change event`).
 
 The `recommendation` of a diagnostic is only in the list `diagnostics` (not in `sessions`, where `diagnostics` is a list of messages, and not in `summary`): it tells what to check or change, with the `ascp` options and `aspera.conf` parameters concerned (e.g. UDP port and firewalls, target and minimum rate, storage write, SSH). Diagnostics without action (e.g. information, or cancelled by the user) have no `recommendation`; the diagnostic of the category of a failed session gives its hint in `message`.
 
-Option `ascp_logs` (dot-notation) sets `period` (snapshot period in minutes, default `1`), `zero_bytes` (include sessions without transferred bytes), `mtu` (when not found in logs), `resolve` (host names of peers), `timezone`, and `thresholds` (diagnostic thresholds, including `rate_decline_ratio`, `rate_decline_min_samples`, `rate_decline_delay`, `rate_decline_end_fraction`, `license_expiry_days`, `small_files_min_count` and `small_files_max_mean`), e.g. `--ascp-logs.period=5` or `--ascp-logs.thresholds.efficiency=95`.
+Option `ascp_logs` (dot-notation) sets `period` (snapshot period in minutes, default `1`), `zero_bytes` (include sessions without transferred bytes), `mtu` (when not found in logs), `resolve` (host names of peers), `timezone`, `health_minutes` (window in minutes for health check command, default `60`), `remote_max_size` (maximum total size in bytes of the log files read from a server with [`server logs`](#analyze-ascp-logs-of-the-server), default `268435456`), and `thresholds` (diagnostic thresholds, including `rate_decline_ratio`, `rate_decline_min_samples`, `rate_decline_delay`, `rate_decline_end_fraction`, `license_expiry_days`, `small_files_min_count`, `small_files_max_mean` and `small_mtu_max`), e.g. `--ascp-logs.period=5` or `--ascp-logs.thresholds.efficiency=95`.
 
 Times of log lines are read in the time zone of the analyst, and displayed in it. To read the log of another system without shifting it, set the time zone of the log with `timezone`: `UTC` or an offset `+HH:MM`, e.g. `--ascp-logs.timezone=+02:00`. Syslog lines (`Oct 25 00:02:20`) have no year: it is deduced from the modification date of the log file (the current date for the standard input), the log being before this date. So a log from December to January, analyzed in March, has its December lines in the previous year. Keep the modification date of the file when copying it (e.g. `cp -p`, `scp -p`).
 
@@ -4688,7 +4691,7 @@ Command `records` gives the log lines parsed into records, with the field names 
 | Record      | Log lines                                                                                       |
 |-------------|-------------------------------------------------------------------------------------------------|
 | `samples`   | `Receiver bl` or `Sender bl` line, with the `DS Qs` line that follows it in field `DS`.          |
-| `sessions`  | `Session Start`, `Session Params`, `Session Stop` and `Session Statistics` lines of a session.   |
+| `sessions`  | `Session Start`, `Session Params`, `Session Stop` and `Session Statistics` lines of a session, and lines of the process about it (see below). |
 | `transfers` | `Transfer Start` and `Transfer Stop` lines of a file.                                           |
 
 A group of a log line becomes an object: for example, `rate t/m/c/n/vl/vr/r=...` becomes `rate.t`, `rate.m`, `rate.c`, etc.
@@ -4696,6 +4699,15 @@ Values are numbers when the log value is a number: rates in bps, durations in ms
 `Session Stop` and `Transfer Stop` have the fields of `Session Start` and `Transfer Start`, with their final values.
 When several log files are read, field `log_file` gives the log file of each record.
 Field `cookie` of `Session Params` is never output.
+
+A session record also has the fields of these lines of the process (`ascp`), when the log has them:
+
+| Field                                                          | Log line                                                                                              |
+|----------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| `fasp_version`, `license_max_rate`, `license_expires`          | `Initializing FASP version <version>, license expires on <date>, max rate=<N> Mbps, ...`: `license_max_rate` (bps) and `license_expires` are absent if the license is unlimited or has no expiry date. `account no.` and `license no.` are never output. |
+| `pMTU`, `start_brtt`                                           | `Measured pMTU: <N> Bytes, start_brtt: <N> ms`.                                                        |
+| `datagram_size`, `block_size`, `path_mtu`                      | `datagram size <N>B, block size <N>B, path MTU <N>B` (no `path_mtu` in old versions).                  |
+| `peer_rate_params`                                             | List of `Peer requested rate params adopted` lines, in the order of the log: `time`, `target_rate`, `min_rate` and `transfer_policy` of each change. |
 
 For example, samples where the calculated rate is lower than the target rate, and sessions with loss of control messages from the receiver:
 
@@ -5110,16 +5122,16 @@ The description gives the supported agents, if not all, and the corresponding `a
 |--------------------------------|-----------------|----------------------------------------------------------------------------------|
 | `apply_local_docroot` | `Bool` | Apply local docroot to source paths.<br/>(A, T)<br/>(`--apply-local-docroot`) |
 | `authentication` | `String` | Set to `token` for SSH bypass keys, else password asked if not provided.<br/>(C) |
-| `cipher_allowed` | `Enum[String]` | Returned by node API. Valid literals include `aes-128` and `none`.<br/>Allowed values: `none`, `aes-128`, `aes-192`, `aes-256`, `aes-128-cfb`, `aes-192-cfb`, `aes-256-cfb`, `aes-128-gcm`, `aes-192-gcm`, `aes-256-gcm`.<br/>(C) |
 | `cipher` | `Enum[String]` | In transit encryption algorithms.<br/>Allowed values: `none`, `aes-128`, `aes-192`, `aes-256`, `aes-128-cfb`, `aes-192-cfb`, `aes-256-cfb`, `aes-128-gcm`, `aes-192-gcm`, `aes-256-gcm`.<br/>Default: `none`.<br/>(`-c (conversion){enum}`) |
-| `content_protection_password` | `String` | Password for encryption/decryption of transferred assets.<br/>(env:`ASPERA_SCP_FILEPASS`) |
+| `cipher_allowed` | `Enum[String]` | Returned by node API. Valid literals include `aes-128` and `none`.<br/>Allowed values: `none`, `aes-128`, `aes-192`, `aes-256`, `aes-128-cfb`, `aes-192-cfb`, `aes-256-cfb`, `aes-128-gcm`, `aes-192-gcm`, `aes-256-gcm`.<br/>(C) |
 | `content_protection` | `Enum[String]` | Enable client-side content protection (CSEAR, encryption-at-rest).<br/>For uploads, set to `encrypt` to transfer encrypted files and store them on the server with the extension `.aspera-env`. (`aspera.conf` parameter `transfer_encryption_content_protection_extension`). To download and decrypt encrypted files, set to `decrypt`<br/>`content_protection_password` must be specified if this option is set.<br/>Allowed values: `encrypt`, `decrypt`.<br/>(`--file-crypt={enum}`) |
+| `content_protection_password` | `String` | Password for encryption/decryption of transferred assets.<br/>(env:`ASPERA_SCP_FILEPASS`) |
 | `cookie` | `String` | Metadata for transfer specified by application.<br/>(env:`ASPERA_SCP_COOKIE`) |
 | `create_dir` | `Bool` | Create target directory if it doesn't already exist.<br/>If **all** the following conditions are met, then the `destination_root` specifies a filename instead of destination folder:<br/>- `create_dir` is `false`<br/>- A single source file is given on **command line**<br/>- The target folder specified by `destination_root` does not exist<br/>In all other cases, `destination_root` specifies a folder, and it is created if it does not already exist. I.e. if **any** of those conditions is met:<br/>- `create_dir` is `true`<br/>- Multiple source files are provided<br/>- List of source files are provided in a file (list or pair), default for Node API and `ascli`.<br/>- The target folder exists<br/>(`-d`) |
 | `delete_before_transfer` | `Bool` | Before transfer, delete files that exist at the destination but not at the source.<br/>The source and destination arguments must be directories that have matching names.<br/>Objects on the destination that have the same name but different type or size as objects on the source are not deleted.<br/>(`--delete-before-transfer`) |
 | `delete_source` | `Bool` | Remove transferred source files after transfer success. Equivalent to `remove_after_transfer` + `remove_empty_directories` + `remove_empty_source_directory`. Take precedence over those.<br/>(A, N, T) |
-| `destination_root_id` | `String` | The file ID of the destination root directory.<br/>Required when using Bearer token auth for the destination node.<br/>(T) |
 | `destination_root` | `String` | Destination root directory.<br/>Required. |
+| `destination_root_id` | `String` | The file ID of the destination root directory.<br/>Required when using Bearer token auth for the destination node.<br/>(T) |
 | `dgram_size` | `Integer` | UDP datagram size in bytes.<br/>(`-Z {integer}`) |
 | `direction` | `Enum[String]` | Direction of transfer (on client side).<br/>Required.<br/>Allowed values: `send`, `receive`.<br/>(`--mode=(conversion){enum}`) |
 | `exclude_newer_than` | `String` | Exclude files, but not directories, from the transfer if they are newer than the specified number of seconds added to the source computer's epoch.<br/>e.g. `-86400` for newer than a day back.<br/>(`--exclude-newer-than={string}`) |
@@ -5128,21 +5140,21 @@ The description gives the supported agents, if not all, and the corresponding `a
 | `fasp_port` | `Integer` | Specifies fasp (UDP) port.<br/>Default: `33001`.<br/>(`-O {integer}`) |
 | `fasp_proxy` | `Hash` | Proxy for communications between the remote server and the (local) client.<br/>(T) |
 | `file_checksum` | `Enum[String]` | Enable checksum reporting for transferred files by specifying the hash to use.<br/>Allowed values: `sha-512`, `sha-384`, `sha-256`, `sha1`, `md5`, `none`.<br/>Default: `none`.<br/>(A, N)<br/>(`--file-checksum={enum}`) |
-| `http_fallback_port` | `Integer` | Specifies HTTP port when no cipher is used.<br/>(`-t {integer}`) |
 | `http_fallback` | `Bool, String` | When true(1), attempts to perform an HTTP transfer if a FASP transfer cannot be performed.<br/>(`-y (conversion){boolean\|string}`) |
+| `http_fallback_port` | `Integer` | Specifies HTTP port when no cipher is used.<br/>(`-t {integer}`) |
 | `https_fallback_port` | `Integer` | Specifies HTTPS port when cipher is used.<br/>(`-t {integer}`) |
 | `icos` | `Hash` | Configuration parameters for IBM Cloud Object Storage (ICOS).<br/>(T) |
 | `keepalive` | `Bool` | The session is running in persistent session mode.<br/>(A, T)<br/>(`--keepalive`) |
-| `lock_min_rate_kbps` | `Bool` | If `true`, lock the minimum transfer rate to the value set for min_rate_kbps.<br/>If `false`, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.<br/>(C, T) |
 | `lock_min_rate` | `Bool` | n/a<br/>(C) |
+| `lock_min_rate_kbps` | `Bool` | If `true`, lock the minimum transfer rate to the value set for min_rate_kbps.<br/>If `false`, users can adjust the transfer rate up to the value set for target_rate_cap_kbps.<br/>(C, T) |
 | `lock_rate_policy` | `Bool` | If `true`, lock the rate policy to the default value.<br/>(C, T) |
-| `lock_target_rate_kbps` | `Bool` | If `true`, lock the target transfer rate to the default value set for `target_rate_kbps`.<br/>If `false`, users can adjust the transfer rate up to the value set for `target_rate_cap_kbps`.<br/>(C, T) |
 | `lock_target_rate` | `Bool` | n/a<br/>(C) |
+| `lock_target_rate_kbps` | `Bool` | If `true`, lock the target transfer rate to the default value set for `target_rate_kbps`.<br/>If `false`, users can adjust the transfer rate up to the value set for `target_rate_cap_kbps`.<br/>(C, T) |
 | `min_rate_cap_kbps` | `Integer` | The highest minimum rate that an incoming transfer can request, in kilobits per second.<br/>Client minimum rate requests that exceed the minimum rate cap are ignored.<br/>The default value of unlimited applies no cap to the minimum rate. (Default: 0)<br/>(C, T) |
 | `min_rate_kbps` | `Integer` | Set the minimum transfer rate in kilobits per second.<br/>Default: `0`.<br/>(`-m {integer}`) |
 | `move_after_transfer` | `String` | Move source files to the specified `archive-dir` directory after they are transferred correctly.<br/>Available as of 3.8.0. Details in `ascp` manual.<br/>Requires write permissions on the source.<br/>If `src_base` is specified, files are moved to `archive-dir`/`path-relative-to-srcbase`.<br/>`archive-dir` must be in the same file system (or cloud storage account) as the source files being transferred.<br/>`archive-dir` is subject to the same docroot restrictions as source files.<br/>`move_after_transfer` and `remove_after_transfer` are mutually exclusive options.<br/>After files have been moved to the archive, the original source directory structure is left in place. Empty directories are not saved to `archive-dir`. To remove empty source directories after a successful move operation, also set `remove_empty_directories` to `true`. When using `remove_empty_directories`, empty directory removal examination starts at the `srcbase` and proceeds down any subdirectories. If no `srcbase` is used and a file path (as opposed to a directory path) is specified, then only the immediate parent directory is examined and removed if it is empty following the move of the source file.<br/>(A, N, T)<br/>(`--move-after-transfer={string}`) |
-| `multi_session_threshold` | `Integer` | Split files across multiple `ascp` sessions if their size in bytes is greater than or equal to the specified value.<br/>(0=no file is split)<br/>(A, N, T)<br/>(`--multi-session-threshold={integer}`) |
 | `multi_session` | `Integer` | Use multi-session transfer. max 128.<br/>Each participant on one host needs an independent UDP (-O) port.<br/>Large files are split between sessions only when transferring with `resume_policy`=`none`.<br/>(special:`-C {integer}`) |
+| `multi_session_threshold` | `Integer` | Split files across multiple `ascp` sessions if their size in bytes is greater than or equal to the specified value.<br/>(0=no file is split)<br/>(A, N, T)<br/>(`--multi-session-threshold={integer}`) |
 | `obfuscate_file_names` | `Bool` | HTTP Gateway obfuscates file names when set to `true`.<br/>(H) |
 | `overwrite` | `Enum[String]` | Overwrite files at the destination with source files of the same name based  on the policy:<br/>- `always` : Always overwrite the file.<br/>- `never` : Never overwrite the file. If the destination contains partial files that are older or the same  as the source files and resume is enabled, the partial files resume transfer. Partial files with checksums or sizes that differ from the source files  are not overwritten.<br/>- `diff` : (default) Overwrite the file if it is different from the source,  depending on the compare method (default is size). If the destination is object storage, `diff` has the same effect as always. If resume is not enabled, partial files are overwritten if they are different  from the source, otherwise they are skipped. If resume is enabled, only partial files with different sizes or checksums  from the source are overwritten; otherwise, files resume.<br/>- `diff+older` : Overwrite the file if it is older and different from the source,  depending on the compare method (default is size). If resume is not enabled, partial files are overwritten if they are older  and different from the source, otherwise they are skipped. If resume is enabled, only partial files that are different and older than  the source are overwritten, otherwise they are resumed.<br/>- `older` : Overwrite the file if its timestamp is older than the source timestamp.<br/>If you set an overwrite policy of `diff` or `diff+older`, difference is determined  by the value set for `resume_policy`:<br/>`none` : The source and destination files are always considered different and  the destination file is always overwritten<br/>`attributes` : The source and destination files are compared based on file attributes <br/>`sparse_checksum` : The source and destination files are compared based on sparse checksums, (currently file size)<br/>`full_checksum` : The source and destination files are compared based on full checksums<br/>Allowed values: `never`, `always`, `diff`, `older`, `diff+older`.<br/>Default: `diff`.<br/>(`--overwrite={enum}`) |
 | `password` | `String` | Password for local Windows user when transfer user associated with node API user is not the same as the one running `asperanoded`.<br/>Allows impersonating the transfer user and have access to resources (e.g. network shares).<br/>Windows only, node API only.<br/>(N) |
@@ -5160,8 +5172,8 @@ The description gives the supported agents, if not all, and the corresponding `a
 | `preserve_source_access_time` | `Bool` | Preserve the time logged for when the source file was accessed.<br/>(A, T)<br/>(`--preserve-source-access-time`) |
 | `preserve_times` | `Bool` | Preserve file timestamps.<br/>(A, N, T)<br/>(`-p`) |
 | `proxy` | `String` | Specify the address of the Aspera high-speed proxy server.<br/>`dnat(s)://[user[:password]@]server:port`<br/>Default ports for DNAT and DNATS protocols are 9091 and 9092.<br/>Password, if specified here, overrides the value of environment variable `ASPERA_PROXY_PASS`.<br/>(A)<br/>(`--proxy={string}`) |
-| `rate_policy_allowed` | `Enum[String]` | Specifies most aggressive rate policy that is allowed. Returned by node API.<br/>Allowed values: `low`, `fair`, `high`, `fixed`.<br/>(C) |
 | `rate_policy` | `Enum[String]` | The transfer rate policy to use when sharing bandwidth. Allowable values:<br/>- `high` : When sharing bandwidth, transfer at twice the rate of a transfer using a fair policy.<br/>- `fair` : (Default) Share bandwidth equally with other traffic.<br/>- `low` : Use only unused bandwidth.<br/>- `fixed` : Transfer at the target rate, regardless of the actual network capacity. Do not share bandwidth. Aspera recommends that you do not use this setting except under special circumstances,  otherwise the destination storage can be damaged.<br/>Allowed values: `low`, `fair`, `high`, `fixed`.<br/>(`--policy={enum}`) |
+| `rate_policy_allowed` | `Enum[String]` | Specifies most aggressive rate policy that is allowed. Returned by node API.<br/>Allowed values: `low`, `fair`, `high`, `fixed`.<br/>(C) |
 | `remote_access_key` | `String` | The access key ID of the access key that was used to construct the bearer token that is used to authenticate to the remote node.<br/>(T) |
 | `remote_host` | `String` | IP or fully qualified domain name (FQDN) of the remote server.<br/>Required.<br/>(`--host={string}`) |
 | `remote_password` | `String` | SSH session password.<br/>(env:`ASPERA_SCP_PASS`) |
@@ -5176,22 +5188,22 @@ The description gives the supported agents, if not all, and the corresponding `a
 | `save_before_overwrite` | `Bool` | If a transfer would result in an existing file <filename>.<ext> being overwritten, move that file to <filename>.yyyy.mm.dd.hh.mm.ss.index.<ext> (where index is set to 1 at the beginning of each new second and incremented for each file saved in this manner during the same second) in the same directory  before writing the new file.<br/>File attributes are maintained in the renamed file.<br/>(A, N, T)<br/>(`--save-before-overwrite`) |
 | `skip_duplicate_check` | `Bool` | Don't check for duplicate files at the destination.<br/>(A, T)<br/>(`--skip-dir-traversal-dupes`) |
 | `skip_special_files` | `Bool` | All assets other than files, directories and symbolic links are considered special. A transfer will fail if the user attempts to transfer special assets. If `true`, `ascp` skips special assets and proceeds with the transfer of all other assets.<br/>(A, T)<br/>(`--skip-special-files`) |
-| `source_root_id` | `String` | The file ID of the source root directory. Required when using Bearer token auth for the source node.<br/>(N, T) |
 | `source_root` | `String` | Path to be prepended to each source path.<br/>This is either a conventional path or it can be a URI but only if there is no root defined.<br/>(`--source-prefix64=(conversion){string}`) |
-| `src_base64` | `String` | The folder name below which the directory structure is preserved (base64 encoded).<br/>(A, T)<br/>(`--src-base64={string}`) |
+| `source_root_id` | `String` | The file ID of the source root directory. Required when using Bearer token auth for the source node.<br/>(N, T) |
 | `src_base` | `String` | Specify the prefix to be stripped off from each source object.<br/>The remaining portion of the source path is kept intact at the destination.<br/>Special care must be taken when used with cloud storage.<br/>(A, N, T)<br/>(`--src-base64=(conversion){string}`) |
+| `src_base64` | `String` | The folder name below which the directory structure is preserved (base64 encoded).<br/>(A, T)<br/>(`--src-base64={string}`) |
 | `ssh_args` | `Array` | Add arguments to the command-line arguments passed to the external ssh program (implies -SSH). The arguments are inserted before any key file(s) supplied to `ascp` and before the user/host arguments.<br/>(A, T)<br/>(special:`--ssh-arg={array}`) |
 | `ssh_port` | `Integer` | Specifies SSH (TCP) port.<br/>Default: `direct:22, other:33001`.<br/>(`-P {integer}`) |
+| `ssh_private_key` | `String` | Private key used for SSH authentication.<br/>Shall look like: -----BEGIN RSA PRIV4TE KEY-----&bsol;nMII...<br/>Note the JSON encoding: &bsol;n for newlines.<br/>(A, T)<br/>(env:`ASPERA_SCP_KEY`) |
 | `ssh_private_key_passphrase` | `String` | The passphrase associated with the transfer user's SSH private key. Available as of 3.7.2.<br/>(A, T)<br/>(env:`ASPERA_SCP_PASS`) |
 | `ssh_private_key_path` | `String` | Path to private key for SSH.<br/>(A, T)<br/>(`-i {string}`) |
-| `ssh_private_key` | `String` | Private key used for SSH authentication.<br/>Shall look like: -----BEGIN RSA PRIV4TE KEY-----&bsol;nMII...<br/>Note the JSON encoding: &bsol;n for newlines.<br/>(A, T)<br/>(env:`ASPERA_SCP_KEY`) |
 | `sshfp` | `String` | Check it against server SSH host key fingerprint.<br/>(`--check-sshfp={string}`) |
 | `symlink_policy` | `Enum[String]` | Handle source side symbolic links. Refer to HSTS manual for more details.<br/>- `follow`: Follow a symbolic link and transfer the contents of the linked file or directory when the link target is in the user's docroot.<br/>- `copy`: Copy only the symbolic link. If a file with the same name exists at the destination, the symbolic link does not replace the file.<br/>- `skip`: Skip-symbolic links. The link or the file to which it points are not transferred.<br/>- `copy+force`: Copy only the symbolic link. If a file with the same name exists at the destination, the symbolic link replaces the file. If the file of the same name at the destination is a symbolic link to a directory, it is not replaced.<br/>Allowed values: `follow`, `copy`, `copy+force`, `skip`.<br/>Default: `follow`.<br/>(`--symbolic-links={enum}`) |
-| `tags64` | `String` | Base64 string for `tags`.<br/>(A, T)<br/>(`--tags64={string}`) |
 | `tags` | `Hash` | Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specifies a "retry timeout" but is not actually used for node API initiated transfers.<br/>(`--tags64=(conversion){object}`) |
+| `tags64` | `String` | Base64 string for `tags`.<br/>(A, T)<br/>(`--tags64={string}`) |
+| `target_rate` | `String, Integer` | Pseudo-parameter: desired transfer rate in bps, with an optional unit suffix. Converted to `target_rate_kbps` (rounded down) before the transfer is started, overriding it if both are present. Also applies to `async` (sync). Accepted formats: integer (bps), or integer followed by `k`/`K` (x1000), `m`/`M` (x1000000), `g`/`G` (x1000000000). Examples: `100000000`, `100000k`, `100m`, `1g`. |
 | `target_rate_cap_kbps` | `Integer` | Maximum target rate for incoming transfers, in kilobits per second. Returned by upload/download_setup node API.<br/>(C, T) |
 | `target_rate_kbps` | `Integer` | Specifies desired speed for the transfer.<br/>(`-l {integer}`) |
-| `target_rate` | `String, Integer` | Pseudo-parameter: desired transfer rate in bps, with an optional unit suffix. Converted to `target_rate_kbps` (rounded down) before the transfer is started, overriding it if both are present. Also applies to `async` (sync). Accepted formats: integer (bps), or integer followed by `k`/`K` (x1000), `m`/`M` (x1000000), `g`/`G` (x1000000000). Examples: `100000000`, `100000k`, `100m`, `1g`. |
 | `title` | `String` | Title of the transfer.<br/>(C, N, T) |
 | `token` | `String` | Authorization token. Type is Bearer, Basic or ATM.<br/>(env:`ASPERA_SCP_TOKEN`) |
 | `use_ascp4` | `Bool` | Specify version of protocol. `ascp4` will be deprecated.<br/>Default: `false`.<br/>(A, N, T) |
@@ -6085,7 +6097,7 @@ OPTIONS: global
     --fpac=VALUE                   Proxy auto configuration script
     --proxy-credentials=LIST       HTTP proxy credentials for fpac: user, password
     --sql=VALUE                    SQL suffix appended to sqlite3 queries for admin subcommands (e.g. WHERE clause)
-    --ascp-logs=HASH               Ascp: log analysis (dot-notation: period, zero_bytes, mtu, resolve, thresholds, timezone)
+    --ascp-logs=HASH               Ascp: log analysis (dot-notation: period, zero_bytes, mtu, resolve, thresholds, timezone, health_minutes, remote_max_size)
 -P, --preset=VALUE                 Load the named option preset from current config file
     --version-check-days=INT       Period in days to check new version (zero to disable)
     --plugin-folder=VALUE          Folder where to find additional plugins
@@ -8594,6 +8606,23 @@ ascli server --ssh-options=@json:'{"use_agent": false}' ...
 If one of the SSH private keys is passphrase-protected, then option `passphrase` can be used.
 It is equivalent to setting both options `ssh_options.passphrase` and `ts.ssh_private_key_passphrase`.
 
+### Analyze `ascp` logs of the server
+
+Command `logs` analyzes the `ascp` log files of the server (`ascp` 4.0 and later), instead of those of the local machine: the files are read over the SSH connection of the plugin (same `url`, `username`, `password` or `ssh_keys`, and `ssh_options`), then analyzed like with [`config ascp logs`](#agent-direct-transfer). It has the same sub-commands (`summary`, `sessions`, `diagnostics`, `health`, `records`, ...) and the same option `ascp_logs`.
+Paths of the files on the server are mandatory: there is no default location, as it depends on the installation (e.g. a syslog file such as `/var/log/aspera.log` or `/var/log/messages`, or a file of the folder given with `ascp -L`).
+Files compressed with gzip (rotations) are supported. A folder is not read, give its files.
+
+```shell
+ascli server --url=ssh://<SERVER_ADDRESS>:33001 --username=root --ssh-keys=~/.ssh/id_rsa logs summary /var/log/aspera.log
+ascli server ... logs sessions /var/log/aspera.log /var/log/aspera.log-20261101.gz --select=@json:'{"status":"failed"}'
+```
+
+The user must be allowed to read the files (log files are often readable by `root` only), and the server shall provide a shell with `head` (and `stat`).
+The files are copied to a temporary folder, removed after the analysis.
+The size of the files is limited (total of 256 MB by default), to avoid reading huge logs in memory: the limit is the key `remote_max_size` (in bytes) of option `ascp_logs`, e.g. `--ascp-logs.remote_max_size=1000000000`.
+The modification date of each file is kept, as the year of syslog lines is deduced from it.
+Not available with `--url=local:` and `https`.
+
 ### Other session channels for `server`
 
 URL schemes `local` and `https` are also supported (mainly for testing purposes).
@@ -9227,8 +9256,8 @@ It takes an optional `Hash` argument with the following parameters:
 | `chain` | `String` | Path to the PEM certificate chain file (appended as extra chain certificates).<br/>Example: `/path/to/chain.pem`. |
 | `docroot` | `String` | Local folder of the node files. Paths of `/files/browse` and local paths of transfers (sources of `send`, destination of `receive`) are relative to it, and confined in it. Defaults to the current working directory.<br/>Example: `/data/aspera`. |
 | `key` | `String` | Path to the PEM private key file, or the PKCS12 passphrase when `cert` is a `.p12`/`.pfx` file.<br/>Example: `/path/to/key.pem`. |
-| `password_min_bits` | `Integer` | Minimum estimated strength of `password`, in bits (log2 of the number of guesses to find it). The strength is estimated with gem `zxcvbn` if installed, else with a built-in estimate that detects repeats, sequences, keyboard rows, words and years. `0` disables the check. A random password of 32 bytes (`openssl rand -hex 32`) is far above the default.<br/>Default: `80`. |
 | `password` | `String` | Password expected from clients in HTTP Basic authentication, for the above `username`. Generate it with `openssl rand -hex 32`: a weak password is refused (see `password_min_bits`).<br/>Example: `my_password`. |
+| `password_min_bits` | `Integer` | Minimum estimated strength of `password`, in bits (log2 of the number of guesses to find it). The strength is estimated with gem `zxcvbn` if installed, else with a built-in estimate that detects repeats, sequences, keyboard rows, words and years. `0` disables the check. A random password of 32 bytes (`openssl rand -hex 32`) is far above the default.<br/>Default: `80`. |
 | `retention_sec` | `Integer` | Time in seconds a transfer stays in the list of transfers after it ended (completed, failed or canceled, and no more retried).<br/>Default: `86400`. |
 | `url` | `String` | Address and port the emulator listens on. Use `https://` with `cert`/`key` for TLS.<br/>Default: `http://localhost:8080`. |
 | `username` | `String` | Username expected from clients in HTTP Basic authentication. Set together with `password`. When not set, requests are accepted without authentication. Mandatory when `url` is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`).<br/>Example: `node_user`. |
@@ -9965,8 +9994,8 @@ An optional positional parameter can be provided as [Extended Value](#extended-v
 | `fail_on_error` | `Bool` | When `true`, return HTTP 500 if the script exits with a non-zero status code. When `false` (default), the exit code is reported in the response body but HTTP 200 is returned.<br/>Default: `false`. |
 | `key` | `String` | Path to the PEM private key file, or the PKCS12 passphrase when `cert` is a `.p12`/`.pfx` file.<br/>Example: `/path/to/key.pem`. |
 | `script_folder` | `String` | Folder containing the post-processing scripts. The URL path (after the base path) is appended to this folder to locate the script to execute.<br/>Default: `.`.<br/>Example: `/opt/faspex/scripts`. |
-| `secret_token_min_bits` | `Integer` | Minimum estimated strength of `secret_token`, in bits (log2 of the number of guesses to find it). The strength is estimated with gem `zxcvbn` if installed, else with a built-in estimate that detects repeats, sequences, keyboard rows, words and years. `0` disables the check. A random token of 32 bytes (`openssl rand -hex 32`) is far above the default.<br/>Default: `80`. |
 | `secret_token` | `String` | Shared secret for webhook authentication. When set, every incoming request must include `?token=<value>` in the URL; requests without the correct token are rejected with HTTP 401. Configure the Faspex webhook URL as `http://host:port/path/script.sh?token=<value>`. This parameter or `allowed_ips` is required when `url` is not a local address. Generate it with `openssl rand -hex 32`: a weak token is refused (see `secret_token_min_bits`). |
+| `secret_token_min_bits` | `Integer` | Minimum estimated strength of `secret_token`, in bits (log2 of the number of guesses to find it). The strength is estimated with gem `zxcvbn` if installed, else with a built-in estimate that detects repeats, sequences, keyboard rows, words and years. `0` disables the check. A random token of 32 bytes (`openssl rand -hex 32`) is far above the default.<br/>Default: `80`. |
 | `timeout_seconds` | `Integer` | Maximum time in seconds to wait for the script to complete before killing it.<br/>Default: `60`. |
 | `url` | `String` | Address and port the server listens on. Use `https://` with `cert`/`key` for TLS.<br/>Default: `http://localhost:8080`. |
 
@@ -10037,8 +10066,8 @@ It takes an optional `Hash` argument:
 | `cert` | `String` | Path to the TLS certificate file. Accepted formats: PEM (`.pem`) or PKCS12 (`.p12` / `.pfx`).<br/>Example: `/path/to/cert.pem`. |
 | `chain` | `String` | Path to the PEM certificate chain file (appended as extra chain certificates).<br/>Example: `/path/to/chain.pem`. |
 | `key` | `String` | Path to the PEM private key file, or the PKCS12 passphrase when `cert` is a `.p12`/`.pfx` file.<br/>Example: `/path/to/key.pem`. |
-| `password_min_bits` | `Integer` | Minimum estimated strength of `password`, in bits (log2 of the number of guesses to find it). The strength is estimated with gem `zxcvbn` if installed, else with a built-in estimate that detects repeats, sequences, keyboard rows, words and years. `0` disables the check. A random password of 32 bytes (`openssl rand -hex 32`) is far above the default.<br/>Default: `80`. |
 | `password` | `String` | Password expected from clients in HTTP Basic authentication, for the above `username`. Generate it with `openssl rand -hex 32`: a weak password is refused (see `password_min_bits`).<br/>Example: `my_password`. |
+| `password_min_bits` | `Integer` | Minimum estimated strength of `password`, in bits (log2 of the number of guesses to find it). The strength is estimated with gem `zxcvbn` if installed, else with a built-in estimate that detects repeats, sequences, keyboard rows, words and years. `0` disables the check. A random password of 32 bytes (`openssl rand -hex 32`) is far above the default.<br/>Default: `80`. |
 | `url` | `String` | Address and port the server listens on. Use `https://` with `cert`/`key` for TLS.<br/>Default: `http://localhost:8080`. |
 | `username` | `String` | Username expected from clients in HTTP Basic authentication. Set together with `password`. When not set, requests are accepted without authentication. Mandatory when `url` is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`).<br/>Example: `fx4_user`. |
 
@@ -10820,9 +10849,9 @@ When generating preview files, the following options can be modified on command 
 | `clips_length` | `Integer` | Video: length (in seconds) of each clip of MP4 video preview (`clips`), and of `animated` PNG thumbnail.<br/>Default: `5`. |
 | `max_size` | `Integer` | Maximum size (in bytes) of a preview file: a warning is logged if exceeded.<br/>Default: `16777216`. |
 | `office_conversion` | `Enum[String]` | PNG thumbnail of office document: conversion tool.<br/>Allowed values: `soffice`, `unoconv`.<br/>Default: `soffice`. |
+| `reencode_ffmpeg` | `Hash` | MP4 video preview (`reencode`): `ffmpeg` options replacing the default ones.<br/>Default: `{}`. |
 | `reencode_ffmpeg.in` | `Array` | Input options. |
 | `reencode_ffmpeg.out` | `Array` | Output options. |
-| `reencode_ffmpeg` | `Hash` | MP4 video preview (`reencode`): `ffmpeg` options replacing the default ones.<br/>Default: `{}`. |
 | `thumb_img_size` | `Integer` | PNG thumbnail of image, PDF, office document or text: size (in pixels).<br/>Default: `800`. |
 | `thumb_text_font` | `String` | PNG thumbnail of text: font name, as listed by `magick identify -list font`.<br/>Default: `Courier`. |
 | `thumb_vid_fraction` | `Number` | PNG thumbnail of video (`fixed`): position of the snapshot, as a fraction of the video duration.<br/>Default: `0.1`. |
@@ -11601,15 +11630,16 @@ ascli config sync spec
 | `delete_before` | `Bool` | Schedule deletes before transfers.<br/>Default: `false`.<br/>(`--delete-before`) |
 | `delete_delay` | `Bool` | Delay actual deletes until the end of the synchronization.<br/>Default: `false`.<br/>(`--delete-delay`) |
 | `direction` | `Enum[String]` | The direction of replication relative to the local.<br/>Allowed values: `bidi`, `pull`, `push`.<br/>Default: `push`.<br/>(`--direction={enum}`)(-K) |
+| `exclude_dirs_older_than` | `Hash` | Don't scan directories with a recursive modified time older than absolute or async start time - relative_seconds |
 | `exclude_dirs_older_than.absolute` | `String` | UTC timestamp. Empty value for disabled. |
 | `exclude_dirs_older_than.relative_seconds` | `Integer` | Relative to async start time. `-1` for disabled.<br/>Default: `-1`. |
-| `exclude_dirs_older_than` | `Hash` | Don't scan directories with a recursive modified time older than absolute or async start time - relative_seconds |
+| `filters` | `Array[Hash]` | The filters allow to further specify which files have to be excluded and included from the transfer list. Each filter is defined by a rule and a value. Order of filters matters |
 | `filters[].rule` | `Enum[String]` | The rule for the filter.<br/>Required.<br/>Allowed values: `include`, `exclude`, `include_from`, `exclude_from`. |
 | `filters[].value` | `String` | On include or exclude, the filter's pattern. On include_from or exclude_from, the path containing filter specifications<br/>Required. |
-| `filters` | `Array[Hash]` | The filters allow to further specify which files have to be excluded and included from the transfer list. Each filter is defined by a rule and a value. Order of filters matters |
 | `ignore_delete` | `Bool` | Do not copy removals to the peer.<br/>Default: `false`.<br/>(`--ignore-delete`) |
 | `ignore_mode` | `Bool` | Source files that have had their mode changed after the initial transfer will not update the destination file mode.<br/>Default: `false`.<br/>(`--ignore-mode`) |
 | `ignore_remote_host_sync_name` | `Bool` | Do not check that the remote host being used for the current transfer matches the host used when the local database was created<br/>Default: `false`. |
+| `local` | `Hash` | Required. |
 | `local.pass` | `String` | Authenticate the local async with the specified password. |
 | `local.path` | `String` | The directory to be synchronized on the local host.<br/>Required.<br/>(`--local-dir={string}`)(-d) |
 | `local_apply_docroot` | `Bool` | Prepend the docroot to the directory on the local host.<br/>Default: `false`.<br/>(`--apply-local-docroot`) |
@@ -11626,11 +11656,10 @@ ascli config sync spec
 | `local_scan_interval_milliseconds` | `Integer` | Enable periodic scans on the local host during a continuous sync. `-1` for disabled. On the command line, the value is a duration, e.g. `1h 30m`, `2s500ms`, `5:30`, `1d 02:00:00.250`. A plain number is in seconds. Stored in milliseconds.<br/>Default: `-1`.<br/>(`--scan-interval={integer}`) |
 | `local_scan_threads` | `Integer` | Number of directory scanning threads on the local host. Value must be between 1 and 99<br/>Default: `1`.<br/>(`--scan-threads={integer}`) |
 | `local_stat_cache_size` | `Integer` | Set stat cache size on the local host. 0 for disabled.<br/>Default: `0`. |
-| `local` | `Hash` | Required. |
+| `log` | `Hash` |  |
 | `log.level` | `Enum[String]` | Use the specified log level.<br/>Allowed values: `log`, `dbg1`, `dbg2`.<br/>Default: `log`.<br/>(special:`-D`) |
 | `log.local_dir` | `String` | Use the specified logging directory on the local host.<br/>(`--alt-logdir={string}`)(-L) |
 | `log.remote_dir` | `String` | Use the specified logging directory on the remote host.<br/>(`--remote-logdir={string}`)(-R) |
-| `log` | `Hash` |  |
 | `manifest_path` | `String` | A directory path where ascp will create manifest TEXT files (passed to ascp as --file-manifest-path) |
 | `mirror` | `Bool` | Force the pulling side to be exactly like the pushing side, removing files on the destination that don't exist on the source and resending source files that don't have an exact match on the destination. Cannot be used in bi-directional mode.<br/>Default: `false`.<br/>(`--mirror`) |
 | `mode` | `Enum[String]` | Specify whether async runs continuously or not. In `one_time` mode, async stops after the first full synchronization. `continuous` supported only if the source is Windows or Linux.<br/>Allowed values: `one_time`, `continuous`.<br/>Default: `one_time`.<br/>(special:`--continuous`)(-C) |
@@ -11651,6 +11680,7 @@ ascli config sync spec
 | `preserve_object_metadata` | `Bool` | Preserve object metadata from the source to the destination.<br/>Default: `false`.<br/>(`--preserve-object-metadata`) |
 | `preserve_uid` | `Bool` | Preserve the file owner's UID.<br/>Default: `false`.<br/>(`--preserve-uid`)(-u) |
 | `quiet` | `Bool` | Disable progress display.<br/>Default: `true`.<br/>(`--quiet`)(-q) |
+| `remote` | `Hash` | Required. |
 | `remote.connect_mode` | `Enum[String]` | Define how to connect to the remote.<br/>Allowed values: `ssh`, `ws`.<br/>Default: `ssh`.<br/>(special:`--ws-connect`) |
 | `remote.fingerprint` | `String` | Check it against server SSH host key fingerprint. |
 | `remote.host` | `String` | Use the specified host name or address of the remote host.<br/>Required.<br/>(`--host={string}`) |
@@ -11658,14 +11688,14 @@ ascli config sync spec
 | `remote.path` | `String` | Synchronize the specified directory on the remote host.<br/>Required.<br/>(`--remote-dir={string}`)(-r) |
 | `remote.port` | `Integer` | Use the specified TCP port for SSH. Used when connect_mode is `ssh`<br/>Default: `22`.<br/>(`--tcp-port={integer}`)(-P) |
 | `remote.private_key_paths` | `Array[String]` | Authenticate with the specified SSH private key file.<br/>(`--private-key-path={array}`)(-i) |
+| `remote.proxy` | `Hash` | Specify the address of the Aspera high-speed proxy server.<br/>(special:`--proxy={object}`) |
 | `remote.proxy.host` | `String` | Use the specified host name or address of the proxy. |
 | `remote.proxy.pass` | `String` | Authenticate to the proxy with the specified password. |
 | `remote.proxy.port` | `Integer` | Use the specified port. Default is 9091 for dnat, 9092 for dnats. |
 | `remote.proxy.protocol` | `Enum[String]` | The protocol to be used.<br/>Allowed values: `none`, `dnat`, `dnats`.<br/>Default: `none`. |
 | `remote.proxy.user` | `String` | Authenticate to the proxy with the specified username. |
-| `remote.proxy` | `Hash` | Specify the address of the Aspera high-speed proxy server.<br/>(special:`--proxy={object}`) |
-| `remote.token_node_user` | `String` | Node API user identity associated with the token. Required for node user bearer tokens |
 | `remote.token` | `String` | Token string passed to server's authentication service. |
+| `remote.token_node_user` | `String` | Node API user identity associated with the token. Required for node user bearer tokens |
 | `remote.user` | `String` | Authenticate the transfer with the specified username.<br/>Required.<br/>(`--user={string}`) |
 | `remote.ws_port` | `Integer` | Use the specified port for Websocket. Used when connect_mode is `ws`.<br/>Default: `9093`. |
 | `remote_checksum_threads` | `Integer` | Maximum number of threads to do checksum on the remote host. Value must be between 1 and 99<br/>Default: `4`.<br/>(`--remote-checksum-threads={integer}`) |
@@ -11681,14 +11711,13 @@ ascli config sync spec
 | `remote_scan_interval_milliseconds` | `Integer` | Enable periodic scans on the remote host. `-1` for disabled. On the command line, the value is a duration, e.g. `1h 30m`, `2s500ms`, `5:30`, `1d 02:00:00.250`. A plain number is in seconds. Stored in milliseconds.<br/>Default: `-1`.<br/>(special:`--remote-scan-interval={integer}`) |
 | `remote_scan_threads` | `Integer` | Number of directory scanning threads on the remote host. Value must be between 1 and 99.<br/>Default: `1`.<br/>(`--remote-scan-threads={integer}`) |
 | `remote_stat_cache_size` | `Integer` | Set stat cache size on the remote host. 0 for disabled.<br/>Default: `0`. |
-| `remote` | `Hash` | Required. |
 | `remove_after_transfer` | `Bool` | Remove source files after they are successfully synchronized.<br/>Default: `false`.<br/>(`--remove-after-transfer`) |
 | `reset` | `Bool` | Clear the snapshot database and rescan the synchronized directories and files to create a fresh snapshot<br/>Default: `false`.<br/>(`--reset`)(-x) |
+| `resume` | `Hash` | Partial transfers may exist if communication disruptions caused the underlying ascp processes to terminate early. Note that transfer resumption can only happen if the `reset` option is disabled. If an async session starts with `reset` enabled and resume enabled, transfers interrupted during that session will be resumable, but only if async is then restarted with 'reset' disabled. |
 | `resume.enabled` | `Bool` | Enable the possibility of resuming individual file transfers between async sessions.<br/>Default: `false`. |
 | `resume.max_age` | `Integer` | Sets the age limit in days for temporary files that will be preserved on cleanup (usually at async's start and stop) for potential transfer resume. Temp files older than the given value will be removed regardless of whether they might be resumable.<br/>Default: `5`.<br/>(`--resume-age-days={integer}`) |
 | `resume.min_size` | `Integer` | This field specifies the minimum size of files that will be allowed to resume.<br/>Default: `1048576`.<br/>(`--support-resume={integer}`) |
 | `resume_scan` | `Bool` | Resume the scan from where the previous execution left off.<br/>Default: `false`.<br/>(`--resume-scan`) |
-| `resume` | `Hash` | Partial transfers may exist if communication disruptions caused the underlying ascp processes to terminate early. Note that transfer resumption can only happen if the `reset` option is disabled. If an async session starts with `reset` enabled and resume enabled, transfers interrupted during that session will be resumable, but only if async is then restarted with 'reset' disabled. |
 | `scan_dir_rename` | `Bool` | Enable the detection of renamed directories and files compared to the previous scan, based on matching inodes<br/>Default: `false`.<br/>(`--scan-dir-rename`) |
 | `scan_file_rename` | `Bool` | Enable the detection of renamed files compared to the previous scan, based on matching inodes.<br/>Default: `false`.<br/>(`--scan-file-rename`) |
 | `scan_intensity` | `Enum[String]` | Scan at the set intensity. `vlow` minimizes system activity. `vhigh` maximizes system activity by continuously scanning files without rest.<br/>Allowed values: `vlow`, `low`, `medium`, `high`, `vhigh`.<br/>Default: `medium`.<br/>(`--scan-intensity={enum}`)(-H) |
@@ -11696,9 +11725,10 @@ ascli config sync spec
 | `store_metadata_records` | `Bool` | Store the acls or xattrs in the snapshot database.<br/>Default: `false`.<br/>(`--store-metadata-records`) |
 | `symbolic_links` | `Enum[String]` | Handle symbolic links with the specified method. Default is `skip` on windows, `copy` otherwise.<br/>Allowed values: `copy`, `skip`, `follow`.<br/>(`--symbolic-links={enum}`)(-n) |
 | `tags` | `Hash` | User-defined metadata tags.<br/>(special:`--tags64={object}`) |
+| `transfer_threads` | `Array[Hash]` | Use the specified number of dedicated transfer threads to process files smaller or equal to the specified size<br/>(special:`--transfer-threads={array}`) |
 | `transfer_threads[].size` | `Integer` | Upper limit. `-1` for infinity.<br/>Default: `-1`. |
 | `transfer_threads[].threads` | `Integer` | The number of threads.<br/>Required. |
-| `transfer_threads` | `Array[Hash]` | Use the specified number of dedicated transfer threads to process files smaller or equal to the specified size<br/>(special:`--transfer-threads={array}`) |
+| `transport` | `Hash` |  |
 | `transport.cipher` | `Enum[String]` | Specify encryption algorithm for file data.<br/>Allowed values: `none`, `aes128`, `aes192`, `aes256`, `aes128cfb`, `aes192cfb`, `aes256cfb`, `aes128gcm`, `aes192gcm`, `aes256gcm`.<br/>Default: `aes128`.<br/>(`--cipher={enum}`)(-c) |
 | `transport.compression` | `Enum[String]` | Compress a file before transfer using the specified MODE.<br/>Allowed values: `none`, `zlib`.<br/>Default: `none`.<br/>(`--compression={enum}`) |
 | `transport.datagram_size` | `Integer` | Specify the datagram size (MTU) for FASP. By default it uses the detected path MTU.<br/>(`--datagram-size={integer}`)(-Z) |
@@ -11710,12 +11740,11 @@ ascli config sync spec
 | `transport.target_rate` | `Integer` | Transfer no faster than the specified rate (in bps). A string with suffix `k`, `m` or `g` is converted to bps by `ascli` (e.g. `100m`).<br/>Default: `10000000`.<br/>(`--target-rate={integer}`)(-l) |
 | `transport.udp_port` | `Integer` | Use the specified UDP port for FASP data transfer.<br/>Default: `33001`.<br/>(`--udp-port={integer}`)(-O) |
 | `transport.write_block_size` | `Integer` | Use the specified block size (in bytes) for writing. Default is determined by `aspera.conf`.<br/>(`--write-block-size={integer}`)(-G) |
-| `transport` | `Hash` |  |
+| `watchd` | `Hash` | When connection is configured, `asperawatchd` is used to detect the changes on the source directory.<br/>(special:`--watchd={object}`) |
 | `watchd.datastore` | `Enum[String]` | Specify the type of datastore, `none` for disabled.<br/>Allowed values: `none`, `redis`, `scalekv`.<br/>Default: `none`. |
 | `watchd.domain` | `String` | Specify the domain. Default is the current username. |
 | `watchd.host` | `String` | Use the specified host name or address to connect to the datastore. |
 | `watchd.port` | `Integer` | Use the specified port.<br/>Default: `31415`. |
-| `watchd` | `Hash` | When connection is configured, `asperawatchd` is used to detect the changes on the source directory.<br/>(special:`--watchd={object}`) |
 | `write_gid` | `String` | Try to write files as the specified group.<br/>(`--write-gid={string}`) |
 | `write_uid` | `String` | Try to write files as the specified user.<br/>(`--write-uid={string}`) |
 
@@ -11859,8 +11888,8 @@ ascli ... sync admin file_info <FOLDER> --sql="WHERE state=20 ORDER BY f_meta_pa
 | `c_meta_path` | `String` | Current metadata — file path as known to the snapshot. |
 | `c_meta_type` | `Integer` | Current metadata — file type (file, directory, …). |
 | `c_meta_uid` | `Integer` | Current metadata — user ID (Unix). |
-| `c_meta_xattrs_cksum` | `String` | Current metadata — checksum of extended attributes. |
 | `c_meta_xattrs` | `Integer` | Current metadata — extended attributes (not used). |
+| `c_meta_xattrs_cksum` | `String` | Current metadata — checksum of extended attributes. |
 | `candidate_in_prog` | `Integer` | Set to 1 when this record is currently in the candidate transfer list. |
 | `commit_version` | `Integer` | Local commit version for this entry. |
 | `f_cont_csum` | `String` | Filesystem content — checksum. |
@@ -11880,8 +11909,8 @@ ascli ... sync admin file_info <FOLDER> --sql="WHERE state=20 ORDER BY f_meta_pa
 | `f_meta_path` | `String` | Filesystem metadata — file path as seen on disk (displayed by `file_info`). |
 | `f_meta_type` | `Integer` | Filesystem metadata — file type. |
 | `f_meta_uid` | `Integer` | Filesystem metadata — user ID (Unix). |
-| `f_meta_xattrs_cksum` | `String` | Filesystem metadata — checksum of extended attributes. |
 | `f_meta_xattrs` | `Integer` | Filesystem metadata — extended attributes (not used). |
+| `f_meta_xattrs_cksum` | `String` | Filesystem metadata — checksum of extended attributes. |
 | `message` | `String` | Error or status message associated with this entry. |
 | `meta_lastreq_no` | `Integer` | Sequence number of the last metadata request sent. |
 | `meta_lastresp_no` | `Integer` | Sequence number of the last metadata response received. |

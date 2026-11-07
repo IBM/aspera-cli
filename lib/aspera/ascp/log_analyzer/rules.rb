@@ -25,8 +25,6 @@ module Aspera
       # Lines of other Aspera processes, when they contain the PID
       OTHER_PROCESSES = /prepost|aspmover|aspsimplesync/
       SESSION_START_STOP = /#{STAMP.source}.*?Session\s+(Start|Stop)/
-      # `key=value` or `key="value"` in `Session Start`, `Session Stop` and `Session Params` lines
-      KEY_VALUE = /(\w+)=("[^"]*"|\S*)/
       ERRSTR = /errstr="([^"]*)"(?:.*?errstr="([^"]*)")?/
       # Error code and message of `Session Stop`: local, then peer
       ERRCODE = /errcode=(\d+) errstr="([^"]*)"/
@@ -38,12 +36,6 @@ module Aspera
         'resume' => :resume, 'ovr' => :overwrite, 'rd_sz' => :read_block_size, 'wr_sz' => :write_block_size,
         'xfer_id' => :xfer_id, 'cluster_num_nodes' => :cluster_nodes, 'cluster_node_id' => :cluster_node
       }.freeze
-      TRANSFER_STOP = /Transfer\s+Stop\s+uuid=(.*?)\s+op=(\w+)\s+status=(\w+).*?file="(.*?)"\s+size=(\d+)\s+start_byte=(\d+)/
-      SESSION_STATISTICS = /FASP Session Statistics.*?effective_rate=(.*?bps).*?tx_bytes\s+(\d+).*?tx_time\s+(\d+)/
-      # Quality metrics of `Session Statistics` (percent): name => Regexp
-      STATISTICS_RATES = {retransmitted: /\bsolicited_rex=([\d.]+)%/, duplicates: /\brcvd_dups=([\d.]+)%/, efficiency: /\beffective=([\d.]+)%/}.freeze
-      # Control messages of `Session Statistics`: from sender, from receiver, retransmission requests
-      CONTROL_MESSAGES = /\((sndr|rcvr|rex)\s+ctl: sent (\d+) rcvd (\d+) lost -?\d+ lost ([\d.]+)%\)/
       # License in `Initializing FASP version` line: maximum rate in Mbps (none if unlimited), expiry date (none if no expiry)
       LICENSE_RATE = /\bmax rate=(\d+) Mbps/
       LICENSE_EXPIRES = /\blicense expires on (\w{3} \w{3} +\d+ [\d:]+ \d{4})/
@@ -61,9 +53,9 @@ module Aspera
         [/\sLOG ASPERA_AUTH_TOKEN is set to TOKEN/,                                  {call: :token_auth}],
         [/\sLOG Node storage access_key=/,                                           {call: :node_auth}],
         [/end File Transfer statistics/,                                            {call: :end_of_statistics}],
-        [/(?:Receiver|Sender)\s+bl\b/,                                              {call: :queue_sample}],
+        [/(?:Receiver|Sender)\s+bl\b/,                                              {call: :add_sample}],
         [/LOG Falling back to HTTP/,                                                {set: %i[http_fallback]}],
-        [TRANSFER_STOP,                                                             {call: :transfer_stop}],
+        [/Transfer\s+Stop\s+(.*)/,                                                  {call: :transfer_stop}],
         [/base\s+RTT\s+reset/,                                                      {call: :brtt_reset}],
         [/(Peer requested|Negotiated) rate params.*?target_rate\s+(\d+)\s+min_rate\s+(\d+)\s+(?:transfer_)?policy\s+(\w+)/, {call: :rate_params}],
         [/pMTU:\s+(\d+).*?start_brtt:\s(\d+)/, {call: :path_mtu}],
@@ -71,7 +63,7 @@ module Aspera
         [/Downgrading resume policy to (\S+)/, {call: :resume_downgrade}],
         [/changing session job size from (\d+) to (\d+) to match server configuration/, {call: :job_size_change}],
         [/vlink init: id=(\d+), type=(\w+), capacity=(\d+)/,                        {call: :vlink_init}],
-        [/datagram size\s+(\d+)B, block size (\d+)B/,                               {call: :datagram_size}],
+        [/datagram size\s+(\d+)B, block size (\d+)B(?:, path MTU (\d+)B)?/,         {call: :datagram_size}],
         [/User aborted session/,                                                    {set: %i[user_abort]}],
         [/FASP session cancelled/,                                                  {set: %i[user_abort]}],
         [/ERR Server unable to hear from client/i,                                  {set: %i[server_nohear_client]}],
@@ -134,7 +126,7 @@ module Aspera
         [/ERR \S*ossl-modules not found/,                                           {set: %i[ossl_modules_missing]}],
         [/ERR Warning: unable to submit change event/,                              {set: %i[change_event_failed]}],
         [/Warning: rex timer overflow auto-adjusted/,                               {call: :rex_timer_overflow}],
-        [SESSION_STATISTICS,                                                        {call: :session_statistics}]
+        [/\bFASP Session Statistics \[\w+\] (.*)/,                                  {call: :session_statistics}]
       ].freeze
 
       # When the session stop error is `Undefined`: first matching flag sets the error
@@ -156,31 +148,22 @@ module Aspera
       }.freeze
 
       # Sample lines: `Receiver bl t/o/r/d/ts/c/h=1/2/3/4/5/6/7 rex_rtt l/h/s/o=...`: group, field names, values
-      SAMPLE = /#{STAMP.source}.*?\[(\w+)(?:-\w+)?\].*?(Receiver|Sender)\s+bl\b/
-      SAMPLE_GROUP = %r{\b([a-z_]+) ([A-Za-z_]+(?:/[A-Za-z_]+)*)=(-?\d+(?:/-?\d+)*)}
-      # Sample value => group.field in log line (second occurrence of a group gets suffix 2)
+      SAMPLE = /#{STAMP.source}.*?\[(\w+)(?:-\w+)?\].*?(Receiver|Sender)\s+(bl\b.*)/
+      # Sample value => path in sample records
       SAMPLE_COMMON = {
-        blocks: 'bl.t', orig: 'bl.o', rex: 'bl.r', target_rate: 'rate.t', min_rate: 'rate.m', calc_rate: 'rate.c',
-        tx_bytes: 'prog.t', written: 'prog.f', elapsed_us: 'prog.e'
+        blocks: %w[bl t], orig: %w[bl o], rex: %w[bl r], target_rate: %w[rate t], min_rate: %w[rate m], calc_rate: %w[rate c],
+        tx_bytes: %w[prog t], written: %w[prog f], elapsed_us: %w[prog e]
       }.freeze
       RECEIVER_SAMPLE = SAMPLE_COMMON.merge(
-        rex_srtt: 'rex_rtt.s', brtt: 'rate_rtt.b', rtt_high: 'rate_rtt.h', srtt: 'rate_rtt.s', brtt_resets: 'rate_rtt.r',
-        rex_count: 'rex.n', lost: 'bl2.l', ooo: 'bl2.o', ring_high: 'disk.h', ring_full: 'disk.b',
-        net_rate: 'rate.n', vlink_local: 'rate.vl', vlink_remote: 'rate.vr', disk_rate: 'rate.r'
+        rex_srtt: %w[rex_rtt s], brtt: %w[rate_rtt b], rtt_high: %w[rate_rtt h], srtt: %w[rate_rtt s], brtt_resets: %w[rate_rtt r],
+        rex_count: %w[rex n], lost: %w[bl2 l], ooo: %w[bl2 o], ring_high: %w[disk h], ring_full: %w[disk b],
+        net_rate: %w[rate n], vlink_local: %w[rate vl], vlink_remote: %w[rate vr], disk_rate: %w[rate r]
       ).freeze
       # Sender: rates of the receiver (ascp 4): network, virtual links, disk
       SENDER_SAMPLE = SAMPLE_COMMON.merge(
-        rex_received: 'rex.b', rex_count: 'rex.n',
-        peer_net_rate: 'rate.n', peer_vlink_local: 'rate.vl', peer_vlink_remote: 'rate.vr', peer_disk_rate: 'rate.r'
+        rex_received: %w[rex b], rex_count: %w[rex n],
+        peer_net_rate: %w[rate n], peer_vlink_local: %w[rate vl], peer_vlink_remote: %w[rate vr], peer_disk_rate: %w[rate r]
       ).freeze
-      # Sender: rate of reading from disk (bps)
-      DISK_READ_RATE = /\bdrate=(\d+)/
-      # `DS Qs` line: timestamp, PID, side, then the rest (queue groups + `Rs` + `mgmt backlog`)
-      DS_QS_LINE = /#{STAMP.source}.*?\[(\w+)(?:-\w+)?\].*?(Receiver|Sender)\s+DS\s+Qs\b(.*)/
-      # `ap` field (attribute-preparation queue) in `DS Qs` lines: side-specific key, same name for Receiver and Sender
-      DS_QS_GROUPS = %r{\b([A-Za-z_]+)\s+([A-Za-z_]+(?:/[A-Za-z_]+)*)=(-?\d+(?:/-?\d+)*)}
-      # Management backlog in `DS Qs` lines: `mgmt backlog i/s/n = 0/3/0 1/4/12`
-      DS_QS_MGMT = %r{\bmgmt backlog [a-z/]+ =((?:\s+-?\d+(?:/-?\d+)*)*)}
     end
   end
 end

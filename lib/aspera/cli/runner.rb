@@ -202,7 +202,7 @@ module Aspera
         end
         # 2- processing of unprocessed arguments (skip when help was displayed: sub-commands are not consumed)
         unless @option_help
-          @context.options&.final_errors&.each do |msg|
+          @context.options&.final_errors(after_error: !exception_info.nil?)&.each do |msg|
             Log.log.error { "Argument: #{msg}" }
             exception_info = {e: Exception.new(msg), t: 'UnusedArg', exit: ExitCode::USAGE} if exception_info.nil?
           end

@@ -51,6 +51,8 @@ module Aspera
         rate_decline:                        "Check for other traffic on the link, and for slow storage on the receiver. #{lower_rate}",
         small_files:                         'Aggregate small files into archives before transfer (`-A zip` of `ascp`), or use a protocol that amortizes the per-file overhead (e.g., HTTP/2 multipart). ' \
           'For many small files, enable concurrent file opens: `write_threads` in `file_system` of `aspera.conf`.',
+        small_mtu:                           'Small packets raise the packet rate and the CPU load of ascp. Check whether the path goes through a VPN or tunnel, and raise its MTU; ' \
+          'or check that no device drops the large UDP probes (`ascp` probes 1492 bytes first). To force the datagram size: option `-Z` of `ascp`, or `datagram_size` in `transfer/protocol_options` of `aspera.conf`.',
         reverse_path_skew:                   'If the network is not congested, set `rtt_reverse_infer` to `false` in `transfer/protocol_options` of `aspera.conf`: each peer reads its own `aspera.conf`.',
         clock_problem:                       'Set `rtt_autocorrect` to `true` in `transfer/protocol_options` of `aspera.conf` (auto-correction of the base RTT, for virtual machines), and check the clock of the virtual machine.',
         peer_clock_problem:                  'Ask the administrator of the peer to set `rtt_autocorrect` to `true` in `transfer/protocol_options` of `aspera.conf` (auto-correction of the base RTT, for virtual machines).',

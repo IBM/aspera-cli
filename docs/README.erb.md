@@ -4359,6 +4359,7 @@ To analyze `ascp` log files (`ascp` 4.0 and later), give log files, or folders w
 | Command             | Result                                                          |
 |---------------------|-----------------------------------------------------------------|
 | `summary`           | Statistics of sessions, errors by category, maximum throughput, findings. |
+| `health`            | Health check for monitoring in Nagios format (failed sessions and low efficiency over last N minutes). |
 | `sessions`          | One row per session, with diagnostics.                          |
 | `diagnostics`       | One row per diagnostic of a session: `id`, `severity` (`error`, `warning`, `info`), `message` and `recommendation` (action to take, when the diagnostic has one). |
 | `multi_sessions`    | Multi-session transfers: sessions grouped by transfer, with aggregate rate. |
@@ -4377,6 +4378,8 @@ Log files compressed with gzip (e.g. rotations `aspera.log-20261101.gz`, `aspera
 <%=cmd%> config ascp logs summary /var/log/aspera.log-20261101.gz
 zcat /var/log/aspera.log-2026*.gz | <%=cmd%> config ascp logs summary -
 ```
+
+To analyze the logs of an HSTS read over SSH, instead of files of the local machine, use command `logs` of the plugin [`server`](#analyze-ascp-logs-of-the-server).
 
 A file must contain `ascp` log lines (`FASP` messages, or lines of process `ascp` in syslog): in a folder, other files are ignored; a file given as argument that is not an `ascp` log is refused.
 
@@ -4398,11 +4401,11 @@ Besides the default columns, `sessions` rows have context columns to filter sess
 | `proxy`          | Address of the proxy (`proxy_ip` of `Session Params`), absent if there is none.                                     |
 | `fips`           | `true` or `false` (`fips_enabled` of `Session Params`).                                                             |
 
-Diagnostics of a session include: category of error (e.g. `udp_setup`, `storage`, `authentication`) with a hint, retry of a failed session, parameters set by the server (cipher, resume policy, virtual link), efficiency and loss of control messages, decline of the rate during the transfer (`rate_decline`: second half of the samples below 70% of the first half, not evaluated if the peer changes the rate, if another transfer session starts meanwhile, or if the session failed), and for a sender, which limit of the receiver (network, disk, virtual link) or reading from storage limits the rate. Other diagnostics: no packet received for some seconds, by the receiver (`reception_interruption`) or by the sender, which gets no feedback of the receiver (`feedback_interruption`); overflow of the retransmission timer (`rex_timer_overflow`: the retransmission RTT is very large); maximum rate of the license of `ascp` below the target rate (`license_rate_limit`); license that expires within `license_expiry_days` (default `30`) of the start of the session, or has expired (`license_expiry`); and many small files transferred (`small_files`): at least `small_files_min_count` (default 100) files with a mean size below `small_files_max_mean` (default 1 MB). Two configuration messages, which have no effect on the transfer, are not diagnostics but only appear in `findings` of `summary`: OpenSSL modules folder not found (`ossl-modules not found`), and a schedule of virtual link capacity that could not be registered (`unable to submit change event`).
+Diagnostics of a session include: category of error (e.g. `udp_setup`, `storage`, `authentication`) with a hint, retry of a failed session, parameters set by the server (cipher, resume policy, virtual link), efficiency and loss of control messages, decline of the rate during the transfer (`rate_decline`: second half of the samples below 70% of the first half, not evaluated if the peer changes the rate, if another transfer session starts meanwhile, or if the session failed), and for a sender, which limit of the receiver (network, disk, virtual link) or reading from storage limits the rate. Other diagnostics: no packet received for some seconds, by the receiver (`reception_interruption`) or by the sender, which gets no feedback of the receiver (`feedback_interruption`); overflow of the retransmission timer (`rex_timer_overflow`: the retransmission RTT is very large); maximum rate of the license of `ascp` below the target rate (`license_rate_limit`); license that expires within `license_expiry_days` (default `30`) of the start of the session, or has expired (`license_expiry`); and many small files transferred (`small_files`): at least `small_files_min_count` (default 100) files with a mean size below `small_files_max_mean` (default 1 MB); path MTU measured by `ascp` below `small_mtu_max` (default 1400, `ascp` measures 1492, 1006, 508 or 296), which suggests a VPN or a tunnel (`small_mtu`). Two configuration messages, which have no effect on the transfer, are not diagnostics but only appear in `findings` of `summary`: OpenSSL modules folder not found (`ossl-modules not found`), and a schedule of virtual link capacity that could not be registered (`unable to submit change event`).
 
 The `recommendation` of a diagnostic is only in the list `diagnostics` (not in `sessions`, where `diagnostics` is a list of messages, and not in `summary`): it tells what to check or change, with the `ascp` options and `aspera.conf` parameters concerned (e.g. UDP port and firewalls, target and minimum rate, storage write, SSH). Diagnostics without action (e.g. information, or cancelled by the user) have no `recommendation`; the diagnostic of the category of a failed session gives its hint in `message`.
 
-Option `ascp_logs` (dot-notation) sets `period` (snapshot period in minutes, default `1`), `zero_bytes` (include sessions without transferred bytes), `mtu` (when not found in logs), `resolve` (host names of peers), `timezone`, and `thresholds` (diagnostic thresholds, including `rate_decline_ratio`, `rate_decline_min_samples`, `rate_decline_delay`, `rate_decline_end_fraction`, `license_expiry_days`, `small_files_min_count` and `small_files_max_mean`), e.g. `--ascp-logs.period=5` or `--ascp-logs.thresholds.efficiency=95`.
+Option `ascp_logs` (dot-notation) sets `period` (snapshot period in minutes, default `1`), `zero_bytes` (include sessions without transferred bytes), `mtu` (when not found in logs), `resolve` (host names of peers), `timezone`, `health_minutes` (window in minutes for health check command, default `60`), `remote_max_size` (maximum total size in bytes of the log files read from a server with [`server logs`](#analyze-ascp-logs-of-the-server), default `268435456`), and `thresholds` (diagnostic thresholds, including `rate_decline_ratio`, `rate_decline_min_samples`, `rate_decline_delay`, `rate_decline_end_fraction`, `license_expiry_days`, `small_files_min_count`, `small_files_max_mean` and `small_mtu_max`), e.g. `--ascp-logs.period=5` or `--ascp-logs.thresholds.efficiency=95`.
 
 Times of log lines are read in the time zone of the analyst, and displayed in it. To read the log of another system without shifting it, set the time zone of the log with `timezone`: `UTC` or an offset `+HH:MM`, e.g. `--ascp-logs.timezone=+02:00`. Syslog lines (`Oct 25 00:02:20`) have no year: it is deduced from the modification date of the log file (the current date for the standard input), the log being before this date. So a log from December to January, analyzed in March, has its December lines in the previous year. Keep the modification date of the file when copying it (e.g. `cp -p`, `scp -p`).
 
@@ -4411,7 +4414,7 @@ Command `records` gives the log lines parsed into records, with the field names 
 | Record      | Log lines                                                                                       |
 |-------------|-------------------------------------------------------------------------------------------------|
 | `samples`   | `Receiver bl` or `Sender bl` line, with the `DS Qs` line that follows it in field `DS`.          |
-| `sessions`  | `Session Start`, `Session Params`, `Session Stop` and `Session Statistics` lines of a session.   |
+| `sessions`  | `Session Start`, `Session Params`, `Session Stop` and `Session Statistics` lines of a session, and lines of the process about it (see below). |
 | `transfers` | `Transfer Start` and `Transfer Stop` lines of a file.                                           |
 
 A group of a log line becomes an object: for example, `rate t/m/c/n/vl/vr/r=...` becomes `rate.t`, `rate.m`, `rate.c`, etc.
@@ -4419,6 +4422,15 @@ Values are numbers when the log value is a number: rates in bps, durations in ms
 `Session Stop` and `Transfer Stop` have the fields of `Session Start` and `Transfer Start`, with their final values.
 When several log files are read, field `log_file` gives the log file of each record.
 Field `cookie` of `Session Params` is never output.
+
+A session record also has the fields of these lines of the process (`ascp`), when the log has them:
+
+| Field                                                          | Log line                                                                                              |
+|----------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| `fasp_version`, `license_max_rate`, `license_expires`          | `Initializing FASP version <version>, license expires on <date>, max rate=<N> Mbps, ...`: `license_max_rate` (bps) and `license_expires` are absent if the license is unlimited or has no expiry date. `account no.` and `license no.` are never output. |
+| `pMTU`, `start_brtt`                                           | `Measured pMTU: <N> Bytes, start_brtt: <N> ms`.                                                        |
+| `datagram_size`, `block_size`, `path_mtu`                      | `datagram size <N>B, block size <N>B, path MTU <N>B` (no `path_mtu` in old versions).                  |
+| `peer_rate_params`                                             | List of `Peer requested rate params adopted` lines, in the order of the log: `time`, `target_rate`, `min_rate` and `transfer_policy` of each change. |
 
 For example, samples where the calculated rate is lower than the target rate, and sessions with loss of control messages from the receiver:
 
@@ -7850,6 +7862,23 @@ This means that your environment suggests using an agent, but no SSH agent is ru
 
 If one of the SSH private keys is passphrase-protected, then option `passphrase` can be used.
 It is equivalent to setting both options `ssh_options.passphrase` and `ts.ssh_private_key_passphrase`.
+
+### Analyze `ascp` logs of the server
+
+Command `logs` analyzes the `ascp` log files of the server (`ascp` 4.0 and later), instead of those of the local machine: the files are read over the SSH connection of the plugin (same `url`, `username`, `password` or `ssh_keys`, and `ssh_options`), then analyzed like with [`config ascp logs`](#agent-direct-transfer). It has the same sub-commands (`summary`, `sessions`, `diagnostics`, `health`, `records`, ...) and the same option `ascp_logs`.
+Paths of the files on the server are mandatory: there is no default location, as it depends on the installation (e.g. a syslog file such as `/var/log/aspera.log` or `/var/log/messages`, or a file of the folder given with `ascp -L`).
+Files compressed with gzip (rotations) are supported. A folder is not read, give its files.
+
+```shell
+<%=cmd%> server --url=ssh://<%=ph :server_address%>:33001 --username=root --ssh-keys=~/.ssh/id_rsa logs summary /var/log/aspera.log
+<%=cmd%> server ... logs sessions /var/log/aspera.log /var/log/aspera.log-20261101.gz --select=@json:'{"status":"failed"}'
+```
+
+The user must be allowed to read the files (log files are often readable by `root` only), and the server shall provide a shell with `head` (and `stat`).
+The files are copied to a temporary folder, removed after the analysis.
+The size of the files is limited (total of 256 MB by default), to avoid reading huge logs in memory: the limit is the key `remote_max_size` (in bytes) of option `ascp_logs`, e.g. `--ascp-logs.remote_max_size=1000000000`.
+The modification date of each file is kept, as the year of syslog lines is deduced from it.
+Not available with `--url=local:` and `https`.
 
 ### Other session channels for `server`
 

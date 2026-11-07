@@ -24,19 +24,19 @@ module Aspera
       # Kind of record of log lines => description, and default fields
       RECORDS = {
         samples:   ['Periodic statistics of sessions: `Receiver bl` or `Sender bl` line, with its `DS Qs` line', %w[time pid side rate.t rate.c rate.n prog.t prog.e]],
-        sessions:  ['Sessions: `Session Start`, `Params`, `Stop` and `Statistics` lines', %w[uuid pid start stop op status errstr user peer targetrate effective_rate]],
+        sessions:  ['Sessions: `Session Start`, `Params`, `Stop` and `Statistics` lines, with license, MTU and rate lines of the process', %w[uuid pid start stop op status errstr user peer targetrate effective_rate]],
         transfers: ['Files: `Transfer Start` and `Transfer Stop` lines', %w[uuid start stop op status file size rate]]
       }.freeze
       RECORD_KIND = {name: :kind, description: RECORDS.map { |kind, (description, _)| "#{kind}: #{description}" }.join(', '), allowed: RECORDS.keys}.freeze
       # Default values of option `ascp_logs` (see schema `AscpLogsOptions`)
-      DEFAULTS = {'period' => 1, 'zero_bytes' => false, 'mtu' => nil, 'resolve' => false, 'thresholds' => {}, 'timezone' => nil}.freeze
+      DEFAULTS = {'period' => 1, 'zero_bytes' => false, 'mtu' => nil, 'resolve' => false, 'thresholds' => {}, 'timezone' => nil, 'health_minutes' => 60, 'remote_max_size' => 268_435_456}.freeze
       private_constant :LOG_FILES, :LISTS, :RECORDS, :RECORD_KIND, :DEFAULTS
       # When a plugin class includes AscpLogsActions, register the :ascp_logs option
       # in that class's DSL registry so Base#initialize auto-declares it,
       # and add the class-level DSL methods of ClassMethods.
       class << self
         def included(base)
-          base.option(:ascp_logs, description: 'Ascp: log analysis (dot-notation: period, zero_bytes, mtu, resolve, thresholds, timezone)', schema: Schema::Registry::ASCP_LOGS_OPTIONS)
+          base.option(:ascp_logs, description: 'Ascp: log analysis (dot-notation: period, zero_bytes, mtu, resolve, thresholds, timezone, health_minutes, remote_max_size)', schema: Schema::Registry::ASCP_LOGS_OPTIONS)
           base.extend(ClassMethods)
         end
       end
@@ -44,14 +44,16 @@ module Aspera
       # Class-level DSL methods added to the plugin class that includes AscpLogsActions.
       module ClassMethods
         # DSL class method: declare the `logs` node and its commands.
-        # @param parent [Symbol, Array<Symbol>] path relative to current scope, e.g. :logs
-        def ascp_logs_commands(parent)
+        # @param parent    [Symbol, Array<Symbol>] path relative to current scope, e.g. :logs
+        # @param arguments [Array<Hash>]           argument that gives the log files (default: local files)
+        def ascp_logs_commands(parent, arguments: LOG_FILES)
           commands_under(parent, description: 'Analyze ascp log files') do
-            command(:summary, description: 'Statistics and findings', arguments: LOG_FILES, action: :action_ascp_logs_summary)
+            command(:summary, description: 'Statistics and findings', arguments: arguments, action: :action_ascp_logs_summary)
+            command(:health, description: 'Health check for monitoring', arguments: arguments, action: :action_ascp_logs_health)
             LISTS.each do |name, (description, fields)|
-              command(name, description: description, arguments: LOG_FILES, action: ->(paths:, **) { Result::ObjectList.new(analyze_ascp_logs(paths).public_send(name), fields: fields) })
+              command(name, description: description, arguments: arguments, action: ->(paths:, **) { Result::ObjectList.new(analyze_ascp_logs(paths).public_send(name), fields: fields) })
             end
-            command(:records, description: 'Log lines parsed into records, with the field names of the log', arguments: [RECORD_KIND] + LOG_FILES, action: :action_ascp_logs_records)
+            command(:records, description: 'Log lines parsed into records, with the field names of the log', arguments: [RECORD_KIND] + arguments, action: :action_ascp_logs_records)
             command(:fields, description: 'Description of the fields of records', arguments: [RECORD_KIND], action: :action_ascp_logs_fields)
           end
         end
@@ -61,10 +63,52 @@ module Aspera
         Result::SingleObject.new(analyze_ascp_logs(paths).summary)
       end
 
+      # Health check for monitoring. Reports failed sessions and low efficiency sessions over the last N minutes.
+      # @param paths [Array<String>] Log files or folders
+      # @param now [Time, Integer, nil] Current reference time (can be injected for testing)
+      # @return [Aspera::Cli::Result::ObjectList] Nagios status list
+      def action_ascp_logs_health(paths:, now: nil, **)
+        require 'aspera/nagios'
+        analyzer = analyze_ascp_logs(paths)
+        params = ascp_logs_params
+        health_minutes = params['health_minutes'].to_i
+
+        ref_time = now ? now.to_i : Time.now.to_i
+
+        failed_count = 0
+        low_efficiency_count = 0
+
+        analyzer.log_files.each do |log_file|
+          windows_log = log_file.path.match?(/\w:/)
+          log_file.sessions.each do |s|
+            start_time = s[:start]
+            next unless start_time && start_time >= (ref_time - health_minutes * 60) && start_time <= ref_time
+
+            s.report(windows_log: windows_log)
+            failed_count += 1 if s[:status] == 'failed'
+            low_efficiency_count += 1 if s.diagnostics.any? { |d| d['id'] == 'low_efficiency' }
+          end
+        end
+
+        nagios = Nagios.new
+        msg = "#{failed_count} failed, #{low_efficiency_count} low efficiency in last #{health_minutes} min"
+        if failed_count.positive?
+          nagios.add_critical('ascp logs', msg)
+        elsif low_efficiency_count.positive?
+          nagios.add_warning('ascp logs', msg)
+        else
+          nagios.add_ok('ascp logs', msg)
+        end
+
+        Result::ObjectList.new(nagios.status_list)
+      end
+
       def action_ascp_logs_records(kind:, paths:, **)
         require 'aspera/ascp/log_analyzer'
-        check_ascp_logs_paths(paths)
-        Result::ObjectList.new(Ascp::LogAnalyzer::Records.list(kind, paths, timezone: ascp_logs_params['timezone']), fields: RECORDS[kind].last)
+        ascp_logs_files(paths) do |files|
+          check_ascp_logs_paths(files)
+          Result::ObjectList.new(Ascp::LogAnalyzer::Records.list(kind, files, timezone: ascp_logs_params['timezone']), fields: RECORDS[kind].last)
+        end
       rescue ParameterError => e
         raise BadArgument, e.message
       end
@@ -92,15 +136,25 @@ module Aspera
           thresholds: user_thresholds,
           timezone:   params['timezone']
         )
-        check_ascp_logs_paths(paths)
-        paths.each do |path|
-          Log.log.debug { "Analyzing: #{path}" }
-          analyzer.add(path)
+        ascp_logs_files(paths) do |files|
+          check_ascp_logs_paths(files)
+          files.each do |path|
+            Log.log.debug { "Analyzing: #{path}" }
+            analyzer.add(path)
+          end
         end
         analyzer.warnings.each { |warning| Log.log.warn(warning) }
         analyzer
       rescue ParameterError => e
         raise BadArgument, e.message
+      end
+
+      # Local log files or folders to analyze, for the paths given as arguments.
+      # A plugin that gets logs elsewhere (e.g. `server logs`) redefines this method: files exist only during the block.
+      # @param paths [Array<String>] arguments of the command
+      # @yieldparam files [Array<String>] local log files or folders
+      def ascp_logs_files(paths)
+        yield(paths)
       end
 
       # @return [Hash] value of option `ascp_logs`, with defaults

@@ -3,7 +3,8 @@
 # Values are numbers when the log value is a number: rates in bps, durations in ms, s or µs, percentages without `%`.
 # Sources (ascp 4): `fasp_session_rx_stats_to_str` (Receiver bl), `fasp_session_tx_stats_to_str` (Sender bl),
 #   `sink_sess_stats_log` and `source_sess_stats_log` (DS Qs), `as_mgmt_backlog_status` (mgmt backlog),
-#   `fasp_session_log` (Session Start/Stop/Params),
+#   `fasp_session_log` (Session Start/Stop/Params), `fasp.c` (Initializing FASP version), `msg_api.c` (Measured pMTU),
+#   `fasp_session.c` (datagram size), `fasp_rateparams_neg.c` (Peer requested rate params adopted),
 #   `fasp_ds_util.c` (Session Statistics), `action.c` (Transfer Start/Stop).
 openapi: 3.0.0
 info:
@@ -548,8 +549,10 @@ components:
     Session:
       type: object
       description: >-
-        A session: `Session Start`, `Session Params`, `Session Stop` and `Session Statistics` lines.
+        A session: `Session Start`, `Session Params`, `Session Stop` and `Session Statistics` lines,
+        and the lines of the process about the session (`Initializing FASP version`, `Measured pMTU`, `datagram size`, `Peer requested rate params adopted`).
         `Session Stop` has the fields of `Session Start`, with their final values.
+        Fields `account no.` and `license no.` of `Initializing FASP version` are never output.
         Field `cookie` of `Session Params` is never output.
       additionalProperties: false
       properties:
@@ -916,6 +919,50 @@ components:
         rex_xmit_pct:
           type: number
           description: Blocks retransmitted by the sender (%, receiver).
+        fasp_version:
+          type: string
+          description: Version of `ascp` and build (`Initializing FASP version`).
+        license_max_rate:
+          type: integer
+          description: Maximum rate of the license (bps), absent if unlimited (`Initializing FASP version`, `max rate`).
+        license_expires:
+          type: string
+          description: Expiry date of the license, as logged, absent if none (`Initializing FASP version`, `license expires on`).
+        pMTU:
+          type: integer
+          description: Path MTU measured at the start of the session (bytes, `Measured pMTU`).
+        start_brtt:
+          type: integer
+          description: Base round-trip time measured at the start of the session (ms, `Measured pMTU`).
+        datagram_size:
+          type: integer
+          description: Size of UDP packets (bytes, `datagram size`).
+        block_size:
+          type: integer
+          description: Size of data blocks (bytes, `block size`).
+        path_mtu:
+          type: integer
+          description: Path MTU used for the session (bytes, `path MTU` of the `datagram size` line, absent in old versions).
+        peer_rate_params:
+          type: array
+          description: Rate parameters adopted at the request of the peer, in the order of the log (`Peer requested rate params adopted`).
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              time:
+                type: string
+                format: date-time
+                description: Time of the line.
+              target_rate:
+                type: integer
+                description: Target rate (bps).
+              min_rate:
+                type: integer
+                description: Minimum rate (bps).
+              transfer_policy:
+                type: string
+                description: 'Rate policy: `fixed`, `high`, `fair` or `low`.'
     Transfer:
       type: object
       description: >-

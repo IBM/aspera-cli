@@ -50,7 +50,8 @@ module Aspera
         rate_decline_end_fraction: 0.1,
         license_expiry_days:       30,
         small_files_min_count:     100,
-        small_files_max_mean:      1_000_000
+        small_files_max_mean:      1_000_000,
+        small_mtu_max:             1400
       }.freeze
 
       # @return [Array<LogFile>] analyzed log files

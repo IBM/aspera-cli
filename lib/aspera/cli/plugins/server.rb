@@ -2,6 +2,7 @@
 
 require 'aspera/cli/plugins/basic_auth'
 require 'aspera/cli/sync_actions'
+require 'aspera/cli/ascp_logs_actions'
 require 'aspera/transfer/result'
 require 'aspera/transfer/spec'
 require 'aspera/ascmd'
@@ -10,12 +11,15 @@ require 'aspera/nagios'
 require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/environment'
+require 'shellwords'
+require 'tmpdir'
 module Aspera
   module Cli
     module Plugins
       # Operations on HSTS with SSH/FASP (ascmd/ascp)
       class Server < BasicAuth
         include SyncActions
+        include AscpLogsActions
 
         SSH_SCHEME = 'ssh'
         LOCAL_SCHEME = 'local'
@@ -195,6 +199,9 @@ module Aspera
           command :transfer, description: 'Check FASP transfer health'
         end
 
+        # Analysis of ascp logs of the server: same commands as `config ascp logs`, on files read over SSH
+        ascp_logs_commands(:logs, arguments: [{name: :paths, description: 'Log files on the server (gzip supported)', multiple: true}])
+
         # AsCmd operations (available only when SSH/local - not WSS)
         # Arguments follow AsCmd::OPS_ARGS: one path per operation, or source and destination
         PATHS_ARGS = [{name: :paths, multiple: true}].freeze
@@ -297,6 +304,47 @@ module Aspera
         # --- ascmd handlers ---
 
         private
+
+        # Log files of the server, to analyze with the commands of `logs`.
+        # Read over SSH, in a temporary folder removed after the block.
+        # @param paths [Array<String>] files on the server
+        # @yieldparam files [Array<String>] local copies
+        def ascp_logs_files(paths)
+          executor = ascmd_executor
+          Aspera.assert(executor.is_a?(Ssh), type: Cli::BadArgument) { 'Reading the logs of the server requires an SSH connection (URL scheme ssh)' }
+          remaining = ascp_logs_params['remote_max_size']
+          Dir.mktmpdir('ascli_logs') do |folder|
+            files = paths.each_with_index.map do |remote, index|
+              local = File.join(folder, format('%02d_%s', index, File.basename(remote)))
+              remaining -= read_remote_log(executor, remote, local, remaining)
+              local
+            end
+            yield(files)
+          end
+        end
+
+        # Copy a file of the server over SSH. Shell characters of the path are escaped.
+        # The modification date is kept: the year of syslog lines is deduced from it.
+        # @param executor [Ssh]     SSH connection
+        # @param remote   [String]  file on the server
+        # @param local    [String]  destination
+        # @param limit    [Integer] maximum size in bytes
+        # @return [Integer] size in bytes
+        def read_remote_log(executor, remote, local, limit)
+          quoted = Shellwords.escape(remote)
+          # First line: modification time (0 if unknown), then the content, read up to one byte over the limit
+          output = executor.execute("(stat -c %Y -- #{quoted} 2>/dev/null || echo 0); head -c #{limit + 1} -- #{quoted}").b
+          mtime, _, content = output.partition("\n")
+          Aspera.assert(content.bytesize <= limit, type: Cli::BadArgument) do
+            "Log files from the server exceed the limit of #{ascp_logs_params['remote_max_size']} bytes (option ascp_logs.remote_max_size), at: #{remote}"
+          end
+          Log.log.debug { "Read #{remote}: #{content.bytesize} bytes" }
+          File.binwrite(local, content)
+          File.utime(Time.now, Time.at(mtime.to_i), local) if mtime.to_i.positive?
+          content.bytesize
+        rescue Ssh::Error => e
+          raise Cli::BadArgument, "Cannot read #{remote}: #{e.message}"
+        end
 
         # AsCmd `cp` and `mv` take source and destination pairs.
         # With option `to_folder`, paths are only sources, copied or moved into that folder.

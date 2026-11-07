@@ -311,7 +311,7 @@ module Aspera
 
         it 'completes the value of an option, with words split on = and :' do
           expect(complete_bash(bash, 'ascli --format=js', %w[ascli --format = js])).to(eq(%w[json jsonpp]))
-          expect(complete_bash(bash, 'ascli server --url=https://h:443 l', %w[ascli server --url = https : //h : 443 l])).to(eq(['ls']))
+          expect(complete_bash(bash, 'ascli server --url=https://h:443 l', %w[ascli server --url = https : //h : 443 l])).to(eq(%w[logs ls]))
         end
 
         it 'completes the end marker of a structure built with @:, split on @ and :' do

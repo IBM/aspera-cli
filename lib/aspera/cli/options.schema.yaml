@@ -835,6 +835,14 @@ components:
         timezone:
           type: string
           description: Time zone of the log lines (`UTC` or `+HH:MM`), to read a log from another time zone. Default is the local time zone.
+        health_minutes:
+          type: integer
+          description: Window in minutes to report transfer errors and low efficiency.
+          default: 60
+        remote_max_size:
+          type: integer
+          description: Maximum total size in bytes of the log files read from a server (`server logs`).
+          default: 536870912
         thresholds:
           type: object
           description: Diagnostic thresholds.
@@ -888,6 +896,10 @@ components:
               type: integer
               description: Maximum mean file size in bytes below which the small-files diagnostic is emitted.
               default: 1000000
+            small_mtu_max:
+              type: integer
+              description: Path MTU in bytes below which the small-MTU diagnostic is emitted (ascp measures 1492, 1006, 508 or 296).
+              default: 1400
     PackageFolderOptions:
       type: object
       title: Package download folder organization

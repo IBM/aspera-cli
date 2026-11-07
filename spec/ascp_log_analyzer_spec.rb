@@ -502,6 +502,108 @@ RSpec.describe(Aspera::Ascp::LogAnalyzer) do
     end
   end
 
+  it 'groups samples into time buckets aligned on the period' do
+    sample = ->(sec, blk, bytes) do
+      time = format('10:%02d:%02d', sec / 60, sec % 60)
+      "2026-01-10 #{time}.000 [1a2b-1] LOG Receiver bl t/o/r/d/ts/c/h=#{blk}/#{blk}/0/0/0/0/0 rex_rtt l/h/s/o=0/0/0/0 ooo_rtt l/h/s/o=0/0/0/0 " \
+        'rate_rtt b/l/h/s/r/f=20/20/20/20/0/1 ctl bm/bs=0/0 rex n/s/q/v/a/r=0/0/0/0/0/0 bl l/d/o/r/a/x/dl/df/dm/ds=0/0/0/0/0/0/0/0/0/0 ' \
+        'disk l/h/b=0/0/0 vlink lq/lo/rq/ro=0/0/0/0 rate t/m/c/n/vl/vr/r=10000000/0/10000000/10000000/10000000/10000000/10000000 ' \
+        "prog t/f/e=#{bytes}/#{bytes}/#{sec * 1_000_000} rcvD=0"
+    end
+    init = [
+      '2026-01-10 10:00:15.000 [1a2b-1] LOG Configuration: using v2 configuration file "/opt/aspera/etc/aspera.conf", user xfer',
+      '2026-01-10 10:00:15.000 [1a2b-1] LOG Initializing FASP version 4.4.5, license max rate=(unlimited), account no.=1, license no.=1 product=10',
+      '2026-01-10 10:00:15.000 [1a2b-1] LOG FASP Session Start uuid=11111111-0000-0000-0000-000000000001 op=recv status=started ' \
+        'source=/src dest=/dst source_prefix=- local=10.0.0.1:33001 peer=10.0.0.2:51000 tcp_port=33001 os="Linux" ver=4.4.5 lic=10:1:1 peeros="Linux" peerver=4.4.5 peerlic=6:1:1'
+    ]
+    fin = [
+      '2026-01-10 10:03:00.000 [1a2b-1] LOG FASP Session Stop uuid=11111111-0000-0000-0000-000000000001 op=recv status=success local=10.0.0.1:33001 peer=10.0.0.2:51000',
+      '2026-01-10 10:03:00.000 [1a2b-1] LOG ======= end File Transfer statistics ======='
+    ]
+    Dir.mktmpdir do |dir|
+      log = (init + [sample.call(20, 100, 100_000), sample.call(59, 500, 500_000), sample.call(60, 600, 600_000), sample.call(110, 1000, 1_000_000)] + fin).join("\n")
+      path = File.join(dir, 'test.log')
+      File.write(path, log)
+      analyzer = described_class.new(period: 60, timezone: 'UTC').add(path)
+      times = analyzer.snapshots.map { |s| s['time'] }
+      expect(times).to(eq(['2026-01-10T10:00:00Z', '2026-01-10T10:01:00Z']))
+      expect(analyzer.snapshots.first['sessions']).to(eq(1))
+      expect(analyzer.snapshots.first['rate']).to(be_positive)
+    end
+  end
+
+  it 'does not report empty periods and handles a single sample in a bucket' do
+    sample = ->(sec, blk, bytes) do
+      time = format('10:%02d:%02d', sec / 60, sec % 60)
+      "2026-01-10 #{time}.000 [1a2b-1] LOG Receiver bl t/o/r/d/ts/c/h=#{blk}/#{blk}/0/0/0/0/0 rex_rtt l/h/s/o=0/0/0/0 ooo_rtt l/h/s/o=0/0/0/0 " \
+        'rate_rtt b/l/h/s/r/f=20/20/20/20/0/1 ctl bm/bs=0/0 rex n/s/q/v/a/r=0/0/0/0/0/0 bl l/d/o/r/a/x/dl/df/dm/ds=0/0/0/0/0/0/0/0/0/0 ' \
+        'disk l/h/b=0/0/0 vlink lq/lo/rq/ro=0/0/0/0 rate t/m/c/n/vl/vr/r=10000000/0/10000000/10000000/10000000/10000000/10000000 ' \
+        "prog t/f/e=#{bytes}/#{bytes}/#{sec * 1_000_000} rcvD=0"
+    end
+    init = [
+      '2026-01-10 10:00:00.000 [1a2b-1] LOG Configuration: using v2 configuration file "/opt/aspera/etc/aspera.conf", user xfer',
+      '2026-01-10 10:00:00.000 [1a2b-1] LOG Initializing FASP version 4.4.5, license max rate=(unlimited), account no.=1, license no.=1 product=10',
+      '2026-01-10 10:00:00.000 [1a2b-1] LOG FASP Session Start uuid=11111111-0000-0000-0000-000000000001 op=recv status=started ' \
+        'source=/src dest=/dst source_prefix=- local=10.0.0.1:33001 peer=10.0.0.2:51000 tcp_port=33001 os="Linux" ver=4.4.5 lic=10:1:1 peeros="Linux" peerver=4.4.5 peerlic=6:1:1'
+    ]
+    fin = [
+      '2026-01-10 10:05:00.000 [1a2b-1] LOG FASP Session Stop uuid=11111111-0000-0000-0000-000000000001 op=recv status=success local=10.0.0.1:33001 peer=10.0.0.2:51000',
+      '2026-01-10 10:05:00.000 [1a2b-1] LOG ======= end File Transfer statistics ======='
+    ]
+    Dir.mktmpdir do |dir|
+      # Minute 0: 2 samples (rate computed)
+      # Minute 1: empty (no sample)
+      # Minute 2: 1 single sample (no delta -> rate is 0 -> not reported without zero_bytes)
+      # Minute 3: 2 samples (rate computed)
+      log = (init + [sample.call(10, 100, 100_000), sample.call(40, 400, 400_000), sample.call(130, 500, 500_000), sample.call(190, 600, 600_000), sample.call(220, 900, 900_000)] + fin).join("\n")
+      path = File.join(dir, 'test.log')
+      File.write(path, log)
+      analyzer = described_class.new(period: 60, timezone: 'UTC').add(path)
+      times = analyzer.snapshots.map { |s| s['time'] }
+      expect(times).to(eq(['2026-01-10T10:00:00Z', '2026-01-10T10:03:00Z']))
+
+      # With zero_bytes: true, single-sample and zero-rate periods are reported
+      zero_analyzer = described_class.new(period: 60, zero_bytes: true, timezone: 'UTC').add(path)
+      zero_times = zero_analyzer.snapshots.map { |s| s['time'] }
+      expect(zero_times).to(eq(['2026-01-10T10:00:00Z', '2026-01-10T10:02:00Z', '2026-01-10T10:03:00Z']))
+    end
+  end
+
+  it 'applies samples in log order between two rate changes of the peer' do
+    sample = ->(sec, target) do
+      time = format('10:%02d:%02d', sec / 60, sec % 60)
+      "2026-01-10 #{time}.000 [1a2b-1] LOG Receiver bl t/o/r/d/ts/c/h=#{sec}00/#{sec}00/0/0/0/0/0 rex_rtt l/h/s/o=0/0/0/0 ooo_rtt l/h/s/o=0/0/0/0 " \
+        'rate_rtt b/l/h/s/r/f=20/20/20/20/0/1 ctl bm/bs=0/0 rex n/s/q/v/a/r=0/0/0/0/0/0 bl l/d/o/r/a/x/dl/df/dm/ds=0/0/0/0/0/0/0/0/0/0 ' \
+        "disk l/h/b=0/0/0 vlink lq/lo/rq/ro=0/0/0/0 rate t/m/c/n/vl/vr/r=#{target}/0/#{target}/#{target}/#{target}/#{target}/#{target} " \
+        "prog t/f/e=#{sec}000/#{sec}000/#{sec * 1_000_000} rcvD=0"
+    end
+    peer_rate = ->(sec, target) { format("2026-01-10 10:%02d:%02d.000 [1a2b-1] LOG Peer requested rate params adopted,  target_rate #{target} min_rate 0 transfer_policy fair", 0, sec) }
+    lines = [
+      '2026-01-10 10:00:00.000 [1a2b-1] LOG Configuration: using v2 configuration file "/opt/aspera/etc/aspera.conf", user xfer',
+      '2026-01-10 10:00:00.000 [1a2b-1] LOG Initializing FASP version 4.4.5, license max rate=(unlimited), account no.=1, license no.=1 product=10',
+      '2026-01-10 10:00:00.000 [1a2b-1] LOG FASP Session Start uuid=11111111-0000-0000-0000-000000000001 op=recv status=started ' \
+        'source=/src dest=/dst source_prefix=- local=10.0.0.1:33001 peer=10.0.0.2:51000 tcp_port=33001 os="Linux" ver=4.4.5 lic=10:1:1 peeros="Linux" peerver=4.4.5 peerlic=6:1:1',
+      '2026-01-10 10:00:00.000 [1a2b-1] LOG FASP Session Params uuid=11111111-0000-0000-0000-000000000001 userid=0 user="xfer" targetrate=100000000 minrate=0 ' \
+        'rate_policy=fair cipher=aes-128 resume=0 ovr=1 rd_sz=0 wr_sz=0 xfer_id=-',
+      sample.call(10, 100_000_000),
+      # The peer removes the limit, then the next sample still shows the previous target rate, then the peer sets another limit
+      peer_rate.call(20, 0),
+      sample.call(25, 100_000_000),
+      peer_rate.call(30, 80_000_000),
+      sample.call(40, 80_000_000), sample.call(50, 80_000_000),
+      '2026-01-10 10:01:00.000 [1a2b-1] LOG FASP Session Stop uuid=11111111-0000-0000-0000-000000000001 op=recv status=success local=10.0.0.1:33001 peer=10.0.0.2:51000',
+      '2026-01-10 10:01:00.000 [1a2b-1] LOG ======= end File Transfer statistics ======='
+    ]
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'test.log')
+      File.write(path, lines.join("\n"))
+      analyzer = described_class.new(timezone: 'UTC').add(path)
+      change = analyzer.diagnostics.find { |d| d['id'].eql?('rate_change') }
+      expect(change['message']).to(eq('Last of multiple parameter changes by peer: Target rate changed from 100,000,000 bps to 80,000,000 bps.'))
+      expect(analyzer.sessions.first['target_rate']).to(eq(80_000_000))
+    end
+  end
+
   it 'shows last error of a session that stopped logging' do
     analyze(extra: %i[abrupt_end]) do |analyzer|
       session = session_of(analyzer, '3e4f')
@@ -754,6 +856,171 @@ RSpec.describe(Aspera::Ascp::LogAnalyzer) do
       # Default thresholds (100 files): does not fire
       analyzer2 = described_class.new(zero_bytes: true)
       expect(analyzer2.add(path).diagnostics.map { |d| d['id'] }).not_to(include('small_files'))
+    end
+  end
+
+  it 'diagnoses a small path MTU, which suggests a VPN or a tunnel' do
+    lines = ['LOG Measured pMTU: 1006 Bytes, start_brtt: 32 ms', 'LOG datagram size 992B, block size 928B, path MTU 1006B']
+    analyze_minor(lines: lines) do |_analyzer, diagnostics|
+      expect(diagnostics).to(include('small_mtu' => include('severity' => 'info', 'message' => /path MTU measured by ascp is 1006 bytes.*datagram size: 992 bytes/, 'recommendation' => be_a(String))))
+    end
+  end
+
+  it 'does not diagnose the usual path MTU' do
+    analyze_minor(lines: ['LOG datagram size 1472B, block size 1408B, path MTU 1492B']) { |_analyzer, diagnostics| expect(diagnostics).not_to(include('small_mtu')) }
+    # Old format without path MTU: no diagnostic
+    analyze_minor(lines: ['LOG datagram size 960B, block size 896B']) { |_analyzer, diagnostics| expect(diagnostics).not_to(include('small_mtu')) }
+  end
+
+  it 'respects the small_mtu_max threshold' do
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'aspera-scp-transfer.log')
+      File.write(path, minor_log(lines: ['LOG datagram size 1472B, block size 1408B, path MTU 1492B']))
+      expect(described_class.new(zero_bytes: true, thresholds: {small_mtu_max: 1500}).add(path).diagnostics.map { |d| d['id'] }).to(include('small_mtu'))
+    end
+  end
+
+  describe Aspera::Ascp::LogAnalyzer::Diagnostics do
+    it 'diagnoses license expiry isolated on a session' do
+      session = Aspera::Ascp::LogAnalyzer::Session.new('1234')
+      session[:license_expires] = '2026-10-10'
+      session[:start] = Time.parse('2026-10-01').to_i
+      diagnostics = described_class.new(session)
+      diagnostics.diagnose_license
+      expect(diagnostics.list).to(eq([
+        {'id' => 'license_expiry', 'severity' => 'warning', 'message' => 'The license expires on 2026-10-10, 9 days after the start of this session.'}
+      ]))
+    end
+
+    it 'diagnoses low efficiency isolated on a session' do
+      session = Aspera::Ascp::LogAnalyzer::Session.new('1234')
+      session[:efficiency] = 75.0
+      session.increment(:tx_bytes, 1000)
+      diagnostics = described_class.new(session)
+      diagnostics.diagnose_quality
+      expect(diagnostics.list).to(eq([
+        {'id' => 'low_efficiency', 'severity' => 'warning', 'message' => 'Only 75.0% of the data blocks sent were useful: retransmissions reduce the effective rate.'}
+      ]))
+    end
+  end
+
+  describe 'AscpLogsActions health command' do
+    before do
+      require 'aspera/cli/error'
+      require 'aspera/cli/result'
+      require 'aspera/cli/ascp_logs_actions'
+    end
+
+    # Helper to create a dummy CLI plugin that includes AscpLogsActions
+    let(:plugin) do
+      # Define the class in the correct namespace to resolve BadArgument, etc.
+      unless defined?(Aspera::Cli::DummyHealthPlugin)
+        module Aspera
+          module Cli
+            class DummyHealthPlugin
+              class << self
+                def option(*_args); end
+              end
+
+              include Aspera::Cli::AscpLogsActions
+
+              BadArgument = Aspera::Cli::BadArgument
+              ParameterError = Aspera::ParameterError
+              Result = Aspera::Cli::Result
+              attr_accessor :ascp_logs_options
+
+              def initialize
+                @ascp_logs_options = {}
+              end
+
+              def options
+                self
+              end
+
+              def get_option(name)
+                return @ascp_logs_options if name == :ascp_logs
+                nil
+              end
+            end
+          end
+        end
+      end
+      Aspera::Cli::DummyHealthPlugin.new
+    end
+
+    it 'returns OK when no failures or low efficiency are present' do
+      log_ok = <<~EOF
+        2026-01-10 10:00:00.000 [aaaa-140001] LOG FASP Session Start uuid=ffffffff-0000-0000-0000-000000000001 op=send status=started local=10.0.0.1:52000 peer=10.0.0.3:33001 tcp_port=33001 os="Linux" ver=4.4.8 lic=10:1:1234
+        2026-01-10 10:00:10.000 [aaaa-140001] LOG FASP Session Stop uuid=ffffffff-0000-0000-0000-000000000001 op=send status=success local=10.0.0.1:52000 peer=10.0.0.3:33001 tcp_port=33001 os="Linux" ver=4.4.8 lic=10:1:1234
+      EOF
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'ascp.log')
+        File.write(path, log_ok)
+        File.utime(Time.parse('2026-01-10 10:10:00'), Time.parse('2026-01-10 10:10:00'), path)
+
+        now = Time.parse('2026-01-10 10:30:00')
+        result = plugin.action_ascp_logs_health(paths: [path], now: now)
+        expect(result.data).to(eq([
+          {'status' => 'ok', 'component' => 'ascp logs', 'message' => '0 failed, 0 low efficiency in last 60 min'}
+        ]))
+      end
+    end
+
+    it 'returns WARNING when low efficiency is present' do
+      log_warning = <<~EOF
+        2026-01-10 10:00:00.000 [aaaa-140001] LOG FASP Session Start uuid=ffffffff-0000-0000-0000-000000000001 op=send status=started local=10.0.0.1:52000 peer=10.0.0.3:33001 tcp_port=33001 os="Linux" ver=4.4.8 lic=10:1:1234
+        2026-01-10 10:00:05.000 [aaaa-140001] LOG FASP Session Statistics [Sender] id=ffffffff-0000-0000-0000-000000000001 delay=8ms rex_delay=30ms solicited_rex=25.00% unsolicited_rex=0.00% ave_xmit_rate 10.00Mbps effective=75.00% effective_rate=10.00Mbps (progress: tx_bytes 1000 file_bytes 1000 tx_time 1000)
+        2026-01-10 10:00:10.000 [aaaa-140001] LOG FASP Session Stop uuid=ffffffff-0000-0000-0000-000000000001 op=send status=success local=10.0.0.1:52000 peer=10.0.0.3:33001 tcp_port=33001 os="Linux" ver=4.4.8 lic=10:1:1234
+      EOF
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'ascp.log')
+        File.write(path, log_warning)
+        File.utime(Time.parse('2026-01-10 10:10:00'), Time.parse('2026-01-10 10:10:00'), path)
+
+        now = Time.parse('2026-01-10 10:30:00')
+        result = plugin.action_ascp_logs_health(paths: [path], now: now)
+        expect(result.data).to(eq([
+          {'status' => 'warning', 'component' => 'ascp logs', 'message' => '0 failed, 1 low efficiency in last 60 min'}
+        ]))
+      end
+    end
+
+    it 'returns CRITICAL when a failure is present' do
+      log_critical = <<~EOF
+        2026-01-10 10:00:00.000 [aaaa-140001] LOG FASP Session Start uuid=ffffffff-0000-0000-0000-000000000001 op=send status=started local=10.0.0.1:52000 peer=10.0.0.3:33001 tcp_port=33001 os="Linux" ver=4.4.8 lic=10:1:1234
+        2026-01-10 10:00:10.000 [aaaa-140001] LOG FASP Session Stop uuid=ffffffff-0000-0000-0000-000000000001 op=send status=failed errcode=36 errstr="Session data transfer timeout" local=10.0.0.1:52000 peer=10.0.0.3:33001 tcp_port=33001 os="Linux" ver=4.4.8 lic=10:1:1234
+      EOF
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'ascp.log')
+        File.write(path, log_critical)
+        File.utime(Time.parse('2026-01-10 10:10:00'), Time.parse('2026-01-10 10:10:00'), path)
+
+        now = Time.parse('2026-01-10 10:30:00')
+        result = plugin.action_ascp_logs_health(paths: [path], now: now)
+        expect(result.data).to(eq([
+          {'status' => 'critical', 'component' => 'ascp logs', 'message' => '1 failed, 0 low efficiency in last 60 min'}
+        ]))
+      end
+    end
+
+    it 'ignores old errors outside the time window and counts recent ones' do
+      log_mixed = <<~EOF
+        2026-01-10 09:00:00.000 [aaaa-140001] LOG FASP Session Start uuid=ffffffff-0000-0000-0000-000000000001 op=send status=started local=10.0.0.1:52000 peer=10.0.0.3:33001 tcp_port=33001 os="Linux" ver=4.4.8 lic=10:1:1234
+        2026-01-10 09:00:10.000 [aaaa-140001] LOG FASP Session Stop uuid=ffffffff-0000-0000-0000-000000000001 op=send status=failed errcode=36 errstr="Session data transfer timeout" local=10.0.0.1:52000 peer=10.0.0.3:33001 tcp_port=33001 os="Linux" ver=4.4.8 lic=10:1:1234
+        2026-01-10 10:00:00.000 [aaaa-140001] LOG FASP Session Start uuid=ffffffff-0000-0000-0000-000000000002 op=send status=started local=10.0.0.1:52000 peer=10.0.0.3:33001 tcp_port=33001 os="Linux" ver=4.4.8 lic=10:1:1234
+        2026-01-10 10:00:10.000 [aaaa-140001] LOG FASP Session Stop uuid=ffffffff-0000-0000-0000-000000000002 op=send status=failed errcode=36 errstr="Session data transfer timeout" local=10.0.0.1:52000 peer=10.0.0.3:33001 tcp_port=33001 os="Linux" ver=4.4.8 lic=10:1:1234
+      EOF
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'ascp.log')
+        File.write(path, log_mixed)
+        File.utime(Time.parse('2026-01-10 10:10:00'), Time.parse('2026-01-10 10:10:00'), path)
+
+        now = Time.parse('2026-01-10 10:30:00')
+        result = plugin.action_ascp_logs_health(paths: [path], now: now)
+        expect(result.data).to(eq([
+          {'status' => 'critical', 'component' => 'ascp logs', 'message' => '1 failed, 0 low efficiency in last 60 min'}
+        ]))
+      end
     end
   end
 end
