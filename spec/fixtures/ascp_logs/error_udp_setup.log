@@ -1,0 +1,43 @@
+2026-10-07 19:20:32.100 [b0e1-2340302] LOG Initializing FASP version 4.4.7.2228 b4d6b52, license expires on Sat Jan  1 00:00:00 2033, max rate=(unlimited), account no.=1, license no.=1234 product=10
+2026-10-07 19:20:32.100 [b0e1-2340302] LOG Configured symlink actions: create=1, follow=1, follow_wide=0, skip=0
+2026-10-07 19:20:32.100 [b0e1-2340302] LOG IBM Aspera High-Speed Transfer Server version 4.4.7.2228
+2026-10-07 19:20:32.105 [b0e1-2340302] LOG (access key) Not present
+2026-10-07 19:20:32.107 [b0e1-2340302] LOG as_sock_create_client_any: Could not connect to address ::1, err=ECONNREFUSED
+2026-10-07 19:20:32.119 [b0e1-2340302] LOG [asssh] remote host-key fingerprint 0000000000000000000000000000000000000005
+2026-10-07 19:20:32.136 [b0e1-2340302] LOG [asssh] authentication succeeded, proceeding.
+2026-10-07 19:20:32.190 [b0e1-2340302] LOG Symlink actions for starters: create=0, follow=1, follow_wide=0, skip=0
+2026-10-07 19:20:32.190 [b0e1-2340302] LOG Xattrs-preserving modes for starters: --preserve-xattrs=none, --remote-preserve-xattrs=none; --preserve-acls=none, --remote-preserve-acls=none
+2026-10-07 19:20:32.190 [b0e1-2340302] LOG changing session job size from 0 to 2 to match server configuration
+2026-10-07 19:20:32.190 [b0e1-2340302] LOG server configuration specifies transit encryption cipher 7, user requests 1
+2026-10-07 19:20:32.190 [b0e1-2340302] LOG MTU discovery not implemented
+2026-10-07 19:20:32.190 [b0e1-2340302] LOG Unable to set Dont Fragment (DF) bit on, pMTU probing may fail
+2026-10-07 19:20:32.190 [b0e1-2340306] LOG FASP Session Start uuid=71460c0c-c2ac-4d16-8d07-41c9391831a8 op=send status=started source=/src/file1 dest=/dst/file1 source_prefix=- local=10.0.0.2:56721 peer=127.0.0.1:33001 tcp_port=22 os="Darwin 25.6.0 Darwin Kernel Version 25.6.0: Fri Jul 31 19:18:49 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6000" ver=4.4.7.2228 b4d6b52 lic=10:1:1234 peeros="Linux 6.8.0-100-generic #100-Ubuntu SMP PREEMPT_DYNAMIC Tue Jan 13 16:39:21 UTC 2026" peerver=4.4.8.2592 6a5e6bf peerlic=6:1:1 proto_sess=20003 proto_udp=20000 proto_bwmeas=20000 proto_data=2000f
+2026-10-07 19:20:32.191 [b0e1-2340306] LOG FASP Session Params uuid=71460c0c-c2ac-4d16-8d07-41c9391831a8 userid=1000 user="xfer" targetrate=100000000 minrate=0 rate_policy=fair cipher=aes-128-gcm resume=0 create=0 extra_create=0 ovr=1 times=0 precalc=yes precalc_disable=false mf=0 mf_path=- mf_suffix=.aspera-inprogress partial_file_suffix=- files_encrypt=no files_decrypt=no file_csum=NONE fips_enabled=no dgram_sz=0 tcp_mode=no rtt_auto=yes cookie="-" vl_proto_ver=1  peer_vl_proto_ver=1 vl_local=0 vlink_remote=0 vl_sess_id=23552 srcbase=- rd_sz=0 wr_sz=0 cluster_num_nodes=1 cluster_node_id=0 cluster_multi_session_threshold=-1 range=0-0 keepalive=no test_login=no proxy_ip=- net_rc_alg=alg_delay exclude_older/newer_than=0/0 xfer_id=-
+2026-10-07 19:20:42.220 [b0e1-2340302] ERR connection attempt timeout, exiting...
+2026-10-07 19:20:42.220 [b0e1-2340302] ERR Client unable to connect to server (check UDP port and firewall)
+2026-10-07 19:20:42.221 [b0e1-2340302] ERR Warning: unable to turn off Dont Fragment (DF) bit
+2026-10-07 19:20:42.221 [b0e1-2340302] ERR UDP session initiation error (start_pmtu_brtt_probing): errcode=11 errstr=[Client unable to connect to server (check UDP port and firewall)]
+2026-10-07 19:20:42.222 [b0e1-2340302] ERR FASP sender had error, errcode 11 errstr [Client unable to connect to server (check UDP port and firewall)]
+2026-10-07 19:20:42.222 [b0e1-2340302] ERR Peer FASP receiver had error, errcode 12 errstr [Server unable to hear from client (check UDP port and firewall)]
+2026-10-07 19:20:42.223 [b0e1-2340306] LOG FASP Session Stop uuid=71460c0c-c2ac-4d16-8d07-41c9391831a8 op=send status=failed errcode=11 errstr="Client unable to connect to server (check UDP port and firewall)" source=/src/file1 dest=/dst/file1 source_prefix=- local=10.0.0.2:56721 peer=127.0.0.1:33001 tcp_port=22 os="Darwin 25.6.0 Darwin Kernel Version 25.6.0: Fri Jul 31 19:18:49 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6000" ver=4.4.7.2228 b4d6b52 lic=10:1:1234 peeros="Linux 6.8.0-100-generic #100-Ubuntu SMP PREEMPT_DYNAMIC Tue Jan 13 16:39:21 UTC 2026" peerver=4.4.8.2592 6a5e6bf peerlic=6:1:1 proto_sess=20003 proto_udp=20000 proto_bwmeas=20000 proto_data=2000f
+2026-10-07 19:20:42.223 [b0e1-2340306] LOG FASP Session Params uuid=71460c0c-c2ac-4d16-8d07-41c9391831a8 userid=1000 user="xfer" targetrate=100000000 minrate=0 rate_policy=fair cipher=aes-128-gcm resume=0 create=0 extra_create=0 ovr=1 times=0 precalc=yes precalc_disable=false mf=0 mf_path=- mf_suffix=.aspera-inprogress partial_file_suffix=- files_encrypt=no files_decrypt=no file_csum=NONE fips_enabled=no dgram_sz=0 tcp_mode=no rtt_auto=yes cookie="-" vl_proto_ver=1  peer_vl_proto_ver=1 vl_local=0 vlink_remote=0 vl_sess_id=23552 srcbase=- rd_sz=0 wr_sz=0 cluster_num_nodes=1 cluster_node_id=0 cluster_multi_session_threshold=-1 range=0-0 keepalive=no test_login=no proxy_ip=- net_rc_alg=alg_delay exclude_older/newer_than=0/0 xfer_id=-
+2026-10-07 19:20:42.223 [b0e1-2340306] LOG FASP Session Statistics [Sender] id=71460c0c-c2ac-4d16-8d07-41c9391831a8 delay=0ms rex_delay=0ms solicited_rex=0.00% unsolicited_rex=0.00% ave_xmit_rate 0.00Kbps effective=0.00% effective_rate=0.00Kbps (detail: good_blks 0 bl_total 0 bl_orig 0 bl_rex 0 dup_last_blks 0) (sndr ctl: sent 0 rcvd 0 lost 0 lost 0.00%) (rcvr ctl: sent 0 rcvd 0 lost 0 lost 0.00%) (rex  ctl: sent 0 rcvd 0 lost 0 lost 0.00%) (progress: tx_bytes 0 file_bytes 0 tx_time 0) (estimate transfer size: 0 bytes)  sess->instru.num_rex_xfer_not_found 0 sess->instru.num_rex_abrtxfer_not_found 0
+2026-10-07 19:20:43.235 [b0e1-2340302] LOG ======= File Transfer statistics =======
+2026-10-07 19:20:43.235 [b0e1-2340302] LOG ------- Source statistics -------
+2026-10-07 19:20:43.235 [b0e1-2340302] LOG Source argument scans attempted             :          0
+2026-10-07 19:20:43.235 [b0e1-2340302] LOG - Source argument scans completed           :          0
+2026-10-07 19:20:43.235 [b0e1-2340302] LOG Source path scans attempted                 :          0
+2026-10-07 19:20:43.235 [b0e1-2340302] LOG - Source path scans failed                  :          0
+2026-10-07 19:20:43.235 [b0e1-2340302] LOG - Source path scans skipped since irregular :          0
+2026-10-07 19:20:43.235 [b0e1-2340302] LOG - Source path scans excluded                :          0
+2026-10-07 19:20:43.235 [b0e1-2340302] LOG - Source directory scans completed          :          0
+2026-10-07 19:20:43.235 [b0e1-2340302] LOG - Source file scans completed               :          0
+2026-10-07 19:20:43.235 [b0e1-2340302] LOG Source directory creates attempted          :          0
+2026-10-07 19:20:43.235 [b0e1-2340302] LOG - Source directory creates failed           :          0
+2026-10-07 19:20:43.235 [b0e1-2340302] LOG - Source directory created or existed       :          0
+2026-10-07 19:20:43.235 [b0e1-2340302] LOG Source file transfers attempted             :          0
+2026-10-07 19:20:43.235 [b0e1-2340302] LOG - Source file transfers failed              :          0
+2026-10-07 19:20:43.235 [b0e1-2340302] LOG - Source file transfers passed              :          0
+2026-10-07 19:20:43.235 [b0e1-2340302] LOG - Source file transfers skipped             :          0
+2026-10-07 19:20:43.235 [b0e1-2340302] LOG Source bytes transferred                    :          0
+2026-10-07 19:20:43.235 [b0e1-2340302] LOG ======= end File Transfer statistics =======

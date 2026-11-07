@@ -1,0 +1,42 @@
+Oct  9 00:06:12 host1.example.com ascp[3806940]: LOG Initializing FASP version 4.4.8.2596 b12cd13, license max rate=(unlimited), account no.=1, license no.=1234 product=10
+Oct  9 00:06:12 host1.example.com ascp[3806940]: LOG Configured symlink actions: create=1, follow=1, follow_wide=1, skip=0
+Oct  9 00:06:12 host1.example.com ascp[3806940]: LOG IBM Aspera High-Speed Transfer Server version 4.4.8.2596
+Oct  9 00:06:12 host1.example.com ascp[3806940]: LOG Requested symlink action(s): create=0, follow=1, follow_wide=0, skip=0
+Oct  9 00:06:12 host1.example.com ascp[3806940]: LOG Symlink actions adjusted platform-wise and per configuration: create=0, follow=1, follow_wide=1, skip=0
+Oct  9 00:06:12 host1.example.com ascp[3806940]: LOG FASP Session Start uuid=7f5aeef0-3c15-40c0-9b6b-259be20b1ba2 op=recv status=started source=C:/src/file1 dest=/dst/file1 source_prefix=- local=198.51.100.3:33001 peer=198.51.100.2:57857 tcp_port=33001 os="Linux 5.14.0-687.52.1.el9_8.x86_64 #1 SMP PREEMPT_DYNAMIC Wed Sep 23 14:20:15 EDT 2026" ver=4.4.8.2596 b12cd13 lic=10:1:1234 peeros="Darwin 25.6.0 Darwin Kernel Version 25.6.0: Fri Jul 31 19:18:49 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6000" peerver=4.4.8.2592 6a5e6bf peerlic=6:1:1 proto_sess=20003 proto_udp=20000 proto_bwmeas=20000 proto_data=2000f
+Oct  9 00:06:12 host1.example.com ascp[3806940]: LOG FASP Session Params uuid=7f5aeef0-3c15-40c0-9b6b-259be20b1ba2 userid=1000 user="xfer" targetrate=500000000 minrate=0 rate_policy=fair cipher=aes-128-gcm resume=1 create=8 extra_create=0 ovr=1 times=0 precalc=no precalc_disable=true mf=0 mf_path=- mf_suffix=.aspera-inprogress partial_file_suffix=- files_encrypt=no files_decrypt=no file_csum=NONE fips_enabled=no dgram_sz=0 tcp_mode=no rtt_auto=yes cookie="-" vl_proto_ver=1  peer_vl_proto_ver=1 vl_local=0 vlink_remote=0 vl_sess_id=22096 srcbase=- rd_sz=0 wr_sz=0 cluster_num_nodes=1 cluster_node_id=0 cluster_multi_session_threshold=-1 range=0-0 keepalive=no test_login=no proxy_ip=- net_rc_alg=alg_delay exclude_older/newer_than=0/0 xfer_id=-
+Oct  9 00:06:12 host1.example.com ascp[3806940]: LOG Measured pMTU: 1492 Bytes, start_brtt: 30 ms
+Oct  9 00:06:12 host1.example.com ascp[3806940]: LOG datagram size 1472B, block size 1408B, path MTU 1492B
+Oct  9 00:06:13 host1.example.com ascp[3806940]: LOG Receiver bl t/o/r/d/ts/c/h=0/0/0/0/0/1/1 rex_rtt l/h/s/o=0/0/30/38 ooo_rtt l/h/s/o=0/0/30/38 rate_rtt b/l/h/s/r/f=30/0/0/30/0/1 ctl bm/bs=0/0 rex n/s/q/v/a/r=0/0/0/0/0/0 bl l/d/o/r/a/x/dl/df/dm/ds=0/0/0/0/0/0/0/0/0/0 disk l/h/b=0/0/0 vlink lq/lo/rq/ro=0/0/0/0 rate t/m/c/n/vl/vr/r=500000000/0/170000000/170000000/500000000/500000000/500000000 prog t/f/e=0/0/1082099 rcvD=0
+Oct  9 00:06:13 host1.example.com ascp[3806940]: LOG Receiver DS Qs ds/n/rq/pa/ao/ap/rd/ru/no/po/pc/do/tv/sv=1/0/0/0/0/0/0/1/0/0/0/0/0/0 Rs i/o=1/1 mgmt backlog i/s/n = 0/3/0 1/4/0
+Oct  9 00:06:21 host1.example.com ascp[3806940]: ERR PEER ABORT: Received sesserr notification from peer, reason FASP_ABORT_LOCAL
+Oct  9 00:06:21 host1.example.com ascp[3806940]: ERR PEER ABORTED: Shutting down sink/receiver,  reason FASP_ABORT_LOCAL
+Oct  9 00:06:21 host1.example.com ascp[3806940]: ERR One or more transfers failed (client)
+Oct  9 00:06:21 host1.example.com ascp[3806940]: LOG Receiver bl t/o/r/d/ts/c/h=0/0/0/0/0/1/1 rex_rtt l/h/s/o=0/0/30/38 ooo_rtt l/h/s/o=0/0/30/38 rate_rtt b/l/h/s/r/f=30/0/0/30/0/1 ctl bm/bs=0/0 rex n/s/q/v/a/r=0/0/0/0/0/0 bl l/d/o/r/a/x/dl/df/dm/ds=0/0/0/0/0/0/0/0/0/0 disk l/h/b=0/0/0 vlink lq/lo/rq/ro=0/0/0/0 rate t/m/c/n/vl/vr/r=500000000/0/500000000/500000000/500000000/500000000/500000000 prog t/f/e=0/0/8995175 rcvD=0
+Oct  9 00:06:21 host1.example.com ascp[3806940]: LOG Receiver DS Qs ds/n/rq/pa/ao/ap/rd/ru/no/po/pc/do/tv/sv=1/0/0/0/0/0/0/0/0/0/0/0/0/0 Rs i/o=1/1 mgmt backlog i/s/n = 0/3/0 1/4/0
+Oct  9 00:06:21 host1.example.com ascp[3806940]: LOG Sink terminating with 1 active ds's
+Oct  9 00:06:21 host1.example.com ascp[3806940]: ERR FASP receiver had error, errcode 19 errstr [One or more transfers failed (client)]
+Oct  9 00:06:21 host1.example.com ascp[3806940]: ERR Peer FASP sender had error, errcode 76 errstr [One or more transfers failed]
+Oct  9 00:06:21 host1.example.com ascp[3806940]: ERR One or more transfers failed (client)
+Oct  9 00:06:21 host1.example.com ascp[3806940]: LOG FASP Session Stop uuid=7f5aeef0-3c15-40c0-9b6b-259be20b1ba2 op=recv status=failed errcode=76 errstr="One or more transfers failed" source=C:/src/file1 dest=/dst/file1 source_prefix=- local=198.51.100.3:33001 peer=198.51.100.2:57857 tcp_port=33001 os="Linux 5.14.0-687.52.1.el9_8.x86_64 #1 SMP PREEMPT_DYNAMIC Wed Sep 23 14:20:15 EDT 2026" ver=4.4.8.2596 b12cd13 lic=10:1:1234 peeros="Darwin 25.6.0 Darwin Kernel Version 25.6.0: Fri Jul 31 19:18:49 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6000" peerver=4.4.8.2592 6a5e6bf peerlic=6:1:1 proto_sess=20003 proto_udp=20000 proto_bwmeas=20000 proto_data=2000f
+Oct  9 00:06:21 host1.example.com ascp[3806940]: LOG FASP Session Params uuid=7f5aeef0-3c15-40c0-9b6b-259be20b1ba2 userid=1000 user="xfer" targetrate=500000000 minrate=0 rate_policy=fair cipher=aes-128-gcm resume=1 create=8 extra_create=0 ovr=1 times=0 precalc=no precalc_disable=true mf=0 mf_path=- mf_suffix=.aspera-inprogress partial_file_suffix=.partial files_encrypt=no files_decrypt=no file_csum=NONE fips_enabled=no dgram_sz=0 tcp_mode=no rtt_auto=yes cookie="-" vl_proto_ver=1  peer_vl_proto_ver=1 vl_local=0 vlink_remote=0 vl_sess_id=22096 srcbase=- rd_sz=0 wr_sz=0 cluster_num_nodes=1 cluster_node_id=0 cluster_multi_session_threshold=-1 range=0-0 keepalive=no test_login=no proxy_ip=- net_rc_alg=alg_delay exclude_older/newer_than=0/0 xfer_id=-
+Oct  9 00:06:21 host1.example.com ascp[3806940]: LOG FASP Session Statistics [Receiver] id=7f5aeef0-3c15-40c0-9b6b-259be20b1ba2 delay=38ms rex_delay=38ms ooo_delay=38ms solicited_rex=0.00% rcvd_rex=0.00% rcvd_dups=0.00% ave_xmit_rate 0.00Kbps effective=0.00% effective_rate=0.00Kbps (detail: good_blks 0 bl_total 0 bl_orig 0 bl_rex 0 dup_blks 0 dup_last_blks 0 drop_blks_xnf 0) (sndr ctl: sent 9 rcvd 9 lost 0 lost 0.00%) (rcvr ctl: sent 86 rcvd 86 lost 0 lost 0.00%) (rex  ctl: sent 0 rcvd 0 lost 0 lost 0.00%) (progress: tx_bytes 0 file_bytes 0 tx_time 8995175) rex_xmit_blks 0  xmit_total 0 rex_xmit_pct 0.00%
+Oct  9 00:06:22 host1.example.com ascp[3806940]: LOG ======= File Transfer statistics =======
+Oct  9 00:06:22 host1.example.com ascp[3806940]: LOG ------- Source statistics -------
+Oct  9 00:06:22 host1.example.com ascp[3806940]: LOG Source argument scans attempted             :          1
+Oct  9 00:06:22 host1.example.com ascp[3806940]: LOG - Source argument scans completed           :          1
+Oct  9 00:06:22 host1.example.com ascp[3806940]: LOG Source path scans attempted                 :          1
+Oct  9 00:06:22 host1.example.com ascp[3806940]: LOG - Source path scans failed                  :          0
+Oct  9 00:06:22 host1.example.com ascp[3806940]: LOG - Source path scans skipped since irregular :          0
+Oct  9 00:06:22 host1.example.com ascp[3806940]: LOG - Source path scans excluded                :          0
+Oct  9 00:06:22 host1.example.com ascp[3806940]: LOG - Source directory scans completed          :          0
+Oct  9 00:06:22 host1.example.com ascp[3806940]: LOG - Source file scans completed               :          0
+Oct  9 00:06:22 host1.example.com ascp[3806940]: LOG Source directory creates attempted          :          0
+Oct  9 00:06:22 host1.example.com ascp[3806940]: LOG - Source directory creates failed           :          0
+Oct  9 00:06:22 host1.example.com ascp[3806940]: LOG - Source directory created or existed       :          0
+Oct  9 00:06:22 host1.example.com ascp[3806940]: LOG Source file transfers attempted             :          1
+Oct  9 00:06:22 host1.example.com ascp[3806940]: LOG - Source file transfers failed              :          0
+Oct  9 00:06:22 host1.example.com ascp[3806940]: LOG - Source file transfers passed              :          0
+Oct  9 00:06:22 host1.example.com ascp[3806940]: LOG - Source file transfers skipped             :          0
+Oct  9 00:06:22 host1.example.com ascp[3806940]: LOG Source bytes transferred                    :          0
+Oct  9 00:06:22 host1.example.com ascp[3806940]: LOG ======= end File Transfer statistics =======

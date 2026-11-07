@@ -1,0 +1,61 @@
+2026-09-25 13:19:27.873 [52d2-7594640] LOG Initializing FASP version 4.4.8.2592 6a5e6bf, license max rate=(unlimited), account no.=1, license no.=1234 product=53
+2026-09-25 13:19:27.873 [52d2-7594640] LOG Configured symlink actions: create=1, follow=1, follow_wide=0, skip=0
+2026-09-25 13:19:27.873 [52d2-7594640] LOG IBM Aspera Transfer SDK version 1.1.9
+2026-09-25 13:19:27.874 [52d2-7594640] ERR /Users/user/.aspera/lib/ossl-modules not found
+2026-09-25 13:19:27.875 [52d2-7594640] LOG (access key) Not present
+2026-09-25 13:19:28.074 [52d2-7594640] LOG [asssh] remote host-key fingerprint 0000000000000000000000000000000000000001
+2026-09-25 13:19:29.012 [52d2-7594640] LOG [asssh] authentication succeeded, proceeding.
+2026-09-25 13:19:29.227 [52d2-7594640] LOG Xattrs-preserving modes for starters: --preserve-xattrs=none, --remote-preserve-xattrs=none; --preserve-acls=none, --remote-preserve-acls=none
+2026-09-25 13:19:29.227 [52d2-7594640] LOG changing session job size from 0 to 2 to match server configuration
+2026-09-25 13:19:29.227 [52d2-7594640] LOG server configuration specifies transit encryption cipher 7, user requests 1
+2026-09-25 13:19:29.227 [52d2-7594640] LOG Precalculate job size not supported in persistent session, disabling
+2026-09-25 13:19:29.228 [52d2-7594640] LOG MTU discovery not implemented
+2026-09-25 13:19:29.228 [52d2-7594640] ERR Warning: Unable to set Dont Fragment (DF) bit on
+2026-09-25 13:19:29.228 [52d2-7594644] LOG FASP Session Start uuid=c8c2cc47-f25c-4609-a8fe-2dbf42454f91 op=recv status=started source= dest= source_prefix=- local=198.51.100.2:64547 peer=198.51.100.3:33001 tcp_port=33001 os="Darwin 25.6.0 Darwin Kernel Version 25.6.0: Fri Jul 31 19:18:49 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6000" ver=4.4.8.2592 6a5e6bf lic=10:1:1234 peeros="Linux 5.14.0-687.42.1.el9_8.x86_64 #1 SMP PREEMPT_DYNAMIC Sun Aug 23 21:35:07 EDT 2026" peerver=4.4.8.2596 b12cd13 peerlic=6:1:1 proto_sess=20003 proto_udp=20000 proto_bwmeas=20000 proto_data=2000f
+2026-09-25 13:19:29.228 [52d2-7594644] LOG FASP Session Params uuid=c8c2cc47-f25c-4609-a8fe-2dbf42454f91 userid=1000 user="xfer" targetrate=500000000000 minrate=0 rate_policy=fair cipher=aes-128-gcm resume=0 create=0 extra_create=3 ovr=255 times=0 precalc=no precalc_disable=false mf=0 mf_path=- mf_suffix=.aspera-inprogress partial_file_suffix=- files_encrypt=no files_decrypt=no file_csum=NONE fips_enabled=no dgram_sz=0 tcp_mode=no rtt_auto=yes cookie="-" vl_proto_ver=1  peer_vl_proto_ver=1 vl_local=0 vlink_remote=0 vl_sess_id=21760 srcbase=- rd_sz=0 wr_sz=0 cluster_num_nodes=1 cluster_node_id=0 cluster_multi_session_threshold=-1 range=0-0 keepalive=yes test_login=no proxy_ip=- net_rc_alg=alg_delay exclude_older/newer_than=0/0 xfer_id=-
+2026-09-25 13:19:29.370 [52d2-7594640] LOG Measured pMTU: 1492 Bytes, start_brtt: 22 ms
+2026-09-25 13:19:29.370 [52d2-7594640] ERR Warning: unable to turn off Dont Fragment (DF) bit
+2026-09-25 13:19:29.370 [52d2-7594640] LOG datagram size 1472B, block size 1408B, path MTU 1492B
+2026-09-25 13:19:30.440 [52d2-7594644] LOG Receiver bl t/o/r/d/ts/c/h=0/0/0/0/0/1/1 rex_rtt l/h/s/o=0/0/22/30 ooo_rtt l/h/s/o=0/0/22/30 rate_rtt b/l/h/s/r/f=22/0/0/22/0/1 ctl bm/bs=0/0 rex n/s/q/v/a/r=0/0/0/0/0/0 bl l/d/o/r/a/x/dl/df/dm/ds=0/0/0/0/0/0/0/0/0/0 disk l/h/b=0/0/0 vlink lq/lo/rq/ro=0/0/0/0 rate t/m/c/n/vl/vr/r=500000000000/0/159999983616/159999983616/500000000000/500000000000/500000000000 prog t/f/e=0/0/1061187 rcvD=0
+2026-09-25 13:19:30.441 [52d2-7594644] LOG Receiver DS Qs ds/n/rq/pa/ao/ap/rd/ru/no/po/pc/do/tv/sv=0/0/0/0/0/0/0/0/0/0/0/0/0/0 Rs i/o=0/0 mgmt backlog i/s/n = 0/4/0
+2026-09-25 13:19:34.649 [52d2-7594644] LOG Add receiver src : /dir1/dir2/file1 dst : /Users/user/dir3/aspera/dir4/tmp/dir5/dir6/dir7/dir6/file2
+2026-09-25 13:19:34.649 [52d2-7594644] LOG Add receiver src : /dir1/dir2/file3 dst : /Users/user/dir3/aspera/dir4/tmp/dir5/dir6/dir7/dir6/file4
+2026-09-25 13:19:34.650 [52d2-7594644] LOG Add receiver src : /dir1/dir2/file5 dst : /Users/user/dir3/aspera/dir4/tmp/dir5/dir6/dir7/dir6/file6
+2026-09-25 13:19:34.650 [52d2-7594644] LOG Add receiver src : /dir1/dir2/file7 dst : /Users/user/dir3/aspera/dir4/tmp/dir5/dir6/dir7/dir6/file8
+2026-09-25 13:19:34.650 [52d2-7594644] LOG Add receiver src : /dir1/dir2/file9 dst : /Users/user/dir3/aspera/dir4/tmp/dir5/dir6/dir7/dir6/file10
+2026-09-25 13:19:34.863 [52d2-7594644] LOG FASP Transfer Start uuid=c8c2cc47-f25c-4609-a8fe-2dbf42454f91 op=recv status=started file="/dst/file1" size=1024 start_byte=0 rate=500.00Gbps loss=0.00 rexreqs=0 overhead=0 mtime="2026-09-25 13:18:43"
+2026-09-25 13:19:34.864 [52d2-7594644] LOG FASP Transfer Start uuid=c8c2cc47-f25c-4609-a8fe-2dbf42454f91 op=recv status=started file="/dst/file1" size=25 start_byte=0 rate=500.00Gbps loss=0.00 rexreqs=0 overhead=0 mtime="2026-09-25 13:19:14"
+2026-09-25 13:19:34.864 [52d2-7594644] LOG FASP Transfer Start uuid=c8c2cc47-f25c-4609-a8fe-2dbf42454f91 op=recv status=started file="/dst/file1" size=25 start_byte=0 rate=500.00Gbps loss=0.00 rexreqs=0 overhead=0 mtime="2026-09-25 13:19:21"
+2026-09-25 13:19:34.928 [52d2-7594644] LOG FASP Transfer Start uuid=c8c2cc47-f25c-4609-a8fe-2dbf42454f91 op=recv status=started file="/dst/file1" size=104857600 start_byte=0 rate=500.00Gbps loss=0.00 rexreqs=0 overhead=0 mtime="2026-09-25 13:18:36"
+2026-09-25 13:19:34.941 [52d2-7594644] LOG FASP Transfer Stop uuid=c8c2cc47-f25c-4609-a8fe-2dbf42454f91 op=recv status=success file="/dst/file1" size=1024 start_byte=0 rate=105.00Kbps elapsed=0.08s loss=0.00 rexreqs=0 overhead=0 mtime="2026-09-25 13:18:43"
+2026-09-25 13:19:34.941 [52d2-7594644] LOG FASP Transfer Stop uuid=c8c2cc47-f25c-4609-a8fe-2dbf42454f91 op=recv status=success file="/dst/file1" size=25 start_byte=0 rate=2.00Kbps elapsed=0.08s loss=0.00 rexreqs=0 overhead=0 mtime="2026-09-25 13:19:14"
+2026-09-25 13:19:34.941 [52d2-7594644] LOG FASP Transfer Stop uuid=c8c2cc47-f25c-4609-a8fe-2dbf42454f91 op=recv status=success file="/dst/file1" size=25 start_byte=0 rate=2.00Kbps elapsed=0.08s loss=0.00 rexreqs=0 overhead=0 mtime="2026-09-25 13:19:21"
+2026-09-25 13:19:35.481 [52d2-7594644] LOG FASP Transfer Start uuid=c8c2cc47-f25c-4609-a8fe-2dbf42454f91 op=recv status=started file="/dst/file1" size=104857600 start_byte=0 rate=500.00Gbps loss=0.00 rexreqs=0 overhead=0 mtime="2026-09-25 13:19:05"
+2026-09-25 13:19:37.280 [52d2-7594644] LOG FASP Transfer Stop uuid=c8c2cc47-f25c-4609-a8fe-2dbf42454f91 op=recv status=success file="/dst/file1" size=104857600 start_byte=0 rate=356.72Mbps elapsed=2.35s loss=68.29 rexreqs=50854 overhead=13792 mtime="2026-09-25 13:18:36"
+2026-09-25 13:19:37.293 [52d2-7594644] LOG FASP Transfer Stop uuid=c8c2cc47-f25c-4609-a8fe-2dbf42454f91 op=recv status=success file="/dst/file1" size=104857600 start_byte=0 rate=462.95Mbps elapsed=1.81s loss=78.54 rexreqs=58487 overhead=15854 mtime="2026-09-25 13:19:05"
+2026-09-25 13:19:39.828 [52d2-7594644] LOG FASP session shutdown (management interface DONE command)
+2026-09-25 13:19:39.828 [52d2-7594658] LOG Session notification: type=19 len=8 reason=0 (FASP_CLOSE_NORMAL)
+2026-09-25 13:19:40.026 [52d2-7594644] LOG Receiver bl t/o/r/d/ts/c/h=179010/69247/109341/422/349046/148950/148950 rex_rtt l/h/s/o=22/522/26/27 ooo_rtt l/h/s/o=200/0/44/228 rate_rtt b/l/h/s/r/f=22/22/214/23/0/1 ctl bm/bs=0/0 rex n/s/q/v/a/r=0/2999539/12885/1/0/29639 bl l/d/o/r/a/x/dl/df/dm/ds=79703/29646/1/0/0/415/7/0/0/0 disk l/h/b=0/3/0 vlink lq/lo/rq/ro=0/0/0/0 rate t/m/c/n/vl/vr/r=500000000000/0/289574649856/289574649856/500000000000/500000000000/500000000000 prog t/f/e=209716274/209716274/10646558 rcvD=5
+2026-09-25 13:19:40.026 [52d2-7594644] LOG Receiver DS Qs ds/n/rq/pa/ao/ap/rd/ru/no/po/pc/do/tv/sv=0/0/0/0/0/0/0/0/0/0/0/0/0/0 Rs i/o=5/5 mgmt backlog i/s/n = 0/4/0
+2026-09-25 13:19:40.028 [52d2-7594644] LOG FASP Session Stop uuid=c8c2cc47-f25c-4609-a8fe-2dbf42454f91 op=recv status=success source= dest= source_prefix=- local=198.51.100.2:64547 peer=198.51.100.3:33001 tcp_port=33001 os="Darwin 25.6.0 Darwin Kernel Version 25.6.0: Fri Jul 31 19:18:49 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6000" ver=4.4.8.2592 6a5e6bf lic=10:1:1234 peeros="Linux 5.14.0-687.42.1.el9_8.x86_64 #1 SMP PREEMPT_DYNAMIC Sun Aug 23 21:35:07 EDT 2026" peerver=4.4.8.2596 b12cd13 peerlic=6:1:1 proto_sess=20003 proto_udp=20000 proto_bwmeas=20000 proto_data=2000f
+2026-09-25 13:19:40.028 [52d2-7594644] LOG FASP Session Params uuid=c8c2cc47-f25c-4609-a8fe-2dbf42454f91 userid=1000 user="xfer" targetrate=500000000000 minrate=0 rate_policy=fair cipher=aes-128-gcm resume=0 create=0 extra_create=3 ovr=255 times=0 precalc=no precalc_disable=false mf=0 mf_path=- mf_suffix=.aspera-inprogress partial_file_suffix=.partial files_encrypt=no files_decrypt=no file_csum=NONE fips_enabled=no dgram_sz=0 tcp_mode=no rtt_auto=yes cookie="-" vl_proto_ver=1  peer_vl_proto_ver=1 vl_local=0 vlink_remote=0 vl_sess_id=21760 srcbase=- rd_sz=0 wr_sz=0 cluster_num_nodes=1 cluster_node_id=0 cluster_multi_session_threshold=-1 range=0-0 keepalive=yes test_login=no proxy_ip=- net_rc_alg=alg_delay exclude_older/newer_than=0/0 xfer_id=-
+2026-09-25 13:19:40.028 [52d2-7594644] LOG FASP Session Statistics [Receiver] id=c8c2cc47-f25c-4609-a8fe-2dbf42454f91 delay=25ms rex_delay=27ms ooo_delay=228ms solicited_rex=57.32% rcvd_rex=61.08% rcvd_dups=16.56% ave_xmit_rate 421.45Mbps effective=42.79% effective_rate=180.35Mbps (detail: good_blks 149371 bl_total 179010 bl_orig 69247 bl_rex 109341 dup_blks 29646 dup_last_blks 7 drop_blks_xnf 415) (sndr ctl: sent 14 rcvd 10 lost 4 lost 28.57%) (rcvr ctl: sent 206 rcvd 206 lost 0 lost 0.00%) (rex  ctl: sent 12885 rcvd 12885 lost 0 lost 0.00%) (progress: tx_bytes 209716274 file_bytes 209716274 tx_time 10646558) rex_xmit_blks 200084  xmit_total 349046 rex_xmit_pct 57.32%
+2026-09-25 13:19:41.032 [52d2-7594640] LOG ======= File Transfer statistics =======
+2026-09-25 13:19:41.032 [52d2-7594640] LOG ------- Source statistics -------
+2026-09-25 13:19:41.032 [52d2-7594640] LOG Source argument scans attempted             :          5
+2026-09-25 13:19:41.032 [52d2-7594640] LOG - Source argument scans completed           :          4
+2026-09-25 13:19:41.032 [52d2-7594640] LOG Source path scans attempted                 :          5
+2026-09-25 13:19:41.032 [52d2-7594640] LOG - Source path scans failed                  :          0
+2026-09-25 13:19:41.032 [52d2-7594640] LOG - Source path scans skipped since irregular :          0
+2026-09-25 13:19:41.032 [52d2-7594640] LOG - Source path scans excluded                :          0
+2026-09-25 13:19:41.032 [52d2-7594640] LOG - Source directory scans completed          :          0
+2026-09-25 13:19:41.033 [52d2-7594640] LOG - Source file scans completed               :          5
+2026-09-25 13:19:41.033 [52d2-7594640] LOG Source directory creates attempted          :          0
+2026-09-25 13:19:41.033 [52d2-7594640] LOG - Source directory creates failed           :          0
+2026-09-25 13:19:41.033 [52d2-7594640] LOG - Source directory created or existed       :          0
+2026-09-25 13:19:41.033 [52d2-7594640] LOG Source file transfers attempted             :          5
+2026-09-25 13:19:41.033 [52d2-7594640] LOG - Source file transfers failed              :          0
+2026-09-25 13:19:41.033 [52d2-7594640] LOG - Source file transfers passed              :          5
+2026-09-25 13:19:41.033 [52d2-7594640] LOG - Source file transfers skipped             :          0
+2026-09-25 13:19:41.033 [52d2-7594640] LOG Source bytes transferred                    :  209716274
+2026-09-25 13:19:41.033 [52d2-7594640] LOG ======= end File Transfer statistics =======

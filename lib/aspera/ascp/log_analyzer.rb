@@ -3,7 +3,11 @@
 # cspell:ignore asperascp asws getname lastlog lsass pcap tokengen trapd userdata winuser wtmp
 require 'resolv'
 require 'set'
+require 'stringio'
 require 'time'
+require 'zlib'
+require 'aspera/assert'
+require 'aspera/log'
 require 'aspera/ascp/log_analyzer/log_file'
 require 'aspera/ascp/log_analyzer/records'
 
@@ -14,12 +18,16 @@ module Aspera
     class LogAnalyzer
       # Oldest ascp version for which the analysis is designed
       MIN_VERSION = '4.0'
+      # Path that designates the standard input
+      STDIN_PATH = '-'
+      # First two bytes of a gzip file
+      GZIP_MAGIC = "\x1F\x8B".b.freeze
       # Files analyzed when scanning a folder
       INCLUDED_FILES = /transfer|messages|log/i
       # Files not analyzed when scanning a folder (path relative to folder)
       EXCLUDED_FILES = %r{async|ssl_|\.dat|\.xml|\.html|graph|winuser|manager|asperascp\.20|background|asws|node|plugin|opt/aspera/var|\.exe|trapd|rtf|lsass|lastlog|wtmp|
         process|stats|production|mongrel|console|ntp\.|prepost|aspx|aspshell|tokengen|userdata|http|asconfigurator|ascmd|\.jpg|\.png|ui\.|connect|ssh|
-        stderr|stdout|central|sync|\.zip|\.msi|\.gz|\.tgz|\.tbz|\.tar|\.rar|\.bz2?|\.pcap|analysis\.txt|\.7z}ix
+        stderr|stdout|central|sync|\.zip|\.msi|\.tgz|\.tbz|\.tar|\.rar|\.bz2?|\.pcap|analysis\.txt|\.7z}ix
       # Folders not scanned
       EXCLUDED_FOLDERS = /\$|recycle/i
       # Statistics summed over log files
@@ -29,28 +37,108 @@ module Aspera
       # Maximum values of log files
       MAXIMA = {max_total: 'max_throughput', max_out: 'max_send', max_in: 'max_receive', max_sess: 'max_sessions'}.freeze
 
+      # Default diagnostic thresholds
+      DEFAULT_THRESHOLDS = {
+        efficiency:                90.0,
+        control_loss_percent:      5.0,
+        control_loss_sent:         10,
+        retry_window:              3600,
+        last_error_window:         60,
+        rate_decline_ratio:        0.7,
+        rate_decline_min_samples:  10,
+        rate_decline_delay:        20,
+        rate_decline_end_fraction: 0.1,
+        license_expiry_days:       30,
+        small_files_min_count:     100,
+        small_files_max_mean:      1_000_000
+      }.freeze
+
       # @return [Array<LogFile>] analyzed log files
-      attr_reader :log_files
+      attr_reader :log_files, :thresholds
 
       # @param period     [Integer]      Snapshot period in seconds
       # @param zero_bytes [Boolean]      Include sessions without transferred bytes
       # @param mtu        [Integer, nil] MTU to use when not found in logs
       # @param resolve    [Boolean]      Resolve peer addresses to host names
-      def initialize(period: 60, zero_bytes: false, mtu: nil, resolve: false)
-        @options = {period: period, zero_bytes: zero_bytes, mtu: mtu}
+      # @param thresholds [Hash]         Diagnostic thresholds
+      # @param timezone   [String, nil]  Time zone of the log lines: `UTC` or `+HH:MM`. Time zone of the analyst if nil.
+      def initialize(period: 60, zero_bytes: false, mtu: nil, resolve: false, thresholds: {}, timezone: nil)
+        self.class.check_timezone(timezone)
+        @timezone = timezone
+        thresholds = thresholds.transform_keys(&:to_sym)
+        unknown = thresholds.keys - DEFAULT_THRESHOLDS.keys
+        Aspera.assert(unknown.empty?, type: ArgumentError) { "Unknown threshold: #{unknown.join(', ')}" }
+        @thresholds = DEFAULT_THRESHOLDS.merge(thresholds)
+        @options = {period: period, zero_bytes: zero_bytes, mtu: mtu, thresholds: @thresholds, timezone: timezone}
         @resolve = resolve
         @log_files = []
       end
 
       class << self
-        # @param path [String] log file, or folder
+        # @param timezone [String, nil] Time zone of the log lines: `UTC` or `+HH:MM`
+        # @raise [ParameterError] if the time zone is not valid
+        def check_timezone(timezone)
+          return if timezone.nil?
+          Time.at(0, in: timezone)
+        rescue ArgumentError
+          raise ParameterError, "Invalid time zone: #{timezone.inspect}, expected `UTC` or `+HH:MM`"
+        end
+
+        # @param path [String] log file, `-` (standard input), or folder
         # @return [Array<String>] the log file, or the log files in the folder (recursively)
         def log_paths(path)
           return [path] unless File.directory?(path)
-          scan_folder(path, path, [])
+          without_links(scan_folder(path, path, []))
+        end
+
+        # Read the lines of a log file: plain, or compressed with gzip (detected with its first bytes)
+        # @param path     [String]   Log file, or `-` for the standard input
+        # @param encoding [Encoding] Encoding of lines
+        # @yieldparam line [String]
+        def read_lines(path, encoding, &block)
+          io = path == STDIN_PATH ? StringIO.new($stdin.binmode.read) : File.open(path, 'rb')
+          gzip = io.read(2) == GZIP_MAGIC
+          io.rewind
+          io = Zlib::GzipReader.new(io, external_encoding: encoding) if gzip
+          io.set_encoding(encoding) unless gzip
+          io.each_line(&block)
+        ensure
+          io&.close
+        end
+
+        # Load the log files of a path
+        # In a folder, a file that is not an ascp log is ignored. A file given explicitly must be an ascp log.
+        # @param path [String] log file, `-` (standard input), or folder
+        # @yieldparam file [String] log file
+        # @yieldreturn [#ascp?] the loaded log
+        # @return [Array] the loaded logs that are ascp logs
+        def load_logs(path)
+          explicit = !File.directory?(path)
+          log_paths(path).filter_map do |file|
+            log = yield(file)
+            next log if log.ascp?
+            Aspera.assert(!explicit, type: ParameterError) { "Not an ascp log: #{file}" }
+            Log.log.debug { "Ignored, not an ascp log: #{file}" }
+            nil
+          rescue Zlib::Error => e
+            raise ParameterError, "Cannot read #{file}: #{e.message}" if explicit
+            Log.log.warn("Ignored, cannot read #{file}: #{e.message}")
+            nil
+          end
         end
 
         private
+
+        # `ascp` creates `<name>.log` as a hard link to the current rotated file `<name>.<n>.log`: keep only one of them.
+        # @return [Array<String>] files, without those that are the same file as a previous one
+        def without_links(files)
+          seen = Set.new
+          files.select do |file|
+            stat = File.stat(file)
+            # No inode number on some platforms
+            stat.ino.zero? || seen.add?([stat.dev, stat.ino])
+          end
+        end
 
         # @return [Array<String>] files, with the log files of folder added
         def scan_folder(root, folder, files)
@@ -68,10 +156,10 @@ module Aspera
       end
 
       # Analyze a log file, or the log files in a folder (recursively)
-      # @param path [String] file or folder
+      # @param path [String] file, `-` (standard input) or folder
       # @return [self]
       def add(path)
-        self.class.log_paths(path).each { |file| @log_files.push(LogFile.new(file, **@options).analyze) }
+        @log_files.concat(self.class.load_logs(path) { |file| LogFile.new(file, **@options).analyze })
         self
       end
 
@@ -129,7 +217,7 @@ module Aspera
         single_file(rows)
       end
 
-      # @return [Array<Hash>] one row per diagnostic of sessions: id, severity, message
+      # @return [Array<Hash>] one row per diagnostic of sessions: id, severity, message, recommendation (if the diagnostic has one)
       def diagnostics
         single_file(@log_files.flat_map(&:diagnostics))
       end
@@ -218,7 +306,7 @@ module Aspera
       private
 
       def iso(time)
-        Time.at(time).iso8601 if time
+        Time.at(time, in: @timezone).iso8601 if time
       end
 
       def each_session

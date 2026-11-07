@@ -4360,7 +4360,7 @@ To analyze `ascp` log files (`ascp` 4.0 and later), give log files, or folders w
 |---------------------|-----------------------------------------------------------------|
 | `summary`           | Statistics of sessions, errors by category, maximum throughput, findings. |
 | `sessions`          | One row per session, with diagnostics.                          |
-| `diagnostics`       | One row per diagnostic of a session: `id`, `severity` (`error`, `warning`, `info`) and `message`. |
+| `diagnostics`       | One row per diagnostic of a session: `id`, `severity` (`error`, `warning`, `info`), `message` and `recommendation` (action to take, when the diagnostic has one). |
 | `multi_sessions`    | Multi-session transfers: sessions grouped by transfer, with aggregate rate. |
 | `snapshots`         | Aggregate rates per period.                                     |
 | `snapshot_sessions` | Rates of each session per period.                               |
@@ -4371,6 +4371,15 @@ To analyze `ascp` log files (`ascp` 4.0 and later), give log files, or folders w
 | `records`           | Log lines parsed into records: `samples`, `sessions` or `transfers` (see below). |
 | `fields`            | Description of the fields of records: `samples`, `sessions` or `transfers`. |
 
+Log files compressed with gzip (e.g. rotations `aspera.log-20261101.gz`, `aspera-scp-transfer.1.log.gz`) are read directly, in a folder or given as argument; gzip is detected from the first bytes of the file, not from its name. Argument `-` reads the logs from the standard input, plain or compressed with gzip:
+
+```shell
+<%=cmd%> config ascp logs summary /var/log/aspera.log-20261101.gz
+zcat /var/log/aspera.log-2026*.gz | <%=cmd%> config ascp logs summary -
+```
+
+A file must contain `ascp` log lines (`FASP` messages, or lines of process `ascp` in syslog): in a folder, other files are ignored; a file given as argument that is not an `ascp` log is refused.
+
 When logs of both sides of a session are analyzed (client and server), each session includes the status, error and diagnostics of the other side (`peer_side`, `peer_diagnostics`).
 
 For example, to list only errors:
@@ -4379,9 +4388,23 @@ For example, to list only errors:
 <%=cmd%> config ascp logs diagnostics /path/to/folder --select=@json:'{"severity":"error"}'
 ```
 
-Diagnostics of a session include: category of error (e.g. `udp_setup`, `storage`, `authentication`) with a hint, retry of a failed session, parameters set by the server (cipher, resume policy, virtual link), efficiency and loss of control messages, and for a sender, which limit of the receiver (network, disk, virtual link) or reading from storage limits the rate.
+Besides the default columns, `sessions` rows have context columns to filter sessions (show them with `--fields=ALL`, or select with `--fields=session,product_name,transport,authentication`, or filter with `--select`/`--query`); a column is absent when the log does not give it:
 
-Option `ascp_logs` (dot-notation) sets `period` (snapshot period in minutes, default `1`), `zero_bytes` (include sessions without transferred bytes), `mtu` (when not found in logs) and `resolve` (host names of peers), e.g. `--ascp-logs.period=5`.
+| Column           | Value                                                                                                              |
+|------------------|--------------------------------------------------------------------------------------------------------------------|
+| `product_name`   | Product that wrote the log, from the line `<product> version <version>` (e.g. `Aspera High-Speed Transfer Server`, `Aspera Transfer SDK`, `Aspera Connect`), without `IBM`. |
+| `transport`      | `ssh` if `Session Start` has `tcp_port`, `wss` if it has `wss_port`.                                                |
+| `authentication` | `token` if `ascp` logs that `ASPERA_AUTH_TOKEN` is set, else `node` if it logs the storage of a node access key. Never the token, the access key or the storage root. |
+| `proxy`          | Address of the proxy (`proxy_ip` of `Session Params`), absent if there is none.                                     |
+| `fips`           | `true` or `false` (`fips_enabled` of `Session Params`).                                                             |
+
+Diagnostics of a session include: category of error (e.g. `udp_setup`, `storage`, `authentication`) with a hint, retry of a failed session, parameters set by the server (cipher, resume policy, virtual link), efficiency and loss of control messages, decline of the rate during the transfer (`rate_decline`: second half of the samples below 70% of the first half, not evaluated if the peer changes the rate, if another transfer session starts meanwhile, or if the session failed), and for a sender, which limit of the receiver (network, disk, virtual link) or reading from storage limits the rate. Other diagnostics: no packet received for some seconds, by the receiver (`reception_interruption`) or by the sender, which gets no feedback of the receiver (`feedback_interruption`); overflow of the retransmission timer (`rex_timer_overflow`: the retransmission RTT is very large); maximum rate of the license of `ascp` below the target rate (`license_rate_limit`); license that expires within `license_expiry_days` (default `30`) of the start of the session, or has expired (`license_expiry`); and many small files transferred (`small_files`): at least `small_files_min_count` (default 100) files with a mean size below `small_files_max_mean` (default 1 MB). Two configuration messages, which have no effect on the transfer, are not diagnostics but only appear in `findings` of `summary`: OpenSSL modules folder not found (`ossl-modules not found`), and a schedule of virtual link capacity that could not be registered (`unable to submit change event`).
+
+The `recommendation` of a diagnostic is only in the list `diagnostics` (not in `sessions`, where `diagnostics` is a list of messages, and not in `summary`): it tells what to check or change, with the `ascp` options and `aspera.conf` parameters concerned (e.g. UDP port and firewalls, target and minimum rate, storage write, SSH). Diagnostics without action (e.g. information, or cancelled by the user) have no `recommendation`; the diagnostic of the category of a failed session gives its hint in `message`.
+
+Option `ascp_logs` (dot-notation) sets `period` (snapshot period in minutes, default `1`), `zero_bytes` (include sessions without transferred bytes), `mtu` (when not found in logs), `resolve` (host names of peers), `timezone`, and `thresholds` (diagnostic thresholds, including `rate_decline_ratio`, `rate_decline_min_samples`, `rate_decline_delay`, `rate_decline_end_fraction`, `license_expiry_days`, `small_files_min_count` and `small_files_max_mean`), e.g. `--ascp-logs.period=5` or `--ascp-logs.thresholds.efficiency=95`.
+
+Times of log lines are read in the time zone of the analyst, and displayed in it. To read the log of another system without shifting it, set the time zone of the log with `timezone`: `UTC` or an offset `+HH:MM`, e.g. `--ascp-logs.timezone=+02:00`. Syslog lines (`Oct 25 00:02:20`) have no year: it is deduced from the modification date of the log file (the current date for the standard input), the log being before this date. So a log from December to January, analyzed in March, has its December lines in the previous year. Keep the modification date of the file when copying it (e.g. `cp -p`, `scp -p`).
 
 Command `records` gives the log lines parsed into records, with the field names of the log lines, to filter them with `--out.query` (JMESPath):
 

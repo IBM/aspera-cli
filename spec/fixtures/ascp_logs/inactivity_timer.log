@@ -1,0 +1,264 @@
+2014-12-04 15:36:46 [f68-00000898] LOG Initializing FASP version 3.5.2.94667, license max rate=10 Mbps, account no.=1, license no.=1234 product=10
+2014-12-04 15:36:46 [f68-00000898] LOG Configured symlink actions: create=0, follow=1, follow_wide=0, skip=0
+2014-12-04 15:36:46 [f68-00000898] LOG Requested symlink action(s): create=0, follow=1, follow_wide=0, skip=0
+2014-12-04 15:36:46 [f68-00000898] LOG Symlink actions adjusted platform-wise and per configuration: create=0, follow=1, follow_wide=0, skip=0
+2014-12-04 15:36:46 [f68-00000098] LOG FASP Session Start uuid=a8491078-1bfb-4f3e-9b30-093030c19778 op=send status=started source=C:/src/file1 (4) dest=C:/dst/file1 source_prefix=- local=198.51.100.6:33001 peer=198.51.100.7:58444 tcp_port=22 os="Microsoft Windows 6.1 Service Pack 1" ver=3.5.2.94667 lic=10:1:1234 peeros="Microsoft Windows 6.1 Service Pack 1" peerver=3.5.1.92519 peerlic=6:1:1 proto_sess=20002 proto_udp=20000 proto_bwmeas=20000 proto_data=20008
+2014-12-04 15:36:46 [f68-00000098] LOG FASP Session Params uuid=a8491078-1bfb-4f3e-9b30-093030c19778 userid=1000 user="xfer" targetrate=10000000 minrate=0 rate_policy=fair cipher=none resume=2 create=0 ovr=1 times=0 precalc=yes mf=0 mf_path=- mf_suffix=.aspera-inprogress partial_file_suffix=- files_encrypt=no files_decrypt=no file_csum=none dgram_sz=0 prepostcmd=- tcp_mode=no rtt_auto=yes cookie="-" vl_proto_ver=1  peer_vl_proto_ver=1 vl_local=0 vlink_remote=0 vl_sess_id=521 srcbase=- rd_sz=0 wr_sz=0 cluster_num_nodes=1 cluster_node_id=0 range=0-0 keepalive=no test_login=no proxy_ip=- net_rc_alg=alg_delay exclude_older/newer_than=0/0
+2014-12-04 15:36:47 [f68-00000898] LOG datagram size 1492B, block size 1452B, path MTU 1492B
+2014-12-04 15:36:47 [f68-000004a8] LOG Add sender src : E:/dir9/dir10/dir11/dir12/dir13/file15.mov dst : -
+2014-12-04 15:36:47 [f68-000004a8] LOG Add sender src : E:/dir9/dir10/dir11/dir12/dir13/file16.mov dst : -
+2014-12-04 15:36:47 [f68-000004a8] LOG Add sender src : E:/dir9/dir10/dir11/dir12/dir13/file17.mov dst : -
+2014-12-04 15:36:47 [f68-000004a8] LOG Add sender src : E:/dir9/dir10/dir11/dir12/dir13/file18.mov dst : -
+2014-12-04 15:36:47 [f68-00000098] LOG FASP Transfer Start uuid=a8491078-1bfb-4f3e-9b30-093030c19778 op=send status=started file="C:/dst/file1" size=10769687746 start_byte=0 rate=10.00Mbps loss=0.00 rexreqs=0 overhead=0
+2014-12-04 15:37:06 [f68-00000cdc] LOG Sender bl t/o/r/dl=2717/2712/5/0 ctl bm/bs=0/0 rex b/r/n=5/5/0 r_ott q/s/n=0/0/147 rate t/m/c=10000000/0/2036200 prog t/f/e=3492060/3492060/18113183 xmtD=0
+2014-12-04 15:37:06 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:37:26 [f68-00000cdc] LOG Sender bl t/o/r/dl=4259/4249/10/0 ctl bm/bs=0/0 rex b/r/n=10/10/0 r_ott q/s/n=0/0/296 rate t/m/c=10000000/0/2263748 prog t/f/e=6123084/6123084/39391602 xmtD=0
+2014-12-04 15:37:26 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:37:46 [f68-00000cdc] LOG Sender bl t/o/r/dl=7337/7298/39/0 ctl bm/bs=0/0 rex b/r/n=39/24/0 r_ott q/s/n=6/0/458 rate t/m/c=10000000/0/2574924 prog t/f/e=10277256/10277256/58593631 xmtD=0
+2014-12-04 15:37:46 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:38:06 [f68-00000cdc] LOG Sender bl t/o/r/dl=10561/10467/94/0 ctl bm/bs=0/0 rex b/r/n=94/48/0 r_ott q/s/n=8/0/621 rate t/m/c=10000000/0/1483034 prog t/f/e=14887356/14887356/77867784 xmtD=0
+2014-12-04 15:38:06 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:38:26 [f68-00000cdc] LOG Sender bl t/o/r/dl=12356/12255/101/0 ctl bm/bs=0/0 rex b/r/n=101/55/0 r_ott q/s/n=5/0/782 rate t/m/c=10000000/0/2449284 prog t/f/e=17704236/17704236/99062940 xmtD=0
+2014-12-04 15:38:26 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:38:46 [f68-00000cdc] LOG Sender bl t/o/r/dl=15611/15497/114/0 ctl bm/bs=0/0 rex b/r/n=114/68/0 r_ott q/s/n=4/0/944 rate t/m/c=10000000/0/3679395 prog t/f/e=22325952/22325952/119203793 xmtD=0
+2014-12-04 15:38:46 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:39:06 [f68-00000cdc] LOG Sender bl t/o/r/dl=18304/18182/122/0 ctl bm/bs=0/0 rex b/r/n=122/76/0 r_ott q/s/n=8/0/1102 rate t/m/c=10000000/0/1488989 prog t/f/e=26215860/26215860/138374576 xmtD=0
+2014-12-04 15:39:06 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:39:26 [f68-00000cdc] LOG Sender bl t/o/r/dl=20476/20348/128/0 ctl bm/bs=0/0 rex b/r/n=128/82/0 r_ott q/s/n=5/0/1261 rate t/m/c=10000000/0/1544986 prog t/f/e=29344920/29344920/158614931 xmtD=0
+2014-12-04 15:39:26 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:39:46 [f68-00000cdc] LOG Sender bl t/o/r/dl=23069/22925/144/0 ctl bm/bs=0/0 rex b/r/n=144/96/0 r_ott q/s/n=7/0/1419 rate t/m/c=10000000/0/1708141 prog t/f/e=33092532/33092532/178799808 xmtD=0
+2014-12-04 15:39:46 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:40:06 [f68-00000cdc] LOG Sender bl t/o/r/dl=26066/25905/161/0 ctl bm/bs=0/0 rex b/r/n=161/108/0 r_ott q/s/n=4/0/1566 rate t/m/c=10000000/0/1798279 prog t/f/e=37460148/37460148/198979611 xmtD=0
+2014-12-04 15:40:06 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:40:26 [f68-00000cdc] LOG Sender bl t/o/r/dl=28623/28446/177/0 ctl bm/bs=0/0 rex b/r/n=177/121/0 r_ott q/s/n=5/0/1725 rate t/m/c=10000000/0/758899 prog t/f/e=41138064/41138064/218094307 xmtD=0
+2014-12-04 15:40:26 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:40:46 [f68-00000cdc] LOG Sender bl t/o/r/dl=31031/30844/187/0 ctl bm/bs=0/0 rex b/r/n=187/129/0 r_ott q/s/n=5/0/1886 rate t/m/c=10000000/0/1363769 prog t/f/e=44561880/44561880/238302350 xmtD=0
+2014-12-04 15:40:46 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:41:06 [f68-00000cdc] LOG Sender bl t/o/r/dl=33175/32979/196/0 ctl bm/bs=0/0 rex b/r/n=196/138/0 r_ott q/s/n=4/0/2047 rate t/m/c=10000000/0/1516538 prog t/f/e=47644476/47644476/258480940 xmtD=0
+2014-12-04 15:41:06 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:41:26 [f68-00000cdc] LOG Sender bl t/o/r/dl=35310/35104/206/0 ctl bm/bs=0/0 rex b/r/n=206/147/0 r_ott q/s/n=10/0/2209 rate t/m/c=10000000/0/887705 prog t/f/e=50850492/50850492/278684342 xmtD=0
+2014-12-04 15:41:26 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:41:46 [f68-00000cdc] LOG Sender bl t/o/r/dl=36798/36589/209/0 ctl bm/bs=0/0 rex b/r/n=209/150/0 r_ott q/s/n=6/0/2365 rate t/m/c=10000000/0/488912 prog t/f/e=53015424/53015424/297903214 xmtD=0
+2014-12-04 15:41:46 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:42:06 [f68-00000cdc] LOG Sender bl t/o/r/dl=37453/37240/213/0 ctl bm/bs=0/0 rex b/r/n=213/153/0 r_ott q/s/n=5/0/2507 rate t/m/c=10000000/0/300363 prog t/f/e=54007140/54007140/318296513 xmtD=0
+2014-12-04 15:42:06 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:42:26 [f68-00000cdc] LOG Sender bl t/o/r/dl=37960/37747/213/0 ctl bm/bs=0/0 rex b/r/n=213/153/0 r_ott q/s/n=9/0/2640 rate t/m/c=10000000/0/167124 prog t/f/e=54778152/54778152/338820939 xmtD=0
+2014-12-04 15:42:26 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:42:46 [f68-00000cdc] LOG Sender bl t/o/r/dl=38348/38132/216/0 ctl bm/bs=0/0 rex b/r/n=216/156/0 r_ott q/s/n=15/0/2763 rate t/m/c=10000000/0/198560 prog t/f/e=55327008/55327008/358432866 xmtD=0
+2014-12-04 15:42:46 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:43:06 [f68-00000cdc] LOG Sender bl t/o/r/dl=38874/38656/218/0 ctl bm/bs=0/0 rex b/r/n=218/158/0 r_ott q/s/n=7/0/2886 rate t/m/c=10000000/0/348684 prog t/f/e=56089308/56089308/379013554 xmtD=0
+2014-12-04 15:43:06 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:43:26 [f68-00000cdc] LOG Sender bl t/o/r/dl=39781/39560/221/0 ctl bm/bs=0/0 rex b/r/n=221/161/0 r_ott q/s/n=7/0/3030 rate t/m/c=10000000/0/582848 prog t/f/e=57346740/57346740/398392339 xmtD=0
+2014-12-04 15:43:26 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:43:46 [f68-00000cdc] LOG Sender bl t/o/r/dl=40672/40450/222/0 ctl bm/bs=0/0 rex b/r/n=222/162/0 r_ott q/s/n=5/0/3183 rate t/m/c=10000000/0/341636 prog t/f/e=58672416/58672416/418670972 xmtD=0
+2014-12-04 15:43:46 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:44:06 [f68-00000cdc] LOG Sender bl t/o/r/dl=42264/42039/225/0 ctl bm/bs=0/0 rex b/r/n=225/165/0 r_ott q/s/n=15/0/3340 rate t/m/c=10000000/0/469333 prog t/f/e=60988356/60988356/438907856 xmtD=0
+2014-12-04 15:44:06 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:44:26 [f68-00000cdc] LOG Sender bl t/o/r/dl=43664/43434/230/0 ctl bm/bs=0/0 rex b/r/n=230/170/0 r_ott q/s/n=8/0/3496 rate t/m/c=10000000/0/596088 prog t/f/e=62979048/62979048/458265067 xmtD=0
+2014-12-04 15:44:26 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:44:46 [f68-00000cdc] LOG Sender bl t/o/r/dl=44369/44138/231/0 ctl bm/bs=0/0 rex b/r/n=231/171/0 r_ott q/s/n=13/0/3649 rate t/m/c=10000000/0/476527 prog t/f/e=64021584/64021584/478625340 xmtD=0
+2014-12-04 15:44:46 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:45:06 [f68-00000cdc] LOG Sender bl t/o/r/dl=45679/45448/231/0 ctl bm/bs=0/0 rex b/r/n=231/171/0 r_ott q/s/n=10/0/3804 rate t/m/c=10000000/0/345316 prog t/f/e=65893212/65893212/497908248 xmtD=0
+2014-12-04 15:45:06 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:45:26 [f68-00000cdc] LOG Sender bl t/o/r/dl=47984/47743/241/0 ctl bm/bs=0/0 rex b/r/n=241/178/0 r_ott q/s/n=20/0/3964 rate t/m/c=10000000/0/1623647 prog t/f/e=68895948/68895948/518208685 xmtD=0
+2014-12-04 15:45:26 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:45:46 [f68-00000cdc] LOG Sender bl t/o/r/dl=50623/50373/250/0 ctl bm/bs=0/0 rex b/r/n=250/187/0 r_ott q/s/n=5/0/4127 rate t/m/c=10000000/0/410882 prog t/f/e=73039956/73039956/538332594 xmtD=0
+2014-12-04 15:45:46 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:46:06 [f68-00000cdc] LOG Sender bl t/o/r/dl=52999/52733/266/0 ctl bm/bs=0/0 rex b/r/n=266/201/0 r_ott q/s/n=4/0/4287 rate t/m/c=10000000/0/1375567 prog t/f/e=76388268/76388268/558592216 xmtD=0
+2014-12-04 15:46:06 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:46:26 [f68-00000cdc] LOG Sender bl t/o/r/dl=56262/55975/287/0 ctl bm/bs=0/0 rex b/r/n=287/221/0 r_ott q/s/n=32/0/4451 rate t/m/c=10000000/0/3760238 prog t/f/e=80581644/80581644/577795523 xmtD=0
+2014-12-04 15:46:26 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:46:46 [f68-00000cdc] LOG Sender bl t/o/r/dl=59636/59322/314/0 ctl bm/bs=0/0 rex b/r/n=314/244/0 r_ott q/s/n=19/0/4615 rate t/m/c=10000000/0/360781 prog t/f/e=86020836/86020836/597935170 xmtD=0
+2014-12-04 15:46:46 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:47:06 [f68-00000cdc] LOG Sender bl t/o/r/dl=63439/63108/331/0 ctl bm/bs=0/0 rex b/r/n=331/261/0 r_ott q/s/n=8/0/4781 rate t/m/c=10000000/0/1351993 prog t/f/e=91417920/91417920/618131920 xmtD=0
+2014-12-04 15:47:06 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:47:26 [f68-00000cdc] LOG Sender bl t/o/r/dl=65828/65487/341/0 ctl bm/bs=0/0 rex b/r/n=341/271/0 r_ott q/s/n=10/0/4938 rate t/m/c=10000000/0/1149435 prog t/f/e=94920144/94920144/638453834 xmtD=0
+2014-12-04 15:47:26 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:47:46 [f68-00000cdc] LOG Sender bl t/o/r/dl=68278/67922/356/0 ctl bm/bs=0/0 rex b/r/n=356/286/0 r_ott q/s/n=8/0/5103 rate t/m/c=10000000/0/3194100 prog t/f/e=98387520/98387520/658649952 xmtD=0
+2014-12-04 15:47:46 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:48:06 [f68-00000cdc] LOG Sender bl t/o/r/dl=72322/71935/387/0 ctl bm/bs=0/0 rex b/r/n=387/311/0 r_ott q/s/n=17/0/5268 rate t/m/c=10000000/0/2261948 prog t/f/e=104131632/104131632/677840162 xmtD=0
+2014-12-04 15:48:06 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:48:26 [f68-00000cdc] LOG Sender bl t/o/r/dl=75542/75134/408/0 ctl bm/bs=0/0 rex b/r/n=408/330/0 r_ott q/s/n=11/0/5424 rate t/m/c=10000000/0/1641508 prog t/f/e=108635736/108635736/698013871 xmtD=0
+2014-12-04 15:48:26 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:48:46 [f68-00000cdc] LOG Sender bl t/o/r/dl=78274/77852/422/0 ctl bm/bs=0/0 rex b/r/n=422/344/0 r_ott q/s/n=9/0/5589 rate t/m/c=10000000/0/447213 prog t/f/e=112895904/112895904/718260324 xmtD=0
+2014-12-04 15:48:46 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:49:06 [f68-00000cdc] LOG Sender bl t/o/r/dl=80819/80389/430/0 ctl bm/bs=0/0 rex b/r/n=430/352/0 r_ott q/s/n=9/0/5752 rate t/m/c=10000000/0/975705 prog t/f/e=116611572/116611572/738464190 xmtD=0
+2014-12-04 15:49:06 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:49:26 [f68-00000cdc] LOG Sender bl t/o/r/dl=86648/86177/471/0 ctl bm/bs=0/0 rex b/r/n=471/385/0 r_ott q/s/n=4/0/5919 rate t/m/c=10000000/0/5531964 prog t/f/e=124310076/124310076/758617233 xmtD=0
+2014-12-04 15:49:26 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:49:46 [f68-00000cdc] LOG Sender bl t/o/r/dl=94263/93715/548/0 ctl bm/bs=0/0 rex b/r/n=548/452/0 r_ott q/s/n=8/0/6090 rate t/m/c=10000000/0/6312271 prog t/f/e=135171036/135171036/777728320 xmtD=0
+2014-12-04 15:49:46 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:50:06 [f68-00000cdc] LOG Sender bl t/o/r/dl=106913/106226/687/0 ctl bm/bs=0/0 rex b/r/n=687/576/0 r_ott q/s/n=4/0/6267 rate t/m/c=10000000/0/9223805 prog t/f/e=152551476/152551476/797806482 xmtD=0
+2014-12-04 15:50:06 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:50:26 [f68-00000cdc] LOG Sender bl t/o/r/dl=116383/115575/808/0 ctl bm/bs=0/0 rex b/r/n=808/686/0 r_ott q/s/n=9/0/6439 rate t/m/c=10000000/0/5314997 prog t/f/e=167395272/167395272/818861596 xmtD=0
+2014-12-04 15:50:26 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:50:46 [f68-00000cdc] LOG Sender bl t/o/r/dl=127468/126540/928/0 ctl bm/bs=0/0 rex b/r/n=928/792/0 r_ott q/s/n=4/0/6610 rate t/m/c=10000000/0/6495827 prog t/f/e=183277248/183277248/838916746 xmtD=0
+2014-12-04 15:50:46 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:51:06 [f68-00000cdc] LOG Sender bl t/o/r/dl=137929/136899/1030/0 ctl bm/bs=0/0 rex b/r/n=1030/884/0 r_ott q/s/n=3/0/6785 rate t/m/c=10000000/0/8741851 prog t/f/e=198272052/198272052/858978579 xmtD=0
+2014-12-04 15:51:06 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:51:26 [f68-00000cdc] LOG Sender bl t/o/r/dl=147288/146163/1125/0 ctl bm/bs=0/0 rex b/r/n=1125/976/0 r_ott q/s/n=7/0/6956 rate t/m/c=10000000/0/6037416 prog t/f/e=211495416/211495416/878079379 xmtD=0
+2014-12-04 15:51:26 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:51:46 [f68-00000cdc] LOG Sender bl t/o/r/dl=152462/151291/1171/0 ctl bm/bs=0/0 rex b/r/n=1171/1021/0 r_ott q/s/n=4/0/7123 rate t/m/c=10000000/0/4690340 prog t/f/e=218916588/218916588/898268639 xmtD=0
+2014-12-04 15:51:46 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:52:06 [f68-00000cdc] LOG Sender bl t/o/r/dl=163623/162348/1275/0 ctl bm/bs=0/0 rex b/r/n=1275/1117/0 r_ott q/s/n=10/0/7300 rate t/m/c=10000000/0/9257790 prog t/f/e=234505260/234505260/918335892 xmtD=0
+2014-12-04 15:52:06 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:52:26 [f68-00000cdc] LOG Sender bl t/o/r/dl=176318/174876/1442/0 ctl bm/bs=0/0 rex b/r/n=1442/1254/0 r_ott q/s/n=6/0/7476 rate t/m/c=10000000/0/8805668 prog t/f/e=252886128/252886128/938419049 xmtD=0
+2014-12-04 15:52:26 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:52:46 [f68-00000cdc] LOG Sender bl t/o/r/dl=188890/187275/1615/0 ctl bm/bs=0/0 rex b/r/n=1615/1385/0 r_ott q/s/n=9/0/7650 rate t/m/c=10000000/0/1427651 prog t/f/e=271624188/271624188/958482929 xmtD=0
+2014-12-04 15:52:46 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:53:06 [f68-00000cdc] LOG Sender bl t/o/r/dl=199186/197466/1720/0 ctl bm/bs=0/0 rex b/r/n=1720/1480/0 r_ott q/s/n=7/0/7822 rate t/m/c=10000000/0/8217069 prog t/f/e=284880948/284880948/977579288 xmtD=0
+2014-12-04 15:53:06 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:53:26 [f68-00000cdc] LOG Sender bl t/o/r/dl=208833/206972/1861/0 ctl bm/bs=0/0 rex b/r/n=1861/1581/0 r_ott q/s/n=14/0/7999 rate t/m/c=10000000/0/9136716 prog t/f/e=299021976/299021976/997676358 xmtD=0
+2014-12-04 15:53:26 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:53:46 [f68-00000cdc] LOG Sender bl t/o/r/dl=221796/219784/2012/0 ctl bm/bs=0/0 rex b/r/n=2012/1715/0 r_ott q/s/n=8/0/8175 rate t/m/c=10000000/0/5708731 prog t/f/e=318748848/318748848/1018744537 xmtD=0
+2014-12-04 15:53:46 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:54:06 [f68-00000cdc] LOG Sender bl t/o/r/dl=234280/232000/2280/0 ctl bm/bs=0/0 rex b/r/n=2280/1865/0 r_ott q/s/n=9/0/8350 rate t/m/c=10000000/0/1135699 prog t/f/e=336731868/336731868/1038803491 xmtD=0
+2014-12-04 15:54:06 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:54:26 [f68-00000cdc] LOG Sender bl t/o/r/dl=240088/237712/2376/0 ctl bm/bs=0/0 rex b/r/n=2376/1905/0 r_ott q/s/n=13/0/8521 rate t/m/c=10000000/0/7395421 prog t/f/e=344707704/344707704/1058908813 xmtD=0
+2014-12-04 15:54:26 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:54:46 [f68-00000cdc] LOG Sender bl t/o/r/dl=248077/245633/2444/0 ctl bm/bs=0/0 rex b/r/n=2444/1965/0 r_ott q/s/n=6/0/8696 rate t/m/c=10000000/0/6298386 prog t/f/e=356333868/356333868/1079012667 xmtD=0
+2014-12-04 15:54:46 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:55:06 [f68-00000cdc] LOG Sender bl t/o/r/dl=256504/253964/2540/0 ctl bm/bs=0/0 rex b/r/n=2540/2047/0 r_ott q/s/n=3/0/8870 rate t/m/c=10000000/0/1005877 prog t/f/e=368501628/368501628/1098127635 xmtD=0
+2014-12-04 15:55:06 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:55:26 [f68-00000cdc] LOG Sender bl t/o/r/dl=264927/262297/2630/0 ctl bm/bs=0/0 rex b/r/n=2630/2124/0 r_ott q/s/n=5/0/9043 rate t/m/c=10000000/0/1759407 prog t/f/e=380347044/380347044/1118237715 xmtD=0
+2014-12-04 15:55:26 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:55:46 [f68-00000cdc] LOG Sender bl t/o/r/dl=267764/265117/2647/0 ctl bm/bs=0/0 rex b/r/n=2647/2140/0 r_ott q/s/n=13/0/9206 rate t/m/c=10000000/0/5981236 prog t/f/e=384309552/384309552/1138394745 xmtD=0
+2014-12-04 15:55:46 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:56:06 [f68-00000cdc] LOG Sender bl t/o/r/dl=270757/268101/2656/0 ctl bm/bs=0/0 rex b/r/n=2656/2149/0 r_ott q/s/n=3/0/9367 rate t/m/c=10000000/0/3386807 prog t/f/e=389032908/389032908/1158622851 xmtD=0
+2014-12-04 15:56:06 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:56:26 [f68-00000cdc] LOG Sender bl t/o/r/dl=278621/275890/2731/0 ctl bm/bs=0/0 rex b/r/n=2731/2213/0 r_ott q/s/n=6/0/9538 rate t/m/c=10000000/0/1661322 prog t/f/e=400377384/400377384/1178750387 xmtD=0
+2014-12-04 15:56:26 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:56:46 [f68-00000cdc] LOG Sender bl t/o/r/dl=285902/283076/2826/0 ctl bm/bs=0/0 rex b/r/n=2826/2302/0 r_ott q/s/n=5/0/9709 rate t/m/c=10000000/0/7540395 prog t/f/e=409986720/409986720/1197959162 xmtD=0
+2014-12-04 15:56:46 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:57:06 [f68-00000cdc] LOG Sender bl t/o/r/dl=289026/286133/2893/0 ctl bm/bs=0/0 rex b/r/n=2893/2367/0 r_ott q/s/n=4/0/9870 rate t/m/c=10000000/0/3569772 prog t/f/e=415045488/415045488/1218196988 xmtD=0
+2014-12-04 15:57:06 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:57:26 [f68-00000cdc] LOG Sender bl t/o/r/dl=298578/295509/3069/0 ctl bm/bs=0/0 rex b/r/n=3069/2532/0 r_ott q/s/n=5/0/10043 rate t/m/c=10000000/0/954010 prog t/f/e=428903376/428903376/1238312003 xmtD=0
+2014-12-04 15:57:26 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:57:46 [f68-00000cdc] LOG Sender bl t/o/r/dl=303925/300754/3171/0 ctl bm/bs=0/0 rex b/r/n=3171/2591/0 r_ott q/s/n=4/0/10209 rate t/m/c=10000000/0/5574413 prog t/f/e=436154664/436154664/1258453290 xmtD=0
+2014-12-04 15:57:46 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:58:06 [f68-00000cdc] LOG Sender bl t/o/r/dl=312757/309391/3366/0 ctl bm/bs=0/0 rex b/r/n=3366/2725/0 r_ott q/s/n=14/0/10382 rate t/m/c=10000000/0/9816776 prog t/f/e=448268700/448268700/1278548117 xmtD=0
+2014-12-04 15:58:06 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:58:26 [f68-00000cdc] LOG Sender bl t/o/r/dl=318231/314623/3608/0 ctl bm/bs=0/0 rex b/r/n=3608/2867/0 r_ott q/s/n=10/0/10549 rate t/m/c=10000000/0/793333 prog t/f/e=456555264/456555264/1297699100 xmtD=0
+2014-12-04 15:58:26 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:58:46 [f68-00000cdc] LOG Sender bl t/o/r/dl=323299/319503/3796/0 ctl bm/bs=0/0 rex b/r/n=3796/2977/0 r_ott q/s/n=4/0/10712 rate t/m/c=10000000/0/666761 prog t/f/e=463800744/463800744/1317964741 xmtD=0
+2014-12-04 15:58:46 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:59:06 [f68-00000cdc] LOG Sender bl t/o/r/dl=327113/323182/3931/0 ctl bm/bs=0/0 rex b/r/n=3931/3035/0 r_ott q/s/n=4/0/10869 rate t/m/c=10000000/0/3041515 prog t/f/e=468599604/468599604/1338332002 xmtD=0
+2014-12-04 15:59:06 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:59:26 [f68-00000cdc] LOG Sender bl t/o/r/dl=332804/328727/4077/0 ctl bm/bs=0/0 rex b/r/n=4077/3107/0 r_ott q/s/n=4/0/11034 rate t/m/c=10000000/0/3913838 prog t/f/e=476999424/476999424/1358482161 xmtD=0
+2014-12-04 15:59:26 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 15:59:46 [f68-00000cdc] LOG Sender bl t/o/r/dl=338830/334590/4240/0 ctl bm/bs=0/0 rex b/r/n=4240/3189/0 r_ott q/s/n=4/0/11200 rate t/m/c=10000000/0/3345069 prog t/f/e=484642752/484642752/1377605405 xmtD=0
+2014-12-04 15:59:46 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 16:00:06 [f68-00000cdc] LOG Sender bl t/o/r/dl=340957/336538/4419/0 ctl bm/bs=0/0 rex b/r/n=4422/3256/3 r_ott q/s/n=6/0/11352 rate t/m/c=10000000/0/995012 prog t/f/e=488505072/488505072/1397991309 xmtD=0
+2014-12-04 16:00:06 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 16:00:26 [f68-00000cdc] LOG Sender bl t/o/r/dl=347224/342526/4698/0 ctl bm/bs=0/0 rex b/r/n=4698/3367/0 r_ott q/s/n=7/0/11519 rate t/m/c=10000000/0/4603238 prog t/f/e=496607232/496607232/1418103949 xmtD=0
+2014-12-04 16:00:26 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 16:00:46 [f68-00000cdc] LOG Sender bl t/o/r/dl=358539/353392/5147/0 ctl bm/bs=0/0 rex b/r/n=5147/3555/0 r_ott q/s/n=7/0/11692 rate t/m/c=10000000/0/6332171 prog t/f/e=512894316/512894316/1439224426 xmtD=0
+2014-12-04 16:00:46 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 16:01:06 [f68-00000cdc] LOG Sender bl t/o/r/dl=367007/361555/5452/0 ctl bm/bs=0/0 rex b/r/n=5452/3701/0 r_ott q/s/n=3/0/11867 rate t/m/c=10000000/0/5785558 prog t/f/e=524170548/524170548/1458296714 xmtD=0
+2014-12-04 16:01:06 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 16:01:26 [f68-00000cdc] LOG Sender bl t/o/r/dl=377230/371414/5816/0 ctl bm/bs=0/0 rex b/r/n=5816/3875/0 r_ott q/s/n=14/0/12040 rate t/m/c=10000000/0/8920609 prog t/f/e=538308672/538308672/1478408607 xmtD=0
+2014-12-04 16:01:26 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 16:01:46 [f68-00000cdc] LOG Sender bl t/o/r/dl=387305/381012/6293/0 ctl bm/bs=0/1 rex b/r/n=6293/4048/0 r_ott q/s/n=8/0/12200 rate t/m/c=10000000/0/829037 prog t/f/e=553004364/553004364/1497488140 xmtD=0
+2014-12-04 16:01:46 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 16:01:48 [f68-00000cdc] LOG Sender has not received a packet for 3 seconds!
+2014-12-04 16:01:49 [f68-00000cdc] LOG Sender has not received a packet for 4 seconds!
+2014-12-04 16:01:50 [f68-00000cdc] LOG Sender has not received a packet for 5 seconds!
+2014-12-04 16:01:51 [f68-00000cdc] LOG Sender has not received a packet for 6 seconds!
+2014-12-04 16:01:52 [f68-00000cdc] LOG Sender has not received a packet for 7 seconds!
+2014-12-04 16:01:53 [f68-00000cdc] LOG Sender has not received a packet for 8 seconds!
+2014-12-04 16:01:54 [f68-00000cdc] LOG Sender has not received a packet for 9 seconds!
+2014-12-04 16:01:55 [f68-00000cdc] LOG Sender has not received a packet for 10 seconds!
+2014-12-04 16:01:56 [f68-00000cdc] LOG Sender has not received a packet for 11 seconds!
+2014-12-04 16:01:57 [f68-00000cdc] LOG Sender has not received a packet for 12 seconds!
+2014-12-04 16:01:58 [f68-00000cdc] LOG Sender has not received a packet for 13 seconds!
+2014-12-04 16:01:59 [f68-00000cdc] LOG Sender has not received a packet for 14 seconds!
+2014-12-04 16:02:00 [f68-00000cdc] LOG Sender has not received a packet for 15 seconds!
+2014-12-04 16:02:01 [f68-00000cdc] LOG Sender has not received a packet for 16 seconds!
+2014-12-04 16:02:02 [f68-00000cdc] LOG Sender has not received a packet for 17 seconds!
+2014-12-04 16:02:03 [f68-00000cdc] LOG Sender has not received a packet for 18 seconds!
+2014-12-04 16:02:04 [f68-00000cdc] LOG Sender has not received a packet for 19 seconds!
+2014-12-04 16:02:05 [f68-00000cdc] LOG Sender has not received a packet for 20 seconds!
+2014-12-04 16:02:06 [f68-00000cdc] LOG Sender has not received a packet for 21 seconds!
+2014-12-04 16:02:06 [f68-00000cdc] LOG Sender bl t/o/r/dl=388695/382402/6293/0 ctl bm/bs=0/1 rex b/r/n=6293/4048/0 r_ott q/s/n=8/0/12200 rate t/m/c=10000000/0/829037 prog t/f/e=553004364/553004364/1497488140 xmtD=0
+2014-12-04 16:02:06 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 16:02:07 [f68-00000cdc] LOG Sender has not received a packet for 22 seconds!
+2014-12-04 16:02:08 [f68-00000cdc] LOG Sender has not received a packet for 23 seconds!
+2014-12-04 16:02:09 [f68-00000cdc] LOG Sender has not received a packet for 24 seconds!
+2014-12-04 16:02:10 [f68-00000cdc] LOG Sender has not received a packet for 25 seconds!
+2014-12-04 16:02:11 [f68-00000cdc] LOG Sender has not received a packet for 26 seconds!
+2014-12-04 16:02:12 [f68-00000cdc] LOG Sender has not received a packet for 27 seconds!
+2014-12-04 16:02:13 [f68-00000cdc] LOG Sender has not received a packet for 28 seconds!
+2014-12-04 16:02:14 [f68-00000cdc] LOG Sender has not received a packet for 29 seconds!
+2014-12-04 16:02:15 [f68-00000cdc] LOG Sender has not received a packet for 30 seconds!
+2014-12-04 16:02:16 [f68-00000cdc] LOG Sender has not received a packet for 31 seconds!
+2014-12-04 16:02:17 [f68-00000cdc] LOG Sender has not received a packet for 32 seconds!
+2014-12-04 16:02:18 [f68-00000cdc] LOG Sender has not received a packet for 33 seconds!
+2014-12-04 16:02:19 [f68-00000cdc] LOG Sender has not received a packet for 34 seconds!
+2014-12-04 16:02:20 [f68-00000cdc] LOG Sender has not received a packet for 35 seconds!
+2014-12-04 16:02:21 [f68-00000cdc] LOG Sender has not received a packet for 36 seconds!
+2014-12-04 16:02:22 [f68-00000cdc] LOG Sender has not received a packet for 37 seconds!
+2014-12-04 16:02:23 [f68-00000cdc] LOG Sender has not received a packet for 38 seconds!
+2014-12-04 16:02:24 [f68-00000cdc] LOG Sender has not received a packet for 39 seconds!
+2014-12-04 16:02:25 [f68-00000cdc] LOG Sender has not received a packet for 40 seconds!
+2014-12-04 16:02:26 [f68-00000cdc] LOG Sender has not received a packet for 41 seconds!
+2014-12-04 16:02:26 [f68-00000cdc] LOG Sender bl t/o/r/dl=390084/383791/6293/0 ctl bm/bs=0/1 rex b/r/n=6293/4048/0 r_ott q/s/n=8/0/12200 rate t/m/c=10000000/0/829037 prog t/f/e=553004364/553004364/1497488140 xmtD=0
+2014-12-04 16:02:26 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 16:02:27 [f68-00000cdc] LOG Sender has not received a packet for 42 seconds!
+2014-12-04 16:02:28 [f68-00000cdc] LOG Sender has not received a packet for 43 seconds!
+2014-12-04 16:02:29 [f68-00000cdc] LOG Sender has not received a packet for 44 seconds!
+2014-12-04 16:02:30 [f68-00000cdc] LOG Sender has not received a packet for 45 seconds!
+2014-12-04 16:02:31 [f68-00000cdc] LOG Sender has not received a packet for 46 seconds!
+2014-12-04 16:02:32 [f68-00000cdc] LOG Sender has not received a packet for 47 seconds!
+2014-12-04 16:02:33 [f68-00000cdc] LOG Sender has not received a packet for 48 seconds!
+2014-12-04 16:02:34 [f68-00000cdc] LOG Sender has not received a packet for 49 seconds!
+2014-12-04 16:02:35 [f68-00000cdc] LOG Sender has not received a packet for 50 seconds!
+2014-12-04 16:02:36 [f68-00000cdc] LOG Sender has not received a packet for 51 seconds!
+2014-12-04 16:02:37 [f68-00000cdc] LOG Sender has not received a packet for 52 seconds!
+2014-12-04 16:02:38 [f68-00000cdc] LOG Sender has not received a packet for 53 seconds!
+2014-12-04 16:02:39 [f68-00000cdc] LOG Sender has not received a packet for 54 seconds!
+2014-12-04 16:02:40 [f68-00000cdc] LOG Sender has not received a packet for 55 seconds!
+2014-12-04 16:02:41 [f68-00000cdc] LOG Sender has not received a packet for 56 seconds!
+2014-12-04 16:02:42 [f68-00000cdc] LOG Sender has not received a packet for 57 seconds!
+2014-12-04 16:02:43 [f68-00000cdc] LOG Sender has not received a packet for 58 seconds!
+2014-12-04 16:02:44 [f68-00000cdc] LOG Sender has not received a packet for 59 seconds!
+2014-12-04 16:02:45 [f68-00000cdc] LOG Sender has not received a packet for 60 seconds!
+2014-12-04 16:02:46 [f68-00000cdc] LOG Sender bl t/o/r/dl=391473/385180/6293/0 ctl bm/bs=0/1 rex b/r/n=6293/4048/0 r_ott q/s/n=8/0/12200 rate t/m/c=10000000/0/829037 prog t/f/e=553004364/553004364/1497488140 xmtD=0
+2014-12-04 16:02:46 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 16:02:46 [f68-00000cdc] LOG Sender has not received a packet for 61 seconds!
+2014-12-04 16:02:46 [f68-00000cdc] LOG Transmitter inactivity timer fired
+2014-12-04 16:02:46 [f68-00000cdc] ERR Session data transfer timeout
+2014-12-04 16:02:46 [f68-00000cdc] ERR Data transfer timeout ds_id 1 (60 sec) xfer errcode 35
+2014-12-04 16:02:46 [f68-00000cdc] LOG Sender bl t/o/r/dl=391484/385191/6293/0 ctl bm/bs=0/1 rex b/r/n=6293/4048/0 r_ott q/s/n=8/0/12200 rate t/m/c=10000000/0/829037 prog t/f/e=553004364/553004364/1497488140 xmtD=1
+2014-12-04 16:02:46 [f68-00000cdc] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=4/0/0/0/0/0/0/0/3/1/0/0 Rs o/i=4/4 mgmt backlog i/s/n = 0/428/0 1/420/0
+2014-12-04 16:02:46 [f68-000004a8] ERR source send ds_err_notfn: Sent DS err notfn pdu, errcode 35 (total len 142)
+2014-12-04 16:02:46 [f68-000004a8] ERR Source-work aborting since transmitter shutdown (shutdown 1 aborted 4)!
+2014-12-04 16:02:46 [f68-000004a8] ERR LOCAL ABORT: Shutting down source/transmitter, local abort reason FASP_ABORT_LOCAL
+2014-12-04 16:02:46 [f68-000004a8] ERR source->sesserr_snd_psb.len 41
+2014-12-04 16:02:46 [f68-000004a8] ERR source_send_abort: sent abort pdu reason 3 (total len 0)
+2014-12-04 16:02:46 [f68-000004a8] LOG Session notification: type=19 len=37 reason=3 (FASP_ABORT_LOCAL)
+2014-12-04 16:03:23 [f68-00000f34] LOG stdio_copy_in: read eof from stdio, quitting (fd=0)
+2014-12-04 16:03:23 [f68-00000898] ERR Failed to send Close Session,  (errno=10060) timeout:120
+2014-12-04 16:03:23 [f68-00000898] ERR FASP sender had error, errcode 36 errstr [Session data transfer timeout]
+2014-12-04 16:03:23 [f68-00000098] LOG FASP Session Stop uuid=a8491078-1bfb-4f3e-9b30-093030c19778 op=send status=failed errcode=40 errstr="Data transfer stalled, timed out" source=C:/src/file1 (4) dest=C:/dst/file1 source_prefix=- local=198.51.100.6:33001 peer=198.51.100.7:58444 tcp_port=22 os="Microsoft Windows 6.1 Service Pack 1" ver=3.5.2.94667 lic=10:1:1234 peeros="Microsoft Windows 6.1 Service Pack 1" peerver=3.5.1.92519 peerlic=6:1:1 proto_sess=20002 proto_udp=20000 proto_bwmeas=20000 proto_data=20008
+2014-12-04 16:03:23 [f68-00000098] LOG FASP Session Params uuid=a8491078-1bfb-4f3e-9b30-093030c19778 userid=1000 user="xfer" targetrate=10000000 minrate=0 rate_policy=fair cipher=none resume=2 create=0 ovr=1 times=0 precalc=yes mf=0 mf_path=- mf_suffix=.aspera-inprogress partial_file_suffix= files_encrypt=no files_decrypt=no file_csum=none dgram_sz=0 prepostcmd=- tcp_mode=no rtt_auto=yes cookie="-" vl_proto_ver=1  peer_vl_proto_ver=1 vl_local=0 vlink_remote=0 vl_sess_id=521 srcbase=- rd_sz=0 wr_sz=0 cluster_num_nodes=1 cluster_node_id=0 range=0-0 keepalive=no test_login=no proxy_ip=- net_rc_alg=alg_delay exclude_older/newer_than=0/0
+2014-12-04 16:03:23 [f68-00000098] LOG FASP Session Statistics [Sender] id=a8491078-1bfb-4f3e-9b30-093030c19778 delay=0ms rex_delay=0ms solicited_rex=1.61% unsolicited_rex=0.00% ave_xmit_rate 3.00Mbps effective=98.39% effective_rate=2.95Mbps (detail: good_blks 385191 bl_total 391484 bl_orig 385191 bl_rex 6293 dup_last_blks 0) (sndr ctl: sent 1561 rcvd 0 lost 1561 lost 100.00%) (rcvr ctl: sent 0 rcvd 35468 lost -35468 lost 0.00%) (rex  ctl: sent 0 rcvd 4048 lost -4048 lost 0.00%) (progress: tx_bytes 553004364 file_bytes 553004364 tx_time 1497488140) (estimate transfer size: 22755934184 bytes)  sess->instru.num_rex_xfer_not_found 0 sess->instru.num_rex_abrtxfer_not_found 0
+2014-12-04 16:03:23 [f68-00000898] LOG ======= File Transfer statistics =======
+2014-12-04 16:03:23 [f68-00000898] LOG ------- Source statistics -------
+2014-12-04 16:03:23 [f68-00000898] LOG Source argument scans attempted             :          4
+2014-12-04 16:03:23 [f68-00000898] LOG - Source argument scans completed           :          4
+2014-12-04 16:03:23 [f68-00000898] LOG Source path scans attempted                 :          4
+2014-12-04 16:03:23 [f68-00000898] LOG - Source path scans failed                  :          0
+2014-12-04 16:03:23 [f68-00000898] LOG - Source path scans skipped since irregular :          0
+2014-12-04 16:03:23 [f68-00000898] LOG - Source path scans excluded                :          0
+2014-12-04 16:03:23 [f68-00000898] LOG - Source directory scans completed          :          0
+2014-12-04 16:03:23 [f68-00000898] LOG - Source file scans completed               :          4
+2014-12-04 16:03:23 [f68-00000898] LOG Source directory creates attempted          :          0
+2014-12-04 16:03:23 [f68-00000898] LOG - Source directory creates failed           :          0
+2014-12-04 16:03:23 [f68-00000898] LOG - Source directory created or existed       :          0
+2014-12-04 16:03:23 [f68-00000898] LOG Source file transfers attempted             :          4
+2014-12-04 16:03:23 [f68-00000898] LOG - Source file transfers failed              :          4 !
+2014-12-04 16:03:23 [f68-00000898] LOG - Source file transfers passed              :          0
+2014-12-04 16:03:23 [f68-00000898] LOG - Source file transfers skipped             :          0
+2014-12-04 16:03:23 [f68-00000898] LOG Source bytes transferred                    : 10769687746
+2014-12-04 16:03:23 [f68-00000898] LOG ======= end File Transfer statistics =======
+2014-12-04 16:03:23 [f68-00000508] LOG stdio_copy_out: read eof from socket, quitting (fd=464)

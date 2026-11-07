@@ -3,6 +3,7 @@
 # cspell:words commify Isilon nacks nohear onefs overdriven
 require 'set'
 require 'time'
+require 'aspera/assert'
 require 'aspera/ascp/session_errors'
 
 module Aspera
@@ -13,16 +14,10 @@ module Aspera
         # Calculated rates (bps) of 1 packet per second, for various payload sizes: maximum disk throttling
         DISK_THROTTLE_RATES = [11_584, 11_712, 11_936, 7_824, 8_048, 3_840, 4_064, 2_144, 2_368].freeze
         DEFAULT_MTU = 1492
-        # Seconds before the last line of a session in which an error explains its end
-        LAST_ERROR_WINDOW = 60
         # Sender (ascp 4): limit of the receiver => sample values
         RECEIVER_CAUSES = {'network' => %i[peer_net_rate], 'disk' => %i[peer_disk_rate], 'vlink' => %i[peer_vlink_local peer_vlink_remote]}.freeze
         # Control messages in `Session Statistics`: direction => description
         CONTROL_DIRECTIONS = {'sndr' => 'from sender to receiver', 'rcvr' => 'from receiver to sender', 'rex' => 'requesting retransmission'}.freeze
-        # Minimum control messages sent, and percent lost, for a diagnostic
-        CONTROL_LOSS_MIN = {sent: 10, percent: 5.0}.freeze
-        # Percent of useful data sent below which a diagnostic is given
-        EFFICIENCY_MIN = 90.0
         # Constraint on the rate => series of its sample values
         CONSTRAINT_SERIES = {'network' => :network, 'disk' => :disk, 'vlink_local' => :vlink_local, 'vlink_remote' => :vlink_remote, 'Receiver' => :calc}.freeze
         # Receiver: constraint => sample value
@@ -112,10 +107,18 @@ module Aspera
         # Files transferred: name => {op:, size:, status:, error:}
         attr_reader :files
         # Diagnostics of last report: {id, severity, message}
-        attr_reader :diagnostics
+        attr_reader :diagnostics, :thresholds
 
-        def initialize(pid)
+        # @param pid        [String] Process identifier
+        # @param thresholds [Hash]   Diagnostic thresholds
+        # @param timezone   [String, nil] Time zone of the reported times: `UTC` or `+HH:MM`. Time zone of the analyst if nil.
+        def initialize(pid, thresholds: {}, timezone: nil)
           @pid = pid
+          @timezone = timezone
+          thresholds = thresholds.transform_keys(&:to_sym)
+          unknown = thresholds.keys - DEFAULT_THRESHOLDS.keys
+          Aspera.assert(unknown.empty?, type: ArgumentError) { "Unknown threshold: #{unknown.join(', ')}" }
+          @thresholds = DEFAULT_THRESHOLDS.merge(thresholds)
           @data = {}
           @flags = Set.new
           @series = Hash.new { |h, k| h[k] = [] }
@@ -136,6 +139,10 @@ module Aspera
           @vm = nil
           # Sender: limit of the receiver => number of samples
           @receiver_causes = Hash.new(0)
+          # Rate samples after the delay: [elapsed time (us), time, bps], receiver network rate or sender calculated rate
+          @rate_samples = []
+          # File-queue stats: one hash per DS Qs sample, keys 'ao', 'ap', 'mgmt_backlog'
+          @ds_qs_samples = []
         end
 
         def [](key)
@@ -194,7 +201,7 @@ module Aspera
         # @param time [Integer, nil] time of line
         # @param config [Hash] user and version from configuration lines
         def session_line(kind, f, time, config)
-          %i[uuid op user source dest local os ver peeros peerver].each { |k| @data[k] = f[k] if f[k] }
+          %i[uuid op user source dest local os ver peeros peerver transport].each { |k| @data[k] = f[k] if f[k] }
           if f[:lic]
             @data[:product] = f[:lic].split(':').first.to_i
             @data[:role] = 'client' if [6, 7].include?(@data[:product])
@@ -212,6 +219,10 @@ module Aspera
           @data[:peer] ||= f[:peer]
           @data[:p_port] = f[:p_port] if f[:p_port]
           @data[:ver] ||= config[:ver]
+          @data[:product_name] ||= config[:product_name]
+          @data[:auth] ||= config[:auth]
+          @data[:license_rate] ||= config[:license_rate]
+          @data[:license_expires] ||= config[:license_expires]
           @data[kind] = time
           @data[:date] = @data[:stop] || @data[:start]
         end
@@ -225,6 +236,9 @@ module Aspera
             @data[key] = value.match?(/\A\d+\z/) && key != :user ? value.to_i : value
           end
           @data[:policy] = POLICIES.fetch(@data[:policy], @data[:policy]) if @data[:policy]
+          # `proxy_ip=-`: no proxy
+          @data[:proxy] = fields['proxy_ip'] if fields['proxy_ip'] && fields['proxy_ip'] != '-'
+          @data[:fips] = fields['fips_enabled'] == 'yes' if fields.key?('fips_enabled')
         end
 
         # Error and status of `Session Stop` line
@@ -320,6 +334,7 @@ module Aspera
           @data[:target_rate] = s[:target_rate] if num(:target_rate).zero?
           @data[:min_rate] = s[:min_rate]
           @series[:calc].push(s[:calc_rate].to_i)
+          @rate_samples.push([s[:elapsed_us], s[:time], (receiver ? s[:net_rate] : s[:calc_rate]).to_i]) if elapsed > @thresholds[:rate_decline_delay]
           increment(:disk_max) if DISK_THROTTLE_RATES.include?(s[:calc_rate])
           check_stuck_nack(s)
           check_stuck_rex(s) if receiver
@@ -357,6 +372,20 @@ module Aspera
           elsif (!first || s[:written].nonzero?) && s[:blocks].to_i.nonzero?
             @data[:loss_rate] = s[:rex].to_i.fdiv(s[:blocks])
           end
+        end
+
+        # Accumulate file-queue statistics from one `DS Qs` sample
+        # @param qs [Hash] keys: `'ao'` (open-async), `'ap'` (attrprep), `'mgmt_backlog'` (bytes buffered)
+        def add_ds_qs_sample(qs)
+          @ds_qs_samples.push(qs)
+        end
+
+        # Tell if another session starts while the rate samples are recorded: it may share the link
+        # @param starts [Array<Integer>] start times of the transfer sessions of the log
+        def shared_link(starts)
+          return if @rate_samples.empty?
+          first, last = @rate_samples.map { |sample| sample[1] }.minmax
+          @data[:shared_link] = starts.any? { |time| time > first && time <= last }
         end
 
         # Evaluate ATM / tail-drop rate limiting detection, at end of a snapshot period
@@ -474,6 +503,8 @@ module Aspera
           diagnose_loss(loss, sample_dir, avg, min_rate_high)
           diagnose_stuck_nack(loss)
           diagnose_quality
+          diagnose_rate_decline
+          diagnose_file_pipeline
           diagnose_sender if sample_dir == 'send'
           {
             'pid'                     => @pid,
@@ -496,7 +527,7 @@ module Aspera
             'local_port'              => d[:l_port],
             'version'                 => d[:ver],
             'os'                      => d[:os],
-            'product'                 => d[:product],
+            **context_columns,
             'peer'                    => d[:peer],
             'peer_port'               => d[:p_port],
             'peer_version'            => d[:peerver],
@@ -549,6 +580,19 @@ module Aspera
         FASP_PORTS = (33_000..33_099)
         private_constant :FASP_PORTS
 
+        # Columns that tell in which context the session ran, to filter sessions
+        # @return [Hash] product, transport (`ssh` or `wss`), authentication type (`token` or `node`), proxy address, FIPS mode
+        def context_columns
+          {
+            'product'        => @data[:product],
+            'product_name'   => @data[:product_name],
+            'transport'      => @data[:transport],
+            'authentication' => @data[:auth],
+            'proxy'          => @data[:proxy],
+            'fips'           => @data[:fips]
+          }
+        end
+
         # Add a diagnostic
         # @param id       [Symbol] identifier
         # @param severity [Symbol] `error`, `warning` or `info`
@@ -562,7 +606,7 @@ module Aspera
         end
 
         def iso(time)
-          Time.at(time).iso8601 if time
+          Time.at(time, in: @timezone).iso8601 if time
         end
 
         # @return [Array, nil] average and median of series, as integers
@@ -798,19 +842,50 @@ module Aspera
           end
           diag(:job_size_changed, :info, "Job size changed from #{d[:job_size].first} to #{d[:job_size].last} to match server configuration.") if d[:job_size]
           d[:vlinks]&.each { |id, vlink| diag(:vlink, :info, "Virtual link #{id} (#{vlink['type']}) limits bandwidth to #{c(vlink['capacity'])} bps.") }
+          diagnose_license
+        end
+
+        # Maximum rate of the license below the target rate, and expiry date of the license close to the session
+        def diagnose_license
+          d = @data
+          diag(:license_rate_limit, :warning, "The license limits the rate to #{c(d[:license_rate])} bps, below the target rate of #{c(num(:target_rate))} bps.") if d[:license_rate] && num(:target_rate) > d[:license_rate]
+          return unless d[:license_expires] && (started = d[:start] || d[:stop])
+          days = ((Time.parse(d[:license_expires]).to_i - started) / 86_400.0).floor
+          return if days > @thresholds[:license_expiry_days]
+          diag(:license_expiry, :warning, days.negative? ? "The license expired on #{d[:license_expires]}." : "The license expires on #{d[:license_expires]}, #{days} days after the start of this session.")
         end
 
         # Efficiency and loss of control messages, from `Session Statistics`
         def diagnose_quality
           d = @data
-          if d[:efficiency] && num(:tx_bytes).positive? && d[:efficiency] < EFFICIENCY_MIN
+          if d[:efficiency] && num(:tx_bytes).positive? && d[:efficiency] < @thresholds[:efficiency]
             diag(:low_efficiency, :warning, "Only #{d[:efficiency]}% of the data blocks sent were useful: retransmissions reduce the effective rate." \
               "#{' In fixed policy, lower the target rate, or use fair policy.' if d[:policy] == 'fixed'}")
           end
           d[:control_loss]&.each do |direction, (sent, lost)|
-            next if sent < CONTROL_LOSS_MIN[:sent] || lost < CONTROL_LOSS_MIN[:percent]
+            next if sent < @thresholds[:control_loss_sent] || lost < @thresholds[:control_loss_percent]
             diag(:control_message_loss, :warning, "#{lost}% of control messages #{CONTROL_DIRECTIONS[direction]} were lost.")
           end
+          return unless num(:rex_overflow).positive?
+          diag(
+            :rex_timer_overflow, :warning,
+            "The retransmission timer overflowed at least #{num(:rex_overflow)} times (logged every 5 seconds at most): the retransmission RTT was very large, which delays the retransmission of lost blocks."
+          )
+        end
+
+        # Rate of the second half of the samples is lower than the first half.
+        # Not evaluated if the session failed, if the rate parameters changed, or if another session started and may share the link.
+        # The last samples are dropped: end of session, file queue drained.
+        def diagnose_rate_decline
+          return if @data[:status] == 'failed' || @params || @data[:shared_link]
+          rates = @rate_samples.sort_by(&:first).map(&:last)
+          rates = rates.first((rates.size * (1 - @thresholds[:rate_decline_end_fraction])).floor)
+          return if rates.size < @thresholds[:rate_decline_min_samples]
+          half = rates.size / 2
+          first = self.class.average(rates.first(half))
+          second = self.class.average(rates.last(rates.size - half))
+          return unless first.positive? && second < @thresholds[:rate_decline_ratio] * first
+          diag(:rate_decline, :warning, "The rate declined during the transfer: #{c(second)} bps on average in the second half, #{c(first)} bps in the first half (#{(100.0 * second / first).round}%).")
         end
 
         # Sender (ascp 4): limit set by the receiver, and storage read rate
@@ -852,10 +927,16 @@ module Aspera
             causes = "#{'disk or network constraints on the rate, ' if slowdown}rate-limiting, a firewall block, or a network outage"
             diag(:reception_interruption, :warning, "Data reception was interrupted for up to #{d[:no_data]} seconds (#{d[:no_data_total]} seconds in total): possibly caused by #{causes}.")
           end
+          if num(:no_feedback).positive?
+            diag(
+              :feedback_interruption, :warning,
+              "The sender received no packet from the receiver for up to #{d[:no_feedback]} seconds (#{d[:no_feedback_total]} seconds in total): possibly caused by rate-limiting, a firewall block, or a network outage."
+            )
+          end
           diag(:filename_too_long, :error, "#{d[:filename_too_long]} files failed because their Windows path is longer than 260 characters.") if d[:filename_too_long] && (windows_log || windows?)
           diag(:configuration_error, :error, "Error in aspera.conf: #{d[:conf_parse]}") if d[:conf_parse]
           # Session ended without `Session Stop`: show the error logged just before, if any
-          diag(:last_error, :error, "Last error before ascp stopped logging: #{d[:last_error]}") if d[:exit] && d[:stop].nil? && d[:last_error] && d[:last_error_time].to_i >= num(:last) - LAST_ERROR_WINDOW
+          diag(:last_error, :error, "Last error before ascp stopped logging: #{d[:last_error]}") if d[:exit] && d[:stop].nil? && d[:last_error] && d[:last_error_time].to_i >= num(:last) - @thresholds[:last_error_window]
           if d[:ssh_disconnect]
             # libssh2 error -9: timeout
             diag(
@@ -864,7 +945,7 @@ module Aspera
             )
           end
           if num(:gap).positive?
-            diag(:io_wait, :warning, "ascp was blocked (IO wait) for #{d[:gap]} seconds, until #{Time.at(d[:gap_last]).ctime}#{', with an SSH timeout' if flag?(:ssh_timeout)}.")
+            diag(:io_wait, :warning, "ascp was blocked (IO wait) for #{d[:gap]} seconds, until #{Time.at(d[:gap_last], in: @timezone).ctime}#{', with an SSH timeout' if flag?(:ssh_timeout)}.")
           end
           diag(:udp_flood_protection, :warning, 'No route to host during the transfer: possibly caused by UDP flood protection of a firewall: check the logs.') if flag?(:send_no_route) && num(:tx_bytes).nonzero? && !flag?(:as_buf_io)
           diag(:local_port_changed, :info, "Local port changed from #{d[:start_l_port]} to #{d[:l_port]} during the session.") if d[:start_l_port]
@@ -955,6 +1036,19 @@ module Aspera
             elsif flag?(:send_nack_stuck) && loss < 0.9 then "#{stuck} on the sender#{', probably lost because of the packet loss' if loss > 0.4}."
             end
           diag(:stuck_nack, :warning, message) if message
+        end
+
+        # Small files and file-queue diagnostics, from `DS Qs` lines
+        def diagnose_file_pipeline
+          count = @data[:transfer_stop_count].to_i
+          return if count < @thresholds[:small_files_min_count]
+          mean = self.class.average(@sizes).to_i
+          return if mean.zero? || mean >= @thresholds[:small_files_max_mean]
+          diag(
+            :small_files, :warning,
+            "#{c(count)} files with a mean size of #{c(mean)} bytes: " \
+              'the per-file overhead (open, attributes, close) dominates and limits throughput.'
+          )
         end
       end
     end

@@ -1,0 +1,58 @@
+2014-10-31 16:29:31 [25c-0xa02521a8] LOG Initializing FASP version 3.5.1.92519, license max rate=(unlimited), account no.=1, license no.=1234 product=6
+2014-10-31 16:29:31 [25c-0xa02521a8] LOG Configured symlink actions: create=1, follow=1, follow_wide=0, skip=0
+2014-10-31 16:29:36 [25c-0xa02521a8] LOG [asssh] remote host-key fingerprint 0000000000000000000000000000000000000007
+2014-10-31 16:29:37 [25c-0xa02521a8] LOG [asssh] authentication succeeded, proceeding.
+2014-10-31 16:29:40 [25c-0xa02521a8] LOG Symlink actions for starters: create=0, follow=1, follow_wide=0, skip=0
+2014-10-31 16:29:40 [25c-0xa02521a8] LOG changing session job size from 0 to 2 to match server configuration
+2014-10-31 16:29:40 [25c-0xa02521a8] LOG vlink init: id=100, type=remote, capacity=100000000, policy=1, Qmax=1250000, Qmin=0, QB=1500000, k_inner=0.50, k_outer=1.00, swarm_size=1
+2014-10-31 16:29:40 [25c-0xa02521a8] ERR MTU discovery not implemented
+2014-10-31 16:29:40 [25c-0xa02521a8] ERR Warning: unable to set Dont Fragment (DF) bit on, pMTU probing may fail
+2014-10-31 16:29:40 [25c-0xb0103000] LOG FASP Session Start uuid=93cb4d52-5e7a-4b9f-b06f-fc64cb3d058e op=send status=started source=/src/file1 (1) dest=/dst/file1 source_prefix=- local=198.51.100.8:63807 peer=198.51.100.9:33001 tcp_port=33001 os="Darwin 13.4.0 Darwin Kernel Version 13.4" ver=3.5.1.92519 lic=10:1:1234 peeros="Microsoft Windows 6.1 Service Pack 1" peerver=3.4.4.84472 peerlic=6:1:1 proto_sess=20002 proto_udp=20000 proto_bwmeas=20000 proto_data=20008
+2014-10-31 16:29:40 [25c-0xb0103000] LOG FASP Session Params uuid=93cb4d52-5e7a-4b9f-b06f-fc64cb3d058e userid=1000 user="xfer" targetrate=1000000 minrate=0 rate_policy=fair cipher=aes-128 resume=2 create=0 ovr=1 times=0 precalc=yes mf=1 mf_path=/Users/user/.aspera/connect/filelists/file21 mf_suffix=.aspera-inprogress partial_file_suffix=- files_encrypt=no files_decrypt=no file_csum=none dgram_sz=0 prepostcmd=- tcp_mode=no rtt_auto=yes cookie="-" vl_proto_ver=1  peer_vl_proto_ver=1 vl_local=0 vlink_remote=100000000 vl_sess_id=2899 srcbase=- rd_sz=0 wr_sz=0 cluster_num_nodes=1 cluster_node_id=0 range=0-0 keepalive=no test_login=no proxy_ip=- net_rc_alg=alg_delay exclude_older/newer_than=0/0
+2014-10-31 16:29:41 [25c-0xa02521a8] ERR MTU discovery not implemented
+2014-10-31 16:29:41 [25c-0xa02521a8] ERR Warning: unable to turn off Dont Fragment (DF) bit
+2014-10-31 16:29:41 [25c-0xa02521a8] LOG datagram size 1484B, block size 1424B, path MTU 1492B
+2014-10-31 16:29:41 [25c-0xb0185000] LOG Add sender src : /Volumes/dir18/dir19/dir20/dir21/file22.MOV dst : -
+2014-10-31 16:29:41 [25c-0xb0207000] LOG Sender bl t/o/r/dl=0/0/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/0 rate t/m/c=1000000/0/11936 prog t/f/e=0/0/0 xmtD=0
+2014-10-31 16:29:41 [25c-0xb0207000] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/1/0/0/0/0/0/0/0/0/0/0 Rs o/i=0/0  mb = 0/
+2014-10-31 16:29:43 [25c-0xb0103000] LOG FASP Transfer Start uuid=93cb4d52-5e7a-4b9f-b06f-fc64cb3d058e op=send status=started file="/dst/file1" size=4469599 start_byte=0 rate=1.00Mbps loss=0.00 rexreqs=0 overhead=0
+2014-10-31 16:30:00 [25c-0xb0103000] LOG Requested new target_rate 882000
+2014-10-31 16:30:00 [25c-0xb0103000] LOG Requested new min_rate 0
+2014-10-31 16:30:00 [25c-0xb0103000] LOG Requested new transfer policy fair
+2014-10-31 16:30:01 [25c-0xb0207000] LOG Sender bl t/o/r/dl=458/343/115/0 ctl bm/bs=0/0 rex b/r/n=115/103/0 r_ott q/s/n=0/0/93 rate t/m/c=882000/0/166117 prog t/f/e=452832/452832/17472690 xmtD=0
+2014-10-31 16:30:01 [25c-0xb0207000] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1  mb = 0/
+2014-10-31 16:30:01 [25c-0xb0207000] LOG Negotiated rate params, target_rate 882000 min_rate 0 transfer_policy fair
+2014-10-31 16:30:03 [25c-0xb0103000] LOG FASP session cancelled (management interface CANCEL command)
+2014-10-31 16:30:03 [25c-0xb0185000] ERR User aborted session
+2014-10-31 16:30:03 [25c-0xb0185000] ERR LOCAL ABORT: Shutting down source/transmitter, local abort reason FASP_ABORT_BY_APP
+2014-10-31 16:30:03 [25c-0xb0185000] ERR source->sesserr_snd_psb.len 32
+2014-10-31 16:30:03 [25c-0xb0185000] ERR source_send_abort: sent abort pdu reason 5 (total len 0)
+2014-10-31 16:30:03 [25c-0xb0185000] LOG Session notification: type=19 len=28 reason=5 (FASP_ABORT_BY_APP)
+2014-10-31 16:30:03 [25c-0xb0207000] LOG Sender bl t/o/r/dl=498/383/115/0 ctl bm/bs=0/0 rex b/r/n=115/103/0 r_ott q/s/n=0/0/104 rate t/m/c=882000/0/207079 prog t/f/e=511216/511216/20592741 xmtD=0
+2014-10-31 16:30:03 [25c-0xb0207000] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1  mb = 0/
+2014-10-31 16:30:03 [25c-0xb0207000] LOG Sender bl t/o/r/dl=499/384/115/0 ctl bm/bs=0/0 rex b/r/n=115/103/0 r_ott q/s/n=0/0/104 rate t/m/c=882000/0/207079 prog t/f/e=511216/511216/20592741 xmtD=0
+2014-10-31 16:30:03 [25c-0xb0207000] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1  mb = 0/
+2014-10-31 16:30:04 [25c-0xa02521a8] ERR FASP sender had error, errcode 68 errstr [User aborted session]
+2014-10-31 16:30:04 [25c-0xa02521a8] ERR Peer FASP receiver had error, errcode 68 errstr [User aborted session (client)]
+2014-10-31 16:30:04 [25c-0xb0103000] LOG FASP Session Stop uuid=93cb4d52-5e7a-4b9f-b06f-fc64cb3d058e op=send status=failed errcode=28 errstr="Cancelled by user" source=/src/file1 (1) dest=/dst/file1 source_prefix=- local=198.51.100.8:63807 peer=198.51.100.9:33001 tcp_port=33001 os="Darwin 13.4.0 Darwin Kernel Version 13.4" ver=3.5.1.92519 lic=10:1:1234 peeros="Microsoft Windows 6.1 Service Pack 1" peerver=3.4.4.84472 peerlic=6:1:1 proto_sess=20002 proto_udp=20000 proto_bwmeas=20000 proto_data=20008
+2014-10-31 16:30:04 [25c-0xb0103000] LOG FASP Session Params uuid=93cb4d52-5e7a-4b9f-b06f-fc64cb3d058e userid=1000 user="xfer" targetrate=882000 minrate=0 rate_policy=fair cipher=aes-128 resume=2 create=0 ovr=1 times=0 precalc=yes mf=1 mf_path=/Users/user/.aspera/connect/filelists/file21 mf_suffix=.aspera-inprogress partial_file_suffix= files_encrypt=no files_decrypt=no file_csum=none dgram_sz=0 prepostcmd=- tcp_mode=no rtt_auto=yes cookie="-" vl_proto_ver=1  peer_vl_proto_ver=1 vl_local=0 vlink_remote=100000000 vl_sess_id=2899 srcbase=- rd_sz=0 wr_sz=0 cluster_num_nodes=1 cluster_node_id=0 range=0-0 keepalive=no test_login=no proxy_ip=- net_rc_alg=alg_delay exclude_older/newer_than=0/0
+2014-10-31 16:30:04 [25c-0xb0103000] LOG FASP Session Statistics [Sender] id=93cb4d52-5e7a-4b9f-b06f-fc64cb3d058e delay=834ms rex_delay=1044ms solicited_rex=23.05% unsolicited_rex=0.00% ave_xmit_rate 265.64Kbps effective=76.95% effective_rate=204.41Kbps (detail: good_blks 384 bl_total 499 bl_orig 384 bl_rex 115 dup_last_blks 0) (sndr ctl: sent 47 rcvd 44 lost 3 lost 6.38%) (rcvr ctl: sent 141 rcvd 138 lost 3 lost 2.13%) (rex  ctl: sent 103 rcvd 103 lost 0 lost 0.00%) (progress: tx_bytes 546816 file_bytes 546816 tx_time 22311202) (estimate transfer size: 4469599 bytes)  sess->instru.num_rex_xfer_not_found 0 sess->instru.num_rex_abrtxfer_not_found 0
+2014-10-31 16:30:04 [25c-0xa02521a8] LOG ======= File Transfer statistics =======
+2014-10-31 16:30:04 [25c-0xa02521a8] LOG ------- Source statistics -------
+2014-10-31 16:30:04 [25c-0xa02521a8] LOG Source argument scans attempted             :          1
+2014-10-31 16:30:04 [25c-0xa02521a8] LOG - Source argument scans completed           :          1
+2014-10-31 16:30:04 [25c-0xa02521a8] LOG Source path scans attempted                 :          1
+2014-10-31 16:30:04 [25c-0xa02521a8] LOG - Source path scans failed                  :          0
+2014-10-31 16:30:04 [25c-0xa02521a8] LOG - Source path scans skipped since irregular :          0
+2014-10-31 16:30:04 [25c-0xa02521a8] LOG - Source path scans excluded                :          0
+2014-10-31 16:30:04 [25c-0xa02521a8] LOG - Source directory scans completed          :          0
+2014-10-31 16:30:04 [25c-0xa02521a8] LOG - Source file scans completed               :          1
+2014-10-31 16:30:04 [25c-0xa02521a8] LOG Source directory creates attempted          :          0
+2014-10-31 16:30:04 [25c-0xa02521a8] LOG - Source directory creates failed           :          0
+2014-10-31 16:30:04 [25c-0xa02521a8] LOG - Source directory created or existed       :          0
+2014-10-31 16:30:04 [25c-0xa02521a8] LOG Source file transfers attempted             :          1
+2014-10-31 16:30:04 [25c-0xa02521a8] LOG - Source file transfers failed              :          1 !
+2014-10-31 16:30:04 [25c-0xa02521a8] LOG - Source file transfers passed              :          0
+2014-10-31 16:30:04 [25c-0xa02521a8] LOG - Source file transfers skipped             :          0
+2014-10-31 16:30:04 [25c-0xa02521a8] LOG Source bytes transferred                    :          0
+2014-10-31 16:30:04 [25c-0xa02521a8] LOG ======= end File Transfer statistics =======

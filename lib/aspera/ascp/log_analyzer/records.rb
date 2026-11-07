@@ -59,14 +59,16 @@ module Aspera
 
         class << self
           # @param kind  [Symbol]        One of the keys of SCHEMAS
-          # @param paths [Array<String>] Log files or folders
+          # @param paths [Array<String>] Log files, `-` (standard input) or folders
+          # @param timezone [String, nil] Time zone of the log lines: `UTC` or `+HH:MM`. Time zone of the analyst if nil.
           # @return [Array<Hash>] records of all log files, with field `log_file` when there are several log files
-          def list(kind, paths)
+          def list(kind, paths, timezone: nil)
             Aspera.assert_values(kind, SCHEMAS.keys)
-            files = paths.flat_map { |path| LogAnalyzer.log_paths(path) }
-            files.flat_map do |file|
-              rows = new(file).parse.public_send(kind)
-              files.size > 1 ? rows.map { |row| {'log_file' => file}.merge(row) } : rows
+            LogAnalyzer.check_timezone(timezone)
+            logs = paths.flat_map { |path| LogAnalyzer.load_logs(path) { |file| new(file, timezone: timezone).parse } }
+            logs.flat_map do |log|
+              rows = log.public_send(kind)
+              logs.size > 1 ? rows.map { |row| {'log_file' => log.path}.merge(row) } : rows
             end
           end
 
@@ -96,12 +98,16 @@ module Aspera
           end
         end
 
+        # @return [String] Log file
+        attr_reader :path
         # @return [Array<Hash>] one record per sample of a session
         attr_reader :samples
 
-        # @param path [String] Log file
-        def initialize(path)
+        # @param path     [String]      Log file
+        # @param timezone [String, nil] Time zone of the log lines: `UTC` or `+HH:MM`. Time zone of the analyst if nil.
+        def initialize(path, timezone: nil)
           @path = path
+          @timezone = timezone
           @samples = []
           # uuid => session record
           @sessions = {}
@@ -117,7 +123,7 @@ module Aspera
         # Read and parse the log file
         # @return [self]
         def parse
-          File.foreach(@path, mode: 'r:UTF-8') do |line|
+          LogAnalyzer.read_lines(@path, Encoding::UTF_8) do |line|
             line = line.scrub unless line.valid_encoding?
             parse_line(normalize(line))
           end
@@ -137,6 +143,7 @@ module Aspera
         private
 
         def parse_line(line)
+          track_ascp(line)
           return unless line.include?(' LOG ')
           pid = line[PID, 1] or return
           process = line[PROCESS, 1]
@@ -145,7 +152,7 @@ module Aspera
           MESSAGES.each do |regex, method|
             m = message.match(regex) or next
             stamp = parse_time(line[LINE_TIME, 1])
-            send(method, pid, stamp && Time.at(stamp).iso8601, m)
+            send(method, pid, iso(stamp), m)
             break
           end
         end

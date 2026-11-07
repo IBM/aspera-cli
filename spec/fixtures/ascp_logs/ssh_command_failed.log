@@ -1,0 +1,80 @@
+2026-09-15 18:30:41.696 [87f1-18601239] LOG Initializing FASP version 4.4.8.2592 6a5e6bf, license max rate=(unlimited), account no.=1, license no.=1234 product=53
+2026-09-15 18:30:41.698 [87f1-18601239] LOG Configured symlink actions: create=1, follow=1, follow_wide=0, skip=0
+2026-09-15 18:30:41.698 [87f1-18601239] LOG IBM Aspera Transfer SDK version 1.1.9
+2026-09-15 18:30:41.699 [87f1-18601239] ERR Too many management channels requested (max 32).
+2026-09-15 18:30:41.701 [87f1-18601239] ERR Cannot connect to management port localhost:65243
+2026-09-15 18:30:41.701 [87f1-18601239] ERR optional management connection to localhost:65243 failed
+2026-09-15 18:30:41.701 [87f1-18601239] ERR Cannot connect to management port localhost:50708
+2026-09-15 18:30:41.701 [87f1-18601239] ERR optional management connection to localhost:50708 failed
+2026-09-15 18:30:41.701 [87f1-18601239] ERR Cannot connect to management port localhost:52999
+2026-09-15 18:30:41.701 [87f1-18601239] ERR optional management connection to localhost:52999 failed
+2026-09-15 18:30:41.702 [87f1-18601239] ERR Cannot connect to management port localhost:51753
+2026-09-15 18:30:41.702 [87f1-18601239] ERR optional management connection to localhost:51753 failed
+2026-09-15 18:30:41.702 [87f1-18601239] ERR Cannot connect to management port localhost:51015
+2026-09-15 18:30:41.702 [87f1-18601239] ERR optional management connection to localhost:51015 failed
+2026-09-15 18:30:41.702 [87f1-18601239] ERR Cannot connect to management port localhost:54946
+2026-09-15 18:30:41.702 [87f1-18601239] ERR optional management connection to localhost:54946 failed
+2026-09-15 18:30:41.703 [87f1-18601239] ERR Cannot connect to management port localhost:59468
+2026-09-15 18:30:41.703 [87f1-18601239] ERR optional management connection to localhost:59468 failed
+2026-09-15 18:30:41.703 [87f1-18601239] ERR Cannot connect to management port localhost:50762
+2026-09-15 18:30:41.703 [87f1-18601239] ERR optional management connection to localhost:50762 failed
+2026-09-15 18:30:41.703 [87f1-18601239] ERR Cannot connect to management port localhost:58660
+2026-09-15 18:30:41.703 [87f1-18601239] ERR optional management connection to localhost:58660 failed
+2026-09-15 18:30:41.704 [87f1-18601239] ERR Cannot connect to management port localhost:58656
+2026-09-15 18:30:41.704 [87f1-18601239] ERR optional management connection to localhost:58656 failed
+2026-09-15 18:30:41.704 [87f1-18601239] ERR Cannot connect to management port localhost:56016
+2026-09-15 18:30:41.704 [87f1-18601239] ERR optional management connection to localhost:56016 failed
+2026-09-15 18:30:41.704 [87f1-18601239] ERR Cannot connect to management port localhost:62047
+2026-09-15 18:30:41.704 [87f1-18601239] ERR optional management connection to localhost:62047 failed
+2026-09-15 18:30:41.705 [87f1-18601239] ERR Cannot connect to management port localhost:62321
+2026-09-15 18:30:41.705 [87f1-18601239] ERR optional management connection to localhost:62321 failed
+2026-09-15 18:30:41.705 [87f1-18601239] ERR Cannot connect to management port localhost:49842
+2026-09-15 18:30:41.705 [87f1-18601239] ERR optional management connection to localhost:49842 failed
+2026-09-15 18:30:41.705 [87f1-18601239] ERR Cannot connect to management port localhost:58232
+2026-09-15 18:30:41.705 [87f1-18601239] ERR optional management connection to localhost:58232 failed
+2026-09-15 18:30:41.706 [87f1-18601239] ERR Cannot connect to management port localhost:55849
+2026-09-15 18:30:41.706 [87f1-18601239] ERR optional management connection to localhost:55849 failed
+2026-09-15 18:30:41.706 [87f1-18601239] ERR Cannot connect to management port localhost:62609
+2026-09-15 18:30:41.706 [87f1-18601239] ERR optional management connection to localhost:62609 failed
+2026-09-15 18:30:41.707 [87f1-18601239] ERR Cannot connect to management port localhost:49491
+2026-09-15 18:30:41.707 [87f1-18601239] ERR optional management connection to localhost:49491 failed
+2026-09-15 18:30:41.707 [87f1-18601239] ERR Cannot connect to management port localhost:58988
+2026-09-15 18:30:41.707 [87f1-18601239] ERR optional management connection to localhost:58988 failed
+2026-09-15 18:30:41.707 [87f1-18601239] ERR Cannot connect to management port localhost:57678
+2026-09-15 18:30:41.707 [87f1-18601239] ERR optional management connection to localhost:57678 failed
+2026-09-15 18:30:41.708 [87f1-18601239] ERR Cannot connect to management port localhost:54445
+2026-09-15 18:30:41.708 [87f1-18601239] ERR optional management connection to localhost:54445 failed
+2026-09-15 18:30:41.708 [87f1-18601239] ERR Cannot connect to management port localhost:59237
+2026-09-15 18:30:41.708 [87f1-18601239] ERR optional management connection to localhost:59237 failed
+2026-09-15 18:30:41.708 [87f1-18601239] ERR Cannot connect to management port localhost:63571
+2026-09-15 18:30:41.709 [87f1-18601239] ERR optional management connection to localhost:63571 failed
+2026-09-15 18:30:41.709 [87f1-18601239] ERR Cannot connect to management port localhost:57458
+2026-09-15 18:30:41.709 [87f1-18601239] ERR optional management connection to localhost:57458 failed
+2026-09-15 18:30:41.709 [87f1-18601239] ERR Cannot connect to management port localhost:57890
+2026-09-15 18:30:41.709 [87f1-18601239] ERR optional management connection to localhost:57890 failed
+2026-09-15 18:30:41.710 [87f1-18601239] ERR Cannot connect to management port localhost:62551
+2026-09-15 18:30:41.710 [87f1-18601239] ERR optional management connection to localhost:62551 failed
+2026-09-15 18:30:41.710 [87f1-18601239] ERR Cannot connect to management port localhost:57718
+2026-09-15 18:30:41.710 [87f1-18601239] ERR optional management connection to localhost:57718 failed
+2026-09-15 18:30:41.710 [87f1-18601239] ERR Cannot connect to management port localhost:51579
+2026-09-15 18:30:41.710 [87f1-18601239] ERR optional management connection to localhost:51579 failed
+2026-09-15 18:30:41.711 [87f1-18601239] ERR Cannot connect to management port localhost:63462
+2026-09-15 18:30:41.711 [87f1-18601239] ERR optional management connection to localhost:63462 failed
+2026-09-15 18:30:41.711 [87f1-18601239] ERR Cannot connect to management port localhost:50063
+2026-09-15 18:30:41.711 [87f1-18601239] ERR optional management connection to localhost:50063 failed
+2026-09-15 18:30:41.711 [87f1-18601239] ERR Cannot connect to management port localhost:60905
+2026-09-15 18:30:41.711 [87f1-18601239] ERR optional management connection to localhost:60905 failed
+2026-09-15 18:30:41.711 [87f1-18601239] ERR /Users/user/.aspera/lib/ossl-modules not found
+2026-09-15 18:30:41.715 [87f1-18601239] LOG (access key) Not present
+2026-09-15 18:30:41.906 [87f1-18601239] LOG [asssh] remote host-key fingerprint 0000000000000000000000000000000000000001
+2026-09-15 18:30:42.028 [87f1-18601239] LOG [asssh] authentication succeeded, proceeding.
+2026-09-15 18:30:42.454 [87f1-18601239] ERR Failed to start remote command, libssh2 result -9
+2026-09-15 18:30:42.458 [87f1-18601239] ERR [asssh] channel eof wait rc=-9
+2026-09-15 18:30:42.475 [87f1-18601239] ERR [asssh] channel wait close rc=-34
+2026-09-15 18:30:42.475 [87f1-18601239] ERR [ascp] Failed to start remote command
+2026-09-15 18:30:42.476 [87f1-18601239] ERR failed to authenticate
+2026-09-15 18:30:42.476 [87f1-18601241] LOG FASP Session Start uuid=4d507e02-8603-49cb-914b-7baf94ea9e2d op=recv status=failed errcode=89 errstr="SSH authentication failed" source=/src/file1 dest=/dst/file1 source_prefix=- local=198.51.100.4:33001 peer=198.51.100.3:8888 tcp_port=33001 os="Darwin 25.6.0 Darwin Kernel Version 25.6.0: Fri Jul 31 19:18:49 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6000" ver=4.4.8.2592 6a5e6bf lic=10:1:1234 peeros="-" peerver=- peerlic=6:1:1 proto_sess=20003 proto_udp=20000 proto_bwmeas=20000 proto_data=2000f
+2026-09-15 18:30:42.476 [87f1-18601241] LOG FASP Session Params uuid=4d507e02-8603-49cb-914b-7baf94ea9e2d userid=1000 user="xfer" targetrate=10000000 minrate=0 rate_policy=fair cipher=aes-128-cfb resume=2 create=8 extra_create=0 ovr=1 times=0 precalc=no precalc_disable=false mf=0 mf_path=- mf_suffix=.aspera-inprogress partial_file_suffix=- files_encrypt=no files_decrypt=no file_csum=NONE fips_enabled=no dgram_sz=0 tcp_mode=no rtt_auto=yes cookie="-" vl_proto_ver=1  peer_vl_proto_ver=0 vl_local=0 vlink_remote=0 vl_sess_id=0 srcbase=- rd_sz=0 wr_sz=0 cluster_num_nodes=1 cluster_node_id=0 cluster_multi_session_threshold=-1 range=0-0 keepalive=no test_login=no proxy_ip=- net_rc_alg=alg_delay exclude_older/newer_than=0/0 xfer_id=b7151eda-0973-4c0e-abc2-15f198219075
+2026-09-15 18:30:42.477 [87f1-18601241] LOG FASP Session Stop uuid=4d507e02-8603-49cb-914b-7baf94ea9e2d op=recv status=failed errcode=89 errstr="SSH authentication failed" source=/src/file1 dest=/dst/file1 source_prefix=- local=198.51.100.4:33001 peer=198.51.100.3:8888 tcp_port=33001 os="Darwin 25.6.0 Darwin Kernel Version 25.6.0: Fri Jul 31 19:18:49 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6000" ver=4.4.8.2592 6a5e6bf lic=10:1:1234 peeros="-" peerver=- peerlic=6:1:1 proto_sess=20003 proto_udp=20000 proto_bwmeas=20000 proto_data=2000f
+2026-09-15 18:30:42.477 [87f1-18601241] LOG FASP Session Params uuid=4d507e02-8603-49cb-914b-7baf94ea9e2d userid=1000 user="xfer" targetrate=10000000 minrate=0 rate_policy=fair cipher=aes-128-cfb resume=2 create=8 extra_create=0 ovr=1 times=0 precalc=no precalc_disable=false mf=0 mf_path=- mf_suffix=.aspera-inprogress partial_file_suffix=- files_encrypt=no files_decrypt=no file_csum=NONE fips_enabled=no dgram_sz=0 tcp_mode=no rtt_auto=yes cookie="-" vl_proto_ver=1  peer_vl_proto_ver=0 vl_local=0 vlink_remote=0 vl_sess_id=0 srcbase=- rd_sz=0 wr_sz=0 cluster_num_nodes=1 cluster_node_id=0 cluster_multi_session_threshold=-1 range=0-0 keepalive=no test_login=no proxy_ip=- net_rc_alg=alg_delay exclude_older/newer_than=0/0 xfer_id=b7151eda-0973-4c0e-abc2-15f198219075
+2026-09-15 18:30:42.477 [87f1-18601241] LOG FASP Session Statistics [Receiver] id=4d507e02-8603-49cb-914b-7baf94ea9e2d delay=0ms rex_delay=0ms ooo_delay=0ms solicited_rex=0.00% rcvd_rex=0.00% rcvd_dups=0.00% ave_xmit_rate 0.00Kbps effective=0.00% effective_rate=0.00Kbps (detail: good_blks 0 bl_total 0 bl_orig 0 bl_rex 0 dup_blks 0 dup_last_blks 0 drop_blks_xnf 0) (sndr ctl: sent 0 rcvd 0 lost 0 lost 0.00%) (rcvr ctl: sent 0 rcvd 0 lost 0 lost 0.00%) (rex  ctl: sent 0 rcvd 0 lost 0 lost 0.00%) (progress: tx_bytes 0 file_bytes 0 tx_time 0) rex_xmit_blks 0  xmit_total 0 rex_xmit_pct 0.00%

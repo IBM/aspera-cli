@@ -1,0 +1,39 @@
+2015-02-18 13:43:28 [1fa4-00000eb8] LOG Initializing FASP version 3.5.2.94667, license expires on Sat Jan  1 00:00:00 2033, max rate=(unlimited), account no.=1, license no.=1234 product=8
+2015-02-18 13:43:28 [1fa4-00000eb8] LOG Configured symlink actions: create=0, follow=1, follow_wide=0, skip=0
+2015-02-18 13:43:36 [1fa4-00000eb8] LOG [asssh] remote host-key fingerprint 0000000000000000000000000000000000000006
+2015-02-18 13:43:38 [1fa4-00000eb8] LOG [asssh] authentication succeeded, proceeding.
+2015-02-18 13:43:41 [1fa4-00000eb8] LOG Symlink actions for starters: create=0, follow=1, follow_wide=0, skip=0
+2015-02-18 13:43:41 [1fa4-000014ac] LOG FASP Session Start uuid=49d45029-4d3d-4077-8b64-eddd2c6f3b2c op=send status=started source=C:/src/file1 (1) dest=/dst/file1 source_prefix=- local=198.51.100.13:49898 peer=198.51.100.14:33001 tcp_port=33001 os="Microsoft Windows 6.1 Service Pack 1" ver=3.5.2.94667 lic=10:1:1234 peeros="Linux 2.6.32-504.3.3.el6.x86_64 #1 SMP W" peerver=3.5.2.94794 peerlic=6:1:1 proto_sess=20002 proto_udp=20000 proto_bwmeas=20000 proto_data=20008
+2015-02-18 13:43:41 [1fa4-000014ac] LOG FASP Session Params uuid=49d45029-4d3d-4077-8b64-eddd2c6f3b2c userid=1000 user="xfer" targetrate=10000000 minrate=0 rate_policy=fair cipher=none resume=2 create=1 ovr=1 times=3 precalc=yes mf=0 mf_path=- mf_suffix=.aspera-inprogress partial_file_suffix=- files_encrypt=no files_decrypt=no file_csum=none dgram_sz=0 prepostcmd=- tcp_mode=no rtt_auto=yes cookie="-" vl_proto_ver=1  peer_vl_proto_ver=1 vl_local=0 vlink_remote=0 vl_sess_id=22608 srcbase=- rd_sz=0 wr_sz=0 cluster_num_nodes=1 cluster_node_id=0 range=0-0 keepalive=no test_login=no proxy_ip=- net_rc_alg=alg_delay exclude_older/newer_than=0/0
+2015-02-18 13:43:42 [1fa4-00000eb8] LOG datagram size 1492B, block size 1452B, path MTU 1492B
+2015-02-18 13:43:42 [1fa4-00001c84] LOG Add sender src : C:/Users/user/Documents/file19 dst : -
+2015-02-18 13:43:43 [1fa4-000014ac] LOG FASP Transfer Stop uuid=49d45029-4d3d-4077-8b64-eddd2c6f3b2c op=send status=failed errcode=5 errstr="Insufficient permissions" file="C:/dst/file1" size=104857600 start_byte=0 rate=0.00Kbps elapsed=0.00s loss=0.00 rexreqs=0 overhead=0
+2015-02-18 13:43:43 [1fa4-00001bb0] LOG Sender bl t/o/r/dl=0/0/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/0 rate t/m/c=10000000/0/4681000 prog t/f/e=0/0/0 xmtD=0
+2015-02-18 13:43:43 [1fa4-00001bb0] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=0/0/0/0/0/0/0/0/0/0/0/0 Rs o/i=1/1 mgmt backlog i/s/n = 0/336/0 1/332/0
+2015-02-18 13:43:43 [1fa4-00001bb0] LOG Sender bl t/o/r/dl=0/0/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/0 rate t/m/c=10000000/0/4681000 prog t/f/e=0/0/0 xmtD=0
+2015-02-18 13:43:43 [1fa4-00001bb0] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=0/0/0/0/0/0/0/0/0/0/0/0 Rs o/i=1/1 mgmt backlog i/s/n = 0/336/0 1/332/0
+2015-02-18 13:43:43 [1fa4-00000eb8] ERR Insufficient permissions
+2015-02-18 13:43:44 [1fa4-00000eb8] ERR FASP sender had error, errcode 51 errstr [Insufficient permissions]
+2015-02-18 13:43:44 [1fa4-00000eb8] ERR Peer FASP receiver had error, errcode 51 errstr [Insufficient permissions]
+2015-02-18 13:43:44 [1fa4-000014ac] LOG FASP Session Stop uuid=49d45029-4d3d-4077-8b64-eddd2c6f3b2c op=send status=failed errcode=5 errstr="Insufficient permissions" source=C:/src/file1 (1) dest=/dst/file1 source_prefix=- local=198.51.100.13:49898 peer=198.51.100.14:33001 tcp_port=33001 os="Microsoft Windows 6.1 Service Pack 1" ver=3.5.2.94667 lic=10:1:1234 peeros="Linux 2.6.32-504.3.3.el6.x86_64 #1 SMP W" peerver=3.5.2.94794 peerlic=6:1:1 proto_sess=20002 proto_udp=20000 proto_bwmeas=20000 proto_data=20008
+2015-02-18 13:43:44 [1fa4-000014ac] LOG FASP Session Params uuid=49d45029-4d3d-4077-8b64-eddd2c6f3b2c userid=1000 user="xfer" targetrate=10000000 minrate=0 rate_policy=fair cipher=none resume=2 create=1 ovr=1 times=3 precalc=yes mf=0 mf_path=- mf_suffix=.aspera-inprogress partial_file_suffix= files_encrypt=no files_decrypt=no file_csum=none dgram_sz=0 prepostcmd=- tcp_mode=no rtt_auto=yes cookie="-" vl_proto_ver=1  peer_vl_proto_ver=1 vl_local=0 vlink_remote=0 vl_sess_id=22608 srcbase=- rd_sz=0 wr_sz=0 cluster_num_nodes=1 cluster_node_id=0 range=0-0 keepalive=no test_login=no proxy_ip=- net_rc_alg=alg_delay exclude_older/newer_than=0/0
+2015-02-18 13:43:44 [1fa4-000014ac] LOG FASP Session Statistics [Sender] id=49d45029-4d3d-4077-8b64-eddd2c6f3b2c delay=8ms rex_delay=8ms solicited_rex=0.00% unsolicited_rex=0.00% ave_xmit_rate 0.00Kbps effective=0.00% effective_rate=0.00Kbps (detail: good_blks 0 bl_total 0 bl_orig 0 bl_rex 0 dup_last_blks 0) (sndr ctl: sent 21 rcvd 21 lost 0 lost 0.00%) (rcvr ctl: sent 31 rcvd 5 lost 26 lost 83.87%) (rex  ctl: sent 0 rcvd 0 lost 0 lost 0.00%) (progress: tx_bytes 0 file_bytes 104857600 tx_time 1406046) (estimate transfer size: 104857600 bytes)  sess->instru.num_rex_xfer_not_found 0 sess->instru.num_rex_abrtxfer_not_found 0
+2015-02-18 13:43:44 [1fa4-00000eb8] LOG ======= File Transfer statistics =======
+2015-02-18 13:43:44 [1fa4-00000eb8] LOG ------- Source statistics -------
+2015-02-18 13:43:44 [1fa4-00000eb8] LOG Source argument scans attempted             :          1
+2015-02-18 13:43:44 [1fa4-00000eb8] LOG - Source argument scans completed           :          1
+2015-02-18 13:43:44 [1fa4-00000eb8] LOG Source path scans attempted                 :          1
+2015-02-18 13:43:44 [1fa4-00000eb8] LOG - Source path scans failed                  :          0
+2015-02-18 13:43:44 [1fa4-00000eb8] LOG - Source path scans skipped since irregular :          0
+2015-02-18 13:43:44 [1fa4-00000eb8] LOG - Source path scans excluded                :          0
+2015-02-18 13:43:44 [1fa4-00000eb8] LOG - Source directory scans completed          :          0
+2015-02-18 13:43:44 [1fa4-00000eb8] LOG - Source file scans completed               :          1
+2015-02-18 13:43:44 [1fa4-00000eb8] LOG Source directory creates attempted          :          0
+2015-02-18 13:43:44 [1fa4-00000eb8] LOG - Source directory creates failed           :          0
+2015-02-18 13:43:44 [1fa4-00000eb8] LOG - Source directory created or existed       :          0
+2015-02-18 13:43:44 [1fa4-00000eb8] LOG Source file transfers attempted             :          1
+2015-02-18 13:43:44 [1fa4-00000eb8] LOG - Source file transfers failed              :          1 !
+2015-02-18 13:43:44 [1fa4-00000eb8] LOG - Source file transfers passed              :          0
+2015-02-18 13:43:44 [1fa4-00000eb8] LOG - Source file transfers skipped             :          0
+2015-02-18 13:43:44 [1fa4-00000eb8] LOG Source bytes transferred                    :          0
+2015-02-18 13:43:44 [1fa4-00000eb8] LOG ======= end File Transfer statistics =======

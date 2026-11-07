@@ -1,0 +1,53 @@
+2015-06-15 09:45:33 [274c-00003bf0] LOG Initializing FASP version 3.5.4.100392, license expires on Sat Jan  1 00:00:00 2033, max rate=(unlimited), account no.=1, license no.=1234 product=10
+2015-06-15 09:45:33 [274c-00003bf0] LOG Configured symlink actions: create=0, follow=1, follow_wide=0, skip=0
+2015-06-15 09:45:33 [274c-00003bf0] LOG Requested symlink action(s): create=0, follow=1, follow_wide=0, skip=0
+2015-06-15 09:45:33 [274c-00003bf0] LOG Symlink actions adjusted platform-wise and per configuration: create=0, follow=1, follow_wide=0, skip=0
+2015-06-15 09:45:34 [274c-00004290] LOG FASP Session Start uuid=ec715627-5f6b-496a-a8ad-e654aa36c5cb op=recv status=started source=C:/src/file1 (1) dest=/dst/file1 source_prefix=- local=10.0.0.7:33001 peer=10.0.0.8:60388 tcp_port=22 os="Microsoft Windows 6.2 " ver=3.5.4.100392 lic=10:1:1234 peeros="Microsoft Windows 6.1 Service Pack 1" peerver=3.5.1.92519 peerlic=6:1:1 proto_sess=20002 proto_udp=20000 proto_bwmeas=20000 proto_data=20008
+2015-06-15 09:45:34 [274c-00004290] LOG FASP Session Params uuid=ec715627-5f6b-496a-a8ad-e654aa36c5cb userid=1000 user="xfer" targetrate=10000000 minrate=0 rate_policy=fair cipher=aes-128 resume=2 create=0 ovr=1 times=0 precalc=no mf=0 mf_path=- mf_suffix=.aspera-inprogress partial_file_suffix=- files_encrypt=no files_decrypt=no file_csum=none dgram_sz=0 prepostcmd=- tcp_mode=no rtt_auto=yes cookie="-" vl_proto_ver=1  peer_vl_proto_ver=1 vl_local=0 vlink_remote=0 vl_sess_id=23643 srcbase=- rd_sz=0 wr_sz=0 cluster_num_nodes=1 cluster_node_id=0 range=0-0 keepalive=no test_login=no proxy_ip=- net_rc_alg=alg_delay exclude_older/newer_than=0/0
+2015-06-15 09:45:34 [274c-00003bf0] LOG Measured pMTU: 1492 Bytes, start_brtt: 6 ms
+2015-06-15 09:45:34 [274c-00003bf0] LOG datagram size 1484B, block size 1424B, path MTU 1492B
+2015-06-15 09:45:34 [274c-00004290] LOG FASP Transfer Start uuid=ec715627-5f6b-496a-a8ad-e654aa36c5cb op=recv status=started file="/dst/file1" size=7395016704 start_byte=0 rate=10.00Mbps loss=0.00 rexreqs=0 overhead=0 mtime="2014-12-30 09:45"
+2015-06-15 09:45:49 [274c-000021c8] LOG Peer requested rate params adopted,  target_rate 100000000 min_rate 0 transfer_policy fair
+2015-06-15 09:45:53 [274c-000021c8] LOG Peer requested rate params adopted,  target_rate 631205000 min_rate 0 transfer_policy fair
+2015-06-15 09:45:54 [274c-000021c8] LOG Receiver bl t/o/r/d/ts=63930/63928/1/1/62000 rex_rtt l/h/s/o=15/0/7/22 ooo_rtt l/h/s/o=1/35/12/69 rate_rtt b/l/h/s/r/f=1/1/35/3/0/1 ctl bm/bs=0/0 rex n/s/q/v/a/r=4/1/1/114/0/0 bl l/d/o/r/a/x/dl/df/dm/ds=119/0/118/0/0/1/0/0/0/0 disk l/h/b=0/1/0 vlink lq/lo/rq/ro=0/0/0/0 rate t/m/c/n/vl/vr/r=631205000/0/414329662/414329662/631205000/631205000/631205000 prog t/f/e=91034896/91034896/20212183 rcvD=0
+2015-06-15 09:45:54 [274c-000021c8] LOG Receiver DS Qs ds/n/rq/ao/ap/rd/ru/no/po/pc/do=1/0/0/0/0/0/1/0/0/0/0 Rs i/o=1/1 mgmt backlog i/s/n = 0/452/0 1/448/0
+2015-06-15 09:46:14 [274c-000021c8] LOG Receiver bl t/o/r/d/ts=212839/209654/3184/1/214211 rex_rtt l/h/s/o=31/126/34/35 ooo_rtt l/h/s/o=3/114/4/5 rate_rtt b/l/h/s/r/f=1/1/153/1/0/1 ctl bm/bs=0/0 rex n/s/q/v/a/r=0/3333/17/534/0/0 bl l/d/o/r/a/x/dl/df/dm/ds=1791/1927/534/0/0/1/0/0/0/0 disk l/h/b=0/2/0 vlink lq/lo/rq/ro=0/0/0/0 rate t/m/c/n/vl/vr/r=631205000/0/631205000/631205000/631205000/631205000/631205000 prog t/f/e=300337264/300337264/40571838 rcvD=0
+2015-06-15 09:46:14 [274c-000021c8] LOG Receiver DS Qs ds/n/rq/ao/ap/rd/ru/no/po/pc/do=1/0/0/0/0/0/1/0/0/0/0 Rs i/o=1/1 mgmt backlog i/s/n = 0/452/0 1/448/0
+2015-06-15 09:46:34 [274c-000021c8] LOG Receiver bl t/o/r/d/ts=249455/246270/3184/1/249719 rex_rtt l/h/s/o=0/0/34/35 ooo_rtt l/h/s/o=0/0/4/5 rate_rtt b/l/h/s/r/f=1/1/3/1/0/1 ctl bm/bs=0/0 rex n/s/q/v/a/r=0/3333/17/535/0/0 bl l/d/o/r/a/x/dl/df/dm/ds=1792/1927/535/0/0/1/0/0/0/0 disk l/h/b=0/1/0 vlink lq/lo/rq/ro=0/0/0/0 rate t/m/c/n/vl/vr/r=631205000/0/631205000/631205000/631205000/631205000/631205000 prog t/f/e=352478448/352478448/59908678 rcvD=0
+2015-06-15 09:46:34 [274c-000021c8] LOG Receiver DS Qs ds/n/rq/ao/ap/rd/ru/no/po/pc/do=1/0/0/0/0/0/1/0/0/0/0 Rs i/o=1/1 mgmt backlog i/s/n = 0/452/0 1/448/0
+2015-06-15 09:46:54 [274c-000021c8] LOG Receiver bl t/o/r/d/ts=754981/751796/3184/1/709703 rex_rtt l/h/s/o=0/0/34/35 ooo_rtt l/h/s/o=1/73/6/8 rate_rtt b/l/h/s/r/f=1/1/103/2/0/1 ctl bm/bs=0/0 rex n/s/q/v/a/r=0/3333/17/1534/0/0 bl l/d/o/r/a/x/dl/df/dm/ds=2791/1927/1534/0/0/1/0/0/0/0 disk l/h/b=0/4/0 vlink lq/lo/rq/ro=0/0/0/0 rate t/m/c/n/vl/vr/r=631205000/0/631205000/631205000/631205000/631205000/631205000 prog t/f/e=1072347472/1072347472/80113753 rcvD=0
+2015-06-15 09:46:54 [274c-000021c8] LOG Receiver DS Qs ds/n/rq/ao/ap/rd/ru/no/po/pc/do=1/0/0/0/0/0/1/0/0/0/0 Rs i/o=1/1 mgmt backlog i/s/n = 0/452/0 1/448/0
+2015-06-15 09:47:14 [274c-000021c8] LOG Receiver bl t/o/r/d/ts=1152957/1146591/6365/1/1154273 rex_rtt l/h/s/o=41/89/47/59 ooo_rtt l/h/s/o=1/86/84/96 rate_rtt b/l/h/s/r/f=1/1/114/1/0/1 ctl bm/bs=0/0 rex n/s/q/v/a/r=0/6514/38/2228/0/0 bl l/d/o/r/a/x/dl/df/dm/ds=5086/3507/2228/0/0/1/0/0/0/0 disk l/h/b=0/7/0 vlink lq/lo/rq/ro=0/0/0/0 rate t/m/c/n/vl/vr/r=631205000/0/631205000/631205000/631205000/631205000/631205000 prog t/f/e=1636815376/1636815376/100440887 rcvD=0
+2015-06-15 09:47:14 [274c-000021c8] LOG Receiver DS Qs ds/n/rq/ao/ap/rd/ru/no/po/pc/do=1/0/0/0/0/0/1/0/0/0/0 Rs i/o=1/1 mgmt backlog i/s/n = 0/452/0 1/448/0
+2015-06-15 09:47:25 [274c-000021c8] ERR WARNING: Disk write speed exceeded. Consider reducing target rate.
+2015-06-15 09:47:29 [274c-00000474] ERR PEER ABORT: Received sesserr notification from peer, reason FASP_ABORT_BY_APP
+2015-06-15 09:47:29 [274c-00000474] ERR PEER ABORTED: Shutting down sink/receiver,  reason FASP_ABORT_BY_APP
+2015-06-15 09:47:29 [274c-00000474] ERR User aborted session (client)
+2015-06-15 09:47:30 [274c-000021c8] LOG Receiver bl t/o/r/d/ts=1339154/1324616/10451/4087/1341891 rex_rtt l/h/s/o=2/667/17/35 ooo_rtt l/h/s/o=8/145/14/45 rate_rtt b/l/h/s/r/f=1/1/176/10/0/1 ctl bm/bs=0/0 rex n/s/q/v/a/r=0/10600/62/2442/0/0 bl l/d/o/r/a/x/dl/df/dm/ds=9386/3507/2442/4086/0/1/0/0/0/0 disk l/h/b=0/12/0 vlink lq/lo/rq/ro=0/0/0/0 rate t/m/c/n/vl/vr/r=631205000/0/628280749/628280749/631205000/631205000/631205000 prog t/f/e=1896141440/1896141440/115943826 rcvD=0
+2015-06-15 09:47:30 [274c-000021c8] LOG Receiver DS Qs ds/n/rq/ao/ap/rd/ru/no/po/pc/do=1/0/0/0/0/0/1/0/0/0/0 Rs i/o=1/1 mgmt backlog i/s/n = 0/452/0 1/448/0
+2015-06-15 09:47:31 [274c-00003bf0] ERR FASP receiver had error, errcode 68 errstr [User aborted session (client)]
+2015-06-15 09:47:31 [274c-00003bf0] ERR Peer FASP sender had error, errcode 68 errstr [User aborted session]
+2015-06-15 09:47:31 [274c-00004290] LOG FASP Session Stop uuid=ec715627-5f6b-496a-a8ad-e654aa36c5cb op=recv status=failed errcode=28 errstr="Cancelled by user" source=C:/src/file1 (1) dest=/dst/file1 source_prefix=- local=10.0.0.7:33001 peer=10.0.0.8:60388 tcp_port=22 os="Microsoft Windows 6.2 " ver=3.5.4.100392 lic=10:1:1234 peeros="Microsoft Windows 6.1 Service Pack 1" peerver=3.5.1.92519 peerlic=6:1:1 proto_sess=20002 proto_udp=20000 proto_bwmeas=20000 proto_data=20008
+2015-06-15 09:47:31 [274c-00004290] LOG FASP Session Params uuid=ec715627-5f6b-496a-a8ad-e654aa36c5cb userid=1000 user="xfer" targetrate=631205000 minrate=0 rate_policy=fair cipher=aes-128 resume=2 create=0 ovr=1 times=0 precalc=no mf=0 mf_path=- mf_suffix=.aspera-inprogress partial_file_suffix= files_encrypt=no files_decrypt=no file_csum=none dgram_sz=0 prepostcmd=- tcp_mode=no rtt_auto=yes cookie="-" vl_proto_ver=1  peer_vl_proto_ver=1 vl_local=0 vlink_remote=0 vl_sess_id=23643 srcbase=- rd_sz=0 wr_sz=0 cluster_num_nodes=1 cluster_node_id=0 range=0-0 keepalive=no test_login=no proxy_ip=- net_rc_alg=alg_delay exclude_older/newer_than=0/0
+2015-06-15 09:47:31 [274c-00004290] LOG FASP Session Statistics [Receiver] id=ec715627-5f6b-496a-a8ad-e654aa36c5cb delay=10ms rex_delay=35ms ooo_delay=45ms solicited_rex=0.79% rcvd_rex=0.78% rcvd_dups=0.26% ave_xmit_rate 135.70Mbps effective=99.21% effective_rate=134.63Mbps (detail: good_blks 1331560 bl_total 1339154 bl_orig 1324616 bl_rex 10451 dup_blks 3507 dup_last_blks 0 drop_blks_xnf 1) (sndr ctl: sent 114 rcvd 114 lost 0 lost 0.00%) (rcvr ctl: sent 2909 rcvd 2907 lost 2 lost 0.07%) (rex  ctl: sent 62 rcvd 62 lost 0 lost 0.00%) (progress: tx_bytes 1896141440 file_bytes 1896141440 tx_time 115943826) rex_xmit_blks 10600  xmit_total 1342160 rex_xmit_pct 0.79%
+2015-06-15 09:47:31 [274c-00003bf0] LOG ======= File Transfer statistics =======
+2015-06-15 09:47:31 [274c-00003bf0] LOG ------- Source statistics -------
+2015-06-15 09:47:31 [274c-00003bf0] LOG Source argument scans attempted             :          1
+2015-06-15 09:47:31 [274c-00003bf0] LOG - Source argument scans completed           :          1
+2015-06-15 09:47:31 [274c-00003bf0] LOG Source path scans attempted                 :          1
+2015-06-15 09:47:31 [274c-00003bf0] LOG - Source path scans failed                  :          0
+2015-06-15 09:47:31 [274c-00003bf0] LOG - Source path scans skipped since irregular :          0
+2015-06-15 09:47:31 [274c-00003bf0] LOG - Source path scans excluded                :          0
+2015-06-15 09:47:31 [274c-00003bf0] LOG - Source directory scans completed          :          0
+2015-06-15 09:47:31 [274c-00003bf0] LOG - Source file scans completed               :          1
+2015-06-15 09:47:31 [274c-00003bf0] LOG Source directory creates attempted          :          0
+2015-06-15 09:47:31 [274c-00003bf0] LOG - Source directory creates failed           :          0
+2015-06-15 09:47:31 [274c-00003bf0] LOG - Source directory created or existed       :          0
+2015-06-15 09:47:31 [274c-00003bf0] LOG Source file transfers attempted             :          1
+2015-06-15 09:47:31 [274c-00003bf0] LOG - Source file transfers failed              :          1 !
+2015-06-15 09:47:31 [274c-00003bf0] LOG - Source file transfers passed              :          0
+2015-06-15 09:47:31 [274c-00003bf0] LOG - Source file transfers skipped             :          0
+2015-06-15 09:47:31 [274c-00003bf0] LOG Source bytes transferred                    :          0
+2015-06-15 09:47:31 [274c-00003bf0] LOG ======= end File Transfer statistics =======
+2015-06-15 09:47:31 [274c-00003d08] LOG stdio_copy_out: read eof from socket, quitting (fd=500)
+2015-06-15 09:47:31 [274c-00002198] LOG stdio_copy_in: read eof from stdio, quitting (fd=0)

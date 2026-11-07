@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# cspell:ignore alloc aspmover bdrate brcvd dups rcvd sndr aspsimplesync astokengen fdlimit filewrite pulseaudio sesserr varation
+# cspell:ignore alloc ossl aspmover bdrate brcvd dups rcvd sndr aspsimplesync astokengen fdlimit filewrite pulseaudio sesserr varation
 module Aspera
   module Ascp
     class LogAnalyzer
@@ -44,6 +44,9 @@ module Aspera
       STATISTICS_RATES = {retransmitted: /\bsolicited_rex=([\d.]+)%/, duplicates: /\brcvd_dups=([\d.]+)%/, efficiency: /\beffective=([\d.]+)%/}.freeze
       # Control messages of `Session Statistics`: from sender, from receiver, retransmission requests
       CONTROL_MESSAGES = /\((sndr|rcvr|rex)\s+ctl: sent (\d+) rcvd (\d+) lost -?\d+ lost ([\d.]+)%\)/
+      # License in `Initializing FASP version` line: maximum rate in Mbps (none if unlimited), expiry date (none if no expiry)
+      LICENSE_RATE = /\bmax rate=(\d+) Mbps/
+      LICENSE_EXPIRES = /\blicense expires on (\w{3} \w{3} +\d+ [\d:]+ \d{4})/
       AS_BUF_IO = /ERR as_buf_io:\s+IO/
       SERVER_MGMT_RESET = {set: %i[server_management_connection_reset], clear: %i[peer_abort]}.freeze
       DATA_TIMEOUT = %i[data_transfer_timeout].freeze
@@ -54,6 +57,9 @@ module Aspera
       # unless: flags that cancel the effect, call: method of LogFile called with (session, MatchData)
       # No effect: line is recognized, so that a later rule does not match it
       LINE_RULES = [
+        [/\sLOG (?:IBM )?(Aspera [\w -]+?) version \d/,                              {call: :product_name}],
+        [/\sLOG ASPERA_AUTH_TOKEN is set to TOKEN/,                                  {call: :token_auth}],
+        [/\sLOG Node storage access_key=/,                                           {call: :node_auth}],
         [/end File Transfer statistics/,                                            {call: :end_of_statistics}],
         [/(?:Receiver|Sender)\s+bl\b/,                                              {call: :queue_sample}],
         [/LOG Falling back to HTTP/,                                                {set: %i[http_fallback]}],
@@ -124,7 +130,10 @@ module Aspera
         [/\[asssh\] (?:channel|session) [a-z ]+ rc=-?\d+/,                          {call: :ssh_disconnect_error}],
         [/speed exceeded/,                                                          {set: %i[exceeded]}],
         [/segfault/,                                                                {call: :segfault}],
-        [/Receiver has not received a packet for (\d+) seconds/,                    {call: :no_data}],
+        [/(Receiver|Sender) has not received a packet for (\d+) seconds/,           {call: :no_data}],
+        [/ERR \S*ossl-modules not found/,                                           {set: %i[ossl_modules_missing]}],
+        [/ERR Warning: unable to submit change event/,                              {set: %i[change_event_failed]}],
+        [/Warning: rex timer overflow auto-adjusted/,                               {call: :rex_timer_overflow}],
         [SESSION_STATISTICS,                                                        {call: :session_statistics}]
       ].freeze
 
@@ -166,6 +175,12 @@ module Aspera
       ).freeze
       # Sender: rate of reading from disk (bps)
       DISK_READ_RATE = /\bdrate=(\d+)/
+      # `DS Qs` line: timestamp, PID, side, then the rest (queue groups + `Rs` + `mgmt backlog`)
+      DS_QS_LINE = /#{STAMP.source}.*?\[(\w+)(?:-\w+)?\].*?(Receiver|Sender)\s+DS\s+Qs\b(.*)/
+      # `ap` field (attribute-preparation queue) in `DS Qs` lines: side-specific key, same name for Receiver and Sender
+      DS_QS_GROUPS = %r{\b([A-Za-z_]+)\s+([A-Za-z_]+(?:/[A-Za-z_]+)*)=(-?\d+(?:/-?\d+)*)}
+      # Management backlog in `DS Qs` lines: `mgmt backlog i/s/n = 0/3/0 1/4/12`
+      DS_QS_MGMT = %r{\bmgmt backlog [a-z/]+ =((?:\s+-?\d+(?:/-?\d+)*)*)}
     end
   end
 end

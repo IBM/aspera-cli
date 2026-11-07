@@ -1,0 +1,370 @@
+2014-10-06 00:30:07 [754-000019a0] LOG Initializing FASP version 3.4.4.84472, license max rate=1000 Mbps, account no.=1, license no.=1234 product=10
+2014-10-06 00:30:08 [754-000019a0] ERR optional management connection to localhost:49648 failed
+2014-10-06 00:30:08 [754-000019a0] LOG Client requested cipher 0; using 1 as configured
+2014-10-06 00:30:08 [754-000019a0] LOG vlink init: id=4, type=local, capacity=50000000, policy=1, Qmax=625000, Qmin=0, QB=750000, k_inner=0.50, k_outer=1.00, swarm_size=1
+2014-10-06 00:30:08 [754-000019a0] LOG vlink init: id=100, type=remote, capacity=120000000, policy=1, Qmax=1500000, Qmin=0, QB=1800000, k_inner=0.50, k_outer=1.00, swarm_size=1
+2014-10-06 00:30:08 [754-00001fcc] LOG Key "SOFTWARE\Aspera\FASP" not found in registry
+2014-10-06 00:30:08 [754-00001fcc] LOG Key "SOFTWARE\Aspera\Enterprise Server" found in registry
+2014-10-06 00:30:08 [754-00001fcc] LOG Connected to redis
+2014-10-06 00:30:08 [754-00001fcc] LOG FASP Session Start uuid=1f1ae7d9-5411-4e4b-89c8-c10622ddfa7b op=send status=started source=C:/src/file1 (1) dest=C:/dst/file1 source_prefix=- local=10.0.0.3:33001 peer=10.0.0.4:53680 tcp_port=22 os="Microsoft Windows 6.2 " ver=3.4.4.84472 lic=10:1:1234 peeros="Microsoft Windows 6.2 " peerver=3.4.4.84472 peerlic=6:1:1 proto_sess=20002 proto_udp=20000 proto_bwmeas=20000 proto_data=20008
+2014-10-06 00:30:08 [754-00001fcc] LOG FASP Session Params uuid=1f1ae7d9-5411-4e4b-89c8-c10622ddfa7b userid=1000 user="xfer" targetrate=100000000 minrate=0 rate_policy=high cipher=aes-128 resume=0 create=0 ovr=1 times=0 precalc=no mf=0 mf_path=- mf_suffix=.aspera-inprogress partial_file_suffix=- files_encrypt=no files_decrypt=no file_csum=none dgram_sz=0 prepostcmd=- tcp_mode=no rtt_auto=yes cookie="-" vl_proto_ver=1  peer_vl_proto_ver=1 vl_local=50000000 vlink_remote=120000000 vl_sess_id=23566 srcbase=- rd_sz=0 wr_sz=0 cluster_num_nodes=1 cluster_node_id=0 range=0-0 keepalive=no test_login=no proxy_ip=- net_rc_alg=alg_delay
+2014-10-06 00:30:08 [754-000019a0] LOG datagram size 1484B, block size 1424B, path MTU 1492B
+2014-10-06 00:30:08 [754-00001f24] LOG Add sender src : D:/dir25/file24.txt dst : -
+2014-10-06 00:30:08 [754-00000d94] LOG virtual link created: multicast socket 672, address 198.51.100.4:55001, multicast group 198.51.100.10 iface 198.51.100.4
+2014-10-06 00:30:08 [754-00000d94] LOG Changing local virtual link 4 from 50000000bps to 120000000bps
+2014-10-06 00:30:08 [754-00001fcc] LOG FASP Transfer Start uuid=1f1ae7d9-5411-4e4b-89c8-c10622ddfa7b op=send status=started file="C:/dst/file1" size=46 start_byte=0 rate=100.00Mbps loss=0.00 rexreqs=0 overhead=0
+2014-10-06 00:30:08 [754-00001fcc] LOG FASP Transfer Stop uuid=1f1ae7d9-5411-4e4b-89c8-c10622ddfa7b op=send status=success file="C:/dst/file1" size=46 start_byte=0 rate=2.76Kbps elapsed=0.13s loss=0.00 rexreqs=0 overhead=0
+2014-10-06 00:30:08 [754-00000d94] LOG Sender bl t/o/r/dl=3/2/1/1 ctl bm/bs=0/0 rex b/r/n=1/1/0 r_ott q/s/n=0/0/1 rate t/m/c=100000000/0/18000000 prog t/f/e=0/0/0 xmtD=1
+2014-10-06 00:30:08 [754-00000d94] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=0/0/0/0/0/0/0/0/0/0/0/0 Rs o/i=1/1
+2014-10-06 00:30:08 [754-00000d94] LOG Sender bl t/o/r/dl=3/2/1/1 ctl bm/bs=0/0 rex b/r/n=1/1/0 r_ott q/s/n=0/0/1 rate t/m/c=100000000/0/18000000 prog t/f/e=0/0/0 xmtD=1
+2014-10-06 00:30:08 [754-00000d94] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=0/0/0/0/0/0/0/0/0/0/0/0 Rs o/i=1/1
+2014-10-06 00:30:08 [754-00001fcc] LOG FASP Session Stop uuid=1f1ae7d9-5411-4e4b-89c8-c10622ddfa7b op=send status=success source=C:/src/file1 (1) dest=C:/dst/file1 source_prefix=- local=10.0.0.3:33001 peer=10.0.0.4:53680 tcp_port=22 os="Microsoft Windows 6.2 " ver=3.4.4.84472 lic=10:1:1234 peeros="Microsoft Windows 6.2 " peerver=3.4.4.84472 peerlic=6:1:1 proto_sess=20002 proto_udp=20000 proto_bwmeas=20000 proto_data=20008
+2014-10-06 00:30:08 [754-00001fcc] LOG FASP Session Params uuid=1f1ae7d9-5411-4e4b-89c8-c10622ddfa7b userid=1000 user="xfer" targetrate=100000000 minrate=0 rate_policy=high cipher=aes-128 resume=0 create=0 ovr=1 times=0 precalc=no mf=0 mf_path=- mf_suffix=.aspera-inprogress partial_file_suffix= files_encrypt=no files_decrypt=no file_csum=none dgram_sz=0 prepostcmd=- tcp_mode=no rtt_auto=yes cookie="-" vl_proto_ver=1  peer_vl_proto_ver=1 vl_local=120000000 vlink_remote=120000000 vl_sess_id=23566 srcbase=- rd_sz=0 wr_sz=0 cluster_num_nodes=1 cluster_node_id=0 range=0-0 keepalive=no test_login=no proxy_ip=- net_rc_alg=alg_delay
+2014-10-06 00:30:08 [754-00001fcc] LOG FASP Session Statistics [Sender] id=1f1ae7d9-5411-4e4b-89c8-c10622ddfa7b delay=8ms rex_delay=30ms solicited_rex=33.33% unsolicited_rex=33.33% ave_xmit_rate 0.00Kbps effective=33.33% effective_rate=0.00Kbps (detail: good_blks 1 bl_total 3 bl_orig2 bl_rex 1 dup_last_blks 1) (sndr ctl: sent 1 rcvd 1 lost 0 lost 0.00%) (rcvr ctl: sent 6 rcvd 5 lost 1 lost 16.67%) (rex  ctl: sent 1 rcvd 1 lost 0 lost 0.00%) (progress: tx_bytes 46 file_bytes 46 tx_time 265587) (estimate transfer size: 0 bytes)  sess->instru.num_rex_xfer_not_found 0 sess->instru.num_rex_abrtxfer_not_found 0
+2014-10-06 00:30:08 [754-00001fcc] LOG event_thread() event queue was shutdown, stopping the thread.
+2014-10-06 00:30:08 [754-000019a0] LOG ======= File Transfer statistics =======
+2014-10-06 00:30:08 [754-000019a0] LOG ------- Source statistics -------
+2014-10-06 00:30:08 [754-000019a0] LOG Source argument scans attempted             :          1
+2014-10-06 00:30:08 [754-000019a0] LOG - Source argument scans completed           :          1
+2014-10-06 00:30:08 [754-000019a0] LOG Source path scans attempted                 :          1
+2014-10-06 00:30:08 [754-000019a0] LOG - Source path scans failed                  :          0
+2014-10-06 00:30:08 [754-000019a0] LOG - Source path scans skipped since irregular :          0
+2014-10-06 00:30:08 [754-000019a0] LOG - Source path scans excluded                :          0
+2014-10-06 00:30:08 [754-000019a0] LOG - Source directory scans completed          :          0
+2014-10-06 00:30:08 [754-000019a0] LOG - Source file scans completed               :          1
+2014-10-06 00:30:08 [754-000019a0] LOG Source directory creates attempted          :          0
+2014-10-06 00:30:08 [754-000019a0] LOG - Source directory creates failed           :          0
+2014-10-06 00:30:08 [754-000019a0] LOG - Source directory created or existed       :          0
+2014-10-06 00:30:08 [754-000019a0] LOG Source file transfers attempted             :          1
+2014-10-06 00:30:08 [754-000019a0] LOG - Source file transfers failed              :          0
+2014-10-06 00:30:08 [754-000019a0] LOG - Source file transfers passed              :          1
+2014-10-06 00:30:08 [754-000019a0] LOG - Source file transfers skipped             :          0
+2014-10-06 00:30:08 [754-000019a0] LOG Source bytes transferred                    :         46
+2014-10-06 00:30:08 [754-000019a0] LOG ======= end File Transfer statistics =======
+2014-10-06 00:30:08 [754-00001ee8] LOG stdio_copy_out: read eof from socket, quitting (fd=508)
+2014-10-06 00:30:08 [754-00001fc4] LOG stdio_copy_in: read eof from stdio, quitting (fd=0)
+2014-10-08 11:40:53 [754-000002ec] LOG Aspera Enterprise Server version 3.4.4.84472
+2014-10-08 11:40:53 [754-000002ec] LOG No public key file specified.
+2014-10-08 11:40:53 [754-000002ec] LOG Configuration: using v2 configuration file "/opt/aspera/etc/aspera.conf" user xfer
+2014-10-08 11:40:53 [754-000002ec] LOG Initializing FASP version 3.4.4.84472, license max rate=1000 Mbps, account no.=1, license no.=1234 product=10
+2014-10-08 11:40:55 [754-000002ec] ERR optional management connection to localhost:49648 failed
+2014-10-08 11:40:55 [754-000002ec] LOG [asssh] remote host-key fingerprint 0000000000000000000000000000000000000008
+2014-10-08 11:40:55 [754-000002ec] LOG [asssh] authentication succeeded, proceeding.
+2014-10-08 11:40:56 [754-000002ec] LOG vlink init: id=4, type=local, capacity=120000000, policy=1, Qmax=1500000, Qmin=0, QB=1800000, k_inner=0.50, k_outer=1.00, swarm_size=1
+2014-10-08 11:40:56 [754-00000574] LOG Key "SOFTWARE\Aspera\FASP" not found in registry
+2014-10-08 11:40:56 [754-00000574] LOG Key "SOFTWARE\Aspera\Enterprise Server" found in registry
+2014-10-08 11:40:56 [754-00000574] LOG Connected to redis
+2014-10-08 11:40:56 [754-00000574] LOG FASP Session Start uuid=3290bbb1-600e-4459-9ea4-76ab060d9d92 op=send status=started source=C:/src/file1 (1) dest=/dst/file1 source_prefix=- local=10.0.0.3:55696 peer=10.0.0.6:33004 tcp_port=33001 os="Microsoft Windows 6.2 " ver=3.4.4.84472 lic=10:1:1234 peeros="Microsoft Windows 6.2 " peerver=3.4.4.84472 peerlic=6:1:1 proto_sess=20002 proto_udp=20000 proto_bwmeas=20000 proto_data=20008
+2014-10-08 11:40:56 [754-00000574] LOG FASP Session Params uuid=3290bbb1-600e-4459-9ea4-76ab060d9d92 userid=1000 user="xfer" targetrate=120000000 minrate=0 rate_policy=fair cipher=aes-128 resume=2 create=9 ovr=1 times=3 precalc=yes mf=0 mf_path=- mf_suffix=.aspera-inprogress partial_file_suffix=- files_encrypt=no files_decrypt=no file_csum=none dgram_sz=0 prepostcmd=- tcp_mode=no rtt_auto=yes cookie="-" vl_proto_ver=1  peer_vl_proto_ver=1 vl_local=120000000 vlink_remote=0 vl_sess_id=3844 srcbase=- rd_sz=0 wr_sz=0 cluster_num_nodes=1 cluster_node_id=0 range=0-0 keepalive=no test_login=no proxy_ip=- net_rc_alg=alg_delay
+2014-10-08 11:40:56 [754-000002ec] LOG datagram size 1484B, block size 1424B, path MTU 1492B
+2014-10-08 11:40:56 [754-00001f28] LOG Add sender src : e:/dir26/file25.mxf dst : -
+2014-10-08 11:40:56 [754-000011f4] LOG virtual link created: multicast socket 716, address 198.51.100.4:55001, multicast group 198.51.100.10 iface 198.51.100.4
+2014-10-08 11:40:57 [754-00000574] LOG FASP Transfer Start uuid=3290bbb1-600e-4459-9ea4-76ab060d9d92 op=send status=started file="C:/dst/file1" size=19866076736 start_byte=0 rate=120.00Mbps loss=0.00 rexreqs=0 overhead=0
+2014-10-08 11:41:13 [754-000011f4] LOG Sender bl t/o/r/dl=40212/40212/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/123 rate t/m/c=120000000/0/27141344 prog t/f/e=53264720/53264720/16015116 xmtD=0
+2014-10-08 11:41:13 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:41:33 [754-000011f4] LOG Sender bl t/o/r/dl=89937/89937/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/267 rate t/m/c=120000000/0/24565701 prog t/f/e=123996224/123996224/36030685 xmtD=0
+2014-10-08 11:41:33 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:41:53 [754-000011f4] LOG Sender bl t/o/r/dl=139815/139815/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/411 rate t/m/c=120000000/0/25295633 prog t/f/e=198803216/198803216/57047252 xmtD=0
+2014-10-08 11:41:53 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:42:13 [754-000011f4] LOG Sender bl t/o/r/dl=189478/189478/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/556 rate t/m/c=120000000/0/33955501 prog t/f/e=269611616/269611616/77095031 xmtD=0
+2014-10-08 11:42:13 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:42:33 [754-000011f4] LOG Sender bl t/o/r/dl=239733/239733/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/708 rate t/m/c=120000000/0/30291435 prog t/f/e=337681664/337681664/96126015 xmtD=0
+2014-10-08 11:42:33 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:42:53 [754-000011f4] LOG Sender bl t/o/r/dl=289926/289926/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/862 rate t/m/c=120000000/0/26449376 prog t/f/e=409301744/409301744/116128027 xmtD=0
+2014-10-08 11:42:53 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:43:13 [754-000011f4] LOG Sender bl t/o/r/dl=340500/340500/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/1018 rate t/m/c=120000000/0/26020191 prog t/f/e=481166752/481166752/136159166 xmtD=0
+2014-10-08 11:43:13 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:43:33 [754-000011f4] LOG Sender bl t/o/r/dl=390847/390847/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/1168 rate t/m/c=120000000/0/32374232 prog t/f/e=553309440/553309440/156175401 xmtD=0
+2014-10-08 11:43:33 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:43:53 [754-000011f4] LOG Sender bl t/o/r/dl=441454/441454/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/1322 rate t/m/c=120000000/0/30203516 prog t/f/e=625147392/625147392/176208644 xmtD=0
+2014-10-08 11:43:53 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:44:13 [754-000011f4] LOG Sender bl t/o/r/dl=491763/491763/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/1473 rate t/m/c=120000000/0/24919248 prog t/f/e=697093568/697093568/196255035 xmtD=0
+2014-10-08 11:44:13 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:44:33 [754-000011f4] LOG Sender bl t/o/r/dl=542559/542559/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/1627 rate t/m/c=120000000/0/30919807 prog t/f/e=769429920/769429920/216318210 xmtD=0
+2014-10-08 11:44:33 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:44:53 [754-000011f4] LOG Sender bl t/o/r/dl=593190/593190/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/1782 rate t/m/c=120000000/0/32659850 prog t/f/e=842043952/842043952/236349656 xmtD=0
+2014-10-08 11:44:53 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:45:13 [754-000011f4] LOG Sender bl t/o/r/dl=643501/643501/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/1933 rate t/m/c=120000000/0/29465378 prog t/f/e=913350752/913350752/256351353 xmtD=0
+2014-10-08 11:45:13 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:45:33 [754-000011f4] LOG Sender bl t/o/r/dl=693505/693505/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=2/0/2089 rate t/m/c=120000000/0/34407431 prog t/f/e=984983648/984983648/276370086 xmtD=0
+2014-10-08 11:45:33 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:45:53 [754-000011f4] LOG Sender bl t/o/r/dl=743602/743602/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/2247 rate t/m/c=120000000/0/25959372 prog t/f/e=1056242032/1056242032/296373701 xmtD=0
+2014-10-08 11:45:53 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:46:13 [754-000011f4] LOG Sender bl t/o/r/dl=794084/794084/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/2403 rate t/m/c=120000000/0/28359563 prog t/f/e=1127853568/1127853568/316392625 xmtD=0
+2014-10-08 11:46:13 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:46:33 [754-000011f4] LOG Sender bl t/o/r/dl=844511/844511/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/2556 rate t/m/c=120000000/0/32234579 prog t/f/e=1196433408/1196433408/335409090 xmtD=0
+2014-10-08 11:46:33 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:46:53 [754-000011f4] LOG Sender bl t/o/r/dl=894784/894784/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/2713 rate t/m/c=120000000/0/25613262 prog t/f/e=1268180224/1268180224/355425460 xmtD=0
+2014-10-08 11:46:53 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:47:13 [754-000011f4] LOG Sender bl t/o/r/dl=945349/945349/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/2869 rate t/m/c=120000000/0/27890998 prog t/f/e=1340045232/1340045232/375447277 xmtD=0
+2014-10-08 11:47:13 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:47:30 [754-00000574] LOG Requested new target_rate 0
+2014-10-08 11:47:30 [754-00000574] LOG Requested new min_rate 0
+2014-10-08 11:47:30 [754-000011f4] LOG Negotiated rate params, target_rate 0 min_rate 0 transfer_policy fair
+2014-10-08 11:47:34 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/3027 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/395582660 xmtD=0
+2014-10-08 11:47:34 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:47:54 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/3198 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/415661319 xmtD=0
+2014-10-08 11:47:54 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:48:14 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/3369 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/435802659 xmtD=0
+2014-10-08 11:48:14 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:48:34 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=2/0/3542 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/455756015 xmtD=0
+2014-10-08 11:48:34 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:48:54 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/3714 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/475865383 xmtD=0
+2014-10-08 11:48:54 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:49:14 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/3886 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/495918951 xmtD=0
+2014-10-08 11:49:14 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:49:34 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/4057 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/515920725 xmtD=0
+2014-10-08 11:49:34 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:49:54 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/4229 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/536042590 xmtD=0
+2014-10-08 11:49:54 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:50:14 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/4401 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/556062398 xmtD=0
+2014-10-08 11:50:14 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:50:34 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/4572 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/576174727 xmtD=0
+2014-10-08 11:50:34 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:50:54 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/4742 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/596239346 xmtD=0
+2014-10-08 11:50:54 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:51:14 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/4914 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/616193413 xmtD=0
+2014-10-08 11:51:14 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:51:34 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/5086 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/635256936 xmtD=0
+2014-10-08 11:51:34 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:51:54 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/5259 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/655408664 xmtD=0
+2014-10-08 11:51:54 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:52:14 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/5431 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/675440426 xmtD=0
+2014-10-08 11:52:14 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:52:34 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/5603 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/695445729 xmtD=0
+2014-10-08 11:52:34 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:52:54 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/5773 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/715555612 xmtD=0
+2014-10-08 11:52:54 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:53:14 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/5944 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/735618828 xmtD=0
+2014-10-08 11:53:14 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:53:34 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/6119 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/755608997 xmtD=0
+2014-10-08 11:53:34 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:53:54 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/6290 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/775719431 xmtD=0
+2014-10-08 11:53:54 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:54:14 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/6462 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/795801730 xmtD=0
+2014-10-08 11:54:14 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:54:34 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/6633 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/815822147 xmtD=0
+2014-10-08 11:54:34 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:54:54 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/6806 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/835845219 xmtD=0
+2014-10-08 11:54:54 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:55:14 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/6978 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/855838941 xmtD=0
+2014-10-08 11:55:14 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:55:34 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/7150 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/875867854 xmtD=0
+2014-10-08 11:55:34 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:55:54 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/7320 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/896002909 xmtD=0
+2014-10-08 11:55:54 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:56:14 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/7492 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/916269565 xmtD=0
+2014-10-08 11:56:14 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:56:34 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/7664 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/936291857 xmtD=0
+2014-10-08 11:56:34 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:56:54 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/7838 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/955315678 xmtD=0
+2014-10-08 11:56:54 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:57:14 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/8010 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/976472437 xmtD=0
+2014-10-08 11:57:14 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:57:34 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/8183 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/996667073 xmtD=0
+2014-10-08 11:57:34 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:57:54 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/8354 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1016777382 xmtD=0
+2014-10-08 11:57:54 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:58:14 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/8525 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1036936561 xmtD=0
+2014-10-08 11:58:14 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:58:34 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/8695 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1057139138 xmtD=0
+2014-10-08 11:58:34 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:58:54 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/8867 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1077067713 xmtD=0
+2014-10-08 11:58:54 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:59:14 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/9040 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1096209295 xmtD=0
+2014-10-08 11:59:14 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:59:34 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/9212 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1116414618 xmtD=0
+2014-10-08 11:59:34 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 11:59:54 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/9383 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1136559804 xmtD=0
+2014-10-08 11:59:54 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:00:14 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/9554 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1156641743 xmtD=0
+2014-10-08 12:00:14 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:00:34 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/9726 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1176548505 xmtD=0
+2014-10-08 12:00:34 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:00:54 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/9896 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1196658387 xmtD=0
+2014-10-08 12:00:54 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:01:14 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/10067 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1216802059 xmtD=0
+2014-10-08 12:01:14 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:01:34 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/10237 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1237056816 xmtD=0
+2014-10-08 12:01:34 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:01:54 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/10408 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1256135375 xmtD=0
+2014-10-08 12:01:54 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:02:14 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/10580 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1276136402 xmtD=0
+2014-10-08 12:02:14 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:02:34 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=2/0/10749 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1296401612 xmtD=0
+2014-10-08 12:02:34 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:02:54 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/10923 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1316567996 xmtD=0
+2014-10-08 12:02:54 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:03:14 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/11096 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1336650682 xmtD=0
+2014-10-08 12:03:14 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:03:34 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/11268 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1356556896 xmtD=0
+2014-10-08 12:03:34 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:03:54 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/11439 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1376709787 xmtD=0
+2014-10-08 12:03:54 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:04:14 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/11611 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1396850384 xmtD=0
+2014-10-08 12:04:14 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:04:34 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/11783 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1416925556 xmtD=0
+2014-10-08 12:04:34 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:04:54 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/11954 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1436933877 xmtD=0
+2014-10-08 12:04:54 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:05:14 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/12126 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1456966626 xmtD=0
+2014-10-08 12:05:14 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:05:34 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/12299 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1476216580 xmtD=0
+2014-10-08 12:05:34 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:05:54 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/12469 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1496404599 xmtD=0
+2014-10-08 12:05:54 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:06:14 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/12641 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1516514474 xmtD=0
+2014-10-08 12:06:14 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:06:34 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/12814 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1536609235 xmtD=0
+2014-10-08 12:06:34 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:06:54 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=2/0/12986 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1556609748 xmtD=0
+2014-10-08 12:06:54 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:07:14 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/13160 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1576797754 xmtD=0
+2014-10-08 12:07:14 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:07:34 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/13332 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1596813849 xmtD=0
+2014-10-08 12:07:34 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:07:54 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/13506 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1616723457 xmtD=0
+2014-10-08 12:07:54 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:08:14 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/13678 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1636801650 xmtD=0
+2014-10-08 12:08:14 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:08:34 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/13850 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1656754703 xmtD=0
+2014-10-08 12:08:34 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:08:54 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/14020 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1676781458 xmtD=0
+2014-10-08 12:08:54 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:09:14 [754-000011f4] LOG Sender bl t/o/r/dl=986509/986509/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=2/0/14191 rate t/m/c=0/0/0 prog t/f/e=1404788816/1404788816/1696913773 xmtD=0
+2014-10-08 12:09:14 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:09:23 [754-00000574] LOG Requested new target_rate 120000000
+2014-10-08 12:09:23 [754-00000574] LOG Requested new min_rate 0
+2014-10-08 12:09:23 [754-000011f4] LOG Negotiated rate params, target_rate 120000000 min_rate 0 transfer_policy fair
+2014-10-08 12:09:33 [754-000011f4] LOG Sender bl t/o/r/dl=1007817/1007817/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/14352 rate t/m/c=120000000/0/33421209 prog t/f/e=1432750480/1432750480/1716435527 xmtD=0
+2014-10-08 12:09:33 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:09:53 [754-000011f4] LOG Sender bl t/o/r/dl=1058326/1058326/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/14507 rate t/m/c=120000000/0/27502926 prog t/f/e=1504290816/1504290816/1736465004 xmtD=0
+2014-10-08 12:09:53 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:10:13 [754-000011f4] LOG Sender bl t/o/r/dl=1108614/1108614/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/14661 rate t/m/c=120000000/0/33891548 prog t/f/e=1576400752/1576400752/1756496414 xmtD=0
+2014-10-08 12:10:13 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:10:33 [754-000011f4] LOG Sender bl t/o/r/dl=1158985/1158985/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/14817 rate t/m/c=120000000/0/24490459 prog t/f/e=1648228736/1648228736/1776513010 xmtD=0
+2014-10-08 12:10:33 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:10:53 [754-000011f4] LOG Sender bl t/o/r/dl=1209271/1209271/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/14976 rate t/m/c=120000000/0/26858529 prog t/f/e=1719596768/1719596768/1796544995 xmtD=0
+2014-10-08 12:10:53 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:11:13 [754-000011f4] LOG Sender bl t/o/r/dl=1259370/1259370/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/15131 rate t/m/c=120000000/0/33809216 prog t/f/e=1791410512/1791410512/1816592391 xmtD=0
+2014-10-08 12:11:13 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:11:33 [754-000011f4] LOG Sender bl t/o/r/dl=1309709/1309709/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/15282 rate t/m/c=120000000/0/28904367 prog t/f/e=1862901008/1862901008/1836624463 xmtD=0
+2014-10-08 12:11:33 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:11:53 [754-000011f4] LOG Sender bl t/o/r/dl=1360008/1360008/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=2/0/15438 rate t/m/c=120000000/0/30247945 prog t/f/e=1935009520/1935009520/1856641015 xmtD=0
+2014-10-08 12:11:53 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:12:13 [754-000011f4] LOG Sender bl t/o/r/dl=1410513/1410513/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/15596 rate t/m/c=120000000/0/25573010 prog t/f/e=2006893040/2006893040/1876672685 xmtD=0
+2014-10-08 12:12:13 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:12:33 [754-000011f4] LOG Sender bl t/o/r/dl=1460820/1460820/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=2/0/15752 rate t/m/c=120000000/0/31553591 prog t/f/e=2075064192/2075064192/1895720170 xmtD=0
+2014-10-08 12:12:33 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:12:53 [754-000011f4] LOG Sender bl t/o/r/dl=1511441/1511441/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/15910 rate t/m/c=120000000/0/33913846 prog t/f/e=2147233936/2147233936/1915767750 xmtD=0
+2014-10-08 12:12:53 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:13:13 [754-000011f4] LOG Sender bl t/o/r/dl=1561840/1561840/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/16064 rate t/m/c=120000000/0/26299336 prog t/f/e=2219096096/2219096096/1935784143 xmtD=0
+2014-10-08 12:13:13 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:13:33 [754-000011f4] LOG Sender bl t/o/r/dl=1612091/1612091/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/16219 rate t/m/c=120000000/0/33371317 prog t/f/e=2290878512/2290878512/1955831439 xmtD=0
+2014-10-08 12:13:33 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:13:53 [754-000011f4] LOG Sender bl t/o/r/dl=1662231/1662231/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=2/0/16377 rate t/m/c=120000000/0/31846924 prog t/f/e=2362350496/2362350496/1975863665 xmtD=0
+2014-10-08 12:13:53 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:14:13 [754-000011f4] LOG Sender bl t/o/r/dl=1712832/1712832/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/16533 rate t/m/c=120000000/0/27169685 prog t/f/e=2434528784/2434528784/1995895464 xmtD=0
+2014-10-08 12:14:13 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:14:33 [754-000011f4] LOG Sender bl t/o/r/dl=1763211/1763211/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/16691 rate t/m/c=120000000/0/31025177 prog t/f/e=2506437936/2506437936/2015928703 xmtD=0
+2014-10-08 12:14:33 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:14:53 [754-000011f4] LOG Sender bl t/o/r/dl=1813262/1813262/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/16849 rate t/m/c=120000000/0/34120472 prog t/f/e=2577773216/2577773216/2035944574 xmtD=0
+2014-10-08 12:14:53 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:15:13 [754-000011f4] LOG Sender bl t/o/r/dl=1863645/1863645/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/17008 rate t/m/c=120000000/0/28383629 prog t/f/e=2649653888/2649653888/2055991523 xmtD=0
+2014-10-08 12:15:13 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:15:33 [754-000011f4] LOG Sender bl t/o/r/dl=1913830/1913830/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/17163 rate t/m/c=120000000/0/26537001 prog t/f/e=2721278240/2721278240/2076085719 xmtD=0
+2014-10-08 12:15:33 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:15:53 [754-000011f4] LOG Sender bl t/o/r/dl=1964096/1964096/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/17321 rate t/m/c=120000000/0/33343260 prog t/f/e=2793301312/2793301312/2096164410 xmtD=0
+2014-10-08 12:15:53 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:16:13 [754-000011f4] LOG Sender bl t/o/r/dl=2014519/2014519/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/17474 rate t/m/c=120000000/0/25173015 prog t/f/e=2864999712/2864999712/2116197760 xmtD=0
+2014-10-08 12:16:13 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:16:33 [754-000011f4] LOG Sender bl t/o/r/dl=2065247/2065247/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=4/0/17629 rate t/m/c=120000000/0/32812851 prog t/f/e=2933697744/2933697744/2135213532 xmtD=0
+2014-10-08 12:16:33 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:16:53 [754-000011f4] LOG Sender bl t/o/r/dl=2115942/2115942/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/17786 rate t/m/c=120000000/0/31560326 prog t/f/e=3009884592/3009884592/2156229999 xmtD=0
+2014-10-08 12:16:53 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:17:13 [754-000011f4] LOG Sender bl t/o/r/dl=2166703/2166703/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/17944 rate t/m/c=120000000/0/24772021 prog t/f/e=3082089936/3082089936/2176262228 xmtD=0
+2014-10-08 12:17:13 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:17:33 [754-000011f4] LOG Sender bl t/o/r/dl=2217571/2217571/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/18102 rate t/m/c=120000000/0/28849157 prog t/f/e=3154605712/3154605712/2196324556 xmtD=0
+2014-10-08 12:17:33 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:17:53 [754-000011f4] LOG Sender bl t/o/r/dl=2267842/2267842/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/18259 rate t/m/c=120000000/0/33541102 prog t/f/e=3226561856/3226561856/2216356270 xmtD=0
+2014-10-08 12:17:53 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:18:13 [754-000011f4] LOG Sender bl t/o/r/dl=2318392/2318392/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=2/0/18416 rate t/m/c=120000000/0/32731964 prog t/f/e=3298859760/3298859760/2236393311 xmtD=0
+2014-10-08 12:18:13 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:18:33 [754-000011f4] LOG Sender bl t/o/r/dl=2368841/2368841/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=2/0/18576 rate t/m/c=120000000/0/25606616 prog t/f/e=3370758944/3370758944/2256419400 xmtD=0
+2014-10-08 12:18:33 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:18:53 [754-000011f4] LOG Sender bl t/o/r/dl=2418988/2418988/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/18735 rate t/m/c=120000000/0/27030042 prog t/f/e=3441986000/3441986000/2276465107 xmtD=0
+2014-10-08 12:18:53 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:19:13 [754-000011f4] LOG Sender bl t/o/r/dl=2469433/2469433/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/18894 rate t/m/c=120000000/0/31500718 prog t/f/e=3513957808/3513957808/2296515101 xmtD=0
+2014-10-08 12:19:13 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:19:33 [754-000011f4] LOG Sender bl t/o/r/dl=2519518/2519518/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=2/0/19052 rate t/m/c=120000000/0/33901356 prog t/f/e=3585731680/3585731680/2316532615 xmtD=0
+2014-10-08 12:19:33 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:19:53 [754-000011f4] LOG Sender bl t/o/r/dl=2569709/2569709/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=2/0/19210 rate t/m/c=120000000/0/25428677 prog t/f/e=3657269168/3657269168/2336579161 xmtD=0
+2014-10-08 12:19:53 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:20:13 [754-000011f4] LOG Sender bl t/o/r/dl=2620120/2620120/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/19368 rate t/m/c=120000000/0/29095792 prog t/f/e=3728872160/3728872160/2356610844 xmtD=0
+2014-10-08 12:20:13 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:20:33 [754-000011f4] LOG Sender bl t/o/r/dl=2670630/2670630/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/19526 rate t/m/c=120000000/0/34480428 prog t/f/e=3801006304/3801006304/2376642839 xmtD=0
+2014-10-08 12:20:33 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:20:53 [754-000011f4] LOG Sender bl t/o/r/dl=2720969/2720969/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/19683 rate t/m/c=120000000/0/26644975 prog t/f/e=3873136176/3873136176/2396675143 xmtD=0
+2014-10-08 12:20:53 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:21:13 [754-000011f4] LOG Sender bl t/o/r/dl=2771390/2771390/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=2/0/19841 rate t/m/c=120000000/0/25825016 prog t/f/e=3941397040/3941397040/2415722188 xmtD=0
+2014-10-08 12:21:13 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:21:33 [754-000011f4] LOG Sender bl t/o/r/dl=2822182/2822182/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/19998 rate t/m/c=120000000/0/34432981 prog t/f/e=4013633712/4013633712/2435738950 xmtD=0
+2014-10-08 12:21:33 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:21:53 [754-000011f4] LOG Sender bl t/o/r/dl=2872674/2872674/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/20155 rate t/m/c=120000000/0/28829980 prog t/f/e=4085643968/4085643968/2455756079 xmtD=0
+2014-10-08 12:21:53 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:22:13 [754-000011f4] LOG Sender bl t/o/r/dl=2923110/2923110/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/20310 rate t/m/c=120000000/0/27362821 prog t/f/e=4157716880/4157716880/2475802852 xmtD=0
+2014-10-08 12:22:13 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:22:33 [754-000011f4] LOG Sender bl t/o/r/dl=2973074/2973074/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/20465 rate t/m/c=120000000/0/33018046 prog t/f/e=4229006592/4229006592/2495865602 xmtD=0
+2014-10-08 12:22:33 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:22:53 [754-000011f4] LOG Sender bl t/o/r/dl=3023444/3023444/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/20617 rate t/m/c=120000000/0/29591394 prog t/f/e=4300779040/4300779040/2515893312 xmtD=0
+2014-10-08 12:22:53 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:23:13 [754-000011f4] LOG Sender bl t/o/r/dl=3073641/3073641/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/20773 rate t/m/c=120000000/0/33716201 prog t/f/e=4372532976/4372532976/2535945091 xmtD=0
+2014-10-08 12:23:13 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:23:33 [754-000011f4] LOG Sender bl t/o/r/dl=3124151/3124151/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/20928 rate t/m/c=120000000/0/24938925 prog t/f/e=4444551776/4444551776/2556024610 xmtD=0
+2014-10-08 12:23:33 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:23:53 [754-000011f4] LOG Sender bl t/o/r/dl=3174468/3174468/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/21083 rate t/m/c=120000000/0/31914841 prog t/f/e=4516449536/4516449536/2576059578 xmtD=0
+2014-10-08 12:23:53 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:24:13 [754-000011f4] LOG Sender bl t/o/r/dl=3224851/3224851/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=2/0/21235 rate t/m/c=120000000/0/27027346 prog t/f/e=4588341600/4588341600/2596073568 xmtD=0
+2014-10-08 12:24:13 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:24:33 [754-000011f4] LOG Sender bl t/o/r/dl=3275405/3275405/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=1/0/21388 rate t/m/c=120000000/0/30115040 prog t/f/e=4660336192/4660336192/2616120622 xmtD=0
+2014-10-08 12:24:33 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:24:39 [754-00000574] ERR as_buf_io: IO error (errno=10054)
+2014-10-08 12:24:39 [754-00000574] ERR Cannot write to management socket localhost:49164, An existing connection was forcibly closed by the remote host.
+2014-10-08 12:24:39 [754-000011f4] LOG Sender bl t/o/r/dl=3289896/3289896/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=2/0/21433 rate t/m/c=120000000/0/27285911 prog t/f/e=4681681952/4681681952/2622135546 xmtD=0
+2014-10-08 12:24:39 [754-000011f4] LOG Sender DS Qs ds/a/d/ao/eo/n/ap/rq/rd/ru/di/do=1/0/0/0/0/0/0/0/0/1/0/0 Rs o/i=1/1
+2014-10-08 12:24:39 [754-00001f28] ERR Source-work aborting since transmitter shutdown (shutdown 1 aborted 0)!
+2014-10-08 12:24:39 [754-00001f28] ERR LOCAL ABORT: Shutting down source/transmitter, local abort reason FASP_ABORT_LOCAL
+2014-10-08 12:24:39 [754-00001f28] ERR source->sesserr_snd_psb.len 125
+2014-10-08 12:24:39 [754-00001f28] ERR source_send_abort: sent abort pdu reason 3 (total len 0)
+2014-10-08 12:24:39 [754-00001f28] LOG Session notification: type=19 len=121 reason=3 (FASP_ABORT_LOCAL)
+2014-10-08 12:24:40 [754-000002ec] ERR FASP sender had error, errcode 74 errstr [Cannot write to management socket localhost:49164, An existing connection was forcibly closed by the remote host.]
+2014-10-08 12:24:40 [754-000002ec] ERR Peer FASP receiver had error, errcode 19 errstr [Cannot write to management socket localhost:49164, An existing connection was forcibly closed by the remote host. (client)]
+2014-10-08 12:24:40 [754-00000574] LOG FASP Session Stop uuid=3290bbb1-600e-4459-9ea4-76ab060d9d92 op=send status=failed errcode=16 errstr="Connection lost" source=C:/src/file1 (1) dest=/dst/file1 source_prefix=- local=10.0.0.3:55696 peer=10.0.0.6:33004 tcp_port=33001 os="Microsoft Windows 6.2 " ver=3.4.4.84472 lic=10:1:1234 peeros="Microsoft Windows 6.2 " peerver=3.4.4.84472 peerlic=6:1:1 proto_sess=20002 proto_udp=20000 proto_bwmeas=20000 proto_data=20008
+2014-10-08 12:24:40 [754-00000574] LOG FASP Session Params uuid=3290bbb1-600e-4459-9ea4-76ab060d9d92 userid=1000 user="xfer" targetrate=120000000 minrate=0 rate_policy=fair cipher=aes-128 resume=2 create=9 ovr=1 times=3 precalc=yes mf=0 mf_path=- mf_suffix=.aspera-inprogress partial_file_suffix= files_encrypt=no files_decrypt=no file_csum=none dgram_sz=0 prepostcmd=- tcp_mode=no rtt_auto=yes cookie="-" vl_proto_ver=1  peer_vl_proto_ver=1 vl_local=120000000 vlink_remote=0 vl_sess_id=3844 srcbase=- rd_sz=0 wr_sz=0 cluster_num_nodes=1 cluster_node_id=0 range=0-0 keepalive=no test_login=no proxy_ip=- net_rc_alg=alg_delay
+2014-10-08 12:24:40 [754-00000574] LOG FASP Session Statistics [Sender] id=3290bbb1-600e-4459-9ea4-76ab060d9d92 delay=21ms rex_delay=8ms solicited_rex=0.00% unsolicited_rex=0.00% ave_xmit_rate 14.69Mbps effective=100.00% effective_rate=14.69Mbps (detail: good_blks 3289896 bl_total 3289896 bl_orig3289896 bl_rex 0 dup_last_blks 0) (sndr ctl: sent 2580 rcvd 2580 lost 0 lost 0.00%) (rcvr ctl: sent 41810 rcvd 41809 lost 1 lost 0.00%) (rex  ctl: sent 0 rcvd 0 lost 0 lost 0.00%) (progress: tx_bytes 4684811904 file_bytes 4684811904 tx_time 2623029774) (estimate transfer size: 19866076736 bytes)  sess->instru.num_rex_xfer_not_found 0 sess->instru.num_rex_abrtxfer_not_found 0
+2014-10-08 12:24:40 [754-00000574] LOG event_thread() event queue was shutdown, stopping the thread.
+2014-10-08 12:24:40 [754-000002ec] LOG ======= File Transfer statistics =======
+2014-10-08 12:24:40 [754-000002ec] LOG ------- Source statistics -------
+2014-10-08 12:24:40 [754-000002ec] LOG Source argument scans attempted             :          1
+2014-10-08 12:24:40 [754-000002ec] LOG - Source argument scans completed           :          1
+2014-10-08 12:24:40 [754-000002ec] LOG Source path scans attempted                 :          1
+2014-10-08 12:24:40 [754-000002ec] LOG - Source path scans failed                  :          0
+2014-10-08 12:24:40 [754-000002ec] LOG - Source path scans skipped since irregular :          0
+2014-10-08 12:24:40 [754-000002ec] LOG - Source path scans excluded                :          0
+2014-10-08 12:24:40 [754-000002ec] LOG - Source directory scans completed          :          0
+2014-10-08 12:24:40 [754-000002ec] LOG - Source file scans completed               :          1
+2014-10-08 12:24:40 [754-000002ec] LOG Source directory creates attempted          :          0
+2014-10-08 12:24:40 [754-000002ec] LOG - Source directory creates failed           :          0
+2014-10-08 12:24:40 [754-000002ec] LOG - Source directory created or existed       :          0
+2014-10-08 12:24:40 [754-000002ec] LOG Source file transfers attempted             :          1
+2014-10-08 12:24:40 [754-000002ec] LOG - Source file transfers failed              :          1 !
+2014-10-08 12:24:40 [754-000002ec] LOG - Source file transfers passed              :          0
+2014-10-08 12:24:40 [754-000002ec] LOG - Source file transfers skipped             :          0
+2014-10-08 12:24:40 [754-000002ec] LOG Source bytes transferred                    :          0
+2014-10-08 12:24:40 [754-000002ec] LOG ======= end File Transfer statistics =======
+2014-10-08 12:24:40 [754-000002ec] LOG [asssh][dbg][feed 01ED7D30][session 01ED7E48][channel 01ED7E4C] disconnect
+2014-10-08 12:24:40 [754-000002ec] LOG [asssh][dbg][feed 01ED7D30] disconnect channel eof
+2014-10-08 12:24:40 [754-000002ec] LOG [asssh][dbg][feed 01ED7D30] disconnect channel closed
+2014-10-08 12:24:40 [754-000002ec] LOG [asssh][dbg][feed 01ED7D30] session disconnect
+2014-10-08 12:24:40 [754-000002ec] LOG [asssh][dbg][feed 01ED7D30] session free
+2014-10-08 12:24:40 [754-000002ec] LOG [asssh][dbg][feed 01ED7D30] disconnect done errcode=0 errstr=done

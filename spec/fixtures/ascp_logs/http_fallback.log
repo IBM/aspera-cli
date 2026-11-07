@@ -1,0 +1,78 @@
+2026-09-11 19:05:06.162 [992f-15483028] LOG Initializing FASP version 4.4.8.2592 6a5e6bf, license max rate=(unlimited), account no.=1, license no.=1234 product=53
+2026-09-11 19:05:06.162 [992f-15483028] LOG Configured symlink actions: create=1, follow=1, follow_wide=0, skip=0
+2026-09-11 19:05:06.162 [992f-15483028] LOG IBM Aspera Transfer SDK version 1.1.9
+2026-09-11 19:05:06.170 [992f-15483028] ERR Too many management channels requested (max 32).
+2026-09-11 19:05:06.177 [992f-15483028] ERR Cannot connect to management port localhost:65243
+2026-09-11 19:05:06.177 [992f-15483028] ERR optional management connection to localhost:65243 failed
+2026-09-11 19:05:06.177 [992f-15483028] ERR Cannot connect to management port localhost:52999
+2026-09-11 19:05:06.177 [992f-15483028] ERR optional management connection to localhost:52999 failed
+2026-09-11 19:05:06.177 [992f-15483028] ERR Cannot connect to management port localhost:51753
+2026-09-11 19:05:06.177 [992f-15483028] ERR optional management connection to localhost:51753 failed
+2026-09-11 19:05:06.178 [992f-15483028] ERR Cannot connect to management port localhost:59468
+2026-09-11 19:05:06.178 [992f-15483028] ERR optional management connection to localhost:59468 failed
+2026-09-11 19:05:06.178 [992f-15483028] ERR Cannot connect to management port localhost:50762
+2026-09-11 19:05:06.178 [992f-15483028] ERR optional management connection to localhost:50762 failed
+2026-09-11 19:05:06.178 [992f-15483028] ERR Cannot connect to management port localhost:58660
+2026-09-11 19:05:06.178 [992f-15483028] ERR optional management connection to localhost:58660 failed
+2026-09-11 19:05:06.181 [992f-15483028] ERR Cannot connect to management port localhost:58656
+2026-09-11 19:05:06.181 [992f-15483028] ERR optional management connection to localhost:58656 failed
+2026-09-11 19:05:06.181 [992f-15483028] ERR Cannot connect to management port localhost:56016
+2026-09-11 19:05:06.181 [992f-15483028] ERR optional management connection to localhost:56016 failed
+2026-09-11 19:05:06.182 [992f-15483028] ERR Cannot connect to management port localhost:62047
+2026-09-11 19:05:06.182 [992f-15483028] ERR optional management connection to localhost:62047 failed
+2026-09-11 19:05:06.182 [992f-15483028] ERR Cannot connect to management port localhost:62321
+2026-09-11 19:05:06.182 [992f-15483028] ERR optional management connection to localhost:62321 failed
+2026-09-11 19:05:06.182 [992f-15483028] ERR Cannot connect to management port localhost:49842
+2026-09-11 19:05:06.182 [992f-15483028] ERR optional management connection to localhost:49842 failed
+2026-09-11 19:05:06.182 [992f-15483028] ERR Cannot connect to management port localhost:58232
+2026-09-11 19:05:06.182 [992f-15483028] ERR optional management connection to localhost:58232 failed
+2026-09-11 19:05:06.182 [992f-15483028] ERR Cannot connect to management port localhost:55849
+2026-09-11 19:05:06.182 [992f-15483028] ERR optional management connection to localhost:55849 failed
+2026-09-11 19:05:06.183 [992f-15483028] ERR Cannot connect to management port localhost:62609
+2026-09-11 19:05:06.183 [992f-15483028] ERR optional management connection to localhost:62609 failed
+2026-09-11 19:05:06.183 [992f-15483028] ERR Cannot connect to management port localhost:49491
+2026-09-11 19:05:06.183 [992f-15483028] ERR optional management connection to localhost:49491 failed
+2026-09-11 19:05:06.183 [992f-15483028] ERR Cannot connect to management port localhost:58988
+2026-09-11 19:05:06.183 [992f-15483028] ERR optional management connection to localhost:58988 failed
+2026-09-11 19:05:06.183 [992f-15483028] ERR Cannot connect to management port localhost:57678
+2026-09-11 19:05:06.183 [992f-15483028] ERR optional management connection to localhost:57678 failed
+2026-09-11 19:05:06.184 [992f-15483028] ERR Cannot connect to management port localhost:54445
+2026-09-11 19:05:06.184 [992f-15483028] ERR optional management connection to localhost:54445 failed
+2026-09-11 19:05:06.184 [992f-15483028] ERR Cannot connect to management port localhost:59237
+2026-09-11 19:05:06.184 [992f-15483028] ERR optional management connection to localhost:59237 failed
+2026-09-11 19:05:06.184 [992f-15483028] ERR Cannot connect to management port localhost:63571
+2026-09-11 19:05:06.184 [992f-15483028] ERR optional management connection to localhost:63571 failed
+2026-09-11 19:05:06.184 [992f-15483028] ERR Cannot connect to management port localhost:57458
+2026-09-11 19:05:06.184 [992f-15483028] ERR optional management connection to localhost:57458 failed
+2026-09-11 19:05:06.185 [992f-15483028] ERR Cannot connect to management port localhost:57890
+2026-09-11 19:05:06.185 [992f-15483028] ERR optional management connection to localhost:57890 failed
+2026-09-11 19:05:06.185 [992f-15483028] ERR Cannot connect to management port localhost:62551
+2026-09-11 19:05:06.185 [992f-15483028] ERR optional management connection to localhost:62551 failed
+2026-09-11 19:05:06.185 [992f-15483028] ERR Cannot connect to management port localhost:57718
+2026-09-11 19:05:06.185 [992f-15483028] ERR optional management connection to localhost:57718 failed
+2026-09-11 19:05:06.185 [992f-15483028] ERR Cannot connect to management port localhost:51579
+2026-09-11 19:05:06.185 [992f-15483028] ERR optional management connection to localhost:51579 failed
+2026-09-11 19:05:06.186 [992f-15483028] ERR Cannot connect to management port localhost:63462
+2026-09-11 19:05:06.186 [992f-15483028] ERR optional management connection to localhost:63462 failed
+2026-09-11 19:05:06.186 [992f-15483028] ERR Cannot connect to management port localhost:50063
+2026-09-11 19:05:06.186 [992f-15483028] ERR optional management connection to localhost:50063 failed
+2026-09-11 19:05:06.186 [992f-15483028] ERR Cannot connect to management port localhost:60905
+2026-09-11 19:05:06.186 [992f-15483028] ERR optional management connection to localhost:60905 failed
+2026-09-11 19:05:06.186 [992f-15483028] ERR Cannot connect to management port localhost:49554
+2026-09-11 19:05:06.186 [992f-15483028] ERR optional management connection to localhost:49554 failed
+2026-09-11 19:05:06.187 [992f-15483028] ERR Cannot connect to management port localhost:60895
+2026-09-11 19:05:06.187 [992f-15483028] ERR optional management connection to localhost:60895 failed
+2026-09-11 19:05:06.187 [992f-15483028] ERR Cannot connect to management port localhost:52007
+2026-09-11 19:05:06.187 [992f-15483028] ERR optional management connection to localhost:52007 failed
+2026-09-11 19:05:06.187 [992f-15483028] ERR /Users/user/.aspera/lib/ossl-modules not found
+2026-09-11 19:05:06.227 [992f-15483028] LOG (access key) Not present
+2026-09-11 19:05:06.228 [992f-15483033] LOG FASP Session Start uuid=051b6f5b-e3e7-4377-bcc8-dc3d60480532 op=send status=started source= dest=/dst/file1 source_prefix=- local=198.51.100.4:33001 peer=198.51.100.4:33001 tcp_port=443 os="Darwin 25.6.0 Darwin Kernel Version 25.6.0: Fri Jul 31 19:18:49 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6000" ver=4.4.8.2592 6a5e6bf lic=10:1:1234 peeros="-" peerver=- peerlic=6:1:1 proto_sess=20003 proto_udp=20000 proto_bwmeas=20000 proto_data=2000f
+2026-09-11 19:05:06.228 [992f-15483033] LOG FASP Session Params uuid=051b6f5b-e3e7-4377-bcc8-dc3d60480532 userid=1000 user="xfer" targetrate=500000000 minrate=0 rate_policy=fair cipher=aes-128-cfb resume=2 create=8 extra_create=0 ovr=1 times=0 precalc=no precalc_disable=false mf=0 mf_path=- mf_suffix=.aspera-inprogress partial_file_suffix=- files_encrypt=no files_decrypt=no file_csum=NONE fips_enabled=no dgram_sz=0 tcp_mode=no rtt_auto=yes cookie="-" vl_proto_ver=1  peer_vl_proto_ver=0 vl_local=0 vlink_remote=0 vl_sess_id=0 srcbase=- rd_sz=0 wr_sz=0 cluster_num_nodes=1 cluster_node_id=0 cluster_multi_session_threshold=-1 range=0-0 keepalive=no test_login=no proxy_ip=- net_rc_alg=alg_none exclude_older/newer_than=0/0 xfer_id=-
+2026-09-11 19:05:06.333 [992f-15483028] LOG Falling back to HTTP
+2026-09-11 19:05:06.342 [992f-15483028] LOG HTTP socket error: Unable to resolve remote address.  Remote address is server1.example.com, port 443.
+2026-09-11 19:05:06.342 [992f-15483028] ERR http_session=e8b63afc-f084-40ba-9f7e-3009b3401ee0 Error unable to create socket action=session_start server=server1.example.com port=443 connection=(HTTPS) proxy= port=0 error=Unable to resolve remote address.  Remote address is server1.example.com, port 443.
+2026-09-11 19:05:06.342 [992f-15483028] LOG Initializing http "put" request fasp session=051b6f5b-e3e7-4377-bcc8-dc3d60480532 http_session=e8b63afc-f084-40ba-9f7e-3009b3401ee0 source=/src/file1 and dest=/dst/file1 server=server1.example.com result=400
+2026-09-11 19:05:06.342 [992f-15483028] ERR Failed to create HTTP server session_id=e8b63afc-f084-40ba-9f7e-3009b3401ee0
+2026-09-11 19:05:06.349 [992f-15483028] LOG HTTP socket error: Unable to resolve remote address.  Remote address is server1.example.com, port 443.
+2026-09-11 19:05:06.349 [992f-15483028] ERR http_session=e8b63afc-f084-40ba-9f7e-3009b3401ee0 Error unable to create socket action=session_end server=server1.example.com port=443 connection=(HTTPS) proxy= port=0 error=Unable to resolve remote address.  Remote address is server1.example.com, port 443.
+2026-09-11 19:05:10.000 [992f-15483033] LOG FASP Session Stop uuid=051b6f5b-e3e7-4377-bcc8-dc3d60480532 op=send status=failed errcode=1 errstr="Fell back to HTTP" source= dest=/dst/file1 source_prefix=- local=198.51.100.4:33001 peer=198.51.100.4:33001 tcp_port=443 os="Darwin 25.6.0 Darwin Kernel Version 25.6.0: Fri Jul 31 19:18:49 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6000" ver=4.4.8.2592 6a5e6bf lic=10:1:1234 peeros="-" peerver=- peerlic=6:1:1 proto_sess=20003 proto_udp=20000 proto_bwmeas=20000 proto_data=2000f

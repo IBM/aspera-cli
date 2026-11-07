@@ -1,0 +1,112 @@
+2026-09-28 13:37:02.861 [15c2b-10138990] LOG Initializing FASP version 4.4.8.2592 6a5e6bf, license max rate=(unlimited), account no.=1, license no.=1234 product=53
+2026-09-28 13:37:02.861 [15c2b-10138990] LOG Configured symlink actions: create=1, follow=1, follow_wide=0, skip=0
+2026-09-28 13:37:02.861 [15c2b-10138990] LOG IBM Aspera Transfer SDK version 1.1.9
+2026-09-28 13:37:02.866 [15c2b-10138990] ERR Too many management channels requested (max 32).
+2026-09-28 13:37:02.867 [15c2b-10138990] ERR Cannot connect to management port localhost:51284
+2026-09-28 13:37:02.867 [15c2b-10138990] ERR optional management connection to localhost:51284 failed
+2026-09-28 13:37:02.868 [15c2b-10138990] ERR Cannot connect to management port localhost:65243
+2026-09-28 13:37:02.868 [15c2b-10138990] ERR optional management connection to localhost:65243 failed
+2026-09-28 13:37:02.869 [15c2b-10138990] ERR Cannot connect to management port localhost:50708
+2026-09-28 13:37:02.869 [15c2b-10138990] ERR optional management connection to localhost:50708 failed
+2026-09-28 13:37:02.869 [15c2b-10138990] ERR Cannot connect to management port localhost:52999
+2026-09-28 13:37:02.869 [15c2b-10138990] ERR optional management connection to localhost:52999 failed
+2026-09-28 13:37:02.870 [15c2b-10138990] ERR Cannot connect to management port localhost:51753
+2026-09-28 13:37:02.870 [15c2b-10138990] ERR optional management connection to localhost:51753 failed
+2026-09-28 13:37:02.871 [15c2b-10138990] ERR Cannot connect to management port localhost:60981
+2026-09-28 13:37:02.871 [15c2b-10138990] ERR optional management connection to localhost:60981 failed
+2026-09-28 13:37:02.872 [15c2b-10138990] ERR Cannot connect to management port localhost:55772
+2026-09-28 13:37:02.872 [15c2b-10138990] ERR optional management connection to localhost:55772 failed
+2026-09-28 13:37:02.872 [15c2b-10138990] ERR Cannot connect to management port localhost:51015
+2026-09-28 13:37:02.872 [15c2b-10138990] ERR optional management connection to localhost:51015 failed
+2026-09-28 13:37:02.872 [15c2b-10138990] ERR Cannot connect to management port localhost:54946
+2026-09-28 13:37:02.872 [15c2b-10138990] ERR optional management connection to localhost:54946 failed
+2026-09-28 13:37:02.872 [15c2b-10138990] ERR Cannot connect to management port localhost:59468
+2026-09-28 13:37:02.872 [15c2b-10138990] ERR optional management connection to localhost:59468 failed
+2026-09-28 13:37:02.873 [15c2b-10138990] ERR Cannot connect to management port localhost:53104
+2026-09-28 13:37:02.873 [15c2b-10138990] ERR optional management connection to localhost:53104 failed
+2026-09-28 13:37:02.873 [15c2b-10138990] ERR Cannot connect to management port localhost:55839
+2026-09-28 13:37:02.873 [15c2b-10138990] ERR optional management connection to localhost:55839 failed
+2026-09-28 13:37:02.873 [15c2b-10138990] ERR Cannot connect to management port localhost:50762
+2026-09-28 13:37:02.873 [15c2b-10138990] ERR optional management connection to localhost:50762 failed
+2026-09-28 13:37:02.873 [15c2b-10138990] ERR Cannot connect to management port localhost:58660
+2026-09-28 13:37:02.873 [15c2b-10138990] ERR optional management connection to localhost:58660 failed
+2026-09-28 13:37:02.874 [15c2b-10138990] ERR Cannot connect to management port localhost:58656
+2026-09-28 13:37:02.874 [15c2b-10138990] ERR optional management connection to localhost:58656 failed
+2026-09-28 13:37:02.874 [15c2b-10138990] ERR Cannot connect to management port localhost:56016
+2026-09-28 13:37:02.874 [15c2b-10138990] ERR optional management connection to localhost:56016 failed
+2026-09-28 13:37:02.874 [15c2b-10138990] ERR Cannot connect to management port localhost:58328
+2026-09-28 13:37:02.874 [15c2b-10138990] ERR optional management connection to localhost:58328 failed
+2026-09-28 13:37:02.874 [15c2b-10138990] ERR Cannot connect to management port localhost:62047
+2026-09-28 13:37:02.874 [15c2b-10138990] ERR optional management connection to localhost:62047 failed
+2026-09-28 13:37:02.874 [15c2b-10138990] ERR Cannot connect to management port localhost:62321
+2026-09-28 13:37:02.874 [15c2b-10138990] ERR optional management connection to localhost:62321 failed
+2026-09-28 13:37:02.875 [15c2b-10138990] ERR Cannot connect to management port localhost:49842
+2026-09-28 13:37:02.875 [15c2b-10138990] ERR optional management connection to localhost:49842 failed
+2026-09-28 13:37:02.875 [15c2b-10138990] ERR Cannot connect to management port localhost:58232
+2026-09-28 13:37:02.875 [15c2b-10138990] ERR optional management connection to localhost:58232 failed
+2026-09-28 13:37:02.875 [15c2b-10138990] ERR Cannot connect to management port localhost:55849
+2026-09-28 13:37:02.875 [15c2b-10138990] ERR optional management connection to localhost:55849 failed
+2026-09-28 13:37:02.875 [15c2b-10138990] ERR Cannot connect to management port localhost:49220
+2026-09-28 13:37:02.875 [15c2b-10138990] ERR optional management connection to localhost:49220 failed
+2026-09-28 13:37:02.875 [15c2b-10138990] ERR Cannot connect to management port localhost:63487
+2026-09-28 13:37:02.875 [15c2b-10138990] ERR optional management connection to localhost:63487 failed
+2026-09-28 13:37:02.876 [15c2b-10138990] ERR Cannot connect to management port localhost:62609
+2026-09-28 13:37:02.876 [15c2b-10138990] ERR optional management connection to localhost:62609 failed
+2026-09-28 13:37:02.876 [15c2b-10138990] ERR Cannot connect to management port localhost:49491
+2026-09-28 13:37:02.876 [15c2b-10138990] ERR optional management connection to localhost:49491 failed
+2026-09-28 13:37:02.876 [15c2b-10138990] ERR Cannot connect to management port localhost:58988
+2026-09-28 13:37:02.876 [15c2b-10138990] ERR optional management connection to localhost:58988 failed
+2026-09-28 13:37:02.876 [15c2b-10138990] ERR Cannot connect to management port localhost:57678
+2026-09-28 13:37:02.876 [15c2b-10138990] ERR optional management connection to localhost:57678 failed
+2026-09-28 13:37:02.877 [15c2b-10138990] ERR Cannot connect to management port localhost:54445
+2026-09-28 13:37:02.877 [15c2b-10138990] ERR optional management connection to localhost:54445 failed
+2026-09-28 13:37:02.877 [15c2b-10138990] ERR Cannot connect to management port localhost:52656
+2026-09-28 13:37:02.877 [15c2b-10138990] ERR optional management connection to localhost:52656 failed
+2026-09-28 13:37:02.877 [15c2b-10138990] ERR /Users/user/.aspera/lib/ossl-modules not found
+2026-09-28 13:37:02.881 [15c2b-10138990] LOG (access key) Not present
+2026-09-28 13:37:03.072 [15c2b-10138990] LOG [asssh] remote host-key fingerprint 0000000000000000000000000000000000000001
+2026-09-28 13:37:04.850 [15c2b-10138990] LOG [asssh] authentication succeeded, proceeding.
+2026-09-28 13:37:05.479 [15c2b-10138990] LOG Symlink actions for starters: create=0, follow=1, follow_wide=0, skip=0
+2026-09-28 13:37:05.480 [15c2b-10138990] LOG Xattrs-preserving modes for starters: --preserve-xattrs=none, --remote-preserve-xattrs=none; --preserve-acls=none, --remote-preserve-acls=none
+2026-09-28 13:37:05.481 [15c2b-10138990] LOG changing session job size from 0 to 2 to match server configuration
+2026-09-28 13:37:05.481 [15c2b-10138990] LOG server configuration specifies transit encryption cipher 7, user requests 1
+2026-09-28 13:37:05.482 [15c2b-10138990] LOG Symlink actions overridden by server: create=0, follow=1, follow_wide=1, skip=0
+2026-09-28 13:37:05.483 [15c2b-10138990] LOG MTU discovery not implemented
+2026-09-28 13:37:05.483 [15c2b-10138990] LOG Unable to set Dont Fragment (DF) bit on, pMTU probing may fail
+2026-09-28 13:37:05.483 [15c2b-10138998] LOG FASP Session Start uuid=3482c330-7356-4d08-a3eb-8ff0e5b6c2c8 op=send status=started source=/src/file1 dest=/dst/file1 source_prefix=- local=198.51.100.2:55217 peer=198.51.100.3:33001 tcp_port=33001 os="Darwin 25.6.0 Darwin Kernel Version 25.6.0: Fri Jul 31 19:18:49 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6000" ver=4.4.8.2592 6a5e6bf lic=10:1:1234 peeros="Linux 5.14.0-687.42.1.el9_8.x86_64 #1 SMP PREEMPT_DYNAMIC Sun Aug 23 21:35:07 EDT 2026" peerver=4.4.8.2596 b12cd13 peerlic=6:1:1 proto_sess=20003 proto_udp=20000 proto_bwmeas=20000 proto_data=2000f
+2026-09-28 13:37:05.483 [15c2b-10138998] LOG FASP Session Params uuid=3482c330-7356-4d08-a3eb-8ff0e5b6c2c8 userid=1000 user="xfer" targetrate=100000000 minrate=0 rate_policy=fair cipher=aes-128-gcm resume=0 create=0 extra_create=0 ovr=1 times=0 precalc=yes precalc_disable=false mf=0 mf_path=- mf_suffix=.aspera-inprogress partial_file_suffix=- files_encrypt=no files_decrypt=no file_csum=NONE fips_enabled=no dgram_sz=0 tcp_mode=no rtt_auto=yes cookie="-" vl_proto_ver=1  peer_vl_proto_ver=1 vl_local=0 vlink_remote=0 vl_sess_id=21249 srcbase=- rd_sz=0 wr_sz=0 cluster_num_nodes=1 cluster_node_id=0 cluster_multi_session_threshold=-1 range=0-0 keepalive=no test_login=no proxy_ip=- net_rc_alg=alg_delay exclude_older/newer_than=0/0 xfer_id=cb71b88d-e4ac-499e-9673-70ab34ddf416
+2026-09-28 13:37:05.483 [15c2b-10138999] ERR as_buf_io: IO error 32 (Broken pipe)
+2026-09-28 13:37:05.483 [15c2b-10138999] ERR Could not write to optional management socket (err=-1)
+2026-09-28 13:37:05.508 [15c2b-10138990] ERR Warning: unable to turn off Dont Fragment (DF) bit
+2026-09-28 13:37:05.508 [15c2b-10138990] LOG datagram size 1472B, block size 1408B, path MTU 1492B
+2026-09-28 13:37:05.511 [15c2b-10139046] LOG Add sender src : /private/tmp/dir14/dir15/dir16/dir17/file20.bin dst : -
+2026-09-28 13:37:05.511 [15c2b-10138998] LOG Sender bl t/o/r/dl/c/h=0/0/0/0/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/0 rate t/m/c/rc/n/vl/vr/r=100000000/0/100000/0/0/100000000/100000000/100000000 prog t/f/e=0/0/0 xmtD=0 drate=0
+2026-09-28 13:37:05.511 [15c2b-10138998] LOG Sender DS Qs ds/re/a/d/ao/eo/n/ap/rq/rd/ru/cl/di/do=0/0/1/0/0/0/0/0/0/0/0/0/0/0 Rs o/i=0/0 mgmt backlog i/s/n = 0/4/0 1/-1/0
+2026-09-28 13:37:05.603 [15c2b-10138998] LOG FASP Transfer Start uuid=3482c330-7356-4d08-a3eb-8ff0e5b6c2c8 op=send status=started file="/dst/file1" size=30000000 start_byte=0 rate=100.00Mbps loss=0.00 rexreqs=0 overhead=0
+2026-09-28 13:37:08.944 [15c2b-10138998] LOG FASP Transfer Stop uuid=3482c330-7356-4d08-a3eb-8ff0e5b6c2c8 op=send status=success file="/dst/file1" size=30000000 start_byte=0 rate=71.82Mbps elapsed=3.34s loss=0.00 rexreqs=1 overhead=0
+2026-09-28 13:37:08.993 [15c2b-10138998] LOG Sender bl t/o/r/dl/c/h=21309/21308/1/1/20794/20794 ctl bm/bs=0/0 rex b/r/n=1/1/0 r_ott q/s/n=0/0/22 rate t/m/c/rc/n/vl/vr/r=100000000/0/100000000/100000000/100000000/100000000/100000000/100000000 prog t/f/e=30000000/30000000/3402712 xmtD=1 drate=101705328813
+2026-09-28 13:37:08.993 [15c2b-10138998] LOG Sender DS Qs ds/re/a/d/ao/eo/n/ap/rq/rd/ru/cl/di/do=0/0/0/0/0/0/0/0/0/0/0/0/0/0 Rs o/i=1/1 mgmt backlog i/s/n = 0/4/0 1/-1/0
+2026-09-28 13:37:08.993 [15c2b-10138998] LOG Sender bl t/o/r/dl/c/h=21309/21308/1/1/20794/20794 ctl bm/bs=0/0 rex b/r/n=1/1/0 r_ott q/s/n=0/0/22 rate t/m/c/rc/n/vl/vr/r=100000000/0/100000000/100000000/100000000/100000000/100000000/100000000 prog t/f/e=30000000/30000000/3402712 xmtD=1 drate=101705328813
+2026-09-28 13:37:08.993 [15c2b-10138998] LOG Sender DS Qs ds/re/a/d/ao/eo/n/ap/rq/rd/ru/cl/di/do=0/0/0/0/0/0/0/0/0/0/0/0/0/0 Rs o/i=1/1 mgmt backlog i/s/n = 0/4/0 1/-1/0
+2026-09-28 13:37:09.176 [15c2b-10138998] LOG FASP Session Stop uuid=3482c330-7356-4d08-a3eb-8ff0e5b6c2c8 op=send status=success source=/src/file1 dest=/dst/file1 source_prefix=- local=198.51.100.2:55217 peer=198.51.100.3:33001 tcp_port=33001 os="Darwin 25.6.0 Darwin Kernel Version 25.6.0: Fri Jul 31 19:18:49 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T6000" ver=4.4.8.2592 6a5e6bf lic=10:1:1234 peeros="Linux 5.14.0-687.42.1.el9_8.x86_64 #1 SMP PREEMPT_DYNAMIC Sun Aug 23 21:35:07 EDT 2026" peerver=4.4.8.2596 b12cd13 peerlic=6:1:1 proto_sess=20003 proto_udp=20000 proto_bwmeas=20000 proto_data=2000f
+2026-09-28 13:37:09.176 [15c2b-10138998] LOG FASP Session Params uuid=3482c330-7356-4d08-a3eb-8ff0e5b6c2c8 userid=1000 user="xfer" targetrate=100000000 minrate=0 rate_policy=fair cipher=aes-128-gcm resume=0 create=0 extra_create=0 ovr=1 times=0 precalc=yes precalc_disable=false mf=0 mf_path=- mf_suffix=.aspera-inprogress partial_file_suffix=.partial files_encrypt=no files_decrypt=no file_csum=NONE fips_enabled=no dgram_sz=0 tcp_mode=no rtt_auto=yes cookie="-" vl_proto_ver=1  peer_vl_proto_ver=1 vl_local=0 vlink_remote=0 vl_sess_id=21249 srcbase=- rd_sz=0 wr_sz=0 cluster_num_nodes=1 cluster_node_id=0 cluster_multi_session_threshold=-1 range=0-0 keepalive=no test_login=no proxy_ip=- net_rc_alg=alg_delay exclude_older/newer_than=0/0 xfer_id=cb71b88d-e4ac-499e-9673-70ab34ddf416
+2026-09-28 13:37:09.176 [15c2b-10138998] LOG FASP Session Statistics [Sender] id=3482c330-7356-4d08-a3eb-8ff0e5b6c2c8 delay=23ms rex_delay=31ms solicited_rex=0.00% unsolicited_rex=0.00% ave_xmit_rate 70.91Mbps effective=99.99% effective_rate=70.90Mbps (detail: good_blks 21307 bl_total 21309 bl_orig 21308 bl_rex 1 dup_last_blks 1) (sndr ctl: sent 11 rcvd 11 lost 0 lost 0.00%) (rcvr ctl: sent 69 rcvd 69 lost 0 lost 0.00%) (rex  ctl: sent 1 rcvd 1 lost 0 lost 0.00%) (progress: tx_bytes 30000000 file_bytes 30000000 tx_time 3627748) (estimate transfer size: 30000000 bytes)  sess->instru.num_rex_xfer_not_found 0 sess->instru.num_rex_abrtxfer_not_found 0
+2026-09-28 13:37:10.179 [15c2b-10138990] LOG ======= File Transfer statistics =======
+2026-09-28 13:37:10.179 [15c2b-10138990] LOG ------- Source statistics -------
+2026-09-28 13:37:10.179 [15c2b-10138990] LOG Source argument scans attempted             :          1
+2026-09-28 13:37:10.179 [15c2b-10138990] LOG - Source argument scans completed           :          1
+2026-09-28 13:37:10.179 [15c2b-10138990] LOG Source path scans attempted                 :          1
+2026-09-28 13:37:10.179 [15c2b-10138990] LOG - Source path scans failed                  :          0
+2026-09-28 13:37:10.179 [15c2b-10138990] LOG - Source path scans skipped since irregular :          0
+2026-09-28 13:37:10.179 [15c2b-10138990] LOG - Source path scans excluded                :          0
+2026-09-28 13:37:10.179 [15c2b-10138990] LOG - Source directory scans completed          :          0
+2026-09-28 13:37:10.180 [15c2b-10138990] LOG - Source file scans completed               :          1
+2026-09-28 13:37:10.180 [15c2b-10138990] LOG Source directory creates attempted          :          0
+2026-09-28 13:37:10.180 [15c2b-10138990] LOG - Source directory creates failed           :          0
+2026-09-28 13:37:10.180 [15c2b-10138990] LOG - Source directory created or existed       :          0
+2026-09-28 13:37:10.180 [15c2b-10138990] LOG Source file transfers attempted             :          1
+2026-09-28 13:37:10.180 [15c2b-10138990] LOG - Source file transfers failed              :          0
+2026-09-28 13:37:10.180 [15c2b-10138990] LOG - Source file transfers passed              :          1
+2026-09-28 13:37:10.180 [15c2b-10138990] LOG - Source file transfers skipped             :          0
+2026-09-28 13:37:10.180 [15c2b-10138990] LOG Source bytes transferred                    :   30000000
+2026-09-28 13:37:10.180 [15c2b-10138990] LOG ======= end File Transfer statistics =======

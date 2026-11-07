@@ -8,7 +8,7 @@ module Aspera
   module Cli
     # Mixin for Config plugin: commands of `ascp logs`, analysis of `ascp` log files (sessions, statistics and diagnostics)
     module AscpLogsActions
-      LOG_FILES = [{name: :paths, description: 'Log files, or folders with log files', multiple: true, complete: :file}].freeze
+      LOG_FILES = [{name: :paths, description: 'Log files (gzip supported), `-` for standard input, or folders with log files', multiple: true, complete: :file}].freeze
       # Command => description, and default fields
       LISTS = {
         sessions:          ['Sessions, with diagnostics',                                           %w[pid session user direction peer status error error_category start transmitted_bytes average_rate loss_rate diagnostics]],
@@ -29,14 +29,14 @@ module Aspera
       }.freeze
       RECORD_KIND = {name: :kind, description: RECORDS.map { |kind, (description, _)| "#{kind}: #{description}" }.join(', '), allowed: RECORDS.keys}.freeze
       # Default values of option `ascp_logs` (see schema `AscpLogsOptions`)
-      DEFAULTS = {'period' => 1, 'zero_bytes' => false, 'mtu' => nil, 'resolve' => false}.freeze
+      DEFAULTS = {'period' => 1, 'zero_bytes' => false, 'mtu' => nil, 'resolve' => false, 'thresholds' => {}, 'timezone' => nil}.freeze
       private_constant :LOG_FILES, :LISTS, :RECORDS, :RECORD_KIND, :DEFAULTS
       # When a plugin class includes AscpLogsActions, register the :ascp_logs option
       # in that class's DSL registry so Base#initialize auto-declares it,
       # and add the class-level DSL methods of ClassMethods.
       class << self
         def included(base)
-          base.option(:ascp_logs, description: 'Ascp: log analysis (dot-notation: period, zero_bytes, mtu, resolve)', schema: Schema::Registry::ASCP_LOGS_OPTIONS)
+          base.option(:ascp_logs, description: 'Ascp: log analysis (dot-notation: period, zero_bytes, mtu, resolve, thresholds, timezone)', schema: Schema::Registry::ASCP_LOGS_OPTIONS)
           base.extend(ClassMethods)
         end
       end
@@ -63,8 +63,10 @@ module Aspera
 
       def action_ascp_logs_records(kind:, paths:, **)
         require 'aspera/ascp/log_analyzer'
-        paths.each { |path| Aspera.assert(File.exist?(path), type: BadArgument) { "No such file or folder: #{path}" } }
-        Result::ObjectList.new(Ascp::LogAnalyzer::Records.list(kind, paths), fields: RECORDS[kind].last)
+        check_ascp_logs_paths(paths)
+        Result::ObjectList.new(Ascp::LogAnalyzer::Records.list(kind, paths, timezone: ascp_logs_params['timezone']), fields: RECORDS[kind].last)
+      rescue ParameterError => e
+        raise BadArgument, e.message
       end
 
       def action_ascp_logs_fields(kind:, **)
@@ -80,20 +82,37 @@ module Aspera
       # @return [Aspera::Ascp::LogAnalyzer]
       def analyze_ascp_logs(paths)
         require 'aspera/ascp/log_analyzer'
-        params = DEFAULTS.merge((options.get_option(:ascp_logs) || {}).transform_keys(&:to_s))
+        params = ascp_logs_params
+        user_thresholds = (params['thresholds'] || {}).transform_keys(&:to_s)
         analyzer = Ascp::LogAnalyzer.new(
           period:     params['period'] * 60,
           zero_bytes: params['zero_bytes'],
           mtu:        params['mtu'],
-          resolve:    params['resolve']
+          resolve:    params['resolve'],
+          thresholds: user_thresholds,
+          timezone:   params['timezone']
         )
+        check_ascp_logs_paths(paths)
         paths.each do |path|
-          Aspera.assert(File.exist?(path), type: BadArgument) { "No such file or folder: #{path}" }
           Log.log.debug { "Analyzing: #{path}" }
           analyzer.add(path)
         end
         analyzer.warnings.each { |warning| Log.log.warn(warning) }
         analyzer
+      rescue ParameterError => e
+        raise BadArgument, e.message
+      end
+
+      # @return [Hash] value of option `ascp_logs`, with defaults
+      def ascp_logs_params
+        DEFAULTS.merge((options.get_option(:ascp_logs) || {}).transform_keys(&:to_s))
+      end
+
+      # Standard input (`-`) is read by the analyzer
+      def check_ascp_logs_paths(paths)
+        paths.each do |path|
+          Aspera.assert(path == Ascp::LogAnalyzer::STDIN_PATH || File.exist?(path), type: BadArgument) { "No such file or folder: #{path}" }
+        end
       end
     end
   end

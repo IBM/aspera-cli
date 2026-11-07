@@ -3,7 +3,9 @@
 # cspell:words nstore pids throughputs
 require 'set'
 require 'time'
+require 'aspera/assert'
 require 'aspera/ascp/log_analyzer/rules'
+require 'aspera/ascp/log_analyzer/advice'
 require 'aspera/ascp/log_analyzer/lines'
 require 'aspera/ascp/log_analyzer/session'
 
@@ -16,38 +18,45 @@ module Aspera
 
         # Statistic => finding, when not zero
         FINDINGS = {
-          stuck_nack:        'Retransmission requests (NACKs) were stuck in %d transfers: check the logs.',
-          filename_too_long: '%d files failed because their Windows path is longer than 260 characters.',
-          gap:               'ascp was blocked (IO wait) %d times.',
-          gap_ssh:           'ascp was blocked (IO wait) %d times, with an SSH timeout.',
-          buffer_died:       'The system ran out of buffer memory, and ascp exited, %d times.',
-          timeout_died:      'A data or SSH timeout made ascp exit %d times.',
-          decryption_died:   'A file decryption error made ascp exit %d times.',
-          table_died:        'ascp exited at the end of %d sessions, without logging the statistics table.',
-          died:              'ascp exited, was blocked (IO wait), or stopped logging, %d times: check the logs.',
-          win_clock:         'The clock of the system moves backwards: update the firmware of the motherboard.',
-          vm:                'This system may run on a VM, or have another clock problem, which affected %d transfers.',
-          disable_reverse:   'Reverse path congestion inference skew affected %d transfers: check the logs, and disable it if appropriate.',
-          vm_peer:           'Peers may run on a VM, or have another clock problem, which affected %d transfers.'
+          stuck_nack:           'Retransmission requests (NACKs) were stuck in %d transfers: check the logs.',
+          filename_too_long:    '%d files failed because their Windows path is longer than 260 characters.',
+          gap:                  'ascp was blocked (IO wait) %d times.',
+          gap_ssh:              'ascp was blocked (IO wait) %d times, with an SSH timeout.',
+          buffer_died:          'The system ran out of buffer memory, and ascp exited, %d times.',
+          timeout_died:         'A data or SSH timeout made ascp exit %d times.',
+          decryption_died:      'A file decryption error made ascp exit %d times.',
+          table_died:           'ascp exited at the end of %d sessions, without logging the statistics table.',
+          died:                 'ascp exited, was blocked (IO wait), or stopped logging, %d times: check the logs.',
+          win_clock:            'The clock of the system moves backwards: update the firmware of the motherboard.',
+          vm:                   'This system may run on a VM, or have another clock problem, which affected %d transfers.',
+          disable_reverse:      'Reverse path congestion inference skew affected %d transfers: check the logs, and disable it if appropriate.',
+          vm_peer:              'Peers may run on a VM, or have another clock problem, which affected %d transfers.',
+          ossl_modules_missing: 'The OpenSSL modules folder of ascp was not found in %d sessions (configuration, e.g. installation of the HTTP gateway): no effect unless an OpenSSL provider (e.g. FIPS) is needed.',
+          change_event_failed:  'A change of the schedule of the virtual link capacity could not be registered in %d sessions: the schedule is not applied.'
         }.freeze
         # Totals of a snapshot period
         PERIOD_TOTALS = %i[rate rate_in rate_out calc calc_in calc_out target target_in target_out loss_in loss_out].freeze
-        # Maximum seconds between the end of a failed session and a new session, to consider it a retry
-        RETRY_WINDOW = 3600
         # A retry has the same values for these
         RETRY_KEYS = %i[peer op source dest].freeze
 
-        attr_reader :path, :stats, :licenses, :first_time, :last_time
+        attr_reader :path, :stats, :licenses, :first_time, :last_time, :thresholds
 
         # @param path       [String]       Log file
         # @param period     [Integer]      Snapshot period in seconds
         # @param zero_bytes [Boolean]      Include sessions without transferred bytes
         # @param mtu        [Integer, nil] MTU to use when not found in logs
-        def initialize(path, period: 60, zero_bytes: false, mtu: nil)
+        # @param thresholds [Hash]         Diagnostic thresholds
+        # @param timezone   [String, nil]  Time zone of the log lines: `UTC` or `+HH:MM`. Time zone of the analyst if nil.
+        def initialize(path, period: 60, zero_bytes: false, mtu: nil, thresholds: {}, timezone: nil)
           @path = path
+          @timezone = timezone
           @period = period
           @zero_bytes = zero_bytes
           @mtu = mtu
+          thresholds = thresholds.transform_keys(&:to_sym)
+          unknown = thresholds.keys - DEFAULT_THRESHOLDS.keys
+          Aspera.assert(unknown.empty?, type: ArgumentError) { "Unknown threshold: #{unknown.join(', ')}" }
+          @thresholds = DEFAULT_THRESHOLDS.merge(thresholds)
           # PID => current Session of process
           @current = {}
           # All sessions, in order of creation
@@ -72,7 +81,7 @@ module Aspera
         # Read and analyze the log file
         # @return [self]
         def analyze
-          File.foreach(@path, mode: 'rb') { |line| parse_line(normalize(line)) }
+          LogAnalyzer.read_lines(@path, Encoding::BINARY) { |line| parse_line(normalize(line)) }
           process_samples unless @pending.empty?
           if @held
             start_period(@held)
@@ -127,20 +136,22 @@ module Aspera
               'peer'              => group.first[:peer],
               'direction'         => group.first.direction,
               'status'            => group.all? { |s| s[:status] == 'success' } ? 'success' : 'failed',
-              'start'             => (Time.at(start).iso8601 if start),
-              'stop'              => (Time.at(stop).iso8601 if stop),
+              'start'             => iso(start),
+              'stop'              => iso(stop),
               'transmitted_bytes' => bytes,
               'average_rate'      => (bytes * 8 / (stop - start) if start && stop && stop > start)
             }.compact
           end
         end
 
-        # @return [Array<Hash>] one row per diagnostic of sessions: id, severity, message
+        # @return [Array<Hash>] one row per diagnostic of sessions: id, severity, message, recommendation (if any)
         def diagnostics
           windows_log = @path.match?(/\w:/)
           sessions.flat_map do |s|
             s.report(windows_log: windows_log)
-            s.diagnostics.map { |diagnostic| {'file' => @path, 'pid' => s.pid, 'session' => s[:uuid]}.compact.merge(diagnostic) }
+            s.diagnostics.map do |diagnostic|
+              {'file' => @path, 'pid' => s.pid, 'session' => s[:uuid]}.compact.merge(diagnostic, 'recommendation' => RECOMMENDATIONS[diagnostic['id'].to_sym]).compact
+            end
           end
         end
 
@@ -153,7 +164,7 @@ module Aspera
         def snapshots
           reported_periods.map do |time, period|
             t = period[:totals]
-            row = {'file' => @path, 'time' => Time.at(time).iso8601, 'sessions' => active_sessions(period[:slots])}
+            row = {'file' => @path, 'time' => iso(time), 'sessions' => active_sessions(period[:slots])}
             if @period > 600 && period[:stop].to_i > period[:start].to_i
               duration = period[:stop] - period[:start]
               row.merge!('rate' => t[:data] / duration, 'rate_in' => t[:data_in] / duration, 'rate_out' => t[:data_out] / duration)
@@ -171,7 +182,7 @@ module Aspera
               progress = (100.0 * slot[:tx_bytes].to_i / session[:tx_bytes]).round(2) if session.flag?(:statistics) && session.num(:tx_bytes).nonzero?
               {
                 'file'       => @path,
-                'time'       => Time.at(time).iso8601,
+                'time'       => iso(time),
                 'pid'        => session.pid,
                 'session'    => session[:uuid],
                 'rate'       => slot[:net_rate].to_i,
@@ -201,7 +212,7 @@ module Aspera
         # A process starts a new session
         # @return [Session] new current session of process
         def new_session(pid)
-          s = Session.new(pid)
+          s = Session.new(pid, thresholds: @thresholds, timezone: @timezone)
           @sessions.push(s)
           @current[pid] = s
         end
@@ -225,6 +236,7 @@ module Aspera
         end
 
         def parse_line(line)
+          track_ascp(line)
           pid = line[PID, 1] or return
           time = parse_time(line[LINE_TIME, 1])
           if time
@@ -248,6 +260,9 @@ module Aspera
             check_pid_reuse(pid)
             session(pid).set(:transfer)
             @config[pid][:ver] = version
+            # Authentication is logged after this line (the product name before or after it, depending on the version)
+            @config[pid].delete(:auth)
+            license(@config[pid], line)
           end
           return if line.include?('ascmd') || line.include?('aspshell')
           # Other processes (e.g. asperanoded): only time is used
@@ -268,8 +283,11 @@ module Aspera
           end
           s[:last] = time
           s.session_params(key_values(line)) if line.include?('FASP Session Params')
-          # No rule applies to file queue samples
-          apply_rules(s, line) unless line.include?(' DS Qs ')
+          if line.include?(' DS Qs ')
+            parse_ds_qs(pid, line)
+          else
+            apply_rules(s, line)
+          end
           next_period(line, time)
         end
 
@@ -280,12 +298,20 @@ module Aspera
           effects[:call] ? send(effects[:call], s, line.match(Array(match).first)) : s.apply(effects)
         end
 
+        # Maximum rate (bps, nil if unlimited) and expiry date (nil if none) of the license, from the `Initializing FASP version` line
+        def license(config, line)
+          mbps = line[LICENSE_RATE, 1]
+          config[:license_rate] = mbps && (mbps.to_i * 1_000_000)
+          config[:license_expires] = line[LICENSE_EXPIRES, 1]
+        end
+
         # `Session Start` or `Session Stop` line
         # @return [Session] session of line: a new one if the process starts another session
         def session_line(s, pid, kind, stamp, line)
           fields = key_values(line)
           f = {
             uuid: fields['uuid'] || fields['id'], op: fields['op'], user: fields['user'], source: fields['source'], dest: fields['dest'],
+            transport: (fields.key?('wss_port') ? 'wss' : ('ssh' if fields.key?('tcp_port'))),
             os: fields['os'], ver: fields['ver'], peeros: fields['peeros'], peerver: fields['peerver'], lic: fields['lic'], peerlic: fields['peerlic']
           }.compact
           if f[:uuid] && s[:uuid] && s[:uuid] != f[:uuid]
@@ -368,10 +394,33 @@ module Aspera
           session((s.pid.to_i - 11).to_s)[:error] = 'segfault'
         end
 
+        # No packet received: the receiver logs it from 2 seconds, the sender (no feedback of the receiver) from 3 seconds
         def no_data(s, m)
-          seconds = m[1].to_i
-          s[:no_data] = seconds if s.num(:no_data) <= seconds
-          s.increment(:no_data_total, seconds == 2 ? 2 : 1)
+          sender = m[1] == 'Sender'
+          key = sender ? :no_feedback : :no_data
+          first = sender ? 3 : 2
+          seconds = m[2].to_i
+          s[key] = seconds if s.num(key) <= seconds
+          s.increment(:"#{key}_total", seconds == first ? first : 1)
+        end
+
+        # Product name: `IBM Aspera High-Speed Transfer Server version 4.4.8.2596`, logged once by the process
+        def product_name(s, m)
+          @config[s.pid][:product_name] = m[1]
+        end
+
+        # Authentication with a token (`ASPERA_AUTH_TOKEN`), also when the line of the access key of the node storage follows
+        def token_auth(s, _m)
+          @config[s.pid][:auth] = 'token'
+        end
+
+        # Storage of a node access key, without token: authentication of the node user
+        def node_auth(s, _m)
+          @config[s.pid][:auth] ||= 'node'
+        end
+
+        def rex_timer_overflow(s, _m)
+          s.increment(:rex_overflow)
         end
 
         def session_statistics(s, m)
@@ -463,6 +512,25 @@ module Aspera
           @stats[:last] = time
         end
 
+        # Parse and accumulate a `DS Qs` line into the current session (called directly, not via `@pending`)
+        def parse_ds_qs(pid, line)
+          m = line.match(DS_QS_LINE) or return
+          rest = m[3]
+          # Extract named group k1/k2=v1/v2: pick only the `Qs` group (the first)
+          qs = {}
+          rest.scan(DS_QS_GROUPS) do |group, keys, numbers|
+            next unless group == 'Qs'
+            keys.split('/').zip(numbers.split('/').map(&:to_i)) { |k, v| qs[k] = v }
+            break
+          end
+          # Management backlog: sum of buffered bytes across all sockets
+          if (bl = rest.match(DS_QS_MGMT))
+            backlog = bl[1].split.sum { |triplet| triplet.split('/').last.to_i }
+            qs['mgmt_backlog'] = backlog
+          end
+          session(pid).add_ds_qs_sample(qs) unless qs.empty?
+        end
+
         # @return [Integer] number of sessions in period
         def active_sessions(slots)
           @zero_bytes ? slots.size : slots.count { |_, slot| slot[:total1].to_i.positive? || slot[:total2].to_i.positive? }
@@ -519,7 +587,9 @@ module Aspera
         # --- Statistics ---
 
         def compute_statistics
+          starts = transfer_sessions.filter_map { |s| s[:start] }
           transfer_sessions.each do |s|
+            s.shared_link(starts)
             s.clear(:vm) if @stats[:smart_reset].positive?
             exit_category = s.check_exit(@stats[:last])
             @stats[exit_category] += 1 if exit_category
@@ -540,6 +610,8 @@ module Aspera
               @stats[:cancelled] += 1 if cancelled
               @stats[:errors][s[:error]] += 1 unless cancelled
             end
+            @stats[:ossl_modules_missing] += 1 if s.flag?(:ossl_modules_missing)
+            @stats[:change_event_failed] += 1 if s.flag?(:change_event_failed)
             @stats[:vm] += 1 if s.flag?(:vm)
             @stats[:vm_peer] += 1 if s.flag?(:vm_peer)
             @stats[:disable_reverse] += 1 if s.flag?(:disable_reverse) && !s.flag?(:no_reverse_infer)
@@ -564,7 +636,7 @@ module Aspera
             group.sort_by { |s| s[:start] }.each_cons(2) do |previous, current|
               next unless previous[:status] == 'failed' && current[:start] > previous[:start]
               next if previous[:xfer_id] && previous[:xfer_id] == current[:xfer_id]
-              next if current[:start] - (previous[:stop] || previous[:last] || previous[:start]) > RETRY_WINDOW
+              next if current[:start] - (previous[:stop] || previous[:last] || previous[:start]) > @thresholds[:retry_window]
               previous[:retried_by] = current.pid
               current[:retry_of] = previous.pid
               @stats[:retries] += 1

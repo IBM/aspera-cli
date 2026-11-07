@@ -1,0 +1,59 @@
+Nov  6 09:38:34 host1.example.com ascp[2529557]: LOG Initializing FASP version 4.4.8.2592 6a5e6bf, license max rate=(unlimited), account no.=1, license no.=1234 product=6
+Nov  6 09:38:34 host1.example.com ascp[2529557]: LOG Configured symlink actions: create=1, follow=1, follow_wide=0, skip=0
+Nov  6 09:38:34 host1.example.com ascp[2529557]: LOG IBM Aspera High-Speed Transfer Server version 4.4.9.3472
+Nov  6 09:38:34 host1.example.com ascp[2529557]: ERR /opt/aspera/httpgateway/lib/ossl-modules not found
+Nov  6 09:38:39 host1.example.com ascp[2529557]: LOG (access key) Not present
+Nov  6 09:38:39 host1.example.com ascp[2529557]: LOG [asssh] remote host-key fingerprint 0000000000000000000000000000000000000003
+Nov  6 09:38:39 host1.example.com ascp[2529557]: LOG [asssh] authentication succeeded, proceeding.
+Nov  6 09:38:42 host1.example.com ascp[2529557]: LOG Symlink actions for starters: create=0, follow=1, follow_wide=0, skip=0
+Nov  6 09:38:42 host1.example.com ascp[2529557]: LOG Xattrs-preserving modes for starters: --preserve-xattrs=none, --remote-preserve-xattrs=none; --preserve-acls=none, --remote-preserve-acls=none
+Nov  6 09:38:42 host1.example.com ascp[2529557]: LOG changing session job size from 0 to 2 to match server configuration
+Nov  6 09:38:42 host1.example.com ascp[2529557]: LOG server configuration specifies transit encryption cipher 9, user requests 1
+Nov  6 09:38:42 host1.example.com ascp[2529557]: LOG vlink init: id=70, type=remote, capacity=10000000000, Qmax=125000000, Qmin=0, QB=150000000, k_inner=0.50, k_outer=1.00, swarm_size=1
+Nov  6 09:38:42 host1.example.com ascp[2529557]: LOG FASP Session Start uuid=d6801ba9-65e0-4963-9555-15c10ef0c019 op=send status=started source=C:/src/file1 dest=/dst/file1 source_prefix=- local=198.51.100.3:55692 peer=198.51.100.11:33001 tcp_port=33001 os="Linux 5.14.0-687.58.1.el9_8.x86_64 #1 SMP PREEMPT_DYNAMIC Wed Oct 14 01:16:38 EDT 2026" ver=4.4.8.2592 6a5e6bf lic=10:1:1234 peeros="Linux 5.14.0-687.58.1.el9_8.x86_64 #1 SMP PREEMPT_DYNAMIC Wed Oct 14 01:16:38 EDT 2026" peerver=4.4.8.8008 a091d0a peerlic=6:1:1 proto_sess=20003 proto_udp=20000 proto_bwmeas=20000 proto_data=2000f
+Nov  6 09:38:42 host1.example.com ascp[2529557]: LOG FASP Session Params uuid=d6801ba9-65e0-4963-9555-15c10ef0c019 userid=1000 user="xfer" targetrate=700000000 minrate=0 rate_policy=fair cipher=aes-256-gcm resume=0 create=0 extra_create=0 ovr=255 times=0 precalc=yes precalc_disable=false mf=0 mf_path=- mf_suffix=.aspera-inprogress partial_file_suffix=- files_encrypt=no files_decrypt=no file_csum=NONE fips_enabled=no dgram_sz=0 tcp_mode=no rtt_auto=yes cookie="-" vl_proto_ver=1  peer_vl_proto_ver=1 vl_local=0 vlink_remote=10000000000 vl_sess_id=527 srcbase=- rd_sz=0 wr_sz=0 cluster_num_nodes=1 cluster_node_id=0 cluster_multi_session_threshold=-1 range=0-0 keepalive=no test_login=no proxy_ip=- net_rc_alg=alg_delay exclude_older/newer_than=0/0 xfer_id=26f77b25-c734-4007-8de9-ac78858c99ed
+Nov  6 09:38:42 host1.example.com ascp[2529557]: LOG datagram size 1472B, block size 1408B, path MTU 1492B
+Nov  6 09:38:42 host1.example.com ascp[2529557]: LOG PVCL Chunk/block sizes set to 1047552/1408
+Nov  6 09:38:42 host1.example.com ascp[2529557]: LOG Add sender src : file11.mp4 dst : file11.mp4
+Nov  6 09:38:42 host1.example.com ascp[2529557]: LOG Sender bl t/o/r/dl/c/h=0/0/0/0/0/0 ctl bm/bs=0/0 rex b/r/n=0/0/0 r_ott q/s/n=0/0/0 rate t/m/c/rc/n/vl/vr/r=700000000/0/700000/0/0/700000000/700000000/700000000 prog t/f/e=0/0/0 xmtD=0 drate=0
+Nov  6 09:38:42 host1.example.com ascp[2529557]: LOG Sender DS Qs ds/re/a/d/ao/eo/n/ap/rq/rd/ru/cl/di/do=1/0/0/0/0/0/0/0/1/0/0/0/0/0 Rs o/i=1/0 mgmt backlog i/s/n = 0/4/0
+Nov  6 09:38:44 host1.example.com ascp[2529557]: LOG FASP Transfer Start uuid=d6801ba9-65e0-4963-9555-15c10ef0c019 op=send status=started file="/dst/file1" size=641871746 start_byte=0 rate=700.00Mbps loss=0.00 rexreqs=0 overhead=0
+Nov  6 09:39:02 host1.example.com ascp[2529557]: LOG Sender bl t/o/r/dl/c/h=141954/141953/1/0/141361/141361 ctl bm/bs=0/0 rex b/r/n=1/1/0 r_ott q/s/n=0/0/0 rate t/m/c/rc/n/vl/vr/r=700000000/0/65660888/65660888/65660888/700000000/700000000/700000000 prog t/f/e=197971840/197971840/18779550 xmtD=0 drate=96592973
+Nov  6 09:39:02 host1.example.com ascp[2529557]: LOG Sender DS Qs ds/re/a/d/ao/eo/n/ap/rq/rd/ru/cl/di/do=1/0/0/0/0/0/0/0/0/0/1/0/0/0 Rs o/i=1/1 mgmt backlog i/s/n = 0/4/0
+Nov  6 09:39:20 host1.example.com ascp[2529557]: ERR pvcl:stdio-tar read() stdiotar input length did not match length specified
+Nov  6 09:39:20 host1.example.com ascp[2529557]: ERR file transmit read error, canceling this file
+Nov  6 09:39:20 host1.example.com ascp[2529557]: ERR ABORT: Transmitter internal abort on xfer 1 [file11.mp4]
+Nov  6 09:39:20 host1.example.com ascp[2529557]: LOG ABORT: [Internal] do lastblock event xfer 1 [FN file11.mp4]
+Nov  6 09:39:20 host1.example.com ascp[2529557]: ERR File block read error, skipping to next file, xfer errcode 59 sess errcode 0
+Nov  6 09:39:20 host1.example.com ascp[2529557]: ERR pvcl:stdio-tar read() stdiotar input length did not match length specified
+Nov  6 09:39:20 host1.example.com ascp[2529557]: ERR source send ds_err_notfn: Sent DS err notfn pdu, errcode 59 (total len 133)
+Nov  6 09:39:20 host1.example.com ascp[2529557]: LOG FASP Transfer Stop uuid=d6801ba9-65e0-4963-9555-15c10ef0c019 op=send status=failed errcode=35 errstr="Disk read error" file="/dst/file1" size=641871746 start_byte=0 rate=82.86Mbps elapsed=36.11s loss=0.00 rexreqs=1 overhead=0
+Nov  6 09:39:20 host1.example.com ascp[2529557]: LOG Sender bl t/o/r/dl/c/h=265609/265608/1/0/265609/265609 ctl bm/bs=0/0 rex b/r/n=1/1/0 r_ott q/s/n=0/0/0 rate t/m/c/rc/n/vl/vr/r=700000000/0/72339408/72339408/72339408/700000000/700000000/700000000 prog t/f/e=369750656/369750656/36723613 xmtD=1 drate=88568631
+Nov  6 09:39:20 host1.example.com ascp[2529557]: LOG Sender DS Qs ds/re/a/d/ao/eo/n/ap/rq/rd/ru/cl/di/do=0/0/0/0/0/0/0/0/0/0/0/0/0/0 Rs o/i=1/1 mgmt backlog i/s/n = 0/4/0
+Nov  6 09:39:20 host1.example.com ascp[2529557]: LOG Sender bl t/o/r/dl/c/h=265609/265608/1/0/265609/265609 ctl bm/bs=0/0 rex b/r/n=1/1/0 r_ott q/s/n=0/0/0 rate t/m/c/rc/n/vl/vr/r=700000000/0/72339408/72339408/72339408/700000000/700000000/700000000 prog t/f/e=369750656/369750656/36723613 xmtD=1 drate=88568631
+Nov  6 09:39:20 host1.example.com ascp[2529557]: LOG Sender DS Qs ds/re/a/d/ao/eo/n/ap/rq/rd/ru/cl/di/do=0/0/0/0/0/0/0/0/0/0/0/0/0/0 Rs o/i=1/1 mgmt backlog i/s/n = 0/4/0
+Nov  6 09:39:20 host1.example.com ascp[2529557]: ERR Disk read failed
+Nov  6 09:39:21 host1.example.com ascp[2529557]: ERR FASP sender had error, errcode 59 errstr [Disk read failed]
+Nov  6 09:39:21 host1.example.com ascp[2529557]: ERR Peer FASP receiver had error, errcode 59 errstr [Disk read failed]
+Nov  6 09:39:21 host1.example.com ascp[2529557]: LOG FASP Session Stop uuid=d6801ba9-65e0-4963-9555-15c10ef0c019 op=send status=failed errcode=59 errstr="Disk read failed" source=C:/src/file1 dest=/dst/file1 source_prefix=- local=198.51.100.3:55692 peer=198.51.100.11:33001 tcp_port=33001 os="Linux 5.14.0-687.58.1.el9_8.x86_64 #1 SMP PREEMPT_DYNAMIC Wed Oct 14 01:16:38 EDT 2026" ver=4.4.8.2592 6a5e6bf lic=10:1:1234 peeros="Linux 5.14.0-687.58.1.el9_8.x86_64 #1 SMP PREEMPT_DYNAMIC Wed Oct 14 01:16:38 EDT 2026" peerver=4.4.8.8008 a091d0a peerlic=6:1:1 proto_sess=20003 proto_udp=20000 proto_bwmeas=20000 proto_data=2000f
+Nov  6 09:39:21 host1.example.com ascp[2529557]: LOG FASP Session Params uuid=d6801ba9-65e0-4963-9555-15c10ef0c019 userid=1000 user="xfer" targetrate=700000000 minrate=0 rate_policy=fair cipher=aes-256-gcm resume=0 create=0 extra_create=0 ovr=255 times=0 precalc=yes precalc_disable=false mf=0 mf_path=- mf_suffix=.aspera-inprogress partial_file_suffix= files_encrypt=no files_decrypt=no file_csum=NONE fips_enabled=no dgram_sz=0 tcp_mode=no rtt_auto=yes cookie="-" vl_proto_ver=1  peer_vl_proto_ver=1 vl_local=0 vlink_remote=10000000000 vl_sess_id=527 srcbase=- rd_sz=0 wr_sz=0 cluster_num_nodes=1 cluster_node_id=0 cluster_multi_session_threshold=-1 range=0-0 keepalive=no test_login=no proxy_ip=- net_rc_alg=alg_delay exclude_older/newer_than=0/0 xfer_id=26f77b25-c734-4007-8de9-ac78858c99ed
+Nov  6 09:39:21 host1.example.com ascp[2529557]: LOG FASP Session Statistics [Sender] id=d6801ba9-65e0-4963-9555-15c10ef0c019 delay=149ms rex_delay=21ms solicited_rex=0.00% unsolicited_rex=0.00% ave_xmit_rate 80.99Mbps effective=100.00% effective_rate=80.99Mbps (detail: good_blks 265608 bl_total 265609 bl_orig 265608 bl_rex 1 dup_last_blks 0) (sndr ctl: sent 36 rcvd 36 lost 0 lost 0.00%) (rcvr ctl: sent 963 rcvd 962 lost 1 lost 0.10%) (rex  ctl: sent 1 rcvd 1 lost 0 lost 0.00%) (progress: tx_bytes 373976064 file_bytes 373976064 tx_time 37528483) (estimate transfer size: 0 bytes)  sess->instru.num_rex_xfer_not_found 0 sess->instru.num_rex_abrtxfer_not_found 0
+Nov  6 09:39:22 host1.example.com ascp[2529557]: LOG ======= File Transfer statistics =======
+Nov  6 09:39:22 host1.example.com ascp[2529557]: LOG ------- Source statistics -------
+Nov  6 09:39:22 host1.example.com ascp[2529557]: LOG Source argument scans attempted             :          1
+Nov  6 09:39:22 host1.example.com ascp[2529557]: LOG - Source argument scans completed           :          1
+Nov  6 09:39:22 host1.example.com ascp[2529557]: LOG Source path scans attempted                 :          1
+Nov  6 09:39:22 host1.example.com ascp[2529557]: LOG - Source path scans failed                  :          0
+Nov  6 09:39:22 host1.example.com ascp[2529557]: LOG - Source path scans skipped since irregular :          0
+Nov  6 09:39:22 host1.example.com ascp[2529557]: LOG - Source path scans excluded                :          0
+Nov  6 09:39:22 host1.example.com ascp[2529557]: LOG - Source directory scans completed          :          0
+Nov  6 09:39:22 host1.example.com ascp[2529557]: LOG - Source file scans completed               :          0
+Nov  6 09:39:22 host1.example.com ascp[2529557]: LOG Source directory creates attempted          :          0
+Nov  6 09:39:22 host1.example.com ascp[2529557]: LOG - Source directory creates failed           :          0
+Nov  6 09:39:22 host1.example.com ascp[2529557]: LOG - Source directory created or existed       :          0
+Nov  6 09:39:22 host1.example.com ascp[2529557]: LOG Source file transfers attempted             :          1
+Nov  6 09:39:22 host1.example.com ascp[2529557]: LOG - Source file transfers failed              :          1 !
+Nov  6 09:39:22 host1.example.com ascp[2529557]: LOG - Source file transfers passed              :          0
+Nov  6 09:39:22 host1.example.com ascp[2529557]: LOG - Source file transfers skipped             :          0
+Nov  6 09:39:22 host1.example.com ascp[2529557]: LOG Source bytes transferred                    :  373976064
+Nov  6 09:39:22 host1.example.com ascp[2529557]: LOG ======= end File Transfer statistics =======
