@@ -1422,10 +1422,8 @@ Command line arguments that are not options are referred to as **Positional Argu
 
 For example:
 
-<%# check_commands: skip -%>
-
 ```shell
-<%=cmd%> plugin command verb --option-name=VAL1 VAL2
+<%=cmd_skip%> plugin command verb --option-name=VAL1 VAL2
 ```
 
 - **Positional Arguments**: `plugin command verb VAL2`
@@ -1433,8 +1431,8 @@ For example:
 
 Enumeration values (positional arguments and option names/values) support prefix matching.
 See [Enumerations](#enumerations) for details.
-<%# check_commands: skip -%>
-For example `<%=cmd%> config pre ov --for=c` is the same as `<%=cmd%> config preset overview --format=csv`.
+
+For example `<%=cmd_skip%> config pre ov --for=c` is the same as `<%=cmd_skip%> config preset overview --format=csv`.
 
 The value of **Options** and **Command Parameters** is evaluated with the [Extended Value](#extended-value-syntax) syntax.
 
@@ -1540,9 +1538,7 @@ The following are enumerations:
 
 Examples:
 
-<%# check_commands: skip -%>
-
-- Positional: `<%=cmd%> config pre ov --for=c` is the same as `<%=cmd%> config preset overview --format=csv`
+- Positional: `<%=cmd_skip%> config pre ov --for=c` is the same as `<%=cmd_skip%> config preset overview --format=csv`
 - Option name: `--log-l=debug` is the same as `--log-level=debug`
 - Option value: `--format=c` is the same as `--format=csv`
 
@@ -2608,11 +2604,9 @@ Adding `--show-config` to any command line performs a dry run and displays the r
 To display a specific option, add `--fields=<option_name>`.
 Add `--out.flat=no` when the option holds a structured value (`Hash`, `Array`) to display it as-is rather than flattened into dot-path keys:
 
-<%# check_commands: skip -%>
-
 ```shell
-<%=cmd%> --opt=@json:'{"a":1,"b":"two"}' some_plugin --show-config --fields=opt --out.flat=no
-<%=cmd%> --opt.a=1 --opt.b=two some_plugin --show-config --fields=opt --out.flat=no
+<%=cmd_skip%> --opt=@json:'{"a":1,"b":"two"}' some_plugin --show-config --fields=opt --out.flat=no
+<%=cmd_skip%> --opt.a=1 --opt.b=two some_plugin --show-config --fields=opt --out.flat=no
 ```
 
 Both lines above display the same resolved value for option `opt`.
@@ -3115,33 +3109,31 @@ In PowerShell, the words proposed are kept for the session, so only the first `T
 
 Once active, press `Tab` to complete:
 
-<%# check_commands: skip -%>
-
 ```bash
-<%=cmd%> <Tab>                            # plugins and global options: aoc, server, node, ..., --format, ...
-<%=cmd%> server <Tab>                     # sub-commands and options of plugin: upload, download, ls, ..., --url, ...
-<%=cmd%> aoc admin <Tab>                  # sub-commands at any depth: user, node, ...
-<%=cmd%> server ls --u<Tab>               # options, after any command: --url, --username, ...
-<%=cmd%> --format=<Tab>                   # values of option: --format=json, --format=table, ...
-<%=cmd%> --ts.<Tab>                       # keys of option, from its schema: --ts.direction=, --ts.target_rate_kbps=, ...
-<%=cmd%> --out.t<Tab>                     # a sub-structure is followed by a dot: --out.table.
-<%=cmd%> --ts.direction=<Tab>             # values of key: --ts.direction=send, --ts.direction=receive
-<%=cmd%> --transfer=<Tab>                 # plain value of option, key agent: --transfer=direct, --transfer=node, ...
-<%=cmd%> faspex5 admin accounts list --query.<Tab> # keys of --query, from the command: --query.limit=, ...
-<%=cmd%> server upload <Tab>              # local files
-<%=cmd%> server download --to-folder <Tab> # local folders
-<%=cmd%> config genkey <Tab>              # local files, where a local path is expected
-<%=cmd%> --temp.folder=<Tab>              # local folders, for a key of option
-<%=cmd%> --ts=@<Tab>                      # extended value modifiers: @json:, @file:, @preset:, @:, ...
-<%=cmd%> --private-key=@file:<Tab>        # local files, after @file: or @path:
-<%=cmd%> -P <Tab>                         # presets: also for config preset show, @preset:
-<%=cmd%> config preset get myconf <Tab>   # parameters of preset: url, username, ...
-<%=cmd%> config transfer status <Tab>     # asynchronous transfer jobs
-<%=cmd%> node access_keys do <Tab>        # type of expected value, not inserted: <identifier>
-<%=cmd%> aoc packages send <Tab>          # type, and keys of structure (required ones with *): <Hash> name*, workspace_id*, ...
-<%=cmd%> aoc packages send @: <Tab>       # keys of structure built with @:, from its schema: name=, workspace_id=, recipients.0., ...
-<%=cmd%> aoc packages send @: archived=<Tab> # values of key: archived=true, archived=false
-<%=cmd%> aoc packages send @: name=x <Tab> # end marker of structure built with @: END, and the other keys
+<%=cmd_skip%> <Tab>                            # plugins and global options: aoc, server, node, ..., --format, ...
+<%=cmd_skip%> server <Tab>                     # sub-commands and options of plugin: upload, download, ls, ..., --url, ...
+<%=cmd_skip%> aoc admin <Tab>                  # sub-commands at any depth: user, node, ...
+<%=cmd_skip%> server ls --u<Tab>               # options, after any command: --url, --username, ...
+<%=cmd_skip%> --format=<Tab>                   # values of option: --format=json, --format=table, ...
+<%=cmd_skip%> --ts.<Tab>                       # keys of option, from its schema: --ts.direction=, --ts.target_rate_kbps=, ...
+<%=cmd_skip%> --out.t<Tab>                     # a sub-structure is followed by a dot: --out.table.
+<%=cmd_skip%> --ts.direction=<Tab>             # values of key: --ts.direction=send, --ts.direction=receive
+<%=cmd_skip%> --transfer=<Tab>                 # plain value of option, key agent: --transfer=direct, --transfer=node, ...
+<%=cmd_skip%> faspex5 admin accounts list --query.<Tab> # keys of --query, from the command: --query.limit=, ...
+<%=cmd_skip%> server upload <Tab>              # local files
+<%=cmd_skip%> server download --to-folder <Tab> # local folders
+<%=cmd_skip%> config genkey <Tab>              # local files, where a local path is expected
+<%=cmd_skip%> --temp.folder=<Tab>              # local folders, for a key of option
+<%=cmd_skip%> --ts=@<Tab>                      # extended value modifiers: @json:, @file:, @preset:, @:, ...
+<%=cmd_skip%> --private-key=@file:<Tab>        # local files, after @file: or @path:
+<%=cmd_skip%> -P <Tab>                         # presets: also for config preset show, @preset:
+<%=cmd_skip%> config preset get myconf <Tab>   # parameters of preset: url, username, ...
+<%=cmd_skip%> config transfer status <Tab>     # asynchronous transfer jobs
+<%=cmd_skip%> node access_keys do <Tab>        # type of expected value, not inserted: <identifier>
+<%=cmd_skip%> aoc packages send <Tab>          # type, and keys of structure (required ones with *): <Hash> name*, workspace_id*, ...
+<%=cmd_skip%> aoc packages send @: <Tab>       # keys of structure built with @:, from its schema: name=, workspace_id=, recipients.0., ...
+<%=cmd_skip%> aoc packages send @: archived=<Tab> # values of key: archived=true, archived=false
+<%=cmd_skip%> aoc packages send @: name=x <Tab> # end marker of structure built with @: END, and the other keys
 ```
 
 No space is inserted after a word that continues: `key=`, `key.`, `@file:`, or a folder (Bash 4 and later).
@@ -3356,7 +3348,7 @@ Commands `list`, `ids` and `delete` are not supported: use the **Keychain Access
 > [!WARNING]
 > **Linux only**
 
-It is possible to manage secrets in the Linux Secret Service (GNOME Keyring, KWallet, KeePassXC...), using the `secret-tool` command of libsecret (for example, package `libsecret-tools` on Debian and Ubuntu).
+It is possible to manage secrets in the Linux Secret Service (GNOME Keyring, KWallet, KeePassXC...), using the `secret-tool` command of `libsecret` (for example, package `libsecret-tools` on Debian and Ubuntu).
 A session with an unlocked keyring is required.
 Secrets are grouped with attribute `service`, which is parameter `name` (default: `<%=cmd%>`).
 
@@ -3853,7 +3845,7 @@ Notes:
 - The tunnel listens on `127.0.0.1`: if the browser resolves `localhost` to `::1`, use `--redirect-uri=http://127.0.0.1:12345`.
 - For Shares with `--auth=web`, the same procedure applies; the tokens go through the browser of the workstation and the tunnel, then <%=tool%> immediately exchanges the refresh token.
 - On Windows, `ssh` is the OpenSSH client provided with the system; with PuTTY, add a local port forwarding (Connection &rarr; SSH &rarr; Tunnels) from `127.0.0.1:12345` to `127.0.0.1:12345`.
-- Another solution is X11 forwarding: run an X server on the workstation (for example VcXsrv or X410 on Windows) and connect with `ssh -X`.
+- Another solution is X11 forwarding: run an X server on the workstation (for example `VcXsrv` or X410 on Windows) and connect with `ssh -X`.
   The browser then runs on the server and is displayed on the workstation, so no tunnel is needed.
   It is heavier (X server to install, slower display), and the browser is the one of the server.
 - Without interaction (automation), prefer a method that needs no browser, such as `--auth=jwt` for Aspera on Cloud.
@@ -5679,10 +5671,8 @@ You can create the skeleton of a new plugin like this:
 Created ./foo.rb
 ```
 
-<%# check_commands: skip -%>
-
 ```shell
-<%=cmd%> --plugin-folder=. foo
+<%=cmd_skip%> --plugin-folder=. foo
 ```
 
 ### Plugins vs Transfer Agents
@@ -10705,10 +10695,8 @@ or
 
 or
 
-<%# check_commands: skip -%>
-
 ```shell
-<%=cmd%> config preset update smtp_google --server=smtp.google.com --username=john@gmail.com --password=<%=ph :password%>
+<%=cmd_skip%> config preset update smtp_google --server=smtp.google.com --username=john@gmail.com --password=<%=ph :password%>
 ```
 
 Set this configuration as global default, for instance:

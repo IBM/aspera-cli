@@ -20,6 +20,8 @@ class DocCommandChecker
   SKIP_MARKER = '<%# check_commands: skip -%>'
   # Command in the ERB template
   CMD_ERB = '<%=cmd%>'
+  # Same as CMD_ERB but marks the line as not to be checked (use instead of CMD_ERB on the line)
+  NOCHECK_ERB = '<%=cmd_skip%>'
   # Pipe to a command
   PIPE = /\s*\|\s*(?=#{Regexp.escape(CMD_ERB)} )/
   # Command in `$(...)`
@@ -28,7 +30,7 @@ class DocCommandChecker
   INLINE = /`(#{Regexp.escape(CMD_ERB)} [^`]+)`/
   # Shell prompt before a command
   PROMPT = /\A(?:\$|PS[^>]*>|C:[^>]*>)\s+/
-  private_constant :CMD_ERB, :PIPE, :SUBSHELL, :INLINE, :PROMPT
+  private_constant :CMD_ERB, :NOCHECK_ERB, :PIPE, :SUBSHELL, :INLINE, :PROMPT
 
   # Load plugins and collect the commands and options they declare.
   # @param template [Pathname] ERB template of the manual
@@ -52,7 +54,7 @@ class DocCommandChecker
       check_command(example[:text]).map { |e| "#{@template.basename}:#{example[:line]}: #{e}: #{example[:text]}" }
     end
     errors.each { |e| Aspera::Log.log.error(e) }
-    raise "#{errors.length} invalid command example(s), fix or place #{SKIP_MARKER} on the line before" unless errors.empty?
+    raise "#{errors.length} invalid command example(s), fix or place #{SKIP_MARKER} before or use #{NOCHECK_ERB} instead of #{CMD_ERB}" unless errors.empty?
     Aspera::Log.log.info { "#{@template.basename}: command examples OK" }
   end
 
@@ -76,7 +78,7 @@ class DocCommandChecker
   end
 
   # Extract command examples from the template: lines of code blocks (continued lines are joined)
-  # and inline code spans, except those excluded by `SKIP_MARKER`.
+  # and inline code spans, except those excluded by `SKIP_MARKER` or containing `NOCHECK_ERB`.
   # @return [Array<Hash>] command examples: `{line:, text:}`
   def examples
     result = []
@@ -96,6 +98,7 @@ class DocCommandChecker
       elsif fence
         next if fence[:skip]
         code = line.strip
+        next if code.include?(NOCHECK_ERB)
         logical = logical.nil? ? {line: index + 1, text: code} : logical.merge(text: "#{logical[:text]} #{code}")
         next if logical[:text].end_with?('\\') && logical[:text].chop!
         result.concat(code_commands(logical[:text]).map { |c| {line: logical[:line], text: c} })

@@ -1474,7 +1474,6 @@ Command line arguments that are not options are referred to as **Positional Argu
 
 For example:
 
-
 ```shell
 ascli plugin command verb --option-name=VAL1 VAL2
 ```
@@ -1484,6 +1483,7 @@ ascli plugin command verb --option-name=VAL1 VAL2
 
 Enumeration values (positional arguments and option names/values) support prefix matching.
 See [Enumerations](#enumerations) for details.
+
 For example `ascli config pre ov --for=c` is the same as `ascli config preset overview --format=csv`.
 
 The value of **Options** and **Command Parameters** is evaluated with the [Extended Value](#extended-value-syntax) syntax.
@@ -1589,7 +1589,6 @@ The following are enumerations:
 **Prefix matching**: You can use a unique prefix instead of the full value, provided it uniquely identifies the value in that context.
 
 Examples:
-
 
 - Positional: `ascli config pre ov --for=c` is the same as `ascli config preset overview --format=csv`
 - Option name: `--log-l=debug` is the same as `--log-level=debug`
@@ -2667,7 +2666,6 @@ Adding `--show-config` to any command line performs a dry run and displays the r
 To display a specific option, add `--fields=<option_name>`.
 Add `--out.flat=no` when the option holds a structured value (`Hash`, `Array`) to display it as-is rather than flattened into dot-path keys:
 
-
 ```shell
 ascli --opt=@json:'{"a":1,"b":"two"}' some_plugin --show-config --fields=opt --out.flat=no
 ascli --opt.a=1 --opt.b=two some_plugin --show-config --fields=opt --out.flat=no
@@ -3310,7 +3308,6 @@ In PowerShell, the words proposed are kept for the session, so only the first `T
 
 Once active, press `Tab` to complete:
 
-
 ```bash
 ascli <Tab>                            # plugins and global options: aoc, server, node, ..., --format, ...
 ascli server <Tab>                     # sub-commands and options of plugin: upload, download, ls, ..., --url, ...
@@ -3589,7 +3586,7 @@ Commands `list`, `ids` and `delete` are not supported: use the **Keychain Access
 > [!WARNING]
 > **Linux only**
 
-It is possible to manage secrets in the Linux Secret Service (GNOME Keyring, KWallet, KeePassXC...), using the `secret-tool` command of libsecret (for example, package `libsecret-tools` on Debian and Ubuntu).
+It is possible to manage secrets in the Linux Secret Service (GNOME Keyring, KWallet, KeePassXC...), using the `secret-tool` command of `libsecret` (for example, package `libsecret-tools` on Debian and Ubuntu).
 A session with an unlocked keyring is required.
 Secrets are grouped with attribute `service`, which is parameter `name` (default: `ascli`).
 
@@ -4094,7 +4091,7 @@ Notes:
 - The tunnel listens on `127.0.0.1`: if the browser resolves `localhost` to `::1`, use `--redirect-uri=http://127.0.0.1:12345`.
 - For Shares with `--auth=web`, the same procedure applies; the tokens go through the browser of the workstation and the tunnel, then `ascli` immediately exchanges the refresh token.
 - On Windows, `ssh` is the OpenSSH client provided with the system; with PuTTY, add a local port forwarding (Connection &rarr; SSH &rarr; Tunnels) from `127.0.0.1:12345` to `127.0.0.1:12345`.
-- Another solution is X11 forwarding: run an X server on the workstation (for example VcXsrv or X410 on Windows) and connect with `ssh -X`.
+- Another solution is X11 forwarding: run an X server on the workstation (for example `VcXsrv` or X410 on Windows) and connect with `ssh -X`.
   The browser then runs on the server and is displayed on the workstation, so no tunnel is needed.
   It is heavier (X server to install, slower display), and the browser is the one of the server.
 - Without interaction (automation), prefer a method that needs no browser, such as `--auth=jwt` for Aspera on Cloud.
@@ -6196,7 +6193,6 @@ ascli config plugins create foo .
 ```text
 Created ./foo.rb
 ```
-
 
 ```shell
 ascli --plugin-folder=. foo
@@ -12097,7 +12093,6 @@ ascli config preset initialize smtp_google @json:'{"server":"smtp.google.com","u
 ```
 
 or
-
 
 ```shell
 ascli config preset update smtp_google --server=smtp.google.com --username=john@gmail.com --password=<PASSWORD>

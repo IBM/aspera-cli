@@ -148,6 +148,9 @@ class DocHelper
   # Just command name
   def cmd; Aspera::Cli::Info::CMD_NAME; end
 
+  # Same as `cmd` but marks the command line as not to be checked by DocCommandChecker
+  def cmd_skip; cmd; end
+
   # (Markdown) used in text with formatting of command
   def tool; "`#{cmd}`"; end
 
