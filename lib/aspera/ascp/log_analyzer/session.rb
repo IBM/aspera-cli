@@ -553,7 +553,7 @@ module Aspera
         end
 
         def iso(time)
-          Time.at(time, in: @timezone).iso8601 if time
+          Time.at(time).getlocal(@timezone).iso8601 if time
         end
 
         # @return [Array, nil] average and median of series, as integers

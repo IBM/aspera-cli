@@ -216,7 +216,7 @@ module Aspera
             )
           end
           if @session.num(:gap).positive?
-            diag(:io_wait, :warning, "ascp was blocked (IO wait) for #{d[:gap]} seconds, until #{Time.at(d[:gap_last], in: @session.timezone).ctime}#{', with an SSH timeout' if @session.flag?(:ssh_timeout)}.")
+            diag(:io_wait, :warning, "ascp was blocked (IO wait) for #{d[:gap]} seconds, until #{Time.at(d[:gap_last]).getlocal(@session.timezone).ctime}#{', with an SSH timeout' if @session.flag?(:ssh_timeout)}.")
           end
           diag(:udp_flood_protection, :warning, 'No route to host during the transfer: possibly caused by UDP flood protection of a firewall: check the logs.') if @session.flag?(:send_no_route) && @session.num(:tx_bytes).nonzero? && !@session.flag?(:as_buf_io)
           diag(:local_port_changed, :info, "Local port changed from #{d[:start_l_port]} to #{d[:l_port]} during the session.") if d[:start_l_port]

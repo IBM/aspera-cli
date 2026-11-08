@@ -35,7 +35,8 @@ RSpec.shared_context('with live server', :live) do
       # :nocov:
       options.merge!({
         host_key:   %w[rsa-sha2-512 rsa-sha2-256],
-        kex:        %w[curve25519-sha256 diffie-hellman-group14-sha256],
+        # curve25519-sha256 requires the x25519 C extension gem: not available on JRuby
+        kex:        %w[diffie-hellman-group14-sha256],
         encryption: %w[aes256-ctr aes192-ctr aes128-ctr]
       })
       # :nocov:

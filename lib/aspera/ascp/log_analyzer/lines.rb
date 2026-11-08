@@ -38,7 +38,7 @@ module Aspera
         # @param time [Integer, nil] Epoch time
         # @return [String, nil] ISO 8601 time, in the time zone of the log lines
         def iso(time)
-          Time.at(time, in: @timezone).iso8601 if time
+          Time.at(time).getlocal(@timezone).iso8601 if time
         end
 
         # @return [Integer, nil] epoch time of `Mon DD HH:MM:SS` (year deduced) or `YYYY-MM-DD HH:MM:SS`, in the time zone of the log lines

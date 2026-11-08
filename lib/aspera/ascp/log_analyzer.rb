@@ -121,7 +121,8 @@ module Aspera
             Aspera.assert(!explicit, type: ParameterError) { "Not an ascp log: #{file}" }
             Log.log.debug { "Ignored, not an ascp log: #{file}" }
             nil
-          rescue Zlib::Error => e
+          rescue Zlib::Error, Errno::EPIPE => e
+            # JRuby raises Errno::EPIPE (instead of Zlib::Error) on truncated gzip input
             raise ParameterError, "Cannot read #{file}: #{e.message}" if explicit
             Log.log.warn("Ignored, cannot read #{file}: #{e.message}")
             nil
@@ -307,7 +308,7 @@ module Aspera
       private
 
       def iso(time)
-        Time.at(time, in: @timezone).iso8601 if time
+        Time.at(time).getlocal(@timezone).iso8601 if time
       end
 
       def each_session

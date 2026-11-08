@@ -59,7 +59,7 @@ module Aspera
           folder = cert_folder('a')
           http.trusted_cert_locations = [folder, SpecialValues::DEF]
           expect(http.trusted_cert_locations).to(include(File.join(folder, 'a.pem')))
-          expect(http.trusted_cert_locations).to(include(*default))
+          expect(http.trusted_cert_locations).to(include(*default)) unless default.empty?
         end
 
         it 'raises for a missing location' do
