@@ -349,7 +349,7 @@ components:
                 ru:
                   description: Running.
                   type: integer
-                no:
+                'no':
                   description: Dispatch without transfer of data.
                   type: integer
                 po:
