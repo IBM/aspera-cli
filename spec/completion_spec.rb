@@ -31,7 +31,7 @@ module Aspera
       # Home folder of the executed command: a configuration file with preset `mypreset`
       before(:all) do
         @home = Dir.mktmpdir
-        File.write(File.join(@home, 'config.yaml'), {'config' => {'version' => Cli::VERSION}, 'mypreset' => {'url' => 'https://example.com', 'username' => 'myuser'}}.to_yaml)
+        File.write(File.join(@home, 'config.yaml'), {'config' => {'version' => Cli::VERSION}, 'mypreset' => {'_comment' => 'wizard: My App', 'url' => 'https://example.com', 'username' => 'myuser'}}.to_yaml)
       end
 
       after(:all) { FileUtils.remove_entry(@home) }
@@ -252,7 +252,7 @@ module Aspera
           expect(run_candidates('--ts=@json:')).to(include(start_with("--ts=@json:@file:\t")))
           expect(run_candidates('--private-key=@file:')).to(eq([':files --private-key=@file:']))
           expect(run_candidates('config', 'echo', '@json:@file:')).to(eq([':files @json:@file:']))
-          expect(run_candidates('--ts=@preset:')).to(include('--ts=@preset:mypreset'))
+          expect(run_candidates('--ts=@preset:')).to(include("--ts=@preset:mypreset\twizard: My App"))
           expect(run_candidates('--ts=@preset:mypreset.')).to(include('--ts=@preset:mypreset.url', '--ts=@preset:mypreset.username'))
           expect(run_candidates('--password=@env:', env: {'COMPLETION_TEST_VAR' => 'x'})).to(include('--password=@env:COMPLETION_TEST_VAR'))
           expect(run_candidates('--password=@val:@')).to(eq([":hint #{ExtendedValue.instance.description(:val)}"]))
@@ -273,8 +273,12 @@ module Aspera
         end
 
         it 'proposes presets, and their parameters' do
-          expect(run_candidates('-P', '')).to(include('mypreset'))
-          expect(run_candidates('config', 'preset', 'show', '')).to(include('mypreset'))
+          expect(run_candidates('-P', '')).to(include("mypreset\twizard: My App"))
+          # Short option with its value in the same word
+          expect(run_candidates('-Pmy')).to(include("-Pmypreset\twizard: My App"))
+          expect(run_candidates('-Pmypreset.')).to(include('-Pmypreset.url'))
+          expect(run_candidates('-Pmypreset', 'config', '')).to(include(start_with("preset\t")))
+          expect(run_candidates('config', 'preset', 'show', '')).to(include("mypreset\twizard: My App"))
           expect(run_candidates('config', 'preset', 'get', 'mypreset', '')).to(eq(%w[url username :]))
         end
       end

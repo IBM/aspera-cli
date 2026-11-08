@@ -9,8 +9,9 @@ Highlights: analysis of `ascp` logs (`config ascp logs`), multiple named secret 
 ### New Features
 
 * `ascli`:
-  * Improved shell completion: structures, extended values, local files and folders, presets, transfer jobs and `--query`.
+  * Improved shell completion: structures, extended values, local files and folders, presets, transfer jobs and `--query`. Preset names are proposed with their `_comment`, if any.
 * `config`:
+  * `wizard` adds `_comment: "wizard: <application>"` to the preset it creates.
   * New command `ascp logs`: analysis of `ascp` log files (`ascp` 4.0 and later): statistics, sessions with diagnostics (identifier, severity, error category with hint, retries, efficiency, rate decline, rate limit on the sender), multi-session transfers, rates per period (calculated in time buckets aligned on the period), errors by peer, transferred files, licenses. Logs of client and server are joined by session. Rows of `ascp logs diagnostics` have a `recommendation` (action to take, from the `ascp` options and `aspera.conf` parameters) when the diagnostic has one. New option `ascp_logs` (with sub-object `thresholds` for configurable diagnostic thresholds). Commands `ascp logs records` and `ascp logs fields` give the log lines parsed into records, for use with `--out.query`.
   * `ascp logs`: the year of syslog lines (which have none) is deduced from the modification date of the log file instead of the current date (a log from December to January analyzed in March was in the wrong year). New key `timezone` of option `ascp_logs` (`UTC` or `+HH:MM`) to read the log of a system in another time zone.
   * `ascp logs`: new diagnostics: `feedback_interruption` (sender that receives no packet from the receiver), `rex_timer_overflow` (overflow of the retransmission timer), `license_rate_limit` (license maximum rate below the target rate) and `license_expiry` (license expired or close to expiry, threshold `license_expiry_days`). Configuration messages without effect (`ossl-modules not found`, `unable to submit change event`) are mentioned in `findings` of `summary`.

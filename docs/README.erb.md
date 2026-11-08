@@ -2877,6 +2877,10 @@ demo_server:
 > [!NOTE]
 > Comment keys are preserved and visible in `config preset overview` for inspection, but are never injected as CLI options.
 
+By convention, `_comment` holds a short description of the preset.
+The [shell completion](#shell-completion) of preset names (e.g. `-P <tab>`) shows it next to each name.
+The wizard sets it for the presets it creates: `_comment: "wizard: <application>"`.
+
 A good practice is to not manually edit the configuration file and use modification commands instead.
 If necessary, the configuration file can be opened in a text editor with:
 

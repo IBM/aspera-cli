@@ -98,8 +98,8 @@ module Aspera
       # @return [Completion]
       def completion(words, current)
         words = completion_join_bash_split(words)
-        # `--opt=value`: complete the value of the option, with this prefix
-        prefix = current.start_with?(Option::PREFIX) && current.include?(Option::VALUE_SEP) ? current[0..current.index(Option::VALUE_SEP)] : ''
+        # `--opt=value` or `-Ovalue`: complete the value of the option, with this prefix
+        prefix = completion_inline_prefix(current)
         words += [prefix] unless prefix.empty?
         plugin_class, positional, waiting, collecting = completion_context(words)
         return Completion.new(candidates: []) if positional.nil?
@@ -121,6 +121,15 @@ module Aspera
             completion_command(plugin_class, positional[1..], value, position)
           end
         result.prefixed(prefix)
+      end
+
+      # @param current [String] word at cursor
+      # @return [String] part of the word that precedes the value of an option given in the same word: `--opt=` or `-O`, empty if none
+      def completion_inline_prefix(current)
+        return current[0..current.index(Option::VALUE_SEP)] if current.start_with?(Option::PREFIX) && current.include?(Option::VALUE_SEP)
+        return '' if current.start_with?(Option::PREFIX) || !Option.option?(current)
+        short = completion_option(Option.parse(current[0, 2]))
+        short.nil? || short.flag? ? '' : current[0, 2]
       end
 
       # @param words [Array<String>] words typed before the cursor
@@ -485,13 +494,14 @@ module Aspera
         completion.prefixed(prefix)
       end
 
-      # Names of presets, and parameters of the preset typed (`@preset:` takes a dot path)
+      # Names of presets (with their comment as description), and parameters of the preset typed (`@preset:` takes a dot path)
       # @param value [String] value typed
-      # @return [Array<Array(String, nil)>]
+      # @return [Array<Array(String, String)>]
       def completion_preset_names(value)
-        presets.config_presets.each_key.flat_map do |name|
+        presets.config_presets.flat_map do |name, preset|
           parameters = value.start_with?("#{name}#{DotContainer::SEPARATOR}") ? completion_preset_parameters(name) : []
-          [[name, nil]] + parameters.map { |parameter, _| ["#{name}#{DotContainer::SEPARATOR}#{parameter}", nil] }
+          comment = completion_description(preset[PresetManager::Key::COMMENT]) if preset.is_a?(Hash)
+          [[name, comment]] + parameters.map { |parameter, _| ["#{name}#{DotContainer::SEPARATOR}#{parameter}", nil] }
         end
       end
 

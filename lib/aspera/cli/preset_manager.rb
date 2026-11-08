@@ -30,6 +30,8 @@ module Aspera
         GLOBAL      = 'global_common_defaults'
         # Prefix for comment/meta keys ignored during preset parsing (e.g. _comment)
         META_PREFIX = '_'
+        # Key of the free text describing a preset (ignored when the preset is applied)
+        COMMENT     = "#{META_PREFIX}comment".freeze
       end
 
       GLOBAL_DEFAULT_KEYWORD = 'GLOBAL'
