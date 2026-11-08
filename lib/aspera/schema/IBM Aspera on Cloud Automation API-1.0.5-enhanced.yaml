@@ -34,6 +34,8 @@ tags:
     description: Actions within a step
   - name: workflow_permissions
     description: Permissions on workflows
+  - name: app_permissions
+    description: Application settings and permissions
 paths:
   /workflows:
     get:
@@ -56,6 +58,12 @@ paths:
       parameters:
         - $ref: '#/components/parameters/offset'
         - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/q'
+        - $ref: '#/components/parameters/show_org_workflows'
+        - $ref: '#/components/parameters/admin'
+        - $ref: '#/components/parameters/user_id'
+        - $ref: '#/components/parameters/organization_id'
+        - $ref: '#/components/parameters/response_type'
     post:
       operationId: createWorkflow
       summary: Create a workflow
@@ -99,6 +107,7 @@ paths:
           required: false
           schema:
             type: string
+        - $ref: '#/components/parameters/response_type'
       responses:
         '200':
           description: OK - Successful response
@@ -267,6 +276,49 @@ paths:
                 $ref: '#/components/schemas/404-Workflows'
       tags:
         - workflows
+  /workflows/{id}/copy:
+    post:
+      operationId: copyWorkflow
+      summary: Duplicate a workflow
+      description: Creates a duplicate copy of an existing workflow with a new name.
+      parameters:
+        - name: id
+          in: path
+          description: Numeric ID of the workflow to duplicate
+          required: true
+          schema:
+            type: string
+          example: '1120'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Name for the duplicated workflow
+                  example: Copy of Send Files to Media
+              required:
+                - name
+      responses:
+        '201':
+          description: Successfully duplicated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/workflowData'
+        '400':
+          description: Bad Request. The payload may not be in the correct format (JSON format).
+        '403':
+          description: Forbidden. The bearer token is missing or incorrect.
+        '404':
+          description: Not Found. The workflow ID submitted in the request is incorrect.
+        '422':
+          description: Unprocessable Entity. Incorrect parameter information in payload.
+      tags:
+        - workflows
   /workflow_instances:
     get:
       operationId: listWorkflowInstances
@@ -277,6 +329,8 @@ paths:
         - $ref: '#/components/parameters/status'
         - $ref: '#/components/parameters/offset'
         - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/user_id'
+        - $ref: '#/components/parameters/organization_id'
       responses:
         '200':
           description: OK - Successful response
@@ -428,7 +482,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/createStepRequest'
+              $ref: '#/components/schemas/updateStepRequest'
       responses:
         '204':
           description: No Content
@@ -569,7 +623,9 @@ paths:
       summary: Get workflow permissions
       description: Returns all workflow permissions.
       parameters:
-        - $ref: '#/components/parameters/workflow_ID'
+        - $ref: '#/components/parameters/workflowID'
+        - $ref: '#/components/parameters/user_id'
+        - $ref: '#/components/parameters/organization_id'
       responses:
         '200':
           description: OK - Successful response
@@ -655,20 +711,88 @@ paths:
           description: Forbidden. The bearer token is missing or incorrect.
       tags:
         - workflow_permissions
+  /app_permissions/{id}:
+    get:
+      operationId: getAppPermissions
+      summary: Get automation application permissions
+      description: Returns configuration settings for the Automation application for the specified organization ID.
+      parameters:
+        - name: id
+          in: path
+          description: Numeric ID of the organization
+          required: true
+          schema:
+            type: string
+          example: '58'
+      responses:
+        '200':
+          description: OK - Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppPermissions'
+        '403':
+          description: Forbidden. The bearer token is missing or incorrect.
+        '404':
+          description: Not Found. Organization not found.
+        '500':
+          description: Internal Server Error
+      tags:
+        - app_permissions
+    put:
+      operationId: updateAppPermissions
+      summary: Update automation application permissions
+      description: Updates configuration settings for the Automation application for the specified organization ID.
+      parameters:
+        - name: id
+          in: path
+          description: Numeric ID of the organization
+          required: true
+          schema:
+            type: string
+          example: '58'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/updateAppPermissionsRequest'
+      responses:
+        '200':
+          description: OK - Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppPermissions'
+        '204':
+          description: No Content
+        '400':
+          description: Bad Request.
+        '403':
+          description: Forbidden. The bearer token is missing or incorrect.
+        '422':
+          description: Unprocessable Entity.
+      tags:
+        - app_permissions
 components:
   parameters:
     status:
       name: status
       in: query
-      description: 'Status of the job. Allowed values: executing, failed, complete, canceled.'
+      description: 'Status of the job. Allowed values: initiating, executing, queued, paused, resumed, complete, failed, canceled, timeout.'
       required: false
       schema:
         type: string
         enum:
+          - initiating
           - executing
-          - failed
+          - queued
+          - paused
+          - resumed
           - complete
+          - failed
           - canceled
+          - timeout
       example: executing
     workflow_ID:
       name: workflow_id
@@ -705,6 +829,58 @@ components:
         minimum: 1
         examples:
           - 20
+    q:
+      name: q
+      in: query
+      description: Search query string to filter workflows by name
+      required: false
+      schema:
+        type: string
+      example: My Workflow
+    show_org_workflows:
+      name: show_org_workflows
+      in: query
+      description: Whether to return all organization workflows or only those belonging to the current user
+      required: false
+      schema:
+        type: boolean
+      example: true
+    admin:
+      name: admin
+      in: query
+      description: Whether to execute request in admin mode
+      required: false
+      schema:
+        type: boolean
+      example: true
+    user_id:
+      name: user_id
+      in: query
+      description: User ID to filter results
+      required: false
+      schema:
+        type: string
+      example: '1072'
+    organization_id:
+      name: organization_id
+      in: query
+      description: Organization ID to filter results
+      required: false
+      schema:
+        type: string
+      example: '58'
+    response_type:
+      name: response_type
+      in: query
+      description: Detail level of returned workflows ('long' returns full steps and actions)
+      required: false
+      schema:
+        type: string
+        enum:
+          - short
+          - long
+        default: short
+      example: long
   schemas:
     200-WorkflowInstances:
       description: Returned data for all jobs
@@ -801,16 +977,31 @@ components:
           type: string
           examples:
             - transfer step
+        action_id:
+          description: ID of current action in the workflow instance
+          type: string
+          examples:
+            - '1406'
         status:
           description: 'Status of the workflow instance.'
           type: string
           examples:
             - complete
           enum:
+            - initiating
             - executing
-            - failed
+            - queued
+            - paused
+            - resumed
             - complete
+            - failed
             - canceled
+            - timeout
+        current_status:
+          description: Human-readable current status description
+          type: string
+          examples:
+            - Transfer in progress
         status_details:
           description: Error message - only returned for a failed workflow instance
           type: string
@@ -828,11 +1019,62 @@ components:
           format: date-time
           examples:
             - 2019-03-17T07:07:22.000Z
+        queue_position:
+          description: Position in queue when job is queued
+          type: integer
+          examples:
+            - 1
         workflow_name:
           description: Name of the workflow
           type: string
           examples:
             - media content
+        workflow_trigger_type:
+          description: Trigger type that initiated this workflow instance
+          type: string
+          enum:
+            - manual
+            - scheduled
+            - watch_folder
+            - shared_inbox
+            - delete_folder
+        action_statuses:
+          description: Status breakdown per step and action
+          type: object
+          properties:
+            steps:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  actions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        status:
+                          type: string
+                          enum:
+                            - initiating
+                            - executing
+                            - queued
+                            - paused
+                            - resumed
+                            - complete
+                            - failed
+                            - canceled
+                            - timeout
+                        outputs:
+                          description: Output data of the action
+                          nullable: true
+                        name:
+                          type: string
+                        type:
+                          type: string
     200-WorkflowPermissions:
       description: Returned data for all workflow permissions
       type: object
@@ -962,6 +1204,33 @@ components:
           type: string
           examples:
             - '1072'
+        user_name:
+          description: Name of user who created the workflow
+          type: string
+          examples:
+            - John Doe
+        active:
+          description: Whether the workflow is currently active
+          type: boolean
+          examples:
+            - true
+        workflow_version_id:
+          description: ID of the current workflow version
+          type:
+            - string
+            - 'null'
+          examples:
+            - '150'
+        hidden:
+          description: Whether the workflow is hidden from the UI
+          type: boolean
+          examples:
+            - false
+        allow_notifications:
+          description: Whether email notifications are enabled for this workflow
+          type: boolean
+          examples:
+            - true
         state:
           description: 'State of the workflow.'
           type: string
@@ -1058,6 +1327,11 @@ components:
               examples:
                 - - id: example@email.com
                     type: Email
+        permissions:
+          description: Permissions associated with the workflow
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowPermissions'
         updated_at:
           description: Time workflow is updated
           type: string
@@ -1074,6 +1348,7 @@ components:
             - shared_inbox
             - watch_folder
             - scheduled
+            - delete_folder
         workflow_can_activate:
           description: The workflow has a transfer step or send package step. This is a mandatory condition.
           type: boolean
@@ -1123,6 +1398,11 @@ components:
           examples:
             - - '1272'
               - '1263'
+        actions:
+          description: Data for actions in the step
+          type: array
+          items:
+            $ref: '#/components/schemas/actionData'
     201-Workflow:
       type: object
       properties:
@@ -1266,13 +1546,19 @@ components:
             - scheduled
           enum:
             - transfer
+            - package_transfer
             - send_package
             - api
             - email_notification
+            - custom_var
+            - folder
+            - telestream_qc
+            - antivirus
             - manual
             - shared_inbox
             - watch_folder
             - scheduled
+            - delete_folder
         data:
           description: Detailed action data
           type: object
@@ -1731,6 +2017,45 @@ components:
           type: string
           examples:
             - Send Files to Media
+        organization_id:
+          description: Organization ID
+          type: string
+          examples:
+            - '58'
+        user_id:
+          description: User ID
+          type: string
+          examples:
+            - '1072'
+        user_name:
+          description: User name
+          type: string
+          examples:
+            - John Doe
+        hidden:
+          description: Whether the workflow is hidden from the UI
+          type: boolean
+          examples:
+            - false
+        allow_notifications:
+          description: Whether email notifications are enabled
+          type: boolean
+          examples:
+            - false
+        trigger_type:
+          description: Trigger type
+          type: string
+          enum:
+            - manual
+            - shared_inbox
+            - watch_folder
+            - scheduled
+            - delete_folder
+        step_order:
+          description: Order of steps
+          type: array
+          items:
+            type: string
       required:
         - name
       title: Creates a new workflow
@@ -1747,6 +2072,11 @@ components:
           type: string
           examples:
             - '32'
+        organization_id:
+          description: ID of organization
+          type: string
+          examples:
+            - '58'
         duplicate:
           description: Whether to give permission to duplicate the workflow
           type: boolean
@@ -1764,11 +2094,11 @@ components:
         - manage_jobs
       title: Creates a new workflow permission
     updateWorkflow:
-      description: Updates name and step order of an existing workflow
+      description: Updates an existing workflow
       type: object
       properties:
         name:
-          description: Name of new workflow
+          description: Name of workflow
           type: string
           examples:
             - Send Files to Media
@@ -1781,9 +2111,67 @@ components:
             - - '321'
               - '123'
               - '111'
-      required:
-        - name
-        - step_order
+        allow_notifications:
+          description: Whether email notifications are enabled for this workflow
+          type: boolean
+          examples:
+            - true
+        workflow_notifications:
+          type: object
+          properties:
+            started:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  type:
+                    type: string
+                    enum:
+                      - User
+                      - Group
+                      - Email
+            failed:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  type:
+                    type: string
+                    enum:
+                      - User
+                      - Group
+                      - Email
+            completed:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  type:
+                    type: string
+                    enum:
+                      - User
+                      - Group
+                      - Email
+        trigger_type:
+          type: string
+          enum:
+            - manual
+            - shared_inbox
+            - watch_folder
+            - scheduled
+            - delete_folder
+        organization_id:
+          type: string
+        user_id:
+          type: string
+        user_name:
+          type: string
       title: Updates an existing workflow
     cancelWorkflowInstance:
       type: object
@@ -1823,6 +2211,24 @@ components:
       required:
         - workflow_id
       title: Creates a new step
+    updateStepRequest:
+      type: object
+      properties:
+        name:
+          description: Name of the step
+          type: string
+          examples:
+            - notification step
+        action_order:
+          description: Order of actions in a step, listed by action ID
+          type: array
+          items:
+            type: string
+          examples:
+            - - '1273'
+              - '1262'
+              - '1274'
+      title: Updates a step
     createActionAPI:
       type: object
       properties:
@@ -2045,6 +2451,7 @@ components:
                     - overwrite_always
                   enum:
                     - overwrite_always
+                    - overwrite_both_newer_different
                     - overwrite_both_newer_and_different
                     - overwrite_different
                     - overwrite_newer
@@ -2126,16 +2533,26 @@ components:
                   type: boolean
                   examples:
                     - false
-                move_after_transfer:
-                  description: Archive location in case of archiving. (location relative to source path)
-                  type: string
-                  examples:
-                    - /abc/def
                 remove_skipped:
-                  description: Archive location in case of delete source. to remove the skipped files
+                  description: Remove skipped files when archive_option is delete
                   type: boolean
                   examples:
                     - true
+                remove_empty_directories:
+                  description: Remove empty directories when archive_option is delete
+                  type: boolean
+                  examples:
+                    - true
+                remove_empty_source_dir:
+                  description: Remove empty source directory when archive_option is delete
+                  type: boolean
+                  examples:
+                    - true
+                move_after_transfer:
+                  description: Archive location in case of archiving (relative to source path)
+                  type: string
+                  examples:
+                    - /abc/def
             substitutions:
               description: Data for substitution variables from previous steps, inserted into the message
               type: array
@@ -2207,10 +2624,11 @@ components:
             - file_name
           enum:
             - file_name
+            - folder_name
             - extension_name
             - file_size
         field_type:
-          description: 'Type of the condition field. The value ''string'' is used with a field_name of file_name or extension_name. The value ''byte'' is used with a field_name of file_size.'
+          description: 'Type of the condition field. The value ''string'' is used with a field_name of file_name, folder_name, or extension_name. The value ''byte'' is used with a field_name of file_size.'
           type: string
           examples:
             - string
@@ -2234,7 +2652,9 @@ components:
             - less_than_or_equal
         value:
           description: Value of the condition
-          type: string
+          type:
+            - string
+            - integer
           examples:
             - .jpg
         size:
@@ -2387,6 +2807,28 @@ components:
           examples:
             - true
       title: Updates an existing workflow permission
+    AppPermissions:
+      description: Application permissions and settings for an organization
+      type: object
+      properties:
+        failed_count_to_deactivate:
+          description: Number of consecutive failed workflow runs before automatic deactivation
+          type: integer
+          examples:
+            - 5
+      title: Automation App Permissions
+    updateAppPermissionsRequest:
+      description: Request payload to update application permissions for an organization
+      type: object
+      properties:
+        failed_count_to_deactivate:
+          description: Number of consecutive failed workflow runs before automatic deactivation
+          type: integer
+          examples:
+            - 5
+      required:
+        - failed_count_to_deactivate
+      title: Update Automation App Permissions Request
   securitySchemes:
     bearerAuth:
       type: http
