@@ -806,7 +806,7 @@ module Aspera
           )
           command :create, description: 'Create an app membership', arguments: [{name: :membership, type: Hash}]
         end
-        command :automation,        description: 'Manage automation (BETA)', setup: :setup_automation_api
+        command :automation,        description: 'Manage automation'
         command :gateway,           description: 'Start AoC Faspex4 gateway',
           arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: Schema::Registry::GATEWAY_OPTIONS}]
 
@@ -933,9 +933,41 @@ module Aspera
         # Automation API: a workflow has ordered steps (step_order), a step has ordered actions (action_order)
         AUTOMATION_CRUD = {api: :@automation_api, body_component: Schema::Registry::AUTOMATION}.freeze
         private_constant :AUTOMATION_CRUD
+        AOC_AUTOMATION_GUIDE_URLS = [
+          'https://raw.githubusercontent.com/laurent-martin/aspera-orchestrator-plugins-doc/main/docs/aoc/aoc-automation-development-guide.md'
+        ].freeze
         commands_under :automation do
+          command :guide, description: 'AoC Automation Development Guide (from GitHub, no AoC connection needed)'
+          command :workflows, description: 'Manage workflows', setup: :setup_automation_api
+          command :instances, description: 'Manage workflow instances (jobs)', setup: :setup_automation_api
+          command :steps, description: 'Manage workflow steps', setup: :setup_automation_api
+          command :actions, description: 'Manage workflow actions', setup: :setup_automation_api
+
+          commands_under :guide do
+            command :toc, description: 'List sections of the AoC Automation Development Guide: level, title, anchor',
+              arguments: [{name: :level, type: Integer, mandatory: false, default: 3}],
+              action: ->(level: 3, **) { automation_guide_toc(level) }
+            command :full, description: 'Display the whole AoC Automation Development Guide',
+              action: ->(**) { Result::Text.new(automation_guide_document) }
+            command :section, description: 'Display one section of the guide (anchor given by `toc`)',
+              arguments: [{name: :anchor, type: String}],
+              action: ->(anchor:, **) { automation_guide_section(anchor) }
+          end
           commands_under :workflows do
             crud_commands(**AUTOMATION_CRUD, entity: 'workflows', items_key: 'workflows', query_component: Schema::Registry::AUTOMATION)
+            command :details, description: 'Get full workflow structure with all steps and actions',
+              arguments: [{name: :workflow_id, type: :identifier}],
+              action: ->(workflow_id:, **) { Result::SingleObject.new(workflow_details(workflow_id)) }
+            command :export, description: 'Export workflow definition to a portable structure',
+              arguments: [{name: :workflow_id, type: :identifier}],
+              action: ->(workflow_id:, **) { Result::SingleObject.new(workflow_export_data(workflow_id)) }
+            command :import, description: 'Import workflow definition and create steps and actions',
+              arguments: [{name: :workflow, type: Hash, description: 'Workflow structure with steps and actions'}],
+              action: ->(workflow:, **) { Result::SingleObject.new(workflow_import_data(workflow)) }
+            command :duplicate, description: 'Duplicate workflow and all its steps and actions',
+              arguments: [{name: :workflow_id, type: :identifier},
+                          {name: :name, type: String, mandatory: false, default: nil, description: 'New workflow name'}],
+              action: ->(workflow_id:, name:, **) { Result::SingleObject.new(workflow_duplicate(workflow_id, new_name: name)) }
             command :launch, description: 'Launch a workflow',
               arguments: [{name: :workflow_id, type: :identifier}],
               action: ->(workflow_id:, **) { Result::SingleObject.new(@automation_api.create("workflows/#{workflow_id}/launch", {})) }
@@ -1505,6 +1537,143 @@ module Aspera
           new_action = @automation_api.create('actions', {'type' => 'manual'}.merge(action).merge('step_id' => step['id']))
           @automation_api.update("steps/#{step['id']}", {'action_order' => [new_action['id']]})
           Result::SingleObject.new(new_action)
+        end
+
+        # automation helper methods
+
+        def workflow_details(workflow_id)
+          workflow = @automation_api.read("workflows/#{workflow_id}")
+          steps = Array(workflow['step_order']).map do |step_id|
+            step = @automation_api.read("steps/#{step_id}")
+            actions = Array(step['action_order']).map { |action_id| @automation_api.read("actions/#{action_id}") }
+            step.merge('actions' => actions)
+          end
+          workflow.merge('steps' => steps)
+        end
+
+        def workflow_export_data(workflow_id)
+          wf = workflow_details(workflow_id)
+          portable_steps = Array(wf['steps']).each_with_index.map do |step, step_idx|
+            portable_actions = Array(step['actions']).each_with_index.map do |action, act_idx|
+              action_data = action.dup
+              orig_action_id = action_data.delete('id')
+              action_data.delete('step_id')
+              action_data.delete('created_at')
+              action_data.delete('updated_at')
+              action_data.delete('user_id')
+              action_data.delete('organization_id')
+              {
+                'ref_id' => orig_action_id || "action_#{step_idx + 1}_#{act_idx + 1}",
+                'name'   => action_data['name'],
+                'type'   => action_data['type'],
+                'data'   => action_data['data']
+              }.compact
+            end
+            orig_step_id = step['id']
+            {
+              'ref_id'  => orig_step_id || "step_#{step_idx + 1}",
+              'name'    => step['name'],
+              'actions' => portable_actions
+            }.compact
+          end
+          {
+            'name'                   => wf['name'],
+            'trigger_type'           => wf['trigger_type'] || 'manual',
+            'allow_notifications'    => wf['allow_notifications'] || false,
+            'workflow_notifications' => wf['workflow_notifications'] || {},
+            'steps'                  => portable_steps
+          }
+        end
+
+        def workflow_import_data(manifest)
+          raise Cli::BadArgument, 'Manifest must be a Hash' unless manifest.is_a?(Hash)
+          wf_params = {
+            'name'                   => manifest['name'] || 'Imported Workflow',
+            'trigger_type'           => manifest['trigger_type'] || 'manual',
+            'allow_notifications'    => manifest['allow_notifications'] || false,
+            'workflow_notifications' => manifest['workflow_notifications'] || {}
+          }
+          new_wf = @automation_api.create('workflows', wf_params)
+          wf_id = new_wf['id']
+
+          step_id_map = {}
+          action_id_map = {}
+          created_step_ids = []
+
+          Array(manifest['steps']).each_with_index do |step_data, s_idx|
+            step_name = step_data['name'] || "Step #{s_idx + 1}"
+            old_step_ref = step_data['ref_id'] || step_data['id'] || "step_#{s_idx + 1}"
+            new_step = @automation_api.create('steps', {'workflow_id' => wf_id, 'name' => step_name})
+            new_step_id = new_step['id']
+            step_id_map[old_step_ref] = new_step_id
+            created_step_ids << new_step_id
+
+            created_action_ids = []
+            Array(step_data['actions']).each_with_index do |action_data, a_idx|
+              old_action_ref = action_data['ref_id'] || action_data['id'] || "action_#{s_idx + 1}_#{a_idx + 1}"
+              action_payload = {
+                'step_id' => new_step_id,
+                'name'    => action_data['name'] || (s_idx.zero? && a_idx.zero? ? 'Trigger' : "Action #{a_idx + 1}"),
+                'type'    => action_data['type'] || 'manual',
+                'data'    => deep_clone_and_remap_substitutions(action_data['data'] || {}, step_id_map, action_id_map)
+              }
+              new_act = @automation_api.create('actions', action_payload)
+              new_act_id = new_act['id']
+              action_id_map[old_action_ref] = new_act_id
+              created_action_ids << new_act_id
+            end
+            @automation_api.update("steps/#{new_step_id}", {'action_order' => created_action_ids})
+          end
+
+          @automation_api.update("workflows/#{wf_id}", {'step_order' => created_step_ids})
+          workflow_details(wf_id)
+        end
+
+        def workflow_duplicate(workflow_id, new_name: nil)
+          wf = @automation_api.read("workflows/#{workflow_id}")
+          manifest = workflow_export_data(workflow_id)
+          manifest['name'] = new_name || "#{wf['name']} (Copy)"
+          workflow_import_data(manifest)
+        end
+
+        def deep_clone_and_remap_substitutions(data, step_map, action_map)
+          cloned = JSON.parse(JSON.generate(data))
+          if cloned.is_a?(Hash) && cloned['substitutions'].is_a?(Array)
+            cloned['substitutions'].each do |sub|
+              template = sub['template']
+              if template.is_a?(String)
+                step_map.each do |old_id, new_id|
+                  template = template.gsub("step_id_#{old_id}", "step_id_#{new_id}")
+                end
+                action_map.each do |old_id, new_id|
+                  template = template.gsub("action_id_#{old_id}", "action_id_#{new_id}")
+                end
+                sub['template'] = template
+              end
+            end
+          end
+          cloned
+        end
+
+        # automation guide methods
+
+        def automation_guide_document
+          require 'aspera/uri_reader'
+          local_path = File.expand_path('../../../../../aspera-orchestrator-plugins-doc/docs/aoc/aoc-automation-development-guide.md', __dir__)
+          urls = File.exist?(local_path) ? [UriReader.file_url(local_path)] + AOC_AUTOMATION_GUIDE_URLS : AOC_AUTOMATION_GUIDE_URLS
+          UriReader.read_first(urls, what: 'AoC Automation Development Guide')
+        end
+
+        def automation_guide_toc(level)
+          require 'aspera/markdown'
+          Result::ObjectList.new(Markdown.toc(automation_guide_document, max_level: level || 3), fields: %w[level title anchor])
+        end
+
+        def automation_guide_section(anchor)
+          require 'aspera/markdown'
+          text = Markdown.extract_section(automation_guide_document, anchor)
+          Aspera.assert(!text.nil?, type: Cli::Error) { "Section not found: #{anchor}, use `toc` to list anchors" }
+          Result::Text.new(text)
         end
 
         # admin > client > set_pub_key

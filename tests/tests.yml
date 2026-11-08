@@ -4193,9 +4193,29 @@ aoc_auto_wf_action_create:
 #	sed -nEe 's/^\| id +\| ([^ ]+) +\|/\1/p' action.info > tmp_action_id.txt
 #	rm -f action.info
 #	rm -f tmp_action_id.txt
+aoc_auto_wf_details:
+  depends_on:
+    - aoc_auto_wf_action_create
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - automation
+    - workflow
+    - details
+    - $(t.saved_output :aoc_auto_wf_id)
+aoc_auto_wf_export:
+  depends_on:
+    - aoc_auto_wf_action_create
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - automation
+    - workflow
+    - export
+    - $(t.saved_output :aoc_auto_wf_id)
 aoc_auto_wf_delete:
   depends_on:
-    - aoc_auto_wf_id
+    - aoc_auto_wf_export
   args:
     - --preset=aoc_admin
     - aoc
