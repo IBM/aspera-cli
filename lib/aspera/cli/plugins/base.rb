@@ -563,7 +563,7 @@ module Aspera
                   accept_list: arg_spec.allowed,
                   default:     arg_spec.interactive ? nil : arg_spec.default,
                   schema:      arg_spec.schema,
-                  raw:         arg_spec.raw
+                  evaluate:    arg_spec.evaluate
                 )
               end
             end

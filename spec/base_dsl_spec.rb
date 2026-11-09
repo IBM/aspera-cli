@@ -246,7 +246,7 @@ module Aspera
             )
             klass.define_method(:handle_greet) { |name:, **| Result::Status.new("hello #{name}") }
             allow(options).to(receive(:get_next_command).with([:greet], aliases: nil).and_return(:greet))
-            allow(options).to(receive(:get_next_argument).with('name', mandatory: true, multiple: false, validation: String, accept_list: nil, default: nil, schema: nil, raw: false).and_return('world'))
+            allow(options).to(receive(:get_next_argument).with('name', mandatory: true, multiple: false, validation: String, accept_list: nil, default: nil, schema: nil, evaluate: :extended).and_return('world'))
             inst = klass.new(context: context)
             expect(inst.dispatch_from_registry([])).to(be_a(Result::Status).and(have_attributes(data: 'hello world')))
           end
@@ -482,19 +482,25 @@ module Aspera
           end
 
           it 'calls get_next_argument with correct params for a Class type' do
-            allow(options).to(receive(:get_next_argument).with('path', mandatory: true, multiple: false, validation: String, accept_list: nil, default: nil, schema: nil, raw: false).and_return('/tmp/foo'))
+            allow(options).to(receive(:get_next_argument).with('path', mandatory: true, multiple: false, validation: String, accept_list: nil, default: nil, schema: nil, evaluate: :extended).and_return('/tmp/foo'))
             arg_spec = ArgumentSpec.new(name: :path, type: String)
             expect(plugin.resolve_argument(arg_spec)).to(eq('/tmp/foo'))
           end
 
           it 'passes mandatory: false and default: correctly' do
-            allow(options).to(receive(:get_next_argument).with('sync_info', mandatory: false, multiple: false, validation: Hash, accept_list: nil, default: {}, schema: nil, raw: false).and_return({}))
+            allow(options).to(receive(:get_next_argument).with('sync_info', mandatory: false, multiple: false, validation: Hash, accept_list: nil, default: {}, schema: nil, evaluate: :extended).and_return({}))
             arg_spec = ArgumentSpec.new(name: :sync_info, type: Hash, mandatory: false, default: {})
             expect(plugin.resolve_argument(arg_spec)).to(eq({}))
           end
 
+          it 'defaults to evaluate: :extended, and refuses another value than :extended, :smart and :none' do
+            expect(ArgumentSpec.new(name: :a).evaluate).to(eq(:extended))
+            expect(ArgumentSpec.new(name: :a, evaluate: :smart).evaluate).to(eq(:smart))
+            expect { ArgumentSpec.new(name: :a, evaluate: :raw) }.to(raise_error(ArgumentError, /evaluate: :raw, expecting one of: extended, smart, none/))
+          end
+
           it 'passes multiple: true correctly' do
-            allow(options).to(receive(:get_next_argument).with('files', mandatory: true, multiple: true, validation: String, accept_list: nil, default: nil, schema: nil, raw: false).and_return(%w[a b]))
+            allow(options).to(receive(:get_next_argument).with('files', mandatory: true, multiple: true, validation: String, accept_list: nil, default: nil, schema: nil, evaluate: :extended).and_return(%w[a b]))
             arg_spec = ArgumentSpec.new(name: :files, type: String, multiple: true)
             expect(plugin.resolve_argument(arg_spec)).to(eq(%w[a b]))
           end

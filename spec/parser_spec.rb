@@ -486,10 +486,15 @@ module Aspera
           expect(build_parser([]).next_argument_in?(%w[a])).to(be(false))
         end
 
-        it 'does not evaluate a raw argument as extended value' do
+        it 'does not evaluate an argument with evaluate: :none' do
           opts = build_parser(%w[@json:[1] @json:[1]])
-          expect(opts.get_next_argument('raw', raw: true)).to(eq('@json:[1]'))
+          expect(opts.get_next_argument('raw', evaluate: :none)).to(eq('@json:[1]'))
           expect(opts.get_next_argument('evaluated', validation: nil)).to(eq([1]))
+        end
+
+        it 'converts an argument with evaluate: :smart, evaluating it once' do
+          opts = build_parser(%w[yes 40000 @val:40000 @val:@json:[1] @json:[1]])
+          expect(Array.new(5) { opts.get_next_argument('smart', validation: nil, evaluate: :smart) }).to(eq([true, 40_000, '40000', '@json:[1]', [1]]))
         end
 
         it 'checks the next arguments in order without consuming them' do

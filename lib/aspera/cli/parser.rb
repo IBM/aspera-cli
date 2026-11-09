@@ -90,16 +90,18 @@ module Aspera
 
         # Using dotted hash notation, convert value to bool, int, float or extended value
         # `true` and `yes` are converted to `true`, `false` and `no` to `false`
-        # @param value [String] The value to convert to appropriate type
+        # @param value   [String]  The value to convert to appropriate type
+        # @param context [String]  Where the value comes from, for error messages
+        # @param allowed [Class, Array, nil] Types accepted for an extended value
         # @return [Boolean, Integer, Float, String, Array, Hash] the converted value
-        def smart_convert(value)
+        def smart_convert(value, context: 'dotted expression', allowed: nil)
           case value
           when 'true', BoolValue::YES_SYM.to_s then true
           when 'false', BoolValue::NO_SYM.to_s then false
           else
             Integer(value, 10, exception: false) ||
               Float(value, exception: false) ||
-              ExtendedValue.instance.evaluate(value, context: 'dotted expression')
+              ExtendedValue.instance.evaluate(value, context: context, allowed: allowed)
           end
         end
       end
@@ -209,9 +211,9 @@ module Aspera
       # @param validation  [Class, Array, nil] Accepted value type(s) or list of Symbols
       # @param aliases     [Hash] map of aliases: key = alias, value = real value
       # @param default     [Object] default value
-      # @param raw         [Boolean] `true`: value is not evaluated as extended value
+      # @param evaluate    [Symbol]  `:extended`: extended value, `:smart`: also `true`, `yes`, `false`, `no` and numbers, `:none`: as typed
       # @return [Object, Array, nil] one value, list or nil (if optional and no default)
-      def get_next_argument(descr, mandatory: true, multiple: false, accept_list: nil, validation: Type::STRING, aliases: nil, default: nil, schema: nil, raw: false)
+      def get_next_argument(descr, mandatory: true, multiple: false, accept_list: nil, validation: Type::STRING, aliases: nil, default: nil, schema: nil, evaluate: :extended)
         ensure_parsed
         Aspera.assert_array_all(accept_list, Symbol) unless accept_list.nil?
         Aspera.assert_hash_all(aliases, Symbol, Symbol) unless aliases.nil?
@@ -220,7 +222,7 @@ module Aspera
         Aspera.assert_array_all(validation, Class) { 'validation' } unless validation.nil?
         descr = "#{descr}#{add_types_info(validation)}"
         result =
-          if !@command_line.pending_arguments.empty? then read_arguments(descr, multiple: multiple, validation: validation, accept_list: accept_list, aliases: aliases, raw: raw)
+          if !@command_line.pending_arguments.empty? then read_arguments(descr, multiple: multiple, validation: validation, accept_list: accept_list, aliases: aliases, evaluate: evaluate)
           elsif !default.nil? then default
           elsif mandatory then get_interactive(descr, multiple: multiple, accept_list: accept_list, aliases: aliases, schema: schema)
           end
@@ -530,11 +532,17 @@ module Aspera
         " (#{types.map(&:name).join(', ')})"
       end
 
-      # Consume positional arguments, and evaluate them unless `raw`
+      # Consume positional arguments, and evaluate them as told by `evaluate`
       # @return [Object, Array] one value, or list if `multiple`
-      def read_arguments(descr, multiple:, validation:, accept_list:, aliases:, raw:)
+      def read_arguments(descr, multiple:, validation:, accept_list:, aliases:, evaluate:)
         values = @command_line.shift_arguments(multiple)
-        values = values.map { |v| ExtendedValue.instance.evaluate(v, context: "argument: #{descr}", allowed: validation) } unless raw
+        context = "argument: #{descr}"
+        case evaluate
+        when :extended then values = values.map { |v| ExtendedValue.instance.evaluate(v, context: context, allowed: validation) }
+        when :smart then values = values.map { |v| Parser.smart_convert(v, context: context, allowed: validation) }
+        when :none then nil
+        else Aspera.error_unexpected_value(evaluate)
+        end
         # If expecting list and only one arg of type array : it is the list
         values = values.first if multiple && values.length.eql?(1) && values.first.is_a?(Array)
         if accept_list

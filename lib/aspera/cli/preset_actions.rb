@@ -141,7 +141,7 @@ module Aspera
           Secret::Hider.instance.contains_secret?(param_name)
         end
         param_name = Parser.option_line_to_name(param_name)
-        presets.set_key(name, param_name, Parser.smart_convert(param_value))
+        presets.set_key(name, param_name, param_value)
         secure_preset_option(presets.config_presets[name], name, param_name)
         Result::Nothing.new
       end

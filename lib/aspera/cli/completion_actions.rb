@@ -561,7 +561,7 @@ module Aspera
         hint = completion_hint(type_str, arg_spec.schema)
         # Percent selector: lookup of the identifier by a field
         hint = "#{hint} or %<field>:<value>" if arg_spec.type.eql?(:identifier) && !arg_spec.lookup.nil?
-        completion_value(value, position, hint: hint, allowed: arg_spec.allowed&.map(&:to_s), complete: arg_spec.complete, extended: !arg_spec.raw)
+        completion_value(value, position, hint: hint, allowed: arg_spec.allowed&.map(&:to_s), complete: arg_spec.complete, extended: !arg_spec.evaluate.eql?(:none))
       end
 
       # @param plugin_sym [Symbol] plugin name

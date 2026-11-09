@@ -24,8 +24,14 @@ module Aspera
     #                                                     Style: use Symbol for named methods; ->(){} for 1-liners; lambda do…end for 2–3 statements.
     # @!attribute allowed     [Array<Symbol>, nil]        Allowed Symbol values; when set, type is forced to Symbol and accept_list is applied
     # @!attribute interactive [Boolean]                   When true, prompts for this argument (only) when no CLI args are provided
-    # @!attribute raw         [Boolean]                   When true, the value is not evaluated as extended value (e.g. `@env:`)
+    # @!attribute evaluate    [Symbol]                    How the value is read, one of `EVALUATIONS`. Default `:extended`.
+    #                                                     `:extended`: extended value (`@json:`, `@file:`, `@val:`...); a value without prefix stays a string.
+    #                                                     `:smart`: `true`/`yes`/`false`/`no` and numbers are converted, else extended value (as dotted options).
+    #                                                     `:none`: the string as typed, not evaluated (e.g. `@env:`).
     # @!attribute complete    [Symbol, nil]               Values proposed by shell completion, one of `Complete::KINDS` (e.g. `:file`)
+    # Ways to evaluate the value of an argument, see `ArgumentSpec#evaluate`
+    EVALUATIONS = %i[extended smart none].freeze
+
     ArgumentSpec = Struct.new(
       :name,
       :description,
@@ -38,7 +44,7 @@ module Aspera
       :lookup,
       :allowed,
       :interactive,
-      :raw,
+      :evaluate,
       :complete,
       keyword_init: true
     ) do
@@ -47,8 +53,9 @@ module Aspera
         kwargs[:multiple]     = false if kwargs[:multiple].nil?
         kwargs[:bulk]         = false if kwargs[:bulk].nil?
         kwargs[:interactive]  = false if kwargs[:interactive].nil?
-        kwargs[:raw]          = false if kwargs[:raw].nil?
+        kwargs[:evaluate]     = :extended if kwargs[:evaluate].nil?
         kwargs[:type]         = String unless kwargs.key?(:type) || kwargs[:allowed]
+        raise ArgumentError, "evaluate: #{kwargs[:evaluate].inspect}, expecting one of: #{EVALUATIONS.join(', ')}" unless EVALUATIONS.include?(kwargs[:evaluate])
         super
       end
 

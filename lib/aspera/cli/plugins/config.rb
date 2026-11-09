@@ -125,7 +125,7 @@ module Aspera
             arguments: [{name: :name, type: :identifier, complete: :preset}, {name: :param_name, complete: :preset_parameter}]
           command :set, description: 'Set a parameter in a preset',
             arguments: [{name: :name, type: :identifier, complete: :preset}, {name: :param_name, complete: :preset_parameter},
-                        {name: :param_value, type: nil}]
+                        {name: :param_value, type: nil, evaluate: :smart}]
           command :initialize, description: 'Initialize a preset with a value',
             arguments: [{name: :name, type: :identifier, complete: :preset}, {name: :preset, type: Hash}]
           command :update,     description: 'Update a preset with current option values',
@@ -256,7 +256,7 @@ module Aspera
           command :import, description: 'Import secrets from a JSON array (supports --bulk)',
             arguments: [{name: :secrets, type: Array, schema: {type: 'array', items: {'$ref' => Schema::Registry::VAULT_SECRET}}}]
           command :check, description: 'Check that a reference to a store of option vault can be read, without its value',
-            arguments: [{name: :reference, raw: true}]
+            arguments: [{name: :reference, evaluate: :none}]
         end
         command :commands, description: 'List all available commands, of all plugins or only the given one, optionally under a command path',
           arguments: [{name: :plugin_name, mandatory: false, default: nil},
@@ -436,9 +436,9 @@ module Aspera
         # completion sub-commands
         commands_under :completion do
           command :words, description: 'List words that can follow the given words',
-            arguments: [{name: :words, multiple: true, mandatory: false, raw: true}]
+            arguments: [{name: :words, multiple: true, mandatory: false, evaluate: :none}]
           command :candidates, description: 'Complete the last word, with descriptions and a directive for the shell (used by completion scripts)',
-            arguments: [{name: :words, multiple: true, mandatory: false, raw: true}]
+            arguments: [{name: :words, multiple: true, mandatory: false, evaluate: :none}]
           COMPLETION_SHELLS.each_key do |shell|
             command shell, description: "Generate #{shell} completion script, to evaluate in shell",
               action: ->(**) { completion_script(shell) }
