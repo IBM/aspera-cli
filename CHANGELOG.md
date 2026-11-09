@@ -39,6 +39,8 @@ Highlights: analysis of `ascp` logs (`config ascp logs`), multiple named secret 
 
 ### Issues Fixed
 
+* `aoc`: `automation workflows import` failed on a workflow with steps after the trigger ("Step ... doesn't belong to a workflow"), and left a partial workflow. It now adds each step to the workflow before creating its actions, deletes the partial workflow if a call fails, and replaces the identifiers of steps and actions in every string of the action data, not only in `substitutions[].template`. `automation workflows duplicate` now uses the copy of the server, which keeps the secrets (tokens, passwords) that the API does not return when a workflow is read.
+* `aoc`: `automation instances show` did not return: the server searches the job without an index on its UUID (`GET workflow_instances/<id>`). The command now finds the job in the list of jobs. It accepts the numeric identifier or the UUID.
 * `config`:
   * `vault` (HashiCorp): Responses of Vault failed with `wrong number of arguments` with gem `json` 3. `vault info` shows the authentication method instead of an internal object.
 * `ascli`:

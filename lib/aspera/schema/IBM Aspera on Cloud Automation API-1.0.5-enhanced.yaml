@@ -9,9 +9,9 @@ info:
   description: |-
     The Automation API allows you to create multistep workflows with event-based triggers cued to IBM Aspera on Cloud endpoints. The first step in your workflow contains the trigger, which can be a person or an API, a series of scheduled times, a new file added to a folder, or a package arriving in a shared inbox, or the deletion of a file or folder.
 
-    The rest of the steps in the workflow contain one or more actions. An action can transfer a file, send a package, call an API, notify users, create custom substitution variables, or create a folder. Identifiers are numeric strings. Identifiers are numeric strings. After you activate the workflow, you can monitor active jobs and update the state of the workflow, which allows you to make edits. Note: To be activated, a workflow must have at least two steps, and contain an action that transfers a file or sends a package.
+    The rest of the steps in the workflow contain one or more actions. An action can transfer a file, send a package, call an API, notify users, create custom substitution variables, or create a folder. Identifiers are numeric strings. After you activate the workflow, you can monitor active jobs and update the state of the workflow, which allows you to make edits. Note: To be activated, a workflow must have at least two steps, and contain an action that transfers a file or sends a package.
 
-    Access Control: You must include a JSON Web Token (bearer token) in the authorization header of your request. The token must give access to the Automation application. Except for the administrator scope, a user acts only on the workflows shared with them (`edit`, `manage_jobs` or `duplicate` permission). The token must give access to the Automation application. Except for the administrator scope, a user acts only on the workflows shared with them (`edit`, `manage_jobs` or `duplicate` permission).
+    Access Control: You must include a JSON Web Token (bearer token) in the authorization header of your request. The token must give access to the Automation application. Except for the administrator scope, a user acts only on the workflows shared with them (`edit`, `manage_jobs` or `duplicate` permission).
 
     For additional information, visit the Aspera Developer Center at https://developer.ibm.com/aspera/
   version: 1.0.5
@@ -1678,7 +1678,7 @@ components:
         message:
           type: string
           examples:
-            - Workflow has been triggered and Caldera will execute it.
+            - Workflow has been triggered and will be executed.
     DefaultCopyName:
       type: object
       properties:

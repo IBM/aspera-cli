@@ -1026,9 +1026,12 @@ module Aspera
           end
           commands_under :instances do
             crud_commands(
-              **AUTOMATION_CRUD, entity: 'workflow_instances', name: 'workflow instance', operations: %i[list show delete],
+              **AUTOMATION_CRUD, entity: 'workflow_instances', name: 'workflow instance', operations: %i[list delete],
               items_key: 'workflow_instances', query_component: Schema::Registry::AUTOMATION
             )
+            command :show, description: 'Show a workflow instance (job), by identifier or by UUID',
+              arguments: [{name: :workflow_instance_id, type: :identifier}],
+              action: ->(workflow_instance_id:, **) { Result::SingleObject.new(workflow_instance_find(workflow_instance_id)) }
             command :cancel, description: 'Cancel workflow instance',
               arguments: [{name: :workflow_instance_id, type: :identifier}],
               action: ->(workflow_instance_id:, **) { Result::SingleObject.new(@automation_api.update("workflow_instances/#{workflow_instance_id}", {'status' => 'canceled'})) }
@@ -1057,7 +1060,6 @@ module Aspera
         # Build automation API and store in @automation_api ivar.
         def setup_automation_api(**)
           change_api_scope(Api::AoC::Scope::ADMIN_USER)
-          Log.log.warn('BETA: work under progress')
           @automation_api = Rest::Client.new(**aoc_api.params, base_url: aoc_api.base_url.gsub('/api/', '/automation/'))
           {}
         end
@@ -1541,6 +1543,27 @@ module Aspera
 
         # automation helper methods
 
+        # Get one job. `GET workflow_instances/<id>` does not answer on the server (the job is searched without an index on `instance_id`),
+        # so use the list, which does. The search string `q` matches the UUID (`instance_id`) but not the numeric identifier:
+        # in this case, browse the list.
+        # @param instance_id [String] Numeric identifier or UUID of the job
+        # @return [Hash] The job
+        def workflow_instance_find(instance_id)
+          instance_id = instance_id.to_s
+          is_uuid = instance_id.include?('-')
+          limit = 1000
+          offset = 0
+          loop do
+            query = {'limit' => limit, 'offset' => offset, 'sort' => '-state_change_time'}
+            query['q'] = instance_id if is_uuid
+            page = @automation_api.read('workflow_instances', query)
+            found = page['workflow_instances'].find { |job| job[is_uuid ? 'instance_id' : 'id'].eql?(instance_id) }
+            return found unless found.nil?
+            offset += limit
+            raise BadIdentifier.new('Workflow instance', instance_id) if is_uuid || offset >= page['total_count'].to_i
+          end
+        end
+
         def workflow_details(workflow_id)
           workflow = @automation_api.read("workflows/#{workflow_id}")
           steps = Array(workflow['step_order']).map do |step_id|
@@ -1600,59 +1623,71 @@ module Aspera
           action_id_map = {}
           created_step_ids = []
 
-          Array(manifest['steps']).each_with_index do |step_data, s_idx|
-            step_name = step_data['name'] || "Step #{s_idx + 1}"
-            old_step_ref = step_data['ref_id'] || step_data['id'] || "step_#{s_idx + 1}"
-            new_step = @automation_api.create('steps', {'workflow_id' => wf_id, 'name' => step_name})
-            new_step_id = new_step['id']
-            step_id_map[old_step_ref] = new_step_id
-            created_step_ids << new_step_id
+          begin
+            Array(manifest['steps']).each_with_index do |step_data, s_idx|
+              step_name = step_data['name'] || "Step #{s_idx + 1}"
+              old_step_ref = step_data['ref_id'] || step_data['id'] || "step_#{s_idx + 1}"
+              new_step = @automation_api.create('steps', {'workflow_id' => wf_id, 'name' => step_name})
+              new_step_id = new_step['id']
+              step_id_map[old_step_ref] = new_step_id
+              created_step_ids << new_step_id
+              # The API refuses an action whose step is not yet in the workflow
+              @automation_api.update("workflows/#{wf_id}", {'step_order' => created_step_ids})
 
-            created_action_ids = []
-            Array(step_data['actions']).each_with_index do |action_data, a_idx|
-              old_action_ref = action_data['ref_id'] || action_data['id'] || "action_#{s_idx + 1}_#{a_idx + 1}"
-              action_payload = {
-                'step_id' => new_step_id,
-                'name'    => action_data['name'] || (s_idx.zero? && a_idx.zero? ? 'Trigger' : "Action #{a_idx + 1}"),
-                'type'    => action_data['type'] || 'manual',
-                'data'    => deep_clone_and_remap_substitutions(action_data['data'] || {}, step_id_map, action_id_map)
-              }
-              new_act = @automation_api.create('actions', action_payload)
-              new_act_id = new_act['id']
-              action_id_map[old_action_ref] = new_act_id
-              created_action_ids << new_act_id
+              created_action_ids = []
+              Array(step_data['actions']).each_with_index do |action_data, a_idx|
+                old_action_ref = action_data['ref_id'] || action_data['id'] || "action_#{s_idx + 1}_#{a_idx + 1}"
+                action_payload = {
+                  'step_id' => new_step_id,
+                  'name'    => action_data['name'] || (s_idx.zero? && a_idx.zero? ? 'Trigger' : "Action #{a_idx + 1}"),
+                  'type'    => action_data['type'] || 'manual',
+                  'data'    => remap_references(action_data['data'] || {}, step_id_map, action_id_map)
+                }
+                new_act = @automation_api.create('actions', action_payload)
+                new_act_id = new_act['id']
+                action_id_map[old_action_ref] = new_act_id
+                created_action_ids << new_act_id
+              end
+              @automation_api.update("steps/#{new_step_id}", {'action_order' => created_action_ids})
             end
-            @automation_api.update("steps/#{new_step_id}", {'action_order' => created_action_ids})
+          rescue StandardError
+            # do not leave a partial workflow behind
+            begin
+              @automation_api.delete("workflows/#{wf_id}")
+            rescue StandardError => e
+              Log.log.warn { "Could not delete partial workflow #{wf_id}: #{e.message}" }
+            end
+            raise
           end
 
-          @automation_api.update("workflows/#{wf_id}", {'step_order' => created_step_ids})
           workflow_details(wf_id)
         end
 
+        # The copy is made by the server: the API does not return secrets (tokens, passwords), so an export/import would lose them.
         def workflow_duplicate(workflow_id, new_name: nil)
-          wf = @automation_api.read("workflows/#{workflow_id}")
-          manifest = workflow_export_data(workflow_id)
-          manifest['name'] = new_name || "#{wf['name']} (Copy)"
-          workflow_import_data(manifest)
+          new_name ||= @automation_api.read("workflows/#{workflow_id}/default_copy_name")['default_copy_name']
+          @automation_api.create("workflows/#{workflow_id}/copy", {'name' => new_name})
         end
 
-        def deep_clone_and_remap_substitutions(data, step_map, action_map)
-          cloned = JSON.parse(JSON.generate(data))
-          if cloned.is_a?(Hash) && cloned['substitutions'].is_a?(Array)
-            cloned['substitutions'].each do |sub|
-              template = sub['template']
-              if template.is_a?(String)
-                step_map.each do |old_id, new_id|
-                  template = template.gsub("step_id_#{old_id}", "step_id_#{new_id}")
-                end
-                action_map.each do |old_id, new_id|
-                  template = template.gsub("action_id_#{old_id}", "action_id_#{new_id}")
-                end
-                sub['template'] = template
-              end
-            end
+        # Reference to an action output in a string: step_id_<STEP>.action_id_<ACTION>
+        ACTION_OUTPUT_REFERENCE = /step_id_([^.\s{}"']+)\.action_id_([^.\s{}"']+)/
+        private_constant :ACTION_OUTPUT_REFERENCE
+
+        # Replace the step and action identifiers of the manifest by the new ones, in all strings of `data`
+        # (action fields as well as `substitutions[].template`).
+        # One pass only: an identifier that was just replaced must not be replaced again.
+        # @param data [Object] Hash, Array, or scalar to copy
+        # @param step_map [Hash] manifest step reference => new step id
+        # @param action_map [Hash] manifest action reference => new action id
+        # @return [Object] copy of `data`
+        def remap_references(data, step_map, action_map)
+          case data
+          when Hash then data.transform_values { |v| remap_references(v, step_map, action_map) }
+          when Array then data.map { |v| remap_references(v, step_map, action_map) }
+          when String
+            data.gsub(ACTION_OUTPUT_REFERENCE) { "step_id_#{step_map.fetch(Regexp.last_match(1), Regexp.last_match(1))}.action_id_#{action_map.fetch(Regexp.last_match(2), Regexp.last_match(2))}" }
+          else data
           end
-          cloned
         end
 
         # automation guide methods

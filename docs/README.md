@@ -8233,6 +8233,8 @@ admin workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page"
 automation workflow action <id> create @: name=toto
 automation workflow create @: name=test_workflow
 automation workflow delete <id>
+automation workflow details <id>
+automation workflow export <id>
 automation workflow list
 automation workflow list --query.show_org_workflows=@val:true
 automation workflow list --select.name=test_workflow --fields=id
