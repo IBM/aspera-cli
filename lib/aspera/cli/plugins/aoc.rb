@@ -1670,7 +1670,7 @@ module Aspera
         end
 
         # Reference to an action output in a string: step_id_<STEP>.action_id_<ACTION>
-        ACTION_OUTPUT_REFERENCE = /step_id_([^.\s{}"']+)\.action_id_([^.\s{}"']+)/
+        ACTION_OUTPUT_REFERENCE = /step_id_((?>[^.\s{}"']{1,256}))\.action_id_((?>[^.\s{}"']{1,256}))/
         private_constant :ACTION_OUTPUT_REFERENCE
 
         # Replace the step and action identifiers of the manifest by the new ones, in all strings of `data`

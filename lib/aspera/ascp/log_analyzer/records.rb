@@ -42,9 +42,9 @@ module Aspera
           /\AFASP Transfer (Start|Stop) (.*)/                                                              => :transfer_line
         }.freeze
         # Group of a sample line: `name k1/k2=v1/v2`, or `key=value` alone
-        GROUP_FIELDS = %r{(?:([A-Za-z_]+)\s+)?([A-Za-z_]+(?:/[A-Za-z_]+)*)=(-?\d+(?:/-?\d+)*)}
+        GROUP_FIELDS = %r{(?<![A-Za-z_/])(?:([A-Za-z_]++)\s++)?([A-Za-z_]++(?:/[A-Za-z_]++)*+)=(-?\d++(?:/-?\d++)*+)}
         # `mgmt backlog i/s/n = 0/3/0 1/4/0` of `DS Qs` lines: one triplet per management socket
-        MGMT_BACKLOG = %r{\s*mgmt backlog ([a-z/]+) =((?:\s+-?\d+(?:/-?\d+)*)*)}
+        MGMT_BACKLOG = %r{mgmt backlog ([a-z/]++) =((?:\s++-?\d++(?:/-?\d++)*+)*+)}
         # `[peer errcode=27 errstr="..."]`: fields of the peer
         PREFIXED = /\[(\w+)\s+([^\]]*)\]/
         KEY = %r{([A-Za-z_][\w/]*)=}
