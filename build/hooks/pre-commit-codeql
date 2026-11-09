@@ -1,0 +1,23 @@
+#!/bin/sh
+# Pre-commit: run CodeQL (rake tools:codeql) when staged Ruby changes add or modify a regular expression.
+# Polynomial ReDoS is the most frequent CodeQL finding of this project.
+# CODEQL_HOOK=always forces the run, CODEQL_HOOK=skip disables it. `git commit --no-verify` skips all hooks.
+case "${CODEQL_HOOK:-}" in
+  skip) exit 0 ;;
+esac
+cd "$(git rev-parse --show-toplevel)" || exit 0
+# Added lines of staged Ruby files, without diff headers
+added=$(git diff --cached -U0 --no-color --diff-filter=ACMR -- '*.rb' '*.rake' 'Rakefile' 'Gemfile' '*.gemspec' |
+  grep -E '^\+' | grep -vE '^\+\+\+ ')
+[ -z "$added" ] && exit 0
+if [ "${CODEQL_HOOK:-}" != always ]; then
+  # Regex literal after an operator or opening, %r{}, Regexp, match operators and regexp-taking String methods
+  pattern='(=~|!~|%r[^[:alnum:][:space:]]|Regexp|\.(match\??|scan|gsub!?|sub!?|split|slice!?|index|rindex|start_with\?|grep|grep_v)\(|[(,=[:space:]]/[^/*[:space:]=][^/]*/[imxounse]*)'
+  printf '%s\n' "$added" | grep -qE "$pattern" || exit 0
+fi
+if ! command -v codeql > /dev/null 2>&1; then
+  echo "pre-commit: regex changed but 'codeql' not found, skipping CodeQL (brew install --cask codeql)" >&2
+  exit 0
+fi
+echo "pre-commit: regular expression changed in Ruby code, running CodeQL (CODEQL_HOOK=skip to disable)" >&2
+exec bundle exec rake tools:codeql

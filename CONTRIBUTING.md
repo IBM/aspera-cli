@@ -151,6 +151,17 @@ bundle exec rake tools:codeql    # security (CodeQL, as GitHub code scanning)
 `tools:codeql` requires the `codeql` CLI (macOS: `brew install --cask codeql`), it downloads the query packs on first use.
 It analyzes the tracked files, with their changes, for the languages of `.github/workflows/codeql-analysis.yml`, and fails if CodeQL reports any result.
 
+Polynomial ReDoS in regular expressions is the most frequent finding.
+Optional `pre-commit` hook `build/hooks/pre-commit-codeql` runs `tools:codeql` when the staged Ruby changes add a regular expression (regex literal, `%r`, `Regexp`, `=~`, `match`, `scan`, `gsub`, `sub`, `split`...).
+It runs next to the other `pre-commit` hooks, register it once in the local git configuration:
+
+```shell
+git config --local hook.codeql.event pre-commit
+git config --local hook.codeql.command 'sh build/hooks/pre-commit-codeql'
+```
+
+Environment variable `CODEQL_HOOK=always` forces the analysis, and `CODEQL_HOOK=skip` disables it.
+
 `cspell` (configuration: `.cspell.json`) does not check code in backticks, quoted strings without space (values, identifiers), command line options, and `%w[]`/`%i[]` arrays.
 An unknown word that is a general term goes to a dictionary of folder `.cspell/`: `aspera.dict` (Aspera products and this project), `ruby.dict` (Ruby and gems), `tools.dict` (other tools and technical terms).
 For test data, prefer names made of words (e.g. `test-file`, `bad-agent`): they need no exception.

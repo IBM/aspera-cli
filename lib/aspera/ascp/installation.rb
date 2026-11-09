@@ -338,8 +338,8 @@ module Aspera
           extracted_files[file_basename] = entry_name
           FileUtils.mkdir_p(dest_folder)
           if link_target.nil?
-            # Security: Check if destination already exists
-            if File.exist?(dest_file)
+            # Security: Check if destination already exists, including a dangling symlink (`exist?` follows links)
+            if File.symlink?(dest_file) || File.exist?(dest_file)
               Log.log.warn { "Rejecting write to existing file or link: #{dest_file}" }
               next
             end
@@ -349,13 +349,13 @@ module Aspera
               FileUtils.mkdir_p(File.dirname(dest_file))
               # Check where the file would resolve to (handles existing symlinks in path)
               resolved_dest = File.realpath(File.dirname(dest_file))
-              unless resolved_dest.start_with?(install_boundary)
+              unless inside_folder?(resolved_dest, install_boundary)
                 Log.log.warn { "Rejecting file outside installation directory: #{dest_file} resolves to #{resolved_dest}" }
                 next
               end
             rescue Errno::ENOENT
               # Directory doesn't exist yet, verify the intended path
-              unless dest_file.start_with?(folder)
+              unless inside_folder?(File.expand_path(dest_file), File.expand_path(folder))
                 Log.log.warn { "Rejecting file with path outside installation directory: #{dest_file}" }
                 next
               end
@@ -364,7 +364,8 @@ module Aspera
           else
             # Security: Validate symlink target stays within installation boundary
             # Resolve the symlink target relative to its location
-            link_dir = File.dirname(dest_file)
+            # (real path of the folder, so that links already on disk are resolved)
+            link_dir = File.realpath(File.dirname(dest_file))
             resolved_target = if link_target.start_with?('/')
               # Absolute symlink target
               link_target
@@ -373,7 +374,7 @@ module Aspera
               File.expand_path(link_target, link_dir)
             end
             # Check if resolved target would be outside installation directory
-            unless resolved_target.start_with?(install_boundary)
+            unless inside_folder?(File.expand_path(resolved_target), install_boundary)
               Log.log.warn { "Rejecting symlink pointing outside installation directory: #{entry_name} -> #{link_target} (resolves to #{resolved_target})" }
               next
             end
@@ -420,6 +421,13 @@ module Aspera
       attr_accessor :transferd_urls
 
       private
+
+      # @param path     [String] Path to check
+      # @param boundary [String] Folder that must contain `path`
+      # @return [Boolean] `true` if `path` is `boundary` or is below it (a sibling sharing the name prefix is not)
+      def inside_folder?(path, boundary)
+        path.eql?(boundary) || path.start_with?(boundary.end_with?(File::SEPARATOR) ? boundary : "#{boundary}#{File::SEPARATOR}")
+      end
 
       DEFAULT_ASPERA_CONF = <<~END_OF_CONFIG_FILE
         <?xml version='1.0' encoding='UTF-8'?>

@@ -36,4 +36,67 @@ RSpec.describe(Aspera::Ascp::Installation) do
       end
     end
   end
+
+  describe 'archive with links (GHSA-mjf3-ccfm-5rwp)' do
+    # @param path    [String] Path of archive to create
+    # @param entries [Array<Array>] `[:link, name, target]` or `[:file, name, content]`
+    def write_tar_gz_entries(path, entries)
+      File.open(path, 'wb') do |file|
+        Zlib::GzipWriter.wrap(file) do |gz|
+          Gem::Package::TarWriter.new(gz) do |tar|
+            entries.each do |type, name, value|
+              if type.eql?(:link)
+                tar.add_symlink(name, value, 0o755)
+              else
+                tar.add_file_simple(name, 0o755, value.bytesize) { |io| io.write(value) }
+              end
+            end
+          end
+        end
+      end
+    end
+
+    it 'does not write through a symlink to a file outside of the install folder' do
+      Dir.mktmpdir do |dir|
+        victim = File.join(dir, 'victim.sh')
+        File.write(victim, 'SAFE')
+        archive = File.join(dir, 'sdk.tar.gz')
+        write_tar_gz_entries(archive, [[:link, 'pkg/bin/ascp', victim], [:file, 'pkg/lib/ascp', 'PWNED']])
+        folder = File.join(dir, 'install')
+        described_class.instance.download_sdk(folder: folder, url: Aspera::UriReader.file_url(archive), backup: false) { '/' }
+        expect(File.read(victim)).to(eq('SAFE'))
+        expect(File.symlink?(File.join(folder, 'ascp'))).to(be(false))
+      end
+    end
+
+    it 'does not create a symlink to a sibling folder sharing the name prefix of the install folder' do
+      Dir.mktmpdir do |dir|
+        archive = File.join(dir, 'sdk.tar.gz')
+        write_tar_gz_entries(archive, [[:link, 'pkg/bin/other', File.join(dir, 'install_evil', 'x')]])
+        folder = File.join(dir, 'install')
+        described_class.instance.download_sdk(folder: folder, url: Aspera::UriReader.file_url(archive), backup: false) { '/' }
+        expect(File.symlink?(File.join(folder, 'other'))).to(be(false))
+      end
+    end
+
+    it 'does not create a relative symlink leaving the install folder' do
+      Dir.mktmpdir do |dir|
+        archive = File.join(dir, 'sdk.tar.gz')
+        write_tar_gz_entries(archive, [[:link, 'pkg/bin/up', '../../outside']])
+        folder = File.join(dir, 'install')
+        described_class.instance.download_sdk(folder: folder, url: Aspera::UriReader.file_url(archive), backup: false) { '/' }
+        expect(File.symlink?(File.join(folder, 'up'))).to(be(false))
+      end
+    end
+
+    it 'keeps a symlink inside the install folder' do
+      Dir.mktmpdir do |dir|
+        archive = File.join(dir, 'sdk.tar.gz')
+        write_tar_gz_entries(archive, [[:file, 'pkg/bin/real', 'content'], [:link, 'pkg/bin/alias', 'real']])
+        folder = File.join(dir, 'install')
+        described_class.instance.download_sdk(folder: folder, url: Aspera::UriReader.file_url(archive), backup: false) { '/' }
+        expect(File.read(File.join(folder, 'alias'))).to(eq('content'))
+      end
+    end
+  end
 end
