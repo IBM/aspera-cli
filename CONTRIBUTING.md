@@ -39,7 +39,7 @@ bundle install
 bundle exec rake -T
 ```
 
-For detailed testing instructions, please refer to [Running Tests](#running-tests).
+For detailed testing instructions, please refer to [Test Environment](#test-environment).
 
 ### How to Contribute
 
@@ -47,12 +47,12 @@ To submit a contribution, follow these steps:
 
 1. **Fork** the repository on GitHub.
 
-1. **Create a feature branch** specifically for your changes.
+2. **Create a feature branch** specifically for your changes.
 
-1. **Implement** your feature or bug fix.
+3. **Implement** your feature or bug fix.
    See [Development Cycle for a New CLI Command](#development-cycle-for-a-new-cli-command) for the complete checklist.
 
-1. **Submit a pull request** with a detailed description of your work.
+4. **Submit a pull request** with a detailed description of your work.
 
 > [!TIP]
 > Keep pull requests focused; include only changes relevant to the specific feature or fix.
@@ -200,7 +200,7 @@ The `aspera-cli` architecture is designed to be modular and extensible.
 
   Located in `lib/aspera/agent`, these components manage data transfer operations.
 
-Detailed class diagrams are available in <docs/uml.png>
+Detailed class diagrams are available in [docs/uml.png](docs/uml.png).
 
 ## Ruby Environment
 
@@ -224,15 +224,15 @@ The build system is powered by Ruby's `rake`.
 
 The following environment variables and macros control specific build behaviors:
 
-| Environment variable        | Contents   | Description                                                  |
-|-----------------------------|------------| -------------------------------------------------------------|
-| `ASPERA_CLI_TEST_CONF_URL`  | URL        | URL for the configuration file containing secrets for tests. |
-| `LOG_SECRETS`               | `yes`/`no` | Toggles the logging of secrets in `rake` tasks.              |
-| `LOG_LEVEL`                 | `debug`, ... | Sets the logging verbosity for `rake` tasks.                 |
-| `ENABLE_COVERAGE`           | set/unset  | Enables test coverage analysis when defined.                 |
-| `SIGNING_KEY`               | File path or PEM | Path to the signing key file, or PEM content (starts with `-----BEGIN`). |
-| `DRY_RUN`                   | `1`        | Simulates execution without performing actual operations (`git`, `gh`). |
-| `DEBUG`                     | `1`        | Shows stack trace on errors during documentation generation. |
+| Environment variable       | Contents         | Description                                                              |
+|----------------------------|------------------|--------------------------------------------------------------------------|
+| `ASPERA_CLI_TEST_CONF_URL` | URL              | URL for the configuration file containing secrets for tests.             |
+| `LOG_SECRETS`              | `yes`/`no`       | Toggles the logging of secrets in `rake` tasks.                          |
+| `LOG_LEVEL`                | `debug`, ...     | Sets the logging verbosity for `rake` tasks.                             |
+| `ENABLE_COVERAGE`          | set/unset        | Enables test coverage analysis when defined.                             |
+| `SIGNING_KEY`              | File path or PEM | Path to the signing key file, or PEM content (starts with `-----BEGIN`). |
+| `DRY_RUN`                  | `1`              | Simulates execution without performing actual operations (`git`, `gh`).  |
+| `DEBUG`                    | `1`              | Shows stack trace on errors during documentation generation.             |
 
 These values can be set as standard environment variables or passed directly to the `rake` command.
 
@@ -281,21 +281,21 @@ tlmgr install fvextra selnolig lualatex-math
 
 - Validate URLs during generation with:
 
-```shell
-rake doc:check_links
-```
+  ```shell
+  rake doc:check_links
+  ```
 
 - Debug the generation process: `DEBUG=1`.
 
 - Build the documentation:
 
-```shell
-rake doc:build
-```
+  ```shell
+  rake doc:build
+  ```
 
 ## Test Environment
 
-Detailed testing information can be found in <tests/README.md>.
+Detailed testing information can be found in [tests/README.md](tests/README.md).
 
 ## Build
 
@@ -321,7 +321,7 @@ The gem is signed using the public certificate in `certs` and the **private key*
 bundle exec rake SIGNING_KEY=/path/to/vault/gem-private_key.pem
 ```
 
-For more details, see <certs/README.md>.
+For more details, see [certs/README.md](certs/README.md).
 
 ### gRPC stubs for Transfer SDK
 
@@ -366,29 +366,29 @@ Before a new release, ensure the following:
 
 - **Pass all tests**:
 
-```shell
-bundle exec rake test:run
-```
+  ```shell
+  bundle exec rake test:run
+  ```
 
 - **Verify container builds** (using the local gem):
 
-```shell
-bundle exec rake container:build'[local]'
-bundle exec rake container:test
-```
+  ```shell
+  bundle exec rake container:build'[local]'
+  bundle exec rake container:test
+  ```
 
 - **Check documentation links**:
 
-```shell
-bundle exec rake doc:check_links
-```
+  ```shell
+  bundle exec rake doc:check_links
+  ```
 
 - **Check release procedure**:
 
-```shell
-bundle exec rake release:run DRY_RUN=1
-git restore lib/aspera/cli/version.rb CHANGELOG.md docs/README.md
-```
+  ```shell
+  bundle exec rake release:run DRY_RUN=1
+  git restore lib/aspera/cli/version.rb CHANGELOG.md docs/README.md
+  ```
 
 ### Automated Release Process
 
@@ -426,22 +426,22 @@ If necessary, you can mirror the automated process manually:
 
 - Build the PDF manual:
 
-```shell
-bundle exec rake doc:build
-```
+  ```shell
+  bundle exec rake doc:build
+  ```
 
 - Build the signed gem:
 
-```shell
-bundle exec rake SIGNING_KEY=/path/to/vault/gem-private_key.pem
-```
+  ```shell
+  bundle exec rake SIGNING_KEY=/path/to/vault/gem-private_key.pem
+  ```
 
 - Tag the release and push to GitHub:
 
-```shell
-bundle exec rake release_tag
-```
+  ```shell
+  bundle exec rake release_tag
+  ```
 
-This triggers the `.github/workflows/deploy.yml` action to publish to RubyGems.
+  This triggers the `.github/workflows/deploy.yml` action to publish to RubyGems.
 
 - Update `version.rb` to the next `.pre` development version.
