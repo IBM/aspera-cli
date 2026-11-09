@@ -55,6 +55,15 @@ module Aspera
         @resolver = nil
         # Name of the default store, `nil` if none
         @default = nil
+        # Name and type of stores, without parameters (may contain secrets)
+        @stores = []
+      end
+
+      # Stores of option `vault`, without their parameters
+      # @return [Array<Hash>] `name`, `type`, `default` of each store, empty if not configured
+      def stores
+        resolver
+        @stores
       end
 
       # Default store, opened when first used.
@@ -125,6 +134,7 @@ module Aspera
         require 'aspera/secret/resolver'
         resolver = Secret::Resolver.new(config.merge(STORES_KEY => stores))
         @default = default
+        @stores = stores.map { |name, params| {'name' => name, 'type' => params[:type], 'default' => name.eql?(default)} }
         resolver
       end
 

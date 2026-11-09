@@ -45,6 +45,46 @@ RSpec.describe(Aspera::Secret::Store) do
       end
     end
 
+    it 'keeps the mode of the vault file, replaced atomically, without temporary file' do
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'vault.bin')
+        vault = described_class.new(file: path, password: vault_password)
+        vault.set({label: 'one', password: secret}) # HashiCorpIgnore
+        expect(File.stat(path).mode & 0o777).to(eq(0o600))
+        File.chmod(0o640, path)
+        vault.set({label: 'two', password: other}) # HashiCorpIgnore
+        vault.delete(label: 'one')
+        vault.change_password(other)
+        expect(File.stat(path).mode & 0o777).to(eq(0o640))
+        expect(Dir.children(dir).sort).to(eq(['vault.bin', 'vault.bin.lock']))
+        expect(described_class.new(file: path, password: other).get(label: 'two')[:password]).to(eq(other))
+      end
+    end
+
+    it 'keeps the owner of the vault file and of its lock file, when changed by root', if: Process.uid.zero? do
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'vault.bin')
+        vault = described_class.new(file: path, password: vault_password)
+        vault.set({label: 'one', password: secret}) # HashiCorpIgnore
+        # nobody: owner of the file, root changes it
+        File.chown(65_534, 65_534, path)
+        vault.set({label: 'two', password: other}) # HashiCorpIgnore
+        [path, "#{path}.lock"].each do |file|
+          expect(File.stat(file).uid).to(eq(65_534))
+          expect(File.stat(file).gid).to(eq(65_534))
+        end
+      end
+    end
+
+    it 'does not create the vault file when the first change fails' do
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'vault.bin')
+        vault = described_class.new(file: path, password: vault_password)
+        expect { vault.delete(label: 'missing') }.to(raise_error(/Label not found/))
+        expect(File.exist?(path)).to(be(false))
+      end
+    end
+
     it 'refuses a vault file with Ruby objects, when used' do
       Dir.mktmpdir do |dir|
         path = File.join(dir, 'vault.bin')

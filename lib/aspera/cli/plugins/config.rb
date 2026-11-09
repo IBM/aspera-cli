@@ -214,6 +214,8 @@ module Aspera
         commands_under :vault do
           command :info,     description: 'Show vault information',
             action: ->(**) { Result::SingleObject.new(vault_required.info) }
+          command :stores,   description: 'List stores of option vault, with their type and whether it is the default one, without parameters',
+            action: ->(**) { Result::ObjectList.new(context.vault.stores) }
           command :ids,      description: 'List secret labels in the vault',
             action: ->(**) { Result::ObjectList.new(vault_required.ids) }
           command :list,     description: 'List all secrets with full details',

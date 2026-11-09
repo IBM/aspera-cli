@@ -158,6 +158,8 @@ module Aspera
         def with_lock
           lock_path = "#{@path}.lock"
           File.open(lock_path, File::CREAT | File::RDWR, 0o600) do |lf|
+            # Same owner as the vault file, so that it can be locked by whoever owns the vault, not only by who created the lock file
+            give_owner(lock_path, File.stat(@path)) if File.exist?(@path)
             lf.flock(File::LOCK_EX)
             # Reload inside the lock so we see any write done by another process
             load_file(@password.value)
@@ -280,8 +282,19 @@ module Aspera
           OsslCipher.new(@cipher_name, key)
         end
 
+        # Give the owner and group of a stat to a file, if allowed (only root can give a file to another user)
+        # @param path [String]    File to change
+        # @param stat [File::Stat] Owner and group to set
+        def give_owner(path, stat)
+          return if File.stat(path).uid.eql?(stat.uid) && File.stat(path).gid.eql?(stat.gid)
+          File.chown(stat.uid, stat.gid, path)
+        rescue SystemCallError, NotImplementedError => e
+          Log.log.debug { "cannot set owner of #{path}: #{e.message}" }
+        end
+
         # Save current data to file atomically (temp file + rename) so a concurrent reader
         # never sees a partial file.
+        # The file that is replaced keeps its owner, group and mode.
         def save
           vault_info = {
             'version' => '1.1.0',
@@ -294,6 +307,11 @@ module Aspera
           tmp = "#{@path}.tmp#{::Process.pid}"
           begin
             File.write(tmp, content, perm: 0o600)
+            if File.exist?(@path)
+              stat = File.stat(@path)
+              give_owner(tmp, stat)
+              File.chmod(stat.mode & 0o7777, tmp)
+            end
             File.rename(tmp, @path)
           rescue SystemCallError
             File.unlink(tmp) rescue nil
