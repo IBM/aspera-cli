@@ -11,6 +11,7 @@ require 'aspera/cli/extended_value'
 require 'aspera/cli/preset_manager'
 require 'aspera/cli/option_value'
 require 'aspera/cli/command_spec'
+require 'aspera/schema/registry'
 
 module Aspera
   module Cli
@@ -141,6 +142,23 @@ module Aspera
             .to(raise_error(BadArgument, /no such file or folder/))
         end
 
+        it 'refuses a sub-option marked `x-security` in the schema, however it is given' do
+          option = OptionValue.new(option: :out, allowed: [Hash, String], schema: Schema::Registry::OUT_OPTIONS)
+          security.lock('in MCP server mode', default: :high)
+          expect { option.assign_value({'file' => '/tmp/x'}, source: :cmdline) }.to(raise_error(BadArgument, /option out.file: disabled by security level high/))
+          expect { option.assign_value({'format' => 'json'}, source: :cmdline) }.not_to(raise_error)
+          expect { option.check_security({file: '/tmp/x'}) }.to(raise_error(BadArgument, /out.file/))
+          ui = OptionValue.new(option: :ui, allowed: [Hash, String], schema: Schema::Registry::UI_OPTIONS)
+          expect { ui.assign_value({'command' => ['x']}, source: :preset) }.to(raise_error(BadArgument, /ui.command/))
+          expect { ui.assign_value({'mode' => 'terminal'}, source: :preset) }.not_to(raise_error)
+        end
+
+        it 'does not restrict values set by the program or by the environment of the process' do
+          security.lock('in MCP server mode', default: :high)
+          %i[default code env].each { |source| expect { OptionValue.new(option: :home, security: :low).assign_value('/x', source: source) }.not_to(raise_error) }
+          %i[cmdline preset plugin_preset].each { |source| expect { OptionValue.new(option: :home, security: :low).assign_value('/x', source: source) }.to(raise_error(BadArgument)) }
+        end
+
         it 'refuses an unknown level' do
           expect { security.options = {'level' => 'none'} }.to(raise_error(BadArgument, /security.level: expecting one of/))
         end
@@ -167,6 +185,36 @@ module Aspera
             expect { security.options = value }.to(raise_error(BadArgument, /security cannot be changed in test/))
           end
           expect(security.level).to(eq(:medium))
+        end
+      end
+
+      describe '#writable_path' do
+        let(:writable_folder) { File.join(folder, 'writable').tap { |path| Dir.mkdir(path) } }
+
+        before { security.lock('in MCP server mode', default: :high) }
+
+        it 'allows any path at level low' do
+          security.reset
+          expect(security.writable_path(File.join(folder, 'any', 'file.rb'))).to(eq(File.join(folder, 'any', 'file.rb')))
+        end
+
+        it 'refuses all paths when none is writable' do
+          expect { security.writable_path(File.join(folder, 'file.rb')) }.to(raise_error(BadArgument, /writing is refused by security level high/))
+        end
+
+        it 'allows files, existing or not, in writable paths, and refuses others, also with .. or a symbolic link' do
+          security.reset
+          security.options = {'level' => 'high', 'writable_paths' => [writable_folder]}
+          expect(security.writable_path(File.join(writable_folder, 'sub', 'new.txt'))).to(eq(File.join(File.realpath(writable_folder), 'sub', 'new.txt')))
+          expect { security.writable_path(File.join(writable_folder, '..', 'plugins', 'x.rb')) }.to(raise_error(BadArgument))
+          expect { security.writable_path("#{writable_folder}-other/x") }.to(raise_error(BadArgument))
+          link = File.join(writable_folder, 'link')
+          File.symlink(folder, link)
+          expect { security.writable_path(File.join(link, 'x.rb')) }.to(raise_error(BadArgument))
+        end
+
+        it 'cannot be changed when locked' do
+          expect { security.options = {'writable_paths' => [writable_folder]} }.to(raise_error(BadArgument, /cannot be changed/))
         end
       end
 

@@ -939,6 +939,33 @@ The plugin factory discovers the plugin automatically; `CommandRegistry#validate
 4. **SSH Keys**: Public key authentication
 5. **Access Keys**: Node API access keys
 
+### Security Levels and MCP Mode
+
+Commands sent by an MCP client (`mcp server`) are untrusted input: they run in the server process, as the server user.
+`Security` ([`security.rb`](../lib/aspera/cli/security.rb)) is locked by `mcp server` (default level `high`), and the client cannot change it.
+**MCP mode shall not allow the execution of custom code, nor writing where the client chooses.**
+A feature that does one of the following is available only at level `low`:
+
+- Executes code or a command: ERB (`notify_template`), JavaScript (`fpac`), a command (`ui.command`), a downloaded executable (`sdk_url`), scripts (`faspex5 postprocessing`)
+- Loads code: Ruby plugins (folder `plugins` of the configuration folder, `plugin_folder`), and what selects where they are loaded from (`home`)
+- Writes a file chosen by the client: `out.file`, `pid_file`; downloaded files go only in `writable_paths`
+
+How it is enforced, in one place for each kind of feature:
+
+| Kind | Declaration | Enforced in |
+| --- | --- | --- |
+| Option | `security: :low` of `option` / `Parser#declare` (`OptionSpec#security`, `OptionValue#security`) | `OptionValue#assign_value`: command line, presets and interactive input; not default, code and environment of the process |
+| Sub-option of an option with a schema | `x-security: low` on the property in the schema (e.g. `ui.command`, `out.file`) | `OptionValue#check_sub_options_security`, also for `--out.file=...` (dot notation) |
+| Command | `security: :low` of `command` (`CommandSpec#security`) | `Plugins::Base#dispatch_from_registry`; refused commands are not listed by `config commands` |
+| Plugin folder | `security:` of `Factory#add_lookup_folder` | `Factory#add_plugins_from_lookup_folders` and `Factory#plugin_class`: a file written after start is not loaded |
+| Extended value | `Security::EXTENDED_VALUE_LEVELS` | `Security#check_extended_value` |
+| Written file | `Security#writable_path` | `config download`, `TransferAgent#start` (receive) |
+| Preset | The same options and sub-options, and `Security#check_stored_value` | `PresetActions#check_preset_entry`: a preset is evaluated later, maybe at level `low` |
+
+The level is also the way to extend: a new option, sub-option or command that executes, downloads, or loads code, or writes a file chosen by the user, shall declare `security: :low` (or `x-security: low`).
+A file written by a command shall go through `Security#writable_path`.
+Specs: `security_spec.rb`, `plugin_security_spec.rb`, `preset_actions_spec.rb`.
+
 ### Credential Storage
 
 - Encrypted configuration file

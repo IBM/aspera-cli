@@ -6,6 +6,7 @@ require 'aspera/cli/result'
 require 'aspera/cli/parser'
 require 'aspera/cli/option_value'
 require 'aspera/cli/security'
+require 'aspera/schema/registry'
 require 'aspera/log'
 require 'securerandom'
 
@@ -214,8 +215,11 @@ module Aspera
 
           it 'refuses command of option ui' do
             Security.instance.lock('in MCP server mode', default: :high)
+            option = OptionValue.new(option: :ui, allowed: [Hash, String], schema: Schema::Registry::UI_OPTIONS)
             h = host_with_options({'ui' => {'command' => ['/bin/true']}})
-            expect { h.action_preset_update(name: 'p1') }.to(raise_error(BadArgument, /ui.command/))
+            allow(h).to(receive(:options).and_return(double('options', unprocessed_options_with_value: {'ui' => {'command' => ['/bin/true']}}, option_declared?: true, option_def: option)))
+            expect { h.action_preset_update(name: 'p1') }.to(raise_error(BadArgument, /option ui.command: disabled by security level high/))
+            expect { h.action_preset_set(name: 'p1', param_name: 'ui.command', param_value: ['/bin/true']) }.to(raise_error(BadArgument, /ui.command/))
           end
 
           it 'refuses an option that requires a lower level' do

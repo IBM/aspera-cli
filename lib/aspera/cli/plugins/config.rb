@@ -455,7 +455,7 @@ module Aspera
         def add_plugin_folders(value)
           value = [value] unless value.is_a?(Array)
           Aspera.assert_array_all(value, String) { 'plugin folder(s)' }
-          value.each { |f| Plugins::Factory.instance.add_lookup_folder(f) }
+          value.each { |f| Plugins::Factory.instance.add_lookup_folder(f, security: :low) }
         end
 
         # `on_set` callback of option `preset`
@@ -505,6 +505,7 @@ module Aspera
         def action_download(file_url:, file_dest: nil, **)
           file_url = file_url.chomp
           file_dest = File.join(transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE), file_url.rpartition('/').last) if file_dest.nil?
+          file_dest = Security.instance.writable_path(file_dest)
           Log.log.info("Downloading: #{file_url}")
           Rest::Client.new(base_url: file_url).call(operation: 'GET', save_to: file_dest)
           Result::Status.new("Saved to: #{file_dest}")

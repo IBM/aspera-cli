@@ -254,8 +254,6 @@ module Aspera
               else Aspera.error_unexpected_value(v, type: BadArgument) { 'ui.mode' }
               end
           when :command
-            # The command is executed to open a URL
-            Security.instance.check_level(:low, 'option ui.command')
             Environment.instance.browser_command = v.nil? || v.empty? ? nil : v.map(&:to_s)
           else Aspera.error_unexpected_value(k, type: BadArgument) { 'ui sub-option (mode, command)' }
           end
@@ -546,7 +544,7 @@ module Aspera
         )
         @context.options.declare(:clean_temp, description: 'Cleanup temporary files on exit', allowed: Type::BOOLEAN, on_set: TempFileManager.instance.method(:cleanup_on_exit=), deprecation: {last: '4.27.5', message: 'use --temp.clean'})
         @context.options.declare(:temp_folder, description: 'Temporary folder', on_set: TempFileManager.instance.method(:global_temp=), deprecation: {last: '4.27.5', message: 'use --temp.folder'}, complete: :folder)
-        @context.options.declare(:pid_file, description: 'Write process identifier to file, delete on exit', complete: :file)
+        @context.options.declare(:pid_file, description: 'Write process identifier to file, delete on exit', complete: :file, security: :low)
         @context.options.declare(
           :parser, description: 'Default parser for structured parameters and options',
           on_set: ExtendedValue.instance.method(:default_decoder=),

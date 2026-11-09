@@ -3,6 +3,7 @@
 require 'singleton'
 require 'aspera/assert'
 require 'aspera/cli/error'
+require 'aspera/cli/security'
 require 'aspera/environment'
 require 'aspera/string_ext'
 
@@ -20,6 +21,8 @@ module Aspera
 
         def initialize
           @lookup_folders = []
+          # Security level (see `Security`) of each folder: a plugin is code
+          @folder_security = {}
           # information on plugins
           @plugins = {}
         end
@@ -31,8 +34,12 @@ module Aspera
 
         # add a folder to the list of folders to look for plugins
         # (absolute, as `require` resolves a relative path against $LOAD_PATH)
-        def add_lookup_folder(folder)
+        # @param folder   [String]      Folder
+        # @param security [Symbol, nil] Most restrictive security level at which plugins of this folder are used, `nil` for all levels (folder of the gem).
+        #   A folder that a user or a client can write is `:low`: a file written there would be loaded as code.
+        def add_lookup_folder(folder, security: nil)
           folder = File.expand_path(folder)
+          @folder_security[folder] = security
           @lookup_folders.unshift(folder) unless @lookup_folders.include?(folder)
         end
 
@@ -40,6 +47,8 @@ module Aspera
         def add_plugins_from_lookup_folders
           @lookup_folders.each do |folder|
             next unless File.directory?(folder)
+            # Plugins registered at start (level low) stay, but files that appear later are not
+            next unless Security.instance.allowed?(@folder_security[folder])
             # TODO: add gem root to load path ? and require short folder ?
             # $LOAD_PATH.push(folder) if i[:add_path]
             Dir.children(folder).each do |source|
@@ -49,7 +58,7 @@ module Aspera
               next if IGNORE_PLUGINS.include?(plugin_symbol)
               req = path.sub(/#{Environment::RB_EXT}$/o, '')
               next if @plugins.key?(plugin_symbol)
-              @plugins[plugin_symbol] = {source: path, require_stanza: req}
+              @plugins[plugin_symbol] = {source: path, require_stanza: req, security: @folder_security[folder]}
             end
           end
         end
@@ -63,6 +72,8 @@ module Aspera
         # @return [Class] class object for plugin
         def plugin_class(plugin_name_sym)
           Aspera.assert(@plugins.key?(plugin_name_sym), type: NoSuchElement) { "plugin not found: #{plugin_name_sym}" }
+          # A plugin registered at start can be replaced by a file written since: it is code
+          Security.instance.check_level(@plugins[plugin_name_sym][:security], "plugin #{plugin_name_sym}")
           require @plugins[plugin_name_sym][:require_stanza]
           # Module.nesting[1] is Aspera::Cli::Plugins
           return Object.const_get("#{Module.nesting[1]}::#{plugin_name_sym.to_s.snake_to_capital}")

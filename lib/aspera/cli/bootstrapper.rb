@@ -94,7 +94,7 @@ module Aspera
       def setup_main_folder
         @context.options.declare(
           :home, description: 'Home folder for tool',
-          on_set: @context.method(:main_folder=), complete: :folder,
+          on_set: @context.method(:main_folder=), complete: :folder, security: :low,
           default: default_app_main_folder(app_name: Info::CMD_NAME)
         )
         @context.options.parse_options!
@@ -105,7 +105,7 @@ module Aspera
       def setup_persistency_and_plugin_folders(gem_plugins_folder)
         @context.persistency = PersistencyFolder.new(File.join(@context.main_folder, PERSISTENCY_FOLDER))
         Plugins::Factory.instance.add_lookup_folder(gem_plugins_folder)
-        Plugins::Factory.instance.add_lookup_folder(File.join(@context.main_folder, ASPERA_PLUGINS_FOLDERNAME))
+        Plugins::Factory.instance.add_lookup_folder(File.join(@context.main_folder, ASPERA_PLUGINS_FOLDERNAME), security: :low)
       end
 
       # Declare + parse :config_file option: sets context.presets + context.http_config

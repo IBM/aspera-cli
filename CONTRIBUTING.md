@@ -68,6 +68,10 @@ Each step is self-contained so that an automated agent can apply them independen
 - If the command belongs to a mixin (e.g. `AscpActions`, `PresetActions`), add the method in the corresponding file under `lib/aspera/cli/`.
 - Declare the new command with `command(...)` at class level and implement the corresponding `handle_<path>` method.
 - For agent-related schemas, declare parameters in `lib/aspera/cli/options.schema.yaml` under `components/schemas/`.
+- Commands of an MCP client are untrusted (see [Security Levels and MCP Mode](docs/ARCHITECTURE.md#security-levels-and-mcp-mode)).
+  If a new option, sub-option or command executes code or a command, downloads and runs code, loads a plugin, or writes a file whose path the user gives, make it available only at level `low`: `security: :low` on `option` or `command`, or `x-security: low` on a key of a schema.
+  Write such a file with `Security.instance.writable_path`.
+  Add a spec that checks the refusal at level `high`.
 
 #### 2 — Add tests in `tests/tests.yml`
 

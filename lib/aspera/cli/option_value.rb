@@ -138,7 +138,7 @@ module Aspera
         end
         Aspera.assert(!@deprecation, type: :warn) { "Option #{@option} is #{@deprecation}" } if warn_deprecation
         # Values set by the program itself are not restricted: those from command line, preset, environment are
-        Security.instance.check_level(@security, "option #{@option}") unless %i[default code].include?(source)
+        Security.instance.check_level(@security, "option #{@option}") if restricted_source?(source)
         if schema_request?(value)
           return if lower
           raise SchemaRequest.new(:option, @option, @schema) unless @schema.nil?
@@ -147,6 +147,7 @@ module Aspera
           return
         end
         new_value = coerce(ExtendedValue.instance.evaluate(value, context: "option: #{@option}", allowed: @types))
+        check_sub_options_security(new_value) if restricted_source?(source)
         new_value = {@shorthand => new_value} if @shorthand && new_value.is_a?(String)
         Log.log.trace1 { "#{source}: #{@option} <- (#{new_value.class})#{new_value}" }
         Aspera.assert_type(new_value, *@types, type: BadArgument) { "Option #{@option}" } if @types
@@ -169,7 +170,37 @@ module Aspera
         nil
       end
 
+      # Check that the option, and the sub-options present in a `Hash` value (`x-security` in schema), are available at current security level.
+      # Used for a value that is not assigned yet, e.g. to store in a preset.
+      # @param value [Object] Value of the option
+      # @raise [BadArgument] If refused at current level
+      def check_security(value)
+        Security.instance.check_level(@security, "option #{@option}")
+        check_sub_options_security(value)
+      end
+
       private
+
+      # Values set by the program, or by the environment of the process (under control of the one who starts it), are not restricted:
+      # those from command line, presets (that a client can modify) and interactive input are.
+      # @param source [Symbol] `OptionSource`
+      # @return [Boolean] `true` if a value from this source is checked against security level
+      def restricted_source?(source)
+        !%i[default code env].include?(source)
+      end
+
+      # @param value [Object] Value of the option
+      # @raise [BadArgument] If a sub-option with `x-security` in the schema is present and refused at current level
+      def check_sub_options_security(value)
+        return unless @schema && value.is_a?(Hash)
+        Schema::Registry.instance.reader(@schema).each_property do |property, _name, full_name, _required|
+          level = property['x-security']
+          next if level.nil?
+          # Value of the sub-option, if given (a `nil` value clears it)
+          given = full_name.split('.').reduce(value) { |node, key| node.is_a?(Hash) ? node.find { |k, _| k.to_s.eql?(key) }&.last : nil }
+          Security.instance.check_level(level.to_sym, "option #{@option}.#{full_name}") unless given.nil?
+        end
+      end
 
       # Validate a structured value against the schema of the option.
       # Value may be partial: completed by other sources or defaults, so `required` is not enforced.

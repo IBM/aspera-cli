@@ -60,6 +60,7 @@ components:
           default: auto
         command:
           type: array
+          x-security: low
           description: >-
             Command that opens a URL, instead of the system default.
             First item is the executable (full path, or name of an executable found in `PATH`), then its arguments. The URL is added as last argument.
@@ -79,9 +80,11 @@ components:
           description: >-
             - `low`: no restriction.
 
-            - `medium`: `@file:` reads only files in `allowed_paths`, `@ruby:`, `@uri:` and `@env:` are refused.
+            - `medium`: `@file:` reads only files in `allowed_paths`, `@ruby:`, `@uri:` and `@env:` are refused, files are written only in `writable_paths`.
 
-            - `high`: `@ruby:`, `@file:`, `@uri:` and `@env:` are refused.
+            - `high`: `@ruby:`, `@file:`, `@uri:` and `@env:` are refused, files are written only in `writable_paths`.
+
+            Features that execute code, load plugins, or write a file chosen by the client (e.g. `--out.file`) are available only at level `low`.
           enum:
             - low
             - medium
@@ -90,6 +93,13 @@ components:
           type: array
           description: >-
             With level `medium`: files and folders that `@file:` can read.
+            A symbolic link leading outside of them is refused.
+          items:
+            type: string
+        writable_paths:
+          type: array
+          description: >-
+            With levels `medium` and `high`: folders where files can be written (downloaded files, results of `config download`), none by default.
             A symbolic link leading outside of them is refused.
           items:
             type: string
@@ -1243,6 +1253,7 @@ components:
         file:
           type: string
           x-cli-complete: file
+          x-security: low
           description: Destination file for results (use `-` for stdout).
         fields:
           description: >-

@@ -39,6 +39,7 @@ module Aspera
         @level = nil
         @default_level = LEVELS.first
         @allowed_paths = []
+        @writable_paths = []
         @locked = nil
       end
 
@@ -47,7 +48,7 @@ module Aspera
 
       # Set by option `security`.
       # When locked, the value can only be set again to the current one.
-      # @param value [Hash] `level` and `allowed_paths`, see schema `SecurityOptions`
+      # @param value [Hash] `level`, `allowed_paths` and `writable_paths`, see schema `SecurityOptions`
       # @return [nil]
       def options=(value)
         Aspera.assert_type(value, Hash, type: BadArgument) { 'security' }
@@ -56,19 +57,17 @@ module Aspera
         value = value.transform_keys(&:to_sym)
         new_level = value[:level]&.to_sym
         Aspera.assert_values(new_level, LEVELS, type: BadArgument) { 'security.level' } unless new_level.nil?
-        new_paths = Array(value[:allowed_paths]).map do |path|
-          path = File.expand_path(path)
-          Aspera.assert(File.exist?(path), type: BadArgument) { "security.allowed_paths: no such file or folder: #{path}" }
-          File.realpath(path)
-        end
+        new_paths = existing_real_paths(value[:allowed_paths], 'allowed_paths')
+        new_writable_paths = existing_real_paths(value[:writable_paths], 'writable_paths')
         if @locked
-          Aspera.assert((new_level || @default_level).eql?(level) && new_paths.eql?(@allowed_paths), type: BadArgument) do
+          Aspera.assert((new_level || @default_level).eql?(level) && new_paths.eql?(@allowed_paths) && new_writable_paths.eql?(@writable_paths), type: BadArgument) do
             "security cannot be changed #{@locked}"
           end
           return
         end
         @level = new_level
         @allowed_paths = new_paths
+        @writable_paths = new_writable_paths
         nil
       end
 
@@ -156,7 +155,41 @@ module Aspera
         end
       end
 
+      # Writing a file where the client chooses (e.g. downloaded file) could replace a file that is used later (e.g. plugin, shell startup file).
+      # At level `medium` and `high`, files can be written only in `writable_paths` (none by default): the real path of the folder is checked,
+      # so that neither `..` nor a symbolic link leads outside of them.
+      # @param path [String] Path of a file or folder to write, that may not exist yet
+      # @return [String] Path to write
+      # @raise [BadArgument] If writing is refused at current level
+      def writable_path(path)
+        path = File.expand_path(path)
+        return path if level.eql?(:low)
+        # The first existing parent gives the real path, the missing part contains no link
+        existing = path
+        missing = []
+        until File.exist?(existing) || File.dirname(existing).eql?(existing)
+          missing.unshift(File.basename(existing))
+          existing = File.dirname(existing)
+        end
+        real_path = File.join(File.realpath(existing), *missing)
+        Aspera.assert(@writable_paths.any? { |allowed| real_path.eql?(allowed) || real_path.start_with?(File.join(allowed, '')) }, type: BadArgument) do
+          "writing is refused by security level #{level}: not in security.writable_paths: #{path} (#{where_to_set})"
+        end
+        real_path
+      end
+
       private
+
+      # @param paths [Array<String>, nil] Paths given to option `security`
+      # @param key   [String] Name of key, for error messages
+      # @return [Array<String>] Real paths
+      def existing_real_paths(paths, key)
+        Array(paths).map do |path|
+          path = File.expand_path(path)
+          Aspera.assert(File.exist?(path), type: BadArgument) { "security.#{key}: no such file or folder: #{path}" }
+          File.realpath(path)
+        end
+      end
 
       # @return [String] Where to set the level, for error messages
       def where_to_set

@@ -2703,21 +2703,29 @@ It is a `Hash` with the following keys:
 |-----|-----|-----|-----|
 | `level` | `string` | `low` | `low`, `medium`, or `high` |
 | `allowed_paths` | `Array<string>` | - | With level `medium`: files and folders that `@file:` can read |
+| `writable_paths` | `Array<string>` | - | With levels `medium` and `high`: folders where files can be written |
 
-| Level | `@file:` | `@ruby:`, `@uri:`, and `@env:` | Secret processed by another extended value |
-|---|---|---|---|
-| `low` | Allowed | Allowed | Allowed |
-| `medium` | Only files in `allowed_paths` | Refused | Refused |
-| `high` | Refused | Refused | Refused |
+| Level | `@file:` | `@ruby:`, `@uri:`, and `@env:` | Secret processed by another extended value | Write files | Features that execute code |
+|---|---|---|---|---|---|
+| `low` | Allowed | Allowed | Allowed | Allowed | Allowed |
+| `medium` | Only files in `allowed_paths` | Refused | Refused | Only in `writable_paths` | Refused |
+| `high` | Refused | Refused | Refused | Only in `writable_paths` | Refused |
 
 With level `medium`, the real path of the file is checked: a symbolic link leading outside of `allowed_paths` is refused.
+
+With levels `medium` and `high`, files are written only in `writable_paths` (none by default): downloaded files (`config download`, and transfers that receive files), because a file written where the client chooses could replace a file that is used later, for example a plugin or a shell startup file.
+The real path of the folder is checked: neither `..` nor a symbolic link leading outside of `writable_paths` is accepted.
+
+> [!NOTE]
+> Reading files is not restricted for transfers: a command that sends files (for example `server upload`) reads the files that it is given, whatever the level.
+> The security level restricts extended values, not the paths of transfers.
 
 The same applies to `@file:<path>` in the parameters of stores of option `vault`, and in option `vault_password` (for example, `token`), although the file is read when used, not when the option is evaluated.
 
 A secret (read by `@secret:`, `@vault:`, or `@preset:`) is hidden in results by its value: processed by another extended value, it could be revealed (for example, split by `@list:@vault:...`, or with a short value in a text by `@extend:`).
 With levels `medium` and `high`, a secret must be the whole value of an option or argument, for example `@preset:<PRESET_NAME>.password` for option `password`, and it cannot be a parameter name of `config preset set`.
 
-Features that execute code (own, or downloaded), or load code, are available only at level `low`:
+Features that execute code (own, or downloaded), load code, or write a file chosen by the client, are available only at level `low`:
 
 | Feature | Why |
 |---|---|
@@ -2725,11 +2733,16 @@ Features that execute code (own, or downloaded), or load code, are available onl
 | Option `fpac` | Proxy auto configuration: JavaScript code |
 | Option `ui`, key `command` | Command executed to open a URL |
 | Options `sdk_url` and `locations_url` | The SDK, including `ascp`, is downloaded from this location, then executed |
+| Option `out`, key `file` (and `output`), option `pid_file` | Write (or truncate, or delete) a file chosen by the client |
+| Option `home` | Configuration folder: its presets, and its folder `plugins` (Ruby code) are used |
 | Option `plugin_folder` | Plugins are Ruby code |
+| Plugins of the folder `plugins` of the configuration folder, and of option `plugin_folder` | Ruby code: not loaded at other levels, also if the file was there before |
 | Command `config plugins create` | Creates Ruby code, loaded as a plugin |
 | Command `faspex5 postprocessing` | Executes scripts, or Ruby code |
 
-At other levels, an option is refused whatever the way it is set (command line, preset, environment variable), and a command is not listed by `config commands`.
+At other levels, an option is refused whatever the way it is set (command line, or preset), and a command is not listed by `config commands`.
+Values from the environment of the process (for example `ASCLI_HOME`) are not restricted: they are set by the one who starts the process, not by a client.
+A sub-option of an option is restricted in the same way: it is marked `x-security: low` in the schema of the option (for example, `file` of option `out`), and refused when given, by dot notation (`--out.file=...`) or in a `Hash`.
 A preset is used later, maybe at level `low`: at level `medium` and `high`, `config preset set`, `update` and `initialize` refuse such an option, and a value that contains an extended value that the level refuses (for example `@val:@ruby:...`).
 
 Options are evaluated in the order of the command line: place `--security` before options that use extended values.
@@ -11137,12 +11150,19 @@ With both transports:
 - The [Security Level](#security-level) is `high` by default: `@ruby:`, `@file:` (also in the parameters of stores of option `vault`), `@uri:`, and `@env:` are refused, and a secret must be the whole value: hidden in results, it cannot be processed by another extended value.
   It applies to commands sent by the client, and to presets, because the client can modify presets.
   Commands sent by the client cannot change option `security`.
-  Features that execute code, such as option `notify_template` or command `config plugins create`, are refused, see [Security Level](#security-level).
+  Features that execute code, such as option `notify_template` or command `config plugins create`, plugins, and writing to a file chosen by the client (option `out.file`), are refused, see [Security Level](#security-level).
+  Files can be written (for example by `config download`, or by a transfer that receives files) only in `writable_paths`, none by default: without it, the client cannot download files.
 
 To use another level, set option `security` when starting the server, for example:
 
 ```shell
 ascli mcp server --security.level=medium --security.allowed_paths.0=$HOME/.aspera/ascli/my_private_key
+```
+
+To let the client download files in a folder, keep the level `high` and give the folder:
+
+```shell
+ascli mcp server --security.writable_paths.0=$HOME/Downloads/ascli
 ```
 
 > [!NOTE]

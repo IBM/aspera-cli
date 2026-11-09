@@ -69,14 +69,15 @@ module Aspera
       # A preset is evaluated when used, maybe at a lower security level (e.g. on the command line): it cannot hold what the current level refuses.
       # @param param_name  [String, Symbol] Option name, or dot-path in an option (e.g. `ui.command`)
       # @param param_value [Object] Value to store
-      # @raise [BadArgument] If the option, or the value, is refused at current security level
+      # @raise [BadArgument] If the option, a sub-option (`x-security` in schema), or the value, is refused at current security level
       def check_preset_entry(param_name, param_value)
-        key = param_name.to_s.tr('-', '_')
-        option_name = key.split(DotContainer::SEPARATOR).first.to_sym
-        Security.instance.check_level(options.option_def(option_name).security, "preset option #{option_name}") if options.option_declared?(option_name)
-        # Sub-key of option `ui` that executes a command
-        ui_command = key.start_with?("ui#{DotContainer::SEPARATOR}command") || (param_value.is_a?(Hash) && param_value.keys.map(&:to_s).include?('command'))
-        Security.instance.check_level(:low, 'preset option ui.command') if option_name.eql?(:ui) && ui_command
+        path = param_name.to_s.tr('-', '_').split(DotContainer::SEPARATOR)
+        option_name = path.first.to_sym
+        if options.option_declared?(option_name)
+          # Value of the option, from the sub-option given by dot-path
+          option_value = path.drop(1).reverse.inject(param_value) { |value, key| {key => value} }
+          options.option_def(option_name).check_security(option_value)
+        end
         Security.instance.check_stored_value(param_value, "preset option #{option_name}")
       end
 

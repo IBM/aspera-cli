@@ -11,6 +11,7 @@ require 'aspera/log'
 require 'aspera/assert'
 require 'aspera/secret/hider'
 require 'securerandom'
+require 'aspera/cli/security'
 
 module Aspera
   module Cli
@@ -252,6 +253,8 @@ module Aspera
         @user_transfer_spec['paths'] = transfer_spec['paths'] || ts_source_paths
         # updated transfer spec with command line
         transfer_spec.deep_merge!(@user_transfer_spec)
+        # Files are written where the client chooses, see Security
+        transfer_spec['destination_root'] = Security.instance.writable_path(transfer_spec['destination_root']) if transfer_spec['direction'].eql?(Transfer::Spec::DIRECTION_RECEIVE) && transfer_spec['destination_root']
         # resolve pseudo-parameter: target_rate -> target_rate_kbps (overrides target_rate_kbps if both are present)
         Transfer::Spec.resolve_target_rate(transfer_spec)
         # recursively remove values that are nil (user wants to delete)
