@@ -28,7 +28,7 @@ Highlights: analysis of `ascp` logs (`config ascp logs`), multiple named secret 
 * `server`: new command `logs` analyzes the `ascp` log files of the server (paths on the server, gzip supported), read over its SSH connection, with the same sub-commands as `config ascp logs`. The total size read is limited by key `remote_max_size` of option `ascp_logs` (default 256 MB).
 * `shares`: New option `--auth=web` authenticates a SAML user with the web browser (option `--redirect-uri`, default `http://localhost:12345`). The token is saved and renewed. It requires a Shares that accepts a loopback URL in `RelayState` of the SAML login (see manual).
 * `orchestrator`:
-  * New commands, from the API of Orchestrator: `tasks` (`list`, `show`, `submit`), `alerts list`, `queues`, `pools`, `plugins` (`reload`, `enable`, `import`), `workflows` (`parents`, `steps`, `test_step`, `test_status`), `portlets`, `users create`, `workorders delete`, `workstep reset`, `monitors activate|deactivate`, statistics (`workorders stats`, `workstep stats`, `queue_stats`), and `control` (start, stop or kill the engine, the monitor or workers, and show the process status).
+  * New commands, from the API of Orchestrator: `tasks` (`list`, `show`, `submit`), `alerts list`, `queues`, `pools`, `plugins` (`reload`, `enable`, `import`), `workflows` (`parents`, `steps`, `test_step`, `test_status`), `portlets` (`list`, `show`), `users create`, `workorders delete`, `worksteps reset`, `monitors activate|deactivate`, statistics (`workorders stats`, `worksteps stats`, `queues stats`), and `control` (start, stop or kill the engine, the monitor or workers, and show the process status).
   * `workflows check_import` detects more problems that make a workflow unusable in Orchestrator (steps that never start, loops, invalid links or lookups).
   * `workflows development` and `plugins spec` have sub-commands `toc`, `full` and `section <anchor>` (`show <plugin> [section]` for `plugins spec`). The guide is read from the IBM short link, with GitHub as fallback. `plugins spec` gives `manual_anchor`, the section of the Plugin Manual to read with `workflows development manual section`.
 * **library**:
@@ -164,7 +164,7 @@ Highlights: security hardening of local web servers (authentication, minimum sec
 * `orchestrator`:
   * `workflows import_with_constraints` failed with an internal error of Orchestrator (plugins not enabled), or silently imported copies (partial resolution of conflicts). The OpenAPI description of `find_constraints` and `import_with_constraints` was wrong.
   * `workflows import`, `import_with_constraints` and `publish` sent requests rejected by Orchestrator, `import` did not report workflows not imported, and `start` with `synchronous` failed to display the work order.
-  * `workstep status` displayed fields that are YAML dumps of Orchestrator objects (`prerequisites`, `work_outputs`...): they are removed, inputs and outputs are in `inputs` and `outputs`.
+  * `worksteps status` displayed fields that are YAML dumps of Orchestrator objects (`prerequisites`, `work_outputs`...): they are removed, inputs and outputs are in `inputs` and `outputs`.
 * `shares`:
   * The manual and the description of `admin user|group all share_permissions` (read-only) did not tell that permissions are granted with `admin share user_permissions|group_permissions`: AI assistants concluded that it was not possible. The argument of `show` is named `share_id`.
 

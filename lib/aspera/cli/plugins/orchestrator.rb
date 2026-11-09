@@ -178,19 +178,16 @@ module Aspera
             {name: :worker_ids, mandatory: false}
           ],
           action: ->(process:, operation:, worker_ids: nil, **) { processes_result(call_ao("control_process/#{process}", query: {command: operation, worker_id: worker_ids}.compact, accept: Mime::XML, xml_opts: PROCESSES_XML_OPTS)) }
-        command :queue_stats, description: 'Statistics of the execution queue of the engine',
-          action: ->(**) { Result::SingleObject.new(call_ao("execution_queue_stats/#{ANY_ID}")) }
-        command :portlets,   description: 'Show Orchestrator portlet versions',
-          action: ->(**) { Result::ObjectList.new(call_ao('portlet_version')['Portlet'] || []) }
         command :users,      description: 'Manage users'
         command :alerts,     description: 'Alerts of the categories the user is subscribed to'
         command :tasks,      description: 'Tasks: user inputs waiting for a user'
         command :monitors,   description: 'Monitors of workflows, work orders, folders, remote nodes and scripts'
         command :queues,     description: 'Managed queues'
+        command :portlets,   description: 'Portlets of the web interface'
         command :pools,      description: 'Resource pools'
         command :journal,    description: 'Journal books'
         command :workorders, description: 'Manage work orders'
-        command :workstep,   description: 'Manage work steps'
+        command :worksteps,  description: 'Manage work steps'
 
         commands_under :alerts do
           command :list, description: 'List alerts (option query: `category`, `count_only`)',
@@ -230,6 +227,14 @@ module Aspera
             action: ->(type:, monitor_id:, **) { Result::SingleObject.new(call_ao("deactivate_monitor/#{monitor_id}", query: {monitor_type: type})) }
         end
 
+        commands_under :portlets do
+          command :list, description: 'List portlets with their version',
+            action: ->(**) { Result::ObjectList.new(call_ao('portlet_version')['Portlet'] || []) }
+          command :show, description: 'Show the version of a portlet',
+            arguments: [{name: :portlet}],
+            action: ->(portlet:, **) { Result::ObjectList.new(call_ao("portlet_version/#{URI.encode_uri_component(portlet)}")['Portlet'] || []) }
+        end
+
         commands_under :users do
           command :create, description: 'Create a user',
             arguments: [{name: :user, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::ORCHESTRATOR, 'api/create_user/{id}.post')}],
@@ -237,6 +242,8 @@ module Aspera
         end
 
         commands_under :queues do
+          command :stats, description: 'Statistics of the execution queue of the engine',
+            action: ->(**) { Result::SingleObject.new(call_ao("execution_queue_stats/#{ANY_ID}")) }
           command :list, description: 'List managed queues',
             action: ->(**) { Result::ObjectList.new(call_ao('queues_list').dig('Queues', 'queue') || []) }
           command :items, description: 'List items of a queue',
@@ -290,7 +297,7 @@ module Aspera
         end
 
         commands_under :plugins do
-          command :list, description: 'Show Orchestrator plugin versions', action: ->(**) { Result::ObjectList.new(call_ao('plugin_version')['Plugin']) }
+          command :list, description: 'List plugins with their version', action: ->(**) { Result::ObjectList.new(call_ao('plugin_version')['Plugin']) }
           command :reload, description: 'Reload a plugin (class name), or all enabled plugins',
             arguments: [{name: :plugin, mandatory: false}],
             action: ->(plugin: nil, **) { Result::SingleObject.new(call_ao('reload_plugin', query: {action_type: plugin}.compact)) }
@@ -417,7 +424,7 @@ module Aspera
             action: ->(**) { statistics_result(call_ao("work_order_stats/#{ANY_ID}")) }
         end
 
-        commands_under :workstep do
+        commands_under :worksteps do
           command :status, description: 'Show status of a work step',
             arguments: [{name: :workstep_id, type: :identifier}]
           command :cancel, description: 'Cancel a work step',
@@ -516,7 +523,7 @@ module Aspera
 
         # Fields of the work step that Orchestrator returns as YAML dumps of its Ruby objects (`prerequisites`, `work_outputs`...)
         # are removed: they are not readable, and the inputs and outputs are also given as `inputs` and `outputs`.
-        def action_workstep_status(workstep_id:, **)
+        def action_worksteps_status(workstep_id:, **)
           status = call_ao("work_step_status/#{workstep_id}")
           status['work_step']&.reject! { |_name, value| value.is_a?(String) && value.match?(YAML_DUMP) }
           Result::SingleObject.new(status)

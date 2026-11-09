@@ -446,7 +446,7 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
 
     it 'resets a work step' do
       allow(orchestrator).to(receive(:call_ao).and_return({'workstep_reset' => true}))
-      run(%i[workstep reset], workstep_id: '5,6')
+      run(%i[worksteps reset], workstep_id: '5,6')
       expect(orchestrator).to(have_received(:call_ao).with('workstep_reset/5,6'))
     end
 
@@ -496,7 +496,7 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
     it 'gives the statistics, or the message when there is none' do
       allow(orchestrator).to(receive(:call_ao).and_return([{'Date' => '2026-11-01'}], 'No Statistics found. Change the filter and try again.'))
       expect(run(%i[workorders stats]).data).to(eq([{'Date' => '2026-11-01'}]))
-      result = run(%i[workstep stats])
+      result = run(%i[worksteps stats])
       expect(orchestrator).to(have_received(:call_ao).with('work_order_stats/0'))
       expect(orchestrator).to(have_received(:call_ao).with('work_step_stats/0'))
       expect(result).to(be_a(Aspera::Cli::Result::Status))
@@ -589,9 +589,9 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
       expect(orchestrator).to(have_received(:call_ao).with('create_user/0', body: {'login' => 'jdoe'}))
       expect(result.data).to(eq("User 'jdoe' was successfully created."))
       allow(orchestrator).to(receive(:call_ao).and_return({'Portlet' => [{'name' => 'x'}]}))
-      expect(run(%i[portlets]).data).to(eq([{'name' => 'x'}]))
+      expect(run(%i[portlets list]).data).to(eq([{'name' => 'x'}]))
       allow(orchestrator).to(receive(:call_ao).and_return({'ready' => 1}))
-      run(%i[queue_stats])
+      run(%i[queues stats])
       expect(orchestrator).to(have_received(:call_ao).with('execution_queue_stats/0'))
     end
   end
@@ -686,7 +686,7 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
     end
   end
 
-  describe '#action_workstep_status' do
+  describe '#action_worksteps_status' do
     it 'removes the fields that are YAML dumps of Ruby objects' do
       outputs = [{'value' => nil, 'name' => 'Title', 'id' => 9547, 'type' => 'string'}]
       response = {
@@ -698,7 +698,7 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
         'inputs'    => []
       }
       allow(orchestrator).to(receive(:call_ao).with('work_step_status/3994').and_return(response))
-      expect(orchestrator.action_workstep_status(workstep_id: '3994').data).to(eq({
+      expect(orchestrator.action_worksteps_status(workstep_id: '3994').data).to(eq({
         'work_step' => {'id' => 3994, 'status' => 'In Progress', 'status_details' => 'Faspex inbox watcher started'},
         'outputs'   => outputs,
         'inputs'    => []

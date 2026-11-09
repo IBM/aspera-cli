@@ -10461,10 +10461,10 @@ plugins list
 plugins spec show AmazonS3Operation --format=yaml
 plugins spec show ascpclient inputs
 plugins spec toc --select=@json:'{"category":"Triggers"}'
-portlets
+portlets list
 processes
-queue_stats
 queues list
+queues stats
 tasks list
 workflow check_import orch_wf_check.yml
 workflow details my_workflow_id
@@ -10487,9 +10487,9 @@ workorder reset <id>
 workorder status <id>
 workorder status <orch_wf_start_sleep> --fields=status_details
 workorders stats
-workstep cancel <id>
-workstep stats
-workstep status <id>
+worksteps cancel <id>
+worksteps stats
+worksteps status <id>
 ```
 
 ## Plugin: `cos`: IBM Cloud Object Storage

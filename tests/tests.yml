@@ -4373,10 +4373,12 @@ orch_portlets:
   args:
     - orchestrator
     - portlets
+    - list
 orch_queue_stats:
   args:
     - orchestrator
-    - queue_stats
+    - queues
+    - stats
 orch_workorder_stats:
   args:
     - orchestrator
@@ -4385,7 +4387,7 @@ orch_workorder_stats:
 orch_workstep_stats:
   args:
     - orchestrator
-    - workstep
+    - worksteps
     - stats
 orch_alerts_list:
   args:
@@ -4549,7 +4551,7 @@ orch_workstep_status:
     - orch_workstep_id
   args:
     - orchestrator
-    - workstep
+    - worksteps
     - status
     - $((t.saved_output :orch_workstep_id).match(/\((\d+)\)/)[1])
 orch_workstep_cancel:
@@ -4557,7 +4559,7 @@ orch_workstep_cancel:
     - orch_workstep_id
   args:
     - orchestrator
-    - workstep
+    - worksteps
     - cancel
     - $((t.saved_output :orch_workstep_id).match(/\((\d+)\)/)[1])
 ats_aws_trust_policy:
