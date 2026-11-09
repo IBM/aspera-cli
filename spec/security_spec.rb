@@ -9,6 +9,8 @@ require 'tmpdir'
 require 'aspera/cli/security'
 require 'aspera/cli/extended_value'
 require 'aspera/cli/preset_manager'
+require 'aspera/cli/option_value'
+require 'aspera/cli/command_spec'
 
 module Aspera
   module Cli
@@ -165,6 +167,67 @@ module Aspera
             expect { security.options = value }.to(raise_error(BadArgument, /security cannot be changed in test/))
           end
           expect(security.level).to(eq(:medium))
+        end
+      end
+
+      describe '#check_level' do
+        it 'allows any feature without attribute, and `low` features at level low' do
+          expect { security.check_level(nil, 'x') }.not_to(raise_error)
+          expect { security.check_level(:low, 'x') }.not_to(raise_error)
+          expect(security.allowed?(:high)).to(be(true))
+        end
+
+        it 'refuses features above their level, and tells how to allow them' do
+          security.lock('in MCP server mode', default: :high)
+          expect { security.check_level(:low, 'option notify_template') }.to(raise_error(BadArgument, /option notify_template: disabled by security level high: use level low/))
+          expect { security.check_level(:medium, 'x') }.to(raise_error(BadArgument, /use level medium/))
+          expect { security.check_level(:high, 'x') }.not_to(raise_error)
+        end
+
+        it 'allows `medium` features at level medium only up to medium' do
+          security.lock('in MCP server mode', default: :medium)
+          expect { security.check_level(:medium, 'x') }.not_to(raise_error)
+          expect { security.check_level(:low, 'x') }.to(raise_error(BadArgument))
+        end
+      end
+
+      describe 'attribute `security:`' do
+        it 'refuses to set an option from command line or preset above its level, not from the program' do
+          option = OptionValue.new(option: :notify_template, security: :low)
+          security.lock('in MCP server mode', default: :high)
+          expect { option.assign_value('<%= 1 %>', source: :cmdline) }.to(raise_error(BadArgument, /option notify_template: disabled by security level high/))
+          expect { option.assign_value('<%= 1 %>', source: :preset) }.to(raise_error(BadArgument))
+          expect { option.assign_value('<%= 1 %>', source: :default) }.not_to(raise_error)
+          expect(option.value).to(eq('<%= 1 %>'))
+        end
+
+        it 'allows the option at level low' do
+          option = OptionValue.new(option: :notify_template, security: :low)
+          expect { option.assign_value('x', source: :cmdline) }.not_to(raise_error)
+        end
+
+        it 'refuses an unknown level' do
+          expect { OptionValue.new(option: :x, security: :none) }.to(raise_error(Aspera::AssertError))
+          expect { CommandSpec.new(id: :x, description: 'x', security: :none) }.to(raise_error(Aspera::AssertError))
+        end
+
+        it 'refuses a command above its level' do
+          expect(Security.instance.allowed?(CommandSpec.new(id: :x, description: 'x', security: :low).security)).to(be(true))
+          security.lock('in MCP server mode', default: :high)
+          expect(security.allowed?(CommandSpec.new(id: :x, description: 'x', security: :low).security)).to(be(false))
+        end
+      end
+
+      describe '#check_stored_value' do
+        it 'accepts any value at level low' do
+          expect { security.check_stored_value({'a' => ['@ruby:1']}, 'preset') }.not_to(raise_error)
+        end
+
+        it 'refuses at level high a value that holds a refused extended value, at any depth' do
+          security.lock('in MCP server mode', default: :high)
+          expect { security.check_stored_value('@val:@ruby:1+1', 'preset option p') }.to(raise_error(BadArgument, /cannot store @ruby:/))
+          expect { security.check_stored_value({'a' => ['@env:HOME']}, 'preset') }.to(raise_error(BadArgument, /@env:/))
+          expect { security.check_stored_value('@json:{"a":1}', 'preset') }.not_to(raise_error)
         end
       end
 

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'aspera/assert'
+require 'aspera/dot_container'
 require 'aspera/secret/hider'
 require 'aspera/cli/security'
 require 'aspera/cli/preset_manager'
@@ -65,6 +66,20 @@ module Aspera
       # @param preset      [Hash]   the preset hash (modified in place)
       # @param preset_name [String] name used as base for the vault label
       # @param option_name [String] option key to inspect
+      # A preset is evaluated when used, maybe at a lower security level (e.g. on the command line): it cannot hold what the current level refuses.
+      # @param param_name  [String, Symbol] Option name, or dot-path in an option (e.g. `ui.command`)
+      # @param param_value [Object] Value to store
+      # @raise [BadArgument] If the option, or the value, is refused at current security level
+      def check_preset_entry(param_name, param_value)
+        key = param_name.to_s.tr('-', '_')
+        option_name = key.split(DotContainer::SEPARATOR).first.to_sym
+        Security.instance.check_level(options.option_def(option_name).security, "preset option #{option_name}") if options.option_declared?(option_name)
+        # Sub-key of option `ui` that executes a command
+        ui_command = key.start_with?("ui#{DotContainer::SEPARATOR}command") || (param_value.is_a?(Hash) && param_value.keys.map(&:to_s).include?('command'))
+        Security.instance.check_level(:low, 'preset option ui.command') if option_name.eql?(:ui) && ui_command
+        Security.instance.check_stored_value(param_value, "preset option #{option_name}")
+      end
+
       def secure_preset_option(preset, preset_name, option_name)
         return unless SECRET_KEYWORDS.any? { |kw| option_name.end_with?(kw) }
         # Vault password is not saved in vault
@@ -141,6 +156,7 @@ module Aspera
           Secret::Hider.instance.contains_secret?(param_name)
         end
         param_name = Parser.option_line_to_name(param_name)
+        check_preset_entry(param_name, param_value)
         presets.set_key(name, param_name, param_value)
         secure_preset_option(presets.config_presets[name], name, param_name)
         Result::Nothing.new
@@ -150,6 +166,8 @@ module Aspera
         name = preset_name(name, create: true)
         cp = presets.config_presets
         Log.log.warn { "configuration already exists: #{name}, overwriting" } if cp.key?(name)
+        Aspera.assert_type(preset, Hash, type: Cli::BadArgument) { 'preset' }
+        preset.each { |k, v| check_preset_entry(k, v) }
         cp[name] = preset
         Result::Status.new("Initialized: #{name}")
       end
@@ -158,6 +176,7 @@ module Aspera
         name = preset_name(name, create: true)
         unprocessed_options = options.unprocessed_options_with_value
         Log.dump(:opts, unprocessed_options)
+        unprocessed_options.each { |k, v| check_preset_entry(k, v) }
         cp = presets.config_presets
         cp[name] ||= {}
         cp[name].merge!(unprocessed_options)

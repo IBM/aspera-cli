@@ -27,9 +27,10 @@ module Aspera
       # @param schema      [String, nil]             Schema reference (e.g. "opts:components.schemas.Foo");
       #                                              when description: is nil, the schema title or first description line is used
       # @param complete    [Symbol, nil]             Values proposed by shell completion, one of `Complete::KINDS`
+      # @param security    [Symbol, nil]             Most restrictive security level at which the option is available (see `Security`)
       def option(name, description: nil,
         short: nil, allowed: nil, default: nil,
-        on_set: nil, shorthand: nil, deprecation: nil, schema: nil, complete: nil)
+        on_set: nil, shorthand: nil, deprecation: nil, schema: nil, complete: nil, security: nil)
         register_option_spec(
           OptionSpec.new(
             name:        name,
@@ -41,7 +42,8 @@ module Aspera
             shorthand:   shorthand,
             deprecation: deprecation,
             schema:      schema,
-            complete:    complete
+            complete:    complete,
+            security:    security
           )
         )
       end

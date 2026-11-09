@@ -149,7 +149,7 @@ module Aspera
 
       # Declare + parse :fpac / :proxy_credentials: sets up PAC executor
       def setup_pac_executor
-        @context.options.declare(:fpac, description: 'Proxy auto configuration script')
+        @context.options.declare(:fpac, description: 'Proxy auto configuration script', security: :low)
         @context.options.declare(:proxy_credentials, description: 'HTTP proxy credentials for fpac: user, password', allowed: [Array, NilClass])
         @context.options.parse_options!
         pac_script = @context.options.get_option(:fpac)

@@ -83,6 +83,39 @@ module Aspera
         nil
       end
 
+      # @param max_level [Symbol, nil] `security:` attribute of an option or command: most restrictive level that allows it, `nil` for any level
+      # @return [Boolean] `true` if the feature is available at current level
+      def allowed?(max_level)
+        max_level.nil? || LEVELS.index(level) <= LEVELS.index(max_level)
+      end
+
+      # Features that execute code (own or downloaded), or load code, declare `security: :low`.
+      # @param max_level [Symbol, nil] `security:` attribute of an option or command
+      # @param what      [String] Feature, e.g. `option notify_template`
+      # @raise [BadArgument] If the feature is refused at current level
+      def check_level(max_level, what)
+        return if allowed?(max_level)
+        raise BadArgument, "#{what}: disabled by security level #{level}: use level #{max_level} (#{where_to_set})"
+      end
+
+      # A value stored to be used later (e.g. in a preset) is evaluated when used, maybe at another level (e.g. `low` on the command line).
+      # So it must not use an extended value that is refused at current level, e.g. `@val:@ruby:...`.
+      # @param value [Object] Value to store (`Hash`, `Array`, `String`)
+      # @param what  [String] What stores the value, e.g. `preset option ts`
+      # @raise [BadArgument] If the value contains an extended value refused at current level
+      def check_stored_value(value, what)
+        case value
+        when Hash then value.each { |k, v| [k, v].each { |item| check_stored_value(item, what) } }
+        when Array then value.each { |v| check_stored_value(v, what) }
+        when String
+          EXTENDED_VALUE_LEVELS.each do |handler, levels|
+            next if levels.include?(level) || !value.include?("@#{handler}:")
+            raise BadArgument, "#{what}: cannot store @#{handler}: extended value, disabled by security level #{level} (#{where_to_set})"
+          end
+        end
+        nil
+      end
+
       # @param handler [Symbol] Extended-value handler
       # @raise [BadArgument] If the handler is refused at current level, with the level that allows it and where to set it
       def check_extended_value(handler)

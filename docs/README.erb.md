@@ -2655,6 +2655,21 @@ The same applies to `@file:<path>` in the parameters of stores of option `vault`
 A secret (read by `@secret:`, `@vault:`, or `@preset:`) is hidden in results by its value: processed by another extended value, it could be revealed (for example, split by `@list:@vault:...`, or with a short value in a text by `@extend:`).
 With levels `medium` and `high`, a secret must be the whole value of an option or argument, for example `@preset:<%=ph :preset_name%>.password` for option `password`, and it cannot be a parameter name of `config preset set`.
 
+Features that execute code (own, or downloaded), or load code, are available only at level `low`:
+
+| Feature | Why |
+|---|---|
+| Option `notify_template` | ERB template: Ruby code |
+| Option `fpac` | Proxy auto configuration: JavaScript code |
+| Option `ui`, key `command` | Command executed to open a URL |
+| Options `sdk_url` and `locations_url` | The SDK, including `ascp`, is downloaded from this location, then executed |
+| Option `plugin_folder` | Plugins are Ruby code |
+| Command `config plugins create` | Creates Ruby code, loaded as a plugin |
+| Command `faspex5 postprocessing` | Executes scripts, or Ruby code |
+
+At other levels, an option is refused whatever the way it is set (command line, preset, environment variable), and a command is not listed by `config commands`.
+A preset is used later, maybe at level `low`: at level `medium` and `high`, `config preset set`, `update` and `initialize` refuse such an option, and a value that contains an extended value that the level refuses (for example `@val:@ruby:...`).
+
 Options are evaluated in the order of the command line: place `--security` before options that use extended values.
 
 ```shell
@@ -9978,6 +9993,7 @@ With both transports:
 - The [Security Level](#security-level) is `high` by default: `@ruby:`, `@file:` (also in the parameters of stores of option `vault`), `@uri:`, and `@env:` are refused, and a secret must be the whole value: hidden in results, it cannot be processed by another extended value.
   It applies to commands sent by the client, and to presets, because the client can modify presets.
   Commands sent by the client cannot change option `security`.
+  Features that execute code, such as option `notify_template` or command `config plugins create`, are refused, see [Security Level](#security-level).
 
 To use another level, set option `security` when starting the server, for example:
 

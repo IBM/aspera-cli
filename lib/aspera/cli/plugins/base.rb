@@ -350,6 +350,7 @@ module Aspera
               end
             end
           else
+            Security.instance.check_level(spec.security, "command #{current_path.join(' ')}") if spec
             # Phase A - for intermediate nodes only: resolve all ArgumentSpec declared on this node
             # before dispatching to children (leaf nodes resolve their arguments inside execute_leaf).
             ctx = resolve_arguments(spec.arguments, ctx) if !is_leaf && spec&.arguments

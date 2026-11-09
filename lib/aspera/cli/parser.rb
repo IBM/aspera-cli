@@ -152,8 +152,9 @@ module Aspera
       # @param deprecation   [Hash, nil] deprecation: `{last:, message:}`, see `Deprecation`
       # @param schema        [String] schema path documenting the Hash form of this option
       # @param complete      [Symbol, nil] values proposed by shell completion, one of `Complete::KINDS`
+      # @param security      [Symbol, nil] most restrictive security level at which the option is available, see `Security`
       # @param block [Proc] Block to execute when option is found
-      def declare(option_symbol, description: nil, short: nil, allowed: nil, default: nil, on_set: nil, shorthand: nil, convert: nil, deprecation: nil, schema: nil, complete: nil, &block)
+      def declare(option_symbol, description: nil, short: nil, allowed: nil, default: nil, on_set: nil, shorthand: nil, convert: nil, deprecation: nil, schema: nil, complete: nil, security: nil, &block)
         Aspera.assert_type(option_symbol, Symbol)
         Aspera.assert(!@registry.declared?(option_symbol)) { "#{option_symbol} already declared" }
         if on_set && allowed.eql?(Type::NONE)
@@ -177,7 +178,8 @@ module Aspera
             convert:     convert,
             deprecation: deprecation,
             schema:      schema,
-            complete:    complete
+            complete:    complete,
+            security:    security
           ),
           short: short
         )

@@ -254,6 +254,8 @@ module Aspera
               else Aspera.error_unexpected_value(v, type: BadArgument) { 'ui.mode' }
               end
           when :command
+            # The command is executed to open a URL
+            Security.instance.check_level(:low, 'option ui.command')
             Environment.instance.browser_command = v.nil? || v.empty? ? nil : v.map(&:to_s)
           else Aspera.error_unexpected_value(k, type: BadArgument) { 'ui sub-option (mode, command)' }
           end

@@ -4,6 +4,8 @@ require 'aspera/cli/preset_actions'
 require 'aspera/cli/vault_actions'
 require 'aspera/cli/result'
 require 'aspera/cli/parser'
+require 'aspera/cli/option_value'
+require 'aspera/cli/security'
 require 'aspera/log'
 require 'securerandom'
 
@@ -62,6 +64,7 @@ module Aspera
                 opts_self.vault_option if sym == :vault
               end
               o.define_singleton_method(:unprocessed_options_with_value) { {} }
+              o.define_singleton_method(:option_declared?) { |_name| false }
             end
           end
 
@@ -172,6 +175,7 @@ module Aspera
               opts_hash = unprocessed_hash
               Object.new.tap do |o|
                 o.define_singleton_method(:unprocessed_options_with_value) { opts_hash }
+                o.define_singleton_method(:option_declared?) { |_name| false }
                 o.define_singleton_method(:get_option) { |*| nil }
               end
             end
@@ -195,6 +199,31 @@ module Aspera
             expect(presets_double).not_to(receive(:global_default_preset))
             h = host_with_options({'password' => secret})
             h.action_preset_update(name: 'p1')
+          end
+        end
+
+        context 'with a restricted security level' do
+          after { Security.instance.reset }
+
+          it 'refuses an extended value that the level refuses, which would be evaluated later at another level' do
+            Security.instance.lock('in MCP server mode', default: :high)
+            h = host_with_options({'ts' => '@val:@ruby:1+1'})
+            expect { h.action_preset_update(name: 'p1') }.to(raise_error(BadArgument, /cannot store @ruby:/))
+            expect(config_presets).to(be_empty)
+          end
+
+          it 'refuses command of option ui' do
+            Security.instance.lock('in MCP server mode', default: :high)
+            h = host_with_options({'ui' => {'command' => ['/bin/true']}})
+            expect { h.action_preset_update(name: 'p1') }.to(raise_error(BadArgument, /ui.command/))
+          end
+
+          it 'refuses an option that requires a lower level' do
+            Security.instance.lock('in MCP server mode', default: :high)
+            h = host_with_options({'notify_template' => 'x'})
+            option = OptionValue.new(option: :notify_template, security: :low)
+            allow(h).to(receive(:options).and_return(double('options', unprocessed_options_with_value: {'notify_template' => 'x'}, option_declared?: true, option_def: option)))
+            expect { h.action_preset_update(name: 'p1') }.to(raise_error(BadArgument, /option notify_template: disabled by security level high/))
           end
         end
 

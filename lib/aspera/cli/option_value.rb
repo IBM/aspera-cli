@@ -2,6 +2,7 @@
 
 require 'aspera/cli/option_types'
 require 'aspera/cli/extended_value'
+require 'aspera/cli/security'
 require 'aspera/cli/deprecation'
 require 'aspera/secret/hider'
 require 'aspera/schema/registry'
@@ -22,6 +23,8 @@ module Aspera
       # [Symbol, nil] `OptionSource` of current value, `nil` if never set
       attr_reader :source
       attr_reader :sensitive, :schema, :deprecation
+      # [Symbol, nil] Most restrictive security level at which the option is available, `nil`: all levels, see `Security`
+      attr_reader :security
       # [String, nil] For a `Hash` option: key of a `String` value
       attr_reader :shorthand
       # [Symbol, nil] Values proposed by shell completion, one of `Complete::KINDS`
@@ -44,12 +47,13 @@ module Aspera
       # @param deprecation [Hash, Deprecation, nil] Deprecation: `{last:, message:}`, see `Deprecation`
       # @param schema [String] Declaration of schema
       # @param complete [Symbol, nil] Values proposed by shell completion, one of `Complete::KINDS`
+      # @param security [Symbol, nil] Most restrictive security level at which the option is available (e.g. `:low`: executes code), see `Security`
       # `allowed`:
       # - `nil` No validation, so just a string
       # - `Class` The single allowed Class
       # - `Array<Class>` Multiple allowed classes
       # - `Array<Symbol>` List of allowed values
-      def initialize(option:, description: nil, allowed: Type::STRING, on_set: nil, shorthand: nil, convert: nil, deprecation: nil, schema: nil, complete: nil)
+      def initialize(option:, description: nil, allowed: Type::STRING, on_set: nil, shorthand: nil, convert: nil, deprecation: nil, schema: nil, complete: nil, security: nil)
         Log.log.trace1 { "option: #{option}, allowed: #{allowed}" }
         @option = option
         @description = description
@@ -65,6 +69,8 @@ module Aspera
         @convert = convert
         Aspera.assert_values(complete, Complete::KINDS + [nil]) { "#{@option}: complete" }
         @complete = complete
+        Aspera.assert_values(security, Security::LEVELS + [nil]) { "#{@option}: security" }
+        @security = security
         @source = nil
         @value = nil
         Aspera.assert(on_set.nil? || on_set.respond_to?(:call)) { "#{@option}: on_set callback must respond to call" }
@@ -131,6 +137,8 @@ module Aspera
           return
         end
         Aspera.assert(!@deprecation, type: :warn) { "Option #{@option} is #{@deprecation}" } if warn_deprecation
+        # Values set by the program itself are not restricted: those from command line, preset, environment are
+        Security.instance.check_level(@security, "option #{@option}") unless %i[default code].include?(source)
         if schema_request?(value)
           return if lower
           raise SchemaRequest.new(:option, @option, @schema) unless @schema.nil?

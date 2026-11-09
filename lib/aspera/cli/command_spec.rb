@@ -2,6 +2,7 @@
 
 require 'aspera/schema/registry'
 require 'aspera/cli/option_types'
+require 'aspera/cli/security'
 
 module Aspera
   module Cli
@@ -90,6 +91,7 @@ module Aspera
     # @!attribute deprecation [Hash, nil]            Forwarded to options.declare as deprecation: `{last:, message:}`
     # @!attribute schema      [String, nil]          JSON schema name; also derives description when nil
     # @!attribute complete    [Symbol, nil]          Values proposed by shell completion, one of `Complete::KINDS` (e.g. `:file`)
+    # @!attribute security    [Symbol, nil]          Most restrictive security level at which the option is available (`:low`: executes code), see `Security`
     OptionSpec = Struct.new(
       :name,
       :description,
@@ -101,6 +103,7 @@ module Aspera
       :deprecation,
       :schema,
       :complete,
+      :security,
       keyword_init: true
     ) do
       # Declare this option on a parser, resolving the `on_set` callback.
@@ -118,7 +121,8 @@ module Aspera
           shorthand:   shorthand,
           deprecation: deprecation,
           schema:      schema,
-          complete:    complete
+          complete:    complete,
+          security:    security
         )
       end
 
@@ -194,6 +198,7 @@ module Aspera
     # @!attribute condition        [Symbol, nil]                 Instance method returning Boolean; if false command is hidden from dispatch
     # @!attribute query_schema     [String, nil]                 Schema path for --query help; when set, the runner hints `--query=help`
     # @!attribute mount            [MountSpec, Hash, nil]        Expose children of another plugin's registry under this node
+    # @!attribute security         [Symbol, nil]                 Most restrictive security level at which the command is available (`:low`: executes code), see `Security`
     CommandSpec = Struct.new(
       :id,
       :parent,
@@ -206,9 +211,11 @@ module Aspera
       :condition,
       :query_schema,
       :mount,
+      :security,
       keyword_init: true
     ) do
       def initialize(**kwargs)
+        Aspera.assert_values(kwargs[:security], Security::LEVELS + [nil]) { "#{kwargs[:id]}: security" }
         # Coerce each element of arguments: from Hash to ArgumentSpec if needed
         if kwargs[:arguments]
           kwargs[:arguments] = kwargs[:arguments].map do |a|

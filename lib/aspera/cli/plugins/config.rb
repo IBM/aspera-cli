@@ -3,6 +3,7 @@
 require 'aspera/cli/bootstrapper'
 require 'aspera/cli/plugins/basic_auth'
 require 'aspera/cli/plugins/factory'
+require 'aspera/cli/security'
 require 'aspera/cli/extended_value'
 require 'aspera/cli/special_values'
 require 'aspera/cli/version'
@@ -85,13 +86,13 @@ module Aspera
 
         option :preset,             description: 'Load the named option preset from current config file',             short: 'P', on_set: :load_preset, complete: :preset
         option :version_check_days, description: 'Period in days to check new version (zero to disable)',             allowed: Type::INTEGER, default: DEFAULT_CHECK_NEW_VERSION_DAYS
-        option :plugin_folder,      description: 'Folder where to find additional plugins',                           on_set: :add_plugin_folders, complete: :folder
-        option :sdk_url,            description: 'Ascp: URL to get Aspera Transfer Executables',                      default: SpecialValues::DEF
-        option :locations_url,      description: 'Ascp: URLs to get download locations of Aspera Transfer Daemon',   allowed: Type::STRING_ARRAY, default: Ascp::Installation.instance.transferd_urls, on_set: Ascp::Installation.instance.method(:transferd_urls=)
+        option :plugin_folder,      description: 'Folder where to find additional plugins',                           on_set: :add_plugin_folders, complete: :folder, security: :low
+        option :sdk_url,            description: 'Ascp: URL to get Aspera Transfer Executables',                      default: SpecialValues::DEF, security: :low
+        option :locations_url,      description: 'Ascp: URLs to get download locations of Aspera Transfer Daemon',   allowed: Type::STRING_ARRAY, default: Ascp::Installation.instance.transferd_urls, on_set: Ascp::Installation.instance.method(:transferd_urls=), security: :low
         option :sdk_folder,         description: 'Ascp: Path to folder with ascp (or product with "product:")',      on_set: Ascp::Installation.instance.method(:sdk_folder=), complete: :folder
         option :smtp,               schema: Schema::Registry::SMTP_OPTIONS
         option :notify_to,          description: 'Email: Recipient for notification of transfers'
-        option :notify_template,    description: 'Email: ERB template for notification of transfers'
+        option :notify_template,    description: 'Email: ERB template for notification of transfers', security: :low
         option :cache_tokens,       description: 'Save and reuse OAuth tokens', allowed: Type::BOOLEAN, default: true
         option :expand_mounts,      description: 'Commands: list commands of sub-trees provided by another plugin', allowed: Type::BOOLEAN, default: false
         option :no_default,         description: 'Do not load default configuration for plugin', allowed: Type::NONE, short: 'N', on_set: -> { presets.use_plugin_defaults = false }
@@ -323,7 +324,7 @@ module Aspera
         # plugins sub-commands
         commands_under :plugins do
           command :list, description: 'List all available plugins'
-          command :create, description: 'Create a new plugin skeleton file',
+          command :create, description: 'Create a new plugin skeleton file', security: :low,
             arguments: [
               {name: :name},
               {name: :folder, mandatory: false, complete: :folder}
@@ -531,6 +532,8 @@ module Aspera
 
         def action_plugins_create(name:, folder: nil, **)
           plugin_name = name.downcase
+          # The name is inserted in Ruby code and in a file name
+          Aspera.assert(plugin_name.match?(/\A[a-z][a-z0-9_]*\z/), type: BadArgument) { "plugin name must be lowercase letters, digits and underscores: #{name}" }
           destination_folder = folder || File.join(context.main_folder, ASPERA_PLUGINS_FOLDERNAME)
           plugin_file = File.join(destination_folder, "#{plugin_name}.rb")
           content = <<~END_OF_PLUGIN_CODE
@@ -586,6 +589,8 @@ module Aspera
             reg = Plugins::Factory.instance.plugin_class(name).command_registry
             prefix = listed_command_path(name, reg, words)
             paths = prefix.empty? || reg.children_of(prefix).any? ? reg.leaf_paths(prefix, expand_mounts: expand_mounts) : [prefix]
+            # Commands refused by security level are not proposed
+            paths = paths.select { |path| path.each_index.all? { |i| Security.instance.allowed?(reg[path[0, i + 1]]&.security) } }
             paths.map do |path|
               mount = expand_mounts ? nil : reg.mount_at(path)
               description = reg[path]&.description.to_s
