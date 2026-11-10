@@ -44,14 +44,22 @@ module Aspera
       class Host
         # @return [String]  Root folder: all files are written below it (`/` for a real installation)
         # @return [Numeric] Seconds to wait for the daemon to listen
-        attr_reader :root, :timeout
+        # @return [Symbol]  Operating system, see `Environment::OS_*`
+        # @return [Integer] Effective user id of the process
+        attr_reader :root, :timeout, :os, :euid
 
         # @param root      [String]   Root folder of the file system
         # @param runner    [#call]    Receives the command words, returns `[output, success]`, default: run the command
         # @param listening [#call]    Receives address and port, returns `true` if a server listens, default: try to connect
         # @param timeout   [Numeric]  Seconds to wait for the daemon to listen
-        def initialize(root: '/', runner: nil, listening: nil, timeout: 30)
+        # @param os        [Symbol]   Operating system, default: the current one
+        # @param euid      [Integer]  Effective user id, default: the one of the process
+        # @param systemctl [Boolean]  `true` if `systemctl` is available, default: look for it in `PATH`
+        def initialize(root: '/', runner: nil, listening: nil, timeout: 30, os: nil, euid: nil, systemctl: nil)
           @root = root
+          @os = os || Environment.instance.os
+          @euid = euid || ::Process.euid
+          @systemctl = systemctl.nil? ? ENV.fetch('PATH', '').split(File::PATH_SEPARATOR).any? { |dir| File.executable?(File.join(dir, 'systemctl')) } : systemctl
           @runner = runner || lambda do |*cmd|
             out, err, status = Environment.secure_execute(*cmd, mode: :capture, exception: false)
             [out.to_s + err.to_s, status.success?]
@@ -79,6 +87,11 @@ module Aspera
         # @return [Boolean] `true` if a server listens on this address and port
         def listening?(address, port)
           @listening.call(address, port)
+        end
+
+        # @return [Boolean] `true` if `systemctl` is available
+        def systemctl?
+          @systemctl
         end
       end
 
@@ -284,6 +297,55 @@ module Aspera
           run_steps(steps, dry_run)
         end
 
+        # @param user_config [Hash] `CONFIG`
+        # @return [Hash] Validated `service` section with defaults, plus `config` section as `overrides`
+        def service_options(user_config)
+          Aspera.assert_type(user_config, Hash) { 'CONFIG' }
+          conf = json_hash(user_config)
+          service = conf['service'] || {}
+          errors = Schema::Validator.instance.errors(service, Schema::Registry::SERVICE_OPTIONS)
+          Aspera.assert(errors.empty?, type: ParameterError) { "Invalid service parameters:\n#{errors.join("\n")}" }
+          return {
+            'name'        => DEFAULT_SERVICE_NAME,
+            'user'        => DEFAULT_USER,
+            'unit_dir'    => DEFAULT_UNIT_DIR,
+            'after'       => DEFAULT_AFTER,
+            'environment' => {}
+          }.merge(service).merge('overrides' => conf['config'] || {})
+        end
+
+        # Refuse to run on a host that cannot run the service: systemd on Linux, as root.
+        # Not checked with `dry_run`: the actions are only shown, so that it works everywhere.
+        # @param host    [Host]    Access to the system
+        # @param dry_run [Boolean] `true`: change nothing, no check
+        # @raise [Error] if the host is not supported or the user is not root
+        def assert_supported(host, dry_run: false)
+          return if dry_run
+          Aspera.assert(host.os.eql?(Environment::OS_LINUX), type: Error) { "The service requires Linux with systemd, this is: #{host.os}" }
+          Aspera.assert(host.systemctl?, type: Error) { 'The service requires systemd: command systemctl not found' }
+          Aspera.assert(host.euid.zero?, type: Error) { 'The service must be managed as root (use sudo), or use --dry-run=yes to only see the actions' }
+        end
+
+        # @return [String] Version of transferd that the configuration schema matches
+        def schema_version
+          schema_hash['$comment'].to_s[/transferd (\d+\.\d+\.\d+)/, 1]
+        end
+
+        # Warn (never fail) if the SDK is not the version that the configuration schema matches.
+        # @param sdk_folder [String] Folder of the SDK, or link `current` of the layout
+        # @param host       [Host]   Access to the system
+        # @return [String, nil] The warning, or `nil` if versions are the same or the version is unknown
+        def check_version(sdk_folder, host: Host.new)
+          exe = executable(sdk_folder)
+          return unless File.exist?(exe)
+          sdk_version = host.run(exe, 'version').first[/\d+\.\d+\.\d+/]
+          return if sdk_version.nil? || sdk_version.eql?(schema_version)
+          relation = Gem::Version.new(sdk_version) > Gem::Version.new(schema_version) ? 'newer' : 'older'
+          message = "transferd #{sdk_version} is #{relation} than the version of the configuration schema (#{schema_version}): some settings may be unknown or refused"
+          Log.log.warn(message)
+          return message
+        end
+
         private
 
         def assert_layout(sdk_folder)
@@ -327,23 +389,6 @@ module Aspera
             systemctl(host, 'restart', opts['name'], check: false) if File.exist?(unit_path(host, opts))
           end
           raise
-        end
-
-        # @param user_config [Hash] `CONFIG`
-        # @return [Hash] Validated `service` section with defaults, plus `config` section as `overrides`
-        def service_options(user_config)
-          Aspera.assert_type(user_config, Hash) { 'CONFIG' }
-          conf = json_hash(user_config)
-          service = conf['service'] || {}
-          errors = Schema::Validator.instance.errors(service, Schema::Registry::SERVICE_OPTIONS)
-          Aspera.assert(errors.empty?, type: ParameterError) { "Invalid service parameters:\n#{errors.join("\n")}" }
-          return {
-            'name'        => DEFAULT_SERVICE_NAME,
-            'user'        => DEFAULT_USER,
-            'unit_dir'    => DEFAULT_UNIT_DIR,
-            'after'       => DEFAULT_AFTER,
-            'environment' => {}
-          }.merge(service).merge('overrides' => conf['config'] || {})
         end
 
         # @return [String] Path of `transferd` in the SDK
@@ -522,10 +567,14 @@ module Aspera
           @schema ||=
             begin
               require 'json_schemer'
-              # JSON is read with the YAML loader: it accepts the header comment added by `rake tools:openapi`
-              path = File.join(File.expand_path('../..', __dir__), Schema::Registry::LOCATIONS[:transferd])
-              JSONSchemer.schema(Yaml.safe_load(File.read(path)))
+              JSONSchemer.schema(schema_hash)
             end
+        end
+
+        # @return [Hash] Schema of `transferd.json`
+        def schema_hash
+          # JSON is read with the YAML loader: it accepts the header comment added by `rake tools:openapi`
+          @schema_hash ||= Yaml.safe_load(File.read(File.join(File.expand_path('../..', __dir__), Schema::Registry::LOCATIONS[:transferd])))
         end
 
         # @param config   [Hash]        Configuration to validate

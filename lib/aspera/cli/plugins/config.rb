@@ -397,6 +397,7 @@ module Aspera
             end
           )
           commands_under :service, description: 'Manage the transfer daemon as a system service' do
+            service_config_arg = {name: :config, type: Hash, mandatory: false, default: {}, schema: Schema::Registry::TRANSFERD_SERVICE_CONFIG}
             command(
               :spec, description: 'Show the transfer daemon configuration schema',
               action: lambda do |**|
@@ -405,13 +406,52 @@ module Aspera
               end
             )
             command(
+              :install, description: 'Install the SDK if needed, then configure and start the service',
+              arguments: [service_config_arg],
+              action: ->(config:, **) { transferd_service_install(config) }
+            )
+            command(
               :configure, description: 'Configure the transfer daemon service',
-              arguments: [{name: :config, type: Hash, mandatory: false, default: {}, schema: Schema::Registry::TRANSFERD_SERVICE_CONFIG}],
+              arguments: [service_config_arg],
               action: lambda do |config:, **|
-                sdk_folder = options.get_option(:sdk_folder)
-                dry_run = options.get_option(:dry_run)
-                steps = Products::TransferdService.configure(config, sdk_folder, dry_run: dry_run)
-                Result::ValueList.new(steps, name: 'action')
+                transferd_service do |host, sdk_folder, dry_run|
+                  steps = Products::TransferdService.configure(config, sdk_folder, host: host, dry_run: dry_run)
+                  Products::TransferdService.check_version(sdk_folder, host: host)
+                  transferd_service_steps(steps)
+                end
+              end
+            )
+            command(
+              :status, description: 'Show the state of the service (the API key is not shown)',
+              arguments: [service_config_arg],
+              action: lambda do |config:, **|
+                transferd_service { |host, sdk_folder, _dry_run| Result::SingleObject.new(Products::TransferdService.status(config, sdk_folder, host: host)) }
+              end
+            )
+            command(
+              :uninstall, description: 'Stop and remove the service (service.purge: also remove configuration and logs)',
+              arguments: [service_config_arg],
+              action: lambda do |config:, **|
+                transferd_service do |host, _sdk_folder, dry_run|
+                  purge = Products::TransferdService.service_options(config)['purge'].eql?(true)
+                  transferd_service_steps(Products::TransferdService.uninstall(config, host: host, dry_run: dry_run, purge: purge))
+                end
+              end
+            )
+            command(
+              :use, description: 'Use an installed version of the SDK (SDK folder named current), and restart the service',
+              arguments: [{name: :version}, service_config_arg],
+              action: lambda do |version:, config:, **|
+                transferd_service do |host, sdk_folder, dry_run|
+                  transferd_service_steps(Products::TransferdService.use(config, sdk_folder, version, host: host, dry_run: dry_run))
+                end
+              end
+            )
+            command(
+              :versions, description: 'List the installed versions of the SDK (SDK folder named current)',
+              action: lambda do |**|
+                sdk_folder = options.get_option(:sdk_folder, mandatory: true)
+                Result::ObjectList.new(Products::TransferdService.versions(sdk_folder), fields: %w[version folder current])
               end
             )
           end
@@ -492,6 +532,54 @@ module Aspera
         end
 
         # DSL handlers - one method per leaf command
+
+        # Common processing of the commands of `config transferd service` that act on the system.
+        # Refuses to run if the system is not supported or the user is not root, unless `--dry-run=yes`.
+        # @yieldparam host       [Products::TransferdService::Host] Access to the system
+        # @yieldparam sdk_folder [String]  Option `sdk_folder`, or link `current` of the layout
+        # @yieldparam dry_run    [Boolean] Option `dry_run`
+        def transferd_service
+          host = Products::TransferdService::Host.new
+          dry_run = options.get_option(:dry_run)
+          Products::TransferdService.assert_supported(host, dry_run: dry_run)
+          sdk_folder = options.get_option(:sdk_folder, mandatory: true)
+          Aspera.assert(!Ascp::Installation.product_selector?(sdk_folder), type: Cli::BadArgument) { 'The service requires a SDK folder, not a product' }
+          yield(host, sdk_folder, dry_run)
+        end
+
+        # @param steps [Array<String>] Actions done, or to do with `--dry-run=yes`
+        # @return [Result] The list of actions, or a message if there is nothing to do
+        def transferd_service_steps(steps)
+          steps.empty? ? Result::Status.new('Nothing to do') : Result::ValueList.new(steps, name: 'action')
+        end
+
+        # Implementation of `config transferd service install`
+        # With the layout (SDK folder named `current`), the SDK is installed in a folder of the version, next to the link.
+        # @param config [Hash] `CONFIG`
+        def transferd_service_install(config)
+          transferd_service do |host, sdk_folder, dry_run|
+            version = Products::TransferdService.service_options(config)['version'] || Info::SDK_VERSION
+            sdk_url = options.get_option(:sdk_url, mandatory: true)
+            sdk_url = nil if sdk_url.eql?(SpecialValues::DEF)
+            installation = Ascp::Installation.instance
+            install_sdk =
+              if Products::TransferdService.layout?(sdk_folder)
+                lambda do |folder|
+                  Products::Transferd.sdk_directory = folder
+                  begin
+                    installation.install_sdk(url: sdk_url, version: version)
+                  ensure
+                    Products::Transferd.sdk_directory = sdk_folder
+                  end
+                end
+              else
+                -> { installation.install_sdk(url: sdk_url, version: version) }
+              end
+            steps = Products::TransferdService.install(config, sdk_folder, host: host, dry_run: dry_run, install_sdk: install_sdk, version: version)
+            Products::TransferdService.check_version(sdk_folder, host: host)
+            transferd_service_steps(steps)
+          end
+        end
 
         def action_documentation(location: :github, section: nil, **)
           case location

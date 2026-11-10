@@ -543,6 +543,16 @@ components:
             `TRANSFERD_ADDRESS`, `TRANSFERD_PORT`, `TRANSFERD_MGMT_PORT` and `TRANSFERD_MGMT_ADDRESS` override the configuration file.
           additionalProperties:
             type: string
+        version:
+          type: string
+          description: >-
+            Version of the SDK to install, used by `install` when the SDK folder is named `current` (versions side by side).
+            Defaults to the SDK version of this tool.
+          pattern: '^\d+(\.\d+)*$'
+        purge:
+          type: boolean
+          description: Used by `uninstall`. Also remove the configuration file and the log folder.
+          default: false
     TransferdServiceConfig:
       type: object
       description: >-
