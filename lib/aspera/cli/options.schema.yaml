@@ -413,6 +413,16 @@ components:
           type: boolean
           description: Stop the daemon when `ascli` exits.
           default: true
+        api_key:
+          type: string
+          description: >-
+            API key of an existing daemon (`start` is `false`) that has `authentication` enabled in its configuration.
+            It is sent in the metadata `api_key` of each call.
+        ca_file:
+          type: string
+          description: >-
+            Path to the certificate authority file (PEM) that signed the certificate of an existing daemon (`start` is `false`)
+            that has `tls` enabled in its configuration. A self-signed certificate is its own authority.
     TransferAgentOptions:
       description: >-
         Transfer agent selector and agent-specific parameters.

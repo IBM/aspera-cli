@@ -37,6 +37,7 @@ Highlights: analysis of `ascp` logs (`config ascp logs`), multiple named secret 
   * `Aspera::Log#logger=` sends logs to the logger of the application.
   * New token creator `Aspera::OAuth::SharesWeb` (`grant_method: :shares_web`).
   * Transfer agents: new optional method `transfer_cancel(transfer_id, agent_params)` stops a transfer started asynchronously (agent `transferd`: call `StopTransfer`). Agent `transferd` has a reader `transfer_id`: identifier of the last transfer started.
+  * Agent `transferd`: new parameters `api_key` and `ca_file` for an existing daemon (`start` is `false`) whose configuration enables `authentication` (the key is sent in the metadata `api_key` of each call) or `tls` (certificate authority file). `Aspera::Agent::Transferd.create_client` builds the gRPC client; `transfer_status` and `transfer_cancel` accept the same parameters.
 
 ### Issues Fixed
 

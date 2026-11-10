@@ -14,6 +14,22 @@ require 'transferd_services_pb'
 module Aspera
   module Agent
     class Transferd < Base
+      # Sends the API key of the daemon (`authentication` of its configuration) in the metadata `api_key` of each call
+      class ApiKeyInterceptor < GRPC::ClientInterceptor
+        # @param api_key [String] API key
+        def initialize(api_key)
+          super()
+          @api_key = api_key
+        end
+
+        %i[request_response client_streamer server_streamer bidi_streamer].each do |rpc_type|
+          define_method(rpc_type) do |metadata: nil, **_rest, &block|
+            metadata['api_key'] = @api_key
+            block.call
+          end
+        end
+      end
+
       # https://github.com/grpc/grpc/blob/master/doc/naming.md
       # https://grpc.io/docs/guides/custom-name-resolution/
       LOCAL_SOCKET_ADDR = '127.0.0.1'
@@ -37,10 +53,28 @@ module Aspera
       private_constant :LOCAL_SOCKET_ADDR, :PORT_SEP, :AUTO_LOCAL_TCP_PORT, :ASYNC_STATUS, :MIN_USEC_EPOCH
 
       class << self
+        # Client of a daemon
+        # @param url     [String]      Endpoint of the daemon, e.g. `127.0.0.1:55002`
+        # @param api_key [String, nil] API key, if the daemon has `authentication` enabled
+        # @param ca_file [String, nil] File with the certificate authority of the daemon (PEM), if the daemon has `tls` enabled
+        # @return [Transferd::Api::TransferService::Stub] gRPC client
+        def create_client(url, api_key: nil, ca_file: nil)
+          credentials = ca_file.nil? ? :this_channel_is_insecure : GRPC::Core::ChannelCredentials.new(File.read(ca_file))
+          return ::Transferd::Api::TransferService::Stub.new(url, credentials) if api_key.nil?
+          ::Transferd::Api::TransferService::Stub.new(url, credentials, interceptors: [ApiKeyInterceptor.new(api_key)])
+        end
+
+        # @param agent_params [Hash] `url`: endpoint of the daemon; optional `api_key`, `ca_file`
+        # @return [Transferd::Api::TransferService::Stub] Client of the daemon
+        def client(agent_params)
+          Aspera.assert(agent_params['url'].is_a?(String) && !agent_params['url'].empty?) { 'agent_params: missing url' }
+          create_client(agent_params['url'], api_key: agent_params['api_key'], ca_file: agent_params['ca_file'])
+        end
+
         # Re-query a previously started transfer from a running transferd daemon (unary call `QueryTransfer`).
         # The daemon keeps a transfer for some time after its end (`workers.transfer_max_age` of its configuration): then it is `unknown`.
         # @param transfer_id  [String] Identifier of transfer, given by the daemon (`transfer_id`)
-        # @param agent_params [Hash]   `url`: endpoint of the daemon, e.g. `127.0.0.1:55002`; optional `timeout`: seconds
+        # @param agent_params [Hash]   `url`: endpoint of the daemon, e.g. `127.0.0.1:55002`; optional `timeout`: seconds, `api_key`, `ca_file`
         # @return [Hash] Normalized status: `status` (`running`, `completed`, `failed`, `cancelled`, or `unknown` if the daemon cannot tell),
         #   `bytes_transferred`, and when known: `state` (status of the daemon), `bytes_written` (by the receiver, with the bytes of a resumed transfer),
         #   `files_completed`, `rate_kbps` (average), `target_rate_kbps`,
@@ -58,7 +92,7 @@ module Aspera
 
         # Stop a transfer (call `StopTransfer`)
         # @param transfer_id  [String] Identifier of transfer, given by the daemon
-        # @param agent_params [Hash]   `url`: endpoint of the daemon; optional `timeout`: seconds
+        # @param agent_params [Hash]   `url`: endpoint of the daemon; optional `timeout`: seconds, `api_key`, `ca_file`
         # @return [Boolean] `true`: stopped
         # @raise [Transfer::Error] The daemon did not stop it: unknown or terminated transfer
         def transfer_cancel(transfer_id, agent_params)
@@ -104,13 +138,6 @@ module Aspera
 
         private
 
-        # @param agent_params [Hash] `url`: endpoint of the daemon
-        # @return [Transferd::Api::TransferService::Stub] Client of the daemon
-        def client(agent_params)
-          Aspera.assert(agent_params['url'].is_a?(String) && !agent_params['url'].empty?) { 'agent_params: missing url' }
-          ::Transferd::Api::TransferService::Stub.new(agent_params['url'], :this_channel_is_insecure)
-        end
-
         # @param agent_params [Hash] Optional `timeout`: seconds
         # @return [Time] Deadline of a call
         def deadline(agent_params)
@@ -129,11 +156,15 @@ module Aspera
       # @param url   [String]  URL of the transfer manager daemon
       # @param start [Boolean] If `false`, expect that an external daemon is already running
       # @param stop  [Boolean] If `false`, do not shutdown daemon on exit
+      # @param api_key [String, nil] API key of an external daemon with `authentication` enabled
+      # @param ca_file [String, nil] Certificate authority (PEM file) of an external daemon with `tls` enabled
       # @param base  [Hash]    Base class options
       def initialize(
-        url:   AUTO_LOCAL_TCP_PORT,
-        start: true,
-        stop:  true,
+        url:     AUTO_LOCAL_TCP_PORT,
+        start:   true,
+        stop:    true,
+        api_key: nil,
+        ca_file: nil,
         **base
       )
         super(**base)
@@ -150,8 +181,8 @@ module Aspera
         begin
           # no address: local bind
           daemon_endpoint = "#{LOCAL_SOCKET_ADDR}#{daemon_endpoint}" if daemon_endpoint.match?(/^#{PORT_SEP}[0-9]+$/o)
-          # Create stub (without credentials)
-          @transfer_client = ::Transferd::Api::TransferService::Stub.new(daemon_endpoint, :this_channel_is_insecure)
+          # Create stub: no credentials for a daemon started here, API key and TLS only for an external daemon
+          @transfer_client = self.class.create_client(daemon_endpoint, api_key: api_key, ca_file: ca_file)
           # Initiate actual connection
           get_info_response = @transfer_client.get_info(::Transferd::Api::InstanceInfoRequest.new)
           @daemon_endpoint = daemon_endpoint

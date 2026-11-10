@@ -110,6 +110,50 @@ RSpec.describe(Aspera::Agent::Transferd) do
     end
   end
 
+  describe '.create_client' do
+    let(:ca_file) { File.join(Dir.mktmpdir('transferd_ca'), 'ca.pem') }
+
+    before { File.write(ca_file, 'certificate') }
+
+    after { FileUtils.rm_rf(File.dirname(ca_file)) }
+
+    it 'has no credentials by default' do
+      expect(Transferd::Api::TransferService::Stub).to(receive(:new).with('h:1', :this_channel_is_insecure).and_return(stub))
+      expect(described_class.create_client('h:1')).to(be(stub))
+    end
+
+    it 'sends the API key in the metadata of each type of call' do
+      interceptor = nil
+      expect(Transferd::Api::TransferService::Stub).to(receive(:new)) do |url, credentials, interceptors:|
+        expect([url, credentials]).to(eq(['h:1', :this_channel_is_insecure]))
+        interceptor = interceptors.first
+        stub
+      end
+      described_class.create_client('h:1', api_key: 'KEY')
+      expect(interceptor).to(be_a(GRPC::ClientInterceptor))
+      %i[request_response client_streamer server_streamer bidi_streamer].each do |rpc_type|
+        metadata = {'other' => 'value'}
+        expect(interceptor.public_send(rpc_type, metadata: metadata) { :called }).to(eq(:called))
+        expect(metadata).to(eq('other' => 'value', 'api_key' => 'KEY'))
+      end
+    end
+
+    it 'reads the certificate authority of the daemon' do
+      credentials = instance_double(GRPC::Core::ChannelCredentials)
+      expect(GRPC::Core::ChannelCredentials).to(receive(:new).with('certificate').and_return(credentials))
+      expect(Transferd::Api::TransferService::Stub).to(receive(:new).with('h:1', credentials).and_return(stub))
+      described_class.create_client('h:1', ca_file: ca_file)
+    end
+
+    it 'is used by transfer_status with the parameters of the agent' do
+      credentials = instance_double(GRPC::Core::ChannelCredentials)
+      allow(GRPC::Core::ChannelCredentials).to(receive(:new).and_return(credentials))
+      expect(Transferd::Api::TransferService::Stub).to(receive(:new).with('h:1', credentials, interceptors: [an_instance_of(described_class::ApiKeyInterceptor)]).and_return(stub))
+      allow(stub).to(receive(:query_transfer).and_return(query_response(:RUNNING)))
+      described_class.transfer_status('tid', {'url' => 'h:1', 'api_key' => 'KEY', 'ca_file' => ca_file})
+    end
+  end
+
   it 'is not supported by the base agent' do
     expect(Aspera::Agent::Base.transfer_cancel('tid', params)).to(be_nil)
   end
