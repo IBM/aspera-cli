@@ -10,6 +10,7 @@ module Aspera
     # - `wait_for_transfers_completion`  : waits for all transfer sessions to finish
     # - `notify_progress`                : called back by transfer agent to notify transfer progress
     # - `self.transfer_status`           : (optional) re-query a previously started transfer by id
+    # - `self.transfer_cancel`           : (optional) stop a previously started transfer by id
     class Base
       class << self
         # Re-query the status of a transfer that was started asynchronously.
@@ -18,6 +19,16 @@ module Aspera
         # @param agent_params [Hash]   connection parameters stored at submission time
         # @return [Hash, nil] status hash with at least 'status' key, or nil if not supported
         def transfer_status(_transfer_id, _agent_params)
+          nil
+        end
+
+        # Stop a transfer that was started asynchronously.
+        # Override in agents that support it (transferd).
+        # @param transfer_id  [String] opaque id returned by start_transfer
+        # @param agent_params [Hash]   connection parameters stored at submission time
+        # @return [Boolean, nil] `true` if stopped, `nil` if not supported
+        # @raise [Transfer::Error] The agent refused to stop the transfer
+        def transfer_cancel(_transfer_id, _agent_params)
           nil
         end
       end

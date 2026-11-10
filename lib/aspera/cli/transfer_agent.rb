@@ -287,12 +287,12 @@ module Aspera
           # (e.g. MCP server mode). The ref is stored in AsyncTransferStore's memory map,
           # never on disk.
           async_store.register_agent_ref(job_id, agent_instance) if %w[direct httpgw].include?(agent_type)
-          # transfer_id: in-process agents use job_id; daemon agents expose @transfer_id
+          # transfer_id: in-process agents use job_id; transferd has a reader; other daemon agents keep @transfer_id
           transfer_id =
-            if %w[direct httpgw].include?(agent_type)
-              job_id
-            else
-              agent_instance.instance_variable_get(:@transfer_id).to_s
+            case agent_type
+            when 'direct', 'httpgw' then job_id
+            when 'transferd' then agent_instance.transfer_id.to_s
+            else agent_instance.instance_variable_get(:@transfer_id).to_s
             end
           async_store.write(job_id, {
             'job_id'            => job_id,

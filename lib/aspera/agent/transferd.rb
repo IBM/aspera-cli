@@ -4,8 +4,10 @@ require 'aspera/environment'
 require 'aspera/agent/base'
 require 'aspera/products/transferd'
 require 'aspera/temp_file_manager'
+require 'aspera/transfer/error'
 require 'aspera/transfer/spec'
 require 'json'
+require 'time'
 require 'uri'
 require 'transferd_services_pb'
 
@@ -18,37 +20,107 @@ module Aspera
       PORT_SEP = ':'
       # port zero means select a random available high port
       AUTO_LOCAL_TCP_PORT = "#{PORT_SEP}0"
+      # Default timeout in seconds of the calls of `transfer_status` and `transfer_cancel` (`agent_params['timeout']`)
+      CALL_TIMEOUT_SEC = 10
+      # Status of the daemon → status of an asynchronous transfer (as other agents): other statuses are `running`
+      ASYNC_STATUS = {
+        COMPLETED:      'completed',
+        FAILED:         'failed',
+        CANCELED:       'cancelled',
+        UNKNOWN_STATUS: 'unknown'
+      }.freeze
+      # Statuses of the daemon after which a transfer does not change
+      FINAL_STATUSES = %i[COMPLETED FAILED CANCELED].freeze
+      # Time in the daemon is in microseconds, but some versions give milliseconds: values below this are milliseconds
+      MIN_USEC_EPOCH = 10**14
 
-      private_constant :LOCAL_SOCKET_ADDR, :PORT_SEP, :AUTO_LOCAL_TCP_PORT
+      private_constant :LOCAL_SOCKET_ADDR, :PORT_SEP, :AUTO_LOCAL_TCP_PORT, :ASYNC_STATUS, :MIN_USEC_EPOCH
 
       class << self
-        # Re-query a previously started transfer from a running transferd daemon.
-        # agent_params must contain 'url' (the daemon endpoint, e.g. "127.0.0.1:12345").
-        # @return [Hash] normalized status hash
+        # Re-query a previously started transfer from a running transferd daemon (unary call `QueryTransfer`).
+        # The daemon keeps a transfer for some time after its end (`workers.transfer_max_age` of its configuration): then it is `unknown`.
+        # @param transfer_id  [String] Identifier of transfer, given by the daemon (`transfer_id`)
+        # @param agent_params [Hash]   `url`: endpoint of the daemon, e.g. `127.0.0.1:55002`; optional `timeout`: seconds
+        # @return [Hash] Normalized status: `status` (`running`, `completed`, `failed`, `cancelled`, or `unknown` if the daemon cannot tell),
+        #   `bytes_transferred`, and when known: `state` (status of the daemon), `files_completed`, `rate_kbps` (average), `target_rate_kbps`,
+        #   `elapsed_sec`, `started_at`, `ended_at`, `error_code`, `error`
         def transfer_status(transfer_id, agent_params)
-          client = ::Transferd::Api::TransferService::Stub.new(agent_params['url'], :this_channel_is_insecure)
-          result = {'bytes_transferred' => 0}
-          client.monitor_transfers(::Transferd::Api::RegistrationRequest.new(transferId: [transfer_id])) do |response|
-            result = case response.status
-            when :COMPLETED
-              {
-                'status' => 'completed', 'ended_at' => Time.now.utc.iso8601,
-                        'bytes_transferred' => response.transferInfo.bytesTransferred
-              }
-            when :FAILED, :CANCELED
-              {
-                'status' => response.status == :FAILED ? 'failed' : 'cancelled',
-                        'ended_at' => Time.now.utc.iso8601, 'bytes_transferred' => 0,
-                        'error' => JSON.parse(response.message.to_s)['Description']
-              }
-            else
-              {'status' => 'running', 'bytes_transferred' => response.transferInfo.bytesTransferred}
-            end
-            break
+          response = client(agent_params).query_transfer(::Transferd::Api::TransferInfoRequest.new(transferId: transfer_id), deadline: deadline(agent_params))
+          # An unknown transfer is not an exception: status is not set, and error has code 404
+          error = response.error&.description.to_s
+          return {'status' => 'unknown', 'bytes_transferred' => 0, 'error' => error} if response.status.eql?(:UNKNOWN_STATUS) && !error.empty?
+          normalize_status(response)
+        rescue GRPC::BadStatus => e
+          # Daemon not reachable, or timeout: the transfer may still run
+          {'status' => 'unknown', 'bytes_transferred' => 0, 'error' => "#{e.class.name.split('::').last}: #{e.details}"}
+        end
+
+        # Stop a transfer (call `StopTransfer`)
+        # @param transfer_id  [String] Identifier of transfer, given by the daemon
+        # @param agent_params [Hash]   `url`: endpoint of the daemon; optional `timeout`: seconds
+        # @return [Boolean] `true`: stopped
+        # @raise [Transfer::Error] The daemon did not stop it: unknown or terminated transfer
+        def transfer_cancel(transfer_id, agent_params)
+          response = client(agent_params).stop_transfer(::Transferd::Api::StopTransferRequest.new(transferId: [transfer_id]), deadline: deadline(agent_params))
+          result = response.stopResult.find { |item| item.transferId.eql?(transfer_id) }
+          Aspera.assert(!result.nil?, type: Transfer::Error) { "transfer id=#{transfer_id}: no result of stop" }
+          Aspera.assert(result.stopped, type: Transfer::Error) { result.error&.description || "transfer id=#{transfer_id}: not stopped" }
+          true
+        end
+
+        # @param response [Transferd::Api::QueryTransferResponse, Transferd::Api::TransferResponse] Response of the daemon
+        # @return [Hash] Normalized status, see `transfer_status`
+        def normalize_status(response)
+          info = response.transferInfo
+          result = {
+            'status'            => ASYNC_STATUS.fetch(response.status, 'running'),
+            'state'             => response.status.to_s.downcase,
+            'bytes_transferred' => info&.bytesTransferred.to_i
+          }
+          return result if info.nil?
+          result.merge!(
+            'files_completed'  => info.filesCompleted,
+            'rate_kbps'        => info.averageRateKbps,
+            'target_rate_kbps' => info.targetRateKbps,
+            'elapsed_sec'      => info.elapsedUsec / 1_000_000.0,
+            'started_at'       => epoch_time(info.startTimeUsec),
+            'ended_at'         => epoch_time(info.endTimeUsec)
+          )
+          if FINAL_STATUSES.include?(response.status)
+            result['ended_at'] ||= Time.now.utc.iso8601
+          else
+            result.delete('ended_at')
           end
-          result
-        rescue StandardError => e
-          {'status' => 'running', 'bytes_transferred' => 0, 'error' => e.message}
+          error = info.errorDescription.to_s.strip
+          error = response.error&.description.to_s if error.empty?
+          unless error.empty?
+            result['error_code'] = info.errorCode
+            result['error'] = error
+          end
+          result.compact
+        end
+
+        private
+
+        # @param agent_params [Hash] `url`: endpoint of the daemon
+        # @return [Transferd::Api::TransferService::Stub] Client of the daemon
+        def client(agent_params)
+          Aspera.assert(agent_params['url'].is_a?(String) && !agent_params['url'].empty?) { 'agent_params: missing url' }
+          ::Transferd::Api::TransferService::Stub.new(agent_params['url'], :this_channel_is_insecure)
+        end
+
+        # @param agent_params [Hash] Optional `timeout`: seconds
+        # @return [Time] Deadline of a call
+        def deadline(agent_params)
+          Time.now + (agent_params['timeout'] || CALL_TIMEOUT_SEC).to_f
+        end
+
+        # @param value [Integer] Time since epoch, in microseconds or milliseconds, 0 if not known
+        # @return [String, nil] Time in ISO 8601, `nil` if not known
+        def epoch_time(value)
+          return if value.nil? || value <= 0
+          seconds = value >= MIN_USEC_EPOCH ? value / 1_000_000.0 : value / 1000.0
+          Time.at(seconds).utc.iso8601
         end
       end
 
@@ -83,7 +155,8 @@ module Aspera
           @daemon_endpoint = daemon_endpoint
           Log.log.debug { "Daemon info: #{get_info_response}" }
           Log.log.warn('Attached to existing daemon') unless @daemon_pid || !start || !@stop
-          at_exit { shutdown }
+          # `shutdown` is registered with `at_exit` only when the daemon is started here:
+          # a long-running process (e.g. Orchestrator) that attaches to an external daemon for each transfer would accumulate them
         rescue GRPC::Unavailable => e
           # if transferd is external: do not start it, or other error
           raise if !start || !e.message.include?('failed to connect')
@@ -140,6 +213,8 @@ module Aspera
 
       # Actual endpoint the daemon is listening on (resolved after connect, e.g. when port 0 was used)
       attr_reader :daemon_endpoint
+      # Identifier of the last transfer started, given by the daemon: for `transfer_status` and `transfer_cancel`
+      attr_reader :transfer_id
       # gRPC client of the daemon
       attr_reader :transfer_client
 

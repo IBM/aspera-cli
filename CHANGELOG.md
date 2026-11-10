@@ -36,6 +36,7 @@ Highlights: analysis of `ascp` logs (`config ascp logs`), multiple named secret 
   * Resolver can also create secrets in stores declared `writable: true` (`Resolver#write`; refused if the secret exists, safe against concurrent writes), and inspect stores and references without reading secret values (`Resolver#list`, `#fields`, `#check`, `Aspera::Secret.reference_text`).
   * `Aspera::Log#logger=` sends logs to the logger of the application.
   * New token creator `Aspera::OAuth::SharesWeb` (`grant_method: :shares_web`).
+  * Transfer agents: new optional method `transfer_cancel(transfer_id, agent_params)` stops a transfer started asynchronously (agent `transferd`: call `StopTransfer`). Agent `transferd` has a reader `transfer_id`: identifier of the last transfer started.
 
 ### Issues Fixed
 
@@ -51,6 +52,9 @@ Highlights: analysis of `ascp` logs (`config ascp logs`), multiple named secret 
   * An argument without `=` collected by `@:` is reported as a bad argument, instead of an assertion failure. Errors of extended values name their modifier (e.g. `@file:`).
   * `@extend:` no longer evaluates again the values it inserts (e.g. read by `@env:` or `@file:`).
   * An unknown key of a `Hash` option in dot notation (e.g. `--ui.foo=1`) is followed only by the schema error, no longer by an extra `unprocessed values` error.
+* **library**: agent `transferd`:
+  * `transfer_status` no longer blocks on an ended transfer: it calls `QueryTransfer` instead of `MonitorTransfers`, which sends nothing for an ended transfer. When the daemon cannot be reached, does not answer in time, or does not know the transfer, the status is `unknown` instead of `running`. New fields: `state` (status of the daemon), `files_completed`, `rate_kbps`, `target_rate_kbps`, `elapsed_sec`, `started_at`, `ended_at` (time of the daemon), `error_code`. `error` is the error of the transfer. Calls have a timeout: key `timeout` of `agent_params`, default 10 seconds.
+  * A process that attaches to an external daemon for each transfer (e.g. Orchestrator) accumulated `at_exit` handlers: `shutdown` is registered only when the agent starts the daemon.
 
 ### Breaking Changes
 
