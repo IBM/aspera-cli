@@ -8,8 +8,8 @@ require 'aspera/assert'
 module Aspera
   module Cli
     # Mixin for Config plugin: async transfer management actions.
-    # Exposes three sub-commands under `config transfer`:
-    #   status  --id=<job_id>   Re-query a running/completed transfer
+    # Exposes three sub-commands under `config agents jobs` (`config transfer` is a deprecated alias):
+    #   status  <job_id>        Re-query a running/completed transfer
     #   list                    List all persisted async transfer entries
     #   cleanup                 Remove completed/failed/cancelled entries
     #
@@ -22,7 +22,7 @@ module Aspera
     module TransferActions
       # Re-query the status of a single async transfer job.
       # @param job_id [String] UUID returned at submission time
-      def action_transfer_status(job_id:, **)
+      def action_agents_jobs_status(job_id:, **)
         store = async_transfer_store
         entry = store.read(job_id)
         Aspera.assert(!entry.nil?, type: Cli::BadArgument) { "Unknown job_id: #{job_id}" }
@@ -43,7 +43,7 @@ module Aspera
       private_constant :TERMINAL_STATUSES
 
       # Delete completed, failed, and cancelled entries from the store.
-      def action_transfer_cleanup(**)
+      def action_agents_jobs_cleanup(**)
         store = async_transfer_store
         deleted = store.list
           .select { |e| TERMINAL_STATUSES.include?(e['status']) }

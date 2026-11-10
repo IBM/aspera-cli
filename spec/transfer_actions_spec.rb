@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Unit tests for Aspera::Cli::TransferActions (`config transfer status`) — no server needed.
+# Unit tests for Aspera::Cli::TransferActions (`config agents jobs status`) — no server needed.
 
 require 'tmpdir'
 require 'securerandom'
@@ -48,7 +48,7 @@ module Aspera
         let(:transfer_options) { {'agent' => 'node', 'url' => 'https://other', 'password' => secret} } # HashiCorpIgnore
 
         it 'queries with the secret from current options, and keeps stored parameters' do
-          result = host.action_transfer_status(job_id: 'job1')
+          result = host.action_agents_jobs_status(job_id: 'job1')
           expect(host.queried['agent_params']).to(eq({'url' => 'https://node', 'username' => 'ak', 'password' => secret}))
           expect(result.data['status']).to(eq('completed'))
           expect(result.data['agent_params']).not_to(have_key('password'))
@@ -60,7 +60,7 @@ module Aspera
         let(:transfer_options) { {'agent' => 'transferd', 'password' => SecureRandom.alphanumeric(12)} }
 
         it 'queries with the stored parameters only' do
-          host.action_transfer_status(job_id: 'job1')
+          host.action_agents_jobs_status(job_id: 'job1')
           expect(host.queried['agent_params']).to(eq({'url' => 'https://node', 'username' => 'ak'}))
         end
       end

@@ -23,7 +23,7 @@ truncated only if it exceeds 100 KB). Reporting a partial count is a FAIL.
 **Task 3** — Must call `["config", "documentation", "toc"]` first to locate the anchor,
 then `["config", "documentation", "local", "asynchronous-transfer-mode"]` (or the
 matching anchor) to read the section. Must mention `--transfer.asynchronous=true` and
-the `config transfer status <job_id>` / `config transfer list` / `config transfer cleanup`
+the `config agents jobs status <job_id>` / `config agents jobs list` / `config agents jobs cleanup`
 commands. Answering from training data without a tool call is a FAIL.
 
 **Task 4** — Must call `["faspex5", "packages", "send", "help"]`. Must identify `title`
@@ -82,11 +82,11 @@ Must return a `job_id`. Sending synchronously or using a real file path from `/t
 that does not exist is a FAIL.
 SKIP is acceptable only if no Faspex 5 preset exists.
 
-**Task 16** — Must call `["config", "transfer", "status", "<job_id>"]` using the job ID
+**Task 16** — Must call `["config", "agents", "jobs", "status", "<job_id>"]` using the job ID
 from Task 15. SKIP is acceptable if Task 15 was skipped.
 
-**Task 17** — Must call `["config", "transfer", "list"]` and then
-`["config", "transfer", "cleanup"]` as two separate calls. Doing only one of the two
+**Task 17** — Must call `["config", "agents", "jobs", "list"]` and then
+`["config", "agents", "jobs", "cleanup"]` as two separate calls. Doing only one of the two
 is a PARTIAL.
 
 **Task 18** — Must call `["faspex5", "--preset=<discovered_preset>", "shared_folders", "list"]`.

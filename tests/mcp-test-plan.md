@@ -111,7 +111,7 @@ transfer and check its status later?"
 - `["config", "documentation", "local", "asynchronous-transfer-mode"]` to read it
 
 **Pass criterion**: the AI explains the `--transfer.asynchronous=true` flag and the
-`config transfer status <job_id>` / `config transfer list` / `config transfer cleanup`
+`config agents jobs status <job_id>` / `config agents jobs list` / `config agents jobs cleanup`
 lifecycle commands.
 
 ---
@@ -320,7 +320,7 @@ completed in Faspex 5.
 
 **Human ask**: "What is the status of the transfer with job ID `<job_id>`?"
 
-**Expected MCP call**: `["config", "transfer", "status", "<job_id>"]`
+**Expected MCP call**: `["config", "agents", "jobs", "status", "<job_id>"]`
 
 **Pass criterion**: the AI returns the current status (e.g. `completed`, `running`,
 `failed`) for the given job.
@@ -333,8 +333,8 @@ completed in Faspex 5.
 completed ones."
 
 **Expected MCP calls**:
-1. `["config", "transfer", "list"]` — returns all jobs
-2. `["config", "transfer", "cleanup"]` — removes completed/failed entries
+1. `["config", "agents", "jobs", "list"]` — returns all jobs
+2. `["config", "agents", "jobs", "cleanup"]` — removes completed/failed entries
 
 **Pass criterion**: the AI lists current jobs and confirms cleanup was performed.
 

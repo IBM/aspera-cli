@@ -5180,7 +5180,7 @@ conf_agents_show_bad:
     - agents
     - show
     - bad-agent
-# Async transfer tests (config transfer sub-commands)
+# Async transfer tests (config agents jobs sub-commands)
 conf_async_node_upload:
   description: Start an async transfer via node agent and capture the job_id.
   tags:
@@ -5207,7 +5207,8 @@ conf_async_transfer_status:
     - background_transfer
   args:
     - config
-    - transfer
+    - agents
+    - jobs
     - status
     - $(t.saved_output :conf_async_node_upload)
 conf_async_transfer_list:
@@ -5218,7 +5219,8 @@ conf_async_transfer_list:
     - background_transfer
   args:
     - config
-    - transfer
+    - agents
+    - jobs
     - list
 conf_async_transfer_cleanup:
   description: Remove completed/failed entries from the async transfer store.
@@ -5229,8 +5231,20 @@ conf_async_transfer_cleanup:
     - background_transfer
   args:
     - config
-    - transfer
+    - agents
+    - jobs
     - cleanup
+conf_transfer_deprecated_list:
+  description: Deprecated alias of config agents jobs list.
+  depends_on:
+    - conf_async_node_upload
+  tags:
+    - nodoc
+    - background_transfer
+  args:
+    - config
+    - transfer
+    - list
 conf_ascp_installg:
   tags:
     - nodoc

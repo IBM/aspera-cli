@@ -3163,7 +3163,7 @@ Once active, press `Tab` to complete:
 <%=cmd_skip%> --private-key=@file:<Tab>        # local files, after @file: or @path:
 <%=cmd_skip%> -P <Tab>                         # presets: also for config preset show, @preset:
 <%=cmd_skip%> config preset get myconf <Tab>   # parameters of preset: url, username, ...
-<%=cmd_skip%> config transfer status <Tab>     # asynchronous transfer jobs
+<%=cmd_skip%> config agents jobs status <Tab>     # asynchronous transfer jobs
 <%=cmd_skip%> node access_keys do <Tab>        # type of expected value, not inserted: <identifier>
 <%=cmd_skip%> aoc packages send <Tab>          # type, and keys of structure (required ones with *): <Hash> name*, workspace_id*, ...
 <%=cmd_skip%> aoc packages send @: <Tab>       # keys of structure built with @:, from its schema: name=, workspace_id=, recipients.0., ...
@@ -4270,14 +4270,17 @@ The returned `job_id` can be used at any time to check progress:
   '--transfer=@json:{"agent":"desktop","asynchronous":true}'
 
 # Poll status later
-<%=cmd%> config transfer status <job_id>
+<%=cmd%> config agents jobs status <job_id>
 
 # List all pending/completed async transfers
-<%=cmd%> config transfer list
+<%=cmd%> config agents jobs list
 
 # Remove completed/failed entries
-<%=cmd%> config transfer cleanup
+<%=cmd%> config agents jobs cleanup
 ```
+
+> [!NOTE]
+> `config transfer` (`list`, `status`, `cleanup`) is deprecated after 4.28.0: use `config agents jobs`. It still works, with a warning.
 
 All transfer agents support asynchronous mode:
 
@@ -4292,16 +4295,16 @@ All transfer agents support asynchronous mode:
 
 For `direct` and `httpgw`, the transfer runs as a Ruby thread inside the <%=tool%> process.
 The `job_id` is persisted on disk but the live thread state is only available as long as the same process is running.
-If the process is restarted, `config transfer status` returns `unknown` for those jobs.
+If the process is restarted, `config agents jobs status` returns `unknown` for those jobs.
 
-Parameters of the agent are persisted, except secrets (e.g. `password` of agent `node`): `config transfer status` takes them from the current `transfer` option, if it is for the same agent (e.g. same option on command line, or in a preset).
+Parameters of the agent are persisted, except secrets (e.g. `password` of agent `node`): `config agents jobs status` takes them from the current `transfer` option, if it is for the same agent (e.g. same option on command line, or in a preset).
 
 > [!NOTE]
 > **`asynchronous` and MCP** - When <%=tool%> is used as an MCP server, an AI assistant calling
 > a transfer command may time out or cancel the request and retry, causing duplicate transfers.
 > Using `asynchronous: true` eliminates this risk: the transfer is submitted immediately,
 > the `job_id` is returned, and the AI can poll
-> `config transfer status <job_id>` to track progress without any risk of duplication.
+> `config agents jobs status <job_id>` to track progress without any risk of duplication.
 > This works with all agents, including `direct` and `httpgw`.
 
 #### Agent: Direct

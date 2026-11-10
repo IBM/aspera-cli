@@ -84,9 +84,9 @@ module Aspera
         end
 
         DEFAULT_CHECK_NEW_VERSION_DAYS = 7
-        # Last released version with `config transferd` and `config ascp install` not deprecated
-        DEPRECATED_TRANSFERD_LAST = '4.28.0'
-        private_constant :DEFAULT_CHECK_NEW_VERSION_DAYS, :DEPRECATED_TRANSFERD_LAST
+        # Last released version with `config transferd`, `config ascp install` and `config transfer` not deprecated
+        DEPRECATED_LAST = '4.28.0'
+        private_constant :DEFAULT_CHECK_NEW_VERSION_DAYS, :DEPRECATED_LAST
 
         option :preset,             description: 'Load the named option preset from current config file',             short: 'P', on_set: :load_preset, complete: :preset
         option :version_check_days, description: 'Period in days to check new version (zero to disable)',             allowed: Type::INTEGER, default: DEFAULT_CHECK_NEW_VERSION_DAYS
@@ -340,7 +340,7 @@ module Aspera
         commands_under :ascp do
           command :show,    description: 'Show ascp binary path', action: ->(**) { Result::Text.new(Ascp::Installation.instance.path(:ascp)) }
           command :info,    description: 'Show ascp and transfer spec information'
-          command :install, description: "Install the transfer SDK (#{Deprecation.new(last: DEPRECATED_TRANSFERD_LAST, message: 'use transferd install')})",
+          command :install, description: "Install the transfer SDK (#{Deprecation.new(last: DEPRECATED_LAST, message: 'use transferd install')})",
             arguments: [{name: :version, mandatory: false, default: nil}],
             action: ->(version: nil, **) { transferd_plugin(command: 'config ascp install', replacement: 'transferd install').action_install(version: version) }
           command(
@@ -373,9 +373,8 @@ module Aspera
             arguments: [{name: :agent_name, allowed: Agent::Factory::ALL.keys}]
         end
 
-        # transfer async management sub-commands
-        command :transfer, description: 'Manage asynchronous transfers'
-        commands_under :transfer do
+        # async transfer jobs: moved to `agents jobs`, `transfer` is kept as deprecated alias
+        commands_under %i[agents jobs], description: 'Manage asynchronous transfer jobs' do
           command(
             :list, description: 'List all async transfer jobs',
             action: lambda do |**|
@@ -387,9 +386,11 @@ module Aspera
             arguments: [{name: :job_id, complete: :transfer_job}]
           command :cleanup, description: 'Remove completed/failed/cancelled transfer entries'
         end
+        command :transfer, description: "Manage asynchronous transfers (#{Deprecation.new(last: DEPRECATED_LAST, message: 'use agents jobs')})",
+          setup: :deprecated_transfer_setup, mount: {plugin: self, at: %i[agents jobs], instance: :itself}
 
         # transferd sub-commands: moved to plugin `transferd`, kept as deprecated alias
-        command :transferd, description: "Manage the transfer daemon (#{Deprecation.new(last: DEPRECATED_TRANSFERD_LAST, message: 'use plugin transferd')})",
+        command :transferd, description: "Manage the transfer daemon (#{Deprecation.new(last: DEPRECATED_LAST, message: 'use plugin transferd')})",
           mount: {plugin: Transferd, instance: :transferd_plugin, only: %i[install list service]}
 
         # sync sub-commands
@@ -473,8 +474,14 @@ module Aspera
         # @param replacement [String] Command to use instead
         # @return [Transferd] Plugin instance
         def transferd_plugin(command: 'config transferd', replacement: 'transferd', **)
-          Log.log.warn { "Command #{command} is #{Deprecation.new(last: DEPRECATED_TRANSFERD_LAST, message: "use #{replacement}")}" }
+          Log.log.warn { "Command #{command} is #{Deprecation.new(last: DEPRECATED_LAST, message: "use #{replacement}")}" }
           Transferd.new(context: context)
+        end
+
+        # Setup of the deprecated `config transfer` (alias of `config agents jobs`, same plugin)
+        def deprecated_transfer_setup(**)
+          Log.log.warn { "Command config transfer is #{Deprecation.new(last: DEPRECATED_LAST, message: 'use config agents jobs')}" }
+          {}
         end
 
         def action_documentation(location: :github, section: nil, **)
