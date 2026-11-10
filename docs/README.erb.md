@@ -4755,6 +4755,113 @@ On Windows the compilation may fail for various reasons (3.1.1):
 
 <!-- spellchecker: enable -->
 
+#### Transfer Daemon as a system service
+
+The Transfer Daemon (`transferd`) can run permanently as a `systemd` service, for applications that use an existing daemon (see [Agent: Transfer Daemon](#agent-transfer-daemon), `start` set to `false`).
+<%=tool%> installs the SDK, writes the configuration file of the daemon (`/etc/transferd/transferd.json`) and the `systemd` unit, then enables and starts the service.
+
+Commands are in `config transferd service`:
+
+| Command     | Action |
+|-------------|--------|
+| `spec`      | Show the schema of the configuration file of the daemon (`transferd.json`). Works on any system. |
+| `install`   | Install the SDK if it is missing, then do `configure`. |
+| `configure` | Merge the given configuration into the existing file, validate it, write the file and the unit, reload `systemd`, enable and restart the service, and wait until the daemon listens. |
+| `status`    | Show the version, the state of the service, the endpoint and whether it listens. The API key is never shown. |
+| `uninstall` | Stop and remove the service. With `purge` set to `true` in `service`, also remove the configuration file and the log folder. |
+| `use`       | Switch to an installed version of the SDK and restart the service (see below). |
+| `versions`  | List the installed versions of the SDK (see below). |
+
+Except `spec` and `versions`, commands take the optional **last** positional argument `CONFIG`: a `Hash` ([Extended Value](#extended-value-syntax)) with two optional sections:
+
+- `service`: how the service is installed.
+- `config`: content of `transferd.json`.
+
+```json
+{
+  "service": {
+    "user": "asperadaemon"
+  },
+  "config": {
+    "address": "127.0.0.1",
+    "port": 55002,
+    "log_directory": "/var/log/aspera-transferd",
+    "workers": {"max_concurrent": 10},
+    "authentication": {"enabled": true}
+  }
+}
+```
+
+Parameters of section `service`:
+
+<%=schema_to_table(Aspera::Schema::Registry::SERVICE_OPTIONS)%>
+
+Section `config` follows the JSON schema of the daemon, displayed with:
+
+```shell
+<%=cmd%> config transferd service spec
+```
+
+<%=schema_to_table('transferd')%>
+
+The configuration is checked before anything is written:
+
+- Keys not given keep their value in the existing `transferd.json` (deep merge), and a key set to `null` is removed.
+- An unknown key, a value of a wrong type, or an inconsistent configuration (for example `tls.enabled` without `certificate` and `key`) is refused, with the name of the key and of the file if the faulty key is in the existing file.
+  The daemon itself ignores unknown keys silently.
+- The section `fasp_runtime` is computed from the SDK folder, and can be overridden.
+- If `authentication.enabled` is `true` and no `api_key` is given, the key of the existing file is kept, else a random one is generated.
+  The file is written in clear text with mode `0640`, owner `user:group`.
+  To get the key from the [vault](#secret-vault), write `{"config":{"authentication":{"api_key":"@vault:transferd.api_key@"}}}` in an [Extended Value](#extended-value-syntax) `@json:@extend:'...'`.
+
+Requirements:
+
+- `systemd` on Linux only.
+  On other systems, or without `systemctl`, commands fail with a message (only `spec` and `--dry-run` work everywhere).
+- Run as `root`, except with `--dry-run=yes` (option is a boolean), which shows the actions and the files without any change, and `spec` and `versions`.
+- The account (`asperadaemon` by default) is **not** created by <%=tool%>.
+  If it does not exist, the command fails and shows the command to create it:
+  `useradd --system --no-create-home --shell /usr/sbin/nologin asperadaemon`.
+  This is the account used by other Aspera products on the same host, so that files have the same owner.
+- If the version of the SDK installed is different from the version of the schema, then a warning is displayed (it is not an error).
+
+Example:
+
+```shell
+sudo <%=cmd%> config transferd service install --sdk-folder=/opt/aspera/transferd/current @json:'{"config":{"port":55002,"authentication":{"enabled":true}}}'
+```
+
+```shell
+<%=cmd%> config transferd service configure --dry-run=yes @json:'{"config":{"log_level":"debug"}}'
+```
+
+```shell
+sudo <%=cmd%> config transferd service status
+```
+
+```shell
+sudo <%=cmd%> config transferd service uninstall @json:'{"service":{"purge":true}}'
+```
+
+##### Versions side by side and rollback
+
+If the SDK folder (option `sdk_folder`) is named `current`, e.g. `--sdk-folder=/opt/aspera/transferd/current`, then <%=tool%> uses the layout `<prefix>/<version>` with a link `current` that points to the version in use:
+
+```text
+/opt/aspera/transferd/1.1.9
+/opt/aspera/transferd/1.1.10
+/opt/aspera/transferd/current -> 1.1.10
+```
+
+- `service install` installs the version given in `service.version` (default: version tested with this release of <%=tool%>) in `<prefix>/<version>`, and sets the link `current`.
+  If the installation fails, then the link is set back to the previous version.
+- The unit and `transferd.json` refer to `current`: switching the link and restarting the service is enough to change the version.
+- `service versions` lists the installed versions and the one in use.
+- `service use <%=ph :version%>` switches the link and restarts the service.
+  If the service does not start, then the link is set back to the previous version and the service is restarted.
+
+Any other folder name is used as is, with no link.
+
 ### Transfer Specification
 
 Some commands lead to file transfer (upload/download).

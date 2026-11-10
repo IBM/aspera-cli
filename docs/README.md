@@ -5007,7 +5007,9 @@ Set option `transfer` to `transferd`.
 Options for `transfer` are:
 
 | Field | Type | Description |
-|-------|--------|----------------------------------------------------------------------------------|
+|---------|--------|----------------------------------------------------------------------------------|
+| `api_key` | `String` | API key of an existing daemon (`start` is `false`) that has `authentication` enabled in its configuration. It is sent in the metadata `api_key` of each call. |
+| `ca_file` | `String` | Path to the certificate authority file (PEM) that signed the certificate of an existing daemon (`start` is `false`) that has `tls` enabled in its configuration. A self-signed certificate is its own authority. |
 | `start` | `Bool` | Start a new daemon instance.<br/>Default: `true`. |
 | `stop` | `Bool` | Stop the daemon when `ascli` exits.<br/>Default: `true`. |
 | `url` | `String` | Address and port listened by the daemon (e.g. `:55002`). If port is `0`, the daemon listens on a random available port. If no address is given, `127.0.0.1` is used.<br/>Default: `:0`. |
@@ -5050,6 +5052,165 @@ On Windows the compilation may fail for various reasons (3.1.1):
   &rarr; edit the file `[Ruby main dir]/include/ruby-[version]/ruby/win32.h` and change the signature of `gettimeofday` to `gettimeofday(struct timeval *, void *)`, that is, change `struct timezone` to `void`
 
 <!-- spellchecker: enable -->
+
+#### Transfer Daemon as a system service
+
+The Transfer Daemon (`transferd`) can run permanently as a `systemd` service, for applications that use an existing daemon (see [Agent: Transfer Daemon](#agent-transfer-daemon), `start` set to `false`).
+`ascli` installs the SDK, writes the configuration file of the daemon (`/etc/transferd/transferd.json`) and the `systemd` unit, then enables and starts the service.
+
+Commands are in `config transferd service`:
+
+| Command     | Action |
+|-------------|--------|
+| `spec`      | Show the schema of the configuration file of the daemon (`transferd.json`). Works on any system. |
+| `install`   | Install the SDK if it is missing, then do `configure`. |
+| `configure` | Merge the given configuration into the existing file, validate it, write the file and the unit, reload `systemd`, enable and restart the service, and wait until the daemon listens. |
+| `status`    | Show the version, the state of the service, the endpoint and whether it listens. The API key is never shown. |
+| `uninstall` | Stop and remove the service. With `purge` set to `true` in `service`, also remove the configuration file and the log folder. |
+| `use`       | Switch to an installed version of the SDK and restart the service (see below). |
+| `versions`  | List the installed versions of the SDK (see below). |
+
+Except `spec` and `versions`, commands take the optional **last** positional argument `CONFIG`: a `Hash` ([Extended Value](#extended-value-syntax)) with two optional sections:
+
+- `service`: how the service is installed.
+- `config`: content of `transferd.json`.
+
+```json
+{
+  "service": {
+    "user": "asperadaemon"
+  },
+  "config": {
+    "address": "127.0.0.1",
+    "port": 55002,
+    "log_directory": "/var/log/aspera-transferd",
+    "workers": {"max_concurrent": 10},
+    "authentication": {"enabled": true}
+  }
+}
+```
+
+Parameters of section `service`:
+
+| Field | Type | Description |
+|-------------|---------------|----------------------------------------------------------------------------------|
+| `after` | `Array[String]` | Units that shall be started before the daemon (`After=` in the unit).<br/>Default: `["network.target"]`. |
+| `environment` | `Hash` | Environment variables set in the unit. None is set unless given here. `TRANSFERD_ADDRESS`, `TRANSFERD_PORT`, `TRANSFERD_MGMT_PORT` and `TRANSFERD_MGMT_ADDRESS` override the configuration file. |
+| `group` | `String` | Group that runs the daemon. Defaults to the primary group of `user`. |
+| `name` | `String` | Name of the service. The unit file is `<name>.service`.<br/>Default: `aspera-transferd`. |
+| `purge` | `Bool` | Used by `uninstall`. Also remove the configuration file and the log folder.<br/>Default: `false`. |
+| `unit_dir` | `String` | Folder where the unit file is created.<br/>Default: `/etc/systemd/system`. |
+| `user` | `String` | Account that runs the daemon. It must exist, it is not created.<br/>Default: `asperadaemon`. |
+| `version` | `String` | Version of the SDK to install, used by `install` when the SDK folder is named `current` (versions side by side). Defaults to the SDK version of this tool. |
+
+Section `config` follows the JSON schema of the daemon, displayed with:
+
+```shell
+ascli config transferd service spec
+```
+
+| Field | Type | Description |
+|------------------------------------------|---------------|----------------------------------------------------------------------------------|
+| `$schema` | `String` | Optional URI or path of this schema, used by editors for completion and validation. Ignored by transferd. |
+| `address` | `String` | IP address or host name on which the gRPC API listens. Use 0.0.0.0 to listen on all IPv4 interfaces (for example in a container); when not listening on a loopback address, consider enabling tls and authentication. Overridden by environment variable TRANSFERD_ADDRESS, and by option --address (-a), which takes precedence.<br/>Default: `127.0.0.1`.<br/>Example: `127.0.0.1`. |
+| `api_time_settings` | `Hash` | Keepalive and connection lifetime settings of the gRPC API server, in seconds. |
+| `api_time_settings.max_conn_age` | `Integer` | Maximum lifetime of a client connection, with a random variation of +/-10%; the client must then reconnect. 0 or omitted: no limit.<br/>Default: `0`.<br/>Example: `3600`. |
+| `api_time_settings.max_conn_age_grace` | `Integer` | Additional time given to ongoing calls once max_conn_age is reached, before the connection is forcibly closed. 0 or omitted: no limit.<br/>Default: `0`.<br/>Example: `10`. |
+| `api_time_settings.max_conn_idle` | `Integer` | Time after which a client connection with no ongoing call is closed. 0 or omitted: 86400 (24 hours).<br/>Default: `86400`.<br/>Example: `120`. |
+| `api_time_settings.time` | `Integer` | Time without activity from a client after which the server pings it to check that the connection is still alive. 0 or omitted: 7200 (2 hours).<br/>Default: `7200`.<br/>Example: `60`. |
+| `api_time_settings.timeout` | `Integer` | Time the server waits for activity after a keepalive ping before closing the connection. 0 or omitted: 20.<br/>Default: `20`.<br/>Example: `3`. |
+| `authentication` | `Hash` | API key authentication of clients of the gRPC API. |
+| `authentication.api_key` | `String` | Value that clients must send in gRPC request metadata entry api_key. It is stored in clear text: restrict read access to this file.<br/>Example: `change-me-to-a-long-random-value`. |
+| `authentication.enabled` | `Bool` | Requires every call to carry the API key; other calls are rejected with status UNAUTHENTICATED. api_key is then required.<br/>Default: `false`. |
+| `fasp_management` | `Hash` | Management port on which the ascp processes started by transferd report transfer progress. |
+| `fasp_management.address` | `String` | IP address on which the management server listens. Change it only when ascp must reach transferd through an interface other than loopback. Overridden by environment variable TRANSFERD_MGMT_ADDRESS, and by option --mgmtaddress (-A), which takes precedence.<br/>Default: `127.0.0.1`.<br/>Example: `127.0.0.1`. |
+| `fasp_management.port` | `Integer` | TCP port of the management server. 0 or omitted: a free port is selected at startup. Overridden by environment variable TRANSFERD_MGMT_PORT, and by option --mgmtport (-P), which takes precedence.<br/>Default: `0`.<br/>Example: `23456`. |
+| `fasp_management.promiscuous_mode_enabled` | `Bool` | When true, transferd also reports transfers of ascp processes that it did not start. So that those processes find the management port, transferd writes it in file transferd.<port>.optport of directory ../var/run/aspera, relative to the FASP runtime bin directory. Those ascp processes must use the same FASP runtime as transferd (see fasp_runtime).<br/>Default: `false`. |
+| `fasp_runtime` | `Hash` | FASP runtime (ascp, async, license, aspera.conf) used for transfers. Omitted: the runtime embedded in the SDK is used. When this section is present, set use_embedded explicitly: if it is not true, user_defined is required. |
+| `fasp_runtime.extra_config` | `Array[Hash]` | Extra command line options added to the executables started for transfers. Does not apply to async. |
+| `fasp_runtime.extra_config[].command` | `String` | End of the path of the executable to which options are added, for example ascp (ascp.exe on Windows). Only the first matching entry is used.<br/>Required.<br/>Example: `ascp`. |
+| `fasp_runtime.extra_config[].options` | `Array[String]` | Options added to the command line, one argument per item, before the transfer arguments.<br/>Example: `["--save-before-overwrite"]`. |
+| `fasp_runtime.force_version` | `String` | Accepted for backward compatibility. Has no effect. |
+| `fasp_runtime.log` | `Hash` | Default logging of ascp, for transfers whose request configuration does not set localLog or logLevel. Does not apply to async. |
+| `fasp_runtime.log.dir` | `String` | Directory where ascp writes its log (ascp option -L). Empty or omitted: default location of ascp.<br/>Example: `/var/log/aspera`. |
+| `fasp_runtime.log.level` | `Integer` | Level of detail of the ascp log: 0 for basic information (files transferred, transfer rate), 1 to 4 for increasingly detailed debug messages (ascp options -D to -DDDD).<br/>Default: `0`. |
+| `fasp_runtime.use_embedded` | `Bool` | true: use the FASP runtime embedded in the SDK, and ignore user_defined. false: use the runtime located by user_defined. Omitted while the fasp_runtime section is present: false.<br/>Example: `true`. |
+| `fasp_runtime.user_defined` | `Hash` | Location of a separately installed FASP runtime. Required when use_embedded is not true, ignored otherwise. Both directories must exist at startup. |
+| `fasp_runtime.user_defined.bin` | `String` | Directory containing the ascp and async executables. A relative path is resolved from the working directory of transferd.<br/>Required.<br/>Example: `/opt/aspera/bin`. |
+| `fasp_runtime.user_defined.etc` | `String` | Directory containing the license file aspera-license and the configuration file aspera.conf. A relative path is resolved from the working directory of transferd.<br/>Required.<br/>Example: `/opt/aspera/etc`. |
+| `log_directory` | `String` | Directory of the transferd log file transferd.log (rotated at 10 MiB, 10 files kept). A relative path is resolved from the directory of the transferd executable. The directory is created if missing. Empty or omitted: logs are written to standard output.<br/>Example: `/var/log/aspera`. |
+| `log_format` | `Enum[String]` | Format of the transferd log: text for human-readable lines, json for one JSON object per line. Any value other than text gives json.<br/>Allowed values: `text`, `json`.<br/>Default: `text`. |
+| `log_level` | `Enum[String]` | Level of detail of the transferd log, from most (trace) to least (panic) verbose. Omitted or unrecognized value: info.<br/>Allowed values: `trace`, `debug`, `info`, `warning`, `error`, `fatal`, `panic`.<br/>Default: `info`. |
+| `port` | `Integer` | TCP port on which the gRPC API listens. 0 or omitted: a free port is selected at startup; it is written in the log and in file transferd.<port>.optport of runtime_dir. The configuration file shipped with the SDK sets 55002. Overridden by environment variable TRANSFERD_PORT, and by option --port (-p), which takes precedence.<br/>Default: `0`.<br/>Example: `55002`. |
+| `reflection` | `Bool` | Enables the gRPC server reflection service, so that tools such as grpcurl or grpcui can list and call the API without the transferd.proto file. Useful for debugging; leave disabled otherwise.<br/>Default: `false`. |
+| `runtime_dir` | `String` | Directory for runtime files. When port is 0, transferd writes the selected port in file transferd.<port>.optport there. Created with owner-only permissions if missing. Omitted: ../var/run/aspera relative to the directory of the transferd executable.<br/>Example: `/var/run/aspera`. |
+| `tls` | `Hash` | TLS for the gRPC API. When enabled, clients must connect using TLS. |
+| `tls.certificate` | `String` | Path of the PEM server certificate file, which may include intermediate certificates. A relative path is resolved from the working directory of transferd.<br/>Example: `/etc/transferd/server.crt`. |
+| `tls.enabled` | `Bool` | Enables TLS. certificate and key are then required.<br/>Default: `false`. |
+| `tls.key` | `String` | Path of the PEM private key file matching certificate. A relative path is resolved from the working directory of transferd.<br/>Example: `/etc/transferd/server.key`. |
+| `tls.min_tls_version` | `Enum[String]` | Minimum TLS version accepted from clients. Omitted or other value: TLSv12.<br/>Allowed values: `TLSv12`, `TLSv13`.<br/>Default: `TLSv12`. |
+| `workers` | `Hash` | Transfer execution and retention. |
+| `workers.max_concurrent` | `Integer` | Maximum number of transfers running at the same time. Additional transfers wait in a queue until a running one ends. 0 or omitted: 100.<br/>Default: `100`.<br/>Example: `10`. |
+| `workers.transfer_cleaning_period` | `Integer` | Interval, in seconds, at which transferd removes ended transfers older than transfer_max_age. 0 or omitted: 3600 (1 hour).<br/>Default: `3600`. |
+| `workers.transfer_max_age` | `Integer` | Time, in seconds, during which an ended transfer remains known to transferd (status queries, events) before it can be removed. Removal happens at the next cleaning, so a transfer may remain up to transfer_max_age + transfer_cleaning_period. 0 or omitted: 7200 (2 hours).<br/>Default: `7200`.<br/>Example: `86400`. |
+
+The configuration is checked before anything is written:
+
+- Keys not given keep their value in the existing `transferd.json` (deep merge), and a key set to `null` is removed.
+- An unknown key, a value of a wrong type, or an inconsistent configuration (for example `tls.enabled` without `certificate` and `key`) is refused, with the name of the key and of the file if the faulty key is in the existing file.
+  The daemon itself ignores unknown keys silently.
+- The section `fasp_runtime` is computed from the SDK folder, and can be overridden.
+- If `authentication.enabled` is `true` and no `api_key` is given, the key of the existing file is kept, else a random one is generated.
+  The file is written in clear text with mode `0640`, owner `user:group`.
+  To get the key from the [vault](#secret-vault), write `{"config":{"authentication":{"api_key":"@vault:transferd.api_key@"}}}` in an [Extended Value](#extended-value-syntax) `@json:@extend:'...'`.
+
+Requirements:
+
+- `systemd` on Linux only.
+  On other systems, or without `systemctl`, commands fail with a message (only `spec` and `--dry-run` work everywhere).
+- Run as `root`, except with `--dry-run=yes` (option is a boolean), which shows the actions and the files without any change, and `spec` and `versions`.
+- The account (`asperadaemon` by default) is **not** created by `ascli`.
+  If it does not exist, the command fails and shows the command to create it:
+  `useradd --system --no-create-home --shell /usr/sbin/nologin asperadaemon`.
+  This is the account used by other Aspera products on the same host, so that files have the same owner.
+- If the version of the SDK installed is different from the version of the schema, then a warning is displayed (it is not an error).
+
+Example:
+
+```shell
+sudo ascli config transferd service install --sdk-folder=/opt/aspera/transferd/current @json:'{"config":{"port":55002,"authentication":{"enabled":true}}}'
+```
+
+```shell
+ascli config transferd service configure --dry-run=yes @json:'{"config":{"log_level":"debug"}}'
+```
+
+```shell
+sudo ascli config transferd service status
+```
+
+```shell
+sudo ascli config transferd service uninstall @json:'{"service":{"purge":true}}'
+```
+
+##### Versions side by side and rollback
+
+If the SDK folder (option `sdk_folder`) is named `current`, e.g. `--sdk-folder=/opt/aspera/transferd/current`, then `ascli` uses the layout `<prefix>/<version>` with a link `current` that points to the version in use:
+
+```text
+/opt/aspera/transferd/1.1.9
+/opt/aspera/transferd/1.1.10
+/opt/aspera/transferd/current -> 1.1.10
+```
+
+- `service install` installs the version given in `service.version` (default: version tested with this release of `ascli`) in `<prefix>/<version>`, and sets the link `current`.
+  If the installation fails, then the link is set back to the previous version.
+- The unit and `transferd.json` refer to `current`: switching the link and restarting the service is enough to change the version.
+- `service versions` lists the installed versions and the one in use.
+- `service use <VERSION>` switches the link and restarts the service.
+  If the service does not start, then the link is set back to the previous version and the service is restarted.
+
+Any other folder name is used as is, with no link.
 
 ### Transfer Specification
 
@@ -6111,6 +6272,7 @@ OPTIONS: global
     --security=HASH                Security restrictions (dot-notation: level, allowed_paths)
     --lock-port=INT                Prevent dual execution of a command, e.g. in cron
     --once-only=yes|no             Process only new items (some commands)
+    --dry-run=yes|no               Do not perform changes, only show what would be done
     --log-secrets=yes|no           Show passwords in logs
     --temp=HASH                    Temporary files (dot-notation: folder, clean, expiry)
     --clean-temp=yes|no            Cleanup temporary files on exit (deprecated after 4.27.5: use --temp.clean)
