@@ -390,7 +390,7 @@ module Aspera
 
         # transferd sub-commands: moved to plugin `transferd`, kept as deprecated alias
         command :transferd, description: "Manage the transfer daemon (#{Deprecation.new(last: DEPRECATED_TRANSFERD_LAST, message: 'use plugin transferd')})",
-          mount: {plugin: Transferd, instance: :transferd_plugin}
+          mount: {plugin: Transferd, instance: :transferd_plugin, only: %i[install list service]}
 
         # sync sub-commands
         commands_under :sync do

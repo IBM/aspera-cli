@@ -92,6 +92,26 @@ RSpec.describe(Aspera::Agent::Transferd) do
     end
   end
 
+  describe '.info' do
+    it 'gives the information of the daemon, with a deadline' do
+      expect(stub).to(receive(:get_info)) do |_request, deadline:|
+        expect(deadline).to(be_a(Time))
+        api::InstanceInfoResponse.new(apiVersion: 'v1', info: api::InstanceInfo.new(managementPort: 55_001))
+      end
+      expect(described_class.info(params)).to(include('apiVersion' => 'v1', 'info' => include('managementPort' => 55_001)))
+    end
+
+    it 'raises the error of the daemon' do
+      allow(stub).to(receive(:get_info).and_return(api::InstanceInfoResponse.new(error: api::Error.new(code: 500, description: 'broken'))))
+      expect { described_class.info(params) }.to(raise_error(Aspera::Transfer::Error, 'broken'))
+    end
+
+    it 'raises an error when the daemon cannot be reached' do
+      allow(stub).to(receive(:get_info).and_raise(GRPC::Unavailable.new('failed to connect to all addresses')))
+      expect { described_class.info(params) }.to(raise_error(Aspera::Transfer::Error, /Unavailable: failed to connect/))
+    end
+  end
+
   describe '.transfer_cancel' do
     it 'stops the transfer' do
       expect(stub).to(receive(:stop_transfer)) do |request, deadline:|

@@ -12,9 +12,17 @@ require 'aspera/assert'
 module Aspera
   module Cli
     module Plugins
-      # Install the Transfer Daemon (`transferd`), and run it as a system service
+      # Install the Transfer Daemon (`transferd`), run it as a system service, and query a running daemon
       class Transferd < Base
         application_name 'Transfer Daemon'
+
+        class << self
+          # Seam for the client commands: object that gives `info(params)`, `transfer_status(id, params)` and `transfer_cancel(id, params)`,
+          # with `params` a Hash with `url`, and optional `api_key`, `ca_file`.
+          # `nil` (default): `Agent::Transferd`, loaded on first use, because it requires the optional gem `grpc`.
+          # @return [#info, #transfer_status, #transfer_cancel, nil]
+          attr_accessor :daemon_client
+        end
 
         command :install, description: 'Install the transfer daemon',
           arguments: [{name: :version, mandatory: false, default: nil}]
@@ -79,6 +87,28 @@ module Aspera
             end
           )
         end
+        command :info, description: 'Show information on a running daemon',
+          action: ->(**) { Result::SingleObject.new(daemon_client.info(daemon_params)) }
+        command :transfers, description: 'Query the transfers of a running daemon'
+        commands_under :transfers do
+          command(
+            :show, description: 'Show the status of a transfer (the daemon keeps it for some time after its end)',
+            arguments: [{name: :transfer_id}],
+            action: ->(transfer_id:, **) { Result::SingleObject.new(daemon_client.transfer_status(transfer_id, daemon_params)) }
+          )
+          command(
+            :cancel, description: 'Stop a transfer',
+            arguments: [{name: :transfer_id}],
+            action: lambda do |transfer_id:, **|
+              daemon_client.transfer_cancel(transfer_id, daemon_params)
+              Result::Status.new("Transfer #{transfer_id} stopped")
+            end
+          )
+        end
+
+        option :url,     description: 'Client commands: endpoint of the running daemon, e.g. 127.0.0.1:55002'
+        option :api_key, description: 'Client commands: API key of the daemon, if its authentication is enabled'
+        option :ca_file, description: 'Client commands: certificate authority (PEM file) of the daemon, if its TLS is enabled'
 
         # Install the transfer SDK (ascp + transferd) from a URL or using the default source.
         # Version defaults to `Info::SDK_VERSION`; pass `LATEST` as argument to install the latest available version.
@@ -99,6 +129,28 @@ module Aspera
         end
 
         private
+
+        # @return [#info, #transfer_status, #transfer_cancel] The client of the daemon
+        # @raise [Cli::Error] if the optional gem `grpc` is missing
+        def daemon_client
+          injected = self.class.daemon_client
+          return injected unless injected.nil?
+          begin
+            require 'aspera/agent/transferd'
+          rescue LoadError => e
+            raise Cli::Error, "Commands that query a running daemon require the gem grpc (#{e.message}). Install it with: gem install grpc"
+          end
+          Agent::Transferd
+        end
+
+        # @return [Hash] Parameters of the connection to the daemon: option `url` is mandatory, `api_key` and `ca_file` are optional
+        def daemon_params
+          {
+            'url'     => options.get_option(:url, mandatory: true),
+            'api_key' => options.get_option(:api_key),
+            'ca_file' => options.get_option(:ca_file)
+          }.compact
+        end
 
         # @return [String, nil] Value of option `sdk_url`, or nil to select the archive from the SDK locations (`DEF`)
         def sdk_url_option

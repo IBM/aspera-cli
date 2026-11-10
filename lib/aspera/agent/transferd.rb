@@ -90,6 +90,19 @@ module Aspera
           {'status' => 'unknown', 'bytes_transferred' => 0, 'error' => "#{e.class.name.split('::').last}: #{e.details}"}
         end
 
+        # Information on a running daemon (unary call `GetInfo`)
+        # @param agent_params [Hash] `url`: endpoint of the daemon; optional `timeout`: seconds, `api_key`, `ca_file`
+        # @return [Hash] Version of the API (`apiVersion`) and information on the instance (`info`)
+        # @raise [Transfer::Error] The daemon is not reachable, or gave an error
+        def info(agent_params)
+          response = client(agent_params).get_info(::Transferd::Api::InstanceInfoRequest.new, deadline: deadline(agent_params))
+          error = response.error&.description.to_s
+          Aspera.assert(error.empty?, type: Transfer::Error) { error }
+          JSON.parse(response.to_h.except(:error).to_json)
+        rescue GRPC::BadStatus => e
+          raise Transfer::Error, "#{e.class.name.split('::').last}: #{e.details}"
+        end
+
         # Stop a transfer (call `StopTransfer`)
         # @param transfer_id  [String] Identifier of transfer, given by the daemon
         # @param agent_params [Hash]   `url`: endpoint of the daemon; optional `timeout`: seconds, `api_key`, `ca_file`
