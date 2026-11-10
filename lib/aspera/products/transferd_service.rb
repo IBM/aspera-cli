@@ -34,7 +34,11 @@ module Aspera
       WAIT_INTERVAL = 0.5
       # Keys of `transferd.json` that contain a secret
       SECRET_KEYS = %w[api_key].freeze
-      private_constant :API_KEY_BYTES, :FILE_MODE, :DIR_MODE, :WAIT_INTERVAL, :SECRET_KEYS
+      # Name of the link to the version in use, in the layout `<prefix>/<version>`
+      CURRENT_LINK = 'current'
+      # Name of the folder of a version in the layout
+      VERSION_PATTERN = /\A\d+(\.\d+)*\z/
+      private_constant :API_KEY_BYTES, :FILE_MODE, :DIR_MODE, :WAIT_INTERVAL, :SECRET_KEYS, :VERSION_PATTERN
 
       # Access to the system: root folder, commands and network. Replaceable in tests.
       class Host
@@ -147,21 +151,86 @@ module Aspera
           return result
         end
 
+        # Layout of versions side by side: `<prefix>/<version>` folders and the link `<prefix>/current`.
+        # It is used when the SDK folder is named `current`. The paths in the unit and in `transferd.json` go through the link,
+        # so that switching the link and restarting the service is enough to change the version.
+        # @param sdk_folder [String] Folder of the SDK
+        # @return [Boolean] `true` if the layout is used
+        def layout?(sdk_folder)
+          File.basename(sdk_folder).eql?(CURRENT_LINK)
+        end
+
+        # @param sdk_folder [String] Folder of the SDK
+        # @return [String] Folder of the version in use if the layout is used, else `sdk_folder` as is
+        def resolve(sdk_folder)
+          layout?(sdk_folder) && File.symlink?(sdk_folder) ? File.realpath(sdk_folder) : sdk_folder
+        end
+
+        # @param sdk_folder [String] Link `current` of the layout
+        # @return [Array<Hash>] Installed versions, oldest first: `version`, `folder`, `current`
+        def versions(sdk_folder)
+          assert_layout(sdk_folder)
+          prefix = File.dirname(sdk_folder)
+          current = link_target(sdk_folder)
+          names = Dir.exist?(prefix) ? Dir.children(prefix) : []
+          return names
+              .select { |name| name.match?(VERSION_PATTERN) && File.exist?(executable(File.join(prefix, name))) }
+              .sort_by { |name| Gem::Version.new(name) }
+              .map { |name| {'version' => name, 'folder' => File.join(prefix, name), 'current' => name.eql?(current)} }
+        end
+
+        # Switch the link `current` to an installed version and restart the service.
+        # If the restart fails, the link is set back to the previous version and the service is restarted again.
+        # @param user_config [Hash]    `CONFIG`
+        # @param sdk_folder  [String]  Link `current` of the layout
+        # @param version     [String]  Installed version
+        # @return [Array<String>] Actions done, or to do with `dry_run`; empty if the version is already in use
+        def use(user_config, sdk_folder, version, host: Host.new, dry_run: false)
+          assert_layout(sdk_folder)
+          folder = version_folder(sdk_folder, version)
+          Aspera.assert(File.exist?(executable(folder)), type: ParameterError) { "Version #{version} is not installed in #{folder}" }
+          previous = link_target(sdk_folder)
+          return [] if previous.eql?(version)
+          opts = service_options(user_config)
+          steps = [["link #{sdk_folder} to #{version}", -> { switch_link(sdk_folder, version) }]]
+          if File.exist?(unit_path(host, opts))
+            config_file = host.path(CONFIG_FILE)
+            conf = File.exist?(config_file) ? read_config(config_file) : {}
+            steps << ["restart #{opts['name']}", -> { systemctl(host, 'restart', opts['name']) }]
+            steps.concat(wait_steps(host, opts, conf))
+          end
+          return with_rollback(sdk_folder, previous, opts, host) { run_steps(steps, dry_run) }
+        end
+
         # Install the SDK if not present, then configure and start the service.
+        # With the layout, the SDK is installed in `<prefix>/<version>`, the link `current` is set to it, and
+        # it is set back to the previous version if the service cannot be started.
         # @param user_config [Hash]    `CONFIG`: sections `service` and `config`
-        # @param sdk_folder  [String]  Folder of the SDK
+        # @param sdk_folder  [String]  Folder of the SDK, or link `current` of the layout
         # @param host        [Host]    Access to the system
         # @param dry_run     [Boolean] `true`: change nothing, only return the actions
-        # @param install_sdk [#call]   Installs the SDK in `sdk_folder`, called if `transferd` is not there
+        # @param install_sdk [#call]   Installs the SDK, called if `transferd` is not there.
+        #                              With the layout it receives the folder of the version, else no argument.
+        # @param version     [String]  Version to install and use, mandatory with the layout, else ignored
         # @return [Array<String>] Actions done, or to do with `dry_run`
-        def install(user_config, sdk_folder, host: Host.new, dry_run: false, install_sdk: nil)
+        def install(user_config, sdk_folder, host: Host.new, dry_run: false, install_sdk: nil, version: nil)
           steps = []
-          unless File.exist?(executable(sdk_folder))
+          previous = nil
+          if layout?(sdk_folder)
+            folder = version_folder(sdk_folder, version)
+            previous = link_target(sdk_folder)
+            unless File.exist?(executable(folder))
+              Aspera.assert(!install_sdk.nil?, type: ParameterError) { "SDK is not installed in #{folder}" }
+              steps << ["install the SDK in #{folder}", -> { install_sdk.call(folder) }]
+            end
+            steps << ["link #{sdk_folder} to #{version}", -> { switch_link(sdk_folder, version) }] unless previous.eql?(version)
+          elsif !File.exist?(executable(sdk_folder))
             Aspera.assert(!install_sdk.nil?, type: ParameterError) { "SDK is not installed in #{sdk_folder}" }
             steps << ["install the SDK in #{sdk_folder}", install_sdk]
           end
           steps.concat(configure_steps(user_config, sdk_folder, host, dry_run))
-          run_steps(steps, dry_run)
+          return run_steps(steps, dry_run) unless layout?(sdk_folder)
+          with_rollback(sdk_folder, previous, service_options(user_config), host) { run_steps(steps, dry_run) }
         end
 
         # Merge `CONFIG` in the configuration file, write the unit, then (re)start the service.
@@ -184,6 +253,7 @@ module Aspera
           version = File.exist?(executable(sdk_folder)) ? host.run(executable(sdk_folder), 'version').first : ''
           return {
             'service'        => opts['name'],
+            'sdk_folder'     => resolve(sdk_folder),
             'installed'      => File.exist?(unit_file),
             'version'        => version[/\d+\.\d+\.\d+/],
             'enabled'        => host.run('systemctl', 'is-enabled', opts['name']).first.strip,
@@ -215,6 +285,49 @@ module Aspera
         end
 
         private
+
+        def assert_layout(sdk_folder)
+          Aspera.assert(layout?(sdk_folder), type: ParameterError) { "The SDK folder must be named #{CURRENT_LINK} to use versions: #{sdk_folder}" }
+        end
+
+        # @return [String] Folder of a version, next to the link `current`
+        def version_folder(sdk_folder, version)
+          Aspera.assert(version.is_a?(String) && version.match?(VERSION_PATTERN), type: ParameterError) { "Invalid version: #{version.inspect}" }
+          File.join(File.dirname(sdk_folder), version)
+        end
+
+        # @return [String, nil] Name of the folder the link points to, or `nil` if there is no link
+        def link_target(link)
+          File.symlink?(link) ? File.basename(File.readlink(link)) : nil
+        end
+
+        # Atomically set the link to a version (relative target)
+        def switch_link(link, version)
+          Aspera.assert(File.symlink?(link) || !File.exist?(link), type: Error) { "#{link} exists and is not a link" }
+          temporary = "#{link}.new"
+          FileUtils.rm_f(temporary)
+          File.symlink(version, temporary)
+          File.rename(temporary, link)
+        end
+
+        # @return [String] Path of the unit file
+        def unit_path(host, opts)
+          host.path(File.join(opts['unit_dir'], "#{opts['name']}.service"))
+        end
+
+        # Run the block, and if it fails, set back the link to the previous version and restart the service.
+        def with_rollback(sdk_folder, previous, opts, host)
+          yield
+        rescue StandardError
+          Log.log.error { "Failed, going back to version #{previous || 'none'}" }
+          if previous.nil?
+            File.delete(sdk_folder) if File.symlink?(sdk_folder)
+          else
+            switch_link(sdk_folder, previous)
+            systemctl(host, 'restart', opts['name'], check: false) if File.exist?(unit_path(host, opts))
+          end
+          raise
+        end
 
         # @param user_config [Hash] `CONFIG`
         # @return [Hash] Validated `service` section with defaults, plus `config` section as `overrides`
@@ -322,12 +435,16 @@ module Aspera
           steps << ["write #{unit_file} (mode #{FILE_MODE.to_s(8)}):\n#{unit_text}", -> { write_file(unit_file, unit_text, nil, nil) }]
           steps << ['reload systemd', -> { systemctl(host, 'daemon-reload') }]
           steps << ["enable and restart #{opts['name']}", -> { %w[enable restart].each { |action| systemctl(host, action, opts['name']) } }]
-          port = (opts['environment']['TRANSFERD_PORT'] || conf['port']).to_i
-          if port.positive?
-            address = connect_address(opts['environment']['TRANSFERD_ADDRESS'] || conf['address'] || '127.0.0.1')
-            steps << ["wait for #{address}:#{port}", -> { wait_listening(host, address, port, opts['name']) }]
-          end
+          steps.concat(wait_steps(host, opts, conf))
           return steps
+        end
+
+        # @return [Array<Array(String, #call)>] Step to wait for the daemon, none if the port is dynamic
+        def wait_steps(host, opts, conf)
+          port = (opts['environment']['TRANSFERD_PORT'] || conf['port']).to_i
+          return [] unless port.positive?
+          address = connect_address(opts['environment']['TRANSFERD_ADDRESS'] || conf['address'] || '127.0.0.1')
+          return [["wait for #{address}:#{port}", -> { wait_listening(host, address, port, opts['name']) }]]
         end
 
         # @return [Array<Array(String, #call)>] Steps to remove the configuration file and the log folder
