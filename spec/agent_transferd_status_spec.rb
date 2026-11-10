@@ -38,11 +38,11 @@ RSpec.describe(Aspera::Agent::Transferd) do
       expect(stub).to(receive(:query_transfer)) do |request, deadline:|
         expect(request.transferId).to(eq('tid'))
         expect(deadline).to(be_within(2).of(Time.now + 10))
-        query_response(:RUNNING, {bytesTransferred: 1024, filesCompleted: 1, averageRateKbps: 900, targetRateKbps: 10_000, elapsedUsec: 2_500_000})
+        query_response(:RUNNING, {bytesTransferred: 1024, bytesWritten: 3072, filesCompleted: 1, averageRateKbps: 900, targetRateKbps: 10_000, elapsedUsec: 2_500_000})
       end
       result = described_class.transfer_status('tid', params)
       expect(result).to(include(
-        'status' => 'running', 'state' => 'running', 'bytes_transferred' => 1024, 'files_completed' => 1,
+        'status' => 'running', 'state' => 'running', 'bytes_transferred' => 1024, 'bytes_written' => 3072, 'files_completed' => 1,
         'rate_kbps' => 900, 'target_rate_kbps' => 10_000, 'elapsed_sec' => 2.5
       ))
       expect(result).not_to(include('ended_at', 'error'))

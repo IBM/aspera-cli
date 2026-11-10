@@ -42,7 +42,8 @@ module Aspera
         # @param transfer_id  [String] Identifier of transfer, given by the daemon (`transfer_id`)
         # @param agent_params [Hash]   `url`: endpoint of the daemon, e.g. `127.0.0.1:55002`; optional `timeout`: seconds
         # @return [Hash] Normalized status: `status` (`running`, `completed`, `failed`, `cancelled`, or `unknown` if the daemon cannot tell),
-        #   `bytes_transferred`, and when known: `state` (status of the daemon), `files_completed`, `rate_kbps` (average), `target_rate_kbps`,
+        #   `bytes_transferred`, and when known: `state` (status of the daemon), `bytes_written` (by the receiver, with the bytes of a resumed transfer),
+        #   `files_completed`, `rate_kbps` (average), `target_rate_kbps`,
         #   `elapsed_sec`, `started_at`, `ended_at`, `error_code`, `error`
         def transfer_status(transfer_id, agent_params)
           response = client(agent_params).query_transfer(::Transferd::Api::TransferInfoRequest.new(transferId: transfer_id), deadline: deadline(agent_params))
@@ -79,6 +80,7 @@ module Aspera
           }
           return result if info.nil?
           result.merge!(
+            'bytes_written'    => info.bytesWritten,
             'files_completed'  => info.filesCompleted,
             'rate_kbps'        => info.averageRateKbps,
             'target_rate_kbps' => info.targetRateKbps,
