@@ -10808,6 +10808,8 @@ The plugin also has client commands for a running daemon (for example one instal
 | `transfers cancel <transfer_id>`| Stop a transfer.                                                    |
 
 They use the options `url` (mandatory, endpoint of the daemon, e.g. `127.0.0.1:55002`), `api_key` (if the daemon enables `authentication`) and `ca_file` (if the daemon enables `tls`).
+If a key is not given, it is taken from the same key of the option `--transfer`, when its agent is `transferd` (e.g. a preset used for transfers).
+The options of the plugin have priority.
 The daemon has no call to list the transfers.
 These commands require the gem `grpc`: it is loaded only when one of them runs, so that the other commands do not need it.
 If it is missing: `gem install grpc`.

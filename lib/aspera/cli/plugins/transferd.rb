@@ -143,13 +143,23 @@ module Aspera
           Agent::Transferd
         end
 
-        # @return [Hash] Parameters of the connection to the daemon: option `url` is mandatory, `api_key` and `ca_file` are optional
+        # Parameters of the connection to the daemon: option `url` is mandatory, `api_key` and `ca_file` are optional.
+        # Options `url`, `api_key` and `ca_file` have priority, else the same keys of option `transfer` are used, if its agent is `transferd`.
+        # @return [Hash]
         def daemon_params
-          {
-            'url'     => options.get_option(:url, mandatory: true),
-            'api_key' => options.get_option(:api_key),
-            'ca_file' => options.get_option(:ca_file)
-          }.compact
+          from_transfer = transfer_agent_params
+          params = %w[url api_key ca_file].to_h { |key| [key, options.get_option(key.to_sym) || from_transfer[key]] }.compact
+          Aspera.assert(params.key?('url'), type: Cli::BadArgument) do
+            "Missing option #{Parser.option_name_to_line(:url)} (or #{Parser.option_name_to_line(:transfer)} with agent transferd and key url)"
+          end
+          return params
+        end
+
+        # @return [Hash] Keys `url`, `api_key`, `ca_file` of option `transfer`, only if its agent is `transferd`, else empty
+        def transfer_agent_params
+          transfer_options = transfer.transfer_options
+          return {} unless transfer_options['agent'].to_s.eql?('transferd')
+          return transfer_options.slice('url', 'api_key', 'ca_file')
         end
 
         # @return [String, nil] Value of option `sdk_url`, or nil to select the archive from the SDK locations (`DEF`)

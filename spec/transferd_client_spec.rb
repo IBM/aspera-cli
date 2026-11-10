@@ -85,6 +85,21 @@ module Aspera
         expect(fake.calls).to(eq([[:transfer_cancel, 'tid', {'url' => 'h:1'}]]))
       end
 
+      it 'uses option transfer when its agent is transferd' do
+        run_cli('transferd', 'info', '--transfer=@json:{"agent":"transferd","url":"h:2","api_key":"K","ca_file":"/ca.pem"}')
+        expect(fake.calls).to(eq([[:info, {'url' => 'h:2', 'api_key' => 'K', 'ca_file' => '/ca.pem'}]]))
+      end
+
+      it 'gives priority to the options of the plugin over option transfer' do
+        run_cli('transferd', 'info', '--url=h:1', '--transfer=@json:{"agent":"transferd","url":"h:2","api_key":"K"}')
+        expect(fake.calls).to(eq([[:info, {'url' => 'h:1', 'api_key' => 'K'}]]))
+      end
+
+      it 'ignores option transfer when its agent is not transferd' do
+        expect { run_cli('transferd', 'info', '--transfer=@json:{"agent":"direct","url":"h:2"}') }.to(raise_error(SystemExit))
+        expect(fake.calls).to(be_empty)
+      end
+
       it 'requires the option url' do
         expect { run_cli('transferd', 'info') }.to(raise_error(SystemExit))
         expect(fake.calls).to(be_empty)
