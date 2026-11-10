@@ -536,6 +536,7 @@ module Aspera
         @context.options.declare(:security, description: 'Security restrictions (dot-notation: level, allowed_paths)', on_set: Security.instance.method(:options=), schema: Schema::Registry::SECURITY_OPTIONS)
         @context.options.declare(:lock_port, description: 'Prevent dual execution of a command, e.g. in cron', allowed: Type::INTEGER)
         @context.options.declare(:once_only, description: 'Process only new items (some commands)', allowed: Type::BOOLEAN, default: false)
+        @context.options.declare(:dry_run, description: 'Do not perform changes, only show what would be done', allowed: Type::BOOLEAN, default: false)
         @context.options.declare(:log_secrets, description: 'Show passwords in logs', allowed: Type::BOOLEAN, default: Secret::Hider.instance.log_secrets, on_set: Secret::Hider.instance.method(:log_secrets=))
         @context.options.declare(
           :temp, description: 'Temporary files (dot-notation: folder, clean, expiry)',

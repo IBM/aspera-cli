@@ -106,4 +106,19 @@ RSpec.describe(Aspera::Products::TransferdService) do
       expect(validator.errors({'usr' => 'aspweb'}, path)).not_to(be_empty)
     end
   end
+
+  describe 'service config schema' do
+    let(:validator) { Aspera::Schema::Validator.instance }
+    let(:path) { Aspera::Schema::Registry::TRANSFERD_SERVICE_CONFIG }
+
+    it 'is registered' do
+      expect(Aspera::Schema::Registry.instance.reader(path)['properties']).to(include('service', 'config'))
+    end
+
+    it 'accepts valid values and refuses unknown keys' do
+      expect(validator.errors({'service' => {'user' => 'aspweb'}, 'config' => {'port' => 55_002}}, path)).to(be_empty)
+      expect(validator.errors({'unknown_key' => 'test'}, path)).not_to(be_empty)
+      expect(validator.errors({'service' => {'unknown_service_opt' => 'test'}}, path)).not_to(be_empty)
+    end
+  end
 end

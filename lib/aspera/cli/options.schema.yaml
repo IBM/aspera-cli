@@ -543,6 +543,18 @@ components:
             `TRANSFERD_ADDRESS`, `TRANSFERD_PORT`, `TRANSFERD_MGMT_PORT` and `TRANSFERD_MGMT_ADDRESS` override the configuration file.
           additionalProperties:
             type: string
+    TransferdServiceConfig:
+      type: object
+      description: >-
+        Configuration of the transfer daemon (`transferd`) as a system service.
+      additionalProperties: false
+      properties:
+        service:
+          $ref: "#/components/schemas/ServiceOptions"
+        config:
+          type: object
+          description: >-
+            Content of `transferd.json`, validated against the transfer daemon configuration schema.
     HttpOptions:
       type: object
       description: >-

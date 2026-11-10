@@ -102,6 +102,7 @@ module Aspera
       TRANSFER_AGENT_OPTIONS  = "#{OPTIONS}:components.schemas.TransferAgentOptions"
       SMTP_OPTIONS            = "#{OPTIONS}:components.schemas.SmtpOptions"
       SERVICE_OPTIONS         = "#{OPTIONS}:components.schemas.ServiceOptions"
+      TRANSFERD_SERVICE_CONFIG = "#{OPTIONS}:components.schemas.TransferdServiceConfig"
       HTTP_OPTIONS            = "#{OPTIONS}:components.schemas.HttpOptions"
       VAULT_OPTIONS           = "#{OPTIONS}:components.schemas.VaultOptions"
       VAULT_SECRET            = "#{OPTIONS}:components.schemas.VaultSecret"

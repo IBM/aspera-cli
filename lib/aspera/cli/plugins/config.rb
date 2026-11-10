@@ -22,6 +22,7 @@ require 'aspera/cli/gem_checker'
 require 'aspera/ascp/installation'
 require 'aspera/sync/operations'
 require 'aspera/products/transferd'
+require 'aspera/products/transferd_service'
 require 'aspera/transfer/spec'
 require 'aspera/schema/documentation'
 require 'aspera/secret/store/macos_security'
@@ -395,6 +396,25 @@ module Aspera
               Result::ObjectList.new(sdk_list, fields: sdk_list.first.keys - ['url'])
             end
           )
+          commands_under :service, description: 'Manage the transfer daemon as a system service' do
+            command(
+              :spec, description: 'Show the transfer daemon configuration schema',
+              action: lambda do |**|
+                builder = Schema::Documentation.new(TerminalFormatter, Schema::Registry.instance.reader('transferd')).build
+                Result::ObjectList.new(builder.rows, fields: builder.columns)
+              end
+            )
+            command(
+              :configure, description: 'Configure the transfer daemon service',
+              arguments: [{name: :config, type: Hash, mandatory: false, default: {}, schema: Schema::Registry::TRANSFERD_SERVICE_CONFIG}],
+              action: lambda do |config:, **|
+                sdk_folder = options.get_option(:sdk_folder)
+                dry_run = options.get_option(:dry_run)
+                steps = Products::TransferdService.configure(config, sdk_folder, dry_run: dry_run)
+                Result::ValueList.new(steps, name: 'action')
+              end
+            )
+          end
         end
 
         # sync sub-commands

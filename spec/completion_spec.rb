@@ -98,6 +98,10 @@ module Aspera
           preset_results = run_words('config', 'preset')
           expect(preset_results).to(include('list', 'overview', 'delete', 'show'))
           expect(preset_results.none? { |r| r.start_with?('-') }).to(be(true))
+
+          service_results = run_words('config', 'transferd', 'service')
+          expect(service_results).to(include('spec', 'configure'))
+          expect(service_results.none? { |r| r.start_with?('-') }).to(be(true))
         end
 
         it 'proposes allowed values for an enum option' do
@@ -121,6 +125,7 @@ module Aspera
           expect(run_words('config', 'preset', 'set', 'mypreset', 'url')).to(eq(['<String>']))
           expect(run_words('config', 'vault', 'create')).to(eq(['<Hash> label*, username, password, url, description']))
           expect(run_words('config', 'vault', 'import')).to(eq(['<Array>']))
+          expect(run_words('config', 'transferd', 'service', 'configure')).to(eq(['<Hash> service, config']))
         end
 
         it 'skips values of options given in a separate word' do
