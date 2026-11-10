@@ -8,13 +8,57 @@ require 'aspera/schema/registry'
 
 module Aspera
   module Products
-    # Run the transfer daemon as a system service: configuration of `transferd.json`
+    # Run the transfer daemon as a system service: configuration of `transferd.json` and systemd unit
     class TransferdService
       # Number of random bytes of a generated API key
       API_KEY_BYTES = 32
+      DEFAULT_SERVICE_NAME = 'aspera-transferd'
+      DEFAULT_USER = 'asperadaemon'
+      DEFAULT_UNIT_DIR = '/etc/systemd/system'
+      DEFAULT_AFTER = ['network.target'].freeze
       private_constant :API_KEY_BYTES
 
       class << self
+        # Generate the text of the systemd unit file.
+        # @param options [Hash] Service and execution options (from CONFIG or specific keys)
+        # @return [String] systemd unit file content
+        def unit(options = {})
+          Aspera.assert_type(options, Hash) { 'options' }
+          opts = json_hash(options)
+          opts = opts['service'].merge(opts) if opts['service'].is_a?(Hash)
+          executable = opts['executable'] || opts['exec'] || opts['bin'] ||
+            (opts['sdk_folder'] ? File.join(opts['sdk_folder'], 'bin', 'transferd') : '/opt/aspera/transferd/bin/transferd')
+          config_file = opts['config_file'] || opts['config'] || opts['config_path'] || opts['file'] || '/etc/transferd/transferd.json'
+          user = opts['user'] || DEFAULT_USER
+          group = opts['group']
+          after = opts['after'] || DEFAULT_AFTER
+          after = Array(after).join(' ')
+          env = opts['environment'] || {}
+
+          lines = [
+            '[Unit]',
+            "Description=#{opts['description'] || 'IBM Aspera Transfer Daemon'}",
+            "After=#{after}",
+            '',
+            '[Service]',
+            "Type=#{opts['type'] || 'simple'}",
+            "User=#{user}"
+          ]
+          lines << "Group=#{group}" if group && !group.empty?
+          lines << "ExecStart=#{executable} --config #{config_file}"
+          lines << "Restart=#{opts['restart'] || 'always'}"
+          env.keys.sort.each do |k|
+            lines << %Q(Environment="#{k}=#{env[k]}")
+          end
+          lines.push(
+            '',
+            '[Install]',
+            "WantedBy=#{opts['wanted_by'] || 'multi-user.target'}",
+            ''
+          )
+          lines.join("\n")
+        end
+
         # Build the content of `transferd.json`.
         # Order of precedence: values computed from `sdk_folder`, then `existing`, then `overrides`.
         # A key set to `nil` in `overrides` is removed.
