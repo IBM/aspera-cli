@@ -301,10 +301,10 @@ module Aspera
           command :reload, description: 'Reload a plugin (class name), or all enabled plugins',
             arguments: [{name: :plugin, mandatory: false}],
             action: ->(plugin: nil, **) { Result::SingleObject.new(call_ao('reload_plugin', query: {action_type: plugin}.compact)) }
-          command :enable, description: 'Enable a plugin (class name), or all plugins',
+          command :enable, description: 'Enable a plugin (class name), or all plugins. Orchestrator 4.1.6: never for a plugin imported with `import`, it deletes its folder',
             arguments: [{name: :plugin, mandatory: false}],
             action: ->(plugin: nil, **) { Result::SingleObject.new(call_ao("enable_plugin/#{ANY_ID}", query: {action_type: plugin}.compact)) }
-          command :import, description: 'Import a plugin from an archive present on the Orchestrator host',
+          command :import, description: 'Import and enable a plugin from an archive present on the Orchestrator host, readable by aspweb. Orchestrator 4.1.6: its migration files stay in the load folder, and prevent the next start',
             arguments: [{name: :file_path}],
             action: ->(file_path:, **) { Result::SingleObject.new(call_ao("import_plugin/#{ANY_ID}", query: {file: file_path})) }
           command :reload_set, description: 'Reload a set of plugins',
