@@ -498,6 +498,51 @@ components:
           description: Display name of the sender. Defaults to the local-part of `from_email`.
           examples:
             - John Wayne
+    ServiceOptions:
+      type: object
+      description: >-
+        Installation parameters of the transfer daemon (`transferd`) as a system service.
+        The content of the daemon configuration file is described by its own schema.
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          description: >-
+            Name of the service.
+            The unit file is `<name>.service`.
+          default: aspera-transferd
+          minLength: 1
+        user:
+          type: string
+          description: >-
+            Account that runs the daemon.
+            It must exist, it is not created.
+          default: asperadaemon
+          minLength: 1
+        group:
+          type: string
+          description: Group that runs the daemon. Defaults to the primary group of `user`.
+          minLength: 1
+        unit_dir:
+          type: string
+          description: Folder where the unit file is created.
+          default: /etc/systemd/system
+          minLength: 1
+        after:
+          type: array
+          description: Units that shall be started before the daemon (`After=` in the unit).
+          items:
+            type: string
+          default:
+            - network.target
+        environment:
+          type: object
+          description: >-
+            Environment variables set in the unit.
+            None is set unless given here.
+            `TRANSFERD_ADDRESS`, `TRANSFERD_PORT`, `TRANSFERD_MGMT_PORT` and `TRANSFERD_MGMT_ADDRESS` override the configuration file.
+          additionalProperties:
+            type: string
     HttpOptions:
       type: object
       description: >-
