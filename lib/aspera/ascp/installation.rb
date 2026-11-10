@@ -386,8 +386,10 @@ module Aspera
       # Downloads, installs and configures the SDK, returns name, version and install folder
       # @param url     [nil, String] URL to SDK archive, if nil: default url for version
       # @param version [nil, String] Specific version, if nil: latest version
+      # @param folder  [nil, String] Install folder, if nil: the SDK folder (option `sdk_folder`), which is unchanged
       # @return [Array<String>] sdk name, sdk version, install folder
-      def install_sdk(url: nil, version: nil)
+      def install_sdk(url: nil, version: nil, folder: nil)
+        return with_sdk_directory(folder) { install_sdk(url: url, version: version) } unless folder.nil?
         folder = Products::Transferd.sdk_directory
         download_sdk(folder: folder, url: url, version: version)
         # Ensure necessary files are there, or generate them, restrict file access on SDK executables
@@ -421,6 +423,18 @@ module Aspera
       attr_accessor :transferd_urls
 
       private
+
+      # Run the block with another SDK folder (files of the SDK are located from it), then set the previous one back
+      # @param folder [String] Temporary SDK folder
+      def with_sdk_directory(folder)
+        previous = Products::Transferd.sdk_directory
+        begin
+          Products::Transferd.sdk_directory = folder
+          return yield
+        ensure
+          Products::Transferd.sdk_directory = previous
+        end
+      end
 
       # @param path     [String] Path to check
       # @param boundary [String] Folder that must contain `path`

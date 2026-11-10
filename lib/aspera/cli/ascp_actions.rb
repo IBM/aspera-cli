@@ -46,6 +46,12 @@ module Aspera
         end
       end
 
+      # @return [String, nil] Value of option `sdk_url`, or nil to select the archive from the SDK locations (`DEF`)
+      def sdk_url_option
+        sdk_url = options.get_option(:sdk_url, mandatory: true)
+        return sdk_url.eql?(SpecialValues::DEF) ? nil : sdk_url
+      end
+
       # Install the transfer SDK (ascp + transferd) from a URL or using the default source.
       # Version defaults to `Info::SDK_VERSION`; pass `LATEST` as argument to install the latest available version.
       # @param version [String, nil] version to install; nil means use the default SDK version
@@ -53,9 +59,7 @@ module Aspera
       def install_transfer_sdk(version: nil)
         asked_version = version.nil? ? Info::SDK_VERSION : version
         asked_version = nil if asked_version.eql?(SpecialValues::LATEST)
-        sdk_url = options.get_option(:sdk_url, mandatory: true)
-        sdk_url = nil if sdk_url.eql?(SpecialValues::DEF)
-        name, ver, folder = Ascp::Installation.instance.install_sdk(url: sdk_url, version: asked_version)
+        name, ver, folder = Ascp::Installation.instance.install_sdk(url: sdk_url_option, version: asked_version)
         return Result::Status.new("Installed #{name} version #{ver} in #{folder}")
       end
 

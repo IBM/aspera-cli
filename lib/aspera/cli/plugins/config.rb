@@ -559,19 +559,11 @@ module Aspera
         def transferd_service_install(config)
           transferd_service do |host, sdk_folder, dry_run|
             version = Products::TransferdService.service_options(config)['version'] || Info::SDK_VERSION
-            sdk_url = options.get_option(:sdk_url, mandatory: true)
-            sdk_url = nil if sdk_url.eql?(SpecialValues::DEF)
+            sdk_url = sdk_url_option
             installation = Ascp::Installation.instance
             install_sdk =
               if Products::TransferdService.layout?(sdk_folder)
-                lambda do |folder|
-                  Products::Transferd.sdk_directory = folder
-                  begin
-                    installation.install_sdk(url: sdk_url, version: version)
-                  ensure
-                    Products::Transferd.sdk_directory = sdk_folder
-                  end
-                end
+                ->(folder) { installation.install_sdk(url: sdk_url, version: version, folder: folder) }
               else
                 -> { installation.install_sdk(url: sdk_url, version: version) }
               end

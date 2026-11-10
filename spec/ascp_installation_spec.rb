@@ -99,4 +99,35 @@ RSpec.describe(Aspera::Ascp::Installation) do
       end
     end
   end
+
+  describe 'install_sdk with folder' do
+    around do |example|
+      previous = Aspera::Products::Transferd.instance_variable_get(:@sdk_dir)
+      Aspera::Products::Transferd.sdk_directory = '/sdk/default'
+      example.run
+    ensure
+      Aspera::Products::Transferd.instance_variable_set(:@sdk_dir, previous)
+    end
+
+    it 'installs in the given folder and sets back the SDK folder, also on error' do
+      seen = nil
+      allow(described_class.instance).to(receive(:download_sdk)) do |folder:, **|
+        seen = [folder, Aspera::Products::Transferd.sdk_directory]
+        raise 'stop'
+      end
+      expect { described_class.instance.install_sdk(folder: '/sdk/1.1.9') }.to(raise_error('stop'))
+      expect(seen).to(eq(['/sdk/1.1.9', '/sdk/1.1.9']))
+      expect(Aspera::Products::Transferd.sdk_directory).to(eq('/sdk/default'))
+    end
+
+    it 'installs in the SDK folder without folder' do
+      seen = nil
+      allow(described_class.instance).to(receive(:download_sdk)) do |folder:, **|
+        seen = folder
+        raise 'stop'
+      end
+      expect { described_class.instance.install_sdk }.to(raise_error('stop'))
+      expect(seen).to(eq('/sdk/default'))
+    end
+  end
 end
