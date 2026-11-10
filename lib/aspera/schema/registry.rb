@@ -68,11 +68,12 @@ module Aspera
         shares:       'aspera/schema/IBM_Aspera_Shares.yaml',
         orchestrator: 'aspera/schema/IBM Aspera Orchestrator API-v1-enhanced.yaml',
         async_tables: 'aspera/schema/async_tables.yaml',
-        ascp_log:     'aspera/ascp/log.schema.yaml'
+        ascp_log:     'aspera/ascp/log.schema.yaml',
+        transferd:    'aspera/schema/transferd-config.schema.json'
       }
 
       # Schemas owned by ascli: values are validated against them (vendor API schemas are validated by the API)
-      OWNED = %i[spec args conf opts preview async_tables ascp_log].freeze
+      OWNED = %i[spec args conf opts preview async_tables ascp_log transferd].freeze
 
       OPTIONS = 'opts'
       TRANSFER_SPEC = 'spec'
@@ -134,8 +135,8 @@ module Aspera
         sym = name.to_sym
         Aspera.assert(Registry.known?(sym)) { "schema: #{sym}" }
         spec_file = File.join(@main_folder, LOCATIONS[sym])
-        @cache[sym] = Yaml.safe_load(File.read(spec_file)) if spec_file.end_with?('.yaml') && !@cache.key?(sym)
-        @cache[sym] = JSON.parse(File.read(spec_file)) if spec_file.end_with?('.json') && !@cache.key?(sym)
+        # JSON is read with the YAML loader: it accepts the header comment added by `rake tools:openapi`
+        @cache[sym] = Yaml.safe_load(File.read(spec_file)) unless @cache.key?(sym)
         # Query-params path: strip the suffix, navigate to the operation node, extract parameters
         if path&.end_with?(QUERY_PARAMS_SUFFIX)
           parent_path = path.delete_suffix(QUERY_PARAMS_SUFFIX)
