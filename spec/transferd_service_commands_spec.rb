@@ -86,7 +86,7 @@ RSpec.describe(Aspera::Products::TransferdService) do
   end
 end
 
-RSpec.describe('config transferd service commands') do
+RSpec.describe('transferd service commands') do
   let(:source_root) { File.expand_path('..', __dir__) }
 
   def run_cli(*args)
@@ -98,20 +98,20 @@ RSpec.describe('config transferd service commands') do
 
   it 'refuses to run for real when not root or not on Linux with systemd' do
     skip('running as root') if Process.euid.zero?
-    _stdout, stderr, status = run_cli('config', 'transferd', 'service', 'status')
+    _stdout, stderr, status = run_cli('transferd', 'service', 'status')
     expect(status.exitstatus).not_to(eq(0))
     expect(stderr).to(match(/requires (Linux with systemd|systemd)|as root/))
   end
 
   it 'shows the actions of uninstall with --dry-run=yes on any platform' do
-    stdout, stderr, status = run_cli('config', 'transferd', 'service', 'uninstall', '--dry-run=yes')
+    stdout, stderr, status = run_cli('transferd', 'service', 'uninstall', '--dry-run=yes')
     expect(status.exitstatus).to(eq(0), stderr)
     expect(stdout + stderr).to(match(/Nothing to do|remove/))
   end
 
   it 'lists nothing useful but refuses versions without the layout' do
     Dir.mktmpdir do |folder|
-      _stdout, stderr, status = run_cli('config', 'transferd', 'service', 'versions', "--sdk-folder=#{folder}")
+      _stdout, stderr, status = run_cli('transferd', 'service', 'versions', "--sdk-folder=#{folder}")
       expect(status.exitstatus).not_to(eq(0))
       expect(stderr).to(include('must be named current'))
     end
@@ -122,7 +122,7 @@ RSpec.describe('config transferd service commands') do
       FileUtils.mkdir_p(File.join(prefix, '1.1.9'))
       FileUtils.touch(File.join(prefix, '1.1.9', 'transferd'))
       File.symlink('1.1.9', File.join(prefix, 'current'))
-      stdout, stderr, status = run_cli('config', 'transferd', 'service', 'versions', "--sdk-folder=#{File.join(prefix, 'current')}", '--format=json')
+      stdout, stderr, status = run_cli('transferd', 'service', 'versions', "--sdk-folder=#{File.join(prefix, 'current')}", '--format=json')
       expect(status.exitstatus).to(eq(0), stderr)
       expect(JSON.parse(stdout)).to(eq([{'version' => '1.1.9', 'folder' => File.join(prefix, '1.1.9'), 'current' => true}]))
     end

@@ -5085,35 +5085,30 @@ conf_ascp_install_113:
     - conf_ascp_sdk_folder_save
   pre: puts((t.saved_output :conf_ascp_sdk_folder_save))
   args:
-    - config
-    - ascp
+    - transferd
     - install
     - 1.1.3
 conf_ascp_install_latest:
   depends_on:
     - conf_ascp_install_113
   args:
-    - config
-    - ascp
+    - transferd
     - install
 conf_ascp_install_in_other_folder:
   $comment: Install in non standard folder
   pre: (TMP / 'sdk_test_dir').rmtree
   args:
-    - config
-    - ascp
+    - transferd
     - install
     - --sdk-folder=$(TMP / 'sdk_test_dir')
 conf_ascp_installd:
   args:
-    - config
     - transferd
     - list
 conf_transferd_install_latest:
   tags:
     - smoke_test
   args:
-    - config
     - transferd
     - install
 conf_transferd_url:
@@ -5121,11 +5116,22 @@ conf_transferd_url:
     - save_output
     - nodoc
   args:
-    - config
     - transferd
     - list
     - --select=@json:{"platform":"osx-arm64","version":"1.1.3"}
     - --fields=url
+transferd_service_spec:
+  args:
+    - transferd
+    - service
+    - spec
+transferd_service_configure_dry_run:
+  args:
+    - transferd
+    - service
+    - configure
+    - --dry-run=yes
+    - '@json:{"service":{"user":"aspweb"},"config":{"port":55002}}'
 conf_agents_list:
   args:
     - config

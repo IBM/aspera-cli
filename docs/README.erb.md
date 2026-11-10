@@ -193,7 +193,7 @@ export PATH=$PATH:$HOME/bin
 - Install the Aspera transfer runtime (tested version), as it is not included in the <%=tool%> package:
 
 ```shell
-<%=cmd%> config transferd install
+<%=cmd%> transferd install
 ```
 
 ### Option A - Test with the Aspera Demo Server
@@ -354,7 +354,7 @@ This executable includes the Ruby runtime and gems, but not the transfer SDK.
 
 ```shell
 tar zxvf <%=gemspec.name%>-<%=ph :version%>-<%=ph :platform%>.tgz
-./<%=cmd%> config transferd install
+./<%=cmd%> transferd install
 ```
 
 #### Linux: Checking the GLIBC version
@@ -413,7 +413,7 @@ The GLIBC of the system must be at least the version in the archive name, see [C
 
 > [!NOTE]
 > The launcher `<%=cmd%>` uses the `ascp` located in folder `sdk` of the package, unless environment variable `ASCLI_SDK_FOLDER` is set.
-> So, `<%=cmd%> config transferd install` is not needed.
+> So, `<%=cmd%> transferd install` is not needed.
 
 The configuration is stored in the [main folder](#main-configuration-and-persistency-folder), like for other installation methods.
 To upgrade, extract the new version, and update the symbolic link.
@@ -450,7 +450,7 @@ Apart from the prerequisite below, no installation step, no administrator rights
 
 > [!NOTE]
 > The launcher `<%=cmd%>.cmd` uses the `ascp` located in folder `sdk` of the package, unless environment variable `ASCLI_SDK_FOLDER` is set.
-> So, `<%=cmd%> config transferd install` is not needed.
+> So, `<%=cmd%> transferd install` is not needed.
 
 The configuration is stored in the [main folder](#main-configuration-and-persistency-folder), like for other installation methods.
 To upgrade, extract the new version, and update the `PATH` if the folder name changed.
@@ -838,7 +838,7 @@ The easiest option to install `ascp` is through the use of the IBM Aspera Transf
 Install it using <%=tool%> (for the current platform) with:
 
 ```shell
-<%=cmd%> config transferd install
+<%=cmd%> transferd install
 ```
 
 The installation of the transfer binaries follows those steps:
@@ -861,30 +861,33 @@ The installation of the transfer binaries follows those steps:
 | `locations_url` | List of URLs to get download URLs of Aspera Transfer Daemon from IBM official repository, tried in order.<%=br%>A list given in options replaces the default list.<%=br%>Default:<%=br%>- `https://ibm.biz/sdk_location`<%=br%>- `https://raw.githubusercontent.com/IBM/aspera-cli/refs/heads/main/docs/sdk_location.yaml`|
 | `sdk_folder`  | Folder where the SDK archive is extracted.<%=br%>Default: `$HOME/.aspera/sdk` |
 
-Transfer Daemon versions available from `locations_url` can be listed with: `<%=cmd%> config transferd list`
+> [!NOTE]
+> Commands `config transferd ...` and `config ascp install` are deprecated aliases of `transferd ...` and `transferd install`.
+
+Transfer Daemon versions available from `locations_url` can be listed with: `<%=cmd%> transferd list`
 
 To install a specific version, for example, 1.1.3:
 
 ```shell
-<%=cmd%> config transferd install 1.1.3
+<%=cmd%> transferd install 1.1.3
 ```
 
 To get the download URL for a specific platform and version:
 
 ```shell
-<%=cmd%> config transferd list --select.platform=osx-arm64 --select.version=1.1.3 --fields=url
+<%=cmd%> transferd list --select.platform=osx-arm64 --select.version=1.1.3 --fields=url
 ```
 
 To download it, pipe to `config download`:
 
 ```shell
-<%=cmd%> config transferd list --select.platform=osx-arm64 --select.version=1.1.3 --fields=url | <%=cmd%> config download @stdin:
+<%=cmd%> transferd list --select.platform=osx-arm64 --select.version=1.1.3 --fields=url | <%=cmd%> config download @stdin:
 ```
 
 To install from a local file (air-gapped installation) instead of fetching from the internet, specify the location of the SDK file with option `sdk_url`:
 
 ```shell
-<%=cmd%> config transferd install --sdk-url=file:///macos-arm64-1.1.3-c6c7a2a.zip
+<%=cmd%> transferd install --sdk-url=file:///macos-arm64-1.1.3-c6c7a2a.zip
 ```
 
 The format is: `file:///<%=ph :path%>` (canonical form) or `file:<%=ph :path%>` (short form), where `<%=ph :path%>` can be either a relative path (not starting with `/`), or an absolute path (starting with `/`).
@@ -938,13 +941,13 @@ For an air-gapped installation, two alternatives are available:
       On a system with internet access, retrieve the SDK archive for the target platform and version:
 
       ```shell
-      <%=cmd%> config transferd list --select.platform=<%=ph :platform%> --select.version=<%=ph :version%> --fields=url | <%=cmd%> config download @stdin:
+      <%=cmd%> transferd list --select.platform=<%=ph :platform%> --select.version=<%=ph :version%> --fields=url | <%=cmd%> config download @stdin:
       ```
 
       On the air-gapped system, install from the downloaded file using option `--sdk-url`:
 
       ```shell
-      <%=cmd%> config transferd install --sdk-url=file:///<%=ph :sdk_archive_path%>
+      <%=cmd%> transferd install --sdk-url=file:///<%=ph :sdk_archive_path%>
       ```
 
 2. Retrieve the [single file executable](#single-file-executable) from the release, if available, and the SDK (not included) as described above.
@@ -986,7 +989,7 @@ The following procedure applies when using RVM for the Ruby installation:
    cd $HOME
    tar zxvf rvm-<%=cmd%>.tgz
    source ~/.rvm/scripts/rvm
-   <%=cmd%> config transferd install --sdk-url=file:///<%=ph :sdk_archive_path%>
+   <%=cmd%> transferd install --sdk-url=file:///<%=ph :sdk_archive_path%>
    ```
 
 6. Add the following line to the shell environment file (`.profile`):
@@ -1034,7 +1037,7 @@ On the target system:
 4. Install the Aspera Transfer Daemon SDK:
 
    ```shell
-   <%=cmd%> config transferd install --sdk-url=file:///<%=ph :sdk_archive_path%>
+   <%=cmd%> transferd install --sdk-url=file:///<%=ph :sdk_archive_path%>
    ```
 
 ### Container
@@ -3001,7 +3004,7 @@ Plugin `config` provides general commands for <%=tool%>:
 - `wizard`
 - `vault`
 - `ascp`
-- `transferd`
+- `transferd` (deprecated, use plugin [`transferd`](#plugin-transferd-transfer-daemon))
 
 The default preset for `config` is read for any plugin invocation: this allows setting global options, such as `--log-level` or `--interactive`.
 When <%=tool%> starts, it looks for the `default` Option Preset and checks the value for `config`.
@@ -4106,7 +4109,7 @@ Or, alternatively, (prefer transfer spec like above, generally):
 
 By default, it uses the `direct` agent, which is a local `ascp`.
 Nevertheless, <%=tool%> does not come with `ascp` installed.
-This is the reason why it is advised to install the Aspera Transfer Daemon during installation (`<%=cmd%> config transferd install`).
+This is the reason why it is advised to install the Aspera Transfer Daemon during installation (`<%=cmd%> transferd install`).
 
 By default, <%=tool%> uses the `ascp` binary found in **well known locations**, that is, typical Aspera product installation paths.
 
@@ -4115,7 +4118,7 @@ It provides the following commands for `ascp` sub-command:
 
 - `show` : Show the path of `ascp` used
 - `info` : Show information on `ascp` and its environment
-- `install` : Install the Transfer SDK (same as `config transferd install`)
+- `install` : Install the Transfer SDK (deprecated, same as `transferd install`)
 - `spec` : List transfer spec parameters supported by `ascp`
 - `schema` : Show the JSON schema of the transfer spec
 - `errors` : List known `ascp` errors and whether they are retry-able
@@ -4760,7 +4763,7 @@ On Windows the compilation may fail for various reasons (3.1.1):
 The Transfer Daemon (`transferd`) can run permanently as a `systemd` service, for applications that use an existing daemon (see [Agent: Transfer Daemon](#agent-transfer-daemon), `start` set to `false`).
 <%=tool%> installs the SDK, writes the configuration file of the daemon (`/etc/transferd/transferd.json`) and the `systemd` unit, then enables and starts the service.
 
-Commands are in `config transferd service`:
+Commands are in `transferd service` (plugin [`transferd`](#plugin-transferd-transfer-daemon)):
 
 | Command     | Action |
 |-------------|--------|
@@ -4799,7 +4802,7 @@ Parameters of section `service`:
 Section `config` follows the JSON schema of the daemon, displayed with:
 
 ```shell
-<%=cmd%> config transferd service spec
+<%=cmd%> transferd service spec
 ```
 
 <%=schema_to_table('transferd')%>
@@ -4828,19 +4831,19 @@ Requirements:
 Example:
 
 ```shell
-sudo <%=cmd%> config transferd service install --sdk-folder=/opt/aspera/transferd/current @json:'{"config":{"port":55002,"authentication":{"enabled":true}}}'
+sudo <%=cmd%> transferd service install --sdk-folder=/opt/aspera/transferd/current @json:'{"config":{"port":55002,"authentication":{"enabled":true}}}'
 ```
 
 ```shell
-<%=cmd%> config transferd service configure --dry-run=yes @json:'{"config":{"log_level":"debug"}}'
+<%=cmd%> transferd service configure --dry-run=yes @json:'{"config":{"log_level":"debug"}}'
 ```
 
 ```shell
-sudo <%=cmd%> config transferd service status
+sudo <%=cmd%> transferd service status
 ```
 
 ```shell
-sudo <%=cmd%> config transferd service uninstall @json:'{"service":{"purge":true}}'
+sudo <%=cmd%> transferd service uninstall @json:'{"service":{"purge":true}}'
 ```
 
 ##### Versions side by side and rollback
@@ -9660,6 +9663,16 @@ After creating a default configuration using one of the previous methods (otherw
 
 <%=include_commands_for_plugin(:httpgw)%>
 
+## Plugin: `transferd`: Transfer Daemon
+
+Plugin `transferd` installs the IBM Aspera Transfer Daemon (`transferd`, which includes `ascp`) and runs it as a system service.
+See [Installing `ascp` through `transferd`](#installing-ascp-through-transferd) and [Transfer Daemon as a system service](#transfer-daemon-as-a-system-service).
+
+> [!NOTE]
+> Commands `config transferd ...` and `config ascp install` are deprecated aliases of `transferd ...` and `transferd install`.
+
+<%=include_commands_for_plugin(:transferd)%>
+
 ## Plugin: `faspio`: Faspio Gateway
 
 IBM Aspera faspio Gateway is a high-performance proxy that bridges traditional TCP/UDP applications with the Aspera FASP protocol, enabling secure, ultra-fast transfers over any network, even with high latency or packet loss.
@@ -11079,7 +11092,7 @@ This happens on Linux x86 if you try to install `transferd` on a Linux version t
 Workaround: Install an older version of `transferd`:
 
 ```shell
-<%=cmd%> config transferd install 1.1.2
+<%=cmd%> transferd install 1.1.2
 ```
 
 See [Single file executable](#single-file-executable).

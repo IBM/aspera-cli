@@ -130,6 +130,7 @@ The plugin architecture enables modular command implementation for different Asp
 - [`httpgw.rb`](../lib/aspera/cli/plugins/httpgw.rb) - HTTP Gateway
 - [`faspio.rb`](../lib/aspera/cli/plugins/faspio.rb) - Fasp.io Gateway
 - [`alee.rb`](../lib/aspera/cli/plugins/alee.rb) - Aspera Line Enterprise Edition
+- [`transferd.rb`](../lib/aspera/cli/plugins/transferd.rb) - Transfer Daemon: SDK installation and system service
 
 The Faspex 4 plugin was removed (end of support).
 

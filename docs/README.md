@@ -194,7 +194,7 @@ ascli -v
 - Install the Aspera transfer runtime (tested version), as it is not included in the `ascli` package:
 
 ```shell
-ascli config transferd install
+ascli transferd install
 ```
 
 ### Option A - Test with the Aspera Demo Server
@@ -355,7 +355,7 @@ This executable includes the Ruby runtime and gems, but not the transfer SDK.
 
 ```shell
 tar zxvf aspera-cli-<VERSION>-<PLATFORM>.tgz
-./ascli config transferd install
+./ascli transferd install
 ```
 
 #### Linux: Checking the GLIBC version
@@ -414,7 +414,7 @@ The GLIBC of the system must be at least the version in the archive name, see [C
 
 > [!NOTE]
 > The launcher `ascli` uses the `ascp` located in folder `sdk` of the package, unless environment variable `ASCLI_SDK_FOLDER` is set.
-> So, `ascli config transferd install` is not needed.
+> So, `ascli transferd install` is not needed.
 
 The configuration is stored in the [main folder](#main-configuration-and-persistency-folder), like for other installation methods.
 To upgrade, extract the new version, and update the symbolic link.
@@ -451,7 +451,7 @@ Apart from the prerequisite below, no installation step, no administrator rights
 
 > [!NOTE]
 > The launcher `ascli.cmd` uses the `ascp` located in folder `sdk` of the package, unless environment variable `ASCLI_SDK_FOLDER` is set.
-> So, `ascli config transferd install` is not needed.
+> So, `ascli transferd install` is not needed.
 
 The configuration is stored in the [main folder](#main-configuration-and-persistency-folder), like for other installation methods.
 To upgrade, extract the new version, and update the `PATH` if the folder name changed.
@@ -890,7 +890,7 @@ The easiest option to install `ascp` is through the use of the IBM Aspera Transf
 Install it using `ascli` (for the current platform) with:
 
 ```shell
-ascli config transferd install
+ascli transferd install
 ```
 
 The installation of the transfer binaries follows those steps:
@@ -913,30 +913,33 @@ The installation of the transfer binaries follows those steps:
 | `locations_url` | List of URLs to get download URLs of Aspera Transfer Daemon from IBM official repository, tried in order.<br/>A list given in options replaces the default list.<br/>Default:<br/>- `https://ibm.biz/sdk_location`<br/>- `https://raw.githubusercontent.com/IBM/aspera-cli/refs/heads/main/docs/sdk_location.yaml`|
 | `sdk_folder`  | Folder where the SDK archive is extracted.<br/>Default: `$HOME/.aspera/sdk` |
 
-Transfer Daemon versions available from `locations_url` can be listed with: `ascli config transferd list`
+> [!NOTE]
+> Commands `config transferd ...` and `config ascp install` are deprecated aliases of `transferd ...` and `transferd install`.
+
+Transfer Daemon versions available from `locations_url` can be listed with: `ascli transferd list`
 
 To install a specific version, for example, 1.1.3:
 
 ```shell
-ascli config transferd install 1.1.3
+ascli transferd install 1.1.3
 ```
 
 To get the download URL for a specific platform and version:
 
 ```shell
-ascli config transferd list --select.platform=osx-arm64 --select.version=1.1.3 --fields=url
+ascli transferd list --select.platform=osx-arm64 --select.version=1.1.3 --fields=url
 ```
 
 To download it, pipe to `config download`:
 
 ```shell
-ascli config transferd list --select.platform=osx-arm64 --select.version=1.1.3 --fields=url | ascli config download @stdin:
+ascli transferd list --select.platform=osx-arm64 --select.version=1.1.3 --fields=url | ascli config download @stdin:
 ```
 
 To install from a local file (air-gapped installation) instead of fetching from the internet, specify the location of the SDK file with option `sdk_url`:
 
 ```shell
-ascli config transferd install --sdk-url=file:///macos-arm64-1.1.3-c6c7a2a.zip
+ascli transferd install --sdk-url=file:///macos-arm64-1.1.3-c6c7a2a.zip
 ```
 
 The format is: `file:///<PATH>` (canonical form) or `file:<PATH>` (short form), where `<PATH>` can be either a relative path (not starting with `/`), or an absolute path (starting with `/`).
@@ -990,13 +993,13 @@ For an air-gapped installation, two alternatives are available:
       On a system with internet access, retrieve the SDK archive for the target platform and version:
 
       ```shell
-      ascli config transferd list --select.platform=<PLATFORM> --select.version=<VERSION> --fields=url | ascli config download @stdin:
+      ascli transferd list --select.platform=<PLATFORM> --select.version=<VERSION> --fields=url | ascli config download @stdin:
       ```
 
       On the air-gapped system, install from the downloaded file using option `--sdk-url`:
 
       ```shell
-      ascli config transferd install --sdk-url=file:///<SDK_ARCHIVE_PATH>
+      ascli transferd install --sdk-url=file:///<SDK_ARCHIVE_PATH>
       ```
 
 2. Retrieve the [single file executable](#single-file-executable) from the release, if available, and the SDK (not included) as described above.
@@ -1038,7 +1041,7 @@ The following procedure applies when using RVM for the Ruby installation:
    cd $HOME
    tar zxvf rvm-ascli.tgz
    source ~/.rvm/scripts/rvm
-   ascli config transferd install --sdk-url=file:///<SDK_ARCHIVE_PATH>
+   ascli transferd install --sdk-url=file:///<SDK_ARCHIVE_PATH>
    ```
 
 6. Add the following line to the shell environment file (`.profile`):
@@ -1086,7 +1089,7 @@ On the target system:
 4. Install the Aspera Transfer Daemon SDK:
 
    ```shell
-   ascli config transferd install --sdk-url=file:///<SDK_ARCHIVE_PATH>
+   ascli transferd install --sdk-url=file:///<SDK_ARCHIVE_PATH>
    ```
 
 ### Container
@@ -3067,7 +3070,7 @@ Plugin `config` provides general commands for `ascli`:
 - `wizard`
 - `vault`
 - `ascp`
-- `transferd`
+- `transferd` (deprecated, use plugin [`transferd`](#plugin-transferd-transfer-daemon))
 
 The default preset for `config` is read for any plugin invocation: this allows setting global options, such as `--log-level` or `--interactive`.
 When `ascli` starts, it looks for the `default` Option Preset and checks the value for `config`.
@@ -3117,9 +3120,6 @@ agents show connect
 agents show direct
 ascp errors
 ascp info --sdk-folder=sdk_test_dir
-ascp install
-ascp install --sdk-folder=sdk_test_dir
-ascp install 1.1.3
 ascp products list
 ascp schema --format=jsonpp
 ascp show
@@ -3214,8 +3214,6 @@ tokens list
 transfer cleanup
 transfer list
 transfer status <conf_async_node_upload>
-transferd install
-transferd list
 vault check @vault://local/my_label
 vault create @: label=my_label password=<PASSWORD> 'description=my secret'
 vault delete foo --vault.type=system
@@ -4372,7 +4370,7 @@ Or, alternatively, (prefer transfer spec like above, generally):
 
 By default, it uses the `direct` agent, which is a local `ascp`.
 Nevertheless, `ascli` does not come with `ascp` installed.
-This is the reason why it is advised to install the Aspera Transfer Daemon during installation (`ascli config transferd install`).
+This is the reason why it is advised to install the Aspera Transfer Daemon during installation (`ascli transferd install`).
 
 By default, `ascli` uses the `ascp` binary found in **well known locations**, that is, typical Aspera product installation paths.
 
@@ -4381,7 +4379,7 @@ It provides the following commands for `ascp` sub-command:
 
 - `show` : Show the path of `ascp` used
 - `info` : Show information on `ascp` and its environment
-- `install` : Install the Transfer SDK (same as `config transferd install`)
+- `install` : Install the Transfer SDK (deprecated, same as `transferd install`)
 - `spec` : List transfer spec parameters supported by `ascp`
 - `schema` : Show the JSON schema of the transfer spec
 - `errors` : List known `ascp` errors and whether they are retry-able
@@ -5058,7 +5056,7 @@ On Windows the compilation may fail for various reasons (3.1.1):
 The Transfer Daemon (`transferd`) can run permanently as a `systemd` service, for applications that use an existing daemon (see [Agent: Transfer Daemon](#agent-transfer-daemon), `start` set to `false`).
 `ascli` installs the SDK, writes the configuration file of the daemon (`/etc/transferd/transferd.json`) and the `systemd` unit, then enables and starts the service.
 
-Commands are in `config transferd service`:
+Commands are in `transferd service` (plugin [`transferd`](#plugin-transferd-transfer-daemon)):
 
 | Command     | Action |
 |-------------|--------|
@@ -5106,7 +5104,7 @@ Parameters of section `service`:
 Section `config` follows the JSON schema of the daemon, displayed with:
 
 ```shell
-ascli config transferd service spec
+ascli transferd service spec
 ```
 
 | Field | Type | Description |
@@ -5178,19 +5176,19 @@ Requirements:
 Example:
 
 ```shell
-sudo ascli config transferd service install --sdk-folder=/opt/aspera/transferd/current @json:'{"config":{"port":55002,"authentication":{"enabled":true}}}'
+sudo ascli transferd service install --sdk-folder=/opt/aspera/transferd/current @json:'{"config":{"port":55002,"authentication":{"enabled":true}}}'
 ```
 
 ```shell
-ascli config transferd service configure --dry-run=yes @json:'{"config":{"log_level":"debug"}}'
+ascli transferd service configure --dry-run=yes @json:'{"config":{"log_level":"debug"}}'
 ```
 
 ```shell
-sudo ascli config transferd service status
+sudo ascli transferd service status
 ```
 
 ```shell
-sudo ascli config transferd service uninstall @json:'{"service":{"purge":true}}'
+sudo ascli transferd service uninstall @json:'{"service":{"purge":true}}'
 ```
 
 ##### Versions side by side and rollback
@@ -6335,6 +6333,7 @@ PLUGINS
     preview         Preview
     server          HSTS Fasp/SSH
     shares          Shares
+    transferd       Transfer Daemon
 
 
 ```
@@ -10795,6 +10794,28 @@ health
 info
 ```
 
+## Plugin: `transferd`: Transfer Daemon
+
+Plugin `transferd` installs the IBM Aspera Transfer Daemon (`transferd`, which includes `ascp`) and runs it as a system service.
+See [Installing `ascp` through `transferd`](#installing-ascp-through-transferd) and [Transfer Daemon as a system service](#transfer-daemon-as-a-system-service).
+
+> [!NOTE]
+> Commands `config transferd ...` and `config ascp install` are deprecated aliases of `transferd ...` and `transferd install`.
+
+### Tested commands for `transferd`
+
+> [!NOTE]
+> Add `ascli transferd` in front of the following commands:
+
+```shell
+install
+install --sdk-folder=sdk_test_dir
+install 1.1.3
+list
+service configure --dry-run=yes @json:'{"service":{"user":"aspweb"},"config":{"port":55002}}'
+service spec
+```
+
 ## Plugin: `faspio`: Faspio Gateway
 
 IBM Aspera faspio Gateway is a high-performance proxy that bridges traditional TCP/UDP applications with the Aspera FASP protocol, enabling secure, ultra-fast transfers over any network, even with high latency or packet loss.
@@ -12560,7 +12581,7 @@ This happens on Linux x86 if you try to install `transferd` on a Linux version t
 Workaround: Install an older version of `transferd`:
 
 ```shell
-ascli config transferd install 1.1.2
+ascli transferd install 1.1.2
 ```
 
 See [Single file executable](#single-file-executable).
