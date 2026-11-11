@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require 'monitor'
-require 'aspera/environment'
 require 'aspera/log'
 require 'aspera/assert'
+require 'aspera/transfer/units'
 require 'ruby-progressbar'
 
 module Aspera
@@ -18,42 +18,7 @@ module Aspera
       RATE_WINDOW_SEC = 5.0
       # Rate is not displayed on a shorter period
       RATE_MIN_SEC = 1.0
-      # Decimal units, like `ascp`
-      KILO = 1000
-      BITS_PER_MEGABIT = KILO * KILO
-      BYTE_UNITS = %w[B KB MB GB TB PB].freeze
-      private_constant :RATE_WINDOW_SEC, :RATE_MIN_SEC, :KILO, :BITS_PER_MEGABIT, :BYTE_UNITS
-
-      class << self
-        # @param bytes [Integer] Size in bytes
-        # @return [String] Size with decimal unit, e.g. `12.3 MB`
-        def format_bytes(bytes)
-          value = bytes.to_f
-          index = 0
-          while value >= KILO && index < BYTE_UNITS.length - 1
-            value /= KILO
-            index += 1
-          end
-          return "#{bytes} B" if index.zero?
-          format('%.1f %s', value, BYTE_UNITS[index])
-        end
-
-        # @param bytes_per_second [Float, nil] Rate, `nil` if unknown
-        # @return [String] Rate in megabits per second (decimal, like `ascp`)
-        def format_rate(bytes_per_second)
-          return '-- Mbps' if bytes_per_second.nil?
-          mbps = bytes_per_second * Environment::BITS_PER_BYTE / BITS_PER_MEGABIT
-          mbps < 10 ? format('%.2f Mbps', mbps) : format('%.0f Mbps', mbps)
-        end
-
-        # @param seconds [Numeric, nil] Duration, `nil` if unknown
-        # @return [String] Duration as `hh:mm:ss`
-        def format_duration(seconds)
-          return '--:--:--' if seconds.nil?
-          seconds = seconds.round
-          format('%02d:%02d:%02d', seconds / 3600, (seconds / 60) % 60, seconds % 60)
-        end
-      end
+      private_constant :RATE_WINDOW_SEC, :RATE_MIN_SEC
 
       # @param output [IO] Where the progress bar is displayed: not on `$stdout`, which may be redirected for command output
       def initialize(output: $stderr)
@@ -261,12 +226,12 @@ module Aspera
         unless @sessions.empty?
           bytes_per_second = rate
           # Fixed width, so that bar does not change size
-          rate_text = self.class.format_rate(bytes_per_second).rjust(11)
+          rate_text = Transfer::Units.format_rate(bytes_per_second).rjust(11)
           if total.nil?
-            fields.push(self.class.format_bytes(current).rjust(8), rate_text)
+            fields.push(Transfer::Units.format_bytes(current).rjust(8), rate_text)
           else
             eta = bytes_per_second&.positive? ? (total - current) / bytes_per_second : nil
-            fields.push('%j%%', rate_text, "ETA: #{self.class.format_duration(eta)}")
+            fields.push('%j%%', rate_text, "ETA: #{Transfer::Units.format_duration(eta)}")
           end
         end
         update_format(title_text(final: false), fields)
@@ -287,7 +252,7 @@ module Aspera
           update_bar(total, current)
           fields.push('%B', '%j%%')
         end
-        fields.push(self.class.format_bytes(current), self.class.format_rate(average_rate)) unless @sessions.empty?
+        fields.push(Transfer::Units.format_bytes(current), Transfer::Units.format_rate(average_rate)) unless @sessions.empty?
         # Last status (e.g. `running`) is no more relevant
         @title = success ? nil : 'failed'
         # Final line may be shorter (no bar)

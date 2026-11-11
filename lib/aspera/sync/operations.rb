@@ -3,6 +3,7 @@
 require 'aspera/ascp/installation'
 require 'aspera/agent/direct'
 require 'aspera/transfer/spec'
+require 'aspera/transfer/units'
 require 'aspera/exec_spec'
 require 'aspera/command_line_converter'
 require 'aspera/command_line_builder'
@@ -264,7 +265,7 @@ module Aspera
         # Convert `target_rate` given as a string with optional suffix (e.g. `100m`) into integer bps
         # @param params [Hash, nil] `transport` (`conf` format) or session (`args` format), modified in place
         def normalize_target_rate(params)
-          params['target_rate'] = Transfer::Spec.rate_string_to_bps(params['target_rate']) if params.is_a?(Hash) && params['target_rate'].is_a?(String)
+          params['target_rate'] = Transfer::Units.rate_string_to_bps(params['target_rate']) if params.is_a?(Hash) && params['target_rate'].is_a?(String)
         end
 
         # Transfer specification to synchronization information

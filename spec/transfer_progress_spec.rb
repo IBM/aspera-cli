@@ -38,25 +38,6 @@ module Aspera
         output.string.split(/[\r\n]/).map(&:strip).reject(&:empty?).chunk_while { |a, b| a == b }.map(&:first)
       end
 
-      describe 'formatting' do
-        it 'formats sizes with decimal units' do
-          expect(described_class.format_bytes(999)).to(eq('999 B'))
-          expect(described_class.format_bytes(12_345_678)).to(eq('12.3 MB'))
-          expect(described_class.format_bytes(2 * (10**18))).to(eq('2000.0 PB'))
-        end
-
-        it 'formats rates in megabits per second' do
-          expect(described_class.format_rate(nil)).to(eq('-- Mbps'))
-          expect(described_class.format_rate(125_000)).to(eq('1.00 Mbps'))
-          expect(described_class.format_rate(12_500_000)).to(eq('100 Mbps'))
-        end
-
-        it 'formats durations' do
-          expect(described_class.format_duration(nil)).to(eq('--:--:--'))
-          expect(described_class.format_duration(3725.4)).to(eq('01:02:05'))
-        end
-      end
-
       it 'shows initialization status, without leading space' do
         progress.event(:sessions_init, info: 'starting')
         expect(lines.last).to(start_with('starting Time: 00:00:00'))
