@@ -9,6 +9,10 @@
 # install          # Build and install aspera-cli-x.y.z.gem into system gems
 # install:local    # Build and install aspera-cli-x.y.z.gem into system gems without network access
 # release[remote]  # Create tag vx.y.z and build and push aspera-cli-x.y.z.gem to https://rubygems.org
+
+# Project files are UTF-8: read them as such even without a UTF-8 locale (e.g. `LANG` unset in git hooks), where Ruby defaults to US-ASCII
+Encoding.default_external = Encoding::UTF_8
+
 require 'bundler/gem_tasks'
 require 'bundler/setup'
 
