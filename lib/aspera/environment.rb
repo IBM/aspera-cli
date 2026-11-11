@@ -75,9 +75,10 @@ module Aspera
         return RbConfig::CONFIG['RUBY_PROGRAM_VERSION']
       end
 
-      # Empty variable binding for secure eval
+      # Fresh binding: no local variables, `self` is a plain `Object` (not a sandbox).
+      # Constants still resolve through the `Aspera` nesting.
       def empty_binding
-        return Kernel.binding
+        return Object.new.instance_eval { binding }
       end
 
       # Secure execution of Ruby code
