@@ -65,6 +65,7 @@ Highlights: analysis of `ascp` logs (`config ascp logs`), multiple named secret 
 
 ### Breaking Changes
 
+* Ruby 3.3 or later is required (3.2 reached end of life in March 2026). Future minimum is 3.4. Policy: a Ruby version is supported until 6 months after its end of official support.
 * `orchestrator`:
   * `workflows development`: document `authoring` is replaced by `guide` (the Aspera Orchestrator Development Guide, which includes the Workflow Authoring Guide): `workflows development authoring toc` is now `workflows development guide toc`, and `workflows development templates customruby` is now `workflows development templates section customruby`.
   * `plugins spec` is now `plugins spec toc`, and `plugins spec <plugin> [section]` is now `plugins spec show <plugin> [section]`.

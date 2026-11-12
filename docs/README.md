@@ -473,10 +473,10 @@ Then, install the Aspera Transfer Daemon, see [Installing `ascp` through `transf
 
 A Ruby interpreter is required to run `ascli`.
 
-Required Ruby version is version: >= 3.2.
+Required Ruby version is version: >= 3.3.
 
 > [!WARNING]
-> The minimum Ruby version will be 3.3 in a future version.
+> The minimum Ruby version will be 3.4 in a future version.
 
 **Ruby can be installed using any of the following methods**: `rpm`, `yum`, `dnf`, `rvm`, `rbenv`, `brew`, Windows installer, ...
 
@@ -487,9 +487,20 @@ Required Ruby version is version: >= 3.2.
 
 For convenience, you may refer to the following sections for a proposed method for specific operating systems.
 
-`ascli` supports a Ruby version until 18 months after its [end of official support](https://www.ruby-lang.org/en/downloads/branches/).
+`ascli` supports a Ruby version until 6 months after its [end of official support](https://www.ruby-lang.org/en/downloads/branches/).
 The minimum version is increased accordingly, and announced in advance.
 If only an older Ruby version must be used due to system constraints, use an older version of `ascli` that supports it; refer to [rubygems.org](https://rubygems.org/gems/aspera-cli).
+
+The following table summarizes Ruby version lifecycles and `ascli` support status:
+
+| Ruby Version | Official EOL Date | ascli Support End (EOL + 6 mo) | ascli Status |
+|--------------|-------------------|--------------------------------|-----------------------------------|
+| 4.0 | 2029-03-31 | 2029-09-30 | **Supported (Tested & Packaged)** |
+| 3.4 | 2028-03-31 | 2028-09-30 | **Supported (Future minimum)** |
+| 3.3 | 2027-03-31 | 2027-09-30 | **Supported (Current minimum)** |
+| 3.2 | 2026-03-31 | 2026-09-30 | End of Support |
+| 3.1 | 2025-03-26 | 2025-09-26 | End of Support |
+| 3.0 | 2024-04-23 | 2024-10-23 | End of Support |
 
 #### Windows: Installer
 
@@ -552,6 +563,24 @@ Add it to your shell configuration file:
 - **bash**: replace `~/.zprofile` with `~/.bash_profile` in the commands above.
 
 #### Linux: Package
+
+`ascli` supports Linux distributions that are officially maintained by their vendor (Red Hat for RHEL / UBI, Canonical for Ubuntu LTS).
+
+- **GLIBC Requirement:** The Transfer SDK executables (`ascp`, `transferd`) and the Linux portable package require **`glibc >= 2.28`**.
+- **Installation Compatibility:**
+  - If the OS provides a Ruby package or DNF module stream meeting the required version (≥ 3.3), the `aspera-cli` gem can be installed directly with `gem install`.
+  - If the OS is under maintenance but ships an older default system Ruby (e.g. Ubuntu 22.04 LTS with Ruby 3.0), `ascli` is fully supported via the [Linux portable package](#linux-portable-package), the [container image](#container), or a Ruby version manager (`rbenv`, `rvm`).
+
+The following table summarizes supported Linux distributions, vendor end of support dates, GLIBC versions, available Ruby streams, and recommended `ascli` installation modes:
+
+| Linux Distribution | OS Support End (EOL) | GLIBC (>= 2.28) | OS Ruby Version(s) | ascli Support / Mode |
+|----------------------|----------------------|--------------------|--------------------------------------|-------------------------------------------------------|
+| **RHEL / UBI 10** | 2035-05-31 | 2.39+ (Compatible) | >= 3.3 (default) | Gem, Portable, Container |
+| **RHEL / UBI 9** | 2032-05-31 | 2.34 (Compatible) | 3.0 (default), 3.1, 3.3 (DNF module) | Gem (`dnf module enable ruby:3.3`), Portable, Container |
+| **RHEL / UBI 8** | 2029-05-31 | 2.28 (Compatible) | 3.1, 3.3 (DNF module) | Gem (`dnf module enable ruby:3.3`), Portable, Container |
+| **Ubuntu 26.04 LTS** | 2031-05-29 | 2.43+ (Compatible) | >= 3.3 (APT package) | Gem, Portable, Container |
+| **Ubuntu 24.04 LTS** | 2029-05-31 | 2.39 (Compatible) | 3.2 (APT package) | Gem (`apt install ruby-full`), Portable, Container |
+| **Ubuntu 22.04 LTS** | 2027-06-01 | 2.35 (Compatible) | 3.0 (APT package) | Portable, Container, rbenv (OS Ruby < 3.2) |
 
 If your Linux distribution provides a standard Ruby package, you can use it provided that the version is supported.
 
@@ -766,15 +795,13 @@ See [Gemfile](../Gemfile):
 | rake | ~> 13.0 |  |
 | debug | ~> 1.11 | (no jruby) |
 | grpc-tools | ~> 1.67 |  |
-| reek | ~> 6.5.0 |  |
+| reek | ~> 6.6.0 |  |
 | rspec | ~> 3.0 |  |
 | rubocop | ~> 1.75 |  |
 | rubocop-ast | ~> 1.4 |  |
 | rubocop-performance | ~> 1.10 | (no jruby) |
-| rubocop-shopify | ~> 2.0 |  |
-| simplecov | ~> 0.22 |  |
 | solargraph | ~> 0.48 | (no jruby) |
-| ferrum | ~> 0.19.1 | (no jruby) |
+| ferrum | ~> 0.20.1 | (no jruby) |
 | mcp | ~> 1.2 | for ascli mcp server (MCP protocol support) |
 | rack | ~> 3.0 | for ascli mcp server HTTP transport (required by mcp StreamableHTTPTransport) |
 | grpc | ~> 1.71 | (no jruby) for Aspera Transfer Daemon |
@@ -786,7 +813,7 @@ See [Gemfile](../Gemfile):
 | syslog | ~> 0.3 | (no jruby) for logger=syslog |
 | zxcvbn | ~> 1.0 | for better estimate of secret strength (faspex5 postprocessing secret_token) |
 | keeper_secrets_manager | ~> 17.2 | for vault of type keeper (Keeper Secrets Manager) |
-| rmagick | ~> 6.1 | (no jruby) for terminal view |
+| rmagick | ~> 7.2 | (no jruby) for terminal view |
 
 Install like this:
 
@@ -794,15 +821,13 @@ Install like this:
 gem install rake -v '~> 13.0'
 gem install debug -v '~> 1.11'
 gem install grpc-tools -v '~> 1.67'
-gem install reek -v '~> 6.5.0'
+gem install reek -v '~> 6.6.0'
 gem install rspec -v '~> 3.0'
 gem install rubocop -v '~> 1.75'
 gem install rubocop-ast -v '~> 1.4'
 gem install rubocop-performance -v '~> 1.10'
-gem install rubocop-shopify -v '~> 2.0'
-gem install simplecov -v '~> 0.22'
 gem install solargraph -v '~> 0.48'
-gem install ferrum -v '~> 0.19.1'
+gem install ferrum -v '~> 0.20.1'
 gem install mcp -v '~> 1.2'
 gem install rack -v '~> 3.0'
 gem install grpc -v '~> 1.71'
@@ -814,7 +839,7 @@ gem install bcrypt_pbkdf -v '~> 1.1'
 gem install syslog -v '~> 0.3'
 gem install zxcvbn -v '~> 1.0'
 gem install keeper_secrets_manager -v '~> 17.2'
-gem install rmagick -v '~> 6.1'
+gem install rmagick -v '~> 7.2'
 ```
 
 ### Ruby gem: `aspera-cli`

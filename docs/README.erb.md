@@ -483,9 +483,13 @@ Required Ruby version is <%=ruby_version%>.
 
 For convenience, you may refer to the following sections for a proposed method for specific operating systems.
 
-<%=tool%> supports a Ruby version until 18 months after its [end of official support](https://www.ruby-lang.org/en/downloads/branches/).
+<%=tool%> supports a Ruby version until 6 months after its [end of official support](https://www.ruby-lang.org/en/downloads/branches/).
 The minimum version is increased accordingly, and announced in advance.
 If only an older Ruby version must be used due to system constraints, use an older version of <%=tool%> that supports it; refer to [rubygems.org](<%=gemspec.metadata['rubygems_uri']%>).
+
+The following table summarizes Ruby version lifecycles and <%=tool%> support status:
+
+<%= ruby_support_table %>
 
 #### Windows: Installer
 
@@ -548,6 +552,17 @@ Add it to your shell configuration file:
 - **bash**: replace `~/.zprofile` with `~/.bash_profile` in the commands above.
 
 #### Linux: Package
+
+<%=tool%> supports Linux distributions that are officially maintained by their vendor (Red Hat for RHEL / UBI, Canonical for Ubuntu LTS).
+
+- **GLIBC Requirement:** The Transfer SDK executables (`ascp`, `transferd`) and the Linux portable package require **`glibc >= <%= sdk_glibc_version %>`**.
+- **Installation Compatibility:**
+  - If the OS provides a Ruby package or DNF module stream meeting the required version (≥ <%= Aspera::Cli::Info::RUBY_MINIMUM_VERSION %>), the `<%= gemspec.name %>` gem can be installed directly with `gem install`.
+  - If the OS is under maintenance but ships an older default system Ruby (e.g. Ubuntu 22.04 LTS with Ruby 3.0), <%=tool%> is fully supported via the [Linux portable package](#linux-portable-package), the [container image](#container), or a Ruby version manager (`rbenv`, `rvm`).
+
+The following table summarizes supported Linux distributions, vendor end of support dates, GLIBC versions, available Ruby streams, and recommended <%=tool%> installation modes:
+
+<%= linux_support_table %>
 
 If your Linux distribution provides a standard Ruby package, you can use it provided that the version is supported.
 

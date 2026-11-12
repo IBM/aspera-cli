@@ -89,6 +89,32 @@ def ubi_ruby_streams(major)
     .sort_by { |v| Gem::Version.new(v) }
 end
 
+# Compute minimum and future minimum Ruby versions based on EOL + grace months policy
+# @param grace_months [Integer] Grace period after official EOL in months (default: 6)
+# @return [Array<String>] [minimum_version, future_minimum_version]
+def compute_ruby_policy_versions(grace_months = 6)
+  rest = Aspera::Rest::Client.new(base_url: 'https://endoflife.date', redirect_max: 3)
+  eol_data = rest.call(operation: 'GET', subpath: 'api/ruby.json')
+  today = Date.today
+  supported_cycles = eol_data.select do |entry|
+    eol = entry['eol']
+    if eol.is_a?(String) && eol.match?(/\A\d{4}-\d{2}-\d{2}\z/)
+      (Date.parse(eol) >> grace_months) >= today
+    else
+      true
+    end
+  end.map { |e| e['cycle'].to_s }.sort_by { |v| Gem::Version.new(v) }
+
+  min_version = supported_cycles.first || Aspera::Cli::Info::RUBY_MINIMUM_VERSION
+  min_idx = supported_cycles.index(min_version) || 0
+  future_min_version = supported_cycles[min_idx + 1] || min_version
+
+  [min_version, future_min_version]
+rescue StandardError => e
+  log.warn("Could not compute Ruby policy versions from endoflife.date: #{e.message}")
+  [Aspera::Cli::Info::RUBY_MINIMUM_VERSION, Aspera::Cli::Info::RUBY_FUTURE_MINIMUM_VERSION]
+end
+
 namespace :tools do
   desc 'Show changes since latest tag'
   task changes: [] do
@@ -229,9 +255,11 @@ namespace :tools do
     latest_str, latest_ext = ruby_latest_common(setup_versions)
     log.info("Latest stable Ruby version: #{setup_versions.max_by { |v| Gem::Version.new(v) }}, available for CI and all packages: #{latest_str} (RubyInstaller#{latest_ext})")
 
-    # Minimum supported version (e.g. "3.2" → [3, 2]), and minor line of the tested version.
-    min_ver = Aspera::Cli::Info::RUBY_MINIMUM_VERSION.split('.').map(&:to_i)
-    log.info("Minimum Ruby version: #{Aspera::Cli::Info::RUBY_MINIMUM_VERSION}")
+    # Policy versions (minimum and future minimum) based on endoflife.date + 6 months grace period
+    policy_min, policy_future = compute_ruby_policy_versions(6)
+    log.info("Policy-based Ruby versions (EOL + 6 mo): minimum #{policy_min}, future minimum #{policy_future}")
+
+    min_ver = policy_min.split('.').map(&:to_i)
     tested_ver = latest_str.split('.').first(2).map(&:to_i)
 
     # One "X.Y" entry per minor line, from min_ver up to the tested one, plus jruby.
@@ -247,16 +275,38 @@ namespace :tools do
 
     updated = []
 
-    # 1. Tested Ruby version (reference) and suffix of its latest RubyInstaller release: Aspera::Cli::Info
+    # 1. Update Aspera::Cli::Info: RUBY_MINIMUM_VERSION, RUBY_FUTURE_MINIMUM_VERSION, RUBY_TESTED_VERSION, WINDOWS_RUBY_INSTALLER_EXT
     info_file = LIB / 'aspera/cli/info.rb'
     content = info_file.read
     new_content = content
+      .sub(/(?<=RUBY_MINIMUM_VERSION = ')[^']+/, policy_min)
+      .sub(/(?<=RUBY_FUTURE_MINIMUM_VERSION = ')[^']+/, policy_future)
       .sub(/(?<=RUBY_TESTED_VERSION = ')[^']+/, latest_str)
       .sub(/(?<=WINDOWS_RUBY_INSTALLER_EXT = ')[^']+/, latest_ext)
     if new_content != content
       info_file.write(new_content)
       updated << info_file.basename.to_s
       log.info("Updated: #{info_file.relative_path_from(TOP)}")
+    end
+
+    # Update .rubocop.yml TargetRubyVersion
+    rubocop_file = TOP / '.rubocop.yml'
+    rubocop_content = rubocop_file.read
+    new_rubocop = rubocop_content.sub(/(?<=TargetRubyVersion: )\S+/, policy_min)
+    if new_rubocop != rubocop_content
+      rubocop_file.write(new_rubocop)
+      updated << rubocop_file.basename.to_s
+      log.info("Updated: #{rubocop_file.relative_path_from(TOP)}")
+    end
+
+    # Update README.md Install section
+    readme_file = TOP / 'README.md'
+    readme_content = readme_file.read
+    new_readme = readme_content.sub(/(?<=Install \*\*Ruby\*\* ≥ )\d+\.\d+/, policy_min)
+    if new_readme != readme_content
+      readme_file.write(new_readme)
+      updated << readme_file.basename.to_s
+      log.info("Updated: #{readme_file.relative_path_from(TOP)}")
     end
 
     # 2. Fixed Ruby version for all workflows (setup-ruby and Ruby build in packages.yml): .ruby-version

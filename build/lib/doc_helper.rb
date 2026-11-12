@@ -18,6 +18,8 @@ require 'aspera/markdown'
 require 'aspera/formatter_interface'
 require 'yaml'
 require 'erb'
+require 'date'
+require 'json'
 require 'English'
 require 'pathname'
 require_relative 'test_env'
@@ -265,6 +267,165 @@ class DocHelper
     message = "version: >= #{Aspera::Cli::Info::RUBY_MINIMUM_VERSION}"
     message += ".\n\n> [!WARNING]\n> The minimum Ruby version will be #{Aspera::Cli::Info::RUBY_FUTURE_MINIMUM_VERSION} in a future version" unless Aspera::Cli::Info::RUBY_MINIMUM_VERSION.eql?(Aspera::Cli::Info::RUBY_FUTURE_MINIMUM_VERSION)
     return message
+  end
+
+  # Fetch lifecycle data from endoflife.date API with graceful fallback
+  def fetch_eol_data(product)
+    begin
+      rest = Aspera::Rest::Client.new(base_url: 'https://endoflife.date', redirect_max: 3)
+      data = rest.call(operation: 'GET', subpath: "api/#{product}.json")
+      return data if data.is_a?(Array)
+    rescue StandardError => e
+      Aspera::Log.log.warn("Could not fetch endoflife.date API for #{product}: #{e.message}")
+    end
+    nil
+  end
+
+  # Generate markdown table with Ruby version support policy
+  def ruby_support_table
+    min_v = Aspera::Cli::Info::RUBY_MINIMUM_VERSION
+    future_v = Aspera::Cli::Info::RUBY_FUTURE_MINIMUM_VERSION
+    tested_v = Aspera::Cli::Info::RUBY_TESTED_VERSION[/\A\d+\.\d+/]
+
+    eol_data = fetch_eol_data('ruby') || [
+      {'cycle' => '4.0', 'eol' => '2029-03-31'},
+      {'cycle' => '3.4', 'eol' => '2028-03-31'},
+      {'cycle' => '3.3', 'eol' => '2027-03-31'},
+      {'cycle' => '3.2', 'eol' => '2026-03-31'},
+      {'cycle' => '3.1', 'eol' => '2025-03-26'},
+      {'cycle' => '3.0', 'eol' => '2024-04-23'}
+    ]
+
+    headers = ['Ruby Version', 'Official EOL Date', 'ascli Support End (EOL + 6 mo)', 'ascli Status']
+    rows = []
+
+    eol_data.each do |entry|
+      cycle = entry['cycle'].to_s
+      next if Gem::Version.new(cycle) < Gem::Version.new('3.0')
+
+      eol = entry['eol']
+      if eol.is_a?(String) && eol.match?(/\A\d{4}-\d{2}-\d{2}\z/)
+        eol_date = Date.parse(eol)
+        ascli_eol = (eol_date >> 6).strftime('%Y-%m-%d')
+        eol_str = eol
+      else
+        eol_str = 'Active'
+        ascli_eol = 'Active'
+      end
+
+      status = if cycle.eql?(min_v)
+        '**Supported (Current minimum)**'
+      elsif cycle.eql?(future_v) && !min_v.eql?(future_v)
+        '**Supported (Future minimum)**'
+      elsif cycle.eql?(tested_v)
+        '**Supported (Tested & Packaged)**'
+      elsif Gem::Version.new(cycle) > Gem::Version.new(min_v)
+        'Supported'
+      else
+        'End of Support'
+      end
+
+      rows << [cycle, eol_str, ascli_eol, status]
+    end
+
+    rows.sort_by! { |r| Gem::Version.new(r[0]) }.reverse!
+    Aspera::Markdown.table([headers] + rows)
+  end
+
+  # Required GLIBC version for the tested Aspera Transfer SDK on Linux x86_64, from docs/sdk_location.yaml
+  def sdk_glibc_version
+    sdk_version = Aspera::Cli::Info::SDK_VERSION
+    yaml_file = Paths::DOC / 'sdk_location.yaml'
+    return '2.28' unless yaml_file.exist?
+
+    locations = YAML.safe_load(yaml_file.read)
+    entry = locations.find { |l| l['version'].to_s.eql?(sdk_version) && l['platform'].eql?('linux-x86_64') }
+    entry&.[]('transferd_glibc') || entry&.[]('ascp_glibc') || entry&.[]('comment')&.[](/(?:GLIBC|glibc)\s*([\d.]+)/, 1) || '2.28'
+  rescue StandardError => e
+    Aspera::Log.log.warn("Could not extract GLIBC version from sdk_location.yaml: #{e.message}")
+    '2.28'
+  end
+
+  # Generate markdown table with supported Linux distributions, EOL dates, GLIBC and Ruby support
+  def linux_support_table
+    today = Date.today
+    glibc_min = sdk_glibc_version
+
+    os_info = {
+      'rhel' => {
+        'cycles' => {
+          '8'  => {'glibc' => '2.28', 'ruby' => '3.1, 3.3 (DNF module)', 'install_mode' => 'Gem (`dnf module enable ruby:3.3`), Portable, Container'},
+          '9'  => {'glibc' => '2.34', 'ruby' => '3.0 (default), 3.1, 3.3 (DNF module)', 'install_mode' => 'Gem (`dnf module enable ruby:3.3`), Portable, Container'},
+          '10' => {'glibc' => '2.39+', 'ruby' => '>= 3.3 (default)', 'install_mode' => 'Gem, Portable, Container'}
+        }
+      },
+      'ubuntu' => {
+        'cycles' => {
+          '20.04' => {'glibc' => '2.31', 'ruby' => '2.7 (APT package)', 'install_mode' => 'Portable, Container, rbenv (OS Ruby < 3.2)'},
+          '22.04' => {'glibc' => '2.35', 'ruby' => '3.0 (APT package)', 'install_mode' => 'Portable, Container, rbenv (OS Ruby < 3.2)'},
+          '24.04' => {'glibc' => '2.39', 'ruby' => '3.2 (APT package)', 'install_mode' => 'Gem (`apt install ruby-full`), Portable, Container'},
+          '26.04' => {'glibc' => '2.43+', 'ruby' => '>= 3.3 (APT package)', 'install_mode' => 'Gem, Portable, Container'}
+        }
+      }
+    }
+
+    rhel_eol = fetch_eol_data('rhel') || [
+      {'cycle' => '10', 'eol' => '2035-05-31'},
+      {'cycle' => '9', 'eol' => '2032-05-31'},
+      {'cycle' => '8', 'eol' => '2029-05-31'}
+    ]
+
+    ubuntu_eol = fetch_eol_data('ubuntu') || [
+      {'cycle' => '26.04', 'lts' => true, 'eol' => '2031-05-29'},
+      {'cycle' => '24.04', 'lts' => true, 'eol' => '2029-05-31'},
+      {'cycle' => '22.04', 'lts' => true, 'eol' => '2027-06-01'}
+    ]
+
+    headers = ['Linux Distribution', 'OS Support End (EOL)', "GLIBC (>= #{glibc_min})", 'OS Ruby Version(s)', 'ascli Support / Mode']
+    rows = []
+
+    rhel_eol.each do |entry|
+      cycle = entry['cycle'].to_s
+      meta = os_info['rhel']['cycles'][cycle]
+      next unless meta
+
+      eol = entry['eol'].to_s
+      next if eol.match?(/\A\d{4}-\d{2}-\d{2}\z/) && Date.parse(eol) < today
+
+      os_glibc = meta['glibc'][/[\d.]+/]
+      compat = Gem::Version.new(os_glibc) >= Gem::Version.new(glibc_min) ? 'Compatible' : 'Incompatible'
+
+      rows << [
+        "**RHEL / UBI #{cycle}**",
+        eol,
+        "#{meta['glibc']} (#{compat})",
+        meta['ruby'],
+        meta['install_mode']
+      ]
+    end
+
+    ubuntu_eol.each do |entry|
+      next unless entry['lts']
+      cycle = entry['cycle'].to_s
+      meta = os_info['ubuntu']['cycles'][cycle]
+      next unless meta
+
+      eol = entry['eol'].to_s
+      next if eol.match?(/\A\d{4}-\d{2}-\d{2}\z/) && Date.parse(eol) < today
+
+      os_glibc = meta['glibc'][/[\d.]+/]
+      compat = Gem::Version.new(os_glibc) >= Gem::Version.new(glibc_min) ? 'Compatible' : 'Incompatible'
+
+      rows << [
+        "**Ubuntu #{cycle} LTS**",
+        eol,
+        "#{meta['glibc']} (#{compat})",
+        meta['ruby'],
+        meta['install_mode']
+      ]
+    end
+
+    Aspera::Markdown.table([headers] + rows)
   end
 
   # Generate help for the given command

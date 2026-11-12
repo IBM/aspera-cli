@@ -13,11 +13,11 @@ module Aspera
       SRC_URL  = 'https://github.com/IBM/aspera-cli'
       CONTAINER = 'docker.io/martinlaurent/ascli'
       # Minimum required Ruby version: single reference, used by `required_ruby_version` in gemspec file and by the documentation
-      # Policy: a Ruby version is supported until 18 months after its end of official support
+      # Policy: a Ruby version is supported until 6 months after its end of official support
       # Consistency with other files: `rake tools:check_ruby`
-      RUBY_MINIMUM_VERSION = '3.2'
+      RUBY_MINIMUM_VERSION = '3.3'
       # Set this to warn in advance when minimum required ruby version will increase
-      RUBY_FUTURE_MINIMUM_VERSION = '3.3'
+      RUBY_FUTURE_MINIMUM_VERSION = '3.4'
       # Version with which this version of CLI was tested
       SDK_VERSION = '1.1.9'
       # Ruby version with which this version of CLI was tested, packaged in container image and portable packages
