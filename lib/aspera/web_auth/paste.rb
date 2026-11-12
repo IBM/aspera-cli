@@ -6,6 +6,8 @@ require 'aspera/log'
 require 'aspera/cli/prompt'
 require 'aspera/cli/info'
 require 'aspera/web_auth/blob'
+require 'aspera/rainbow'
+using Rainbow
 
 module Aspera
   module WebAuth
@@ -65,22 +67,35 @@ module Aspera
         @reply_keys = reply_keys
       end
 
+      # @return [Boolean] true if the message given to the user contains the login URL (so it shall not be displayed separately)
+      def shows_login_url?
+        !@login_url.nil?
+      end
+
       # Ask the user for the code, or the URL the browser was redirected to
       # Input is not echoed on a terminal: it contains an authorization code or tokens.
       # @return [Hash{String=>String}] The query
       def received_request
         Log.log.warn do
-          url_step = "copy the full URL from the address bar of the browser (it shows a connection error on #{@redirect_uri}: this is expected)"
+          browser_steps = [
+            "The browser shows a connection error on #{@redirect_uri}: this is expected.",
+            'Copy the full URL from the address bar of the browser, and paste it in the prompt below.'
+          ]
           if @login_url.nil?
-            "USER ACTION: log in with the web browser, then #{url_step}, and paste it here."
+            (['USER ACTION: Log in with the web browser, then:'] + browser_steps.map { |s| "  - #{s}" }).join("\n")
           else
             code = Blob.encode(:login, {'login_url' => @login_url.to_s, 'redirect_uri' => @redirect_uri, 'reply_keys' => @reply_keys})
             [
-              'USER ACTION: log in with the web browser, then paste the result here. Two ways:',
-              "  1. Log in with the URL above, then #{url_step}.",
-              "  2. If #{Cli::Info::CMD_NAME} is installed on the workstation that has the browser, instead run there:",
-              "       #{Cli::Info::CMD_NAME} config web_login #{code}",
-              '     log in in the page it opens, then copy the code shown by the browser.'
+              'USER ACTION: To continue, choose one of these two ways:',
+              "  1. With any browser (#{Cli::Info::CMD_NAME} is not needed on the workstation):",
+              '     - Open this URL in a browser and log in:',
+              "         #{@login_url.to_s.red}",
+              *browser_steps.map { |s| "     - #{s}" },
+              "  2. If #{Cli::Info::CMD_NAME} is installed on the workstation that has the browser:",
+              '     - Run there:',
+              "         #{Cli::Info::CMD_NAME} config web_login #{code}",
+              '     - Log in in the page that opens.',
+              '     - Copy the code shown by the browser, and paste it in the prompt below.'
             ].join("\n")
           end
         end

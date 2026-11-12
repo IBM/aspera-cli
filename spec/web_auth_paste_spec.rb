@@ -84,6 +84,14 @@ RSpec.describe(Aspera::WebAuth::Paste) do
       expect(shown.join("\n")).not_to(match(/web_login/))
     end
 
+    it 'gives the login URL in its message only with the login page' do
+      expect(paste.shows_login_url?).to(be(false))
+      expect(login_paste.shows_login_url?).to(be(true))
+      allow(Aspera::Cli::Prompt).to(receive(:prompt_user_input).and_return('code=abc&state=xyz'))
+      login_paste.received_request
+      expect(shown.join("\n")).to(include('https://idp.example.com/authorize?a=1&b=2'))
+    end
+
     it 'gives the code of the command for the workstation, with the login page, then reads the reply code' do
       reply = Aspera::WebAuth::Blob.encode(:reply, {'code' => 'abc', 'state' => 'xyz'})
       allow(Aspera::Cli::Prompt).to(receive(:prompt_user_input).and_return(reply))

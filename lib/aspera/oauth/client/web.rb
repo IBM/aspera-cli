@@ -39,7 +39,7 @@ module Aspera
         # receive the code: local web server, or redirect URL pasted by the user (see option ui.web_auth)
         login_receiver = WebAuth.receiver(@redirect_uri, self.class.additional_info, login_url: login_page_url, reply_keys: %w[code state])
         # start browser on login page
-        Environment.instance.open_uri(login_page_url)
+        WebAuth.open_login_page(login_receiver, login_page_url)
         # wait for code in request
         received_params = login_receiver.received_request
         Aspera.assert(random_state.eql?(received_params['state'])) { 'wrong received state' }

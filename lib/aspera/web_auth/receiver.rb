@@ -34,6 +34,14 @@ module Aspera
         else Aspera.error_unexpected_value(env.web_auth) { 'ui.web_auth' }
         end
       end
+
+      # Let the user open the login page, unless the receiver already gives the URL in its own message
+      # @param login_receiver [Server, Paste] Result of `receiver`
+      # @param login_url      [String, URI]   URL of the login page
+      def open_login_page(login_receiver, login_url)
+        return if login_receiver.is_a?(Paste) && login_receiver.shows_login_url?
+        Environment.instance.open_uri(login_url)
+      end
     end
   end
 end

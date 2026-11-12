@@ -35,7 +35,7 @@ module Aspera
           @redirect_uri, [Web.additional_info, URI.parse(api.base_url).host].compact.join(' - '),
           login_url: login_page_url, reply_keys: %w[refresh_token state]
         )
-        Environment.instance.open_uri(login_page_url)
+        WebAuth.open_login_page(login_receiver, login_page_url)
         received_params = login_receiver.received_request
         Aspera.assert(random_state.eql?(received_params['state'])) { 'wrong received state' }
         refresh_token = received_params['refresh_token'].to_s
