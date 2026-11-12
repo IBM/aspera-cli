@@ -3989,9 +3989,35 @@ For example: <https://cryptotools.net/rsagen>
 
 ### Web service
 
-Some plugins start a local web server.
-This server can serve HTTP or HTTPS (with certificate).
+`ascli` is a command-line tool: it runs in a shell, with the credentials and presets of the user who starts it, and it assumes that only this user uses it.
+It is not intended to be a public-facing web server.
+When commands come from another program, for example an MCP client, see [Security Level](#security-level).
 
+Some commands start a web server, for a specific client:
+
+| Command | Client | Protection required when `url` is not loopback |
+|---|---|---|
+| `mcp server`, `http` transport | MCP client | `auth_token`, see [MCP Security](#security) |
+| `faspex5 postprocessing` | Faspex 5 web hooks | `secret_token` or `allowed_ips`, see [Faspex 4-style post-processing](#faspex-5-faspex-4-style-post-processing) |
+| `faspex5 gateway`, `aoc gateway` | Faspex 4 client applications | `username` and `password`, see [Faspex 4 Gateway](#faspex-5-faspex-4-gateway) |
+| `node emulator` | Node API clients, for tests | `username` and `password`, see [Node emulator](#node-emulator) |
+
+By default, the server listens on a loopback address: `localhost`, an address of `127.0.0.0/8`, or `::1`.
+It can be reached only from the same host.
+
+> [!WARNING]
+> Loopback restricts the host, not the user: on a host shared with other users, they can also reach the server.
+> On such a host, also set the protection of the command.
+
+When the host of `url` is not a loopback address, for example `0.0.0.0` (all interfaces), the server can be reached from the network: the command refuses to start without its protection.
+On a network, use HTTPS (`https://` in `url`) or a reverse proxy with TLS: with HTTP, passwords and tokens are sent in clear.
+
+Other features listen on a loopback address only, to receive input from the browser of the user:
+
+- [Web login flow](#web-login-flow): the result of the login, on `redirect_uri`.
+- `@secret:`, with option `ui` set to `graphical` (see [Secret Vault](#secret-vault)), or with `mcp server` and the `stdio` transport (see [Secrets entered in a web page](#secrets-entered-in-a-web-page)): the secret entered by the user.
+
+The server serves HTTP, or HTTPS with a certificate.
 The following parameters are supported:
 
 | Parameter         | Type     | Default                 | Description                                                      |
@@ -9496,7 +9522,7 @@ ascli node emulator @json:'{"url":"http://localhost:12348","username":"sim","pas
 
 Generate the password with `openssl rand -hex 32`.
 A weak password is refused at startup: its strength is estimated in bits, and shall be at least `password_min_bits`.
-`username` and `password` are mandatory when `url` is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`): anyone reaching the emulator could send the files of the `docroot` to any host.
+`username` and `password` are mandatory when `url` is not a loopback address (see [Web service](#web-service)): anyone reaching the emulator could send the files of the `docroot` to any host.
 
 Then, in another terminal, use it as a node, for example, to list the files in `/data`:
 
@@ -10248,8 +10274,8 @@ Instead, one can specify the **IP address of the host** or `host.containers.inte
 So, `ascli` shall listen on an address reachable from the containers: the IP address of the host, or `0.0.0.0` for all interfaces.
 
 > [!NOTE]
-> **Security**: by default the listener binds to loopback (`localhost`) and is not reachable from outside the host.
-> When `url` is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`), at least one of the following protections is required:
+> **Security**: by default the listener binds to loopback (`localhost`) and is not reachable from outside the host (see [Web service](#web-service)).
+> When `url` is not a loopback address, at least one of the following protections is required:
 >
 > - **`secret_token`**: include the token in the Faspex webhook URL: `http://host:8080/processing/script1.sh?token=<TOKEN>`. Requests without the correct token are rejected with HTTP 401.
 > - **`allowed_ips`**: restrict the listener to the known Faspex container IPs or network, e.g. `@json:'{"allowed_ips":["192.168.1.10","10.89.0.0/24"]}'`. Requests from other IPs are rejected with HTTP 403.
@@ -10291,6 +10317,8 @@ It takes an optional `Hash` argument:
 | `url` | `String` | Address and port the server listens on. Use `https://` with `cert`/`key` for TLS.<br/>Default: `http://localhost:8080`. |
 | `username` | `String` | Username expected from clients in HTTP Basic authentication. Set together with `password`. When not set, requests are accepted without authentication. Mandatory when `url` is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`).<br/>Example: `fx4_user`. |
 
+For details on `url` and HTTPS (`cert`, `key`, `chain`), see [Web service](#web-service).
+
 Example:
 
 ```shell
@@ -10300,7 +10328,7 @@ ascli faspex5 gateway @json:'{"url":"https://localhost:12345/aspera/faspex","use
 Clients authenticate with HTTP Basic, as on Faspex 4, with the `username` and `password` of the gateway.
 Generate the password with `openssl rand -hex 32`.
 A weak password is refused at startup: its strength is estimated in bits, and shall be at least `password_min_bits`.
-`username` and `password` are mandatory when `url` is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`): anyone reaching the gateway could send packages to anyone, as the Faspex 5 user.
+`username` and `password` are mandatory when `url` is not a loopback address (see [Web service](#web-service)): anyone reaching the gateway could send packages to anyone, as the Faspex 5 user.
 When they are not set, requests are accepted without authentication.
 
 There are many limitations:
@@ -11355,6 +11383,8 @@ Keys of a transport are refused with the other transport.
 > [!NOTE]
 > `port` and `bind` are deprecated: use `url`, for example, `url=http://0.0.0.0:8080` instead of `port=8080 bind=0.0.0.0`.
 
+For the addresses the server listens on, and HTTPS, see [Web service](#web-service).
+
 ### Security
 
 > [!WARNING]
@@ -11365,7 +11395,7 @@ With the `http` transport:
 
 - With `oauth`, the consent page asks for `auth_token` as access code, else anyone reaching the server could approve its own client.
   It shows where the authorization is sent (origin of `redirect_uri`): allow only if it is the expected AI client, for example `http://127.0.0.1:<port>`.
-- For local-only deployments (hosts of `url` and `public_url` are loopback: `localhost`, `127.0.0.0/8`, `::1`), `auth_token` and `oauth` are optional but recommended.
+- For local-only deployments (hosts of `url` and `public_url` are loopback, see [Web service](#web-service)), `auth_token` and `oauth` are optional but recommended: on a host shared with other users, they can also reach the server.
   Without `auth_token`, the consent page only asks to click **Allow**.
 - `auth_token` and `oauth` can coexist: a request is accepted if it carries a valid static token **or** a valid OAuth access token.
 - A weak `auth_token` is refused at startup (see `auth_token_min_bits`): generate it with `openssl rand -hex 32`.

@@ -1,6 +1,8 @@
-# Reporting bugs and security vulnerabilities
+# Reporting bugs
 
-Report bug, including vulnerability issues following this:
+Report a bug in a [GitHub issue](https://github.com/IBM/aspera-cli/issues).
+
+**Do not report a security vulnerability in a public issue**: see [SECURITY.md](SECURITY.md).
 
 Please, make sure to include the following information:
 
@@ -36,10 +38,3 @@ For example, if `ascp` fails to transfer a file, there are two possibilities:
 
 * `ascp` cannot transfer due to a configuration on the server side, in which case the bug should be reported to IBM
 * `ascli` is not using it correctly (missing or wrong parameter provided to `ascp`), in which case the bug should be reported to this project
-
-## Security Policy
-
-| Version | Supported          |
-| ------- | ------------------ |
-| >= 4.0  | :white_check_mark: |
-| < 4.0   | :x:                |

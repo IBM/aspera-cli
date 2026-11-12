@@ -47,6 +47,7 @@ ascli -v
 ## Contributing
 
 - **Bugs & features:** [BUGS.md](https://github.com/IBM/aspera-cli/blob/main/BUGS.md)
+- **Security vulnerabilities:** [SECURITY.md](https://github.com/IBM/aspera-cli/blob/main/SECURITY.md)
 - **How to contribute:** [CONTRIBUTING.md](https://github.com/IBM/aspera-cli/blob/main/CONTRIBUTING.md)
 - **Release notes:** [CHANGELOG.md](https://github.com/IBM/aspera-cli/blob/main/CHANGELOG.md)
 

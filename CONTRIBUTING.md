@@ -1,8 +1,10 @@
 # Contributing
 
-## Reporting Issues and Vulnerabilities
+## Reporting Issues
 
-If you encounter a bug or a security vulnerability, please report it via [GitHub Issues](https://github.com/IBM/aspera-cli/issues).
+If you encounter a bug, please report it via [GitHub Issues](https://github.com/IBM/aspera-cli/issues).
+
+**Do not report a security vulnerability in a public issue**: see [SECURITY.md](SECURITY.md).
 
 Before submitting a new report:
 
