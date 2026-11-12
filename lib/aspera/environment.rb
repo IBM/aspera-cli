@@ -288,7 +288,8 @@ module Aspera
     # url_method:      :text or :graphical, how URLs, secrets and files are presented to the user
     # browser_command: [Array<String>, nil] command (and arguments) that opens a URL (URL is appended), instead of
     #                  the system default
-    attr_accessor :url_method, :browser_command, :file_illegal_characters
+    # web_auth:        :port or :paste, how the result of a web login is received: local port, or URL pasted by the user
+    attr_accessor :url_method, :browser_command, :web_auth, :file_illegal_characters
     attr_reader :os, :cpu, :default_gui_mode
 
     def initialize
@@ -333,6 +334,7 @@ module Aspera
         end
       @url_method = @default_gui_mode
       @browser_command = nil
+      @web_auth = :port
       @file_illegal_characters = REPLACE_CHARACTER + WINDOWS_FILENAME_INVALID_CHARACTERS
       nil
     end

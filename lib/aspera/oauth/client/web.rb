@@ -2,7 +2,7 @@
 
 require 'aspera/oauth/client/base'
 require 'aspera/environment'
-require 'aspera/web_auth/server'
+require 'aspera/web_auth/receiver'
 require 'aspera/assert'
 module Aspera
   module OAuth
@@ -36,12 +36,12 @@ module Aspera
         )
         # here, we need a human to authorize on a web page
         Log.log.debug { "login_page_url=#{login_page_url}" }
-        # start a web server to receive request code
-        web_server = WebAuth::Server.new(@redirect_uri, self.class.additional_info)
+        # receive the code: local web server, or redirect URL pasted by the user (see option ui.web_auth)
+        login_receiver = WebAuth.receiver(@redirect_uri, self.class.additional_info, login_url: login_page_url, reply_keys: %w[code state])
         # start browser on login page
         Environment.instance.open_uri(login_page_url)
         # wait for code in request
-        received_params = web_server.received_request
+        received_params = login_receiver.received_request
         Aspera.assert(random_state.eql?(received_params['state'])) { 'wrong received state' }
         # exchange code for token
         create_token_base(

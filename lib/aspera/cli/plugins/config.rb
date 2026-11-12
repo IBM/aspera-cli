@@ -29,6 +29,9 @@ require 'aspera/schema/documentation'
 require 'aspera/secret/store/macos_security'
 require 'aspera/environment'
 require 'aspera/persistency_action_once'
+require 'aspera/web_auth/blob'
+require 'aspera/web_auth/relay'
+require 'aspera/cli/prompt'
 require 'aspera/id_generator'
 require 'aspera/data_repository'
 require 'aspera/rest'
@@ -174,6 +177,9 @@ module Aspera
             {name: :file_url},
             {name: :file_dest, mandatory: false, complete: :file}
           ]
+        command :web_login, description: 'Web login for ascli on another host (option ui.web_auth=paste): open the login page, show a code to paste there',
+          security: :low,
+          arguments: [{name: :code}]
         command :tokens, description: 'Manage OAuth tokens'
         command :plugins, description: 'Manage CLI plugins'
         command :detect, description: 'Detect the Aspera product from a URL (interactive)',
@@ -513,6 +519,38 @@ module Aspera
           end
         end
 
+        # Web login for `ascli` that runs on another host, started with `--ui.web_auth=paste`.
+        # The code comes from another host, or from a message: the host of the login page is confirmed by the user the first time.
+        # @param code [String] Code of type login, given by the remote `ascli`
+        def action_web_login(code:, **)
+          type, data = WebAuth::Blob.decode(code)
+          raise BadArgument, 'This code is for ascli that waits for the login: run this command with the code that ascli gives' unless type.eql?(:login)
+          login = WebAuth::Relay.parse(data)
+          confirm_web_login_host(login.host)
+          Log.log.debug { "Redirection to #{login.redirect_uri}" }
+          WebAuth::Relay.run(login)
+          Result::Status.new('Login done: paste the code shown by the browser in the terminal of ascli that waits for it')
+        rescue ParameterError => e
+          raise BadArgument, e.message
+        rescue Errno::EADDRINUSE
+          raise Cli::Error, "Cannot listen on #{login.redirect_uri}: the port is used. The URL is registered for the login, it cannot be changed: free the port, and retry."
+        end
+
+        # The login page opened by `web_login` comes from a code given by another host (or in a message): ask the user to accept its host the first time.
+        # Accepted hosts are kept in persistency. Without a terminal, an unknown host is refused.
+        # @param host [String] Host of the login page
+        # @raise [BadArgument] if the host is not accepted
+        def confirm_web_login_host(host)
+          persist = context.persistency
+          hosts = persist.get(WEB_LOGIN_HOSTS_ID).to_s.split("\n")
+          return if hosts.include?(host)
+          raise BadArgument, "Host of the login page is not known: #{host}. Run this command in a terminal to accept it." unless $stdin.tty?
+          $stderr.puts("This code opens the login page of: #{host}") # rubocop:disable Style/StderrPuts
+          answer = Prompt.prompt_user_input("Open it, and trust this host for next logins? (yes/no)")
+          raise BadArgument, "Host of the login page refused: #{host}" unless %w[y yes].include?(answer.strip.downcase)
+          persist.put(WEB_LOGIN_HOSTS_ID, (hosts + [host]).join("\n"))
+        end
+
         def action_download(file_url:, file_dest: nil, **)
           file_url = file_url.chomp
           file_dest = File.join(transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE), file_url.rpartition('/').last) if file_dest.nil?
@@ -670,6 +708,8 @@ module Aspera
         # Folder containing custom plugins in user's config folder
         ASPERA_PLUGINS_FOLDERNAME = 'plugins'
         PERSISTENCY_FOLDER = 'persist_store'
+        # Persistency identifier of the hosts of login pages that the user accepted for `web_login`
+        WEB_LOGIN_HOSTS_ID = 'web_login_hosts'
         FILE_LIST_FOLDER_NAME = 'filelists'
         REST_EXCEPTIONS_LOG_FILENAME = 'rest_exceptions.log'
         ASPERA = 'aspera'
@@ -692,6 +732,7 @@ module Aspera
           :CONF_GLOBAL_SYM,
           :ASPERA_PLUGINS_FOLDERNAME,
           :PERSISTENCY_FOLDER,
+          :WEB_LOGIN_HOSTS_ID,
           :FILE_LIST_FOLDER_NAME,
           :REST_EXCEPTIONS_LOG_FILENAME,
           :ASPERA,

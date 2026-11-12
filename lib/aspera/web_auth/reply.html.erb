@@ -1,0 +1,150 @@
+<%# Content of the page displayed after login when the reply is given to the user, to paste in the terminal of ascli, in layout of Aspera::WebPage. Variables: additional_info, code, nonce %>
+        <style>
+            .code-box {
+                display: flex;
+                align-items: stretch;
+                gap: 0.5rem;
+                margin-top: 1.25rem;
+            }
+
+            .code {
+                flex: 1;
+                min-width: 0;
+                padding: 0.6rem 0.75rem;
+                text-align: left;
+                font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+                font-size: 0.8rem;
+                line-height: 1.4;
+                letter-spacing: 0.05em;
+                word-break: break-all;
+                max-height: 9rem;
+                overflow-y: auto;
+                background: var(--surface);
+                color: var(--text);
+                border: 1px solid var(--border);
+                border-radius: 6px;
+                user-select: none;
+            }
+
+            .code.revealed {
+                user-select: all;
+            }
+
+            .code-box button.icon {
+                flex: none;
+                width: 2.75rem;
+                padding: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: var(--card-bg);
+                color: var(--text-secondary);
+                border: 1px solid var(--input-border);
+            }
+
+            .code-box button.icon:hover {
+                color: var(--accent);
+                border-color: var(--accent);
+            }
+
+            .code-box button.icon svg.hide,
+            .code-box button.icon.on svg.show {
+                display: none;
+            }
+
+            .code-box button.icon.on svg.hide {
+                display: block;
+            }
+
+            .status {
+                min-height: 1.4rem;
+                font-size: 0.85rem;
+                color: var(--success);
+            }
+        </style>
+
+        <div class="icon-circle ok">
+            <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 16 13 23 26 9"/>
+            </svg>
+        </div>
+
+        <h1>Login Complete</h1>
+        <p>Copy this code, and paste it in the terminal where <b>ascli</b> waits for it. You can then close this window.</p>
+
+<% unless additional_info.to_s.empty? %>
+        <div class="info-box">
+            <%= h additional_info %>
+        </div>
+<% end %>
+
+        <div class="code-box">
+            <div id="code" class="code" aria-live="polite">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;</div>
+            <button type="button" id="reveal" class="icon" title="Show the code" aria-label="Show the code" aria-pressed="false">
+                <svg class="show" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <svg class="hide" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+            </button>
+        </div>
+        <div class="actions">
+            <button type="button" id="copy" class="allow">Copy</button>
+        </div>
+        <p id="status" class="status" role="status"></p>
+
+        <%# The code is in this script only, not in the page: it is inserted in the page when the user shows it %>
+        <script nonce="<%= h nonce %>">
+            (function () {
+                var code = <%= JSON.generate(code.to_s).gsub('<', '\u003c') %>;
+                var box = document.getElementById('code');
+                var mask = box.textContent;
+                var reveal = document.getElementById('reveal');
+                var status = document.getElementById('status');
+                var shown = false;
+
+                reveal.addEventListener('click', function () {
+                    shown = !shown;
+                    box.textContent = shown ? code : mask;
+                    box.classList.toggle('revealed', shown);
+                    reveal.classList.toggle('on', shown);
+                    reveal.setAttribute('aria-pressed', shown ? 'true' : 'false');
+                    var label = shown ? 'Hide the code' : 'Show the code';
+                    reveal.title = label;
+                    reveal.setAttribute('aria-label', label);
+                });
+
+                function legacyCopy() {
+                    var area = document.createElement('textarea');
+                    area.value = code;
+                    area.setAttribute('readonly', '');
+                    area.style.position = 'fixed';
+                    area.style.opacity = '0';
+                    document.body.appendChild(area);
+                    area.select();
+                    var ok = false;
+                    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+                    document.body.removeChild(area);
+                    return ok;
+                }
+
+                function done(ok) {
+                    status.style.color = ok ? '' : 'var(--danger)';
+                    status.textContent = ok ? 'Copied. Paste it in the terminal.' : 'Copy failed: show the code, select it and copy it.';
+                }
+
+                document.getElementById('copy').addEventListener('click', function () {
+                    if (navigator.clipboard && window.isSecureContext) {
+                        navigator.clipboard.writeText(code).then(function () { done(true); }, function () { done(legacyCopy()); });
+                    } else {
+                        done(legacyCopy());
+                    }
+                });
+
+                // The callback URL contains a code or tokens: remove the query from the address bar and from the entry of the session history
+                if (window.history && history.replaceState) history.replaceState(null, '', location.pathname);
+            })();
+        </script>

@@ -63,10 +63,21 @@ module Aspera
         let(:environment) { Environment.instance }
 
         around do |example|
-          saved = [environment.url_method, environment.browser_command]
+          saved = [environment.url_method, environment.browser_command, environment.web_auth]
           example.run
         ensure
-          environment.url_method, environment.browser_command = saved
+          environment.url_method, environment.browser_command, environment.web_auth = saved
+        end
+
+        it 'sets web_auth' do
+          runner.send(:option_ui=, {web_auth: 'paste'})
+          expect(environment.web_auth).to(eq(:paste))
+          runner.send(:option_ui=, {web_auth: 'port'})
+          expect(environment.web_auth).to(eq(:port))
+        end
+
+        it 'rejects an unknown web_auth' do
+          expect { runner.send(:option_ui=, {web_auth: 'bad'}) }.to(raise_error(BadArgument))
         end
 
         {

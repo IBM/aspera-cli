@@ -238,7 +238,7 @@ module Aspera
         Result::Text.new(usage_text(plugin: plugin))
       end
 
-      # `on_set` callback of the `ui` option (dot-notation sub-properties): `mode`, `command`
+      # `on_set` callback of the `ui` option (dot-notation sub-properties): `mode`, `web_auth`, `command`
       # A plain value is the `mode`. Values are validated against schema `UiOptions`.
       # @param value [Hash] sub-properties to set
       def option_ui=(value)
@@ -253,9 +253,12 @@ module Aspera
               when 'browser', 'graphical' then :graphical
               else Aspera.error_unexpected_value(v, type: BadArgument) { 'ui.mode' }
               end
+          when :web_auth
+            Aspera.assert_values(v.to_s, %w[port paste], type: BadArgument) { 'ui.web_auth' }
+            Environment.instance.web_auth = v.to_sym
           when :command
             Environment.instance.browser_command = v.nil? || v.empty? ? nil : v.map(&:to_s)
-          else Aspera.error_unexpected_value(k, type: BadArgument) { 'ui sub-option (mode, command)' }
+          else Aspera.error_unexpected_value(k, type: BadArgument) { 'ui sub-option (mode, web_auth, command)' }
           end
         end
       end
@@ -520,7 +523,7 @@ module Aspera
         @context.options.declare(:show_config, description: 'Display parameters used for the provided action', allowed: Type::NONE) { @option_show_config = true }
         @context.options.declare(:version, description: 'Display version', allowed: Type::NONE, short: 'v') { @context.formatter.display_message(:data, Cli::VERSION); ::Process.exit(0) } # rubocop:disable Style/Semicolon
         @context.options.declare(
-          :ui, description: 'User interface (dot-notation: mode, command)',
+          :ui, description: 'User interface (dot-notation: mode, web_auth, command)',
           allowed: [Hash, String], shorthand: 'mode', schema: Schema::Registry::UI_OPTIONS,
           on_set: method(:option_ui=)
         )

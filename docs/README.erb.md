@@ -3842,7 +3842,7 @@ Some actions may require the use of a graphical tool:
 - A text editor for editing the configuration file
 
 By default, <%=tool%> assumes that a graphical environment is available on Windows and macOS; on other systems, it relies on the presence of the `DISPLAY` environment variable.
-The composite option `ui` (use `--ui=help` to display this schema) selects the mode and the browser command:
+The composite option `ui` (use `--ui=help` to display this schema) selects the mode, the way a web login is received, and the browser command:
 
 <%=schema_to_table(Aspera::Schema::Registry::UI_OPTIONS)%>
 
@@ -3912,6 +3912,67 @@ To solve this, forward the port of `redirect_uri` from the workstation to the se
 4. The browser is redirected to `http://localhost:12345`: the tunnel sends the request to <%=tool%> on the server, and the flow continues as described above.
 
 The tunnel only exists as long as the SSH session is open.
+
+If no tunnel is possible (for example, a jump server between the workstation and the server), use `--ui.web_auth=paste`: <%=tool%> then opens no local port, and the result of the login is given through the terminal.
+There are two ways, depending on whether <%=tool%> is also installed on the workstation.
+
+With `--ui.web_auth=port` (default), in an SSH session with `--ui=terminal`, a warning reminds this option.
+
+##### With <%=tool%> on the workstation
+
+<%=tool%> on the workstation opens the login page, receives the redirection of the browser, and shows a code to paste in the terminal of the server.
+Nothing else is needed on the workstation: no configuration, no preset, no access to the server of the application.
+The exchange of the code for a token is done by <%=tool%> on the server: the secret of the client does not leave it.
+
+1. In the SSH session, run the command with `--ui=terminal --ui.web_auth=paste`:
+
+   ```shell
+   <%=cmd%> <%=ph :plugin%> <%=ph :command%> --ui=terminal --ui.web_auth=paste
+   ```
+
+2. <%=tool%> displays a command to run on the workstation, with a code made of letters and digits (a double click selects all of it), and waits:
+
+   ```text
+   USER ACTION: if <%=cmd%> is installed on the workstation that has the browser, run there:
+     <%=cmd%> config web_login ASCLI1L...
+   and paste here the code shown by the browser after login.
+   ```
+
+3. On the workstation, run this command.
+   The first time for a login host, <%=tool%> displays the host of the login page, and asks to trust it (`yes`): it opens a URL that comes from another system.
+   Trusted hosts are saved; without a terminal, an unknown host is refused.
+   <%=tool%> then opens the browser on the login page and listens on `redirect_uri`.
+4. Log in. The browser shows a page "Login Complete" with the code to paste, hidden by default:
+   - The button **Copy** puts the code in the clipboard.
+   - The **eye** button shows or hides the code, to select it manually.
+5. Paste the code in the terminal of the server (nothing is displayed). <%=tool%> on the server checks the `state`, and the flow continues as described above, from step 6.
+
+The command on the workstation:
+
+- accepts only a login page in `https`, and a `redirect_uri` on a loopback address; the host shown for confirmation is the one of the URL, not a label given in the code;
+- is available only at security level `low`;
+- ends once the browser has received the page with the code; the port of `redirect_uri` shall be free on the workstation (the URL is registered for the login and cannot be changed);
+- gives to the server only the parameters it needs (the `code` and the `state` for `web`, the `refresh_token` and the `state` for Shares).
+
+The codes are encoded and compressed, they are **not encrypted**: do not keep them, nor send them.
+The code of the reply is checked (checksum), a code that is incomplete or mistyped is detected.
+Spaces, line breaks and letter case are ignored: a code displayed on several lines can be pasted.
+
+##### Without <%=tool%> on the workstation
+
+If <%=tool%> is not installed on the workstation, the URL of the error page is used:
+
+1. In the SSH session, run the command with `--ui=terminal --ui.web_auth=paste`.
+2. Copy the displayed login URL in the browser of the workstation, and log in.
+3. The browser is redirected to `redirect_uri` (for example `http://localhost:12345/?code=...&state=...`) and shows a connection error: this is expected.
+4. Copy the full URL from the address bar of the browser, and paste it in the terminal (nothing is displayed, as it contains a code or tokens).
+   The query alone (`code=...&state=...`) is also accepted.
+   The `state` is mandatory: it is checked like in the standard flow, then the flow continues from step 6.
+
+Both ways accept, at the prompt, the code, the URL or the query.
+If standard input is not a terminal, the line is read from it.
+The size of a pasted line may be limited by the terminal: tokens of Shares are long, and the code of the reply contains only what is needed.
+
 Notes:
 
 - The port must be free on the workstation.

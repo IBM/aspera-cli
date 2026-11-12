@@ -41,10 +41,12 @@ module Aspera
 
     class << self
       # Set the headers of an HTML page: type and security headers
-      # @param response [WEBrick::HTTPResponse]
+      # @param response                [WEBrick::HTTPResponse]
+      # @param content_security_policy [String, nil] Policy that replaces the default one, e.g. to allow a script of the page
       # @return [nil]
-      def secure_headers(response)
+      def secure_headers(response, content_security_policy: nil)
         HEADERS.each { |name, value| response[name] = value }
+        response['Content-Security-Policy'] = content_security_policy unless content_security_policy.nil?
         nil
       end
 

@@ -58,6 +58,20 @@ components:
             - text
             - graphical
           default: auto
+        web_auth:
+          type: string
+          description: >-
+            How the result of a web login (`--auth=web`, SSO) is received.
+
+            - `port`: `ascli` listens on the loopback port of `redirect_uri`, the browser is redirected to it.
+
+            - `paste`: no port is opened. After login, the browser shows a connection error on `redirect_uri`:
+            copy the full URL from the address bar of the browser and paste it in the terminal.
+            Use it when the browser cannot reach the host that runs `ascli` and a SSH tunnel is not possible.
+          enum:
+            - port
+            - paste
+          default: port
         command:
           type: array
           x-security: low

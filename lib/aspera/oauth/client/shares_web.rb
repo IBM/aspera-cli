@@ -30,9 +30,13 @@ module Aspera
         )
         Log.log.debug { "login_page_url=#{login_page_url}" }
         # the page shows where the user is logged in
-        web_server = WebAuth::Server.new(@redirect_uri, [Web.additional_info, URI.parse(api.base_url).host].compact.join(' - '))
+        # reply: the refresh token is exchanged at once, the access token received in the URL is not needed
+        login_receiver = WebAuth.receiver(
+          @redirect_uri, [Web.additional_info, URI.parse(api.base_url).host].compact.join(' - '),
+          login_url: login_page_url, reply_keys: %w[refresh_token state]
+        )
         Environment.instance.open_uri(login_page_url)
-        received_params = web_server.received_request
+        received_params = login_receiver.received_request
         Aspera.assert(random_state.eql?(received_params['state'])) { 'wrong received state' }
         refresh_token = received_params['refresh_token'].to_s
         Aspera.assert(!refresh_token.empty?) { 'No token received: does this Shares support redirection to a loopback URL?' }
