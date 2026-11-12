@@ -3938,6 +3938,9 @@ The exchange of the code for a token is done by <%=tool%> on the server: the sec
    and paste here the code shown by the browser after login.
    ```
 
+   This command is displayed only if <%=tool%> does not start the browser itself (`--ui=terminal` without `--ui.command`).
+   If the browser is started by <%=tool%> (`--ui=graphical`, or `--ui.command`), it is on the same host as <%=tool%>, and the redirection may be immediate (user already logged in): only the instruction to copy the URL from the browser is displayed.
+
 3. On the workstation, run this command.
    The first time for a login host, <%=tool%> displays the host of the login page, and asks to trust it (`yes`): it opens a URL that comes from another system.
    Trusted hosts are saved; without a terminal, an unknown host is refused.

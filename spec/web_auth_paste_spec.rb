@@ -94,10 +94,10 @@ RSpec.describe(Aspera::WebAuth, '.receiver') do
   let(:environment) { Aspera::Environment.instance }
 
   around do |example|
-    saved = [environment.web_auth, environment.url_method]
+    saved = [environment.web_auth, environment.url_method, environment.browser_command]
     example.run
   ensure
-    environment.web_auth, environment.url_method = saved
+    environment.web_auth, environment.url_method, environment.browser_command = saved
   end
 
   it 'listens on a port by default' do
@@ -116,9 +116,27 @@ RSpec.describe(Aspera::WebAuth, '.receiver') do
 
   it 'gives the login page to paste, for the workstation' do
     environment.web_auth = :paste
+    environment.url_method = :text
+    environment.browser_command = nil
     paste = described_class.receiver('http://localhost:12345', nil, login_url: 'https://idp.example.com/a', reply_keys: %w[code state])
     expect(paste.instance_variable_get(:@login_url)).to(eq('https://idp.example.com/a'))
     expect(paste.instance_variable_get(:@reply_keys)).to(eq(%w[code state]))
+  end
+
+  it 'does not give the login page to paste if the browser is started by ascli' do
+    environment.web_auth = :paste
+    environment.url_method = :graphical
+    environment.browser_command = nil
+    paste = described_class.receiver('http://localhost:12345', nil, login_url: 'https://idp.example.com/a', reply_keys: %w[code state])
+    expect(paste.instance_variable_get(:@login_url)).to(be_nil)
+  end
+
+  it 'does not give the login page to paste if a browser command is set' do
+    environment.web_auth = :paste
+    environment.url_method = :text
+    environment.browser_command = ['firefox']
+    paste = described_class.receiver('http://localhost:12345', nil, login_url: 'https://idp.example.com/a', reply_keys: %w[code state])
+    expect(paste.instance_variable_get(:@login_url)).to(be_nil)
   end
 
   it 'suggests paste in a SSH session with terminal mode and port' do

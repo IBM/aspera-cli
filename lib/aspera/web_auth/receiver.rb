@@ -13,13 +13,15 @@ module Aspera
       # Both provide `received_request`.
       # @param redirect_uri    [String]        Loopback URL that receives the result
       # @param additional_info [String]        Information in web page (only with `:port`)
-      # @param login_url       [String, URI]   URL of the login page: with `:paste`, a code for `ascli` on the workstation is given to the user
+      # @param login_url       [String, URI]   URL of the login page: with `:paste`, a code for `ascli` on the workstation is given to the user,
+      #                                        unless the browser is started by `ascli` (the user has no time to use the code, and the browser is local)
       # @param reply_keys      [Array<String>] Keys of the query that the client needs (with `login_url`)
       # @return [Server, Paste]
       def receiver(redirect_uri, additional_info = nil, login_url: nil, reply_keys: nil)
         env = Environment.instance
         case env.web_auth
         when :paste
+          login_url = nil if env.browser_command || env.url_method.eql?(:graphical)
           Paste.new(redirect_uri, login_url: login_url, reply_keys: reply_keys)
         when :port
           if env.url_method.eql?(:text) && env.browser_command.nil? && (ENV.key?('SSH_CONNECTION') || ENV.key?('SSH_TTY'))
