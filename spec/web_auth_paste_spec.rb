@@ -59,9 +59,17 @@ RSpec.describe(Aspera::WebAuth::Paste) do
     let(:paste) { described_class.new('http://localhost:12345') }
     let(:login_paste) { described_class.new('http://localhost:12345', login_url: 'https://idp.example.com/authorize?a=1&b=2', reply_keys: %w[code state]) }
 
+    # Messages given to the user (through the logger), evaluated
+    let(:shown) { [] }
+
+    before do
+      allow(Aspera::Log.log).to(receive(:warn)) { |*args, &block| shown << (block ? block.call : args.first) }
+    end
+
     it 'reads the pasted URL as a sensitive input' do
       allow(Aspera::Cli::Prompt).to(receive(:prompt_user_input).and_return('http://localhost:12345/?code=abc&state=xyz'))
-      expect { expect(paste.received_request).to(eq('code' => 'abc', 'state' => 'xyz')) }.to(output(/connection error.*localhost:12345/m).to_stderr)
+      expect(paste.received_request).to(eq('code' => 'abc', 'state' => 'xyz'))
+      expect(shown.join("\n")).to(match(/connection error.*localhost:12345/m))
       expect(Aspera::Cli::Prompt).to(have_received(:prompt_user_input).with('Code or URL', sensitive: true))
     end
 
@@ -72,16 +80,15 @@ RSpec.describe(Aspera::WebAuth::Paste) do
 
     it 'does not propose the workstation command without login URL' do
       allow(Aspera::Cli::Prompt).to(receive(:prompt_user_input).and_return('code=abc&state=xyz'))
-      expect { paste.received_request }.not_to(output(/web_login/).to_stderr)
+      paste.received_request
+      expect(shown.join("\n")).not_to(match(/web_login/))
     end
 
     it 'gives the code of the command for the workstation, with the login page, then reads the reply code' do
       reply = Aspera::WebAuth::Blob.encode(:reply, {'code' => 'abc', 'state' => 'xyz'})
       allow(Aspera::Cli::Prompt).to(receive(:prompt_user_input).and_return(reply))
-      shown = +''
-      allow($stderr).to(receive(:puts)) { |text| shown << "#{text}\n" }
       expect(login_paste.received_request).to(eq('code' => 'abc', 'state' => 'xyz'))
-      command = shown[/ascli config web_login (ASCLI1L[A-Z2-7]+)/, 1]
+      command = shown.join("\n")[/ascli config web_login (ASCLI1L[A-Z2-7]+)/, 1]
       expect(command).not_to(be_nil)
       type, data = Aspera::WebAuth::Blob.decode(command)
       expect(type).to(eq(:login))

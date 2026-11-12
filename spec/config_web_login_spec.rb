@@ -26,7 +26,10 @@ module Aspera
         let(:login_code) { WebAuth::Blob.encode(:login, login_data) }
         let(:hosts_id) { described_class.const_get(:WEB_LOGIN_HOSTS_ID) }
 
-        before { allow(WebAuth::Relay).to(receive(:run)) }
+        before do
+          allow(WebAuth::Relay).to(receive(:run))
+          allow(Log.log).to(receive(:warn))
+        end
 
         it 'is a command reserved to security level low' do
           expect(described_class.command_registry[[:web_login]].security).to(eq(:low))
@@ -35,7 +38,8 @@ module Aspera
         it 'asks to trust the host the first time, then does not ask again' do
           allow($stdin).to(receive(:tty?).and_return(true))
           allow(Prompt).to(receive(:prompt_user_input).and_return('yes'))
-          expect { config.action_web_login(code: login_code) }.to(output(/idp\.example\.com/).to_stderr)
+          config.action_web_login(code: login_code)
+          expect(Log.log).to(have_received(:warn))
           expect(WebAuth::Relay).to(have_received(:run).once)
           expect(persisted[hosts_id]).to(eq('idp.example.com'))
           config.action_web_login(code: login_code)
@@ -46,7 +50,7 @@ module Aspera
         it 'does not open the page if the user refuses the host' do
           allow($stdin).to(receive(:tty?).and_return(true))
           allow(Prompt).to(receive(:prompt_user_input).and_return('no'))
-          expect { config.action_web_login(code: login_code) }.to(raise_error(BadArgument, /refused/).and(output.to_stderr))
+          expect { config.action_web_login(code: login_code) }.to(raise_error(BadArgument, /refused/))
           expect(WebAuth::Relay).not_to(have_received(:run))
           expect(persisted).to(be_empty)
         end

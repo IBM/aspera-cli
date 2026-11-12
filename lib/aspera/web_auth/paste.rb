@@ -2,6 +2,7 @@
 
 require 'uri'
 require 'aspera/assert'
+require 'aspera/log'
 require 'aspera/cli/prompt'
 require 'aspera/cli/info'
 require 'aspera/web_auth/blob'
@@ -68,14 +69,21 @@ module Aspera
       # Input is not echoed on a terminal: it contains an authorization code or tokens.
       # @return [Hash{String=>String}] The query
       def received_request
-        unless @login_url.nil?
-          code = Blob.encode(:login, {'login_url' => @login_url.to_s, 'redirect_uri' => @redirect_uri, 'reply_keys' => @reply_keys})
-          $stderr.puts('USER ACTION: if ascli is installed on the workstation that has the browser, run there:') # rubocop:disable Style/StderrPuts
-          $stderr.puts("  #{Cli::Info::CMD_NAME} config web_login #{code}") # rubocop:disable Style/StderrPuts
-          $stderr.puts('and paste here the code shown by the browser after login.') # rubocop:disable Style/StderrPuts
-          $stderr.puts('Otherwise, log in with the URL above:') # rubocop:disable Style/StderrPuts
+        Log.log.warn do
+          url_step = "copy the full URL from the address bar of the browser (it shows a connection error on #{@redirect_uri}: this is expected)"
+          if @login_url.nil?
+            "USER ACTION: log in with the web browser, then #{url_step}, and paste it here."
+          else
+            code = Blob.encode(:login, {'login_url' => @login_url.to_s, 'redirect_uri' => @redirect_uri, 'reply_keys' => @reply_keys})
+            [
+              'USER ACTION: log in with the web browser, then paste the result here. Two ways:',
+              "  1. Log in with the URL above, then #{url_step}.",
+              "  2. If #{Cli::Info::CMD_NAME} is installed on the workstation that has the browser, instead run there:",
+              "       #{Cli::Info::CMD_NAME} config web_login #{code}",
+              '     log in in the page it opens, then copy the code shown by the browser.'
+            ].join("\n")
+          end
         end
-        $stderr.puts("After login, the browser shows a connection error on #{@redirect_uri}: this is expected. Copy the full URL from the address bar of the browser, and paste it here.") # rubocop:disable Style/StderrPuts
         self.class.parse(Cli::Prompt.prompt_user_input('Code or URL', sensitive: true))
       end
     end

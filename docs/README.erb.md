@@ -3930,16 +3930,18 @@ The exchange of the code for a token is done by <%=tool%> on the server: the sec
    <%=cmd%> <%=ph :plugin%> <%=ph :command%> --ui=terminal --ui.web_auth=paste
    ```
 
-2. <%=tool%> displays a command to run on the workstation, with a code made of letters and digits (a double click selects all of it), and waits:
+2. <%=tool%> displays the login URL, then a message that proposes the two ways to log in, with a command to run on the workstation that contains a code made of letters and digits (a double click selects all of it), and waits:
 
    ```text
-   USER ACTION: if <%=cmd%> is installed on the workstation that has the browser, run there:
-     <%=cmd%> config web_login ASCLI1L...
-   and paste here the code shown by the browser after login.
+   USER ACTION: log in with the web browser, then paste the result here. Two ways:
+     1. Log in with the URL above, then copy the full URL from the address bar of the browser (it shows a connection error on http://localhost:12345: this is expected).
+     2. If <%=cmd%> is installed on the workstation that has the browser, instead run there:
+          <%=cmd%> config web_login ASCLI1L...
+        log in in the page it opens, then copy the code shown by the browser.
    ```
 
-   This command is displayed only if <%=tool%> does not start the browser itself (`--ui=terminal` without `--ui.command`).
-   If the browser is started by <%=tool%> (`--ui=graphical`, or `--ui.command`), it is on the same host as <%=tool%>, and the redirection may be immediate (user already logged in): only the instruction to copy the URL from the browser is displayed.
+   The command is displayed only if <%=tool%> does not start the browser itself (`--ui=terminal` without `--ui.command`).
+   If the browser is started by <%=tool%> (`--ui=graphical`, or `--ui.command`), it is on the same host as <%=tool%>, and the redirection may be immediate (user already logged in): only the instruction to log in and copy the URL from the browser is displayed.
 
 3. On the workstation, run this command.
    The first time for a login host, <%=tool%> displays the host of the login page, and asks to trust it (`yes`): it opens a URL that comes from another system.

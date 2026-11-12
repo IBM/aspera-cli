@@ -545,7 +545,7 @@ module Aspera
           hosts = persist.get(WEB_LOGIN_HOSTS_ID).to_s.split("\n")
           return if hosts.include?(host)
           raise BadArgument, "Host of the login page is not known: #{host}. Run this command in a terminal to accept it." unless $stdin.tty?
-          $stderr.puts("This code opens the login page of: #{host}") # rubocop:disable Style/StderrPuts
+          Log.log.warn { "This code opens the login page of: #{host}" }
           answer = Prompt.prompt_user_input("Open it, and trust this host for next logins? (yes/no)")
           raise BadArgument, "Host of the login page refused: #{host}" unless %w[y yes].include?(answer.strip.downcase)
           persist.put(WEB_LOGIN_HOSTS_ID, (hosts + [host]).join("\n"))
