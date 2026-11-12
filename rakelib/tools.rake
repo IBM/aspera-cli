@@ -457,4 +457,43 @@ namespace :tools do
     raise "Inconsistent Ruby versions:\n#{errors.join("\n")}" unless errors.empty?
     log.info('Ruby versions are consistent')
   end
+
+  desc 'Check if gem versions can be upgraded: latest release of each gem of gemspec and Gemfile, compatible with the minimum Ruby (Aspera::Cli::Info), against requirement and Gemfile.lock'
+  task :check_gems do
+    require 'bundler'
+    ruby_min = Gem::Version.new("#{Aspera::Cli::Info::RUBY_MINIMUM_VERSION}.0")
+    log.info("Minimum Ruby: #{ruby_min}")
+    locked = GEMFILE_LOCK.read.scan(/^    (\S+) \(([^)]+)\)$/).to_h
+    # Gems of gemspec and Gemfile (conditions on JRuby are evaluated for the current Ruby)
+    dependencies = Gem::Specification.load(GEMSPEC.to_s).runtime_dependencies
+    dependencies += Bundler::Definition.build(GEMFILE.to_s, GEMFILE_LOCK.to_s, nil).dependencies
+    dependencies = dependencies.uniq(&:name).sort_by(&:name)
+    blocked = []
+    dependencies.each do |dep|
+      next if dep.name.eql?(Aspera::Cli::Info::GEM_NAME)
+      raw = Aspera::Rest::Client.new(base_url: "https://rubygems.org/api/v1/versions/#{dep.name}.json", redirect_max: 3).read(nil)
+      releases = (raw.is_a?(String) ? JSON.parse(raw) : raw).reject { |r| r['prerelease'] }
+      # Releases that can be installed with the minimum Ruby
+      usable = releases.select do |release|
+        required = release['ruby_version'].to_s.split(',').map(&:strip).reject(&:empty?)
+        required.empty? || Gem::Requirement.new(*required).satisfied_by?(ruby_min)
+      end.map { |release| Gem::Version.new(release['number']) }
+      latest = usable.max
+      next log.warn("#{dep.name}: no release compatible with Ruby #{ruby_min}") if latest.nil?
+      # Version in Gemfile.lock is optionally suffixed with platform
+      current = locked[dep.name]&.sub(/-[a-z].*\z/, '')
+      status = []
+      if !dep.requirement.satisfied_by?(latest)
+        status << "requirement `#{dep.requirement}` excludes latest"
+        blocked.push(dep.name)
+      end
+      status << "locked #{current}" if current && Gem::Version.new(current) < latest
+      if status.empty?
+        log.info("OK: #{dep.name}: #{latest} (#{dep.requirement})")
+      else
+        log.warn("#{dep.name}: latest for Ruby #{ruby_min}: #{latest}: #{status.join(', ')}")
+      end
+    end
+    log.warn("Requirement(s) to review: #{blocked.join(', ')}") unless blocked.empty?
+  end
 end

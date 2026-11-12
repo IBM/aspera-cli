@@ -50,10 +50,10 @@ Gem::Specification.new do |spec|
   spec.add_dependency('jmespath', '~> 1.6')
   spec.add_dependency('json_schemer', '~> 2.4')
   spec.add_dependency('jwt', '>= 2.0') # keep quite open as long as used methods are compatible. (for Orchestrator)
-  spec.add_dependency('marcel', '>= 1.1', '< 3') # 2.x requires Ruby >= 3.3
+  spec.add_dependency('marcel', '~> 2.1')
   spec.add_dependency('mime-types', '~> 3.5')
   spec.add_dependency('net-smtp', '~> 0.5')
-  spec.add_dependency('net-ssh', '~> 7.3') # 8.x requires gem openssl >= 3.2 (native build on Ruby 3.2)
+  spec.add_dependency('net-ssh', '~> 8.1')
   spec.add_dependency('rainbow', '~> 3.0')
   spec.add_dependency('ruby-progressbar', '~> 1.0')
   spec.add_dependency('rubyzip', '~> 3.1')

@@ -19,8 +19,8 @@ group :development do
   gem('rubocop', '~> 1.75')
   gem('rubocop-ast', '~> 1.4')
   gem('rubocop-performance', '~> 1.10') unless defined?(JRUBY_VERSION)
-  gem('rubocop-shopify', '>= 2.0', '< 4') # 3.x requires Ruby >= 3.3
-  gem('simplecov', '>= 0.22', '< 2') # 1.x requires Ruby >= 3.3
+  gem('rubocop-shopify', '~> 3.1')
+  gem('simplecov', '~> 1.3')
   gem('solargraph', '~> 0.48') unless defined?(JRUBY_VERSION)
   gem('ferrum', '~> 0.20.1') unless defined?(JRUBY_VERSION)
 end
