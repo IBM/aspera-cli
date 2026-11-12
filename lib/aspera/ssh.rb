@@ -16,8 +16,7 @@ module Aspera
 
     class << self
       # Removes ed25519 keys from the default identity list used by Net::SSH.
-      # Called when the `ed25519` gem is absent or explicitly disabled via
-      # `ASCLI_ENABLE_ED25519=false`.
+      # Called when explicitly disabled via `ASCLI_ENABLE_ED25519=false`.
       # @return [void]
       def disable_ed25519_keys
         Log.log.debug('Disabling SSH ed25519 user keys')
@@ -118,6 +117,7 @@ module Aspera
   end
 end
 
-# Deactivate ed25519 and ecdsa private keys from SSH identities, as it usually causes problems
-Aspera::Ssh.disable_ed25519_keys if Gem::Specification.find_all_by_name('ed25519').none? || ENV.fetch('ASCLI_ENABLE_ED25519', 'true').eql?('false')
+# Deactivate ed25519 private keys from SSH identities if requested (ed25519 is natively supported by net-ssh 8 using OpenSSL)
+Aspera::Ssh.disable_ed25519_keys if ENV.fetch('ASCLI_ENABLE_ED25519', 'true').eql?('false')
+# Deactivate ecdsa algorithms with JRuby, as it usually causes problems
 Aspera::Ssh.disable_ecd_sha2_algorithms if defined?(JRUBY_VERSION) && ENV.fetch('ASCLI_ENABLE_ECDSHA2', 'false').eql?('false')

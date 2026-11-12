@@ -791,7 +791,7 @@ Those are not installed as part of dependencies because they involve compilation
 See [Gemfile](../Gemfile):
 
 | name | version | comment |
-|------------------------|-----------|-------------------------------------------------------------------------------|
+|------------------------|-----------|----------------------------------------------------------------------------------|
 | rake | ~> 13.0 |  |
 | debug | ~> 1.11 | (no jruby) |
 | grpc-tools | ~> 1.67 |  |
@@ -800,6 +800,8 @@ See [Gemfile](../Gemfile):
 | rubocop | ~> 1.75 |  |
 | rubocop-ast | ~> 1.4 |  |
 | rubocop-performance | ~> 1.10 | (no jruby) |
+| rubocop-shopify | ~> 3.1 |  |
+| simplecov | ~> 1.3 |  |
 | solargraph | ~> 0.48 | (no jruby) |
 | ferrum | ~> 0.20.1 | (no jruby) |
 | mcp | ~> 1.2 | for ascli mcp server (MCP protocol support) |
@@ -808,8 +810,7 @@ See [Gemfile](../Gemfile):
 | sqlite3 | ~> 2.7 | (no jruby) for async DB |
 | jdbc-sqlite3 | ~> 3.46 | (jruby) for async DB |
 | sequel | ~> 5.96 | (jruby) for async DB |
-| ed25519 | ~> 1.4 | (no jruby) for ed25519 and OpenSSH file format |
-| bcrypt_pbkdf | ~> 1.1 | (no jruby) for ed25519 and OpenSSH file format |
+| bcrypt_pbkdf | ~> 1.1 | (no jruby) for passphrase-protected OpenSSH private keys (ed25519 is native in net-ssh 8) |
 | syslog | ~> 0.3 | (no jruby) for logger=syslog |
 | zxcvbn | ~> 1.0 | for better estimate of secret strength (faspex5 postprocessing secret_token) |
 | keeper_secrets_manager | ~> 17.2 | for vault of type keeper (Keeper Secrets Manager) |
@@ -826,6 +827,8 @@ gem install rspec -v '~> 3.0'
 gem install rubocop -v '~> 1.75'
 gem install rubocop-ast -v '~> 1.4'
 gem install rubocop-performance -v '~> 1.10'
+gem install rubocop-shopify -v '~> 3.1'
+gem install simplecov -v '~> 1.3'
 gem install solargraph -v '~> 0.48'
 gem install ferrum -v '~> 0.20.1'
 gem install mcp -v '~> 1.2'
@@ -834,7 +837,6 @@ gem install grpc -v '~> 1.71'
 gem install sqlite3 -v '~> 2.7'
 gem install jdbc-sqlite3 -v '~> 3.46'
 gem install sequel -v '~> 5.96'
-gem install ed25519 -v '~> 1.4'
 gem install bcrypt_pbkdf -v '~> 1.1'
 gem install syslog -v '~> 0.3'
 gem install zxcvbn -v '~> 1.0'
@@ -3903,13 +3905,12 @@ The file containing the private key (key pair) can optionally be protected by a 
 If the key is protected by a passphrase, then the passphrase is prompted when the key is used.
 Some plugins support option `passphrase`.
 
-By default, `ascli` does not support `ed25519` type, nor OpenSSH encoded keys.
-See section: [Private key type ed25519](#private-key-type-ed25519-not-supported-by-default).
-It requires PEM encoded keys.
-To support `ed25519` and OpenSSH format (default on modern Linux), install those gems:
+Keys of type `ed25519` and OpenSSH encoded keys (default on modern Linux) are supported.
+See section: [Private key type ed25519](#private-key-type-ed25519).
+For OpenSSH encoded keys protected by a passphrase, install gem `bcrypt_pbkdf` (not available for JRuby):
 
 ```shell
-gem install ed25519 bcrypt_pbkdf
+gem install bcrypt_pbkdf
 ```
 
 The following sample commands use the shell variable `KEY_PAIR_PATH`.
@@ -12571,27 +12572,25 @@ This also requires Ruby header files.
 If Ruby was installed as a Linux package, then also install the Ruby development package:
 `ruby-dev` or `ruby-devel`, depending on distribution.
 
-### Private key type: `ed25519` not supported by default
+### Private key type: `ed25519`
 
-There are a few aspects concerning ED25519 keys.
-
-By default, the `aspera-cli` gem does not depend on the `ed25519` gem because it requires compilation of native code which can cause problems and prevent the installation of `ascli`, especially when using JRuby.
-See [net-ssh issue 565](https://github.com/net-ssh/net-ssh/issues/565).
-If you want to use `ed25519` keys, then install the required gems:
+Keys of type `ed25519` and keys in the OpenSSH format are supported by `net-ssh` using the Ruby `openssl` gem (>= 3.2.0): the `ed25519` gem is not needed.
+Only OpenSSH private keys protected by a passphrase require the `bcrypt_pbkdf` gem, which requires compilation of native code:
 
 ```shell
-gem install ed25519 bcrypt_pbkdf
+gem install bcrypt_pbkdf
 ```
 
-In addition, if those two gems are not installed, and if you are using Private Keys encoded using the OpenSSH format, the following message is displayed:
+If the gem is missing, then loading such a key fails with an error mentioning `bcrypt_pbkdf`.
+
+If the OpenSSL backend does not support Ed25519, then the following message is displayed:
 
 ```text
 OpenSSH keys only supported if ED25519 is available (NotImplementedError)
-net-ssh requires the following gems for ed25519 support:
- * ed25519 (>= 1.2, < 2.0)
- * bcrypt_pbkdf (>= 1.0, < 2.0)
-See https://github.com/net-ssh/net-ssh/issues/565 for more information
+net-ssh requires openssl >= 3.2.0 and a crypto backend with Ed25519 enabled for ed25519 support.
 ```
+
+To ignore the `ed25519` keys of the default identities (`~/.ssh/id_ed25519`), set env var `ASCLI_ENABLE_ED25519` to `false`.
 
 In addition, if **JRuby** is used, host keys of type: `ecdsa-sha2` and `ecdh-sha2` are also deactivated by default.
 To activate, set env var `ASCLI_ENABLE_ECDSHA2` to `true`.

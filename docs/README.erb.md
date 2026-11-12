@@ -3660,13 +3660,12 @@ The file containing the private key (key pair) can optionally be protected by a 
 If the key is protected by a passphrase, then the passphrase is prompted when the key is used.
 Some plugins support option `passphrase`.
 
-By default, <%=tool%> does not support `ed25519` type, nor OpenSSH encoded keys.
-See section: [Private key type ed25519](#private-key-type-ed25519-not-supported-by-default).
-It requires PEM encoded keys.
-To support `ed25519` and OpenSSH format (default on modern Linux), install those gems:
+Keys of type `ed25519` and OpenSSH encoded keys (default on modern Linux) are supported.
+See section: [Private key type ed25519](#private-key-type-ed25519).
+For OpenSSH encoded keys protected by a passphrase, install gem `bcrypt_pbkdf` (not available for JRuby):
 
 ```shell
-gem install ed25519 bcrypt_pbkdf
+gem install bcrypt_pbkdf
 ```
 
 The following sample commands use the shell variable `KEY_PAIR_PATH`.
@@ -11072,27 +11071,25 @@ This also requires Ruby header files.
 If Ruby was installed as a Linux package, then also install the Ruby development package:
 `ruby-dev` or `ruby-devel`, depending on distribution.
 
-### Private key type: `ed25519` not supported by default
+### Private key type: `ed25519`
 
-There are a few aspects concerning ED25519 keys.
-
-By default, the `<%=gemspec.name%>` gem does not depend on the `ed25519` gem because it requires compilation of native code which can cause problems and prevent the installation of <%=tool%>, especially when using JRuby.
-See [net-ssh issue 565](https://github.com/net-ssh/net-ssh/issues/565).
-If you want to use `ed25519` keys, then install the required gems:
+Keys of type `ed25519` and keys in the OpenSSH format are supported by `net-ssh` using the Ruby `openssl` gem (>= 3.2.0): the `ed25519` gem is not needed.
+Only OpenSSH private keys protected by a passphrase require the `bcrypt_pbkdf` gem, which requires compilation of native code:
 
 ```shell
-gem install ed25519 bcrypt_pbkdf
+gem install bcrypt_pbkdf
 ```
 
-In addition, if those two gems are not installed, and if you are using Private Keys encoded using the OpenSSH format, the following message is displayed:
+If the gem is missing, then loading such a key fails with an error mentioning `bcrypt_pbkdf`.
+
+If the OpenSSL backend does not support Ed25519, then the following message is displayed:
 
 ```text
 OpenSSH keys only supported if ED25519 is available (NotImplementedError)
-net-ssh requires the following gems for ed25519 support:
- * ed25519 (>= 1.2, < 2.0)
- * bcrypt_pbkdf (>= 1.0, < 2.0)
-See https://github.com/net-ssh/net-ssh/issues/565 for more information
+net-ssh requires openssl >= 3.2.0 and a crypto backend with Ed25519 enabled for ed25519 support.
 ```
+
+To ignore the `ed25519` keys of the default identities (`~/.ssh/id_ed25519`), set env var `<%=opt_env :enable_ed25519%>` to `false`.
 
 In addition, if **JRuby** is used, host keys of type: `ecdsa-sha2` and `ecdh-sha2` are also deactivated by default.
 To activate, set env var `<%=opt_env :enable_ecdsha2%>` to `true`.

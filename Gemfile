@@ -33,8 +33,7 @@ group :optional do
   gem('sqlite3', '~> 2.7') unless defined?(JRUBY_VERSION) # for async DB
   gem('jdbc-sqlite3', '~> 3.46') if defined?(JRUBY_VERSION) # for async DB
   gem('sequel', '~> 5.96') if defined?(JRUBY_VERSION) # for async DB
-  gem('ed25519', '~> 1.4') unless defined?(JRUBY_VERSION) # for ed25519 and OpenSSH file format
-  gem('bcrypt_pbkdf', '~> 1.1') unless defined?(JRUBY_VERSION) # for ed25519 and OpenSSH file format
+  gem('bcrypt_pbkdf', '~> 1.1') unless defined?(JRUBY_VERSION) # for passphrase-protected OpenSSH private keys (ed25519 is native in net-ssh 8)
   gem('syslog', '~> 0.3') unless defined?(JRUBY_VERSION) # for logger=syslog
   gem('zxcvbn', '~> 1.0') # for better estimate of secret strength (faspex5 postprocessing secret_token)
   gem('keeper_secrets_manager', '~> 17.2') # for vault of type keeper (Keeper Secrets Manager)
