@@ -81,7 +81,7 @@ RSpec.describe(Aspera::WebAuth::Relay) do
       nonce = csp[/nonce-([^']+)/, 1]
       expect(response.body).to(include(%(<script nonce="#{nonce}">)))
       expect(response['Cache-Control']).to(eq('no-store'))
-      reply = response.body[/ASCLI1R[A-Z2-7]+/]
+      reply = response.body[/DCODE1R[A-Z2-7]+/]
       expect(reply).not_to(be_nil)
       # the code is only in the script, not in the visible page
       expect(response.body.scan(reply).length).to(eq(1))

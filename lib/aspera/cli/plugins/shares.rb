@@ -16,11 +16,11 @@ module Aspera
         ADMIN_API_PATH = 'api/v1'
         # path for authentication (SAML login page, OAuth token) after base url
         AUTH_API_PATH = 'auth'
-        # default URL that receives the tokens, with auth `web`
+        # default URL that receives the tokens, with auth `web` and `ui.web_auth=port`
         REDIRECT_LOCALHOST = 'http://localhost:12345'
         AUTH_TYPES = %i[basic web].freeze
         option :auth,         description: 'Type of authentication: user and password, or Web browser (SAML)', allowed: AUTH_TYPES, default: :basic
-        option :redirect_uri, description: "Web authentication: loopback URL that receives the tokens (default: #{REDIRECT_LOCALHOST})"
+        option :redirect_uri, description: "Web authentication with ui.web_auth=port: loopback URL that receives the tokens (default: #{REDIRECT_LOCALHOST})"
         class << self
           # Check various endpoints on Shares
           # @return [Hash] with version, ping, api

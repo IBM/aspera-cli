@@ -68,6 +68,7 @@ components:
             - `paste`: no port is opened. After login, the browser shows a connection error on `redirect_uri`:
             copy the full URL from the address bar of the browser and paste it in the terminal.
             Use it when the browser cannot reach the host that runs `ascli` and a SSH tunnel is not possible.
+            For `shares`, Shares displays a code (starting with `DCODE1`) instead: paste it in the terminal.
           enum:
             - port
             - paste

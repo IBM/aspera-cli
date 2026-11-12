@@ -96,7 +96,7 @@ RSpec.describe(Aspera::WebAuth::Paste) do
       reply = Aspera::WebAuth::Blob.encode(:reply, {'code' => 'abc', 'state' => 'xyz'})
       allow(Aspera::Cli::Prompt).to(receive(:prompt_user_input).and_return(reply))
       expect(login_paste.received_request).to(eq('code' => 'abc', 'state' => 'xyz'))
-      command = shown.join("\n")[/ascli config web_login (ASCLI1L[A-Z2-7]+)/, 1]
+      command = shown.join("\n")[/ascli config web_login (DCODE1L[A-Z2-7]+)/, 1]
       expect(command).not_to(be_nil)
       type, data = Aspera::WebAuth::Blob.decode(command)
       expect(type).to(eq(:login))

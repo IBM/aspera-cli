@@ -8,14 +8,14 @@ module Aspera
   module WebAuth
     # Text code exchanged by the user between `ascli` on a remote host and `ascli` on the workstation that has the browser (option `ui.web_auth=paste`).
     #
-    # Format: `ASCLI1` + type letter + Base32 of (deflated JSON + CRC32).
+    # Format: `DCODE1` + type letter + Base32 of (deflated JSON + CRC32).
     # - Type: `L` (login, from the remote host to the workstation) or `R` (reply, from the workstation to the remote host)
     # - Base32 (RFC 4648 alphabet, no padding): letters and digits only, selected with a double click and typed without quotes in any shell
     # - CRC32 of type and deflated data: detects an incomplete or mistyped code
     # Spaces, line breaks and case are ignored when decoding, so that a code split on several lines is valid.
     # A code is not encrypted: it is an encoding, the reply contains a code or tokens.
     module Blob
-      PREFIX = 'ASCLI1'
+      PREFIX = 'DCODE1'
       TYPES = {login: 'L', reply: 'R'}.freeze
       ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
       # Limits on what is accepted: protection against an abusive input

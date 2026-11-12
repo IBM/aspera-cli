@@ -50,7 +50,7 @@ RSpec.describe(Aspera::WebAuth::Servlet) do
       expect(response.body).to(include("nonce=\"#{csp[/nonce-([^']+)/, 1]}\""))
       expect(response.body).to(include('&lt;b&gt;info&lt;/b&gt;'))
       expect(response.body).to(include('Copy'))
-      reply = response.body[/ASCLI1R[A-Z2-7]+/]
+      reply = response.body[/DCODE1R[A-Z2-7]+/]
       expect(Aspera::WebAuth::Blob.decode(reply)).to(eq([:reply, {'code' => 'c1', 'state' => 's1'}]))
       expect(response.body).not_to(include('zzz'))
       expect(web_auth).to(have_received(:signal_request).with(request))

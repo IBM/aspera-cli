@@ -3889,6 +3889,29 @@ Authentication methods that need a user login in a browser (`--auth=web`, includ
 
 The code or tokens never go to another host than the local one: the host of `redirect_uri` shall be loopback.
 
+#### Option `ui.web_auth`
+
+Option `ui.web_auth` (part of the composite option `ui`, see [Graphical Interactions](#graphical-interactions-browser-and-text-editor)) selects how the result of a web login is received:
+
+| Value            | Local port | Use when |
+|------------------|------------|----------|
+| `port` (default) | Yes: <%=tool%> listens on the loopback address of `redirect_uri` | The browser runs on the same system as <%=tool%>, or an SSH tunnel is possible. |
+| `paste`          | No: `redirect_uri` is only used in the login URL | The browser cannot reach the system that runs <%=tool%>, and no tunnel is possible. |
+
+With `paste`, after login the user gives the result to <%=tool%> through the terminal (nothing is displayed, as it contains a code or tokens):
+
+- the code displayed by Shares (starting with `DCODE1`), or the code shown by `<%=cmd%> config web_login` on the workstation,
+- or the full URL (or only the query) from the address bar of the browser, which shows a connection error on `redirect_uri`: this is expected.
+
+In all cases the `state` is checked.
+Details are in the following sections.
+
+Example:
+
+```shell
+<%=cmd%> <%=ph :plugin%> <%=ph :command%> --ui=terminal --ui.web_auth=paste
+```
+
 #### Web login when the browser is on another system
 
 The browser sends the result of the login to `redirect_uri`, on the loopback address of the system where the browser runs.
@@ -3941,7 +3964,7 @@ The exchange of the code for a token is done by <%=tool%> on the server: the sec
         - Copy the full URL from the address bar of the browser, and paste it in the prompt below.
      2. If <%=cmd%> is installed on the workstation that has the browser:
         - Run there:
-            <%=cmd%> config web_login ASCLI1L...
+            <%=cmd%> config web_login DCODE1L...
         - Log in in the page that opens.
         - Copy the code shown by the browser, and paste it in the prompt below.
    ```
@@ -3963,7 +3986,7 @@ The command on the workstation:
 - accepts only a login page in `https`, and a `redirect_uri` on a loopback address; the host shown for confirmation is the one of the URL, not a label given in the code;
 - is available only at security level `low`;
 - ends once the browser has received the page with the code; the port of `redirect_uri` shall be free on the workstation (the URL is registered for the login and cannot be changed);
-- gives to the server only the parameters it needs (the `code` and the `state` for `web`, the `refresh_token` and the `state` for Shares).
+- gives to the server only the parameters it needs (the `code` and the `state`).
 
 The codes are encoded and compressed, they are **not encrypted**: do not keep them, nor send them.
 The code of the reply is checked (checksum), a code that is incomplete or mistyped is detected.
@@ -3982,15 +4005,15 @@ If <%=tool%> is not installed on the workstation, the URL of the error page is u
 
 Both ways accept, at the prompt, the code, the URL or the query.
 If standard input is not a terminal, the line is read from it.
-The size of a pasted line may be limited by the terminal: tokens of Shares are long, and the code of the reply contains only what is needed.
+The size of a pasted line may be limited by the terminal: the code of the reply contains only what is needed.
 
 Notes:
 
+- For Shares with `--auth=web`, `paste` is simpler: Shares itself displays the code, so neither the tunnel, nor `<%=cmd%> config web_login`, nor the URL of the error page is used (see [Authentication of SAML users](#authentication-of-saml-users)).
 - The port must be free on the workstation.
   To use another port, change it in the tunnel and in `--redirect-uri`, for example `--redirect-uri=http://localhost:23456` and `-L 127.0.0.1:23456:127.0.0.1:23456`.
   For Aspera on Cloud, this `redirect_uri` shall also be declared in the API client (see [API Client Registration](#api-client-registration)).
 - The tunnel listens on `127.0.0.1`: if the browser resolves `localhost` to `::1`, use `--redirect-uri=http://127.0.0.1:12345`.
-- For Shares with `--auth=web`, the same procedure applies; the tokens go through the browser of the workstation and the tunnel, then <%=tool%> immediately exchanges the refresh token.
 - On Windows, `ssh` is the OpenSSH client provided with the system; with PuTTY, add a local port forwarding (Connection &rarr; SSH &rarr; Tunnels) from `127.0.0.1:12345` to `127.0.0.1:12345`.
 - Another solution is X11 forwarding: run an X server on the workstation (for example `VcXsrv` or X410 on Windows) and connect with `ssh -X`.
   The browser then runs on the server and is displayed on the workstation, so no tunnel is needed.
@@ -9465,16 +9488,25 @@ A user that has only a SAML identity (no local password) can authenticate with a
 <%=cmd%> shares --url=https://shares.example.com --auth=web files browse /
 ```
 
-See [Web login flow](#web-login-flow).
-<%=tool%> listens on a local port (`--redirect-uri`, default: `http://localhost:12345`), opens the SAML login page of Shares (`/auth/saml`) in the browser, and receives the OAuth tokens there.
-The host of `redirect_uri` shall be loopback: `localhost`, an address of `127.0.0.0/8`, or `[::1]`.
+Option `ui.web_auth` selects how the result of the login is received (see [Web login flow](#web-login-flow)):
+
+- `port` (default): automatic when the browser runs on the same system as <%=tool%>.
+  <%=tool%> listens on a local port (`--redirect-uri`, default: `http://localhost:12345`), opens the SAML login page of Shares (`/auth/saml`) in the browser with this URL in `RelayState`, and receives the OAuth tokens there.
+  The host of `redirect_uri` shall be loopback: `localhost`, an address of `127.0.0.0/8`, or `[::1]`.
+- `paste`: the browser may run on another system than <%=tool%> (for example, <%=tool%> runs on a server accessed with SSH), without tunnel.
+  No local port is opened and `--redirect-uri` is not used.
+  <%=tool%> generates a random `state` and opens the SAML login page with `RelayState` `aspera://device-code?state=<state>`.
+  After login, Shares displays a code (it starts with `DCODE1`). The user copies it and pastes it in the terminal (nothing is displayed, as the code contains a token).
+  If standard input is not a terminal, the code is read from it.
+  <%=tool%> checks that the `state` of the code is the one it generated.
+
 The token is saved, and renewed with its refresh token: the browser is opened again only if this fails.
 Option `username` is optional: with it, the token is saved for this user.
 
 > [!IMPORTANT]
-> Shares does not have the OAuth authorization code grant: it accepts a loopback URL in `RelayState` of SAML only with a patch (see the request to the Shares team).
-> With a Shares that does not accept it, the browser stays on the SAML login and <%=tool%> reports that no token was received.
-> Shares returns the tokens in the URL of the browser, <%=tool%> immediately exchanges the refresh token for a new token, so that the tokens that were visible in the URL are not valid any more.
+> Shares does not have the OAuth authorization code grant: both ways require a patch of Shares, which returns the tokens when `RelayState` is a loopback URL (`port`) or `aspera://device-code?state=<state>` (`paste`).
+> With a Shares without the patch, <%=tool%> reports that no token was received.
+> The tokens given by Shares go through the browser (in the URL, or in the code): <%=tool%> immediately exchanges the refresh token for a new token, so that the tokens that were visible are not valid any more.
 
 <%=include_commands_for_plugin(:shares)%>
 
