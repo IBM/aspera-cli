@@ -225,8 +225,8 @@ module Aspera
 
       # Start a transfer and wait for completion, plugins shall use this method
       # @param transfer_spec [Hash] transfer specification
-      # @param rest_token    [Rest::Client, nil] if oauth token regeneration supported
-      def start(transfer_spec, rest_token: nil)
+      # @param oauth_api     [Rest::Client, nil] API whose OAuth token renews the bearer token of the transfer, if rejected
+      def start(transfer_spec, oauth_api: nil)
         # check parameters
         Aspera.assert_type(transfer_spec, Hash) { 'transfer_spec' }
         raise "Wrong remote host: #{CP4I_REMOTE_HOST_LB}" if transfer_spec['remote_host'].eql?(CP4I_REMOTE_HOST_LB)
@@ -263,8 +263,10 @@ module Aspera
         transfer_spec['content_protection_password'] = @context.options.prompt_user_input('content protection password', sensitive: true) if transfer_spec['content_protection'].eql?('decrypt') && !transfer_spec.key?('content_protection_password')
         # Secrets of transfer spec (e.g. `token` from the application) are hidden wherever they appear (logs, results)
         Secret::Hider.instance.add_secrets_in(transfer_spec)
+        # Renews the bearer token of the transfer: only possible with OAuth
+        token_regenerator = -> { oauth_api.oauth.renewed_authorization } if oauth_api&.auth_params&.fetch(:type, nil).eql?(:oauth2)
         # create transfer agent
-        agent_instance.start_transfer(transfer_spec, token_regenerator: rest_token)
+        agent_instance.start_transfer(transfer_spec, token_regenerator: token_regenerator)
         # --- async mode ---
         if transfer_options['asynchronous']
           agent_type = (transfer_options['agent'] || 'direct').to_s

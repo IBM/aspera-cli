@@ -118,7 +118,7 @@ module Aspera
       # Start `ascp` transfer(s) (non blocking), single or multi-session
       # Session information added to @sessions
       # @param transfer_spec     [Hash]   Aspera transfer specification
-      # @param token_regenerator [Object] Object with method refreshed_transfer_token
+      # @param token_regenerator [Proc, nil] Returns a renewed value for the bearer token of the transfer
       def start_transfer(transfer_spec, token_regenerator: nil)
         # clone transfer spec because we modify it (first level keys)
         transfer_spec = transfer_spec.clone
@@ -379,11 +379,11 @@ module Aspera
             Log.log.trace1 { 'Graceful shutdown, DONE message received' }
           when 'ERROR'
             if /bearer token/i.match?(last_event['Description']) &&
-                session[:token_regenerator].respond_to?(:refreshed_transfer_token)
+                !session[:token_regenerator].nil?
               # regenerate token here, expired, or error on it
               # Note: in multi-session, each session will have a different one.
               Log.log.warn('Regenerating token for transfer')
-              env['ASPERA_SCP_TOKEN'] = session[:token_regenerator].refreshed_transfer_token
+              env['ASPERA_SCP_TOKEN'] = session[:token_regenerator].call
             end
             raise Transfer::Error.new(last_event['Description'], code: last_event['Code'].to_i)
           else

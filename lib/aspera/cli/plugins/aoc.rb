@@ -1087,7 +1087,7 @@ module Aspera
           end
           package_data['encryption_at_rest'] = true if transfer.user_transfer_spec['content_protection'].eql?('encrypt')
           created_package = aoc_api.create_package_simple(package_data, option_validate, new_user_option)
-          return Runner.result_object_transfer(created_package[:info], transfer.start(created_package[:spec], rest_token: created_package[:node]))
+          return Runner.result_object_transfer(created_package[:info], transfer.start(created_package[:spec], oauth_api: created_package[:node]))
         end
 
         # packages > receive — package_id: from arguments:(:identifier) (or overridden by public_link)
@@ -1135,7 +1135,7 @@ module Aspera
             transfer.user_transfer_spec['destination_root'] = self.class.unique_folder(package_info, destination_folder, **per_package_def) unless per_package_def.empty?
             dest_folder = transfer.user_transfer_spec['destination_root'] || destination_folder
             formatter.display_status(%Q{Downloading package: [#{package_info['id']}] "#{package_info['name']}" to [#{dest_folder}]})
-            statuses = transfer.start(transfer_spec, rest_token: package_node_api)
+            statuses = transfer.start(transfer_spec, oauth_api: package_node_api)
             File.write(File.join(dest_folder, "#{package_id}.info.json"), package_info.to_json) if save_metadata
             result_transfer.push({'package' => package_id, Runner::STATUS_FIELD => statuses})
             if skip_ids_persistency && statuses.is_a?(Transfer::Result::Success)

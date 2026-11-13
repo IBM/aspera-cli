@@ -229,6 +229,46 @@ module Aspera
         end
       end
 
+      # ── bearer token renewal by the agent ───────────────────────────────────
+
+      describe 'token regenerator' do
+        let(:agent_double) do
+          d = double('Agent::Direct')
+          allow(d).to(receive(:start_transfer))
+          allow(d).to(receive(:wait_for_completion).and_return(Aspera::Transfer::Result.success))
+          d
+        end
+
+        let(:ta) do
+          build_agent(agent_type: 'direct').tap { |a| a.agent_instance = agent_double }
+        end
+
+        # @return [Proc, nil] Token regenerator given to the agent
+        def regenerator_given
+          regenerator = :not_called
+          expect(agent_double).to(have_received(:start_transfer)) { |_ts, token_regenerator:| regenerator = token_regenerator }
+          regenerator
+        end
+
+        it 'renews the OAuth token of the API' do
+          # Generated, none in source
+          new_authorization = "Bearer #{SecureRandom.hex(8)}"
+          oauth = double('OAuth', renewed_authorization: new_authorization)
+          ta.start(ts, oauth_api: double('Node', auth_params: {type: :oauth2}, oauth: oauth))
+          expect(regenerator_given.call).to(eq(new_authorization))
+        end
+
+        it 'is not given for an API without OAuth' do
+          ta.start(ts, oauth_api: double('Node', auth_params: {type: :basic}))
+          expect(regenerator_given).to(be_nil)
+        end
+
+        it 'is not given without API' do
+          ta.start(ts)
+          expect(regenerator_given).to(be_nil)
+        end
+      end
+
       # ── AsyncTransferStore: _* keys are not persisted ───────────────────────
 
       describe 'AsyncTransferStore#write' do
