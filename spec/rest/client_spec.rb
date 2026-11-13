@@ -200,11 +200,19 @@ RSpec.describe(Aspera::Rest) do
         expect(api.read('api')).to(eq({}))
       end
 
-      it 'raises original error if no new token can be obtained' do
+      it 'raises the error of token generation if no new token can be obtained' do
         allow(oauth).to(receive(:authorization).with(no_args).and_return(old_token))
         allow(oauth).to(receive(:authorization).with(refresh: true).and_raise(Aspera::Rest::CallError, 'refresh'))
         allow(oauth).to(receive(:authorization).with(cache: false).and_raise(Aspera::Rest::CallError, 'generate'))
-        expect { api.read('api') }.to(raise_error(Aspera::Rest::CallError) { |e| expect(e.response.code).to(eq('401')) })
+        expect { api.read('api') }.to(raise_error(Aspera::Rest::CallError, 'generate'))
+        expect(@received).to(eq([old_token]))
+      end
+
+      it 'returns the original response if no new token can be obtained and exceptions are disabled' do
+        allow(oauth).to(receive(:authorization).with(no_args).and_return(old_token))
+        allow(oauth).to(receive(:authorization).with(refresh: true).and_raise(Aspera::Rest::CallError, 'refresh'))
+        allow(oauth).to(receive(:authorization).with(cache: false).and_raise(Aspera::Rest::CallError, 'generate'))
+        expect(api.call(operation: 'GET', subpath: 'api', exception: false, ret: :resp).code).to(eq('401'))
       end
 
       it 'renews token only once' do

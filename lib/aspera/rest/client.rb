@@ -202,11 +202,14 @@ module Aspera
           # not authorized: OAuth token expired
           if !token_renewed && @not_auth_codes.include?(result_http.code.to_s) && @auth_params[:type].eql?(:oauth2)
             token_renewed = true
-            new_authorization = renew_oauth_authorization
-            unless new_authorization.nil?
+            begin
+              req_headers['Authorization'] = renew_oauth_authorization
               Log.log.debug('using new token')
-              req_headers['Authorization'] = new_authorization
               retry
+            rescue StandardError => e_renew
+              # The reason why no token could be obtained is more useful than the original error
+              raise e_renew if exception
+              # No exception requested: the result is the original response
             end
           end
           if retry_error?(e) && (error_tries -= 1).positive?
@@ -267,17 +270,13 @@ module Aspera
       end
 
       # Renew OAuth token: use refresh token, or generate a new one
-      # @return [String, nil] New value for header `Authorization`, or `nil` if no new token could be obtained
+      # @return [String] New value for header `Authorization`
+      # @raise [StandardError] Error of the generation of a new token, if no token could be obtained
       def renew_oauth_authorization
         oauth.authorization(refresh: true)
       rescue StandardError => e
         Log.log.error("refresh failed: #{e.message}".bg(:red))
-        begin
-          oauth.authorization(cache: false)
-        rescue StandardError => e
-          Log.log.error("new token failed: #{e.message}".bg(:red))
-          nil
-        end
+        oauth.authorization(cache: false)
       end
 
       # Forward the call to the location of a redirect response.
