@@ -23,7 +23,7 @@ module Aspera
       # @param use_query      [Boolean] Provide parameters in query instead of body
       # @param token_field    [String]  Field in result that contains the token
       # @param cache_ids      [Array]   List of unique identifiers for cache id generation
-      # @param **rest_params  [Hash]    Parameters for REST
+      # @param rest_params    [Hash]    Parameters for REST
       def initialize(
         params: {},
         path_token: 'token',
@@ -55,12 +55,11 @@ module Aspera
       # @param other_params [Hash] Other parameters to merge
       # @return [Hash] Token creation parameters
       def base_parameters(include_secret: false, **other_params)
-        call_params = @params.dup
-        call_params.delete(:client_secret) unless include_secret
-        call_params.merge(other_params)
+        (include_secret ? @params : @params.except(:client_secret)).merge(other_params)
       end
 
       # Helper method to create token as per RFC
+      # @param include_secret [Boolean] Add secret in call parameters
       # @param other_params [Hash] Additional parameter to base parameters
       # @return [Net::HTTPResponse] Raw HTTP response with token
       # @raise [Rest::CallError] If not 2XX code
@@ -68,14 +67,14 @@ module Aspera
         Log.log.debug { 'Generating a new token'.bg(:green) }
         creation_params = base_parameters(include_secret: include_secret, **other_params)
         return @api.create(@path_token, nil, query: creation_params, ret: :resp) if @use_query
-        return @api.create(@path_token, creation_params, content_type: Mime::WWW, ret: :resp)
+        @api.create(@path_token, creation_params, content_type: Mime::WWW, ret: :resp)
       end
 
       # Get the value of the HTTP `Authorization` header for this OAuth client, i.e. `Bearer <token>`.
       # The bearer token is obtained through {#token} (cached, refreshed or generated).
       # @return [String] Value suitable for Authorization header
       def authorization
-        return OAuth::Factory.bearer_authorization(token)
+        OAuth::Factory.bearer_authorization(token)
       end
 
       # Get the value of the HTTP `Authorization` header with a renewed token, i.e. `Bearer <token>`.
@@ -83,7 +82,7 @@ module Aspera
       # The bearer token is obtained through {#renew_token}.
       # @return [String] Value suitable for Authorization header
       def renewed_authorization
-        return OAuth::Factory.bearer_authorization(renew_token)
+        OAuth::Factory.bearer_authorization(renew_token)
       end
 
       # Get a OAuth v2 token: the cached one, unless it expires soon, else a renewed one.
@@ -93,9 +92,11 @@ module Aspera
       # @return [String] The bearer token
       def token
         token_info = cached_token_info
-        return bearer_token(token_info[:data]) unless token_info.nil? || token_info[:expired]
-        Log.log.trace1 { 'Cached token expires soon' } unless token_info.nil?
-        return renew_token
+        unless token_info.nil?
+          return bearer_token(token_info[:data]) unless token_info[:expired]
+          Log.log.trace1 { 'Cached token expires soon' }
+        end
+        renew_token
       end
 
       # Get a new OAuth v2 token, discarding the cached one.
@@ -103,7 +104,7 @@ module Aspera
       # @return [String] The bearer token
       # @raise [StandardError] Error of the generation of a new token
       def renew_token
-        return bearer_token(refreshed_token_data(discard_cached_token) || created_token_data)
+        bearer_token(refreshed_token_data(discard_cached_token) || save_token_data(create_token))
       end
 
       private
@@ -120,7 +121,7 @@ module Aspera
         return if token_info.nil?
         Factory.instance.persist_mgr.delete(@token_cache_id)
         refresh_token = token_info[:data]['refresh_token']
-        return refresh_token unless refresh_token.eql?('not_supported')
+        refresh_token unless refresh_token.eql?('not_supported')
       end
 
       # Get a new token using a refresh token.
@@ -129,17 +130,11 @@ module Aspera
       # @return [Hash{String => Object}, nil] Token creation response, or `nil` if no refresh token or if refresh failed
       def refreshed_token_data(refresh_token)
         return if refresh_token.nil?
-        return save_token_data(create_token_base(include_secret: true, grant_type: 'refresh_token', refresh_token: refresh_token))
+        save_token_data(create_token_base(include_secret: true, grant_type: 'refresh_token', refresh_token: refresh_token))
       rescue StandardError => e
         # Refresh token can fail: a new token will be generated
         Log.log.warn { "Refresh failed: #{e}" }
-        return
-      end
-
-      # Generate a new token with the method of the subclass
-      # @return [Hash{String => Object}] Token creation response
-      def created_token_data
-        return save_token_data(create_token)
+        nil
       end
 
       # Cache the token creation response
@@ -150,7 +145,7 @@ module Aspera
         Factory.instance.persist_mgr.put(@token_cache_id, http.body)
         # Logs decoded token information
         cached_token_info
-        return token_data
+        token_data
       end
 
       # @param token_data [Hash{String => Object}] Token creation response
@@ -158,7 +153,7 @@ module Aspera
       def bearer_token(token_data)
         Aspera.assert(token_data.key?(@token_field)) { "API error: No such field in answer: #{@token_field}" }
         Secret::Hider.instance.add_secret_values(token_data[@token_field], token_data['refresh_token'])
-        return token_data[@token_field]
+        token_data[@token_field]
       end
     end
   end
