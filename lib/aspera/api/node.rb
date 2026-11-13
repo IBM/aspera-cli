@@ -452,7 +452,7 @@ module Aspera
 
       # Generate a refreshed auth token
       def refreshed_transfer_token
-        return oauth.authorization(refresh: true)
+        return oauth.renewed_authorization
       end
 
       # Get a base download transfer spec (gen3)
@@ -484,7 +484,7 @@ module Aspera
           ak_token = Rest.basic_authorization(auth_params[:username], auth_params[:password])
         when :oauth2
           ak_name = params[:headers][HEADER_X_ASPERA_ACCESS_KEY]
-          # TODO: token_generation_lambda = lambda{|do_refresh|oauth.authorization(refresh: do_refresh)}
+          # TODO: token_generation_lambda = lambda{|do_refresh|do_refresh ? oauth.renewed_authorization : oauth.authorization}
           # Get bearer token, possibly use cache
           ak_token = oauth.authorization
         when :none

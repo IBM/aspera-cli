@@ -203,13 +203,14 @@ module Aspera
           if !token_renewed && @not_auth_codes.include?(result_http.code.to_s) && @auth_params[:type].eql?(:oauth2)
             token_renewed = true
             begin
-              req_headers['Authorization'] = renew_oauth_authorization
+              req_headers['Authorization'] = oauth.renewed_authorization
               Log.log.debug('using new token')
               retry
             rescue StandardError => e_renew
               # The reason why no token could be obtained is more useful than the original error
               raise e_renew if exception
               # No exception requested: the result is the original response
+              Log.log.error { "Token renewal failed: #{e_renew.message}" }
             end
           end
           if retry_error?(e) && (error_tries -= 1).positive?
@@ -267,16 +268,6 @@ module Aspera
       # @return [void]
       def retry_sleep
         sleep(Parameters.instance.retry_sleep) unless Parameters.instance.retry_sleep.eql?(0)
-      end
-
-      # Renew OAuth token: use refresh token, or generate a new one
-      # @return [String] New value for header `Authorization`
-      # @raise [StandardError] Error of the generation of a new token, if no token could be obtained
-      def renew_oauth_authorization
-        oauth.authorization(refresh: true)
-      rescue StandardError => e
-        Log.log.error("refresh failed: #{e.message}".bg(:red))
-        oauth.authorization(cache: false)
       end
 
       # Forward the call to the location of a redirect response.

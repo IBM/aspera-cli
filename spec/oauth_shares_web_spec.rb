@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require 'securerandom'
 require 'aspera/rest'
 require 'aspera/oauth/client/shares_web'
 require 'aspera/cli/context'
@@ -25,6 +26,8 @@ RSpec.describe(Aspera::OAuth::SharesWeb) do
 
   before do
     allow(environment).to(receive(:open_uri)) { |url| opened.push(url.to_s) }
+    # No cached token: a new one is generated
+    allow(Aspera::OAuth::Factory.instance).to(receive(:get_token_info).and_return(nil))
   end
 
   # @return [String] RelayState of the login page that was opened
@@ -66,7 +69,7 @@ RSpec.describe(Aspera::OAuth::SharesWeb) do
     it 'opens the SAML login page with a loopback RelayState, then exchanges the received refresh token' do
       receive_on_loopback(access_token: 'browser_access', refresh_token: 'browser_refresh')
       mock_token_call
-      expect(oauth.token(cache: false)).to(eq('new_access'))
+      expect(oauth.token).to(eq('new_access'))
       # the page of the browser shows the Shares server
       expect(Aspera::WebAuth::Server).to(have_received(:new).with('http://localhost:12345/', include('shares.example.com')))
       login = URI.parse(opened.first)
@@ -78,12 +81,12 @@ RSpec.describe(Aspera::OAuth::SharesWeb) do
 
     it 'refuses an answer with another state' do
       allow(Aspera::WebAuth::Server).to(receive(:new).and_return(instance_double(Aspera::WebAuth::Server, received_request: {'state' => 'other', 'refresh_token' => 'x'})))
-      expect { oauth.token(cache: false) }.to(raise_error(Aspera::AssertError, /wrong received state/))
+      expect { oauth.token }.to(raise_error(Aspera::AssertError, /wrong received state/))
     end
 
     it 'reports a Shares that does not redirect to a loopback URL' do
       receive_on_loopback
-      expect { oauth.token(cache: false) }.to(raise_error(Aspera::AssertError, /No token received/))
+      expect { oauth.token }.to(raise_error(Aspera::AssertError, /No token received/))
     end
   end
 
@@ -96,7 +99,7 @@ RSpec.describe(Aspera::OAuth::SharesWeb) do
     it 'opens the SAML login page with a device-code RelayState, then exchanges the refresh token of the pasted code' do
       paste_code(refresh_token: 'browser_refresh')
       mock_token_call
-      expect(oauth.token(cache: false)).to(eq('new_access'))
+      expect(oauth.token).to(eq('new_access'))
       login = URI.parse(opened.first)
       expect([login.host, login.path]).to(eq(['shares.example.com', '/auth/saml']))
       expect(relay_state_sent).to(match(%r{\Aaspera://device-code\?state=[0-9a-f-]{36}\z}))
@@ -108,22 +111,22 @@ RSpec.describe(Aspera::OAuth::SharesWeb) do
 
     it 'refuses a code with another state' do
       paste_code(state: 'other', refresh_token: 'x')
-      expect { oauth.token(cache: false) }.to(raise_error(Aspera::AssertError, /wrong received state/))
+      expect { oauth.token }.to(raise_error(Aspera::AssertError, /wrong received state/))
     end
 
     it 'reports a code without token' do
       paste_code
-      expect { oauth.token(cache: false) }.to(raise_error(Aspera::AssertError, /No token received/))
+      expect { oauth.token }.to(raise_error(Aspera::AssertError, /No token received/))
     end
 
     it 'refuses something that is not a code' do
       allow(Aspera::Cli::Prompt).to(receive(:prompt_user_input).and_return('http://localhost:12345/?state=x'))
-      expect { oauth.token(cache: false) }.to(raise_error(Aspera::ParameterError, /Not a code/))
+      expect { oauth.token }.to(raise_error(Aspera::ParameterError, /Not a code/))
     end
 
     it 'refuses a code of another type' do
       allow(Aspera::Cli::Prompt).to(receive(:prompt_user_input).and_return(Aspera::WebAuth::Blob.encode(:login, {'login_url' => 'https://x'})))
-      expect { oauth.token(cache: false) }.to(raise_error(Aspera::ParameterError, /type of code/))
+      expect { oauth.token }.to(raise_error(Aspera::ParameterError, /type of code/))
     end
   end
 end
@@ -161,13 +164,15 @@ module Aspera
 
         describe '#wizard' do
           let(:wizard_mock) { instance_double(Aspera::Cli::Wizard, required: false) }
+          # Generated, none in source
+          let(:password) { SecureRandom.alphanumeric(12) }
 
           it 'generates a basic auth preset with username and password' do
-            p = plugin('--auth=basic', '--username=alice', '--password=secret')
+            p = plugin('--auth=basic', '--username=alice', "--password=#{password}")
             result = p.wizard(wizard_mock, 'https://shares.example.com')
             expect(result).to(eq(
               preset_ids:   ['alice'],
-              preset_value: {url: 'https://shares.example.com', username: 'alice', password: 'secret'},
+              preset_value: {url: 'https://shares.example.com', username: 'alice', password: password},
               test_args:    'files browse /'
             ))
           end
@@ -206,9 +211,9 @@ module Aspera
           end
 
           it 'defaults to basic auth when password is provided even if auth is not specified' do
-            p = plugin('--username=alice', '--password=secret')
+            p = plugin('--username=alice', "--password=#{password}")
             result = p.wizard(wizard_mock, 'https://shares.example.com')
-            expect(result[:preset_value]).to(eq(url: 'https://shares.example.com', username: 'alice', password: 'secret'))
+            expect(result[:preset_value]).to(eq(url: 'https://shares.example.com', username: 'alice', password: password))
           end
 
           it 'prompts for auth type interactively when auth and password are not provided' do

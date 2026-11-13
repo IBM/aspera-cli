@@ -179,46 +179,36 @@ RSpec.describe(Aspera::Rest) do
 
       # Issue #275: in 4.27.2, the renewed token was not used by the retried request, which was sent again with the expired token
       it 'sends the renewed token (not the expired one) in the retried request' do
-        allow(oauth).to(receive(:authorization).with(no_args).and_return(old_token))
-        allow(oauth).to(receive(:authorization).with(refresh: true).and_return(new_token))
+        allow(oauth).to(receive_messages(authorization: old_token, renewed_authorization: new_token))
         expect(api.read('api')).to(eq({}))
         expect(@received).to(eq([old_token, new_token]))
-        expect(oauth).to(have_received(:authorization).with(refresh: true).once)
+        expect(oauth).to(have_received(:renewed_authorization).once)
       end
 
-      it 'retries with refreshed token, even with retry_max=0' do
+      it 'retries with renewed token, even with retry_max=0' do
         @params.retry_max = 0
-        allow(oauth).to(receive(:authorization).with(no_args).and_return(old_token))
-        allow(oauth).to(receive(:authorization).with(refresh: true).and_return(new_token))
+        allow(oauth).to(receive_messages(authorization: old_token, renewed_authorization: new_token))
         expect(api.read('api')).to(eq({}))
       end
 
-      it 'generates new token if refresh fails' do
-        allow(oauth).to(receive(:authorization).with(no_args).and_return(old_token))
-        allow(oauth).to(receive(:authorization).with(refresh: true).and_raise(Aspera::Rest::CallError, 'refresh'))
-        allow(oauth).to(receive(:authorization).with(cache: false).and_return(new_token))
-        expect(api.read('api')).to(eq({}))
-      end
-
-      it 'raises the error of token generation if no new token can be obtained' do
-        allow(oauth).to(receive(:authorization).with(no_args).and_return(old_token))
-        allow(oauth).to(receive(:authorization).with(refresh: true).and_raise(Aspera::Rest::CallError, 'refresh'))
-        allow(oauth).to(receive(:authorization).with(cache: false).and_raise(Aspera::Rest::CallError, 'generate'))
+      it 'raises the error of token renewal, without trying again, if no new token can be obtained' do
+        allow(oauth).to(receive(:authorization).and_return(old_token))
+        allow(oauth).to(receive(:renewed_authorization).and_raise(Aspera::Rest::CallError, 'generate'))
         expect { api.read('api') }.to(raise_error(Aspera::Rest::CallError, 'generate'))
         expect(@received).to(eq([old_token]))
+        expect(oauth).to(have_received(:renewed_authorization).once)
       end
 
       it 'returns the original response if no new token can be obtained and exceptions are disabled' do
-        allow(oauth).to(receive(:authorization).with(no_args).and_return(old_token))
-        allow(oauth).to(receive(:authorization).with(refresh: true).and_raise(Aspera::Rest::CallError, 'refresh'))
-        allow(oauth).to(receive(:authorization).with(cache: false).and_raise(Aspera::Rest::CallError, 'generate'))
+        allow(oauth).to(receive(:authorization).and_return(old_token))
+        allow(oauth).to(receive(:renewed_authorization).and_raise(Aspera::Rest::CallError, 'generate'))
         expect(api.call(operation: 'GET', subpath: 'api', exception: false, ret: :resp).code).to(eq('401'))
       end
 
       it 'renews token only once' do
-        allow(oauth).to(receive(:authorization).and_return(old_token))
+        allow(oauth).to(receive_messages(authorization: old_token, renewed_authorization: old_token))
         expect { api.read('api') }.to(raise_error(Aspera::Rest::CallError))
-        expect(oauth).to(have_received(:authorization).with(refresh: true).once)
+        expect(oauth).to(have_received(:renewed_authorization).once)
       end
     end
 
