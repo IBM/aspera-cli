@@ -160,7 +160,11 @@ RSpec.describe(Aspera::Rest) do
 
       before do
         valid = new_token
+        # Authorization header of each request received by the server
+        @received = []
+        received = @received
         @url = start_server('/api' => lambda do |req, res|
+          received.push(req['Authorization'])
           res['Content-Type'] = 'application/json'
           res.status = req['Authorization'].eql?(valid) ? 200 : 401
           res.body = '{}'
@@ -171,6 +175,15 @@ RSpec.describe(Aspera::Rest) do
         rest = Aspera::Rest::Client.new(base_url: @url, auth: {type: :oauth2})
         rest.instance_variable_set(:@oauth, oauth)
         rest
+      end
+
+      # Issue #275: in 4.27.2, the renewed token was not used by the retried request, which was sent again with the expired token
+      it 'sends the renewed token (not the expired one) in the retried request' do
+        allow(oauth).to(receive(:authorization).with(no_args).and_return(old_token))
+        allow(oauth).to(receive(:authorization).with(refresh: true).and_return(new_token))
+        expect(api.read('api')).to(eq({}))
+        expect(@received).to(eq([old_token, new_token]))
+        expect(oauth).to(have_received(:authorization).with(refresh: true).once)
       end
 
       it 'retries with refreshed token, even with retry_max=0' do
