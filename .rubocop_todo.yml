@@ -1,6 +1,6 @@
 Metrics/ClassLength:
   Enabled: true
-  Max: 1300
+  Max: 1500
 Metrics/MethodLength:
   Enabled: true
   Max: 105

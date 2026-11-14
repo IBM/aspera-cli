@@ -55,6 +55,8 @@ module Aspera
 
         def dispatch(req, res)
           check_request(req, json: JSON_PATHS.include?(req.path), **@allowed)
+          # Page opened by the user in a browser (no bearer token), protected by the access code
+          return @web_secret.handle(req, res) if req.path.start_with?(WebSecret::PATH_PREFIX)
           case req.path
           when '/'
             # Discovery endpoint (server metadata, no auth required)
@@ -63,9 +65,6 @@ module Aspera
           when '/oauth/register'                          then oauth(req, res, :handle_register, post_only: true)
           when '/oauth/authorize'                         then oauth(req, res, :handle_authorize)
           when '/oauth/token'                             then oauth(req, res, :handle_token, post_only: true)
-          when ->(path) { path.start_with?(WebSecret::PATH_PREFIX) }
-            # Page opened by the user in a browser (no bearer token), protected by the access code
-            @web_secret.handle(req, res)
           else
             # All other paths are MCP endpoints: require authorization
             return unauthorized(res) unless authorized?(req)
