@@ -184,8 +184,8 @@ Highlights: security hardening of local web servers (authentication, minimum sec
   * `workflows import`, `import_with_constraints` and `publish` sent requests rejected by Orchestrator, `import` did not report workflows not imported, and `start` with `synchronous` failed to display the work order.
   * `worksteps status` displayed fields that are YAML dumps of Orchestrator objects (`prerequisites`, `work_outputs`...): they are removed, inputs and outputs are in `inputs` and `outputs`.
   * Authentication with option `apikey` was rejected by Orchestrator (HTTP 401): the API requires `username` with `api_key` (`/api/login` body, or query parameters `login` and `api_key`). Option `username` is now required with `apikey`.
-  * The manual and the description of `admin user|group all share_permissions` (read-only) did not tell that permissions are granted with `admin share user_permissions|group_permissions`: AI assistants concluded that it was not possible. The argument of `show` is named `share_id`.
 * `shares`:
+  * The manual and the description of `admin user|group all share_permissions` (read-only) did not tell that permissions are granted with `admin share user_permissions|group_permissions`: AI assistants concluded that it was not possible. The argument of `show` is named `share_id`.
 
 ### Breaking Changes
 
