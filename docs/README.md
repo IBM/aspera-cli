@@ -10616,9 +10616,9 @@ The Orchestrator plugin supports different credentials and authentication styles
   - `--auth_style=token` (default): Exchanges credentials for a JWT Bearer token via `/api/login`.
   - `--auth_style=basic`: Standard HTTP Basic Authentication.
   - `--auth_style=query`: Passes credentials in URL query parameters (`?login=...&password=...`).
-- **API Key** (`--apikey`):
+- **Username / API Key** (`--username` and `--apikey`): the API key is the one of the user, so the user name is required.
   - `--auth_style=token` (default): Exchanges the API key for a JWT Bearer token via `/api/login`.
-  - `--auth_style=query`: Passes the API key in URL query parameter (`?apikey=...`).
+  - `--auth_style=query`: Passes the API key in URL query parameters (`?login=...&api_key=...`).
 
 ### Start a workflow
 

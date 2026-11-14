@@ -107,7 +107,7 @@ module Aspera
           }
         end
 
-        option :apikey,      description: 'API key (exclusive with username/password)'
+        option :apikey,      description: 'API key of the user (exclusive with password), requires username'
         option :auth_style,  description: 'Authentication style', allowed: %i[basic query token], default: :token
         option :ret_style,   description: 'Method to specify the expected response format ("Accept")', allowed: %i[header query path], default: :query
         option :result,      description: "Specify result value as: 'work_step:parameter'", deprecation: {last: '4.27.2', message: 'use keys `step` and `variable` of argument `execution` of `workflows start`'}
@@ -455,8 +455,8 @@ module Aspera
           apikey = options.get_option(:apikey)
           username = options.get_option(:username)
           password = options.get_option(:password)
-          Aspera.assert(apikey.nil? || (username.nil? && password.nil?), type: Cli::BadArgument) { 'apikey and username/password are mutually exclusive' }
-          Aspera.assert(!apikey.nil? || (!username.nil? && !password.nil?), type: Cli::BadArgument) { 'provide either apikey or username and password' }
+          Aspera.assert(apikey.nil? || password.nil?, type: Cli::BadArgument) { 'apikey and password are mutually exclusive' }
+          Aspera.assert(!username.nil? && !(apikey.nil? && password.nil?), type: Cli::BadArgument) { 'provide username with either password or apikey' }
 
           auth_params =
             case style
@@ -468,11 +468,7 @@ module Aspera
                 password: password
               }
             when :query
-              if apikey
-                {type: :url, url_query: {'apikey' => apikey}}
-              else
-                {type: :url, url_query: {'login' => username, 'password' => password}}
-              end
+              {type: :url, url_query: {'login' => username}.merge(apikey ? {'api_key' => apikey} : {'password' => password})}
             when :token
               {
                 type:         :oauth2,
@@ -480,7 +476,7 @@ module Aspera
                 base_url:     base_url,
                 path_token:   'api/login',
                 token_field:  'token',
-                json:         apikey ? {apikey: apikey} : {username: username, password: password}
+                json:         {username: username}.merge(apikey ? {api_key: apikey} : {password: password})
               }
             else Aspera.error_unexpected_value(style)
             end

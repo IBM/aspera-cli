@@ -66,20 +66,30 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
       expect(client.auth_params[:json]).to(eq(username: 'admin', password: password))
     end
 
-    it 'configures Rest::Client for query auth with apikey' do
-      parse_argv(%W[--url=https://orch.example.com --apikey=#{apikey} --auth_style=query])
+    it 'configures Rest::Client for query auth with username and apikey' do
+      parse_argv(%W[--url=https://orch.example.com --username=admin --apikey=#{apikey} --auth_style=query])
       client = orchestrator.api_orch
-      expect(client.auth_params).to(eq(type: :url, url_query: {'apikey' => apikey}))
+      expect(client.auth_params).to(eq(type: :url, url_query: {'login' => 'admin', 'api_key' => apikey}))
     end
 
-    it 'configures Rest::Client for token auth with apikey' do
-      parse_argv(%W[--url=https://orch.example.com --apikey=#{apikey} --auth_style=token])
+    it 'configures Rest::Client for token auth with username and apikey' do
+      parse_argv(%W[--url=https://orch.example.com --username=admin --apikey=#{apikey} --auth_style=token])
       client = orchestrator.api_orch
       expect(client.auth_params[:type]).to(eq(:oauth2))
       expect(client.auth_params[:grant_method]).to(eq(:json_credentials))
       expect(client.auth_params[:path_token]).to(eq('api/login'))
       expect(client.auth_params[:token_field]).to(eq('token'))
-      expect(client.auth_params[:json]).to(eq(apikey: apikey))
+      expect(client.auth_params[:json]).to(eq(username: 'admin', api_key: apikey))
+    end
+
+    it 'raises error when apikey is given without username' do
+      parse_argv(%W[--url=https://orch.example.com --apikey=#{apikey}])
+      expect { orchestrator.api_orch }.to(raise_error(Aspera::Cli::BadArgument, /provide username with either password or apikey/))
+    end
+
+    it 'raises error when apikey and password are both given' do
+      parse_argv(%W[--url=https://orch.example.com --username=admin --password=#{password} --apikey=#{apikey}])
+      expect { orchestrator.api_orch }.to(raise_error(Aspera::Cli::BadArgument, /apikey and password are mutually exclusive/))
     end
 
     it 'does not include passwords or apikey in token cache id' do
@@ -90,14 +100,14 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
       expect(token_cache_id).to(include('admin'))
 
       orchestrator.instance_variable_set(:@api_orch, nil)
-      parse_argv(%W[--url=https://orch.example.com --apikey=#{apikey} --auth_style=token])
+      parse_argv(%W[--url=https://orch.example.com --username=admin --apikey=#{apikey} --auth_style=token])
       client2 = orchestrator.api_orch
       token_cache_id2 = client2.oauth.instance_variable_get(:@token_cache_id)
       expect(token_cache_id2).not_to(include(apikey))
     end
 
     it 'raises error when using basic auth_style with apikey' do
-      parse_argv(%W[--url=https://orch.example.com --apikey=#{apikey} --auth_style=basic])
+      parse_argv(%W[--url=https://orch.example.com --username=admin --apikey=#{apikey} --auth_style=basic])
       expect { orchestrator.api_orch }.to(raise_error(Aspera::Cli::BadArgument, /basic auth style cannot be used with apikey/))
     end
   end
