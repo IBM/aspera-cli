@@ -677,7 +677,6 @@ module Aspera
         # @param data           [Hash, Array<Hash>] Entity data (Array with bulk), from the command's declared `data` argument
         # @param display_fields [Array, nil]        Fields to display
         def entity_create(api:, entity:, data:, display_fields: nil, **)
-          data = Array(data)
           bulk_result(data, command: :create, fields: display_fields) do |params|
             api.create(entity, params)
           end

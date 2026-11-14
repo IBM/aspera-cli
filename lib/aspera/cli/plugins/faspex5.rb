@@ -109,9 +109,8 @@ module Aspera
           Aspera.assert_type(parameters[type], Array) { type }
           recipient_types = Api::Faspex::RECIPIENT_TYPES
           if parameters.key?('recipient_types')
-            recipient_types = parameters['recipient_types']
-            parameters.delete('recipient_types')
-            recipient_types = Array(recipient_types)
+            recipient_types = Array(parameters.delete('recipient_types'))
+            Aspera.assert_array_all(recipient_types, String) { 'recipient_types' }
           end
           parameters[type].map! do |recipient_data|
             # If just a string, make a general lookup and build expected name/type hash
@@ -834,6 +833,7 @@ module Aspera
         # @return [Array<String>] resolved user ids
         def resolve_member_user_ids(users)
           users = Array(users)
+          Aspera.assert_array_all(users, String) { 'users' }
           users.map do |user|
             if (m = Parser.percent_selector(user))
               api_v5.lookup_entity_by_field(entity: 'accounts', field: m[:field], value: m[:value], query: Rest.php_style({type: ACCOUNT_TYPES}))['id']

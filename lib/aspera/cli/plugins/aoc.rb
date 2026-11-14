@@ -1114,6 +1114,7 @@ module Aspera
             formatter.display_status("Found #{ids_to_download.length} package(s).")
           else
             ids_to_download = Array(ids_to_download)
+            Aspera.assert_array_all(ids_to_download, String) { 'Package id(s)' }
           end
           ts_paths = transfer.ts_source_paths(default: ['.'])
           per_package_def = options.get_option(:package_folder).symbolize_keys
