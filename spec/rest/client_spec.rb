@@ -117,6 +117,8 @@ RSpec.describe(Aspera::Rest) do
       handlers.each { |path, handler| server.mount_proc(path, &handler) }
       @servers.push(server)
       @threads.push(Thread.new { server.start })
+      # Wait for the server to run: if shutdown occurs before start (no request sent), start would never end
+      sleep(0.01) until server.status.eql?(:Running)
       "http://127.0.0.1:#{server.config[:Port]}"
     end
 
