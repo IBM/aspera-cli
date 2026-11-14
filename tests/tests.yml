@@ -615,7 +615,7 @@ serv_health:
     - server
     - health
     - transfer
-    - --to-folder=@preset:server.upload_folder
+    - --to-folder=@preset:server1_info.upload_folder
 serv_health_bad:
   tags:
     - nodoc
@@ -628,17 +628,17 @@ serv_detect:
   args:
     - config
     - detect
-    - "@preset:server_user.url"
+    - "@preset:server1_user.url"
 serv_wizard:
   tags:
     - server
   args:
     - config
     - wizard
-    - "@preset:server_user.url"
+    - "@preset:server1_user.url"
     - server
-    - --username=@preset:server_user.username
-    - --password=@preset:server_user.password
+    - --username=@preset:server1_user.username
+    - --password=@preset:server1_user.password
 serv_wizard_password:
   tags:
     - server
@@ -646,11 +646,11 @@ serv_wizard_password:
   args:
     - config
     - wizard
-    - "@preset:server.address"
+    - "@preset:server1_info.address"
     - server
     - srv2
-    - --username=@preset:server_user.username
-    - --password=@preset:server_user.password
+    - --username=@preset:server1_user.username
+    - --password=@preset:server1_user.password
 serv_browse:
   tags:
     - smoke_test
@@ -671,7 +671,7 @@ serv_mkdir:
   args:
     - server
     - mkdir
-    - "@preset:server.inside_folder"
+    - "@preset:server1_info.inside_folder"
     - --logger=stdout
 serv_upload_wrong_password:
   description: Try to transfer with wrong password.
@@ -681,7 +681,8 @@ serv_upload_wrong_password:
   expect: failed to authenticate
   args:
     - server
-    - --preset=server3_user
+    - --preset=server2_user
+    - --password=wrong
     - upload
     - $(PATH_TST_ASC_LCL)
     - --transfer=@json:{"monitor":false,"resume":{"iter_max":0}}
@@ -693,7 +694,8 @@ serv_browse_wrong_password:
   expect: Authentication failed
   args:
     - server
-    - --preset=server3_user
+    - --preset=server2_user
+    - --password=wrong
     - browse
     - /
     - --ssh-options.number_of_password_prompts=0
@@ -719,7 +721,7 @@ serv_upload_missing_file_token:
   args:
     - -N
     - server
-    - --url=@preset:server_user.url
+    - --url=@preset:server1_user.url
     - upload
     - wrong
     - --ts.token=$(secret :dummy)
@@ -753,7 +755,7 @@ serv_upload_simple:
     - server
     - upload
     - faux:///test.$(SecureRandom.uuid).bin?1k
-    - --to-folder=@preset:server.upload_folder
+    - --to-folder=@preset:server1_info.upload_folder
 serv_upload_multi_session:
   depends_on:
     - serv_mkdir
@@ -761,7 +763,7 @@ serv_upload_multi_session:
     - server
     - upload
     - $(PATH_TST_LCL_FILE)
-    - --to-folder=@preset:server.inside_folder
+    - --to-folder=@preset:server1_info.inside_folder
     - --ts=@json:{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}
     - --transfer=@json:{"spawn_delay_sec":2.5,"multi_incr_udp":false}
     - --progress-bar=yes
@@ -775,7 +777,7 @@ serv_upload_multi_test:
     - server
     - upload
     - faux:///serv_upload_multi_test?1k
-    - --to-folder=@preset:server.inside_folder
+    - --to-folder=@preset:server1_info.inside_folder
     - --ts=@json:{"multi_session":2,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}
     - --transfer.multi_incr_udp=false
 serv_upload_multi_session_cancel:
@@ -789,7 +791,7 @@ serv_upload_multi_session_cancel:
     - server
     - upload
     - faux:///serv_upload_multi_session_cancel?100k
-    - --to-folder=@preset:server.inside_folder
+    - --to-folder=@preset:server1_info.inside_folder
     - --ts=@json:{"multi_session":-10,"resume_policy":"none","target_rate_kbps":100}
     - --transfer.multi_incr_udp=false
   post: |
@@ -803,7 +805,7 @@ serv_browse_uploaded:
   args:
     - server
     - browse
-    - "@extend:@preset:server.inside_folder@/$(FILENAME_UNICODE)"
+    - "@extend:@preset:server1_info.inside_folder@/$(FILENAME_UNICODE)"
 serv_upload_pair_notify:
   depends_on:
     - serv_mkdir
@@ -812,7 +814,7 @@ serv_upload_pair_notify:
     - upload
     - --src-type=pair
     - $(PATH_TST_LCL_FILE)
-    - "@extend:@preset:server.inside_folder@/other_name_2"
+    - "@extend:@preset:server1_info.inside_folder@/other_name_2"
     - --notify-to=@preset:misc.email_external
     - "--transfer.ascp_args=@list: -l 100m"
 serv_upload_pair_sources_prep:
@@ -824,7 +826,7 @@ serv_upload_pair_sources_prep:
   args:
     - server
     - delete
-    - "@extend:@preset:server.inside_folder@/other_name_3"
+    - "@extend:@preset:server1_info.inside_folder@/other_name_3"
 serv_upload_pair_sources:
   depends_on:
     - serv_upload_pair_sources_prep
@@ -832,7 +834,7 @@ serv_upload_pair_sources:
     - server
     - upload
     - --src-type=pair
-    - --sources=@json:@extend:["$(PATH_TST_ASC_LCL)","@preset:server.inside_folder@/other_name_3"]
+    - --sources=@json:@extend:["$(PATH_TST_ASC_LCL)","@preset:server1_info.inside_folder@/other_name_3"]
     - --transfer.quiet=false
 serv_upload_transferd:
   tags:
@@ -843,7 +845,7 @@ serv_upload_transferd:
     - server
     - upload
     - --sources=@ts
-    - --ts=@json:@extend:{"paths":[{"source":"$(PATH_TST_ASC_LCL)","destination":"@preset:server.inside_folder@/other_name_4"}]}
+    - --ts=@json:@extend:{"paths":[{"source":"$(PATH_TST_ASC_LCL)","destination":"@preset:server1_info.inside_folder@/other_name_4"}]}
     - --transfer.agent=transferd
 serv_upload_ts_options:
   depends_on:
@@ -854,7 +856,7 @@ serv_upload_ts_options:
     - upload
     - --src-type=pair
     - $(PATH_TST_ASC_LCL)
-    - "@extend:@preset:server.upload_folder@/other_name_5"
+    - "@extend:@preset:server1_info.upload_folder@/other_name_5"
     - --ts=@json:{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"$(secret :content_protection)","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":"-1","exclude_older_than":"-10000","fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum"}
 serv_sync_pull_args_reset:
   description: Sync using args syntax (reset)
@@ -872,7 +874,7 @@ serv_sync_pull_args_reset:
     - server
     - sync
     - pull
-    - "@preset:server.inside_folder"
+    - "@preset:server1_info.inside_folder"
     - --to-folder=$(PATH_TMP_SYNCS / 'serv_sync_pull_args')
     - '@json:@extend:{"instance":{"quiet":false},"sessions":[{"name":"serv_sync_pull_args","target_rate":"@preset:sync.bps@","reset":true}]}'
 serv_sync_pull_args_status:
@@ -922,7 +924,7 @@ serv_sync_pull_conf_reset:
     - server
     - sync
     - pull
-    - "@preset:server.inside_folder"
+    - "@preset:server1_info.inside_folder"
     - --to-folder=$(PATH_TMP_SYNCS / 'serv_sync_pull_conf')
     - '@json:@extend:{"name":"serv_sync_pull_conf","reset":true,"transport":{"target_rate":@preset:sync.bps@}}'
 serv_sync_pull_conf_status_fail:
@@ -961,7 +963,7 @@ serv_sync_pull_conf_sync:
     - server
     - sync
     - pull
-    - "@preset:server.inside_folder"
+    - "@preset:server1_info.inside_folder"
     - --to-folder=$(PATH_TMP_SYNCS / 'serv_sync_pull_conf')
     - '@:'
     - name=serv_sync_pull_conf
@@ -1020,7 +1022,7 @@ serv_upload_ex_list:
     - upload
     - --sources=@ts
     - --transfer.ascp_args=@list:,--file-list,$(PATH_FILE_LIST)
-    - --to-folder=@preset:server.inside_folder
+    - --to-folder=@preset:server1_info.inside_folder
 serv_upload_ex_pair:
   depends_on:
     - serv_mkdir
@@ -1035,22 +1037,22 @@ serv_md5:
   args:
     - server
     - md5sum
-    - "@extend:@preset:server.inside_folder@/$(FILENAME_ASCII)"
+    - "@extend:@preset:server1_info.inside_folder@/$(FILENAME_ASCII)"
 serv_down_lcl:
   depends_on:
     - serv_upload_multi_session
   args:
     - server
     - download
-    - "@extend:@preset:server.inside_folder@/$(FILENAME_ASCII)"
+    - "@extend:@preset:server1_info.inside_folder@/$(FILENAME_ASCII)"
     - --to-folder=$(TMP)
     - --transfer=@json:{"wss":false,"resume":{"iter_max":1}}
 serv_down_from_node:
   args:
     - server
     - download
-    - "@preset:server.large_file"
-    - --to-folder=@preset:server.upload_folder
+    - "@preset:server1_info.large_file"
+    - --to-folder=@preset:server1_info.upload_folder
     - --transfer.agent=node
     - --ts.resume_policy=none
 serv_down_from_node_fail:
@@ -1063,7 +1065,7 @@ serv_down_from_node_fail:
     - server
     - download
     - file_does_not_exist.random
-    - --to-folder=@preset:server.upload_folder
+    - --to-folder=@preset:server1_info.upload_folder
     - --transfer.agent=node
 serv_cp:
   depends_on:
@@ -1071,23 +1073,23 @@ serv_cp:
   args:
     - server
     - cp
-    - "@extend:@preset:server.inside_folder@/$(FILENAME_ASCII)"
-    - "@extend:@preset:server.upload_folder@/200KB.2"
+    - "@extend:@preset:server1_info.inside_folder@/$(FILENAME_ASCII)"
+    - "@extend:@preset:server1_info.upload_folder@/200KB.2"
 serv_mv:
   depends_on:
     - serv_cp
   args:
     - server
     - mv
-    - "@extend:@preset:server.upload_folder@/200KB.2"
-    - "@extend:@preset:server.upload_folder@/to.delete"
+    - "@extend:@preset:server1_info.upload_folder@/200KB.2"
+    - "@extend:@preset:server1_info.upload_folder@/to.delete"
 serv_delete:
   depends_on:
     - serv_mv
   args:
     - server
     - delete
-    - "@extend:@preset:server.upload_folder@/to.delete"
+    - "@extend:@preset:server1_info.upload_folder@/to.delete"
 serv_cleanup:
   depends_on:
     - serv_cp
@@ -1097,7 +1099,7 @@ serv_cleanup:
   args:
     - server
     - delete
-    - "@preset:server.inside_folder"
+    - "@preset:server1_info.inside_folder"
 serv_info:
   args:
     - server
@@ -1118,7 +1120,7 @@ serv_health_xfer_nagios:
     - server
     - health
     - transfer
-    - --to-folder=@preset:server.upload_folder
+    - --to-folder=@preset:server1_info.upload_folder
     - --format=nagios
 serv_health_xfer_nagios_fail:
   tags:
@@ -1157,7 +1159,7 @@ serv_upload_progress_quiet:
     - upload
     - faux:///test1?100m
     - faux:///test2?100m
-    - --to-folder=@preset:server.upload_folder
+    - --to-folder=@preset:server1_info.upload_folder
     - --ts=@json:{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}
     - --transfer.quiet=false
 serv_upload_progress:
@@ -1168,7 +1170,7 @@ serv_upload_progress:
     - upload
     - faux:///test1?100m
     - faux:///test2?100m
-    - --to-folder=@preset:server.upload_folder
+    - --to-folder=@preset:server1_info.upload_folder
     - --ts=@json:{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}
 # Console ------------------------------------------------------
 cons_health:
@@ -1365,29 +1367,29 @@ nd_delete_error:
   args:
     - node
     - delete
-    - "@extend:@preset:server.upload_folder@/a_folder"
+    - "@extend:@preset:server1_info.upload_folder@/a_folder"
 nd_folder:
   depends_on:
     - nd_delete_error
   args:
     - node
     - mkdir
-    - "@extend:@preset:server.upload_folder@/a_folder"
+    - "@extend:@preset:server1_info.upload_folder@/a_folder"
 nd_mklink:
   depends_on:
     - nd_folder
   args:
     - node
     - mklink
-    - "@extend:@preset:server.upload_folder@/a_folder"
-    - "@extend:@preset:server.upload_folder@/tdlink"
+    - "@extend:@preset:server1_info.upload_folder@/a_folder"
+    - "@extend:@preset:server1_info.upload_folder@/tdlink"
 nd_mkfile:
   depends_on:
     - nd_folder
   args:
     - node
     - mkfile
-    - "@extend:@preset:server.upload_folder@/a_file1"
+    - "@extend:@preset:server1_info.upload_folder@/a_file1"
     - hello world
 nd_rename:
   depends_on:
@@ -1395,7 +1397,7 @@ nd_rename:
   args:
     - node
     - rename
-    - "@preset:server.upload_folder"
+    - "@preset:server1_info.upload_folder"
     - a_file1
     - a_file
 nd_delete_multi:
@@ -1407,7 +1409,7 @@ nd_delete_multi:
   args:
     - node
     - delete
-    - "@list:@extend:,@preset:server.upload_folder@/a_folder,@preset:server.upload_folder@/tdlink,@preset:server.upload_folder@/a_file"
+    - "@list:@extend:,@preset:server1_info.upload_folder@/a_folder,@preset:server1_info.upload_folder@/tdlink,@preset:server1_info.upload_folder@/a_file"
 nd_upload_ascii:
   tags:
     - nodoc
@@ -1415,7 +1417,7 @@ nd_upload_ascii:
     - node
     - upload
     - $(PATH_TST_ASC_LCL)
-    - --to-folder=@preset:server.upload_folder
+    - --to-folder=@preset:server1_info.upload_folder
     - --ts.target_rate_cap_kbps=10000
 nd_download_ascii:
   depends_on:
@@ -1423,7 +1425,7 @@ nd_download_ascii:
   args:
     - node
     - download
-    - "@extend:@preset:server.upload_folder@/$(FILENAME_ASCII)"
+    - "@extend:@preset:server1_info.upload_folder@/$(FILENAME_ASCII)"
     - --to-folder=$(TMP)
 nd_delete_ascii:
   depends_on:
@@ -1431,7 +1433,7 @@ nd_delete_ascii:
   args:
     - node
     - delete
-    - "@extend:@preset:server.upload_folder@/$(FILENAME_ASCII)"
+    - "@extend:@preset:server1_info.upload_folder@/$(FILENAME_ASCII)"
 nd_slash:
   args:
     - node
@@ -1443,7 +1445,7 @@ nd_http_upload:
     - node
     - upload
     - $(PATH_TST_ASC_LCL)
-    - --to-folder=@preset:server.upload_folder
+    - --to-folder=@preset:server1_info.upload_folder
     - --ts.target_rate_cap_kbps=10000
 nd_http_cat:
   depends_on:
@@ -1451,19 +1453,19 @@ nd_http_cat:
   args:
     - node
     - cat
-    - "@extend:@preset:server.upload_folder@/$(FILENAME_ASCII)"
+    - "@extend:@preset:server1_info.upload_folder@/$(FILENAME_ASCII)"
 nd_http_delete:
   depends_on:
     - nd_http_cat
   args:
     - node
     - delete
-    - "@extend:@preset:server.upload_folder@/$(FILENAME_ASCII)"
+    - "@extend:@preset:server1_info.upload_folder@/$(FILENAME_ASCII)"
 nd_2_nd_xfer:
   args:
     - node
     - upload
-    - --to-folder=@preset:server.upload_folder
+    - --to-folder=@preset:server1_info.upload_folder
     - --sources=@ts
     - --ts=@json:{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}
     - --transfer.agent=node
@@ -1478,7 +1480,7 @@ nd_2_nd_xfer_cleanup:
   args:
     - node
     - delete
-    - "@extend:@preset:server.upload_folder@/10MB.2"
+    - "@extend:@preset:server1_info.upload_folder@/10MB.2"
 nd_service_clean:
   tags:
     - pre_cleanup
@@ -1590,7 +1592,7 @@ nd_xfer_upload_bg:
   args:
     - node
     - upload
-    - --to-folder=@preset:server.upload_folder
+    - --to-folder=@preset:server1_info.upload_folder
     - --ts=@json:{"target_rate_kbps":1000,"resume_policy":"none"}
     - faux:///big-file?10G
     - --progress=no
@@ -1731,7 +1733,7 @@ serv_upload_via_emulator:
     - server
     - upload
     - /$(FILENAME_ASCII)
-    - --to-folder=@preset:server.upload_folder
+    - --to-folder=@preset:server1_info.upload_folder
     - --transfer.agent=node
     - --transfer.url=http://localhost:12348
     - --transfer.username=sim
@@ -4842,7 +4844,7 @@ sync_create:
     - node
     - ssync
     - create
-    - '@json:@extend:{"configuration":{"name":"my_node_sync","local":{"path":"@preset:sync.local_path_real@"},"remote":{"host":"@preset:server2_info.host@","port":@preset:server2_info.port@,"user":"@preset:server_user.username@","pass":"@preset:server_user.password@","path":"@preset:sync.remote_path@"}}}'
+    - '@json:@extend:{"configuration":{"name":"my_node_sync","local":{"path":"@preset:sync.local_path_real@"},"remote":{"host":"@preset:server2_info.host@","port":@preset:server2_info.port@,"user":"@preset:server1_user.username@","pass":"@preset:server1_user.password@","path":"@preset:sync.remote_path@"}}}'
 sync_create_check:
   depends_on:
     - sync_create
@@ -5081,9 +5083,10 @@ conf_ascp_sdk_folder_save:
     - --show-config
     - --fields=sdk_folder
 conf_ascp_install_113:
+  $comment: Remove the SDK folder first, else nothing is installed if the version is already there
   depends_on:
     - conf_ascp_sdk_folder_save
-  pre: puts((t.saved_output :conf_ascp_sdk_folder_save))
+  pre: Pathname.new(t.saved_output(:conf_ascp_sdk_folder_save)).rmtree
   args:
     - transferd
     - install
@@ -5091,6 +5094,13 @@ conf_ascp_install_113:
 conf_ascp_install_latest:
   depends_on:
     - conf_ascp_install_113
+  args:
+    - transferd
+    - install
+conf_ascp_install_again:
+  $comment: Same version again, nothing to do
+  depends_on:
+    - conf_ascp_install_latest
   args:
     - transferd
     - install
@@ -5108,6 +5118,9 @@ conf_ascp_installd:
 conf_transferd_install_latest:
   tags:
     - smoke_test
+  depends_on:
+    - conf_ascp_sdk_folder_save
+  pre: Pathname.new(t.saved_output(:conf_ascp_sdk_folder_save)).rmtree
   args:
     - transferd
     - install
@@ -5190,7 +5203,7 @@ conf_async_node_upload:
   args:
     - server
     - upload
-    - --to-folder=@preset:server.upload_folder
+    - --to-folder=@preset:server1_info.upload_folder
     - --ts=@json:{"target_rate_kbps":10000,"resume_policy":"none"}
     - faux:///async_test_file?1m
     - --progress=no
@@ -6830,14 +6843,14 @@ serv_hot_prep:
   args:
     - server
     - delete
-    - "@extend:@preset:server.upload_folder@/target_hot"
+    - "@extend:@preset:server1_info.upload_folder@/target_hot"
 serv_hot_mkdir:
   depends_on:
     - serv_hot_prep
   args:
     - server
     - mkdir
-    - "@extend:@preset:server.upload_folder@/target_hot"
+    - "@extend:@preset:server1_info.upload_folder@/target_hot"
 serv_hot_run:
   $comment: First run transfers nothing because file is too recent
   pre: |
@@ -6847,7 +6860,7 @@ serv_hot_run:
   args:
     - server
     - upload
-    - --to-folder=@extend:@preset:server.upload_folder@/target_hot
+    - --to-folder=@extend:@preset:server1_info.upload_folder@/target_hot
     - --lock-port=50101
     - --transfer.ascp_args=@list:,--remove-after-transfer,--remove-empty-directories,--exclude-newer-than=-8,--src-base,$(PATH_HOT_FOLDER)
     - $(PATH_HOT_FOLDER)
@@ -6859,7 +6872,7 @@ serv_hot_check:
   args:
     - server
     - browse
-    - "@extend:@preset:server.upload_folder@/target_hot"
+    - "@extend:@preset:server1_info.upload_folder@/target_hot"
   post: sleep TEMPORIZE_CREATE
 serv_hot_run_second:
   $comment: Second run transfers file
@@ -6868,7 +6881,7 @@ serv_hot_run_second:
   args:
     - server
     - upload
-    - --to-folder=@extend:@preset:server.upload_folder@/target_hot
+    - --to-folder=@extend:@preset:server1_info.upload_folder@/target_hot
     - --lock-port=50101
     - --transfer.ascp_args=@list:,--remove-after-transfer,--remove-empty-directories,--exclude-newer-than=-8,--src-base,$(PATH_HOT_FOLDER)
     - $(PATH_HOT_FOLDER)
@@ -6879,7 +6892,7 @@ serv_hot_check_second:
   args:
     - server
     - browse
-    - "@extend:@preset:server.upload_folder@/target_hot"
+    - "@extend:@preset:server1_info.upload_folder@/target_hot"
 tcos_info_svc_cred:
   args:
     - -N

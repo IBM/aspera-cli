@@ -66,12 +66,12 @@ jobs:
           config:
             version: 4.25.0
           default:
-            server: server_user
-          server_user:
+            server: server1_user
+          server1_user:
             url: ssh://eudemo.asperademo.com:33001
             username: "${{ secrets.CF_HSTS_SSH_USER }}"
             password: "${{ secrets.CF_HSTS_SSH_PASS }}"
-          server:
+          server1_info:
             upload_folder: /Upload
           jns:
             ssh_options:
