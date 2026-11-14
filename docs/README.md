@@ -3168,7 +3168,7 @@ detect app.example.com
 detect https://f5.example.com/path
 detect https://f5.example.com/path faspex5
 detect https://node.example.com/path
-detect https://server.example.com/path
+detect https://server1.example.com/path
 detect https://shares.example.com/path shares
 detect https://tst.example.com/path faspio
 detect https://tst.example.com/path httpgw
@@ -3255,7 +3255,7 @@ wizard https://console.example.com/path console
 wizard https://f5.example.com/path faspex5 --key-path=my_private_key
 wizard https://node.example.com/path node --username=test --password=<PASSWORD>
 wizard https://orch.example.com/path orchestrator --username=test --password=<PASSWORD>
-wizard https://server.example.com/path server --username=my_username --password=<PASSWORD>
+wizard https://server1.example.com/path server --username=my_username --password=<PASSWORD>
 wizard https://shares.example.com/path shares --username=test --password=<PASSWORD>
 wizard https://tst.example.com/path faspio --override=yes --username=my_username --password=<PASSWORD>
 wizard https://tst.example.com/path httpgw
@@ -4098,7 +4098,7 @@ The composite option `ui` (use `--ui=help` to display this schema) selects the m
 |----------|---------------|----------------------------------------------------------------------------------|
 | `command` | `Array[String]` | Command that opens a URL, instead of the system default. First item is the executable (full path, or name of an executable found in `PATH`), then its arguments. The URL is added as last argument. When set, it is used to open URLs, whatever the `mode`. |
 | `mode` | `Enum[String]` | - `auto`: `browser` on Windows and macOS, or if env var `DISPLAY` is set, else `terminal`.<br/>- `terminal`: URLs to open are displayed on terminal, and secrets are entered on terminal.<br/>- `browser`: a browser opens URLs, and secrets are entered on a web page.<br/>`text` is an alias for `terminal`, and `graphical` is an alias for `browser`.<br/>Files to edit are always opened with a text editor, whatever the `mode`.<br/>Allowed values: `auto`, `terminal`, `browser`, `text`, `graphical`.<br/>Default: `auto`. |
-| `web_auth` | `Enum[String]` | How the result of a web login (`--auth=web`, SSO) is received.<br/>- `port`: `ascli` listens on the loopback port of `redirect_uri`, the browser is redirected to it.<br/>- `paste`: no port is opened. After login, the browser shows a connection error on `redirect_uri`: copy the full URL from the address bar of the browser and paste it in the terminal. Use it when the browser cannot reach the host that runs `ascli` and a SSH tunnel is not possible.<br/>Allowed values: `port`, `paste`.<br/>Default: `port`. |
+| `web_auth` | `Enum[String]` | How the result of a web login (`--auth=web`, SSO) is received.<br/>- `port`: `ascli` listens on the loopback port of `redirect_uri`, the browser is redirected to it.<br/>- `paste`: no port is opened. After login, the browser shows a connection error on `redirect_uri`: copy the full URL from the address bar of the browser and paste it in the terminal. Use it when the browser cannot reach the host that runs `ascli` and a SSH tunnel is not possible. For `shares`, Shares displays a code (starting with `DCODE1`) instead: paste it in the terminal.<br/>Allowed values: `port`, `paste`.<br/>Default: `port`. |
 
 A plain value is the `mode`:
 
@@ -4142,6 +4142,29 @@ Authentication methods that need a user login in a browser (`--auth=web`, includ
    Next calls use the cached token, renewed if needed without a browser.
 
 The code or tokens never go to another host than the local one: the host of `redirect_uri` shall be loopback.
+
+#### Option `ui.web_auth`
+
+Option `ui.web_auth` (part of the composite option `ui`, see [Graphical Interactions](#graphical-interactions-browser-and-text-editor)) selects how the result of a web login is received:
+
+| Value            | Local port | Use when |
+|------------------|------------|----------|
+| `port` (default) | Yes: `ascli` listens on the loopback address of `redirect_uri` | The browser runs on the same system as `ascli`, or an SSH tunnel is possible. |
+| `paste`          | No: `redirect_uri` is only used in the login URL | The browser cannot reach the system that runs `ascli`, and no tunnel is possible. |
+
+With `paste`, after login the user gives the result to `ascli` through the terminal (nothing is displayed, as it contains a code or tokens):
+
+- the code displayed by Shares (starting with `DCODE1`), or the code shown by `ascli config web_login` on the workstation,
+- or the full URL (or only the query) from the address bar of the browser, which shows a connection error on `redirect_uri`: this is expected.
+
+In all cases the `state` is checked.
+Details are in the following sections.
+
+Example:
+
+```shell
+ascli <PLUGIN> <COMMAND> --ui=terminal --ui.web_auth=paste
+```
 
 #### Web login when the browser is on another system
 
@@ -5060,6 +5083,10 @@ So, for example:
 
 #### Agent: Connect Client
 
+> **Note:** IBM Aspera Connect will be deprecated in 2027.
+> Use [IBM Aspera for Desktop](#agent-desktop-client) instead: `--transfer=desktop`.
+> `ascli` displays a warning when the `connect` agent is used.
+
 By specifying option: `--transfer=connect`, `ascli` will start transfers using the locally installed **IBM Aspera Connect Client**.
 There are no specific parameters for option `transfer`.
 
@@ -5083,10 +5110,6 @@ Parameters provided in option `transfer` are:
 | `username` | `String` | Node API user or access key.<br/>Required. |
 
 Like any other option, `transfer` can get its value from a pre-configured [Option Preset](#option-preset):
-> **Note:** IBM Aspera Connect will be deprecated in 2027.
-> Use [IBM Aspera for Desktop](#agent-desktop-client) instead: `--transfer=desktop`.
-> `ascli` displays a warning when the `connect` agent is used.
-
 
 ```shell
 --transfer=@preset:<PRESET_NAME> --transfer.agent=node
