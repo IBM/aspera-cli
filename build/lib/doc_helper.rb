@@ -269,7 +269,7 @@ class DocHelper
     return message
   end
 
-  # Fetch lifecycle data from endoflife.date API with graceful fallback
+  # Fetch lifecycle data from `endoflife.date` API with graceful fallback
   def fetch_eol_data(product)
     begin
       rest = Aspera::Rest::Client.new(base_url: 'https://endoflife.date', redirect_max: 3)

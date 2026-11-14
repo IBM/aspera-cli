@@ -23,6 +23,7 @@ codehilite
 codeql
 compdef
 compinit
+compset
 configmap
 CREAT
 creds
@@ -35,7 +36,9 @@ devkit
 DOCKERHUB
 Docsify
 drun
+dtmp
 ecdh
+endoflife
 ffprobe
 FILEERROR
 filelists
@@ -60,6 +63,7 @@ instana
 introspectable
 jdbc
 JMESPath
+journalctl
 junkimu
 kubeconfig
 LASTEXITCODE
@@ -70,6 +74,7 @@ libglib
 libreadline
 librsvg
 libruby
+libsecret
 libssh
 libyaml
 linkname
@@ -89,14 +94,17 @@ msys
 multiprocess
 mxfile
 noblanks
+nocheck
 noded
 nodoc
 NOLIC
+nologin
 noninteractive
 noxfer
 nproc
 nupkg
 Ocran
+OIDC
 oneline
 optipng
 otel
@@ -151,7 +159,6 @@ unoconv
 usepackage
 vals
 venv
-VLINK
 windowszip
 workdir
 WRONLY

@@ -28,9 +28,9 @@ RSpec.describe('config agents jobs') do
   end
 
   it 'refuses an unknown job' do
-    _stdout, stderr, status = run_cli('config', 'agents', 'jobs', 'status', 'nojob')
+    _stdout, stderr, status = run_cli('config', 'agents', 'jobs', 'status', 'bad-job')
     expect(status.exitstatus).not_to(eq(0))
-    expect(stderr).to(include('Unknown job_id: nojob'))
+    expect(stderr).to(include('Unknown job_id: bad-job'))
   end
 
   describe 'deprecated config transfer' do
@@ -42,9 +42,9 @@ RSpec.describe('config agents jobs') do
     end
 
     it 'runs the same commands' do
-      _stdout, stderr, status = run_cli('config', 'transfer', 'status', 'nojob')
+      _stdout, stderr, status = run_cli('config', 'transfer', 'status', 'bad-job')
       expect(status.exitstatus).not_to(eq(0))
-      expect(stderr).to(include('Unknown job_id: nojob'))
+      expect(stderr).to(include('Unknown job_id: bad-job'))
     end
 
     it 'shows deprecation in the list of commands' do

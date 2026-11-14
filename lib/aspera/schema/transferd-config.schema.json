@@ -53,7 +53,7 @@
     },
     "reflection": {
       "type": "boolean",
-      "description": "Enables the gRPC server reflection service, so that tools such as grpcurl or grpcui can list and call the API without the transferd.proto file. Useful for debugging; leave disabled otherwise.",
+      "description": "Enables the gRPC server reflection service, so that tools such as `grpcurl` or `grpcui` can list and call the API without the transferd.proto file. Useful for debugging; leave disabled otherwise.",
       "default": false
     },
     "workers": {

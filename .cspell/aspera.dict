@@ -22,6 +22,7 @@ asperalee
 asperanoded
 asperaredisd
 asperasoft
+aspweb
 asssh
 asyncadmin
 asyncs
@@ -36,6 +37,7 @@ csear
 csum
 csvt
 datagram
+dcode
 descr
 dgram
 dmembership
@@ -48,6 +50,7 @@ endef
 errcode
 errstr
 eudemo
+fanout
 FASP
 faspe
 faspex
@@ -93,6 +96,7 @@ nodeapi
 nodegen
 NOTIF
 openssldir
+optport
 overdriving
 passcode
 paygo
@@ -104,10 +108,10 @@ pingfile
 pkce
 pmax
 Portlet
-portlet
 portlets
 postproc
 prepost
+psirt
 PVCL
 reencode
 rescan
@@ -131,6 +135,7 @@ transferd
 transfersdk
 trevents
 tspec
+vlink
 vlinks
 watchd
 watchfolder
@@ -140,5 +145,7 @@ workgroups
 workorder
 workorders
 workstep
+worksteps
 xattrs
 xfer
+xmlsteps

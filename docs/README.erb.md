@@ -487,7 +487,7 @@ For convenience, you may refer to the following sections for a proposed method f
 The minimum version is increased accordingly, and announced in advance.
 If only an older Ruby version must be used due to system constraints, use an older version of <%=tool%> that supports it; refer to [rubygems.org](<%=gemspec.metadata['rubygems_uri']%>).
 
-The following table summarizes Ruby version lifecycles and <%=tool%> support status:
+The following table summarizes Ruby version life cycles and <%=tool%> support status:
 
 <%= ruby_support_table %>
 

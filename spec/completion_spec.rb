@@ -28,10 +28,10 @@ module Aspera
       # Locale forced in the executed command, so that the output (Unicode characters, see `Environment.char`) does not depend on the actual environment
       UTF8_LOCALE = Environment::I18N_VARS.to_h { |var| [var, var.eql?('LC_ALL') ? 'en_US.UTF-8' : nil] }.freeze
 
-      # Home folder of the executed command: a configuration file with preset `mypreset`
+      # Home folder of the executed command: a configuration file with preset `my_preset`
       before(:all) do
         @home = Dir.mktmpdir
-        File.write(File.join(@home, 'config.yaml'), {'config' => {'version' => Cli::VERSION}, 'mypreset' => {'_comment' => 'wizard: My App', 'url' => 'https://example.com', 'username' => 'myuser'}}.to_yaml)
+        File.write(File.join(@home, 'config.yaml'), {'config' => {'version' => Cli::VERSION}, 'my_preset' => {'_comment' => 'wizard: My App', 'url' => 'https://example.com', 'username' => 'myuser'}}.to_yaml)
       end
 
       after(:all) { FileUtils.remove_entry(@home) }
@@ -122,7 +122,7 @@ module Aspera
 
         it 'proposes placeholder for positional arguments with type' do
           expect(run_words('node', 'access_keys', 'do')).to(eq(['<identifier>']))
-          expect(run_words('config', 'preset', 'set', 'mypreset', 'url')).to(eq(['<String>']))
+          expect(run_words('config', 'preset', 'set', 'my_preset', 'url')).to(eq(['<String>']))
           expect(run_words('config', 'vault', 'create')).to(eq(['<Hash> label*, username, password, url, description']))
           expect(run_words('config', 'vault', 'import')).to(eq(['<Array>']))
           expect(run_words('transferd', 'service', 'configure')).to(eq(['<Hash> service, config']))
@@ -131,7 +131,7 @@ module Aspera
         it 'skips values of options given in a separate word' do
           expect(run_words('server', '--url', 'https://x', 'ls')).to(eq(['<String>']))
           expect(run_words('--format', 'json', 'server')).to(include('ls', 'upload'))
-          expect(run_words('-P', 'mypreset', 'server')).to(include('ls', 'upload'))
+          expect(run_words('-P', 'my_preset', 'server')).to(include('ls', 'upload'))
         end
 
         it 'joins option and value split on = by bash' do
@@ -162,7 +162,7 @@ module Aspera
         it 'accepts a unique prefix of plugin, command or alias, and proposes aliases' do
           expect(run_words('serv')).to(include('ls', 'browse', 'rm', 'delete'))
           expect(run_words('serv', 'br')).to(eq(['<String>']))
-          expect(run_words('conf', 'pres', 'sh')).to(include('mypreset'))
+          expect(run_words('conf', 'pres', 'sh')).to(include('my_preset'))
         end
       end
 
@@ -257,8 +257,8 @@ module Aspera
           expect(run_candidates('--ts=@json:')).to(include(start_with("--ts=@json:@file:\t")))
           expect(run_candidates('--private-key=@file:')).to(eq([':files --private-key=@file:']))
           expect(run_candidates('config', 'echo', '@json:@file:')).to(eq([':files @json:@file:']))
-          expect(run_candidates('--ts=@preset:')).to(include("--ts=@preset:mypreset\twizard: My App"))
-          expect(run_candidates('--ts=@preset:mypreset.')).to(include('--ts=@preset:mypreset.url', '--ts=@preset:mypreset.username'))
+          expect(run_candidates('--ts=@preset:')).to(include("--ts=@preset:my_preset\twizard: My App"))
+          expect(run_candidates('--ts=@preset:my_preset.')).to(include('--ts=@preset:my_preset.url', '--ts=@preset:my_preset.username'))
           expect(run_candidates('--password=@env:', env: {'COMPLETION_TEST_VAR' => 'x'})).to(include('--password=@env:COMPLETION_TEST_VAR'))
           expect(run_candidates('--password=@val:@')).to(eq([":hint #{ExtendedValue.instance.description(:val)}"]))
           # Argument not evaluated as extended value
@@ -278,13 +278,13 @@ module Aspera
         end
 
         it 'proposes presets, and their parameters' do
-          expect(run_candidates('-P', '')).to(include("mypreset\twizard: My App"))
+          expect(run_candidates('-P', '')).to(include("my_preset\twizard: My App"))
           # Short option with its value in the same word
-          expect(run_candidates('-Pmy')).to(include("-Pmypreset\twizard: My App"))
-          expect(run_candidates('-Pmypreset.')).to(include('-Pmypreset.url'))
-          expect(run_candidates('-Pmypreset', 'config', '')).to(include(start_with("preset\t")))
-          expect(run_candidates('config', 'preset', 'show', '')).to(include("mypreset\twizard: My App"))
-          expect(run_candidates('config', 'preset', 'get', 'mypreset', '')).to(eq(%w[url username :]))
+          expect(run_candidates('-Pmy')).to(include("-Pmy_preset\twizard: My App"))
+          expect(run_candidates('-Pmy_preset.')).to(include('-Pmy_preset.url'))
+          expect(run_candidates('-Pmy_preset', 'config', '')).to(include(start_with("preset\t")))
+          expect(run_candidates('config', 'preset', 'show', '')).to(include("my_preset\twizard: My App"))
+          expect(run_candidates('config', 'preset', 'get', 'my_preset', '')).to(eq(%w[url username :]))
         end
       end
 

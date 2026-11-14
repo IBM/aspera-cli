@@ -110,3 +110,10 @@ yieldparam
 yieldreturn
 Zvby
 zxcvbn
+byteslice
+getlocal
+getgrnam
+getpwnam
+eaddrinuse
+rdwr
+mtimes

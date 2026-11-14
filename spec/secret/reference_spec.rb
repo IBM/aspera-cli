@@ -155,7 +155,7 @@ RSpec.describe(Aspera::Secret) do
       allow(resolver).to(receive(:monotonic_time).and_return(seconds))
     end
 
-    it 'gives a store by name, and its writability' do
+    it 'gives a store by name, and whether it is writable' do
       expect(resolver.store('mem')).to(be(store))
       expect(resolver.store_names).to(eq(%w[mem other]))
       expect { resolver.store('none') }.to(raise_error(Aspera::Secret::Error, 'unknown store none'))

@@ -37,7 +37,8 @@ RSpec.describe(Aspera::Ascp::Installation) do
     end
   end
 
-  describe 'archive with links (GHSA-mjf3-ccfm-5rwp)' do
+  describe 'archive with links' do
+    # Security advisory GHSA-mjf3-ccfm-5rwp # cspell:disable-line
     # @param path    [String] Path of archive to create
     # @param entries [Array<Array>] `[:link, name, target]` or `[:file, name, content]`
     def write_tar_gz_entries(path, entries)

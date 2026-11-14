@@ -491,7 +491,7 @@ For convenience, you may refer to the following sections for a proposed method f
 The minimum version is increased accordingly, and announced in advance.
 If only an older Ruby version must be used due to system constraints, use an older version of `ascli` that supports it; refer to [rubygems.org](https://rubygems.org/gems/aspera-cli).
 
-The following table summarizes Ruby version lifecycles and `ascli` support status:
+The following table summarizes Ruby version life cycles and `ascli` support status:
 
 | Ruby Version | Official EOL Date | ascli Support End (EOL + 6 mo) | ascli Status |
 |--------------|-------------------|--------------------------------|-----------------------------------|
@@ -5268,7 +5268,7 @@ ascli transferd service spec
 | `log_format` | `Enum[String]` | Format of the transferd log: text for human-readable lines, json for one JSON object per line. Any value other than text gives json.<br/>Allowed values: `text`, `json`.<br/>Default: `text`. |
 | `log_level` | `Enum[String]` | Level of detail of the transferd log, from most (trace) to least (panic) verbose. Omitted or unrecognized value: info.<br/>Allowed values: `trace`, `debug`, `info`, `warning`, `error`, `fatal`, `panic`.<br/>Default: `info`. |
 | `port` | `Integer` | TCP port on which the gRPC API listens. 0 or omitted: a free port is selected at startup; it is written in the log and in file transferd.<port>.optport of runtime_dir. The configuration file shipped with the SDK sets 55002. Overridden by environment variable TRANSFERD_PORT, and by option --port (-p), which takes precedence.<br/>Default: `0`.<br/>Example: `55002`. |
-| `reflection` | `Bool` | Enables the gRPC server reflection service, so that tools such as grpcurl or grpcui can list and call the API without the transferd.proto file. Useful for debugging; leave disabled otherwise.<br/>Default: `false`. |
+| `reflection` | `Bool` | Enables the gRPC server reflection service, so that tools such as `grpcurl` or `grpcui` can list and call the API without the transferd.proto file. Useful for debugging; leave disabled otherwise.<br/>Default: `false`. |
 | `runtime_dir` | `String` | Directory for runtime files. When port is 0, transferd writes the selected port in file transferd.<port>.optport there. Created with owner-only permissions if missing. Omitted: ../var/run/aspera relative to the directory of the transferd executable.<br/>Example: `/var/run/aspera`. |
 | `tls` | `Hash` | TLS for the gRPC API. When enabled, clients must connect using TLS. |
 | `tls.certificate` | `String` | Path of the PEM server certificate file, which may include intermediate certificates. A relative path is resolved from the working directory of transferd.<br/>Example: `/etc/transferd/server.crt`. |

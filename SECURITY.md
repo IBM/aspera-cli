@@ -3,7 +3,7 @@
 ## Supported Versions
 
 Security fixes are released in a new version of `aspera-cli`.
-They are not backported to older versions.
+They are not back-ported to older versions.
 
 | Version        | Supported                        |
 | -------------- | -------------------------------- |

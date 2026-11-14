@@ -6,7 +6,7 @@ require_relative 'base'
 module Aspera
   module Secret
     module Store
-      # Manage secrets using the Linux Secret Service (GNOME Keyring, KWallet, KeePassXC...), with the `secret-tool` CLI of libsecret.
+      # Manage secrets using the Linux Secret Service (GNOME Keyring, KWallet, KeePassXC...), with the `secret-tool` CLI of `libsecret`.
       # https://specifications.freedesktop.org/secret-service/latest/
       # Items have attributes: `service` (parameter `name`), `label`, and optionally `username`, `url`, `description`.
       class SecretService < Base

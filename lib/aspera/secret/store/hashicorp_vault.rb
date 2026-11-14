@@ -200,13 +200,13 @@ module Aspera
           raise Error, "invalid path: #{path}" if folder.split('/', -1).any? { |s| INVALID_SEGMENTS.include?(s) }
           mount = options['mount'] || folder.split('/').first
           raise Error, "path shall start with mount #{mount}/" unless folder.eql?(mount) || folder.start_with?("#{mount}/")
-          raise Error, "path not allowed: #{folder}/" unless browsable?("#{folder}/")
+          raise Error, "path not allowed: #{folder}/" unless reachable?("#{folder}/")
           sub = folder.delete_prefix(mount).delete_prefix('/')
           keys = call { |client| client.kv(mount).list(sub.empty? ? '' : "#{sub}/") }
           entries = keys.filter_map do |key|
             full = "#{folder}/#{key}"
             is_folder = key.end_with?('/')
-            {name: key.delete_suffix('/'), folder: is_folder} if is_folder ? browsable?(full) : allowed?(full)
+            {name: key.delete_suffix('/'), folder: is_folder} if is_folder ? reachable?(full) : allowed?(full)
           end
           entries.sort_by { |entry| [entry[:name], entry[:folder] ? 0 : 1] }
         end
@@ -280,7 +280,7 @@ module Aspera
 
         # @param folder [String] `<mount>/<path>/`
         # @return [Boolean] `true` if the folder holds paths that references can read: in an allowed prefix, or above one
-        def browsable?(folder)
+        def reachable?(folder)
           allowed?(folder) || @allowed_prefixes.any? { |prefix| prefix.start_with?(folder) }
         end
 

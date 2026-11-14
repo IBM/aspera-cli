@@ -255,7 +255,7 @@ namespace :tools do
     latest_str, latest_ext = ruby_latest_common(setup_versions)
     log.info("Latest stable Ruby version: #{setup_versions.max_by { |v| Gem::Version.new(v) }}, available for CI and all packages: #{latest_str} (RubyInstaller#{latest_ext})")
 
-    # Policy versions (minimum and future minimum) based on endoflife.date + 6 months grace period
+    # Policy versions (minimum and future minimum) based on `endoflife.date` + 6 months grace period
     policy_min, policy_future = compute_ruby_policy_versions(6)
     log.info("Policy-based Ruby versions (EOL + 6 mo): minimum #{policy_min}, future minimum #{policy_future}")
 
