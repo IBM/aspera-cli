@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest an enhancement of aspera-cli (ascli)
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Use case
+      description: What do you want to do, and what is missing or difficult today
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Command, option or behavior you expect (an example command line helps)
+  - type: input
+    id: product
+    attributes:
+      label: Aspera product and version
+      description: For example Aspera on Cloud, Faspex 5, Node API, HSTS 4.4

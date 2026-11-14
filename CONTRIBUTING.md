@@ -1,8 +1,10 @@
 # Contributing
 
+By participating, you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+
 ## Reporting Issues
 
-If you encounter a bug, please report it via [GitHub Issues](https://github.com/IBM/aspera-cli/issues).
+If you encounter a bug, please report it via [GitHub Issues](https://github.com/IBM/aspera-cli/issues), using the bug report form.
 
 **Do not report a security vulnerability in a public issue**: see [SECURITY.md](SECURITY.md).
 
@@ -54,7 +56,7 @@ To submit a contribution, follow these steps:
 3. **Implement** your feature or bug fix.
    See [Development Cycle for a New CLI Command](#development-cycle-for-a-new-cli-command) for the complete checklist.
 
-4. **Submit a pull request** with a detailed description of your work.
+4. **Submit a pull request** with a detailed description of your work, and complete the checklist of the pull request template.
 
 > [!TIP]
 > Keep pull requests focused; include only changes relevant to the specific feature or fix.
@@ -153,6 +155,9 @@ bundle exec rake tools:reek      # code smell detection
 bundle exec rake tools:spell     # spelling (cspell)
 bundle exec rake tools:codeql    # security (CodeQL, as GitHub code scanning)
 ```
+
+In GitHub Actions, `tools:rubocop` (job `lint` of `.github/workflows/test.yml`, on changes of Ruby files), `tools:spell` (`.github/workflows/spell.yml`, on every push to `main` and every pull request) and CodeQL (`.github/workflows/codeql-analysis.yml`) run automatically.
+`tools:reek` is not run in CI.
 
 `tools:codeql` requires the `codeql` CLI (macOS: `brew install --cask codeql`), it downloads the query packs on first use.
 It analyzes the tracked files, with their changes, for the languages of `.github/workflows/codeql-analysis.yml`, and fails if CodeQL reports any result.
@@ -449,5 +454,8 @@ If necessary, you can mirror the automated process manually:
   ```
 
   This triggers the `.github/workflows/deploy.yml` action to publish to RubyGems.
+  It authenticates with [Trusted Publishing](https://guides.rubygems.org/trusted-publishing/) (OpenID Connect): the publication does not use a RubyGems API key (the workflow `yank-gem-version.yml` still uses the secret `RUBYGEMS_API_KEY`).
+  The trusted publisher (repository `IBM/aspera-cli`, workflow `deploy.yml`) is declared in the settings of the gem on rubygems.org.
+  The gem metadata `rubygems_mfa_required` requires multi-factor authentication for the other operations on the gem.
 
 - Update `version.rb` to the next `.pre` development version.

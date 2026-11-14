@@ -49,6 +49,7 @@ ascli -v
 - **Bugs & features:** [BUGS.md](https://github.com/IBM/aspera-cli/blob/main/BUGS.md)
 - **Security vulnerabilities:** [SECURITY.md](https://github.com/IBM/aspera-cli/blob/main/SECURITY.md)
 - **How to contribute:** [CONTRIBUTING.md](https://github.com/IBM/aspera-cli/blob/main/CONTRIBUTING.md)
+- **Code of conduct:** [CODE_OF_CONDUCT.md](https://github.com/IBM/aspera-cli/blob/main/CODE_OF_CONDUCT.md)
 - **Release notes:** [CHANGELOG.md](https://github.com/IBM/aspera-cli/blob/main/CHANGELOG.md)
 
 Commands map to Aspera REST APIs; see the manual for options.

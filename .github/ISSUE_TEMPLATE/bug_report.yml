@@ -1,0 +1,58 @@
+name: Bug report
+description: Report a bug in aspera-cli (ascli)
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not report a security vulnerability here**: see [SECURITY.md](https://github.com/IBM/aspera-cli/blob/main/SECURITY.md).
+        Scope: only the Ruby gem `aspera-cli` and its interactions with IBM Aspera components: see [BUGS.md](https://github.com/IBM/aspera-cli/blob/main/BUGS.md#scope-of-support).
+        Remove secrets (passwords, tokens, private keys) from logs before posting them.
+  - type: checkboxes
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues
+          required: true
+        - label: I use the latest version of `aspera-cli`
+          required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version of aspera-cli
+      description: Output of `ascli -v`
+    validations:
+      required: true
+  - type: input
+    id: ruby
+    attributes:
+      label: Ruby version
+      description: Output of `ruby -v` (or the installation method, if not a gem)
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system name and version
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened, and what did you expect
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: The command line that fails
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant output with `--log-level=debug`
+      description: Add `ascp` log files if the issue is related to a transfer
+      render: text
