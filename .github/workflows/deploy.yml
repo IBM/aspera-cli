@@ -1,4 +1,6 @@
 # Action to push a gem version to RubyGems when a new tag is created
+# Authentication: RubyGems Trusted Publishing (OIDC), no long-lived API key.
+# The trusted publisher (repository IBM/aspera-cli, workflow deploy.yml) shall be declared in the gem settings on rubygems.org
 name: Push to Rubygems
 
 on:
@@ -6,28 +8,33 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build + Publish
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Required by Trusted Publishing: OIDC token exchanged for a short-lived RubyGems API key
+      id-token: write
     env:
       BUNDLE_WITHOUT: optional:development:special
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
+        uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1
         with:
           bundler-cache: true # runs 'bundle install' and caches installed gems automatically
       - name: Install rake
         run: gem install rake
+      # Sets GEM_HOST_API_KEY (short-lived), used by `gem push`
+      - name: Configure RubyGems credentials (Trusted Publishing)
+        uses: rubygems/configure-rubygems-credentials@dc5a8d8553e6ee01fc26761a49e99e733d17954a # v2.1.0
       - name: Publish to RubyGems
         if: contains(github.ref, 'refs/tags/v')
         env:
           SIGNING_KEY: ${{ secrets.PRIVATE_KEY_PEM }}
-        run: |
-          gem_conf="$HOME/.gem"
-          mkdir -p "$gem_conf"
-          install -m 600 /dev/null "$gem_conf/credentials"
-          printf ":rubygems_api_key: ${{ secrets.RUBYGEMS_API_KEY }}\n" > "$gem_conf"/credentials
-          rake release_signed
+        run: rake release_signed

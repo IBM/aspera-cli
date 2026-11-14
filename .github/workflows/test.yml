@@ -22,7 +22,28 @@ on:
       - "**/*.gemspec"
       - "tests/tests.yml"
       - ".github/workflows/test.yml"
+
+permissions:
+  contents: read
+
 jobs:
+  lint:
+    name: RuboCop
+    runs-on: ubuntu-latest
+    env:
+      BUNDLE_WITHOUT: optional:special
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1
+        with:
+          bundler-cache: true
+
+      - name: Run RuboCop
+        run: bundle exec rubocop lib
+
   unit:
     runs-on: ubuntu-latest
     env:
@@ -32,10 +53,10 @@ jobs:
         ruby: ["3.3", "3.4", "4.0", "jruby"]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Set up Ruby ${{ matrix.ruby }}
-        uses: ruby/setup-ruby@v1
+        uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1
         with:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
@@ -51,10 +72,10 @@ jobs:
       BUNDLE_WITHOUT: optional:special
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
+        uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1
         with:
           ruby-version: "4.0"
           bundler-cache: true

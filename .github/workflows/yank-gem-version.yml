@@ -8,16 +8,19 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   yank:
     runs-on: ubuntu-latest
     env:
       BUNDLE_WITHOUT: optional:development:special
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup Ruby
-        uses: ruby/setup-ruby@v1
+        uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1
         with:
           bundler-cache: true
 

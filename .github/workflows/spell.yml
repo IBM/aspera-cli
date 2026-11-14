@@ -1,0 +1,23 @@
+# Spell check (cspell) of the whole repository: same as `rake tools:spell`
+# Configuration: .cspell.json, project dictionaries in .cspell/
+name: Spell Check
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  spell:
+    name: cspell
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # Node.js is preinstalled on the runner
+      - name: Run cspell
+        run: npx --yes cspell@10 --no-progress --dot '**'
