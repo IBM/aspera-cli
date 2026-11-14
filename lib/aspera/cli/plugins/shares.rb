@@ -34,7 +34,7 @@ module Aspera
                   .new(base_url: url, redirect_max: 2)
                   .read('', headers: {'Accept'=>'text/html'})
                 Aspera.assert(login_page.include?('aspera-Shares')) { 'not Shares' }
-                if (m = login_page.match(/\(v([0-9a-f\.]+)\)/))
+                if (m = login_page.match(/\(v([0-9a-f.]+)\)/))
                   version = m[1]
                   if (m = login_page.match(/Patch level ([0-9]+)/))
                     version = "#{version} #{m[0]}"

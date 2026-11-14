@@ -20,7 +20,7 @@ module Aspera
         Aspera::Agent.const_get(agent.to_s.capitalize).new(**options)
       end
 
-      IGNORED_ITEMS = %i[factory base]
+      IGNORED_ITEMS = %i[factory base].freeze
       # Available agents: :long : Capitalized name string, :short : single character symbol
       ALL =
         Dir.children(File.dirname(File.expand_path(__FILE__)))

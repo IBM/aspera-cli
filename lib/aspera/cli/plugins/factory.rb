@@ -87,7 +87,7 @@ module Aspera
           plugin_class(plugin_name_sym).new(**args)
         end
 
-        IGNORE_PLUGINS = %i[factory base basic_auth oauth]
+        IGNORE_PLUGINS = %i[factory base basic_auth oauth].freeze
         private_constant :IGNORE_PLUGINS
       end
     end

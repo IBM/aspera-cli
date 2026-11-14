@@ -13,7 +13,7 @@ module Aspera
     # Client: Aspera for Desktop
     class Desktop < Base
       # try twice the main init url in sequence
-      START_URIS = ['aspera://', 'aspera://', 'aspera://']
+      START_URIS = ['aspera://', 'aspera://', 'aspera://'].freeze
       # delay between each try to start the app
       SLEEP_SEC_BETWEEN_RETRY = 5
       private_constant :START_URIS, :SLEEP_SEC_BETWEEN_RETRY

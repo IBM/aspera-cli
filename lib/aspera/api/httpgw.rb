@@ -209,7 +209,7 @@ module Aspera
             fileIndex:    file_index
           }
           file = file_to_send[:file]
-          file = File.open(file) unless file.is_a?(Transfer::FauxFile) # rubocop:disable Style/FileOpen
+          file = File.open(file) unless file.is_a?(Transfer::FauxFile)
           begin
             until file.eof?
               slice_bin_data = file.read(@upload_chunk_size)

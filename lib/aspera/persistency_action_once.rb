@@ -11,7 +11,7 @@ module Aspera
     PARSE_DEFAULT = lambda { |t| JSON.parse(t) }
     FORMAT_DEFAULT = lambda { |h| JSON.generate(h) }
     MERGE_DEFAULT = lambda { |current, file| current.concat(file).uniq rescue current }
-    MANAGER_METHODS = %i[get put delete]
+    MANAGER_METHODS = %i[get put delete].freeze
     private_constant :DELETE_DEFAULT, :PARSE_DEFAULT, :FORMAT_DEFAULT, :MERGE_DEFAULT, :MANAGER_METHODS
 
     # @param manager [Object]  Mandatory Database (must respond to get/put/delete)

@@ -20,7 +20,7 @@ module Aspera
       let(:options) do
         option_values = values
         Object.new.tap do |o|
-          o.define_singleton_method(:get_option) { |name, mandatory: false| option_values[name] } # rubocop:disable Lint/UnusedBlockArgument
+          o.define_singleton_method(:get_option) { |name, mandatory: false| option_values[name] }
         end
       end
       let(:manager) { described_class.new(options, main_folder) }

@@ -188,7 +188,7 @@ class DocHelper
   end
 
   # If version contains other characters than digit and dot, it is pre-release
-  def gem_install_option; /[^\.0-9]/.match?(gemspec.version.to_s) ? ' --pre' : ''; end
+  def gem_install_option; /[^.0-9]/.match?(gemspec.version.to_s) ? ' --pre' : ''; end
 
   # Build markdown table with optional gems
   def gem_opt_md_list
@@ -452,8 +452,8 @@ class DocHelper
     ['@extend:', ''],
     ['.$(SecureRandom.uuid)', ''],
     [/\$\(TMP\)$/, '.'],
-    [/\$\(\(?t\.saved_output( :|\(')([^\)']+_id)'?.*\)/, '<id>'],
-    [/\$\(t\.saved_output( :|\(')([^\)']+)'?.*\)/, '<\2>'],
+    [/\$\(\(?t\.saved_output( :|\(')([^)']+_id)'?.*\)/, '<id>'],
+    [/\$\(t\.saved_output( :|\(')([^)']+)'?.*\)/, '<\2>'],
     [/@preset:([^_]+)_[^ ]+\.url/, 'https://\1.example.com/path'],
     # Value of a secret: placeholder like `ph`
     [/((?:pass(?:word)?|secret)(?:=|":"))@preset:(?:[a-z0-9_]+|\$\([a-z_]+\)[a-z0-9_]*)\.([a-z0-9_]+)@?/, ->(m) { "#{m[1]}<#{m[2].delete_suffix('_here').upcase}>" }],
@@ -481,7 +481,7 @@ class DocHelper
     [/\$\((?:name|t\.resolve :[a-z0-9_]+)\) \$\(TIMESTAMP_TEST_RUN\)/, 'package title'],
     [/^--base=.*/, '--base=test'],
     [/^(--[a-z\-.]+=)?(@[a-z]+:)?(.*['"*! $\\?].*)$/, "\\1\\2'\\3'"]
-  ]
+  ].freeze
   # @return [Hash<Symbol, Array<String>>] All test commands with key by plugin
   def all_test_commands_by_plugin
     return @commands unless @commands.nil?

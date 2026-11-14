@@ -112,7 +112,7 @@ module Aspera
               build_formatter(argv)
               expect(Rainbow.enabled).to(be(colors), argv.join(' '))
             ensure
-              $stdout.close unless $stdout.equal?(STDOUT) # rubocop:disable Style/GlobalStdStream
+              $stdout.close unless $stdout.equal?(STDOUT)
               $stdout = STDOUT
             end
           end

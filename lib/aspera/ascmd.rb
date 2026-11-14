@@ -193,7 +193,7 @@ module Aspera
           num_bytes = type_name.eql?(:zstr) ? buffer.length : type_descr[:size]
           Aspera.assert(buffer.length >= num_bytes, 'not enough bytes')
           byte_array = buffer.shift(num_bytes)
-          byte_array = [byte_array] unless byte_array.is_a?(Array)
+          byte_array = Array(byte_array)
           result = byte_array.pack('C*').unpack1(type_descr[:unpack])
           result.force_encoding('UTF-8') if type_name.eql?(:zstr)
           Log.log.trace1 { "#{'   .' * indent_level}-> base:#{byte_array} -> #{result}" }

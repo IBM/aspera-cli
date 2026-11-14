@@ -4,7 +4,7 @@ require_relative '../lib/aspera/proxy_auto_config'
 require_relative '../lib/aspera/uri_reader'
 require 'bundler/setup'
 
-PAC_FILE = "file:///#{File.dirname(File.realpath(__FILE__), 2)}/tests/proxy.pac"
+PAC_FILE = "file:///#{File.dirname(File.realpath(__FILE__), 2)}/tests/proxy.pac".freeze
 
 RSpec.describe(Aspera::ProxyAutoConfig) do
   it "get right proxy with #{PAC_FILE}" do

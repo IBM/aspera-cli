@@ -47,7 +47,7 @@ PATH_DOWN_TST_ASC = PATH_WEB_DOWNLOAD / FILENAME_ASCII
 # This file name contains special characters, it must be quoted when used in shell
 PATH_TST_UTF_LCL = TMP / FILENAME_UNICODE
 # local path, using `faux:`
-PATH_TST_LCL_FILE = "faux:///#{URI.encode_www_form_component(FILENAME_UNICODE)}?100m"
+PATH_TST_LCL_FILE = "faux:///#{URI.encode_www_form_component(FILENAME_UNICODE)}?100m".freeze
 # sync dir must be an absolute path, but tmp dir may not exist yet, while its enclosing folder shall exist
 PATH_TMP_SYNCS = TMP / 'syncs'
 PATH_SHARES_SYNC = PATH_TMP_SYNCS / 'shares_sync'
@@ -155,8 +155,8 @@ def reset_macos_hsts
   # while ! $(CLI_COMMAND) node -N -Ptst_node_preview info;do echo waiting..;sleep 2;done
 end
 
-MACOS_LAUNCHD_UNLOAD = %w[sudo launchctl unload]
-MACOS_LAUNCHD_LOAD = %w[sudo launchctl load]
+MACOS_LAUNCHD_UNLOAD = %w[sudo launchctl unload].freeze
+MACOS_LAUNCHD_LOAD = %w[sudo launchctl load].freeze
 MACOS_LAUNCHD_FOLDERS = Pathname.new('/Library/LaunchDaemons')
 
 def macos_service(action, aspera_name)

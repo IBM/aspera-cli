@@ -221,7 +221,7 @@ module Aspera
         Log.log.debug { "ascp args: #{exec_spec}" }
         return exec_spec
       end
-      DELETE_EQUIV = %w[remove_after_transfer remove_empty_directories remove_empty_source_directory]
+      DELETE_EQUIV = %w[remove_after_transfer remove_empty_directories remove_empty_source_directory].freeze
       # `ascp` options to provide a file list
       FILE_LIST_OPTIONS = ['--file-list', '--file-pair-list'].freeze
       private_constant :DELETE_EQUIV, :FILE_LIST_OPTIONS

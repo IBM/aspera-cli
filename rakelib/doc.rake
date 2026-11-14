@@ -76,7 +76,7 @@ DOC_FILES = [
   Paths::TEST_DEFS,
   Paths::GEMSPEC,
   Paths::GEMFILE
-]
+].freeze
 
 # Source file that contain constants used to generate doc (version, urls)
 CONST_SOURCES = %w[info version].map { |i| Paths::LIB / "aspera/cli/#{i}.rb" }

@@ -8,8 +8,8 @@ module Aspera
       # Name of the containing gem, same as in <gem name>.gemspec
       GEM_NAME = 'aspera-cli'
       DOC_URL  = 'https://ibm.biz/ascli-doc'
-      RUBYDOC_URL = "https://www.rubydoc.info/gems/#{GEM_NAME}"
-      GEM_URL  = "https://rubygems.org/gems/#{GEM_NAME}"
+      RUBYDOC_URL = "https://www.rubydoc.info/gems/#{GEM_NAME}".freeze
+      GEM_URL  = "https://rubygems.org/gems/#{GEM_NAME}".freeze
       SRC_URL  = 'https://github.com/IBM/aspera-cli'
       CONTAINER = 'docker.io/martinlaurent/ascli'
       # Minimum required Ruby version: single reference, used by `required_ruby_version` in gemspec file and by the documentation

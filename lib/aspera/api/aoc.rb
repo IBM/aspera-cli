@@ -103,7 +103,7 @@ module Aspera
         # Scope `admin:all`
         ADMIN = 'admin:all'
         ADMIN_USER = 'admin-user:all'
-        ADMIN_USER_USER = "#{ADMIN_USER}+#{USER}"
+        ADMIN_USER_USER = "#{ADMIN_USER}+#{USER}".freeze
       end
       API_V1 = 'api/v1'
 

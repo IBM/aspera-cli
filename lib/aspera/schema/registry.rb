@@ -70,7 +70,7 @@ module Aspera
         async_tables: 'aspera/schema/async_tables.yaml',
         ascp_log:     'aspera/ascp/log.schema.yaml',
         transferd:    'aspera/schema/transferd-config.schema.json'
-      }
+      }.freeze
 
       # Schemas owned by ascli: values are validated against them (vendor API schemas are validated by the API)
       OWNED = %i[spec args conf opts preview async_tables ascp_log transferd].freeze
@@ -90,31 +90,31 @@ module Aspera
       SHARES = 'shares+/api/v1'
       ASYNC_TABLES = 'async_tables'
       ASCP_LOG = 'ascp_log'
-      LOG_OPTIONS             = "#{OPTIONS}:components.schemas.LogOptions"
-      UI_OPTIONS              = "#{OPTIONS}:components.schemas.UiOptions"
-      SECURITY_OPTIONS        = "#{OPTIONS}:components.schemas.SecurityOptions"
-      TEMP_OPTIONS            = "#{OPTIONS}:components.schemas.TempOptions"
-      DIRECT_AGENT_OPTIONS    = "#{OPTIONS}:components.schemas.DirectAgentOptions"
-      NODE_AGENT_OPTIONS      = "#{OPTIONS}:components.schemas.NodeAgentOptions"
-      NODE_EMULATOR_OPTIONS   = "#{OPTIONS}:components.schemas.NodeEmulatorOptions"
-      HTTPGW_AGENT_OPTIONS    = "#{OPTIONS}:components.schemas.HttpgwAgentOptions"
-      TRANSFERD_AGENT_OPTIONS = "#{OPTIONS}:components.schemas.TransferdAgentOptions"
-      TRANSFER_AGENT_OPTIONS  = "#{OPTIONS}:components.schemas.TransferAgentOptions"
-      SMTP_OPTIONS            = "#{OPTIONS}:components.schemas.SmtpOptions"
-      SERVICE_OPTIONS         = "#{OPTIONS}:components.schemas.ServiceOptions"
-      TRANSFERD_SERVICE_CONFIG = "#{OPTIONS}:components.schemas.TransferdServiceConfig"
-      HTTP_OPTIONS            = "#{OPTIONS}:components.schemas.HttpOptions"
-      VAULT_OPTIONS           = "#{OPTIONS}:components.schemas.VaultOptions"
-      VAULT_SECRET            = "#{OPTIONS}:components.schemas.VaultSecret"
-      VAULT_STORE             = "#{OPTIONS}:components.schemas.VaultStore"
-      VAULT_STORES            = "#{OPTIONS}:components.schemas.VaultStores"
-      IMAGE_OPTIONS           = "#{OPTIONS}:components.schemas.ImageOptions"
-      ASCP_LOGS_OPTIONS       = "#{OPTIONS}:components.schemas.AscpLogsOptions"
-      OUT_OPTIONS             = "#{OPTIONS}:components.schemas.OutOptions"
-      PACKAGE_FOLDER_OPTIONS  = "#{OPTIONS}:components.schemas.PackageFolderOptions"
-      WEB_SERVER_OPTIONS      = "#{OPTIONS}:components.schemas.WebServerOptions"
-      GATEWAY_OPTIONS         = "#{OPTIONS}:components.schemas.Faspex4GatewayOptions"
-      POSTPROC_OPTIONS        = "#{OPTIONS}:components.schemas.Faspex4PostProcOptions"
+      LOG_OPTIONS             = "#{OPTIONS}:components.schemas.LogOptions".freeze
+      UI_OPTIONS              = "#{OPTIONS}:components.schemas.UiOptions".freeze
+      SECURITY_OPTIONS        = "#{OPTIONS}:components.schemas.SecurityOptions".freeze
+      TEMP_OPTIONS            = "#{OPTIONS}:components.schemas.TempOptions".freeze
+      DIRECT_AGENT_OPTIONS    = "#{OPTIONS}:components.schemas.DirectAgentOptions".freeze
+      NODE_AGENT_OPTIONS      = "#{OPTIONS}:components.schemas.NodeAgentOptions".freeze
+      NODE_EMULATOR_OPTIONS   = "#{OPTIONS}:components.schemas.NodeEmulatorOptions".freeze
+      HTTPGW_AGENT_OPTIONS    = "#{OPTIONS}:components.schemas.HttpgwAgentOptions".freeze
+      TRANSFERD_AGENT_OPTIONS = "#{OPTIONS}:components.schemas.TransferdAgentOptions".freeze
+      TRANSFER_AGENT_OPTIONS  = "#{OPTIONS}:components.schemas.TransferAgentOptions".freeze
+      SMTP_OPTIONS            = "#{OPTIONS}:components.schemas.SmtpOptions".freeze
+      SERVICE_OPTIONS         = "#{OPTIONS}:components.schemas.ServiceOptions".freeze
+      TRANSFERD_SERVICE_CONFIG = "#{OPTIONS}:components.schemas.TransferdServiceConfig".freeze
+      HTTP_OPTIONS            = "#{OPTIONS}:components.schemas.HttpOptions".freeze
+      VAULT_OPTIONS           = "#{OPTIONS}:components.schemas.VaultOptions".freeze
+      VAULT_SECRET            = "#{OPTIONS}:components.schemas.VaultSecret".freeze
+      VAULT_STORE             = "#{OPTIONS}:components.schemas.VaultStore".freeze
+      VAULT_STORES            = "#{OPTIONS}:components.schemas.VaultStores".freeze
+      IMAGE_OPTIONS           = "#{OPTIONS}:components.schemas.ImageOptions".freeze
+      ASCP_LOGS_OPTIONS       = "#{OPTIONS}:components.schemas.AscpLogsOptions".freeze
+      OUT_OPTIONS             = "#{OPTIONS}:components.schemas.OutOptions".freeze
+      PACKAGE_FOLDER_OPTIONS  = "#{OPTIONS}:components.schemas.PackageFolderOptions".freeze
+      WEB_SERVER_OPTIONS      = "#{OPTIONS}:components.schemas.WebServerOptions".freeze
+      GATEWAY_OPTIONS         = "#{OPTIONS}:components.schemas.Faspex4GatewayOptions".freeze
+      POSTPROC_OPTIONS        = "#{OPTIONS}:components.schemas.Faspex4PostProcOptions".freeze
 
       REQ_BODY = '.requestBody.content.application/json.schema'
       # Suffix appended to a dotted path to signal query-param extraction in reader()

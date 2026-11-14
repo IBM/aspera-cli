@@ -455,7 +455,7 @@ module Aspera
         # `on_set` callback of option `plugin_folder`
         # @param value [String, Array<String>] folder(s) where to find plugins
         def add_plugin_folders(value)
-          value = [value] unless value.is_a?(Array)
+          value = Array(value)
           Aspera.assert_array_all(value, String) { 'plugin folder(s)' }
           value.each { |f| Plugins::Factory.instance.add_lookup_folder(f, security: :low) }
         end
@@ -716,7 +716,7 @@ module Aspera
         SERVER_COMMAND = 'server'
         DEMO_SERVER = 'demo'
         DEMO_PRESET = 'demoserver'
-        EMAIL_TEST_TEMPLATE = <<~END_OF_TEMPLATE
+        EMAIL_TEST_TEMPLATE = <<~END_OF_TEMPLATE.freeze
           From: <%=from_name%> <<%=from_email%>>
           To: <<%=to%>>
           Subject: #{Info::GEM_NAME} email test

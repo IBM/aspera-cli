@@ -505,7 +505,7 @@ module Aspera
       end
 
       # HTTP codes of service unavailable
-      UNAVAILABLE_CODES = ['503']
+      UNAVAILABLE_CODES = ['503'].freeze
       # Network errors that can be retried
       NETWORK_ERRORS = [
         Net::OpenTimeout, Net::ReadTimeout, Net::WriteTimeout,

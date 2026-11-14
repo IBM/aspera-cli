@@ -199,7 +199,7 @@ module Aspera
           $stdout = if @output_to_file
             File.open(value, 'w')
           else
-            STDOUT # rubocop:disable Style/GlobalStdStream
+            STDOUT
           end
           apply_colors
         when :image

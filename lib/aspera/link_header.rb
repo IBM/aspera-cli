@@ -72,7 +72,7 @@ module Aspera
     end
 
     # RFC 2616 token: any char except separators
-    TOKEN_RE  = /[^()<>@,;:\"\[\]?={}\s]+/  # RFC 2616 token
+    TOKEN_RE  = /[^()<>@,;:"\[\]?={}\s]+/  # RFC 2616 token
     QUOTED_RE = /"((?:[^"\\]|\\.)*)"/       # double-quoted string with backslash escapes
     HREF_RE   = /\s*<([^>]*)>\s*;?\s*/      # <URI> possibly followed by ;
     ATTR_RE   = /(#{TOKEN_RE})\s*=\s*(#{TOKEN_RE}|#{QUOTED_RE})\s*/ # key=value or key="value"

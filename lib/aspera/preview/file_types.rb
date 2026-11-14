@@ -96,7 +96,7 @@ module Aspera
       private
 
       TYPE_NOT_FOUND = 'application/octet-stream'
-      ACCEPT_CTRL_CHARS = [9, 10, 13]
+      ACCEPT_CTRL_CHARS = [9, 10, 13].freeze
 
       # Returns true if the file looks like ASCII text (printable ASCII + \t, \r, \n, space).
       # It reads only a small prefix (default: 64KB) and fails fast on the first bad byte.

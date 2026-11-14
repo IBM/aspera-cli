@@ -1113,7 +1113,7 @@ module Aspera
             ids_to_download = all_packages[:items].map { |e| e['id'] }
             formatter.display_status("Found #{ids_to_download.length} package(s).")
           else
-            ids_to_download = [ids_to_download] unless ids_to_download.is_a?(Array)
+            ids_to_download = Array(ids_to_download)
           end
           ts_paths = transfer.ts_source_paths(default: ['.'])
           per_package_def = options.get_option(:package_folder).symbolize_keys

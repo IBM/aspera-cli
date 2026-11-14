@@ -28,7 +28,7 @@ module Aspera
       include Singleton
 
       # First is default
-      DEFAULT_DECODERS = %i[none json ruby yaml]
+      DEFAULT_DECODERS = %i[none json ruby yaml].freeze
 
       class << self
         # Decode comma separated table text

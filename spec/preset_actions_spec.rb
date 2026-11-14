@@ -36,7 +36,7 @@ module Aspera
       let(:vault_store) { {} }
       let(:vault_double) do
         double('vault').tap do |v|
-          allow(v).to(receive(:get)) do |label:, exception: true| # rubocop:disable Lint/UnusedBlockArgument
+          allow(v).to(receive(:get)) do |label:, exception: true|
             vault_store[label]
           end
           allow(v).to(receive(:set)) do |entry|
@@ -61,7 +61,7 @@ module Aspera
           def options
             opts_self = self
             Object.new.tap do |o|
-              o.define_singleton_method(:get_option) do |sym, mandatory: false| # rubocop:disable Lint/UnusedBlockArgument
+              o.define_singleton_method(:get_option) do |sym, mandatory: false|
                 opts_self.vault_option if sym == :vault
               end
               o.define_singleton_method(:unprocessed_options_with_value) { {} }

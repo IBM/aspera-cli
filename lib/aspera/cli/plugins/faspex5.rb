@@ -111,7 +111,7 @@ module Aspera
           if parameters.key?('recipient_types')
             recipient_types = parameters['recipient_types']
             parameters.delete('recipient_types')
-            recipient_types = [recipient_types] unless recipient_types.is_a?(Array)
+            recipient_types = Array(recipient_types)
           end
           parameters[type].map! do |recipient_data|
             # If just a string, make a general lookup and build expected name/type hash
@@ -251,7 +251,7 @@ module Aspera
             Log.dump(:package_ids, level: :trace1) { packages.map { |p| p['id'] } }
           else
             # a single id was provided, or a list of ids
-            package_ids = [package_ids] unless package_ids.is_a?(Array)
+            package_ids = Array(package_ids)
             Aspera.assert_array_all(package_ids, String) { 'Package id(s)' }
             # packages = package_ids.map{|pkg_id|api_v5.read("packages/#{pkg_id}")}
             packages = package_ids.map { |pkg_id| {'id'=>pkg_id} }
@@ -833,7 +833,7 @@ module Aspera
         # @param users [Array] raw user ids or percent-selector strings
         # @return [Array<String>] resolved user ids
         def resolve_member_user_ids(users)
-          users = [users] unless users.is_a?(Array)
+          users = Array(users)
           users.map do |user|
             if (m = Parser.percent_selector(user))
               api_v5.lookup_entity_by_field(entity: 'accounts', field: m[:field], value: m[:value], query: Rest.php_style({type: ACCOUNT_TYPES}))['id']
@@ -990,7 +990,7 @@ module Aspera
         ACCOUNT_TYPES = %w{local_user saml_user self_registered_user external_user}.freeze
         WORKGROUP_TYPES = %w{workgroup shared_inbox}.freeze
         CONTACT_TYPES = (WORKGROUP_TYPES + %w{distribution_list user external_user}).freeze
-        PACKAGE_RECIPIENT_TYPES = %i{recipients private_recipients notified_on_upload notified_on_download notified_on_receipt}
+        PACKAGE_RECIPIENT_TYPES = %i{recipients private_recipients notified_on_upload notified_on_download notified_on_receipt}.freeze
         private_constant :ACCOUNT_TYPES, :CONTACT_TYPES, :PACKAGE_RECIPIENT_TYPES,
           :CRUD_NO_SHOW, :CRUD_NO_LIST
       end

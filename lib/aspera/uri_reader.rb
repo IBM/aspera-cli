@@ -26,10 +26,10 @@ module Aspera
   # The canonical form built by {file_url} uses the `file:///` prefix.
   module UriReader
     SCHEME_FILE = 'file'
-    SCHEME_FILE_PFX1 = "#{SCHEME_FILE}:"
+    SCHEME_FILE_PFX1 = "#{SCHEME_FILE}:".freeze
     # Canonical prefix for file: URLs (no host, three slashes).
     # What follows is the literal path: relative or absolute (starting with a second slash).
-    SCHEME_FILE_PFX2 = "#{SCHEME_FILE_PFX1}///"
+    SCHEME_FILE_PFX2 = "#{SCHEME_FILE_PFX1}///".freeze
     # Timeout in seconds when another URL remains to be tried
     FAIL_FAST_TIMEOUT = 10
     private_constant :SCHEME_FILE, :SCHEME_FILE_PFX1, :SCHEME_FILE_PFX2, :FAIL_FAST_TIMEOUT

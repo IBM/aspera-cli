@@ -35,7 +35,7 @@ module Aspera
       LOCAL_SOCKET_ADDR = '127.0.0.1'
       PORT_SEP = ':'
       # port zero means select a random available high port
-      AUTO_LOCAL_TCP_PORT = "#{PORT_SEP}0"
+      AUTO_LOCAL_TCP_PORT = "#{PORT_SEP}0".freeze
       # Default timeout in seconds of the calls of `transfer_status` and `transfer_cancel` (`agent_params['timeout']`)
       CALL_TIMEOUT_SEC = 10
       # Status of the daemon → status of an asynchronous transfer (as other agents): other statuses are `running`

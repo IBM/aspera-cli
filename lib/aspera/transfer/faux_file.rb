@@ -6,7 +6,7 @@ module Aspera
     class FauxFile
       SCHEME = 'faux'
       # marker for faux file
-      PREFIX = "#{SCHEME}:///"
+      PREFIX = "#{SCHEME}:///".freeze
       # size units, kilo, mega ...
       SIZE_UNITS = %w[k m g t p e].freeze
       private_constant :SCHEME, :PREFIX, :SIZE_UNITS

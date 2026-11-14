@@ -12,7 +12,7 @@ module Aspera
       IBM_CLOUD_TOKEN_URL = 'https://iam.cloud.ibm.com/identity'
       TOKEN_FIELD = 'delegated_refresh_token'
       FASP_INFO_KEYS = %w[ATSEndpoint AccessKey].freeze
-      SERVICE_CREDS_PARAMS = %w[apikey resource_instance_id endpoints]
+      SERVICE_CREDS_PARAMS = %w[apikey resource_instance_id endpoints].freeze
       class << self
         def parameters_from_svc_credentials(service_credentials, bucket_region)
           # check necessary contents

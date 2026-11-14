@@ -657,7 +657,7 @@ module Aspera
           $stdout = StringIO.new
           $stderr = StringIO.new
           value = opts.with_interactive { opts.get_option(:username, mandatory: true) }
-          out, err = $stdout.string, $stderr.string # rubocop:disable Style/ParallelAssignment
+          out, err = $stdout.string, $stderr.string
           $stdin, $stdout, $stderr = saved
           expect(value).to(eq('john'))
           expect(out).to(be_empty)

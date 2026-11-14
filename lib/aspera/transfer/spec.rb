@@ -38,7 +38,7 @@ module Aspera
           'attrs'       => 'attributes',
           'sparse_csum' => 'sparse_checksum',
           'full_csum'   => 'full_checksum'
-        }
+        }.freeze
         private_constant :POLICY_FIX
         # translate upload/download to send/receive
         def transfer_type_to_direction(transfer_type)

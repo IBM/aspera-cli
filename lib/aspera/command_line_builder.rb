@@ -232,7 +232,7 @@ module Aspera
       else
         # transform into command line option with value
         # parameter_value=parameter_value.to_s if parameter_value.is_a?(Integer)
-        parameter_value = [parameter_value] unless parameter_value.is_a?(Array)
+        parameter_value = Array(parameter_value)
         # if transfer_spec value is an array, applies option many times
         parameter_value.each { |v| add_command_line_options(properties['x-cli-option'], v) }
       end

@@ -124,7 +124,7 @@ module Aspera
             'server must have: asnodeadmin -mu <node user> --acl-add=internal --internal'
           ]
         }
-      ]
+      ].freeze
       private_constant :ERROR_HINTS
 
       class << self
@@ -135,7 +135,7 @@ module Aspera
             next unless error.is_a?(hint[:exception])
             message = error.message
             matches = hint[:match]
-            matches = [matches] unless matches.is_a?(Array)
+            matches = Array(matches)
             matches.each do |m|
               case m
               when String

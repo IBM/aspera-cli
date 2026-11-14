@@ -13,7 +13,7 @@ module Aspera
   module Agent
     class Connect < Base
       # try twice the main init url in sequence
-      CONNECT_START_URIS = ['fasp://initialize', 'fasp://initialize', 'aspera-drive://initialize', 'https://test-connect.ibmaspera.com/']
+      CONNECT_START_URIS = ['fasp://initialize', 'fasp://initialize', 'aspera-drive://initialize', 'https://test-connect.ibmaspera.com/'].freeze
       # delay between each try to start connect
       SLEEP_SEC_BETWEEN_RETRY = 5
       private_constant :CONNECT_START_URIS, :SLEEP_SEC_BETWEEN_RETRY

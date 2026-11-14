@@ -362,7 +362,7 @@ module Aspera
       CONF_SCHEMA = CommandLineBuilder.read_schema(Schema::Registry::SYNC_CONF)
       CMDLINE_PARAMS_KEYS = %w[instance sessions].freeze
       ASYNC_ADMIN_EXECUTABLE = 'asyncadmin'
-      PRIVATE_FOLDER = "#{Environment.instance.os.eql?(Environment::OS_WINDOWS) ? '~' : '.'}private-asp"
+      PRIVATE_FOLDER = "#{Environment.instance.os.eql?(Environment::OS_WINDOWS) ? '~' : '.'}private-asp".freeze
       ASYNC_DB = 'snap.db'
       PARAM_KEYS = %w[local sessions].freeze
 

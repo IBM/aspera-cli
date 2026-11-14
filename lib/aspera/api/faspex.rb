@@ -94,7 +94,7 @@ module Aspera
       # states for jobs not in final state
       JOB_RUNNING = %w[queued working].freeze
       PATH_STANDARD_ROOT = '/aspera/faspex'
-      PATH_API_DETECT = "#{PATH_API_V5}/#{PATH_HEALTH}"
+      PATH_API_DETECT = "#{PATH_API_V5}/#{PATH_HEALTH}".freeze
       HEADER_X_NEXT_ITER_TOKEN = 'X-Aspera-Next-Iteration-Token'
       HEADER_FASPEX_VERSION = 'X-IBM-Aspera'
       EMAIL_NOTIF_LIST = %w[
@@ -125,7 +125,7 @@ module Aspera
         sync_failed
         account_exist
         mfa_code
-      ]
+      ].freeze
       class << self
         # @return [Boolean] true if the URL is a public link
         def public_link?(url)

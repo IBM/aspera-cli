@@ -283,7 +283,7 @@ module Aspera
       ].freeze
       # Management port start message
       PROT_VERSION = '2'
-      MGT_HEADER = "FASPMGR #{PROT_VERSION}"
+      MGT_HEADER = "FASPMGR #{PROT_VERSION}".freeze
       # empty line is separator to end event information
       MGT_FRAME_SEPARATOR = ''
       # fields description for JSON generation
