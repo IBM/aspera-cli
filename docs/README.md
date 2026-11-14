@@ -982,7 +982,7 @@ Supported platforms are listed in the [Release Notes](https://developer.ibm.com/
 
 If the embedded method is not used, the following packages are also suitable:
 
-- IBM Aspera Connect Client (Free)
+- IBM Aspera Connect Client (Free, to be deprecated in 2027, use IBM Aspera for Desktop)
 - IBM Aspera Desktop Client (Free)
 - IBM Aspera for Desktop (Free)
 - IBM Aspera High Speed Transfer Server (Licensed)
@@ -4601,7 +4601,7 @@ The following agents are supported and selected with option `transfer`:
 |----------|----------|-------------------------------|
 | [`direct`](#agent-direct)          | local    | direct execution of `ascp`    |
 | [`transferd`](#agent-transfer-daemon) | local    | Aspera Transfer Daemon        |
-| [`connect`](#agent-connect-client) | local    | Aspera Connect Client         |
+| [`connect`](#agent-connect-client) | local    | Aspera Connect Client (to be deprecated in 2027, use `desktop`) |
 | [`desktop`](#agent-desktop-client) | local    | Aspera for Desktop            |
 | [`node`](#agent-node-api)          | remote   | Aspera Transfer Node          |
 | [`httpgw`](#agent-http-gateway)    | remote   | Aspera HTTP Gateway           |
@@ -5083,6 +5083,10 @@ Parameters provided in option `transfer` are:
 | `username` | `String` | Node API user or access key.<br/>Required. |
 
 Like any other option, `transfer` can get its value from a pre-configured [Option Preset](#option-preset):
+> **Note:** IBM Aspera Connect will be deprecated in 2027.
+> Use [IBM Aspera for Desktop](#agent-desktop-client) instead: `--transfer=desktop`.
+> `ascli` displays a warning when the `connect` agent is used.
+
 
 ```shell
 --transfer=@preset:<PRESET_NAME> --transfer.agent=node

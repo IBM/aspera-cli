@@ -2,6 +2,7 @@
 
 require_relative 'base'
 require_relative '../products/connect'
+require_relative '../products/desktop'
 require_relative '../products/other'
 require_relative '../rest'
 require_relative '../environment'
@@ -16,7 +17,9 @@ module Aspera
       CONNECT_START_URIS = ['fasp://initialize', 'fasp://initialize', 'aspera-drive://initialize', 'https://test-connect.ibmaspera.com/'].freeze
       # delay between each try to start connect
       SLEEP_SEC_BETWEEN_RETRY = 5
-      private_constant :CONNECT_START_URIS, :SLEEP_SEC_BETWEEN_RETRY
+      # Connect is end of life in 2027, replaced by Aspera for Desktop
+      DEPRECATION_MESSAGE = "#{Products::Connect::APP_NAME} will be deprecated in 2027: use #{Products::Desktop::APP_NAME} instead (--transfer=desktop)".freeze
+      private_constant :CONNECT_START_URIS, :SLEEP_SEC_BETWEEN_RETRY, :DEPRECATION_MESSAGE
 
       class << self
         # Re-query a previously started transfer via the Connect REST API.
@@ -64,6 +67,7 @@ module Aspera
 
       def initialize(**base_options)
         super
+        Log.log.warn { DEPRECATION_MESSAGE.red }
         @transfer_id = nil
         @connect_settings = {
           'app_id' => SecureRandom.uuid
