@@ -239,8 +239,10 @@ module Aspera
         return ascp_data
       end
 
-      # @return [String] the url for download of SDK archive for the given platform and version
-      def sdk_url_for_platform(platform: nil, version: nil)
+      # @param platform [nil, String] Platform, if nil: current one
+      # @param version  [nil, String] Version, if nil: latest
+      # @return [Hash] the entry of SDK locations for the given platform and version
+      def sdk_location_for_platform(platform: nil, version: nil)
         all_locations = sdk_locations
         platform = Environment.instance.architecture if platform.nil?
         locations = all_locations.select { |l| l['platform'].eql?(platform) }
@@ -248,7 +250,20 @@ module Aspera
         version = locations.max_by { |entry| Gem::Version.new(entry['version']) }['version'] if version.nil?
         info = locations.select { |entry| entry['version'].eql?(version) }
         Aspera.assert(!info.empty?) { "No such version: #{version} for #{platform}" }
-        return info.first['url']
+        return info.first
+      end
+
+      # @return [String] the url for download of SDK archive for the given platform and version
+      def sdk_url_for_platform(platform: nil, version: nil)
+        return sdk_location_for_platform(platform: platform, version: version)['url']
+      end
+
+      # @return [String, nil] Version of the SDK installed in the SDK folder (from its meta data file), or nil if not installed
+      def installed_sdk_version
+        return unless File.exist?(sdk_exe_path(:transferd))
+        meta_data_file = File.join(Products::Transferd.sdk_directory, Products::Other::INFO_META_FILE)
+        return unless File.exist?(meta_data_file)
+        return File.read(meta_data_file).scan(%r{<version>(.*?)</version>}).flatten.first
       end
 
       # @param url         [String] URL or filename used to detect archive format
