@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative 'log'
-
 module Aspera
   # Generic error in gem
   class Error < StandardError
@@ -32,6 +30,7 @@ module Aspera
     # @return [nil]
     def report_error(type, message)
       if type.is_a?(Symbol)
+        require_relative 'log'
         Log.log.send(type, message)
       else
         raise type, message
