@@ -105,7 +105,7 @@ SPECIAL_TAGS = (EXPECTED_FAIL + %i[save_output wait_value tmp_conf noblock]).fre
 def path_file_pair_list
   PATH_FILE_PAIR_LIST2.write([
     PATH_TST_ASC_LCL,
-    File.join(conf_data('server.inside_folder'), 'other_name')
+    File.join(conf_data('server1_info.inside_folder'), 'other_name')
   ].join("\n")) unless PATH_FILE_PAIR_LIST2.exist?
   PATH_FILE_PAIR_LIST2
 end
@@ -414,14 +414,3 @@ namespace TEST_CASE_NS do
     end
   end
 end
-
-# TODO: separately in rake task
-# asession:
-#	set -x&&\
-#	remote_host=$$( config preset get server_user url)&&\
-#	remote_host=$${remote_host#*://}&&\
-#	remote_port=$${remote_host#*:}&&\
-#	remote_host=$${remote_host%:*}&&\
-#	remote_user=$$( config preset get server_user username)&&\
-#	remote_pass=$$( config preset get server_user password)&&\
-#	$(DIR_BIN)asession @json:@extend:{"loglevel":"info","spec":{"remote_host":"'"$${remote_host}"'","remote_user":"'"$${remote_user}"'","ssh_port":'$${remote_port}',"remote_password":"'"$${remote_pass}"'","direction":"receive","destination_root":"$(TMP)","resume_policy":"none","paths":[{"source":"/aspera-test-dir-large/100MB"}]}}
