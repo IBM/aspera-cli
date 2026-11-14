@@ -35,6 +35,20 @@ def secret(name)
   path.read
 end
 
+# Send a package through the Faspex 4 gateway (`POST /aspera/faspex/send`), as a Faspex 4 client does.
+# Called in `pre` of tests, the transfer spec is then used by a transfer command (e.g. `server upload --ts=...`).
+# @param url        [String] Base URL of the gateway (Faspex 4 API)
+# @param recipients [Array<String>] Recipients of the package
+# @param title      [String] Title of the package
+# @return [Hash] Transfer spec: the first of `xfer_sessions` of the response
+def faspex4_send_transfer_spec(url:, recipients:, title:)
+  Aspera::Rest::Parameters.instance.session_cb = ->(s){s.verify_mode = OpenSSL::SSL::VERIFY_NONE}
+  body = {delivery: {title: title, note: '', recipients: recipients}}
+  response = Aspera::Rest::Client.new(base_url: url).call(operation: 'POST', subpath: 'send', content_type: Aspera::Mime::JSON, body: body, ret: :data)
+  raise 'Expected one transfer spec in xfer_sessions' unless response['xfer_sessions'].is_a?(Array) && response['xfer_sessions'].size == 1
+  response['xfer_sessions'].first
+end
+
 MCP_REDIRECT_URI = 'http://127.0.0.1:19999/cb'
 MCP_INIT_PARAMS  = {protocolVersion: '2024-11-05', capabilities: {}, clientInfo: {name: 'test', version: '0'}}.freeze
 # Protocol version of stateless requests: version and client capabilities in `_meta` of each request

@@ -2327,24 +2327,21 @@ aoc_gateway_set_faspex_url:
     - "@:"
     - url=https://localhost:12347/aspera/faspex
 faspex_send_via_aoc_gateway:
-  description: Access faspex directly through configured gateway
+  description: Create a package through the AoC gateway (Faspex 4 API), then upload a file with the returned transfer spec
   depends_on:
     - aoc_gateway_set_faspex_url
   tags:
     - nodoc
     - fx_gateway
-  pre: generated_secret(:dummy)
+  pre: |
+    transfer_spec = faspex4_send_transfer_spec(url: 'https://localhost:12347/aspera/faspex', recipients: ['laurent.martin.aspera@fr.ibm.com'], title: 'gateway aoc')
+    (TMP / 'fxgw_ts.json').write(JSON.generate(transfer_spec))
   args:
-    - -N
-    - faspex
-    - --url=https://localhost:12347/aspera/faspex
-    - --username=_unused_
-    - --password=$(secret :dummy)
-    - --warn-insecure=yes
-    - package
-    - send
-    - --delivery-info=@json:{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}
-    - faux:///test1?1m
+    - server
+    - upload
+    - --url=https://eudemo.asperademo.com:443
+    - --ts=@json:@file:$(TMP / 'fxgw_ts.json')
+    - faux:///test1?1k
   post: t.stop_process :aoc_gateway_set_faspex_url
 aoc_user_suite:
   instantiate: awa_user_suite
