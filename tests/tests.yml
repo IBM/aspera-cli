@@ -1596,12 +1596,12 @@ nd_xfer_upload_bg:
     - --ts=@json:{"target_rate_kbps":1000,"resume_policy":"none"}
     - faux:///big-file?10G
     - --progress=no
-  post: sleep 5
 nd_xfer_active_id:
   depends_on:
     - nd_xfer_upload_bg
   tags:
     - save_output
+    - wait_value
     - nodoc
   args:
     - node
@@ -2879,9 +2879,21 @@ aoc_file_upload_video:
     - --src-type=pair
     - "@preset:file.mpg"
     - video_file.mpg
-  post: |
-    puts 'waiting for preview'
-    sleep 60
+aoc_file_wait_video_preview:
+  tags:
+    - nodoc
+    - save_output
+    - wait_value
+  depends_on:
+    - aoc_file_upload_video
+  template: awa_user_suite
+  args:
+    - files
+    - show
+    - "@extend:@preset:awa.test_folder@/video_file.mpg"
+    - --fields=preview
+    - --format=csv
+    - --out.level=data
 aoc_files_upload_pair:
   tags:
     - nodoc
@@ -2907,7 +2919,7 @@ aoc_files_permission_list:
 aoc_files_thumbnail_video:
   $comment: no preview
   depends_on:
-    - aoc_file_upload_video
+    - aoc_file_wait_video_preview
   tags:
     - flaky
   template: awa_user_suite
@@ -2919,7 +2931,7 @@ aoc_files_thumbnail_text_double:
   tags:
     - rmagick
   depends_on:
-    - aoc_file_upload_video
+    - aoc_file_wait_video_preview
   template: awa_user_suite
   args:
     - files
@@ -2932,7 +2944,7 @@ aoc_files_thumbnail_text_single:
     - nodoc
     - rmagick
   depends_on:
-    - aoc_file_upload_video
+    - aoc_file_wait_video_preview
   template: awa_user_suite
   args:
     - files
@@ -2947,7 +2959,7 @@ aoc_files_thumbnail_video_no_term:
   tags:
     - rmagick
   depends_on:
-    - aoc_file_upload_video
+    - aoc_file_wait_video_preview
   template: awa_user_suite
   args:
     - files
@@ -4303,8 +4315,6 @@ orch_plugin_spec_section:
     - inputs
 orch_wf_list:
   args:
-#    - -N
-#    - -Porch_key
     - orchestrator
     - workflow
     - list
@@ -4530,7 +4540,6 @@ orch_workorder_output:
 orch_wf_start_sleep:
   tags:
     - save_output
-  post: sleep 3
   args:
     - orchestrator
     - workflow
@@ -4540,6 +4549,7 @@ orch_wf_start_sleep:
 orch_workstep_id:
   tags:
     - save_output
+    - wait_value
   depends_on:
     - orch_wf_start_sleep
   args:
