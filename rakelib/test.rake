@@ -388,6 +388,12 @@ namespace TEST_CASE_NS do
         log.info("[OK]   #{name}")
         break
       rescue RuntimeError => e
+        if tags[:wait_value] && wait_attempts < 60
+          wait_attempts += 1
+          log.info("Retry #{wait_attempts} after error: #{e.message}")
+          sleep(5)
+          redo
+        end
         STATES[name] = 'failed'
         expected_fails = EXPECTED_FAIL.select { |tag| tags[tag] }
         if expected_fails.empty?

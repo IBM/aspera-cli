@@ -777,7 +777,7 @@ module Aspera
         # access_keys > do > show
         def action_access_keys_do_show(path:, do_root_file_id:, **)
           apifid = apifid_from_path(do_root_file_id, path)
-          Result::SingleObject.new(apifid.node_api.read("files/#{apifid.file_id}"))
+          Result::SingleObject.new(apifid.node_api.read("files/#{apifid.file_id}", headers: Api::Node.add_cache_control))
         end
 
         # access_keys > do > modify
@@ -790,7 +790,7 @@ module Aspera
         # access_keys > do > thumbnail
         def action_access_keys_do_thumbnail(path:, do_root_file_id:, **)
           apifid = apifid_from_path(do_root_file_id, path)
-          Result::Image.new(apifid.node_api.read("files/#{apifid.file_id}/preview", headers: {'Accept' => 'image/png'}, ret: :resp).body)
+          Result::Image.new(apifid.node_api.read("files/#{apifid.file_id}/preview", headers: Api::Node.add_cache_control({'Accept' => 'image/png'}), ret: :resp).body)
         end
 
         # access_keys > do > rename

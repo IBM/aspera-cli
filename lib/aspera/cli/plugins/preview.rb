@@ -239,16 +239,21 @@ module Aspera
           # original_mtime=DateTime.parse(entry['modified_time'])
           # Local directory where previews are generated before being uploaded back.
           local_entry_preview_dir = File.join(@tmp_folder, entry_preview_folder_name(entry))
-          file_info = @api_node.read("files/#{entry['id']}")
-          # TODO: This does not work with Gen4 because preview folders are hidden by the API.
-          # this_preview_folder_entries=@api_node.read_folder_content(@previews_folder_entry['id'],{name: @entry_preview_folder_name})
-          # TODO: Query Gen3 APIs to list preview files and retrieve timestamps.
+          file_info = @api_node.read("files/#{entry['id']}", headers: Api::Node.add_cache_control)
+          # Check if preview exists either from file_info or by checking preview endpoint
+          preview_exist = file_info.key?('preview')
+          unless preview_exist
+            begin
+              @api_node.read("files/#{entry['id']}/preview", headers: {'Accept' => 'image/png'})
+              preview_exist = true
+            rescue StandardError
+              preview_exist = false
+            end
+          end
           gen_infos.each do |gen_info|
             gen_info[:src] = local_original_filepath
             gen_info[:dst] = File.join(local_entry_preview_dir, gen_info[:base_dest])
-            # TODO: Reuse `this_preview_folder_entries` once preview folders become visible.
-            gen_info[:preview_exist] = file_info.key?('preview')
-            # TODO: Compare source and preview modification times when remote timestamps are available.
+            gen_info[:preview_exist] = preview_exist
             gen_info[:preview_newer_than_original] = gen_info[:preview_exist]
           end
           return local_entry_preview_dir

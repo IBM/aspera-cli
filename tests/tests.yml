@@ -2886,11 +2886,9 @@ aoc_file_wait_video_preview:
   template: awa_user_suite
   args:
     - files
-    - show
+    - thumbnail
     - "@extend:@preset:awa.test_folder@/video_file.mpg"
-    - --fields=preview
-    - --format=csv
-    - --out.level=data
+    - --node-api.cache=no
 aoc_files_upload_pair:
   tags:
     - nodoc
@@ -2914,11 +2912,8 @@ aoc_files_permission_list:
     - "@preset:awa.test_folder"
     - list
 aoc_files_thumbnail_video:
-  $comment: no preview
   depends_on:
     - aoc_file_wait_video_preview
-  tags:
-    - flaky
   template: awa_user_suite
   args:
     - files
