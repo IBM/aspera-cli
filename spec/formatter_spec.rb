@@ -2,11 +2,11 @@
 
 # Unit tests for Aspera::Cli::Formatter option handling — no server, no config file needed.
 
+require_relative '../lib/aspera/cli/parser'
+require_relative '../lib/aspera/cli/formatter'
+require_relative '../lib/aspera/cli/result'
 require 'securerandom'
 require 'stringio'
-require 'aspera/cli/parser'
-require 'aspera/cli/formatter'
-require 'aspera/cli/result'
 
 module Aspera
   module Cli

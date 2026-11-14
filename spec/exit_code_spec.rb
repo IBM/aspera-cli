@@ -2,9 +2,9 @@
 
 # Exit status of `ascli`, by category of error.
 
-require 'aspera/cli/error'
-require 'aspera/cli/info'
-require 'aspera/rest/call_error'
+require_relative '../lib/aspera/cli/error'
+require_relative '../lib/aspera/cli/info'
+require_relative '../lib/aspera/rest/call_error'
 require 'net/http'
 require 'open3'
 require 'rbconfig'

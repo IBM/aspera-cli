@@ -2,10 +2,10 @@
 
 # Plugins are code: a file of a folder that a client can write is not loaded when the security level is not low.
 
+require_relative '../lib/aspera/cli/plugins/factory'
+require_relative '../lib/aspera/cli/security'
 require 'tmpdir'
 require 'fileutils'
-require 'aspera/cli/plugins/factory'
-require 'aspera/cli/security'
 
 module Aspera
   module Cli

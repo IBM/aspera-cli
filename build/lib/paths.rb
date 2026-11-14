@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
+require_relative '../../lib/aspera/cli/info'
+require_relative '../../lib/aspera/cli/version'
 require 'pathname'
-require 'aspera/cli/info'
-require 'aspera/cli/version'
 
 # Path constants for the project layout (build scripts, docs, tests).
 # All paths are relative to the repository root.

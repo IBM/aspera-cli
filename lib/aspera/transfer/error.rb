@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/ascp/management'
+require_relative '../ascp/management'
 
 module Aspera
   module Transfer

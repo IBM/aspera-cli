@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'aspera/sync/operations'
-require 'aspera/assert'
-require 'aspera/environment'
+require_relative '../sync/operations'
+require_relative '../assert'
+require_relative '../environment'
 require 'pathname'
 
 module Aspera
@@ -47,14 +47,14 @@ module Aspera
             command(
               :meta, description: 'Show sync session metadata', arguments: PATH_AND_INFO_ARGS,
               action: lambda do |path:, sync_info: {}, **|
-                require 'aspera/sync/database'
+                require_relative '../sync/database'
                 Result::SingleObject.new(db_from_args(path: path, sync_info: sync_info).meta(options.get_option(:sql)))
               end
             )
             command(
               :counters, description: 'Show sync counters', arguments: PATH_AND_INFO_ARGS,
               action: lambda do |path:, sync_info: {}, **|
-                require 'aspera/sync/database'
+                require_relative '../sync/database'
                 Result::SingleObject.new(db_from_args(path: path, sync_info: sync_info).counters(options.get_option(:sql)))
               end
             )
@@ -62,14 +62,14 @@ module Aspera
             command(
               :overview, description: 'Show sync database overview', arguments: PATH_AND_INFO_ARGS,
               action: lambda do |path:, sync_info: {}, **|
-                require 'aspera/sync/database'
+                require_relative '../sync/database'
                 Result::ObjectList.new(db_from_args(path: path, sync_info: sync_info).overview, fields: %w[table name type])
               end
             )
             command(
               :query, description: 'Execute a raw SQL query', arguments: PATH_AND_INFO_ARGS,
               action: lambda do |path:, sync_info: {}, **|
-                require 'aspera/sync/database'
+                require_relative '../sync/database'
                 Result.auto(db_from_args(path: path, sync_info: sync_info).execute(options.get_option(:sql, mandatory: true)))
               end
             )
@@ -154,7 +154,7 @@ module Aspera
       end
 
       def action_sync_admin_file_info(path:, sync_info: {}, **)
-        require 'aspera/sync/database'
+        require_relative '../sync/database'
         result = db_from_args(path: path, sync_info: sync_info).file_info(options.get_option(:sql))
         result.each do |r|
           r['sstate'] = SyncActions::STATE_STR[r['state']] if r['state']

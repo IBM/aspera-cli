@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
+require_relative '../../lib/aspera/transfer/faux_file'
+require_relative '../../lib/aspera/transfer/error'
 require 'bundler/setup'
-require 'aspera/transfer/faux_file'
-require 'aspera/transfer/error'
 
 module Aspera
   module Transfer

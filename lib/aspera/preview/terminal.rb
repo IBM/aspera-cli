@@ -2,11 +2,11 @@
 
 # cspell:words MAGICKCORE ITERM
 
+require_relative '../log'
+require_relative '../environment'
+require_relative '../rainbow'
 require 'base64'
 require 'io/console'
-require 'aspera/log'
-require 'aspera/environment'
-require 'aspera/rainbow'
 using Rainbow
 
 module Aspera

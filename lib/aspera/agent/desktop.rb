@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-require 'aspera/agent/base'
-require 'aspera/rest'
-require 'aspera/environment'
-require 'aspera/json_rpc/client'
-require 'aspera/products/desktop'
-require 'aspera/transfer/spec'
+require_relative 'base'
+require_relative '../rest'
+require_relative '../environment'
+require_relative '../json_rpc/client'
+require_relative '../products/desktop'
+require_relative '../transfer/spec'
 require 'securerandom'
 
 module Aspera

@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require 'aspera/web_auth/server'
-require 'aspera/web_auth/paste'
-require 'aspera/environment'
-require 'aspera/log'
+require_relative 'server'
+require_relative 'paste'
+require_relative '../environment'
+require_relative '../log'
 
 module Aspera
   module WebAuth

@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
+require_relative '../../lib/aspera/environment'
+require_relative '../../lib/aspera/log'
+require_relative '../../lib/aspera/cli/plugins/factory'
+require_relative '../../lib/aspera/cli/plugins/config'
+require_relative 'paths'
+require_relative 'doc_helper'
 require 'json'
 require 'shellwords'
 require 'tmpdir'
-require 'aspera/environment'
-require 'aspera/log'
-require 'aspera/cli/plugins/factory'
-require 'aspera/cli/plugins/config'
-require_relative 'paths'
-require_relative 'doc_helper'
 
 # Check hand-written command examples of the manual template against the commands and options of plugins.
 # Checked: code lines starting with the command (after an optional prompt), commands after a pipe or in `$(...)`,

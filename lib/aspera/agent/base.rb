@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'aspera/assert'
-require 'aspera/transfer/result'
+require_relative '../assert'
+require_relative '../transfer/result'
 module Aspera
   module Agent
     # Base class for transfer agents

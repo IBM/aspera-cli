@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
+require_relative '../lib/aspera/temp_file_manager'
 require 'bundler/setup'
-require 'aspera/temp_file_manager'
 require 'securerandom'
 require 'tmpdir'
 

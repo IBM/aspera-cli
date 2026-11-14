@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'aspera/assert'
-require 'aspera/log'
+require_relative 'assert'
+require_relative 'log'
 require 'singleton'
 require 'fileutils'
 require 'etc'

@@ -9,9 +9,9 @@ rescue LoadError => e
   RSpec.describe('Aspera::Secret::Store::Keeper') { it('requires gem keeper_secrets_manager') { skip(e.message) } }
   return
 end
+require_relative '../../../lib/aspera/secret/store/factory'
+require_relative '../../../lib/aspera/secret/store/keeper'
 require 'securerandom'
-require 'aspera/secret/store/factory'
-require 'aspera/secret/store/keeper'
 
 RSpec.describe(Aspera::Secret::Store::Keeper) do
   let(:password) { SecureRandom.alphanumeric(12) }

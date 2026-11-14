@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/secret/reference'
-require 'aspera/secret/store/base'
+require_relative '../../log'
+require_relative '../../assert'
+require_relative '../reference'
+require_relative 'base'
 require 'logger'
 begin
   require 'keeper_secrets_manager'

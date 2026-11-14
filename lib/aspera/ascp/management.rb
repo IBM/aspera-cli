@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'aspera/assert'
-require 'aspera/log'
-require 'aspera/string_ext'
+require_relative '../assert'
+require_relative '../log'
+require_relative '../string_ext'
 
 module Aspera
   module Ascp

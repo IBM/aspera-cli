@@ -42,8 +42,8 @@ module MCP
   end
 end
 
-require 'aspera/cli/mcp/tool'
-require 'aspera/cli/result'
+require_relative '../../lib/aspera/cli/mcp/tool'
+require_relative '../../lib/aspera/cli/result'
 require 'securerandom'
 require 'uri'
 

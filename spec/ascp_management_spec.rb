@@ -2,8 +2,8 @@
 
 # Unit tests for Aspera::Ascp::Management: management port messages of `ascp`.
 
+require_relative '../lib/aspera/ascp/management'
 require 'bundler/setup'
-require 'aspera/ascp/management'
 
 RSpec.describe(Aspera::Ascp::Management) do
   describe 'ERRORS' do

@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require 'aspera/environment'
-require 'aspera/formatter_interface'
-require 'aspera/markdown'
-require 'aspera/assert'
-require 'aspera/rainbow'
+require_relative '../environment'
+require_relative '../formatter_interface'
+require_relative '../markdown'
+require_relative '../assert'
+require_relative '../rainbow'
 using Rainbow
 
 module Aspera

@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
+require_relative '../log'
+require_relative '../environment'
 require 'singleton'
-require 'aspera/log'
-require 'aspera/environment'
 module Aspera
   module Agent
     # Factory for Agents

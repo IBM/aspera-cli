@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 # cspell:ignore smode errstr zstr zmode zuid zgid zctime zatime zmtime fcount dcount btype blist ascmdtypes
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/rainbow'
+require_relative 'log'
+require_relative 'assert'
+require_relative 'rainbow'
 using Rainbow
 
 module Aspera

@@ -1,20 +1,20 @@
 # frozen_string_literal: true
 
-require 'aspera/uri_reader'
-require 'aspera/environment'
-require 'aspera/yaml'
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/secret/hider'
-require 'aspera/cli/error'
-require 'aspera/cli/prompt'
-require 'aspera/cli/security'
+require_relative '../uri_reader'
+require_relative '../environment'
+require_relative '../yaml'
+require_relative '../log'
+require_relative '../assert'
+require_relative '../secret/hider'
+require_relative 'error'
+require_relative 'prompt'
+require_relative 'security'
+require_relative '../rainbow'
 require 'json'
 require 'base64'
 require 'zlib'
 require 'csv'
 require 'singleton'
-require 'aspera/rainbow'
 using Rainbow
 
 module Aspera
@@ -81,7 +81,7 @@ module Aspera
         def read_secret(prompt)
           prompt = 'secret' if prompt.empty?
           return Prompt.prompt_user_input(prompt, sensitive: true) unless Environment.instance.url_method.eql?(:graphical)
-          require 'aspera/cli/web_secret'
+          require_relative 'web_secret'
           WebSecret.ask(prompt)
         end
 

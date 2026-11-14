@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
+require_relative '../../assert'
+require_relative '../error'
+require_relative '../security'
+require_relative '../../environment'
+require_relative '../../string_ext'
 require 'singleton'
-require 'aspera/assert'
-require 'aspera/cli/error'
-require 'aspera/cli/security'
-require 'aspera/environment'
-require 'aspera/string_ext'
 
 module Aspera
   module Cli

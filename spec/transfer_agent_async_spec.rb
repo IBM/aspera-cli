@@ -4,15 +4,15 @@
 # The agent_instance is fully doubled; no real transfer is started.
 # PersistencyFolder uses a temp directory.
 
+require_relative '../lib/aspera/hash_ext'
+require_relative '../lib/aspera/persistency_folder'
+require_relative '../lib/aspera/cli/async_transfer_store'
+require_relative '../lib/aspera/cli/error'
+require_relative '../lib/aspera/cli/transfer_agent'
+require_relative '../lib/aspera/transfer/result'
 require 'bundler/setup'
 require 'tmpdir'
 require 'securerandom'
-require 'aspera/hash_ext'
-require 'aspera/persistency_folder'
-require 'aspera/cli/async_transfer_store'
-require 'aspera/cli/error'
-require 'aspera/cli/transfer_agent'
-require 'aspera/transfer/result'
 
 module Aspera
   module Cli
@@ -303,7 +303,7 @@ module Aspera
       # ── Agent::Direct.transfer_status ───────────────────────────────────────
 
       describe 'Agent::Direct.transfer_status' do
-        before { require 'aspera/agent/direct' }
+        before { require_relative '../lib/aspera/agent/direct' }
 
         it 'returns unknown when _agent_ref is nil' do
           result = Aspera::Agent::Direct.transfer_status('some-job', {})
@@ -356,7 +356,7 @@ module Aspera
       # ── Agent::Httpgw.transfer_status ───────────────────────────────────────
 
       describe 'Agent::Httpgw.transfer_status' do
-        before { require 'aspera/agent/httpgw' }
+        before { require_relative '../lib/aspera/agent/httpgw' }
 
         it 'returns unknown when _agent_ref is nil' do
           result = Aspera::Agent::Httpgw.transfer_status('some-job', {})
@@ -405,7 +405,7 @@ module Aspera
       # ── Runner.result_transfer with typed Transfer::Result ──────────────────
 
       describe 'Runner.result_transfer' do
-        before { require 'aspera/cli/runner' }
+        before { require_relative '../lib/aspera/cli/runner' }
 
         it 'returns a SingleObject for Transfer::Result::Async' do
           async_result = Aspera::Transfer::Result.async(job_id: 'abc-123')
@@ -428,7 +428,7 @@ module Aspera
       # ── Runner.result_object_transfer: created object (e.g. package) and its transfer ──
 
       describe 'Runner.result_object_transfer' do
-        before { require 'aspera/cli/runner' }
+        before { require_relative '../lib/aspera/cli/runner' }
 
         let(:package) { {'id' => '3909', 'title' => 'test'} }
 

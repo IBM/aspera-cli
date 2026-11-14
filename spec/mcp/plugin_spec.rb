@@ -55,8 +55,8 @@ unless defined?(MCP::Server)
   end
 end
 
-require 'aspera/cli/plugins/mcp'
-require 'aspera/oauth/server/pkce'
+require_relative '../../lib/aspera/cli/plugins/mcp'
+require_relative '../../lib/aspera/oauth/server/pkce'
 require 'securerandom'
 
 RSpec.describe(Aspera::Cli::Plugins::Mcp) do
@@ -84,8 +84,8 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
     end
 
     before do
-      require 'aspera/cli/mcp/tool'
-      require 'aspera/cli/mcp/http_servlet'
+      require_relative '../../lib/aspera/cli/mcp/tool'
+      require_relative '../../lib/aspera/cli/mcp/http_servlet'
       web_server = instance_double(Aspera::WebServerSimple, start: nil)
       allow(web_server).to(receive(:mount)) { |*args| mounted.replace(args) }
       allow(Aspera::WebServerSimple).to(receive(:new)) do |uri, **tls|

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'aspera/assert'
-require 'aspera/environment'
+require_relative 'assert'
+require_relative 'environment'
 require 'uri'
 
 module Aspera

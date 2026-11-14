@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/plugins/basic_auth'
+require_relative 'basic_auth'
 
 module Aspera
   module Cli

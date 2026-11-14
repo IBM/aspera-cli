@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'aspera/assert'
-require 'aspera/secret/hider'
+require_relative '../assert'
+require_relative 'hider'
 require 'uri'
 
 module Aspera

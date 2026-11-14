@@ -1,14 +1,14 @@
 # Rakefile
 # frozen_string_literal: true
 
+require_relative '../lib/aspera/assert'
+require_relative '../lib/aspera/environment'
+require_relative '../lib/aspera/cli/info'
+require_relative '../lib/aspera/cli/version'
 require 'rake'
 require 'fileutils'
 require 'pathname'
 require 'tmpdir'
-require 'aspera/assert'
-require 'aspera/environment'
-require 'aspera/cli/info'
-require 'aspera/cli/version'
 
 require_relative '../build/lib/build_tools'
 include BuildTools

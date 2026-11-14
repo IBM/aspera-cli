@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
 # cspell:words nstore pids throughputs
+require_relative '../../assert'
+require_relative 'rules'
+require_relative 'advice'
+require_relative 'lines'
+require_relative 'session'
 require 'set'
 require 'time'
-require 'aspera/assert'
-require 'aspera/ascp/log_analyzer/rules'
-require 'aspera/ascp/log_analyzer/advice'
-require 'aspera/ascp/log_analyzer/lines'
-require 'aspera/ascp/log_analyzer/session'
 
 module Aspera
   module Ascp

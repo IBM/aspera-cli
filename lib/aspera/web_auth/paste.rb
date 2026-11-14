@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
+require_relative '../assert'
+require_relative '../log'
+require_relative '../cli/prompt'
+require_relative '../cli/info'
+require_relative 'blob'
+require_relative '../rainbow'
 require 'uri'
-require 'aspera/assert'
-require 'aspera/log'
-require 'aspera/cli/prompt'
-require 'aspera/cli/info'
-require 'aspera/web_auth/blob'
-require 'aspera/rainbow'
 using Rainbow
 
 module Aspera

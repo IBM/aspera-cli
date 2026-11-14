@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/preset_actions'
-require 'aspera/cli/vault_actions'
-require 'aspera/cli/result'
-require 'aspera/cli/parser'
-require 'aspera/cli/option_value'
-require 'aspera/cli/security'
-require 'aspera/schema/registry'
-require 'aspera/log'
+require_relative '../lib/aspera/cli/preset_actions'
+require_relative '../lib/aspera/cli/vault_actions'
+require_relative '../lib/aspera/cli/result'
+require_relative '../lib/aspera/cli/parser'
+require_relative '../lib/aspera/cli/option_value'
+require_relative '../lib/aspera/cli/security'
+require_relative '../lib/aspera/schema/registry'
+require_relative '../lib/aspera/log'
 require 'securerandom'
 
 # Minimal host class that includes both mixins, backed by simple test doubles.

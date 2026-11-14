@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'aspera/assert'
-require 'aspera/cli/mailer'
-require 'aspera/cli/secret_finder'
+require_relative '../assert'
+require_relative 'mailer'
+require_relative 'secret_finder'
 
 module Aspera
   module Cli

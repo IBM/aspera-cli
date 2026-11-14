@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require 'aspera/assert'
-require 'aspera/rest'
-require 'aspera/oauth/client/base'
-require 'aspera/rest/list'
+require_relative '../assert'
+require_relative '../rest'
+require_relative '../oauth/client/base'
+require_relative '../rest/list'
 require 'digest'
 
 module Aspera

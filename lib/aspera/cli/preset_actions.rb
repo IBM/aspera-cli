@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require 'aspera/assert'
-require 'aspera/dot_container'
-require 'aspera/secret/hider'
-require 'aspera/cli/security'
-require 'aspera/cli/preset_manager'
+require_relative '../assert'
+require_relative '../dot_container'
+require_relative '../secret/hider'
+require_relative 'security'
+require_relative 'preset_manager'
 
 module Aspera
   module Cli

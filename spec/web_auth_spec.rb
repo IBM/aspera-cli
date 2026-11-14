@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/web_auth/server'
+require_relative '../lib/aspera/web_auth/server'
 
 RSpec.describe(Aspera::WebAuth::Servlet) do
   # Minimal stand-in for WEBrick::HTTPRequest

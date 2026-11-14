@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'aspera/schema/registry'
-require 'aspera/cli/option_types'
-require 'aspera/cli/security'
+require_relative '../schema/registry'
+require_relative 'option_types'
+require_relative 'security'
 
 module Aspera
   module Cli

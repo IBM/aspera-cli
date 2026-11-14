@@ -2,9 +2,9 @@
 
 # Unit tests for the import of an AoC Automation workflow — no server needed.
 
-require 'aspera/cli/context'
-require 'aspera/cli/parser'
-require 'aspera/cli/plugins/aoc'
+require_relative '../lib/aspera/cli/context'
+require_relative '../lib/aspera/cli/parser'
+require_relative '../lib/aspera/cli/plugins/aoc'
 
 module Aspera
   module Cli

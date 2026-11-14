@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
+require_relative 'mime'
+require_relative 'web_server_simple'
 require 'json'
 require 'openssl'
 require 'uri'
 require 'webrick'
-require 'aspera/mime'
-require 'aspera/web_server_simple'
 
 module Aspera
   # Mixin for WEBrick servlets of local web servers: JSON responses, and check of requests that a web page could send.

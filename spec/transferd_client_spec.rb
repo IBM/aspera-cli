@@ -3,12 +3,12 @@
 # Client commands of plugin `transferd` (`info`, `transfers show|cancel`): no daemon and no gem `grpc` required, the client is a fake.
 
 require 'spec_helper'
+require_relative '../lib/aspera/cli/runner'
+require_relative '../lib/aspera/cli/plugins/transferd'
 require 'open3'
 require 'rbconfig'
 require 'tmpdir'
 require 'json'
-require 'aspera/cli/runner'
-require 'aspera/cli/plugins/transferd'
 
 module Aspera
   module Cli
@@ -114,7 +114,7 @@ module Aspera
     RSpec.describe('transferd client without the gem grpc') do
       it 'gives a clear error, only when a client command runs' do
         plugin = Plugins::Transferd.allocate
-        allow(plugin).to(receive(:require).with('aspera/agent/transferd').and_raise(LoadError, 'cannot load such file -- grpc'))
+        allow(plugin).to(receive(:require_relative).with('../../agent/transferd').and_raise(LoadError, 'cannot load such file -- grpc'))
         expect { plugin.send(:daemon_client) }.to(raise_error(Cli::Error, /gem install grpc/))
       end
 

@@ -1,23 +1,23 @@
 # frozen_string_literal: true
 
-require 'aspera/schema/registry'
-require 'aspera/cli/option_declarator'
-require 'aspera/cli/special_values'
-require 'aspera/cli/terminal_formatter'
-require 'aspera/cli/table_fitter'
-require 'aspera/preview/terminal'
-require 'aspera/secret/hider'
-require 'aspera/environment'
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/markdown'
-require 'aspera/dot_container'
+require_relative '../schema/registry'
+require_relative 'option_declarator'
+require_relative 'special_values'
+require_relative 'terminal_formatter'
+require_relative 'table_fitter'
+require_relative '../preview/terminal'
+require_relative '../secret/hider'
+require_relative '../environment'
+require_relative '../log'
+require_relative '../assert'
+require_relative '../markdown'
+require_relative '../dot_container'
+require_relative '../rainbow'
 require 'tty-spinner'
 require 'json'
 require 'yaml'
 require 'pp'
 require 'csv'
-require 'aspera/rainbow'
 using Rainbow
 
 module Aspera
@@ -274,7 +274,7 @@ module Aspera
       # formatter method, eliminating the need for type checking in the formatter.
       # @param result [Result] Result object to display
       def display_results(result)
-        require 'aspera/cli/result'
+        require_relative 'result'
         Aspera.assert_type(result, Cli::Result) { 'result must be a Result object' }
 
         Log.log.debug { "display_results: result class=#{result.class.name}" }

@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require 'aspera/rest/parameters'
-require 'aspera/mime'
-require 'aspera/assert'
-require 'aspera/log'
+require_relative 'parameters'
+require_relative '../mime'
+require_relative '../assert'
+require_relative '../log'
 
 module Aspera
   module Rest

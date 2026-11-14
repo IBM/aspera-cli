@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'aspera/sync/operations'
+require_relative '../lib/aspera/sync/operations'
 
 RSpec.describe(Aspera::Sync::Operations) do
   # `conf` format: `local` at top level, `args` format: `sessions` list

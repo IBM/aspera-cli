@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
+require_relative 'registry'
 require 'singleton'
 require 'json'
-require 'aspera/schema/registry'
 
 module Aspera
   module Schema

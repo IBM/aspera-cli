@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
-require 'aspera/log'
-require 'aspera/assert'
+require_relative 'log'
+require_relative 'assert'
+require_relative 'rainbow'
 require 'rbconfig'
 require 'singleton'
 require 'openssl'
@@ -9,7 +10,6 @@ require 'open3'
 require 'English'
 require 'io/console'
 require 'shellwords'
-require 'aspera/rainbow'
 using Rainbow
 
 # cspell:words bccwin conhost Cmder

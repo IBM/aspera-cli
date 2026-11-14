@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'aspera/cli/option_declarator'
-require 'aspera/cli/parser'
+require_relative '../lib/aspera/cli/option_declarator'
+require_relative '../lib/aspera/cli/parser'
 
 RSpec.describe(Aspera::Cli::OptionDeclarator) do
   let(:dummy_class) do

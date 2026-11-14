@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
+require_relative '../lib/aspera/transfer/result'
 require 'bundler/setup'
-require 'aspera/transfer/result'
 
 RSpec.describe(Aspera::Transfer::Result) do
   describe '.success' do

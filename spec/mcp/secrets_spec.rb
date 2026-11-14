@@ -16,7 +16,7 @@ unless defined?(MCP::Server::InputRequiredResult)
   end
 end
 
-require 'aspera/cli/mcp/secrets'
+require_relative '../../lib/aspera/cli/mcp/secrets'
 require 'json'
 require 'uri'
 require 'securerandom'

@@ -3,7 +3,7 @@
 # Unit tests for Aspera::Agent::Direct: progress events from `ascp` management events.
 # Management events are excerpts of actual transfers.
 
-require 'aspera/agent/direct'
+require_relative '../lib/aspera/agent/direct'
 
 RSpec.describe(Aspera::Agent::Direct) do
   let(:events) { [] }

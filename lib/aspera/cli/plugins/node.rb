@@ -1,18 +1,18 @@
 # frozen_string_literal: true
 
 # cspell:ignore asperabrowserurl
-require 'aspera/schema/registry'
-require 'aspera/cli/plugins/basic_auth'
-require 'aspera/cli/sync_actions'
-require 'aspera/cli/special_values'
-require 'aspera/transfer/spec'
-require 'aspera/nagios'
-require 'aspera/hash_ext'
-require 'aspera/id_generator'
-require 'aspera/api/node'
-require 'aspera/oauth/client/factory'
-require 'aspera/rest/list'
-require 'aspera/assert'
+require_relative '../../schema/registry'
+require_relative 'basic_auth'
+require_relative '../sync_actions'
+require_relative '../special_values'
+require_relative '../../transfer/spec'
+require_relative '../../nagios'
+require_relative '../../hash_ext'
+require_relative '../../id_generator'
+require_relative '../../api/node'
+require_relative '../../oauth/client/factory'
+require_relative '../../rest/list'
+require_relative '../../assert'
 require 'base64'
 require 'zlib'
 
@@ -1132,9 +1132,9 @@ module Aspera
         end
 
         def action_emulator(parameters: {}, **)
-          require 'aspera/secret/strength'
-          require 'aspera/web_server_simple'
-          require 'aspera/node_emulator'
+          require_relative '../../secret/strength'
+          require_relative '../../web_server_simple'
+          require_relative '../../node_emulator'
           # missing parameters take the default of the schema
           defaults = Schema::Registry.instance.reader(Schema::Registry::NODE_EMULATOR_OPTIONS).current['properties'].each_with_object({}) do |(name, property), result|
             result[name.to_sym] = property['default'] if property.key?('default')

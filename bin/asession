@@ -1,12 +1,12 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require 'aspera/coverage'
-require 'aspera/agent/direct'
-require 'aspera/cli/extended_value'
-require 'aspera/products/transferd'
-require 'aspera/log'
-require 'aspera/assert'
+require_relative '../lib/aspera/coverage'
+require_relative '../lib/aspera/agent/direct'
+require_relative '../lib/aspera/cli/extended_value'
+require_relative '../lib/aspera/products/transferd'
+require_relative '../lib/aspera/log'
+require_relative '../lib/aspera/assert'
 require 'json'
 
 class UsageError < StandardError; end

@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/async_transfer_store'
-require 'aspera/agent/factory'
-require 'aspera/log'
-require 'aspera/assert'
+require_relative 'async_transfer_store'
+require_relative '../agent/factory'
+require_relative '../log'
+require_relative '../assert'
 
 module Aspera
   module Cli

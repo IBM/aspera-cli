@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'aspera/rest'
-require 'aspera/rest/list'
-require 'aspera/cli/error'
+require_relative '../../lib/aspera/rest'
+require_relative '../../lib/aspera/rest/list'
+require_relative '../../lib/aspera/cli/error'
 
 RSpec.describe(Aspera::Rest::List) do
   # Minimal API returning a fixed list for `read`

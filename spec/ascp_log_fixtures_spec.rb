@@ -3,8 +3,8 @@
 # cspell:ignore peeros peerver rexreqs
 # Tests for Aspera::Ascp::LogAnalyzer with real anonymized log fixtures.
 
+require_relative '../lib/aspera/ascp/log_analyzer'
 require 'bundler/setup'
-require 'aspera/ascp/log_analyzer'
 
 RSpec.describe(Aspera::Ascp::LogAnalyzer) do
   fixtures_dir = File.expand_path('fixtures/ascp_logs', __dir__)

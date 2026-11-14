@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/option_types'
-require 'aspera/cli/extended_value'
-require 'aspera/cli/security'
-require 'aspera/cli/deprecation'
-require 'aspera/secret/hider'
-require 'aspera/schema/registry'
-require 'aspera/schema/validator'
-require 'aspera/log'
-require 'aspera/assert'
+require_relative 'option_types'
+require_relative 'extended_value'
+require_relative 'security'
+require_relative 'deprecation'
+require_relative '../secret/hider'
+require_relative '../schema/registry'
+require_relative '../schema/validator'
+require_relative '../log'
+require_relative '../assert'
 
 module Aspera
   module Cli

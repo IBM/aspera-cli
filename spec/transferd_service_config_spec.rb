@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'aspera/products/transferd_service'
-require 'aspera/schema/validator'
+require_relative '../lib/aspera/products/transferd_service'
+require_relative '../lib/aspera/schema/validator'
 
 RSpec.describe(Aspera::Products::TransferdService) do
   let(:sdk) { '/opt/sdk/1.1.10' }

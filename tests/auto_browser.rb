@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
+require_relative '../lib/aspera/environment'
+require_relative '../lib/aspera/rest'
+require_relative '../lib/aspera/mime'
+require_relative '../build/lib/paths'
 require 'uri'
 require 'optparse'
-require 'aspera/environment'
-require 'aspera/rest'
-require 'aspera/mime'
-require_relative '../build/lib/paths'
 
 # Automated browser script using Google Chrome (Ferrum) with HTTP fallback.
 # Intercepts URLs opened by ascli (secrets, OAuth consent, etc.),

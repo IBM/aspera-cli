@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/plugins/base'
-require 'aspera/cli/plugins/node'
-require 'aspera/api/cos_node'
-require 'aspera/assert'
+require_relative 'base'
+require_relative 'node'
+require_relative '../../api/cos_node'
+require_relative '../../assert'
 
 module Aspera
   module Cli

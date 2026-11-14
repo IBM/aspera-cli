@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
+require_relative '../log'
+require_relative '../assert'
+require_relative 'error'
 require 'singleton'
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/transfer/error'
 
 module Aspera
   module Transfer

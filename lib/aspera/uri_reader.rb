@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
+require_relative 'assert'
+require_relative 'log'
+require_relative 'rest'
+require_relative 'temp_file_manager'
 require 'uri'
 require 'base64'
-require 'aspera/assert'
-require 'aspera/log'
-require 'aspera/rest'
-require 'aspera/temp_file_manager'
 
 module Aspera
   # Read content from a URI; supported schemes: file:, http:, https:, data:

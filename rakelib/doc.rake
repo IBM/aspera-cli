@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/info'
-require 'digest'
+require_relative '../lib/aspera/cli/info'
 require_relative '../build/lib/build_tools'
 require_relative '../build/lib/doc_helper'
 require_relative '../build/lib/doc_command_checker'
 require_relative '../build/lib/test_env'
 require_relative '../build/lib/asperaconf'
+require 'digest'
 include BuildTools
 
 PATH_TMP_DOT = Paths::TMP / 'uml.dot'

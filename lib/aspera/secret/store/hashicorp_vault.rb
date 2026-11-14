@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-require 'aspera/environment'
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/secret/hider'
-require 'aspera/secret/reference'
-require 'aspera/secret/store/base'
+require_relative '../../environment'
+require_relative '../../log'
+require_relative '../../assert'
+require_relative '../hider'
+require_relative '../reference'
+require_relative 'base'
 require 'vault'
 require 'time'
 

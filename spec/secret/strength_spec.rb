@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/secret/strength'
+require_relative '../../lib/aspera/secret/strength'
 require 'securerandom'
 
 RSpec.describe(Aspera::Secret::Strength) do

@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'aspera/oauth/client/base'
-require 'aspera/environment'
-require 'aspera/assert'
+require_relative 'base'
+require_relative '../../environment'
+require_relative '../../assert'
 require 'securerandom'
 require 'openssl'
 module Aspera

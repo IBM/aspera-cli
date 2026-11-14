@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
-require 'pathname'
-require 'tmpdir'
-require 'aspera/markdown'
-require 'aspera/environment'
-require 'aspera/yaml'
+require_relative '../lib/aspera/markdown'
+require_relative '../lib/aspera/environment'
+require_relative '../lib/aspera/yaml'
 require_relative '../build/lib/paths'
 require_relative '../build/lib/build_tools'
 require_relative '../build/lib/test_env'
+require 'pathname'
+require 'tmpdir'
 include BuildTools
 
 namespace :release do
@@ -327,7 +327,7 @@ namespace :release do
             version = res[:version].to_s
           elsif plugin_sym.eql?(:node) && preset_cfg['username'] && preset_cfg['password']
             # Fallback to authenticating with test preset credentials to get Node version via /info
-            require 'aspera/api/node'
+            require_relative '../lib/aspera/api/node'
             node_api = Aspera::Api::Node.new(
               base_url: url,
               auth:     {

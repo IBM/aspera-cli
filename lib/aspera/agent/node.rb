@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-require 'aspera/agent/base'
-require 'aspera/transfer/spec'
-require 'aspera/api/node'
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/oauth/client/factory'
+require_relative 'base'
+require_relative '../transfer/spec'
+require_relative '../api/node'
+require_relative '../log'
+require_relative '../assert'
+require_relative '../oauth/client/factory'
 
 module Aspera
   module Agent

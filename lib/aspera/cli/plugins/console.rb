@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'aspera/assert'
-require 'aspera/cli/plugins/basic_auth'
-require 'aspera/nagios'
+require_relative '../../assert'
+require_relative 'basic_auth'
+require_relative '../../nagios'
 
 module Aspera
   module Cli

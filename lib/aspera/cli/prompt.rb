@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
+require_relative '../assert'
 require 'io/console'
-require 'aspera/assert'
 
 module Aspera
   module Cli

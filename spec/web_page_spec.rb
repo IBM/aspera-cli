@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/web_page'
+require_relative '../lib/aspera/web_page'
 require 'webrick'
 
 RSpec.describe(Aspera::WebPage) do

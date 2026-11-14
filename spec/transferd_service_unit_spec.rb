@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'aspera/products/transferd_service'
+require_relative '../lib/aspera/products/transferd_service'
 
 RSpec.describe(Aspera::Products::TransferdService) do
   describe '.unit' do

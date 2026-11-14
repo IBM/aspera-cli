@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'aspera/rest'
-require 'aspera/oauth/client/web'
+require_relative '../lib/aspera/rest'
+require_relative '../lib/aspera/oauth/client/web'
 
 RSpec.describe(Aspera::OAuth::Web) do
   def web(redirect_uri) = described_class.new(redirect_uri: redirect_uri, base_url: 'https://example.com/oauth2')

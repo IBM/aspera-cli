@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/command_spec'
+require_relative 'command_spec'
 
 module Aspera
   module Cli

@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
+require_relative '../../lib/aspera/secret/hider'
+require_relative '../../lib/aspera/environment'
 require 'bundler/setup'
-require 'aspera/secret/hider'
-require 'aspera/environment'
 require 'securerandom'
 
 RSpec.describe(Aspera::Secret::Hider) do

@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/plugins/base'
-require 'aspera/rest'
-require 'aspera/api/httpgw'
-require 'aspera/nagios'
+require_relative 'base'
+require_relative '../../rest'
+require_relative '../../api/httpgw'
+require_relative '../../nagios'
 
 module Aspera
   module Cli

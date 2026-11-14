@@ -4,12 +4,12 @@
 # and for the status loop of Agent::Node.
 # All external I/O (REST, JSON-RPC, gRPC) is doubled — no real daemons required.
 
+require_relative '../lib/aspera/rest'
+require_relative '../lib/aspera/transfer/error'
+require_relative '../lib/aspera/agent/node'
+require_relative '../lib/aspera/agent/desktop'
+require_relative '../lib/aspera/json_rpc/client'
 require 'bundler/setup'
-require 'aspera/rest'
-require 'aspera/transfer/error'
-require 'aspera/agent/node'
-require 'aspera/agent/desktop'
-require 'aspera/json_rpc/client'
 require 'securerandom'
 
 # ── Node ──────────────────────────────────────────────────────────────────────

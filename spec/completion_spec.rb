@@ -4,8 +4,8 @@
 # Shell completion scripts displayed by `config completion <shell>`, and the commands they call.
 # The Bash and PowerShell scripts are executed with `bash` and `pwsh`, if available.
 
-require 'aspera/cli/runner'
-require 'aspera/cli/plugins/config'
+require_relative '../lib/aspera/cli/runner'
+require_relative '../lib/aspera/cli/plugins/config'
 require 'fileutils'
 require 'open3'
 require 'rbconfig'

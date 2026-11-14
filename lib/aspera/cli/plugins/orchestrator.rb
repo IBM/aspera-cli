@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/plugins/basic_auth'
-require 'aspera/cli/special_values'
-require 'aspera/nagios'
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/transfer/spec'
-require 'aspera/schema/registry'
+require_relative 'basic_auth'
+require_relative '../special_values'
+require_relative '../../nagios'
+require_relative '../../log'
+require_relative '../../assert'
+require_relative '../../transfer/spec'
+require_relative '../../schema/registry'
 require 'xmlsimple'
 
 module Aspera
@@ -541,7 +541,7 @@ module Aspera
         # @param document [Symbol] One of DOC_URLS keys
         # @return [String] Markdown
         def development_document(document)
-          require 'aspera/uri_reader'
+          require_relative '../../uri_reader'
           UriReader.read_first(DOC_URLS[document], what: "document #{document}") do |text|
             Aspera.assert(!HTML_PAGE.match?(text), type: Cli::Error) { 'HTML page instead of Markdown' }
             text
@@ -550,13 +550,13 @@ module Aspera
 
         # @param level [Integer, nil] Maximum level of headings of the table of contents (default per document)
         def development_toc(document, level)
-          require 'aspera/markdown'
+          require_relative '../../markdown'
           Result::ObjectList.new(Markdown.toc(development_document(document), max_level: level || DOC_TOC_LEVELS[document]), fields: %w[level title anchor])
         end
 
         # @param anchor [String] Anchor of the section, see `toc`
         def development_section(document, anchor)
-          require 'aspera/markdown'
+          require_relative '../../markdown'
           text = Markdown.extract_section(development_document(document), anchor)
           Aspera.assert(!text.nil?, type: Cli::Error) { "Section not found: #{anchor}, use `toc` to list anchors" }
           Result::Text.new(text)
@@ -566,8 +566,8 @@ module Aspera
         # @return [Hash] Class name of plugin => attributes, inputs, outputs
         def plugin_specs
           return @plugin_specs if @plugin_specs
-          require 'aspera/uri_reader'
-          require 'aspera/yaml'
+          require_relative '../../uri_reader'
+          require_relative '../../yaml'
           specs = Yaml.safe_load(UriReader.read(options.get_option(:plugin_specs, mandatory: true)))
           Aspera.assert_type(specs, Hash, type: Cli::Error) { 'plugin specifications' }
           @plugin_specs = specs
@@ -619,7 +619,7 @@ module Aspera
         # @param file_path [String] Workflow file (`.yml` or `.wkf`)
         # @return [Hash] `valid` (Boolean), `file_name`, `issues` (list of Hash: `severity`, `code`, `file`, `path`, `message`)
         def check_workflow(file_path)
-          require 'aspera/orchestrator_workflow_checker'
+          require_relative '../../orchestrator_workflow_checker'
           specs = nil
           specs_error = nil
           begin

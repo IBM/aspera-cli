@@ -2,8 +2,8 @@
 
 # Unit tests for Aspera::Ascp::SessionErrors: error codes of FASP sessions in `ascp` logs.
 
+require_relative '../lib/aspera/ascp/session_errors'
 require 'bundler/setup'
-require 'aspera/ascp/session_errors'
 
 RSpec.describe(Aspera::Ascp::SessionErrors) do
   describe 'CODES' do

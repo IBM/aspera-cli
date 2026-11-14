@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'aspera/rest'
-require 'aspera/oauth/client/boot'
+require_relative '../lib/aspera/rest'
+require_relative '../lib/aspera/oauth/client/boot'
 require 'securerandom'
 require 'base64'
 require 'json'

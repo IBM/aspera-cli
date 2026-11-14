@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 # cspell:words commify Isilon nacks nohear onefs overdriven
+require_relative '../../assert'
+require_relative '../session_errors'
+require_relative 'diagnostics'
 require 'set'
 require 'time'
-require 'aspera/assert'
-require 'aspera/ascp/session_errors'
-require 'aspera/ascp/log_analyzer/diagnostics'
 
 module Aspera
   module Ascp

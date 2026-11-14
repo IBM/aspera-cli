@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'aspera/rest/call_error'
-require 'aspera/log'
+require_relative 'call_error'
+require_relative '../log'
 require 'singleton'
 require 'net/http'
 

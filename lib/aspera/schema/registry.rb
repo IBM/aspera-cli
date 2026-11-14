@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
+require_relative '../yaml'
+require_relative 'reader'
 require 'singleton'
-require 'aspera/yaml'
-require 'aspera/schema/reader'
 
 module Aspera
   # base class for plugins modules

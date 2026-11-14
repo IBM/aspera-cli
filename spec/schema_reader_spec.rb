@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'aspera/assert'
-require 'aspera/schema/reader'
+require_relative '../lib/aspera/assert'
+require_relative '../lib/aspera/schema/reader'
 
 RSpec.describe(Aspera::Schema::Reader) do
   describe '.from_query_params' do

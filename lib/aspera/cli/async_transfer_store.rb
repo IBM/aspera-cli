@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'aspera/log'
-require 'aspera/secret/hider'
+require_relative '../log'
+require_relative '../secret/hider'
 require 'json'
 require 'securerandom'
 

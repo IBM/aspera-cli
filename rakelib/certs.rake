@@ -1,11 +1,11 @@
 # Rakefile
 # frozen_string_literal: true
 
+require_relative '../lib/aspera/rainbow'
 require 'rake'
 require 'openssl'
 require 'pathname'
 require 'singleton'
-require 'aspera/rainbow'
 using Rainbow
 
 require_relative '../build/lib/build_tools'

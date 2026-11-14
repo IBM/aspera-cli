@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/web_secret'
+require_relative '../lib/aspera/cli/web_secret'
 require 'securerandom'
 require 'net/http'
 require 'uri'

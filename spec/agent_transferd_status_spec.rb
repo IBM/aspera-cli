@@ -5,7 +5,7 @@
 
 require 'bundler/setup'
 begin
-  require 'aspera/agent/transferd'
+  require_relative '../lib/aspera/agent/transferd'
 rescue LoadError => e
   warn("Skipping Agent::Transferd specs: #{e.message}")
   return

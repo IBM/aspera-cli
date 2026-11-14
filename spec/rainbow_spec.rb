@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'aspera/rainbow'
+require_relative '../lib/aspera/rainbow'
 
 RSpec.describe(Aspera::Colors) do
   describe '.detect' do

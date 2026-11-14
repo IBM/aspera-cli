@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'aspera/log'
+require_relative '../lib/aspera/log'
 require 'stringio'
 require 'securerandom'
 

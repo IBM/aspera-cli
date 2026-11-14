@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # cspell:ignore reuseaddr sourcelist BUFS ERANGE
-require 'aspera/ascp/management'
+require_relative 'management'
 
 module Aspera
   module Ascp

@@ -1,16 +1,16 @@
 # Rakefile
 # frozen_string_literal: true
 
+require_relative '../lib/aspera/rest'
+require_relative '../lib/aspera/environment'
+require_relative '../lib/aspera/cli/info'
+require_relative '../lib/aspera/cli/version'
+require_relative '../lib/aspera/cli/transfer_progress'
 require 'rake'
 require 'zip'
 require 'erb'
-require 'aspera/rest'
-require 'aspera/environment'
-require 'aspera/cli/info'
-require 'aspera/cli/version'
 require 'fileutils'
 require 'rubygems/package'
-require 'aspera/cli/transfer_progress'
 
 require_relative '../build/lib/build_tools'
 include BuildTools

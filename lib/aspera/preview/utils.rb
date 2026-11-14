@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'aspera/log'
-require 'aspera/assert'
+require_relative '../log'
+require_relative '../assert'
 require 'English'
 require 'tmpdir'
 require 'fileutils'

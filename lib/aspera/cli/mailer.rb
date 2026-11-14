@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'aspera/environment'
-require 'aspera/log'
-require 'aspera/assert'
+require_relative '../environment'
+require_relative '../log'
+require_relative '../assert'
 require 'erb'
 
 module Aspera

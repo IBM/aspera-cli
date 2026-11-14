@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/mcp/http_servlet'
+require_relative '../../lib/aspera/cli/mcp/http_servlet'
 require 'json'
 require 'securerandom'
 
@@ -106,7 +106,7 @@ RSpec.describe(Aspera::Cli::Mcp::HttpServlet) do
     end
 
     before do
-      require 'aspera/oauth/server/pkce'
+      require_relative '../../lib/aspera/oauth/server/pkce'
       options[:oauth_server] = oauth_server
     end
 
@@ -169,7 +169,7 @@ RSpec.describe(Aspera::Cli::Mcp::HttpServlet) do
     end
 
     it 'refuses a client registration that is not JSON' do
-      require 'aspera/oauth/server/pkce'
+      require_relative '../../lib/aspera/oauth/server/pkce'
       oauth_server = instance_double(Aspera::OAuth::Server::Pkce, handle_register: nil)
       options[:oauth_server] = oauth_server
       expect(request('POST', '/oauth/register', 'Content-Type' => 'text/plain').status).to(eq(415))

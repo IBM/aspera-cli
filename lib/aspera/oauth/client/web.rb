@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require 'aspera/oauth/client/base'
-require 'aspera/environment'
-require 'aspera/web_auth/receiver'
-require 'aspera/assert'
+require_relative 'base'
+require_relative '../../environment'
+require_relative '../../web_auth/receiver'
+require_relative '../../assert'
 module Aspera
   module OAuth
     # Authentication using Web browser

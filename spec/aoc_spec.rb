@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
+require_relative '../lib/aspera/api/aoc'
 require 'bundler/setup'
-require 'aspera/api/aoc'
 
 RSpec.describe(Aspera::Api::AoC) do
   describe '#node_api_from' do

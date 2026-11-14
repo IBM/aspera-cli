@@ -4,11 +4,11 @@
 # These tests are intentionally self-contained: they do NOT require spec_helper
 # (which needs a live server config) because all dependencies of Base are doubled.
 
-require 'aspera/cli/command_registry'
-require 'aspera/cli/command_spec'
-require 'aspera/cli/context'
-require 'aspera/cli/parser'
-require 'aspera/cli/plugins/base'
+require_relative '../lib/aspera/cli/command_registry'
+require_relative '../lib/aspera/cli/command_spec'
+require_relative '../lib/aspera/cli/context'
+require_relative '../lib/aspera/cli/parser'
+require_relative '../lib/aspera/cli/plugins/base'
 
 module Aspera
   module Cli

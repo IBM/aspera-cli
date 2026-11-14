@@ -3,10 +3,10 @@
 # cspell:ignore abrtxfer blks drate dups instru mgmt rcvd rcvD rcvr rexreqs sndr userid xmit xmtD
 # Unit tests for Aspera::Ascp::LogAnalyzer::Records: lines of `ascp` logs parsed into records.
 
+require_relative '../lib/aspera/ascp/log_analyzer'
+require_relative '../lib/aspera/schema/validator'
 require 'bundler/setup'
 require 'tmpdir'
-require 'aspera/ascp/log_analyzer'
-require 'aspera/schema/validator'
 
 RSpec.describe(Aspera::Ascp::LogAnalyzer::Records) do
   rx = '11111111-2222-3333-4444-555555555555'

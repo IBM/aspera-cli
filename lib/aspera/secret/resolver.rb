@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'aspera/secret/reference'
-require 'aspera/secret/store/factory'
-require 'aspera/secret/hider'
+require_relative 'reference'
+require_relative 'store/factory'
+require_relative 'hider'
 
 module Aspera
   module Secret

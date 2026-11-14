@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
+require_relative '../../log'
+require_relative '../../secret/hider'
+require_relative '../runner'
+require_relative '../error'
+require_relative 'secrets'
+require_relative '../../schema/reader'
+require_relative '../../schema/registry'
+require_relative '../plugins/mcp'
 require 'json'
-require 'aspera/log'
-require 'aspera/secret/hider'
-require 'aspera/cli/runner'
-require 'aspera/cli/error'
-require 'aspera/cli/mcp/secrets'
-require 'aspera/schema/reader'
-require 'aspera/schema/registry'
-require 'aspera/cli/plugins/mcp'
 unless defined?(MCP::Tool)
   begin
     require 'mcp'

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'aspera/schema/registry'
+require_relative '../lib/aspera/schema/registry'
 
 RSpec.describe(Aspera::Schema::Registry) do
   describe 'transferd configuration schema' do

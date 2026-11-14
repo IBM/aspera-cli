@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
+require_relative '../../lib/aspera/transfer/units'
 require 'bundler/setup'
-require 'aspera/transfer/units'
 
 module Aspera
   module Transfer

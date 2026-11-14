@@ -1,17 +1,17 @@
 # frozen_string_literal: true
 
-require 'aspera/agent/factory'
-require 'aspera/schema/registry'
-require 'aspera/cli/option_declarator'
-require 'aspera/transfer/result'
-require 'aspera/transfer/spec'
-require 'aspera/cli/info'
-require 'aspera/cli/async_transfer_store'
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/secret/hider'
+require_relative '../agent/factory'
+require_relative '../schema/registry'
+require_relative 'option_declarator'
+require_relative '../transfer/result'
+require_relative '../transfer/spec'
+require_relative 'info'
+require_relative 'async_transfer_store'
+require_relative '../log'
+require_relative '../assert'
+require_relative '../secret/hider'
+require_relative 'security'
 require 'securerandom'
-require 'aspera/cli/security'
 
 module Aspera
   module Cli

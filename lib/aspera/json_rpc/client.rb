@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require 'aspera/rest/error_analyzer'
-require 'aspera/rest/call_error'
-require 'aspera/assert'
-require 'aspera/json_rpc/version'
+require_relative '../rest/error_analyzer'
+require_relative '../rest/call_error'
+require_relative '../assert'
+require_relative 'version'
 
 # Error in non-2XX response. Error in 2XX response is raised by the client.
 Aspera::Rest::ErrorAnalyzer.instance.add_simple_handler(name: 'JSON RPC', path: %w[error message])

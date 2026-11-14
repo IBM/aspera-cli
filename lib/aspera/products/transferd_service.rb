@@ -1,17 +1,17 @@
 # frozen_string_literal: true
 
+require_relative '../assert'
+require_relative '../log'
+require_relative '../environment'
+require_relative '../yaml'
+require_relative '../secret/hider'
+require_relative '../schema/registry'
+require_relative '../schema/validator'
 require 'json'
 require 'securerandom'
 require 'etc'
 require 'fileutils'
 require 'socket'
-require 'aspera/assert'
-require 'aspera/log'
-require 'aspera/environment'
-require 'aspera/yaml'
-require 'aspera/secret/hider'
-require 'aspera/schema/registry'
-require 'aspera/schema/validator'
 
 module Aspera
   module Products

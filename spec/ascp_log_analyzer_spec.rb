@@ -3,11 +3,11 @@
 # cspell:ignore blks drate dups filewrite httpgateway lport rcvd rexreqs sndr userid xmit
 # Unit tests for Aspera::Ascp::LogAnalyzer: analysis of `ascp` log files.
 
+require_relative '../lib/aspera/ascp/log_analyzer'
 require 'bundler/setup'
 require 'tmpdir'
 require 'zlib'
 require 'stringio'
-require 'aspera/ascp/log_analyzer'
 
 RSpec.describe(Aspera::Ascp::LogAnalyzer) do
   # Log file of `ascp` 4 (option `-L`): a receiver session (server side, success) and a sender session (client side, failed)
@@ -906,9 +906,9 @@ RSpec.describe(Aspera::Ascp::LogAnalyzer) do
 
   describe 'AscpLogsActions health command' do
     before do
-      require 'aspera/cli/error'
-      require 'aspera/cli/result'
-      require 'aspera/cli/ascp_logs_actions'
+      require_relative '../lib/aspera/cli/error'
+      require_relative '../lib/aspera/cli/result'
+      require_relative '../lib/aspera/cli/ascp_logs_actions'
     end
 
     # Helper to create a dummy CLI plugin that includes AscpLogsActions

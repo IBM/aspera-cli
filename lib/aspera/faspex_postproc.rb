@@ -1,18 +1,18 @@
 # frozen_string_literal: true
 
+require_relative 'log'
+require_relative 'assert'
+require_relative 'environment'
+require_relative 'hash_ext'
+require_relative 'secret/strength'
+require_relative 'servlet_helpers'
+require_relative 'web_server_simple'
 require 'json'
 require 'timeout'
 require 'English'
 require 'ipaddr'
 require 'openssl'
 require 'webrick'
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/environment'
-require 'aspera/hash_ext'
-require 'aspera/secret/strength'
-require 'aspera/servlet_helpers'
-require 'aspera/web_server_simple'
 
 module Aspera
   # Start a Faspex-4 style post-processing script using Faspex-5 webhook

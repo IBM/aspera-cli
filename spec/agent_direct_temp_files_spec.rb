@@ -4,11 +4,11 @@
 # also after the end of the command (asynchronous transfer, MCP server), and are deleted then.
 # `ascp` is not started: start_and_monitor_process is replaced by a wait.
 
+require_relative '../lib/aspera/agent/direct'
+require_relative '../lib/aspera/temp_file_manager'
+require_relative '../lib/aspera/transfer/parameters'
 require 'bundler/setup'
 require 'tmpdir'
-require 'aspera/agent/direct'
-require 'aspera/temp_file_manager'
-require 'aspera/transfer/parameters'
 
 RSpec.describe(Aspera::Agent::Direct) do
   let(:manager) { Aspera::TempFileManager.instance }

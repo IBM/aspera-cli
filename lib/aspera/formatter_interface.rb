@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/assert'
+require_relative 'assert'
 
 module Aspera
   # Common interface for documentation formatters

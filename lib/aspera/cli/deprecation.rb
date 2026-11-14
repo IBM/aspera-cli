@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/version'
-require 'aspera/assert'
+require_relative 'version'
+require_relative '../assert'
 
 module Aspera
   module Cli

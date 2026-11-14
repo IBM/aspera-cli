@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'aspera/schema/reader'
-require 'aspera/schema/documentation'
+require_relative '../lib/aspera/schema/reader'
+require_relative '../lib/aspera/schema/documentation'
 
 RSpec.describe(Aspera::Schema::Documentation) do
   # Formatter without styling

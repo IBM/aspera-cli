@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/api/node'
+require_relative '../log'
+require_relative '../assert'
+require_relative 'node'
 require 'xmlsimple'
 
 module Aspera

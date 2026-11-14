@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'aspera/cli/preset_manager'
-require 'aspera/cli/error'
+require_relative '../lib/aspera/cli/preset_manager'
+require_relative '../lib/aspera/cli/error'
 require 'base64'
 require 'securerandom'
 require 'tmpdir'

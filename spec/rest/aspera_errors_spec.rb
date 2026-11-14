@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require_relative '../../lib/aspera/rest/aspera_errors'
 require 'net/http'
-require 'aspera/rest/aspera_errors'
 
 RSpec.describe(Aspera::Rest::ErrorAnalyzer) do
   it 'has Aspera handlers registered once on require' do

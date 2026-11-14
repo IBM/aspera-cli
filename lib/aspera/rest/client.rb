@@ -1,22 +1,22 @@
 # frozen_string_literal: true
 
-require 'aspera/mime'
-require 'aspera/rest/parameters'
-require 'aspera/rest/util'
-require 'aspera/rest/call_error'
-require 'aspera/rest/error_analyzer'
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/oauth/client/factory'
-require 'aspera/hash_ext'
-require 'aspera/timer_limiter'
+require_relative '../mime'
+require_relative 'parameters'
+require_relative 'util'
+require_relative 'call_error'
+require_relative 'error_analyzer'
+require_relative '../log'
+require_relative '../assert'
+require_relative '../oauth/client/factory'
+require_relative '../hash_ext'
+require_relative '../timer_limiter'
+require_relative '../rainbow'
 require 'net/http'
 require 'net/https'
 require 'json'
 require 'securerandom'
 require 'fileutils'
 require 'pathname'
-require 'aspera/rainbow'
 using Rainbow
 
 # Cancel method for HTTP

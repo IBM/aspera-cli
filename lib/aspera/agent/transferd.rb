@@ -1,15 +1,15 @@
 # frozen_string_literal: true
 
-require 'aspera/environment'
-require 'aspera/agent/base'
-require 'aspera/products/transferd'
-require 'aspera/temp_file_manager'
-require 'aspera/transfer/error'
-require 'aspera/transfer/spec'
+require_relative '../environment'
+require_relative 'base'
+require_relative '../products/transferd'
+require_relative '../temp_file_manager'
+require_relative '../transfer/error'
+require_relative '../transfer/spec'
+require_relative '../../transferd_services_pb'
 require 'json'
 require 'time'
 require 'uri'
-require 'transferd_services_pb'
 
 module Aspera
   module Agent

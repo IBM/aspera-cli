@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'openssl'
 require_relative 'lib/aspera/cli/version'
 require_relative 'lib/aspera/cli/info'
+require 'openssl'
 
 # expected extension of gemspec file
 GEMSPEC_EXT = '.gemspec'

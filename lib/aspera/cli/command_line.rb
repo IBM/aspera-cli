@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/error'
-require 'aspera/dot_container'
-require 'aspera/log'
-require 'aspera/assert'
+require_relative 'error'
+require_relative '../dot_container'
+require_relative '../log'
+require_relative '../assert'
 
 module Aspera
   module Cli

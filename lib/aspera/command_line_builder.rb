@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/schema/registry'
-require 'aspera/exec_spec'
+require_relative 'log'
+require_relative 'assert'
+require_relative 'schema/registry'
+require_relative 'exec_spec'
 require 'yaml'
 module Aspera
   # Helper class to build command line from a parameter list (key-value hash)

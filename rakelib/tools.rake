@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require_relative '../build/lib/build_tools'
-require 'aspera/uri_reader'
-require 'aspera/rest'
-require 'aspera/assert'
+require_relative '../lib/aspera/uri_reader'
+require_relative '../lib/aspera/rest'
+require_relative '../lib/aspera/assert'
 require 'json'
 require 'yaml'
 require 'zlib'

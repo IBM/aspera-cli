@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require 'aspera/agent/factory'
-require 'aspera/schema/registry'
-require 'aspera/schema/reader'
-require 'aspera/schema/documentation'
-require 'aspera/ascp/session_errors'
+require_relative '../agent/factory'
+require_relative '../schema/registry'
+require_relative '../schema/reader'
+require_relative '../schema/documentation'
+require_relative '../ascp/session_errors'
 
 module Aspera
   module Cli

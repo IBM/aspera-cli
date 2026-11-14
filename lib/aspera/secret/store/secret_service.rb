@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'aspera/environment'
-require 'aspera/secret/store/base'
+require_relative '../../environment'
+require_relative 'base'
 
 module Aspera
   module Secret

@@ -1,9 +1,14 @@
 # frozen_string_literal: true
 
-require 'aspera/environment'
-require 'aspera/rest'
-require 'aspera/log'
-require 'aspera/hash_ext'
+require_relative '../lib/aspera/environment'
+require_relative '../lib/aspera/rest'
+require_relative '../lib/aspera/log'
+require_relative '../lib/aspera/hash_ext'
+require_relative '../build/lib/build_tools'
+require_relative '../build/lib/paths'
+require_relative '../build/lib/test_env'
+require_relative '../tests/test_helpers'
+require_relative '../lib/aspera/rainbow'
 require 'rake'
 require 'uri'
 require 'zlib'
@@ -12,11 +17,6 @@ require 'set'
 require 'fileutils'
 require 'securerandom'
 require 'yaml'
-require_relative '../build/lib/build_tools'
-require_relative '../build/lib/paths'
-require_relative '../build/lib/test_env'
-require_relative '../tests/test_helpers'
-require 'aspera/rainbow'
 using Rainbow
 # spec tests (only if rspec is available)
 begin

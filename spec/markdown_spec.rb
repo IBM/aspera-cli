@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'aspera/markdown'
+require_relative '../lib/aspera/markdown'
 
 RSpec.describe(Aspera::Markdown) do
   describe '.table' do

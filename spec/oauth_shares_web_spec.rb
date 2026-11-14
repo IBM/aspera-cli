@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require_relative '../lib/aspera/rest'
+require_relative '../lib/aspera/oauth/client/shares_web'
+require_relative '../lib/aspera/cli/context'
+require_relative '../lib/aspera/cli/parser'
+require_relative '../lib/aspera/cli/formatter'
+require_relative '../lib/aspera/cli/wizard'
+require_relative '../lib/aspera/cli/plugins/shares'
 require 'securerandom'
-require 'aspera/rest'
-require 'aspera/oauth/client/shares_web'
-require 'aspera/cli/context'
-require 'aspera/cli/parser'
-require 'aspera/cli/formatter'
-require 'aspera/cli/wizard'
-require 'aspera/cli/plugins/shares'
 
 RSpec.describe(Aspera::OAuth::SharesWeb) do
   let(:oauth) { described_class.new(redirect_uri: redirect_uri, base_url: 'https://shares.example.com/auth') }

@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
+require_relative '../lib/aspera/rest'
+require_relative '../lib/aspera/json_rpc/client'
 require 'bundler/setup'
-require 'aspera/rest'
-require 'aspera/json_rpc/client'
 require 'webrick'
 require 'json'
 

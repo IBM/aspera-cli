@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
+require_relative '../lib/aspera/assert'
 require 'bundler/setup'
-require 'aspera/assert'
 
 RSpec.describe(Aspera::InternalError) do
   it 'asserts unreachable line' do

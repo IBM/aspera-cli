@@ -2,9 +2,9 @@
 
 # Unit tests for Aspera::Secret: parsing of references, resolver with a fake store — no server needed.
 
+require_relative '../../lib/aspera/secret/resolver'
 require 'tmpdir'
 require 'securerandom'
-require 'aspera/secret/resolver'
 
 RSpec.describe(Aspera::Secret) do
   # Values of secrets are generated, none in source

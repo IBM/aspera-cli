@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
+require_relative '../lib/aspera/api/node'
 require 'bundler/setup'
-require 'aspera/api/node'
 
 RSpec.describe(Aspera::Api::Node) do
   describe '#resolve_api_fid' do

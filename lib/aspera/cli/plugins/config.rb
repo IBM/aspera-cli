@@ -1,44 +1,44 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/bootstrapper'
-require 'aspera/cli/plugins/basic_auth'
-require 'aspera/cli/plugins/factory'
-require 'aspera/cli/plugins/transferd'
-require 'aspera/cli/deprecation'
-require 'aspera/cli/security'
-require 'aspera/cli/extended_value'
-require 'aspera/cli/special_values'
-require 'aspera/cli/version'
-require 'aspera/cli/formatter'
-require 'aspera/cli/http'
-require 'aspera/cli/info'
-require 'aspera/cli/wizard'
-require 'aspera/cli/sync_actions'
-require 'aspera/cli/ascp_actions'
-require 'aspera/cli/ascp_logs_actions'
-require 'aspera/cli/preset_actions'
-require 'aspera/cli/completion_actions'
-require 'aspera/cli/vault_actions'
-require 'aspera/cli/transfer_actions'
-require 'aspera/cli/gem_checker'
-require 'aspera/ascp/installation'
-require 'aspera/sync/operations'
-require 'aspera/products/transferd'
-require 'aspera/transfer/spec'
-require 'aspera/schema/documentation'
-require 'aspera/secret/store/macos_security'
-require 'aspera/environment'
-require 'aspera/persistency_action_once'
-require 'aspera/web_auth/blob'
-require 'aspera/web_auth/relay'
-require 'aspera/cli/prompt'
-require 'aspera/id_generator'
-require 'aspera/data_repository'
-require 'aspera/rest'
-require 'aspera/oauth/client/jwt'
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/string_ext'
+require_relative '../bootstrapper'
+require_relative 'basic_auth'
+require_relative 'factory'
+require_relative 'transferd'
+require_relative '../deprecation'
+require_relative '../security'
+require_relative '../extended_value'
+require_relative '../special_values'
+require_relative '../version'
+require_relative '../formatter'
+require_relative '../http'
+require_relative '../info'
+require_relative '../wizard'
+require_relative '../sync_actions'
+require_relative '../ascp_actions'
+require_relative '../ascp_logs_actions'
+require_relative '../preset_actions'
+require_relative '../completion_actions'
+require_relative '../vault_actions'
+require_relative '../transfer_actions'
+require_relative '../gem_checker'
+require_relative '../../ascp/installation'
+require_relative '../../sync/operations'
+require_relative '../../products/transferd'
+require_relative '../../transfer/spec'
+require_relative '../../schema/documentation'
+require_relative '../../secret/store/macos_security'
+require_relative '../../environment'
+require_relative '../../persistency_action_once'
+require_relative '../../web_auth/blob'
+require_relative '../../web_auth/relay'
+require_relative '../prompt'
+require_relative '../../id_generator'
+require_relative '../../data_repository'
+require_relative '../../rest'
+require_relative '../../oauth/client/jwt'
+require_relative '../../log'
+require_relative '../../assert'
+require_relative '../../string_ext'
 require 'openssl'
 require 'digest'
 require 'open3'
@@ -316,14 +316,14 @@ module Aspera
           command(
             :flush, description: 'Delete all cached OAuth tokens',
             action: lambda do |**|
-              require 'aspera/api/node'
+              require_relative '../../api/node'
               Result::ValueList.new(OAuth::Factory.instance.flush_tokens, name: 'file')
             end
           )
           command(
             :list, description: 'List all cached OAuth tokens',
             action: lambda do |**|
-              require 'aspera/api/node'
+              require_relative '../../api/node'
               Result::ObjectList.new(OAuth::Factory.instance.persisted_tokens)
             end
           )
@@ -497,7 +497,7 @@ module Aspera
             Environment.instance.open_uri("#{Info::DOC_URL}#{section}")
             return Result::Nothing.new
           when :toc, :local
-            require 'aspera/markdown'
+            require_relative '../../markdown'
             local_doc = File.join(self.class.gem_src_root, '..', 'docs', 'README.md')
             Aspera.assert(File.exist?(local_doc), type: Cli::Error) { "Local documentation not found: #{local_doc}" }
             content = File.read(local_doc)
@@ -561,7 +561,7 @@ module Aspera
         end
 
         def action_tokens_show(token_id:, **)
-          require 'aspera/api/node'
+          require_relative '../../api/node'
           data = OAuth::Factory.instance.get_token_info(token_id)
           Aspera.assert(!data.nil?, type: Cli::Error) { 'Unknown identifier' }
           Result::SingleObject.new(data)

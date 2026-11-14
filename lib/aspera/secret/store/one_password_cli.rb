@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'aspera/environment'
-require 'aspera/secret/store/one_password_base'
+require_relative '../../environment'
+require_relative 'one_password_base'
 require 'json'
 
 module Aspera

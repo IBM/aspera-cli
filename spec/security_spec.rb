@@ -2,16 +2,16 @@
 
 # Unit tests for Aspera::Cli::Security and its use by ExtendedValue — no server, no config file needed.
 
+require_relative '../lib/aspera/cli/security'
+require_relative '../lib/aspera/cli/extended_value'
+require_relative '../lib/aspera/cli/preset_manager'
+require_relative '../lib/aspera/cli/option_value'
+require_relative '../lib/aspera/cli/command_spec'
+require_relative '../lib/aspera/schema/registry'
 require 'base64'
 require 'fileutils'
 require 'securerandom'
 require 'tmpdir'
-require 'aspera/cli/security'
-require 'aspera/cli/extended_value'
-require 'aspera/cli/preset_manager'
-require 'aspera/cli/option_value'
-require 'aspera/cli/command_spec'
-require 'aspera/schema/registry'
 
 module Aspera
   module Cli

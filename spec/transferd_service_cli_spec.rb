@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require_relative '../lib/aspera/cli/info'
 require 'open3'
 require 'rbconfig'
 require 'tmpdir'
 require 'json'
-require 'aspera/cli/info'
 
 RSpec.describe('transferd service CLI') do
   let(:source_root) { File.expand_path('..', __dir__) }

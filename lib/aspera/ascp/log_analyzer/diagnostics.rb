@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 # cspell:words commify Isilon nohear onefs overdriven
+require_relative '../session_errors'
 require 'time'
-require 'aspera/ascp/session_errors'
 
 module Aspera
   module Ascp

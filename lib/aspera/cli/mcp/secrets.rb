@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require 'aspera/secret/hider'
-require 'aspera/cli/error'
-require 'aspera/cli/info'
-require 'aspera/cli/web_secret'
+require_relative '../../secret/hider'
+require_relative '../error'
+require_relative '../info'
+require_relative '../web_secret'
 require 'json'
 
 module Aspera

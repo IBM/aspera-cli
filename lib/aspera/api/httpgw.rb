@@ -1,15 +1,15 @@
 # frozen_string_literal: true
 
-require 'aspera/log'
-require 'aspera/rest'
-require 'aspera/transfer/faux_file'
-require 'aspera/assert'
+require_relative '../log'
+require_relative '../rest'
+require_relative '../transfer/faux_file'
+require_relative '../assert'
+require_relative '../rainbow'
 require 'net/protocol'
 require 'securerandom'
 require 'websocket'
 require 'base64'
 require 'json'
-require 'aspera/rainbow'
 using Rainbow
 
 # Throw exception on error, instead of error code

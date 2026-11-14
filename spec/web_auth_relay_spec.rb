@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require_relative '../lib/aspera/web_auth/relay'
+require_relative '../lib/aspera/web_auth/paste'
+require_relative '../lib/aspera/web_auth/blob'
 require 'net/http'
-require 'aspera/web_auth/relay'
-require 'aspera/web_auth/paste'
-require 'aspera/web_auth/blob'
 
 RSpec.describe(Aspera::WebAuth::Relay) do
   let(:valid) { {'login_url' => 'https://idp.example.com/authorize?a=1&b=2', 'redirect_uri' => 'http://localhost:12345/', 'reply_keys' => %w[code state]} }

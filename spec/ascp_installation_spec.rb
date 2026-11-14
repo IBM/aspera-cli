@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
+require_relative '../lib/aspera/uri_reader'
+require_relative '../lib/aspera/ascp/installation'
 require 'bundler/setup'
 require 'tmpdir'
 require 'zlib'
 require 'rubygems/package'
 require 'zip'
-require 'aspera/uri_reader'
-require 'aspera/ascp/installation'
 
 RSpec.describe(Aspera::Ascp::Installation) do
   # @param path [String] Path of archive to create, with a file in a sub folder, like the SDK

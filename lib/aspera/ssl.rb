@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
+require_relative 'assert'
+require_relative 'log'
 require 'openssl'
-require 'aspera/assert'
-require 'aspera/log'
 
 module Aspera
   # Give possibility to globally override SSL options

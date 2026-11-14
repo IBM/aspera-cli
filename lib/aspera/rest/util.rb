@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require 'aspera/rest/parameters'
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/secret/hider'
+require_relative 'parameters'
+require_relative '../log'
+require_relative '../assert'
+require_relative '../secret/hider'
 require 'net/http'
 require 'net/https'
 require 'uri'

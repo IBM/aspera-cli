@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/command_registry'
-require 'aspera/cli/command_spec'
+require_relative '../lib/aspera/cli/command_registry'
+require_relative '../lib/aspera/cli/command_spec'
 
 RSpec.describe(Aspera::Cli::CommandRegistry) do
   subject(:registry) { described_class.send(:new) }

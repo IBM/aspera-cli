@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/api/aoc'
+require_relative 'aoc'
 module Aspera
   module Api
     # Aspera License Entitlement Engine API client

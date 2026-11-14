@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/environment'
+require_relative '../environment'
 
 module Aspera
   module Products

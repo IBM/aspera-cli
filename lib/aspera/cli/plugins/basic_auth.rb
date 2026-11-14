@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'aspera/rest'
-require 'aspera/cli/plugins/base'
+require_relative '../../rest'
+require_relative 'base'
 
 module Aspera
   module Cli

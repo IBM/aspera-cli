@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
+require_relative 'assert'
+require_relative 'log'
 require 'net/ssh'
-require 'aspera/assert'
-require 'aspera/log'
 
 module Aspera
   # A simple wrapper around Net::SSH

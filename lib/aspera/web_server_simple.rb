@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
+require_relative 'log'
+require_relative 'assert'
+require_relative 'hash_ext'
 require 'delegate'
 require 'ipaddr'
 require 'webrick'
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/hash_ext'
 
 module Aspera
   # Simple WEBrick server with HTTPS support

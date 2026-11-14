@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require 'aspera/transfer/error'
-require 'aspera/rest'
-require 'aspera/log'
-require 'aspera/ssh'
-require 'aspera/assert'
-require 'aspera/cli/info'
-require 'aspera/cli/terminal_formatter'
+require_relative '../transfer/error'
+require_relative '../rest'
+require_relative '../log'
+require_relative '../ssh'
+require_relative '../assert'
+require_relative 'info'
+require_relative 'terminal_formatter'
 require 'net/ssh'
 require 'openssl'
 

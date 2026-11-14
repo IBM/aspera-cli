@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/extended_value'
-require 'aspera/cli/parser'
-require 'aspera/assert'
-require 'aspera/cli/result'
-require 'aspera/cli/command_registry'
-require 'aspera/cli/option_declarator'
-require 'aspera/cli/special_values'
-require 'aspera/rest/list'
-require 'aspera/schema/registry'
+require_relative '../extended_value'
+require_relative '../parser'
+require_relative '../../assert'
+require_relative '../result'
+require_relative '../command_registry'
+require_relative '../option_declarator'
+require_relative '../special_values'
+require_relative '../../rest/list'
+require_relative '../../schema/registry'
 
 module Aspera
   module Cli

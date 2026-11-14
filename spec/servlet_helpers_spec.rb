@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/servlet_helpers'
+require_relative '../lib/aspera/servlet_helpers'
 
 RSpec.describe(Aspera::ServletHelpers) do
   # Minimal stand-in for WEBrick::HTTPRequest

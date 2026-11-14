@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
+require_relative 'log'
+require_relative 'assert'
+require_relative 'environment'
 require 'fileutils'
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/environment'
 
 # search: persistency_folder PersistencyFolder
 

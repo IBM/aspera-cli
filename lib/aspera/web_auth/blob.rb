@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
+require_relative '../assert'
 require 'json'
 require 'zlib'
-require 'aspera/assert'
 
 module Aspera
   module WebAuth

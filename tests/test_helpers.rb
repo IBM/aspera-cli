@@ -4,16 +4,16 @@
 # Loaded from rakelib/test.rake via require_relative.
 # Methods receive `t` (TestEnv::Context) when needed; constants (TMP, etc.) are global.
 
+require_relative '../lib/aspera/rest'
+require_relative '../lib/aspera/mime'
+require_relative '../lib/aspera/json_rpc/client'
+require_relative '../lib/aspera/secret/store/macos_security'
+require_relative '../lib/aspera/environment'
+require_relative '../build/lib/paths'
 require 'openssl'
 require 'shellwords'
 require 'base64'
 require 'securerandom'
-require 'aspera/rest'
-require 'aspera/mime'
-require 'aspera/json_rpc/client'
-require 'aspera/secret/store/macos_security'
-require 'aspera/environment'
-require_relative '../build/lib/paths'
 
 # Generate a secret, unless it already exists. No secret value is stored in checked-in files: the value is kept
 # in a file of the tmp folder, so that it is the same in all test runs (e.g. a vault created by a test is opened by a later run).

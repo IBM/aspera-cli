@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
+require_relative '../lib/aspera/persistency_folder'
+require_relative '../lib/aspera/cli/async_transfer_store'
 require 'bundler/setup'
 require 'tmpdir'
 require 'securerandom'
-require 'aspera/persistency_folder'
-require 'aspera/cli/async_transfer_store'
 
 module Aspera
   module Cli

@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require_relative '../lib/aspera/cli/info'
+require_relative '../lib/aspera/products/transferd_service'
 require 'open3'
 require 'rbconfig'
 require 'tmpdir'
 require 'fileutils'
-require 'aspera/cli/info'
-require 'aspera/products/transferd_service'
 
 RSpec.describe(Aspera::Products::TransferdService) do
   let(:root) { Dir.mktmpdir('transferd_commands') }

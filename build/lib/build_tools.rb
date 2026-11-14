@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
+require_relative '../../lib/aspera/log'
+require_relative '../../lib/aspera/secret/hider'
+require_relative '../../lib/aspera/environment'
+require_relative '../../lib/aspera/cli/version'
+require_relative '../../lib/aspera/cli/parser'
+require_relative 'paths'
+require_relative '../../lib/aspera/rainbow'
 require 'bundler'
 require 'yaml'
-require 'aspera/log'
-require 'aspera/secret/hider'
-require 'aspera/environment'
-require 'aspera/cli/version'
-require 'aspera/cli/parser'
-require_relative 'paths'
-require 'aspera/rainbow'
 using Rainbow
 
 module BuildTools
@@ -87,7 +87,7 @@ module BuildTools
   # @param dest [Pathname] Destination file path
   # @return [Pathname] Destination file path
   def download_file(url, dest)
-    require 'aspera/rest'
+    require_relative '../../lib/aspera/rest'
     Aspera::Rest::Client.new(base_url: url.sub(%r{/[^/]+$}, ''), redirect_max: 5)
       .read(url.sub(%r{^.+/}, ''), save_to: dest)
     dest
@@ -131,7 +131,7 @@ module BuildTools
   # @param folder      [Pathname] Destination folder
   # @return [Pathname] Path to SDK archive
   def download_sdk_archive(sdk_version, platform, folder)
-    require 'aspera/ascp/installation'
+    require_relative '../../lib/aspera/ascp/installation'
     log.info("Getting Aspera SDK #{sdk_version} for #{platform}")
     sdk_url = Aspera::Ascp::Installation.instance.sdk_url_for_platform(platform: platform, version: sdk_version)
     download_file(sdk_url, folder / sdk_url.sub(%r{^.+/}, ''))
@@ -144,10 +144,10 @@ module BuildTools
   # @param sdk_version [String]   SDK version
   # @param sdk_dir     [Pathname] Destination folder
   def install_package_sdk(sdk_archive, sdk_version, sdk_dir)
-    require 'aspera/ascp/installation'
-    require 'aspera/uri_reader'
-    require 'aspera/products/transferd'
-    require 'aspera/products/other'
+    require_relative '../../lib/aspera/ascp/installation'
+    require_relative '../../lib/aspera/uri_reader'
+    require_relative '../../lib/aspera/products/transferd'
+    require_relative '../../lib/aspera/products/other'
     Aspera::Ascp::Installation.instance.download_sdk(folder: sdk_dir.to_s, url: Aspera::UriReader.file_url(sdk_archive.to_s), backup: false)
     Aspera::Products::Transferd.sdk_directory = sdk_dir.to_s
     %i[aspera_license aspera_conf ssh_private_dsa ssh_private_rsa].each { |file_id| Aspera::Ascp::Installation.instance.path(file_id) }
@@ -167,8 +167,8 @@ module BuildTools
   # Download the transfer.proto file into a temporary folder
   # @param tmp_proto_folder [String] Temporary folder to download the proto file into
   def download_proto_file(tmp_proto_folder)
-    require 'aspera/ascp/installation'
-    require 'aspera/cli/transfer_progress'
+    require_relative '../../lib/aspera/ascp/installation'
+    require_relative '../../lib/aspera/cli/transfer_progress'
     Aspera::Rest::Parameters.instance.progress_bar = Aspera::Cli::TransferProgress.new
     # Retrieve `transfer.proto` from the web
     Aspera::Ascp::Installation.instance.download_sdk(folder: tmp_proto_folder, backup: false) { |name| name.end_with?('.proto') ? '/' : nil }

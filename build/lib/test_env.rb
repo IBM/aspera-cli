@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/uri_reader'
-require 'aspera/yaml'
+require_relative '../../lib/aspera/log'
+require_relative '../../lib/aspera/assert'
+require_relative '../../lib/aspera/uri_reader'
+require_relative '../../lib/aspera/yaml'
 require_relative 'paths'
 
 # Test environment configuration and test definition management

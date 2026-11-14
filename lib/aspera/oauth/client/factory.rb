@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'aspera/id_generator'
-require 'aspera/assert'
-require 'aspera/string_ext'
+require_relative '../../id_generator'
+require_relative '../../assert'
+require_relative '../../string_ext'
 require 'singleton'
 require 'base64'
 module Aspera

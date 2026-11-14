@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
 require_relative 'spec_helper'
-require 'aspera/cli/plugins/server'
-require 'aspera/cli/parser'
-require 'aspera/cli/context'
-require 'aspera/ssh'
+require_relative '../lib/aspera/cli/plugins/server'
+require_relative '../lib/aspera/cli/parser'
+require_relative '../lib/aspera/cli/context'
+require_relative '../lib/aspera/ssh'
 
 # Command `server logs`: the SSH connection is replaced by a double that serves the fixture files
 RSpec.describe(Aspera::Cli::Plugins::Server) do

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
+require_relative '../lib/aspera/cli/deprecation'
 require 'bundler/setup'
-require 'aspera/cli/deprecation'
 
 module Aspera
   module Cli

@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
+require_relative '../lib/aspera/cli/vault_manager'
+require_relative '../lib/aspera/secret/store/encrypted_hash'
 require 'tmpdir'
 require 'securerandom'
-require 'aspera/cli/vault_manager'
-require 'aspera/secret/store/encrypted_hash'
 
 module Aspera
   module Cli

@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require 'aspera/oauth/client/jwt'
-require 'aspera/assert'
-require 'aspera/environment'
-require 'aspera/id_generator'
-require 'aspera/cli/option_declarator'
-require 'aspera/cli/plugins/factory'
-require 'aspera/rainbow'
+require_relative '../oauth/client/jwt'
+require_relative '../assert'
+require_relative '../environment'
+require_relative '../id_generator'
+require_relative 'option_declarator'
+require_relative 'plugins/factory'
+require_relative '../rainbow'
 using Rainbow
 
 module Aspera
@@ -138,7 +138,7 @@ module Aspera
           apps.first
         else
           formatter.display_status('Multiple applications detected, please select from:')
-          require 'aspera/cli/result'
+          require_relative 'result'
           formatter.display_results(Result::ObjectList.new(apps, fields: %w[product url version]))
           answer = options.prompt_user_input_in_list('product', apps.map { |a| a[:product] })
           apps.find { |a| a[:product].eql?(answer) }

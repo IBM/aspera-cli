@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
+require_relative 'server'
+require_relative '../web_server_simple'
+require_relative '../environment'
+require_relative '../log'
+require_relative '../assert'
 require 'uri'
-require 'aspera/web_auth/server'
-require 'aspera/web_server_simple'
-require 'aspera/environment'
-require 'aspera/log'
-require 'aspera/assert'
 
 module Aspera
   module WebAuth

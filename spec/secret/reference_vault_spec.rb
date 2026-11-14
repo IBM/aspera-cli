@@ -2,12 +2,12 @@
 
 # Unit tests for secret references in HashiCorp Vault: KV v2, token file, AppRole — with a fake Vault server (WEBrick).
 
+require_relative '../../lib/aspera/secret/resolver'
+require_relative '../../lib/aspera/secret/store/hashicorp_vault'
 require 'tmpdir'
 require 'securerandom'
 require 'webrick'
 require 'json'
-require 'aspera/secret/resolver'
-require 'aspera/secret/store/hashicorp_vault'
 
 RSpec.describe(Aspera::Secret::Store::HashicorpVault) do
   before(:all) do

@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
+require_relative '../assert'
+require_relative 'error'
 require 'singleton'
-require 'aspera/assert'
-require 'aspera/cli/error'
 
 module Aspera
   module Cli

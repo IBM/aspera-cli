@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'aspera/rest'
-require 'aspera/secret/store/one_password_base'
+require_relative '../../rest'
+require_relative 'one_password_base'
 
 module Aspera
   module Secret

@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'aspera/oauth/client/web'
-require 'aspera/web_auth/blob'
-require 'aspera/cli/prompt'
+require_relative 'web'
+require_relative '../../web_auth/blob'
+require_relative '../../cli/prompt'
 require 'securerandom'
 
 module Aspera

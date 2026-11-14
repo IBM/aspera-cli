@@ -1,15 +1,15 @@
 # frozen_string_literal: true
 
 # cspell:ignore asperascp asws getname lastlog lsass pcap tokengen trapd userdata winuser wtmp
+require_relative '../assert'
+require_relative '../log'
+require_relative 'log_analyzer/log_file'
+require_relative 'log_analyzer/records'
 require 'resolv'
 require 'set'
 require 'stringio'
 require 'time'
 require 'zlib'
-require 'aspera/assert'
-require 'aspera/log'
-require 'aspera/ascp/log_analyzer/log_file'
-require 'aspera/ascp/log_analyzer/records'
 
 module Aspera
   module Ascp

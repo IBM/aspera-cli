@@ -3,11 +3,11 @@
 # `config agents jobs list|status|cleanup` and the deprecated alias `config transfer ...`: same commands, no server needed.
 
 require 'spec_helper'
+require_relative '../lib/aspera/cli/info'
 require 'open3'
 require 'rbconfig'
 require 'tmpdir'
 require 'json'
-require 'aspera/cli/info'
 
 RSpec.describe('config agents jobs') do
   let(:source_root) { File.expand_path('..', __dir__) }

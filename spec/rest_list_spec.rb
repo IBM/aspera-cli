@@ -2,7 +2,7 @@
 
 # Unit tests for Aspera::Rest::List paging — no server needed.
 
-require 'aspera/rest/list'
+require_relative '../lib/aspera/rest/list'
 
 module Aspera
   module Rest

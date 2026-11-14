@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
+require_relative '../lib/aspera/environment'
 require 'bundler/setup'
 require 'tmpdir'
 require 'securerandom'
-require 'aspera/environment'
 
 RSpec.describe(Aspera::Environment) do
   it 'works for OSes' do

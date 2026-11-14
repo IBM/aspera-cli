@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'aspera/cli/table_fitter'
+require_relative '../lib/aspera/cli/table_fitter'
 
 RSpec.describe(Aspera::Cli::TableFitter) do
   let(:headings) { %w[name description] }

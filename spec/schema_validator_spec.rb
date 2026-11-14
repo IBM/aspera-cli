@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'aspera/schema/validator'
+require_relative '../lib/aspera/schema/validator'
 
 RSpec.describe(Aspera::Schema::Validator) do
   subject(:validator) { described_class.instance }

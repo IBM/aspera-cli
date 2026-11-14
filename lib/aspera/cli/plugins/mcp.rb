@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/plugins/base'
-require 'aspera/cli/info'
-require 'aspera/cli/version'
-require 'aspera/oauth/server/pkce'
-require 'aspera/cli/security'
-require 'aspera/cli/deprecation'
-require 'aspera/secret/strength'
+require_relative 'base'
+require_relative '../info'
+require_relative '../version'
+require_relative '../../oauth/server/pkce'
+require_relative '../security'
+require_relative '../deprecation'
+require_relative '../../secret/strength'
 require 'securerandom'
 
 module Aspera
@@ -139,8 +139,8 @@ module Aspera
           arguments:   [{name: :mcp_options, type: [Hash], mandatory: false, schema: 'opts:components.schemas.McpServerOptions'}]
 
         def action_server(mcp_options: nil, **)
-          require 'aspera/cli/mcp/tool'
-          require 'aspera/cli/extended_value'
+          require_relative '../mcp/tool'
+          require_relative '../extended_value'
           mcp_options = (mcp_options || {}).transform_keys(&:to_sym)
           unknown = mcp_options.keys - SERVER_KEYS - CONFIG_KEYS - STDIO_KEYS - HTTP_KEYS - HTTP_SERVER_KEYS - TOOL_KEYS - %i[transport]
           Aspera.assert(unknown.empty?, type: Cli::BadArgument) { "Unknown MCP option(s): #{unknown.join(', ')}" }
@@ -244,8 +244,8 @@ module Aspera
         # On an address that is not loopback, `auth_token` is mandatory, also with OAuth:
         # it is the secret asked on the consent page, else anyone could approve its own client.
         def start_http_transport(server, mcp_options)
-          require 'aspera/cli/mcp/http_servlet'
-          require 'aspera/web_server_simple'
+          require_relative '../mcp/http_servlet'
+          require_relative '../../web_server_simple'
           parameters        = http_server_parameters(mcp_options)
           uri               = WebServerSimple.url(parameters)
           auth_token        = mcp_options[:auth_token]

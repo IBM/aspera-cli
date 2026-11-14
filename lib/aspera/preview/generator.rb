@@ -4,11 +4,11 @@
 # spellchecker:ignore soffice pauseframes libx264 trunc bufsize muxer apng libmp3lame maxrate posterize movflags faststart
 # spellchecker:ignore palettegen paletteuse pointsize bordercolor repage lanczos unoconv optipng reencode conv transframes
 
-require 'aspera/preview/utils'
-require 'aspera/preview/file_types'
-require 'aspera/schema/registry'
-require 'aspera/log'
-require 'aspera/assert'
+require_relative 'utils'
+require_relative 'file_types'
+require_relative '../schema/registry'
+require_relative '../log'
+require_relative '../assert'
 
 module Aspera
   module Preview

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/environment'
+require_relative '../environment'
 
 module Aspera
   # Location of Aspera products, for which an Agent is not proposed

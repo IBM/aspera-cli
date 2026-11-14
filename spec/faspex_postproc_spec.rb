@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/faspex_postproc'
+require_relative '../lib/aspera/faspex_postproc'
 require 'fileutils'
 require 'json'
 require 'securerandom'

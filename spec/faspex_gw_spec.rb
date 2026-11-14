@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/faspex_gw'
+require_relative '../lib/aspera/faspex_gw'
 require 'securerandom'
 
 RSpec.describe(Aspera::Faspex4GWServlet) do

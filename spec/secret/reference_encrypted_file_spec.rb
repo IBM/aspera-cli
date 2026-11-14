@@ -2,11 +2,11 @@
 
 # Unit tests for secret references in an encrypted file of ascli (vault of type `file`).
 
+require_relative '../../lib/aspera/secret/resolver'
+require_relative '../../lib/aspera/secret/store/encrypted_hash'
 require 'English'
 require 'tmpdir'
 require 'securerandom'
-require 'aspera/secret/resolver'
-require 'aspera/secret/store/encrypted_hash'
 
 RSpec.describe(Aspera::Secret::Store::EncryptedHash) do
   # Values of secrets are generated, none in source

@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/plugins/basic_auth'
-require 'aspera/cli/plugins/node'
-require 'aspera/assert'
-require 'aspera/rest/list'
+require_relative 'basic_auth'
+require_relative 'node'
+require_relative '../../assert'
+require_relative '../../rest/list'
 
 module Aspera
   module Cli

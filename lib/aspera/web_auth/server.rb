@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
+require_relative '../web_server_simple'
+require_relative '../servlet_helpers'
+require_relative '../web_page'
+require_relative 'blob'
+require_relative '../assert'
 require 'json'
 require 'securerandom'
-require 'aspera/web_server_simple'
-require 'aspera/servlet_helpers'
-require 'aspera/web_page'
-require 'aspera/web_auth/blob'
-require 'aspera/assert'
 
 module Aspera
   module WebAuth

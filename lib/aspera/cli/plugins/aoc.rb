@@ -1,25 +1,25 @@
 # frozen_string_literal: true
 
-require 'aspera/schema/registry'
-require 'aspera/cli/plugins/oauth'
-require 'aspera/cli/plugins/node'
-require 'aspera/cli/plugins/ats'
-require 'aspera/cli/transfer_agent'
-require 'aspera/cli/special_values'
-require 'aspera/environment'
-require 'aspera/cli/wizard'
-require 'aspera/agent/node'
-require 'aspera/transfer/result'
-require 'aspera/transfer/spec'
-require 'aspera/api/aoc'
-require 'aspera/api/node'
-require 'aspera/persistency_action_once'
-require 'aspera/id_generator'
-require 'aspera/assert'
-require 'aspera/graphql'
+require_relative '../../schema/registry'
+require_relative 'oauth'
+require_relative 'node'
+require_relative 'ats'
+require_relative '../transfer_agent'
+require_relative '../special_values'
+require_relative '../../environment'
+require_relative '../wizard'
+require_relative '../../agent/node'
+require_relative '../../transfer/result'
+require_relative '../../transfer/spec'
+require_relative '../../api/aoc'
+require_relative '../../api/node'
+require_relative '../../persistency_action_once'
+require_relative '../../id_generator'
+require_relative '../../assert'
+require_relative '../../graphql'
+require_relative '../../rainbow'
 require 'securerandom'
 require 'date'
-require 'aspera/rainbow'
 using Rainbow
 
 module Aspera
@@ -1693,19 +1693,19 @@ module Aspera
         # automation guide methods
 
         def automation_guide_document
-          require 'aspera/uri_reader'
+          require_relative '../../uri_reader'
           local_path = File.expand_path('../../../../../aspera-orchestrator-plugins-doc/docs/aoc/aoc-automation-development-guide.md', __dir__)
           urls = File.exist?(local_path) ? [UriReader.file_url(local_path)] + AOC_AUTOMATION_GUIDE_URLS : AOC_AUTOMATION_GUIDE_URLS
           UriReader.read_first(urls, what: 'AoC Automation Development Guide')
         end
 
         def automation_guide_toc(level)
-          require 'aspera/markdown'
+          require_relative '../../markdown'
           Result::ObjectList.new(Markdown.toc(automation_guide_document, max_level: level || 3), fields: %w[level title anchor])
         end
 
         def automation_guide_section(anchor)
-          require 'aspera/markdown'
+          require_relative '../../markdown'
           text = Markdown.extract_section(automation_guide_document, anchor)
           Aspera.assert(!text.nil?, type: Cli::Error) { "Section not found: #{anchor}, use `toc` to list anchors" }
           Result::Text.new(text)
@@ -1813,7 +1813,7 @@ module Aspera
         end
 
         def action_gateway(parameters: {}, **)
-          require 'aspera/faspex_gw'
+          require_relative '../../faspex_gw'
           Faspex4GWServlet.serve(parameters.symbolize_keys, type: Cli::BadArgument) { [aoc_api, aoc_api.workspace_info[:id]] }
           return Result::Status.new('Gateway terminated')
         end

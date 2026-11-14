@@ -2,10 +2,10 @@
 
 # Unit tests for Aspera::Cli::Plugins::Faspex5 — no server needed.
 
-require 'aspera/cli/context'
-require 'aspera/cli/parser'
-require 'aspera/cli/plugins/faspex5'
-require 'aspera/web_server_simple'
+require_relative '../lib/aspera/cli/context'
+require_relative '../lib/aspera/cli/parser'
+require_relative '../lib/aspera/cli/plugins/faspex5'
+require_relative '../lib/aspera/web_server_simple'
 require 'securerandom'
 
 module Aspera

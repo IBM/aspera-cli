@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
+require_relative '../log'
+require_relative '../assert'
+require_relative '../transfer/units'
 require 'monitor'
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/transfer/units'
 require 'ruby-progressbar'
 
 module Aspera

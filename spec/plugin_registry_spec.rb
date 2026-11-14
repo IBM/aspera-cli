@@ -6,8 +6,8 @@
 # Also checks that the test command displayed by the wizard of each plugin exists.
 # This spec does NOT require spec_helper (no live server config needed).
 
+require_relative '../lib/aspera/cli/runner'
 require 'bundler/setup'
-require 'aspera/cli/runner'
 Dir[File.join(__dir__, '../lib/aspera/cli/plugins/*.rb')].each { |f| require f }
 
 module Aspera

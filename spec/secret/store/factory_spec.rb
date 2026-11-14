@@ -2,10 +2,10 @@
 
 # Unit tests for Aspera::Secret::Store::Factory — no server needed.
 
+require_relative '../../../lib/aspera/environment'
+require_relative '../../../lib/aspera/secret/store/factory'
 require 'tmpdir'
 require 'securerandom'
-require 'aspera/environment'
-require 'aspera/secret/store/factory'
 
 RSpec.describe(Aspera::Secret::Store::Factory) do
   # Values of secrets are generated, none in source

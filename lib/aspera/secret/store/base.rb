@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'aspera/assert'
-require 'aspera/secret/reference'
+require_relative '../../assert'
+require_relative '../reference'
 
 module Aspera
   module Secret

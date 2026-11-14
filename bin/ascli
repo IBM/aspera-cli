@@ -12,9 +12,9 @@ Encoding.default_external = Encoding::UTF_8
 $VERBOSE = old_verbose
 
 # start coverage (if enabled) before any library is loaded
-require 'aspera/coverage'
-require 'aspera/log'
-require 'aspera/cli/info'
+require_relative '../lib/aspera/coverage'
+require_relative '../lib/aspera/log'
+require_relative '../lib/aspera/cli/info'
 
 # Early debug for parser
 # Note: does not accept short option names, nor extended values
@@ -31,8 +31,8 @@ rescue => e
   Process.exit(1)
 end
 
-require 'aspera/environment'
-require 'aspera/cli/runner'
+require_relative '../lib/aspera/environment'
+require_relative '../lib/aspera/cli/runner'
 Aspera::Environment.instance.fix_home
 Aspera::Environment.instance.fix_ca_certificates
 Aspera::Cli::Runner.new(ARGV).run

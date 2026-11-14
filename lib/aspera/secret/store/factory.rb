@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'aspera/assert'
-require 'aspera/secret/reference'
-require 'aspera/secret/store/base'
+require_relative '../../assert'
+require_relative '../reference'
+require_relative 'base'
 
 module Aspera
   module Secret
@@ -70,20 +70,20 @@ module Aspera
             case type
             when 'file'
               # this module requires compilation, so it is optional
-              require 'aspera/secret/store/encrypted_hash'
+              require_relative 'encrypted_hash'
               EncryptedHash
             when 'vault'
-              require 'aspera/secret/store/hashicorp_vault'
+              require_relative 'hashicorp_vault'
               HashicorpVault
             when 'system'
-              require 'aspera/secret/store/macos_security'
+              require_relative 'macos_security'
               MacosSystem
             when 'secret_service'
-              require 'aspera/secret/store/secret_service'
+              require_relative 'secret_service'
               SecretService
             when 'keeper'
               # optional gem `keeper_secrets_manager`
-              require 'aspera/secret/store/keeper'
+              require_relative 'keeper'
               Keeper
             when '1password'
               source ||= 'api'

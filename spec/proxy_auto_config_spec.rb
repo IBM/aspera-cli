@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
+require_relative '../lib/aspera/proxy_auto_config'
+require_relative '../lib/aspera/uri_reader'
 require 'bundler/setup'
-require 'aspera/proxy_auto_config'
-require 'aspera/uri_reader'
 
 PAC_FILE = "file:///#{File.dirname(File.realpath(__FILE__), 2)}/tests/proxy.pac"
 

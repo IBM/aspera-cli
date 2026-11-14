@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'aspera/log'
-require 'aspera/rest'
+require_relative '../log'
+require_relative '../rest'
 
 module Aspera
   module Api

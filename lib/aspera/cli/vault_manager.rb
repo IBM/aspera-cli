@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/error'
-require 'aspera/cli/info'
-require 'aspera/cli/security'
-require 'aspera/cli/deprecation'
-require 'aspera/secret/reference'
-require 'aspera/log'
-require 'aspera/assert'
+require_relative 'error'
+require_relative 'info'
+require_relative 'security'
+require_relative 'deprecation'
+require_relative '../secret/reference'
+require_relative '../log'
+require_relative '../assert'
 
 module Aspera
   module Cli
@@ -131,7 +131,7 @@ module Aspera
         Aspera.assert(default.nil? || stores.key?(default), type: BadArgument) { "option vault: #{DEFAULT_KEY}: no store #{default}" }
         check_file_values(:vault, stores)
         add_vault_password(stores[default]) unless default.nil?
-        require 'aspera/secret/resolver'
+        require_relative '../secret/resolver'
         resolver = Secret::Resolver.new(config.merge(STORES_KEY => stores))
         @default = default
         @stores = stores.map { |name, params| {'name' => name, 'type' => params[:type], 'default' => name.eql?(default)} }

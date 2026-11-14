@@ -2,14 +2,14 @@
 
 # Unit tests for Aspera::Cli::TransferActions (`config agents jobs status`) — no server needed.
 
+require_relative '../lib/aspera/persistency_folder'
+require_relative '../lib/aspera/cli/async_transfer_store'
+require_relative '../lib/aspera/cli/result'
+require_relative '../lib/aspera/cli/error'
+require_relative '../lib/aspera/cli/transfer_agent'
+require_relative '../lib/aspera/cli/transfer_actions'
 require 'tmpdir'
 require 'securerandom'
-require 'aspera/persistency_folder'
-require 'aspera/cli/async_transfer_store'
-require 'aspera/cli/result'
-require 'aspera/cli/error'
-require 'aspera/cli/transfer_agent'
-require 'aspera/cli/transfer_actions'
 
 module Aspera
   module Cli

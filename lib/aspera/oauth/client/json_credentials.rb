@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/oauth/client/base'
+require_relative 'base'
 require 'digest'
 
 module Aspera

@@ -3,7 +3,7 @@
 require 'spec_helper'
 require 'securerandom'
 
-require 'aspera/web_auth/blob'
+require_relative '../lib/aspera/web_auth/blob'
 
 RSpec.describe(Aspera::WebAuth::Blob) do
   let(:data) { {'code' => 'abc+/=', 'state' => SecureRandom.uuid, 'refresh_token' => 'ey.' * 200} }

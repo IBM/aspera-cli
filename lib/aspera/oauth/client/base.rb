@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require 'aspera/oauth/client/factory'
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/secret/hider'
-require 'aspera/mime'
+require_relative 'factory'
+require_relative '../../log'
+require_relative '../../assert'
+require_relative '../../secret/hider'
+require_relative '../../mime'
+require_relative '../../rainbow'
 require 'date'
-require 'aspera/rainbow'
 using Rainbow
 
 module Aspera

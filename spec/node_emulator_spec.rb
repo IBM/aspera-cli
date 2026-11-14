@@ -7,15 +7,15 @@
 
 require 'bundler/setup'
 begin
-  require 'aspera/node_emulator'
+  require_relative '../lib/aspera/node_emulator'
 rescue LoadError => e
   # optional gem grpc not installed (e.g. BUNDLE_WITHOUT=optional, or JRuby)
   RSpec.describe('Aspera::NodeEmulator') { it('requires gem grpc') { skip(e.message) } }
   return
 end
-require 'aspera/cli/context'
-require 'aspera/cli/parser'
-require 'aspera/cli/plugins/node'
+require_relative '../lib/aspera/cli/context'
+require_relative '../lib/aspera/cli/parser'
+require_relative '../lib/aspera/cli/plugins/node'
 require 'net/http'
 require 'securerandom'
 require 'tmpdir'

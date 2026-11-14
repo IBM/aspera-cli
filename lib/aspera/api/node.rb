@@ -1,19 +1,19 @@
 # frozen_string_literal: true
 
-require 'aspera/link_header'
-require 'aspera/transfer/spec'
-require 'aspera/rest'
-require 'aspera/oauth/client/factory'
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/secret/hider'
-require 'aspera/environment'
+require_relative '../link_header'
+require_relative '../transfer/spec'
+require_relative '../rest'
+require_relative '../oauth/client/factory'
+require_relative '../log'
+require_relative '../assert'
+require_relative '../secret/hider'
+require_relative '../environment'
+require_relative '../rainbow'
 require 'base64'
 require 'openssl'
 require 'pathname'
 require 'zlib'
 require 'net/ssh/buffer'
-require 'aspera/rainbow'
 using Rainbow
 
 module Aspera

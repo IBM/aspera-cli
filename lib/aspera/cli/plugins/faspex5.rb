@@ -2,23 +2,23 @@
 
 # spellchecker: ignore workgroups mypackages passcode
 
-require 'aspera/schema/registry'
-require 'aspera/cli/plugins/oauth'
-require 'aspera/cli/extended_value'
-require 'aspera/cli/formatter'
-require 'aspera/transfer/result'
-require 'aspera/cli/special_values'
-require 'aspera/cli/wizard'
-require 'aspera/api/faspex'
-require 'aspera/persistency_action_once'
-require 'aspera/id_generator'
-require 'aspera/nagios'
-require 'aspera/environment'
-require 'aspera/assert'
+require_relative '../../schema/registry'
+require_relative 'oauth'
+require_relative '../extended_value'
+require_relative '../formatter'
+require_relative '../../transfer/result'
+require_relative '../special_values'
+require_relative '../wizard'
+require_relative '../../api/faspex'
+require_relative '../../persistency_action_once'
+require_relative '../../id_generator'
+require_relative '../../nagios'
+require_relative '../../environment'
+require_relative '../../assert'
+require_relative '../../rainbow'
 require 'securerandom'
 require 'digest'
 require 'json'
-require 'aspera/rainbow'
 using Rainbow
 
 module Aspera
@@ -977,13 +977,13 @@ module Aspera
         end
 
         def action_gateway(parameters: {}, **)
-          require 'aspera/faspex_gw'
+          require_relative '../../faspex_gw'
           Faspex4GWServlet.serve(parameters.symbolize_keys, type: Cli::BadArgument) { [api_v5, nil] }
           Result::Status.new('Gateway terminated')
         end
 
         def action_postprocessing(parameters: {}, **)
-          require 'aspera/faspex_postproc'
+          require_relative '../../faspex_postproc'
           Faspex4PostProcServlet.serve(parameters.symbolize_keys, type: Cli::BadArgument)
           Result::Status.new('Post-processing terminated')
         end

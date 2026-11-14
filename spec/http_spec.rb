@@ -2,10 +2,10 @@
 
 # Unit tests for Aspera::Cli::Http option handling — no server, no config file needed.
 
+require_relative '../lib/aspera/cli/parser'
+require_relative '../lib/aspera/cli/http'
 require 'tmpdir'
 require 'fileutils'
-require 'aspera/cli/parser'
-require 'aspera/cli/http'
 
 module Aspera
   module Cli

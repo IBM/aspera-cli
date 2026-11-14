@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/runner'
+require_relative '../lib/aspera/cli/runner'
 
 module Aspera
   module Cli

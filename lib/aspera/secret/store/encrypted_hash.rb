@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-require 'aspera/hash_ext'
-require 'aspera/environment'
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/secret/store/base'
-require 'aspera/yaml'
+require_relative '../../hash_ext'
+require_relative '../../environment'
+require_relative '../../log'
+require_relative '../../assert'
+require_relative 'base'
+require_relative '../../yaml'
 require 'openssl'
 require 'yaml'
 

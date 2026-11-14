@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'aspera/cli/plugins/config'
-require 'aspera/cli/context'
-require 'aspera/persistency_folder'
-require 'aspera/web_auth/blob'
+require_relative '../lib/aspera/cli/plugins/config'
+require_relative '../lib/aspera/cli/context'
+require_relative '../lib/aspera/persistency_folder'
+require_relative '../lib/aspera/web_auth/blob'
 
 module Aspera
   module Cli

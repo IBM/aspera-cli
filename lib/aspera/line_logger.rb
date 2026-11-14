@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/log'
+require_relative 'log'
 
 module Aspera
   # used for logging http

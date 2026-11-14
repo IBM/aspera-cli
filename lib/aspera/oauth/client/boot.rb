@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'aspera/oauth/client/base'
-require 'aspera/assert'
-require 'aspera/environment'
+require_relative 'base'
+require_relative '../../assert'
+require_relative '../../environment'
 require 'json'
 
 module Aspera

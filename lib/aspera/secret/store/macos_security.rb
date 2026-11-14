@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 # https://github.com/fastlane-community/security
-require 'aspera/cli/info'
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/environment'
-require 'aspera/secret/store/base'
+require_relative '../../cli/info'
+require_relative '../../log'
+require_relative '../../assert'
+require_relative '../../environment'
+require_relative 'base'
 
 # enhance the gem to support other key chains
 module Aspera

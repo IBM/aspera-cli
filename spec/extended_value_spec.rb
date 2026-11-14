@@ -2,9 +2,9 @@
 
 # Unit tests for Aspera::Cli::ExtendedValue — no server, no config file needed.
 
+require_relative '../lib/aspera/cli/extended_value'
 require 'stringio'
 require 'securerandom'
-require 'aspera/cli/extended_value'
 
 module Aspera
   module Cli
@@ -75,7 +75,7 @@ module Aspera
         end
 
         it 'asks on a web page when user interface is graphical' do
-          require 'aspera/cli/web_secret'
+          require_relative '../lib/aspera/cli/web_secret'
           Environment.instance.url_method = :graphical
           secret = SecureRandom.alphanumeric(12)
           allow(WebSecret).to(receive(:ask).and_return(secret))

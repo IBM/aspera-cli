@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require 'rspec'
 require_relative '../build/lib/test_env'
-require 'aspera/log'
+require_relative '../lib/aspera/log'
+require 'rspec'
 # Aspera::Log.instance.level = :debug
 # Aspera::Log.instance.logger_type = :stderr
-require 'aspera/ascmd'
-require 'aspera/ssh'
+require_relative '../lib/aspera/ascmd'
+require_relative '../lib/aspera/ssh'
 require 'uri'
 require 'openssl'
 

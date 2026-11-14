@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require 'aspera/agent/factory'
-require 'aspera/command_line_builder'
-require 'aspera/assert'
-require 'aspera/transfer/units'
+require_relative '../agent/factory'
+require_relative '../command_line_builder'
+require_relative '../assert'
+require_relative 'units'
 
 module Aspera
   module Transfer

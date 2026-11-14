@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/plugins/base'
-require 'aspera/cli/plugins/node'
-require 'aspera/api/ats'
-require 'aspera/api/aoc'
-require 'aspera/api/alee'
-require 'aspera/assert'
-require 'aspera/rainbow'
+require_relative 'base'
+require_relative 'node'
+require_relative '../../api/ats'
+require_relative '../../api/aoc'
+require_relative '../../api/alee'
+require_relative '../../assert'
+require_relative '../../rainbow'
 using Rainbow
 
 module Aspera

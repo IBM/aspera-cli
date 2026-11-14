@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/rest/error_analyzer'
+require_relative 'error_analyzer'
 require 'xmlsimple'
 
 module Aspera

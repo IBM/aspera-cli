@@ -2,17 +2,17 @@
 
 # Unit tests for Aspera::Secret::Store backends — no server, keychain or `op` needed.
 
+require_relative '../../lib/aspera/hash_ext'
+require_relative '../../lib/aspera/environment'
+require_relative '../../lib/aspera/secret/store/encrypted_hash'
+require_relative '../../lib/aspera/secret/store/macos_security'
+require_relative '../../lib/aspera/secret/store/secret_service'
+require_relative '../../lib/aspera/secret/store/one_password_cli'
+require_relative '../../lib/aspera/secret/store/hashicorp_vault'
 require 'tmpdir'
 require 'yaml'
 require 'json'
 require 'securerandom'
-require 'aspera/hash_ext'
-require 'aspera/environment'
-require 'aspera/secret/store/encrypted_hash'
-require 'aspera/secret/store/macos_security'
-require 'aspera/secret/store/secret_service'
-require 'aspera/secret/store/one_password_cli'
-require 'aspera/secret/store/hashicorp_vault'
 
 RSpec.describe(Aspera::Secret::Store) do
   let(:success) { instance_double(Process::Status, success?: true, exitstatus: 0) }

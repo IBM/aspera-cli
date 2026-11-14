@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'spec_helper'
-require 'aspera/orchestrator_workflow_checker'
+require_relative '../lib/aspera/orchestrator_workflow_checker'
 require 'json'
 require 'stringio'
 require 'zlib'

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/assert'
+require_relative 'assert'
 
 module Aspera
   # Convert dotted-path to/from nested Hash/Array container

@@ -1,19 +1,19 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/extended_value'
-require 'aspera/cli/vault_manager'
-require 'aspera/dot_container'
-require 'aspera/cli/version'
-require 'aspera/cli/info'
-require 'aspera/environment'
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/secret/hider'
-require 'aspera/yaml'
+require_relative 'extended_value'
+require_relative 'vault_manager'
+require_relative '../dot_container'
+require_relative 'version'
+require_relative 'info'
+require_relative '../environment'
+require_relative '../log'
+require_relative '../assert'
+require_relative '../secret/hider'
+require_relative '../yaml'
+require_relative '../rainbow'
 require 'digest'
 require 'fileutils'
 require 'yaml'
-require 'aspera/rainbow'
 using Rainbow
 
 module Aspera

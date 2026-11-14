@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/secret/store/base'
+require_relative 'base'
 
 module Aspera
   module Secret

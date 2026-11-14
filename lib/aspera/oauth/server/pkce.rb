@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/web_page'
-require 'aspera/servlet_helpers'
+require_relative '../../log'
+require_relative '../../assert'
+require_relative '../../web_page'
+require_relative '../../servlet_helpers'
 require 'json'
 require 'securerandom'
 require 'uri'

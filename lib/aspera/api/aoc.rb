@@ -1,15 +1,15 @@
 # frozen_string_literal: true
 
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/rest'
-require 'aspera/hash_ext'
-require 'aspera/data_repository'
-require 'aspera/transfer/spec'
-require 'aspera/api/node'
-require 'aspera/rest/list'
+require_relative '../log'
+require_relative '../assert'
+require_relative '../rest'
+require_relative '../hash_ext'
+require_relative '../data_repository'
+require_relative '../transfer/spec'
+require_relative 'node'
+require_relative '../rest/list'
+require_relative '../rainbow'
 require 'base64'
-require 'aspera/rainbow'
 using Rainbow
 
 module Aspera

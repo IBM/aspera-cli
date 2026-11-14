@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'aspera/schema/registry'
-require 'aspera/assert'
-require 'aspera/log'
+require_relative '../schema/registry'
+require_relative '../assert'
+require_relative '../log'
 
 module Aspera
   module Cli
@@ -68,7 +68,7 @@ module Aspera
       # @param now [Time, Integer, nil] Current reference time (can be injected for testing)
       # @return [Aspera::Cli::Result::ObjectList] Nagios status list
       def action_ascp_logs_health(paths:, now: nil, **)
-        require 'aspera/nagios'
+        require_relative '../nagios'
         analyzer = analyze_ascp_logs(paths)
         params = ascp_logs_params
         health_minutes = params['health_minutes'].to_i
@@ -104,7 +104,7 @@ module Aspera
       end
 
       def action_ascp_logs_records(kind:, paths:, **)
-        require 'aspera/ascp/log_analyzer'
+        require_relative '../ascp/log_analyzer'
         ascp_logs_files(paths) do |files|
           check_ascp_logs_paths(files)
           Result::ObjectList.new(Ascp::LogAnalyzer::Records.list(kind, files, timezone: ascp_logs_params['timezone']), fields: RECORDS[kind].last)
@@ -114,8 +114,8 @@ module Aspera
       end
 
       def action_ascp_logs_fields(kind:, **)
-        require 'aspera/ascp/log_analyzer'
-        require 'aspera/schema/documentation'
+        require_relative '../ascp/log_analyzer'
+        require_relative '../schema/documentation'
         builder = Schema::Documentation.new(TerminalFormatter, Schema::Registry.instance.reader(Ascp::LogAnalyzer::Records::SCHEMAS[kind])).build
         Result::ObjectList.new(builder.rows, fields: builder.columns)
       end
@@ -125,7 +125,7 @@ module Aspera
       # @param paths [Array<String>] log files or folders
       # @return [Aspera::Ascp::LogAnalyzer]
       def analyze_ascp_logs(paths)
-        require 'aspera/ascp/log_analyzer'
+        require_relative '../ascp/log_analyzer'
         params = ascp_logs_params
         user_thresholds = (params['thresholds'] || {}).transform_keys(&:to_s)
         analyzer = Ascp::LogAnalyzer.new(

@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'aspera/web_auth/receiver'
-require 'aspera/web_auth/blob'
+require_relative '../lib/aspera/web_auth/receiver'
+require_relative '../lib/aspera/web_auth/blob'
 
 RSpec.describe(Aspera::WebAuth::Paste) do
   describe '.parse' do

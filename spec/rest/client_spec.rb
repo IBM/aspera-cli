@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
+require_relative '../../lib/aspera/rest'
 require 'bundler/setup'
-require 'aspera/rest'
 require 'webrick'
 require 'tmpdir'
 require 'pathname'

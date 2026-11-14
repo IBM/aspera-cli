@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/info'
-require 'aspera/cli/parser'
-require 'aspera/cli/plugins/factory'
-require 'aspera/cli/preset_manager'
-require 'aspera/cli/special_values'
-require 'aspera/environment'
-require 'aspera/schema/documentation'
-require 'aspera/schema/registry'
+require_relative 'info'
+require_relative 'parser'
+require_relative 'plugins/factory'
+require_relative 'preset_manager'
+require_relative 'special_values'
+require_relative '../environment'
+require_relative '../schema/documentation'
+require_relative '../schema/registry'
 
 module Aspera
   module Cli

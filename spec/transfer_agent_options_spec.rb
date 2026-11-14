@@ -2,9 +2,9 @@
 
 # Unit tests for Aspera::Cli::TransferAgent option handling: `ts`, `transfer` and `transfer_info`.
 
-require 'aspera/cli/parser'
-require 'aspera/cli/context'
-require 'aspera/cli/transfer_agent'
+require_relative '../lib/aspera/cli/parser'
+require_relative '../lib/aspera/cli/context'
+require_relative '../lib/aspera/cli/transfer_agent'
 
 module Aspera
   module Cli

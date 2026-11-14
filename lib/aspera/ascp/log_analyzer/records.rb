@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
 # cspell:ignore abrtxfer
+require_relative 'rules'
+require_relative 'lines'
+require_relative '../../schema/registry'
+require_relative '../../assert'
 require 'strscan'
 require 'time'
-require 'aspera/ascp/log_analyzer/rules'
-require 'aspera/ascp/log_analyzer/lines'
-require 'aspera/schema/registry'
-require 'aspera/assert'
 
 module Aspera
   module Ascp

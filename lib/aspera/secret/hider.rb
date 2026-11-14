@@ -190,7 +190,7 @@ module Aspera
       # @return [String] Placeholder for hidden secrets, in ASCII when Unicode is not supported
       def hidden_marker
         # Required here, as `aspera/environment` requires `aspera/log`, which requires this file
-        require 'aspera/environment'
+        require_relative '../environment'
         Environment.char(HIDDEN_PASSWORD)
       end
     end

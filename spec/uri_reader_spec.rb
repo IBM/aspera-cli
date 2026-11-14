@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
+require_relative '../lib/aspera/uri_reader'
 require 'bundler/setup'
-require 'aspera/uri_reader'
 
 RSpec.describe(Aspera::UriReader) do
   it 'fails on bad uri' do

@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/option_value'
-require 'aspera/cli/error'
-require 'aspera/assert'
+require_relative 'option_value'
+require_relative 'error'
+require_relative '../assert'
 
 module Aspera
   module Cli

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'aspera/id_generator'
+require_relative '../lib/aspera/id_generator'
 
 RSpec.describe(Aspera::IdGenerator) do
   describe '.from_list' do

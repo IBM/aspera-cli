@@ -2,8 +2,8 @@
 
 # Unit tests for Aspera::Cli::TransferProgress: progress bar fed with transfer events.
 
+require_relative '../lib/aspera/cli/transfer_progress'
 require 'stringio'
-require 'aspera/cli/transfer_progress'
 
 module Aspera
   module Cli

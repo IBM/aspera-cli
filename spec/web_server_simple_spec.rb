@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'aspera/web_server_simple'
+require_relative '../lib/aspera/web_server_simple'
 require 'openssl'
 require 'net/http'
 require 'tmpdir'

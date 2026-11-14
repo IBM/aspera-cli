@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
-require 'aspera/assert'
-require 'aspera/secret/hider'
+require_relative 'assert'
+require_relative 'secret/hider'
+require_relative 'rainbow'
 require 'logger'
 require 'pp'
 require 'json'
 require 'singleton'
 require 'stringio'
-require 'aspera/rainbow'
 using Rainbow
 
 # Ignore warnings

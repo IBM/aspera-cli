@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
+require_relative 'log'
+require_relative 'assert'
 require 'json'
-require 'aspera/log'
-require 'aspera/assert'
 
 module Aspera
   # Persist data on file system

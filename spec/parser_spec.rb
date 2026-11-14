@@ -2,8 +2,8 @@
 
 # Unit tests for Aspera::Cli::Parser — no server, no config file needed.
 
+require_relative '../lib/aspera/cli/parser'
 require 'stringio'
-require 'aspera/cli/parser'
 
 module Aspera
   module Cli

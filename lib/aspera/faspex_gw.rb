@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/hash_ext'
-require 'aspera/mime'
-require 'aspera/secret/strength'
-require 'aspera/servlet_helpers'
-require 'aspera/web_server_simple'
+require_relative 'log'
+require_relative 'assert'
+require_relative 'hash_ext'
+require_relative 'mime'
+require_relative 'secret/strength'
+require_relative 'servlet_helpers'
+require_relative 'web_server_simple'
 require 'webrick'
 require 'json'
 

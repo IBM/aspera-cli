@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/special_values'
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/line_logger'
-require 'aspera/schema/registry'
-require 'aspera/cli/option_declarator'
-require 'aspera/rest'
-require 'aspera/oauth/client/factory'
-require 'aspera/ssl'
+require_relative 'special_values'
+require_relative '../log'
+require_relative '../assert'
+require_relative '../line_logger'
+require_relative '../schema/registry'
+require_relative 'option_declarator'
+require_relative '../rest'
+require_relative '../oauth/client/factory'
+require_relative '../ssl'
 require 'openssl'
 
 module Aspera

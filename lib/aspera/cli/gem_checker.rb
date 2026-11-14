@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/version'
-require 'aspera/cli/info'
-require 'aspera/environment'
-require 'aspera/persistency_action_once'
-require 'aspera/rest'
-require 'aspera/log'
+require_relative 'version'
+require_relative 'info'
+require_relative '../environment'
+require_relative '../persistency_action_once'
+require_relative '../rest'
+require_relative '../log'
 require 'date'
 
 module Aspera

@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
 require_relative 'spec_helper'
-require 'aspera/cli/plugins/orchestrator'
-require 'aspera/cli/parser'
-require 'aspera/cli/context'
-require 'aspera/cli/transfer_agent'
+require_relative '../lib/aspera/cli/plugins/orchestrator'
+require_relative '../lib/aspera/cli/parser'
+require_relative '../lib/aspera/cli/context'
+require_relative '../lib/aspera/cli/transfer_agent'
 require 'securerandom'
 
 RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do

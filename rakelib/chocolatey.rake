@@ -1,11 +1,11 @@
 # Rakefile
 # frozen_string_literal: true
 
+require_relative '../lib/aspera/cli/info'
+require_relative '../lib/aspera/cli/version'
 require 'rake'
 require 'erb'
 require 'fileutils'
-require 'aspera/cli/info'
-require 'aspera/cli/version'
 
 require_relative '../build/lib/build_tools'
 require_relative '../build/lib/paths'

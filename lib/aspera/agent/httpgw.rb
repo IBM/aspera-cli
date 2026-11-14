@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require 'aspera/agent/base'
-require 'aspera/transfer/spec'
-require 'aspera/api/httpgw'
-require 'aspera/log'
-require 'aspera/assert'
+require_relative 'base'
+require_relative '../transfer/spec'
+require_relative '../api/httpgw'
+require_relative '../log'
+require_relative '../assert'
 require 'securerandom'
 
 module Aspera

@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require 'aspera/log'
-require 'aspera/assert'
-require 'aspera/environment'
-require 'aspera/web_page'
-require 'aspera/servlet_helpers'
-require 'aspera/cli/error'
-require 'aspera/cli/info'
+require_relative '../log'
+require_relative '../assert'
+require_relative '../environment'
+require_relative '../web_page'
+require_relative '../servlet_helpers'
+require_relative 'error'
+require_relative 'info'
 require 'openssl'
 require 'securerandom'
 
@@ -196,7 +196,7 @@ module Aspera
       # Start a local web server for the pages
       # @return [String] URL of the local server
       def start_local_server
-        require 'aspera/web_server_simple'
+        require_relative '../web_server_simple'
         servlet = Class.new(WEBrick::HTTPServlet::AbstractServlet) do
           include ServletHelpers
 

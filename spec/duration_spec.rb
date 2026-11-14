@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'aspera/duration'
+require_relative '../lib/aspera/duration'
 
 RSpec.describe(Aspera::Duration) do
   describe '.to_unit' do

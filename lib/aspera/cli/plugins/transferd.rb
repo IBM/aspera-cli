@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
-require 'aspera/cli/plugins/base'
-require 'aspera/cli/info'
-require 'aspera/cli/special_values'
-require 'aspera/ascp/installation'
-require 'aspera/products/transferd_service'
-require 'aspera/schema/documentation'
-require 'aspera/log'
-require 'aspera/assert'
+require_relative 'base'
+require_relative '../info'
+require_relative '../special_values'
+require_relative '../../ascp/installation'
+require_relative '../../products/transferd_service'
+require_relative '../../schema/documentation'
+require_relative '../../log'
+require_relative '../../assert'
 
 module Aspera
   module Cli
@@ -136,7 +136,7 @@ module Aspera
           injected = self.class.daemon_client
           return injected unless injected.nil?
           begin
-            require 'aspera/agent/transferd'
+            require_relative '../../agent/transferd'
           rescue LoadError => e
             raise Cli::Error, "Commands that query a running daemon require the gem grpc (#{e.message}). Install it with: gem install grpc"
           end

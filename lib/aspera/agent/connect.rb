@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require 'aspera/agent/base'
-require 'aspera/products/connect'
-require 'aspera/products/other'
-require 'aspera/rest'
-require 'aspera/environment'
+require_relative 'base'
+require_relative '../products/connect'
+require_relative '../products/other'
+require_relative '../rest'
+require_relative '../environment'
+require_relative '../rainbow'
 require 'securerandom'
-require 'aspera/rainbow'
 using Rainbow
 
 module Aspera
