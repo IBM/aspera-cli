@@ -17,10 +17,10 @@ RSpec.shared_context('with live server', :live) do
     full_config = TestEnv.configuration
     default_server = full_config.dig('default', 'server')
     raise 'Missing default config for server' if default_server.nil?
-    info = full_config[default_server]
-    %w[url username password].each do |p|
-      param = info[p]
+    info = %w[url username password].to_h do |p|
+      param = TestEnv.conf_data("#{default_server}.#{p}")
       raise "Wrong value for parameter: #{p}" unless param.is_a?(String) && !param.empty?
+      [p, param]
     end
     info
   end

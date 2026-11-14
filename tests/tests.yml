@@ -3,12 +3,12 @@
 asession:
   command: asession
   pre: |
-    config = conf_data(conf_data('default.server'))
-    uri = URI.parse(config['url'])
+    server_preset = conf_data('default.server')
+    uri = URI.parse(conf_data("#{server_preset}.url"))
     remote_host=uri.host
     remote_port=uri.port
-    remote_user=config['username']
-    remote_pass=config['password']
+    remote_user=conf_data("#{server_preset}.username")
+    remote_pass=conf_data("#{server_preset}.password")
   args:
     - |
       @json:{"loglevel":"info","spec":{"remote_host":"$(remote_host)","remote_user":"$(remote_user)","ssh_port":$(remote_port),"remote_password":"$(remote_pass)","direction":"receive","destination_root":"$(TMP)","resume_policy":"none","paths":[{"source":"/aspera-test-dir-small/10MB.1"}]}}
@@ -4953,8 +4953,7 @@ sync_other_delete_fail:
     - not_exist
 conf_detect:
   pre: |
-    config = conf_data(conf_data('default.server'))
-    uri = URI.parse(config['url'])
+    uri = URI.parse(conf_data("#{conf_data('default.server')}.url"))
     remote_host=uri.host
   args:
     - config

@@ -118,13 +118,7 @@ end
 # @param path [String] Dot-separated path in config
 # @return [Object] Value found at given path
 def conf_data(path)
-  @param_config_cache = TestEnv.configuration if @param_config_cache.nil?
-  current = @param_config_cache
-  path.split('.').each do |k|
-    current = current[k]
-    raise "Missing config: #{k} for #{path}" if current.nil?
-  end
-  current
+  TestEnv.conf_data(path)
 end
 
 def eval_macro(value, user_binding)

@@ -117,6 +117,20 @@ module TestEnv
       end.freeze
   end
 
+  # Retrieve a test environment config parameter.
+  # A string value `@extend:...@preset:path@...` is expanded with the other parameters of the configuration.
+  # @param path [String] Dot-separated path in config
+  # @return [Object] Value found at given path
+  def conf_data(path)
+    current = configuration
+    path.split('.').each do |k|
+      current = current[k]
+      raise "Missing config: #{k} for #{path}" if current.nil?
+    end
+    current = current.delete_prefix('@extend:').gsub(/@preset:([^@]+)@/) { conf_data(Regexp.last_match(1)).to_s } if current.is_a?(String) && current.start_with?('@extend:')
+    current
+  end
+
   # Normalize one raw test definition loaded from [`tests.yml`](tests/tests.yml).
   #
   # This step validates supported keys and applies per-definition defaults, but it
@@ -207,5 +221,5 @@ module TestEnv
     end
     tests
   end
-  module_function :configuration, :normalize_test, :instantiate, :descriptions
+  module_function :configuration, :conf_data, :normalize_test, :instantiate, :descriptions
 end
