@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 # cspell:words getlocal MSGID PROCID rsyslog
+require_relative '../log_analyzer'
+
 module Aspera
   module Ascp
     class LogAnalyzer

@@ -2,6 +2,7 @@
 
 # cspell:words MAGICKCORE ITERM
 
+require_relative '../assert'
 require_relative '../log'
 require_relative '../environment'
 require_relative '../rainbow'

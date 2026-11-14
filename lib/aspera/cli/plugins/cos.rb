@@ -2,6 +2,7 @@
 
 require_relative 'base'
 require_relative 'node'
+require_relative '../error'
 require_relative '../../api/cos_node'
 require_relative '../../assert'
 

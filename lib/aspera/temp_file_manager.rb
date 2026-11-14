@@ -4,6 +4,7 @@ require_relative 'assert'
 require_relative 'log'
 require 'singleton'
 require 'fileutils'
+require 'securerandom'
 require 'etc'
 require 'tmpdir'
 

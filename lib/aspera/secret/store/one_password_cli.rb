@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../../environment'
+require_relative 'base'
 require_relative 'one_password_base'
 require 'json'
 

@@ -7,7 +7,6 @@ require_relative '../ssh'
 require_relative '../assert'
 require_relative 'info'
 require_relative 'terminal_formatter'
-require 'net/ssh'
 require 'openssl'
 
 module Aspera

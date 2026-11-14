@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'command_spec'
+require_relative 'option_types'
 
 module Aspera
   module Cli

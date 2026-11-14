@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative 'error'
 require_relative '../assert'
 require_relative '../nagios'
 require_relative '../log'

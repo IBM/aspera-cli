@@ -3,7 +3,6 @@
 require_relative '../log'
 require_relative '../assert'
 require_relative 'error'
-require 'singleton'
 
 module Aspera
   module Transfer

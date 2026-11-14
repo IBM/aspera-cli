@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'log'
+
 module Aspera
   # Generic error in gem
   class Error < StandardError

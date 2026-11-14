@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative 'base'
-require_relative '../transfer/spec'
 require_relative '../api/httpgw'
 require_relative '../log'
 require_relative '../assert'

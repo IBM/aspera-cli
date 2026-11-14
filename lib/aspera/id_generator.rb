@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require_relative 'assert'
 require_relative 'environment'
 require 'uri'
 

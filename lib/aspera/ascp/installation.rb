@@ -9,19 +9,15 @@ require_relative '../rest'
 require_relative '../uri_reader'
 require_relative '../assert'
 require_relative '../web_server_simple'
-require_relative '../cli/info'
-require_relative '../cli/version'
+require_relative '../hash_ext'
 require_relative '../products/desktop'
 require_relative '../products/connect'
 require_relative '../products/transferd'
 require_relative '../products/other'
-require 'English'
-require 'singleton'
-require 'xmlsimple'
-require 'base64'
 require 'fileutils'
 require 'openssl'
-require 'yaml'
+require 'singleton'
+require 'stringio'
 module Aspera
   module Ascp
     # Singleton that tells where to find ascp and other local resources (keys..) , using the "path(:name)" method.
@@ -133,7 +129,6 @@ module Aspera
           file_key = File.join(Products::Transferd.sdk_directory, 'aspera_fallback_cert_private_key.pem')
           file_cert = File.join(Products::Transferd.sdk_directory, 'aspera_fallback_cert.pem')
           if !File.exist?(file_key) || !File.exist?(file_cert)
-            require 'openssl'
             # create new self signed certificate for http fallback
             private_key = OpenSSL::PKey::RSA.new(4096)
             cert = WebServerSimple.self_signed_cert(private_key)

@@ -3,7 +3,6 @@
 require_relative 'server'
 require_relative '../web_server_simple'
 require_relative '../environment'
-require_relative '../log'
 require_relative '../assert'
 require 'uri'
 

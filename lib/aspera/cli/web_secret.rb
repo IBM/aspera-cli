@@ -9,6 +9,7 @@ require_relative 'error'
 require_relative 'info'
 require 'openssl'
 require 'securerandom'
+require 'uri'
 
 module Aspera
   module Cli

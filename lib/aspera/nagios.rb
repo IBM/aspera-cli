@@ -2,7 +2,6 @@
 
 require_relative 'log'
 require_relative 'assert'
-require 'date'
 
 module Aspera
   class Nagios

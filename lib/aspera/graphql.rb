@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'rest/call_error'
+require_relative 'assert'
 
 module Aspera
   # Helper to execute GraphQL queries via a Rest::Client object.

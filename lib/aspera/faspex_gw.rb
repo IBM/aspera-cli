@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative 'api/faspex'
 require_relative 'log'
 require_relative 'assert'
 require_relative 'hash_ext'

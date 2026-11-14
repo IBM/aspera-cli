@@ -9,6 +9,7 @@ require_relative 'file_types'
 require_relative '../schema/registry'
 require_relative '../log'
 require_relative '../assert'
+require 'fileutils'
 
 module Aspera
   module Preview

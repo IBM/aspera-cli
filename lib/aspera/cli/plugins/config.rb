@@ -1,48 +1,48 @@
 # frozen_string_literal: true
 
-require_relative '../bootstrapper'
-require_relative 'basic_auth'
-require_relative 'factory'
-require_relative 'transferd'
-require_relative '../deprecation'
-require_relative '../security'
-require_relative '../extended_value'
-require_relative '../special_values'
-require_relative '../version'
-require_relative '../formatter'
-require_relative '../http'
-require_relative '../info'
-require_relative '../wizard'
-require_relative '../sync_actions'
 require_relative '../ascp_actions'
 require_relative '../ascp_logs_actions'
-require_relative '../preset_actions'
 require_relative '../completion_actions'
-require_relative '../vault_actions'
-require_relative '../transfer_actions'
+require_relative '../deprecation'
+require_relative '../error'
 require_relative '../gem_checker'
+require_relative '../http'
+require_relative '../info'
+require_relative '../option_types'
+require_relative '../parser'
+require_relative '../preset_actions'
+require_relative '../preset_manager'
+require_relative '../prompt'
+require_relative '../result'
+require_relative '../security'
+require_relative '../special_values'
+require_relative '../sync_actions'
+require_relative '../terminal_formatter'
+require_relative '../transfer_actions'
+require_relative '../vault_actions'
+require_relative '../version'
+require_relative '../wizard'
+require_relative 'base'
+require_relative 'factory'
+require_relative 'transferd'
+require_relative '../../agent/factory'
 require_relative '../../ascp/installation'
-require_relative '../../sync/operations'
-require_relative '../../products/transferd'
-require_relative '../../transfer/spec'
-require_relative '../../schema/documentation'
-require_relative '../../secret/store/macos_security'
+require_relative '../../assert'
+require_relative '../../command_line_builder'
 require_relative '../../environment'
-require_relative '../../persistency_action_once'
+require_relative '../../hash_ext'
+require_relative '../../log'
+require_relative '../../oauth/client/factory'
+require_relative '../../oauth/client/jwt'
+require_relative '../../rest'
+require_relative '../../schema/documentation'
+require_relative '../../schema/registry'
+require_relative '../../string_ext'
+require_relative '../../sync/operations'
+require_relative '../../transfer/spec'
 require_relative '../../web_auth/blob'
 require_relative '../../web_auth/relay'
-require_relative '../prompt'
-require_relative '../../id_generator'
-require_relative '../../data_repository'
-require_relative '../../rest'
-require_relative '../../oauth/client/jwt'
-require_relative '../../log'
-require_relative '../../assert'
-require_relative '../../string_ext'
 require 'openssl'
-require 'digest'
-require 'open3'
-require 'net/http'
 
 module Aspera
   module Cli
@@ -316,14 +316,12 @@ module Aspera
           command(
             :flush, description: 'Delete all cached OAuth tokens',
             action: lambda do |**|
-              require_relative '../../api/node'
               Result::ValueList.new(OAuth::Factory.instance.flush_tokens, name: 'file')
             end
           )
           command(
             :list, description: 'List all cached OAuth tokens',
             action: lambda do |**|
-              require_relative '../../api/node'
               Result::ObjectList.new(OAuth::Factory.instance.persisted_tokens)
             end
           )
@@ -561,7 +559,6 @@ module Aspera
         end
 
         def action_tokens_show(token_id:, **)
-          require_relative '../../api/node'
           data = OAuth::Factory.instance.get_token_info(token_id)
           Aspera.assert(!data.nil?, type: Cli::Error) { 'Unknown identifier' }
           Result::SingleObject.new(data)

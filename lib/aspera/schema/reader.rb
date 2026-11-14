@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative '../assert'
+
 module Aspera
   # base class for plugins modules
   module Schema

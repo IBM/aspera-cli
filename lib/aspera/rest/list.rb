@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'parameters'
+require_relative '../cli/error'
 require_relative '../mime'
 require_relative '../assert'
 require_relative '../log'

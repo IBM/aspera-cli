@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'basic_auth'
+require_relative '../error'
 
 module Aspera
   module Cli
