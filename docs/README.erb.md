@@ -9509,13 +9509,18 @@ Option `ui.web_auth` selects how the result of the login is received (see [Web l
   After login, Shares displays a code (a long text of letters, digits, `-` and `_`). The user copies it and pastes it in the terminal (nothing is displayed, as the code contains a token).
   If standard input is not a terminal, the code is read from it.
   <%=tool%> checks that the `state` of the code is the one it generated.
+  The code is valid for **15 to 30 minutes** after its display: it is encrypted with a key derived from the `state` and from the current time in slots of 15 minutes (the previous and the next slot are also accepted).
+  So the clocks of the Shares server and of the system that runs <%=tool%> shall be correct (less than 15 minutes apart), and the code shall be pasted soon after the login, otherwise <%=tool%> reports an expired code or a wrong clock, and the login shall be done again.
+  The code is also protected against typing errors and modification.
 
 The token is saved, and renewed with its refresh token: the browser is opened again only if this fails.
 Option `username` is optional: with it, the token is saved for this user.
 
 > [!IMPORTANT]
-> Shares does not have the OAuth authorization code grant: both ways require a patch of Shares, which returns the tokens when `RelayState` is a loopback URL (`port`) or `aspera://device-code?state=<state>` (`paste`).
+> Shares does not have the OAuth authorization code grant: both ways require a specific patch of Shares, which returns the tokens when `RelayState` is a loopback URL (`port`) or `aspera://device-code?state=<state>` (`paste`).
 > With a Shares without the patch, <%=tool%> reports that no token was received.
+> This feature works only with this patch: it is not a standard function of Shares, and it has not been validated on a released version of Shares yet.
+> It may change with the final implementation in Shares: the `RelayState` values, the format of the code (and so its validity and its encryption) and the returned fields can differ, and <%=tool%> will then be adapted. Do not rely on the current format outside of <%=tool%>.
 > The tokens given by Shares go through the browser (in the URL, or in the code): <%=tool%> immediately exchanges the refresh token for a new token, so that the tokens that were visible are not valid any more.
 
 <%=include_commands_for_plugin(:shares)%>
