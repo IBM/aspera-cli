@@ -2126,11 +2126,8 @@ nd_ak_bearer_reset:
     - "@preset:ak_creds.username"
   post: sleep TEMPORIZE_CREATE
 nd_ak_bearer_create:
-  $comment: Marked interactive as `ensure_local_node` uses `sudo` when the local node must be started or configured
   depends_on:
     - nd_ak_bearer_reset
-  tags:
-    - interactive
   pre: system('ensure_local_node')
   args:
     - -N

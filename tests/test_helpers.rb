@@ -119,18 +119,27 @@ def mock_idp_paste_reply(screen, access_code)
 end
 
 # Ensure the test keychain is present and unlocked for tests on macOS.
+# If the keychain exists but its generated password was lost (e.g. `clobber`), it cannot be unlocked: it is deleted and created again.
+# If the keychain file was deleted but is still in the search list, it is only removed from the list.
 # @return [void]
 def ensure_test_keychain
   return unless Aspera::Environment.instance.os.eql?(Aspera::Environment::OS_MACOS)
-  kc = Aspera::Secret::Store::MacosSecurity::Keychain.by_name(TEST_KEYCHAIN_NAME)
+  kc_class = Aspera::Secret::Store::MacosSecurity::Keychain
+  kc = kc_class.by_name(TEST_KEYCHAIN_NAME)
+  if !kc.nil? && (!File.exist?(kc.path) || !(Paths::SECRETS / 'keychain').exist?)
+    kc.delete if File.exist?(kc.path)
+    kc_class.search_list = kc_class.list.reject { |k| k.path.eql?(kc.path) }
+    kc = nil
+  end
   if kc.nil?
     kc_path = (TMP / "#{TEST_KEYCHAIN_NAME}.keychain-db").to_s
     password = generated_secret(:keychain)
-    kc = Aspera::Secret::Store::MacosSecurity::Keychain.create(kc_path, password: password)
+    kc = kc_class.create(kc_path, password: password)
     kc.set_settings(timeout: 7200)
-    existing = Aspera::Secret::Store::MacosSecurity::Keychain.list
-    Aspera::Secret::Store::MacosSecurity::Keychain.search_list = [kc] + existing
+    kc_class.search_list = [kc] + kc_class.list
     kc.unlock(password: password)
+  else
+    kc.unlock(password: secret(:keychain))
   end
 end
 

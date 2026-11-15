@@ -82,6 +82,8 @@ PATH_TMP_STATES = TMP / 'states'
 SKIP_STATES = %w[passed skipped].freeze
 # Rake namespace for all test cases
 TEST_CASE_NS = :case
+# Local ports on which a test may leave a process listening: redirect of web authentication, and mock IdP
+TEST_PORTS = [12_345, 13_783].freeze
 
 # Init folders and files
 TMP.mkpath
@@ -214,19 +216,21 @@ end
 def run_test_command(command_line, timeout, **options)
   return run(*command_line, **options) if timeout.nil?
   pid = run(*command_line, mode: :background, pgroup: true, **options)
+  finished = false
   deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + timeout
   loop do
     status = Process.waitpid2(pid, Process::WNOHANG)&.last
     unless status.nil?
+      finished = true
       raise "Command failed: #{status}" unless status.success?
       return true
     end
-    if Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
-      kill_process_group(pid)
-      raise "Timeout after #{timeout}s: the test probably waits for a human action (use TEST_INTERACTIVE=manual, or TEST_TIMEOUT=<seconds>)"
-    end
+    raise "Timeout after #{timeout}s: the test probably waits for a human action (use TEST_INTERACTIVE=manual, or TEST_TIMEOUT=<seconds>)" if Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
     sleep(0.2)
   end
+ensure
+  # Timeout, Ctrl-C or any error: the command is in its own process group, so it would stay alive and keep its port (e.g. redirect of web auth)
+  kill_process_group(pid) if pid && !finished
 end
 
 # Execute the command of a test in a pseudo-terminal: `$stdin.tty?` is true for the command, so that it prompts like with a human.
@@ -375,7 +379,31 @@ namespace :test do
     log.info("Skipped: #{skipped}")
     log.info("Not run: #{not_run}")
   end
+
+  desc 'Stop processes left by tests: no_block ones (tmp/states/*.pid) and listeners on the ports used by tests'
+  task :kill_background do
+    processes = PATH_TMP_STATES.glob('*.pid').to_h { |f| [f.read.to_i, f.basename('.pid').to_s] }
+    # Processes that were not started with a pid file (e.g. interrupted test), but still keep a port
+    TEST_PORTS.each do |port|
+      `lsof -ti tcp:#{port} -sTCP:LISTEN 2>/dev/null`.split.each { |p| processes[p.to_i] ||= "port #{port}" }
+    end
+    processes.each do |pid, origin|
+      next unless pid.positive?
+      # The pid may have been reused by an unrelated process if the file is stale
+      command = `ps -p #{pid} -o command= 2>/dev/null`.strip
+      next unless command.match?(/ascli|mock_idp/)
+      log.info("Stopping #{origin}: #{pid} (#{command})")
+      begin
+        Process.kill('TERM', pid)
+      rescue Errno::ESRCH, Errno::EPERM
+        nil
+      end
+    end
+  end
 end
+
+# Do not lose the pid files (in tmp) of background processes: stop them before deleting
+task clean: 'test:kill_background'
 
 namespace TEST_CASE_NS do
   # Create a Rake task for each test

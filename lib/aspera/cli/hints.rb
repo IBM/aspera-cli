@@ -117,6 +117,16 @@ module Aspera
           ]
         },
         {
+          exception:   StandardError,
+          match:       /1Password CLI failed.*(not currently signed in|no active session)/m,
+          remediation: [
+            'The 1Password CLI (`op`) has no active session',
+            'Check with: op whoami',
+            'Sign in with: eval $(op signin)',
+            'or enable "Integrate with 1Password CLI" in the 1Password desktop application (Settings > Developer)'
+          ]
+        },
+        {
           exception:   Aspera::Rest::CallError,
           match:       /Please configure ACLs for this URI/,
           remediation: [

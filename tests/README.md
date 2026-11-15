@@ -22,6 +22,116 @@ Then, tell where this file is located (e.g. in your shell profile):
 export ASPERA_CLI_TEST_CONF_URL=~/some_secure_folder/test_env.conf
 ```
 
+### Dedicated SSH Server for Local Node Tests (macOS)
+
+Some local node and transfer tests (e.g. `preview_ak`, `nd_ak_bearer_*`) require an active local SSH server for the `xfer` user.
+On enterprise-managed macOS machines, the system Remote Login service (`sudo systemsetup -setremotelogin on`) is often automatically disabled by security policies.
+
+To run these tests without requiring `sudo` or relying on macOS Remote Login, set up a dedicated `sshd` instance listening only on `127.0.0.1:33001`.
+
+#### 1. Create the `xfer` user and authorized keys
+
+```bash
+# Create user if it does not exist
+sudo /usr/sbin/sysadminctl -addUser xfer
+
+# Setup docroot and SSH keys (using Aspera token auth public key)
+sudo mkdir -p /Users/xfer/.ssh /Users/xfer/docroot/previews
+sudo cp /Library/Aspera/var/aspera_tokenauth_id_rsa.pub /Users/xfer/.ssh/authorized_keys
+sudo chown -R xfer: /Users/xfer/docroot /Users/xfer/.ssh
+sudo chmod 700 /Users/xfer/.ssh
+sudo chmod 600 /Users/xfer/.ssh/authorized_keys
+sudo /bin/chmod -R +a "$(whoami) allow write" /Users/xfer/docroot
+```
+
+#### 2. Create the dedicated `sshd` configuration
+
+Create `/Library/Aspera/etc/sshd_aspera_config` (owned by `root:wheel`, permissions `0600`):
+
+```text
+Port 33001
+ListenAddress 127.0.0.1
+Protocol 2
+
+SyslogFacility AUTH
+LogLevel INFO
+
+# Authentication
+PermitRootLogin no
+PubkeyAuthentication yes
+PasswordAuthentication no
+PermitEmptyPasswords no
+ChallengeResponseAuthentication no
+KbdInteractiveAuthentication no
+UsePAM yes
+
+# Ciphers and algorithms (enable ssh-rsa for Aspera client compatibility)
+HostkeyAlgorithms +ssh-rsa
+PubkeyAcceptedAlgorithms +ssh-rsa
+
+# Security & limits
+AllowAgentForwarding no
+AllowTcpForwarding no
+X11Forwarding no
+PrintMotd no
+PrintLastLog no
+TCPKeepAlive yes
+ClientAliveInterval 20
+ClientAliveCountMax 3
+
+# Restrict to transfer user
+AllowUsers xfer
+
+Match User xfer
+    PubkeyAuthentication yes
+    PubkeyAcceptedAlgorithms +ssh-rsa
+    AuthorizedKeysFile /Users/xfer/.ssh/authorized_keys
+```
+
+#### 3. Create the LaunchDaemon
+
+Create `/Library/LaunchDaemons/com.aspera.sshd.plist`:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.aspera.sshd</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/sbin/sshd</string>
+        <string>-D</string>
+        <string>-f</string>
+        <string>/Library/Aspera/etc/sshd_aspera_config</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardErrorPath</key>
+    <string>/Library/Logs/Aspera/sshd_aspera.log</string>
+</dict>
+</plist>
+```
+
+Load the service:
+
+```bash
+sudo launchctl bootstrap system /Library/LaunchDaemons/com.aspera.sshd.plist
+```
+
+#### 4. Configure Aspera Node
+
+Configure `asconfigurator` to use port `33001`:
+
+```bash
+sudo asconfigurator -x 'server;server_name,my_local_server;ssh_port,33001;enable_http,true;enable_https,true;listen,"127.0.0.1:9091,127.0.0.1:9092s";wss_enabled,false'
+```
+
+In `docs/test_env.conf` (and your private test configuration file), set `preview_ak.ts.ssh_port: 33001`.
+
 ## Test descriptions
 
 When new commands are added to the CLI, add corresponding tests to `tests/tests.yml`.
@@ -136,7 +246,7 @@ rm -f Gemfile.lock
 gem install bundler
 bundle install
 
-killall ascli;sleep 2
+# clean (also run by clobber) stops the background processes left by tests, see tmp/states/*.pid
 bundle exec rake clobber
 
 # skip some tests

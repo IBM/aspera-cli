@@ -206,6 +206,13 @@ RSpec.describe(Aspera::Secret::Store) do
       expect { vault.get(label: 'missing') }.to(raise_error(RuntimeError, /not found/))
     end
 
+    it 'does not report a missing secret when op is not signed in' do
+      stub_failed_execute('[ERROR] 2026/11/15 14:47:58 error initializing client: You are not currently signed in.', 1)
+      vault = described_class.new
+      expect { vault.get(label: 'my_label') }.to(raise_error(RuntimeError, /\A1Password CLI failed for 'my_label': error initializing client: You are not currently signed in/))
+      expect { vault.get(label: 'my_label', exception: false) }.to(raise_error(/not currently signed in/))
+    end
+
     it 'asks for an id when several items share the same label' do
       stub_failed_execute('[ERROR] More than one item matches "my_label". Try again and specify the item by its ID', 1)
       expect { described_class.new.get(label: 'my_label') }.to(raise_error(/Multiple secrets found.*use id/))

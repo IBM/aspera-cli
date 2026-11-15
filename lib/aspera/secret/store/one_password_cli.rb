@@ -60,6 +60,9 @@ module Aspera
           stdout, stderr, status = op_capture('item', 'get', identifier, '--format=json', exception: false)
           if !status.success?
             raise "Multiple secrets found with label '#{label}': use id to disambiguate, or option vault to restrict" if stderr.to_s.match?(/more than one item/i)
+            # Other failures (e.g. not signed in) must not be reported as a missing secret
+            # `op` prefixes its messages with `[ERROR] <date> <time>`
+            raise "1Password CLI failed for '#{label}': #{stderr.to_s.sub(%r{\A\[ERROR\]\s+\d{4}/\d\d/\d\d\s+[\d:]+\s+}, '').strip}" unless stderr.to_s.match?(/isn't an item|not found/i)
             raise "Secret '#{label}' not found" if exception
             return
           end
