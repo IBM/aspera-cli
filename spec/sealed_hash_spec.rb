@@ -2,6 +2,9 @@
 
 require 'spec_helper'
 require 'securerandom'
+require 'base64'
+require 'zlib'
+require 'json'
 
 require_relative '../lib/aspera/sealed_hash'
 
@@ -101,6 +104,57 @@ RSpec.describe(Aspera::SealedHash) do
       expect(described_class.sealed?('?code=a&state=b')).to(be(false))
       expect(described_class.sealed?('code=a&state=b')).to(be(false))
       expect(described_class.sealed?('short')).to(be(false))
+    end
+  end
+
+  context 'without encryption' do
+    let(:plain) { {'nodeUser' => 'u', 'nodePW' => 'p+/=', 'nodeURL' => 'https://node.example.com:9092', 'unicode' => 'é€'} }
+    # Format of `ascli node asperabrowser` before the use of this module
+    let(:legacy) { Base64.strict_encode64(Zlib::Deflate.deflate(JSON.generate(plain))).gsub(/=+$/, '').tr('+/', '-_').reverse }
+
+    it 'reads and gives the legacy format with reverse' do
+      # Compression level differs (header of the zlib stream), the content is the same
+      expect(described_class.unseal(legacy, encrypt: false, reverse: true)).to(eq(plain))
+      text = described_class.seal(plain, encrypt: false, reverse: true)
+      expect(text).to(match(/\A[A-Za-z0-9_-]+\z/))
+      decoded = Base64.urlsafe_decode64(text.reverse)
+      expect(JSON.parse(Zlib::Inflate.inflate(decoded))).to(eq(plain))
+    end
+
+    it 'is deterministic, and independent of key and time' do
+      text = described_class.seal(plain, encrypt: false, time: now)
+      expect(described_class.seal(plain, encrypt: false, time: now + 86_400, base_key: 'x', secret: 'y')).to(eq(text))
+      expect(described_class.unseal(text, encrypt: false, time: now + 86_400 * 365)).to(eq(plain))
+    end
+
+    it 'does not reverse by default' do
+      text = described_class.seal(plain, encrypt: false)
+      expect(text).to(eq(described_class.seal(plain, encrypt: false, reverse: true).reverse))
+      expect { described_class.unseal(text.reverse, encrypt: false) }.to(raise_error(Aspera::ParameterError))
+    end
+
+    it 'ignores spaces, line breaks and quotes' do
+      text = described_class.seal(plain, encrypt: false, reverse: true)
+      expect(described_class.unseal("\"#{text.scan(/.{1,20}/).join("\n ")}\"", encrypt: false, reverse: true)).to(eq(plain))
+    end
+
+    it 'refuses invalid input' do
+      expect { described_class.unseal('', encrypt: false) }.to(raise_error(Aspera::ParameterError, /incomplete/))
+      expect { described_class.unseal('abc+/=' * 10, encrypt: false) }.to(raise_error(Aspera::ParameterError, /invalid characters/))
+      expect { described_class.unseal('AAAAAAAA', encrypt: false) }.to(raise_error(Aspera::ParameterError))
+      expect { described_class.unseal(described_class.seal({'x' => 'a' * 1_000_000}, encrypt: false), encrypt: false) }.to(raise_error(Aspera::ParameterError, /too large/))
+    end
+
+    it 'does not read an encrypted text' do
+      expect { described_class.unseal(described_class.seal(plain), encrypt: false) }.to(raise_error(Aspera::ParameterError))
+    end
+  end
+
+  context 'with reverse' do
+    it 'reverses the encrypted text' do
+      text = described_class.seal(data, time: now, reverse: true)
+      expect(described_class.unseal(text, time: now, reverse: true)).to(eq(data))
+      expect { described_class.unseal(text, time: now) }.to(raise_error(Aspera::ParameterError))
     end
   end
 

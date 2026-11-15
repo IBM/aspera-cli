@@ -2,6 +2,7 @@
 
 # cspell:ignore asperabrowserurl
 require_relative '../../schema/registry'
+require_relative '../../sealed_hash'
 require_relative 'basic_auth'
 require_relative '../sync_actions'
 require_relative '../special_values'
@@ -14,7 +15,6 @@ require_relative '../../oauth/client/factory'
 require_relative '../../rest/list'
 require_relative '../../assert'
 require 'base64'
-require 'zlib'
 
 module Aspera
   module Cli
@@ -73,7 +73,7 @@ module Aspera
         # DSL option declarations - at class level, picked up by Base#initialize via ancestor chain.
         # Included by other plugins (Ats, Cos, Aoc) via `use_options Node`.
         option :validator,        description: 'Identifier of validator (optional for central)'
-        option :asperabrowserurl, description: 'URL for simple aspera web ui', default: 'https://asperabrowser.mybluemix.net'
+        option :asperabrowserurl, description: 'URL of Aspera Browser, web application to browse the node', default: 'https://laurent-martin.github.io/aspera-browser-react/'
         option :node_api,         description: 'Gen4: standard_ports: Use standard FASP ports (true) or get from node API (false). cache: Set to false to force actual file system read',
           allowed: Hash, on_set: Api::Node.method(:api_options=)
         option :root_id,          description: 'Gen4: File id of top folder when using access key (override AK root id)'
@@ -579,7 +579,7 @@ module Aspera
             arguments: [{name: :file, type: Hash, mandatory: false, default: nil}]
         end
         # Standalone leaf commands
-        command :asperabrowser, description: 'Open Aspera browser'
+        command :asperabrowser, description: 'Open Aspera Browser on this node (the password is optional: it is then entered in the application)'
         command :basic_token,   description: 'Generate basic auth token', action: ->(**) { Result::Text.new(Rest.basic_authorization(options.get_option(:username, mandatory: true), options.get_option(:password, mandatory: true))) }
         command(
           :bearer_token, description: 'Generate bearer token',
@@ -1122,12 +1122,12 @@ module Aspera
         def action_asperabrowser(**)
           browse_params = {
             'nodeUser' => options.get_option(:username, mandatory: true),
-            'nodePW'   => options.get_option(:password, mandatory: true),
+            'nodePW'   => options.get_option(:password),
             'nodeURL'  => options.get_option(:url, mandatory: true)
-          }
-          # encode parameters so that it looks good in url
-          encoded_params = Base64.strict_encode64(Zlib::Deflate.deflate(JSON.generate(browse_params))).gsub(/=+$/, '').tr('+/', '-_').reverse
-          Environment.instance.open_uri("#{options.get_option(:asperabrowserurl)}?goto=#{encoded_params}")
+          }.reject { |_key, value| value.to_s.empty? }
+          # Not encrypted (decoded by the web application), in the fragment: it is not sent to the web server
+          encoded_params = SealedHash.seal(browse_params, encrypt: false, reverse: true)
+          Environment.instance.open_uri("#{options.get_option(:asperabrowserurl)}##{URI.encode_www_form(goto: encoded_params)}")
           return Result::Status.new('done')
         end
 

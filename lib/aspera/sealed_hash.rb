@@ -25,6 +25,11 @@ module Aspera
   # So a text is valid from 1 to 2 periods after its creation (15 to 30 minutes by default), and is also accepted if the clock of the receiver is up to 1 period behind.
   # When unsealing, spaces and line breaks are ignored (a text split on several lines is valid), as well as quotes and punctuation around the text.
   # Letter case matters.
+  #
+  # With `encrypt: false`, there is no encryption and no validity period: the text is only Hash -> JSON -> deflate -> Base64 URL-safe, readable by anyone, without detection of errors.
+  # It is used for links that must stay valid and are decoded by other programs (e.g. JavaScript in a browser).
+  # `sealed?` does not know this mode.
+  # With `reverse: true`, the final text is reversed (it must be the same on both sides), in any mode.
   module SealedHash
     CIPHER = 'aes-256-gcm'
     IV_SIZE = 12
@@ -47,14 +52,24 @@ module Aspera
       # @param base_key [String, nil] Base of the key, e.g. the name of the application (optional)
       # @param time     [Time]        Time used for the key
       # @param period   [Integer]     Duration of a slot, in seconds (must be the same on both sides)
+      # @param encrypt  [Boolean]     `false`: no encryption, no validity period (secret, base_key, time and period are ignored)
+      # @param reverse  [Boolean]     `true`: the text is reversed
       # @return [String] Base64 URL-safe text, without padding
-      def seal(data, secret: nil, base_key: nil, time: Time.now, period: PERIOD)
+      def seal(data, secret: nil, base_key: nil, time: Time.now, period: PERIOD, encrypt: true, reverse: false)
         Aspera.assert_type(data, Hash)
-        cipher = OpenSSL::Cipher.new(CIPHER).encrypt
-        cipher.key = derive_key(base_key, secret, time.to_i / period)
-        iv = cipher.random_iv
-        body = cipher.update(Zlib::Deflate.deflate(JSON.generate(data), Zlib::BEST_COMPRESSION)) + cipher.final
-        [iv + cipher.auth_tag(TAG_SIZE) + body].pack('m0').tr('+/', '-_').delete('=')
+        deflated = Zlib::Deflate.deflate(JSON.generate(data), Zlib::BEST_COMPRESSION)
+        raw =
+          if encrypt
+            cipher = OpenSSL::Cipher.new(CIPHER).encrypt
+            cipher.key = derive_key(base_key, secret, time.to_i / period)
+            iv = cipher.random_iv
+            body = cipher.update(deflated) + cipher.final
+            iv + cipher.auth_tag(TAG_SIZE) + body
+          else
+            deflated
+          end
+        text = [raw].pack('m0').tr('+/', '-_').delete('=')
+        reverse ? text.reverse : text
       end
 
       # @param text [String] Text typed or pasted by the user
@@ -70,24 +85,31 @@ module Aspera
       # @param base_key [String, nil] Base of the key, e.g. the name of the application (optional)
       # @param time     [Time]        Time used for the key
       # @param period   [Integer]     Duration of a slot, in seconds (must be the same on both sides)
+      # @param encrypt  [Boolean]     Same value as for `seal`
+      # @param reverse  [Boolean]     Same value as for `seal`
       # @return [Hash] The data
       # @raise [ParameterError] if text is not valid: incomplete, mistyped, modified, or made with another key or too long ago
-      def unseal(text, secret: nil, base_key: nil, time: Time.now, period: PERIOD)
+      def unseal(text, secret: nil, base_key: nil, time: Time.now, period: PERIOD, encrypt: true, reverse: false)
         clean = normalize(text)
+        clean = clean.reverse if reverse
         raise ParameterError, 'Code is too long' if clean.length > MAX_TEXT_LENGTH
         raise ParameterError, 'Code has invalid characters: only letters, digits, - and _ are expected' unless clean.match?(TEXT_CHARS)
-        raise ParameterError, 'Code is incomplete' if clean.length < MIN_TEXT_LENGTH
+        raise ParameterError, 'Code is incomplete' if clean.length < (encrypt ? MIN_TEXT_LENGTH : 1)
         raw = begin
           "#{clean.tr('-_', '+/')}#{'=' * ((4 - (clean.length % 4)) % 4)}".unpack1('m0')
         rescue ArgumentError
           raise ParameterError, 'Code is incomplete or has typing errors'
         end
-        deflated = nil
-        SLOT_OFFSETS.each do |offset|
-          deflated = decrypt(raw, derive_key(base_key, secret, (time.to_i / period) + offset))
-          break unless deflated.nil?
+        if encrypt
+          deflated = nil
+          SLOT_OFFSETS.each do |offset|
+            deflated = decrypt(raw, derive_key(base_key, secret, (time.to_i / period) + offset))
+            break unless deflated.nil?
+          end
+          raise ParameterError, 'Invalid code: incomplete, mistyped, expired, or the clock is wrong (check the time of both computers)' if deflated.nil?
+        else
+          deflated = raw
         end
-        raise ParameterError, 'Invalid code: incomplete, mistyped, expired, or the clock is wrong (check the time of both computers)' if deflated.nil?
         data = JSON.parse(inflate(deflated))
         raise ParameterError, 'Invalid code: unexpected content' unless data.is_a?(Hash)
         data

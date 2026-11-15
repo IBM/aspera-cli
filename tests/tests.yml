@@ -1785,8 +1785,45 @@ nd_basic_token:
     - node
     - basic_token
 nd_asperabrowser:
+  description: The URL of Aspera Browser carries the node in its fragment (not sent to the web server). The URL is displayed on the terminal, and decoded here.
+  tags:
+    - interactive
+  tty: true
+  env:
+    ASCLI_UI: ~
+  pre: generated_secret(:dummy)
+  post: |
+    tty = t.out_file.sub_ext('.tty').read.gsub(/\e\[[0-9;]*m/, '')
+    raise 'URL of Aspera Browser not displayed' unless (m = tty.match(%r{https://laurent-martin\.github\.io/aspera-browser-react/#goto=([A-Za-z0-9_-]+)}))
+    data = Aspera::SealedHash.unseal(m[1], encrypt: false, reverse: true)
+    expected = {'nodeUser' => 'user1', 'nodePW' => secret(:dummy), 'nodeURL' => 'https://node.example.com:9092'}
+    raise "Unexpected parameters: #{data.keys}" unless data.eql?(expected)
   args:
     - node
+    - --url=https://node.example.com:9092
+    - --username=user1
+    - --password=$(secret :dummy)
+    - --ui=text
+    - asperabrowser
+nd_asperabrowser_no_password:
+  description: Without password (empty), the key is not in the URL, the application asks it.
+  tags:
+    - interactive
+    - no_doc
+  tty: true
+  env:
+    ASCLI_UI: ~
+  post: |
+    tty = t.out_file.sub_ext('.tty').read.gsub(/\e\[[0-9;]*m/, '')
+    raise 'URL of Aspera Browser not displayed' unless (m = tty.match(%r{https://laurent-martin\.github\.io/aspera-browser-react/#goto=([A-Za-z0-9_-]+)}))
+    data = Aspera::SealedHash.unseal(m[1], encrypt: false, reverse: true)
+    raise "Unexpected parameters: #{data}" unless data.eql?({'nodeUser' => 'user1', 'nodeURL' => 'https://node.example.com:9092'})
+  args:
+    - node
+    - --url=https://node.example.com:9092
+    - --username=user1
+    - --password=
+    - --ui=text
     - asperabrowser
 nd_upload_ak_creds:
   args:
