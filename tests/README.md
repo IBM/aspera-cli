@@ -155,25 +155,27 @@ The following keys are supported in each test entry:
 | `pre`         | `String` | Ruby code to run before the test.                |
 | `post`        | `String` | Ruby code to run after the test.                 |
 | `stdin`       | `String` | Standard input to the command.                   |
-| `tty`         | `Boolean`| Run the command in a pseudo-terminal (see below).|
 | `expect`      | `String` | Expected stdout (or stderr for must_fail).       |
 | `template`    | `String` | Member of this template (see below).             |
 | `instantiate` | `String` | Instance of this template (see below).           |
 
-Some tags have special meaning; others are only for grouping (e.g. to skip or select tests).
+Some tags have special meaning (active tags, listed below); others are only for grouping (e.g. to skip or select tests).
+A grouping tag shall be used by at least 2 tests (the tests of the plugin with that name count): a tag used by a single test is rejected, as it is probably a typo. Active tags are valid even for a single test. Tags `tty` and `background` cannot be combined.
 
 | Tag           | Description                                                       |
 |---------------|-------------------------------------------------------------------|
-| `no_doc`       | Do not include in generated documentation.                        |
+| `no_doc`      | Do not include in generated documentation.                        |
 | `must_fail`   | Test is expected to fail (non-zero exit); `expect` matches stderr.|
-| `pre_cleanup` | If it fails, ignore it (used for cleanup steps).                  |
+| `cleanup`     | If it fails, ignore it (used for cleanup steps).                  |
 | `flaky`       | Known unstable test; failure is tolerated.                        |
 | `save_output` | Save command output to a file named after the test case.          |
 | `wait_value`  | Re-run until a value is produced (requires `save_output`).        |
 | `tmp_conf`    | Use a temporary config file (config may be modified).             |
-| `no_block`     | Do not wait for completion; save PID for later stop.              |
+| `background`  | Do not wait for completion; save PID for later stop.              |
+| `tty`         | Run the command in a pseudo-terminal (see below).                 |
+| `interactive` | A human would have to act (see below).                            |
 
-In `pre`/`post` Ruby code, `t.saved_output(name)` reads output saved by a test with `save_output`; `t.stop_process(name)` stops a process started with `no_block`.
+In `pre`/`post` Ruby code, `t.saved_output(name)` reads output saved by a test with `save_output`; `t.stop_process(name)` stops a process started with `background`.
 
 Values inside `$(...)` in YAML strings are evaluated as Ruby expressions.
 Constants and helpers are defined in `rakelib/test.rake` and are available in `pre`/`post` and in `$(...)`.
@@ -274,7 +276,7 @@ There is no limit in `manual` mode.
 The limit applies to the command of the test, not to the `pre` and `post` code.
 
 - **Terminal input**: Injected automatically via test definition `stdin:`.
-- **Pseudo-terminal**: With `stdin:`, the command reads a file, so `$stdin.tty?` is false: the masked input of secrets (`getpass`) and the questions asked only on a terminal (e.g. trusting the host of `config web_login`) are not run. A test with `tty: true` runs the command in a pseudo-terminal (`PTY.spawn`) instead: each line of `stdin:` is typed when the command displays a prompt (output ending with `> `), the typed characters are not displayed when the command hides them. The text displayed on the terminal is saved in `tmp/states/<test>.tty` (e.g. for a `post` that checks that a secret is not displayed). The output of the command goes to the terminal, so `expect` and `save_output` work with `--out.file` only (set by `save_output`); `stderr` is not separated. The timeout applies as for other `interactive` tests. `tty: true` cannot be combined with `no_block`, and does not capture `must_fail` messages in a file.
+- **Pseudo-terminal**: With `stdin:`, the command reads a file, so `$stdin.tty?` is false: the masked input of secrets (`getpass`) and the questions asked only on a terminal (e.g. trusting the host of `config web_login`) are not run. A test with the tag `tty` runs the command in a pseudo-terminal (`PTY.spawn`) instead: each line of `stdin:` is typed when the command displays a prompt (output ending with `> `), the typed characters are not displayed when the command hides them. The text displayed on the terminal is saved in `tmp/states/<test>.tty` (e.g. for a `post` that checks that a secret is not displayed). The output of the command goes to the terminal, so `expect` and `save_output` work with `--out.file` only (set by `save_output`); `stderr` is not separated. The timeout applies as for other `interactive` tests. The tag `tty` cannot be combined with `background`, and a test with it does not capture `must_fail` messages in a file.
 - **`--interactive=yes`**: the test configuration sets `interactive` to `no` (preset `cli_default`), so a test of the interactive input of missing arguments gives `--interactive=yes` on the command line. Test `conf_echo_interactive` runs `config echo` without argument: the value is asked (`argument: value>`) and read on `stdin:`.
 - **Wizard**: tests of `config wizard` run with `ASCLI_WIZ_TEST=yes`, which skips the steps that wait for the user (`Enter` after the public key, mandatory client id and secret of Faspex 5). A test that covers those steps sets `ASCLI_WIZ_TEST: ~` in `env:` (the value of the test is not overwritten) and gives the answers in `stdin:`.
 - **macOS Keychain**: Managed and unlocked automatically via a dedicated test keychain (`ascli`).
@@ -305,18 +307,18 @@ In `auto` mode, a test fails quickly, with a message that says which human actio
 - Tests that use IBM Aspera Connect or IBM Aspera Desktop (`aoc_files_download_connect`, `aoc_files_download_desktop`) are not automated.
 - These tests are run by hand, on a workstation (Chrome, macOS Keychain, test configuration file with credentials): they are not run in a CI environment.
 - The mock IdP covers the authorization code flow of Faspex 5 only (not Shares, not AoC).
-- With `tty: true`, `stdout` and `stderr` are mixed on the terminal.
+- With tag `tty`, `stdout` and `stderr` are mixed on the terminal.
 
 #### Local mock IdP for `--auth=web`
 
 `tests/mock_idp.rb` is a local server (no real account, no MFA) that mocks a Faspex 5: authorization page (`/aspera/faspex/auth/authorize`), token endpoint (authorization code and refresh), a ping, and the list of packages.
-Test `f5_mock_idp_start` (`no_block`) starts it on `127.0.0.1:13783`, with an access code generated by `generated_secret(:mock_idp_auth)`; test `f5_mock_webauth` runs `faspex5 package list --auth=web` against it, depends on the first, and stops the server in `post`.
+Test `f5_mock_idp_start` (`background`) starts it on `127.0.0.1:13783`, with an access code generated by `generated_secret(:mock_idp_auth)`; test `f5_mock_webauth` runs `faspex5 package list --auth=web` against it, depends on the first, and stops the server in `post`.
 The authorization page is handled by `tests/auto_browser.rb` (Chrome, or HTTP fallback if `ferrum` is not installed): it enters the access code, allows, and the redirection reaches the callback server of `ascli`.
 
 Two more tests use the same server, to cover `--ui.web_auth=paste` (the browser cannot reach the loopback address of the host that runs `ascli`):
 
-- `f5_mock_webauth_paste` (`tty: true`, server started by its own test `f5_mock_idp_paste_start`: a rake task runs once and the server is stopped by `post` of the test that uses it) runs `faspex5 package list --auth=web --ui.web_auth=paste`. `ascli` displays the URL of the login page and waits at the `Code or URL>` prompt. The line of `stdin:` is evaluated when it is typed: `mock_idp_paste_reply(screen, :mock_idp_auth)` (in `test_helpers.rb`) reads the URL in the text displayed so far (`screen`), allows the access on the mock IdP like a user, and returns the URL of the redirection (with `code` and `state`), as copied from the address bar of the browser. `ASCLI_UI` is unset: no browser is started.
-- `conf_web_login` (`tty: true`) runs `config web_login <code>`, for the workstation that has the browser. The code is made in the arguments with `web_login_code(...)` (`SealedHash`, type login). The login page shall be `https`, so test `f5_mock_idp_https_start` starts the mock IdP with `--https` (self-signed certificate; `auto_browser.rb` accepts it for loopback addresses only). The host is not known: `pre` deletes the persisted list of trusted hosts, the question `Open it, and trust this host for next logins? (yes/no)>` is answered `yes` on the terminal, and `post` checks that the question was displayed and that the host is persisted. Then the mock IdP page is opened by `auto_browser.rb`, and the redirection is received by `config web_login`.
+- `f5_mock_webauth_paste` (tag `tty`, server started by its own test `f5_mock_idp_paste_start`: a rake task runs once and the server is stopped by `post` of the test that uses it) runs `faspex5 package list --auth=web --ui.web_auth=paste`. `ascli` displays the URL of the login page and waits at the `Code or URL>` prompt. The line of `stdin:` is evaluated when it is typed: `mock_idp_paste_reply(screen, :mock_idp_auth)` (in `test_helpers.rb`) reads the URL in the text displayed so far (`screen`), allows the access on the mock IdP like a user, and returns the URL of the redirection (with `code` and `state`), as copied from the address bar of the browser. `ASCLI_UI` is unset: no browser is started.
+- `conf_web_login` (tag `tty`) runs `config web_login <code>`, for the workstation that has the browser. The code is made in the arguments with `web_login_code(...)` (`SealedHash`, type login). The login page shall be `https`, so test `f5_mock_idp_https_start` starts the mock IdP with `--https` (self-signed certificate; `auto_browser.rb` accepts it for loopback addresses only). The host is not known: `pre` deletes the persisted list of trusted hosts, the question `Open it, and trust this host for next logins? (yes/no)>` is answered `yes` on the terminal, and `post` checks that the question was displayed and that the host is persisted. Then the mock IdP page is opened by `auto_browser.rb`, and the redirection is received by `config web_login`.
 
 #### Login credentials for web pages
 

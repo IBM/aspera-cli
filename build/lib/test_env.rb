@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'set'
 require_relative '../../lib/aspera/log'
 require_relative '../../lib/aspera/assert'
 require_relative '../../lib/aspera/uri_reader'
@@ -13,9 +14,16 @@ module TestEnv
   # The configuration typically includes server URLs, credentials, and other test parameters
   ENV_VAR_REF_CONF = 'ASPERA_CLI_TEST_CONF_URL'
   # Allowed keys in test definitions (regular tests and template members, without `template`): See tests/README.md for detailed documentation
-  ALLOWED_KEYS = %i{command args tags depends_on description pre post env $comment stdin tty expect vars}.freeze
+  ALLOWED_KEYS = %i{command args tags depends_on description pre post env $comment stdin expect vars}.freeze
   # Allowed keys in template instance definitions (entries with `instantiate`)
   INSTANCE_KEYS = %i{instantiate args tags vars description $comment}.freeze
+  # Tags of tests that will (or might) fail
+  EXPECTED_FAIL = %i[cleanup must_fail flaky].freeze
+  # Tags that change the way a test is executed (see `rakelib/test.rake`)
+  SPECIAL_TAGS = (EXPECTED_FAIL + %i[save_output wait_value tmp_conf background tty]).freeze
+  # Active tags: they have an effect, so they are valid even if used by a single test.
+  # Other tags only group tests: a grouping tag used by a single test is probably a typo.
+  ACTIVE_TAGS = (SPECIAL_TAGS + %i[interactive no_doc]).freeze
 
   # Execution context for a running test case, injected as `t` in every eval binding.
   #
@@ -68,7 +76,7 @@ module TestEnv
       PATH_TMP_STATES / "#{resolve(name)}.pid"
     end
 
-    # @return [Integer] PID stored by a `no_block` test case
+    # @return [Integer] PID stored by a `background` test case
     def pid_of_test(name = nil)
       pid_file(name).read.to_i
     end
@@ -81,7 +89,7 @@ module TestEnv
       value
     end
 
-    # Terminate the process started by a `no_block` test case
+    # Terminate the process started by a `background` test case
     def stop_process(name = nil)
       Aspera::Log.instance.logger.info("Stopping process for test case: #{resolve(name)}")
       pid = pid_of_test(name)
@@ -92,7 +100,7 @@ module TestEnv
       nil
     end
 
-    # Check that the process started by a `no_block` test case is still running
+    # Check that the process started by a `background` test case is still running
     def check_process(name = nil)
       pid = pid_of_test(name)
       r = Process.kill(0, pid)
@@ -150,6 +158,7 @@ module TestEnv
     properties[:tags] ||= []
     properties[:tags].map!(&:to_sym)
     properties[:tags].push(:ats) if properties[:args].include?('ats') && !properties[:tags].include?(:ats)
+    raise "Tags `tty` and `background` cannot be combined in #{name}" if properties[:tags].include?(:tty) && properties[:tags].include?(:background)
     if properties[:args].include?('wizard')
       properties[:env] ||= {}
       # A test can set its own value, e.g. `ASCLI_WIZ_TEST: ~` (unset) to run the interactive steps of the wizard
@@ -214,12 +223,18 @@ module TestEnv
         tests[name] = normalize_test(name, properties)
       end
     end
+    # Grouping tags written in the definitions (not active, not derived from the plugin or the instance name)
+    declared = Set.new
     tests.each_value do |properties|
       plugin_sym = properties[:args].find { |s| !s.start_with?('-', '@') }&.to_sym
       raise "Plugin name must match #{PLUGIN_NAME_PATTERN}: #{plugin_sym}" unless plugin_sym.nil? || plugin_sym.to_s.match?(PLUGIN_NAME_PATTERN)
       properties[:plugin] = plugin_sym unless plugin_sym.nil?
+      declared.merge(properties[:tags] - ACTIVE_TAGS - [plugin_sym, properties[:instance_prefix]&.to_sym, :ats])
       properties[:tags].unshift(plugin_sym) unless plugin_sym.nil? || properties[:tags].include?(plugin_sym)
     end
+    # A grouping tag shall select at least 2 tests (with those that have it through their plugin): else it is probably a typo
+    single = declared.select { |tag| tests.count { |_name, properties| properties[:tags].include?(tag) } < 2 }
+    raise "Grouping tag(s) used by a single test (typo?): #{single.to_a.join(', ')}. Active tags: #{ACTIVE_TAGS.join(', ')}" unless single.empty?
     tests
   end
   module_function :configuration, :conf_data, :normalize_test, :instantiate, :descriptions

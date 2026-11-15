@@ -102,7 +102,7 @@ def web_login_code(login_url:, redirect_uri:)
 end
 
 # Log in on the local mock IdP (`tests/mock_idp.rb`) as the user does with `--ui.web_auth=paste`: open the login page that `ascli` displays,
-# allow the access, and give the URL to which the browser is redirected (it shows a connection error). Called in `stdin` of tests with `tty: true`.
+# allow the access, and give the URL to which the browser is redirected (it shows a connection error). Called in `stdin` of tests with the tag `tty`.
 # @param screen      [String] Text displayed on the terminal so far: it contains the URL of the login page
 # @param access_code [Symbol] Secret (see `generated_secret`) entered as access code on the consent page
 # @return [String] URL of redirection, with the code and the state

@@ -104,10 +104,6 @@ ALL_TESTS = TestEnv.descriptions
 PATH_TESTS_STATES = TMP / 'state.yml'
 STATES = PATH_TESTS_STATES.exist? ? YAML.load_file(PATH_TESTS_STATES) : {}
 
-# tags that will (or might) fail
-EXPECTED_FAIL = %i[pre_cleanup must_fail flaky].freeze
-# all special tags with special handling
-SPECIAL_TAGS = (EXPECTED_FAIL + %i[save_output wait_value tmp_conf no_block]).freeze
 def path_file_pair_list
   PATH_FILE_PAIR_LIST2.write([
     PATH_TST_ASC_LCL,
@@ -380,7 +376,7 @@ namespace :test do
     log.info("Not run: #{not_run}")
   end
 
-  desc 'Stop processes left by tests: no_block ones (tmp/states/*.pid) and listeners on the ports used by tests'
+  desc 'Stop processes left by tests: background ones (tmp/states/*.pid) and listeners on the ports used by tests'
   task :kill_background do
     processes = PATH_TMP_STATES.glob('*.pid').to_h { |f| [f.read.to_i, f.basename('.pid').to_s] }
     # Processes that were not started with a pid file (e.g. interrupted test), but still keep a port
@@ -430,7 +426,7 @@ namespace TEST_CASE_NS do
         Aspera::Environment.secure_eval(info[:pre], __FILE__, __LINE__, exec_binding)
       end
       # [Hash{Symbol => Boolean}] key=special tag, value=true if present
-      tags = SPECIAL_TAGS.to_h { |s| [s, info[:tags].include?(s)] }
+      tags = TestEnv::SPECIAL_TAGS.to_h { |s| [s, info[:tags].include?(s)] }
       tags[:save_output] ||= info[:expect] unless tags[:must_fail]
       if info[:command].nil?
         log.info("[OK]   #{name} (no command)")
@@ -454,14 +450,14 @@ namespace TEST_CASE_NS do
       command_line += ["--out.file=#{t.out_file}"] if tags[:save_output]
       command_line += ['--format=csv', '--out.level=data'] if tags[:save_output] && !command_line.find { |i| i.start_with?('--format=', '--out.format=') }
       run_options = {}
-      if tags[:no_block]
+      if tags[:background]
         run_options[:mode] = :background
         command_line.push("--pid-file=#{t.pid_file}")
       end
       tty_lines = []
       tty_evaluate = nil
       if info[:stdin]
-        if info[:tty]
+        if tags[:tty]
           # Sent to the terminal, one line per prompt (see `run_test_pty`).
           # Macros are evaluated when the line is typed: `screen` is the text displayed so far, e.g. to read the login URL that the command shows.
           tty_lines = info[:stdin].lines
@@ -476,10 +472,10 @@ namespace TEST_CASE_NS do
           stdinfile = TMP / "#{name}.stdin"
           stdinfile.write(input)
           run_options[:in] = stdinfile.to_s
-          run_options[:out] = t.out_file.to_s unless tags[:no_block]
+          run_options[:out] = t.out_file.to_s unless tags[:background]
         end
       end
-      if tags[:must_fail] || tags[:pre_cleanup]
+      if tags[:must_fail] || tags[:cleanup]
         run_options[:err] = t.err_file.to_s
         log.info("err: #{run_options[:err]}")
       end
@@ -487,16 +483,16 @@ namespace TEST_CASE_NS do
       # Loop for possible `redo`
       wait_attempts = 0
       loop do
-        if tags[:no_block]
+        if tags[:background]
           run(*(RUBY_WRAPPER + command_line), env: info[:env], **run_options)
-        elsif info[:tty]
+        elsif tags[:tty]
           # The text displayed on the terminal is saved in a `.tty` file, e.g. to check that a secret was not displayed
           run_test_pty(RUBY_WRAPPER + command_line, tty_lines.dup, test_timeout(info[:tags]), t.out_file.sub_ext('.tty'), env: info[:env], evaluate: tty_evaluate)
         else
           run_test_command(RUBY_WRAPPER + command_line, test_timeout(info[:tags]), env: info[:env], **run_options)
         end
         # Give time to start
-        if tags[:no_block]
+        if tags[:background]
           sleep(1)
           raise 'Process not started' unless t.pid_file.exist?
         end
@@ -508,7 +504,7 @@ namespace TEST_CASE_NS do
           rescue StandardError
             # Do not leave the background process running: it keeps its port and the output of rake
             begin
-              t.stop_process if tags[:no_block]
+              t.stop_process if tags[:background]
             rescue Errno::ESRCH
               nil
             end
@@ -547,7 +543,7 @@ namespace TEST_CASE_NS do
           redo
         end
         STATES[name] = 'failed'
-        expected_fails = EXPECTED_FAIL.select { |tag| tags[tag] }
+        expected_fails = TestEnv::EXPECTED_FAIL.select { |tag| tags[tag] }
         if expected_fails.empty?
           log.error("[FAIL] #{name} : #{e.message}")
           raise
