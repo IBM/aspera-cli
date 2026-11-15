@@ -45,6 +45,7 @@ The following keys are supported in each test entry:
 | `pre`         | `String` | Ruby code to run before the test.                |
 | `post`        | `String` | Ruby code to run after the test.                 |
 | `stdin`       | `String` | Standard input to the command.                   |
+| `tty`         | `Boolean`| Run the command in a pseudo-terminal (see below).|
 | `expect`      | `String` | Expected stdout (or stderr for must_fail).       |
 | `template`    | `String` | Member of this template (see below).             |
 | `instantiate` | `String` | Instance of this template (see below).           |
@@ -155,9 +156,17 @@ bundle exec rake test:run
 
 ### Interactive Tests and Browser Automation
 
-Tests tagged `interactive` involve prompts (terminal stdin), macOS Keychain, or web browser interactions (secret requests, OAuth consent):
+Tests tagged `interactive` are those where, without automation, a human would have to act: answer a prompt on the terminal, use a web page, unlock the macOS Keychain, or give a `sudo` password.
+Data given on `stdin:` to a command that reads its input (e.g. `@stdin:`, MCP over stdio) is not an interaction: such tests are not tagged.
+
+In `auto` mode, a test tagged `interactive` is stopped after `TEST_TIMEOUT` seconds (default 300, `0` for no limit), because it probably waits for a human.
+There is no limit in `manual` mode.
+The limit applies to the command of the test, not to the `pre` and `post` code.
 
 - **Terminal input**: Injected automatically via test definition `stdin:`.
+- **Pseudo-terminal**: With `stdin:`, the command reads a file, so `$stdin.tty?` is false: the masked input of secrets (`getpass`) and the questions asked only on a terminal (e.g. trusting the host of `config web_login`) are not run. A test with `tty: true` runs the command in a pseudo-terminal (`PTY.spawn`) instead: each line of `stdin:` is typed when the command displays a prompt (output ending with `> `), the typed characters are not displayed when the command hides them. The text displayed on the terminal is saved in `tmp/states/<test>.tty` (e.g. for a `post` that checks that a secret is not displayed). The output of the command goes to the terminal, so `expect` and `save_output` work with `--out.file` only (set by `save_output`); `stderr` is not separated. The timeout applies as for other `interactive` tests. `tty: true` cannot be combined with `noblock`, and does not capture `must_fail` messages in a file.
+- **`--interactive=yes`**: the test configuration sets `interactive` to `no` (preset `cli_default`), so a test of the interactive input of missing arguments gives `--interactive=yes` on the command line. Test `conf_echo_interactive` runs `config echo` without argument: the value is asked (`argument: value>`) and read on `stdin:`.
+- **Wizard**: tests of `config wizard` run with `ASCLI_WIZ_TEST=yes`, which skips the steps that wait for the user (`Enter` after the public key, mandatory client id and secret of Faspex 5). A test that covers those steps sets `ASCLI_WIZ_TEST: ~` in `env:` (the value of the test is not overwritten) and gives the answers in `stdin:`.
 - **macOS Keychain**: Managed and unlocked automatically via a dedicated test keychain (`ascli`).
 - **Web pages (`--ui=graphical`, `@secret:`)**: Handled by Google Chrome (via `ferrum`) or HTTP fallback.
 
@@ -166,21 +175,50 @@ The following environment variables control interactive test behavior:
 | Variable | Values / Default | Description |
 | --- | --- | --- |
 | `TEST_INTERACTIVE` | `auto` (default), `manual` | In `auto` mode, all interactions are handled without human intervention. In `manual` mode, the real system browser opens and waits for user input. |
-| `TEST_HEADLESS` | `false` (default), `true` | When `false`, Chrome opens visibly on screen. Set to `true` for headless execution (ideal for CI/CD). |
+| `TEST_HEADLESS` | `false` (default), `true` | When `false`, Chrome opens visibly on screen. Set to `true` for headless execution (no visible window). |
+| `TEST_TIMEOUT` | `300` (default), seconds | Maximum duration of the command of a test tagged `interactive`, in `auto` mode only. `0` removes the limit. |
+| `TEST_LOGIN_TIMEOUT` | `120` (default), seconds | Maximum wait of `tests/auto_browser.rb` for the end of a login on an external page. Keep it lower than `TEST_TIMEOUT`, so that its message is the one reported. |
 | `TEST_DELAY` | `0.5` (default), float | Delay in seconds between actions (typing, clicking) in visible mode. Set to `0` for maximum speed. |
 | `ASCLI_UI` | `ui` option value | Set by the test runner before each test (browser command `ruby tests/auto_browser.rb`, option `ui.command`). Not to be set manually. |
+
+#### Failures that need a human
+
+In `auto` mode, a test fails quickly, with a message that says which human action would have been needed, instead of waiting:
+
+- the command does not end within `TEST_TIMEOUT` seconds: it is stopped, with its child processes (e.g. the browser);
+- `tests/auto_browser.rb` exits with an error if the login does not end within `TEST_LOGIN_TIMEOUT` seconds, if the login page asks for a second factor (one-time code) or a captcha, or if `ferrum` is not installed for an external login page (use `TEST_INTERACTIVE=manual`);
+- if a preset selected by `select_browser(login_preset: ...)` has no `username` or no `password`, the test fails before the command is run.
+
+#### Limits
+
+- The login tests on real services (`aoc_webauth_profile`, `aoc_webauth_profile_refresh`, `f5_webauth`) need a test account **without MFA** (no second factor, no captcha): MFA and TOTP are not supported.
+- Tests that use IBM Aspera Connect or IBM Aspera Desktop (`aoc_files_download_connect`, `aoc_files_download_desktop`) are not automated.
+- These tests are run by hand, on a workstation (Chrome, macOS Keychain, test configuration file with credentials): they are not run in a CI environment.
+- The mock IdP covers the authorization code flow of Faspex 5 only (not Shares, not AoC).
+- With `tty: true`, `stdout` and `stderr` are mixed on the terminal.
+
+#### Local mock IdP for `--auth=web`
+
+`tests/mock_idp.rb` is a local server (no real account, no MFA) that mocks a Faspex 5: authorization page (`/aspera/faspex/auth/authorize`), token endpoint (authorization code and refresh), a ping, and the list of packages.
+Test `f5_mock_idp_start` (`noblock`) starts it on `127.0.0.1:13783`, with an access code generated by `generated_secret(:mock_idp_auth)`; test `f5_mock_webauth` runs `faspex5 package list --auth=web` against it, depends on the first, and stops the server in `post`.
+The authorization page is handled by `tests/auto_browser.rb` (Chrome, or HTTP fallback if `ferrum` is not installed): it enters the access code, allows, and the redirection reaches the callback server of `ascli`.
+
+Two more tests use the same server, to cover `--ui.web_auth=paste` (the browser cannot reach the loopback address of the host that runs `ascli`):
+
+- `f5_mock_webauth_paste` (`tty: true`, server started by its own test `f5_mock_idp_paste_start`: a rake task runs once and the server is stopped by `post` of the test that uses it) runs `faspex5 package list --auth=web --ui.web_auth=paste`. `ascli` displays the URL of the login page and waits at the `Code or URL>` prompt. The line of `stdin:` is evaluated when it is typed: `mock_idp_paste_reply(screen, :mock_idp_auth)` (in `test_helpers.rb`) reads the URL in the text displayed so far (`screen`), allows the access on the mock IdP like a user, and returns the URL of the redirection (with `code` and `state`), as copied from the address bar of the browser. `ASCLI_UI` is unset: no browser is started.
+- `conf_web_login` (`tty: true`) runs `config web_login <code>`, for the workstation that has the browser. The code is made in the arguments with `web_login_code(...)` (`SealedHash`, type login). The login page shall be `https`, so test `f5_mock_idp_https_start` starts the mock IdP with `--https` (self-signed certificate; `auto_browser.rb` accepts it for loopback addresses only). The host is not known: `pre` deletes the persisted list of trusted hosts, the question `Open it, and trust this host for next logins? (yes/no)>` is answered `yes` on the terminal, and `post` checks that the question was displayed and that the host is persisted. Then the mock IdP page is opened by `auto_browser.rb`, and the redirection is received by `config web_login`.
 
 #### Login credentials for web pages
 
 When a web login page is displayed (e.g. OAuth login for `--auth=web`), `tests/auto_browser.rb` fills the user name and password automatically.
-Credentials differ by application, so each test selects the preset of the test configuration file that holds them (options `username` and `password`), using `select_browser` in `pre`.
+Credentials differ by application, so each test selects the preset of the test configuration file that holds them (options `username` and `password`), using `select_browser` in `pre`: `aoc_user_web` for Aspera on Cloud and `f5_user_web` for Faspex 5 (see `docs/test_env.conf`, without secret value).
 It adds `--login-preset=<preset>` to the browser command, set with sub-option `command` of option `ui` (env var `ASCLI_UI`), which `ascli` runs with the URL to open:
 
 ```yaml
 aoc_webauth_profile:
   tags:
     - interactive
-  pre: "select_browser(login_preset: 'aoc_user')"
+  pre: "select_browser(login_preset: 'aoc_user_web')"
   args: ...
 ```
 

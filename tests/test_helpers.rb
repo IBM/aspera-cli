@@ -9,7 +9,10 @@ require_relative '../lib/aspera/mime'
 require_relative '../lib/aspera/json_rpc/client'
 require_relative '../lib/aspera/secret/store/macos_security'
 require_relative '../lib/aspera/environment'
+require_relative '../lib/aspera/sealed_hash'
+require_relative '../lib/aspera/cli/info'
 require_relative '../build/lib/paths'
+require_relative 'login_credentials'
 require 'openssl'
 require 'shellwords'
 require 'base64'
@@ -68,6 +71,7 @@ end
 # when a web page is displayed. Only names are given, not values. `ASCLI_UI` is reset before each test.
 # In manual mode (no auto browser), displays the values of generated secrets that the operator enters on the web page:
 # with `puts`, as the log hides secrets.
+# In auto mode, fails before the test if the login preset has no `username` or no `password`: the browser could not log in.
 # @param login_preset [String, nil] Preset of the test configuration file with `username` and `password` for login pages
 # @param secret       [Symbol, nil] Secret (see `generated_secret`) entered on secret pages
 # @param access_code  [Symbol, nil] Secret (see `generated_secret`) entered as access code on consent and secret pages
@@ -79,8 +83,39 @@ def select_browser(login_preset: nil, secret: nil, access_code: nil)
     end
     return
   end
+  if login_preset
+    # The home of the tests needs its configuration file, which is normally written after `pre`
+    PATH_CONF_FILE.write(TestEnv.configuration.to_yaml) unless PATH_CONF_FILE.exist?
+    LoginCredentials.read!(login_preset)
+  end
   args = {'login-preset' => login_preset, 'secret' => secret, 'access-code' => access_code}.compact.map { |k, v| "--#{k}=#{v}" }
   ENV['ASCLI_UI'] = browser_ui_option(*args)
+end
+
+# Code for `config web_login`, as `ascli` gives it to the user with `--ui.web_auth=paste`: login page, loopback redirection and keys of the reply.
+# Called in `args` of tests.
+# @param login_url    [String] URL of the login page (https)
+# @param redirect_uri [String] Loopback URL to which the browser is redirected
+# @return [String] Code of type login
+def web_login_code(login_url:, redirect_uri:)
+  Aspera::SealedHash.seal({'login_url' => login_url, 'redirect_uri' => redirect_uri, 'reply_keys' => %w[code state]}, base_key: Aspera::Cli::Info::CMD_NAME)
+end
+
+# Log in on the local mock IdP (`tests/mock_idp.rb`) as the user does with `--ui.web_auth=paste`: open the login page that `ascli` displays,
+# allow the access, and give the URL to which the browser is redirected (it shows a connection error). Called in `stdin` of tests with `tty: true`.
+# @param screen      [String] Text displayed on the terminal so far: it contains the URL of the login page
+# @param access_code [Symbol] Secret (see `generated_secret`) entered as access code on the consent page
+# @return [String] URL of redirection, with the code and the state
+def mock_idp_paste_reply(screen, access_code)
+  match = screen.gsub(/\e\[[0-9;]*m/, '').match(%r{http://127\.0\.0\.1:\d+/\S*auth/authorize\?\S+})
+  raise 'Login URL not displayed by the command' if match.nil?
+  login_url = URI.parse(match[0])
+  params = Aspera::Rest.query_to_h(login_url.query)
+  api = Aspera::Rest::Client.new(base_url: "#{login_url.scheme}://#{login_url.host}:#{login_url.port}")
+  consent = params.slice('client_id', 'redirect_uri', 'state', 'code_challenge', 'code_challenge_method').merge('decision' => 'allow', 'consent_secret' => secret(access_code))
+  response = api.create(login_url.path.delete_prefix('/'), consent, content_type: Aspera::Mime::WWW, exception: false, ret: :resp)
+  raise "Expected 302 from the login page, got #{response.code}" unless response.code.eql?('302')
+  response['Location']
 end
 
 # Ensure the test keychain is present and unlocked for tests on macOS.

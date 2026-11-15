@@ -13,7 +13,7 @@ module TestEnv
   # The configuration typically includes server URLs, credentials, and other test parameters
   ENV_VAR_REF_CONF = 'ASPERA_CLI_TEST_CONF_URL'
   # Allowed keys in test definitions (regular tests and template members, without `template`): See tests/README.md for detailed documentation
-  ALLOWED_KEYS = %i{command args tags depends_on description pre post env $comment stdin expect vars}.freeze
+  ALLOWED_KEYS = %i{command args tags depends_on description pre post env $comment stdin tty expect vars}.freeze
   # Allowed keys in template instance definitions (entries with `instantiate`)
   INSTANCE_KEYS = %i{instantiate args tags vars description $comment}.freeze
 
@@ -152,7 +152,8 @@ module TestEnv
     properties[:tags].push(:ats) if properties[:args].include?('ats') && !properties[:tags].include?(:ats)
     if properties[:args].include?('wizard')
       properties[:env] ||= {}
-      properties[:env]['ASCLI_WIZ_TEST'] = 'yes'
+      # A test can set its own value, e.g. `ASCLI_WIZ_TEST: ~` (unset) to run the interactive steps of the wizard
+      properties[:env]['ASCLI_WIZ_TEST'] = 'yes' unless properties[:env].key?('ASCLI_WIZ_TEST')
     end
     properties
   end

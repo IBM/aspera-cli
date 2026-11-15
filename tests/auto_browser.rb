@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
-require_relative '../lib/aspera/environment'
 require_relative '../lib/aspera/rest'
+require_relative '../lib/aspera/web_server_simple'
 require_relative '../lib/aspera/mime'
 require_relative '../build/lib/paths'
+require_relative 'login_credentials'
 require 'uri'
 require 'optparse'
 
@@ -78,32 +79,28 @@ def element_visible?(element)
   element.evaluate('this.offsetWidth > 0 && this.offsetHeight > 0') rescue false
 end
 
-# Read one value of a preset using ascli itself: all extended values are evaluated by ascli
-# (`@vault:`, `@file:`, `@extend:`, `@preset:`...), with the same home and config file as the tests.
-# @param preset [String] Name of the preset in the test configuration file
-# @param key    [String] Name of the value in the preset
-# @return [String, nil] Evaluated value, or nil if not found
-def preset_value(preset, key)
-  stdout, _stderr, status = Aspera::Environment.secure_execute(
-    File.join(Paths::BIN, 'ascli'), "--home=#{Paths::TMP / 'ascli_home'}", '--interactive=no', 'config', 'echo', "@preset:#{preset}.#{key}",
-    mode:       :capture,
-    exception:  false,
-    stdin_data: ''
-  )
-  status.success? && !stdout.empty? ? stdout.chomp : nil
-end
-
 # Retrieve login credentials (evaluated once) from the preset given with option `--login-preset`.
 # Values in the preset may be extended values, e.g. a reference to a vault.
 # @param preset [String, nil] Name of the preset, or nil if the test did not select one
 # @return [Hash] Keys `:username` and `:password` with String values, empty if no preset
 def login_credentials(preset)
-  @login_credentials ||=
-    if preset.nil?
-      {}
-    else
-      {username: preset_value(preset, 'username'), password: preset_value(preset, 'password')}.compact
-    end
+  @login_credentials ||= LoginCredentials.read(preset)
+end
+
+# CSS selectors of a second factor or a captcha on a login page: they need a human, the test account shall not have them.
+HUMAN_CHALLENGE_SELECTORS = [
+  'input[autocomplete="one-time-code"]',
+  'input[name*="otp" i]',
+  'input[name*="totp" i]',
+  'input[id*="otp" i]',
+  'iframe[src*="recaptcha"]',
+  'iframe[src*="hcaptcha"]'
+].join(', ').freeze
+
+# @param browser [Ferrum::Browser] Browser on a login page
+# @return [Boolean] true if the page asks for a second factor or a captcha
+def human_challenge?(browser)
+  browser.css(HUMAN_CHALLENGE_SELECTORS).any? { |e| element_visible?(e) }
 end
 
 # Automate page with Google Chrome via Ferrum
@@ -116,12 +113,15 @@ def automate_with_chrome(target_uri, login_preset, names)
   delay = ENV.fetch('TEST_DELAY', headless ? '0' : '0.5').to_f
   char_delay = delay.positive? ? [delay / 10.0, 0.05].max : 0.0
 
+  browser_options = {'no-sandbox' => nil, 'disable-gpu' => nil}
+  # Local test servers (mock IdP) with a self-signed certificate: this function is called for loopback addresses only, or external login pages with `http`
+  browser_options['ignore-certificate-errors'] = nil if target_uri.scheme.eql?('https') && Aspera::WebServerSimple.loopback?(target_uri.hostname)
   browser = Ferrum::Browser.new(
     headless:        headless,
     slowmo:          delay.positive? ? 0.01 : 0.0, # cspell:disable-line
     timeout:         15,
     process_timeout: 15,
-    browser_options: {'no-sandbox' => nil, 'disable-gpu' => nil}
+    browser_options: browser_options
   )
 
   browser.goto(target_uri.to_s)
@@ -145,7 +145,7 @@ def automate_with_chrome(target_uri, login_preset, names)
     submit_btn&.click
     # Pause on the confirmation screen so the user can see it
     sleep(delay.positive? ? delay * 2 : 0.3)
-  when %r{^/oauth/authorize}
+  when %r{^/oauth/authorize}, %r{/auth/authorize}
     access_input = browser.css('input[name="consent_secret"]').find(&:focusable?)
     if access_input
       type_slowly(access_input, generated_secret_value(names[:access_code], '--access-code'), char_delay)
@@ -169,9 +169,12 @@ def automate_with_chrome(target_uri, login_preset, names)
       user_names = %w[email username userid]
       user_ids = %w[username userid user-name-input]
 
+      redirected = -> { browser.url.include?("localhost:#{redirect_port}") || browser.url.include?("127.0.0.1:#{redirect_port}") }
       loop do
-        break if browser.url.include?("localhost:#{redirect_port}") || browser.url.include?("127.0.0.1:#{redirect_port}")
+        break if redirected.call
         break if Time.now - start_time > max_wait
+
+        raise "Login page asks for a second factor or a captcha: use a test account without MFA (#{browser.url})" if human_challenge?(browser)
 
         # Automatically click "w3id (IBM)" button if present
         unless w3id_clicked
@@ -229,6 +232,7 @@ def automate_with_chrome(target_uri, login_preset, names)
 
         sleep(0.5)
       end
+      raise "Login not completed after #{max_wait}s, a human action is probably needed (check the credentials of option --login-preset). Page: #{browser.url}" unless redirected.call
     end
   end
 ensure
@@ -239,6 +243,8 @@ end
 # @param target_uri [URI]  Target URL
 # @param names      [Hash] Names of the generated secrets: `:secret`, `:access_code`
 def fallback_http(target_uri, names)
+  # Local test servers (mock IdP) with a self-signed certificate: this function is called for loopback addresses only
+  Aspera::Rest::Parameters.instance.session_cb = ->(session) { session.verify_mode = OpenSSL::SSL::VERIFY_NONE }
   api = Aspera::Rest::Client.new(base_url: "#{target_uri.scheme}://#{target_uri.host}:#{target_uri.port}")
   subpath = target_uri.path.delete_prefix('/')
 
@@ -257,7 +263,7 @@ def fallback_http(target_uri, names)
       warn("Error: Unexpected response after secret submit: #{post_res.code}")
       exit(1)
     end
-  when %r{^/oauth/authorize}
+  when %r{^/oauth/authorize}, %r{/auth/authorize}
     params = Aspera::Rest.query_to_h(target_uri.query || '')
     _html, get_res = api.read(subpath, params, ret: :both, exception: false)
     unless get_res.code == '200'
@@ -272,13 +278,20 @@ def fallback_http(target_uri, names)
       'code_challenge'        => params['code_challenge'],
       'code_challenge_method' => params['code_challenge_method'],
       'decision'              => 'allow',
-      'consent_secret'        => generated_secret_value(names[:access_code], '--access-code')
+      'consent_secret'        => (names[:access_code] ? generated_secret_value(names[:access_code], '--access-code') : nil)
     }.compact
 
     post_res = api.create(subpath, consent_params, content_type: Aspera::Mime::WWW, exception: false, ret: :resp)
     unless %w[200 302].include?(post_res.code)
       warn("Error: Unexpected response after consent submit: #{post_res.code}")
       exit(1)
+    end
+
+    if post_res.code == '302' && post_res['Location']
+      callback_uri = URI.parse(post_res['Location'])
+      callback_api = Aspera::Rest::Client.new(base_url: "#{callback_uri.scheme}://#{callback_uri.host}:#{callback_uri.port}")
+      callback_subpath = [callback_uri.path.delete_prefix('/'), callback_uri.query].compact.join('?')
+      callback_api.call(operation: 'GET', subpath: callback_subpath, exception: false, ret: :resp)
     end
   end
 end
@@ -307,6 +320,7 @@ else
   elsif ferrum_available
     automate_with_chrome(uri, login_preset, secret_names)
   else
-    warn("Auto-browser: skipping external GUI browser for #{uri}")
+    warn("Auto-browser: gem ferrum is required to log in automatically at #{uri} (or use TEST_INTERACTIVE=manual)")
+    exit(1)
   end
 end

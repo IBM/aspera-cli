@@ -117,3 +117,5 @@ getpwnam
 eaddrinuse
 rdwr
 mtimes
+pgroup
+wnohang

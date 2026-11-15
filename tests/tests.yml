@@ -656,6 +656,21 @@ serv_wizard_password:
     - preset=srv2
     - --username=@preset:server1_user.username
     - --password=@preset:server1_user.password
+serv_wizard_stdin:
+  description: Wizard without --username and --password, the values are read on the terminal.
+  tags:
+    - server
+    - nodoc
+    - interactive
+  stdin: "$(conf_data('server1_user.username'))\n$(conf_data('server1_user.password'))\n"
+  args:
+    - config
+    - wizard
+    - "@:"
+    - url=@preset:server1_info.address
+    - plugin=server
+    - preset=srv3
+    - override=yes
 serv_browse:
   tags:
     - smoke_test
@@ -2100,7 +2115,6 @@ nd_ak_show:
 nd_ak_bearer_reset:
   $comment: Reset preview access key if present
   tags:
-    - interactive
     - pre_cleanup
     - nodoc
   args:
@@ -2112,8 +2126,11 @@ nd_ak_bearer_reset:
     - "@preset:ak_creds.username"
   post: sleep TEMPORIZE_CREATE
 nd_ak_bearer_create:
+  $comment: Marked interactive as `ensure_local_node` uses `sudo` when the local node must be started or configured
   depends_on:
     - nd_ak_bearer_reset
+  tags:
+    - interactive
   pre: system('ensure_local_node')
   args:
     - -N
@@ -2487,7 +2504,7 @@ awa_ws_current:
 aoc_webauth_profile:
   tags:
     - interactive
-  pre: "select_browser(login_preset: 'aoc_user')"
+  pre: "select_browser(login_preset: 'aoc_user_web')"
   args:
     - --preset=aoc_web
     - aoc
@@ -2498,7 +2515,7 @@ aoc_webauth_profile_refresh:
   tags:
     - interactive
     - nodoc
-  pre: "select_browser(login_preset: 'aoc_user')"
+  pre: "select_browser(login_preset: 'aoc_user_web')"
   args:
     - --preset=aoc_web
     - aoc
@@ -5667,6 +5684,7 @@ conf_vault_macosd:
   tags:
     - vault
     - pre_cleanup
+    - interactive
   args:
     - -N
     - config
@@ -5846,6 +5864,7 @@ conf_preset_ask:
   tags:
     - tmp_conf
     - nodoc
+    - interactive
   args:
     - config
     - preset
@@ -6570,6 +6589,22 @@ conf_echo_secret:
     - "@secret:"
     - --ui=text
     - --out.secrets=yes
+conf_echo_secret_tty:
+  description: Secret entered on a terminal (pseudo-terminal), the typed characters are not displayed.
+  tags:
+    - interactive
+    - nodoc
+  tty: true
+  stdin: "$(secret :echo)\n"
+  expect: $(secret :echo)
+  pre: generated_secret(:echo)
+  post: raise 'Secret displayed on terminal' if t.out_file.sub_ext('.tty').read.include?(secret(:echo))
+  args:
+    - config
+    - echo
+    - "@secret:"
+    - --ui=text
+    - --out.secrets=yes
 conf_echo_secret_web:
   description: Secret entered on a web page opened in the browser, the prompt shows the value to enter (manual mode).
   tags:
@@ -6583,6 +6618,18 @@ conf_echo_secret_web:
     - "@secret:value $(secret :echo)"
     - --ui=graphical
     - --out.secrets=yes
+conf_echo_interactive:
+  description: Missing mandatory argument asked with --interactive=yes (the test configuration sets `interactive` to `no`), the answer is read on stdin.
+  tags:
+    - interactive
+    - nodoc
+  stdin: "$(secret :echo)\n"
+  expect: $(secret :echo)
+  pre: generated_secret(:echo)
+  args:
+    - config
+    - echo
+    - --interactive=yes
 conf_hint:
   description: REST error with expired signature hint
   tags:
@@ -7040,6 +7087,28 @@ f5_wizard_no_key:
     - plugin=faspex5
     - --username=admin@ibm.com
     - --private-key=
+    - --out.secrets=yes
+    - --client-id=abc
+    - --client-secret=$(secret :dummy)
+f5_wizard_stdin:
+  description: Wizard without ASCLI_WIZ_TEST, the private key (empty to generate) and the Enter that validates the public key are read on the terminal.
+  tags:
+    - faspex5
+    - nodoc
+    - interactive
+  pre: generated_secret(:dummy)
+  env:
+    ASCLI_WIZ_TEST: ~
+  stdin: "\n\n"
+  args:
+    - config
+    - wizard
+    - "@:"
+    - url=https://eudemo.asperademo.com
+    - plugin=faspex5
+    - preset=f5_stdin
+    - override=yes
+    - --username=admin@ibm.com
     - --out.secrets=yes
     - --client-id=abc
     - --client-secret=$(secret :dummy)
@@ -7836,11 +7905,114 @@ f5_invite_delete:
 f5_webauth:
   tags:
     - interactive
-  pre: "select_browser(login_preset: 'f5_user')"
+  pre: "select_browser(login_preset: 'f5_user_web')"
   args:
     - --preset=f5_web
     - faspex5
     - version
+f5_mock_idp_start:
+  description: Start the local mock IdP server for --auth=web tests.
+  tags:
+    - noblock
+    - nodoc
+    - faspex5
+  pre: |
+    t.stop_process(:f5_mock_idp_start) rescue nil
+    generated_secret(:mock_idp_auth)
+  command: ../tests/mock_idp.rb
+  args:
+    - --port=13783
+    - --access-code=$(secret :mock_idp_auth)
+f5_mock_webauth:
+  description: Faspex 5 package list with --auth=web against local mock IdP.
+  tags:
+    - interactive
+    - nodoc
+    - faspex5
+  depends_on:
+    - f5_mock_idp_start
+  pre: "select_browser(access_code: :mock_idp_auth)"
+  args:
+    - faspex5
+    - package
+    - list
+    - --url=http://127.0.0.1:13783/aspera/faspex
+    - --auth=web
+    - --client-id=mock_client_id
+    - --redirect-uri=http://127.0.0.1:12345
+  expect: 'mock_pkg_1,Mock Package 1,completed,mock_user,"",2026-01-01T00:00:00Z,1024,1'
+  post: t.stop_process(:f5_mock_idp_start)
+f5_mock_idp_https_start:
+  description: Start the local mock IdP server with HTTPS (self-signed certificate), the login page of `config web_login` shall be https.
+  tags:
+    - noblock
+    - nodoc
+    - faspex5
+  pre: |
+    t.stop_process(:f5_mock_idp_https_start) rescue nil
+    generated_secret(:mock_idp_auth)
+  command: ../tests/mock_idp.rb
+  args:
+    - --port=13783
+    - --https
+    - --access-code=$(secret :mock_idp_auth)
+conf_web_login:
+  description: Login on the workstation for ascli on another host, with the code of type login. The host of the login page is not known yet, it is accepted on the terminal.
+  tags:
+    - interactive
+    - nodoc
+    - faspex5
+  depends_on:
+    - f5_mock_idp_https_start
+  tty: true
+  stdin: "yes\n"
+  pre: |
+    FileUtils.rm_f(PATH_CLI_HOME / 'persist_store/web_login_hosts.txt')
+    select_browser(access_code: :mock_idp_auth)
+  post: |
+    raise 'Host not persisted' unless (PATH_CLI_HOME / 'persist_store/web_login_hosts.txt').read.split("\n").include?('127.0.0.1')
+    raise 'Host not asked' unless t.out_file.sub_ext('.tty').read.include?('trust this host')
+    t.stop_process(:f5_mock_idp_https_start)
+  args:
+    - config
+    - web_login
+    - "$(web_login_code(login_url: 'https://127.0.0.1:13783/aspera/faspex/auth/authorize?client_id=mock_client_id&redirect_uri=http%3A%2F%2F127.0.0.1%3A12345%2F&state=mock_state', redirect_uri: 'http://127.0.0.1:12345/'))"
+f5_mock_idp_paste_start:
+  description: Start the local mock IdP server for the test with --ui.web_auth=paste, with its own start because the server is stopped by the test that uses it.
+  tags:
+    - noblock
+    - nodoc
+    - faspex5
+  pre: |
+    t.stop_process(:f5_mock_idp_paste_start) rescue nil
+    generated_secret(:mock_idp_auth)
+  command: ../tests/mock_idp.rb
+  args:
+    - --port=13783
+    - --access-code=$(secret :mock_idp_auth)
+f5_mock_webauth_paste:
+  description: Faspex 5 package list with --auth=web and --ui.web_auth=paste against local mock IdP, the URL of redirection is pasted on the terminal.
+  tags:
+    - interactive
+    - nodoc
+    - faspex5
+  depends_on:
+    - f5_mock_idp_paste_start
+  tty: true
+  stdin: "$(mock_idp_paste_reply(screen, :mock_idp_auth))\n"
+  env:
+    ASCLI_UI: ~
+  expect: 'mock_pkg_1,Mock Package 1,completed,mock_user,"",2026-01-01T00:00:00Z,1024,1'
+  post: t.stop_process(:f5_mock_idp_paste_start)
+  args:
+    - faspex5
+    - package
+    - list
+    - --url=http://127.0.0.1:13783/aspera/faspex
+    - --auth=web
+    - --client-id=mock_client_id
+    - --redirect-uri=http://127.0.0.1:12345
+    - --ui.web_auth=paste
 f5_fxgw_start:
   description: Start a faspex4->faspex5 gateway in background.
   tags:

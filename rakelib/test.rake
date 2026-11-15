@@ -65,6 +65,10 @@ TEMPORIZE_FILE = 30
 ENV['TEST_INTERACTIVE'] ||= 'auto'
 # Browser command (option `ui.command`, see `browser_ui_option`), nil in manual mode
 BROWSER_COMMAND = ENV['TEST_INTERACTIVE'].eql?('manual') ? nil : ['ruby', (TST / 'auto_browser.rb').to_s].freeze
+# Maximum duration in seconds of a test tagged `interactive`, in auto mode only: a test that waits for a human fails instead of blocking.
+# In manual mode (`TEST_INTERACTIVE=manual`) a human acts, so there is no limit. `TEST_TIMEOUT=0` removes the limit in auto mode.
+# Longer than the wait of `auto_browser.rb` for a login page (`TEST_LOGIN_TIMEOUT`, 120 s), so that its message is the one reported.
+TEST_TIMEOUT_DEFAULT = 300
 
 # Give warning and stop on first warning in this gem
 RUBY_WRAPPER = ['ruby', '-w', TST / 'warning_exit_wrapper.rb'].freeze
@@ -177,6 +181,106 @@ def restart_noded
   macos_start_service('asperanoded')
   sleep(5)
   # -ps -ef|grep aspera|grep -v grep
+end
+
+# @param tags [Array<Symbol>] Tags of the test
+# @return [Integer, nil] Maximum duration in seconds of the test, nil if no limit (see `TEST_TIMEOUT_DEFAULT`)
+def test_timeout(tags)
+  return if BROWSER_COMMAND.nil? || !tags.include?(:interactive)
+  seconds = Integer(ENV.fetch('TEST_TIMEOUT', TEST_TIMEOUT_DEFAULT))
+  seconds.positive? ? seconds : nil
+end
+
+# Stop a process and its children (browser...), started with `pgroup: true`
+# @param pid [Integer] Process id of the leader of the group
+def kill_process_group(pid)
+  Process.kill('TERM', -pid)
+  # Wait for the end of the leader (this also collects it: a zombie group cannot be signaled on macOS), then force if still there
+  20.times do
+    return if Process.waitpid(pid, Process::WNOHANG)
+    sleep(0.1)
+  end
+  Process.kill('KILL', -pid)
+  Process.wait(pid)
+rescue Errno::ESRCH, Errno::ECHILD
+  nil
+end
+
+# Execute the command of a test, with a limit of duration if `timeout` is set.
+# Same result as `run`: raises `RuntimeError` if the command fails.
+# @param command_line [Array<String>] Command and arguments
+# @param timeout      [Integer, nil]  Maximum duration in seconds, nil for no limit
+# @param options      [Hash]          Options of `run`
+def run_test_command(command_line, timeout, **options)
+  return run(*command_line, **options) if timeout.nil?
+  pid = run(*command_line, mode: :background, pgroup: true, **options)
+  deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + timeout
+  loop do
+    status = Process.waitpid2(pid, Process::WNOHANG)&.last
+    unless status.nil?
+      raise "Command failed: #{status}" unless status.success?
+      return true
+    end
+    if Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+      kill_process_group(pid)
+      raise "Timeout after #{timeout}s: the test probably waits for a human action (use TEST_INTERACTIVE=manual, or TEST_TIMEOUT=<seconds>)"
+    end
+    sleep(0.2)
+  end
+end
+
+# Execute the command of a test in a pseudo-terminal: `$stdin.tty?` is true for the command, so that it prompts like with a human.
+# Each line of `lines` is sent when the command displays a prompt, i.e. its output ends with `> `.
+# Same result as `run`: raises `RuntimeError` if the command fails, or after `timeout`.
+# @param command_line [Array<#to_s>]  Command and arguments
+# @param lines        [Array<String>]  Lines to send, one per prompt
+# @param timeout      [Integer, nil]   Maximum duration in seconds, nil for no limit
+# @param transcript   [Pathname]       File where the text displayed on the terminal is saved
+# @param env          [Hash, nil]      Environment variables, a `nil` value removes the variable
+# @param evaluate     [#call, nil]     Called with a line and the text displayed so far, returns the text to type
+def run_test_pty(command_line, lines, timeout, transcript, env: nil, evaluate: nil)
+  require 'pty'
+  deadline = timeout && Process.clock_gettime(Process::CLOCK_MONOTONIC) + timeout
+  screen = +''
+  # Position in `screen` after which the next prompt is expected
+  answered_at = 0
+  output, input, pid = PTY.spawn(env || {}, *command_line.map(&:to_s))
+  begin
+    loop do
+      if deadline && Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+        # The command leads its session: closing the terminal also sends SIGHUP to its processes.
+        # On macOS, a command that is stopped does not end until the terminal is closed.
+        output.close
+        input.close
+        Process.kill('TERM', pid)
+        Process.wait(pid)
+        raise "Timeout after #{timeout}s: the test probably waits for a human action (use TEST_INTERACTIVE=manual, or TEST_TIMEOUT=<seconds>)"
+      end
+      if IO.select([output], nil, nil, 0.1)
+        begin
+          screen << output.read_nonblock(4096)
+        rescue IO::WaitReadable
+          nil
+        rescue EOFError, Errno::EIO
+          # The command closed the terminal: it ends
+          break
+        end
+      end
+      next if lines.empty? || !screen[answered_at..].end_with?('> ')
+      # Echo is disabled after the prompt is displayed: do not type before, else the answer would be displayed
+      sleep(0.2)
+      line = lines.shift
+      input.write(evaluate ? evaluate.call(line, screen) : line)
+      answered_at = screen.size
+    end
+    status = Process.waitpid2(pid).last
+  ensure
+    output.close
+    input.close
+    transcript.write(screen)
+  end
+  raise "Command failed: #{status}" unless status.success?
+  true
 end
 
 # @return [Array<String>] List of matching test case names
@@ -326,13 +430,26 @@ namespace TEST_CASE_NS do
         run_options[:mode] = :background
         command_line.push("--pid-file=#{t.pid_file}")
       end
+      tty_lines = []
+      tty_evaluate = nil
       if info[:stdin]
-        stdinfile = TMP / "#{name}.stdin"
-        input = eval_macro(info[:stdin], exec_binding)
-        stdinfile.write(input)
-        run_options[:in] = stdinfile.to_s
-        log.info("in: #{input}")
-        run_options[:out] = t.out_file.to_s unless tags[:noblock]
+        if info[:tty]
+          # Sent to the terminal, one line per prompt (see `run_test_pty`).
+          # Macros are evaluated when the line is typed: `screen` is the text displayed so far, e.g. to read the login URL that the command shows.
+          tty_lines = info[:stdin].lines
+          log.info("in: #{info[:stdin]}")
+          tty_evaluate = lambda do |line, screen|
+            exec_binding.local_variable_set(:screen, screen)
+            eval_macro(line, exec_binding)
+          end
+        else
+          input = eval_macro(info[:stdin], exec_binding)
+          log.info("in: #{input}")
+          stdinfile = TMP / "#{name}.stdin"
+          stdinfile.write(input)
+          run_options[:in] = stdinfile.to_s
+          run_options[:out] = t.out_file.to_s unless tags[:noblock]
+        end
       end
       if tags[:must_fail] || tags[:pre_cleanup]
         run_options[:err] = t.err_file.to_s
@@ -342,7 +459,14 @@ namespace TEST_CASE_NS do
       # Loop for possible `redo`
       wait_attempts = 0
       loop do
-        run(*(RUBY_WRAPPER + command_line), env: info[:env], **run_options)
+        if tags[:noblock]
+          run(*(RUBY_WRAPPER + command_line), env: info[:env], **run_options)
+        elsif info[:tty]
+          # The text displayed on the terminal is saved in a `.tty` file, e.g. to check that a secret was not displayed
+          run_test_pty(RUBY_WRAPPER + command_line, tty_lines.dup, test_timeout(info[:tags]), t.out_file.sub_ext('.tty'), env: info[:env], evaluate: tty_evaluate)
+        else
+          run_test_command(RUBY_WRAPPER + command_line, test_timeout(info[:tags]), env: info[:env], **run_options)
+        end
         # Give time to start
         if tags[:noblock]
           sleep(1)
