@@ -158,6 +158,7 @@ RSpec.describe(Aspera::WebAuth, '.receiver') do
     allow(Aspera::Log.log).to(receive(:warn))
     environment.web_auth = :port
     environment.url_method = :text
+    environment.browser_command = nil
     stub_const('ENV', ENV.to_h.merge('SSH_CONNECTION' => '1.2.3.4 1 5.6.7.8 22'))
     described_class.receiver('http://localhost:12345')
     expect(Aspera::Log.log).to(have_received(:warn))
@@ -168,6 +169,7 @@ RSpec.describe(Aspera::WebAuth, '.receiver') do
     allow(Aspera::Log.log).to(receive(:warn))
     environment.web_auth = :port
     environment.url_method = :text
+    environment.browser_command = nil
     stub_const('ENV', ENV.to_h.except('SSH_CONNECTION', 'SSH_TTY'))
     described_class.receiver('http://localhost:12345')
     expect(Aspera::Log.log).not_to(have_received(:warn))
