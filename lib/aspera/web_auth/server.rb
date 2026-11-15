@@ -3,7 +3,8 @@
 require_relative '../web_server_simple'
 require_relative '../servlet_helpers'
 require_relative '../web_page'
-require_relative 'blob'
+require_relative '../sealed_hash'
+require_relative '../cli/info'
 require_relative '../assert'
 require 'json'
 require 'securerandom'
@@ -57,7 +58,7 @@ module Aspera
       def render_reply(request, response)
         nonce = SecureRandom.base64(16)
         WebPage.secure_headers(response, content_security_policy: format(REPLY_CSP, nonce: nonce))
-        code = Blob.encode(:reply, request.query.slice(*@web_auth.reply_keys).transform_values(&:to_s))
+        code = SealedHash.seal(request.query.slice(*@web_auth.reply_keys).transform_values(&:to_s), base_key: Cli::Info::CMD_NAME)
         response.body = WebPage.render(REPLY_TEMPLATE_PATH, title: 'Login Complete', additional_info: @web_auth.additional_info, code: code, nonce: nonce)
       end
     end

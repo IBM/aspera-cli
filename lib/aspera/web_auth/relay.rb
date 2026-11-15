@@ -9,7 +9,7 @@ require 'uri'
 module Aspera
   module WebAuth
     # Login on the workstation that has the browser, for `ascli` that runs on another host (option `ui.web_auth=paste`).
-    # The remote `ascli` gives a code (`Blob`, type login) with the URL of the login page, the loopback URL to which the browser is redirected,
+    # The remote `ascli` gives a code (`SealedHash`) with the URL of the login page, the loopback URL to which the browser is redirected,
     # and the keys of the reply. Here, a local server receives the redirection, and the page shown in the browser gives a code (type reply)
     # to paste in the terminal of the remote `ascli`.
     module Relay

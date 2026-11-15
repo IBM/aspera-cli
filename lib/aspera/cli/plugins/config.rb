@@ -40,7 +40,7 @@ require_relative '../../schema/registry'
 require_relative '../../string_ext'
 require_relative '../../sync/operations'
 require_relative '../../transfer/spec'
-require_relative '../../web_auth/blob'
+require_relative '../../sealed_hash'
 require_relative '../../web_auth/relay'
 require 'openssl'
 
@@ -539,8 +539,8 @@ module Aspera
         # The code comes from another host, or from a message: the host of the login page is confirmed by the user the first time.
         # @param code [String] Code of type login, given by the remote `ascli`
         def action_web_login(code:, **)
-          type, data = WebAuth::Blob.decode(code)
-          raise BadArgument, 'This code is for ascli that waits for the login: run this command with the code that ascli gives' unless type.eql?(:login)
+          data = SealedHash.unseal(code, base_key: Cli::Info::CMD_NAME)
+          raise BadArgument, 'This code is for ascli that waits for the login: run this command with the code that ascli gives' unless data.is_a?(Hash) && data.key?('login_url')
           login = WebAuth::Relay.parse(data)
           confirm_web_login_host(login.host)
           Log.log.debug { "Redirection to #{login.redirect_uri}" }

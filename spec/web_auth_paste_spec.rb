@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 require_relative '../lib/aspera/web_auth/receiver'
-require_relative '../lib/aspera/web_auth/blob'
+require_relative '../lib/aspera/sealed_hash'
 
 RSpec.describe(Aspera::WebAuth::Paste) do
   describe '.parse' do
@@ -36,21 +36,21 @@ RSpec.describe(Aspera::WebAuth::Paste) do
     end
 
     it 'accepts the reply code shown by the browser of the workstation' do
-      code = Aspera::WebAuth::Blob.encode(:reply, {'code' => 'abc', 'state' => 'xyz'})
+      code = Aspera::SealedHash.seal({'code' => 'abc', 'state' => 'xyz'}, base_key: Aspera::Cli::Info::CMD_NAME)
       expect(described_class.parse(code)).to(eq('code' => 'abc', 'state' => 'xyz'))
-      expect(described_class.parse("  #{code.downcase}\n")).to(eq('code' => 'abc', 'state' => 'xyz'))
+      expect(described_class.parse("  #{code.scan(/.{1,30}/).join("\n")}\n")).to(eq('code' => 'abc', 'state' => 'xyz'))
     end
 
     it 'refuses a reply code without state' do
-      expect { described_class.parse(Aspera::WebAuth::Blob.encode(:reply, {'code' => 'abc'})) }.to(raise_error(Aspera::ParameterError, /"state"/))
+      expect { described_class.parse(Aspera::SealedHash.seal({'code' => 'abc'}, base_key: Aspera::Cli::Info::CMD_NAME)) }.to(raise_error(Aspera::ParameterError, /"state"/))
     end
 
     it 'refuses a login code, for the workstation' do
-      expect { described_class.parse(Aspera::WebAuth::Blob.encode(:login, {'state' => 'x'})) }.to(raise_error(Aspera::ParameterError, /workstation/))
+      expect { described_class.parse(Aspera::SealedHash.seal({'login_url' => 'https://x', 'state' => 'x'}, base_key: Aspera::Cli::Info::CMD_NAME)) }.to(raise_error(Aspera::ParameterError, /workstation/))
     end
 
     it 'refuses a damaged code' do
-      code = Aspera::WebAuth::Blob.encode(:reply, {'code' => 'abc', 'state' => 'xyz'})
+      code = Aspera::SealedHash.seal({'code' => 'abc', 'state' => 'xyz'}, base_key: Aspera::Cli::Info::CMD_NAME)
       expect { described_class.parse(code[0..-4]) }.to(raise_error(Aspera::ParameterError))
     end
   end
@@ -93,13 +93,12 @@ RSpec.describe(Aspera::WebAuth::Paste) do
     end
 
     it 'gives the code of the command for the workstation, with the login page, then reads the reply code' do
-      reply = Aspera::WebAuth::Blob.encode(:reply, {'code' => 'abc', 'state' => 'xyz'})
+      reply = Aspera::SealedHash.seal({'code' => 'abc', 'state' => 'xyz'}, base_key: Aspera::Cli::Info::CMD_NAME)
       allow(Aspera::Cli::Prompt).to(receive(:prompt_user_input).and_return(reply))
       expect(login_paste.received_request).to(eq('code' => 'abc', 'state' => 'xyz'))
-      command = shown.join("\n")[/ascli config web_login (DCODE1L[A-Z2-7]+)/, 1]
+      command = shown.join("\n")[/ascli config web_login ([A-Za-z0-9_-]+)/, 1]
       expect(command).not_to(be_nil)
-      type, data = Aspera::WebAuth::Blob.decode(command)
-      expect(type).to(eq(:login))
+      data = Aspera::SealedHash.unseal(command, base_key: Aspera::Cli::Info::CMD_NAME)
       expect(data).to(eq('login_url' => 'https://idp.example.com/authorize?a=1&b=2', 'redirect_uri' => 'http://localhost:12345', 'reply_keys' => %w[code state]))
     end
   end

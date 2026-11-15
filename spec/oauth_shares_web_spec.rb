@@ -48,9 +48,11 @@ RSpec.describe(Aspera::OAuth::SharesWeb) do
   # The user pastes the code displayed by Shares (evaluated after the login page was opened)
   # @param extra [Hash] content of the code, in addition to the state sent in RelayState
   # @param state [String, nil] state in the code, default: the one that was sent
-  def paste_code(state: nil, **extra)
+  def paste_code(state: nil, key_state: nil, **extra)
     allow(Aspera::Cli::Prompt).to(receive(:prompt_user_input).with('Code', sensitive: true)) do
-      Aspera::WebAuth::Blob.encode(:reply, {'state' => state || relay_state_sent.delete_prefix('aspera://device-code?state=')}.merge(extra.transform_keys(&:to_s)))
+      sent = relay_state_sent.delete_prefix('aspera://device-code?state=')
+      # Shares uses the state received in RelayState as secret of the code
+      Aspera::SealedHash.seal({'state' => state || sent}.merge(extra.transform_keys(&:to_s)), secret: key_state || sent, base_key: Aspera::Cli::Info::CMD_NAME)
     end
   end
 
@@ -114,6 +116,11 @@ RSpec.describe(Aspera::OAuth::SharesWeb) do
       expect { oauth.token }.to(raise_error(Aspera::AssertError, /wrong received state/))
     end
 
+    it 'refuses a code made for another login' do
+      paste_code(key_state: 'other', refresh_token: 'x')
+      expect { oauth.token }.to(raise_error(Aspera::ParameterError, /Invalid code/))
+    end
+
     it 'reports a code without token' do
       paste_code
       expect { oauth.token }.to(raise_error(Aspera::AssertError, /No token received/))
@@ -124,9 +131,11 @@ RSpec.describe(Aspera::OAuth::SharesWeb) do
       expect { oauth.token }.to(raise_error(Aspera::ParameterError, /Not a code/))
     end
 
-    it 'refuses a code of another type' do
-      allow(Aspera::Cli::Prompt).to(receive(:prompt_user_input).and_return(Aspera::WebAuth::Blob.encode(:login, {'login_url' => 'https://x'})))
-      expect { oauth.token }.to(raise_error(Aspera::ParameterError, /type of code/))
+    it 'refuses a code that is not a reply of Shares (e.g. a login code)' do
+      allow(Aspera::Cli::Prompt).to(receive(:prompt_user_input).with('Code', sensitive: true)) do
+        Aspera::SealedHash.seal({'login_url' => 'https://x'}, secret: relay_state_sent.delete_prefix('aspera://device-code?state='), base_key: Aspera::Cli::Info::CMD_NAME)
+      end
+      expect { oauth.token }.to(raise_error(Aspera::AssertError, /wrong received state/))
     end
   end
 end

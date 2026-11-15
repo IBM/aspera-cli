@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 require_relative 'web'
-require_relative '../../web_auth/blob'
+require_relative '../../sealed_hash'
+require_relative '../../cli/info'
 require_relative '../../cli/prompt'
 require 'securerandom'
 
@@ -58,15 +59,14 @@ module Aspera
       end
 
       # `paste`: Shares shows a code, to paste in the terminal
+      # The state is part of the key of the code: the code is not readable without it
       # @return [Hash{String=>String}] Content of the code
       def receive_code(state)
         Environment.instance.open_uri(login_page("#{DEVICE_CODE_RELAY_STATE}#{state}"))
         Log.log.warn { 'USER ACTION: Log in with the web browser, then copy the code displayed by Shares and paste it in the prompt below.' }
         input = Cli::Prompt.prompt_user_input('Code', sensitive: true)
-        Aspera.assert(WebAuth::Blob.code?(input), type: ParameterError) { 'Not a code: copy the code displayed by Shares after login' }
-        type, data = WebAuth::Blob.decode(input)
-        Aspera.assert_values(type, [:reply], type: ParameterError) { 'type of code' }
-        data
+        Aspera.assert(SealedHash.sealed?(input), type: ParameterError) { 'Not a code: copy the code displayed by Shares after login' }
+        SealedHash.unseal(input, secret: state, base_key: Cli::Info::CMD_NAME)
       end
 
       # @param relay_state [String] Where Shares sends the result

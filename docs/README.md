@@ -4102,7 +4102,7 @@ The composite option `ui` (use `--ui=help` to display this schema) selects the m
 |----------|---------------|----------------------------------------------------------------------------------|
 | `command` | `Array[String]` | Command that opens a URL, instead of the system default. First item is the executable (full path, or name of an executable found in `PATH`), then its arguments. The URL is added as last argument. When set, it is used to open URLs, whatever the `mode`. |
 | `mode` | `Enum[String]` | - `auto`: `browser` on Windows and macOS, or if env var `DISPLAY` is set, else `terminal`.<br/>- `terminal`: URLs to open are displayed on terminal, and secrets are entered on terminal.<br/>- `browser`: a browser opens URLs, and secrets are entered on a web page.<br/>`text` is an alias for `terminal`, and `graphical` is an alias for `browser`.<br/>Files to edit are always opened with a text editor, whatever the `mode`.<br/>Allowed values: `auto`, `terminal`, `browser`, `text`, `graphical`.<br/>Default: `auto`. |
-| `web_auth` | `Enum[String]` | How the result of a web login (`--auth=web`, SSO) is received.<br/>- `port`: `ascli` listens on the loopback port of `redirect_uri`, the browser is redirected to it.<br/>- `paste`: no port is opened. After login, the browser shows a connection error on `redirect_uri`: copy the full URL from the address bar of the browser and paste it in the terminal. Use it when the browser cannot reach the host that runs `ascli` and a SSH tunnel is not possible. For `shares`, Shares displays a code (starting with `DCODE1`) instead: paste it in the terminal.<br/>Allowed values: `port`, `paste`.<br/>Default: `port`. |
+| `web_auth` | `Enum[String]` | How the result of a web login (`--auth=web`, SSO) is received.<br/>- `port`: `ascli` listens on the loopback port of `redirect_uri`, the browser is redirected to it.<br/>- `paste`: no port is opened. After login, the browser shows a connection error on `redirect_uri`: copy the full URL from the address bar of the browser and paste it in the terminal. Use it when the browser cannot reach the host that runs `ascli` and a SSH tunnel is not possible. For `shares`, Shares displays a code (a long text of letters, digits, `-` and `_`) instead: paste it in the terminal.<br/>Allowed values: `port`, `paste`.<br/>Default: `port`. |
 
 A plain value is the `mode`:
 
@@ -4158,7 +4158,7 @@ Option `ui.web_auth` (part of the composite option `ui`, see [Graphical Interact
 
 With `paste`, after login the user gives the result to `ascli` through the terminal (nothing is displayed, as it contains a code or tokens):
 
-- the code displayed by Shares (starting with `DCODE1`), or the code shown by `ascli config web_login` on the workstation,
+- the code displayed by Shares (a long text of letters, digits, `-` and `_`), or the code shown by `ascli config web_login` on the workstation,
 - or the full URL (or only the query) from the address bar of the browser, which shows a connection error on `redirect_uri`: this is expected.
 
 In all cases the `state` is checked.
@@ -4211,7 +4211,7 @@ The exchange of the code for a token is done by `ascli` on the server: the secre
    ascli <PLUGIN> <COMMAND> --ui=terminal --ui.web_auth=paste
    ```
 
-2. `ascli` displays a message that proposes the two ways to log in, with the login URL for the first one, and a command to run on the workstation for the second one: it contains a code made of letters and digits (a double click selects all of it). Then `ascli` waits:
+2. `ascli` displays a message that proposes the two ways to log in, with the login URL for the first one, and a command to run on the workstation for the second one: it contains a code made of letters, digits, `-` and `_`. Then `ascli` waits:
 
    ```text
    USER ACTION: To continue, choose one of these two ways:
@@ -4222,7 +4222,7 @@ The exchange of the code for a token is done by `ascli` on the server: the secre
         - Copy the full URL from the address bar of the browser, and paste it in the prompt below.
      2. If ascli is installed on the workstation that has the browser:
         - Run there:
-            ascli config web_login DCODE1L...
+            ascli config web_login <CODE>
         - Log in in the page that opens.
         - Copy the code shown by the browser, and paste it in the prompt below.
    ```
@@ -4246,9 +4246,9 @@ The command on the workstation:
 - ends once the browser has received the page with the code; the port of `redirect_uri` shall be free on the workstation (the URL is registered for the login and cannot be changed);
 - gives to the server only the parameters it needs (the `code` and the `state`).
 
-The codes are encoded and compressed, they are **not encrypted**: do not keep them, nor send them.
-The code of the reply is checked (checksum), a code that is incomplete or mistyped is detected.
-Spaces, line breaks and letter case are ignored: a code displayed on several lines can be pasted.
+The codes are compressed and encrypted with a key that is not secret (derived from a constant and the current UTC date): they are hard to read and are valid for about one day, but they are **not confidential**: do not keep them, nor send them. The code shown by Shares also uses the random `state` of the login in its key.
+The codes are authenticated: a code that is incomplete, mistyped or modified is detected.
+Spaces and line breaks are ignored (letter case matters): a code displayed on several lines can be pasted.
 
 ##### Without `ascli` on the workstation
 
@@ -10526,7 +10526,7 @@ Option `ui.web_auth` selects how the result of the login is received (see [Web l
 - `paste`: the browser may run on another system than `ascli` (for example, `ascli` runs on a server accessed with SSH), without tunnel.
   No local port is opened and `--redirect-uri` is not used.
   `ascli` generates a random `state` and opens the SAML login page with `RelayState` `aspera://device-code?state=<state>`.
-  After login, Shares displays a code (it starts with `DCODE1`). The user copies it and pastes it in the terminal (nothing is displayed, as the code contains a token).
+  After login, Shares displays a code (a long text of letters, digits, `-` and `_`). The user copies it and pastes it in the terminal (nothing is displayed, as the code contains a token).
   If standard input is not a terminal, the code is read from it.
   `ascli` checks that the `state` of the code is the one it generated.
 

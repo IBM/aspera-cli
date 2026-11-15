@@ -4,7 +4,7 @@ require_relative '../assert'
 require_relative '../log'
 require_relative '../cli/prompt'
 require_relative '../cli/info'
-require_relative 'blob'
+require_relative '../sealed_hash'
 require_relative '../rainbow'
 require 'uri'
 using Rainbow
@@ -14,7 +14,7 @@ module Aspera
     # Receives the result of a web login from the user, who gives it in the terminal.
     # No server is started: used when the browser cannot reach the loopback address of this host (e.g. SSH session, without tunnel).
     # The user gives either:
-    # - a code (`Blob`) shown by the browser of the workstation, after `ascli config web_login <code>` (`ascli` is installed there)
+    # - a code (`SealedHash`) shown by the browser of the workstation, after `ascli config web_login <code>` (`ascli` is installed there)
     # - the URL the browser was redirected to (it shows a connection error), or its query
     # Same interface as `Server` for the part used by OAuth clients: `received_request`.
     class Paste
@@ -27,9 +27,9 @@ module Aspera
           text = input.to_s.strip
           raise ParameterError, 'Nothing was pasted' if text.empty?
           params =
-            if Blob.code?(text)
-              type, data = Blob.decode(text)
-              raise ParameterError, 'This code is for ascli on the workstation: paste the code shown by the browser after login' unless type.eql?(:reply)
+            if SealedHash.sealed?(text)
+              data = SealedHash.unseal(text, base_key: Cli::Info::CMD_NAME)
+              raise ParameterError, 'This code is for ascli on the workstation: paste the code shown by the browser after login' if data.key?('login_url')
               data
             else
               parse_query(text)
@@ -84,7 +84,7 @@ module Aspera
           if @login_url.nil?
             (['USER ACTION: Log in with the web browser, then:'] + browser_steps.map { |s| "  - #{s}" }).join("\n")
           else
-            code = Blob.encode(:login, {'login_url' => @login_url.to_s, 'redirect_uri' => @redirect_uri, 'reply_keys' => @reply_keys})
+            code = SealedHash.seal({'login_url' => @login_url.to_s, 'redirect_uri' => @redirect_uri, 'reply_keys' => @reply_keys}, base_key: Cli::Info::CMD_NAME)
             [
               'USER ACTION: To continue, choose one of these two ways:',
               "  1. With any browser (#{Cli::Info::CMD_NAME} is not needed on the workstation):",

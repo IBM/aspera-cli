@@ -4,7 +4,7 @@ require 'spec_helper'
 require_relative '../lib/aspera/cli/plugins/config'
 require_relative '../lib/aspera/cli/context'
 require_relative '../lib/aspera/persistency_folder'
-require_relative '../lib/aspera/web_auth/blob'
+require_relative '../lib/aspera/sealed_hash'
 
 module Aspera
   module Cli
@@ -23,7 +23,7 @@ module Aspera
           described_class.allocate.tap { |c| allow(c).to(receive(:context).and_return(instance_double(Context, persistency: persistency))) }
         end
         let(:login_data) { {'login_url' => 'https://idp.example.com/authorize?a=1', 'redirect_uri' => 'http://localhost:12345/', 'reply_keys' => %w[code state]} }
-        let(:login_code) { WebAuth::Blob.encode(:login, login_data) }
+        let(:login_code) { SealedHash.seal(login_data, base_key: Aspera::Cli::Info::CMD_NAME) }
         let(:hosts_id) { described_class.const_get(:WEB_LOGIN_HOSTS_ID) }
 
         before do
@@ -69,7 +69,7 @@ module Aspera
         end
 
         it 'refuses a reply code, for the remote ascli' do
-          expect { config.action_web_login(code: WebAuth::Blob.encode(:reply, {'state' => 'x'})) }.to(raise_error(BadArgument, /waits for the login/))
+          expect { config.action_web_login(code: SealedHash.seal({'state' => 'x'}, base_key: Aspera::Cli::Info::CMD_NAME)) }.to(raise_error(BadArgument, /waits for the login/))
         end
 
         it 'refuses a damaged code' do
@@ -78,7 +78,7 @@ module Aspera
 
         it 'refuses a login page that is not https, without asking' do
           allow(Prompt).to(receive(:prompt_user_input))
-          code = WebAuth::Blob.encode(:login, login_data.merge('login_url' => 'http://idp.example.com/'))
+          code = SealedHash.seal(login_data.merge('login_url' => 'http://idp.example.com/'), base_key: Aspera::Cli::Info::CMD_NAME)
           expect { config.action_web_login(code: code) }.to(raise_error(BadArgument, /https/))
           expect(Prompt).not_to(have_received(:prompt_user_input))
         end
