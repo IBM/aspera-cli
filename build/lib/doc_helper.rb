@@ -487,7 +487,7 @@ class DocHelper
     return @commands unless @commands.nil?
     @commands = {}
     all_tests = TestEnv.descriptions
-    all_tests.select { |_, v| v[:command] && !v[:tags].include?(:nodoc) && v[:plugin] }.each_value do |test|
+    all_tests.select { |_, v| v[:command] && !v[:tags].include?(:no_doc) && v[:plugin] }.each_value do |test|
       # Cleanup command line
       line = test[:args].reject { |cmd| cmd.to_s.start_with?('--preset=') || cmd.eql?('-N') }.map do |cmd|
         next cmd unless cmd.is_a?(String)
@@ -611,7 +611,7 @@ class DocHelper
     all_test_commands_by_plugin.delete(:my_command)
     if !all_test_commands_by_plugin.empty?
       Aspera::Log.log.error("Those plugins not included in doc: #{all_test_commands_by_plugin.keys.map { |p| %Q{"#{p}"} }.join(', ')}".red)
-      raise 'Remediate: remove from doc using tag `nodoc` or add section in doc'
+      raise 'Remediate: remove from doc using tag `no_doc` or add section in doc'
     end
     File.rename(tmp_file, @paths[:outfile])
   end

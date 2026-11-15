@@ -83,8 +83,8 @@ Every new command needs at least one entry in `tests/tests.yml`.
 Follow the naming convention `<plugin>_<sub>_<action>` (e.g. `conf_agents_list`).
 
 - Add a **happy-path** test (no extra tags).
-- Add a **failure test** for invalid input with tags `must_fail` and `nodoc`, and set `expect:` to a substring of the expected error message.
-- Tests that should not appear in generated documentation get the `nodoc` tag.
+- Add a **failure test** for invalid input with tags `must_fail` and `no_doc`, and set `expect:` to a substring of the expected error message.
+- Tests that should not appear in generated documentation get the `no_doc` tag.
 - Insert the new entries near related tests (same plugin/sub-command group).
 
 Minimal example:
@@ -98,7 +98,7 @@ conf_agents_list:
 conf_agents_show_bad:
   tags:
     - must_fail
-    - nodoc
+    - no_doc
   expect: "unknown value"
   args:
     - config

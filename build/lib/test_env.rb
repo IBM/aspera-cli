@@ -68,7 +68,7 @@ module TestEnv
       PATH_TMP_STATES / "#{resolve(name)}.pid"
     end
 
-    # @return [Integer] PID stored by a `noblock` test case
+    # @return [Integer] PID stored by a `no_block` test case
     def pid_of_test(name = nil)
       pid_file(name).read.to_i
     end
@@ -81,7 +81,7 @@ module TestEnv
       value
     end
 
-    # Terminate the process started by a `noblock` test case
+    # Terminate the process started by a `no_block` test case
     def stop_process(name = nil)
       Aspera::Log.instance.logger.info("Stopping process for test case: #{resolve(name)}")
       pid = pid_of_test(name)
@@ -92,7 +92,7 @@ module TestEnv
       nil
     end
 
-    # Check that the process started by a `noblock` test case is still running
+    # Check that the process started by a `no_block` test case is still running
     def check_process(name = nil)
       pid = pid_of_test(name)
       r = Process.kill(0, pid)

@@ -62,7 +62,6 @@ mswin
 myns
 newenv
 newevent
-noblock
 nocov
 nsec
 optparse
