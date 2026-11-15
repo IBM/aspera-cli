@@ -7422,6 +7422,62 @@ f5_pack_user_public:
     - --url=@preset:f5_misc.public_link_send_to_user
     - '@json:@extend:{"title":"test title"}'
     - $(PATH_TST_ASC_LCL)
+f5_pub_link_gen_send_user:
+  description: Generate a public link to send a package to the user (field `access_url`). Copy it to preset `f5_misc.public_link_send_to_user`.
+  tags:
+    - setup
+    - f5_pub_link
+    - no_doc
+  args:
+    - faspex5
+    - invitations
+    - create
+    - "@:"
+    - email_address=@preset:misc.email_external
+    - --fields=access_url
+f5_pub_link_gen_send_shared_box:
+  description: Generate a public link to send a package to the shared inbox (field `access_url`). Copy it to preset `f5_misc.public_link_send_shared_box`.
+  tags:
+    - setup
+    - f5_pub_link
+    - no_doc
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - invitations
+    - create
+    - "@:"
+    - email_address=@preset:misc.email_external
+    - recipient_name=ascli-shinbox
+    - recipient_type=shared_inbox
+    - --fields=access_url
+f5_pub_link_gen_recv:
+  description: The link to receive a package is built by the server (random passcode, not returned by the API), it is only sent by email to the recipient. Copy it to preset `f5_misc.public_link_recv_fr_user`.
+  tags:
+    - setup
+    - f5_pub_link
+    - no_doc
+  args:
+    - faspex5
+    - packages
+    - send
+    - '@json:@extend:{"title":"test public link","recipients":[{"name":"@preset:misc.email_external@","recipient_type":"external_user","public_download":true}]}'
+    - $(PATH_TST_ASC_LCL)
+f5_pub_link_no_expire:
+  description: Links received by email expire (3 days by default), so disable the expiration for the link in `f5_misc.public_link_recv_fr_user`.
+  tags:
+    - setup
+    - f5_pub_link
+    - no_doc
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - configuration
+    - modify
+    - "@:"
+    - package_link_expires=false
+    - package_link_expires_after_full_download=false
 f5_pack_recv_public_link_all:
   tags:
     - f5_pub_link
