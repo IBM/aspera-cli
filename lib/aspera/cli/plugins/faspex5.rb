@@ -79,7 +79,7 @@ module Aspera
           end
           wiz_username = options.get_option(:username, mandatory: true)
           wizard.check_email(wiz_username)
-          private_key_path = wizard.ask_private_key(
+          private_key = wizard.ask_private_key(
             user: wiz_username,
             url: app_url,
             page: [Environment.char('👤'), 'Account Settings', 'Preferences', 'Public Key in PEM']
@@ -90,7 +90,7 @@ module Aspera
               url:           app_url,
               username:      wiz_username,
               auth:          :jwt.to_s,
-              private_key:   "@file:#{private_key_path}",
+              private_key:   private_key,
               client_id:     client_id,
               client_secret: client_secret
             },

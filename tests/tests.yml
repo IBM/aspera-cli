@@ -46,8 +46,9 @@ shares_detect:
   args:
     - config
     - detect
-    - "@preset:shares_admin.url"
-    - shares
+    - "@:"
+    - url=@preset:shares_admin.url
+    - plugin=shares
 shares_wizard:
   tags:
     - shares
@@ -55,8 +56,9 @@ shares_wizard:
   args:
     - config
     - wizard
-    - "@preset:shares_admin.url"
-    - shares
+    - "@:"
+    - url=@preset:shares_admin.url
+    - plugin=shares
     - --username=test
     - --password=$(secret :dummy)
 shares_admin_node_list:
@@ -628,15 +630,17 @@ serv_detect:
   args:
     - config
     - detect
-    - "@preset:server1_user.url"
+    - "@:"
+    - url=@preset:server1_user.url
 serv_wizard:
   tags:
     - server
   args:
     - config
     - wizard
-    - "@preset:server1_user.url"
-    - server
+    - "@:"
+    - url=@preset:server1_user.url
+    - plugin=server
     - --username=@preset:server1_user.username
     - --password=@preset:server1_user.password
 serv_wizard_password:
@@ -646,9 +650,10 @@ serv_wizard_password:
   args:
     - config
     - wizard
-    - "@preset:server1_info.address"
-    - server
-    - srv2
+    - "@:"
+    - url=@preset:server1_info.address
+    - plugin=server
+    - preset=srv2
     - --username=@preset:server1_user.username
     - --password=@preset:server1_user.password
 serv_browse:
@@ -1192,16 +1197,20 @@ cons_detect:
   args:
     - config
     - detect
-    - "@preset:console_admin.url"
+    - "@:"
+    - url=@preset:console_admin.url
 cons_wizard:
   tags:
     - console
   args:
     - config
     - wizard
-    - "@preset:console_admin.url"
-    - console
-    - --preset=console_admin
+    - "@:"
+    - url=@preset:console_admin.url
+    - plugin=console
+    - override=yes
+    - --username=@preset:console_admin.username
+    - --password=@preset:console_admin.password
 cons_cur_list:
   args:
     - console
@@ -1308,7 +1317,8 @@ nd_detect:
   args:
     - config
     - detect
-    - "@preset:node_user.url"
+    - "@:"
+    - url=@preset:node_user.url
 nd_wizard:
   tags:
     - node
@@ -1316,8 +1326,9 @@ nd_wizard:
   args:
     - config
     - wizard
-    - "@preset:node_user.url"
-    - node
+    - "@:"
+    - url=@preset:node_user.url
+    - plugin=node
     - --username=test
     - --password=$(secret :dummy)
 nd_info:
@@ -2262,8 +2273,9 @@ aoc_detect:
   args:
     - config
     - detect
-    - "@preset:awa.org"
-    - aoc
+    - "@:"
+    - url=@preset:awa.org
+    - plugin=aoc
 aoc_wizard:
   args:
     - config
@@ -2280,10 +2292,11 @@ aoc_wizard_generic_client:
   args:
     - config
     - wizard
-    - "@preset:awa.org"
-    - aoc
-    - --key-path=@preset:file.private_key
+    - "@:"
+    - url=@preset:awa.org
+    - plugin=aoc
     - --username=@preset:awa.user_email
+    - --private-key=@file:@preset:file.private_key
     - --use-generic-client=yes
 aoc_config_tokens_flush:
   tags:
@@ -2311,11 +2324,12 @@ aoc_wizard_preset:
   args:
     - config
     - wizard
-    - "@preset:awa.org"
-    - aoc
-    - my_preset
-    - --key-path=@preset:file.private_key
+    - "@:"
+    - url=@preset:awa.org
+    - plugin=aoc
+    - preset=my_preset
     - --username=@preset:awa.user_email
+    - --private-key=@file:@preset:file.private_key
 aoc_gateway_set_faspex_url:
   description: Configure gateway URL via AOC plugin
   tags:
@@ -4251,7 +4265,8 @@ orch_detect:
   args:
     - config
     - detect
-    - "@preset:orch_user.url"
+    - "@:"
+    - url=@preset:orch_user.url
 orch_wizard:
   tags:
     - orchestrator
@@ -4259,8 +4274,9 @@ orch_wizard:
   args:
     - config
     - wizard
-    - "@preset:orch_user.url"
-    - orchestrator
+    - "@:"
+    - url=@preset:orch_user.url
+    - plugin=orchestrator
     - --username=test
     - --password=$(secret :dummy)
 orch_info:
@@ -4950,7 +4966,8 @@ conf_detect:
   args:
     - config
     - detect
-    - $(remote_host)
+    - "@:"
+    - url=$(remote_host)
 conf_detectb:
   description: No Aspera app there.
   tags:
@@ -4960,7 +4977,8 @@ conf_detectb:
   args:
     - config
     - detect
-    - https://www.ibm.com
+    - "@:"
+    - url=https://www.ibm.com
 conf_ascp_show:
   args:
     - config
@@ -5303,8 +5321,9 @@ conf_pset_lookup:
     - config
     - preset
     - lookup
-    - --url=@preset:f5_user.url
-    - --username=@preset:f5_user.username
+    - "@:"
+    - url=@preset:f5_user.url
+    - username=@preset:f5_user.username
 conf_pset_show:
   tags:
     - tmp_conf
@@ -6978,18 +6997,23 @@ f5_detect:
   args:
     - config
     - detect
-    - "@preset:f5_user.url"
-    - faspex5
+    - "@:"
+    - url=@preset:f5_user.url
+    - plugin=faspex5
 f5_wizard:
   tags:
     - faspex5
   args:
     - config
     - wizard
-    - "@preset:f5_user.url"
-    - faspex5
-    - --key-path=@preset:file.private_key
-    - --preset=f5_user
+    - "@:"
+    - url=@preset:f5_user.url
+    - plugin=faspex5
+    - override=yes
+    - --username=@preset:f5_user.username
+    - --private-key=@file:@preset:file.private_key
+    - --client-id=@preset:f5_user.client_id
+    - --client-secret=@preset:f5_user.client_secret
 f5_wizard_show_secrets:
   tags:
     - faspex5
@@ -6997,11 +7021,12 @@ f5_wizard_show_secrets:
   args:
     - config
     - wizard
-    - "@preset:f5_user.url"
-    - faspex5
-    - --key-path=@preset:file.private_key
-    - --url=
+    - "@:"
+    - url=@preset:f5_user.url
+    - plugin=faspex5
+    - override=yes
     - --username=a@b.c
+    - --private-key=@file:@preset:file.private_key
 f5_wizard_no_key:
   tags:
     - faspex5
@@ -7010,10 +7035,11 @@ f5_wizard_no_key:
   args:
     - config
     - wizard
-    - https://eudemo.asperademo.com
-    - faspex5
+    - "@:"
+    - url=https://eudemo.asperademo.com
+    - plugin=faspex5
     - --username=admin@ibm.com
-    - --key-path=
+    - --private-key=
     - --out.secrets=yes
     - --client-id=abc
     - --client-secret=$(secret :dummy)
@@ -7026,21 +7052,24 @@ f5_detect_fail:
   args:
     - config
     - detect
-    - https://eudemo.asperademo.com:33001
-    - faspex5
+    - "@:"
+    - url=https://eudemo.asperademo.com:33001
+    - plugin=faspex5
 f5_detect_ok:
   description: Auto-detect without specifying plugin (-N flag)
   args:
     - -N
     - config
     - detect
-    - "@preset:f5_user.url"
+    - "@:"
+    - url=@preset:f5_user.url
 f5_detect_ok_faspex5:
   description: Auto-detect with explicit faspex5 plugin hint
   args:
     - config
     - detect
-    - "@preset:f5_user.url"
+    - "@:"
+    - url=@preset:f5_user.url
 f5_version:
   args:
     - faspex5
@@ -7829,16 +7858,15 @@ f5_fxgw_test:
     - fx_gateway
   depends_on:
     - f5_fxgw_start
-  pre: generated_secret(:dummy)
+  pre: |
+    transfer_spec = faspex4_send_transfer_spec(url: 'https://localhost:12346/aspera/faspex', recipients: ['laurent.martin.aspera@fr.ibm.com'], title: 'gateway aoc')
+    (TMP / 'f5_fxgw_ts.json').write(JSON.generate(transfer_spec))
   args:
-    - -N
-    - faspex
-    - --url=https://localhost:12346/aspera/faspex
-    - --username=_unused_
-    - --password=$(secret :dummy)
-    - package
-    - send
-    - --delivery-info=@json:{"recipients":["laurent.martin.aspera@fr.ibm.com"],"title":"gateway aoc"}
+    - --preset=no_wss
+    - server
+    - upload
+    - --url=https://eudemo.asperademo.com:443
+    - --ts=@json:@file:$(TMP / 'f5_fxgw_ts.json')
     - faux:///test1?1m
   post: |
     Aspera::Rest::Parameters.instance.session_cb = ->(s){s.verify_mode = OpenSSL::SSL::VERIFY_NONE}
@@ -7957,16 +7985,18 @@ httpgw_detect:
   args:
     - config
     - detect
-    - "@preset:tst_httpgw.url"
-    - httpgw
+    - "@:"
+    - url=@preset:tst_httpgw.url
+    - plugin=httpgw
 httpgw_wizard:
   tags:
     - httpgw
   args:
     - config
     - wizard
-    - "@preset:tst_httpgw.url"
-    - httpgw
+    - "@:"
+    - url=@preset:tst_httpgw.url
+    - plugin=httpgw
 faspio_health:
   args:
     - faspio
@@ -7977,17 +8007,19 @@ faspio_detect:
   args:
     - config
     - detect
-    - "@preset:tst_faspio.url"
-    - faspio
+    - "@:"
+    - url=@preset:tst_faspio.url
+    - plugin=faspio
 faspio_wizard:
   tags:
     - faspio
   args:
     - config
     - wizard
-    - "@preset:tst_faspio.url"
-    - faspio
-    - --override=yes
+    - "@:"
+    - url=@preset:tst_faspio.url
+    - plugin=faspio
+    - override=yes
     - --username=@preset:tst_faspio.username
     - --password=@preset:tst_faspio.password
 faspio_blist:

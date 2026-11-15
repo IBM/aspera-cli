@@ -3164,15 +3164,15 @@ commands
 commands aoc --expand-mounts=yes
 commands aoc files
 commands server
-detect app.example.com
-detect https://f5.example.com/path
-detect https://f5.example.com/path faspex5
-detect https://node.example.com/path
-detect https://server1.example.com/path
-detect https://shares.example.com/path shares
-detect https://tst.example.com/path faspio
-detect https://tst.example.com/path httpgw
-detect my_org aoc
+detect @: url=app.example.com
+detect @: url=https://f5.example.com/path
+detect @: url=https://f5.example.com/path plugin=faspex5
+detect @: url=https://node.example.com/path
+detect @: url=https://server1.example.com/path
+detect @: url=https://shares.example.com/path plugin=shares
+detect @: url=https://tst.example.com/path plugin=faspio
+detect @: url=https://tst.example.com/path plugin=httpgw
+detect @: url=my_org plugin=aoc
 doc
 doc github transfer-parameters
 doc local quick-start --ui=text
@@ -3251,16 +3251,16 @@ vault info
 vault list
 vault overview
 vault show my_label
-wizard https://console.example.com/path console
-wizard https://f5.example.com/path faspex5 --key-path=my_private_key
-wizard https://node.example.com/path node --username=test --password=<PASSWORD>
-wizard https://orch.example.com/path orchestrator --username=test --password=<PASSWORD>
-wizard https://server1.example.com/path server --username=my_username --password=<PASSWORD>
-wizard https://shares.example.com/path shares --username=test --password=<PASSWORD>
-wizard https://tst.example.com/path faspio --override=yes --username=my_username --password=<PASSWORD>
-wizard https://tst.example.com/path httpgw
-wizard my_org aoc --key-path=my_private_key --username=my_user_email --use-generic-client=yes
-wizard my_org aoc my_preset --key-path=my_private_key --username=my_user_email
+wizard @: url=https://console.example.com/path plugin=console
+wizard @: url=https://f5.example.com/path plugin=faspex5 --private-key=@file:my_private_key
+wizard @: url=https://node.example.com/path plugin=node --username=test --password=<PASSWORD>
+wizard @: url=https://orch.example.com/path plugin=orchestrator --username=test --password=<PASSWORD>
+wizard @: url=https://server1.example.com/path plugin=server --username=my_username --password=<PASSWORD>
+wizard @: url=https://shares.example.com/path plugin=shares --username=test --password=<PASSWORD>
+wizard @: url=https://tst.example.com/path plugin=faspio override=yes --username=my_username --password=<PASSWORD>
+wizard @: url=https://tst.example.com/path plugin=httpgw
+wizard @: url=my_org plugin=aoc preset=my_preset --private-key=@file:my_private_key --username=my_user_email
+wizard @: url=my_org plugin=aoc --private-key=@file:my_private_key --username=my_user_email --use-generic-client=yes
 ```
 
 #### Evaluation order of options
@@ -3411,32 +3411,36 @@ ascli config completion words aoc admin
 
 The wizard is a command that asks the user for information and creates an [Option Preset](#option-preset) with the provided information for a given application.
 
-It takes three optional arguments:
+It takes one optional argument: a `Hash`, usually given with [`@:`](#positional-arguments-with-dot-path) as `key=value` items, in any order:
 
-|#| Parameter description                      | If not provided, `ascli`                 |
-|-|--------------------------------------------|--------------------------------------------|
-|1| **URL** or hostname of the application     | ask for it.                                |
-|2| The **plugin name** to limit search to     | tries to detect known plugins from the URL |
-|3| The **preset name** to save in config file | generates a unique preset name             |
+| Key        | Description                                                                     | If not provided, `ascli`                 |
+|------------|---------------------------------------------------------------------------------|--------------------------------------------|
+| `url`      | **URL** or hostname of the application                                          | asks for it.                               |
+| `plugin`   | The **plugin name** to limit search to                                          | tries to detect known plugins from the URL |
+| `preset`   | The **preset name** to save in config file                                      | generates a unique preset name             |
+| `default`  | Set the preset as default configuration for the plugin (`yes`/`no`)             | `yes`                                      |
+| `override` | Override the existing default preset of the plugin, if it exists (`yes`/`no`)   | `no`                                       |
 
-Options are also available for the wizard:
+Options of the plugin (for example `--username`, `--password`, `--client-id`, `--private-key`), see the plugin, are given as usual on the command line: they are added to the [Option Preset](#option-preset) created by the wizard.
+Options that the wizard needs, but that are not provided, are asked.
+An unknown key in the `Hash` is refused.
 
-| Option      | Value    | Description                                                         |
-|-------------|----------|---------------------------------------------------------------------|
-| `default`   | [yes]/no | Set as default configuration for specified plugin.                  |
-| `override`  | yes/[no] | Override existing default preset name for the plugin, if it exists. |
-| `key_path`  | path     | Path to private key for JWT.                                        |
+For example:
 
-Other plugin-specific options can be provided to the wizard, such as `--username`.
-They are added to the [Option Preset](#option-preset) created by the wizard.
+```shell
+ascli config wizard @: url=<URL> plugin=<PLUGIN> preset=<PRESET>
+```
 
-The simplest invocation is:
+The command `config detect` takes the same argument, with keys `url` and `plugin`, and shows the detected applications, without creating a preset.
+Use `ascli config wizard help` to show the schema of the argument.
+
+The simplest invocation (without argument: the URL is asked) is:
 
 ```shell
 ascli config wizard
 ```
 
-If the application requires a private key, the user can provide the path to it with option `key_path`, or let the wizard generate one.
+If the application requires a private key, the user can provide it with option `--private-key` (the key, e.g. `@file:<path>`, not only its path), or let the wizard generate one.
 The user is told where to place the associated public key PEM in the application.
 
 #### Example of configuration for a plugin
@@ -6454,9 +6458,6 @@ OPTIONS: global
     --cache-tokens=yes|no          Save and reuse OAuth tokens
     --expand-mounts=yes|no         Commands: list commands of sub-trees provided by another plugin
 -N, --no-default                   Do not load default configuration for plugin
-    --override=yes|no              Wizard: override existing value
-    --default=yes|no               Wizard: set as default configuration for specified plugin (also: update)
-    --key-path=VALUE               Wizard: path to private key for JWT
     --insecure=yes|no              HTTP/S: Do not validate any certificate
     --ignore-certificate=LIST      HTTP/S: Do not validate certificate for these URLs
     --warn-insecure=yes|no         HTTP/S: Issue a warning if certificate is ignored
@@ -6924,11 +6925,13 @@ To complete the setup, you must have:
 
 #### Wizard Invocation
 
-The wizard accepts two optional positional arguments:
+The wizard accepts an optional argument, a `Hash` with keys:
 
-- **Organization/URL**: The organization name or the full FQDN.
+- `url`: The organization name or the full FQDN.
 
-- **Plugin Name**: Specify `aoc` to bypass automatic application detection.
+- `plugin`: Specify `aoc` to bypass automatic application detection.
+
+- `preset`: Name of the preset to create.
 
 If the URL is omitted, the wizard will prompt for it interactively.
 
@@ -6945,8 +6948,8 @@ Once saved in the UI, return to the terminal and press Enter.
 ```console
 $ ascli config wizard
 Using: Aspera on Cloud at https://<ORG_NAME>.ibmaspera.com
-Path to private RSA key (leave empty to generate):
-option: key_path>
+Private RSA key, e.g. @file:<path> (leave empty to generate):
+option: private_key>
 Using existing key:
 /home/john/.aspera/ascli/<PKEY_NAME>.pem
 Please Log in as user john@example.com at: https://<ORG_NAME>.ibmaspera.com
@@ -6971,12 +6974,12 @@ Saving config file.
 
 - **Custom Client Identification**:
   By default, `ascli` uses a pre-registered global client ID.
-  To create and use an organization-specific integration, use the `--use-generic-client=no` flag.
+  To create and use an organization-specific integration, give the option `--use-generic-client=no` of plugin `aoc` to the wizard command.
 
 - **Direct Plugin Targeting**: To limit detection to the `aoc` plugin and skip discovery, provide both the URL and plugin name:
 
   ```shell
-  ascli config wizard <ORG_NAME> aoc
+  ascli config wizard @: url=<ORG_NAME> plugin=aoc
   ```
 
 #### Verifying the Configuration
@@ -7566,7 +7569,7 @@ ascli aoc user settings modify <ID> @json:'{"value":"..."}'
 > - **Application identity**: derived from the `client_id` used during authentication.
 >
 > This means that settings stored by one client application (for example, the AoC web UI) are not visible to another (for example, `ascli` using a different `client_id`).
-> By default, `ascli` uses the pre-registered global `client_id` (see `--use-generic-client`).
+> By default, `ascli` uses the pre-registered global `client_id` (see option `--use-generic-client` of plugin `aoc`).
 
 #### Example: Create a sub access key in a `node`
 
@@ -7735,7 +7738,7 @@ In this example, a user has access to a workspace where two shared folders are l
 First, set up the environment (skip if already done), see [AoC configuration: Using Wizard](#aoc-configuration-using-wizard):
 
 ```shell
-ascli config wizard https://sedemo.ibmaspera.com aoc aoc_sedemo --username=someuser@example.com
+ascli config wizard @: url=https://sedemo.ibmaspera.com plugin=aoc preset=aoc_sedemo --username=someuser@example.com
 ```
 
 This creates the option preset `aoc_sedemo` to allow seamless command line access and sets it as default for Aspera on Cloud.
@@ -9703,13 +9706,13 @@ Multiple applications detected:
 product> faspex5
 ```
 
-When Faspex is detected, the wizard asks for the path to a private key.
+When Faspex is detected, the wizard asks for a private key (a value like `@file:<path>`).
 If you do not have a private key, leave that field blank, and one will be generated or a previously generated key will be used.
 
 ```text
 Using: Faspex at https://faspex5.example.com/aspera/faspex
-Please provide the path to your private RSA key, or nothing to generate one:
-option: key_path>
+Private RSA key, e.g. @file:<path> (leave empty to generate):
+option: private_key>
 Using existing key:
 /Users/someuser/.aspera/ascli/my_key
 ```

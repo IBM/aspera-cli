@@ -14,6 +14,8 @@ module Aspera
       GLOBAL_DEFAULT_KEYWORD = 'GLOBAL'
       # Display columns for preset overview
       CONF_OVERVIEW_KEYS = %w[preset parameter value].freeze
+      # Keys of the criteria for preset lookup
+      LOOKUP_KEYS = %w[url username].freeze
 
       def action_preset_overview(**)
         # Secrets hidden by key name here: the key becomes the value of column `parameter`
@@ -27,11 +29,10 @@ module Aspera
         Result::ObjectList.new(result, fields: CONF_OVERVIEW_KEYS)
       end
 
-      def action_preset_lookup(**)
-        Plugins::BasicAuth.declare_options(options, parse: true)
-        url = options.get_option(:url, mandatory: true)
-        user = options.get_option(:username, mandatory: true)
-        result = presets.lookup_preset(url: url, username: user)
+      # @param criteria [Hash] `url` and `username` of the preset to find
+      def action_preset_lookup(criteria:, **)
+        Aspera.assert((criteria.keys - LOOKUP_KEYS).empty? && (LOOKUP_KEYS - criteria.keys).empty?, type: BadArgument) { "Expected keys: #{LOOKUP_KEYS.join(', ')}" }
+        result = presets.lookup_preset(url: criteria['url'], username: criteria['username'])
         Aspera.assert(!result.nil?, type: Error) { 'no such config found' }
         Result::SingleObject.new(result)
       end

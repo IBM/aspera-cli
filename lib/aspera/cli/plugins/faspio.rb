@@ -46,8 +46,7 @@ module Aspera
           when :jwt
             client_id = options.get_option(:client_id, mandatory: true)
             preset_value[:client_id] = client_id
-            key_path = options.get_option(:key_path)
-            preset_value[:private_key] = key_path ? "@file:#{key_path}" : options.get_option(:private_key, mandatory: true)
+            preset_value[:private_key] = options.get_option(:private_key, mandatory: true)
             passphrase = options.get_option(:passphrase)
             preset_value[:passphrase] = passphrase unless passphrase.nil?
             preset_ids.push(client_id)

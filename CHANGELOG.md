@@ -75,6 +75,10 @@ Highlights: analysis of `ascp` logs (`config ascp logs`), multiple named secret 
 * `orchestrator`:
   * `workflows development`: document `authoring` is replaced by `guide` (the Aspera Orchestrator Development Guide, which includes the Workflow Authoring Guide): `workflows development authoring toc` is now `workflows development guide toc`, and `workflows development templates customruby` is now `workflows development templates section customruby`.
   * `plugins spec` is now `plugins spec toc`, and `plugins spec <plugin> [section]` is now `plugins spec show <plugin> [section]`.
+* `config`: arguments given in a fixed order are replaced by a `Hash`, usually given with `@:` (items `key=value` in any order, validated by a schema: `help` shows it):
+  * `detect <url> [<plugin>]` is now `detect @: url=<url> plugin=<plugin>`. `url` is still asked if not given.
+  * `wizard <url> [<plugin> [<preset>]]` is now `wizard @: url=<url> plugin=<plugin> preset=<preset>`. `url` is still asked if not given. Options of the wizard are replaced by keys of the `Hash`: `--override` and `--default` are now keys `override` and `default`. Options of the plugin (`--username`, `--password`, `--private-key`, `--client-id`, `--use-generic-client`...) are unchanged. Option `--key-path` is removed: give the key itself with `--private-key=@file:<path>`. The wizard still uses the default key, or generates one, if `--private-key` is empty. Options `--override` and `--default` are removed.
+  * `preset lookup --url=<url> --username=<user>` is now `preset lookup @: url=<url> username=<user>`. Options `--url` and `--username` are no longer used by this command.
 * `config completion`: completion scripts saved in a file must be saved again (see manual). Keys of an option are proposed with a trailing `=` or `.`.
 * **library**: Modules about secrets are in `Aspera::Secret`: `SecretHider` is now `Secret::Hider`, `SecretStrength` is now `Secret::Strength`, `Keychain` is now `Secret::Store`. `Secret::Store::Factory.create` takes only the parameters of the store, and `Factory::LIST` is replaced by `Factory.types`.
 

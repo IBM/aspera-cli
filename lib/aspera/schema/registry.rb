@@ -109,6 +109,8 @@ module Aspera
       VAULT_SECRET            = "#{OPTIONS}:components.schemas.VaultSecret".freeze
       VAULT_STORE             = "#{OPTIONS}:components.schemas.VaultStore".freeze
       VAULT_STORES            = "#{OPTIONS}:components.schemas.VaultStores".freeze
+      DETECT_OPTIONS          = "#{OPTIONS}:components.schemas.DetectOptions".freeze
+      WIZARD_OPTIONS          = "#{OPTIONS}:components.schemas.WizardOptions".freeze
       IMAGE_OPTIONS           = "#{OPTIONS}:components.schemas.ImageOptions".freeze
       ASCP_LOGS_OPTIONS       = "#{OPTIONS}:components.schemas.AscpLogsOptions".freeze
       OUT_OPTIONS             = "#{OPTIONS}:components.schemas.OutOptions".freeze

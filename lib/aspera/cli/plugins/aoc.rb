@@ -212,7 +212,7 @@ module Aspera
           auto_set_jwt = false
           # use browser authentication to bootstrap
           use_browser_authentication = false
-          private_key_path = wizard.ask_private_key(
+          private_key = wizard.ask_private_key(
             user: wiz_username,
             url: app_url,
             page: [Environment.char('👤'), 'Account Settings', 'Profile', 'Public Key']
@@ -252,7 +252,7 @@ module Aspera
           end
           myself = aoc_api.read('self')
           if auto_set_pub_key
-            Aspera.assert(myself['public_key'].empty?, 'Public key is already set in profile (use --override=yes)', type: Error) unless option_override
+            Aspera.assert(myself['public_key'].empty?, 'Public key is already set in profile (use wizard key override=yes)', type: Error) unless option_override
             formatter.display_status('Updating profile with the public key.')
             aoc_api.update("users/#{myself['id']}", {'public_key' => pub_key_pem})
           end
@@ -266,7 +266,7 @@ module Aspera
               url:           app_url,
               username:      myself['email'],
               auth:          :jwt.to_s,
-              private_key:   "@file:#{private_key_path}",
+              private_key:   private_key,
               client_id:     client_id,
               client_secret: client_secret
             }.compact,

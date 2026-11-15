@@ -103,7 +103,6 @@ module Aspera
         option :cache_tokens,       description: 'Save and reuse OAuth tokens', allowed: Type::BOOLEAN, default: true
         option :expand_mounts,      description: 'Commands: list commands of sub-trees provided by another plugin', allowed: Type::BOOLEAN, default: false
         option :no_default,         description: 'Do not load default configuration for plugin', allowed: Type::NONE, short: 'N', on_set: -> { presets.use_plugin_defaults = false }
-        use_options Wizard
         # `on_set` callbacks of HTTP options are methods of `http_config`
         use_options Http, target: -> { http_config }
 
@@ -120,7 +119,8 @@ module Aspera
         commands_under :preset do
           command :list,     description: 'List all presets', action: ->(**) { Result::ValueList.new(presets.config_presets.keys, name: 'name') }
           command :overview, description: 'Show all options from all presets'
-          command :lookup,   description: 'Find preset matching URL and username'
+          command :lookup,   description: 'Find preset matching URL and username',
+            arguments: [{name: :criteria, type: Hash}]
           command :secure,   description: 'Move secrets to vault',
             arguments: [{name: :config_name, mandatory: false, complete: :preset}]
           command :show,       description: 'Show a preset',
@@ -182,17 +182,28 @@ module Aspera
           arguments: [{name: :code}]
         command :tokens, description: 'Manage OAuth tokens'
         command :plugins, description: 'Manage CLI plugins'
-        command :detect, description: 'Detect the Aspera product from a URL (interactive)',
-          arguments: [{name: :url, interactive: true}, {name: :plugin_name, mandatory: false, default: nil}],
-          action: ->(url:, plugin_name: nil, **) { Result::ObjectList.new(@wizard.identify_plugins_for_url(url: url, plugin_name: plugin_name).freeze) }
+        command(
+          :detect, description: 'Detect the Aspera product from a URL (interactive)',
+          arguments: [{name: :params, type: Hash, mandatory: false, default: {}, schema: Schema::Registry::DETECT_OPTIONS}],
+          action: lambda do |params:, **|
+            Result::ObjectList.new(@wizard.identify_plugins_for_url(url: ask_url(params), plugin_name: params['plugin']).freeze)
+          end
+        )
         command(
           :wizard, description: 'Run the setup wizard for an Aspera product (interactive)',
-          arguments: [{name: :url, interactive: true}, {name: :plugin_name, mandatory: false, default: nil},
-                      {name: :preset_name, mandatory: false, default: ''}],
-          action: lambda do |url:, plugin_name: nil, preset_name: '', **|
-            apps = @wizard.identify_plugins_for_url(url: url, plugin_name: plugin_name).freeze
+          arguments: [{name: :params, type: Hash, mandatory: false, default: {}, schema: Schema::Registry::WIZARD_OPTIONS}],
+          action: lambda do |params:, **|
+            apps = @wizard.identify_plugins_for_url(url: ask_url(params), plugin_name: params['plugin']).freeze
+            # Options of the plugin (`--username`, `--password`, `--private-key`, ...) are read from the command line.
             # The product wizard prompts for missing mandatory options (username, password, ...)
-            options.with_interactive { @wizard.find(apps, preset_name: preset_name) }
+            options.with_interactive do
+              @wizard.find(
+                apps,
+                preset_name: params['preset'] || '',
+                override:    params.fetch('override', false),
+                default:     params.fetch('default', true)
+              )
+            end
           end
         )
         command :coffee, description: 'Show a coffee image', action: ->(**) { Result::Image.new(COFFEE_IMAGE_URL) }
@@ -472,6 +483,13 @@ module Aspera
         end
 
         # DSL handlers - one method per leaf command
+
+        # URL of the application to detect or configure: from `params`, else asked to the user
+        # @param params [Hash] parameters of `detect` or `wizard`
+        # @return [String] URL
+        def ask_url(params)
+          params['url'] || options.with_interactive { options.get_interactive('url') }
+        end
 
         # Instance of plugin `transferd`, for the deprecated commands `config transferd` and `config ascp install`
         # @param command     [String] Deprecated command

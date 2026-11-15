@@ -1320,6 +1320,47 @@ components:
           examples:
             - - soap_requests
               - frameio_operations # cspell:disable-line
+    DetectOptions:
+      type: object
+      description: Application to detect (`config detect`).
+      additionalProperties: false
+      properties:
+        url:
+          type: string
+          description: URL of the application. Asked interactively if not provided.
+          examples:
+            - https://app.example.com/aspera/app
+        plugin:
+          type: string
+          description: 'Check only this plugin (default: all plugins).'
+          examples:
+            - aoc
+    WizardOptions:
+      type: object
+      description: Application to configure with the wizard (`config wizard`). Options of the plugin (e.g. `--username`, `--password`, `--client-id`, `--private-key`) are given on the command line.
+      additionalProperties: false
+      properties:
+        url:
+          type: string
+          description: URL of the application. Asked interactively if not provided.
+          examples:
+            - https://app.example.com/aspera/app
+        plugin:
+          type: string
+          description: 'Check only this plugin (default: all plugins).'
+          examples:
+            - aoc
+        preset:
+          type: string
+          description: 'Name of the preset to create (default: generated from the product, URL and user).'
+          examples:
+            - my_preset
+        override:
+          type: boolean
+          description: 'Override the existing default preset of the plugin, if it exists (default: no).'
+        default:
+          type: boolean
+          description: 'Set the preset as default configuration for the plugin (default: yes).'
     TableOptions:
       type: object
       description: Terminal table rendering options.

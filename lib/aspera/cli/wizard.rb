@@ -4,7 +4,6 @@ require_relative '../oauth/client/jwt'
 require_relative '../assert'
 require_relative '../environment'
 require_relative '../id_generator'
-require_relative 'option_declarator'
 require_relative 'plugins/factory'
 require_relative '../rainbow'
 using Rainbow
@@ -13,16 +12,9 @@ module Aspera
   module Cli
     # The wizard detects applications and generates a config
     class Wizard
-      extend OptionDeclarator
-
       WIZARD_RESULT_KEYS = %i[preset_ids preset_value test_args].freeze
       DEFAULT_PRIV_KEY_FILENAME = 'my_private_key.pem' # pragma: allowlist secret
       private_constant :WIZARD_RESULT_KEYS, :DEFAULT_PRIV_KEY_FILENAME
-
-      # Declared by the `config` plugin (`use_options Wizard`)
-      option :override, description: 'Wizard: override existing value',                                          allowed: Type::BOOLEAN, default: false
-      option :default,  description: 'Wizard: set as default configuration for specified plugin (also: update)', allowed: Type::BOOLEAN, default: true
-      option :key_path, description: 'Wizard: path to private key for JWT'
 
       def initialize(parent, main_folder)
         @parent = parent
@@ -94,32 +86,37 @@ module Aspera
         nil
       end
 
-      # To be called in public wizard method to get private key
+      # To be called in public wizard method to get private key.
+      # The key is the value of option `private_key` (e.g. `@file:<path>`): if empty or not provided, the default key is used, or generated.
       # @param user [String] User's email
       # @param url  [String] Instance URL
       # @param page [Array<String>] Navigation steps to the page to enter the public key (see `display_navigation`)
-      # @return [String] Private key path (can contain ~ for home)
+      # @return [String] Value of `private_key` for the preset: the key as provided, or a reference to the generated file
       def ask_private_key(user:, url:, page:)
-        # Lets see if path to priv key is provided
-        private_key_path = options.get_option(:key_path)
+        # Lets see if the private key is provided
+        private_key_pem = options.get_option(:private_key)
         # Give a chance to provide
-        if private_key_path.nil?
-          formatter.display_status('Path to private RSA key (leave empty to generate):')
-          private_key_path = options.get_option(:key_path, mandatory: true).to_s
+        if private_key_pem.nil?
+          formatter.display_status('Private RSA key, e.g. @file:<path> (leave empty to generate):')
+          private_key_pem = options.get_option(:private_key, mandatory: true).to_s
         end
-        # Else generate path
-        private_key_path = File.join(@main_folder, DEFAULT_PRIV_KEY_FILENAME) if private_key_path.empty?
-        if File.exist?(File.expand_path(private_key_path))
-          formatter.display_status('Using existing key:')
+        if private_key_pem.empty?
+          private_key_path = File.join(@main_folder, DEFAULT_PRIV_KEY_FILENAME)
+          if File.exist?(File.expand_path(private_key_path))
+            formatter.display_status('Using existing key:')
+          else
+            formatter.display_status("Generating #{OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH} bit RSA key...")
+            OAuth::Jwt.generate_rsa_private_key(path: private_key_path)
+            formatter.display_status('Created key:')
+          end
+          formatter.display_status(private_key_path)
+          private_key_pem = File.read(File.expand_path(private_key_path))
+          options.set_option(:private_key, private_key_pem)
+          private_key_preset_value = "@file:#{private_key_path}"
         else
-          formatter.display_status("Generating #{OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH} bit RSA key...")
-          OAuth::Jwt.generate_rsa_private_key(path: private_key_path)
-          formatter.display_status('Created key:')
+          private_key_preset_value = private_key_pem
         end
-        formatter.display_status(private_key_path)
-        private_key_pem = File.read(File.expand_path(private_key_path))
         pub_key_pem = OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s
-        options.set_option(:private_key, private_key_pem)
         formatter.display_status("Please Log in as user #{user.red} at: #{url.red}")
         display_navigation(*page)
         formatter.display_status("Check or update the value to (#{'including BEGIN/END lines'.red}):".blink)
@@ -127,12 +124,16 @@ module Aspera
         formatter.display_status('Once updated or validated, press [Enter].')
         Environment.instance.open_uri(url)
         $stdin.gets if required
-        private_key_path
+        private_key_preset_value
       end
 
       # Wizard function, creates configuration
-      # @param apps [Array] list of detected apps
-      def find(apps, preset_name: '')
+      # Options of the plugin (e.g. `--username`, `--password`, `--private-key`) are read from the command line, once the plugin has declared them.
+      # @param apps        [Array]   list of detected apps
+      # @param preset_name [String]  name of the preset to create (default: generated)
+      # @param override    [Boolean] override the existing default preset of the plugin, if it exists
+      # @param default     [Boolean] set the preset as default configuration for the plugin
+      def find(apps, preset_name: '', override: false, default: true)
         identification = if apps.length.eql?(1)
           Log.log.debug { "Detected: #{identification}" }
           apps.first
@@ -168,12 +169,10 @@ module Aspera
         # Write configuration file
         formatter.display_status("Preparing preset: #{wiz_preset_name}")
         # Init defaults if necessary
-        option_override = options.get_option(:override, mandatory: true)
-        option_default = options.get_option(:default, mandatory: true)
         preset_value = {PresetManager::Key::COMMENT => "wizard: #{identification[:name]}"}.merge(wizard_result[:preset_value].stringify_keys)
-        @parent.context.presets.defaults_set(identification[:product], wiz_preset_name, preset_value, option_default, option_override)
+        @parent.context.presets.defaults_set(identification[:product], wiz_preset_name, preset_value, default, override)
         test_args = wizard_result[:test_args]
-        test_args = "-P#{wiz_preset_name} #{test_args}" unless option_default
+        test_args = "-P#{wiz_preset_name} #{test_args}" unless default
         # TODO: actually test the command
         test_cmd = "#{Info::CMD_NAME} #{identification[:product]} #{test_args}"
         return Result::Status.new("You can test with:\n#{test_cmd.red}")
