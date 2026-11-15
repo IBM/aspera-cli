@@ -1,0 +1,20 @@
+#!/bin/sh
+# Pre-commit: spell check (cspell) of the staged files, with the same version and configuration as the GitHub workflow `spell.yml`.
+# SPELL_HOOK=skip disables it. `git commit --no-verify` skips all hooks.
+case "${SPELL_HOOK:-}" in
+  skip) exit 0 ;;
+esac
+cd "$(git rev-parse --show-toplevel)" || exit 0
+if ! command -v npx > /dev/null 2>&1; then
+  echo "pre-commit: 'npx' not found, skipping spell check (install Node.js)" >&2
+  exit 0
+fi
+# Staged files, added, copied, modified or renamed (not deleted); ignored paths of .cspell.json are excluded by cspell
+files=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$files" ] && exit 0
+printf '%s\n' "$files" | tr '\n' '\0' |
+  xargs -0 npx --yes cspell@10 --no-progress --no-summary --dot --no-must-find-files ||
+  {
+    echo "pre-commit: spelling errors: fix them or add words to .cspell/*.dict (SPELL_HOOK=skip to disable)" >&2
+    exit 1
+  }

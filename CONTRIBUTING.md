@@ -173,6 +173,17 @@ git config --local hook.codeql.command 'sh build/hooks/pre-commit-codeql'
 
 Environment variable `CODEQL_HOOK=always` forces the analysis, and `CODEQL_HOOK=skip` disables it.
 
+Optional `pre-commit` hook `build/hooks/pre-commit-spell` runs `cspell` on the staged files only, with the same version (`cspell@10`) and configuration as the GitHub workflow `spell.yml`, so that a spelling error is found before the push.
+It requires `npx` (Node.js).
+Register it once in the local git configuration:
+
+```shell
+git config --local hook.spell.event pre-commit
+git config --local hook.spell.command 'sh build/hooks/pre-commit-spell'
+```
+
+Environment variable `SPELL_HOOK=skip` disables it.
+
 `cspell` (configuration: `.cspell.json`) does not check code in backticks, quoted strings without space (values, identifiers), command line options, and `%w[]`/`%i[]` arrays.
 An unknown word that is a general term goes to a dictionary of folder `.cspell/`: `aspera.dict` (Aspera products and this project), `ruby.dict` (Ruby and gems), `tools.dict` (other tools and technical terms).
 For test data, prefer names made of words (e.g. `test-file`, `bad-agent`): they need no exception.
