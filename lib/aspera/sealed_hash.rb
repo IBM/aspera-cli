@@ -12,42 +12,46 @@ module Aspera
   # Steps: Hash -> JSON -> deflate -> AES-256-GCM -> Base64 URL-safe, without padding (characters: `A-Z a-z 0-9 - _`).
   #
   # Text layout, once decoded from Base64: `IV (12 bytes) + authentication tag (16 bytes) + encrypted data`.
-  # The key is `SHA256(<base key> + <secret> + <YYYYMMDD>)`, with the date in UTC. Base key and secret are optional.
+  # The key is `SHA256(<base key> + <secret> + <slot>)`, where slot is the Unix time divided by the period (15 minutes by default), rounded down.
+  # Base key and secret are optional.
   # The authentication tag detects an incomplete, mistyped or modified text, or a wrong key.
   # There is no prefix nor type in the text: the receiver checks the keys of the Hash.
   #
-  # The protection depends on the key: if the base key is a constant (e.g. in the source code) and there is no secret, the key is not secret, and the date is easy to guess:
+  # The protection depends on the key: if the base key is a constant (e.g. in the source code) and there is no secret, the key is not secret, and the slot is easy to guess:
   # the text is then not readable at first sight and is not valid for long, but it is not confidential.
   # To make it confidential, give a `secret` known only by both sides (e.g. a random `state`).
   #
-  # The date changes at midnight UTC, and the clocks of both sides can differ: `unseal` also tries the day before and the day after.
+  # The slot changes every period, and the clocks of both sides can differ: `unseal` also tries the previous slot and the next one.
+  # So a text is valid from 1 to 2 periods after its creation (15 to 30 minutes by default), and is also accepted if the clock of the receiver is up to 1 period behind.
   # When unsealing, spaces and line breaks are ignored (a text split on several lines is valid), as well as quotes and punctuation around the text.
   # Letter case matters.
   module SealedHash
     CIPHER = 'aes-256-gcm'
     IV_SIZE = 12
     TAG_SIZE = 16
-    DAY = 86_400
+    # Duration of a slot, in seconds
+    PERIOD = 900
     # Shortest text: IV, tag and one byte of data, in Base64
     MIN_TEXT_LENGTH = ((IV_SIZE + TAG_SIZE + 1) * 4 / 3.0).ceil
     # Limits on what is accepted: protection against an abusive input
     MAX_TEXT_LENGTH = 65_536
     MAX_INFLATED_SIZE = 262_144
-    # Days tried to decrypt, relative to the current day
-    DAY_OFFSETS = [0, -1, 1].freeze
+    # Slots tried to decrypt, relative to the current slot
+    SLOT_OFFSETS = [0, -1, 1].freeze
     TEXT_CHARS = /\A[A-Za-z0-9_-]*\z/
-    private_constant :CIPHER, :IV_SIZE, :TAG_SIZE, :DAY, :MIN_TEXT_LENGTH, :MAX_TEXT_LENGTH, :MAX_INFLATED_SIZE, :DAY_OFFSETS, :TEXT_CHARS
+    private_constant :CIPHER, :IV_SIZE, :TAG_SIZE, :MIN_TEXT_LENGTH, :MAX_TEXT_LENGTH, :MAX_INFLATED_SIZE, :SLOT_OFFSETS, :TEXT_CHARS
 
     class << self
       # @param data     [Hash]        Data to transform
       # @param secret   [String, nil] Value known by both sides, added to the key
       # @param base_key [String, nil] Base of the key, e.g. the name of the application (optional)
-      # @param time     [Time]        Date used for the key
+      # @param time     [Time]        Time used for the key
+      # @param period   [Integer]     Duration of a slot, in seconds (must be the same on both sides)
       # @return [String] Base64 URL-safe text, without padding
-      def seal(data, secret: nil, base_key: nil, time: Time.now)
+      def seal(data, secret: nil, base_key: nil, time: Time.now, period: PERIOD)
         Aspera.assert_type(data, Hash)
         cipher = OpenSSL::Cipher.new(CIPHER).encrypt
-        cipher.key = derive_key(base_key, secret, time)
+        cipher.key = derive_key(base_key, secret, time.to_i / period)
         iv = cipher.random_iv
         body = cipher.update(Zlib::Deflate.deflate(JSON.generate(data), Zlib::BEST_COMPRESSION)) + cipher.final
         [iv + cipher.auth_tag(TAG_SIZE) + body].pack('m0').tr('+/', '-_').delete('=')
@@ -64,10 +68,11 @@ module Aspera
       # @param text     [String]      Text produced by `seal`
       # @param secret   [String, nil] Value known by both sides, added to the key
       # @param base_key [String, nil] Base of the key, e.g. the name of the application (optional)
-      # @param time     [Time]        Date used for the key
+      # @param time     [Time]        Time used for the key
+      # @param period   [Integer]     Duration of a slot, in seconds (must be the same on both sides)
       # @return [Hash] The data
-      # @raise [ParameterError] if text is not valid: incomplete, mistyped, modified, or made with another key or another day
-      def unseal(text, secret: nil, base_key: nil, time: Time.now)
+      # @raise [ParameterError] if text is not valid: incomplete, mistyped, modified, or made with another key or too long ago
+      def unseal(text, secret: nil, base_key: nil, time: Time.now, period: PERIOD)
         clean = normalize(text)
         raise ParameterError, 'Code is too long' if clean.length > MAX_TEXT_LENGTH
         raise ParameterError, 'Code has invalid characters: only letters, digits, - and _ are expected' unless clean.match?(TEXT_CHARS)
@@ -78,11 +83,11 @@ module Aspera
           raise ParameterError, 'Code is incomplete or has typing errors'
         end
         deflated = nil
-        DAY_OFFSETS.each do |offset|
-          deflated = decrypt(raw, derive_key(base_key, secret, time + (offset * DAY)))
+        SLOT_OFFSETS.each do |offset|
+          deflated = decrypt(raw, derive_key(base_key, secret, (time.to_i / period) + offset))
           break unless deflated.nil?
         end
-        raise ParameterError, 'Invalid code: incomplete, mistyped, or not made today' if deflated.nil?
+        raise ParameterError, 'Invalid code: incomplete, mistyped, expired, or the clock is wrong (check the time of both computers)' if deflated.nil?
         data = JSON.parse(inflate(deflated))
         raise ParameterError, 'Invalid code: unexpected content' unless data.is_a?(Hash)
         data
@@ -100,8 +105,8 @@ module Aspera
       end
 
       # @return [String] 32 bytes
-      def derive_key(base_key, secret, time)
-        OpenSSL::Digest.digest('SHA256', "#{base_key}#{secret}#{time.getutc.strftime('%Y%m%d')}")
+      def derive_key(base_key, secret, slot)
+        OpenSSL::Digest.digest('SHA256', "#{base_key}#{secret}#{slot}")
       end
 
       # @return [String, nil] Deflated data, or `nil` if the key or the tag is not the expected one

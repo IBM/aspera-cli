@@ -4246,7 +4246,7 @@ The command on the workstation:
 - ends once the browser has received the page with the code; the port of `redirect_uri` shall be free on the workstation (the URL is registered for the login and cannot be changed);
 - gives to the server only the parameters it needs (the `code` and the `state`).
 
-The codes are compressed and encrypted with a key that is not secret (derived from a constant and the current UTC date): they are hard to read and are valid for about one day, but they are **not confidential**: do not keep them, nor send them. The code shown by Shares also uses the random `state` of the login in its key.
+The codes are compressed and encrypted with a key that is not secret (derived from a constant and the current time, in slots of 15 minutes): they are hard to read and are valid for 15 to 30 minutes (the clocks of both computers must be correct), but they are **not confidential**: do not keep them, nor send them. The code shown by Shares also uses the random `state` of the login in its key.
 The codes are authenticated: a code that is incomplete, mistyped or modified is detected.
 Spaces and line breaks are ignored (letter case matters): a code displayed on several lines can be pasted.
 

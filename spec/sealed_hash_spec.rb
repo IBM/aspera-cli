@@ -33,17 +33,36 @@ RSpec.describe(Aspera::SealedHash) do
     expect(described_class.unseal("\"#{split}\"\n")).to(eq(data))
   end
 
-  it 'accepts the day before and the day after, not more' do
+  it 'accepts the previous and the next slot, not more' do
     text = described_class.seal(data, time: now)
-    expect(described_class.unseal(text, time: now + 86_400)).to(eq(data))
-    expect(described_class.unseal(text, time: now - 86_400)).to(eq(data))
-    expect { described_class.unseal(text, time: now + (2 * 86_400)) }.to(raise_error(Aspera::ParameterError, /Invalid code/))
+    expect(described_class.unseal(text, time: now + 900)).to(eq(data))
+    expect(described_class.unseal(text, time: now - 900)).to(eq(data))
+    expect { described_class.unseal(text, time: now + (2 * 900)) }.to(raise_error(Aspera::ParameterError, /expired/))
+    expect { described_class.unseal(text, time: now - (2 * 900)) }.to(raise_error(Aspera::ParameterError, /expired/))
   end
 
-  it 'uses the UTC date' do
-    # 23:30 in UTC-5 is 04:30 the next day in UTC
-    local = Time.new(2026, 11, 15, 23, 30, 0, '-05:00')
-    expect(described_class.unseal(described_class.seal(data, time: local), time: Time.utc(2026, 11, 16, 12, 0, 0))).to(eq(data))
+  it 'is valid from 1 to 2 periods' do
+    # `now` is at the start of a slot: 10:00:00
+    text = described_class.seal(data, time: now)
+    expect(described_class.unseal(text, time: now + 1799)).to(eq(data))
+    expect { described_class.unseal(text, time: now + 1800) }.to(raise_error(Aspera::ParameterError, /expired/))
+    # created at the end of a slot: valid 15 min only
+    text = described_class.seal(data, time: now + 899)
+    expect(described_class.unseal(text, time: now + 1799)).to(eq(data))
+    expect { described_class.unseal(text, time: now + 1800) }.to(raise_error(Aspera::ParameterError, /expired/))
+  end
+
+  it 'uses a custom period, that must be the same on both sides' do
+    text = described_class.seal(data, time: now, period: 60)
+    expect(described_class.unseal(text, time: now + 100, period: 60)).to(eq(data))
+    expect { described_class.unseal(text, time: now + 200, period: 60) }.to(raise_error(Aspera::ParameterError, /expired/))
+    expect { described_class.unseal(text, time: now, period: 120) }.to(raise_error(Aspera::ParameterError, /Invalid code/))
+  end
+
+  it 'does not depend on the time zone' do
+    local = Time.new(2026, 11, 15, 5, 0, 0, '-05:00')
+    expect(local.utc).to(eq(now))
+    expect(described_class.unseal(described_class.seal(data, time: local), time: now)).to(eq(data))
   end
 
   it 'detects a typing error' do
