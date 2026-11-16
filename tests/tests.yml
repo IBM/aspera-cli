@@ -2793,6 +2793,8 @@ aoc_files_download_ascii:
     - --to-folder=$(TMP)
     - test-dst/$(FILENAME_ASCII)
 aoc_files_download_connect:
+  tags:
+    - gui
   depends_on:
     - aoc_testdst_cleanup
   pre: |
@@ -2806,6 +2808,8 @@ aoc_files_download_connect:
     - --transfer.agent=connect
     - test-dst/$(FILENAME_ASCII)
 aoc_files_download_desktop:
+  tags:
+    - gui
   depends_on:
     - aoc_testdst_cleanup
   pre: PATH_DOWN_TST_ASC.delete rescue nil

@@ -12,7 +12,7 @@ if ENV.key?('ENABLE_COVERAGE')
   FileUtils.mkdir_p(coverage_root)
   SimpleCov.root(development_root)
   SimpleCov.coverage_dir(coverage_dir)
-  SimpleCov.enable_for_subprocesses if SimpleCov.respond_to?(:enable_for_subprocesses)
+  SimpleCov.merge_subprocesses(true)
   # keep cache data for 1 day (must be longer than time to run the whole test suite)
   SimpleCov.merge_timeout(86400)
   SimpleCov.command_name(SecureRandom.uuid)
@@ -26,14 +26,14 @@ if ENV.key?('ENABLE_COVERAGE')
   no_cov_functions = %w[error_unreachable_line error_unexpected_value Log.log.trace].freeze
   SimpleCov.start do
     # assert usually do not trigger
-    add_filter do |source_file|
+    skip do |source_file|
       source_file.lines.each do |line|
         line.skipped! if no_cov_functions.any? { |i| line.src.include?(i) }
       end
       false
     end
     # no coverage in these files
-    add_filter 'lib/aspera/secret/store/macos_security.rb'
-    add_filter 'lib/aspera/assert.rb'
+    skip 'lib/aspera/secret/store/macos_security.rb'
+    skip 'lib/aspera/assert.rb'
   end
 end

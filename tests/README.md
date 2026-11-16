@@ -304,7 +304,7 @@ In `auto` mode, a test fails quickly, with a message that says which human actio
 #### Limits
 
 - The login tests on real services (`aoc_webauth_profile`, `aoc_webauth_profile_refresh`, `f5_webauth`) need a test account **without MFA** (no second factor, no captcha): MFA and TOTP are not supported.
-- Tests that use IBM Aspera Connect or IBM Aspera Desktop (`aoc_files_download_connect`, `aoc_files_download_desktop`) are not automated.
+- Tests tagged `gui` start a graphical client application (IBM Aspera Connect, IBM Aspera for Desktop) with its URL handler (`fasp://`, `aspera://`): they need a logged-in desktop session and the client installed. `auto_browser.rb` gives such URLs to the system (`open`, `xdg-open`), so no click is needed. Skip them on a headless system: `bundle exec rake test:skip'[tag gui]'`.
 - These tests are run by hand, on a workstation (Chrome, macOS Keychain, test configuration file with credentials): they are not run in a CI environment.
 - The mock IdP covers the authorization code flow of Faspex 5 only (not Shares, not AoC).
 - With tag `tty`, `stdout` and `stderr` are mixed on the terminal.

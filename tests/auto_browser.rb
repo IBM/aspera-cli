@@ -320,9 +320,23 @@ def fallback_http(target_uri, names)
   end
 end
 
+# Open the URL with the system handler (default browser, or application registered for the scheme)
+# @param target_uri [URI] URL to open
+def open_with_system(target_uri)
+  case RbConfig::CONFIG['host_os']
+  when /darwin|mac os/ then system('open', target_uri.to_s)
+  when /linux/ then system('xdg-open', target_uri.to_s)
+  when /mswin|msys|mingw|cygwin/ then system('start', 'explorer', target_uri.to_s)
+  end
+end
+
 secret_names = {secret: secret_name, access_code: access_code_name}
-case uri.hostname
-when *LOOPBACK_HOSTS
+case
+when !%w[http https].include?(uri.scheme)
+  # Not a web page (e.g. `aspera://` to start IBM Aspera for Desktop): the registered application opens it.
+  # In Chrome, the protocol handler asks for a confirmation that no one can give.
+  open_with_system(uri)
+when LOOPBACK_HOSTS.include?(uri.hostname)
   if ferrum_available
     begin
       automate_with_chrome(uri, login_preset, secret_names)
@@ -336,11 +350,7 @@ when *LOOPBACK_HOSTS
 else
   # External/Remote OAuth login URL (e.g. Aspera on Cloud / Faspex 5)
   if ENV['TEST_INTERACTIVE'].to_s.eql?('manual')
-    case RbConfig::CONFIG['host_os']
-    when /darwin|mac os/ then system('open', uri.to_s)
-    when /linux/ then system('xdg-open', uri.to_s)
-    when /mswin|msys|mingw|cygwin/ then system('start', 'explorer', uri.to_s)
-    end
+    open_with_system(uri)
   elsif ferrum_available
     automate_with_chrome(uri, login_preset, secret_names)
   else
