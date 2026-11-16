@@ -67,7 +67,7 @@ Highlights: `ascli` as a tool for AI assistants: a hardened `mcp server` (the AI
   * Files are written on the local system (`config download`, transfers that receive files, except with transfer agent `node`, which writes on the node) only in the new key `writable_paths` of option `security` (none by default).
 * `config`:
   * `plugins create` refuses a plugin name that is not made of lowercase letters, digits and underscores.
-  * `transferd install`, `ascp install`: a file or a link of the SDK archive cannot be written outside of the installation folder.
+  * `transferd install`, `ascp install`: a file or a link of the SDK archive cannot be written outside of the installation folder. Reported by [@thesmartshadow](https://github.com/thesmartshadow).
   * `preset set`: the value is evaluated once, as an extended value: `@val:@file:<path>` stores `@file:<path>` as documented, and not the content of the file. A value without `@val:` is evaluated as before: for example `@yaml:@file:<path>` stores the content, `@val:@yaml:@file:<path>` stores the reference to the file. The result of an evaluation is no longer evaluated again: a file read with `@file:` that contains `@json:[1,2]` is stored as that text.
   * `vault`: the encrypted file vault keeps its owner, group and mode when it is changed by another user, e.g. root.
   * `vault` (HashiCorp): Responses of Vault failed with `wrong number of arguments` with gem `json` 3. `vault info` shows the authentication method instead of an internal object.
