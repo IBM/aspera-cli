@@ -31,6 +31,8 @@ Highlights: `ascli` as a tool for AI assistants: a hardened `mcp server` (the AI
 * `aoc`:
   * `automation` is no longer beta. New commands `automation workflows details` (workflow with its steps and actions), `export`, `import` and `duplicate` (copy made by the server, which keeps the secrets that the API does not return).
   * New command `automation guide` (`toc`, `full`, `section <anchor>`): the Aspera on Cloud Automation Development Guide (from GitHub), also used by AI assistants through `mcp server`.
+* `faspex5`:
+  * Web authentication (`--auth=web`) uses PKCE (RFC 7636, method `S256`): an authorization code is useless without the verifier that only `ascli` knows. Checked by Faspex 5.0.16 and later, ignored by earlier versions. Nothing to change in the configuration.
 * `connect`: IBM Aspera Connect will be deprecated in 2027. The transfer agent `connect` displays a warning that recommends IBM Aspera for Desktop (`--transfer=desktop`).
 * `transferd`: new plugin to install the Transfer Daemon and run it as a system service.
   * `transferd install [version]` and `transferd list` (same as `config transferd install` and `config transferd list`, which are deprecated).
@@ -81,6 +83,7 @@ Highlights: `ascli` as a tool for AI assistants: a hardened `mcp server` (the AI
 * `config`: `preset lookup help` shows the schema of the argument (`url` and `username`).
 * `ascli`: `-h` gives the command and the URL (`llms.txt`) for AI assistants.
 * `aoc`: `automation instances show` did not return. It now accepts the numeric identifier or the UUID.
+* `faspex5`: Web authentication (`--auth=web`) failed when HTTP basic authentication is enabled on the API client: option `client_secret` is now sent.
 * `orchestrator`: Authentication with option `apikey` was rejected by Orchestrator (HTTP 401): the API requires `username` with the API key. Option `username` is now required with `apikey`.
 * `ascli`:
   * `--out.select` with a dot-path key (e.g. `directory_user.type`) selected no item with formats `json`, `jsonpp`, `yaml` and `ruby`.

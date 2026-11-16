@@ -4167,6 +4167,7 @@ Authentication methods that need a user login in a browser (`--auth=web`, includ
 4. The server redirects the browser to `redirect_uri`, with the OAuth code (`web`), or, for Shares, the tokens, and the `state`.
 5. The browser sends this request to `ascli`, which checks that `state` is the one it generated, and stops listening.
 6. `ascli` requests the token to the server: exchange of the code (`web`) or, for Shares, of the refresh token, and saves it in the cache.
+   For Faspex 5, the code is protected with PKCE: `ascli` sends a challenge with the login URL, and the matching verifier with the code.
    Next calls use the cached token, renewed if needed without a browser.
 
 The code or tokens never go to another host than the local one: the host of `redirect_uri` shall be loopback.
@@ -9847,9 +9848,9 @@ For web-based authentication, the administrator must create an **API client** in
 - Do not Activate JWT
 - Set **Redirect URI** to `https://127.0.0.1:8888`
 - Click **Create**
-- Take note of the Client Id (and Client Secret, but not used in current version)
+- Take note of the Client Id, and of the Client Secret if HTTP basic authentication is enabled on the API client
 
-The user will use the following options:
+The user will use the following options (`client_secret` only if HTTP basic authentication is enabled on the API client):
 
 ```text
 --auth=web
@@ -9857,6 +9858,9 @@ The user will use the following options:
 --client-secret=<SECRET>
 --redirect-uri=https://127.0.0.1:8888
 ```
+
+`ascli` uses PKCE (RFC 7636, method `S256`): the authorization code can be exchanged for a token only by the `ascli` process that requested it.
+Faspex checks it since version 5.0.16, earlier versions ignore it.
 
 ### Faspex 5 public link authentication
 

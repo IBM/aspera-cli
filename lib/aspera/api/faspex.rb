@@ -146,7 +146,7 @@ module Aspera
       # @param root           [String] Root path for API
       # @param password       [String, nil] For :boot auth, the token copied directly from browser in developer mode
       # @param client_id      [String, nil] For :web and :jwt auth, the client_id of web UI application
-      # @param client_secret  [String, nil] For :web auth, the client_secret of web UI application (not needed for :jwt)
+      # @param client_secret  [String, nil] For :web auth, the client_secret of the API client, required if it has HTTP basic auth enabled (not needed for :jwt)
       # @param redirect_uri   [String, nil] For :web auth, the redirect_uri of web UI application (must be the same as in application configuration)
       # @param username       [String, nil] For :jwt auth, the username of the user to impersonate
       # @param private_key    [String, nil] For :jwt auth, the private key to sign JWT token
@@ -215,9 +215,13 @@ module Aspera
                 type:         :oauth2,
                 base_url:     "#{url}/#{PATH_AUTH}",
                 grant_method: :web,
+                # Faspex 5.0.16+ checks the code verifier, earlier versions ignore it
+                pkce:         true,
                 params:       {
-                  client_id: client_id
-                },
+                  client_id:     client_id,
+                  # required when the API client has HTTP basic auth enabled, else ignored by Faspex
+                  client_secret: client_secret
+                }.compact,
                 redirect_uri: redirect_uri
               }
             }
