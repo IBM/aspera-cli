@@ -1,6 +1,9 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 module Aspera
   # Generation of the XSD schema of `aspera.conf`, from the documented sample produced by `asuserdata -+`
   module Conf

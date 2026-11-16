@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # This script runs inside the container to build Ruby and create the AppImage
 set -euo pipefail
 APP_PATH="$1"

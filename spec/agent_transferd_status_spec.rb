@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Tests for Agent::Transferd.transfer_status and Agent::Transferd.transfer_cancel (async re-query interface).
 # The gRPC stub is doubled: no daemon required. Requires the optional gem grpc.
 

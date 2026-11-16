@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Command `transferd install`: nothing is done if the version is already installed
 
 require 'spec_helper'

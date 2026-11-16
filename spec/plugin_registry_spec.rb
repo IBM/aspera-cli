@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Validates that the CommandRegistry of each plugin is internally consistent:
 # every leaf command has either an explicit action or a matching action_* method,
 # and every action accepts any keyword (the dispatch context), see `CommandRegistry#validate!`.

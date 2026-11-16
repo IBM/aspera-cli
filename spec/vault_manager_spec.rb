@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 require_relative '../lib/aspera/cli/vault_manager'
 require_relative '../lib/aspera/secret/store/encrypted_hash'
 require 'tmpdir'

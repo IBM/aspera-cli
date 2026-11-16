@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Unit tests for Aspera::Cli::Plugins::Preview event processing on remote storage (`--root-url=aspera:`).
 # Node API, transfer agent and preview generator are doubled: no node server, no ImageMagick/ffmpeg needed.
 

@@ -64,3 +64,7 @@ Out of scope:
 - A feature that works as designed at level `low`.
 - An issue that requires the user to disable a protection, for example `--insecure=yes`.
 - A web server of `ascli` exposed to users or networks that are not trusted, without the protection of its command, or with HTTP instead of HTTPS on a network.
+
+## Assurance Case
+
+The security requirements, the threat model, the trust boundaries, and the weaknesses countered are described in [docs/ASSURANCE_CASE.md](docs/ASSURANCE_CASE.md).

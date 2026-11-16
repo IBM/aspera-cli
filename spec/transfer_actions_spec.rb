@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Unit tests for Aspera::Cli::TransferActions (`config agents jobs status`) — no server needed.
 
 require_relative '../lib/aspera/persistency_folder'

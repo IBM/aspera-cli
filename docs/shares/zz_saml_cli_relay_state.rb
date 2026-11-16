@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # ADDITIVE PATCH for Aspera Shares (Rails 8.1): no existing file is modified.
 # This is a specific patch, not a standard function of Shares.
 # The final implementation in Shares may differ (RelayState values, format and validity of the code, returned fields):

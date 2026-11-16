@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Unit tests for Aspera::Agent::Direct: the temporary files of `ascp` (file list) exist until the end of the transfer,
 # also after the end of the command (asynchronous transfer, MCP server), and are deleted then.
 # `ascp` is not started: start_and_monitor_process is replaced by a wait.

@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Client commands of plugin `transferd` (`info`, `transfers show|cancel`): no daemon and no gem `grpc` required, the client is a fake.
 
 require 'spec_helper'

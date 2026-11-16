@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # cspell:ignore asperascp asws getname lastlog lsass pcap tokengen trapd userdata winuser wtmp
 require_relative '../assert'
 require_relative '../log'

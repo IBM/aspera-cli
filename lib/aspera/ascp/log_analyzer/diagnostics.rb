@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # cspell:words commify Isilon nohear onefs overdriven
 require_relative '../session_errors'
 require 'time'

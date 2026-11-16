@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # cspell:ignore alloc ossl aspmover bdrate brcvd dups rcvd sndr aspsimplesync astokengen fdlimit filewrite pulseaudio sesserr varation
 module Aspera
   module Ascp

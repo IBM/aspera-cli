@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 require_relative '../lib/aspera/cli/preset_actions'
 require_relative '../lib/aspera/cli/vault_actions'
 require_relative '../lib/aspera/cli/result'

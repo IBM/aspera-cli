@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # cspell:ignore peeros peerver rexreqs
 # Tests for Aspera::Ascp::LogAnalyzer with real anonymized log fixtures.
 

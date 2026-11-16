@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Stub MCP::Tool and MCP::Tool::Response before loading mcp/tool.rb so that
 # the file can be required even when the optional 'mcp' gem is not installed.
 module MCP

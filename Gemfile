@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 source 'https://rubygems.org'
 
 # Gem's dependencies are in file <gem name>.gemspec

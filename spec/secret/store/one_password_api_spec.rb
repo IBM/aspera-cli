@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Unit tests for Aspera::Secret::Store::OnePasswordApi — REST client is faked, no 1Password Connect server needed.
 
 require_relative '../../../lib/aspera/secret/store/factory'

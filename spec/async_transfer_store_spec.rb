@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 require_relative '../lib/aspera/persistency_folder'
 require_relative '../lib/aspera/cli/async_transfer_store'
 require 'bundler/setup'

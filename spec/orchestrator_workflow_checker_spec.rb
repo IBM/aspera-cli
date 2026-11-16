@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 require_relative 'spec_helper'
 require_relative '../lib/aspera/orchestrator_workflow_checker'
 require 'json'

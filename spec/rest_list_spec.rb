@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Unit tests for Aspera::Rest::List paging — no server needed.
 
 require_relative '../lib/aspera/rest/list'

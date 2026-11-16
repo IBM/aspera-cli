@@ -1,6 +1,9 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 require_relative '../lib/aspera/web_server_simple'
 require_relative '../lib/aspera/web_page'
 require_relative '../lib/aspera/servlet_helpers'

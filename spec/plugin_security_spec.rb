@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Plugins are code: a file of a folder that a client can write is not loaded when the security level is not low.
 
 require_relative '../lib/aspera/cli/plugins/factory'

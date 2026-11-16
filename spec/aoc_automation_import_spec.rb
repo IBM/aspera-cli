@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Unit tests for the import of an AoC Automation workflow — no server needed.
 
 require_relative '../lib/aspera/cli/context'

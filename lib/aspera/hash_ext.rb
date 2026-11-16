@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 class ::Hash
   # Recursively merge another hash, with nested hashes merged deeply
   # @param second [Hash] Hash to merge into self

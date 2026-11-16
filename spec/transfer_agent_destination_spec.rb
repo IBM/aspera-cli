@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Tests for TransferAgent#start: the restriction on written files (option `security`, `writable_paths`)
 # applies to the destination folder only when the transfer agent writes on the local system.
 # The agent_instance is doubled; no real transfer is started.

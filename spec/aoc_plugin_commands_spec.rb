@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Unit tests for Aspera::Cli::Plugins::Aoc: simple commands that map to one API call — no AoC server needed.
 # The AoC API (and the automation and analytics APIs) are replaced by doubles that record calls.
 

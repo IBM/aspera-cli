@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # cspell:ignore COMPL serv
 # Shell completion scripts displayed by `config completion <shell>`, and the commands they call.
 # The Bash and PowerShell scripts are executed with `bash` and `pwsh`, if available.

@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 module Aspera
   # Holds the executable name, environment variables and command line arguments for a spawned process,
   # and the temporary files it uses (for example a file list), which must exist until it ends.

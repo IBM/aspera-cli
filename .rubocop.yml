@@ -37,6 +37,11 @@ Metrics/ParameterLists:
   Max: 6
 Metrics/BlockNesting:
   Max: 5
+# Each source file has a copyright and license header (SPDX)
+Style/Copyright:
+  Enabled: true
+  Notice: 'SPDX-FileCopyrightText: IBM Corp\.'
+  AutocorrectNotice: "# SPDX-FileCopyrightText: IBM Corp.\n# SPDX-License-Identifier: Apache-2.0"
 Style/TrailingCommaInHashLiteral:
   EnforcedStyleForMultiline: no_comma
 Style/StringLiterals:

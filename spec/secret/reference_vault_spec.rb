@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Unit tests for secret references in HashiCorp Vault: KV v2, token file, AppRole — with a fake Vault server (WEBrick).
 
 require_relative '../../lib/aspera/secret/resolver'

@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 require_relative '../lib/aspera/temp_file_manager'
 require 'bundler/setup'
 require 'securerandom'

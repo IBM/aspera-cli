@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Exit status of `ascli`, by category of error.
 
 require_relative '../lib/aspera/cli/error'

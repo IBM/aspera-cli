@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # cspell:ignore blks drate dups filewrite httpgateway lport rcvd rexreqs sndr userid xmit
 # Unit tests for Aspera::Ascp::LogAnalyzer: analysis of `ascp` log files.
 

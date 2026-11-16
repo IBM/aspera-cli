@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Unit tests for Aspera::Cli::TransferProgress: progress bar fed with transfer events.
 
 require_relative '../lib/aspera/cli/transfer_progress'

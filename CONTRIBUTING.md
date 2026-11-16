@@ -61,6 +61,27 @@ To submit a contribution, follow these steps:
 > [!TIP]
 > Keep pull requests focused; include only changes relevant to the specific feature or fix.
 
+### Code Review
+
+A pull request is merged after the approval of a maintainer (see [GOVERNANCE.md](GOVERNANCE.md)): branch `main` requires one approving review.
+
+The reviewer checks that:
+
+- The automated checks pass: unit tests and RuboCop (`.github/workflows/test.yml`), spell check (`.github/workflows/spell.yml`), CodeQL (`.github/workflows/codeql-analysis.yml`).
+- The change does what the description says, and only that.
+- New or changed behavior has tests in `tests/tests.yml` or `spec/`, including a failure case for invalid input.
+- Inputs from users, files, and servers are validated, and the change keeps the restrictions of the [security levels](docs/README.md#security-level).
+- No secret is in the change (code, tests, documentation): placeholders such as `<PASSWORD>` are used instead.
+- Secrets are not shown in logs or output.
+- The documentation (`docs/README.erb.md`) and `CHANGELOG.md` are updated.
+- New dependencies are needed, maintained, and have a compatible license.
+- The code follows the style of the project.
+
+The reviewer asks for changes in comments of the pull request.
+A pull request with an open question about security is not merged.
+
+The maintainer may commit minor changes directly on `main` (see [Branching Strategy](#branching-strategy)): the same checks apply.
+
 ### Development Cycle for a New CLI Command
 
 When adding or modifying a CLI command, complete **every step** in the following order.

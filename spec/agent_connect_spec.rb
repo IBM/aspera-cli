@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Unit tests for Aspera::Agent::Connect — Connect local REST API is doubled, no Connect application needed.
 
 require_relative '../lib/aspera/agent/connect'

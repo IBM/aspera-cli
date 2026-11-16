@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 module Aspera
   # trigger returns true only if the delay has passed since the last trigger
   class TimerLimiter

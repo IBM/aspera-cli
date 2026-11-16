@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Tests for Phase 0b: DSL class methods and dispatcher in Base.
 # These tests are intentionally self-contained: they do NOT require spec_helper
 # (which needs a live server config) because all dependencies of Base are doubled.

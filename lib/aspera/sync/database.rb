@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 if defined?(JRUBY_VERSION)
   require 'jdbc/sqlite3'
   Jdbc::SQLite3.load_driver

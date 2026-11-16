@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # First warning displayed will stop the execution
 module Warning
   # Ruby warnings start with the location: `<file>:<line>: warning: ...`

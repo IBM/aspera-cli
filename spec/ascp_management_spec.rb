@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Unit tests for Aspera::Ascp::Management: management port messages of `ascp`.
 
 require_relative '../lib/aspera/ascp/management'

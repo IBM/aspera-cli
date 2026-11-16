@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # ffmpeg options:
 # spellchecker:ignore soffice pauseframes libx264 trunc bufsize muxer apng libmp3lame maxrate posterize movflags faststart
 # spellchecker:ignore palettegen paletteuse pointsize bordercolor repage lanczos unoconv optipng reencode conv transframes

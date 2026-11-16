@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Load Rainbow with terminal detection (tty, TERM=dumb, NO_COLOR, CLICOLOR, CLICOLOR_FORCE)
 # and its String refinement.
 # Each file using colors must still activate it with: using Rainbow

@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Unit tests for Aspera::Secret: parsing of references, resolver with a fake store — no server needed.
 
 require_relative '../../lib/aspera/secret/resolver'

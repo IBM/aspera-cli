@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 module Aspera
   # Test coverage with SimpleCov, enabled with env var `ENABLE_COVERAGE`.
   # Each tested process stores only its own result in `parts/<uuid>`: merging all results at each process exit is slow when there are many processes.
@@ -85,9 +88,11 @@ module Aspera
         File.write(File.join(ROOT, BADGE), "#{JSON.pretty_generate(schemaVersion: 1, label: 'coverage', message: format('%.1f%%', percent), color: color)}\n")
       end
 
-      # Configure filters (in `SimpleCov.start` or `SimpleCov.collate` block)
+      # Configure coverage criteria and filters (in `SimpleCov.start` or `SimpleCov.collate` block)
+      # Branch coverage is measured in addition to line coverage (shown in the report, the badge shows lines).
       # @param config [SimpleCov] Receiver of the configuration block
       def filters(config)
+        config.enable_coverage(:branch)
         config.skip do |source_file|
           source_file.lines.each do |line|
             line.skipped! if NO_COV_FUNCTIONS.any? { |i| line.src.include?(i) }

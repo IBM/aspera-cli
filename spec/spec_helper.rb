@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 require 'bundler/setup'
 # start coverage (if enabled) before any library is loaded
 require_relative '../lib/aspera/coverage'

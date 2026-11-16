@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 require_relative '../../lib/aspera/environment'
 require_relative '../../lib/aspera/log'
 require_relative '../../lib/aspera/cli/plugins/factory'

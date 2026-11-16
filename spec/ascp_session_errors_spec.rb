@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Unit tests for Aspera::Ascp::SessionErrors: error codes of FASP sessions in `ascp` logs.
 
 require_relative '../lib/aspera/ascp/session_errors'

@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Unit tests for secret references in an encrypted file of ascli (vault of type `file`).
 
 require_relative '../../lib/aspera/secret/resolver'

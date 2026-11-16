@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Tests for NodeEmulator: mapping of transferd messages to Node API, and transfer store.
 # transferd is replaced by a fake gRPC client — no daemon required.
 # Test values are the ones seen on real transfers (time stamps in milliseconds).

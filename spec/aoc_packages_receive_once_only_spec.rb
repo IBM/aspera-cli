@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # #203: with `once_only`, a package is marked as downloaded only when its transfer succeeded.
 
 require_relative '../lib/aspera/cli/runner'

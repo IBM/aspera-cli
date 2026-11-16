@@ -1,6 +1,9 @@
 # Rakefile
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 require_relative '../lib/aspera/cli/info'
 require_relative '../lib/aspera/cli/version'
 require 'rake'

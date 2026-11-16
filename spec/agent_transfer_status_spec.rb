@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Tests for Agent::Xxx.transfer_status class methods (async re-query interface),
 # and for the status loop of Agent::Node.
 # All external I/O (REST, JSON-RPC, gRPC) is doubled — no real daemons required.

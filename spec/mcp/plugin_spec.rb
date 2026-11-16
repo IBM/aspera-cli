@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Stub the MCP gem classes so this spec can run without the optional `mcp` gem.
 unless defined?(MCP::Server)
   module MCP

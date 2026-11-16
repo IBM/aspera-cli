@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Unit tests for Aspera::Cli::Http option handling — no server, no config file needed.
 
 require_relative '../lib/aspera/cli/parser'

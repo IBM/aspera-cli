@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # `config agents jobs list|status|cleanup` and the deprecated alias `config transfer ...`: same commands, no server needed.
 
 require 'spec_helper'

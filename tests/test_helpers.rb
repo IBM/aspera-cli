@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Helper methods for tests.yml post/pre blocks.
 # Loaded from rakelib/test.rake via require_relative.
 # Methods receive `t` (TestEnv::Context) when needed; constants (TMP, etc.) are global.

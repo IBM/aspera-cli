@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # https://github.com/fastlane-community/security
 require_relative '../../cli/info'
 require_relative '../../log'

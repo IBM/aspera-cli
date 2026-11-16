@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
 # Tests for TransferAgent#start in asynchronous mode.
 # The agent_instance is fully doubled; no real transfer is started.
 # PersistencyFolder uses a temp directory.
