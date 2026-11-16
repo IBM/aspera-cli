@@ -59,6 +59,8 @@ Highlights: `ascli` as a tool for AI assistants: a hardened `mcp server` (the AI
 
 ### Issues Fixed
 
+* Gem dependency: excludes `regexp_parser` 2.13.2, with which `json_schemer` fails to load (`undefined method 'implements'`).
+
 * `mcp`: in `mcp server` mode (security level `high`), a client could execute code, or write a file where it chooses, with: options `notify_template`, `fpac`, `ui` (key `command`), `out` (key `file`), `output`, `pid_file`, `home`, `plugin_folder`, `sdk_url` and `locations_url`, the folder `plugins` of the configuration folder (a client could write a plugin there, e.g. with `config download`, then run it), command `config plugins create` and command `faspex5 postprocessing`. They are now available only at level `low`, whether the option is set on the command line or in a preset; values from the environment of the process are not restricted. At levels `medium` and `high`:
   * `config preset set`, `update` and `initialize` refuse such an option, and a value that contains a refused extended value (for example `@val:@ruby:...`, which was evaluated later at level `low`).
   * Commands refused by the level are not listed by `config commands`.
