@@ -11,26 +11,36 @@ require 'bundler'
 require 'yaml'
 using Rainbow
 
+# Helpers for rake tasks: logging, command execution (with dry run), gems, versions, packaging
+# Methods are module functions: called as `BuildTools.<method>` or without receiver when included
 module BuildTools
+  # Logger of the CLI
+  # @return [Logger]
   # @see Aspera::Log#logger
-  def log(*args, **kwargs, &block)
-    Aspera::Log.instance.logger(*args, **kwargs, &block)
+  def log
+    Aspera::Log.instance.logger
   end
 
   # Execute the command line (not in shell)
-  # @see `Aspera::Environment#secure_execute`
+  # @param cmd    [Array<#to_s>] Executable and arguments
+  # @param kwargs [Hash]         Options of `Aspera::Environment.secure_execute` (e.g. `mode:`, `env:`)
+  # @return [Boolean, Integer, Array(String, String, Process::Status), nil] Depends on `mode`
+  # @see Aspera::Environment.secure_execute
   def run(*cmd, **kwargs)
     log.info("Executing: #{cmd.map { |i| Aspera::Environment.shell_escape_pretty(i.to_s) }.join(' ').sub(%r{^ruby -w [^ ]+ [^ ]+/bin/ascli }, 'ascli ')}")
     Aspera::Environment.secure_execute(*cmd, **kwargs)
   end
 
   # If env var `DRY_RUN` is set to `1`, then do not execute `git` and `gh` commands.
+  # @return [Boolean] `true` if dry run
   def dry_run?
     ENV['DRY_RUN'] == '1'
   end
 
-  # Execute command only if not dry run (env `DRY_RUN=1`)
-  # @param git [Symbol] Name of executable
+  # Execute command only if not dry run (env `DRY_RUN=1`), else log it
+  # @param cmd    [Array<#to_s>] Executable and arguments
+  # @param kwargs [Hash]         Options of {run}
+  # @return [Object] Result of {run}, in dry run: `['']` for `mode: :capture`, else `nil`
   def drun(*cmd, **kwargs)
     if dry_run?
       log.info("#{'Would execute'.red}: #{cmd.map { |i| Aspera::Environment.shell_escape_pretty(i.to_s) }.join(' ')}")
@@ -54,8 +64,9 @@ module BuildTools
   # Download gem and dependencies to folder
   # @param gem_location [String] Path to gem file or <name>:<version>
   # @param destination_path [Pathname] Path to folder where gems files will be stored
+  # @return [void]
   def get_dependency_gems(gem_location, destination_path)
-    tmp_install_ruby = TMP / 'gem_deps_cache'
+    tmp_install_ruby = Paths::TMP / 'gem_deps_cache'
     run('gem', 'install', gem_location, '--no-document', '--install-dir', tmp_install_ruby)
     (tmp_install_ruby / 'cache').each_child do |child|
       child.rename(destination_path / child.basename)
@@ -143,6 +154,7 @@ module BuildTools
   # @param sdk_archive [Pathname] Path to SDK archive
   # @param sdk_version [String]   SDK version
   # @param sdk_dir     [Pathname] Destination folder
+  # @return [void]
   def install_package_sdk(sdk_archive, sdk_version, sdk_dir)
     require_relative '../../lib/aspera/ascp/installation'
     require_relative '../../lib/aspera/uri_reader'
@@ -166,6 +178,7 @@ module BuildTools
 
   # Download the transfer.proto file into a temporary folder
   # @param tmp_proto_folder [String] Temporary folder to download the proto file into
+  # @return [void]
   def download_proto_file(tmp_proto_folder)
     require_relative '../../lib/aspera/ascp/installation'
     require_relative '../../lib/aspera/cli/transfer_progress'
@@ -177,30 +190,40 @@ module BuildTools
   # Version that is currently being built.
   # Use this instead of Aspera::Cli::VERSION to account for beta builds.
   # Default value: `VERSION` from `lib/aspera/cli/version.rb`
+  # @return [String] Version, from `Paths::OVERRIDE_VERSION_FILE` if present (see {use_specific_version})
   def build_version
     return Paths::OVERRIDE_VERSION_FILE.read.strip if Paths::OVERRIDE_VERSION_FILE.exist?
-    VERSION_FILE.read[/VERSION = '([^']+)'/, 1] || raise("VERSION not found in #{VERSION_FILE}")
+    Paths::VERSION_FILE.read[/VERSION = '([^']+)'/, 1] || raise("VERSION not found in #{Paths::VERSION_FILE}")
   end
 
-  # Change version to build
+  # Change version to build (e.g. beta), saved in `Paths::OVERRIDE_VERSION_FILE`
+  # @param version [String] Version to build
+  # @return [void]
   def use_specific_version(version)
     Aspera.assert(!version.to_s.empty?) { 'Version argument is required for beta task' }
-    OVERRIDE_VERSION_FILE.dirname.mkpath
-    OVERRIDE_VERSION_FILE.write(version)
+    Paths::OVERRIDE_VERSION_FILE.dirname.mkpath
+    Paths::OVERRIDE_VERSION_FILE.write(version)
     log.info("Version set to: #{BuildTools.build_version}")
   end
 
-  # Ensure that env var `SIGNING_KEY` is set (path to key file, or PEM content).
+  # Ensure that env var `SIGNING_KEY` is set (path to key file, or PEM content), unless dry run.
+  # @return [void]
+  # @raise [RuntimeError] If `SIGNING_KEY` is not set
   def check_gem_signing_key
     return if dry_run?
     raise 'Please set env var: SIGNING_KEY (path to key file or PEM content) to build a signed gem file' unless ENV.key?('SIGNING_KEY')
   end
 
   # .gem file built by bundler target `build`
+  # @return [Pathname] Path to .gem file of {build_version}
   def built_gem_file
     Paths::RELEASE / "#{Aspera::Cli::Info::GEM_NAME}-#{build_version}.gem"
   end
 
+  # Tell if an env var is set to a true value (e.g. `yes`, `true`), see `Aspera::Cli::BoolValue`
+  # @param var_name [String] Name of env var
+  # @param default  [String] Value if env var is not set
+  # @return [Boolean] `true` if the value is a true value
   def env_var_true?(var_name, default: 'no')
     Aspera::Cli::BoolValue.true?(ENV.fetch(var_name, default).downcase.to_sym)
   end

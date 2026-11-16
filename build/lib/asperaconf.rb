@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 module Aspera
+  # Generation of the XSD schema of `aspera.conf`, from the documented sample produced by `asuserdata -+`
   module Conf
     # ═════════════════════════════════════════════════════════════════════════════
     # CommentParser
@@ -30,6 +31,7 @@ module Aspera
         :enum_values,  # Array of allowed string values (may be empty)
         :description   # Array of descriptive sentences
 
+      # @param comments [Array<String>] Comments following the element, primary comment first
       def initialize(comments)
         @optional    = false
         @label       = nil
@@ -41,6 +43,9 @@ module Aspera
 
       private
 
+      # Set attributes from the primary comment and the follow-up comments
+      # @param comments [Array<String>] Comments following the element, primary comment first
+      # @return [void]
       def parse(comments)
         return if comments.empty?
 
@@ -101,12 +106,16 @@ module Aspera
       end
 
       # Parse "Lookup val1, val2 or val3"  or  "val1, val2, val3"
+      # @param str [String] List of values, with optional `Lookup` prefix
+      # @return [Array<String>] Values
       def parse_lookup(str)
         str = str.sub(/\ALookup\s+/i, '')
         parse_enum_list(str)
       end
 
       # Split on ", " or " or " separators
+      # @param str [String] List of values
+      # @return [Array<String>] Non-empty values
       def parse_enum_list(str)
         str.split(/,\s*|\s+or\s+/).map(&:strip).reject(&:empty?)
       end
@@ -124,15 +133,22 @@ module Aspera
     module TypeMapper
       class << self
         # Maps raw_type string → XSD base type string (always xs:string for safety)
+        # @param raw_type [String, nil] Raw type from primary comment (ignored)
+        # @return [String] `xs:string`
         def xsd_base(raw_type)
           'xs:string' # all fields may carry sentinel strings like "Unlimited"
         end
 
+        # Tell if the raw type is a boolean
+        # @param raw_type [String, nil] Raw type from primary comment
+        # @return [Boolean] `true` if the raw type mentions `boolean`
         def boolean?(raw_type)
           raw_type.to_s.downcase.include?('boolean')
         end
 
         # A concise type label for xs:documentation
+        # @param raw_type [String, nil] Raw type from primary comment
+        # @return [String, nil] Type label, or `nil` for no type or an enum (`lookup`)
         def summary(raw_type)
           return if raw_type.nil? || raw_type == 'lookup'
           case raw_type.downcase
@@ -168,19 +184,26 @@ module Aspera
     #   errors.each { |e| puts e.message }
     # ═════════════════════════════════════════════════════════════════════════════
     class XSDWriter
+      # Number of indentation characters per nesting level
       INDENT_NUM = 2
+      # Indentation character
       INDENT_CHAR = ' '
 
+      # Start an empty document at depth 0
       def initialize
         @lines = []
         @depth = 0
       end
 
+      # @return [String] XSD document, with final newline
       def to_s
         @lines.join("\n").concat("\n")
       end
 
       # ── Document skeleton ──────────────────────────────────────────────────
+
+      # Open the document: XML declaration and `xs:schema` start tag
+      # @return [void]
       def header
         line('<?xml version="1.0" encoding="UTF-8"?>')
         line('<xs:schema')
@@ -190,11 +213,21 @@ module Aspera
         blank
       end
 
+      # Close the document: `xs:schema` end tag
+      # @return [void]
       def footer
         line('</xs:schema>')
       end
 
       # ── Element open/close ─────────────────────────────────────────────────
+
+      # Open an `xs:element` and indent its content
+      # @param name       [String]       Element name
+      # @param min_occurs [Integer, nil] `minOccurs`, omitted if `nil` (default: 1)
+      # @param max_occurs [String, nil]  `maxOccurs` (e.g. `unbounded`), omitted if `nil` (default: 1)
+      # @param type       [String, nil]  XSD type (e.g. `xs:string`), omitted if `nil` (inline type follows)
+      # @param default    [String, nil]  Default value, omitted if `nil`
+      # @return [void]
       def open_element(name, min_occurs: nil, max_occurs: nil, type: nil, default: nil)
         attrs = " name=\"#{name}\""
         attrs += " type=\"#{type}\"" if type
@@ -205,12 +238,18 @@ module Aspera
         @depth += 1
       end
 
+      # Close the `xs:element` opened by {#open_element}
+      # @return [void]
       def close_element
         @depth -= 1
         line('</xs:element>')
       end
 
       # ── Annotation (documentation block) ──────────────────────────────────
+
+      # Add an `xs:annotation` with the documentation text, if not empty
+      # @param parts [Array<String, nil>] Parts of text, joined with a space (`nil` and empty parts skipped)
+      # @return [void]
       def annotation(parts)
         text = parts.compact.reject(&:empty?).join(' ').strip
         return if text.empty?
@@ -222,11 +261,16 @@ module Aspera
       end
 
       # ── Complex type ───────────────────────────────────────────────────────
+
+      # Open an `xs:complexType` and indent its content
+      # @return [void]
       def open_complex_type
         line('<xs:complexType>')
         @depth += 1
       end
 
+      # Close the `xs:complexType` opened by {#open_complex_type}
+      # @return [void]
       def close_complex_type
         @depth -= 1
         line('</xs:complexType>')
@@ -236,38 +280,52 @@ module Aspera
 
       # xs:all — unordered, each child appears 0 or 1 times
       # XSD 1.0 restriction: child maxOccurs must be 1
+      # @return [void]
       def open_all
         line('<xs:all>')
         @depth += 1
       end
 
+      # Close the `xs:all` opened by {#open_all}
+      # @return [void]
       def close_all
         @depth -= 1
         line('</xs:all>')
       end
 
       # xs:sequence — ordered children; used when a child repeats (maxOccurs > 1)
+      # @return [void]
       def open_sequence
         line('<xs:sequence>')
         @depth += 1
       end
 
+      # Close the `xs:sequence` opened by {#open_sequence}
+      # @return [void]
       def close_sequence
         @depth -= 1
         line('</xs:sequence>')
       end
 
       # ── Simple type / restrictions ─────────────────────────────────────────
+
+      # Open an `xs:simpleType` and indent its content
+      # @return [void]
       def open_simple_type
         line('<xs:simpleType>')
         @depth += 1
       end
 
+      # Close the `xs:simpleType` opened by {#open_simple_type}
+      # @return [void]
       def close_simple_type
         @depth -= 1
         line('</xs:simpleType>')
       end
 
+      # Add an `xs:restriction` of `xs:string` to the given values
+      # @param values [Array<String>] Allowed values (`xs:enumeration`)
+      # @return [void]
       def restriction_enum(values)
         line('<xs:restriction base="xs:string">')
         @depth += 1
@@ -277,21 +335,36 @@ module Aspera
       end
 
       # ── Attribute ──────────────────────────────────────────────────────────
+
+      # Add an `xs:attribute`
+      # @param name  [String]      Attribute name
+      # @param type  [String]      XSD type
+      # @param use   [String]      `optional` or `required`
+      # @param fixed [String, nil] Fixed value, omitted if `nil`
+      # @return [void]
       def attribute(name, type: 'xs:string', use: 'optional', fixed: nil)
         extra = fixed ? " fixed=\"#{escape(fixed)}\"" : ''
         line("<xs:attribute name=\"#{name}\" type=\"#{type}\" use=\"#{use}\"#{extra}/>")
       end
 
+      # Separator between blocks: currently disabled, no line is added
+      # @return [void]
       def blank
-        # @lines << ''
+        # To enable: add an empty string to the lines
       end
 
       private
 
+      # Add a line, indented at the current depth
+      # @param str [String] Line content
+      # @return [void]
       def line(str)
         @lines << "#{INDENT_CHAR * (INDENT_NUM * @depth)}#{str}"
       end
 
+      # Escape XML special characters for text and attribute values
+      # @param str [#to_s] Value
+      # @return [String] Escaped value
       def escape(str)
         str.to_s
           .gsub('&', '&amp;')
@@ -311,6 +384,7 @@ module Aspera
       # Elements known to repeat inside their parent
       REPEATING = %w[trunk log_setting path rule filter opt command restriction].freeze
 
+      # @param xml_string [String] Documented sample `aspera.conf` (output of `asuserdata -+`)
       def initialize(xml_string)
         require 'nokogiri'
         @doc     = Nokogiri::XML(xml_string) { |c| c.default_xml.noblanks }
@@ -318,6 +392,8 @@ module Aspera
         @xsd     = XSDWriter.new
       end
 
+      # Generate the XSD schema of the sample (call once)
+      # @return [String] XSD document
       def generate
         @xsd.header
         process_element(@doc.root, root: true)
@@ -332,6 +408,7 @@ module Aspera
       #
       # The first child comment of <conf> carries the build version:
       #   <ǃ-- Build version 4.4.7.2228 -->
+      # @return [String] Build version, or `unknown` if not found
       def extract_version
         @doc.root.children.each do |node|
           next unless node.is_a?(Nokogiri::XML::Comment)
@@ -346,6 +423,8 @@ module Aspera
       # Comments in aspera.conf are siblings of the element they describe,
       # positioned immediately after it in the parent's child list.
       # We collect all contiguous comment/text siblings until the next element.
+      # @param elem [Nokogiri::XML::Element] Described element
+      # @return [Array<String>] Stripped comments, in document order
       def comments_for(elem)
         result = []
         node   = elem.next_sibling
@@ -354,7 +433,7 @@ module Aspera
           when Nokogiri::XML::Comment
             result << node.content.strip
           when Nokogiri::XML::Text
-            next  # skip whitespace
+            nil # skip text (whitespace is already removed by `noblanks`)
           when Nokogiri::XML::Element
             break # reached next peer element
           end
@@ -364,11 +443,17 @@ module Aspera
       end
 
       # ── Element classification ─────────────────────────────────────────────
+
+      # Element has child elements
+      # @param elem [Nokogiri::XML::Element] Element
+      # @return [Boolean]
       def complex?(elem)
         elem.element_children.any?
       end
 
       # Element has sibling(s) with the same name, or is in the known-repeating list
+      # @param elem [Nokogiri::XML::Element] Element
+      # @return [Boolean]
       def repeating?(elem)
         return true if REPEATING.include?(elem.name)
         siblings = elem.parent&.element_children&.map(&:name) || []
@@ -376,16 +461,26 @@ module Aspera
       end
 
       # Has any element child that can repeat (affects xs:all vs xs:sequence choice)
+      # @param elem [Nokogiri::XML::Element] Element
+      # @return [Boolean]
       def has_repeating_children?(elem)
         elem.element_children.any? { |c| repeating?(c) }
       end
 
       # An element with attributes in the source XML needs mixed content handling
+      # @param elem [Nokogiri::XML::Element] Element
+      # @return [Boolean]
       def has_attributes?(elem)
         elem.attributes.any?
       end
 
       # ── Occurrence derivation ──────────────────────────────────────────────
+
+      # Occurrences of an element: optional if not defined by default or `AS_NULL`, unbounded if repeating
+      # @param elem [Nokogiri::XML::Element] Element
+      # @param info [CommentParser]          Parsed comments of the element
+      # @param root [Boolean]                Element is the root element (no occurrence attributes)
+      # @return [Array(Integer, String), Array(Integer, nil), Array(nil, nil)] `minOccurs` (0 or 1), `maxOccurs` (`unbounded`, or `nil` for default), both `nil` for root
       def occurrences(elem, info, root:)
         return [nil, nil] if root
 
@@ -398,6 +493,9 @@ module Aspera
       # Enum values are intentionally omitted from the text: they are already
       # expressed as xs:enumeration restrictions and repeating them in
       # xs:documentation would be redundant noise.
+      # @param elem [Nokogiri::XML::Element] Element
+      # @param info [CommentParser]          Parsed comments of the element
+      # @return [Array<String>] Parts of the documentation text: label, type summary, description
       def doc_parts(elem, info)
         parts = []
 
@@ -418,6 +516,11 @@ module Aspera
       end
 
       # ── Core recursive processor ────────────────────────────────────────────
+
+      # Emit the schema of an element and, recursively, of its children
+      # @param elem [Nokogiri::XML::Element] Element
+      # @param root [Boolean]                Element is the root element
+      # @return [void]
       def process_element(elem, root: false)
         info = CommentParser.new(comments_for(elem))
         min_occ, max_occ = occurrences(elem, info, root: root)
@@ -432,6 +535,10 @@ module Aspera
       end
 
       # ── Root element (`<conf version="2">`) ───────────────────────────────
+
+      # Emit the root element: build version in documentation, attributes with fixed values
+      # @param elem [Nokogiri::XML::Element] Root element
+      # @return [void]
       def emit_root(elem)
         @xsd.open_element(elem.name)
         @xsd.annotation(['Root configuration element for Aspera transfer software.',
@@ -447,6 +554,13 @@ module Aspera
       end
 
       # ── Complex element (has child elements) ──────────────────────────────
+
+      # Emit an element with child elements: complex type with its attributes and children
+      # @param elem    [Nokogiri::XML::Element] Element
+      # @param info    [CommentParser]          Parsed comments of the element
+      # @param min_occ [Integer, nil]           `minOccurs`, see {#occurrences}
+      # @param max_occ [String, nil]            `maxOccurs`, see {#occurrences}
+      # @return [void]
       def emit_complex(elem, info, min_occ, max_occ)
         @xsd.blank
         @xsd.open_element(elem.name, min_occurs: min_occ, max_occurs: max_occ)
@@ -464,6 +578,13 @@ module Aspera
       end
 
       # ── Leaf element (text content only) ──────────────────────────────────
+
+      # Emit an element with text content: `xs:string`, or enumeration of values (booleans included), with default value
+      # @param elem    [Nokogiri::XML::Element] Element
+      # @param info    [CommentParser]          Parsed comments of the element
+      # @param min_occ [Integer, nil]           `minOccurs`, see {#occurrences}
+      # @param max_occ [String, nil]            `maxOccurs`, see {#occurrences}
+      # @return [void]
       def emit_leaf(elem, info, min_occ, max_occ)
         # Determine enum values; inject true/false for boolean fields
         enum_vals = info.enum_values.dup
@@ -495,6 +616,10 @@ module Aspera
       end
 
       # ── Child dispatcher ───────────────────────────────────────────────────
+
+      # Emit the child elements, in `xs:sequence` if one repeats, else in `xs:all`
+      # @param parent [Nokogiri::XML::Element] Parent element
+      # @return [void]
       def emit_children(parent)
         children = parent.element_children
         return if children.empty?

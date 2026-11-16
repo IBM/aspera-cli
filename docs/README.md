@@ -3141,7 +3141,7 @@ ascli config preset set GLOBAL version_check_days 0
 ```shell
 agents jobs cleanup
 agents jobs list
-agents jobs status <conf_async_node_upload>
+agents jobs status <CONF_ASYNC_NODE_UPLOAD>
 agents list
 agents parameters connect
 agents parameters direct
@@ -3251,16 +3251,16 @@ vault info
 vault list
 vault overview
 vault show my_label
-wizard @: url=https://console.example.com/path plugin=console
-wizard @: url=https://f5.example.com/path plugin=faspex5 --private-key=@file:my_private_key
+wizard @: url=https://console.example.com/path plugin=console override=yes --username=my_username --password=<PASSWORD>
+wizard @: url=https://f5.example.com/path plugin=faspex5 override=yes --username=my_username --private-key=@file:<PRIVATE_KEY_FILE> --client-id=<CLIENT_ID> --client-secret=<CLIENT_SECRET>
 wizard @: url=https://node.example.com/path plugin=node --username=test --password=<PASSWORD>
 wizard @: url=https://orch.example.com/path plugin=orchestrator --username=test --password=<PASSWORD>
 wizard @: url=https://server1.example.com/path plugin=server --username=my_username --password=<PASSWORD>
 wizard @: url=https://shares.example.com/path plugin=shares --username=test --password=<PASSWORD>
 wizard @: url=https://tst.example.com/path plugin=faspio override=yes --username=my_username --password=<PASSWORD>
 wizard @: url=https://tst.example.com/path plugin=httpgw
-wizard @: url=my_org plugin=aoc preset=my_preset --private-key=@file:my_private_key --username=my_user_email
-wizard @: url=my_org plugin=aoc --private-key=@file:my_private_key --username=my_user_email --use-generic-client=yes
+wizard @: url=my_org plugin=aoc --username=my_user_email --private-key=@file:<PRIVATE_KEY_FILE> --use-generic-client=yes
+wizard @: url=my_org plugin=aoc preset=my_preset --username=my_user_email --private-key=@file:<PRIVATE_KEY_FILE>
 ```
 
 #### Evaluation order of options
@@ -3553,7 +3553,7 @@ Parameters of a store, with `type` (see sections below):
 | `approle.secret_id` | `String` | Secret ID (if the role requires one): the value, or `@file:<path>`. |
 | `ca_file` | `String` | File with the CA certificates that verify the certificate of the server (HTTPS). |
 | `namespace` | `String` | Namespace (Vault Enterprise). |
-| `token` | `String` | The authentication token. Its value, or `@file:<path>` (e.g. written and renewed by Vault Agent), read again when modified. One of `token` or `approle` is required. For the default store, defaults to the value of `vault_password`, unless `approle` is set.<br/>Example: `dev-only-token`. |
+| `token` | `String` | The authentication token. Its value, or `@file:<path>` (e.g. written and renewed by Vault Agent), read again when modified. One of `token` or `approle` is required. For the default store, defaults to the value of `vault_password`, unless `approle` is set.<br/>Example: `<TOKEN>`. |
 | `type` | `Enum[String]` | Vault type selector.<br/>Required.<br/>Allowed values: `vault`. |
 | `url` | `String` | URL of the HashiCorp Vault server.<br/>Required.<br/>Example: `http://127.0.0.1:8200`. |
 | **type** | `String` | `system`: macOS system keychain secret store. |
@@ -8507,7 +8507,7 @@ For instructions, refer to section `find` for plugin `node`.
 
 ```shell
 admin analytics application_events
-admin analytics files organization '' <id>
+admin analytics files organization '' <ID>
 admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive","limit":2}' --notify-to=my_email_external --notify-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
 admin analytics transfers users --once-only=yes
 admin application instance list
@@ -8515,8 +8515,8 @@ admin application instance list --query.aspera_app_type=files
 admin application instance list --query.organization_apps=true
 admin application membership list
 admin application types
-admin ats access_key create --cloud=aws --region=my_region @json:'{"id":"ak_aws_aoc","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
-admin ats access_key create --cloud=softlayer --region=my_region @: id=ak1ibmcloud secret=<SECRET> 'name="my test key"' storage.type=ibm-s3 storage.bucket=my_bucket storage.credentials.access_key_id=my_access_key storage.credentials.secret_access_key=my_secret_key storage.path=/
+admin ats access_key create --cloud=aws --region=my_region @json:'{"id":"ak_aws_aoc","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_bucket","credentials":{"access_key_id":"<ACCESS_KEY>","secret_access_key":"<SECRET_KEY>"},"path":"/"}}'
+admin ats access_key create --cloud=softlayer --region=my_region @: id=ak1ibmcloud secret=<SECRET> 'name="my test key"' storage.type=ibm-s3 storage.bucket=my_bucket storage.credentials.access_key_id=<ACCESS_KEY> storage.credentials.secret_access_key=<SECRET_KEY> storage.path=/
 admin ats access_key delete ak1ibmcloud
 admin ats access_key list --fields=name,id
 admin ats access_key node ak1ibmcloud --secret=<SECRET> browse /
@@ -8529,10 +8529,10 @@ admin bearer_token --out.level=data --out.secrets=yes
 admin client list
 admin client_access_key list
 admin client_registration_token create @json:'{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
-admin client_registration_token delete <id>
+admin client_registration_token delete <ID>
 admin client_registration_token list
 admin configuration_policy list
-admin configuration_policy show <id>
+admin configuration_policy show <ID>
 admin contact list
 admin dropbox list
 admin dropbox_membership list
@@ -8540,7 +8540,7 @@ admin group list
 admin group_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
 admin kms_profile list
 admin network_policy list
-admin network_policy show <id>
+admin network_policy show <ID>
 admin node bearer_token %name:my_node_name user:all
 admin node do %name:my_node_name --secret=<AK_SECRET> browse /
 admin node do %name:my_node_name --secret=<AK_SECRET> browse /folder_sub --node-api.cache=false
@@ -8574,14 +8574,14 @@ admin user preferences %name:my_user_email show
 admin workspace dropbox %name:my_other_workspace list
 admin workspace list
 admin workspace shared_folder %name:my_other_workspace list
-admin workspace shared_folder %name:my_other_workspace member <id> list
+admin workspace shared_folder %name:my_other_workspace member <ID> list
 admin workspace_membership list
 admin workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
-automation workflow action <id> create @: name=toto
+automation workflow action <ID> create @: name=toto
 automation workflow create @: name=test_workflow
-automation workflow delete <id>
-automation workflow details <id>
-automation workflow export <id>
+automation workflow delete <ID>
+automation workflow details <ID>
+automation workflow export <ID>
 automation workflow list
 automation workflow list --query.show_org_workflows=@val:true
 automation workflow list --select.name=test_workflow --fields=id
@@ -8589,9 +8589,9 @@ bearer_token --out.level=data --out.secrets=yes
 files bearer /
 files bearer_token_node / --cache-tokens=no
 files browse /
-files browse / --url=my_private_link_shared_folder
-files browse / --url=my_public_link_folder_no_pass
-files browse / --url=my_public_link_folder_with_pass --password=<PUBLIC_LINK_FOLDER_PASSWORD>
+files browse / --url=<PRIVATE_LINK_SHARED_FOLDER>
+files browse / --url=<PUBLIC_LINK_FOLDER_NO_PASS>
+files browse / --url=<PUBLIC_LINK_FOLDER_WITH_PASS> --password=<PUBLIC_LINK_FOLDER_PASSWORD>
 files browse my_remote_file
 files browse my_remote_folder
 files browse my_remote_folder/
@@ -8610,8 +8610,8 @@ files rename /some_folder test-dst
 files short_link /test-dst private create
 files short_link /test-dst private list
 files short_link /test-dst public create @: access_levels.0=mkdir access_levels.1=write --fields=id
-files short_link /test-dst public modify <aoc_short_link_pub_create> @: access_levels=edit
-files show %id:<id>
+files short_link /test-dst public modify <AOC_SHORT_LINK_PUB_CREATE> @: access_levels=edit
+files show %id:<ID>
 files show /
 files show test-dst/test_file.bin
 files sync admin status /data/local_sync
@@ -8619,35 +8619,35 @@ files sync pull /test-dst --to-folder=/data/local_sync @json:'{"reset":true,"tra
 files thumbnail my_test_folder/video_file.mpg
 files thumbnail my_test_folder/video_file.mpg --query.text=true --query.double=true
 files transfer push /test-src --to-folder=/test-dst test_file.bin
-files upload --to-folder=/ test_file.bin --url=my_public_link_folder_no_pass
+files upload --to-folder=/ test_file.bin --url=<PUBLIC_LINK_FOLDER_NO_PASS>
 files upload --to-folder=/test-src test_file.bin
 files upload --to-folder=/test-src test_file.bin test_file.bin
 files v3 info
 gateway @: url=https://localhost:12347/aspera/faspex
 organization
 organization --format=image --fields=background_image_url --ui=text
-organization --url=my_public_link_recv_from_aoc_user
-packages browse <id> /
+organization --url=<PUBLIC_LINK_RECV_FROM_AOC_USER>
+packages browse <ID> /
 packages list
 packages list --query=@json:'{"dropbox_name":"my_shared_inbox_name","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
-packages receive <id> --to-folder=.
-packages receive <id> --to-folder=. /
+packages receive <ID> --to-folder=.
+packages receive <ID> --to-folder=. /
 packages receive ALL --once-only=yes --to-folder=. --query.max=5 --lock-port=50101 --package-folder.fld.0=name --package-folder.fld.1=id --package-folder.opt=true
 packages receive ALL --once-only=yes --to-folder=. --query.max=5 --lock-port=50101 --query=@json:'{"dropbox_name":"my_shared_inbox_name","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
 packages receive INIT --once-only=yes --query.dropbox_name=my_shared_inbox_name
 packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"package title","recipients":["my_shared_inbox_meta"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' test_file.bin
 packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"package title","recipients":["my_shared_inbox_meta"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' test_file.bin
 packages send --workspace=my_workspace_shared_inbox @json:'{"name":"package title","recipients":["my_shared_inbox_name"]}' test_file.bin
-packages send @: 'name=package title' END test_file.bin --url=my_public_link_send_aoc_user --password=<PUBLIC_LINK_SEND_USE_PASS>
-packages send @: 'name=package title' END test_file.bin --url=my_public_link_send_shared_inbox
+packages send @: 'name=package title' END test_file.bin --url=<PUBLIC_LINK_SEND_AOC_USER> --password=<PUBLIC_LINK_SEND_USE_PASS>
+packages send @: 'name=package title' END test_file.bin --url=<PUBLIC_LINK_SEND_SHARED_INBOX>
 packages send @: 'name=package title' recipients.0=my_username 'note=some notes' END test_file.bin
 packages send @json:'{"name":"package title","recipients":["my_email_external"]}' --new-user-option.package_contact=true test_file.bin
 packages shared_inboxes list
 packages shared_inboxes short_link public %name:my_shared_inbox_name create --fields=id
-packages shared_inboxes short_link public %name:my_shared_inbox_name delete <aoc_shared_inbox_short_link_create>
+packages shared_inboxes short_link public %name:my_shared_inbox_name delete <AOC_SHARED_INBOX_SHORT_LINK_CREATE>
 packages shared_inboxes short_link public %name:my_shared_inbox_name list
-packages shared_inboxes short_link public %name:my_shared_inbox_name modify <aoc_shared_inbox_short_link_create> @: password=<PUBLIC_LINK_FOLDER_PASSWORD>
-packages shared_inboxes short_link public %name:my_shared_inbox_name show <aoc_shared_inbox_short_link_create>
+packages shared_inboxes short_link public %name:my_shared_inbox_name modify <AOC_SHARED_INBOX_SHORT_LINK_CREATE> @: password=<PUBLIC_LINK_FOLDER_PASSWORD>
+packages shared_inboxes short_link public %name:my_shared_inbox_name show <AOC_SHARED_INBOX_SHORT_LINK_CREATE>
 packages shared_inboxes show %name:my_shared_inbox_name
 packages show '%name:package title'
 remind --username=my_user_email --url=https://aoc.example.com/path
@@ -8797,8 +8797,8 @@ The parameters provided to ATS for access key creation are the ones of [ATS API]
 
 ```shell
 access_key cluster ak2ibmcloud --secret=<SECRET>
-access_key create --cloud=aws --region=my_region @json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
-access_key create --cloud=softlayer --region=my_region @json:'{"id":"ak2ibmcloud","secret":"<SECRET>","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_bucket","credentials":{"access_key_id":"my_access_key","secret_access_key":"my_secret_key"},"path":"/"}}'
+access_key create --cloud=aws --region=my_region @json:'{"id":"ak_aws","name":"my test key AWS","storage":{"type":"aws_s3","bucket":"my_bucket","credentials":{"access_key_id":"<ACCESS_KEY>","secret_access_key":"<SECRET_KEY>"},"path":"/"}}'
+access_key create --cloud=softlayer --region=my_region @json:'{"id":"ak2ibmcloud","secret":"<SECRET>","name":"my test key","storage":{"type":"ibm-s3","bucket":"my_bucket","credentials":{"access_key_id":"<ACCESS_KEY>","secret_access_key":"<SECRET_KEY>"},"path":"/"}}'
 access_key delete ak2ibmcloud
 access_key entitlement ak2ibmcloud
 access_key list --fields=name,id
@@ -8845,7 +8845,7 @@ ascli server --url=ssh://hsts.example.com:33001 --username=john --ssh-keys=~/.ss
 
 ```shell
 browse /
-browse / --password @none: --ssh-options.number_of_password_prompts=0 --ssh-keys=<serv_key_path>
+browse / --password @none: --ssh-options.number_of_password_prompts=0 --ssh-keys=<SERV_KEY_PATH>
 browse my_inside_folder/test_file.bin
 browse my_upload_folder/target_hot
 cp my_inside_folder/test_file.bin my_upload_folder/200KB.2
@@ -9458,7 +9458,8 @@ ascli node -N --url=https://... --password="Bearer $(cat bearer.txt)" --root-id=
 ```shell
 --url=http://localhost:12348 --username=sim --password=<PASSWORD> browse / --fields=path --format=csv --select=@json:'{"basename":"test_file.bin"}'
 --url=http://localhost:12348 --username=sim --password=<PASSWORD> transfer list --fields=status
---url=https://tst.example.com/path --password 'Bearer <nd_bearer_token>' --root-id=<id> access_key do self browse /
+--url=https://node.example.com:9092 --username=user1 --password=<PASSWORD> --ui=text asperabrowser
+--url=https://tst.example.com/path --password 'Bearer <ND_BEARER_TOKEN>' --root-id=<ID> access_key do self browse /
 access_key create @json:'{"id":"my_username","secret":"<PASSWORD>","storage":{"type":"local","path":"/"}}'
 access_key delete my_username
 access_key do my_ak_name browse / --secret=<AK_SECRET>
@@ -9476,15 +9477,14 @@ access_key do my_ak_name node_info / --secret=<AK_SECRET>
 access_key do my_ak_name rename /tst_nd_ak test_nd_ak2 --secret=<AK_SECRET>
 access_key do my_ak_name show %id:1 --secret=<AK_SECRET>
 access_key do my_ak_name upload 'faux:///test_nd_ak3?100k' --node-api.standard_ports=false --secret=<AK_SECRET>
-access_key do self permission %id:<id> create @json:'{"access_type":"user","access_id":"666"}'
+access_key do self permission %id:<ID> create @json:'{"access_type":"user","access_id":"666"}'
 access_key do self permission / delete 1
 access_key do self permission / modify 1 @: 'access_levels=@list: read list'
 access_key do self permission / show 1
 access_key list
-access_key set_bearer_key self @file:my_private_key
+access_key set_bearer_key self @file:<PRIVATE_KEY_FILE>
 access_key show %id:self
 api_details
-asperabrowser
 async bandwidth %name:my_sync_session_name
 async counters %name:my_sync_session_name
 async delete ALL
@@ -9533,12 +9533,12 @@ sync admin status /data/local_sync
 sync pull /aspera-test-dir-tiny --to-folder=/data/local_sync @: reset=true
 sync pull /aspera-test-dir-tiny --to-folder=/data/local_sync @json:'{"name":"my_sync_session_name","reset":true}'
 transfer bandwidth_average
-transfer cancel <id>
+transfer cancel <ID>
 transfer list --query.active_only=true
 transfer list --query.reset=true --once-only=yes
-transfer modify <id> @: target_rate_kbps=10000
+transfer modify <ID> @: target_rate_kbps=10000
 transfer sessions
-transfer show <id>
+transfer show <ID>
 transport
 upload 'faux:///testfile1?1m' --to-folder=my_local_path
 upload --to-folder=my_upload_folder --sources=@ts --ts=@json:'{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}' --transfer.agent=node --transfer.url=https://node.example.com/path --transfer.username=my_username --transfer.password=<PASSWORD>
@@ -9605,7 +9605,7 @@ It takes an optional `Hash` argument with the following parameters:
 | `chain` | `String` | Path to the PEM certificate chain file (appended as extra chain certificates).<br/>Example: `/path/to/chain.pem`. |
 | `docroot` | `String` | Local folder of the node files. Paths of `/files/browse` and local paths of transfers (sources of `send`, destination of `receive`) are relative to it, and confined in it. Defaults to the current working directory.<br/>Example: `/data/aspera`. |
 | `key` | `String` | Path to the PEM private key file, or the PKCS12 passphrase when `cert` is a `.p12`/`.pfx` file.<br/>Example: `/path/to/key.pem`. |
-| `password` | `String` | Password expected from clients in HTTP Basic authentication, for the above `username`. Generate it with `openssl rand -hex 32`: a weak password is refused (see `password_min_bits`).<br/>Example: `my_password`. |
+| `password` | `String` | Password expected from clients in HTTP Basic authentication, for the above `username`. Generate it with `openssl rand -hex 32`: a weak password is refused (see `password_min_bits`).<br/>Example: `<PASSWORD>`. |
 | `password_min_bits` | `Integer` | Minimum estimated strength of `password`, in bits (log2 of the number of guesses to find it). The strength is estimated with gem `zxcvbn` if installed, else with a built-in estimate that detects repeats, sequences, keyboard rows, words and years. `0` disables the check. A random password of 32 bytes (`openssl rand -hex 32`) is far above the default.<br/>Default: `80`. |
 | `retention_sec` | `Integer` | Time in seconds a transfer stays in the list of transfers after it ended (completed, failed or canceled, and no more retried).<br/>Default: `86400`. |
 | `url` | `String` | Address and port the emulator listens on. Use `https://` with `cert`/`key` for TLS.<br/>Default: `http://localhost:8080`. |
@@ -9905,33 +9905,33 @@ gateway @: url=https://localhost:12346/aspera/faspex
 health --url=https://f5.example.com/path
 invitation list
 invitations create @: email_address=aspera.user1+u@gmail.com
-packages browse --url=my_public_link_recv_fr_user /
-packages browse <id> --query.recursive=true
-packages delete <id>
+packages browse --url=<PUBLIC_LINK_RECV_FR_USER> /
+packages browse <ID> --query.recursive=true
+packages delete <ID>
 packages list --box=ALL
 packages list --box=my_shared_box_name
 packages list --box=my_workgroup --group-type=workgroups
 packages list --box=outbox --fields=DEF,sender.email,recipients.0.recipient_type
 packages list --query=@json:'{"mailbox":"inbox","status":"completed"}'
-packages receive --box=my_shared_box_name <id> --to-folder=.
-packages receive --box=my_workgroup --group-type=workgroups <id> --to-folder=.
-packages receive --url=my_public_link_recv_fr_user --to-folder=.
-packages receive --url=my_public_link_recv_fr_user ALL --to-folder=.
-packages receive <id> --to-folder=. --ts.content_protection_password=<PASSWORD>
-packages receive <id> <f5_pack_first_file> --to-folder=. --ts.content_protection_password=<PASSWORD>
+packages receive --box=my_shared_box_name <ID> --to-folder=.
+packages receive --box=my_workgroup --group-type=workgroups <ID> --to-folder=.
+packages receive --url=<PUBLIC_LINK_RECV_FR_USER> --to-folder=.
+packages receive --url=<PUBLIC_LINK_RECV_FR_USER> ALL --to-folder=.
+packages receive <ID> --to-folder=. --ts.content_protection_password=<PASSWORD>
+packages receive <ID> <F5_PACK_FIRST_FILE> --to-folder=. --ts.content_protection_password=<PASSWORD>
 packages receive ALL --once-only=yes --to-folder=. --query.max=5
 packages receive INIT --once-only=yes
-packages send --url=my_public_link_send_shared_box @json:'{"title":"test title"}' test_file.bin
-packages send --url=my_public_link_send_to_user @json:'{"title":"test title"}' test_file.bin
+packages send --url=<PUBLIC_LINK_SEND_SHARED_BOX> @json:'{"title":"test title"}' test_file.bin
+packages send --url=<PUBLIC_LINK_SEND_TO_USER> @json:'{"title":"test title"}' test_file.bin
 packages send @: 'title=for shared inbox' recipients.0=my_shared_box_name metadata.Options=Opt1 'metadata.TextInput=example text' END test_file.bin
 packages send @: 'title=test title' recipients.0.name=my_username END test_file.bin --ts.content_protection_password=<PASSWORD>
 packages send @json:'{"title":"test title","recipients":["my_workgroup"]}' test_file.bin
 packages send @json:'{"title":"test_webhook_ascli","recipients":["my_shared_box_name"]}' 'faux:///test1?1m'
-packages show --box=my_shared_box_name <id>
-packages show --box=my_workgroup --group-type=workgroups <id>
-packages show <id>
-packages status <f5_pack_send_shared> @list:,failed,completed
-packages status <id>
+packages show --box=my_shared_box_name <ID>
+packages show --box=my_workgroup --group-type=workgroups <ID>
+packages show <ID>
+packages status <F5_PACK_SEND_SHARED> @list:,failed,completed
+packages status <ID>
 postprocessing @: url=https://localhost:8553/asclihook script_folder=/path/to/scripts cert=.../localhost.p12 key=<PASSWORD>
 shared browse %name:my_shared_folder_name
 shared list
@@ -10415,7 +10415,7 @@ It takes an optional `Hash` argument:
 | `cert` | `String` | Path to the TLS certificate file. Accepted formats: PEM (`.pem`) or PKCS12 (`.p12` / `.pfx`).<br/>Example: `/path/to/cert.pem`. |
 | `chain` | `String` | Path to the PEM certificate chain file (appended as extra chain certificates).<br/>Example: `/path/to/chain.pem`. |
 | `key` | `String` | Path to the PEM private key file, or the PKCS12 passphrase when `cert` is a `.p12`/`.pfx` file.<br/>Example: `/path/to/key.pem`. |
-| `password` | `String` | Password expected from clients in HTTP Basic authentication, for the above `username`. Generate it with `openssl rand -hex 32`: a weak password is refused (see `password_min_bits`).<br/>Example: `my_password`. |
+| `password` | `String` | Password expected from clients in HTTP Basic authentication, for the above `username`. Generate it with `openssl rand -hex 32`: a weak password is refused (see `password_min_bits`).<br/>Example: `<PASSWORD>`. |
 | `password_min_bits` | `Integer` | Minimum estimated strength of `password`, in bits (log2 of the number of guesses to find it). The strength is estimated with gem `zxcvbn` if installed, else with a built-in estimate that detects repeats, sequences, keyboard rows, words and years. `0` disables the check. A random password of 32 bytes (`openssl rand -hex 32`) is far above the default.<br/>Default: `80`. |
 | `url` | `String` | Address and port the server listens on. Use `https://` with `cert`/`key` for TLS.<br/>Default: `http://localhost:8080`. |
 | `username` | `String` | Username expected from clients in HTTP Basic authentication. Set together with `password`. When not set, requests are accepted without authentication. Mandatory when `url` is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`).<br/>Example: `fx4_user`. |
@@ -10606,12 +10606,12 @@ In addition, it is possible to place a single `query` parameter in the request t
 endpoint list
 health
 ssh_key list
-transfer current files <id>
+transfer current files <ID>
 transfer current list --query.filter='(transfer_name contain aoc)'
 transfer current list --query=@json:'{"filter1":"transfer_name","comp1":"contain","val1":"aoc"}'
-transfer current show <id>
+transfer current show <ID>
 transfer smart list
-transfer smart sub my_smart_id @: source.paths.0=my_smart_file source_type=user_selected
+transfer smart sub <SMART_ID> @: source.paths.0=my_smart_file source_type=user_selected
 ```
 
 ## Plugin: `orchestrator`: IBM Aspera Orchestrator
@@ -10802,29 +10802,29 @@ queues list
 queues stats
 tasks list
 workflow check_import orch_wf_check.yml
-workflow details my_workflow_id
-workflow export my_workflow_id
-workflow inputs my_workflow_id
+workflow details <WORKFLOW_ID>
+workflow export <WORKFLOW_ID>
+workflow inputs <WORKFLOW_ID>
 workflow list
-workflow outputs my_workflow_id
-workflow start my_sleep_workflow_id --fields=work_order.id
-workflow start my_workflow_id @: 'Param=world !'
-workflow start my_workflow_id @: 'Param=world !' END @: step=ResultStep variable=Complete_status_message
+workflow outputs <WORKFLOW_ID>
+workflow start <SLEEP_WORKFLOW_ID> --fields=work_order.id
+workflow start <WORKFLOW_ID> @: 'Param=world !'
+workflow start <WORKFLOW_ID> @: 'Param=world !' END @: step=ResultStep variable=Complete_status_message
+workflow status <WORKFLOW_ID>
 workflow status ALL
-workflow status my_workflow_id
-workflow workorders my_workflow_id
-workflow workorders my_workflow_id --fields=id --query.max_results=1
+workflow workorders <WORKFLOW_ID>
+workflow workorders <WORKFLOW_ID> --fields=id --query.max_results=1
 workflows development guide toc
 workflows development templates section customruby
-workorder cancel <id>
-workorder output <id>
-workorder reset <id>
-workorder status <id>
-workorder status <orch_wf_start_sleep> --fields=status_details
+workorder cancel <ID>
+workorder output <ID>
+workorder reset <ID>
+workorder status <ID>
+workorder status <ORCH_WF_START_SLEEP> --fields=status_details
 workorders stats
-worksteps cancel <id>
+worksteps cancel <ID>
 worksteps stats
-worksteps status <id>
+worksteps status <ID>
 ```
 
 ## Plugin: `cos`: IBM Cloud Object Storage
@@ -10950,8 +10950,8 @@ ascli cos node upload 'faux:///sample1G?1g'
 
 ```shell
 node download test_file.bin --to-folder=.
-node info --bucket=my_bucket --endpoint=my_endpoint --apikey=my_api_key --crn=my_resource_instance_id
-node info --bucket=my_bucket --region=my_region --service-credentials=@json:@file:my_cos_svc_cred
+node info --bucket=my_bucket --endpoint=my_endpoint --apikey=<API_KEY> --crn=<RESOURCE_INSTANCE_ID>
+node info --bucket=my_bucket --region=my_region --service-credentials=@json:@file:<COS_SVC_CRED_FILE>
 node info --log-level=trace2
 node upload test_file.bin
 ```
@@ -11022,7 +11022,7 @@ Using `ascli`, you can remotely create and manage bridges on faspio Gateway, sim
 
 ```shell
 bridges create @json:'{"name":"test1","local":{"protocol":"tcp","tls_enabled":false,"port":"3000","bind_address":"127.0.0.1"},"forward":{"protocol":"fasp","tls_enabled":false,"port":"3994","bind_address":"127.0.0.1","host":["10.0.0.1"]}}'
-bridges delete --bulk=yes @json:<faspio_bclean_list>
+bridges delete --bulk=yes @json:<FASPIO_BCLEAN_LIST>
 bridges list
 bridges show 1
 health
@@ -12491,7 +12491,7 @@ The `smtp` option is a `Hash` ([Extended Value](#extended-value-syntax)) with th
 | `domain` | `String` | Email domain of the user. Defaults to the domain part of `server`.<br/>Example: `gmail.com`. |
 | `from_email` | `String` | Sender address (used in `From:` header and as reply-to). Defaults to `username` when defined.<br/>Example: `johnny@example.com`. |
 | `from_name` | `String` | Display name of the sender. Defaults to the local-part of `from_email`.<br/>Example: `John Wayne`. |
-| `password` | `String` | Password for the above `username`.<br/>Example: `my_password`. |
+| `password` | `String` | Password for the above `username`.<br/>Example: `<PASSWORD>`. |
 | `port` | `Integer` | Port for the SMTP service.<br/>Defaults: `587` (TLS), `465` (SSL), `25` (plain).<br/>Example: `587`. |
 | `server` | `String` | SMTP server address.<br/>Required.<br/>Example: `smtp.gmail.com`. |
 | `ssl` | `Bool` | Enable `TLS/SSL` (port 465).<br/>Default: `false`. |

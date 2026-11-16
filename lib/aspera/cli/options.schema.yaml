@@ -502,7 +502,7 @@ components:
           type: string
           description: Password for the above `username`.
           examples:
-            - my_password
+            - "<PASSWORD>"
         from_email:
           type: string
           description: Sender address (used in `From:` header and as reply-to). Defaults to `username` when defined.
@@ -675,7 +675,7 @@ components:
             One of `token` or `approle` is required.
             For the default store, defaults to the value of `vault_password`, unless `approle` is set.
           examples:
-            - dev-only-token
+            - "<TOKEN>"
         approle:
           type: object
           description: >-
@@ -1145,7 +1145,7 @@ components:
             Password expected from clients in HTTP Basic authentication, for the above `username`.
             Generate it with `openssl rand -hex 32`: a weak password is refused (see `password_min_bits`).
           examples:
-            - my_password
+            - "<PASSWORD>"
         password_min_bits:
           type: integer
           minimum: 0
@@ -1493,7 +1493,7 @@ components:
                 Password expected from clients in HTTP Basic authentication, for the above `username`.
                 Generate it with `openssl rand -hex 32`: a weak password is refused (see `password_min_bits`).
               examples:
-                - my_password
+                - "<PASSWORD>"
             password_min_bits:
               type: integer
               minimum: 0

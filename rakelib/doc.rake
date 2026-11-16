@@ -88,7 +88,7 @@ namespace :doc do
 
   pdf_rule(Paths::PDF_MANUAL, Paths::MD_MANUAL, extra: [Paths::PDF_PREFACE, Paths::MASCOT_SVG] + DIAGRAM_IMAGES.values.flatten.select { |i| i.extname.eql?('.pdf') })
 
-  file Paths::TMPL_CONF_FILE => [Paths::BUILD_TOOLS, Paths::CONF_SIGNATURE] do
+  file Paths::TMPL_CONF_FILE => [Paths::BUILD_TOOLS, Paths::DOC_HELPER, Paths::DOC_MARKUP, Paths::CONF_SIGNATURE] do
     config = TestEnv.configuration
     Aspera.assert(!config.empty?) { 'Need configuration to generate template' }
     DocHelper.config_to_template(config, Paths::TMPL_CONF_FILE)
@@ -104,7 +104,7 @@ namespace :doc do
     ASPERA_CONF_XSD.write(Aspera::Conf::Generator.new(%x{asuserdata -+}).generate)
   end
 
-  file Paths::MD_MANUAL => DOC_FILES + [Paths::BUILD_TOOLS, Paths::DOC_HELPER, Paths::TSPEC_YAML_SCHEMA, Paths::ASYNC_YAML_SCHEMA, Paths::ASYNC_TABLES_YAML_SCHEMA, Paths::GEMSPEC] + CONST_SOURCES do
+  file Paths::MD_MANUAL => DOC_FILES + [Paths::BUILD_TOOLS, Paths::DOC_HELPER, Paths::DOC_MARKUP, Paths::MARKDOWN_FORMATTER, Paths::TSPEC_YAML_SCHEMA, Paths::ASYNC_YAML_SCHEMA, Paths::ASYNC_TABLES_YAML_SCHEMA, Paths::GEMSPEC] + CONST_SOURCES do
     Aspera::Environment.force_terminal_c
     DocHelper.new([Paths::MD_MANUAL] + DOC_FILES).generate
   end

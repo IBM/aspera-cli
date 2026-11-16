@@ -61,27 +61,33 @@ module TestEnv
       @siblings.include?(name) ? "#{@prefix}.#{name}" : name
     end
 
+    # @param name [String, Symbol, nil] test name, see {#resolve}
     # @return [Pathname] .out file for the current test (no arg) or a named sibling
     def out_file(name = nil)
       PATH_TMP_STATES / "#{resolve(name)}.out"
     end
 
+    # @param name [String, Symbol, nil] test name, see {#resolve}
     # @return [Pathname] .err file for the current test (no arg) or a named sibling
     def err_file(name = nil)
       PATH_TMP_STATES / "#{resolve(name)}.err"
     end
 
+    # @param name [String, Symbol, nil] test name, see {#resolve}
     # @return [Pathname] .pid file for the current test (no arg) or a named sibling
     def pid_file(name = nil)
       PATH_TMP_STATES / "#{resolve(name)}.pid"
     end
 
+    # @param name [String, Symbol, nil] test name, see {#resolve}
     # @return [Integer] PID stored by a `background` test case
     def pid_of_test(name = nil)
       pid_file(name).read.to_i
     end
 
     # Read the value saved by a `save_output` test case
+    # @param name [String, Symbol, nil] test name, see {#resolve}
+    # @return [String] Saved output, without final newline
     def saved_output(name = nil)
       state_file = out_file(name)
       value = state_file.read.chomp
@@ -89,7 +95,9 @@ module TestEnv
       value
     end
 
-    # Terminate the process started by a `background` test case
+    # Terminate the process started by a `background` test case, and wait for its end
+    # @param name [String, Symbol, nil] test name, see {#resolve}
+    # @return [void]
     def stop_process(name = nil)
       Aspera::Log.instance.logger.info("Stopping process for test case: #{resolve(name)}")
       pid = pid_of_test(name)
@@ -101,6 +109,9 @@ module TestEnv
     end
 
     # Check that the process started by a `background` test case is still running
+    # @param name [String, Symbol, nil] test name, see {#resolve}
+    # @return [void]
+    # @raise [Errno::ESRCH] If the process is not running
     def check_process(name = nil)
       pid = pid_of_test(name)
       r = Process.kill(0, pid)

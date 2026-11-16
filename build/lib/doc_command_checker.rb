@@ -5,7 +5,7 @@ require_relative '../../lib/aspera/log'
 require_relative '../../lib/aspera/cli/plugins/factory'
 require_relative '../../lib/aspera/cli/plugins/config'
 require_relative 'paths'
-require_relative 'doc_helper'
+require_relative 'doc_markup'
 require 'json'
 require 'shellwords'
 require 'tmpdir'
@@ -48,6 +48,7 @@ class DocCommandChecker
   end
 
   # Check all command examples of the template, log each error, and fail if there is at least one.
+  # @return [void]
   # @raise [RuntimeError] if an example uses an unknown command or option
   def check
     errors = examples.flat_map do |example|
@@ -122,7 +123,7 @@ class DocCommandChecker
   # @param word [String] command line word
   # @return [Boolean] `true` if word is a placeholder, not an actual value
   def placeholder?(word)
-    word.match?(/\A[<\[#{Regexp.escape(DocHelper::PH_CHARS[:b])}]|\.\.\.|\||\AX\z/)
+    word.match?(/\A[<\[#{Regexp.escape(DocMarkup::PH_CHARS[:b])}]|\.\.\.|\||\AX\z/)
   end
 
   # Split a command line into words: remove trailing comment, replace ERB expressions
@@ -131,7 +132,7 @@ class DocCommandChecker
   # @return [Array<String>] words, after rendering ERB placeholders
   def words(text)
     text = text.sub(/\s+#\s.*\z/, '')
-      .gsub(/<%=\s*ph\s+:(\w+)\s*%>/) { "#{DocHelper::PH_CHARS[:b]}#{Regexp.last_match(1).upcase}#{DocHelper::PH_CHARS[:e]}" }
+      .gsub(/<%=\s*ph\s+:(\w+)\s*%>/) { DocMarkup.ph(Regexp.last_match(1)) }
       .gsub(/<%=[^%]*%>/, 'X')
     Shellwords.split(text)
   rescue ArgumentError

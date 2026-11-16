@@ -15,10 +15,11 @@ require_relative '../../lib/aspera/sync/operations'
 require_relative '../../lib/aspera/log'
 require_relative '../../lib/aspera/rest'
 require_relative '../../lib/aspera/markdown'
-require_relative '../../lib/aspera/formatter_interface'
 require_relative 'test_env'
 require_relative 'paths'
 require_relative 'build_tools'
+require_relative 'markdown_formatter'
+require_relative 'doc_markup'
 require_relative '../../lib/aspera/rainbow'
 require 'yaml'
 require 'erb'
@@ -28,43 +29,38 @@ require 'English'
 require 'pathname'
 using Rainbow
 
-# Markdown/HTML formatter for static documentation
-# @see Aspera::FormatterInterface
-# @see TerminalFormatter (in lib/aspera/cli/formatter.rb)
-module MarkdownFormatter
-  include Aspera::FormatterInterface
-
-  # Format special values as HTML entities
-  def special_format(special)
-    "&lt;#{special}&gt;"
-  end
-
-  # Keep Markdown formatting unchanged (pass-through)
-  # @param text [String]
-  def markdown_text(text)
-    text.to_s
-  end
-
-  # Format boolean as simple Y or space
-  def tick(bool)
-    bool ? 'Y' : ' '
-  end
-
-  module_function :tick, :special_format, :markdown_text
-end
-
+# Generates `README.md` from the ERB template `README.erb.md`
+# Instance methods are callable without receiver from the ERB template
 # :reek:TooManyMethods
 class DocHelper
-  # REMOVED_OPTIONS = %w[insecure].freeze
+  include DocMarkup
+
+  # Hosts kept as-is in URLs of the template configuration
   KEEP_HOSTS = %w[localhost 127.0.0.1].freeze
+  # Replaces email addresses in the template configuration
   SAMPLE_EMAIL = 'my_user@example.com'
+  # Replaces short links (`aspera.pub`) in the template configuration
   SHORT_LINK = 'https://aspera.pub/MyShOrTlInK'
+  # URL query parameters whose value is replaced with a placeholder in the template configuration
   SECRET_QUERIES = %w[token passcode context].freeze
-  # Characters surrounding a placeholder (`b`: begin, `e`: end), see `ph`
-  PH_CHARS = {b: '<', e: '>'}.freeze
+  # Preset fields shown as placeholder (`ph`) in doc: secrets, links containing a secret, identifiers
+  PLACEHOLDER_FIELDS = /secret|pass|private_key|api_?key|access_key|token|cred|_link_|_id\z/
   class << self
+    # Doc value for a reference to a preset field in a test command
+    # @param field [String] Name of field in preset
+    # @param file  [Boolean] Value is read from a file (`@file:`)
+    # @return [String] Placeholder for secrets and identifiers, else example value `my_<field>`
+    def preset_value(field, file: false)
+      field = field.delete_suffix('_here')
+      return "#{'@file:' if file}my_#{field}" unless field.match?(PLACEHOLDER_FIELDS)
+      file ? "@file:#{DocMarkup.ph("#{field}_file")}" : DocMarkup.ph(field)
+    end
+
     # Generate template configuration file for tests
-    # Hide sensitive information
+    # Hide sensitive information: secrets, identifiers, emails, host names
+    # @param configuration [Hash] Configuration: preset name => preset values (modified in place)
+    # @param template      [Pathname] Path of generated template file
+    # @return [void]
     def config_to_template(configuration, template)
       Aspera::Log.log.info { "Generating: #{template}" }
       configuration.each do |k, preset_hash|
@@ -107,12 +103,10 @@ class DocHelper
               else
                 uri.host.gsub('aspera-emea', 'example').gsub('asperademo', 'example').gsub('my_local_server', '127.0.0.1')
               end
-              if uri.query.is_a?(String)
-                SECRET_QUERIES.each do |key|
-                  uri.query = uri.query.gsub(/(&?)#{key}=[^&]*/) { "#{::Regexp.last_match(1)}#{key}=some_#{key}" }
-                end
+              # Replace secret values in query on the final string: `URI#query=` would escape placeholder
+              preset_hash[param_name] = SECRET_QUERIES.reduce(uri.to_s) do |url, key|
+                url.gsub(/([?&])#{key}=[^&#]*/) { "#{::Regexp.last_match(1)}#{key}=#{DocMarkup.ph(key)}" }
               end
-              preset_hash[param_name] = uri.to_s
             end
           rescue URI::InvalidURIError
             nil
@@ -123,7 +117,7 @@ class DocHelper
             preset_hash[param_name] = param_value.include?('@') ? SAMPLE_EMAIL : 'my_user'
             next
           when /address/, /password/, /secret/, /client_id/, /key$/, /crn/, /instance_id/, /pass$/, 'instance'
-            preset_hash[param_name] = 'your value here'
+            preset_hash[param_name] = DocMarkup.ph(param_name)
             next
           end
         end
@@ -132,65 +126,38 @@ class DocHelper
     end
   end
 
-  # Place warning in generated file
-  def doc_warn(_)
-    'DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md.'
-  end
-
-  # Line break in tables
-  def br; Aspera::Markdown::HTML_BREAK; end
-
-  # Place Holder
-  # @param name name or description of parameter
-  def ph(name); "#{PH_CHARS[:b]}#{name.upcase}#{PH_CHARS[:e]}"; end
-
-  # To the power of
-  def pow(value); "<sup>#{value}</sup>"; end
-
-  # Just command name
-  def cmd; Aspera::Cli::Info::CMD_NAME; end
-
-  # Same as `cmd` but marks the command line as not to be checked by DocCommandChecker
-  def cmd_skip; cmd; end
-
-  # (Markdown) used in text with formatting of command
-  def tool; "`#{cmd}`"; end
-
-  # Env var for option
-  def opt_env(option); "#{cmd.upcase}_#{option.upcase}"; end
-
-  # Container image in docker hub
-  def container_image; Aspera::Cli::Info::CONTAINER; end
-
-  # Link to the provided path in repo, relative to readme
-  def link_repo(path)
-    "../#{path}".gsub('../docs/', '')
-  end
-
-  # list of specific formatters supported
+  # List of supported log formatters
+  # @return [String] Formatter names as inline code, separated by line breaks (for a table cell)
   def log_formatters
     Aspera::Log::FORMATTERS.map { |i| Aspera::Markdown.icode(i) }.join(br)
   end
 
   # Markdown table of exit codes
+  # @return [String] Markdown table: code, description
   def exit_codes_md_table
     Aspera::Markdown.table([%w[Code Description]] + Aspera::Cli::ExitCode::DESCRIPTIONS.map { |code, description| [Aspera::Markdown.icode(code), description] })
   end
 
+  # Gem specification, loaded once from the gemspec file
+  # @return [Gem::Specification]
   def gemspec
     @gem_spec = Gem::Specification.load(@paths[:gem_spec_file]) || raise("error loading #{@paths[:gem_spec_file]}") if !@gem_spec
     @gem_spec
   end
 
   # Version of gem being built
+  # @return [String]
   def build_version
     BuildTools.build_version
   end
 
+  # Option of `gem install` for the gem version
   # If version contains other characters than digit and dot, it is pre-release
+  # @return [String] ` --pre` for a pre-release, else empty
   def gem_install_option; /[^.0-9]/.match?(gemspec.version.to_s) ? ' --pre' : ''; end
 
   # Build markdown table with optional gems
+  # @return [String] Markdown table: name, version, comment
   def gem_opt_md_list
     columns = %i[name version comment].freeze
     data = gem_opt_list.map do |g|
@@ -201,14 +168,16 @@ class DocHelper
   end
 
   # Build installation commands for optional gems
+  # @return [String] One `gem install` command per line
   def gem_opt_cmd
     gem_opt_list.map do |g|
       "gem install #{g[:name]} -v '#{g[:version]}'"
     end.join("\n")
   end
 
-  # Get list of optional gems
-  # not super strict, but it gets comments
+  # Get list of optional gems, parsed from the Gemfile
+  # Not super strict, but it gets comments
+  # @return [Array<Hash{Symbol => String}>] Keys: `name`, `version`, `comment`
   def gem_opt_list
     File.read(@paths[:gemfile]).lines.filter_map do |l|
       m = l.match(/^ *gem\('([^']+)', '([^']+)'\)(.*)/)
@@ -221,8 +190,9 @@ class DocHelper
     end
   end
 
-  # Get list of optional gems
-  # more reliable but missing comments
+  # Get list of optional gems, using Bundler (alternative to `gem_opt_list`, unused)
+  # More reliable but missing comments
+  # @return [Array<Hash{Symbol => Object}>] Keys: `name`, `version` (requirement), `comment`
   def gem_opt_list_unused
     require 'bundler'
     # Load the definition from the Gemfile and Gemfile.lock
@@ -242,7 +212,9 @@ class DocHelper
   end
 
   # Generate table from schema
-  # @param spec [Aspera::Schema::Reader]
+  # @param spec   [Aspera::Schema::Reader] Schema to document
+  # @param kwargs [Hash] Additional options for `Aspera::Schema::Documentation`
+  # @return [String] Markdown table, one row per field
   def spec_to_table(spec, **kwargs)
     table = Aspera::Schema::Documentation.new(MarkdownFormatter, spec, code_highlight: true, **kwargs).build.table
     # Multi-line cells joined with line breaks
@@ -253,16 +225,21 @@ class DocHelper
   end
 
   # Generate table from schema registry path
+  # @param schema_path [String] Path of schema in `Aspera::Schema::Registry`
+  # @return [String] Markdown table, see `spec_to_table`
   def schema_to_table(schema_path)
     schema = Aspera::Schema::Registry.instance.reader(schema_path)
     spec_to_table(schema)
   end
 
+  # Markdown table of transfer agents
+  # @return [String] Markdown table: short identifier, name, sorted by identifier
   def agent_table
     Aspera::Markdown.table([%w[ID Name]] + Aspera::Agent::Factory::ALL.map { |_, v| [v[:short].upcase, v[:long]] }.sort_by { |a| a[0] })
   end
 
-  # get minimum required Ruby version and future one, from Aspera::Cli::Info
+  # Get minimum required Ruby version and future one, from `Aspera::Cli::Info`
+  # @return [String] Markdown text, with a warning if the future minimum version differs
   def ruby_version
     message = "version: >= #{Aspera::Cli::Info::RUBY_MINIMUM_VERSION}"
     message += ".\n\n> [!WARNING]\n> The minimum Ruby version will be #{Aspera::Cli::Info::RUBY_FUTURE_MINIMUM_VERSION} in a future version" unless Aspera::Cli::Info::RUBY_MINIMUM_VERSION.eql?(Aspera::Cli::Info::RUBY_FUTURE_MINIMUM_VERSION)
@@ -270,6 +247,8 @@ class DocHelper
   end
 
   # Fetch lifecycle data from `endoflife.date` API with graceful fallback
+  # @param product [String] Product name in `endoflife.date` (e.g. `ruby`, `rhel`, `ubuntu`)
+  # @return [Array<Hash>, nil] One entry per release cycle (`cycle`, `eol`, ...), `nil` on failure
   def fetch_eol_data(product)
     begin
       rest = Aspera::Rest::Client.new(base_url: 'https://endoflife.date', redirect_max: 3)
@@ -282,6 +261,8 @@ class DocHelper
   end
 
   # Generate markdown table with Ruby version support policy
+  # Uses built-in EOL dates if `endoflife.date` is not reachable
+  # @return [String] Markdown table, one row per Ruby version >= 3.0, most recent first
   def ruby_support_table
     min_v = Aspera::Cli::Info::RUBY_MINIMUM_VERSION
     future_v = Aspera::Cli::Info::RUBY_FUTURE_MINIMUM_VERSION
@@ -333,6 +314,7 @@ class DocHelper
   end
 
   # Required GLIBC version for the tested Aspera Transfer SDK on Linux x86_64, from docs/sdk_location.yaml
+  # @return [String] GLIBC version, `2.28` if not found
   def sdk_glibc_version
     sdk_version = Aspera::Cli::Info::SDK_VERSION
     yaml_file = Paths::DOC / 'sdk_location.yaml'
@@ -347,6 +329,8 @@ class DocHelper
   end
 
   # Generate markdown table with supported Linux distributions, EOL dates, GLIBC and Ruby support
+  # Releases past their EOL are skipped, for Ubuntu only LTS releases are listed
+  # @return [String] Markdown table, one row per distribution release
   def linux_support_table
     today = Date.today
     glibc_min = sdk_glibc_version
@@ -428,7 +412,10 @@ class DocHelper
     Aspera::Markdown.table([headers] + rows)
   end
 
-  # Generate help for the given command
+  # Generate help for the given command, by executing it with `-h`
+  # @param tool_name [Symbol] Key of the executable in paths: `:ascli` or `:asession`
+  # @return [String] Help text
+  # @raise [RuntimeError] If the executable is unknown or fails
   def generate_help(tool_name)
     raise "missing #{tool_name}" unless @paths.key?(tool_name)
     exec_path = @paths[tool_name]
@@ -439,25 +426,29 @@ class DocHelper
     return output
   end
 
+  # Help of `ascli`, with user-specific home folder replaced
+  # @return [String] Help text
   def include_usage
     generate_help(:ascli).gsub(%r{(current=).*(/.aspera/)}, '\1/user_home\2')
   end
 
+  # Help of `asession`
+  # @return [String] Help text
   def include_asession
     generate_help(:asession)
   end
 
-  # code in ERB readme that require replacement
+  # Replacements applied to each argument of test commands for the doc, in order
+  # Each entry: pattern ([String, Regexp]), replacement ([String, Proc] called with the `MatchData`)
   REPLACEMENTS_YAML = [
     ['@extend:', ''],
     ['.$(SecureRandom.uuid)', ''],
     [/\$\(TMP\)$/, '.'],
-    [/\$\(\(?t\.saved_output( :|\(')([^)']+_id)'?.*\)/, '<id>'],
-    [/\$\(t\.saved_output( :|\(')([^)']+)'?.*\)/, '<\2>'],
+    [/\$\(\(?t\.saved_output( :|\(')([^)']+_id)'?.*\)/, DocMarkup.ph(:id)],
+    [/\$\(t\.saved_output( :|\(')([^)']+)'?.*\)/, ->(m) { DocMarkup.ph(m[2]) }],
     [/@preset:([^_]+)_[^ ]+\.url/, 'https://\1.example.com/path'],
-    # Value of a secret: placeholder like `ph`
-    [/((?:pass(?:word)?|secret)(?:=|":"))@preset:(?:[a-z0-9_]+|\$\([a-z_]+\)[a-z0-9_]*)\.([a-z0-9_]+)@?/, ->(m) { "#{m[1]}<#{m[2].delete_suffix('_here').upcase}>" }],
-    [/@preset:(?:[a-z0-9_]+|\$\([a-z_]+\)[a-z0-9_]*)\.([a-z0-9_]+)@?/, 'my_\1'],
+    # Value of a preset field: placeholder or example, see `preset_value`
+    [/(@file:)?@preset:(?:[a-z0-9_]+|\$\([a-z_]+\)[a-z0-9_]*)\.([a-z0-9_]+)@?/, ->(m) { preset_value(m[2], file: !m[1].nil?) }],
     [/my_link_([a-z_]+)/, 'https://app.example.com/\1_path'],
     [%r{\$\(PATH_TMP_SYNCS / '[^']+'\)}, '/data/local_sync'],
     [%r{\$\([A-Z_]+ / '([^']+)'\)}, '\1'],
@@ -477,12 +468,15 @@ class DocHelper
     ['"docroot":"$(TMP)"', '"docroot":"/data"'],
     ['$(remote_host)', 'app.example.com'],
     # Generated secret, see `generated_secret` in tests/test_helpers.rb
-    [/\$\(secret :[a-z0-9_]+\)/, '<PASSWORD>'],
+    [/\$\(secret :[a-z0-9_]+\)/, DocMarkup.ph(:password)],
     [/\$\((?:name|t\.resolve :[a-z0-9_]+)\) \$\(TIMESTAMP_TEST_RUN\)/, 'package title'],
     [/^--base=.*/, '--base=test'],
     [/^(--[a-z\-.]+=)?(@[a-z]+:)?(.*['"*! $\\?].*)$/, "\\1\\2'\\3'"]
   ].freeze
-  # @return [Hash<Symbol, Array<String>>] All test commands with key by plugin
+
+  # Test commands to include in doc (not tagged `no_doc`), with test values replaced (see `REPLACEMENTS_YAML`)
+  # Computed once, entries are removed when included in doc
+  # @return [Hash{Symbol => Array<String>}] Plugin name => sorted unique commands, without plugin name
   def all_test_commands_by_plugin
     return @commands unless @commands.nil?
     @commands = {}
@@ -509,12 +503,11 @@ class DocHelper
     @commands
   end
 
-  # Used in ERB doc
-  def sample_commands_title(plugin_name_sym)
-    "Tested commands for `#{plugin_name_sym}`"
-  end
-
-  # Used in ERB doc
+  # Section with tested commands of a plugin, marks the plugin as documented
+  # @param plugin_name_sym [Symbol] Plugin name
+  # @param level           [Integer] Heading level of the section
+  # @return [String] Markdown: heading, note, code block with commands
+  # @raise [RuntimeError] If plugin has no test command, or was already included
   def include_commands_for_plugin(plugin_name_sym, level = 3)
     commands = all_test_commands_by_plugin.delete(plugin_name_sym)
     raise "Plugin #{plugin_name_sym} not found in test cases (#{all_test_commands_by_plugin.keys.join(',')})" if commands.nil?
@@ -526,6 +519,8 @@ class DocHelper
     ].join.chomp.chomp
   end
 
+  # All tested commands not yet included in doc
+  # @return [String] One command per line
   def include_commands
     all = []
     all_test_commands_by_plugin.each_value do |v|
@@ -534,9 +529,13 @@ class DocHelper
     return all.join("\n")
   end
 
+  # Heading whose text after a colon starts with a lowercase letter
   HEADING_PATTERN = /^#[^:]*: [a-z]/
 
-  # Check that headings are capitalized
+  # Check that headings are capitalized after a colon
+  # @param file_path [String] Path of markdown file
+  # @return [void]
+  # @raise [RuntimeError] If a heading is not capitalized
   def check_headings(file_path)
     error = false
     File.open(file_path) do |file|
@@ -550,7 +549,11 @@ class DocHelper
     raise 'Check headings specified above' if error
   end
 
-  # Read markdown file line by line, and check that all links are valid.
+  # Read markdown file line by line, and check that all links are valid
+  # Remote links are fetched, local links must exist, anchors and ERB links are skipped
+  # @param file_path [String] Path of markdown file
+  # @return [void]
+  # @raise [RuntimeError] If a local file does not exist
   def check_links_file(file_path)
     require 'uri'
     require 'net/http'
@@ -577,6 +580,9 @@ class DocHelper
     end
   end
 
+  # Get paths of files from the command line arguments
+  # @param args [Array<String>] Paths, in order: outfile, template, ascli, asession, makefile, gem_spec_file, gemfile (consumed)
+  # @raise [RuntimeError] If an argument is missing
   def initialize(args)
     @commands = nil
     @gem_spec = nil
@@ -584,15 +590,20 @@ class DocHelper
     @paths = {}
     %i[outfile template ascli asession makefile gem_spec_file gemfile].each do |name|
       @paths[name] = args.shift.to_s
-      raise "Missing arg: #{name}" if @paths[name].nil?
+      raise "Missing arg: #{name}" if @paths[name].empty?
     end
   end
 
+  # Check links of the template `README.erb.md`, see `check_links_file`
+  # @return [void]
   def check_links_manual
     check_links_file(@paths[:template])
   end
 
   # Generate README.md from README.erb.md
+  # Checks that all plugins and all test commands are documented
+  # @return [void]
+  # @raise [RuntimeError] If test commands of a plugin are not included in doc
   def generate
     Aspera::Log.log.info("Generating markdown doc for version #{build_version}")
     check_headings(@paths[:template])

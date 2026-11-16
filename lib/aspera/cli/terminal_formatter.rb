@@ -11,7 +11,7 @@ module Aspera
   module Cli
     # Terminal formatter with ANSI colors and Unicode support
     # @see FormatterInterface
-    # @see MarkdownFormatter (in build/lib/doc_helper.rb)
+    # @see MarkdownFormatter (in build/lib/markdown_formatter.rb)
     module TerminalFormatter
       include FormatterInterface
 
