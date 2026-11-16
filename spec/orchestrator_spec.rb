@@ -454,6 +454,16 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
       expect(result.data).to(eq("Work order '12' was deleted"))
     end
 
+    it 'lists the work steps of a work order, without YAML dumps, and none before they are created' do
+      steps = [{'id' => 7, 'status' => 'In Progress', 'work_outputs' => "--- !ruby/object:Hash\n"}]
+      allow(orchestrator).to(receive(:call_ao).and_return({'work_order' => {'id' => 3}, 'work_steps' => steps}, {'work_order' => {'id' => 3}}))
+      result = run(%i[workorders worksteps], workorder_id: '3')
+      expect(orchestrator).to(have_received(:call_ao).with('work_order_status/3'))
+      expect(result).to(be_a(Aspera::Cli::Result::ObjectList))
+      expect(result.data).to(eq([{'id' => 7, 'status' => 'In Progress'}]))
+      expect(run(%i[workorders worksteps], workorder_id: '3').data).to(eq([]))
+    end
+
     it 'resets a work step' do
       allow(orchestrator).to(receive(:call_ao).and_return({'workstep_reset' => true}))
       run(%i[worksteps reset], workstep_id: '5,6')

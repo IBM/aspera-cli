@@ -405,6 +405,8 @@ module Aspera
           command :status, description: 'Show status of a work order',
             arguments: [{name: :workorder_id, type: :identifier}],
             action: ->(workorder_id:, **) { Result::SingleObject.new(call_ao("work_order_status/#{workorder_id}")['work_order']) }
+          command :worksteps, description: 'List work steps of a work order (not the steps of its sub-workflows)',
+            arguments: [{name: :workorder_id, type: :identifier}]
           command :cancel, description: 'Cancel a work order (option query: `force`)',
             arguments: [{name: :workorder_id, type: :identifier}],
             query_schema: Schema::Registry.query_params(Schema::Registry::ORCHESTRATOR, 'api/work_order_cancel/{id}'),
@@ -523,6 +525,14 @@ module Aspera
           status = call_ao("work_step_status/#{workstep_id}")
           status['work_step']&.reject! { |_name, value| value.is_a?(String) && value.match?(YAML_DUMP) }
           Result::SingleObject.new(status)
+        end
+
+        # Work steps of a work order, without the fields that are YAML dumps (see `action_worksteps_status`).
+        # Empty until the work order has created its steps.
+        def action_workorders_worksteps(workorder_id:, **)
+          steps = Array(call_ao("work_order_status/#{workorder_id}")['work_steps'])
+          steps.each { |step| step.reject! { |_name, value| value.is_a?(String) && value.match?(YAML_DUMP) } }
+          Result::ObjectList.new(steps)
         end
 
         # 2.1/2.2 Initiate a workorder (async / synchronous)

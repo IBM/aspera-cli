@@ -61,6 +61,12 @@ module Aspera
         FileUtils.rm_f(File.join(ROOT, DIR, '.resultset.json'))
         SimpleCov.root(ROOT)
         SimpleCov.coverage_dir(DIR)
+        # The merged command name lists all process UUIDs: show their number instead
+        SimpleCov.at_exit do
+          result = SimpleCov.result
+          result.command_name = "#{result.command_names.size} processes"
+          result.format!
+        end
         SimpleCov.collate(results, processes: Etc.nprocessors) { Aspera::Coverage.filters(self) }
         true
       end

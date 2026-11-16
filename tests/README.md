@@ -358,6 +358,32 @@ Any other vault type works the same way (e.g. `type: file` with `vault_password`
 > [!NOTE]
 > With `1password` and `source: cli`, the `op` command must be signed in before running the tests.
 
+With the 1Password desktop app integration, an `op` authorization is valid for the terminal session that approved it, expires after 10 minutes without any `op` call, and lasts at most 12 hours.
+These durations are fixed: neither `op` nor the app can change them.
+Locking the app (auto-lock timeout, sleep, screensaver) also ends the authorization.
+A long test run can therefore ask again for authorization when no test reads a secret for more than 10 minutes.
+
+To avoid this, either:
+
+- Keep the authorization alive in the same terminal during the run:
+
+  ```zsh
+  op whoami >/dev/null || op signin
+  ( while sleep 300; do op whoami >/dev/null 2>&1; done ) &
+  keepalive=$!
+  bundle exec rake "test:run[...]"
+  kill $keepalive
+  ```
+
+  Also set the **Auto-lock** delay of the app (Settings → Security) longer than the run, and prevent sleep with `caffeinate -i bundle exec rake ...`.
+
+- Or use a [1Password service account](https://developer.1password.com/docs/service-accounts/) with read access to the test vault: when `OP_SERVICE_ACCOUNT_TOKEN` is set, `op` uses it instead of the desktop app, with no prompt and no timeout.
+  The vault must then be specified in the store parameters (`vault`).
+
+  ```zsh
+  export OP_SERVICE_ACCOUNT_TOKEN=<TOKEN>
+  ```
+
 Examples:
 
 ```bash

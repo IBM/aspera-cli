@@ -10848,8 +10848,8 @@ workorder cancel <ID>
 workorder output <ID>
 workorder reset <ID>
 workorder status <ID>
-workorder status <ORCH_WF_START_SLEEP> --fields=status_details
 workorders stats
+workorders worksteps <ORCH_WF_START_SLEEP> --select.status='In Progress' --fields=id
 worksteps cancel <ID>
 worksteps stats
 worksteps status <ID>

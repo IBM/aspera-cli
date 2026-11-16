@@ -4617,10 +4617,11 @@ orch_workstep_id:
     - orch_wf_start_sleep
   args:
     - orchestrator
-    - workorder
-    - status
+    - workorders
+    - worksteps
     - $(t.saved_output :orch_wf_start_sleep)
-    - --fields=status_details
+    - --select.status=In Progress
+    - --fields=id
 orch_workstep_status:
   depends_on:
     - orch_workstep_id
@@ -4628,7 +4629,7 @@ orch_workstep_status:
     - orchestrator
     - worksteps
     - status
-    - $((t.saved_output :orch_workstep_id).match(/\((\d+)\)/)[1])
+    - $(t.saved_output :orch_workstep_id)
 orch_workstep_cancel:
   depends_on:
     - orch_workstep_id
@@ -4636,7 +4637,7 @@ orch_workstep_cancel:
     - orchestrator
     - worksteps
     - cancel
-    - $((t.saved_output :orch_workstep_id).match(/\((\d+)\)/)[1])
+    - $(t.saved_output :orch_workstep_id)
 ats_aws_trust_policy:
   args:
     - ats
