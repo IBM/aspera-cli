@@ -274,10 +274,28 @@ If you'd prefer to test against Aspera on Cloud, skip ahead to the [AoC Wizard](
 
 ### Leveraging AI Assistance
 
-You can significantly accelerate your workflow by using an AI assistant to generate and troubleshoot commands for <%=tool%>.
-For the best results, provide the AI with the most recent documentation as context.
+You can significantly accelerate your workflow by using an AI assistant with <%=tool%>.
+There are three ways, the first one is the simplest:
 
-Recommended Workflow:
+- **The AI executes commands in a shell** (coding agents): nothing to set up, and no limitation: the AI uses <%=tool%> as you do, with your configuration.
+  Give it the file [`llms.txt`](https://raw.githubusercontent.com/IBM/aspera-cli/refs/heads/main/llms.txt), located at the root of the gem and of the GitHub repository.
+  It tells the AI what <%=tool%> does with IBM Aspera products, and how to discover commands, arguments and options (`config commands`, `help`, `config options`, `config documentation`).
+  With an AI client that supports agent skills, install the skill instead: the AI loads it by itself when a request is about IBM Aspera.
+  The skill is the folder `skills/<%=cmd%>` of the gem (and of the GitHub repository): copy it to the skills folder of the AI client, for example:
+
+  ```shell
+  cp -R "$(gem contents <%=gemspec.name%> | grep 'skills/<%=cmd%>/SKILL.md$' | xargs dirname)" ~/.claude/skills/
+  ```
+
+- **The AI executes commands through MCP**: for an AI client without a shell, start the [MCP server](#plugin-mcp-model-context-protocol-server) and register it in the AI client.
+  The AI discovers commands and their arguments by itself, and executes them.
+  By default, the server restricts what the AI can do (see [Security](#security)), and the AI never sees secrets.
+
+- **The AI generates commands that you execute** (chat assistant that cannot execute commands): it cannot read the documentation through <%=tool%>, so provide it as context, as described below.
+
+In the first two ways, the AI reads the documentation by itself, one section at a time, with `<%=cmd%> config documentation`: there is no need to provide the manual.
+
+Recommended Workflow for a chat assistant:
 
 - **Contextualize**: Download the project manual (this manual in Markdown format, [`docs/README.md`](https://raw.githubusercontent.com/IBM/aspera-cli/refs/heads/main/docs/README.md)) from the GitHub repository.
 
@@ -9518,6 +9536,9 @@ Option `username` is optional: with it, the token is saved for this user.
 
 > [!IMPORTANT]
 > Shares does not have the OAuth authorization code grant: both ways require a specific patch of Shares, which returns the tokens when `RelayState` is a loopback URL (`port`) or `aspera://device-code?state=<state>` (`paste`).
+> The patch is the file [`docs/shares/zz_saml_cli_relay_state.rb`](shares/zz_saml_cli_relay_state.rb) of the GitHub repository.
+> It is temporary code, provided until an equivalent function is officially released in Shares.
+> It modifies no file of Shares: to install it, copy it to `<shares_rails_root>/config/initializers/` on the Shares server and restart Shares; to remove it, delete the file and restart Shares.
 > With a Shares without the patch, <%=tool%> reports that no token was received.
 > This feature works only with this patch: it is not a standard function of Shares, and it has not been validated on a released version of Shares yet.
 > It may change with the final implementation in Shares: the `RelayState` values, the format of the code (and so its validity and its encryption) and the returned fields can differ, and <%=tool%> will then be adapted. Do not rely on the current format outside of <%=tool%>.
@@ -10313,6 +10334,7 @@ With both transports:
   Commands sent by the client cannot change option `security`.
   Features that execute code, such as option `notify_template` or command `config plugins create`, plugins, and writing to a file chosen by the client (option `out.file`), are refused, see [Security Level](#security-level).
   Files can be written (for example by `config download`, or by a transfer that receives files) only in `writable_paths`, none by default: without it, the client cannot download files.
+  It applies to files written on the system that runs the server: not to a transfer with agent `node` (`--transfer=node`), which writes on the node.
 
 To use another level, set option `security` when starting the server, for example:
 

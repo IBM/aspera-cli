@@ -3,6 +3,7 @@
 require 'fileutils'
 
 require_relative '../build/lib/build_tools'
+require_relative '../build/lib/doc_site'
 include BuildTools
 
 PATH_TMP_MKDOCS = Paths::TMP / 'mkdocs'
@@ -24,23 +25,21 @@ namespace :doc do
     run_venv('python3', '-m', 'pip', 'install', '-r', Paths::MKDOCS / 'requirements.txt')
   end
 
-  desc 'ok'
-  task mkdocs: [VENV_FLAG] do
+  desc 'Generate the documentation web site (MkDocs): one page per section of the manual, llms.txt at its root'
+  task site: [VENV_FLAG, Paths::MD_MANUAL] do
     PATH_TMP_MKDOCS.rmtree
     path_site = PATH_TMP_MKDOCS / 'site'
     path_docs = PATH_TMP_MKDOCS / 'src'
     path_site.mkpath
     path_docs.mkpath
-    File.open(path_docs / 'index.md', 'w') do |f|
-      f.write(YAML.dump_stream({'hide'=>['navigation']}))
-      f.write("---\n")
-      f.write(MD_MANUAL.read)
-    end
-    # FileUtils.cp(MD_MANUAL, path_docs / 'index.md')
-    config_file = PATH_TMP_MKDOCS / 'mkdocs.yml'
     config = YAML.safe_load((Paths::MKDOCS / 'mkdocs.yml').read)
+    site = DocSite.new(manual: Paths::MD_MANUAL, llms: Paths::LLMS_TXT, site_url: config['site_url'], repo_url: "#{config['repo_url']}/blob/main/#{Paths::MD_MANUAL.dirname.relative_path_from(Paths::TOP)}")
+    site.write(path_docs)
     config['docs_dir'] = path_docs.to_s
+    config['nav'] = site.nav
+    config_file = PATH_TMP_MKDOCS / 'mkdocs.yml'
     config_file.write(config.to_yaml)
-    run_venv('mkdocs', 'build', '--config-file', config_file, '--site-dir', path_site)
+    run_venv('mkdocs', 'build', '--strict', '--config-file', config_file, '--site-dir', path_site)
+    Aspera::Log.log.info { "Site: #{path_site}" }
   end
 end

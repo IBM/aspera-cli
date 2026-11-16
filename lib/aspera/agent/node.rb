@@ -78,6 +78,12 @@ module Aspera
         @transfer_id = nil
       end
 
+      # Received files are written on the node, not on the local system
+      # @return [Boolean] `false`
+      def local_destination?
+        false
+      end
+
       # generic method
       # :reek:UnusedParameters token_regenerator
       def start_transfer(transfer_spec, token_regenerator: nil)

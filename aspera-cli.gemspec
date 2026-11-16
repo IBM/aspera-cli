@@ -19,7 +19,9 @@ Gem::Specification.new do |spec|
   spec.email         = ['laurent.martin.aspera@fr.ibm.com']
   spec.summary       = 'Execute actions using command line on IBM Aspera Server products: ' \
     'Aspera on Cloud, Faspex, Shares, Node, Console, Orchestrator, High Speed Transfer Server'
-  spec.description   = 'Command line interface for IBM Aspera products'
+  spec.description   = 'Command line interface for IBM Aspera products: transfer files with FASP (ascp), send and receive packages, manage files and administer ' \
+    'Aspera on Cloud, Faspex, Shares, Node, Console, Orchestrator and High Speed Transfer Server. ' \
+    'Usable by AI assistants and AI agents: in a shell (see llms.txt and the agent skill), or through its MCP (Model Context Protocol) server.'
   spec.homepage      = Aspera::Cli::Info::SRC_URL
   spec.license       = 'Apache-2.0'
   spec.requirements << 'Read the manual for any requirement'
@@ -34,7 +36,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
   spec.bindir        = 'bin'
   # list git files from specified location in root folder of project (this gemspec is in project root folder)
-  spec.files = Dir.chdir(File.dirname(gemspec_file)) { %x(git ls-files -z lib bin examples *.md docs/README.md docs/test-mcp-with-ai.md).split("\x0") }
+  spec.files = Dir.chdir(File.dirname(gemspec_file)) { %x(git ls-files -z lib bin examples skills *.md llms.txt docs/README.md docs/test-mcp-with-ai.md).split("\x0") }
   # specify executable names: must be after lines defining: spec.bindir and spec.files
   spec.executables = spec.files.grep(/^#{spec.bindir}/) { |f| File.basename(f) }
   spec.cert_chain  = ['certs/aspera-cli-public-cert.pem']

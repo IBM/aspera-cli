@@ -11,6 +11,14 @@ include BuildTools
 
 PATH_TMP_DOT = Paths::TMP / 'uml.dot'
 
+# Header of the agent skill: `description` tells an AI client when to load the skill
+SKILL_HEADER = {
+  'name'        => Aspera::Cli::Info::CMD_NAME,
+  'description' => 'Operate IBM Aspera products with the ascli command line: Aspera on Cloud, Faspex 5, High-Speed Transfer Server, Node API, Shares, ' \
+    'Console, Orchestrator, Cloud Object Storage. Use when the user wants to transfer files with FASP (ascp), send or receive packages, ' \
+    'browse or manage remote files, administer users, workspaces, nodes or access keys, analyze ascp logs, or develop Orchestrator or Aspera on Cloud Automation workflows.'
+}.freeze
+
 # gfm2pdf-toolchain: PDF manual, check of internal links, export of draw.io diagrams, see CONTRIBUTING.md
 # Folder in env var GFM2PDF_HOME: required by the doc tasks that use it, not by the other tasks (tests, packages)
 GFM2PDF_HOME = ENV.fetch('GFM2PDF_HOME', nil)
@@ -109,6 +117,16 @@ namespace :doc do
     DocHelper.new([Paths::MD_MANUAL] + DOC_FILES).generate
   end
 
+  # Agent skill: same content as `llms.txt`, with the header that tells an AI client when to load it
+  file Paths::SKILL_MD => [Paths::LLMS_TXT] do
+    Aspera::Log.log.info { "Generating: #{Paths::SKILL_MD}" }
+    Paths::SKILL_MD.dirname.mkpath
+    Paths::SKILL_MD.write("#{SKILL_HEADER.to_yaml(line_width: -1)}---\n\n#{Paths::LLMS_TXT.read}")
+  end
+
+  desc 'Generate the agent skill (skills/ascli/SKILL.md) from llms.txt'
+  task skill: [Paths::SKILL_MD]
+
   desc 'Check links in manual'
   task :check_links do
     Aspera::Log.log.info { 'Checking links in manual' }
@@ -132,7 +150,7 @@ namespace :doc do
   task md: [:check_commands, Paths::MD_MANUAL]
 
   desc 'Generate docs except PDF'
-  task prep: [Paths::TMPL_CONF_FILE, Paths::TSPEC_JSON_SCHEMA, Paths::MD_MANUAL]
+  task prep: [Paths::TMPL_CONF_FILE, Paths::TSPEC_JSON_SCHEMA, Paths::MD_MANUAL, Paths::SKILL_MD]
 
   desc 'Generate All Docs'
   task build: [:prep, :check_anchors, Paths::PDF_MANUAL]

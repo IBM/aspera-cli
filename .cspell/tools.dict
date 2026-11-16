@@ -78,6 +78,7 @@ libsecret
 libssh
 libyaml
 linkname
+llms
 lualatex
 luatex
 LZMA
@@ -138,6 +139,7 @@ sarif
 scrollbars
 semgrep
 setremotelogin
+shinbox
 snapdb
 snapmeta
 soffice
@@ -164,4 +166,3 @@ workdir
 WRONLY
 xumlidot
 zipfile
-shinbox

@@ -14,6 +14,15 @@ Use it from the terminal or in scripts to:
 - Call REST APIs and run high-speed transfers (**FASP**)
 - Automate workflows with config, presets, and scripting
 
+## Use with AI assistants
+
+`ascli` is built to be used by AI assistants and AI agents (LLM), so that they can operate IBM Aspera products (Aspera on Cloud, Faspex, High-Speed Transfer Server, Node API, Shares, Console, Orchestrator) for you:
+
+- **In a shell** (coding agents): nothing to set up. Give the agent [`llms.txt`](https://github.com/IBM/aspera-cli/blob/main/llms.txt), or install the agent skill [`skills/ascli`](https://github.com/IBM/aspera-cli/tree/main/skills/ascli): the agent then discovers commands, arguments and options by itself.
+- **MCP server** (Model Context Protocol): `ascli mcp server` exposes all commands to an AI client, with restrictions, and without showing secrets to the AI.
+
+See [Leveraging AI Assistance](https://github.com/IBM/aspera-cli/blob/main/docs/README.md#leveraging-ai-assistance) in the manual.
+
 ## Documentation
 
 Choose what best suits you:

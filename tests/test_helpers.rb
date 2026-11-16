@@ -45,7 +45,7 @@ end
 # @param title      [String] Title of the package
 # @return [Hash] Transfer spec: the first of `xfer_sessions` of the response
 def faspex4_send_transfer_spec(url:, recipients:, title:)
-  Aspera::Rest::Parameters.instance.session_cb = ->(s){s.verify_mode = OpenSSL::SSL::VERIFY_NONE}
+  Aspera::Rest::Parameters.instance.session_cb = ->(s) { s.verify_mode = OpenSSL::SSL::VERIFY_NONE }
   body = {delivery: {title: title, note: '', recipients: recipients}}
   response = Aspera::Rest::Client.new(base_url: url).call(operation: 'POST', subpath: 'send', content_type: Aspera::Mime::JSON, body: body, ret: :data)
   raise 'Expected one transfer spec in xfer_sessions' unless response['xfer_sessions'].is_a?(Array) && response['xfer_sessions'].size == 1

@@ -33,6 +33,13 @@ module Aspera
         end
       end
 
+      # Where received files are written (direction `receive`).
+      # Override in agents that write on a remote system (node): the destination is then not a local path.
+      # @return [Boolean] `true` if the destination folder is on the local system: restrictions on local writes apply (see `Cli::Security`)
+      def local_destination?
+        true
+      end
+
       # Wait for all sessions to terminate and return a typed Transfer::Result.
       # Notifies the end of transfer to the progress bar (agents do not).
       # @return [Transfer::Result::Success, Transfer::Result::Error]

@@ -1695,9 +1695,7 @@ module Aspera
 
         def automation_guide_document
           require_relative '../../uri_reader'
-          local_path = File.expand_path('../../../../../aspera-orchestrator-plugins-doc/docs/aoc/aoc-automation-development-guide.md', __dir__)
-          urls = File.exist?(local_path) ? [UriReader.file_url(local_path)] + AOC_AUTOMATION_GUIDE_URLS : AOC_AUTOMATION_GUIDE_URLS
-          UriReader.read_first(urls, what: 'AoC Automation Development Guide')
+          UriReader.read_first(AOC_AUTOMATION_GUIDE_URLS, what: 'AoC Automation Development Guide')
         end
 
         def automation_guide_toc(level)

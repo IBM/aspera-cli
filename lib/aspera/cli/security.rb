@@ -158,12 +158,13 @@ module Aspera
       # Writing a file where the client chooses (e.g. downloaded file) could replace a file that is used later (e.g. plugin, shell startup file).
       # At level `medium` and `high`, files can be written only in `writable_paths` (none by default): the real path of the folder is checked,
       # so that neither `..` nor a symbolic link leads outside of them.
-      # @param path [String] Path of a file or folder to write, that may not exist yet
-      # @return [String] Path to write
+      # @param path [String] Local path of a file or folder to write, that may not exist yet
+      #   (not called for a transfer agent that writes on a remote system, see `Agent::Base#local_destination?`)
+      # @return [String] Path to write: unchanged at level `low` (no restriction), else the real path
       # @raise [BadArgument] If writing is refused at current level
       def writable_path(path)
-        path = File.expand_path(path)
         return path if level.eql?(:low)
+        path = File.expand_path(path)
         # The first existing parent gives the real path, the missing part contains no link
         existing = path
         missing = []

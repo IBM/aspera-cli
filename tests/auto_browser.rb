@@ -123,6 +123,8 @@ def automate_external_login(browser, target_uri, login_preset, delay, char_delay
   ibmid_clicked = false
   user_names = %w[email username userid]
   user_ids = %w[username userid user-name-input]
+  # Values of attribute `type` of a text input (absent or empty: text)
+  text_types = [nil, '', 'text']
 
   redirected = -> { browser.url.include?("localhost:#{redirect_port}") || browser.url.include?("127.0.0.1:#{redirect_port}") }
   loop do
@@ -160,7 +162,7 @@ def automate_external_login(browser, target_uri, login_preset, delay, char_delay
     if creds[:username]
       user_field = visible_inputs.find { |i| user_names.include?(i.attribute('name')) || user_ids.include?(i.attribute('id')) || i.attribute('type') == 'email' }
       # Unknown names (e.g. Faspex 5 login page): first visible text input, other than the password
-      user_field ||= visible_inputs.find { |i| [nil, '', 'text'].include?(i.attribute('type')) && !i.equal?(pass_field) }
+      user_field ||= visible_inputs.find { |i| text_types.include?(i.attribute('type')) && !i.equal?(pass_field) }
       if user_field
         if user_field.value.to_s.empty?
           type_slowly(user_field, creds[:username], char_delay)

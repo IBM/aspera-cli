@@ -79,6 +79,10 @@ module Paths
   MASCOT_PDF = DOC / 'mascot.pdf'
   # Manual (Markdown), generated from `MD_ERB`
   MD_MANUAL = DOC / 'README.md'
+  # Summary for AI assistants, at the root of the gem (and of the documentation web site)
+  LLMS_TXT = TOP / 'llms.txt'
+  # Agent skill, generated from `LLMS_TXT`: copied by the user in the skills folder of the AI client
+  SKILL_MD = TOP / 'skills' / 'ascli' / 'SKILL.md'
   # Template of the manual, see {DocHelper}
   MD_ERB = DOC / 'README.erb.md'
   # Page of the PDF manual after the cover, see docs/README.gfm2pdf.yaml
