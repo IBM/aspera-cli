@@ -241,8 +241,8 @@ module Aspera
               formatter.display_status('- origin: localhost')
               formatter.display_status('Use the generated client id and secret in the following prompts.'.red)
               Environment.instance.open_uri("#{app_url}/admin/integrations/api-clients")
-              client_id = options.get_option(:client_id, mandatory: true)
-              client_secret = options.get_option(:client_secret, mandatory: true)
+              client_id = options.get_option(:client_id, mandatory: wizard.required)
+              client_secret = options.get_option(:client_secret, mandatory: wizard.required)
               # use_browser_authentication = true
             end
           end

@@ -2361,6 +2361,7 @@ aoc_wizard_org_client:
     - "@:"
     - url=@preset:awa.org
     - plugin=aoc
+    - override=yes
     - --username=@preset:awa.user_email
     - --private-key=@file:@preset:file.private_key
     - --use-generic-client=no
