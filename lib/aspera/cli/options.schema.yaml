@@ -1335,6 +1335,22 @@ components:
           description: 'Check only this plugin (default: all plugins).'
           examples:
             - aoc
+    PresetLookupCriteria:
+      type: object
+      description: Criteria to find a preset (`config preset lookup`).
+      additionalProperties: false
+      required:
+        - url
+        - username
+      properties:
+        url:
+          type: string
+          description: URL of the application, compared with option `url` of presets.
+          examples:
+            - https://app.example.com/aspera/app
+        username:
+          type: string
+          description: User name (or access key), compared with option `username` of presets.
     WizardOptions:
       type: object
       description: Application to configure with the wizard (`config wizard`). Options of the plugin (e.g. `--username`, `--password`, `--client-id`, `--private-key`) are given on the command line.

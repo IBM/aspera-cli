@@ -120,7 +120,7 @@ module Aspera
           command :list,     description: 'List all presets', action: ->(**) { Result::ValueList.new(presets.config_presets.keys, name: 'name') }
           command :overview, description: 'Show all options from all presets'
           command :lookup,   description: 'Find preset matching URL and username',
-            arguments: [{name: :criteria, type: Hash}]
+            arguments: [{name: :criteria, type: Hash, schema: Schema::Registry::PRESET_LOOKUP_CRITERIA}]
           command :secure,   description: 'Move secrets to vault',
             arguments: [{name: :config_name, mandatory: false, complete: :preset}]
           command :show,       description: 'Show a preset',

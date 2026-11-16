@@ -11,6 +11,8 @@ module Aspera
       RUBYDOC_URL = "https://www.rubydoc.info/gems/#{GEM_NAME}".freeze
       GEM_URL  = "https://rubygems.org/gems/#{GEM_NAME}".freeze
       SRC_URL  = 'https://github.com/IBM/aspera-cli'
+      SITE_URL = 'https://ibm.github.io/aspera-cli/'
+      LLMS_URL = "#{SITE_URL}llms.txt".freeze
       CONTAINER = 'docker.io/martinlaurent/ascli'
       # Minimum required Ruby version: single reference, used by `required_ruby_version` in gemspec file and by the documentation
       # Policy: a Ruby version is supported until 6 months after its end of official support

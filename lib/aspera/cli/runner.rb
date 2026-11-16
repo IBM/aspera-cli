@@ -490,6 +490,7 @@ module Aspera
           #{t}execute: #{Info::CMD_NAME} conf doc
           #{t}or visit: #{Info::DOC_URL}
           #{t}source repo: #{Info::SRC_URL}
+          #{t}AI assistants: #{Info::CMD_NAME} config commands, #{Info::LLMS_URL}
 
           ENVIRONMENT VARIABLES
           #{t}Any option can be set as an environment variable, refer to the manual

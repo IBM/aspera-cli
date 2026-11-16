@@ -6393,6 +6393,7 @@ DESCRIPTION
         execute: ascli conf doc
         or visit: https://ibm.biz/ascli-doc
         source repo: https://github.com/IBM/aspera-cli
+        AI assistants: ascli config commands, https://ibm.github.io/aspera-cli/llms.txt
 
 ENVIRONMENT VARIABLES
         Any option can be set as an environment variable, refer to the manual

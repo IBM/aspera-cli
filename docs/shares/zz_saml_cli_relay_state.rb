@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # ADDITIVE PATCH for Aspera Shares (Rails 8.1): no existing file is modified.
-# This is a specific patch, not a standard function of Shares, and it is not tested on a running Shares yet.
+# This is a specific patch, not a standard function of Shares.
 # The final implementation in Shares may differ (RelayState values, format and validity of the code, returned fields):
 # ascli (--auth=web) works only with this patch and will be adapted to the final implementation.
 # Install as <shares_rails_root>/config/initializers/zz_saml_cli_relay_state.rb and restart.

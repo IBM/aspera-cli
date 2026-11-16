@@ -67,6 +67,10 @@ Highlights: `ascli` as a tool for AI assistants: a hardened `mcp server` (the AI
   * `preset set`: the value is evaluated once, as an extended value: `@val:@file:<path>` stores `@file:<path>` as documented, and not the content of the file. A value without `@val:` is evaluated as before: for example `@yaml:@file:<path>` stores the content, `@val:@yaml:@file:<path>` stores the reference to the file. The result of an evaluation is no longer evaluated again: a file read with `@file:` that contains `@json:[1,2]` is stored as that text.
   * `vault`: the encrypted file vault keeps its owner, group and mode when it is changed by another user, e.g. root.
   * `vault` (HashiCorp): Responses of Vault failed with `wrong number of arguments` with gem `json` 3. `vault info` shows the authentication method instead of an internal object.
+* `preview`: an existing preview is also detected with the preview of the file (`files/<id>/preview`), when the information of the file has no `preview`: one more request for such a file.
+* `node`: `access_keys do <id> show` and `thumbnail` ask the node not to use its cache (`Cache-Control`).
+* `config`: `preset lookup help` shows the schema of the argument (`url` and `username`).
+* `ascli`: `-h` gives the command and the URL (`llms.txt`) for AI assistants.
 * `aoc`: `automation instances show` did not return. It now accepts the numeric identifier or the UUID.
 * `orchestrator`: Authentication with option `apikey` was rejected by Orchestrator (HTTP 401): the API requires `username` with the API key. Option `username` is now required with `apikey`.
 * `ascli`:
