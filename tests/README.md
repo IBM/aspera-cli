@@ -392,4 +392,13 @@ Enable it with the environment variable `ENABLE_COVERAGE`:
 bundle exec rake test:run ENABLE_COVERAGE=1
 ```
 
-Open [tmp/coverage/index.html](tmp/coverage/index.html) to view the report (during or after the run).
+Each tested process stores only its own result in `tmp/coverage/parts`.
+The report is generated at the end of `test:run`, also when a test fails.
+To generate it during a run, or after `rake spec`:
+
+```bash
+bundle exec rake test:coverage
+```
+
+Open [tmp/coverage/index.html](tmp/coverage/index.html) to view the report.
+Results older than one day are removed: coverage accumulates over several runs (e.g. `"test:run[next 10]"`) within that delay.

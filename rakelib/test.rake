@@ -328,6 +328,21 @@ namespace :test do
     select_test_cases(args[:name_list]).each do |name|
       Rake::Task["#{TEST_CASE_NS}:#{name}"].invoke
     end
+  ensure
+    # Also on failure: report the coverage of tests run so far
+    Rake::Task['test:coverage'].invoke if ENV.key?('ENABLE_COVERAGE')
+  end
+
+  desc 'Generate coverage report (tmp/coverage) from results of tests run with ENABLE_COVERAGE'
+  task :coverage do
+    # Do not start coverage of Rake itself, but keep the variable for tests started afterwards
+    saved = ENV.delete('ENABLE_COVERAGE')
+    begin
+      require_relative '../lib/aspera/coverage'
+    ensure
+      ENV['ENABLE_COVERAGE'] = saved if saved
+    end
+    log.warn('No coverage result') unless Aspera::Coverage.report
   end
 
   selector_desc 'Skip tests'
