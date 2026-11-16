@@ -428,3 +428,7 @@ bundle exec rake test:coverage
 
 Open [tmp/coverage/index.html](tmp/coverage/index.html) to view the report.
 Results older than one day are removed: coverage accumulates over several runs (e.g. `"test:run[next 10]"`) within that delay.
+
+When all test cases are completed (passed or skipped), the coverage badge file [docs/coverage.json](../docs/coverage.json) is also updated.
+Commit it: the coverage badge of the top [README.md](../README.md) reads it through [shields.io](https://shields.io/badges/endpoint-badge).
+It is not updated after a partial run, to avoid publishing a lower coverage.

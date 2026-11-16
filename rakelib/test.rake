@@ -333,7 +333,7 @@ namespace :test do
     Rake::Task['test:coverage'].invoke if ENV.key?('ENABLE_COVERAGE')
   end
 
-  desc 'Generate coverage report (tmp/coverage) from results of tests run with ENABLE_COVERAGE'
+  desc 'Generate coverage report (tmp/coverage) from results of tests run with ENABLE_COVERAGE, and badge when all tests completed'
   task :coverage do
     # Do not start coverage of Rake itself, but keep the variable for tests started afterwards
     saved = ENV.delete('ENABLE_COVERAGE')
@@ -342,7 +342,12 @@ namespace :test do
     ensure
       ENV['ENABLE_COVERAGE'] = saved if saved
     end
-    log.warn('No coverage result') unless Aspera::Coverage.report
+    percent = Aspera::Coverage.report
+    next log.warn('No coverage result') if percent.nil?
+    # A partial run would publish a lower coverage
+    next log.info("Coverage #{percent.round(1)}%: badge not updated, tests completed: #{percent_completed}%") unless percent_completed.eql?(100.0)
+    Aspera::Coverage.write_badge(percent)
+    log.info("Coverage #{percent.round(1)}%: badge updated: #{Aspera::Coverage::BADGE}")
   end
 
   selector_desc 'Skip tests'

@@ -11,6 +11,10 @@ module Aspera
     DIR = 'tmp/coverage'
     # One sub-folder per process, each with its own `.resultset.json`
     PARTS = File.join(DIR, 'parts')
+    # Coverage badge (shields.io endpoint), relative to `ROOT`
+    BADGE = 'docs/coverage.json'
+    # Badge color: first one whose lower limit is reached
+    BADGE_COLORS = {90 => 'brightgreen', 80 => 'green', 70 => 'yellowgreen', 60 => 'yellow', 50 => 'orange'}.freeze
     # Results are kept for 1 day (must be longer than time to run the whole test suite, possibly in several runs)
     MERGE_TIMEOUT = 86_400
     # Lines with those words are ignored from coverage (assertions usually do not trigger)
@@ -24,7 +28,7 @@ module Aspera
       lib/aspera/secret/store/macos_security.rb
       lib/aspera/assert.rb
     ].freeze
-    private_constant :MERGE_TIMEOUT, :NO_COV_FUNCTIONS, :NO_COV_PATHS
+    private_constant :BADGE_COLORS, :MERGE_TIMEOUT, :NO_COV_FUNCTIONS, :NO_COV_PATHS
 
     class << self
       # Start coverage of current process.
@@ -47,7 +51,7 @@ module Aspera
 
       # Merge the results of all processes and generate the report in `DIR`.
       # Results older than `MERGE_TIMEOUT` are deleted.
-      # @return [Boolean] `false` if there is no result
+      # @return [Float, nil] Percentage of covered lines, or `nil` if there is no result
       def report
         require 'simplecov'
         require 'fileutils'
@@ -56,19 +60,29 @@ module Aspera
         old, parts = parts.partition { |dir| Time.now - File.mtime(dir) > MERGE_TIMEOUT }
         FileUtils.rm_rf(old)
         results = parts.map { |dir| File.join(dir, '.resultset.json') }.select { |file| File.exist?(file) }
-        return false if results.empty?
+        return if results.empty?
         # Else the merged result would be added to the previous one
         FileUtils.rm_f(File.join(ROOT, DIR, '.resultset.json'))
         SimpleCov.root(ROOT)
         SimpleCov.coverage_dir(DIR)
+        percent = nil
         # The merged command name lists all process UUIDs: show their number instead
         SimpleCov.at_exit do
           result = SimpleCov.result
           result.command_name = "#{result.command_names.size} processes"
           result.format!
+          percent = result.covered_percent
         end
         SimpleCov.collate(results, processes: Etc.nprocessors) { Aspera::Coverage.filters(self) }
-        true
+        percent
+      end
+
+      # Write the coverage badge: a shields.io endpoint file, shown in the top `README.md`
+      # @param percent [Float] Percentage of covered lines
+      def write_badge(percent)
+        require 'json'
+        color = BADGE_COLORS.find { |limit, _| percent >= limit }&.last || 'red'
+        File.write(File.join(ROOT, BADGE), "#{JSON.pretty_generate(schemaVersion: 1, label: 'coverage', message: format('%.1f%%', percent), color: color)}\n")
       end
 
       # Configure filters (in `SimpleCov.start` or `SimpleCov.collate` block)
