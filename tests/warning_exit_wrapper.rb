@@ -2,10 +2,12 @@
 
 # First warning displayed will stop the execution
 module Warning
+  # Ruby warnings start with the location: `<file>:<line>: warning: ...`
+  GEM_LIB_DIR = "#{File.expand_path('../lib', __dir__)}/"
   class << self
     def warn(message)
-      # Stop on first warning if in this gem's code, not other gems
-      raise message.to_s if message.to_s.include?('/aspera/')
+      # Stop on first warning located in this gem's code, not other gems (e.g. simplecov messages mentioning the project path)
+      raise message.to_s if message.to_s.start_with?(GEM_LIB_DIR)
       # ignore other gems code (do not call `super`)
     end
   end

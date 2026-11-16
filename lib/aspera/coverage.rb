@@ -16,11 +16,20 @@ if ENV.key?('ENABLE_COVERAGE')
   # keep cache data for 1 day (must be longer than time to run the whole test suite)
   SimpleCov.merge_timeout(86400)
   SimpleCov.command_name(SecureRandom.uuid)
+  # SimpleCov prints its summary on stderr (>= 1.3) or stdout (older): send both to a log file
   SimpleCov.at_exit do
-    original_file_descriptor = $stdout
-    $stdout.reopen(File.open(File.join(coverage_root, 'simplecov.log'), 'a'))
-    SimpleCov.result.format!
-    $stdout.reopen(original_file_descriptor)
+    saved = [$stdout, $stderr].map(&:dup)
+    File.open(File.join(coverage_root, 'simplecov.log'), 'a') do |log|
+      $stdout.reopen(log)
+      $stderr.reopen(log)
+      # Tests may run in parallel: serialize merge + report so that the last report written includes all results
+      log.flock(File::LOCK_EX)
+      SimpleCov.result.format!
+    ensure
+      log.flock(File::LOCK_UN)
+      $stdout.reopen(saved[0])
+      $stderr.reopen(saved[1])
+    end
   end
   # lines with those words are ignored from coverage
   no_cov_functions = %w[error_unreachable_line error_unexpected_value Log.log.trace].freeze
