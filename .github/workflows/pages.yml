@@ -1,9 +1,13 @@
 # Action to publish the documentation web site (one page per section of the manual, llms.txt at its root) on GitHub Pages.
 # Prerequisite: in the settings of the repository, Pages, set "Source" to "GitHub Actions".
-# Started manually: add a trigger (e.g. tags "v*") once the site is enabled.
+# Started on release (tags "v*"), or manually.
+# Prerequisite for tags: in the settings of the repository, Environments, "github-pages", allow the tags "v*" to deploy.
 name: Documentation site
 
 on:
+  push:
+    tags:
+      - "v*"
   workflow_dispatch:
 
 permissions:
