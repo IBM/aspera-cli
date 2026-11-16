@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../../rest'
+require_relative 'base'
 require_relative 'one_password_base'
 
 module Aspera

@@ -95,7 +95,7 @@ module Aspera
           Aspera::Preview::Utils.office_tool = @gen_options.office_conversion
           Api::Node.api_options[:cache] = !@option_folder_reset_cache.eql?(:header)
           # Start from the full supported format list, then remove any skipped format.
-          @preview_formats_to_generate = Aspera::Preview::Generator::PREVIEW_FORMATS.clone
+          @preview_formats_to_generate = Aspera::Preview::Generator::PREVIEW_FORMATS.dup
           skip = options.get_option(:skip_format)
           @preview_formats_to_generate.delete(skip) if skip
           # Created by `tools_cleanup`, only for commands that use it
@@ -164,13 +164,17 @@ module Aspera
           return if events.empty?
           events.each do |event|
             # Ignore non-file events such as folder notifications.
-            if event.dig('data', 'type').eql?('file')
+            if !event.dig('data', 'type').eql?('file')
+              nil
+            elsif Array(event['types']).include?('file.deleted')
+              delete_preview(event['data'])
+            else
               file_entry = @api_node.read("files/#{event['data']['id']}") rescue nil
               if !file_entry.nil? &&
-                  @option_skip_folders.none? { |d| file_entry['path'].start_with?(d) }
+                  @option_skip_folders.none? { |d| file_entry['path'].start_with?(d) } &&
+                  @filter_block.call(file_entry)
                 file_entry['parent_file_id'] = event['data']['parent_file_id']
-                Log.log.error('TODO'.red) if event['types'].include?('file.deleted')
-                generate_preview(file_entry) if event['types'].include?('file.deleted')
+                generate_preview(file_entry)
               end
             end
             # Periodically log progress and persist the latest processed event.
@@ -182,6 +186,30 @@ module Aspera
               iteration_persistency.save
             end
           end
+          nil
+        end
+
+        # Delete the preview folder of a deleted file, if it exists.
+        # Errors are logged: a failure shall not stop the processing of events.
+        # @param entry [Hash] file entry of the event, with at least `id`
+        # @return [nil]
+        def delete_preview(entry)
+          folder_name = entry_preview_folder_name(entry)
+          # The identifier comes from the API: it shall not designate another folder
+          Aspera.assert(!entry['id'].to_s.empty? && File.basename(folder_name).eql?(folder_name)) { "Invalid file id: #{entry['id']}" }
+          if @access_remote
+            preview_folder = @api_node.read_folder_content(@previews_folder_entry['id'], {name: folder_name}).find { |item| item['name'].eql?(folder_name) }
+            return if preview_folder.nil?
+            @api_node.delete("files/#{preview_folder['id']}")
+          else
+            local_entry_preview_dir = File.join(@local_preview_folder, folder_name)
+            return unless File.directory?(local_entry_preview_dir)
+            FileUtils.rm_rf(local_entry_preview_dir)
+          end
+          Log.log.info { "Deleted preview of #{entry['id']}" }
+          nil
+        rescue StandardError => e
+          Log.log.error { "Cannot delete preview of #{entry['id']}: #{e.message}" }
           nil
         end
 
@@ -356,25 +384,15 @@ module Aspera
 
         # Scan all files in provided folder entry
         # @param top_entry [Hash] the top entry to scan
-        # @param top_path  [String, nil] subpath to start folder scan inside
-        def scan_folder_files(top_entry, top_path = nil)
-          unless top_path.nil?
-            # canonical path: start with / and ends with /
-            top_path = "/#{top_path.split('/').reject(&:empty?).join('/')}/"
-          end
-          Log.log.debug { "scan: #{top_entry} : #{top_path}".green }
+        def scan_folder_files(top_entry)
+          Log.log.debug { "scan: #{top_entry}".green }
           # don't use recursive call, use list instead
           entries_to_process = [top_entry]
           until entries_to_process.empty?
             entry = entries_to_process.shift
-            # process this entry only if it is within the top_path
             entry_path_with_slash = entry['path']
             Log.log.debug { "processing entry #{entry_path_with_slash}" } if @periodic.trigger?
             entry_path_with_slash = "#{entry_path_with_slash}/" unless entry_path_with_slash.end_with?('/')
-            if !top_path.nil? && !top_path.start_with?(entry_path_with_slash) && !entry_path_with_slash.start_with?(top_path)
-              Log.log.debug { "#{entry['path']} folder (skip start)".bg(:red) }
-              next
-            end
             Log.log.debug { "item:#{entry}" }
             begin
               case entry['type']

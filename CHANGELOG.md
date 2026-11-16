@@ -67,8 +67,17 @@ Highlights: `ascli` as a tool for AI assistants: a hardened `mcp server` (the AI
   * `preset set`: the value is evaluated once, as an extended value: `@val:@file:<path>` stores `@file:<path>` as documented, and not the content of the file. A value without `@val:` is evaluated as before: for example `@yaml:@file:<path>` stores the content, `@val:@yaml:@file:<path>` stores the reference to the file. The result of an evaluation is no longer evaluated again: a file read with `@file:` that contains `@json:[1,2]` is stored as that text.
   * `vault`: the encrypted file vault keeps its owner, group and mode when it is changed by another user, e.g. root.
   * `vault` (HashiCorp): Responses of Vault failed with `wrong number of arguments` with gem `json` 3. `vault info` shows the authentication method instead of an internal object.
-* `preview`: an existing preview is also detected with the preview of the file (`files/<id>/preview`), when the information of the file has no `preview`: one more request for such a file.
-* `node`: `access_keys do <id> show` and `thumbnail` ask the node not to use its cache (`Cache-Control`).
+* `preview`:
+  * An existing preview is also detected with the preview of the file (`files/<id>/preview`), when the information of the file has no `preview`: one more request for such a file.
+  * `events` generated no preview: it now generates previews of new and modified files (option `filter` applies), and deletes the preview folder of deleted files.
+  * Option `skip_format` failed with `FrozenError`.
+* `aoc`: `packages receive` with option `package_folder`:
+  * Two fields (e.g. `{"fld":["name","id"]}`) gave a folder `<name>.id` instead of `<name>.<id>` (value of the second field).
+  * With `seq` or `opt`, the existence of the folder was checked in the current folder instead of the folder given by `to_folder`.
+* `node`:
+  * `access_keys do <id> show` and `thumbnail` ask the node not to use its cache (`Cache-Control`).
+  * Browsing a folder of a node with `--query.per_page` or `--query.page` failed when API v4 is not used (`TypeError`, or error 400 with only one of them): pages are now read from page 1 until a page is incomplete, and the missing parameter is added.
+  * `telemetry`: an integer value of key `interval` (e.g. `0`, as documented) was refused by the schema. Same for keys `spawn_timeout_sec` and `spawn_delay_sec` of `transfer_info` (agent `direct`), and `font_ratio` of option `out` (key `img`).
 * `config`: `preset lookup help` shows the schema of the argument (`url` and `username`).
 * `ascli`: `-h` gives the command and the URL (`llms.txt`) for AI assistants.
 * `aoc`: `automation instances show` did not return. It now accepts the numeric identifier or the UUID.

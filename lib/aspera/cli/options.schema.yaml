@@ -311,12 +311,10 @@ components:
           default: []
         spawn_timeout_sec:
           type: number
-          format: float
           description: Multi session - Maximum time (in seconds) to verify that `ascp` is running.
           default: 2
         spawn_delay_sec:
           type: number
-          format: float
           description: Multi session - Delay (in seconds) between starting each `ascp` session.
           default: 2
         multi_incr_udp:
@@ -911,7 +909,6 @@ components:
             Default is `true` if the terminal supports Unicode (see `utf8`).
         font_ratio:
           type: number
-          format: float
           description: Terminal font aspect ratio (height divided by width).
           default: 2.3
     AscpLogsOptions:
@@ -1178,7 +1175,6 @@ components:
             - my-instana-api-key
         interval:
           type: number
-          format: float
           description: >-
             Polling interval in seconds. Use `0` for a single-shot run (no loop).
           default: 10

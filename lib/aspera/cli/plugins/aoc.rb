@@ -104,17 +104,19 @@ module Aspera
           # @param package_info       [Hash]   Package information
           # @param destination_folder [String] Base folder
           # @param fld                [Array]  List of fields of package
+          # @return [String] Folder path in destination folder
           def unique_folder(package_info, destination_folder, fld: nil, seq: false, opt: false)
             Aspera.assert_array_all(fld, String, type: BadArgument) { 'fld' }
             Aspera.assert_values(fld.length, [1, 2]) { 'fld length' }
-            folder = Environment.instance.sanitized_filename(package_info[fld[0]])
+            # Existence is checked in the destination folder
+            folder = File.join(destination_folder, Environment.instance.sanitized_filename(package_info[fld[0]].to_s))
             if seq
               folder = next_available_folder(folder, always: !opt)
             elsif fld[1] && (Dir.exist?(folder) || !opt)
               # NOTE: it might already exist
-              folder = "#{folder}.#{Environment.instance.sanitized_filename(fld[1])}"
+              folder = "#{folder}.#{Environment.instance.sanitized_filename(package_info[fld[1]].to_s)}"
             end
-            File.join(destination_folder, folder)
+            folder
           end
 
           # @return [String] AoC REST path for an admin resource type
@@ -1788,9 +1790,10 @@ module Aspera
               if Api::AoC.workspace_access?(item)
                 {'name' => '[Internal permission]'}
               else
-                aoc_api.read("admin/#{item['access_type']}s/#{item['access_id']}") rescue {'name' => 'not found'}
+                aoc_api.read("admin/#{item['access_type']}s/#{item['access_id']}")
               end
-            rescue => e
+            rescue StandardError => e
+              # e.g. member deleted: the error is shown instead of the name
               {'name' => e.to_s}
             end
           end

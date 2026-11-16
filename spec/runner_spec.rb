@@ -213,6 +213,137 @@ module Aspera
           expect(logged_errors('config', 'echo', '1', '2')).to(eq(['Argument: unprocessed values: ["2"]']))
         end
       end
+
+      describe '.result_transfer' do
+        it 'raises on an unexpected result type' do
+          expect { Runner.result_transfer('done') }.to(raise_error(/Unexpected transfer result type: String/))
+        end
+      end
+
+      describe '.result_transfer_multiple' do
+        it 'converts each status to text' do
+          table = [
+            {'id' => 1, Runner::STATUS_FIELD => Transfer::Result::Success.new},
+            {'id' => 2, Runner::STATUS_FIELD => Transfer::Result::Async.new(job_id: 'j1')},
+            {'id' => 3, Runner::STATUS_FIELD => 'other'}
+          ]
+          expect(Runner.result_transfer_multiple(table).data.map { |item| item[Runner::STATUS_FIELD] }).to(eq(%w[success async:j1 other]))
+        end
+      end
+
+      describe '#option_log=' do
+        it 'sets the logger type and format' do
+          allow(Log.instance).to(receive(:logger_type=))
+          allow(Log.instance).to(receive(:formatter=))
+          Runner.new([]).send(:option_log=, {'type' => 'stdout', 'format' => 'standard'})
+          expect(Log.instance).to(have_received(:logger_type=).with(:stdout))
+          expect(Log.instance).to(have_received(:formatter=).with('standard'))
+        end
+      end
+
+      context 'with a temporary home folder' do
+        let(:home) { Dir.mktmpdir }
+
+        before do
+          stub_const('ENV', ENV.to_h.merge('ASCLI_HOME' => home))
+          allow(Log.log).to(receive_messages(warn: nil, info: nil))
+        end
+
+        after { FileUtils.rm_rf(home) }
+
+        describe '#run_with_result: help of a leaf command' do
+          def help(*argv) = Runner.new(argv + ['-h']).run_with_result.data
+
+          it 'shows typed arguments' do
+            text = help('config', 'preset', 'get')
+            expect(text).to(include('COMMAND: config preset get <name> <param_name>'))
+            expect(text).to(match(/ARGUMENTS:\n +name +identifier\n +param_name +String/))
+          end
+
+          it 'shows the schema of a Hash argument' do
+            text = help('config', 'preset', 'lookup')
+            expect(text).to(include('(schema shown below)'))
+            expect(text).to(include('SCHEMA: criteria'))
+          end
+
+          it 'shows the file list of upload and download commands' do
+            expect(help('node', 'upload', '--url=https://localhost')).to(include('[source_file]...  Source file(s) to upload'))
+            expect(help('node', 'download', '--url=https://localhost')).to(include('[source_file]...  Remote path(s) to download'))
+          end
+
+          it 'lists plugins without command' do
+            expect(Runner.new(['-h']).run_with_result.data).to(match(/PLUGINS\n.* node +/m))
+            expect(Runner.new(['help']).run_with_result.data).to(match(/PLUGINS\n.* node +/m))
+          end
+
+          it 'shows an argument with several types' do
+            expect(help('node', 'access_keys', 'do', 'self', 'find', '--url=https://localhost')).to(include('[filter]  File name filter'))
+          end
+
+          it 'gives a tip for list commands with a query schema' do
+            expect(help('faspex5', 'admin', 'workgroups', 'list', '--url=https://localhost')).to(include('TIP: use --query=help'))
+          end
+        end
+
+        describe '#show_usage' do
+          it 'displays the help and exits with success' do
+            runner = Runner.new([])
+            runner.send(:init_agents_and_options)
+            formatter = instance_double(Formatter, display_message: nil)
+            runner.context.formatter = formatter
+            expect { runner.show_usage }.to(raise_error(SystemExit) { |e| expect(e.status).to(eq(0)) })
+            expect(formatter).to(have_received(:display_message).with(:error, /PLUGINS/))
+          end
+        end
+
+        describe '#run_with_result: lock port' do
+          it 'does not execute the command if another instance holds the port' do
+            warnings = []
+            allow(Log.log).to(receive(:warn)) { |*args, &block| warnings.push(block ? block.call : args.first) }
+            server = TCPServer.new('127.0.0.1', 0)
+            port = server.addr[1]
+            expect(Runner.new(['config', 'echo', 'hello', "--lock-port=#{port}"]).run_with_result).to(be_nil)
+            expect(warnings).to(include(/Another instance is already running/))
+          ensure
+            server&.close
+          end
+        end
+
+        describe '#run' do
+          it 'exits with code interrupted on Ctrl-C' do
+            runner = Runner.new(%w[config echo hello])
+            runner.context.formatter = instance_double(Formatter, display_message: nil, format_type: :table)
+            allow(runner).to(receive(:run_with_result).and_raise(Interrupt))
+            allow(Log.log).to(receive(:error))
+            expect { runner.run }.to(raise_error(SystemExit) { |e| expect(e.status).to(eq(ExitCode::INTERRUPTED)) })
+          end
+
+          it 'displays the full exception in debug mode' do
+            runner = Runner.new(%w[config echo hello])
+            runner.context.formatter = instance_double(Formatter, display_message: nil, format_type: :table)
+            allow(runner).to(receive(:run_with_result).and_raise(Cli::Error, 'failure'))
+            allow(Log.log).to(receive_messages(error: nil, debug?: true))
+            expect { expect { runner.run }.to(raise_error(SystemExit)) }.to(output(/failure/).to_stderr)
+          end
+        end
+      end
+
+      describe 'free-form schema' do
+        let(:schema) { 'opts:components.schemas.OrchestratorInitiateParameters' }
+
+        it 'is displayed as its description' do
+          runner = Runner.new([])
+          formatter = instance_double(Formatter, display_message: nil)
+          runner.context.formatter = formatter
+          runner.send(:display_schema, schema)
+          expect(formatter).to(have_received(:display_message).with(:data, String))
+        end
+
+        it 'is shown as its description in the help of an argument' do
+          lines = Runner.new([]).send(:schema_help_lines, ArgumentSpec.new(name: :params, type: [Hash], schema: schema))
+          expect(lines.first).to(include('SCHEMA: params'))
+        end
+      end
     end
   end
 end

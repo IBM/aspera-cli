@@ -5,6 +5,7 @@ require_relative '../products/connect'
 require_relative '../products/desktop'
 require_relative '../products/other'
 require_relative '../rest'
+require_relative '../transfer/spec'
 require_relative '../environment'
 require_relative '../rainbow'
 require 'securerandom'
@@ -143,10 +144,6 @@ module Aspera
             Log.dump(:tr_info, tr_info, level: :trace1)
             if tr_info['transfer_info'].is_a?(Hash)
               transfer = tr_info['transfer_info']
-              if transfer.nil?
-                Log.log.warn('no session in Connect')
-                break
-              end
               # TODO: get session id
               case transfer['status']
               when 'initiating', 'queued'

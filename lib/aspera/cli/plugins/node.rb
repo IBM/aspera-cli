@@ -1155,10 +1155,8 @@ module Aspera
         end
 
         def action_telemetry(parameters: {}, **)
+          # `url` and `key` are required by the schema
           parameters = parameters.symbolize_keys
-          %i[url key].each do |psym|
-            Aspera.assert(parameters.key?(psym), type: Cli::BadArgument) { "Missing parameter: #{psym}" }
-          end
           require 'socket'
           parameters[:interval] = 10 unless parameters.key?(:interval)
           parameters[:hostname] = Socket.gethostname unless parameters.key?(:hostname)

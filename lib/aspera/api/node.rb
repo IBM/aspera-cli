@@ -292,8 +292,10 @@ module Aspera
           if use_v4
             headers[HEADER_ACCEPT_VERSION] = '4.0'
             query['per_page'] = 1000 unless query.key?('per_page')
-          elsif query.key?('per_page') && !query.key?('page')
-            query['page'] = 0
+          else
+            # API v3 requires both `page` (first is 1) and `per_page`
+            query['page'] = 1 unless query.key?('page')
+            query['per_page'] = 1000 unless query.key?('per_page')
           end
           loop do
             Rest::Parameters.instance.spinner_cb.call(folder_items.count)
@@ -304,8 +306,9 @@ module Aspera
               break if iteration_token.nil? || iteration_token.empty?
               query['iteration_token'] = iteration_token
             else
-              break if data['item_count'].eql?(0)
-              query['offset'] += data['item_count']
+              # Last page: empty, or shorter than requested
+              break if data.empty? || (query.key?('per_page') && data.length < query['per_page'].to_i)
+              query['page'] = query['page'].to_i + 1
             end
           end
         rescue StandardError => e
