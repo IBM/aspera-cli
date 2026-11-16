@@ -29,6 +29,7 @@ Choose what best suits you:
 
 | Resource | Link |
 | -------- | ---- |
+| **Documentation site** | [ibm.github.io/aspera-cli](https://ibm.github.io/aspera-cli/) (one page per section, [llms.txt](https://ibm.github.io/aspera-cli/llms.txt) for AI assistants) |
 | **Online manual** | [GitHub docs/README.md](https://github.com/IBM/aspera-cli/blob/main/docs/README.md) |
 | **PDF manual** | In [GitHub Releases](https://github.com/IBM/aspera-cli/releases) |
 | **RubyGems** | [rubygems.org/gems/aspera-cli](https://rubygems.org/gems/aspera-cli) |
