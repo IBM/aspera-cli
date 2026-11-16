@@ -7247,7 +7247,7 @@ f5_pack_send:
     - --ts.content_protection_password=$(secret :content_protection)
 f5_pack_send_ear:
   description: Send a package with encryption at rest, set by transfer spec parameter content_protection
-  pre: generated_secret(:content_protection)
+  pre: generated_secret(:f5_ear)
   args:
     - faspex5
     - packages
@@ -7258,7 +7258,7 @@ f5_pack_send_ear:
     - END
     - $(PATH_TST_ASC_LCL)
     - --ts.content_protection=encrypt
-    - --ts.content_protection_password=$(secret :content_protection)
+    - --ts.content_protection_password=$(secret :f5_ear)
 f5_pack_send_recipient_types:
   description: Send a package to a recipient given by name, looked up in the given recipient types
   args:
@@ -7419,6 +7419,7 @@ f5_pack_recv_file:
 f5_pack_recv_all:
   depends_on:
     - f5_pack_id
+    - f5_pack_send_ear
   args:
     - faspex5
     - packages
@@ -7427,6 +7428,7 @@ f5_pack_recv_all:
     - --once-only=yes
     - --to-folder=$(TMP)
     - --query.max=5
+    - --ts.content_protection_password=$(secret :f5_ear)
 f5_pack_delete:
   depends_on:
     - f5_pack_recv_all

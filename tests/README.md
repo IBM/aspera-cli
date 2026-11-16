@@ -426,9 +426,21 @@ To generate it during a run, or after `rake spec`:
 bundle exec rake test:coverage
 ```
 
-Open [tmp/coverage/index.html](tmp/coverage/index.html) to view the report.
+Open [tmp/coverage/index.html](tmp/coverage/index.html) to view the report: line and branch coverage.
 Results older than one day are removed: coverage accumulates over several runs (e.g. `"test:run[next 10]"`) within that delay.
 
 When all test cases are completed (passed or skipped), the coverage badge file [docs/coverage.json](../docs/coverage.json) is also updated.
 Commit it: the coverage badge of the top [README.md](../README.md) reads it through [shields.io](https://shields.io/badges/endpoint-badge).
 It is not updated after a partial run, to avoid publishing a lower coverage.
+
+## Durations
+
+The duration of each test is saved in `tmp/durations.yml` (last execution of the test, passed or failed).
+At the end of `test:run`, the duration of the run and its slowest tests are logged.
+
+To show the total duration of all tests, also when they were run in several runs, and the slowest tests (default: 20):
+
+```bash
+bundle exec rake test:durations
+bundle exec rake 'test:durations[50]'
+```

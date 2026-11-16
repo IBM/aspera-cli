@@ -119,6 +119,44 @@ def save_state
   File.write(PATH_TESTS_STATES, STATES.to_yaml)
 end
 
+# Duration in seconds of the last execution of each test (passed or failed), saved here
+PATH_TESTS_DURATIONS = TMP / 'durations.yml'
+DURATIONS = PATH_TESTS_DURATIONS.exist? ? YAML.load_file(PATH_TESTS_DURATIONS) : {}
+# Durations of the tests executed by this Rake process (filled during the run)
+RUN_DURATIONS = {} # rubocop:disable Style/MutableConstant
+
+# @return [Float] Monotonic clock, in seconds
+def clock_now
+  Process.clock_gettime(Process::CLOCK_MONOTONIC)
+end
+
+# Save the duration of a test
+# @param name    [String] Test name
+# @param started [Float]  Value of `clock_now` when the test started
+def record_duration(name, started)
+  DURATIONS[name] = RUN_DURATIONS[name] = (clock_now - started).round(1)
+  File.write(PATH_TESTS_DURATIONS, DURATIONS.to_yaml)
+end
+
+# @param seconds [Numeric] Duration
+# @return [String] Duration as `1h02m03s`, `2m03s` or `3s`
+def format_duration(seconds)
+  seconds = seconds.round
+  return "#{seconds}s" if seconds < 60
+  hours, rest = seconds.divmod(3600)
+  minutes, secs = rest.divmod(60)
+  hours.positive? ? format('%dh%02dm%02ds', hours, minutes, secs) : format('%dm%02ds', minutes, secs)
+end
+
+# Log the slowest tests
+# @param durations [Hash{String => Float}] Test name to duration in seconds
+# @param count     [Integer]               Number of tests to show
+def log_slowest(durations, count)
+  durations.max_by(count, &:last).each do |name, seconds|
+    log.info("#{format_duration(seconds).rjust(9)} #{name}")
+  end
+end
+
 # Retrieve test environment config parameters
 # @param path [String] Dot-separated path in config
 # @return [Object] Value found at given path
@@ -328,8 +366,16 @@ namespace :test do
 
   selector_desc 'Run tests'
   task :run, [:name_list] do |_, args|
-    select_test_cases(args[:name_list]).each do |name|
-      Rake::Task["#{TEST_CASE_NS}:#{name}"].invoke
+    started = clock_now
+    begin
+      select_test_cases(args[:name_list]).each do |name|
+        Rake::Task["#{TEST_CASE_NS}:#{name}"].invoke
+      end
+    ensure
+      unless RUN_DURATIONS.empty?
+        log.info("Duration of this run: #{format_duration(clock_now - started)}, #{RUN_DURATIONS.size} tests executed, slowest:")
+        log_slowest(RUN_DURATIONS, 10)
+      end
     end
   ensure
     # Also on failure: report the coverage of tests run so far
@@ -379,6 +425,14 @@ namespace :test do
       log.info("[RESET] #{name}") if STATES.delete(name)
     end
     save_state
+  end
+
+  desc 'Show test durations (last execution of each test, possibly in several runs): total and slowest tests'
+  task :durations, [:count] do |_, args|
+    durations = DURATIONS.slice(*ALL_TESTS.keys)
+    next log.warn("No test duration in #{PATH_TESTS_DURATIONS}") if durations.empty?
+    log.info("Total: #{format_duration(durations.values.sum)} for #{durations.size} of #{ALL_TESTS.size} tests, slowest:")
+    log_slowest(durations, Integer(args[:count] || 20))
   end
 
   desc 'Restart noded on macOS'
@@ -431,10 +485,12 @@ namespace TEST_CASE_NS do
     deps = info[:depends_on] || []
     Aspera.assert_array_all(deps, String)
     task name => deps.map { |d| "#{TEST_CASE_NS}:#{d}" } do
+      started = nil
       if SKIP_STATES.include?(STATES[name]) && !ENV['FORCE']
         # log.info "[SKIP] #{name}"
         next
       end
+      started = clock_now
       log.info("--#{percent_completed}%-------------------------------------------------")
       log.info("[RUN]  #{name} [#{info[:tags].join(' ')}]")
       log.info("[EXEC] #{info[:args]&.join(' ')}")
@@ -582,6 +638,9 @@ namespace TEST_CASE_NS do
         break
       end
       save_state
+    ensure
+      # Also when the test fails
+      record_duration(name, started) unless started.nil?
     end
   end
 end
