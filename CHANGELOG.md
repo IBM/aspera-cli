@@ -4,7 +4,7 @@
 
 Released: [Place date of release here]
 
-Highlights: `ascli` as a tool for AI assistants: a hardened `mcp server` (the AI client can neither execute code nor write files where it chooses), commands that describe themselves (schema of structured arguments with `help`, development guides of Orchestrator and Aspera on Cloud Automation read by section), secrets of the vault inspected without their value, and a new file `llms.txt` (also as an agent skill) that tells an AI how to drive IBM Aspera products with `ascli`. Also: analysis of `ascp` logs (`config ascp logs`, `server logs`), named secret stores for `vault` (new types `keeper` and `secret_service`, HashiCorp AppRole and token file), web login without local port (`--ui.web_auth=paste`), SAML web browser authentication for `shares` (`--auth=web`), new plugin `transferd` (Transfer Daemon as a service), export and import of Aspera on Cloud Automation workflows, many new `orchestrator` commands, improved shell completion. Ruby 3.3 or later is required.
+Highlights: `ascli` as a tool for AI assistants: a hardened `mcp server` (the AI client can neither execute code nor write files where it chooses), commands that describe themselves (schema of structured arguments with `help`, development guides of Orchestrator and Aspera on Cloud Automation read by section), secrets of the vault inspected without their value, and a new file `llms.txt` (also as an agent skill) that tells an AI how to drive IBM Aspera products with `ascli`. Also: analysis of `ascp` logs (`config ascp logs`, `server logs`), named secret stores for `vault` (new types `keeper` and `secret_service`, HashiCorp AppRole and token file), web login without local port (`--ui.web_auth=paste`), SAML web browser authentication for `shares` (`--auth=web`), new plugin `transferd` (Transfer Daemon as a service), export and import of Aspera on Cloud Automation workflows, many new `orchestrator` commands, improved shell completion. Project: OpenSSF Best Practices silver badge, test coverage 96.6%. Ruby 3.3 or later is required.
 
 ### New Features
 
@@ -56,6 +56,11 @@ Highlights: `ascli` as a tool for AI assistants: a hardened `mcp server` (the AI
   * New token creator `Aspera::OAuth::SharesWeb` (`grant_method: :shares_web`).
   * Transfer agents: new optional method `transfer_cancel(transfer_id, agent_params)` stops a transfer started asynchronously (agent `transferd`). Agent `transferd` has a reader `transfer_id`: identifier of the last transfer started.
   * Agent `transferd`: new parameters `api_key` and `ca_file` for an existing daemon (`start` is `false`) whose configuration enables `authentication` or `tls`. New methods `Aspera::Agent::Transferd.info` and `create_client`; `transfer_status` and `transfer_cancel` accept the same parameters. `transfer_status` has new fields: `state`, `bytes_written`, `files_completed`, `rate_kbps`, `target_rate_kbps`, `elapsed_sec`, `started_at`, `ended_at`, `error_code`.
+* **project**:
+  * OpenSSF Best Practices: silver badge (<https://www.bestpractices.dev/projects/5861>).
+  * Test coverage: 96.6% of lines (was 85%), badge in `README.md`. Branch coverage is also measured.
+  * New `GOVERNANCE.md` (roles, decisions, continuity) and `docs/ASSURANCE_CASE.md` (security requirements, threat model, weaknesses countered). Code review requirements in `CONTRIBUTING.md`.
+  * Each source file has an SPDX copyright and license header.
 
 ### Issues Fixed
 
