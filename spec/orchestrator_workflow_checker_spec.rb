@@ -247,6 +247,58 @@ RSpec.describe(Aspera::OrchestratorWorkflowChecker) do
     it 'reports a parameter of unknown type' do
       expect(codes(check(workflow.sub('<Value_type>string', '<Value_type>text')))).to(eq(['graph.parameter_type']))
     end
+
+    it 'reports an element that is not tagged with its class' do
+      expect(codes(check(workflow.sub('!ruby/object:Workflow', '!ruby/object:Other')))).to(eq(%w[workflow.type workflow.name_missing]))
+    end
+
+    it 'reports a whiteboard without graph' do
+      expect(codes(check(workflow.sub(%r{    xml_export: \|\n.*?</Workflow>\n}m, '')))).to(eq(['whiteboard.xml_missing']))
+    end
+
+    it 'reports a template key without action number' do
+      expect(codes(check(workflow.sub('- CustomRuby__1: !ruby/object:CustomRuby', '- CustomRuby: !ruby/object:CustomRuby')))).to(eq(%w[template.key graph.template_missing]))
+    end
+
+    it 'warns on dependencies that are not packed in the file' do
+      external = workflow.sub("- CustomRuby__1: []\n", "- CustomRuby__1:\n  - :entity: Workflow\n    :id_value: 12\n")
+      response = check(external)
+      expect(response['issues'].map { |issue| [issue['code'], issue['message']] }).to(eq([[
+        'dependencies.external', 'uses entities not included in the file, they must exist on the server: Workflow 12'
+      ]]))
+      expect(response['valid']).to(be(true))
+    end
+
+    it 'reads attributes of the Rails format (concise_attributes)' do
+      rails = workflow.sub(
+        "- !ruby/object:Workflow\n  attributes:\n    name: hello\n    run_as: SYSTEM\n",
+        "- !ruby/object:Workflow\n  concise_attributes:\n  - !ruby/object:ActiveModel::Attribute::FromDatabase\n    name: name\n    value_before_type_cast: hello\n"
+      )
+      expect(rails).to(include('concise_attributes'))
+      expect(check(rails)['issues']).to(be_empty)
+      expect(codes(check(rails.sub('value_before_type_cast: hello', 'value_before_type_cast: ""')))).to(eq(['workflow.name_missing']))
+    end
+
+    it 'reports a node id that is not unique' do
+      expect(codes(check(workflow.sub('id="fail"', 'id="end"')))).to(include('graph.id_not_unique'))
+    end
+
+    it 'reports a node without Synch_factor' do
+      expect(codes(check(workflow.sub('<Error x="900" y="350" id="error"><Synch_factor>0</Synch_factor>', '<Error x="900" y="350" id="error">')))).to(eq(['graph.synch_factor']))
+    end
+
+    it 'reports a step without name, type or action identifier' do
+      expect(codes(check(workflow.sub('<Step_name>Say hello</Step_name>', '<Step_name>undefined</Step_name>')))).to(eq(['graph.step_unnamed']))
+      expect(codes(check(workflow.sub('<Step_type>CustomRuby</Step_type>', '<Step_type></Step_type>')))).to(eq(['graph.step_type_missing']))
+      expect(codes(check(workflow.sub('<Action_id>1</Action_id>', '<Action_id></Action_id>')))).to(eq(['graph.action_id_missing']))
+    end
+
+    it 'reports two steps with the same name' do
+      step = workflow[%r{<Step x="400".*?</Step>}]
+      second = step.sub('id="step1"', 'id="step2"').sub('<Prerequisite id="start" status="true"/>', '<Prerequisite id="step1" status="Complete"/>')
+      two_steps = workflow.sub(step, step + second).sub('<Prerequisite id="step1" status="Complete"/></Prerequisites></End>', '<Prerequisite id="step2" status="Complete"/></Prerequisites></End>')
+      expect(codes(check(two_steps))).to(eq(['graph.step_name_not_unique']))
+    end
   end
 
   describe 'with plugin specifications' do
@@ -335,6 +387,38 @@ RSpec.describe(Aspera::OrchestratorWorkflowChecker) do
       expect(codes(check_with_specs(mapped))).to(eq(['step.output_not_produced']))
     end
 
+    it 'warns on an integer attribute that is not a number' do
+      integer_specs = {'CustomRuby' => specs['CustomRuby'].merge('attributes' => specs['CustomRuby']['attributes'].merge('retries' => {'type' => 'integer'}))}
+      response = check_with_specs(with_attributes('retries: three', content: declared), integer_specs)
+      expect(response['issues'].map { |issue| issue['message'] }).to(eq(['retries: three is not an integer, it is read as 0']))
+    end
+
+    it 'warns on an unknown attribute of the Rails format, as the import may succeed' do
+      rails = declared.sub("- !ruby/object:Workflow\n  attributes:\n    name: hello\n", "- !ruby/object:Workflow\n  concise_attributes:\n  - !ruby/object:ActiveModel::Attribute::FromDatabase\n    name: name\n    value_before_type_cast: hello\n  attributes:\n")
+      response = check_with_specs(with_attributes('foo: bar', content: rails))
+      expect(response['issues'].map { |issue| [issue['severity'], issue['code']] }).to(eq([%w[warning template.attribute_unknown]]))
+    end
+
+    it 'evaluates conditions if_set and not_in of an input' do
+      conditional = specs['CustomRuby'].merge('inputs' => {
+        'Folder' => {'type' => 'string', 'required' => true, 'if_set' => 'folder', 'when' => {'source_control_type' => {'not_in' => ['github']}}}
+      })
+      set = with_attributes('folder: /x', 'source_control_type: bitbucket', content: declared)
+      expect(check_with_specs(set, {'CustomRuby' => conditional})['issues'].map { |issue| issue['message'] }).to(eq(['required input Folder is not mapped']))
+      expect(check_with_specs(set.sub('source_control_type: bitbucket', 'source_control_type: github'), {'CustomRuby' => conditional})['issues']).to(be_empty)
+    end
+
+    it 'takes inputs declared as a list, and no input from another format' do
+      expect(check_with_specs(with_attributes(%q(mandatory_inputs: "['person']")))['issues']).to(be_empty)
+      expect(codes(check_with_specs(with_attributes('mandatory_inputs: person')))).to(eq(['step.input_unknown']))
+    end
+
+    it 'warns on an output that the plugin does not have with this template' do
+      outputs = declared.sub('<Outputs></Outputs>', '<Outputs><Output name="message"/><Output name="other"/></Outputs>')
+      response = check_with_specs(with_attributes(%q(typed_outputs: "{'message'=>'string'}"), content: outputs))
+      expect(response['issues'].map { |issue| [issue['code'], issue['message']] }).to(eq([['step.output_unknown', 'CustomRuby has no output other with this template: its settings are ignored']]))
+    end
+
     context 'when names of inputs and outputs are the value of an attribute (<attribute>)' do
       # inputs and outputs named by the value of attribute `table`, as `parameters_associations` of `SimpleParameterLookup`
       let(:table_specs) do
@@ -390,6 +474,11 @@ RSpec.describe(Aspera::OrchestratorWorkflowChecker) do
     it 'reports a file listed but not in the package' do
       response = check(package('x/Workflow_hello__1.txt' => manifest), file_name: 'wf.wkf')
       expect(codes(response)).to(eq(['package.file_missing']))
+    end
+
+    it 'reports a manifest that is not valid YAML' do
+      response = check(package('x/Workflow_hello__1.txt' => "- [\n"), file_name: 'wf.wkf')
+      expect(response['issues'].map { |issue| [issue['code'], issue['path']] }).to(eq([['package.manifest_invalid', 'x/Workflow_hello__1.txt']]))
     end
 
     it 'reports a package without manifest' do

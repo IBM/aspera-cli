@@ -92,6 +92,7 @@ Highlights: `ascli` as a tool for AI assistants: a hardened `mcp server` (the AI
   * `@extend:` no longer evaluates again the values it inserts (e.g. read by `@env:` or `@file:`).
   * An unknown key of a `Hash` option in dot notation (e.g. `--ui.foo=1`) is followed only by the schema error, no longer by an extra `unprocessed values` error.
   * When the renewal of an expired OAuth token fails, the error of the renewal is reported, instead of the original authorization error.
+  * In debug logs, a command argument that contains a single quote was quoted wrongly (e.g. `it's` shown as `'it's s'`).
 * **library**: agent `transferd`:
   * `transfer_status` no longer blocks on an ended transfer. When the daemon cannot be reached, does not answer in time, or does not know the transfer, the status is `unknown` instead of `running`. `error` is the error of the transfer. Calls have a timeout: key `timeout` of `agent_params`, default 10 seconds.
   * A process that attaches to an external daemon for each transfer (e.g. Orchestrator) accumulated `at_exit` handlers: `shutdown` is registered only when the agent starts the daemon.

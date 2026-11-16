@@ -2349,6 +2349,22 @@ aoc_wizard_generic_client:
     - --username=@preset:awa.user_email
     - --private-key=@file:@preset:file.private_key
     - --use-generic-client=yes
+aoc_wizard_org_client:
+  description: Wizard with an organization specific client, the page of API clients is opened and client id and secret are asked
+  tags:
+    - aoc
+    - interactive
+    - tmp_conf
+  args:
+    - config
+    - wizard
+    - "@:"
+    - url=@preset:awa.org
+    - plugin=aoc
+    - --username=@preset:awa.user_email
+    - --private-key=@file:@preset:file.private_key
+    - --use-generic-client=no
+    - --interactive=yes
 aoc_config_tokens_flush:
   tags:
     - no_doc
@@ -3269,6 +3285,17 @@ aoc_pack_recv_public:
     - organization
     - -N
     - --url=@preset:$(awa_type).public_link_recv_from_aoc_user
+aoc_pack_recv_public_link:
+  description: Receive the package of a public link, its identifier is given by the link (argument ignored)
+  tags:
+    - flaky
+  template: awa_user_suite
+  args:
+    - packages
+    - receive
+    - ALL
+    - --url=@preset:$(awa_type).public_link_recv_from_aoc_user
+    - --to-folder=$(TMP)
 aoc_pack_send_pub_sh:
   args:
     - -N
@@ -3453,6 +3480,21 @@ aoc_adm_ws_shared_folder_member_list:
     - member
     - $(t.saved_output :aoc_adm_shared_folder_id)
     - list
+aoc_adm_ws_shared_folder_node_browse:
+  description: Node commands on a shared folder of a workspace
+  depends_on:
+    - aoc_adm_shared_folder_id
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - workspace
+    - shared_folder
+    - "%name:@preset:awa.other_workspace"
+    - node
+    - $(t.saved_output :aoc_adm_shared_folder_id)
+    - browse
+    - /
 aoc_adm_nd_events:
   args:
     - --preset=aoc_admin
@@ -7202,6 +7244,44 @@ f5_pack_send:
     - END
     - $(PATH_TST_ASC_LCL)
     - --ts.content_protection_password=$(secret :content_protection)
+f5_pack_send_ear:
+  description: Send a package with encryption at rest, set by transfer spec parameter content_protection
+  pre: generated_secret(:content_protection)
+  args:
+    - faspex5
+    - packages
+    - send
+    - "@:"
+    - title=test ear
+    - recipients.0.name=@preset:f5_user.username
+    - END
+    - $(PATH_TST_ASC_LCL)
+    - --ts.content_protection=encrypt
+    - --ts.content_protection_password=$(secret :content_protection)
+f5_pack_send_recipient_types:
+  description: Send a package to a recipient given by name, looked up in the given recipient types
+  args:
+    - faspex5
+    - packages
+    - send
+    - "@:"
+    - title=test recipient types
+    - recipients.0=@preset:f5_user.username
+    - recipient_types.0=user
+    - END
+    - $(PATH_TST_ASC_LCL)
+f5_pack_recv_once:
+  description: Receive packages not received since INIT, with option once_only
+  depends_on:
+    - f5_pack_recv_init
+    - f5_pack_send
+  args:
+    - faspex5
+    - packages
+    - receive
+    - ALL
+    - --once-only=yes
+    - --to-folder=$(TMP)
 f5_pack_list:
   args:
     - faspex5

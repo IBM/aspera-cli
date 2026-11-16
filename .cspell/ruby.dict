@@ -24,6 +24,7 @@ eaddrinuse
 Elapsedusec
 ELOOP
 endgroup
+ENOTTY
 enummodule
 ESRCH
 execjs

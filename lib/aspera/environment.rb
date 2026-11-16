@@ -109,8 +109,8 @@ module Aspera
         return str if str.match?(%r{\A[A-Za-z0-9_.,:/@+=-]+\z})
         # return str if Shellwords.shellescape(str) == str
 
-        # Otherwise use single quotes
-        "'#{str.gsub("'", %q('\'\''))}'"
+        # Otherwise use single quotes (gsub with block: in a replacement string, \' is the post-match)
+        "'#{str.gsub("'") { %q('\'') }}'"
       end
 
       # Executes a command without invoking a shell.

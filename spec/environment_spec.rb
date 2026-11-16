@@ -202,4 +202,111 @@ RSpec.describe(Aspera::Environment) do
       end
     end
   end
+
+  describe 'helpers' do
+    it 'quotes for shell only when needed' do
+      expect(described_class.shell_escape_pretty('a=b/c.d')).to(eq('a=b/c.d'))
+      expect(described_class.shell_escape_pretty("it's a")).to(eq(%q('it'\''s a')))
+    end
+
+    it 'logs the command executed in debug' do
+      messages = []
+      allow(Aspera::Log.log).to(receive(:debug)) { |*_args, &block| messages.push(block&.call) }
+      described_class.secure_execute('true', 'x y', env: {'V' => 'a b'})
+      expect(messages).to(include("execute command: V='a b' true 'x y'"))
+    end
+
+    it 'restricts nothing on a path that does not exist, and warns on an error' do
+      expect(described_class.restrict_file_access(File.join(Dir.tmpdir, SecureRandom.uuid))).to(be_nil)
+      allow(Aspera::Log.log).to(receive(:warn))
+      allow(File).to(receive(:chmod).and_raise(Errno::EPERM, 'denied'))
+      described_class.restrict_file_access(Dir.tmpdir)
+      expect(Aspera::Log.log).to(have_received(:warn).with(/denied/))
+    end
+
+    it 'has no terminal columns if size is unknown' do
+      allow(described_class).to(receive(:terminal?).and_return(true))
+      allow($stdout).to(receive(:winsize).and_raise(Errno::ENOTTY))
+      expect(described_class.terminal_columns).to(be_nil)
+    end
+
+    it 'forces the C locale' do
+      saved = described_class::I18N_VARS.to_h { |var| [var, ENV.fetch(var, nil)] }
+      described_class.force_terminal_c
+      expect(described_class::I18N_VARS.map { |var| ENV.fetch(var) }.uniq).to(eq(['C']))
+    ensure
+      saved&.each { |var, value| ENV[var] = value }
+    end
+
+    it 'uses the locale variables if the locale charmap is unknown' do
+      allow(Encoding).to(receive(:locale_charmap).and_return('unknown-charmap'))
+      allow(described_class.instance).to(receive(:os).and_return(Aspera::Environment::OS_LINUX))
+      allow(ENV).to(receive(:values_at).with(*described_class::I18N_VARS).and_return([nil, 'C']))
+      expect(described_class.unicode_environment?).to(be(false))
+    end
+  end
+
+  describe 'opening URLs and files' do
+    let(:env) { described_class.instance }
+    let(:saved_vars) { %w[DISPLAY EDITOR HOME USERPROFILE] }
+
+    around do |example|
+      host_os = RbConfig::CONFIG['host_os']
+      saved_env = ENV.to_h.slice(*saved_vars)
+      example.run
+    ensure
+      RbConfig::CONFIG['host_os'] = host_os
+      saved_vars.each { |var| ENV[var] = saved_env[var] }
+      env.initialize_fields
+    end
+
+    # @param host_os [String]      value of RbConfig host_os
+    # @param display [String, nil] value of DISPLAY
+    def on_os(host_os, display: nil)
+      RbConfig::CONFIG['host_os'] = host_os
+      ENV['DISPLAY'] = display
+      ENV.delete('EDITOR')
+      env.initialize_fields
+      allow(described_class).to(receive(:secure_execute))
+    end
+
+    it 'opens with the system command of the OS' do
+      on_os('mswin')
+      env.open_uri('https://example.com')
+      expect(described_class).to(have_received(:secure_execute).with('start', 'explorer', '"https://example.com"'))
+      env.open_editor('f.txt')
+      expect(described_class).to(have_received(:secure_execute).with('notepad.exe', '"f.txt"'))
+      on_os('linux', display: ':0')
+      env.open_editor('f.txt')
+      expect(described_class).to(have_received(:secure_execute).with('xdg-open', 'f.txt'))
+      on_os('darwin')
+      env.open_uri('https://example.com')
+      expect(described_class).to(have_received(:secure_execute).with('open', 'https://example.com'))
+    end
+
+    it 'displays the URL without graphical display' do
+      on_os('linux')
+      expect(env.default_gui_mode).to(eq(:text))
+      expect { env.open_uri('https://example.com') }.to(output(/please enter this URL in a browser/).to_stdout)
+      expect { env.open_uri('file:///f') }.to(output(/USER ACTION: open this/).to_stdout)
+    end
+
+    it 'uses the browser command, and reports it if not found' do
+      on_os('linux')
+      env.browser_command = ['my-browser']
+      allow(described_class).to(receive(:secure_execute).and_raise(Errno::ENOENT))
+      expect { env.open_uri('https://example.com') }.to(raise_error(Aspera::ParameterError, /Browser command not found .*: my-browser/))
+    ensure
+      env.browser_command = nil
+    end
+
+    it 'sets HOME from USERPROFILE on Windows' do
+      on_os('mswin')
+      Dir.mktmpdir do |dir|
+        ENV['USERPROFILE'] = dir
+        env.fix_home
+        expect(Dir.home).to(eq(dir))
+      end
+    end
+  end
 end
