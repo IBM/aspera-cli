@@ -18,10 +18,13 @@ markdown_extensions:
   - attr_list
   - tables
   - toc:
-      permalink: "🔗"
+      permalink: true
+      permalink_title: Link to this section
   - codehilite
   - pymdownx.superfences
   - pymdownx.highlight
   - pymdownx.details
   - pymdownx.tabbed
   - pymdownx.snippets
+extra_css:
+  - stylesheets/permalink.css
