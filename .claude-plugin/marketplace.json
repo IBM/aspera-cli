@@ -1,0 +1,28 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "aspera-cli",
+  "description": "Agent skill for ascli, the command line interface for IBM Aspera products",
+  "owner": {
+    "name": "IBM Aspera",
+    "url": "https://github.com/IBM/aspera-cli"
+  },
+  "plugins": [
+    {
+      "name": "ascli",
+      "source": "./",
+      "description": "Operate IBM Aspera products (Aspera on Cloud, Faspex 5, HSTS, Node API, Shares, Console, Orchestrator, COS) with the ascli command line",
+      "homepage": "https://github.com/IBM/aspera-cli",
+      "repository": "https://github.com/IBM/aspera-cli",
+      "license": "Apache-2.0",
+      "keywords": [
+        "aspera",
+        "ascli",
+        "fasp",
+        "file-transfer",
+        "faspex",
+        "aspera-on-cloud"
+      ],
+      "category": "file-transfer"
+    }
+  ]
+}

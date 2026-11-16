@@ -1,6 +1,8 @@
 ---
 name: ascli
 description: 'Operate IBM Aspera products with the ascli command line: Aspera on Cloud, Faspex 5, High-Speed Transfer Server, Node API, Shares, Console, Orchestrator, Cloud Object Storage. Use when the user wants to transfer files with FASP (ascp), send or receive packages, browse or manage remote files, administer users, workspaces, nodes or access keys, analyze ascp logs, or develop Orchestrator or Aspera on Cloud Automation workflows.'
+license: Apache-2.0
+compatibility: Requires the ascli command (Ruby gem aspera-cli) in the shell, or the ascli MCP server.
 ---
 
 # ascli: command line interface for IBM Aspera

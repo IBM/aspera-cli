@@ -282,10 +282,16 @@ There are three ways, the first one is the simplest:
   Give it the file [`llms.txt`](https://raw.githubusercontent.com/IBM/aspera-cli/refs/heads/main/llms.txt), located at the root of the gem and of the GitHub repository.
   It tells the AI what `ascli` does with IBM Aspera products, and how to discover commands, arguments and options (`config commands`, `help`, `config options`, `config documentation`).
   With an AI client that supports agent skills, install the skill instead: the AI loads it by itself when a request is about IBM Aspera.
-  The skill is the folder `skills/ascli` of the gem (and of the GitHub repository): copy it to the skills folder of the AI client, for example:
+  The skill, in the [Agent Skills](https://agentskills.io) format, is the folder `skills/ascli` of the gem (and of the GitHub repository): copy it to the skills folder of the AI client, for example:
 
   ```shell
   cp -R "$(gem contents aspera-cli | grep 'skills/ascli/SKILL.md$' | xargs dirname)" ~/.claude/skills/
+  ```
+
+  With Claude Code, install it as a plugin from the GitHub repository, which is also a plugin marketplace: it is updated with the repository.
+
+  ```text
+  /plugin install ascli --marketplace IBM/aspera-cli
   ```
 
 - **The AI executes commands through MCP**: for an AI client without a shell, start the [MCP server](#plugin-mcp-model-context-protocol-server) and register it in the AI client.
