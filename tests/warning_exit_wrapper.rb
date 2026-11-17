@@ -6,7 +6,7 @@
 # First warning displayed will stop the execution
 module Warning
   # Ruby warnings start with the location: `<file>:<line>: warning: ...`
-  GEM_LIB_DIR = "#{File.expand_path('../lib', __dir__)}/"
+  GEM_LIB_DIR = "#{File.expand_path('../lib', __dir__)}/".freeze
   class << self
     def warn(message)
       # Stop on first warning located in this gem's code, not other gems (e.g. simplecov messages mentioning the project path)
