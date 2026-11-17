@@ -486,8 +486,6 @@ If necessary, you can mirror the automated process manually:
   ```
 
   This triggers the `.github/workflows/deploy.yml` action to publish to RubyGems.
-  It authenticates with [Trusted Publishing](https://guides.rubygems.org/trusted-publishing/) (OpenID Connect): the publication does not use a RubyGems API key (the workflow `yank-gem-version.yml` still uses the secret `RUBYGEMS_API_KEY`).
-  The trusted publisher (repository `IBM/aspera-cli`, workflow `deploy.yml`) is declared in the settings of the gem on rubygems.org.
-  The gem metadata `rubygems_mfa_required` requires multi-factor authentication for the other operations on the gem.
+  It authenticates with the RubyGems API key in the repository secret `RUBYGEMS_API_KEY` (scope `push rubygem`; the workflow `yank-gem-version.yml` uses the same secret, scope `yank rubygem`).
 
 - Update `version.rb` to the next `.pre` development version.

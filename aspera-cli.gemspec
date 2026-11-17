@@ -36,7 +36,6 @@ Gem::Specification.new do |spec|
   spec.metadata['changelog_uri']     = File.join(spec.homepage, 'blob/main/CHANGELOG.md')
   spec.metadata['rubygems_uri']      = Aspera::Cli::Info::GEM_URL
   spec.metadata['documentation_uri'] = Aspera::Cli::Info::DOC_URL
-  spec.metadata['rubygems_mfa_required'] = 'true' # MFA required to push, yank or modify the gem on rubygems.org
   spec.require_paths = ['lib']
   spec.bindir        = 'bin'
   # list git files from specified location in root folder of project (this gemspec is in project root folder)
