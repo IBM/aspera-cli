@@ -148,6 +148,7 @@ The following keys are supported in each test entry:
 | `$comment`    | `String` | Internal comment (e.g. for maintainers).         |
 | `tags`        | `Array`  | Group tests or enable special behavior.          |
 | `depends_on`  | `Array`  | Test case names that must run before this one.   |
+| `priority`    | `Integer`| Run earlier: 1 is the highest (see below).       |
 | `command`     | `String` | Executable name (default: `ascli`).              |
 | `args`        | `Array`  | Command-line arguments.                          |
 | `env`         | `Hash`   | Environment variables for this test.             |
@@ -158,6 +159,16 @@ The following keys are supported in each test entry:
 | `expect`      | `String` | Expected stdout (or stderr for must_fail).       |
 | `template`    | `String` | Member of this template (see below).             |
 | `instantiate` | `String` | Instance of this template (see below).           |
+
+Tests are executed and listed in this order:
+
+1. A test comes after the tests in its `depends_on`.
+2. `priority`: 1 is the highest; a test without `priority` comes after all tests with one.
+3. Position in `tests.yml`.
+
+For example, give a priority to tests that need a human (`interactive`, password entry), so that they run at the start, followed by unattended tests.
+A test with a priority brings its dependencies forward with it.
+Test names given on the command line run in the given order.
 
 Some tags have special meaning (active tags, listed below); others are only for grouping (e.g. to skip or select tests).
 A grouping tag shall be used by at least 2 tests (the tests of the plugin with that name count): a tag used by a single test is rejected, as it is probably a typo. Active tags are valid even for a single test. Tags `tty` and `background` cannot be combined.
@@ -210,17 +221,18 @@ An entry with `template: <template name>` is a member of that template.
 It is not executed by itself.
 An entry with `instantiate: <template name>` is an instance of that template.
 It is replaced, at its position in `tests.yml`, by one test named `<instance>.<member>` per member of the template.
-So, as for other tests, the execution order is the order in `tests.yml`.
+So, as for other tests, the position in `tests.yml` gives the execution order (after dependencies and `priority`).
 
 For each generated test:
 
 - `args`: the instance's `args` are placed before the member's `args`.
 - `tags`: the instance name and the instance's `tags` are added to the member's `tags`.
 - `vars`: the instance's `vars` are merged into the member's `vars` (the instance's value wins).
+- `priority`: the instance's `priority`, if any, replaces the member's.
 - `depends_on`: names of sibling members are replaced with `<instance>.<member>`, other names are unchanged.
 - `t`: the same rule applies to names given to `t` methods, e.g. in instance `aoc_user_suite`, `t.saved_output(:awa_bearer)` reads the output of `aoc_user_suite.awa_bearer`.
 
-An instance entry accepts only `instantiate`, `args`, `tags`, `vars`, `description` and `$comment`.
+An instance entry accepts only `instantiate`, `args`, `tags`, `vars`, `priority`, `description` and `$comment`.
 A template that is never instantiated, or an unknown template, is an error.
 
 ## Running Tests

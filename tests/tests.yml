@@ -657,6 +657,7 @@ serv_wizard_password:
     - --username=@preset:server1_user.username
     - --password=@preset:server1_user.password
 serv_wizard_stdin:
+  priority: 1
   description: Wizard without --username and --password, the values are read on the terminal.
   tags:
     - server
@@ -1795,6 +1796,7 @@ nd_basic_token:
     - node
     - basic_token
 nd_asperabrowser:
+  priority: 1
   description: The URL of Aspera Browser carries the node in its fragment (not sent to the web server). The URL is displayed on the terminal, and decoded here.
   tags:
     - interactive
@@ -1816,6 +1818,7 @@ nd_asperabrowser:
     - --ui=text
     - asperabrowser
 nd_asperabrowser_no_password:
+  priority: 1
   description: Without password (empty), the key is not in the URL, the application asks it.
   tags:
     - interactive
@@ -2360,6 +2363,7 @@ aoc_wizard_generic_client:
     - --private-key=@file:@preset:file.private_key
     - --use-generic-client=yes
 aoc_wizard_org_client:
+  priority: 1
   description: Wizard with an organization specific client, the page of API clients is opened and client id and secret are asked
   tags:
     - aoc
@@ -2563,6 +2567,7 @@ awa_ws_current:
     - workspaces
     - current
 aoc_webauth_profile:
+  priority: 1
   tags:
     - interactive
   pre: "select_browser(login_preset: 'aoc_user_web')"
@@ -2573,6 +2578,7 @@ aoc_webauth_profile:
     - profile
     - show
 aoc_webauth_profile_refresh:
+  priority: 1
   tags:
     - interactive
     - no_doc
@@ -5805,6 +5811,7 @@ conf_opt_out_merge:
     - --format=yaml
     - --out.level=data
 conf_vault_macos_info:
+  priority: 1
   pre: ensure_test_keychain
   tags:
     - vault
@@ -5817,6 +5824,7 @@ conf_vault_macos_info:
     - info
     - --vault.type=system
 conf_vault_macos_create:
+  priority: 1
   depends_on:
     - conf_vault_macos_info
   tags:
@@ -5833,6 +5841,7 @@ conf_vault_macos_create:
     - label=foo
     - --vault.type=system
 conf_vault_macos_show:
+  priority: 1
   depends_on:
     - conf_vault_macos_create
   tags:
@@ -5847,6 +5856,7 @@ conf_vault_macos_show:
     - foo
     - --vault.type=system
 conf_vault_macos_delete:
+  priority: 1
   depends_on:
     - conf_vault_macos_show
   tags:
@@ -6028,6 +6038,7 @@ conf_vault_deprecated_store:
     - --vault=@json:{"type":"file","name":"$(PATH_VAULT_FILE)"}
     - --out.secrets=yes
 conf_preset_ask:
+  priority: 1
   stdin: "username\npassword\n\nthe_user\nthe_pass\n"
   tags:
     - tmp_conf
@@ -6747,6 +6758,7 @@ conf_echo_yaml:
     - '@yaml:@json:"- 1\n- 2\n"'
     - --format=ruby
 conf_echo_secret:
+  priority: 1
   description: Secret entered on terminal.
   tags:
     - interactive
@@ -6760,6 +6772,7 @@ conf_echo_secret:
     - --ui=text
     - --out.secrets=yes
 conf_echo_secret_tty:
+  priority: 1
   description: Secret entered on a terminal (pseudo-terminal), the typed characters are not displayed.
   tags:
     - interactive
@@ -6776,6 +6789,7 @@ conf_echo_secret_tty:
     - --ui=text
     - --out.secrets=yes
 conf_echo_secret_web:
+  priority: 1
   description: Secret entered on a web page opened in the browser, the prompt shows the value to enter (manual mode).
   tags:
     - interactive
@@ -6789,6 +6803,7 @@ conf_echo_secret_web:
     - --ui=graphical
     - --out.secrets=yes
 conf_echo_interactive:
+  priority: 1
   description: Missing mandatory argument asked with --interactive=yes (the test configuration sets `interactive` to `no`), the answer is read on stdin.
   tags:
     - interactive
@@ -7261,6 +7276,7 @@ f5_wizard_no_key:
     - --client-id=abc
     - --client-secret=$(secret :dummy)
 f5_wizard_stdin:
+  priority: 1
   description: Wizard without ASCLI_WIZ_TEST, the private key (empty to generate) and the Enter that validates the public key are read on the terminal.
   tags:
     - faspex5
@@ -8169,6 +8185,7 @@ f5_invite_delete:
     - --bulk=yes
     - "@lines:@file:$(t.out_file('f5_invite_id'))"
 f5_webauth:
+  priority: 1
   tags:
     - interactive
   pre: "select_browser(login_preset: 'f5_user_web')"
@@ -8190,6 +8207,7 @@ f5_mock_idp_start:
     - --port=13783
     - --access-code=$(secret :mock_idp_auth)
 f5_mock_webauth:
+  priority: 1
   description: Faspex 5 package list with --auth=web against local mock IdP.
   tags:
     - interactive
@@ -8223,6 +8241,7 @@ f5_mock_idp_https_start:
     - --https
     - --access-code=$(secret :mock_idp_auth)
 conf_web_login:
+  priority: 1
   description: Login on the workstation for ascli on another host, with the code of type login. The host of the login page is not known yet, it is accepted on the terminal.
   tags:
     - interactive
@@ -8257,6 +8276,7 @@ f5_mock_idp_paste_start:
     - --port=13783
     - --access-code=$(secret :mock_idp_auth)
 f5_mock_webauth_paste:
+  priority: 1
   description: Faspex 5 package list with --auth=web and --ui.web_auth=paste against local mock IdP, the URL of redirection is pasted on the terminal.
   tags:
     - interactive

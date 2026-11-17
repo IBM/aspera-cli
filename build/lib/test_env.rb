@@ -17,9 +17,9 @@ module TestEnv
   # The configuration typically includes server URLs, credentials, and other test parameters
   ENV_VAR_REF_CONF = 'ASPERA_CLI_TEST_CONF_URL'
   # Allowed keys in test definitions (regular tests and template members, without `template`): See tests/README.md for detailed documentation
-  ALLOWED_KEYS = %i{command args tags depends_on description pre post env $comment stdin expect vars}.freeze
+  ALLOWED_KEYS = %i{command args tags depends_on priority description pre post env $comment stdin expect vars}.freeze
   # Allowed keys in template instance definitions (entries with `instantiate`)
-  INSTANCE_KEYS = %i{instantiate args tags vars description $comment}.freeze
+  INSTANCE_KEYS = %i{instantiate args tags vars priority description $comment}.freeze
   # Tags of tests that will (or might) fail
   EXPECTED_FAIL = %i[cleanup must_fail flaky].freeze
   # Tags that change the way a test is executed (see `rakelib/test.rake`)
@@ -172,6 +172,7 @@ module TestEnv
     properties[:tags] ||= []
     properties[:tags].map!(&:to_sym)
     properties[:tags].push(:ats) if properties[:args].include?('ats') && !properties[:tags].include?(:ats)
+    raise "Priority must be a positive integer in #{name}: #{properties[:priority].inspect}" unless properties[:priority].nil? || (properties[:priority].is_a?(Integer) && properties[:priority].positive?)
     raise "Tags `tty` and `background` cannot be combined in #{name}" if properties[:tags].include?(:tty) && properties[:tags].include?(:background)
     if properties[:args].include?('wizard')
       properties[:env] ||= {}
@@ -203,6 +204,7 @@ module TestEnv
       properties[:args] = (instance[:args] || []) + (properties[:args] || [])
       properties[:tags] = [instance_name, *properties[:tags], *instance[:tags]].map(&:to_sym).uniq
       properties[:vars] = (properties[:vars] || {}).merge(instance[:vars]) if instance.key?(:vars)
+      properties[:priority] = instance[:priority] if instance.key?(:priority)
       properties[:depends_on] = properties[:depends_on].map { |dependency| context.resolve(dependency) } if properties.key?(:depends_on)
       normalize_test(test_name, properties)
       properties[:instance_prefix] = instance_name
@@ -215,7 +217,8 @@ module TestEnv
   #
   # An entry with `template` is a member of that template and is not executable by itself.
   # An entry with `instantiate` is replaced, at its position, by the tests generated from
-  # the members of that template. So execution order is the order of `tests.yml`.
+  # the members of that template.
+  # Tests are then ordered by `order`: dependencies, `priority`, then position in `tests.yml`.
   #
   # @return [Hash{String=>Hash}] Executable test definitions indexed by final test name
   def descriptions
@@ -249,7 +252,38 @@ module TestEnv
     # A grouping tag shall select at least 2 tests (with those that have it through their plugin): else it is probably a typo
     single = declared.select { |tag| tests.count { |_name, properties| properties[:tags].include?(tag) } < 2 }
     raise "Grouping tag(s) used by a single test (typo?): #{single.to_a.join(', ')}. Active tags: #{ACTIVE_TAGS.join(', ')}" unless single.empty?
-    tests
+    order(tests)
   end
-  module_function :configuration, :conf_data, :normalize_test, :instantiate, :descriptions
+
+  # Order tests for execution.
+  #
+  # Sort levels, first one wins:
+  # 1. A test comes after the tests in its `depends_on`.
+  # 2. `priority`: 1 is the highest, a test without priority comes after all tests with one.
+  # 3. Position in `tests.yml`.
+  #
+  # So a test with a priority brings its dependencies forward with it.
+  #
+  # @param tests [Hash{String=>Hash}] Test definitions in `tests.yml` order
+  # @return [Hash{String=>Hash}] The same test definitions in execution order
+  def order(tests)
+    position = tests.keys.each_with_index.to_h
+    sort_key = ->(name) { [tests[name][:priority] || Float::INFINITY, position[name]] }
+    ordered = {}
+    visiting = []
+    visit = lambda do |name|
+      return if ordered.key?(name)
+      raise "Circular dependency: #{[*visiting.drop_while { |n| n != name }, name].join(' -> ')}" if visiting.include?(name)
+      visiting.push(name)
+      (tests[name][:depends_on] || []).sort_by(&sort_key).each do |dependency|
+        raise "Unknown test in depends_on of #{name}: #{dependency}" unless tests.key?(dependency)
+        visit.call(dependency)
+      end
+      visiting.pop
+      ordered[name] = tests[name]
+    end
+    tests.keys.sort_by(&sort_key).each { |name| visit.call(name) }
+    ordered
+  end
+  module_function :configuration, :conf_data, :normalize_test, :instantiate, :descriptions, :order
 end
