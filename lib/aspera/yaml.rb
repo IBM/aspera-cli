@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require_relative 'assert'
+require 'date'
 require 'yaml'
 
 module Aspera
