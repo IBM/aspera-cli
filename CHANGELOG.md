@@ -65,6 +65,7 @@ Highlights: `ascli` as a tool for AI assistants: a hardened `mcp server`, no lon
 
 ### Issues Fixed
 
+* `config initdemo`: the demo server preset allows the SSH host key `ssh-rsa` (option `ssh_options`), the only one offered by the demo server, so that `server browse` and other file operations work (transfers already worked). A preset created by an earlier version is not modified: recreate it, or add `--ssh-options=@json:'{"host_key":["ssh-rsa"]}'`.
 * Gem dependency: excludes `regexp_parser` 2.13.2, with which `json_schemer` fails to load (`undefined method 'implements'`).
 
 * `mcp`: in `mcp server` mode (security level `high`), a client could execute code, or write a file where it chooses, with: options `notify_template`, `fpac`, `ui` (key `command`), `out` (key `file`), `output`, `pid_file`, `home`, `plugin_folder`, `sdk_url` and `locations_url`, the folder `plugins` of the configuration folder (a client could write a plugin there, e.g. with `config download`, then run it), command `config plugins create` and command `faspex5 postprocessing`. They are now available only at level `low`, whether the option is set on the command line or in a preset; values from the environment of the process are not restricted. At levels `medium` and `high`:

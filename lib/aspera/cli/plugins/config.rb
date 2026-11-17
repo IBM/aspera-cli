@@ -629,7 +629,9 @@ module Aspera
             cp[DEMO_PRESET] = {
               'url'                                    => "ssh://#{DEMO_SERVER}.asperasoft.com:33001",
               'username'                               => ASPERA,
-              'ssAP'.downcase.reverse + 'drow'.reverse => DEMO_SERVER + ASPERA
+              'ssAP'.downcase.reverse + 'drow'.reverse => DEMO_SERVER + ASPERA,
+              # The demo server offers only host key `ssh-rsa` (SHA-1), not enabled by default in `Net::SSH` (browse, delete...)
+              'ssh_options'                            => {'host_key' => DEMO_SERVER_HOST_KEYS}
             }
           end
           cp[PresetManager::Key::DEFAULTS] ||= {}
@@ -734,6 +736,8 @@ module Aspera
         SERVER_COMMAND = 'server'
         DEMO_SERVER = 'demo'
         DEMO_PRESET = 'demoserver'
+        # SSH host key algorithms for the demo server: `ssh-rsa` last, used only if the server offers nothing better
+        DEMO_SERVER_HOST_KEYS = %w[rsa-sha2-512 rsa-sha2-256 ssh-rsa].freeze
         EMAIL_TEST_TEMPLATE = <<~END_OF_TEMPLATE.freeze
           From: <%=from_name%> <<%=from_email%>>
           To: <<%=to%>>
@@ -757,6 +761,7 @@ module Aspera
           :SERVER_COMMAND,
           :DEMO_SERVER,
           :DEMO_PRESET,
+          :DEMO_SERVER_HOST_KEYS,
           :EMAIL_TEST_TEMPLATE,
           :EXTEND_PRESET,
           :EXTEND_VAULT,

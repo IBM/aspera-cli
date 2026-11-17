@@ -776,6 +776,16 @@ serv_upload_simple:
     - upload
     - faux:///test.$(SecureRandom.uuid).bin?1k
     - --to-folder=@preset:server1_info.upload_folder
+serv_upload_target_rate:
+  description: Upload generated data with a target rate with unit, as in README.md
+  depends_on:
+    - conf_transferd_install_latest
+  args:
+    - server
+    - upload
+    - faux:///test.$(SecureRandom.uuid).bin?1m
+    - --to-folder=@preset:server1_info.upload_folder
+    - --ts.target_rate=500m
 serv_upload_multi_session:
   depends_on:
     - serv_mkdir

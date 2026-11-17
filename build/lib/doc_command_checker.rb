@@ -7,13 +7,16 @@ require_relative '../../lib/aspera/environment'
 require_relative '../../lib/aspera/log'
 require_relative '../../lib/aspera/cli/plugins/factory'
 require_relative '../../lib/aspera/cli/plugins/config'
+require_relative '../../lib/aspera/cli/info'
 require_relative 'paths'
 require_relative 'doc_markup'
 require 'json'
 require 'shellwords'
 require 'tmpdir'
 
-# Check hand-written command examples of the manual template against the commands and options of plugins.
+# Check hand-written command examples of the manual template, and of plain Markdown files (e.g. `README.md`),
+# against the commands and options of plugins.
+# In the ERB template, the command is `<%=cmd%>`; in a plain Markdown file, it is the command name (`ascli`).
 # Checked: code lines starting with the command (after an optional prompt), commands after a pipe or in `$(...)`,
 # and inline code spans starting with the command.
 # Placeholders (`<...>`, `[...]`, `...`, `a|b`) stop the check of the rest of a command.
@@ -33,13 +36,15 @@ class DocCommandChecker
   INLINE = /`(#{Regexp.escape(CMD_ERB)} [^`]+)`/
   # Shell prompt before a command
   PROMPT = /\A(?:\$|PS[^>]*>|C:[^>]*>)\s+/
-  private_constant :CMD_ERB, :NOCHECK_ERB, :PIPE, :SUBSHELL, :INLINE, :PROMPT
+  # Command name in a plain Markdown file, replaced with CMD_ERB
+  CMD_LITERAL = %r{(?<![\w/.-])#{Regexp.escape(Aspera::Cli::Info::CMD_NAME)}(?= )}
+  private_constant :CMD_ERB, :NOCHECK_ERB, :PIPE, :SUBSHELL, :INLINE, :PROMPT, :CMD_LITERAL
 
   # Load plugins and collect the commands and options they declare.
-  # @param template [Pathname] ERB template of the manual
-  # @param ascli    [Pathname] executable of the CLI
-  def initialize(template:, ascli:)
-    @template = template
+  # @param files [Array<Pathname>] ERB template of the manual (`.erb.md`) or plain Markdown files
+  # @param ascli [Pathname] executable of the CLI
+  def initialize(files:, ascli:)
+    @files = files
     @ascli = ascli
     factory = Aspera::Cli::Plugins::Factory.instance
     factory.add_lookup_folder(Aspera::Cli::Plugins::Config.gem_plugins_folder)
@@ -50,16 +55,19 @@ class DocCommandChecker
     @options = declared_options
   end
 
-  # Check all command examples of the template, log each error, and fail if there is at least one.
+  # Check all command examples of the files, log each error, and fail if there is at least one.
   # @return [void]
   # @raise [RuntimeError] if an example uses an unknown command or option
   def check
-    errors = examples.flat_map do |example|
-      check_command(example[:text]).map { |e| "#{@template.basename}:#{example[:line]}: #{e}: #{example[:text]}" }
+    errors = @files.flat_map do |file|
+      file_errors = examples(file).flat_map do |example|
+        check_command(example[:text]).map { |e| "#{file.basename}:#{example[:line]}: #{e}: #{example[:text]}" }
+      end
+      Aspera::Log.log.info { "#{file.basename}: command examples OK" } if file_errors.empty?
+      file_errors
     end
     errors.each { |e| Aspera::Log.log.error(e) }
     raise "#{errors.length} invalid command example(s), fix or place #{SKIP_MARKER} before or use #{NOCHECK_ERB} instead of #{CMD_ERB}" unless errors.empty?
-    Aspera::Log.log.info { "#{@template.basename}: command examples OK" }
   end
 
   private
@@ -81,17 +89,21 @@ class DocCommandChecker
     end
   end
 
-  # Extract command examples from the template: lines of code blocks (continued lines are joined)
+  # Extract command examples from a file: lines of code blocks (continued lines are joined)
   # and inline code spans, except those excluded by `SKIP_MARKER` or containing `NOCHECK_ERB`.
+  # @param file [Pathname] ERB template (`.erb.md`) or plain Markdown file
   # @return [Array<Hash>] command examples: `{line:, text:}`
-  def examples
+  def examples(file)
     result = []
     skip = false
     fence = nil
     # logical line of code: lines ending with `\` are continued
     logical = nil
-    File.readlines(@template, chomp: true).each_with_index do |raw, index|
+    # In a plain Markdown file, the command name is used instead of `CMD_ERB`
+    literal = file.basename.to_s.end_with?('.erb.md') ? nil : CMD_LITERAL
+    File.readlines(file, chomp: true).each_with_index do |raw, index|
       line = raw.sub(/\A\s*(?:>\s?)+/, '')
+      line = line.gsub(literal, CMD_ERB) unless literal.nil?
       if line.strip.eql?(SKIP_MARKER)
         skip = true
       elsif fence.nil? && line.match?(/\A\s*```+\S*\s*\z/)

@@ -10594,7 +10594,7 @@ For [**IBM Bob**](https://bob.ibm.com/docs/ide/configuration/mcp/mcp-in-bob), ad
 }
 ```
 
-For other clients (Claude Desktop, VS Code, and so on), the configuration is identical.
+Most other clients (Claude Desktop, Cursor, and so on) use the same `mcpServers` format, VS Code uses `servers` (see below).
 
 ##### Claude Desktop `stdio`
 
@@ -10611,6 +10611,47 @@ Place this section in `mcpServers`:
     }
   },
 ...
+}
+```
+
+##### Claude Code `stdio`
+
+For [**Claude Code**](https://code.claude.com/docs/en/mcp), register the server with the command line (option `--scope user` for all projects):
+
+```shell
+claude mcp add ascli -- <%=cmd%> mcp server
+```
+
+In a shell, Claude Code can also execute <%=tool%> directly: install the agent skill instead (see [Leveraging AI Assistance](#leveraging-ai-assistance)).
+
+##### VS Code `stdio`
+
+For **VS Code** (GitHub Copilot agent mode), add to `.vscode/mcp.json` in your workspace (or run command **MCP: Add Server**):
+
+```json
+{
+  "servers": {
+    "ascli": {
+      "type": "stdio",
+      "command": "ascli",
+      "args": ["mcp", "server"]
+    }
+  }
+}
+```
+
+##### Cursor `stdio`
+
+For **Cursor**, add to `.cursor/mcp.json` in your project (or `~/.cursor/mcp.json` for global configuration):
+
+```json
+{
+  "mcpServers": {
+    "ascli": {
+      "command": "ascli",
+      "args": ["mcp", "server"]
+    }
+  }
 }
 ```
 

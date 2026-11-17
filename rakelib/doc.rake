@@ -136,9 +136,9 @@ namespace :doc do
     DocHelper.new([Paths::MD_MANUAL] + DOC_FILES).check_links_manual
   end
 
-  desc 'Check commands and options of examples in manual'
+  desc 'Check commands and options of examples in manual and README'
   task :check_commands do
-    DocCommandChecker.new(template: Paths::MD_ERB, ascli: Paths::COMMAND).check
+    DocCommandChecker.new(files: [Paths::MD_ERB, Paths::TOP / 'README.md'], ascli: Paths::COMMAND).check
   end
 
   desc 'Check internal links (#anchor) in manual, for GitHub and PDF (requires gfm2pdf-toolchain)'
