@@ -1,8 +1,8 @@
 # Changes (Release notes)
 
-## 4.29.0.pre
+## 4.29.0
 
-Released: [Place date of release here]
+Released: 2026-11-17
 
 Highlights:
 
