@@ -90,6 +90,16 @@ This manual is organized into the following sections:
 
 ### When to use and when not to use
 
+| Need | Best choice | Why |
+| ---- | ----------- | --- |
+| Script or schedule transfers, packages, file management or administration of Aspera products (shell, `cron`, CI/CD) | `ascli` | One tool for all products, presets and vault per environment, structured output, automatic resume |
+| Let an AI assistant or agent operate Aspera products | `ascli`: in a shell, or its MCP server | Same commands as people, restrictions, secrets never shown (see [Leveraging AI Assistance](#leveraging-ai-assistance)) |
+| Administer, troubleshoot, or analyze `ascp` logs, interactively | `ascli` | Commands for every product, `ascp` log diagnostics |
+| Learn or test an Aspera REST API | `ascli` | Shows the API calls (see [Logging, Debugging](#logging-debugging)) |
+| Simple transfer with an HSTS, where nothing else can be installed | `ascp` | Included with every Aspera transfer product (see [`ascli` or `ascp`?](#ascli-or-ascp)) |
+| Build an application (C/C++, Go, Python, Java, .NET, NodeJS...) | Aspera REST APIs and Transfer Daemon (gRPC) | Better for long-term development and maintenance |
+| Users who transfer files with a graphical interface | IBM Aspera for Desktop, or the web interface of the application | Interactive use, no command line |
+
 > [!NOTE]
 > If you are scripting or automating transfers from the command line, `ascli` is the right choice.
 > If you are developing an application, prefer the APIs or SDKs instead.
