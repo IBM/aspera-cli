@@ -13,7 +13,7 @@ Highlights:
 * New plugin `transferd`: Transfer Daemon as a service. Export and import of Aspera on Cloud Automation workflows. Many new `orchestrator` commands. Improved shell completion.
 * Project: OpenSSF Best Practices silver badge, test coverage 96.6%.
 
-**This version has several breaking changes**: read [Breaking Changes](#breaking-changes) before upgrading and validate production workflows before deployment. In particular: Ruby 3.3 or later is required, `config wizard`, `config detect` and `config preset lookup` take their arguments as a `Hash` (`@: url=...`), and some `orchestrator` commands are renamed.
+**This version has several breaking changes**: read the **Breaking Changes** section below before upgrading and validate production workflows before deployment. In particular: Ruby 3.3 or later is required, `config wizard`, `config detect` and `config preset lookup` take their arguments as a `Hash` (`@: url=...`), and some `orchestrator` commands are renamed.
 
 ### New Features
 
@@ -32,7 +32,7 @@ Highlights:
   * `wizard` adds `_comment: "wizard: <application>"` to the preset it creates.
   * Asynchronous transfer jobs (`list`, `status`, `cleanup`) are managed by `agents jobs`. `config transfer` is deprecated.
   * `transferd` (`install`, `list`) and `ascp install` are deprecated, use the new plugin `transferd`.
-  * `preset set` merges into the configuration at three levels (see [Breaking Changes](#breaking-changes)). `preset update`, `initialize` and `unset` are deprecated, and show the command to use.
+  * `preset set` merges into the configuration at three levels (see Breaking Changes below). `preset update`, `initialize` and `unset` are deprecated, and show the command to use.
 * `transferd`: new plugin for the Transfer Daemon.
   * `install [version]` and `list`. `install` does nothing if the version is already installed.
   * `info` and `transfers show|cancel <transfer_id>` for a running daemon (options `--url`, `--api-key`, `--ca-file`; requires gem `grpc`).
@@ -103,7 +103,7 @@ Highlights:
 
 * Ruby 3.3 or later is required (3.2 reached end of life in March 2026). Future minimum is 3.4. Policy: a Ruby version is supported until 6 months after its end of official support. Gem dependencies: `net-ssh` 8, `marcel` 2.
 * `orchestrator`:
-  * Command `workstep` is renamed `worksteps` (e.g. `worksteps status`), as `workorders`.
+  * Command `workstep` is renamed `worksteps` (e.g. `worksteps status`), consistent with `workorders`.
   * `workflows development`: document `authoring` is replaced by `guide` (the Aspera Orchestrator Development Guide, which includes the Workflow Authoring Guide): `workflows development authoring toc` is now `workflows development guide toc`, and `workflows development templates customruby` is now `workflows development templates section customruby`.
   * `plugins spec` is now `plugins spec toc`, and `plugins spec <plugin> [section]` is now `plugins spec show <plugin> [section]`.
 * `config`: arguments given in a fixed order are replaced by a `Hash`, usually given with `@:` (items `key=value` in any order):
