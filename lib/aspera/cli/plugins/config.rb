@@ -159,6 +159,14 @@ module Aspera
             {name: :section, mandatory: false}
           ]
         command(
+          :skill, description: 'Display the agent skill: how an AI drives IBM Aspera products with ascli (same as llms.txt)',
+          action: lambda do |**|
+            skill_file = File.join(self.class.gem_src_root, '..', 'skills', 'ascli', 'SKILL.md')
+            Aspera.assert(File.exist?(skill_file), type: Cli::Error) { "Agent skill not found: #{skill_file}" }
+            Result::Text.new(File.read(skill_file))
+          end
+        )
+        command(
           :genkey, description: 'Generate a new RSA private key',
           arguments: [
             {name: :private_key_path, complete: :file},

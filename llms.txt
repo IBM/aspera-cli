@@ -51,6 +51,8 @@ Before writing or modifying a workflow, read the development guide with `ascli`:
   Specification of an action plugin (template attributes, inputs, outputs): `ascli orchestrator plugins spec toc`, then `ascli orchestrator plugins spec show <plugin>`.
   Check a workflow file before importing it, and fix all errors: `ascli orchestrator workflows check_import <file>`.
 - IBM Aspera on Cloud Automation: `ascli aoc automation guide toc`, then `ascli aoc automation guide section <anchor>`.
+  Start with the section of each trigger and action used (for example, "Send a package" is action type `package_transfer`, section `package-transfer`),
+  then `payload-rules-enforced-by-the-api` and `finding-the-identifiers`.
 
 ## Rules
 

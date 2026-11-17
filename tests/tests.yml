@@ -6417,6 +6417,11 @@ conf_doc_transfer_params:
     - doc
     - github
     - transfer-parameters
+conf_skill:
+  description: Display the agent skill
+  args:
+    - config
+    - skill
 conf_doc_toc:
   description: List table of contents of local documentation
   args:

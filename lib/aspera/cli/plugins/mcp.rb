@@ -115,6 +115,20 @@ module Aspera
             ["orchestrator", "workflows", "development", "manual", "section", "<manual_anchor>"]
           Before importing a workflow file, check it (graph, templates, inputs of steps) and fix all errors:
             ["orchestrator", "workflows", "check_import", "<file>"]
+
+          AOC AUTOMATION WORKFLOW DEVELOPMENT
+          Before writing or modifying an Aspera on Cloud Automation workflow, read the development guide
+          (large: read sections, not the whole document). Start with the section of each trigger and action
+          used (for example "Send a package" is action type package_transfer, section "package-transfer"),
+          then "payload-rules-enforced-by-the-api" and "finding-the-identifiers":
+            ["aoc", "automation", "guide", "section", "package-transfer"]
+          Other sections: "triggers", "actions", "substitution-variables", "importing-a-workflow",
+          "design-recipes-and-patterns", "common-pitfalls-and-resolutions". List the anchors with:
+            ["aoc", "automation", "guide", "toc"]
+
+          GENERAL GUIDANCE
+          For the general rules of use of ascli by an AI (written for a shell: each command line maps to args):
+            ["config", "skill"]
         INST
 
         # Keys forwarded to MCP::Server constructor (symbolized)

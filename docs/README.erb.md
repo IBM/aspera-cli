@@ -301,6 +301,7 @@ There are three ways, the first one is the simplest:
 - **The AI executes commands in a shell** (coding agents): nothing to set up, and no limitation: the AI uses <%=tool%> as you do, with your configuration.
   Give it the file [`llms.txt`](https://raw.githubusercontent.com/IBM/aspera-cli/refs/heads/main/llms.txt), located at the root of the gem and of the GitHub repository.
   It tells the AI what <%=tool%> does with IBM Aspera products, and how to discover commands, arguments and options (`config commands`, `help`, `config options`, `config documentation`).
+  The same content is displayed by `<%=cmd%> config skill`: an AI that can execute <%=tool%> can read it with no file to find.
   With an AI client that supports agent skills, install the skill instead: the AI loads it by itself when a request is about IBM Aspera.
   The skill, in the [Agent Skills](https://agentskills.io) format, is the folder `skills/<%=cmd%>` of the gem (and of the GitHub repository): copy it to the skills folder of the AI client, for example:
 
