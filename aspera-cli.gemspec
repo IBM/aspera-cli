@@ -20,10 +20,11 @@ Gem::Specification.new do |spec|
   spec.version       = Aspera::Cli::VERSION
   spec.authors       = ['Laurent Martin']
   spec.email         = ['laurent.martin.aspera@fr.ibm.com']
-  spec.summary       = 'Execute actions using command line on IBM Aspera Server products: ' \
-    'Aspera on Cloud, Faspex, Shares, Node, Console, Orchestrator, High Speed Transfer Server'
-  spec.description   = 'Command line interface for IBM Aspera products: transfer files with FASP (ascp), send and receive packages, manage files and administer ' \
-    'Aspera on Cloud, Faspex, Shares, Node, Console, Orchestrator and High Speed Transfer Server. ' \
+  spec.summary       = 'The automation interface for IBM Aspera, from command line to AI agents: ' \
+    'transfers, packages, files and administration of Aspera on Cloud, Faspex, Shares, Node, Console, Orchestrator, High Speed Transfer Server'
+  spec.description   = 'Open-source toolkit to automate, integrate and operate IBM Aspera products: high-speed transfers with FASP (ascp), ' \
+    'send and receive packages, manage files and administer Aspera on Cloud, Faspex, Shares, Node, Console, Orchestrator and High Speed Transfer Server. ' \
+    'Structured output for scripts and pipelines, presets and secret vaults for multiple environments, analysis of ascp logs. ' \
     'Usable by AI assistants and AI agents: in a shell (see llms.txt and the agent skill), or through its MCP (Model Context Protocol) server.'
   spec.homepage      = Aspera::Cli::Info::SRC_URL
   spec.license       = 'Apache-2.0'

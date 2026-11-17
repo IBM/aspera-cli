@@ -29,6 +29,8 @@ common:
 
 ### Overview
 
+**The automation interface for IBM Aspera. From command line to AI agents.**
+
 The IBM Aspera Command Line Interface (<%=tool%>) is an enterprise-grade tool that provides comprehensive command-line access to IBM Aspera's suite of high-speed file transfer products and services.
 Designed for automation, scripting, and integration scenarios, <%=tool%> enables organizations to leverage Aspera's FASP technology within their existing workflows and DevOps pipelines.
 
@@ -51,6 +53,15 @@ Designed for automation, scripting, and integration scenarios, <%=tool%> enables
 
 **Configuration Management**
 : Persistent configuration presets, environment variables, and flexible option handling for streamlined operations.
+
+**Structured Output**
+: JSON, YAML, CSV or tables, with filtering and JMESPath queries, for scripts, schedulers and CI/CD pipelines.
+
+**Secrets Management**
+: Secrets kept in a vault (encrypted file, HashiCorp Vault, Keeper, 1Password, macOS keychain, Linux Secret Service), never in scripts.
+
+**AI Assistants and Agents**
+: AI assistants operate IBM Aspera products with <%=tool%>, in a shell (with `llms.txt` or the agent skill) or through the built-in MCP server, with restrictions and without seeing secrets.
 
 **Developer Friendly**
 : Comprehensive logging, debugging capabilities, and API exploration tools for development and troubleshooting.
@@ -4291,7 +4302,7 @@ It provides the following commands for `ascp` sub-command:
 #### Selection of `ascp` location for [`direct`](#agent-direct) agent
 
 Option: `sdk_folder` is used to specify the location of `ascp`.
-By default, <%=tool%> uses `ascp` from the Transfer SDK installed in its configuration folder (see `config ascp install`).
+By default, <%=tool%> uses `ascp` from the Transfer SDK installed in its configuration folder (see `transferd install`).
 
 To override and use an alternate `ascp` path, use option `sdk_folder` (`--sdk-folder=`).
 
@@ -10239,10 +10250,6 @@ Nevertheless, <%=tool%> may or may not have direct file system access to the acc
 <%=include_commands_for_plugin(:preview)%>
 
 ## Plugin: `mcp`: Model Context Protocol server
-
-> [!WARNING]
-> This plugin is **experimental**.
-> The interface, options, and behavior may change in future releases without notice.
 
 The `mcp` plugin starts a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that exposes <%=tool%> to AI assistants and LLM-based tools.
 The server registers a single tool, `execute_<%=cmd%>_command`, which executes any <%=tool%> command in-process and returns the result as text.

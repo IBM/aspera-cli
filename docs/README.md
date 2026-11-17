@@ -30,6 +30,8 @@ common:
 
 ### Overview
 
+**The automation interface for IBM Aspera. From command line to AI agents.**
+
 The IBM Aspera Command Line Interface (`ascli`) is an enterprise-grade tool that provides comprehensive command-line access to IBM Aspera's suite of high-speed file transfer products and services.
 Designed for automation, scripting, and integration scenarios, `ascli` enables organizations to leverage Aspera's FASP technology within their existing workflows and DevOps pipelines.
 
@@ -52,6 +54,15 @@ Designed for automation, scripting, and integration scenarios, `ascli` enables o
 
 **Configuration Management**
 : Persistent configuration presets, environment variables, and flexible option handling for streamlined operations.
+
+**Structured Output**
+: JSON, YAML, CSV or tables, with filtering and JMESPath queries, for scripts, schedulers and CI/CD pipelines.
+
+**Secrets Management**
+: Secrets kept in a vault (encrypted file, HashiCorp Vault, Keeper, 1Password, macOS keychain, Linux Secret Service), never in scripts.
+
+**AI Assistants and Agents**
+: AI assistants operate IBM Aspera products with `ascli`, in a shell (with `llms.txt` or the agent skill) or through the built-in MCP server, with restrictions and without seeing secrets.
 
 **Developer Friendly**
 : Comprehensive logging, debugging capabilities, and API exploration tools for development and troubleshooting.
@@ -3284,6 +3295,7 @@ wizard @: url=https://shares.example.com/path plugin=shares --username=test --pa
 wizard @: url=https://tst.example.com/path plugin=faspio override=yes --username=my_username --password=<PASSWORD>
 wizard @: url=https://tst.example.com/path plugin=httpgw
 wizard @: url=my_org plugin=aoc --username=my_user_email --private-key=@file:<PRIVATE_KEY_FILE> --use-generic-client=yes
+wizard @: url=my_org plugin=aoc override=yes --username=my_user_email --private-key=@file:<PRIVATE_KEY_FILE> --use-generic-client=no --interactive=yes
 wizard @: url=my_org plugin=aoc preset=my_preset --username=my_user_email --private-key=@file:<PRIVATE_KEY_FILE>
 ```
 
@@ -4565,7 +4577,7 @@ It provides the following commands for `ascp` sub-command:
 #### Selection of `ascp` location for [`direct`](#agent-direct) agent
 
 Option: `sdk_folder` is used to specify the location of `ascp`.
-By default, `ascli` uses `ascp` from the Transfer SDK installed in its configuration folder (see `config ascp install`).
+By default, `ascli` uses `ascp` from the Transfer SDK installed in its configuration folder (see `transferd install`).
 
 To override and use an alternate `ascp` path, use option `sdk_folder` (`--sdk-folder=`).
 
@@ -8601,6 +8613,7 @@ admin workspace dropbox %name:my_other_workspace list
 admin workspace list
 admin workspace shared_folder %name:my_other_workspace list
 admin workspace shared_folder %name:my_other_workspace member <ID> list
+admin workspace shared_folder %name:my_other_workspace node <ID> browse /
 admin workspace_membership list
 admin workspace_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
 automation workflow action <ID> create @: name=toto
@@ -8660,6 +8673,7 @@ packages receive <ID> --to-folder=.
 packages receive <ID> --to-folder=. /
 packages receive ALL --once-only=yes --to-folder=. --query.max=5 --lock-port=50101 --package-folder.fld.0=name --package-folder.fld.1=id --package-folder.opt=true
 packages receive ALL --once-only=yes --to-folder=. --query.max=5 --lock-port=50101 --query=@json:'{"dropbox_name":"my_shared_inbox_name","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false,"include_draft":false}' --ts=@json:'{"resume_policy":"sparse_csum","target_rate_kbps":50000}'
+packages receive ALL --url=<PUBLIC_LINK_RECV_FROM_AOC_USER> --to-folder=.
 packages receive INIT --once-only=yes --query.dropbox_name=my_shared_inbox_name
 packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"package title","recipients":["my_shared_inbox_meta"],"metadata":[{"input_type":"single-text","name":"Project Id","values":["123"]},{"input_type":"single-dropdown","name":"Type","values":["Opt2"]},{"input_type":"multiple-checkbox","name":"CheckThose","values":["Check1","Check2"]},{"input_type":"date","name":"Optional Date","values":["2021-01-13T15:02:00.000Z"]}]}' test_file.bin
 packages send --workspace=my_workspace_shared_inbox --validate-metadata=yes @json:'{"name":"package title","recipients":["my_shared_inbox_meta"],"metadata":{"Project Id":"456","Type":"Opt2","CheckThose":["Check1","Check2"],"Optional Date":"2021-01-13T15:02:00.000Z"}}' test_file.bin
@@ -9948,11 +9962,14 @@ packages receive --url=<PUBLIC_LINK_RECV_FR_USER> --to-folder=.
 packages receive --url=<PUBLIC_LINK_RECV_FR_USER> ALL --to-folder=.
 packages receive <ID> --to-folder=. --ts.content_protection_password=<PASSWORD>
 packages receive <ID> <F5_PACK_FIRST_FILE> --to-folder=. --ts.content_protection_password=<PASSWORD>
-packages receive ALL --once-only=yes --to-folder=. --query.max=5
+packages receive ALL --once-only=yes --to-folder=.
+packages receive ALL --once-only=yes --to-folder=. --query.max=5 --ts.content_protection_password=<PASSWORD>
 packages receive INIT --once-only=yes
 packages send --url=<PUBLIC_LINK_SEND_SHARED_BOX> @json:'{"title":"test title"}' test_file.bin
 packages send --url=<PUBLIC_LINK_SEND_TO_USER> @json:'{"title":"test title"}' test_file.bin
 packages send @: 'title=for shared inbox' recipients.0=my_shared_box_name metadata.Options=Opt1 'metadata.TextInput=example text' END test_file.bin
+packages send @: 'title=test ear' recipients.0.name=my_username END test_file.bin --ts.content_protection=encrypt --ts.content_protection_password=<PASSWORD>
+packages send @: 'title=test recipient types' recipients.0=my_username recipient_types.0=user END test_file.bin
 packages send @: 'title=test title' recipients.0.name=my_username END test_file.bin --ts.content_protection_password=<PASSWORD>
 packages send @json:'{"title":"test title","recipients":["my_workgroup"]}' test_file.bin
 packages send @json:'{"title":"test_webhook_ascli","recipients":["my_shared_box_name"]}' 'faux:///test1?1m'
@@ -11457,10 +11474,6 @@ trevents --once-only=yes --skip-types=office --log-level=info
 ```
 
 ## Plugin: `mcp`: Model Context Protocol server
-
-> [!WARNING]
-> This plugin is **experimental**.
-> The interface, options, and behavior may change in future releases without notice.
 
 The `mcp` plugin starts a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that exposes `ascli` to AI assistants and LLM-based tools.
 The server registers a single tool, `execute_ascli_command`, which executes any `ascli` command in-process and returns the result as text.
