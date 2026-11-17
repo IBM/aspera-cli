@@ -262,7 +262,11 @@ module Aspera
       # @param command_list [Array<Symbol>] accepted command names
       # @param aliases      [Hash, nil] command aliases
       # @return [Symbol] selected command
-      def get_next_command(command_list, aliases: nil); get_next_argument('command', accept_list: command_list, aliases: aliases); end
+      def get_next_command(command_list, aliases: nil)
+        command = get_next_argument('command', accept_list: command_list, aliases: aliases)
+        @command_line.mark_command
+        command
+      end
 
       # Check whether an option has already been declared in this manager
       # @param option_symbol [Symbol] name of the option
@@ -390,13 +394,14 @@ module Aspera
         result
       end
 
-      # Get all long options with a value from command line, used to generate a config in config file.
+      # Get long options with a value from command line, used to generate a config in config file.
       # They are marked as processed.
+      # @param after_command [Boolean] `true`: only options placed after the last command word
       # @return [Hash] options with value, dotted notation expanded
-      def unprocessed_options_with_value
+      def unprocessed_options_with_value(after_command: false)
         ensure_parsed
         result = {}
-        @command_line.each_long_option_with_value do |tok|
+        @command_line.each_long_option_with_value(after_command: after_command) do |tok|
           path = [tok.name, *tok.dot_path]
           Log.log.debug { "option #{path.join(DotContainer::SEPARATOR)}=#{tok.value}" }
           DotContainer.dotted_to_container(path, Parser.smart_convert(tok.value), result)

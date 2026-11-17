@@ -509,6 +509,8 @@ module Aspera
               options.get_next_argument(arg_spec.name.to_s, mandatory: false) if options.next_argument_in?([ctx[arg_spec.name].to_s, SpecialValues::ALL])
               next
             end
+            # Not given: not passed to the action, which uses its own default
+            next if arg_spec.omit_absent && options.command_or_arg_empty?
             lookup_cb = arg_spec.lookup if arg_spec.type.eql?(:identifier)
             current = ctx
             block =

@@ -269,7 +269,7 @@ The steps below create a preset, set it as the default for the server plugin, br
 - Create a preset with your server's connection details:
 
 ```shell
-ascli config preset update <SERVER_PRESET_NAME> --url=ssh://hsts.example.com:33001 --username=<USERNAME> --password=<PASSWORD>
+ascli config preset set <SERVER_PRESET_NAME> @: url=ssh://hsts.example.com:33001 username=<USERNAME> password=<PASSWORD>
 ```
 
 ```text
@@ -2818,7 +2818,7 @@ Features that execute code (own, or downloaded), load code, or write a file chos
 At other levels, an option is refused whatever the way it is set (command line, or preset), and a command is not listed by `config commands`.
 Values from the environment of the process (for example `ASCLI_HOME`) are not restricted: they are set by the one who starts the process, not by a client.
 A sub-option of an option is restricted in the same way: it is marked `x-security: low` in the schema of the option (for example, `file` of option `out`), and refused when given, by dot notation (`--out.file=...`) or in a `Hash`.
-A preset is used later, maybe at level `low`: at level `medium` and `high`, `config preset set`, `update` and `initialize` refuse such an option, and a value that contains an extended value that the level refuses (for example `@val:@ruby:...`).
+A preset is used later, maybe at level `low`: at level `medium` and `high`, `config preset set` refuses such an option, and a value that contains an extended value that the level refuses (for example `@val:@ruby:...`).
 
 Options are evaluated in the order of the command line: place `--security` before options that use extended values.
 
@@ -2960,61 +2960,56 @@ An [Option Preset](#option-preset) is a collection of options and their associat
 A named [Option Preset](#option-preset) can be modified directly using `ascli`, which will update the configuration file:
 
 ```text
-ascli config preset <show|delete|get|unset|set|initialize|update|ask> <PRESET_NAME> ...
+ascli config preset <show|delete|get|set|ask> <PRESET_NAME> ...
 ```
 
 The syntax of all `config preset` commands, including `list` and `overview`, is displayed with `ascli config commands config preset`.
 
-The command `initialize` allows setting several options at once, but it deletes an existing configuration instead of updating it, and expects a `Hash` [Extended Value](#extended-value-syntax).
+The command `set` merges values into the configuration, at one of three levels, depending on its arguments:
+
+| Arguments | Merged into | Example |
+| --------- | ----------- | ------- |
+| `<Hash>` | Presets, by name | `ascli config preset set @: demo_server.url=ssh://demo.asperasoft.com:33001 default.server=demo_server` |
+| `<preset_name> <Hash>` | Parameters of a preset | `ascli config preset set demo_server @: url=ssh://demo.asperasoft.com:33001 username=asperaweb` |
+| `<preset_name> <parameter_name> <value>` | One parameter of a preset | `ascli config preset set demo_server password <PASSWORD>` |
+
+The `Hash` is usually given with [dot-path](#positional-arguments-with-dot-path) (`@:`), or with `@json:`.
+Parameters have the names of options, without `--`, for example:
 
 ```shell
-ascli config preset initialize demo_server @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"<PASSWORD>","ts":{"precalculate_job_size":true}}'
+ascli config preset set demo_server @: url=ssh://demo.asperasoft.com:33001 username=asperaweb password=<PASSWORD> ts.precalculate_job_size=true
+ascli config preset set demo_server @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"<PASSWORD>","ts":{"precalculate_job_size":true}}'
 ```
 
-One can also use [positional arguments with dot-path](#positional-arguments-with-dot-path):
+A preset is created if needed.
+Values are **deep-merged** (as JSON Merge Patch, RFC 7396): parameters not given are kept, also in a nested `Hash`: for example, `@: out.level=data` keeps `out.format`.
+
+The value `@none:` (`null` in JSON) **removes** a key: a parameter, a key in a nested `Hash`, or a whole preset (with its default declarations):
 
 ```shell
-ascli config preset initialize demo_server @: url=ssh://demo.asperasoft.com:33001 username=asperaweb password=<PASSWORD> ts.precalculate_job_size=true
+ascli config preset set GLOBAL out.table.pivot @none:
+ascli config preset set demo_server @: username=@none: ts.precalculate_job_size=@none:
+ascli config preset set @: demo_server=@none:
 ```
 
-The command `update` creates an [Option Preset](#option-preset) from options provided on the command line, for example:
-
-```shell
-ascli config preset update demo_server --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=<PASSWORD> --ts=@json:'{"precalculate_job_size":true}'
-```
-
-This creates an [Option Preset](#option-preset) `demo_server` with all provided options.
-
-> [!NOTE]
-> `update` takes **ALL** options provided on the command line (starting with `--` with a value).
-
-The command `set` allows setting individual options in an [Option Preset](#option-preset):
-
-```text
-ascli config preset set <PRESET_NAME> <PARAMETER_NAME> <PARAMETER_VALUE>
-```
-
-Example:
-
-```shell
-ascli config preset set demo_server password <PASSWORD>
-```
-
-The parameter name supports **dot-notation** to set nested hash options.
-If an intermediate hash already exists, the new value is **deep-merged** into it (existing sibling keys are preserved).
+The parameter name of the third form supports **dot-notation** to set nested hash options:
 
 ```shell
 ascli config preset set GLOBAL out.table.pivot single
 ascli config preset set GLOBAL out.level data
 ```
 
-The parameter value is **automatically coerced** to its natural type: integers, floats and booleans (`true`/`yes`/`false`/`no`) are stored as native YAML types rather than strings.
+Values given on the command line (with `@:`, or the value of the third form) are **automatically coerced** to their natural type: integers, floats and booleans (`true`/`yes`/`false`/`no`) are stored as native YAML types rather than strings.
 
-To **delete** a key from a preset, pass `@none:` as the value (evaluates to `nil`):
+Options of the command line are not saved in the preset: they apply to the command `set` itself (for example `--log-level`).
+The section `config` of the configuration file cannot be changed.
 
-```shell
-ascli config preset set GLOBAL out.table.pivot @none:
-```
+> [!NOTE]
+> Commands `update`, `initialize` and `unset` are deprecated, and show the command to use instead:
+>
+> - `update <preset_name> --url=...` is replaced by `set <preset_name> @: url=...`. It takes only the options placed after `update`.
+> - `initialize <preset_name> <Hash>`, which replaces a preset, is replaced by `delete <preset_name>`, then `set <preset_name> <Hash>`.
+> - `unset <preset_name> <parameter_name>` is replaced by `set <preset_name> <parameter_name> @none:`.
 
 A full terminal based overview of the configuration can be displayed using:
 
@@ -3265,18 +3260,19 @@ options server --select=@json:'{"option":"--display"}' --fields=replacement
 plugins create my_command .
 plugins list
 preset delete conf_name
-preset initialize conf_name @json:'{"p1":"v1","p2":"v2"}'
 preset list
 preset overview
+preset set @: conf_name.p4=v4 conf_name_other.p1=v1
+preset set @: conf_name_other=@none:
 preset set GLOBAL sdk_folder 'product:IBM Aspera Connect'
 preset set GLOBAL vault @: default=local stores.local.type=file stores.local.file=/secure/vault_file
 preset set GLOBAL vault_password <PASSWORD>
 preset set GLOBAL version_check_days 0
+preset set conf_name @: p1=@none: p2.sub=v2 p3=v3
+preset set conf_name param @none:
 preset set conf_name param value
 preset set default shares conf_name
 preset show conf_name
-preset unset conf_name param
-preset update conf_name --p1=v1 --p2=v2
 proxy_check --fpac=@file:proxy.pac https://eudemo.asperademo.com --proxy-credentials=@list:,user,pass
 pubkey @file:my_key
 remote_certificate chain https://node.example.com/path
@@ -3340,10 +3336,10 @@ ascli config preset set cli_default interactive no
 ascli config preset set default config cli_default
 ```
 
-An [Option Preset](#option-preset) value can be removed with `unset`:
+An [Option Preset](#option-preset) value can be removed with `@none:`:
 
 ```shell
-ascli config preset unset cli_default interactive
+ascli config preset set cli_default interactive @none:
 ```
 
 Example: Define options using command line:
@@ -3512,13 +3508,13 @@ ascli config preset set shares06 password <PASSWORD>
 This can also be done with one single command:
 
 ```shell
-ascli config preset initialize shares06 @json:'{"url":"https://10.25.0.6","username":"john","password":"<PASSWORD>"}'
+ascli config preset set shares06 @json:'{"url":"https://10.25.0.6","username":"john","password":"<PASSWORD>"}'
 ```
 
 Or:
 
 ```shell
-ascli config preset update shares06 --url=https://10.25.0.6 --username=john --password=<PASSWORD>
+ascli config preset set shares06 @: url=https://10.25.0.6 username=john password=<PASSWORD>
 ```
 
 - Define this [Option Preset](#option-preset) as the default [Option Preset](#option-preset) for the specified plugin (`shares`)
@@ -3892,8 +3888,8 @@ For example, a HashiCorp Vault server with AppRole authentication, limited to se
 References in a preset: to field `password` of secret `aspera/faspex` in mount `kv`, and to field `password` (default field of type `file`) of label `<VAULT_LABEL>` in the encrypted file:
 
 ```shell
-ascli config preset update <PRESET_NAME> --url=... --username=... --password=@val:@vault://corp/kv/aspera/faspex#password
-ascli config preset update <PRESET_NAME> --url=... --username=... --password=@val:@vault://local/<VAULT_LABEL>
+ascli config preset set <PRESET_NAME> @: url=... username=... password=@val:@vault://corp/kv/aspera/faspex#password
+ascli config preset set <PRESET_NAME> @: url=... username=... password=@val:@vault://local/<VAULT_LABEL>
 ```
 
 To check that a reference can be read, without its value (store, version, time of update):
@@ -3914,13 +3910,13 @@ A password can be saved in clear in an [Option Preset](#option-preset) together 
 Example:
 
 ```shell
-ascli config preset update <PRESET_NAME> --url=... --username=... --password=...
+ascli config preset set <PRESET_NAME> @: url=... username=... password=...
 ```
 
 For more secure storage, first create a vault entry (see [Vault: Operations](#vault-operations)), then refer to it in the preset:
 
 ```shell
-ascli config preset update <PRESET_NAME> --url=... --username=... --password=@val:@vault:<VAULT_LABEL>.password
+ascli config preset set <PRESET_NAME> @: url=... username=... password=@val:@vault:<VAULT_LABEL>.password
 ```
 
 > [!NOTE]
@@ -3939,7 +3935,7 @@ This scans all presets (or a single one if a name is provided) and, for every op
 ascli config preset secure <PRESET_NAME>
 ```
 
-When a vault is configured, the `update`, `set`, and `ask` preset commands automatically move secret values (options ending with `password` or `secret`) into the vault as they are written, so no manual migration is needed.
+When a vault is configured, the `set` and `ask` preset commands automatically move secret values (options ending with `password` or `secret`) into the vault as they are written, so no manual migration is needed.
 To disable this behavior for a single command, pass `--vault=@none:`.
 
 ### Private Key
@@ -7116,7 +7112,7 @@ updated: <AOC_ORG>
 > [!NOTE]
 > In above example, replace `https://<ORG_NAME>.ibmaspera.com` with your actual AoC URL.
 
-(This can also be done in one line using the command `config preset update <AOC_ORG> --url=...`)
+(This can also be done in one line using the command `config preset set <AOC_ORG> @: url=...`)
 
 Define this [Option Preset](#option-preset) as default configuration for the `aoc` plugin:
 
@@ -7230,7 +7226,7 @@ To activate default use of JWT authentication for `ascli` using the [Option Pres
 Execute:
 
 ```shell
-ascli config preset update <AOC_ORG> --auth=jwt --private-key=@val:@file:~/.aspera/ascli/<PKEY_NAME> --username=someuser@example.com
+ascli config preset set <AOC_ORG> @: auth=jwt private_key=@val:@file:~/.aspera/ascli/<PKEY_NAME> username=someuser@example.com
 ```
 
 > [!NOTE]
@@ -8761,7 +8757,7 @@ Then, to register the key by default for the `ats` plugin, create a preset.
 Execute:
 
 ```shell
-ascli config preset update <PRESET_NAME> --ibm-api-key=<API_KEY>
+ascli config preset set <PRESET_NAME> @: ibm_api_key=<API_KEY>
 ```
 
 ```shell
@@ -8777,7 +8773,7 @@ aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
 ```
 
 ```shell
-ascli config preset update <PRESET_NAME> --instance=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
+ascli config preset set <PRESET_NAME> @: instance=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
 ```
 
 ```shell
@@ -8794,7 +8790,7 @@ ascli ats api_key create --out.secrets=yes
 ```
 
 ```shell
-ascli config preset update <PRESET_NAME> --ats-key=<ATS_KEY> --ats-secret=<ATS_SECRET>
+ascli config preset set <PRESET_NAME> @: ats_key=<ATS_KEY> ats_secret=<ATS_SECRET>
 ```
 
 ### ATS Access key creation parameters
@@ -9621,7 +9617,7 @@ Identify the region and the endpoint URL will be `https://otlp-[region]-saas.ins
 For convenience, those parameters can be provided in a preset, for example, named `otel_default`.
 
 ```shell
-ascli config preset initialize otel_default @json:'{"url":"https://otlp-orange-saas.instana.io:4318","key":"<KEY>","interval":1.1}'
+ascli config preset set otel_default @json:'{"url":"https://otlp-orange-saas.instana.io:4318","key":"<KEY>","interval":1.1}'
 ```
 
 Then it is invoked like this (assuming a default node is configured):
@@ -9858,7 +9854,7 @@ Typically, users create a preset so they don't have to enter these options each 
 Example:
 
 ```shell
-ascli config preset update <F5_PRESET> --auth=jwt --client-id=<CLIENT_ID> --client-secret=<SECRET> --username=<USERNAME> --private-key=@file:.../path/to/key.pem
+ascli config preset set <F5_PRESET> @: auth=jwt client_id=<CLIENT_ID> client_secret=<SECRET> username=<USERNAME> private_key=@file:.../path/to/key.pem
 
 ascli config preset set default faspex5 <F5_PRESET>
 
@@ -9909,7 +9905,7 @@ For `boot` method: (will be removed in future)
 Use this token as password and use `--auth=boot`.
 
 ```shell
-ascli config preset update f5boot --url=https://localhost/aspera/faspex --auth=boot --password=<TOKEN>
+ascli config preset set f5boot @: url=https://localhost/aspera/faspex auth=boot password=<TOKEN>
 ```
 
 ### Tested commands for `faspex5`
@@ -10916,7 +10912,7 @@ If you already have these parameters, provide the following options to `ascli`:
 Example: Create a Default Configuration
 
 ```shell
-ascli config preset update <COS_PRESET_NAME> --bucket=mybucket --endpoint=https://s3.us-east.cloud-object-storage.appdomain.cloud --apikey=<API_KEY> --crn=<CRN>
+ascli config preset set <COS_PRESET_NAME> @: bucket=mybucket endpoint=https://s3.us-east.cloud-object-storage.appdomain.cloud apikey=<API_KEY> crn=<CRN>
 ascli config preset set default cos <COS_PRESET_NAME>
 ```
 
@@ -10986,7 +10982,7 @@ The required options for this method are:
 Example: Create a Default Configuration
 
 ```shell
-ascli config preset update <COS_PRESET_NAME> --bucket=mybucket --service-credentials=@val:@json:@file:~/service_creds.json --region=us-south
+ascli config preset set <COS_PRESET_NAME> @: bucket=mybucket service_credentials=@val:@json:@file:~/service_creds.json region=us-south
 ascli config preset set default cos <COS_PRESET_NAME>
 ```
 
@@ -11285,7 +11281,7 @@ For example:
 ```shell
 su -s /bin/bash - xfer
 
-ascli config preset update <PREVIEW_PRESET_NAME> --url=https://localhost:9092 --username=<ACCESS_KEY> --password=<SECRET> --skip-types=office --lock-port=12346
+ascli config preset set <PREVIEW_PRESET_NAME> @: url=https://localhost:9092 username=<ACCESS_KEY> password=<SECRET> skip_types=office lock_port=12346
 
 ascli config preset set default preview <PREVIEW_PRESET_NAME>
 ```
@@ -12607,13 +12603,13 @@ ascli config preset set smtp_google password <PASSWORD>
 or
 
 ```shell
-ascli config preset initialize smtp_google @json:'{"server":"smtp.google.com","username":"john@gmail.com","password":"<PASSWORD>"}'
+ascli config preset set smtp_google @json:'{"server":"smtp.google.com","username":"john@gmail.com","password":"<PASSWORD>"}'
 ```
 
 or
 
 ```shell
-ascli config preset update smtp_google --server=smtp.google.com --username=john@gmail.com --password=<PASSWORD>
+ascli config preset set smtp_google @: server=smtp.google.com username=john@gmail.com password=<PASSWORD>
 ```
 
 Set this configuration as global default, for instance:

@@ -33,6 +33,8 @@ module Aspera
     #                                                     `:smart`: `true`/`yes`/`false`/`no` and numbers are converted, else extended value (as dotted options).
     #                                                     `:none`: the string as typed, not evaluated (e.g. `@env:`).
     # @!attribute complete    [Symbol, nil]               Values proposed by shell completion, one of `Complete::KINDS` (e.g. `:file`)
+    # @!attribute omit_absent [Boolean]                   For an optional argument: when not given, it is not passed to the action,
+    #                                                     so that the action (with its own default) can tell it from a value `nil` (`@none:`)
     # Ways to evaluate the value of an argument, see `ArgumentSpec#evaluate`
     EVALUATIONS = %i[extended smart none].freeze
 
@@ -50,6 +52,7 @@ module Aspera
       :interactive,
       :evaluate,
       :complete,
+      :omit_absent,
       keyword_init: true
     ) do
       def initialize(**kwargs)
@@ -58,7 +61,9 @@ module Aspera
         kwargs[:bulk]         = false if kwargs[:bulk].nil?
         kwargs[:interactive]  = false if kwargs[:interactive].nil?
         kwargs[:evaluate]     = :extended if kwargs[:evaluate].nil?
-        kwargs[:type]         = String unless kwargs.key?(:type) || kwargs[:allowed]
+        kwargs[:omit_absent]  = false if kwargs[:omit_absent].nil?
+        raise ArgumentError, "omit_absent: only for an optional argument: #{kwargs[:name]}" if kwargs[:omit_absent] && kwargs[:mandatory]
+        kwargs[:type] = String unless kwargs.key?(:type) || kwargs[:allowed]
         raise ArgumentError, "evaluate: #{kwargs[:evaluate].inspect}, expecting one of: #{EVALUATIONS.join(', ')}" unless EVALUATIONS.include?(kwargs[:evaluate])
         super
       end

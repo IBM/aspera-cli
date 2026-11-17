@@ -5,9 +5,13 @@
 
 require_relative '../assert'
 require_relative '../dot_container'
+require_relative '../hash_ext'
 require_relative '../secret/hider'
 require_relative 'security'
 require_relative 'preset_manager'
+require_relative 'deprecation'
+require_relative 'info'
+require 'json'
 
 module Aspera
   module Cli
@@ -19,6 +23,10 @@ module Aspera
       CONF_OVERVIEW_KEYS = %w[preset parameter value].freeze
       # Keys of the criteria for preset lookup
       LOOKUP_KEYS = %w[url username].freeze
+      # Last released version without deprecation of preset commands `update`, `initialize` and `unset`
+      PRESET_DEPRECATED_LAST = '4.28.0'
+      # Default of an argument not given (`omit_absent`), different from `nil` (`@none:`)
+      NOT_GIVEN = Object.new.freeze
 
       def action_preset_overview(**)
         # Secrets hidden by key name here: the key becomes the value of column `parameter`
@@ -118,15 +126,8 @@ module Aspera
 
       def action_preset_delete(name:, **)
         name = preset_name(name)
-        cp = presets.config_presets
-        raise Cli::BadArgument, "no such preset: #{name}" unless cp.key?(name)
-        cp.delete(name)
-        # Remove default declarations referring to the deleted preset
-        defaults = cp[PresetManager::Key::DEFAULTS]
-        defaults&.select { |_, preset_name| preset_name.eql?(name) }&.each_key do |plugin|
-          defaults.delete(plugin)
-          Log.log.info { "Removed: #{PresetManager::Key::DEFAULTS}: #{plugin}" }
-        end
+        raise Cli::BadArgument, "no such preset: #{name}" unless presets.config_presets.key?(name)
+        delete_preset(name)
         Result::Status.new("Deleted: #{name}")
       end
 
@@ -147,6 +148,7 @@ module Aspera
       end
 
       def action_preset_unset(name:, param_name:, **)
+        Log.log.warn { "Command preset unset is #{Deprecation.new(last: PRESET_DEPRECATED_LAST, message: "use: #{Info::CMD_NAME} config preset set #{shell_word(name)} #{shell_word(param_name)} @none:")}" }
         name = preset_name(name)
         cp = presets.config_presets
         raise Cli::BadArgument, "no such preset: #{name}" unless cp.key?(name)
@@ -154,20 +156,40 @@ module Aspera
         Result::Status.new("Removed: #{name}: #{param_name}")
       end
 
-      def action_preset_set(name:, param_name:, param_value:, **)
+      # Merge into presets (JSON Merge Patch: a value `nil` removes the key), with one of:
+      # - `name` is a Hash: presets by name (a preset `nil` is deleted)
+      # - `name` and `param_name` is a Hash: parameters of the preset
+      # - `name`, `param_name` and `param_value`: one parameter (dot-path), asked if not given
+      # @param name        [String, Hash] Preset name, or presets
+      # @param param_name  [String, Hash] Parameter name (dot-path), or parameters, not given for presets
+      # @param param_value [Object]       Value of the parameter, `nil` removes it
+      def action_preset_set(name:, param_name: NOT_GIVEN, param_value: NOT_GIVEN, **)
+        if name.is_a?(Hash)
+          raise Cli::BadArgument, 'set <presets>: no other argument expected' unless param_name.equal?(NOT_GIVEN)
+          name.each { |preset, values| merge_preset(preset, values) }
+          return Result::Status.new("Updated: #{name.keys.join(', ')}")
+        end
+        raise Cli::BadArgument, 'set <name>: expecting <Hash> of parameters, or <param> <value>' if param_name.equal?(NOT_GIVEN)
+        if param_name.is_a?(Hash)
+          raise Cli::BadArgument, 'set <name> <Hash>: no other argument expected' unless param_value.equal?(NOT_GIVEN)
+          merge_preset(name, param_name)
+          return Result::Status.new("Updated: #{preset_name(name)}")
+        end
+        param_value = options.get_next_argument('param_value', validation: nil, evaluate: :smart) if param_value.equal?(NOT_GIVEN)
         name = preset_name(name, create: true)
         # Key names are not secrets: converted, or split with dot-notation, a secret would not be hidden in results
         Security.instance.check_secret_processing('preset parameter name', hint: 'give a name that is not a secret') do
           Secret::Hider.instance.contains_secret?(param_name)
         end
         param_name = Parser.option_line_to_name(param_name)
-        check_preset_entry(param_name, param_value)
+        check_preset_entry(param_name, param_value) unless param_value.nil?
         presets.set_key(name, param_name, param_value)
         secure_preset_option(presets.config_presets[name], name, param_name)
         Result::Nothing.new
       end
 
       def action_preset_initialize(name:, preset:, **)
+        Log.log.warn { "Command preset initialize is #{Deprecation.new(last: PRESET_DEPRECATED_LAST, message: "use: #{Info::CMD_NAME} config preset delete #{shell_word(name)}, then: #{Info::CMD_NAME} config preset set #{shell_word(name)} <Hash>")}" }
         name = preset_name(name, create: true)
         cp = presets.config_presets
         Log.log.warn { "configuration already exists: #{name}, overwriting" } if cp.key?(name)
@@ -177,16 +199,12 @@ module Aspera
         Result::Status.new("Initialized: #{name}")
       end
 
+      # Deprecated: options placed after `update` are merged into the preset.
       def action_preset_update(name:, **)
-        name = preset_name(name, create: true)
-        unprocessed_options = options.unprocessed_options_with_value
-        Log.dump(:opts, unprocessed_options)
-        unprocessed_options.each { |k, v| check_preset_entry(k, v) }
-        cp = presets.config_presets
-        cp[name] ||= {}
-        cp[name].merge!(unprocessed_options)
-        unprocessed_options.each_key { |k| secure_preset_option(cp[name], name, k) }
-        Result::Status.new("Updated: #{name}")
+        values = options.unprocessed_options_with_value(after_command: true)
+        Log.log.warn { "Command preset update is #{Deprecation.new(last: PRESET_DEPRECATED_LAST, message: "use: #{set_command_hint(name, values)}")}" }
+        merge_preset(name, values)
+        Result::Status.new("Updated: #{preset_name(name)}")
       end
 
       def action_preset_ask(name:, option_names:, **)
@@ -202,6 +220,78 @@ module Aspera
           end
         end
         Result::Status.new("Updated: #{name}")
+      end
+
+      private
+
+      # Merge parameters into a preset (JSON Merge Patch), or delete it.
+      # @param name   [String]    Preset name
+      # @param values [Hash, nil] Parameters: option names, a value `nil` removes the parameter. `nil`: delete the preset.
+      def merge_preset(name, values)
+        raise Cli::BadArgument, "section #{PresetManager::Key::CONFIG} is managed by #{Info::CMD_NAME}" if name.to_s.eql?(PresetManager::Key::CONFIG)
+        name = preset_name(name.to_s, create: !values.nil?)
+        return delete_preset(name) if values.nil?
+        Aspera.assert_type(values, Hash, type: Cli::BadArgument) { "parameters of preset #{name}" }
+        values = values.transform_keys { |k| Parser.option_line_to_name(k.to_s) }
+        Log.dump(:values, values)
+        values.each { |k, v| check_preset_entry(k, v) unless v.nil? }
+        cp = presets.config_presets
+        cp[name] ||= {}
+        Aspera.assert_type(cp[name], Hash, type: Cli::BadArgument) { "preset #{name}" }
+        merge_patch!(cp[name], PresetManager.stringify_secrets(nil, values))
+        values.each { |k, v| secure_preset_option(cp[name], name, k) unless v.nil? }
+        nil
+      end
+
+      # Merge `patch` into `target` (RFC 7396 JSON Merge Patch): a value `nil` removes the key, a `Hash` is merged.
+      # @param target [Hash] Modified in place
+      # @param patch  [Hash]
+      # @return [Hash] target
+      def merge_patch!(target, patch)
+        patch.each do |key, value|
+          if value.nil? then target.delete(key)
+          elsif value.is_a?(Hash) then target[key] = merge_patch!(target[key].is_a?(Hash) ? target[key] : {}, value)
+          else target[key] = value
+          end
+        end
+        target
+      end
+
+      # Delete a preset, and default declarations referring to it.
+      # @param name [String] Preset name
+      def delete_preset(name)
+        cp = presets.config_presets
+        cp.delete(name)
+        defaults = cp[PresetManager::Key::DEFAULTS]
+        defaults&.select { |_, preset_name| preset_name.eql?(name) }&.each_key do |plugin|
+          defaults.delete(plugin)
+          Log.log.info { "Removed: #{PresetManager::Key::DEFAULTS}: #{plugin}" }
+        end
+        nil
+      end
+
+      # Command to use instead of the deprecated `preset update`, without secret values.
+      # Secret parameters are named after the command: in logs, the value of a secret parameter is hidden.
+      # @param name   [String] Preset name
+      # @param values [Hash]   Values taken from options
+      # @return [String] e.g. `ascli config preset set p1 @: url=https://example.com username=bob, and secret parameters: password`
+      def set_command_hint(name, values)
+        secrets, others = DotContainer.new(values).to_dotted.partition do |path, value|
+          Secret::Hider.instance.secret?(path.to_s.split(DotContainer::SEPARATOR).last, value)
+        end
+        assignments = others.map do |path, value|
+          value = "@json:#{JSON.generate(value)}" if value.is_a?(Array) || value.is_a?(Hash)
+          shell_word("#{path}=#{value}")
+        end
+        hint = [Info::CMD_NAME, 'config', 'preset', 'set', shell_word(name), '@:', *assignments].join(' ')
+        hint = "#{hint}, and secret parameters (e.g. with @secret: or @val:@vault:): #{secrets.map(&:first).join(', ')}" unless secrets.empty?
+        hint
+      end
+
+      # @param word [String] Word of a command line
+      # @return [String] Word, quoted for a shell only if needed
+      def shell_word(word)
+        word.match?(%r{\A[\w@:/.,=+%-]+\z}) ? word : "'#{word.gsub("'") { %q('\\'') }}'"
       end
     end
   end

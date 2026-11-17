@@ -119,6 +119,10 @@ module Aspera
         @current_option = nil
         # When set, only positional arguments after this token are available
         @arguments_after = nil
+        # Last positional token consumed by `shift_arguments`
+        @last_shifted = nil
+        # Token of the last command word (set by `mark_command`)
+        @command_token = nil
         process_options = true
         argv.each do |value|
           if process_options && value.eql?(Option::STOP)
@@ -208,7 +212,16 @@ module Aspera
           else Aspera.error_unexpected_value(multiple) { 'multiple' }
           end
         selected.each { |t| t.consumed = true }
+        @last_shifted = selected.last unless selected.empty?
         selected.map(&:value)
+      end
+
+      # Remember the last consumed positional token as the current command word.
+      # Options placed after it can then be selected with `each_long_option_with_value(after_command: true)`.
+      # @return [nil]
+      def mark_command
+        @command_token = @last_shifted
+        nil
       end
 
       # Add an argument before the available positional arguments
@@ -219,9 +232,11 @@ module Aspera
       end
 
       # Consume all long options with a value, whether applied or not.
+      # @param after_command [Boolean] `true`: only options placed after the last command word (see `mark_command`)
       # @yieldparam tok [Option] long option token with a value
-      def each_long_option_with_value
-        @tokens.each do |tok|
+      def each_long_option_with_value(after_command: false)
+        start = after_command && @command_token ? @tokens.index { |t| t.equal?(@command_token) } + 1 : 0
+        @tokens.drop(start).each do |tok|
           next unless tok.is_a?(Option) && tok.short_char.nil? && !tok.value.nil?
           yield(tok)
           tok.consumed = true

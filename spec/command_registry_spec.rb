@@ -522,5 +522,14 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
       expect(a.mandatory).to(be(false))
       expect(a.default).to(eq('foo'))
     end
+
+    it 'defaults omit_absent to false, and accepts it for an optional argument' do
+      expect(Aspera::Cli::ArgumentSpec.new(name: :x).omit_absent).to(be(false))
+      expect(Aspera::Cli::ArgumentSpec.new(name: :x, mandatory: false, omit_absent: true).omit_absent).to(be(true))
+    end
+
+    it 'refuses omit_absent for a mandatory argument' do
+      expect { Aspera::Cli::ArgumentSpec.new(name: :x, omit_absent: true) }.to(raise_error(ArgumentError, /omit_absent/))
+    end
   end
 end

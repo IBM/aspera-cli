@@ -65,6 +65,7 @@ Highlights: `ascli` as a tool for AI assistants: a hardened `mcp server`, no lon
 
 ### Issues Fixed
 
+* `config preset update`: saved all the options of the command line in the preset, also those placed before `update`, for example `--home`, `--config-file`, `--log-level` or `--format`. With the deprecated form, only the options placed after `update` are saved.
 * `config initdemo`: the demo server preset allows the SSH host key `ssh-rsa` (option `ssh_options`), the only one offered by the demo server, so that `server browse` and other file operations work (transfers already worked). A preset created by an earlier version is not modified: recreate it, or add `--ssh-options=@json:'{"host_key":["ssh-rsa"]}'`.
 * Gem dependency: excludes `regexp_parser` 2.13.2, with which `json_schemer` fails to load (`undefined method 'implements'`).
 
@@ -117,6 +118,7 @@ Highlights: `ascli` as a tool for AI assistants: a hardened `mcp server`, no lon
   * `detect <url> [<plugin>]` is now `detect @: url=<url> plugin=<plugin>`. `url` is still asked if not given.
   * `wizard <url> [<plugin> [<preset>]]` is now `wizard @: url=<url> plugin=<plugin> preset=<preset>`. `url` is still asked if not given. Options `--override` and `--default` are replaced by keys `override` and `default` of the `Hash`. Options of the plugin (`--username`, `--password`, `--private-key`, `--client-id`, `--use-generic-client`...) are unchanged. Option `--key-path` is removed: give the key itself with `--private-key=@file:<path>`. The wizard still uses the default key, or generates one, if `--private-key` is empty.
   * `preset lookup --url=<url> --username=<user>` is now `preset lookup @: url=<url> username=<user>`. Options `--url` and `--username` are no longer used by this command.
+  * `preset set` merges into the configuration (JSON Merge Patch: deep merge, `@none:` removes a key) at one of three levels: `set <Hash>` (presets by name, e.g. `set @: p1.url=https://example.com default.server=p1`, `set @: p1=@none:` deletes preset `p1`), `set <name> <Hash>` (parameters of a preset, e.g. `set p1 @: url=https://example.com username=bob`), or `set <name> <param> <value>` (unchanged). Options of the command line are not saved in the preset. Commands `update`, `initialize` and `unset` are deprecated, and show the command to use: `update <name> --url=...` is `set <name> @: url=...` (it now saves only the options placed after `update`), `initialize <name> <Hash>` is `delete <name>` then `set <name> <Hash>`, `unset <name> <param>` is `set <name> <param> @none:`.
 * `config completion`: completion scripts saved in a file must be saved again (see manual). Keys of an option are proposed with a trailing `=` or `.`.
 * **library**: Modules about secrets are in `Aspera::Secret`: `SecretHider` is now `Secret::Hider`, `SecretStrength` is now `Secret::Strength`, `Keychain` is now `Secret::Store`. `Secret::Store::Factory.create` takes only the parameters of the store, and `Factory::LIST` is replaced by `Factory.types`.
 

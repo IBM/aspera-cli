@@ -5414,9 +5414,29 @@ conf_pset_set:
     - conf_name
     - param
     - value
-conf_pset_unset:
+conf_pset_set_remove:
+  description: "Remove a parameter with @none:"
+  depends_on:
+    - conf_pset_set
   tags:
     - tmp_conf
+  args:
+    - config
+    - preset
+    - set
+    - conf_name
+    - param
+    - "@none:"
+  post: |
+    preset = YAML.load_file(PATH_TEST_CONFIG)['conf_name']
+    raise "param should be removed: #{preset}" if preset.key?('param')
+conf_pset_unset:
+  description: "Deprecated, replaced by set <name> <param> @none:"
+  depends_on:
+    - conf_pset_set
+  tags:
+    - tmp_conf
+    - no_doc
   args:
     - config
     - preset
@@ -5460,24 +5480,80 @@ conf_pset_delete:
     - delete
     - conf_name
 conf_pset_initialize:
+  description: Deprecated, replaced by delete, then set <name> <Hash>
   tags:
     - tmp_conf
+    - no_doc
   args:
     - config
     - preset
     - initialize
     - conf_name
     - '@json:{"p1":"v1","p2":"v2"}'
-conf_pset_update:
+conf_pset_set_hash:
+  description: Merge parameters into the preset of conf_pset_initialize, options of the command line (e.g. --home) are not saved
+  depends_on:
+    - conf_pset_initialize
   tags:
     - tmp_conf
   args:
     - config
     - preset
-    - update
+    - set
     - conf_name
+    - "@:"
+    - "p1=@none:"
+    - p2.sub=v2
+    - p3=v3
+  post: |
+    preset = YAML.load_file(PATH_TEST_CONFIG)['conf_name']
+    raise "unexpected preset: #{preset}" unless preset.eql?({'p2' => {'sub' => 'v2'}, 'p3' => 'v3'})
+conf_pset_set_presets:
+  description: Merge into several presets
+  depends_on:
+    - conf_pset_set_hash
+  tags:
+    - tmp_conf
+  args:
+    - config
+    - preset
+    - set
+    - "@:"
+    - conf_name.p4=v4
+    - conf_name_other.p1=v1
+  post: |
+    config = YAML.load_file(PATH_TEST_CONFIG)
+    raise "unexpected preset: #{config['conf_name']}" unless config['conf_name'].eql?({'p2' => {'sub' => 'v2'}, 'p3' => 'v3', 'p4' => 'v4'})
+    raise "unexpected preset: #{config['conf_name_other']}" unless config['conf_name_other'].eql?({'p1' => 'v1'})
+conf_pset_set_presets_delete:
+  description: "Delete a preset with @none:"
+  depends_on:
+    - conf_pset_set_presets
+  tags:
+    - tmp_conf
+  args:
+    - config
+    - preset
+    - set
+    - "@:"
+    - "conf_name_other=@none:"
+  post: |
+    raise 'conf_name_other should be deleted' if YAML.load_file(PATH_TEST_CONFIG).key?('conf_name_other')
+conf_pset_update_deprecated:
+  description: Deprecated form with options, only those after command update are saved
+  tags:
+    - tmp_conf
+    - no_doc
+  args:
+    - --out.level=data
+    - config
+    - preset
+    - update
+    - conf_name_deprecated
     - --p1=v1
-    - --p2=v2
+  post: |
+    preset = YAML.load_file(PATH_TEST_CONFIG)['conf_name_deprecated']
+    raise "unexpected preset: #{preset}" unless preset.eql?({'p1' => 'v1'})
 conf_open:
   description: open configuration file in text editor
   tags:
@@ -5975,7 +6051,7 @@ conf_preset_secure:
     - secure
     - my_preset
 conf_preset_update_auto_secure:
-  description: When vault is configured, preset update auto-moves secrets to the vault
+  description: When vault is configured, preset set auto-moves secrets to the vault
   depends_on:
     - conf_vault_file_password
   tags:
@@ -5985,17 +6061,18 @@ conf_preset_update_auto_secure:
   args:
     - config
     - preset
-    - update
+    - set
     - auto_secure_test
-    - --password=$(secret :stored_password)
-    - --username=alice
+    - "@:"
+    - password=$(secret :stored_password)
+    - username=alice
   post: |
     config = YAML.load_file(PATH_TEST_CONFIG)
     preset = config['auto_secure_test']
     raise "password should be a @vault: reference, got: #{preset['password']}" unless preset['password'].start_with?('@vault:')
     raise "username should remain in clear, got: #{preset['username']}" unless preset['username'] == 'alice'
 conf_preset_update_vault_none:
-  description: With --vault=@none:, preset update keeps secrets in clear despite vault in global preset
+  description: "With --vault=@none:, preset set keeps secrets in clear despite vault in global preset"
   depends_on:
     - conf_vault_file_password
   tags:
@@ -6007,9 +6084,10 @@ conf_preset_update_vault_none:
     - "--vault=@none:"
     - config
     - preset
-    - update
+    - set
     - vault_none_test
-    - --password=$(secret :stored_password)
+    - "@:"
+    - password=$(secret :stored_password)
   post: |
     config = YAML.load_file(PATH_TEST_CONFIG)
     preset = config['vault_none_test']

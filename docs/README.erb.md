@@ -268,7 +268,7 @@ The steps below create a preset, set it as the default for the server plugin, br
 - Create a preset with your server's connection details:
 
 ```shell
-<%=cmd%> config preset update <%=ph :server_preset_name%> --url=ssh://hsts.example.com:33001 --username=<%=ph :username%> --password=<%=ph :password%>
+<%=cmd%> config preset set <%=ph :server_preset_name%> @: url=ssh://hsts.example.com:33001 username=<%=ph :username%> password=<%=ph :password%>
 ```
 
 ```text
@@ -2744,7 +2744,7 @@ Features that execute code (own, or downloaded), load code, or write a file chos
 At other levels, an option is refused whatever the way it is set (command line, or preset), and a command is not listed by `config commands`.
 Values from the environment of the process (for example `<%=opt_env :home%>`) are not restricted: they are set by the one who starts the process, not by a client.
 A sub-option of an option is restricted in the same way: it is marked `x-security: low` in the schema of the option (for example, `file` of option `out`), and refused when given, by dot notation (`--out.file=...`) or in a `Hash`.
-A preset is used later, maybe at level `low`: at level `medium` and `high`, `config preset set`, `update` and `initialize` refuse such an option, and a value that contains an extended value that the level refuses (for example `@val:@ruby:...`).
+A preset is used later, maybe at level `low`: at level `medium` and `high`, `config preset set` refuses such an option, and a value that contains an extended value that the level refuses (for example `@val:@ruby:...`).
 
 Options are evaluated in the order of the command line: place `--security` before options that use extended values.
 
@@ -2886,61 +2886,56 @@ An [Option Preset](#option-preset) is a collection of options and their associat
 A named [Option Preset](#option-preset) can be modified directly using <%=tool%>, which will update the configuration file:
 
 ```text
-<%=cmd%> config preset <show|delete|get|unset|set|initialize|update|ask> <%=ph :preset_name%> ...
+<%=cmd%> config preset <show|delete|get|set|ask> <%=ph :preset_name%> ...
 ```
 
 The syntax of all `config preset` commands, including `list` and `overview`, is displayed with `<%=cmd%> config commands config preset`.
 
-The command `initialize` allows setting several options at once, but it deletes an existing configuration instead of updating it, and expects a `Hash` [Extended Value](#extended-value-syntax).
+The command `set` merges values into the configuration, at one of three levels, depending on its arguments:
+
+| Arguments | Merged into | Example |
+| --------- | ----------- | ------- |
+| `<Hash>` | Presets, by name | `<%=cmd%> config preset set @: demo_server.url=ssh://demo.asperasoft.com:33001 default.server=demo_server` |
+| `<preset_name> <Hash>` | Parameters of a preset | `<%=cmd%> config preset set demo_server @: url=ssh://demo.asperasoft.com:33001 username=asperaweb` |
+| `<preset_name> <parameter_name> <value>` | One parameter of a preset | `<%=cmd%> config preset set demo_server password <%=ph :password%>` |
+
+The `Hash` is usually given with [dot-path](#positional-arguments-with-dot-path) (`@:`), or with `@json:`.
+Parameters have the names of options, without `--`, for example:
 
 ```shell
-<%=cmd%> config preset initialize demo_server @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"<%=ph :password%>","ts":{"precalculate_job_size":true}}'
+<%=cmd%> config preset set demo_server @: url=ssh://demo.asperasoft.com:33001 username=asperaweb password=<%=ph :password%> ts.precalculate_job_size=true
+<%=cmd%> config preset set demo_server @json:'{"url":"ssh://demo.asperasoft.com:33001","username":"asperaweb","password":"<%=ph :password%>","ts":{"precalculate_job_size":true}}'
 ```
 
-One can also use [positional arguments with dot-path](#positional-arguments-with-dot-path):
+A preset is created if needed.
+Values are **deep-merged** (as JSON Merge Patch, RFC 7396): parameters not given are kept, also in a nested `Hash`: for example, `@: out.level=data` keeps `out.format`.
+
+The value `@none:` (`null` in JSON) **removes** a key: a parameter, a key in a nested `Hash`, or a whole preset (with its default declarations):
 
 ```shell
-<%=cmd%> config preset initialize demo_server @: url=ssh://demo.asperasoft.com:33001 username=asperaweb password=<%=ph :password%> ts.precalculate_job_size=true
+<%=cmd%> config preset set GLOBAL out.table.pivot @none:
+<%=cmd%> config preset set demo_server @: username=@none: ts.precalculate_job_size=@none:
+<%=cmd%> config preset set @: demo_server=@none:
 ```
 
-The command `update` creates an [Option Preset](#option-preset) from options provided on the command line, for example:
-
-```shell
-<%=cmd%> config preset update demo_server --url=ssh://demo.asperasoft.com:33001 --username=asperaweb --password=<%=ph :password%> --ts=@json:'{"precalculate_job_size":true}'
-```
-
-This creates an [Option Preset](#option-preset) `demo_server` with all provided options.
-
-> [!NOTE]
-> `update` takes **ALL** options provided on the command line (starting with `--` with a value).
-
-The command `set` allows setting individual options in an [Option Preset](#option-preset):
-
-```text
-<%=cmd%> config preset set <%=ph :preset_name%> <%=ph :parameter_name%> <%=ph :parameter_value%>
-```
-
-Example:
-
-```shell
-<%=cmd%> config preset set demo_server password <%=ph :password%>
-```
-
-The parameter name supports **dot-notation** to set nested hash options.
-If an intermediate hash already exists, the new value is **deep-merged** into it (existing sibling keys are preserved).
+The parameter name of the third form supports **dot-notation** to set nested hash options:
 
 ```shell
 <%=cmd%> config preset set GLOBAL out.table.pivot single
 <%=cmd%> config preset set GLOBAL out.level data
 ```
 
-The parameter value is **automatically coerced** to its natural type: integers, floats and booleans (`true`/`yes`/`false`/`no`) are stored as native YAML types rather than strings.
+Values given on the command line (with `@:`, or the value of the third form) are **automatically coerced** to their natural type: integers, floats and booleans (`true`/`yes`/`false`/`no`) are stored as native YAML types rather than strings.
 
-To **delete** a key from a preset, pass `@none:` as the value (evaluates to `nil`):
+Options of the command line are not saved in the preset: they apply to the command `set` itself (for example `--log-level`).
+The section `config` of the configuration file cannot be changed.
 
-```shell
-<%=cmd%> config preset set GLOBAL out.table.pivot @none:
-```
+> [!NOTE]
+> Commands `update`, `initialize` and `unset` are deprecated, and show the command to use instead:
+>
+> - `update <preset_name> --url=...` is replaced by `set <preset_name> @: url=...`. It takes only the options placed after `update`.
+> - `initialize <preset_name> <Hash>`, which replaces a preset, is replaced by `delete <preset_name>`, then `set <preset_name> <Hash>`.
+> - `unset <preset_name> <parameter_name>` is replaced by `set <preset_name> <parameter_name> @none:`.
 
 A full terminal based overview of the configuration can be displayed using:
 
@@ -3133,10 +3128,10 @@ The main plugin name is `config`, so it is possible to define a default [Option 
 <%=cmd%> config preset set default config cli_default
 ```
 
-An [Option Preset](#option-preset) value can be removed with `unset`:
+An [Option Preset](#option-preset) value can be removed with `@none:`:
 
 ```shell
-<%=cmd%> config preset unset cli_default interactive
+<%=cmd%> config preset set cli_default interactive @none:
 ```
 
 Example: Define options using command line:
@@ -3305,13 +3300,13 @@ This can also be provisioned in a configuration file:
 This can also be done with one single command:
 
 ```shell
-<%=cmd%> config preset initialize shares06 @json:'{"url":"https://10.25.0.6","username":"john","password":"<%=ph :password%>"}'
+<%=cmd%> config preset set shares06 @json:'{"url":"https://10.25.0.6","username":"john","password":"<%=ph :password%>"}'
 ```
 
 Or:
 
 ```shell
-<%=cmd%> config preset update shares06 --url=https://10.25.0.6 --username=john --password=<%=ph :password%>
+<%=cmd%> config preset set shares06 @: url=https://10.25.0.6 username=john password=<%=ph :password%>
 ```
 
 - Define this [Option Preset](#option-preset) as the default [Option Preset](#option-preset) for the specified plugin (`shares`)
@@ -3646,8 +3641,8 @@ For example, a HashiCorp Vault server with AppRole authentication, limited to se
 References in a preset: to field `password` of secret `aspera/faspex` in mount `kv`, and to field `password` (default field of type `file`) of label `<%=ph :vault_label%>` in the encrypted file:
 
 ```shell
-<%=cmd%> config preset update <%=ph :preset_name%> --url=... --username=... --password=@val:@vault://corp/kv/aspera/faspex#password
-<%=cmd%> config preset update <%=ph :preset_name%> --url=... --username=... --password=@val:@vault://local/<%=ph :vault_label%>
+<%=cmd%> config preset set <%=ph :preset_name%> @: url=... username=... password=@val:@vault://corp/kv/aspera/faspex#password
+<%=cmd%> config preset set <%=ph :preset_name%> @: url=... username=... password=@val:@vault://local/<%=ph :vault_label%>
 ```
 
 To check that a reference can be read, without its value (store, version, time of update):
@@ -3668,13 +3663,13 @@ A password can be saved in clear in an [Option Preset](#option-preset) together 
 Example:
 
 ```shell
-<%=cmd%> config preset update <%=ph :preset_name%> --url=... --username=... --password=...
+<%=cmd%> config preset set <%=ph :preset_name%> @: url=... username=... password=...
 ```
 
 For more secure storage, first create a vault entry (see [Vault: Operations](#vault-operations)), then refer to it in the preset:
 
 ```shell
-<%=cmd%> config preset update <%=ph :preset_name%> --url=... --username=... --password=@val:@vault:<%=ph(:vault_label)%>.password
+<%=cmd%> config preset set <%=ph :preset_name%> @: url=... username=... password=@val:@vault:<%=ph(:vault_label)%>.password
 ```
 
 > [!NOTE]
@@ -3693,7 +3688,7 @@ This scans all presets (or a single one if a name is provided) and, for every op
 <%=cmd%> config preset secure <%=ph :preset_name%>
 ```
 
-When a vault is configured, the `update`, `set`, and `ask` preset commands automatically move secret values (options ending with `password` or `secret`) into the vault as they are written, so no manual migration is needed.
+When a vault is configured, the `set` and `ask` preset commands automatically move secret values (options ending with `password` or `secret`) into the vault as they are written, so no manual migration is needed.
 To disable this behavior for a single command, pass `--vault=@none:`.
 
 ### Private Key
@@ -6530,7 +6525,7 @@ updated: <%=ph :aoc_org%>
 > [!NOTE]
 > In above example, replace `https://<%=ph :org_name%>.ibmaspera.com` with your actual AoC URL.
 
-(This can also be done in one line using the command `config preset update <%=ph :aoc_org%> --url=...`)
+(This can also be done in one line using the command `config preset set <%=ph :aoc_org%> @: url=...`)
 
 Define this [Option Preset](#option-preset) as default configuration for the `aoc` plugin:
 
@@ -6644,7 +6639,7 @@ To activate default use of JWT authentication for <%=tool%> using the [Option Pr
 Execute:
 
 ```shell
-<%=cmd%> config preset update <%=ph :aoc_org%> --auth=jwt --private-key=@val:@file:~/.aspera/<%=cmd%>/<%=ph :pkey_name%> --username=someuser@example.com
+<%=cmd%> config preset set <%=ph :aoc_org%> @: auth=jwt private_key=@val:@file:~/.aspera/<%=cmd%>/<%=ph :pkey_name%> username=someuser@example.com
 ```
 
 > [!NOTE]
@@ -8008,7 +8003,7 @@ Then, to register the key by default for the `ats` plugin, create a preset.
 Execute:
 
 ```shell
-<%=cmd%> config preset update <%=ph :preset_name%> --ibm-api-key=<%=ph :api_key%>
+<%=cmd%> config preset set <%=ph :preset_name%> @: ibm_api_key=<%=ph :api_key%>
 ```
 
 ```shell
@@ -8024,7 +8019,7 @@ aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
 ```
 
 ```shell
-<%=cmd%> config preset update <%=ph :preset_name%> --instance=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
+<%=cmd%> config preset set <%=ph :preset_name%> @: instance=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
 ```
 
 ```shell
@@ -8041,7 +8036,7 @@ aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
 ```
 
 ```shell
-<%=cmd%> config preset update <%=ph :preset_name%> --ats-key=<%=ph :ats_key%> --ats-secret=<%=ph :ats_secret%>
+<%=cmd%> config preset set <%=ph :preset_name%> @: ats_key=<%=ph :ats_key%> ats_secret=<%=ph :ats_secret%>
 ```
 
 ### ATS Access key creation parameters
@@ -8709,7 +8704,7 @@ Identify the region and the endpoint URL will be `https://otlp-[region]-saas.ins
 For convenience, those parameters can be provided in a preset, for example, named `otel_default`.
 
 ```shell
-<%=cmd%> config preset initialize otel_default @json:'{"url":"https://otlp-orange-saas.instana.io:4318","key":"<%=ph :key%>","interval":1.1}'
+<%=cmd%> config preset set otel_default @json:'{"url":"https://otlp-orange-saas.instana.io:4318","key":"<%=ph :key%>","interval":1.1}'
 ```
 
 Then it is invoked like this (assuming a default node is configured):
@@ -8936,7 +8931,7 @@ Typically, users create a preset so they don't have to enter these options each 
 Example:
 
 ```shell
-<%=cmd%> config preset update <%=ph :f5_preset%> --auth=jwt --client-id=<%=ph :client_id%> --client-secret=<%=ph :secret%> --username=<%=ph :username%> --private-key=@file:.../path/to/key.pem
+<%=cmd%> config preset set <%=ph :f5_preset%> @: auth=jwt client_id=<%=ph :client_id%> client_secret=<%=ph :secret%> username=<%=ph :username%> private_key=@file:.../path/to/key.pem
 
 <%=cmd%> config preset set default faspex5 <%=ph :f5_preset%>
 
@@ -8987,7 +8982,7 @@ For `boot` method: (will be removed in future)
 Use this token as password and use `--auth=boot`.
 
 ```shell
-<%=cmd%> config preset update f5boot --url=https://localhost/aspera/faspex --auth=boot --password=<%=ph :token%>
+<%=cmd%> config preset set f5boot @: url=https://localhost/aspera/faspex auth=boot password=<%=ph :token%>
 ```
 
 <%=include_commands_for_plugin(:faspex5)%>
@@ -9786,7 +9781,7 @@ If you already have these parameters, provide the following options to <%=tool%>
 Example: Create a Default Configuration
 
 ```shell
-<%=cmd%> config preset update <%=ph :cos_preset_name%> --bucket=mybucket --endpoint=https://s3.us-east.cloud-object-storage.appdomain.cloud --apikey=<%=ph :api_key%> --crn=<%=ph :crn%>
+<%=cmd%> config preset set <%=ph :cos_preset_name%> @: bucket=mybucket endpoint=https://s3.us-east.cloud-object-storage.appdomain.cloud apikey=<%=ph :api_key%> crn=<%=ph :crn%>
 <%=cmd%> config preset set default cos <%=ph :cos_preset_name%>
 ```
 
@@ -9856,7 +9851,7 @@ The required options for this method are:
 Example: Create a Default Configuration
 
 ```shell
-<%=cmd%> config preset update <%=ph :cos_preset_name%> --bucket=mybucket --service-credentials=@val:@json:@file:~/service_creds.json --region=us-south
+<%=cmd%> config preset set <%=ph :cos_preset_name%> @: bucket=mybucket service_credentials=@val:@json:@file:~/service_creds.json region=us-south
 <%=cmd%> config preset set default cos <%=ph :cos_preset_name%>
 ```
 
@@ -10105,7 +10100,7 @@ For example:
 ```shell
 su -s /bin/bash - xfer
 
-<%=cmd%> config preset update <%=ph :preview_preset_name%> --url=https://localhost:9092 --username=<%=ph :access_key%> --password=<%=ph :secret%> --skip-types=office --lock-port=12346
+<%=cmd%> config preset set <%=ph :preview_preset_name%> @: url=https://localhost:9092 username=<%=ph :access_key%> password=<%=ph :secret%> skip_types=office lock_port=12346
 
 <%=cmd%> config preset set default preview <%=ph :preview_preset_name%>
 ```
@@ -11125,13 +11120,13 @@ The `smtp` option is a `Hash` ([Extended Value](#extended-value-syntax)) with th
 or
 
 ```shell
-<%=cmd%> config preset initialize smtp_google @json:'{"server":"smtp.google.com","username":"john@gmail.com","password":"<%=ph :password%>"}'
+<%=cmd%> config preset set smtp_google @json:'{"server":"smtp.google.com","username":"john@gmail.com","password":"<%=ph :password%>"}'
 ```
 
 or
 
 ```shell
-<%=cmd_skip%> config preset update smtp_google --server=smtp.google.com --username=john@gmail.com --password=<%=ph :password%>
+<%=cmd_skip%> config preset set smtp_google @: server=smtp.google.com username=john@gmail.com password=<%=ph :password%>
 ```
 
 Set this configuration as global default, for instance:

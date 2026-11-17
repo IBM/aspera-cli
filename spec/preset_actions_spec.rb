@@ -29,7 +29,8 @@ module Aspera
         double('presets', config_presets: config_presets, global_default_preset: 'GLOBAL').tap do |d|
           allow(d).to(receive(:set_key)) do |preset, key, value|
             config_presets[preset] ||= {}
-            config_presets[preset][key] = value
+            # as PresetManager#set_key: nil removes the key
+            value.nil? ? config_presets[preset].delete(key) : config_presets[preset][key] = value
           end
           allow(d).to(receive(:global_preset?)) { |name| name.eql?('GLOBAL') }
         end
@@ -67,7 +68,7 @@ module Aspera
               o.define_singleton_method(:get_option) do |sym, mandatory: false|
                 opts_self.vault_option if sym == :vault
               end
-              o.define_singleton_method(:unprocessed_options_with_value) { {} }
+              o.define_singleton_method(:unprocessed_options_with_value) { |**| {} }
               o.define_singleton_method(:option_declared?) { |_name| false }
             end
           end
@@ -178,7 +179,7 @@ module Aspera
             define_method(:options) do
               opts_hash = unprocessed_hash
               Object.new.tap do |o|
-                o.define_singleton_method(:unprocessed_options_with_value) { opts_hash }
+                o.define_singleton_method(:unprocessed_options_with_value) { |**| opts_hash }
                 o.define_singleton_method(:option_declared?) { |_name| false }
                 o.define_singleton_method(:get_option) { |*| nil }
               end
@@ -246,6 +247,26 @@ module Aspera
             h = host_with_options({'password' => secret, 'username' => 'bob'}, vault_override: vault_double)
             h.action_preset_update(name: 'p1')
             expect(config_presets['p1']['username']).to(eq('bob'))
+          end
+        end
+
+        context 'with options (deprecated)' do
+          it 'warns with the set command to use, without secret value' do
+            h = host_with_options({'url' => 'https://a.example.com', 'password' => secret, 'out' => {'level' => 'data'}})
+            expect(Log.log).to(receive(:warn)) do |&block|
+              message = block.call
+              expect(message).to(include('deprecated'))
+              expect(message).to(include('ascli config preset set p1 @: url=https://a.example.com out.level=data'))
+              expect(message).to(include('secret parameters'))
+              expect(message).not_to(include(secret))
+            end
+            h.action_preset_update(name: 'p1')
+            expect(config_presets['p1']['url']).to(eq('https://a.example.com'))
+          end
+
+          it 'quotes words of the command for a shell' do
+            h = host_with_options({})
+            expect(h.send(:set_command_hint, 'p 1', {'ts' => {'source' => "it's"}})).to(eq(%q{ascli config preset set 'p 1' @: 'ts.source=it'\''s'}))
           end
         end
       end
@@ -346,6 +367,49 @@ module Aspera
           it 'is allowed with level low' do
             host.action_preset_set(name: 'p1', param_name: secret, param_value: 'v')
             expect(config_presets['p1']).to(eq({secret => 'v'}))
+          end
+        end
+
+        context 'with a Hash of parameters' do
+          it 'merges deeply, with option names converted, and removes keys with nil' do
+            config_presets['p1'] = {'url' => 'https://a.example.com', 'username' => 'bob', 'out' => {'format' => 'json', 'level' => 'data'}}
+            host.action_preset_set(name: 'p1', param_name: {'username' => nil, 'out' => {'level' => nil, 'pivot' => 'single'}, 'log-level' => 'info'})
+            expect(config_presets['p1']).to(eq({'url' => 'https://a.example.com', 'out' => {'format' => 'json', 'pivot' => 'single'}, 'log_level' => 'info'}))
+          end
+
+          it 'refuses a third argument' do
+            expect { host.action_preset_set(name: 'p1', param_name: {'a' => 1}, param_value: 'x') }.to(raise_error(BadArgument, /no other argument/))
+          end
+        end
+
+        context 'with a Hash of presets' do
+          it 'merges into several presets, and deletes a preset with nil, and its default declarations' do
+            config_presets['p2'] = {'url' => 'https://b.example.com'}
+            config_presets['default'] = {'server' => 'p2', 'aoc' => 'p1'}
+            host.action_preset_set(name: {'p1' => {'url' => 'https://a.example.com'}, 'p2' => nil})
+            expect(config_presets['p1']).to(eq({'url' => 'https://a.example.com'}))
+            expect(config_presets.key?('p2')).to(be(false))
+            expect(config_presets['default']).to(eq({'aoc' => 'p1'}))
+          end
+
+          it 'refuses to change the config section' do
+            expect { host.action_preset_set(name: {'config' => {'version' => 'x'}}) }.to(raise_error(BadArgument, /section config/))
+          end
+
+          it 'refuses a value that is not a Hash' do
+            expect { host.action_preset_set(name: {'p1' => 'x'}) }.to(raise_error(BadArgument, /parameters of preset p1/))
+          end
+        end
+
+        context 'with a parameter name' do
+          it 'removes the parameter with nil' do
+            config_presets['p1'] = {'url' => 'https://a.example.com', 'username' => 'bob'}
+            host.action_preset_set(name: 'p1', param_name: 'username', param_value: nil)
+            expect(config_presets['p1']).to(eq({'url' => 'https://a.example.com'}))
+          end
+
+          it 'requires a Hash or a parameter' do
+            expect { host.action_preset_set(name: 'p1') }.to(raise_error(BadArgument, /expecting <Hash> of parameters/))
           end
         end
       end

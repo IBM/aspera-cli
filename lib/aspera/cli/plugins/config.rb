@@ -132,14 +132,15 @@ module Aspera
             arguments: [{name: :name, type: :identifier, complete: :preset}]
           command :get,        description: 'Show a single parameter of a preset',
             arguments: [{name: :name, type: :identifier, complete: :preset}, {name: :param_name, complete: :preset_parameter}]
-          command :unset,      description: 'Remove a parameter from a preset',
+          command :unset,      description: "Remove a parameter from a preset (#{Deprecation.new(last: DEPRECATED_LAST, message: 'use set <name> <param> @none:')})",
             arguments: [{name: :name, type: :identifier, complete: :preset}, {name: :param_name, complete: :preset_parameter}]
-          command :set, description: 'Set a parameter in a preset',
-            arguments: [{name: :name, type: :identifier, complete: :preset}, {name: :param_name, complete: :preset_parameter},
-                        {name: :param_value, type: nil, evaluate: :smart}]
-          command :initialize, description: 'Initialize a preset with a value',
+          command :set, description: 'Merge into presets: <Hash> of presets, <name> <Hash>, or <name> <param> <value> (@none: removes)',
+            arguments: [{name: :name, type: [String, Hash], complete: :preset},
+                        {name: :param_name, type: [String, Hash], mandatory: false, omit_absent: true, complete: :preset_parameter},
+                        {name: :param_value, type: nil, mandatory: false, omit_absent: true, evaluate: :smart}]
+          command :initialize, description: "Initialize a preset with a value (#{Deprecation.new(last: DEPRECATED_LAST, message: 'use delete, then set <name> <Hash>')})",
             arguments: [{name: :name, type: :identifier, complete: :preset}, {name: :preset, type: Hash}]
-          command :update,     description: 'Update a preset with current option values',
+          command :update,     description: "Update a preset with option values (#{Deprecation.new(last: DEPRECATED_LAST, message: 'use set <name> <Hash>')})",
             arguments: [{name: :name, type: :identifier, complete: :preset}]
           command :ask,        description: 'Ask for option values interactively',
             arguments: [{name: :name, type: :identifier, complete: :preset},

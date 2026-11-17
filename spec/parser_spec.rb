@@ -554,6 +554,15 @@ module Aspera
           expect(target.val).to(be_nil)
         end
 
+        it 'unprocessed_options_with_value after_command: only options after the last command word' do
+          opts = build_parser(['--before=1', 'preset', 'update', 'p1', '--url=https://x', '--user.name=me'])
+          opts.parse_options!
+          expect(opts.get_next_command(%i[preset])).to(eq(:preset))
+          expect(opts.get_next_command(%i[update])).to(eq(:update))
+          expect(opts.get_next_argument('name')).to(eq('p1'))
+          expect(opts.unprocessed_options_with_value(after_command: true)).to(eq({'url' => 'https://x', 'user' => {'name' => 'me'}}))
+        end
+
         it 'unprocessed_options_with_value consumes space-separated values' do
           opts = build_parser(['--url', 'https://x', '--user.name=me', 'cmd'])
           opts.parse_options!

@@ -100,7 +100,7 @@ relevant anchor, then `["config", "documentation", "local", "<anchor>"]` to read
 It should not call the full README unless a section is insufficient.
 
 **Pass criterion**: the AI returns actionable steps for creating a preset
-(e.g. using `config preset update` or the wizard).
+(e.g. using `config preset set` or the wizard).
 
 ## 4. End-to-end task — live server required
 
