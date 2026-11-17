@@ -1,6 +1,6 @@
-site_name: Aspera CLI
+site_name: IBM Aspera CLI
 site_url: https://ibm.github.io/aspera-cli/
-site_description: ascli, the command line interface and MCP server for IBM Aspera (Aspera on Cloud, Faspex, HSTS, Node, Shares, Console, Orchestrator), usable by AI assistants and agents
+site_description: IBM Aspera CLI (ascli), the automation interface for IBM Aspera, from command line to AI agents. Transfers, packages, files and administration of Aspera on Cloud, Faspex, HSTS, Node, Shares, Console, Orchestrator. MCP server.
 repo_url: https://github.com/IBM/aspera-cli
 theme:
   name: material

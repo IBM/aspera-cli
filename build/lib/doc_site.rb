@@ -14,6 +14,7 @@ require 'yaml'
 # - internal links (`#anchor`) lead to the page of the anchor
 # - GitHub alerts (`> [!NOTE]`) are converted to admonitions
 # - `llms.txt` at the root of the site lists the pages
+# - the home page is the `README.md` of the project (landing page), if given, instead of the beginning of the manual
 class DocSite
   # Page of the beginning of the manual, before the first section
   INDEX = 'index.md'
@@ -28,19 +29,31 @@ class DocSite
   LOCAL_IMAGE = /!\[[^\]]*\]\((?<file>[^):]+)\)/
   # Link to a file of the repository, relative to the manual: `[text](../Gemfile)` (not an image, not a URL, not an anchor)
   REPO_LINK = /(?<!!)\[(?<text>[^\]]*)\]\((?<path>(?![a-z]+:|#)[^)\s]+)\)/
+  # Link of an image (e.g. badge) to a file of the repository: `[![text](image)](../Gemfile)`
+  REPO_IMAGE_LINK = /(?<image>\[!\[[^\]]*\]\([^)\s]+\)\])\((?<path>(?![a-z]+:|#)[^)\s]+)\)/
   # Comments of the manual are for its editors, and for tools (lint, PDF)
   HTML_COMMENT = /^<!--.*?-->\n/m
-  private_constant :INDEX, :PAGE_LEVEL, :ADMONITIONS, :ALERT_START, :INTERNAL_LINK, :LOCAL_IMAGE, :REPO_LINK, :HTML_COMMENT
+  private_constant :INDEX, :PAGE_LEVEL, :ADMONITIONS, :ALERT_START, :INTERNAL_LINK, :LOCAL_IMAGE, :REPO_LINK, :REPO_IMAGE_LINK, :HTML_COMMENT
+
+  # Title of the home page, if made from `README.md`
+  HOME_TITLE = 'Home'
+  private_constant :HOME_TITLE
 
   # A page of the site
-  Page = Struct.new(:file, :title, :lines)
+  # @!attribute base [Pathname] folder of the source of the page: relative images and links
+  # @!attribute repo [String]   URL of this folder in the repository
+  Page = Struct.new(:file, :title, :lines, :base, :repo)
 
   # @param manual   [Pathname] Manual, Markdown, single file
   # @param llms     [Pathname] `llms.txt` of the project
   # @param site_url [String]   URL of the site, ends with `/`
   # @param repo_url [String]   URL of the folder of the manual in the repository, for links to other files
-  def initialize(manual:, llms:, site_url:, repo_url:)
+  # @param home     [Pathname, nil] `README.md` of the project, for the home page
+  # @param home_url [String, nil]   URL of the folder of `home` in the repository
+  def initialize(manual:, llms:, site_url:, repo_url:, home: nil, home_url: nil)
     @repo_url = repo_url
+    @home = home
+    @home_url = home_url
     @manual = manual
     @llms = llms
     @site_url = site_url
@@ -48,6 +61,7 @@ class DocSite
     # anchor of the manual => file of the page that has it
     @anchor_page = {}
     split
+    home_page unless @home.nil?
   end
 
   # @return [Array<Hash>] Navigation of the site, for `nav` of `mkdocs.yml`
@@ -61,9 +75,13 @@ class DocSite
     @pages.each do |page|
       text = admonitions(page.lines).join
       # links to files of the repository first: links between pages are then relative paths too
-      text = text.gsub(REPO_LINK) { "[#{Regexp.last_match[:text]}](#{File.join(@repo_url, Regexp.last_match[:path])})" }
+      text = text.gsub(REPO_IMAGE_LINK) { "#{Regexp.last_match[:image]}(#{File.join(page.repo, Regexp.last_match[:path])})" }
+      text = text.gsub(REPO_LINK) { "[#{Regexp.last_match[:text]}](#{File.join(page.repo, Regexp.last_match[:path])})" }
       text = text.gsub(INTERNAL_LINK) { "](#{link_target(Regexp.last_match[:anchor], page.file)})" }
-      text.scan(LOCAL_IMAGE).flatten.uniq.each { |image| (folder / image).write((@manual.dirname / image).binread) }
+      text.scan(LOCAL_IMAGE).flatten.uniq.each do |image|
+        (folder / image).dirname.mkpath
+        (folder / image).write((page.base / image).binread)
+      end
       (folder / page.file).write(text)
     end
     (folder / 'llms.txt').write(llms_text)
@@ -87,7 +105,7 @@ class DocSite
       title = heading[2].strip
       anchor = github_anchor(title, seen)
       if level <= PAGE_LEVEL
-        page = Page.new(level < PAGE_LEVEL ? INDEX : "#{anchor}.md", title.delete('`'), [])
+        page = Page.new(level < PAGE_LEVEL ? INDEX : "#{anchor}.md", title.delete('`'), [], @manual.dirname, @repo_url)
         @pages.push(page)
       end
       raise "Heading before the title of the manual: #{title}" if page.nil?
@@ -96,6 +114,19 @@ class DocSite
       page_level = page.file.eql?(INDEX) ? level : level - PAGE_LEVEL + 1
       page.lines.push("#{'#' * page_level} #{title} { ##{anchor} }\n")
     end
+  end
+
+  # Replace the beginning of the manual (title) with `README.md`: links to the manual become internal links.
+  # The lines of the beginning of the manual, after its title, are kept after it.
+  def home_page
+    index = @pages.find { |page| page.file.eql?(INDEX) }
+    raise 'Manual has no title' if index.nil?
+    manual_url = Regexp.escape(File.join(@repo_url, @manual.basename.to_s))
+    text = @home.read.gsub(HTML_COMMENT, '').gsub(/\]\(#{manual_url}#(?<anchor>[^)\s]+)\)/) { "](##{Regexp.last_match[:anchor]})" }
+    index.lines = text.lines + index.lines.drop(1)
+    index.title = HOME_TITLE
+    index.base = @home.dirname
+    index.repo = @home_url
   end
 
   # Anchor of a heading, as generated by GitHub: links of the manual use it

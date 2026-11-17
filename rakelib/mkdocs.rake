@@ -36,7 +36,14 @@ namespace :doc do
     path_site.mkpath
     path_docs.mkpath
     config = YAML.safe_load((Paths::MKDOCS / 'mkdocs.yml').read)
-    site = DocSite.new(manual: Paths::MD_MANUAL, llms: Paths::LLMS_TXT, site_url: config['site_url'], repo_url: "#{config['repo_url']}/blob/main/#{Paths::MD_MANUAL.dirname.relative_path_from(Paths::TOP)}")
+    site = DocSite.new(
+      manual:   Paths::MD_MANUAL,
+      llms:     Paths::LLMS_TXT,
+      site_url: config['site_url'],
+      repo_url: "#{config['repo_url']}/blob/main/#{Paths::MD_MANUAL.dirname.relative_path_from(Paths::TOP)}",
+      home:     Paths::TOP / 'README.md',
+      home_url: "#{config['repo_url']}/blob/main"
+    )
     site.write(path_docs)
     FileUtils.cp_r(Paths::MKDOCS / 'stylesheets', path_docs)
     config['docs_dir'] = path_docs.to_s

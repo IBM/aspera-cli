@@ -121,6 +121,7 @@ For debugging, use `--log-level=debug`.
 
 ## Contributing
 
+- **Questions, ideas, show and tell:** [GitHub Discussions](https://github.com/IBM/aspera-cli/discussions)
 - **Bugs & features:** [BUGS.md](https://github.com/IBM/aspera-cli/blob/main/BUGS.md)
 - **Security vulnerabilities:** [SECURITY.md](https://github.com/IBM/aspera-cli/blob/main/SECURITY.md)
 - **How to contribute:** [CONTRIBUTING.md](https://github.com/IBM/aspera-cli/blob/main/CONTRIBUTING.md)
