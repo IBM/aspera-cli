@@ -12903,6 +12903,40 @@ Another possibility is to add this option: `--transfer=@json:'{"ascp_args":["--p
 > If one relies on `--lock-port` when using containers to avoid parallel transfers in a cron job, this may be the cause, as `lock_port` does not lock across containers.
 > Use `flock` instead.
 
+## Security and Trust
+
+This section is for security and compliance reviewers who evaluate `ascli` before its use in an organization.
+It summarizes how `ascli` protects credentials, communications and the system that runs it, and how the project is developed and released.
+The detailed reasoning is in the [Security Assurance Case](ASSURANCE_CASE.md).
+
+### Protection by area
+
+| Area | How `ascli` protects it | Details |
+| ---- | ------------------------ | ------- |
+| Credentials | Secret values are hidden in logs, results and error messages. Secrets can be kept in a vault instead of the configuration file: encrypted file, HashiCorp Vault, Keeper, 1Password, macOS keychain, Linux Secret Service. The configuration folder is readable only by the current user. | [Secret Vault](#secret-vault) |
+| Communications | API calls use HTTPS, and the certificate of the server is verified by default (disabled only with `--insecure=yes`). | [SSL CA certificate bundle](#configuring-the-ssl-ca-certificate-bundle) |
+| File transfers | Transfers use the IBM Aspera transfer engine (`ascp`), with the encryption in transit and at rest defined by the server and the transfer specification. | [Transfer Specification](#transfer-specification) |
+| Execution by a client that is not fully trusted (AI assistant, program that builds commands) | A security level restricts what commands can do: reading local files, executing code, writing files. The MCP server uses level `high` by default, and the client cannot change it. | [Security Level](#security-level) |
+| AI assistants (MCP server) | The AI client cannot execute code, cannot write files outside the folders that the user allows, and never sees secrets. Over HTTP, a token is mandatory when the server is not on the loopback address, and OAuth 2.0 with PKCE is supported. | [MCP server security](#security) |
+| Local web servers (login, MCP over HTTP) | They listen on the loopback address by default, with authentication and protection against cross-site requests. | [Web service](#web-service) |
+| Usage data | `ascli` sends no usage data (no telemetry). It connects to the servers given in commands and presets, and to public IBM and GitHub locations only for the commands that download from them (for example `transferd install`, development guides). Every 7 days by default, it checks RubyGems for a new version (option `version_check_days`, `0` to disable). | [Configuration](#plugin-config-configuration) |
+
+### Supply chain
+
+- The gem is signed: its signature can be verified at installation, see [Verifying gem installation signature](#verifying-gem-installation-signature).
+- Publishing the gem on RubyGems requires multi-factor authentication.
+- Release packages (gem, single executable, portable packages, container image) are built by GitHub Actions from the repository.
+- Dependencies are gems, updated with Renovate.
+- The source code is analyzed by CodeQL and RuboCop in continuous integration, and tested by unit and integration tests, including tests of the security levels (coverage is shown in the README badge).
+
+### Project practices
+
+- Open source, Apache 2.0 license, developed in the [IBM GitHub organization](https://github.com/IBM/aspera-cli).
+- [OpenSSF Best Practices](https://www.bestpractices.dev/projects/5861): silver badge.
+- Vulnerabilities are reported and handled as described in [SECURITY.md](../SECURITY.md).
+- Roles, decisions and continuity of the project: [GOVERNANCE.md](../GOVERNANCE.md).
+- Structure of the code: [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ## About
 
 ### Hootput, the mascot

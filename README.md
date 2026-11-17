@@ -118,6 +118,7 @@ For debugging, use `--log-level=debug`.
 ## Trust
 
 `ascli` is used to operate production systems, so the project follows strict practices: [OpenSSF Best Practices](https://www.bestpractices.dev/projects/5861) silver badge, high test coverage, a [security assurance case](https://github.com/IBM/aspera-cli/blob/main/docs/ASSURANCE_CASE.md), and secrets kept out of commands and AI clients.
+For security and compliance reviews, see [Security and Trust](https://github.com/IBM/aspera-cli/blob/main/docs/README.md#security-and-trust) in the manual.
 
 ## Contributing
 
