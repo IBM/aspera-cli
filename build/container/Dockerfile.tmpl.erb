@@ -4,8 +4,10 @@
 # @param arg_gem specify a gemfile or a gem version
 # @param arg_opt specify list of optional gems
 # @param arg_ruby specify the version of Ruby, i.e. tag of image https://hub.docker.com/_/ruby
+# @param arg_mcp_name name of the server in the MCP Registry (checked by the registry in this label)
 # "-slim" image not used because rmagick requires native compilation
 FROM docker.io/ruby:<%=arg_ruby%>
+LABEL io.modelcontextprotocol.server.name="<%=arg_mcp_name%>"
 #erb: if arg_gem.end_with?('.gem')
 # For beta, gem is file, then copy it.
 COPY <%=arg_gem%> .
@@ -25,8 +27,8 @@ RUN \
 # rootless execution
 USER cliuser
 RUN \
-  ascli conf ascp install && \
-  ascli conf ascp info
+  ascli transferd install && \
+  ascli config ascp info
 # Default cwd when starting the container
 WORKDIR /home/cliuser
 ENTRYPOINT ["ascli"]

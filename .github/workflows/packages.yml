@@ -6,6 +6,7 @@
 # - Linux: portable package (rake linuxtgz:portable), built in a RHEL 8 container, with the same shared libraries
 # - Windows: portable package (rake windowszip:portable), built on Linux, tested on Windows
 # - Container image (rake container:build), built on Linux, tested, and pushed to Docker Hub (tag `latest` only for the latest release)
+# - MCP Registry: server.json (rake container:server_json) published, for a published release, after the container image
 name: Release Packages
 
 on:
@@ -386,3 +387,57 @@ jobs:
           latest=$(gh release view --repo "${{ github.repository }}" --json tagName --jq .tagName)
           if [ "${latest}" = "v${VERSION}" ]; then task=container:push; else task=container:push_version; fi
           bundle exec rake "${task}"
+
+  mcp-registry:
+    name: MCP Registry, publish server.json
+    needs:
+      - version
+      - container
+    # Only for a published release: the registry pulls the image to check its label
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # OIDC login: grants namespace io.github.<owner of repository>
+      id-token: write
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      MCP_PUBLISHER_VERSION: v1.8.1
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1
+        with:
+          bundler-cache: true
+
+      - name: Generate server.json
+        run: bundle exec rake container:server_json"[${VERSION}]"
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Download and verify mcp-publisher
+        run: |
+          set -euo pipefail
+          os="$(uname -s | tr '[:upper:]' '[:lower:]')"
+          arch="$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')"
+          archive="mcp-publisher_${os}_${arch}.tar.gz"
+          base_url="https://github.com/modelcontextprotocol/registry/releases/download/${MCP_PUBLISHER_VERSION}"
+          curl --fail --location --silent --show-error --output "$archive" "$base_url/$archive"
+          curl --fail --location --silent --show-error --output "$archive.sigstore.json" "$base_url/$archive.sigstore.json"
+          cosign verify-blob \
+            --bundle "$archive.sigstore.json" \
+            --certificate-identity "https://github.com/modelcontextprotocol/registry/.github/workflows/release.yml@refs/tags/${MCP_PUBLISHER_VERSION}" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            "$archive"
+          tar xzf "$archive" mcp-publisher
+          rm -f "$archive" "$archive.sigstore.json"
+
+      # mcp-publisher reads server.json in the current folder
+      - name: Publish to MCP Registry
+        working-directory: tmp
+        run: |
+          ../mcp-publisher login github-oidc
+          ../mcp-publisher publish

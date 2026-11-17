@@ -11,9 +11,18 @@ require_relative '../build/lib/build_tools'
 require 'rake'
 require 'erb'
 require 'fileutils'
+require 'json'
 include BuildTools
 
 CONTAINER_TOOL = ENV['CONTAINER_TOOL'] || 'podman'
+# Name of the MCP server in the MCP Registry (registry.modelcontextprotocol.io), in label of the image
+MCP_REGISTRY_NAME = 'io.github.IBM/aspera-cli'
+# Label of the image checked by the MCP Registry
+MCP_REGISTRY_LABEL = 'io.modelcontextprotocol.server.name'
+# Schema of server.json
+MCP_SERVER_SCHEMA = 'https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json'
+# Configuration folder in the container
+CONTAINER_CONFIG_FOLDER = "/home/cliuser/.aspera/#{Aspera::Cli::Info::CMD_NAME}".freeze
 
 # Extract optional gems
 def optional_gems
@@ -54,7 +63,8 @@ namespace :container do
       Paths::DOCKERFILE_TEMPLATE,
       arg_gem:  arg_gem,
       arg_opt:  optional_gems,
-      arg_ruby: Aspera::Cli::Info::RUBY_TESTED_VERSION
+      arg_ruby:     Aspera::Cli::Info::RUBY_TESTED_VERSION,
+      arg_mcp_name: MCP_REGISTRY_NAME
     ))
     run(CONTAINER_TOOL, 'build', '--squash', '--tag', tag(gem_version), '--tag', tag(:latest), '--file', docker_file, docker_context)
   end
@@ -66,6 +76,45 @@ namespace :container do
     version = run(CONTAINER_TOOL, 'run', '--rm', image_tag, '-v', mode: :capture).first.strip
     raise "Unexpected version: #{version}, expected: #{build_version}" unless version.eql?(build_version)
     run(CONTAINER_TOOL, 'run', '--rm', image_tag, 'config', 'ascp', 'info')
+    label = run(CONTAINER_TOOL, 'image', 'inspect', '--format', "{{index .Labels \"#{MCP_REGISTRY_LABEL}\"}}", image_tag, mode: :capture).first.strip
+    raise "Unexpected label #{MCP_REGISTRY_LABEL}: #{label}, expected: #{MCP_REGISTRY_NAME}" unless label.eql?(MCP_REGISTRY_NAME)
+  end
+
+  desc 'Generate server.json for the MCP Registry (image of the version), in tmp/, empty or no version for current'
+  task :server_json, %i[version] do |_t, args|
+    version = args[:version].to_s.empty? ? build_version : args[:version]
+    server = {
+      '$schema'     => MCP_SERVER_SCHEMA,
+      'name'        => MCP_REGISTRY_NAME,
+      'title'       => 'IBM Aspera CLI',
+      'description' => 'Operate IBM Aspera products: transfers, packages, files and administration',
+      'repository'  => {'url' => Aspera::Cli::Info::SRC_URL, 'source' => 'github'},
+      'websiteUrl'  => Aspera::Cli::Info::SITE_URL,
+      'version'     => version,
+      'packages'    => [{
+        'registryType'     => 'oci',
+        'identifier'       => tag(version),
+        'transport'        => {'type' => 'stdio'},
+        'runtimeArguments' => [{
+          'type'        => 'named',
+          'name'        => '--mount',
+          'description' => 'Configuration folder of ascli (presets, vault), mounted in the container',
+          'value'       => "type=bind,src={config_folder},dst=#{CONTAINER_CONFIG_FOLDER}",
+          'isRequired'  => true,
+          'variables'   => {
+            'config_folder' => {
+              'description' => "Configuration folder of ascli on the host, e.g. $HOME/.aspera/#{Aspera::Cli::Info::CMD_NAME}",
+              'format'      => 'filepath',
+              'isRequired'  => true
+            }
+          }
+        }],
+        'packageArguments' => %w[mcp server].map { |v| {'type' => 'positional', 'value' => v} }
+      }]
+    }
+    file = Paths::TMP / 'server.json'
+    file.write(JSON.pretty_generate(server))
+    log.info { "Generated #{file}" }
   end
 
   desc 'Push only the version tag'

@@ -88,6 +88,7 @@ mergeable
 millis
 mkdocs
 mkpath
+modelcontextprotocol
 modulemd
 monofont
 MSVC
@@ -140,6 +141,7 @@ scrollbars
 semgrep
 setremotelogin
 shinbox
+sigstore
 snapdb
 snapmeta
 soffice
