@@ -69,6 +69,7 @@ namespace :release do
     return '' if data.nil? || data.empty?
 
     sections = []
+    tested_with = data.is_a?(Hash) ? data['tested_with'] : nil
 
     # Support list format or hash format with servers/agents keys
     servers = data.is_a?(Hash) ? data['servers'] : data
@@ -82,6 +83,7 @@ namespace :release do
         ]
       end
       sections << Aspera::Markdown.heading('Server Versions', level: 3)
+      sections << Aspera::Markdown.paragraph("Tested with Ruby #{tested_with['ruby']} on #{tested_with['platform']}.") if tested_with.is_a?(Hash)
       sections << "#{Aspera::Markdown.table(server_table)}\n\n"
     end
 
@@ -262,111 +264,23 @@ namespace :release do
   end
 
   namespace :servers do
-    desc 'Detect and update tested server versions in tests/servers_tested.yaml'
+    desc 'Detect versions of servers (test configuration) and transfer agents (installed here) and update tests/servers_tested.yaml'
     task :update do
-      # Mapping between preset names in test config and plugin symbols
-      preset_plugins = {
-        'node_user'     => :node,
-        'f5_user'       => :faspex5,
-        'shares_admin'  => :shares,
-        'console_admin' => :console,
-        'orch_user'     => :orchestrator,
-        'aoc_user'      => :aoc,
-        'tst_httpgw'    => :httpgw
-      }
-
-      # Plugin classes map
-      plugin_classes = {
-        node:         'Aspera::Cli::Plugins::Node',
-        faspex5:      'Aspera::Cli::Plugins::Faspex5',
-        shares:       'Aspera::Cli::Plugins::Shares',
-        console:      'Aspera::Cli::Plugins::Console',
-        orchestrator: 'Aspera::Cli::Plugins::Orchestrator',
-        aoc:          'Aspera::Cli::Plugins::Aoc',
-        httpgw:       'Aspera::Cli::Plugins::Httpgw'
-      }
-
-      # Require plugins
-      plugin_classes.each_key do |plugin_name|
-        require "aspera/cli/plugins/#{plugin_name}"
-      end
-
-      # Set 5 seconds timeout on HTTP sessions for detect and disable retries
-      Aspera::Rest::Parameters.instance.session_cb = lambda do |http|
-        http.open_timeout = 5
-        http.read_timeout = 5
-      end
-      Aspera::Rest::Parameters.instance.retry_max = 0
-      Aspera::Rest::Parameters.instance.retry_on_timeout = false
-      Aspera::Rest::Parameters.instance.retry_on_error = false
-
-      config = TestEnv.configuration
-      if config.empty?
+      require_relative '../build/lib/tested_versions'
+      if TestEnv.configuration.empty?
         log.warn("No test configuration available (#{TestEnv::ENV_VAR_REF_CONF} not set). Keeping existing #{Paths::SERVERS_TESTED}.")
         next
       end
-
-      # Load current servers_tested or init empty
-      raw_data = Paths::SERVERS_TESTED.exist? ? Aspera::Yaml.safe_load(Paths::SERVERS_TESTED.read) : {}
-      servers_list = raw_data.is_a?(Hash) ? raw_data['servers'] || [] : (raw_data || [])
-      agents_list = raw_data.is_a?(Hash) ? raw_data['agents'] || [] : []
-
-      current_by_plugin = servers_list.to_h { |s| [s['plugin'].to_s, s] }
-
-      preset_plugins.each do |preset_name, plugin_sym|
-        preset_cfg = config[preset_name]
-        next unless preset_cfg.is_a?(Hash) && preset_cfg['url']
-
-        url = preset_cfg['url']
-        plugin_class = Object.const_get(plugin_classes[plugin_sym])
-        next unless plugin_class.respond_to?(:detect)
-
-        product_name = plugin_class.respond_to?(:application_name) ? plugin_class.application_name : plugin_sym.to_s
-        log.info("Detecting #{plugin_sym} at #{url}...")
-        begin
-          res = plugin_class.detect(url)
-          version = nil
-          if res.is_a?(Hash) && res[:version] && res[:version] != 'unknown' && res[:version] != 'requires authentication'
-            version = res[:version].to_s
-          elsif plugin_sym.eql?(:node) && preset_cfg['username'] && preset_cfg['password']
-            # Fallback to authenticating with test preset credentials to get Node version via /info
-            require_relative '../lib/aspera/api/node'
-            node_api = Aspera::Api::Node.new(
-              base_url: url,
-              auth:     {
-                type:     :basic,
-                username: preset_cfg['username'],
-                password: preset_cfg['password']
-              }
-            )
-            info = node_api.read('info')
-            version = info['version'] if info.is_a?(Hash) && info['version']
-          end
-
-          if version
-            log.info("  Found #{plugin_sym} version: #{version}")
-            current_by_plugin[plugin_sym.to_s] = {
-              'plugin'  => plugin_sym.to_s,
-              'product' => product_name,
-              'version' => version
-            }
-          else
-            log.warn("  Could not detect valid version for #{plugin_sym} at #{url} (keeping existing entry if any)")
-          end
-        rescue StandardError => e
-          log.warn("  Detection failed for #{plugin_sym} at #{url}: #{e.message} (keeping existing entry if any)")
-        end
+      detected = TestedVersions.detect
+      # Keep previous entries that could not be detected
+      previous = Paths::SERVERS_TESTED.exist? ? Aspera::Yaml.safe_load(Paths::SERVERS_TESTED.read) || {} : {}
+      {'servers' => 'plugin', 'agents' => 'agent'}.each do |list, key|
+        found = detected[list].map { |i| i[key] }
+        kept = (previous[list] || []).reject { |i| found.include?(i[key]) }
+        kept.each { |i| log.warn("#{i[key]}: not detected, keeping previous version #{i['version']}") }
+        detected[list] = (detected[list] + kept).sort_by { |i| i[key] }
       end
-
-      # Write updated yaml
-      sorted_servers = current_by_plugin.values.sort_by { |s| s['plugin'].to_s }
-      sorted_agents = agents_list.sort_by { |a| a['agent'].to_s }
-      result_hash = {
-        'servers' => sorted_servers,
-        'agents'  => sorted_agents
-      }
-      yaml_content = "# Tested server and transfer agent versions against this version of ascli\n#{result_hash.to_yaml.delete_prefix("---\n")}"
-      Paths::SERVERS_TESTED.write(yaml_content)
+      Paths::SERVERS_TESTED.write("# Tested server and transfer agent versions against this version of ascli (generated by: rake release:servers:update)\n#{detected.to_yaml.delete_prefix("---\n")}")
       log.info("Updated #{Paths::SERVERS_TESTED}:\n#{Paths::SERVERS_TESTED.read}")
     end
 

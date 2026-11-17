@@ -19,8 +19,9 @@ include BuildTools
 # AppImage build configuration
 APP_IMAGE_SRC = Paths::BUILD / 'appimage'
 APP_NAME = 'Ascli'
-# RUBY_VERSION = '3.2.2'
-RUBY_VERSION = '4.0.2'
+# APPIMAGE_RUBY_VERSION = '3.2.2'
+# Ruby version built in the AppImage (not `RUBY_VERSION`, which would replace the one of the running Ruby)
+APPIMAGE_RUBY_VERSION = '4.0.2'
 CONTAINER_IMAGE = 'ubuntu:20.04'
 CONTAINER_TOOL = ENV['CONTAINER_TOOL'] || 'podman'
 
@@ -60,7 +61,7 @@ def build_in_container(build_script_path, app_dir, output_file)
     container_script,
     container_appdir,
     container_output_path,
-    RUBY_VERSION,
+    APPIMAGE_RUBY_VERSION,
     linux_architecture
   ]
 end

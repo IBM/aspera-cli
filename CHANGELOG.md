@@ -122,6 +122,33 @@ Highlights: `ascli` as a tool for AI assistants: a hardened `mcp server`, no lon
 * `config completion`: completion scripts saved in a file must be saved again (see manual). Keys of an option are proposed with a trailing `=` or `.`.
 * **library**: Modules about secrets are in `Aspera::Secret`: `SecretHider` is now `Secret::Hider`, `SecretStrength` is now `Secret::Strength`, `Keychain` is now `Secret::Store`. `Secret::Store::Factory.create` takes only the parameters of the store, and `Factory::LIST` is replaced by `Factory.types`.
 
+### Server Versions
+
+Tested with Ruby 4.0.9 on osx-arm64.
+
+| Plugin | Product | Version |
+|--------------|--------------------------------------------------|------------------|
+| `aoc` | IBM Aspera on Cloud | SaaS |
+| `console` | IBM Aspera Console | 3.4.11 |
+| `faspex5` | IBM Aspera Faspex | 5.0.19 |
+| `faspio` | IBM Aspera faspio Gateway | 1.3.7 |
+| `httpgw` | IBM Aspera HTTP Gateway | 2.3.4 |
+| `node` | IBM Aspera High-Speed Transfer Server (Node API) | 4.4.9.3472 |
+| `orchestrator` | IBM Aspera Orchestrator | 4.1.6.2036-00000 |
+| `server` | IBM Aspera High-Speed Transfer Server (SSH) | 4.4.9.3472 |
+| `shares` | IBM Aspera Shares | 1.11.5 |
+
+### Transfer Agent Versions
+
+| Agent | Product | Version |
+|-----------|--------------------------------------------------|------------|
+| `connect` | IBM Aspera Connect | 4.2.16 |
+| `desktop` | IBM Aspera for Desktop | 1.1.2 |
+| `direct` | IBM Aspera ascp | 4.4.8.2592 |
+| `httpgw` | IBM Aspera HTTP Gateway | 2.3.4 |
+| `node` | IBM Aspera High-Speed Transfer Server (Node API) | 4.4.9.3472 |
+| `transferd` | IBM Aspera Transfer Daemon | 1.1.9 |
+
 ## 4.28.0
 
 Released: 2026-10-22
