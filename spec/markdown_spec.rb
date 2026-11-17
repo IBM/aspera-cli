@@ -11,7 +11,7 @@ RSpec.describe(Aspera::Markdown) do
     let(:table) { [%w[a b], ['x`x`', 'y|z']] }
 
     it 'generates a table with separator and escaped pipes, width without backticks' do
-      expect(described_class.table(table)).to(eq("| a | b |\n|----|-----|\n| x`x` | y\\|z |"))
+      expect(described_class.table(table)).to(eq("| a | b |\n| -- | --- |\n| x`x` | y\\|z |"))
     end
 
     it 'does not modify the provided table' do

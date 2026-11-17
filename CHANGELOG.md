@@ -4,108 +4,100 @@
 
 Released: [Place date of release here]
 
-Highlights: `ascli` as a tool for AI assistants: a hardened `mcp server`, no longer experimental (the AI client can neither execute code nor write files where it chooses), commands that describe themselves (schema of structured arguments with `help`, development guides of Orchestrator and Aspera on Cloud Automation read by section), secrets of the vault inspected without their value, and a new file `llms.txt` (also as an agent skill) that tells an AI how to drive IBM Aspera products with `ascli`. Also: analysis of `ascp` logs (`config ascp logs`, `server logs`), named secret stores for `vault` (new types `keeper` and `secret_service`, HashiCorp AppRole and token file), web login without local port (`--ui.web_auth=paste`), SAML web browser authentication for `shares` (`--auth=web`), new plugin `transferd` (Transfer Daemon as a service), export and import of Aspera on Cloud Automation workflows, many new `orchestrator` commands, improved shell completion. Project: OpenSSF Best Practices silver badge, test coverage 96.6%. Ruby 3.3 or later is required.
+Highlights:
+
+* `ascli` as a tool for AI assistants: `mcp server` is hardened (the AI client can neither execute code nor write files where it chooses) and no longer experimental; commands describe themselves (schema of structured arguments with `help`, development guides of Orchestrator and Aspera on Cloud Automation read by section); new file `llms.txt` (also as an agent skill) that tells an AI how to drive IBM Aspera products with `ascli`.
+* Analysis of `ascp` logs, local (`config ascp logs`) or on a server (`server logs`): statistics, sessions, diagnostics with recommendations.
+* Named secret stores for `vault`, new types `keeper` and `secret_service`, HashiCorp AppRole and token file, secrets inspected without their value.
+* Web login without local port (`--ui.web_auth=paste`), SAML web authentication for `shares` (`--auth=web`).
+* New plugin `transferd`: Transfer Daemon as a service. Export and import of Aspera on Cloud Automation workflows. Many new `orchestrator` commands. Improved shell completion.
+* Project: OpenSSF Best Practices silver badge, test coverage 96.6%.
+
+**This version has several breaking changes**: read [Breaking Changes](#breaking-changes) before upgrading and validate production workflows before deployment. In particular: Ruby 3.3 or later is required, `config wizard`, `config detect` and `config preset lookup` take their arguments as a `Hash` (`@: url=...`), and some `orchestrator` commands are renamed.
 
 ### New Features
 
 * `ascli`:
-  * New file `llms.txt` (in the gem and in the repository): summary for AI assistants of what `ascli` does with IBM Aspera products, and how to discover commands, arguments and options, on the command line or through `mcp server`. Same content as an agent skill (Agent Skills format), in folder `skills/ascli`, for AI clients that load skills by themselves (see manual). The repository is also a Claude Code plugin marketplace: `/plugin install ascli --marketplace IBM/aspera-cli`.
-  * Web authentication (`--auth=web`): new key `web_auth` of option `ui`. `--ui.web_auth=paste` opens no local port: after login, the user pastes in the terminal the URL the browser was redirected to (it shows a connection error, which is expected). It allows SSO when the browser cannot reach the host that runs `ascli` and an SSH tunnel is not possible (e.g. jump server). Default: `port` (unchanged). In an SSH session with `--ui=terminal`, a warning suggests it.
-  * With `--ui.web_auth=paste`, if `ascli` is also installed on the workstation that has the browser, `ascli` displays a command `ascli config web_login <code>` to run there: it opens the login page, and the browser shows a code to paste in the terminal of the server, instead of the URL of an error page. Codes are valid for 15 to 30 minutes (the clocks of both computers must be correct). The host of the login page is confirmed the first time.
-  * Improved shell completion: structures, extended values, local files and folders, presets, transfer jobs and `--query`. Preset names are proposed with their `_comment`, if any.
+  * New file `llms.txt` (in the gem and in the repository): what `ascli` does with IBM Aspera products, and how to discover commands, arguments and options, on the command line or through `mcp server`. Same content as an agent skill in folder `skills/ascli`. The repository is also a Claude Code plugin marketplace: `/plugin install ascli --marketplace IBM/aspera-cli`.
+  * Web authentication (`--auth=web`): new key `web_auth` of option `ui`. With `--ui.web_auth=paste`, no local port is opened: after login, the user pastes in the terminal the URL the browser was redirected to. It allows SSO when the browser cannot reach the host that runs `ascli` (e.g. jump server). If `ascli` is also installed on the workstation, it displays a command `ascli config web_login <code>` to run there instead. Default: `port` (unchanged).
+  * Improved shell completion: structures, extended values, local files and folders, presets (with their `_comment`), transfer jobs and `--query`.
   * SSH keys of type `ed25519` are supported without additional gem. Gem `bcrypt_pbkdf` is only needed for OpenSSH keys protected by a passphrase.
 * `config`:
+  * New command `ascp logs`: analysis of `ascp` log files (`ascp` 4.0 and later), of client and server (joined by session). Sub-commands: statistics, `sessions` (with context columns: product, transport, authentication, proxy, FIPS), `diagnostics` (severity, category, hint and recommended `ascp` options or `aspera.conf` parameters), `health` (Nagios format), multi-session transfers, rates per period, errors by peer, files, licenses, and parsed `records` for `--out.query`. Accepts gzip files, folders and the standard input (`-`). New option `ascp_logs`: thresholds of diagnostics, `timezone`, `health_minutes`.
+  * `ascp errors`: optional argument `session` lists error codes found in logs, with category and the corresponding error of the management port.
+  * `vault`: option `vault` declares several named stores: `{"default":"<name>","cache_ttl":60,"stores":{"<name>":{"type":...}}}`. A secret can be read from any store with `@vault://<store>/<path>[?<options>][#<field>]`; `@vault:<label>.<field>` uses the default store. New commands `vault stores`, `check`, `overview` and `field <label>`: they inspect stores and secrets without showing values. The former single-store form of option `vault` is deprecated, and converted when the configuration file is loaded (a backup is saved). `@file:` in options `vault` and `vault_password` is restricted by option `security` (refused by default in `mcp server`).
+  * `vault` type `file`: parameter `password` (value, or `@file:<path>`) replaces option `vault_password`.
+  * `vault` type HashiCorp: `token` accepts `@file:<path>` (read again when modified, e.g. by Vault Agent). New parameters `approle`, `namespace` and `ca_file`.
+  * `vault`: new types `keeper` (Keeper Secrets Manager, optional gem `keeper_secrets_manager`) and `secret_service` (Linux Secret Service: GNOME Keyring, KWallet, KeePassXC, with `secret-tool`).
   * `wizard` adds `_comment: "wizard: <application>"` to the preset it creates.
-  * Asynchronous transfer jobs (`list`, `status`, `cleanup`) are managed by `agents jobs`, next to the transfer agents. `config transfer` is deprecated, use `config agents jobs`: it still works, with a warning.
-  * Commands `transferd` (`install`, `list`) and `ascp install` are deprecated, use the new plugin `transferd` (`transferd install`, `transferd list`). They still work, with a warning.
-  * New command `ascp logs`: analysis of `ascp` log files (`ascp` 4.0 and later), of client and server (joined by session): statistics, sessions with diagnostics, multi-session transfers, rates per period, errors by peer, transferred files, licenses. Files compressed with gzip (e.g. `aspera.log-20261101.gz`), folders, and the standard input (argument `-`) are accepted. New option `ascp_logs`: diagnostic thresholds (`thresholds`), and `timezone` (`UTC` or `+HH:MM`) to read the log of a system in another time zone.
-  * `ascp logs diagnostics`: identifier, severity, error category with hint, and a `recommendation` (action to take, from the `ascp` options and `aspera.conf` parameters) when there is one. Diagnostics include: retries, low efficiency, rate decline, rate limit on the sender, `feedback_interruption` (sender that receives no packet from the receiver), `rex_timer_overflow`, `license_rate_limit`, `license_expiry`, `small_files` (the per-file overhead dominates) and `small_mtu` (suggests a VPN or a tunnel).
-  * `ascp logs sessions`: columns to filter by context, when the log gives them: `product_name`, `transport` (`ssh` or `wss`), `authentication` (`token` or `node`, never the secret), `proxy` and `fips`.
-  * `ascp logs health`: health of transfer sessions over the last N minutes (option `ascp_logs` key `health_minutes`, default 60), in Nagios format (OK, WARNING on low efficiency, CRITICAL on transfer failures).
-  * `ascp logs records` and `ascp logs fields`: log lines parsed into records, for use with `--out.query`.
-  * `ascp errors`: optional argument `session` lists error codes of sessions (`errcode` in logs), with category and corresponding error of the management port (default: `management`).
-  * `vault`: Option `vault` declares several named stores: `{"default":"<name>","cache_ttl":60,"stores":{"<name>":{"type":...}}}`. `@vault:<label>.<field>` and `config vault` use the default store. A secret can be read from any store, several stores in the same command, with `@vault://<store>/<path>[?<options>][#<field>]`. New commands `vault stores` (stores of option `vault`, with their type and default, without parameters), `vault check` (store, version and update time of a reference, without its value), `vault overview` (labels with their field names) and `vault field <label>` (field names of a secret). Type `file`: parameter `password` (the value, or `@file:<path>`) replaces option `vault_password`, and the file is read again when it is modified. The parameters of a single store, without `stores`, are deprecated: e.g. use `{"default":"local","stores":{"local":{"type":"file","file":"vault.bin"}}}`. The deprecated form found in the configuration file is converted when the file is loaded (a backup of the file is saved).
-  * `vault` (HashiCorp): Parameter `token` accepts `@file:<path>`: the token is read again when the file is modified (e.g. by Vault Agent). New parameters `approle` (AppRole login, with `secret_id`, also `@file:<path>`), `namespace` and `ca_file`. `@file:` in options `vault` and `vault_password` is restricted by option `security` (refused by default in `mcp server`).
-  * `vault`: New type `keeper`: secrets of Keeper Secrets Manager (Keeper Vault), with optional gem `keeper_secrets_manager`. A secret is a record of a folder shared with the application (title or UID); fields are the standard fields of the record, custom fields by label, and `notes`. Parameter `folder_uid` for `config vault create`.
-  * `vault`: New type `secret_service`: secrets of the Linux Secret Service (GNOME Keyring, KWallet, KeePassXC...), using the `secret-tool` command.
+  * Asynchronous transfer jobs (`list`, `status`, `cleanup`) are managed by `agents jobs`. `config transfer` is deprecated.
+  * `transferd` (`install`, `list`) and `ascp install` are deprecated, use the new plugin `transferd`.
+  * `preset set` merges into the configuration at three levels (see [Breaking Changes](#breaking-changes)). `preset update`, `initialize` and `unset` are deprecated, and show the command to use.
+* `transferd`: new plugin for the Transfer Daemon.
+  * `install [version]` and `list`. `install` does nothing if the version is already installed.
+  * `info` and `transfers show|cancel <transfer_id>` for a running daemon (options `--url`, `--api-key`, `--ca-file`; requires gem `grpc`).
+  * `service` (`spec`, `install`, `configure`, `status`, `uninstall`, `use`, `versions`): run `transferd` as a `systemd` service, with its configuration validated, and SDK versions side by side (`use` for rollback). New global option `--dry-run` shows the actions without change.
+* `server`: new command `logs`: same analysis as `config ascp logs`, on the log files of the server, read over SSH (size limited by key `remote_max_size` of option `ascp_logs`, default 256 MB).
 * `aoc`:
-  * `automation` is no longer beta. New commands `automation workflows details` (workflow with its steps and actions), `export`, `import` and `duplicate` (copy made by the server, which keeps the secrets that the API does not return).
-  * New command `automation guide` (`toc`, `full`, `section <anchor>`): the Aspera on Cloud Automation Development Guide (from GitHub), also used by AI assistants through `mcp server`.
-* `faspex5`:
-  * Web authentication (`--auth=web`) uses PKCE (RFC 7636, method `S256`): an authorization code is useless without the verifier that only `ascli` knows. Checked by Faspex 5.0.16 and later, ignored by earlier versions. Nothing to change in the configuration.
-* `connect`: IBM Aspera Connect will be deprecated in 2027. The transfer agent `connect` displays a warning that recommends IBM Aspera for Desktop (`--transfer=desktop`).
-* `transferd`: new plugin to install the Transfer Daemon and run it as a system service.
-  * `transferd install [version]` and `transferd list` (same as `config transferd install` and `config transferd list`, which are deprecated).
-  * `transferd install` (and the deprecated `config ascp install`) does nothing if the requested version is already installed in the SDK folder, instead of downloading and installing it again. It is not checked with option `--sdk-url`.
-  * New client commands for a running daemon: `transferd info` and `transferd transfers show|cancel <transfer_id>`, with the options `--url`, `--api-key` and `--ca-file` (missing keys are taken from `--transfer` when its agent is `transferd`). They require the gem `grpc`.
-  * New commands `transferd service` (`spec`, `install`, `configure`, `status`, `uninstall`, `use`, `versions`): run the Transfer Daemon (`transferd`) as a `systemd` service. The configuration `transferd.json` is given in an optional last argument `{"service":{...},"config":{...}}`: it is merged into the existing file and validated (unknown keys are refused, the API key is kept or generated, never shown). Versions of the SDK can be installed side by side, with `use` for rollback. New global option `--dry-run` shows the actions without change.
-* `server`: new command `logs` analyzes the `ascp` log files of the server (paths on the server, gzip supported), read over its SSH connection, with the same sub-commands as `config ascp logs`. The total size read is limited by key `remote_max_size` of option `ascp_logs` (default 256 MB).
-* `node`: `asperabrowser` opens the new Aspera Browser web application (<https://laurent-martin.github.io/aspera-browser-react/>, option `asperabrowserurl`), as the former one (`asperabrowser.mybluemix.net`) is no longer available. The node (`nodeURL`, `nodeUser` and `nodePW`) is given in the fragment of the URL (`#goto=`), which a browser does not send to the web server, instead of the query. The password is optional: if there is none, it is entered in the application.
-* `shares`: New option `--auth=web` authenticates a SAML user with the web browser. The token is saved and renewed. It requires a Shares with a specific patch: temporary code provided in `docs/shares` until an equivalent is officially released in Shares (see manual), so it may change with the final implementation in Shares.
-  * `--ui.web_auth=port` (default): automatic, `ascli` listens on a loopback port (option `--redirect-uri`, default `http://localhost:12345`) that receives the tokens from Shares.
-  * `--ui.web_auth=paste`: no local port, so the browser can be on any system: Shares displays a code, and the user pastes it in the terminal.
+  * `automation` is no longer beta. New commands `automation workflows details`, `export`, `import` and `duplicate`.
+  * New command `automation guide` (`toc`, `full`, `section <anchor>`): the Aspera on Cloud Automation Development Guide.
+* `faspex5`: web authentication (`--auth=web`) uses PKCE (`S256`), checked by Faspex 5.0.16 and later. Nothing to change in the configuration.
+* `shares`: new option `--auth=web`: SAML authentication with the web browser, with `--ui.web_auth=port` (default) or `paste`. It requires a patch of Shares, provided in `docs/shares` until it is part of a Shares release (see manual).
+* `node`: `asperabrowser` opens the new Aspera Browser web application (option `asperabrowserurl`), as the former one is no longer available. The node credentials are given in the fragment of the URL, which the browser does not send to the web server.
 * `orchestrator`:
-  * New commands, from the API of Orchestrator: `tasks` (`list`, `show`, `submit`), `alerts list`, `queues`, `pools`, `plugins` (`reload`, `enable`, `import`), `workflows` (`parents`, `steps`, `test_step`, `test_status`), `portlets` (`list`, `show`), `users create`, `workorders delete`, `workorders worksteps` (work steps of a work order, with their id), `worksteps reset`, `monitors activate|deactivate`, statistics (`workorders stats`, `worksteps stats`, `queues stats`), and `control` (start, stop or kill the engine, the monitor or workers, and show the process status).
-  * `workflows check_import` detects more problems that make a workflow unusable in Orchestrator (steps that never start, loops, invalid links or lookups).
-  * `workflows development` and `plugins spec` have sub-commands `toc`, `full` and `section <anchor>` (`show <plugin> [section]` for `plugins spec`), so that an AI assistant reads only the section it needs. The guide is read from the IBM short link, with GitHub as fallback. `plugins spec` gives `manual_anchor`, the section of the Plugin Manual to read with `workflows development manual section`.
-* `mcp`: the plugin is no longer experimental: its interface follows the same compatibility rules as other plugins (deprecation before removal).
+  * New commands: `tasks`, `alerts list`, `queues`, `pools`, `plugins` (`reload`, `enable`, `import`), `workflows` (`parents`, `steps`, `test_step`, `test_status`), `portlets`, `users create`, `workorders delete`, `workorders worksteps`, `worksteps reset`, `monitors activate|deactivate`, statistics (`stats` of `workorders`, `worksteps` and `queues`), and `control` (engine, monitor and workers).
+  * `workflows check_import` detects more problems that make a workflow unusable (steps that never start, loops, invalid links or lookups).
+  * `workflows development` and `plugins spec` are read by section (`toc`, `full`, `section <anchor>`), so that an AI assistant reads only what it needs.
+* `connect`: IBM Aspera Connect will be deprecated in 2027: the transfer agent `connect` displays a warning that recommends IBM Aspera for Desktop (`--transfer=desktop`).
+* `mcp`: no longer experimental: the plugin follows the same compatibility rules as other plugins.
 * **library**:
-  * New class `Aspera::Secret::Resolver`: references `secret://<store>/<path>[?<options>][#<field>]` to secrets of named stores (HashiCorp Vault KV v2, encrypted file of `ascli`, macOS keychain, 1Password, or a type registered with `Factory.register_type`), read when used, with a cache. For applications that store references instead of secrets, and `@vault://` of `ascli`.
-  * Resolver can also create secrets in stores declared `writable: true` (`Resolver#write`), and inspect stores and references without reading secret values (`Resolver#list`, `#fields`, `#check`, `Aspera::Secret.reference_text`).
+  * New class `Aspera::Secret::Resolver`: references `secret://<store>/<path>[?<options>][#<field>]` to secrets of named stores, read when used, with a cache. It can also write secrets (`writable: true`) and inspect stores and references without reading values.
   * `Aspera::Log#logger=` sends logs to the logger of the application.
-  * `Aspera::SealedHash.seal` and `unseal` have parameters `encrypt:` (`false`: no encryption and no validity period, for texts decoded by other programs) and `reverse:` (reverse the text). Defaults are unchanged.
+  * `Aspera::SealedHash.seal` and `unseal`: new parameters `encrypt:` and `reverse:`.
   * New token creator `Aspera::OAuth::SharesWeb` (`grant_method: :shares_web`).
-  * Transfer agents: new optional method `transfer_cancel(transfer_id, agent_params)` stops a transfer started asynchronously (agent `transferd`). Agent `transferd` has a reader `transfer_id`: identifier of the last transfer started.
-  * Agent `transferd`: new parameters `api_key` and `ca_file` for an existing daemon (`start` is `false`) whose configuration enables `authentication` or `tls`. New methods `Aspera::Agent::Transferd.info` and `create_client`; `transfer_status` and `transfer_cancel` accept the same parameters. `transfer_status` has new fields: `state`, `bytes_written`, `files_completed`, `rate_kbps`, `target_rate_kbps`, `elapsed_sec`, `started_at`, `ended_at`, `error_code`.
+  * Transfer agents: new optional method `transfer_cancel`. Agent `transferd`: parameters `api_key` and `ca_file` for an existing daemon, methods `info` and `create_client`, new fields in `transfer_status`, reader `transfer_id`.
 * **project**:
   * OpenSSF Best Practices: silver badge (<https://www.bestpractices.dev/projects/5861>).
   * Test coverage: 96.6% of lines (was 85%), badge in `README.md`. Branch coverage is also measured.
-  * New `GOVERNANCE.md` (roles, decisions, continuity) and `docs/ASSURANCE_CASE.md` (security requirements, threat model, weaknesses countered). Code review requirements in `CONTRIBUTING.md`.
+  * New `GOVERNANCE.md` and `docs/ASSURANCE_CASE.md` (security requirements, threat model). Code review requirements in `CONTRIBUTING.md`.
   * Each source file has an SPDX copyright and license header.
 
 ### Issues Fixed
 
-* `config preset update`: saved all the options of the command line in the preset, also those placed before `update`, for example `--home`, `--config-file`, `--log-level` or `--format`. With the deprecated form, only the options placed after `update` are saved.
-* `config initdemo`: the demo server preset allows the SSH host key `ssh-rsa` (option `ssh_options`), the only one offered by the demo server, so that `server browse` and other file operations work (transfers already worked). A preset created by an earlier version is not modified: recreate it, or add `--ssh-options=@json:'{"host_key":["ssh-rsa"]}'`.
-* Gem dependency: excludes `regexp_parser` 2.13.2, with which `json_schemer` fails to load (`undefined method 'implements'`).
-
-* `mcp`: in `mcp server` mode (security level `high`), a client could execute code, or write a file where it chooses, with: options `notify_template`, `fpac`, `ui` (key `command`), `out` (key `file`), `output`, `pid_file`, `home`, `plugin_folder`, `sdk_url` and `locations_url`, the folder `plugins` of the configuration folder (a client could write a plugin there, e.g. with `config download`, then run it), command `config plugins create` and command `faspex5 postprocessing`. They are now available only at level `low`, whether the option is set on the command line or in a preset; values from the environment of the process are not restricted. At levels `medium` and `high`:
-  * `config preset set`, `update` and `initialize` refuse such an option, and a value that contains a refused extended value (for example `@val:@ruby:...`, which was evaluated later at level `low`).
-  * Commands refused by the level are not listed by `config commands`.
-  * Files are written on the local system (`config download`, transfers that receive files, except with transfer agent `node`, which writes on the node) only in the new key `writable_paths` of option `security` (none by default).
-* `config`:
-  * `plugins create` refuses a plugin name that is not made of lowercase letters, digits and underscores.
-  * `transferd install`, `ascp install`: a file or a link of the SDK archive cannot be written outside of the installation folder. Reported by [@thesmartshadow](https://github.com/thesmartshadow).
-  * `preset set`: the value is evaluated once, as an extended value: `@val:@file:<path>` stores `@file:<path>` as documented, and not the content of the file. A value without `@val:` is evaluated as before: for example `@yaml:@file:<path>` stores the content, `@val:@yaml:@file:<path>` stores the reference to the file. The result of an evaluation is no longer evaluated again: a file read with `@file:` that contains `@json:[1,2]` is stored as that text.
-  * `vault`: the encrypted file vault keeps its owner, group and mode when it is changed by another user, e.g. root.
-  * `vault` (HashiCorp): Responses of Vault failed with `wrong number of arguments` with gem `json` 3. `vault info` shows the authentication method instead of an internal object.
-* `preview`:
-  * An existing preview is also detected with the preview of the file (`files/<id>/preview`), when the information of the file has no `preview`: one more request for such a file.
-  * `events` generated no preview: it now generates previews of new and modified files (option `filter` applies), and deletes the preview folder of deleted files.
-  * Option `skip_format` failed with `FrozenError`.
-* `aoc`: `packages receive` with option `package_folder`:
-  * Two fields (e.g. `{"fld":["name","id"]}`) gave a folder `<name>.id` instead of `<name>.<id>` (value of the second field).
-  * With `seq` or `opt`, the existence of the folder was checked in the current folder instead of the folder given by `to_folder`.
-* `node`:
-  * `access_keys do <id> show` and `thumbnail` ask the node not to use its cache (`Cache-Control`).
-  * Browsing a folder of a node with `--query.per_page` or `--query.page` failed when API v4 is not used (`TypeError`, or error 400 with only one of them): pages are now read from page 1 until a page is incomplete, and the missing parameter is added.
-  * `telemetry`: an integer value of key `interval` (e.g. `0`, as documented) was refused by the schema. Same for keys `spawn_timeout_sec` and `spawn_delay_sec` of `transfer_info` (agent `direct`), and `font_ratio` of option `out` (key `img`).
-* `config`: `preset lookup help` shows the schema of the argument (`url` and `username`).
-* `ascli`: `-h` gives the command and the URL (`llms.txt`) for AI assistants.
-* `aoc`: `automation instances show` did not return. It now accepts the numeric identifier or the UUID.
-* `faspex5`: Web authentication (`--auth=web`) failed when HTTP basic authentication is enabled on the API client: option `client_secret` is now sent.
-* `orchestrator`: Authentication with option `apikey` was rejected by Orchestrator (HTTP 401): the API requires `username` with the API key. Option `username` is now required with `apikey`.
+* Security:
+  * `mcp server` (security level `high`): a client could execute code, or write a file where it chooses, through some options (`notify_template`, `fpac`, `ui` key `command`, `out` key `file`, `output`, `pid_file`, `home`, `plugin_folder`, `sdk_url`, `locations_url`), the folder `plugins` of the configuration folder, `config plugins create` and `faspex5 postprocessing`. They are now available only at level `low`, on the command line and in presets. At levels `medium` and `high`, `config preset set` refuses them, `config commands` does not list refused commands, and local files are written only in the new key `writable_paths` of option `security` (none by default).
+  * `config transferd install`, `config ascp install`: a file or a link of the SDK archive cannot be written outside of the installation folder. Reported by [@thesmartshadow](https://github.com/thesmartshadow).
+  * `config plugins create` refuses a plugin name that is not made of lowercase letters, digits and underscores.
 * `ascli`:
-  * `--out.select` with a dot-path key (e.g. `directory_user.type`) selected no item with formats `json`, `jsonpp`, `yaml` and `ruby`.
-  * `--out.select` matching no item displayed a table with headings only, instead of `<empty>`.
+  * `--out.select` with a dot-path key (e.g. `directory_user.type`) selected no item with formats `json`, `jsonpp`, `yaml` and `ruby`. Matching no item displayed a table with headings only, instead of `<empty>`.
   * An argument without `=` collected by `@:` is reported as a bad argument, instead of an assertion failure. Errors of extended values name their modifier (e.g. `@file:`).
   * `@extend:` no longer evaluates again the values it inserts (e.g. read by `@env:` or `@file:`).
-  * An unknown key of a `Hash` option in dot notation (e.g. `--ui.foo=1`) is followed only by the schema error, no longer by an extra `unprocessed values` error.
+  * An unknown key of a `Hash` option in dot notation (e.g. `--ui.foo=1`) gave an extra `unprocessed values` error.
   * When the renewal of an expired OAuth token fails, the error of the renewal is reported, instead of the original authorization error.
-  * In debug logs, a command argument that contains a single quote was quoted wrongly (e.g. `it's` shown as `'it's s'`).
+  * In debug logs, a command argument that contains a single quote was quoted wrongly.
+  * Gem dependency: excludes `regexp_parser` 2.13.2, with which `json_schemer` fails to load.
+* `config`:
+  * `preset update` saved all the options of the command line in the preset, also those placed before `update` (e.g. `--home`, `--log-level`, `--format`).
+  * `preset set`: the value is evaluated once: `@val:@file:<path>` stores `@file:<path>`, as documented, not the content of the file. The result of an evaluation is no longer evaluated again.
+  * `initdemo`: the demo server preset allows the SSH host key `ssh-rsa`, the only one offered by the demo server, so that `server browse` and other file operations work. To fix a preset created by an earlier version: recreate it, or add `--ssh-options=@json:'{"host_key":["ssh-rsa"]}'`.
+  * `vault` type `file`: the vault keeps its owner, group and mode when it is changed by another user, e.g. root.
+  * `vault` type HashiCorp: responses of Vault failed with `wrong number of arguments` with gem `json` 3.
+* `aoc`:
+  * `automation instances show` did not return. It now accepts the numeric identifier or the UUID.
+  * `packages receive` with option `package_folder`: two fields (e.g. `{"fld":["name","id"]}`) gave `<name>.id` instead of `<name>.<id>`, and with `seq` or `opt` the existence of the folder was checked in the current folder instead of `to_folder`.
+* `faspex5`: web authentication (`--auth=web`) failed when HTTP basic authentication is enabled on the API client: option `client_secret` is now sent.
+* `orchestrator`: authentication with option `apikey` was rejected (HTTP 401): the API requires `username` with the API key. Option `username` is now required with `apikey`.
+* `node`:
+  * Browsing a folder with `--query.per_page` or `--query.page` failed when API v4 is not used.
+  * `telemetry`: an integer value of key `interval` (e.g. `0`, as documented) was refused. Same for keys `spawn_timeout_sec` and `spawn_delay_sec` of `transfer_info` (agent `direct`), and `font_ratio` of option `out` (key `img`).
+  * `access_keys do <id> show` and `thumbnail` ask the node not to use its cache.
+* `preview`:
+  * `events` generated no preview: it now generates previews of new and modified files (option `filter` applies), and deletes the previews of deleted files.
+  * Option `skip_format` failed with `FrozenError`.
+  * An existing preview is also detected with the preview of the file (`files/<id>/preview`), when the information of the file has no `preview`.
 * **library**: agent `transferd`:
-  * `transfer_status` no longer blocks on an ended transfer. When the daemon cannot be reached, does not answer in time, or does not know the transfer, the status is `unknown` instead of `running`. `error` is the error of the transfer. Calls have a timeout: key `timeout` of `agent_params`, default 10 seconds.
-  * A process that attaches to an external daemon for each transfer (e.g. Orchestrator) accumulated `at_exit` handlers: `shutdown` is registered only when the agent starts the daemon.
+  * `transfer_status` no longer blocks on an ended transfer. When the daemon cannot be reached, does not answer in time, or does not know the transfer, the status is `unknown` instead of `running`. Calls have a timeout: key `timeout` of `agent_params`, default 10 seconds.
+  * A process that attaches to an external daemon for each transfer (e.g. Orchestrator) accumulated `at_exit` handlers.
 
 ### Breaking Changes
 
@@ -127,7 +119,7 @@ Highlights: `ascli` as a tool for AI assistants: a hardened `mcp server`, no lon
 Tested with Ruby 4.0.9 on osx-arm64.
 
 | Plugin | Product | Version |
-|--------------|--------------------------------------------------|------------------|
+| ------------ | ------------------------------------------------ | ---------------- |
 | `aoc` | IBM Aspera on Cloud | SaaS |
 | `console` | IBM Aspera Console | 3.4.11 |
 | `faspex5` | IBM Aspera Faspex | 5.0.19 |
@@ -141,7 +133,7 @@ Tested with Ruby 4.0.9 on osx-arm64.
 ### Transfer Agent Versions
 
 | Agent | Product | Version |
-|-----------|--------------------------------------------------|------------|
+| --------- | ------------------------------------------------ | ---------- |
 | `connect` | IBM Aspera Connect | 4.2.16 |
 | `desktop` | IBM Aspera for Desktop | 1.1.2 |
 | `direct` | IBM Aspera ascp | 4.4.8.2592 |
@@ -285,7 +277,7 @@ Highlights: security hardening of local web servers (authentication, minimum sec
 ### Server Versions
 
 | Plugin | Product | Version |
-|--------------|--------------------|------------------|
+| -------------- | -------------------- | ------------------ |
 | `aoc` | Aspera on Cloud | SaaS |
 | `console` | IBM Aspera Console | 3.4.11 |
 | `faspex5` | Faspex v5 | F5.0.17 |
@@ -297,7 +289,7 @@ Highlights: security hardening of local web servers (authentication, minimum sec
 ### Transfer Agent Versions
 
 | Agent | Product | Version |
-|-----------|--------------------------------|---------|
+| ----------- | -------------------------------- | --------- |
 | `connect` | IBM Aspera Connect Client | 4.2.14 |
 | `desktop` | IBM Aspera Desktop Client | 4.4.3 |
 | `direct` | IBM Aspera Transfer SDK (ascp) | 1.1.9 |

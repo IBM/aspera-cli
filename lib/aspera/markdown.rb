@@ -173,8 +173,8 @@ module Aspera
       headings = table.shift
       table.unshift(col_widths.map { |col_width| '-' * col_width })
       table.unshift(headings)
+      # Separator row with spaces around pipes, as other rows (markdownlint MD060, style `compact`)
       lines = table.map { |line| "| #{line.map { |i| i.to_s.gsub('\\', '\\\\').gsub('|', '\|') }.join(' | ')} |\n" }
-      lines[1] = lines[1].tr(' ', '-')
       return lines.join.chomp
     end
   end

@@ -539,7 +539,7 @@ If only an older Ruby version must be used due to system constraints, use an old
 The following table summarizes Ruby version life cycles and `ascli` support status:
 
 | Ruby Version | Official EOL Date | ascli Support End (EOL + 6 mo) | ascli Status |
-|--------------|-------------------|--------------------------------|-----------------------------------|
+| ------------ | ----------------- | ------------------------------ | --------------------------------- |
 | 4.0 | 2029-03-31 | 2029-09-30 | **Supported (Tested & Packaged)** |
 | 3.4 | 2028-03-31 | 2028-09-30 | **Supported (Future minimum)** |
 | 3.3 | 2027-03-31 | 2027-09-30 | **Supported (Current minimum)** |
@@ -619,7 +619,7 @@ Add it to your shell configuration file:
 The following table summarizes supported Linux distributions, vendor end of support dates, GLIBC versions, available Ruby streams, and recommended `ascli` installation modes:
 
 | Linux Distribution | OS Support End (EOL) | GLIBC (>= 2.28) | OS Ruby Version(s) | ascli Support / Mode |
-|----------------------|----------------------|--------------------|--------------------------------------|-------------------------------------------------------|
+| -------------------- | -------------------- | ------------------ | ------------------------------------ | ----------------------------------------------------- |
 | **RHEL / UBI 10** | 2035-05-31 | 2.39+ (Compatible) | >= 3.3 (default) | Gem, Portable, Container |
 | **RHEL / UBI 9** | 2032-05-31 | 2.34 (Compatible) | 3.0 (default), 3.1, 3.3 (DNF module) | Gem (`dnf module enable ruby:3.3`), Portable, Container |
 | **RHEL / UBI 8** | 2029-05-31 | 2.28 (Compatible) | 3.1, 3.3 (DNF module) | Gem (`dnf module enable ruby:3.3`), Portable, Container |
@@ -836,7 +836,7 @@ Those are not installed as part of dependencies because they involve compilation
 See [Gemfile](../Gemfile):
 
 | name | version | comment |
-|------------------------|-----------|----------------------------------------------------------------------------------|
+| ---------------------- | --------- | -------------------------------------------------------------------------------- |
 | rake | ~> 13.0 |  |
 | debug | ~> 1.11 | (no jruby) |
 | grpc-tools | ~> 1.67 |  |
@@ -2370,7 +2370,7 @@ ascli config preset overview --out.colors=no --out.utf8=no
 The exit code of `ascli` indicates the category of error, so that scripts can react to it:
 
 | Code | Description |
-|------|----------------------------------------------------------------------------|
+| ---- | -------------------------------------------------------------------------- |
 | `0` | Success |
 | `1` | Other error |
 | `2` | Command line error: unknown command or option, invalid or missing argument |
@@ -3113,7 +3113,7 @@ Some temporary files may be needed during runtime, for example the file list of 
 The composite option `temp` (use `--temp=help` to display this schema) controls them:
 
 | Field | Type | Description |
-|--------|----------------------|----------------------------------------------------------------------------------|
+| ------ | -------------------- | -------------------------------------------------------------------------------- |
 | `clean` | `Bool` | Delete temporary files created by the command when it ends. `false` keeps them, e.g. for debugging. Files left by previous commands are still deleted according to `expiry`.<br/>Default: `true`. |
 | `expiry` | `String, Number, Bool` | Age after which file lists of `ascp` left by previous commands (e.g. interrupted) are deleted, when a command starts. They are in folder `filelists` of the main folder (option `home`). A duration, e.g. `5d`, `12h`, `1w`, `1h 30m`, `1d 02:00:00`, a plain number is seconds. `false` or `null` (`@none:`): never delete them. `0`: delete all of them, including file lists of transfers in progress in other executions of ascli. Such a transfer fails if `ascp` reads its file list again: next session of a multi-session transfer, or resume after an error. Use `0` only when no other transfer is in progress, not in a permanent configuration.<br/>Default: `5d`. |
 | `folder` | `String` | Folder for temporary files, e.g. certificate for WSS transfers, logs of `transferd`.<br/>- `@sys`: temporary folder of the system for the current user (Ruby `Etc.systmpdir`).<br/>- `@env`: from environment variables, e.g. `TMPDIR` (Ruby `Dir.tmpdir`).<br/>Default: `@sys`. |
@@ -3572,7 +3572,7 @@ Option `vault` declares named secret stores (`stores`), and the name of the defa
 - `@vault://<store>/<path>[?<options>][#<field>]` reads a secret of any store (see [Vault: Secret references](#vault-secret-references)).
 
 | Field | Type | Description |
-|-----------|--------|----------------------------------------------------------------------------------|
+| --------- | ------ | -------------------------------------------------------------------------------- |
 | `cache_ttl` | `Number` | Time in seconds a value read by reference is kept in memory, `0` for no cache.<br/>Default: `60`. |
 | `default` | `String` | Name of the default store, in `stores`: read by `@vault:<label>.<field>`, managed by `config vault`, unlocked with option `vault_password`. No default store if not set. |
 | `stores` | `Hash` | Name of store (letters, digits, `_`, `.`, `-`) → parameters of store, with `type`. Secrets are read by reference with `@vault://<store>/<path>[?<options>][#<field>]` from any store.<br/>Required. |
@@ -3586,7 +3586,7 @@ ascli config preset set GLOBAL vault @json:'{"default":"local","stores":{"local"
 Parameters of a store, with `type` (see sections below):
 
 | Field | Type | Description |
-|-------------------|---------------|----------------------------------------------------------------------------------|
+| ----------------- | ------------- | -------------------------------------------------------------------------------- |
 | **type** | `String` | `vault`: IBM HashiCorp Vault secret store. Labels of `config vault` and `@vault:<label>.<field>` are in mount `secret` (KV v2). Reference `@vault://<store>/<mount>/<path>#<field>` (field required) in any KV v2 mount, options `version=<n>`, `mount=<mount>` (when the mount contains `/`). |
 | `allowed_prefixes` | `Array[String]` | Allowed prefixes of `<mount>/<path>` of references: a prefix ending with `/` is a folder, else a path or a folder. All paths are allowed if not set. |
 | `approle` | `Hash` | AppRole authentication: the token is obtained by login, renewed, and obtained again when refused. |
@@ -4103,7 +4103,7 @@ This feature can be used:
 The following options can be specified in option `--out.img`:
 
 | Field | Type | Description |
-|------------|---------|----------------------------------------------------------------------------------|
+| ---------- | ------- | -------------------------------------------------------------------------------- |
 | `double` | `Bool` | Use double vertical resolution via half-block characters (Unicode). Default is `true` if the terminal supports Unicode (see `utf8`). |
 | `font_ratio` | `Number` | Terminal font aspect ratio (height divided by width).<br/>Default: `2.3`. |
 | `reserve` | `Integer` | Number of terminal lines reserved for non-image output.<br/>Default: `3`. |
@@ -4141,7 +4141,7 @@ By default, `ascli` assumes that a graphical environment is available on Windows
 The composite option `ui` (use `--ui=help` to display this schema) selects the mode, the way a web login is received, and the browser command:
 
 | Field | Type | Description |
-|----------|---------------|----------------------------------------------------------------------------------|
+| -------- | ------------- | -------------------------------------------------------------------------------- |
 | `command` | `Array[String]` | Command that opens a URL, instead of the system default. First item is the executable (full path, or name of an executable found in `PATH`), then its arguments. The URL is added as last argument. When set, it is used to open URLs, whatever the `mode`. |
 | `mode` | `Enum[String]` | - `auto`: `browser` on Windows and macOS, or if env var `DISPLAY` is set, else `terminal`.<br/>- `terminal`: URLs to open are displayed on terminal, and secrets are entered on terminal.<br/>- `browser`: a browser opens URLs, and secrets are entered on a web page.<br/>`text` is an alias for `terminal`, and `graphical` is an alias for `browser`.<br/>Files to edit are always opened with a text editor, whatever the `mode`.<br/>Allowed values: `auto`, `terminal`, `browser`, `text`, `graphical`.<br/>Default: `auto`. |
 | `web_auth` | `Enum[String]` | How the result of a web login (`--auth=web`, SSO) is received.<br/>- `port`: `ascli` listens on the loopback port of `redirect_uri`, the browser is redirected to it.<br/>- `paste`: no port is opened. After login, the browser shows a connection error on `redirect_uri`: copy the full URL from the address bar of the browser and paste it in the terminal. Use it when the browser cannot reach the host that runs `ascli` and a SSH tunnel is not possible. For `shares`, Shares displays a code (a long text of letters, digits, `-` and `_`) instead: paste it in the terminal.<br/>Allowed values: `port`, `paste`.<br/>Default: `port`. |
@@ -4327,7 +4327,7 @@ The gem is equipped with traces, mainly for debugging and learning APIs.
 The composite option `log` groups all logging parameters (use `--log=help` to display this schema):
 
 | Field | Type | Description |
-|---------|--------------|---------------------------------------------------------------------------|
+| ------- | ------------ | ------------------------------------------------------------------------- |
 | `format` | `Enum[String]` | Log line formatter. Use `@ruby:` for a custom lambda.<br/>Allowed values: `default`, `caller`, `standard`.<br/>Default: `default`. |
 | `level` | `Enum[String]` | Minimum log level displayed.<br/>Allowed values: `trace2`, `trace1`, `debug`, `info`, `warn`, `error`, `fatal`, `unknown`.<br/>Default: `warn`. |
 | `secrets` | `Bool` | Show passwords and secrets in logs.<br/>Default: `false`. |
@@ -4412,7 +4412,7 @@ To disable this warning, set the option `warn_insecure` to `no`.
 HTTP connection parameters (not `ascp` WSS) can be adjusted using option `http_options`:
 
 | Field | Type | Description |
-|-------------------------|---------------|----------------------------------------------------------------------------------|
+| ----------------------- | ------------- | -------------------------------------------------------------------------------- |
 | `download_partial_suffix` | `String` | File suffix appended to the target filename while a download is in progress. (Rest)<br/>Default: `.http_partial`. |
 | `keep_alive_timeout` | `Number` | Maximum time in seconds to keep an idle persistent connection open. (Net::HTTP)<br/>Default: `2`. |
 | `open_timeout` | `Number` | Maximum time in seconds to wait for a connection to be established. (Net::HTTP)<br/>Default: `60`. |
@@ -4775,7 +4775,7 @@ See [FASP](#fasp-configuration).
 The `transfer` option accepts the following optional parameters to control multi-session, Web Socket Session, Resume policy and add any argument to `ascp`:
 
 | Field | Type | Description |
-|----------------------|---------------|----------------------------------------------------------------------------------|
+| -------------------- | ------------- | -------------------------------------------------------------------------------- |
 | `ascp_args` | `Array[String]` | List of native `ascp` command-line arguments.<br/>Default: `[]`. |
 | `client_ssh_key` | `Enum[String]` | SSH key type to use for token-based transfers.<br/>Allowed values: `rsa`, `dsa_rsa`, `per_client`.<br/>Default: `rsa`. |
 | `file_list` | `Bool` | If `true`, source paths are written to a temp file passed to `ascp` via `--file-list` or `--file-pair-list`.<br/>If `false`, source paths are placed directly on the `ascp` command line.<br/>Default: `true`. |
@@ -5150,7 +5150,7 @@ This is especially useful for direct node-to-node transfers.
 Parameters provided in option `transfer` are:
 
 | Field | Type | Description |
-|----------|--------|---------------------------------------------------------------|
+| -------- | ------ | ------------------------------------------------------------- |
 | `password` | `String` | Password, secret, or bearer token.<br/>Required. |
 | `root_id` | `String` | Root file ID. Mandatory only when `password` is a bearer token. |
 | `url` | `String` | URL of the Node API.<br/>Required. |
@@ -5182,7 +5182,7 @@ By specifying option: `--transfer=httpgw`, `ascli` will start transfers using th
 Parameters provided in option `transfer` are:
 
 | Field | Type | Description |
-|-------------------|--------------|---------------------------------------------|
+| ----------------- | ------------ | ------------------------------------------- |
 | `api_version` | `Enum[String]` | Force use of a specific API version.<br/>Allowed values: `v1`, `v2`.<br/>Default: `v2`. |
 | `synchronous` | `Bool` | Wait for acknowledgment after each message.<br/>Default: `false`. |
 | `upload_chunk_size` | `Integer` | Size in bytes of each upload chunk.<br/>Default: `64000`. |
@@ -5207,7 +5207,7 @@ Set option `transfer` to `transferd`.
 Options for `transfer` are:
 
 | Field | Type | Description |
-|---------|--------|----------------------------------------------------------------------------------|
+| ------- | ------ | -------------------------------------------------------------------------------- |
 | `api_key` | `String` | API key of an existing daemon (`start` is `false`) that has `authentication` enabled in its configuration. It is sent in the metadata `api_key` of each call. |
 | `ca_file` | `String` | Path to the certificate authority file (PEM) that signed the certificate of an existing daemon (`start` is `false`) that has `tls` enabled in its configuration. A self-signed certificate is its own authority. |
 | `start` | `Bool` | Start a new daemon instance.<br/>Default: `true`. |
@@ -5293,7 +5293,7 @@ Except `spec` and `versions`, commands take the optional **last** positional arg
 Parameters of section `service`:
 
 | Field | Type | Description |
-|-------------|---------------|----------------------------------------------------------------------------------|
+| ----------- | ------------- | -------------------------------------------------------------------------------- |
 | `after` | `Array[String]` | Units that shall be started before the daemon (`After=` in the unit).<br/>Default: `["network.target"]`. |
 | `environment` | `Hash` | Environment variables set in the unit. None is set unless given here. `TRANSFERD_ADDRESS`, `TRANSFERD_PORT`, `TRANSFERD_MGMT_PORT` and `TRANSFERD_MGMT_ADDRESS` override the configuration file. |
 | `group` | `String` | Group that runs the daemon. Defaults to the primary group of `user`. |
@@ -5310,7 +5310,7 @@ ascli transferd service spec
 ```
 
 | Field | Type | Description |
-|------------------------------------------|---------------|----------------------------------------------------------------------------------|
+| ---------------------------------------- | ------------- | -------------------------------------------------------------------------------- |
 | `$schema` | `String` | Optional URI or path of this schema, used by editors for completion and validation. Ignored by transferd. |
 | `address` | `String` | IP address or host name on which the gRPC API listens. Use 0.0.0.0 to listen on all IPv4 interfaces (for example in a container); when not listening on a loopback address, consider enabling tls and authentication. Overridden by environment variable TRANSFERD_ADDRESS, and by option --address (-a), which takes precedence.<br/>Default: `127.0.0.1`.<br/>Example: `127.0.0.1`. |
 | `api_time_settings` | `Hash` | Keepalive and connection lifetime settings of the gRPC API server, in seconds. |
@@ -5500,7 +5500,7 @@ The description gives the supported agents, if not all, and the corresponding `a
 #### Transfer Specification Reference
 
 | ID | Name |
-|----|-----------|
+| -- | --------- |
 | A | Direct |
 | C | Connect |
 | D | Desktop |
@@ -5509,7 +5509,7 @@ The description gives the supported agents, if not all, and the corresponding `a
 | T | Transferd |
 
 | Field | Type | Description |
-|--------------------------------|-----------------|----------------------------------------------------------------------------------|
+| ------------------------------ | --------------- | -------------------------------------------------------------------------------- |
 | `apply_local_docroot` | `Bool` | Apply local docroot to source paths.<br/>(A, T)<br/>(`--apply-local-docroot`) |
 | `authentication` | `String` | Set to `token` for SSH bypass keys, else password asked if not provided.<br/>(C) |
 | `cipher` | `Enum[String]` | In transit encryption algorithms.<br/>Allowed values: `none`, `aes-128`, `aes-192`, `aes-256`, `aes-128-cfb`, `aes-192-cfb`, `aes-256-cfb`, `aes-128-gcm`, `aes-192-gcm`, `aes-256-gcm`.<br/>Default: `none`.<br/>(`-c (conversion){enum}`) |
@@ -8069,7 +8069,7 @@ The `package_folder` option (`Hash`) controls how downloaded packages are organi
 **Supported Fields**:
 
 | Field | Type | Description |
-|-------|---------------|----------------------------------------------------------------------------------|
+| ----- | ------------- | -------------------------------------------------------------------------------- |
 | `fld` | `Array[String]` | List of package fields (up to 2) used to build the subfolder name. Field values are joined with `.`.<br/>Example: `["name", "id"]`. |
 | `inf` | `Bool` | If `true`, creates a `<ID>.info.json` sidecar file inside the folder containing package metadata.<br/>Default: `false`. |
 | `opt` | `Bool` | If `false` (default), all fields in `fld` are always used. If `true`, the first field is used unless the folder already exists.<br/>Default: `false`. |
@@ -9647,7 +9647,7 @@ The emulator starts its own `transferd`, and stops it on exit.
 It takes an optional `Hash` argument with the following parameters:
 
 | Field | Type | Description |
-|-------------------|---------|----------------------------------------------------------------------------------|
+| ----------------- | ------- | -------------------------------------------------------------------------------- |
 | `cert` | `String` | Path to the TLS certificate file. Accepted formats: PEM (`.pem`) or PKCS12 (`.p12` / `.pfx`).<br/>Example: `/path/to/cert.pem`. |
 | `chain` | `String` | Path to the PEM certificate chain file (appended as extra chain certificates).<br/>Example: `/path/to/chain.pem`. |
 | `docroot` | `String` | Local folder of the node files. Paths of `/files/browse` and local paths of transfers (sources of `send`, destination of `receive`) are relative to it, and confined in it. Defaults to the current working directory.<br/>Example: `/data/aspera`. |
@@ -10389,7 +10389,7 @@ ascli faspex5 postprocessing
 An optional positional parameter can be provided as [Extended Value](#extended-value-syntax) `Hash`:
 
 | Field | Type | Description |
-|-----------------------|-----------------------|----------------------------------------------------------------------------------|
+| --------------------- | --------------------- | -------------------------------------------------------------------------------- |
 | `allowed_ips` | `String, Array[String]` | IP address or network (CIDR, e.g. `10.89.0.0/24`), or list of them, allowed to call the listener. Requests from any other source IP are rejected with HTTP 403. When not set, no IP restriction is applied. This parameter or `secret_token` is required when `url` is not a local address. |
 | `cert` | `String` | Path to the TLS certificate file. Accepted formats: PEM (`.pem`) or PKCS12 (`.p12` / `.pfx`).<br/>Example: `/path/to/cert.pem`. |
 | `chain` | `String` | Path to the PEM certificate chain file (appended as extra chain certificates).<br/>Example: `/path/to/chain.pem`. |
@@ -10464,7 +10464,7 @@ For legacy Faspex client applications that use the `send` API (only) of Faspex v
 It takes an optional `Hash` argument:
 
 | Field | Type | Description |
-|-------------------|---------|----------------------------------------------------------------------------------|
+| ----------------- | ------- | -------------------------------------------------------------------------------- |
 | `cert` | `String` | Path to the TLS certificate file. Accepted formats: PEM (`.pem`) or PKCS12 (`.p12` / `.pfx`).<br/>Example: `/path/to/cert.pem`. |
 | `chain` | `String` | Path to the PEM certificate chain file (appended as extra chain certificates).<br/>Example: `/path/to/chain.pem`. |
 | `key` | `String` | Path to the PEM private key file, or the PKCS12 passphrase when `cert` is a `.p12`/`.pfx` file.<br/>Example: `/path/to/key.pem`. |
@@ -11302,7 +11302,7 @@ This shall list the contents of the storage root of the access key.
 When generating preview files, the following options can be modified on command line (or in a preset):
 
 | Field | Type | Description |
-|---------------------|--------------|----------------------------------------------------------------------------------|
+| ------------------- | ------------ | -------------------------------------------------------------------------------- |
 | `blend_fps` | `Integer` | MP4 video preview (`blend`): frames per second.<br/>Default: `15`. |
 | `blend_keyframes` | `Integer` | MP4 video preview (`blend`): number of key frames.<br/>Default: `30`. |
 | `blend_pauseframes` | `Integer` | MP4 video preview (`blend`): number of pause frames (repetitions of each key frame).<br/>Default: `3`. |
@@ -12124,7 +12124,7 @@ ascli config sync spec
 > The options listed in the **Description** column correspond to the equivalent parameters used by the low-level `async` command.
 
 | Field | Type | Description |
-|------------------------------------------|---------------|----------------------------------------------------------------------------------|
+| ---------------------------------------- | ------------- | -------------------------------------------------------------------------------- |
 | `ascp_dir` | `String` | Directory containing ascp executable to use. |
 | `assume_no_mods` | `Bool` | Assume that the directory structure has not been modified.<br/>Default: `false`.<br/>(`--assume-no-mods`) |
 | `checksum` | `Enum[String]` | Use the specified checksum type. Default is none on cloud storage.<br/>Allowed values: `sha1`, `md5`, `sha1_sparse`, `md5_sparse`, `none`.<br/>Default: `sha1_sparse`.<br/>(`--checksum={enum}`)(-k) |
@@ -12331,7 +12331,7 @@ ascli ... sync admin file_info <FOLDER> --sql="WHERE state=20 ORDER BY f_meta_pa
 **`sync_snapmeta_table`** - one row per session, written at start and updated at stop:
 
 | Field | Type | Description |
-|-------------------------|--------------|----------------------------------------------------------------------------------|
+| ----------------------- | ------------ | -------------------------------------------------------------------------------- |
 | `ascp_sids` | `String` | Last known FASP (ascp) session IDs. |
 | `byte_peerxfer` | `Integer` | Number of bytes transferred by the peer. |
 | `byte_synced` | `Integer` | Number of bytes successfully synchronized. |
@@ -12364,7 +12364,7 @@ ascli ... sync admin file_info <FOLDER> --sql="WHERE state=20 ORDER BY f_meta_pa
 **`sync_snap_counters_table`** - one row, updated live during a session:
 
 | Field | Type | Description |
-|--------------------------|---------|--------------------------------------------------|
+| ------------------------ | ------- | ------------------------------------------------ |
 | `conflict` | `Integer` | Number of paths in the `Conflict` state. |
 | `error` | `Integer` | Number of paths in the `Error` state. |
 | `files_conflict` | `Integer` | Number of files in the `Conflict` state. |
@@ -12380,7 +12380,7 @@ ascli ... sync admin file_info <FOLDER> --sql="WHERE state=20 ORDER BY f_meta_pa
 **`sync_snapdb_table`** - one row per tracked file or directory:
 
 | Field | Type | Description |
-|------------------------|---------|----------------------------------------------------------------------------------|
+| ---------------------- | ------- | -------------------------------------------------------------------------------- |
 | `c_cont_csum` | `String` | Current content — checksum. |
 | `c_cont_mtime` | `Integer` | Current content — modification time (epoch). |
 | `c_cont_size` | `Integer` | Current content — file size in bytes. |
@@ -12581,7 +12581,7 @@ To do so, set up the SMTP configuration with option `smtp`.
 The `smtp` option is a `Hash` ([Extended Value](#extended-value-syntax)) with the following fields:
 
 | Field | Type | Description |
-|------------|---------|----------------------------------------------------------------------------------|
+| ---------- | ------- | -------------------------------------------------------------------------------- |
 | `domain` | `String` | Email domain of the user. Defaults to the domain part of `server`.<br/>Example: `gmail.com`. |
 | `from_email` | `String` | Sender address (used in `From:` header and as reply-to). Defaults to `username` when defined.<br/>Example: `johnny@example.com`. |
 | `from_name` | `String` | Display name of the sender. Defaults to the local-part of `from_email`.<br/>Example: `John Wayne`. |
