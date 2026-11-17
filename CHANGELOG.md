@@ -28,7 +28,7 @@ Highlights:
 ### New Features
 
 * `ascli`:
-  * New file `llms.txt` (in the gem and in the repository): what `ascli` does with IBM Aspera products, and how to discover commands, arguments and options, on the command line or through `mcp server`. Same content as an agent skill in folder `skills/ascli`. The repository is also a Claude Code plugin marketplace: `/plugin install ascli --marketplace IBM/aspera-cli`.
+  * New file `llms.txt` (in the gem and in the repository): what `ascli` does with IBM Aspera products, and how to discover commands, arguments and options, on the command line or through `mcp server`. Same content as an agent skill in folder `skills/ascli`. The repository is also a Claude Code plugin marketplace: `/plugin marketplace add IBM/aspera-cli`, then `/plugin install ascli@aspera-cli`.
   * Web authentication (`--auth=web`): new key `web_auth` of option `ui`. With `--ui.web_auth=paste`, no local port is opened: after login, the user pastes in the terminal the URL the browser was redirected to. It allows SSO when the browser cannot reach the host that runs `ascli` (e.g. jump server). If `ascli` is also installed on the workstation, it displays a command `ascli config web_login <code>` to run there instead. Default: `port` (unchanged).
   * Improved shell completion: structures, extended values, local files and folders, presets (with their `_comment`), transfer jobs and `--query`.
   * SSH keys of type `ed25519` are supported without additional gem. Gem `bcrypt_pbkdf` is only needed for OpenSSH keys protected by a passphrase.

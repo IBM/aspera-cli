@@ -81,7 +81,7 @@ Each product has its own plugin (`aoc`, `faspex5`, `shares`, `node`, `server`, `
 
 `ascli` lets AI assistants and AI agents (LLM) operate IBM Aspera products for you, with the same commands, presets and secrets as you:
 
-- **In a shell** (coding agents): nothing to set up. Give the agent [`llms.txt`](https://github.com/IBM/aspera-cli/blob/main/llms.txt), or install the agent skill [`skills/ascli`](https://github.com/IBM/aspera-cli/tree/main/skills/ascli) (with Claude Code: `/plugin install ascli --marketplace IBM/aspera-cli`): the agent then discovers commands, arguments and options by itself.
+- **In a shell** (coding agents): nothing to set up. Give the agent [`llms.txt`](https://github.com/IBM/aspera-cli/blob/main/llms.txt), or install the agent skill [`skills/ascli`](https://github.com/IBM/aspera-cli/tree/main/skills/ascli) (with Claude Code: `/plugin marketplace add IBM/aspera-cli`, then `/plugin install ascli@aspera-cli`): the agent then discovers commands, arguments and options by itself.
 - **MCP server** (Model Context Protocol): `ascli mcp server` exposes all commands to any MCP client (IBM Bob, Claude, VS Code...), locally or over HTTPS with token or OAuth authentication.
 
 Safe by default: in the MCP server, the AI can neither execute code nor write files where it chooses, and never sees secrets.

@@ -312,7 +312,8 @@ There are three ways, the first one is the simplest:
   With Claude Code, install it as a plugin from the GitHub repository, which is also a plugin marketplace: it is updated with the repository.
 
   ```text
-  /plugin install ascli --marketplace IBM/aspera-cli
+  /plugin marketplace add IBM/aspera-cli
+  /plugin install ascli@aspera-cli
   ```
 
 - **The AI executes commands through MCP**: for an AI client without a shell, start the [MCP server](#plugin-mcp-model-context-protocol-server) and register it in the AI client.
