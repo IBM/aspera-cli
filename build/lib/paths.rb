@@ -77,9 +77,9 @@ module Paths
   # UML diagram of classes
   UML_PNG = DOC / 'uml.png'
   # Mascot image (SVG)
-  MASCOT_SVG = DOC / 'mascot.svg'
+  MASCOT_SVG = DOC / 'art' / 'mascot.svg'
   # Mascot image (PDF, for the PDF manual)
-  MASCOT_PDF = DOC / 'mascot.pdf'
+  MASCOT_PDF = DOC / 'art' / 'mascot.pdf'
   # Manual (Markdown), generated from `MD_ERB`
   MD_MANUAL = DOC / 'README.md'
   # Summary for AI assistants, at the root of the gem (and of the documentation web site)

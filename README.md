@@ -8,7 +8,7 @@
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5861/badge)](https://bestpractices.coreinfrastructure.org/projects/5861)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-![Hootput the Owl](docs/mascot.svg)
+![Hootput the Owl](docs/art/mascot.svg)
 
 **`ascli`** is an open-source toolkit to automate, integrate and operate IBM Aspera products.
 Administrators, developers, integration engineers and AI agents use the same consistent interface to the whole Aspera ecosystem.

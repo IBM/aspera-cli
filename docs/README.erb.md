@@ -11400,7 +11400,7 @@ Another possibility is to add this option: `--transfer=@json:'{"ascp_args":["--p
 
 ### Hootput, the mascot
 
-![Hootput the Owl](<%=link_repo('docs/mascot.svg')%>)
+![Hootput the Owl](<%=link_repo('docs/art/mascot.svg')%>)
 
 Hootput lives in the terminal, watching over every command with wide, unblinking eyes.
 Known for concise output and sharp insight, this owl thrives where others get lost in the dark.
