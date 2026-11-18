@@ -17,4 +17,8 @@
   <meta name="twitter:title" content="{{ preview_title | striptags | e }}">
   <meta name="twitter:description" content="{{ preview_description | e }}">
   <meta name="twitter:image" content="{{ preview_image }}">
+  {%- if page.is_homepage %}
+  {#- Google Search Console: ownership of the site (public value) #}
+  <meta name="google-site-verification" content="fbQuo3lHo-dYj8wZO_9olwJGHX_KIFm4JO27CjbnyKU">
+  {%- endif %}
 {% endblock %}
