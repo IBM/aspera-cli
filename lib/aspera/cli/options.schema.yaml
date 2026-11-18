@@ -73,6 +73,12 @@ components:
             - port
             - paste
           default: port
+        hidden_silent:
+          type: boolean
+          description: >-
+            Secrets typed or pasted on a terminal are read without any feedback (no echo, no mark), as `getpass`.
+            By default, a mark shows whether something was typed or pasted, without revealing the length.
+          default: false
         command:
           type: array
           x-security: low

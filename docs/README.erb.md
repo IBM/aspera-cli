@@ -1837,6 +1837,13 @@ Keys:
 | `Ctrl-C` | Stop <%=tool%>. |
 
 If the standard input is not a terminal (for example, a pipe), the line is read as is, without mark.
+It is the same if the terminal does not support reading characters one by one (raw mode).
+
+To read secrets without any mark (no feedback, as `getpass`), set option `ui.hidden_silent` to `yes`:
+
+```shell
+<%=cmd%> config preset set GLOBAL ui.hidden_silent yes
+```
 
 ### Output
 

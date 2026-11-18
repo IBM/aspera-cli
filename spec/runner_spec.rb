@@ -66,10 +66,10 @@ module Aspera
         let(:environment) { Environment.instance }
 
         around do |example|
-          saved = [environment.url_method, environment.browser_command, environment.web_auth]
+          saved = [environment.url_method, environment.browser_command, environment.web_auth, environment.hidden_silent]
           example.run
         ensure
-          environment.url_method, environment.browser_command, environment.web_auth = saved
+          environment.url_method, environment.browser_command, environment.web_auth, environment.hidden_silent = saved
         end
 
         it 'sets web_auth' do
@@ -81,6 +81,16 @@ module Aspera
 
         it 'rejects an unknown web_auth' do
           expect { runner.send(:option_ui=, {web_auth: 'bad'}) }.to(raise_error(BadArgument))
+        end
+
+        it 'sets hidden_silent' do
+          runner.send(:option_ui=, {hidden_silent: true})
+          expect(environment.hidden_silent).to(be(true))
+          runner.send(:option_ui=, {hidden_silent: 'no'})
+          expect(environment.hidden_silent).to(be(false))
+          runner.send(:option_ui=, {hidden_silent: 'yes'})
+          expect(environment.hidden_silent).to(be(true))
+          expect { runner.send(:option_ui=, {hidden_silent: 'bad'}) }.to(raise_error(BadArgument))
         end
 
         {

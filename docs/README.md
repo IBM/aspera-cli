@@ -1901,6 +1901,13 @@ Keys:
 | `Ctrl-C` | Stop `ascli`. |
 
 If the standard input is not a terminal (for example, a pipe), the line is read as is, without mark.
+It is the same if the terminal does not support reading characters one by one (raw mode).
+
+To read secrets without any mark (no feedback, as `getpass`), set option `ui.hidden_silent` to `yes`:
+
+```shell
+ascli config preset set GLOBAL ui.hidden_silent yes
+```
 
 ### Output
 
@@ -4170,8 +4177,9 @@ By default, `ascli` assumes that a graphical environment is available on Windows
 The composite option `ui` (use `--ui=help` to display this schema) selects the mode, the way a web login is received, and the browser command:
 
 | Field | Type | Description |
-| -------- | ------------- | -------------------------------------------------------------------------------- |
+| ------------- | ------------- | -------------------------------------------------------------------------------- |
 | `command` | `Array[String]` | Command that opens a URL, instead of the system default. First item is the executable (full path, or name of an executable found in `PATH`), then its arguments. The URL is added as last argument. When set, it is used to open URLs, whatever the `mode`. |
+| `hidden_silent` | `Bool` | Secrets typed or pasted on a terminal are read without any feedback (no echo, no mark), as `getpass`. By default, a mark shows whether something was typed or pasted, without revealing the length.<br/>Default: `false`. |
 | `mode` | `Enum[String]` | - `auto`: `browser` on Windows and macOS, or if env var `DISPLAY` is set, else `terminal`.<br/>- `terminal`: URLs to open are displayed on terminal, and secrets are entered on terminal.<br/>- `browser`: a browser opens URLs, and secrets are entered on a web page.<br/>`text` is an alias for `terminal`, and `graphical` is an alias for `browser`.<br/>Files to edit are always opened with a text editor, whatever the `mode`.<br/>Allowed values: `auto`, `terminal`, `browser`, `text`, `graphical`.<br/>Default: `auto`. |
 | `web_auth` | `Enum[String]` | How the result of a web login (`--auth=web`, SSO) is received.<br/>- `port`: `ascli` listens on the loopback port of `redirect_uri`, the browser is redirected to it.<br/>- `paste`: no port is opened. After login, the browser shows a connection error on `redirect_uri`: copy the full URL from the address bar of the browser and paste it in the terminal. Use it when the browser cannot reach the host that runs `ascli` and a SSH tunnel is not possible. For `shares`, Shares displays a code (a long text of letters, digits, `-` and `_`) instead: paste it in the terminal.<br/>Allowed values: `port`, `paste`.<br/>Default: `port`. |
 
@@ -6503,7 +6511,7 @@ OPTIONS: global
 -h, --help                         Show this message
     --show-config                  Display parameters used for the provided action
 -v, --version                      Display version
-    --ui=HASH                      User interface (dot-notation: mode, web_auth, command)
+    --ui=HASH                      User interface (dot-notation: mode, web_auth, hidden_silent, command)
     --invalid-characters=VALUE     Replacement character and invalid filename characters
     --log-level=ENUM               Log level
     --log-format=VALUE             Log formatter

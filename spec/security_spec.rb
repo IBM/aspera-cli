@@ -109,7 +109,7 @@ module Aspera
           Environment.instance.url_method = saved
         end
 
-        before { allow($stdin).to(receive_messages(tty?: true, getpass: secret)) }
+        before { type_on_terminal(secret) }
 
         it 'is allowed with level low' do
           expect(evaluate('@list:@secret:pw')).to(eq(secret[1..].split(secret[0])))
@@ -121,7 +121,7 @@ module Aspera
             security.options = {'level' => level}
             expect { evaluate('@list:@secret:pw') }.to(raise_error(BadArgument, /@list: cannot process a secret at security level #{level}/))
             expect { evaluate('@json:@secret:pw') }.to(raise_error(BadArgument, /@json: cannot process a secret/))
-            allow($stdin).to(receive_messages(tty?: true, getpass: SecureRandom.alphanumeric(6)))
+            type_on_terminal(SecureRandom.alphanumeric(6))
             expect { evaluate('@extend:<@secret:pw@>') }.to(raise_error(BadArgument, /@extend: cannot process a secret/))
           end
         end

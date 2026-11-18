@@ -24,6 +24,7 @@ eaddrinuse
 Elapsedusec
 ELOOP
 endgroup
+ENODEV
 ENOTTY
 enummodule
 ESRCH
@@ -70,6 +71,7 @@ myns
 newenv
 newevent
 nocov
+noecho
 nprocessors
 nsec
 optparse

@@ -292,7 +292,8 @@ module Aspera
     # browser_command: [Array<String>, nil] command (and arguments) that opens a URL (URL is appended), instead of
     #                  the system default
     # web_auth:        :port or :paste, how the result of a web login is received: local port, or URL pasted by the user
-    attr_accessor :url_method, :browser_command, :web_auth, :file_illegal_characters
+    # hidden_silent:   if true, hidden input shows no mark of its state
+    attr_accessor :url_method, :browser_command, :web_auth, :hidden_silent, :file_illegal_characters
     attr_reader :os, :cpu, :default_gui_mode
 
     def initialize
@@ -338,6 +339,7 @@ module Aspera
       @url_method = @default_gui_mode
       @browser_command = nil
       @web_auth = :port
+      @hidden_silent = false
       @file_illegal_characters = REPLACE_CHARACTER + WINDOWS_FILENAME_INVALID_CHARACTERS
       nil
     end

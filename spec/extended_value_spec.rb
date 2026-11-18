@@ -72,9 +72,8 @@ module Aspera
         it 'asks on terminal when user interface is text' do
           Environment.instance.url_method = :text
           secret = SecureRandom.alphanumeric(12)
-          allow($stdin).to(receive_messages(tty?: true, getpass: secret))
-          expect(evaluate('@secret:pw')).to(eq(secret))
-          expect($stdin).to(have_received(:getpass).with('pw> '))
+          type_on_terminal(secret)
+          expect { expect(evaluate('@secret:pw')).to(eq(secret)) }.to(output(/\Apw> /).to_stderr)
         end
 
         it 'asks on a web page when user interface is graphical' do
@@ -90,7 +89,7 @@ module Aspera
           Environment.instance.url_method = :text
           Environment.unicode = false
           secret = SecureRandom.alphanumeric(12)
-          allow($stdin).to(receive_messages(tty?: true, getpass: secret))
+          type_on_terminal(secret)
           evaluate('@secret:pw')
           expect(Secret::Hider.instance.hidden_copy({'a' => ["x #{secret} y"]})).to(eq({'a' => ['x *** y']}))
         ensure
