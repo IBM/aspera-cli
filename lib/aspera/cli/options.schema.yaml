@@ -1506,6 +1506,74 @@ components:
             Default is auto-detected: enabled if stdout is a terminal and the locale is UTF-8, or on Windows, the terminal renders Unicode (e.g. Windows Terminal, VS Code).
         img:
           $ref: "#/components/schemas/ImageOptions"
+    PollOptions:
+      type: object
+      description: >-
+        Repeat a read-only command (e.g. `list`, `show`, `status`) and display its result,
+        until a condition is met, or a number of runs or a time is reached.
+        The command runs first immediately, then again `interval` seconds after the end of each run.
+        Without `max`, `timeout` and `until`, it runs until interrupted (Ctrl-C).
+        Refused on a command that changes state (e.g. `send`, `create`, `delete`, `start`), before anything is executed.
+        Formatting options (`--format`, `--fields`, `--out.query`) apply to each result displayed.
+        A short status line on `stderr` gives the run number and the time before each result displayed.
+        By default, an error of a run (e.g. an API error) ends the command with that error (see `errors`).
+      additionalProperties: false
+      properties:
+        interval:
+          oneOf:
+            - type: number
+              minimum: 0
+            - type: string
+          description: >-
+            Time to wait after a run, before the next one.
+            A duration: a number of seconds, or a `String`, e.g. `30s`, `2m`, `1h 30m`, `1d 02:00:00` (rounded down to seconds).
+          default: 5
+        max:
+          type: integer
+          minimum: 1
+          description: Maximum number of runs. No limit by default.
+        timeout:
+          oneOf:
+            - type: number
+              minimum: 0
+            - type: string
+          description: >-
+            Maximum time since the start of the first run.
+            A duration, as `interval`, e.g. `600`, `10m`, `1h`.
+            A last run occurs at this time. No limit by default.
+            With `max`, polling stops at the first limit reached.
+        until:
+          type: string
+          description: >-
+            JMESPath expression (https://jmespath.org) evaluated on the JSON view of the result data:
+            after `--select` (for a list of objects), before `--fields` and `--out.query`.
+            Polling stops at the first run where it is true: as in JMESPath, `false`, `null`, empty string, empty list and empty object are false, other values are true.
+            So `@` (the data itself) waits for a non-empty result, e.g. a list with at least one item.
+            The syntax is checked before the first run.
+            If the condition is not met after the last run (`max` or `timeout`), the command fails (exit code 1).
+        show:
+          type: string
+          description: >-
+            Which results are displayed.
+
+            - `change`: the first result, then each result whose display differs from the previous one.
+
+            - `each`: every result.
+
+            - `last`: only the last result, when polling stops (including when the condition is not met).
+          enum: [change, each, last]
+          default: change
+        errors:
+          type: string
+          description: >-
+            What an error of a run does (e.g. an API error, an entity not found yet).
+
+            - `fail`: the command ends with this error.
+
+            - `retry`: the error is shown on the status line, and the command runs again, as for a result where `until` is false.
+            If the last run fails, the command ends with its error.
+          enum: [fail, retry]
+          default: fail
     WebServerOptions:
       type: object
       description: >-

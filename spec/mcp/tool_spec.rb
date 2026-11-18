@@ -84,6 +84,14 @@ RSpec.describe(Aspera::Cli::Mcp::Tool) do
     end
   end
 
+  describe 'Result::Poll' do
+    it 'refuses option poll: the command would display its results' do
+      resp = call_with_result(Aspera::Cli::Result::Poll.new({'max' => 2}))
+      expect(resp.error?).to(be(true))
+      expect(resp.content.first[:text]).to(include('Option poll: not available in MCP server mode'))
+    end
+  end
+
   describe 'Result::Empty' do
     it 'returns a single empty text content block' do
       resp = call_with_result(Aspera::Cli::Result::Empty.new)

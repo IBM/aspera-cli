@@ -121,7 +121,7 @@ module Aspera
           mkfile:      {description: 'Create a file (Gen3)', arguments: [{name: :path}, {name: :contents, mandatory: false, default: nil}]},
           rename:      {description: 'Rename a file or folder (Gen3)', arguments: [{name: :folder}, {name: :source}, {name: :destination}]},
           delete:      {description: 'Delete files or folders (Gen3)', arguments: [{name: :paths, multiple: true}]},
-          ls:          {description: 'List files (Gen3)',            arguments: [{name: :path}], aliases: [:browse]},
+          ls:          {description: 'List files (Gen3)',            arguments: [{name: :path}], aliases: [:browse], read_only: true},
           upload:      {description: 'Upload files (Gen3)',          transfer_paths: :send},
           download:    {description: 'Download files (Gen3)',        transfer_paths: :receive},
           cat:         {description: 'Show file contents (Gen3)',    arguments: [{name: :path}]},
@@ -129,8 +129,8 @@ module Aspera
           spec:        {description: 'Show transfer spec base'},
           api_details: {description: 'Show API details'},
           health:      {description: 'Check node health'},
-          events:      {description: 'List events'},
-          info:        {description: 'Show node info'},
+          events:      {description: 'List events', read_only: true},
+          info:        {description: 'Show node info', read_only: true},
           slash:       {description: 'Show root info'},
           license:     {description: 'Show license'},
           access_keys: {description: 'Manage access keys'}
@@ -155,12 +155,12 @@ module Aspera
           download:          {description: 'Download files',                 transfer_paths: :receive},
           modify:            {description: 'Modify file',                    arguments: [{name: :path}, {name: :file, type: Hash, schema: 'node:components.schemas.files-id-put-request'}]},
           cat:               {description: 'Show file contents',             arguments: SINGLE_PATH_ARG},
-          show:              {description: 'Show file info',                 arguments: SINGLE_PATH_ARG},
-          thumbnail:         {description: 'Show file thumbnail',            arguments: SINGLE_PATH_ARG},
+          show:              {description: 'Show file info',                 arguments: SINGLE_PATH_ARG, read_only: true},
+          thumbnail:         {description: 'Show file thumbnail',            arguments: SINGLE_PATH_ARG, read_only: true},
           bearer_token_node: {description: 'Show bearer token for file node', arguments: SINGLE_PATH_ARG},
           node_info:         {description: 'Show node info for file',        arguments: SINGLE_PATH_ARG},
-          ls:                {description: 'List files',                     arguments: SINGLE_PATH_ARG, aliases: [:browse]},
-          find:              {description: 'Find files',                     arguments: SINGLE_PATH_ARG + FILTER_ARGS}
+          ls:                {description: 'List files',                     arguments: SINGLE_PATH_ARG, aliases: [:browse], read_only: true},
+          find:              {description: 'Find files',                     arguments: SINGLE_PATH_ARG + FILTER_ARGS, read_only: true}
         }.freeze
         private_constant :SINGLE_PATH_ARG
 
@@ -490,7 +490,7 @@ module Aspera
         # transfer
         command :transfer, description: 'Manage transfer operations'
         commands_under :transfer do
-          command :list, description: 'List transfers'
+          command :list, read_only: true, description: 'List transfers'
           command(
             :cancel, description: 'Cancel a transfer',
             arguments: [{name: :transfer_id, type: :identifier}],
@@ -499,7 +499,7 @@ module Aspera
               Result::Status.new('Cancelled')
             end
           )
-          command :show, description: 'Show a transfer',
+          command :show, read_only: true, description: 'Show a transfer',
             arguments: [{name: :transfer_id, type: :identifier}],
             action: ->(transfer_id:, **) { Result::SingleObject.new(api_node.read("ops/transfers/#{transfer_id}")) }
           command(

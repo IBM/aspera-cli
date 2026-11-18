@@ -6,6 +6,7 @@ Released: [Place date of release here]
 
 ### New Features
 
+* New option `poll`: repeats a read-only command and displays its result (each time it changes, each time, or the last one), until a JMESPath condition on the result is true, or a number of runs or a time is reached, e.g. ``orchestrator workorders status <ID> --poll=@json:'{"interval":10,"max":30,"until":"status == `Complete`"}'``. Parameters `interval`, `max`, `timeout`, `until`, `show`, `errors` (`fail` or `retry`). Refused on a command that is not marked read-only (e.g. `faspex5 packages send`), with options `once_only` and `notify_to`, and in MCP server mode. Read-only: generic `list` and `show`, and others, e.g. `orchestrator workorders status`, `orchestrator tasks list`, `faspex5 packages list`, `node browse`.
 * `config`: new command `skill`: displays the agent skill (same content as `llms.txt`), for an AI that does not install skills, in a shell or through `mcp server`.
 * `mcp server`: the default instructions tell the AI to read the Aspera on Cloud Automation Development Guide before writing a workflow (sections to start with, for example `package-transfer` for action "Send a package"), and point to `config skill` for general guidance. The agent skill and `llms.txt` give the same starting sections.
 * Chocolatey package `aspera-cli`: installs the Windows portable package (Ruby, gems and `ascp` included, checked with its SHA-256) instead of Ruby and the gem, and adds only `ascli` to the `PATH`. It is built, tested and published by the release workflow.

@@ -7,6 +7,7 @@ require_relative '../extended_value'
 require_relative '../parser'
 require_relative '../../assert'
 require_relative '../result'
+require_relative '../poll'
 require_relative '../command_registry'
 require_relative '../option_declarator'
 require_relative '../special_values'
@@ -27,6 +28,8 @@ module Aspera
           INSTANCE = (SINGLETON + %i[delete]).freeze
           # All standard operations: `create` `list` `modify` `show` `delete`
           ALL = (GLOBAL + INSTANCE).freeze
+          # Operations that change nothing: `list` `show`
+          READ = %i[list show].freeze
         end
         class << self
           include OptionDeclarator
@@ -163,6 +166,8 @@ module Aspera
                 send(:"entity_#{verb}", api: crud_api(api), entity: resolved_entity, **kwargs, **ctx)
               end
               cmd_attrs = {description: operation_description(verb, name || entity.inspect), action: action_proc}
+              # Operations that change nothing: can be repeated with option `poll`
+              cmd_attrs[:read_only] = true if Operations::READ.include?(verb)
               cmd_attrs[:arguments] = args if args
               cmd_attrs[:query_schema] = Schema::Registry.query_params(kwargs[:query_component], entity) if verb.eql?(:list) && kwargs[:query_component] && entity.is_a?(String)
               command(verb, **cmd_attrs)
@@ -289,6 +294,7 @@ module Aspera
         option :query, description: 'Additional filter for for some commands (list/delete)', allowed: [Hash, Array, NilClass]
         option :bulk,  description: 'Bulk operation (only some)',                            allowed: Type::BOOLEAN, default: false
         option :bfail, description: 'Bulk operation error handling',                         allowed: Type::BOOLEAN, default: true
+        option :poll,  description: 'Repeat a read-only command (dot-notation: interval, max, timeout, until, show, errors)', schema: Schema::Registry::POLL_OPTIONS
 
         def initialize(context:)
           Aspera.assert_type(context, Context) { 'context' }
@@ -354,6 +360,8 @@ module Aspera
             end
           else
             Security.instance.check_level(spec.security, "command #{current_path.join(' ')}") if spec
+            # Before anything is executed (setup, arguments, action)
+            poll = poll_result(current_path, spec) if is_leaf
             # Phase A - for intermediate nodes only: resolve all ArgumentSpec declared on this node
             # before dispatching to children (leaf nodes resolve their arguments inside execute_leaf).
             ctx = resolve_arguments(spec.arguments, ctx) if !is_leaf && spec&.arguments
@@ -362,7 +370,7 @@ module Aspera
 
           # Phase B - leaf fast-path or child dispatch
           if is_leaf
-            dispatch_leaf(current_path, spec, ctx)
+            dispatch_leaf(current_path, spec, ctx, poll: poll)
           else
             dispatch_child(current_path, registry, ctx)
           end
@@ -373,13 +381,32 @@ module Aspera
         # @param current_path [Array<Symbol>]
         # @param spec [CommandSpec]
         # @param ctx [Hash]
+        # @param poll [Result::Poll, nil] With option `poll`: result that executes the action when displayed
         # @return [Object]
-        def dispatch_leaf(current_path, spec, ctx)
+        def dispatch_leaf(current_path, spec, ctx, poll: nil)
           if @context.help_requested
             @help_path = current_path
             raise Cli::HelpRequest, self
           end
-          execute_leaf(spec, ctx)
+          execute_leaf(spec, ctx, poll: poll)
+        end
+
+        # With option `poll`, check that the command is read-only, and the parameters of `poll`
+        # @param current_path [Array<Symbol>] path of the leaf command
+        # @param spec         [CommandSpec]   leaf command
+        # @return [Result::Poll, nil] `nil` if option `poll` is not set
+        # @raise [Cli::BadArgument] if the command is not read-only, or a parameter is invalid
+        def poll_result(current_path, spec)
+          parameters = options.get_option(:poll)
+          return if parameters.nil? || parameters.empty?
+          command = [self.class.name.split('::').last.downcase, *current_path].join(' ')
+          Aspera.assert(spec.read_only, type: Cli::BadArgument) do
+            "Option poll: refused on `#{command}`: only a read-only command can be repeated (e.g. list, show, status)"
+          end
+          # Options that make a read-only command change state at each run
+          Aspera.assert(!options.get_option(:once_only), type: Cli::BadArgument) { 'Option poll: refused with option once_only: it saves state at each run' }
+          Aspera.assert(options.get_option(:notify_to).nil?, type: Cli::BadArgument) { 'Option poll: refused with option notify_to: it sends emails at each run' }
+          Result::Poll.new(parameters, format: formatter&.format_type)
         end
 
         # Phase B, child branch: consume the next command argument, then either continue
@@ -486,13 +513,17 @@ module Aspera
         # they are not read again from the command line.
         # @param spec [CommandSpec] a leaf node (no children)
         # @param ctx  [Hash]        accumulated context (pre-resolved keys are not re-consumed)
+        # @param poll [Result::Poll, nil] With option `poll`: the action is executed when this result is displayed
         # @return [Object]
-        def execute_leaf(spec, ctx)
+        def execute_leaf(spec, ctx, poll: nil)
           a = action_for(spec)
           # Always resolve declared arguments (even when transfer_paths is set — those arguments
           # are consumed first; ts_source_paths then reads whatever remains in the queue).
           ctx = resolve_arguments(spec.arguments, ctx) if spec.arguments
-          invoke_action(a, [], ctx)
+          return invoke_action(a, [], ctx) if poll.nil?
+          # Arguments are resolved once, the action is executed at each run
+          poll.action = -> { invoke_action(a, [], ctx) }
+          poll
         end
 
         # Resolve positional arguments from the CLI argument stream, in order.

@@ -184,6 +184,7 @@ module Aspera
         rescue Cli::MissingArgument => e;              exception_info = {e: e, t: 'Missing', exit: ExitCode::USAGE}
         rescue Cli::BadIdentifier, EntityNotFound => e; exception_info = {e: e, t: 'Identifier', exit: ExitCode::NOT_FOUND}
         rescue Cli::SchemaRequest => e;                exception_info = {e: e, t: 'Schema', exit: ExitCode::SUCCESS}
+        rescue Cli::PollConditionNotMet => e;          exception_info = {e: e, t: 'Poll', exit: ExitCode::ERROR}
         rescue Cli::Error => e;                        exception_info = {e: e, t: 'Tool', usage: true, exit: ExitCode::ERROR}
         rescue Transfer::Error => e;                   exception_info = {e: e, t: 'Transfer', exit: ExitCode::TRANSFER}
         rescue Rest::CallError => e;                   exception_info = {e: e, t: 'Rest', exit: ExitCode.for_call_error(e)}

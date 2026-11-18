@@ -2400,6 +2400,53 @@ ascli config preset overview --out.colors=no --out.utf8=no
 > [!NOTE]
 > Logs issued before the option is processed (e.g. at startup) use the detected value.
 
+### Polling: Option `poll`
+
+Option `--poll` executes a read-only command several times, and displays its results, for example to wait for a state: a work order complete, a task waiting for a user, a package received.
+It replaces a shell loop with `sleep`: arguments are read once (identifiers looked up once), the command runs again in the same process.
+
+Its value is a `Hash` (also with dot-notation, e.g. `--poll.interval=10`):
+
+| Field | Type | Description |
+| -------- | -------------- | -------------------------------------------------------------------------------- |
+| `errors` | `Enum[String]` | What an error of a run does (e.g. an API error, an entity not found yet).<br/>- `fail`: the command ends with this error.<br/>- `retry`: the error is shown on the status line, and the command runs again, as for a result where `until` is false. If the last run fails, the command ends with its error.<br/>Allowed values: `fail`, `retry`.<br/>Default: `fail`. |
+| `interval` | `Number, String` | Time to wait after a run, before the next one. A duration: a number of seconds, or a `String`, e.g. `30s`, `2m`, `1h 30m`, `1d 02:00:00` (rounded down to seconds).<br/>Default: `5`. |
+| `max` | `Integer` | Maximum number of runs. No limit by default. |
+| `show` | `Enum[String]` | Which results are displayed.<br/>- `change`: the first result, then each result whose display differs from the previous one.<br/>- `each`: every result.<br/>- `last`: only the last result, when polling stops (including when the condition is not met).<br/>Allowed values: `change`, `each`, `last`.<br/>Default: `change`. |
+| `timeout` | `Number, String` | Maximum time since the start of the first run. A duration, as `interval`, e.g. `600`, `10m`, `1h`. A last run occurs at this time. No limit by default. With `max`, polling stops at the first limit reached. |
+| `until` | `String` | JMESPath expression (https://jmespath.org) evaluated on the JSON view of the result data: after `--select` (for a list of objects), before `--fields` and `--out.query`. Polling stops at the first run where it is true: as in JMESPath, `false`, `null`, empty string, empty list and empty object are false, other values are true. So `@` (the data itself) waits for a non-empty result, e.g. a list with at least one item. The syntax is checked before the first run. If the condition is not met after the last run (`max` or `timeout`), the command fails (exit code 1). |
+
+`interval` and `timeout` are durations: a number of seconds, or a `String` with units `w`, `d`, `h`, `m`, `s`, e.g. `30s`, `2m`, `1h 30m`, `1d 02:00:00`, as for the [HTTP socket parameters](#http-socket-parameters).
+
+```shell
+# Wait for a work order to complete, check every 10 seconds, at most 30 times
+ascli orchestrator workorders status <WORKORDER_ID> --poll=@json:'{"interval":10,"max":30,"until":"status == `Complete`"}'
+# Same, with dot-notation, and a timeout of 10 minutes
+ascli orchestrator workorders status <WORKORDER_ID> --poll.interval=10s --poll.timeout=10m --poll.until='status == `Complete`'
+# Wait for a task waiting for a user (a non-empty list), display only the last result
+ascli orchestrator tasks list --poll=@json:'{"interval":5,"max":60,"until":"@","show":"last"}' --format=json
+# Display the status of the resources of a pool, each time it changes, until interrupted (Ctrl-C)
+ascli orchestrator pools status <POOL_NAME> --poll.interval=5
+```
+
+Behavior:
+
+- Polling stops at the first run where `until` is true, or after `max` runs, or at `timeout`.
+- Without `until`, the command runs `max` times (or until `timeout`, or until interrupted), and the exit status is success.
+- If `until` is not true after the last run, the command fails with `condition not met after <N> runs` (exit status `1`).
+- `until` is evaluated on the data of the result (as seen by `--out.query`: JSON values), after `--out.select`, before `--out.fields` and `--out.query`.
+  Expression `@` is true for a non-empty result: e.g. a list with at least one item.
+- Options `--format`, `--out.fields`, `--out.select` and `--out.query` apply to each result displayed.
+  With `show=change` (default), a result is displayed when its display differs from the previous one.
+- Before each result displayed, a status line on `stderr` gives the run number and the time, e.g. `poll: run 3/30 2026-01-02 10:20:30`.
+  Output is flushed after each result: it can be read line by line by another program, e.g. with `--format=json` (one line per result).
+- An error of a run (e.g. an API error) ends the command with this error, unless `errors` is `retry`: then the run counts as one where `until` is false.
+- `Ctrl-C` ends polling: with `show=last`, the last result is displayed, and the exit status is `130`.
+
+For safety, option `poll` is refused, before anything is executed, on a command that is not marked read-only: a command that creates, modifies, deletes, sends, starts or cancels something, e.g. `faspex5 packages send`.
+Commands marked read-only are generic `list` and `show` commands, and some others, e.g. `status` commands of `orchestrator`, `node browse`.
+It is also refused with options `once_only` (state saved at each run) and `notify_to` (email sent at each run), with format `nagios`, and in [MCP server](#plugin-mcp-model-context-protocol-server) mode (the client calls the tool again instead).
+
 ### Exit status
 
 The exit code of `ascli` indicates the category of error, so that scripts can react to it:
@@ -6572,6 +6619,7 @@ OPTIONS: global
     --query=HASH                   Additional filter for for some commands (list/delete)
     --bulk=yes|no                  Bulk operation (only some)
     --bfail=yes|no                 Bulk operation error handling
+    --poll=HASH                    Repeat a read-only command (dot-notation: interval, max, timeout, until, show, errors)
     --ts=HASH                      Override transfer spec values
     --to-folder=VALUE              Destination folder for transferred files
     --sources=VALUE                How list of transferred files is provided (@args,@ts,Array)

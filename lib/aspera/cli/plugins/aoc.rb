@@ -746,7 +746,7 @@ module Aspera
               Result::ObjectList.new(events)
             end
           )
-          command :transfers,          description: 'List transfer events',
+          command :transfers,          read_only: true, description: 'List transfer events',
             arguments: [
               EVENT_RESOURCE_TYPE_ARG,
               EVENT_RESOURCE_ID_ARG.merge(mandatory: false, default: nil)
@@ -897,8 +897,8 @@ module Aspera
             arguments: [{name: :package, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::AOC, 'packages.post')}]
           command :receive, description: 'Receive packages', aliases: [:recv], transfer_paths: :receive,
             arguments: [PACKAGE_ID_ARG]
-          command :list, description: 'List packages'
-          command :show, description: 'Show a package',
+          command :list, read_only: true, description: 'List packages'
+          command :show, read_only: true, description: 'Show a package',
             arguments: [PACKAGE_ID_ARG],
             action: ->(package_id:, **) { Result::SingleObject.new(aoc_api.read("packages/#{package_id}")) }
           command :delete, description: 'Delete packages',

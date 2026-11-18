@@ -81,6 +81,19 @@ module Aspera
           end
         end
 
+        # Check the syntax of a JMESPath expression, e.g. of `--out.query`, before the command is executed
+        # @param expression [String] JMESPath expression
+        # @param label      [String, nil] Name of the option, for the error message
+        # @raise [Cli::BadArgument] if the syntax is invalid
+        # @return [nil]
+        def check_jmespath(expression, label = nil)
+          require 'jmespath'
+          JMESPath::Parser.new.parse(expression)
+          nil
+        rescue JMESPath::Errors::SyntaxError => e
+          raise Cli::BadArgument, "#{"#{label}: " if label}JMESPath: #{e.message}"
+        end
+
         # @param fields [Array<String>] List of fields to not display
         # @return [Array<String>] List of fields to display, including special values (`ALL`) and tagged (`-`) fields
         def all_but(*fields)
@@ -226,14 +239,7 @@ module Aspera
       # @param expression [String, Proc, nil] JMESPath expression, or Ruby lambda, or `nil` for none
       def query=(expression)
         Aspera.assert_type(expression, String, Proc, NilClass, type: Cli::BadArgument) { 'out.query' }
-        if expression.is_a?(String)
-          require 'jmespath'
-          begin
-            JMESPath::Parser.new.parse(expression)
-          rescue JMESPath::Errors::SyntaxError => e
-            raise Cli::BadArgument, "JMESPath: #{e.message}"
-          end
-        end
+        self.class.check_jmespath(expression) if expression.is_a?(String)
         @options[:query] = expression
       end
 

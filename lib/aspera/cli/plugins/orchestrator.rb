@@ -171,9 +171,9 @@ module Aspera
 
         # --- DSL ---
 
-        command :health,     description: 'Check Orchestrator API health'
-        command :info,       description: 'Check that Orchestrator responds (ping)', action: ->(**) { Result::SingleObject.new(call_ao('remote_node_ping', accept: Mime::XML, xml_opts: {'ForceArray' => false})) }
-        command :processes,  description: 'Show Orchestrator background process status', action: ->(**) { processes_result(call_ao('processes_status', accept: Mime::XML, xml_opts: PROCESSES_XML_OPTS)) }
+        command :health,     read_only: true, description: 'Check Orchestrator API health'
+        command :info,       read_only: true, description: 'Check that Orchestrator responds (ping)', action: ->(**) { Result::SingleObject.new(call_ao('remote_node_ping', accept: Mime::XML, xml_opts: {'ForceArray' => false})) }
+        command :processes,  read_only: true, description: 'Show Orchestrator background process status', action: ->(**) { processes_result(call_ao('processes_status', accept: Mime::XML, xml_opts: PROCESSES_XML_OPTS)) }
         command :control,    description: 'Start, stop or kill the engine, the monitor or workers of Orchestrator, and show the process status',
           arguments: [
             {name: :process, type: Symbol, allowed: PROCESS_TYPES},
@@ -193,16 +193,16 @@ module Aspera
         command :worksteps,  description: 'Manage work steps'
 
         commands_under :alerts do
-          command :list, description: 'List alerts (option query: `category`, `count_only`)',
+          command :list, read_only: true, description: 'List alerts (option query: `category`, `count_only`)',
             query_schema: Schema::Registry.query_params(Schema::Registry::ORCHESTRATOR, 'api/alerts/{id}'),
             action: ->(**) { Result.auto(call_ao("alerts/#{ANY_ID}")) }
         end
 
         commands_under :tasks do
-          command :list, description: 'List tasks waiting for a user (only an administrator can list the tasks of another user)',
+          command :list, read_only: true, description: 'List tasks waiting for a user (only an administrator can list the tasks of another user)',
             arguments: [{name: :user, mandatory: false, default: SELF_USER}],
             action: ->(user:, **) { Result::ObjectList.new(call_ao("list_tasks/#{URI.encode_uri_component(user)}")['tasks'] || []) }
-          command :show, description: 'Show a task: its user inputs and its parameters. Id is a task id, or WO<work order id> with the step name when the work order has several',
+          command :show, read_only: true, description: 'Show a task: its user inputs and its parameters. Id is a task id, or WO<work order id> with the step name when the work order has several',
             arguments: [
               {name: :task_id},
               {name: :step_name, mandatory: false}
@@ -217,10 +217,10 @@ module Aspera
         end
 
         commands_under :monitors do
-          command :snapshot, description: 'Show status of monitors, of all types or of one type',
+          command :snapshot, read_only: true, description: 'Show status of monitors, of all types or of one type',
             arguments: [{name: :type, type: Symbol, mandatory: false, allowed: MONITOR_SNAPSHOT_TYPES}],
             action: ->(type: nil, **) { Result::SingleObject.new(call_ao(type.nil? ? 'monitor_snapshot' : "monitor_snapshot/#{type}")['monitor']) }
-          command :list, description: 'List monitors of a type: remote node monitors give the names of remote nodes',
+          command :list, read_only: true, description: 'List monitors of a type: remote node monitors give the names of remote nodes',
             arguments: [{name: :type, type: Symbol, allowed: MONITOR_TYPES}]
           command :activate, description: 'Activate a monitor',
             arguments: [{name: :type, type: Symbol, allowed: MONITOR_TYPES}, {name: :monitor_id, type: :identifier}],
@@ -231,9 +231,9 @@ module Aspera
         end
 
         commands_under :portlets do
-          command :list, description: 'List portlets with their version',
+          command :list, read_only: true, description: 'List portlets with their version',
             action: ->(**) { Result::ObjectList.new(call_ao('portlet_version')['Portlet'] || []) }
-          command :show, description: 'Show the version of a portlet',
+          command :show, read_only: true, description: 'Show the version of a portlet',
             arguments: [{name: :portlet}],
             action: ->(portlet:, **) { Result::ObjectList.new(call_ao("portlet_version/#{URI.encode_uri_component(portlet)}")['Portlet'] || []) }
         end
@@ -245,14 +245,14 @@ module Aspera
         end
 
         commands_under :queues do
-          command :stats, description: 'Statistics of the execution queue of the engine',
+          command :stats, read_only: true, description: 'Statistics of the execution queue of the engine',
             action: ->(**) { Result::SingleObject.new(call_ao("execution_queue_stats/#{ANY_ID}")) }
-          command :list, description: 'List managed queues',
+          command :list, read_only: true, description: 'List managed queues',
             action: ->(**) { Result::ObjectList.new(call_ao('queues_list').dig('Queues', 'queue') || []) }
-          command :items, description: 'List items of a queue',
+          command :items, read_only: true, description: 'List items of a queue',
             arguments: [{name: :queue}],
             action: ->(queue:, **) { Result::ObjectList.new(call_ao("queued_items/#{URI.encode_uri_component(queue)}")['queued_items'] || []) }
-          command :lookup, description: 'Find queued items, with option query: by item id, by item or by description (optionally in a queue)',
+          command :lookup, read_only: true, description: 'Find queued items, with option query: by item id, by item or by description (optionally in a queue)',
             query_schema: Schema::Registry.query_params(Schema::Registry::ORCHESTRATOR, 'api/lookup_queued_item'),
             action: ->(**) { Result::ObjectList.new(call_ao('lookup_queued_item')['queued_items'] || []) }
           command :add, description: 'Add an item to a queue (priority, weight, description and tags with option query)',
@@ -272,7 +272,7 @@ module Aspera
         end
 
         commands_under :pools do
-          command :status, description: 'Show resources of a resource pool and their status',
+          command :status, read_only: true, description: 'Show resources of a resource pool and their status',
             arguments: [{name: :pool_name}],
             action: ->(pool_name:, **) { Result::ObjectList.new(call_ao("pool_status/#{ANY_ID}", query: {name: pool_name}, json_opts: RESOURCE_JSON_OPTS)['ManagedResource'] || []) }
           command :add_resource, description: 'Add a resource to a resource pool (capacity and tags with option query)',
@@ -294,13 +294,13 @@ module Aspera
         end
 
         commands_under :journal do
-          command :files, description: 'List files recorded in a journal book (filters with option query)',
+          command :files, read_only: true, description: 'List files recorded in a journal book (filters with option query)',
             arguments: [{name: :book}],
             query_schema: Schema::Registry.query_params(Schema::Registry::ORCHESTRATOR, 'api/journal_files/{id}')
         end
 
         commands_under :plugins do
-          command :list, description: 'List plugins with their version', action: ->(**) { Result::ObjectList.new(call_ao('plugin_version')['Plugin']) }
+          command :list, read_only: true, description: 'List plugins with their version', action: ->(**) { Result::ObjectList.new(call_ao('plugin_version')['Plugin']) }
           command :reload, description: 'Reload a plugin (class name), or all enabled plugins',
             arguments: [{name: :plugin, mandatory: false}],
             action: ->(plugin: nil, **) { Result::SingleObject.new(call_ao('reload_plugin', query: {action_type: plugin}.compact)) }
@@ -327,14 +327,14 @@ module Aspera
         end
 
         commands_under :workflows do
-          command :list, description: 'List all workflows'
-          command :status,     description: 'Show running status of a workflow',
+          command :list, read_only: true, description: 'List all workflows'
+          command :status,     read_only: true, description: 'Show running status of a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
             action: ->(workflow_id:, **) { Result::ObjectList.new(call_ao(workflow_id.eql?(SpecialValues::ALL) ? 'workflows_status' : "workflows_status/#{workflow_id}")['workflows']['workflow']) }
-          command :inputs,     description: 'Show input specification of a workflow',
+          command :inputs,     read_only: true, description: 'Show input specification of a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
             action: ->(workflow_id:, **) { Result::SingleObject.new(call_ao("workflow_inputs_spec/#{workflow_id}")['workflow_inputs_spec']) }
-          command :details,    description: 'Show detailed running status of a workflow (period with option query: `start_date`, `end_date`)',
+          command :details,    read_only: true, description: 'Show detailed running status of a workflow (period with option query: `start_date`, `end_date`)',
             arguments: [{name: :workflow_id, type: :identifier}],
             query_schema: Schema::Registry.query_params(Schema::Registry::ORCHESTRATOR, 'api/workflow_details/{id}'),
             action: ->(workflow_id:, **) { Result::ObjectList.new(call_ao("workflow_details/#{workflow_id}")['workflows']['workflow']['statuses']) }
@@ -366,7 +366,7 @@ module Aspera
               {name: :workflow_id, type: :identifier},
               {name: :export, type: Hash, mandatory: false, default: {}, schema: 'opts:components.schemas.OrchestratorWorkflowExport'}
             ]
-          command :workorders, description: 'List work orders of a workflow (filters with option query)',
+          command :workorders, read_only: true, description: 'List work orders of a workflow (filters with option query)',
             arguments: [{name: :workflow_id, type: :identifier}],
             query_schema: Schema::Registry.query_params(Schema::Registry::ORCHESTRATOR, 'api/work_orders_list/{id}'),
             action: ->(workflow_id:, **) { Result::ObjectList.new(call_ao("work_orders_list/#{workflow_id}")['work_orders']) }
@@ -386,29 +386,29 @@ module Aspera
               end
             end
           end
-          command :outputs,    description: 'Show output specification of a workflow',
+          command :outputs,    read_only: true, description: 'Show output specification of a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
             action: ->(workflow_id:, **) { Result::ObjectList.new(call_ao("workflow_outputs_spec/#{workflow_id}")['workflow_outputs_spec']['output']) }
-          command :parents,    description: 'List published workflows that use a sub-workflow',
+          command :parents,    read_only: true, description: 'List published workflows that use a sub-workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
             action: ->(workflow_id:, **) { Result::ValueList.new(call_ao("list_by_subworkflow/#{workflow_id}")['parent_workflows'] || [], name: 'workflow') }
-          command :steps,      description: 'List steps of a type (plugin class, e.g. CustomRuby) in published workflows, with their work orders',
+          command :steps,      read_only: true, description: 'List steps of a type (plugin class, e.g. CustomRuby) in published workflows, with their work orders',
             arguments: [{name: :step_type}],
             action: ->(step_type:, **) { Result::ObjectList.new(call_ao("retrieve_steps/#{ANY_ID}", query: {type: step_type})) }
           command :test_step,  description: 'Launch the test cases of workflow steps: returns the id of the test run (`synchronous`, `step`, `case` with option query)',
             arguments: [{name: :workflow_id, type: :identifier}],
             query_schema: Schema::Registry.query_params(Schema::Registry::ORCHESTRATOR, 'api/test_step/{id}'),
             action: ->(workflow_id:, **) { Result::SingleObject.new(call_ao("test_step/#{workflow_id}")) }
-          command :test_status, description: 'Show the status of a test run launched by `test_step`',
+          command :test_status, read_only: true, description: 'Show the status of a test run launched by `test_step`',
             arguments: [{name: :test_run_id}],
             action: ->(test_run_id:, **) { Result::SingleObject.new(call_ao("test_step_status/#{test_run_id}")) }
         end
 
         commands_under :workorders do
-          command :status, description: 'Show status of a work order',
+          command :status, read_only: true, description: 'Show status of a work order',
             arguments: [{name: :workorder_id, type: :identifier}],
             action: ->(workorder_id:, **) { Result::SingleObject.new(call_ao("work_order_status/#{workorder_id}")['work_order']) }
-          command :worksteps, description: 'List work steps of a work order (not the steps of its sub-workflows)',
+          command :worksteps, read_only: true, description: 'List work steps of a work order (not the steps of its sub-workflows)',
             arguments: [{name: :workorder_id, type: :identifier}]
           command :cancel, description: 'Cancel a work order (option query: `force`)',
             arguments: [{name: :workorder_id, type: :identifier}],
@@ -417,20 +417,20 @@ module Aspera
           command :reset,  description: 'Reset a work order',
             arguments: [{name: :workorder_id, type: :identifier}],
             action: ->(workorder_id:, **) { Result::SingleObject.new(call_ao("work_order_reset/#{workorder_id}")['work_order']) }
-          command :output, description: 'Show output of a work order (filters with option query: `step_name`, `variable_name`)',
+          command :output, read_only: true, description: 'Show output of a work order (filters with option query: `step_name`, `variable_name`)',
             arguments: [{name: :workorder_id, type: :identifier}],
             query_schema: Schema::Registry.query_params(Schema::Registry::ORCHESTRATOR, 'api/work_order_output/{id}'),
             action: ->(workorder_id:, **) { Result::ObjectList.new(call_ao("work_order_output/#{workorder_id}", accept: Mime::XML, xml_opts: {'ForceArray' => %w[variable], 'SuppressEmpty' => nil})['variable']) }
           command :delete, description: 'Delete a work order and its dependents',
             arguments: [{name: :workorder_id, type: :identifier}],
             action: ->(workorder_id:, **) { Result::Status.new(call_ao("work_order_destroy/#{workorder_id}").strip) }
-          command :stats, description: 'Statistics of work orders: of the last 30 days, or of one day (filters `workflow_id`, `label`, `date` with option query)',
+          command :stats, read_only: true, description: 'Statistics of work orders: of the last 30 days, or of one day (filters `workflow_id`, `label`, `date` with option query)',
             query_schema: Schema::Registry.query_params(Schema::Registry::ORCHESTRATOR, 'api/work_order_stats/{id}'),
             action: ->(**) { statistics_result(call_ao("work_order_stats/#{ANY_ID}")) }
         end
 
         commands_under :worksteps do
-          command :status, description: 'Show status of a work step',
+          command :status, read_only: true, description: 'Show status of a work step',
             arguments: [{name: :workstep_id, type: :identifier}]
           command :cancel, description: 'Cancel a work step',
             arguments: [{name: :workstep_id, type: :identifier}],
@@ -438,7 +438,7 @@ module Aspera
           command :reset, description: 'Restart the work order from a work step (several work steps: comma-separated ids)',
             arguments: [{name: :workstep_id, type: :identifier}],
             action: ->(workstep_id:, **) { Result.auto(call_ao("workstep_reset/#{workstep_id}")) }
-          command :stats, description: 'Statistics of work steps: of the last 30 days, or of one day (filters `workflow_id`, `step_id`, `step_type`, `date` with option query)',
+          command :stats, read_only: true, description: 'Statistics of work steps: of the last 30 days, or of one day (filters `workflow_id`, `step_id`, `step_type`, `date` with option query)',
             query_schema: Schema::Registry.query_params(Schema::Registry::ORCHESTRATOR, 'api/work_step_stats/{id}'),
             action: ->(**) { statistics_result(call_ao("work_step_stats/#{ANY_ID}")) }
         end

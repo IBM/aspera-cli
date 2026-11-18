@@ -262,6 +262,7 @@ module Aspera
             raise ArgumentError, "#{path.inspect}: mount arguments must be mandatory" unless mount.arguments.all?(&:mandatory)
             validate_arguments(path, mount.arguments, plugin_class)
             raise ArgumentError, "#{path.inspect}: mount and action: are exclusive" if spec.action
+            raise ArgumentError, "#{path.inspect}: mount and read_only: are exclusive" if spec.read_only
             raise ArgumentError, "#{path.inspect}: mount at #{mount.at.inspect} not found in #{mount.plugin}" unless mount.at.empty? || mount.registry[mount.at]
             target_ids = mount.registry.children_of(mount.at).keys
             unknown = Array(mount.only) + Array(mount.except) - target_ids
@@ -271,6 +272,8 @@ module Aspera
             next
           end
 
+          # Rule: only a leaf is executed, so only a leaf is read-only
+          raise ArgumentError, "#{path.inspect}: read_only: only on a leaf" if spec.read_only && @children_index[path]&.any?
           next if @children_index[path]&.any? # intermediate node: skip
           action = spec.action
           if action.nil?

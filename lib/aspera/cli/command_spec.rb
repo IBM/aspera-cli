@@ -207,6 +207,7 @@ module Aspera
     # @!attribute query_schema     [String, nil]                 Schema path for --query help; when set, the runner hints `--query=help`
     # @!attribute mount            [MountSpec, Hash, nil]        Expose children of another plugin's registry under this node
     # @!attribute security         [Symbol, nil]                 Most restrictive security level at which the command is available (`:low`: executes code), see `Security`
+    # @!attribute read_only        [Boolean]                     Leaf only: the command changes nothing (on the server or locally), so it can be repeated (option `poll`)
     CommandSpec = Struct.new(
       :id,
       :parent,
@@ -220,10 +221,13 @@ module Aspera
       :query_schema,
       :mount,
       :security,
+      :read_only,
       keyword_init: true
     ) do
       def initialize(**kwargs)
         Aspera.assert_values(kwargs[:security], Security::LEVELS + [nil]) { "#{kwargs[:id]}: security" }
+        kwargs[:read_only] = false if kwargs[:read_only].nil?
+        Aspera.assert_values(kwargs[:read_only], [true, false]) { "#{kwargs[:id]}: read_only" }
         # Coerce each element of arguments: from Hash to ArgumentSpec if needed
         if kwargs[:arguments]
           kwargs[:arguments] = kwargs[:arguments].map do |a|

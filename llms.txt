@@ -61,6 +61,8 @@ Before writing or modifying a workflow, read the development guide with `ascli`:
 - Credentials: saved in presets. List them with `ascli config preset overview`, select one with `--preset=<name>`; a plugin may have a default preset.
 - Secrets: never ask the user to type a secret in the conversation. Use a preset, the vault (`@vault:<label>.<field>`), or `@secret:<name>`, which asks the user outside of the conversation. Values of secrets are hidden in results.
 - Results: filter and reshape with `--out.query` (JMESPath), `--out.select` and `--out.fields`, instead of post-processing a large output.
+- Wait for a state (a work order complete, a task created, a package received): repeat a read-only command (`list`, `show`, `status`) with `--poll`, not with `sleep` or a shell loop, e.g. ``--poll=@json:'{"interval":10,"max":30,"until":"status == `Complete`"}'``.
+  `until` is a JMESPath expression on the result (`@`: result not empty), the command fails if it is not met after `max` runs (or `timeout`). `"show":"last"` displays only the last result, `"errors":"retry"` runs again after an error. With `--format=json`, each result displayed is one line: usable in a background watcher. See section `polling-option-poll` of the manual.
 - Transfers: source paths are the last arguments, the destination is `--to-folder=<path>`, other transfer parameters are in `--ts=@json:{...}` (schema: `ascli config ascp spec`).
 - Exit code: `0` success, other values give the category of error (usage, authentication, not found, transfer, network): see `ascli -h`.
 - Show the user the command line that was executed.
@@ -72,6 +74,7 @@ ascli config commands faspex5
 ascli faspex5 packages send help
 ascli faspex5 packages send @json:'{"title":"Report","recipients":["user@example.com"]}' /path/to/file.pdf
 ascli aoc files browse / --format=json
+ascli orchestrator workorders status 1234 --poll=@json:'{"interval":10,"max":30,"until":"status == `Complete`"}' --format=json
 ascli server upload /path/to/file --to-folder=/Upload
 ascli config ascp logs diagnostics /path/to/aspera-scp-transfer.log
 ```

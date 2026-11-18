@@ -34,6 +34,8 @@ module Aspera
             allow(o).to(receive(:option_declared?)).and_return(false)
             allow(o).to(receive(:declare))
             allow(o).to(receive(:command_or_arg_empty?)).and_return(false)
+            # No option poll
+            allow(o).to(receive(:get_option).with(:poll).and_return(nil))
           end
         end
 

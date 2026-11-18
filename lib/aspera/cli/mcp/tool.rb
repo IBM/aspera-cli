@@ -152,6 +152,8 @@ module Aspera
             Log.dump(:mcp_execute, effective_args)
             runner = Runner.new(effective_args)
             result = runner.run_with_result
+            # The command of a poll is executed when the result is displayed, on the command line only
+            raise Cli::BadArgument, 'Option poll: not available in MCP server mode, call the tool again instead' if result.is_a?(Result::Poll)
             # Secrets never reach the AI client, whatever the output format requested in args.
             # As on the command line, `--out.query` applies to the data of an object or list, after secrets are removed
             if result.is_a?(Result::SingleObject) || result.is_a?(Result::ObjectList) || result.is_a?(Result::ValueList)

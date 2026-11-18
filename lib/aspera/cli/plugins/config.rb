@@ -181,7 +181,7 @@ module Aspera
           arguments: [{name: :private_key_pem}],
           action: ->(private_key_pem:, **) { Result::Text.new(OpenSSL::PKey::RSA.new(private_key_pem).public_key.to_s) }
         command :remote_certificate, description: 'Retrieve the certificate chain of a remote HTTPS server'
-        command :echo, description: 'Show the value of a given argument',
+        command :echo, read_only: true, description: 'Show the value of a given argument',
           arguments: [{name: :value, type: nil}],
           action: ->(value:, **) { Result.auto(value) }
         command :download, description: 'Download a file from a URL',

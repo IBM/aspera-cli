@@ -118,6 +118,7 @@ module Aspera
       IMAGE_OPTIONS           = "#{OPTIONS}:components.schemas.ImageOptions".freeze
       ASCP_LOGS_OPTIONS       = "#{OPTIONS}:components.schemas.AscpLogsOptions".freeze
       OUT_OPTIONS             = "#{OPTIONS}:components.schemas.OutOptions".freeze
+      POLL_OPTIONS            = "#{OPTIONS}:components.schemas.PollOptions".freeze
       PACKAGE_FOLDER_OPTIONS  = "#{OPTIONS}:components.schemas.PackageFolderOptions".freeze
       WEB_SERVER_OPTIONS      = "#{OPTIONS}:components.schemas.WebServerOptions".freeze
       GATEWAY_OPTIONS         = "#{OPTIONS}:components.schemas.Faspex4GatewayOptions".freeze

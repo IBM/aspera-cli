@@ -2336,6 +2336,46 @@ Set either option to `yes` or `no` to override detection, for example to keep co
 > [!NOTE]
 > Logs issued before the option is processed (e.g. at startup) use the detected value.
 
+### Polling: Option `poll`
+
+Option `--poll` executes a read-only command several times, and displays its results, for example to wait for a state: a work order complete, a task waiting for a user, a package received.
+It replaces a shell loop with `sleep`: arguments are read once (identifiers looked up once), the command runs again in the same process.
+
+Its value is a `Hash` (also with dot-notation, e.g. `--poll.interval=10`):
+
+<%=schema_to_table(Aspera::Schema::Registry::POLL_OPTIONS)%>
+
+`interval` and `timeout` are durations: a number of seconds, or a `String` with units `w`, `d`, `h`, `m`, `s`, e.g. `30s`, `2m`, `1h 30m`, `1d 02:00:00`, as for the [HTTP socket parameters](#http-socket-parameters).
+
+```shell
+# Wait for a work order to complete, check every 10 seconds, at most 30 times
+<%=cmd%> orchestrator workorders status <%=ph :workorder_id%> --poll=@json:'{"interval":10,"max":30,"until":"status == `Complete`"}'
+# Same, with dot-notation, and a timeout of 10 minutes
+<%=cmd%> orchestrator workorders status <%=ph :workorder_id%> --poll.interval=10s --poll.timeout=10m --poll.until='status == `Complete`'
+# Wait for a task waiting for a user (a non-empty list), display only the last result
+<%=cmd%> orchestrator tasks list --poll=@json:'{"interval":5,"max":60,"until":"@","show":"last"}' --format=json
+# Display the status of the resources of a pool, each time it changes, until interrupted (Ctrl-C)
+<%=cmd%> orchestrator pools status <%=ph :pool_name%> --poll.interval=5
+```
+
+Behavior:
+
+- Polling stops at the first run where `until` is true, or after `max` runs, or at `timeout`.
+- Without `until`, the command runs `max` times (or until `timeout`, or until interrupted), and the exit status is success.
+- If `until` is not true after the last run, the command fails with `condition not met after <N> runs` (exit status `1`).
+- `until` is evaluated on the data of the result (as seen by `--out.query`: JSON values), after `--out.select`, before `--out.fields` and `--out.query`.
+  Expression `@` is true for a non-empty result: e.g. a list with at least one item.
+- Options `--format`, `--out.fields`, `--out.select` and `--out.query` apply to each result displayed.
+  With `show=change` (default), a result is displayed when its display differs from the previous one.
+- Before each result displayed, a status line on `stderr` gives the run number and the time, e.g. `poll: run 3/30 2026-01-02 10:20:30`.
+  Output is flushed after each result: it can be read line by line by another program, e.g. with `--format=json` (one line per result).
+- An error of a run (e.g. an API error) ends the command with this error, unless `errors` is `retry`: then the run counts as one where `until` is false.
+- `Ctrl-C` ends polling: with `show=last`, the last result is displayed, and the exit status is `130`.
+
+For safety, option `poll` is refused, before anything is executed, on a command that is not marked read-only: a command that creates, modifies, deletes, sends, starts or cancels something, e.g. `faspex5 packages send`.
+Commands marked read-only are generic `list` and `show` commands, and some others, e.g. `status` commands of `orchestrator`, `node browse`.
+It is also refused with options `once_only` (state saved at each run) and `notify_to` (email sent at each run), with format `nagios`, and in [MCP server](#plugin-mcp-model-context-protocol-server) mode (the client calls the tool again instead).
+
 ### Exit status
 
 The exit code of <%=tool%> indicates the category of error, so that scripts can react to it:

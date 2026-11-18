@@ -70,6 +70,9 @@ module Aspera
 
     class NoSuchElement < Error; end
 
+    # Raised when the condition of option `poll` (`until`) is not met after the last run.
+    class PollConditionNotMet < Error; end
+
     # Raised when a lookup for a specific entity fails to return exactly one result.
     #
     # Provides a formatted message indicating whether the entity was missing

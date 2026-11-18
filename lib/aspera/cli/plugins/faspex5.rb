@@ -499,21 +499,21 @@ module Aspera
 
         # :health and :postprocessing work without authentication: they do not use api_v5.
         command :health,         description: 'Check Faspex 5 health'
-        command :version,        description: 'Show Faspex 5 version', action: ->(**) { Result::SingleObject.new(api_v5.read('version')) }
+        command :version,        read_only: true, description: 'Show Faspex 5 version', action: ->(**) { Result::SingleObject.new(api_v5.read('version')) }
         command :bearer_token,   description: 'Show OAuth bearer token', action: ->(**) { Result::Text.new(api_v5.oauth.authorization) }
         # Package id argument; with a public link to a package, setup_package_id provides it instead
         PACKAGE_ID_ARG = [{name: :package_id, type: :identifier}].freeze
         private_constant :PACKAGE_ID_ARG
         command :packages, description: 'Manage packages'
         commands_under :packages do
-          command :list,   description: 'List packages',
+          command :list,   read_only: true, description: 'List packages',
             arguments: [{name: :filter, mandatory: false, default: nil, type: Proc}]
           command :send,   description: 'Send a package', transfer_paths: :send,
             arguments: [{name: :package, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::FASPEX, 'packages.post')}],
             action: ->(package:, **) { package_send(package) }
-          command :show,   description: 'Show a package', setup: :setup_package_id, arguments: PACKAGE_ID_ARG,
+          command :show,   read_only: true, description: 'Show a package', setup: :setup_package_id, arguments: PACKAGE_ID_ARG,
             action: ->(package_id:, **) { Result::SingleObject.new(api_v5.read("packages/#{package_id}", query_read_delete)) }
-          command :browse, description: 'Browse package files', setup: :setup_package_id,
+          command :browse, read_only: true, description: 'Browse package files', setup: :setup_package_id,
             arguments: PACKAGE_ID_ARG + [{name: :folder_path, mandatory: false, default: '/'}],
             action: ->(folder_path:, package_id:, **) { browse_folder("packages/#{package_id}/files/#{Api::Faspex.box_type(options.get_option(:box))}", recipient_query(package_id), folder_path: folder_path) }
           command :status, description: 'Wait for package status', setup: :setup_package_id,
@@ -573,7 +573,7 @@ module Aspera
         end
 
         commands_under :shared_folders do
-          command :list,   description: 'List shared folders', action: ->(**) { Result::ObjectList.new(api_v5.read('shared_folders')['shared_folders']) }
+          command :list,   read_only: true, description: 'List shared folders', action: ->(**) { Result::ObjectList.new(api_v5.read('shared_folders')['shared_folders']) }
           command :browse, description: 'Browse a shared folder',
             arguments: [{name: :shared_folder_id, type: :identifier, lookup: :lookup_shared_folder_id},
                         {name: :folder_path, mandatory: false, default: '/'}]
@@ -603,7 +603,7 @@ module Aspera
             commands_under res do
               # List is handled with Faspex 5 pagination (item_list_with_total)
               unless is_singleton
-                list_kwargs = {description: operation_description(:list, entity_noun(entity_path))}
+                list_kwargs = {description: operation_description(:list, entity_noun(entity_path)), read_only: true}
                 list_kwargs[:query_schema] = Schema::Registry.query_params(cfg[:query_component], entity_path) if cfg[:query_component]
                 command :list, **list_kwargs
               end
