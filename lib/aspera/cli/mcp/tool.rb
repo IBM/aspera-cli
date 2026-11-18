@@ -15,8 +15,8 @@ require 'json'
 unless defined?(MCP::Tool)
   begin
     require 'mcp'
-  rescue LoadError
-    raise Cli::Error, "The 'mcp' and 'rack' gems are required. Install them with: gem install mcp rack"
+  rescue LoadError => e
+    raise Aspera::Cli::Error, "The 'mcp' gem is required (and 'rack' for transport http). Install with: gem install mcp rack (#{e.message})"
   end
 end
 

@@ -11,6 +11,8 @@ Released: [Place date of release here]
 
 ### Issues Fixed
 
+* `mcp server`: when the optional gem `mcp` is not installed, the error was `uninitialized constant Cli` instead of the message telling to install it.
+
 ### Breaking Changes
 
 ## 4.29.0
