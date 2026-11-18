@@ -1,7 +1,5 @@
 $ErrorActionPreference = 'Stop'
 
-$gemName = '<%=Aspera::Cli::Info::GEM_NAME%>'
-
-Write-Host "Uninstalling $gemName..."
-
-gem uninstall $gemName -a -x -I
+# The folder of the package is deleted by Chocolatey: only the command on the PATH is removed here.
+# The configuration (%USERPROFILE%\.aspera\ascli) is kept.
+Uninstall-BinFile -Name '<%=Aspera::Cli::Info::CMD_NAME%>'

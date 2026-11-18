@@ -375,7 +375,7 @@ There are several ways to install <%=tool%>:
 - On Windows, as a [portable package](#windows-portable-package)
 
   This method is the simplest on Windows: extract and run. It includes Ruby, gems and `ascp`.
-- On Windows, with the [Chocolatey package](#windows-chocolatey-package) (installs Ruby and the gem).
+- On Windows, with the [Chocolatey package](#windows-chocolatey-package): it installs the portable package and adds `<%=cmd%>` to the `PATH`.
 - As a [container](#container) (`docker`, `podman`, `singularity`).
 
 The following sections describe the various installation methods.
@@ -505,7 +505,8 @@ To uninstall, delete the folder, and remove it from the `PATH` if it was added.
 
 ### Windows: Chocolatey package
 
-If you use [Chocolatey](https://chocolatey.org/), <%=tool%> can be installed with the `aspera-cli` package: it installs Ruby (if not already present) and the `<%=gemspec.name%>` gem.
+If you use [Chocolatey](https://chocolatey.org/), <%=tool%> can be installed with the `aspera-cli` package.
+It installs the [portable package](#windows-portable-package) (Ruby, gems and `ascp` included, checked with its SHA-256) and adds only the command `<%=cmd%>` to the `PATH`: no Ruby installation is needed.
 
 In a PowerShell as Administrator:
 
@@ -513,7 +514,7 @@ In a PowerShell as Administrator:
 choco install aspera-cli -y
 ```
 
-Then, install the Aspera Transfer Daemon, see [Installing `ascp` through `transferd`](#installing-ascp-through-transferd).
+Upgrade with `choco upgrade aspera-cli`, uninstall with `choco uninstall aspera-cli` (the configuration is kept).
 
 ### Ruby
 

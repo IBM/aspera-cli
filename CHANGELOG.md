@@ -8,6 +8,7 @@ Released: [Place date of release here]
 
 * `config`: new command `skill`: displays the agent skill (same content as `llms.txt`), for an AI that does not install skills, in a shell or through `mcp server`.
 * `mcp server`: the default instructions tell the AI to read the Aspera on Cloud Automation Development Guide before writing a workflow (sections to start with, for example `package-transfer` for action "Send a package"), and point to `config skill` for general guidance. The agent skill and `llms.txt` give the same starting sections.
+* Chocolatey package `aspera-cli`: installs the Windows portable package (Ruby, gems and `ascp` included, checked with its SHA-256) instead of Ruby and the gem, and adds only `ascli` to the `PATH`. It is built, tested and published by the release workflow.
 
 ### Issues Fixed
 

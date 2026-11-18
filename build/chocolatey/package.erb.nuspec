@@ -1,19 +1,34 @@
-<?xml version="1.0"?>
-<package>
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
   <metadata>
-    <id>%=CHOCO_PACKAGE_NAME%</id>
-    <version>%=nuget_version_build%</version>
-    <title>Aspera CLI</title>
-    <authors>Laurent Martin</authors>
-    <readme>README.md</readme>
-    <projectUrl>https://github.com/you/your-gem-name</projectUrl>
-    <licenseUrl>%=Aspera::Cli::Info::SRC_URL%/blob/main/LICENSE</licenseUrl>
+    <id><%=Aspera::Cli::Info::GEM_NAME%></id>
+    <version><%=nuget_version%></version>
+    <title>IBM Aspera CLI</title>
+    <authors>IBM</authors>
+    <owners>Laurent Martin</owners>
+    <projectUrl><%=Aspera::Cli::Info::SITE_URL%></projectUrl>
+    <projectSourceUrl><%=Aspera::Cli::Info::SRC_URL%></projectSourceUrl>
+    <packageSourceUrl><%=Aspera::Cli::Info::SRC_URL%>/tree/main/build/chocolatey</packageSourceUrl>
+    <docsUrl><%=Aspera::Cli::Info::SITE_URL%></docsUrl>
+    <bugTrackerUrl><%=Aspera::Cli::Info::SRC_URL%>/issues</bugTrackerUrl>
+    <iconUrl>https://raw.githubusercontent.com/IBM/aspera-cli/main/docs/art/mascot.svg</iconUrl>
+    <licenseUrl><%=Aspera::Cli::Info::SRC_URL%>/blob/main/LICENSE</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Installs Ruby, VC++ Redistributable, then installs the aspera-cli gem and configures transfer daemon.</description>
-    <tags>ascli aspera cli ascp ibm</tags>
-    <dependencies>
-      <dependency id="ruby" version="[3.2.0,)" />
-      <dependency id="vcredist140" version="[14.0.0,)" />
-    </dependencies>
+    <releaseNotes><%=Aspera::Cli::Info::SRC_URL%>/releases/tag/v<%=gem_version%></releaseNotes>
+    <summary>The automation interface for IBM Aspera: from command line to AI agents.</summary>
+    <description>IBM Aspera CLI (`<%=Aspera::Cli::Info::CMD_NAME%>`) is an open-source toolkit to automate, integrate and operate IBM Aspera products: high-speed FASP transfers, Aspera on Cloud, Faspex, HSTS, Node API, Shares, Console, Orchestrator, and an MCP server for AI agents.
+
+This package installs the Windows portable package of `<%=Aspera::Cli::Info::CMD_NAME%>`: Ruby, gems and the IBM Aspera Transfer SDK (`ascp`, `transferd`) are included. No Ruby installation is needed, and only the command `<%=Aspera::Cli::Info::CMD_NAME%>` is added to the PATH.
+
+Try it, no account needed:
+
+```
+<%=Aspera::Cli::Info::CMD_NAME%> config initdemo
+<%=Aspera::Cli::Info::CMD_NAME%> server browse /
+```</description>
+    <tags>ascli aspera ibm-aspera fasp ascp file-transfer high-speed-transfer cli automation mcp</tags>
   </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
 </package>

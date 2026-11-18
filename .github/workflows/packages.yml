@@ -5,6 +5,7 @@
 #   Ocran bundles all shared libraries except glibc, so the executable runs on any Linux with glibc >= 2.28 (RHEL 8 and later)
 # - Linux: portable package (rake linuxtgz:portable), built in a RHEL 8 container, with the same shared libraries
 # - Windows: portable package (rake windowszip:portable), built on Linux, tested on Windows
+# - Chocolatey: package that installs the Windows portable package (rake chocolatey:build), tested on Windows, pushed for a final version
 # - Container image (rake container:build), built on Linux, tested, and pushed to Docker Hub (tag `latest` only for the latest release)
 # - MCP Registry: server.json (rake container:server_json) published, for a published release, after the container image
 name: Release Packages
@@ -29,6 +30,10 @@ on:
         default: true
       windows:
         description: "Windows portable package"
+        type: boolean
+        default: true
+      chocolatey:
+        description: "Chocolatey package (alone: uses the Windows portable package already attached to the release)"
         type: boolean
         default: true
       container:
@@ -346,6 +351,63 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release upload "v$env:VERSION" $env:ARCHIVE --clobber --repo "${{ github.repository }}"
+
+  chocolatey:
+    name: Chocolatey, build, test and push
+    needs:
+      - version
+      - windows-release
+    # After the Windows portable package is attached, or alone (manual, without Windows): with the one already attached to the release
+    if: >-
+      !cancelled() && needs.version.result == 'success' &&
+      (github.event_name == 'release' && needs.windows-release.result == 'success' ||
+      github.event_name == 'workflow_dispatch' && inputs.chocolatey &&
+      (needs.windows-release.result == 'success' || !inputs.windows))
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1
+        with:
+          bundler-cache: true
+
+      # The package downloads the portable package attached to the release by job windows-release (URL and SHA-256 in the package)
+      - name: Build package
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          bundle exec rake "chocolatey:build[$env:VERSION]"
+
+      # Install from the local package, as a user would, then uninstall
+      - name: Check package installs and runs
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          $nugetVersion = $env:VERSION -replace '\.([a-z]+)', '-$1'
+          choco install aspera-cli --version $nugetVersion --source "$PWD\pkg" --yes --no-progress
+          $output = (ascli --version 2>&1) -join "`n"
+          if ($output -ne $env:VERSION) { throw "Unexpected output of --version:`n$output" }
+          # Only ascli is shimmed: not the executables of the package (ruby, ascp, transferd...)
+          foreach ($exe in 'ruby', 'ascp', 'transferd') {
+              if (Test-Path "$env:ChocolateyInstall\bin\$exe.exe") { throw "$exe.exe of the package is on the PATH" }
+          }
+          ascli config ascp info --fields=ascp_version
+          choco uninstall aspera-cli --yes --no-progress
+
+      # Push only a final version, and only if the API key is configured (repository secret CHOCOLATEY_API_KEY)
+      - name: Push to Chocolatey community repository
+        if: ${{ !contains(needs.version.outputs.version, 'pre') && !contains(needs.version.outputs.version, 'beta') }}
+        env:
+          CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
+        run: |
+          if (-not $env:CHOCOLATEY_API_KEY) { Write-Output '::warning::Secret CHOCOLATEY_API_KEY not set: package not pushed'; exit 0 }
+          $PSNativeCommandUseErrorActionPreference = $true
+          choco push "pkg\aspera-cli.$env:VERSION.nupkg" --source https://push.chocolatey.org/ --api-key $env:CHOCOLATEY_API_KEY
 
   container:
     name: Container image, build, test and push
