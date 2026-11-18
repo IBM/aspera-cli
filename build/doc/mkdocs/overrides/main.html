@@ -1,0 +1,20 @@
+{#- Link previews (Open Graph, X/Twitter): title, description and image of each page -#}
+{% extends "base.html" %}
+{% block extrahead %}
+  {%- set preview_title = config.site_name if page.is_homepage else page.title ~ " - " ~ config.site_name -%}
+  {%- set preview_description = page.meta.description if page.meta and page.meta.description else config.site_description -%}
+  {%- set preview_image = config.site_url ~ "assets/social-preview.png" -%}
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="{{ config.site_name | e }}">
+  <meta property="og:title" content="{{ preview_title | striptags | e }}">
+  <meta property="og:description" content="{{ preview_description | e }}">
+  <meta property="og:url" content="{{ page.canonical_url | e }}">
+  <meta property="og:image" content="{{ preview_image }}">
+  <meta property="og:image:width" content="1280">
+  <meta property="og:image:height" content="640">
+  <meta property="og:image:alt" content="IBM Aspera CLI: the automation interface for IBM Aspera, from command line to AI agents">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ preview_title | striptags | e }}">
+  <meta name="twitter:description" content="{{ preview_description | e }}">
+  <meta name="twitter:image" content="{{ preview_image }}">
+{% endblock %}

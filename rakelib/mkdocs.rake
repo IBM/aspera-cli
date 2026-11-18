@@ -46,6 +46,9 @@ namespace :doc do
     )
     site.write(path_docs)
     FileUtils.cp_r(Paths::MKDOCS / 'stylesheets', path_docs)
+    # Image of link previews (Open Graph), and theme override that declares it
+    FileUtils.cp_r(Paths::MKDOCS / 'assets', path_docs)
+    FileUtils.cp_r(Paths::MKDOCS / 'overrides', PATH_TMP_MKDOCS)
     config['docs_dir'] = path_docs.to_s
     config['nav'] = site.nav
     config_file = PATH_TMP_MKDOCS / 'mkdocs.yml'

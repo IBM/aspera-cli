@@ -37,7 +37,11 @@ class DocSite
 
   # Title of the home page, if made from `README.md`
   HOME_TITLE = 'Home'
-  private_constant :HOME_TITLE
+  # Maximum length of the description of a page (`<meta name="description">`, link previews): search engines show about 160 characters
+  DESCRIPTION_MAX = 160
+  # Lines that are not prose, for the description of a page: heading, code fence, table, quote, admonition, list, or containing HTML
+  NOT_PROSE = /^\s*(#|```|\||>|!!!|[-*+] |\d+\. |$)|</
+  private_constant :HOME_TITLE, :DESCRIPTION_MAX, :NOT_PROSE
 
   # A page of the site
   # @!attribute base [Pathname] folder of the source of the page: relative images and links
@@ -82,6 +86,8 @@ class DocSite
         (folder / image).dirname.mkpath
         (folder / image).write((page.base / image).binread)
       end
+      # Description of the page (front matter, used by MkDocs for `<meta name="description">`): the home page keeps the one of the site
+      text = "#{{'description' => description(page)}.to_yaml}---\n\n#{text}" unless page.file.eql?(INDEX)
       (folder / page.file).write(text)
     end
     (folder / 'llms.txt').write(llms_text)
@@ -167,6 +173,46 @@ class DocSite
         result.push(line)
       end
     end
+    result
+  end
+
+  # Description of a page: its first paragraph of prose, without Markdown, limited to whole sentences.
+  # If the page has no such prose, or only a sentence that introduces a list (ends with `:`): made from the title of the page.
+  # @param page [Page] Page
+  # @return [String] Description
+  def description(page)
+    from_prose = prose_description(page.lines)
+    return from_prose unless from_prose.nil? || from_prose.end_with?(':')
+    "#{page.title}, in the IBM Aspera CLI (ascli) manual."
+  end
+
+  # @param lines [Array<String>] Lines of a page
+  # @return [String, nil] First paragraph of prose, without Markdown, limited to whole sentences, or `nil`
+  def prose_description(lines)
+    paragraph = []
+    in_code = false
+    lines.each do |line|
+      in_code = !in_code if line.match?(/^\s*```/)
+      next if in_code
+      if line.match?(NOT_PROSE)
+        break unless paragraph.empty?
+        next
+      end
+      paragraph.push(line.strip)
+    end
+    return if paragraph.empty?
+    text = paragraph.join(' ')
+      .gsub(/!\[[^\]]*\]\([^)]*\)/, '')
+      .gsub(/\[([^\]]*)\]\([^)]*\)/, '\1')
+      .delete('`*<>')
+      .squeeze(' ').strip
+    return if text.empty?
+    result = ''
+    text.split(/(?<=[.!?])\s+/).each do |sentence|
+      break if result.length + sentence.length + 1 > DESCRIPTION_MAX
+      result = result.empty? ? sentence : "#{result} #{sentence}"
+    end
+    result = "#{text[0, DESCRIPTION_MAX - 1].sub(/\s+\S*\z/, '')}…" if result.empty?
     result
   end
 

@@ -4,6 +4,7 @@ site_description: IBM Aspera CLI (ascli), the automation interface for IBM Asper
 repo_url: https://github.com/IBM/aspera-cli
 theme:
   name: material
+  custom_dir: overrides
   features:
     - navigation.instant
     - navigation.expand
