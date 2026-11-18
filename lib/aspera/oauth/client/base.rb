@@ -10,6 +10,7 @@ require_relative '../../secret/hider'
 require_relative '../../mime'
 require_relative '../../rainbow'
 require 'date'
+require 'time'
 using Rainbow
 
 module Aspera
@@ -141,11 +142,16 @@ module Aspera
       end
 
       # Cache the token creation response
+      # Adds `obtained_at` and, if the server gives `expires_in`, `expires_at` (expiration of an opaque token)
       # @param http [Net::HTTPResponse] Response of the token creation (see {#create_token_base})
       # @return [Hash{String => Object}] Token creation response: `@token_field`, optional `refresh_token`, `expires_in`, ...
       def save_token_data(http)
         token_data = JSON.parse(http.body)
-        Factory.instance.persist_mgr.put(@token_cache_id, http.body)
+        now = Time.now
+        token_data[Factory::OBTAINED_AT_FIELD] = now.utc.iso8601
+        lifetime = Integer(token_data['expires_in'], exception: false)
+        token_data[Factory::EXPIRES_AT_FIELD] = (now + lifetime).utc.iso8601 if lifetime && !token_data.key?(Factory::EXPIRES_AT_FIELD)
+        Factory.instance.persist_mgr.put(@token_cache_id, JSON.generate(token_data))
         # Logs decoded token information
         cached_token_info
         token_data

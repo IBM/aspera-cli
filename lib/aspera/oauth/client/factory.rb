@@ -8,6 +8,8 @@ require_relative '../../assert'
 require_relative '../../string_ext'
 require 'singleton'
 require 'base64'
+require 'json'
+require 'time'
 module Aspera
   module OAuth
     # Factory to create tokens and manage their cache
@@ -23,6 +25,9 @@ module Aspera
       # prefix for bearer authorization when in header
       SPACE_BEARER_AUTH_SCHEME = 'Bearer '
       TOKEN_FIELD = 'access_token'
+      # fields added to the cached token creation response
+      OBTAINED_AT_FIELD = 'obtained_at'
+      EXPIRES_AT_FIELD = 'expires_at'
 
       private_constant :PERSIST_CATEGORY_TOKEN, :SPACE_BEARER_AUTH_SCHEME
 
@@ -81,7 +86,9 @@ module Aspera
           # tokens older than this duration in sec. will be discarded from cache
           token_cache_max_age:     1800,
           # tokens valid for less than this duration in sec. will be regenerated
-          token_refresh_threshold: 120
+          token_refresh_threshold: 120,
+          # tokens obtained since more than this duration in sec. will be regenerated (0: no limit)
+          token_refresh_max_age:   0
         }
       end
 
@@ -143,19 +150,22 @@ module Aspera
         token_value = token_data[token_field] || token_data[TOKEN_FIELD] || token_data['token']
         decoded_token = decode_token(token_value)
         info = {data: token_data}
-        if decoded_token.is_a?(Hash)
-          info[:decoded] = decoded_token
-          # TODO: move date decoding to token decoder ?
-          expiration_date =
-            if    decoded_token['expires_at'].is_a?(String) then Time.parse(decoded_token['expires_at']).to_time
-            elsif decoded_token['exp'].is_a?(Integer)       then Time.at(decoded_token['exp'])
-            end
-          unless expiration_date.nil?
-            info[:expiration] = expiration_date
-            info[:ttl_sec] = expiration_date - Time.now
-            info[:expired] = info[:ttl_sec] < @parameters[:token_refresh_threshold]
+        info[:decoded] = decoded_token if decoded_token.is_a?(Hash)
+        # TODO: move date decoding to token decoder ?
+        expiration_date =
+          if    decoded_token.is_a?(Hash) && decoded_token['expires_at'].is_a?(String) then Time.parse(decoded_token['expires_at'])
+          elsif decoded_token.is_a?(Hash) && decoded_token['exp'].is_a?(Integer)       then Time.at(decoded_token['exp'])
+          elsif token_data[EXPIRES_AT_FIELD].is_a?(String)                             then Time.parse(token_data[EXPIRES_AT_FIELD])
           end
+        unless expiration_date.nil?
+          info[:expiration] = expiration_date
+          info[:ttl_sec] = expiration_date - Time.now
+          info[:expired] = info[:ttl_sec] < @parameters[:token_refresh_threshold]
         end
+        # Force refresh of an old token, e.g. before its refresh token expires
+        max_age = @parameters[:token_refresh_max_age].to_i
+        obtained_at = token_data[OBTAINED_AT_FIELD]
+        info[:expired] = true if max_age.positive? && obtained_at.is_a?(String) && Time.now - Time.parse(obtained_at) > max_age
         Log.dump(:token_info, info)
         return info
       end

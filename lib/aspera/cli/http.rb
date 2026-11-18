@@ -7,6 +7,7 @@ require_relative 'special_values'
 require_relative '../log'
 require_relative '../assert'
 require_relative '../line_logger'
+require_relative '../duration'
 require_relative '../schema/registry'
 require_relative 'option_declarator'
 require_relative '../rest'
@@ -27,7 +28,24 @@ module Aspera
       # OpenSSL constant that disables peer verification (VERIFY_NONE)
       SELF_SIGNED_CERT = OpenSSL::SSL.const_get(:enon_yfirev.to_s.upcase.reverse) # cspell: disable-line
 
-      private_constant :CERT_EXT, :SELF_SIGNED_CERT
+      # Keys of `http_options` that are durations in seconds: a number, or a string decoded by {Duration}
+      DURATION_KEYS = %i[
+        read_timeout write_timeout open_timeout keep_alive_timeout
+        retry_sleep
+        token_cache_max_age token_refresh_threshold token_refresh_max_age jwt_accepted_offset_sec jwt_expiry_offset_sec
+      ].freeze
+
+      private_constant :CERT_EXT, :SELF_SIGNED_CERT, :DURATION_KEYS
+
+      class << self
+        # @param value [Numeric, String] Duration: number of seconds, or string, e.g. `12h`, `1d`, `1h 30m`, `0.5`
+        # @return [Numeric] Number of seconds (integer, unless the string has milliseconds)
+        def duration_seconds(value)
+          return value if value.is_a?(Numeric)
+          milliseconds = Duration.to_unit(value, 'ms')
+          (milliseconds % 1000).zero? ? milliseconds / 1000 : milliseconds / 1000.0
+        end
+      end
 
       # `on_set` callbacks are methods of the instance given as `target:` to `declare_options`
       option :insecure,           description: 'HTTP/S: Do not validate any certificate',                   allowed: Type::BOOLEAN, default: false, on_set: :insecure=
@@ -56,12 +74,19 @@ module Aspera
       # in @http_options for Net::HTTP session configuration in update_session.
       # This runs on every assignment (JSON hash, dotted notation, preset merge) so timing
       # of option parsing never matters.
+      # Durations (`DURATION_KEYS`) are converted to seconds first.
       # @param new_options [Hash] merged http_options hash
       # @return [nil]
+      # @raise [BadArgument] if a duration is invalid
       def http_options=(new_options)
         Aspera.assert_type(new_options, Hash)
         kept = {}
         new_options.each do |k, v|
+          begin
+            v = self.class.duration_seconds(v) if DURATION_KEYS.include?(k.to_sym)
+          rescue ParameterError => e
+            raise BadArgument, "Option http_options: #{k}: #{e.message}"
+          end
           method = "#{k}=".to_sym
           if Rest::Parameters.instance.respond_to?(method)
             Rest::Parameters.instance.send(method, v)

@@ -585,26 +585,46 @@ components:
 
         Keys are dispatched at startup to three targets:
         `Rest::Parameters` (`user_agent`, `download_partial_suffix`, `retry_*`),
-        `SSL` (`ssl_options`), and `OAuth` (`token_cache_max_age`, `token_refresh_threshold`).
+        `SSL` (`ssl_options`), and `OAuth` (`token_*`, `jwt_*`).
         Any remaining key is forwarded as a setter to the `Net::HTTP` session
         (e.g. `ca_file`, `verify_mode`) — the list below covers the common ones.
       additionalProperties: true
       properties:
         read_timeout:
-          type: number
-          description: Maximum time in seconds to wait for data to be read from the server. (Net::HTTP)
+          oneOf:
+            - type: string
+            - type: number
+              minimum: 0
+          description: >-
+            Maximum time in seconds to wait for data to be read from the server. (Net::HTTP)
+            A duration, e.g. `30s`, `12h`, `1d`, `1h 30m`, a plain number is seconds.
           default: 60
         write_timeout:
-          type: number
-          description: Maximum time in seconds to wait for data to be written to the server. (Net::HTTP)
+          oneOf:
+            - type: string
+            - type: number
+              minimum: 0
+          description: >-
+            Maximum time in seconds to wait for data to be written to the server. (Net::HTTP)
+            A duration, e.g. `30s`, `12h`, `1d`, `1h 30m`, a plain number is seconds.
           default: 60
         open_timeout:
-          type: number
-          description: Maximum time in seconds to wait for a connection to be established. (Net::HTTP)
+          oneOf:
+            - type: string
+            - type: number
+              minimum: 0
+          description: >-
+            Maximum time in seconds to wait for a connection to be established. (Net::HTTP)
+            A duration, e.g. `30s`, `12h`, `1d`, `1h 30m`, a plain number is seconds.
           default: 60
         keep_alive_timeout:
-          type: number
-          description: Maximum time in seconds to keep an idle persistent connection open. (Net::HTTP)
+          oneOf:
+            - type: string
+            - type: number
+              minimum: 0
+          description: >-
+            Maximum time in seconds to keep an idle persistent connection open. (Net::HTTP)
+            A duration, e.g. `30s`, `12h`, `1d`, `1h 30m`, a plain number is seconds.
           default: 2
         ssl_options:
           type: array
@@ -635,17 +655,60 @@ components:
           description: Maximum number of retry attempts. (Rest)
           default: 1
         retry_sleep:
-          type: integer
-          description: Delay in seconds between retry attempts. (Rest)
+          oneOf:
+            - type: string
+            - type: number
+              minimum: 0
+          description: >-
+            Delay in seconds between retry attempts. (Rest)
+            A duration, e.g. `30s`, `12h`, `1d`, `1h 30m`, a plain number is seconds.
           default: 4
         token_cache_max_age:
-          type: integer
-          description: Maximum age in seconds of a cached OAuth token before it is discarded. (OAuth)
+          oneOf:
+            - type: string
+            - type: number
+              minimum: 0
+          description: >-
+            Maximum age in seconds of a cached OAuth token before it is discarded. (OAuth)
+            A duration, e.g. `30s`, `12h`, `1d`, `1h 30m`, a plain number is seconds.
           default: 1800
         token_refresh_threshold:
-          type: integer
-          description: Remaining token lifetime in seconds below which the token is proactively refreshed. (OAuth)
+          oneOf:
+            - type: string
+            - type: number
+              minimum: 0
+          description: >-
+            Remaining token lifetime in seconds below which the token is proactively refreshed. (OAuth)
+            A duration, e.g. `30s`, `12h`, `1d`, `1h 30m`, a plain number is seconds.
           default: 120
+        token_refresh_max_age:
+          oneOf:
+            - type: string
+            - type: number
+              minimum: 0
+          description: >-
+            Age in seconds (since it was obtained) above which the token is proactively refreshed, `0` for no limit.
+            E.g. keeps a session alive when the refresh token expires at the same time as the token (Shares). (OAuth)
+            A duration, e.g. `30s`, `12h`, `1d`, `1h 30m`, a plain number is seconds.
+          default: 0
+        jwt_accepted_offset_sec:
+          oneOf:
+            - type: string
+            - type: number
+              minimum: 0
+          description: >-
+            Tolerance of clock difference with the server: a generated JWT is valid since this duration in the past (`nbf`). (OAuth)
+            A duration, e.g. `30s`, `12h`, `1d`, `1h 30m`, a plain number is seconds.
+          default: 300
+        jwt_expiry_offset_sec:
+          oneOf:
+            - type: string
+            - type: number
+              minimum: 0
+          description: >-
+            Validity of a generated JWT, used to request a token. (OAuth)
+            A duration, e.g. `30s`, `12h`, `1d`, `1h 30m`, a plain number is seconds.
+          default: 3600
     VaultHashicorpOptions:
       type: object
       description: >-

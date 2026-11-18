@@ -99,6 +99,34 @@ module Aspera
         end
       end
 
+      describe 'option http_options' do
+        around do |example|
+          oauth = OAuth::Factory.instance.parameters
+          saved_oauth = oauth.dup
+          saved_sleep = Rest::Parameters.instance.retry_sleep
+          example.run
+        ensure
+          oauth.replace(saved_oauth)
+          Rest::Parameters.instance.retry_sleep = saved_sleep
+        end
+
+        it 'accepts durations as number of seconds or string' do
+          http = build_http(['--http-options=@json:{"token_refresh_max_age":"12h","token_cache_max_age":86400,"retry_sleep":"2s","read_timeout":"1m 30s","open_timeout":"0.5"}'])
+          expect(OAuth::Factory.instance.parameters).to(include(token_refresh_max_age: 43_200, token_cache_max_age: 86_400))
+          expect(Rest::Parameters.instance.retry_sleep).to(eq(2))
+          expect(http.http_options).to(eq('read_timeout' => 90, 'open_timeout' => 0.5))
+        end
+
+        it 'accepts a duration in dot notation' do
+          build_http(['--http-options.token_refresh_max_age=1d'])
+          expect(OAuth::Factory.instance.parameters[:token_refresh_max_age]).to(eq(86_400))
+        end
+
+        it 'rejects an invalid duration' do
+          expect { build_http(['--http-options=@json:{"retry_sleep":"abc"}']) }.to(raise_error(BadArgument, /retry_sleep: Invalid duration: abc/))
+        end
+      end
+
       describe 'option insecure' do
         it 'ignores certificate for any URL' do
           http = build_http(['--insecure=yes', '--warn-insecure=no'])

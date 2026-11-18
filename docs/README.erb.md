@@ -4180,7 +4180,7 @@ HTTP connection parameters (not `ascp` WSS) can be adjusted using option `http_o
 
 <%=schema_to_table(Aspera::Schema::Registry::HTTP_OPTIONS)%>
 
-Time values are set in **seconds** and can be of type either `Integer` or `Float`.
+Time values are durations: a number of **seconds** (`Integer` or `Float`), or a `String`, e.g. `30s`, `12h`, `1d`, `1h 30m`, `1d 02:00:00`.
 Any additional key is forwarded as a setter to the `Net::HTTP` session.
 For a full list, refer to the Ruby library: [`Net::HTTP`](https://github.com/ruby/net-http/blob/master/lib/net/http.rb).
 
@@ -4190,6 +4190,13 @@ Example:
 
 ```shell
 <%=cmd%> aoc admin package list --http-options=@json:'{"read_timeout":10.0}'
+```
+
+With a server whose token and refresh token expire at the same time (e.g. Shares: 24 hours), `token_refresh_max_age` refreshes the token before its refresh token expires.
+A command run more often than this duration (e.g. scheduled every 12 hours) keeps the session alive without a new login, provided the token stays in cache (`token_cache_max_age`):
+
+```shell
+<%=cmd%> shares files browse / --http-options=@json:'{"token_cache_max_age":"1d","token_refresh_max_age":"12h"}'
 ```
 
 The option `ssl_options` corresponds to a list of options as listed in `man SSL_CTX_set_options`.

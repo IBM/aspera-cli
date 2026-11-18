@@ -12,8 +12,12 @@ Released: [Place date of release here]
 * Hidden input (passwords, code or URL pasted after a web login): a mark shows the state, without revealing the length: `🔑` while the input is empty, `…` once something is typed or pasted (`***` and `...` without Unicode). Ctrl-U erases the input, e.g. to paste again.
 * Web login without local port (`--ui.web_auth=paste`): the page that shows the code after `config web_login` tells how long it is valid (15 minutes). Same for the page of the Shares patch for `--auth=web` (`docs/shares`).
 
+* OAuth: new key `token_refresh_max_age` of option `http_options`: a cached token obtained since more than this duration (seconds) is refreshed before use (default: `0`, no limit). With an `ascli` command run more often than the lifetime of the refresh token (e.g. every 12 hours), it keeps a session alive without new login, e.g. with Shares whose token and refresh token both expire after 24 hours: `--http-options=@json:'{"token_cache_max_age":"1d","token_refresh_max_age":"12h"}'`.
+* `http_options`: durations (timeouts, `retry_sleep`, `token_*`, `jwt_*`) accept a string, e.g. `30s`, `12h`, `1d`, `1h 30m`, in addition to a number of seconds. Keys `jwt_accepted_offset_sec` and `jwt_expiry_offset_sec` are documented.
+
 ### Issues Fixed
 
+* OAuth: an opaque token (not a JWT, e.g. Shares) was used until rejected by the server: its refresh token, if it expires at the same time, could no longer be used. The expiration given at creation (`expires_in`) is now kept in cache (`expires_at`), and the token is refreshed before it expires (`token_refresh_threshold`).
 * `mcp server`: when the optional gem `mcp` is not installed, the error was `uninitialized constant Cli` instead of the message telling to install it.
 
 ### Breaking Changes

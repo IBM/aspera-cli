@@ -9,6 +9,7 @@ require_relative '../lib/aspera/oauth/client/generic'
 require 'securerandom'
 require 'base64'
 require 'json'
+require 'time'
 
 RSpec.describe(Aspera::OAuth::Base) do
   # In-memory token cache
@@ -73,7 +74,7 @@ RSpec.describe(Aspera::OAuth::Base) do
     it 'generates and caches a token if none in cache' do
       server('client_credentials' => {'access_token' => new_token})
       expect(oauth.token).to(eq(new_token))
-      expect(cached).to(eq({'access_token' => new_token}))
+      expect(cached).to(include('access_token' => new_token))
     end
 
     it 'uses the cached token if it does not expire soon' do
@@ -88,7 +89,45 @@ RSpec.describe(Aspera::OAuth::Base) do
       server('refresh_token' => {'access_token' => new_token})
       expect(oauth.token).to(eq(new_token))
       expect(oauth.api).to(have_received(:create).with('token', include(grant_type: 'refresh_token', refresh_token: refresh_token), any_args))
-      expect(cached).to(eq({'access_token' => new_token}))
+      expect(cached).to(include('access_token' => new_token))
+    end
+
+    it 'stores when the token was obtained, and the expiration of an opaque token' do
+      server('client_credentials' => {'access_token' => refresh_token, 'expires_in' => 86_400})
+      oauth.token
+      expect(Time.parse(cached['obtained_at'])).to(be_within(5).of(Time.now))
+      expect(Time.parse(cached['expires_at'])).to(be_within(5).of(Time.now + 86_400))
+    end
+
+    it 'refreshes a cached opaque token if it expires soon' do
+      cache('access_token' => SecureRandom.alphanumeric(12), 'refresh_token' => refresh_token, 'expires_at' => (Time.now + 10).utc.iso8601)
+      server('refresh_token' => {'access_token' => new_token})
+      expect(oauth.token).to(eq(new_token))
+      expect(@grants).to(eq(['refresh_token']))
+    end
+
+    context 'with token_refresh_max_age' do
+      around do |example|
+        parameters = Aspera::OAuth::Factory.instance.parameters
+        parameters[:token_refresh_max_age] = 3600
+        example.run
+      ensure
+        parameters[:token_refresh_max_age] = 0
+      end
+
+      it 'refreshes a cached token obtained since more than the maximum age' do
+        cache('access_token' => valid_token, 'refresh_token' => refresh_token, 'obtained_at' => (Time.now - 3700).utc.iso8601)
+        server('refresh_token' => {'access_token' => new_token})
+        expect(oauth.token).to(eq(new_token))
+        expect(@grants).to(eq(['refresh_token']))
+      end
+
+      it 'uses a cached token obtained since less than the maximum age' do
+        cache('access_token' => valid_token, 'refresh_token' => refresh_token, 'obtained_at' => (Time.now - 60).utc.iso8601)
+        server({})
+        expect(oauth.token).to(eq(valid_token))
+        expect(@grants).to(be_empty)
+      end
     end
 
     it 'rejects an answer without token' do
@@ -110,7 +149,7 @@ RSpec.describe(Aspera::OAuth::Base) do
       server('refresh_token' => Aspera::Rest::CallError.new('refresh'), 'client_credentials' => {'access_token' => new_token})
       expect(oauth.renew_token).to(eq(new_token))
       expect(@grants).to(eq(%w[refresh_token client_credentials]))
-      expect(cached).to(eq({'access_token' => new_token}))
+      expect(cached).to(include('access_token' => new_token))
     end
 
     it 'generates a new token if refresh is not supported' do

@@ -4441,23 +4441,26 @@ To disable this warning, set the option `warn_insecure` to `no`.
 HTTP connection parameters (not `ascp` WSS) can be adjusted using option `http_options`:
 
 | Field | Type | Description |
-| ----------------------- | ------------- | -------------------------------------------------------------------------------- |
+| ----------------------- | -------------- | -------------------------------------------------------------------------------- |
 | `download_partial_suffix` | `String` | File suffix appended to the target filename while a download is in progress. (Rest)<br/>Default: `.http_partial`. |
-| `keep_alive_timeout` | `Number` | Maximum time in seconds to keep an idle persistent connection open. (Net::HTTP)<br/>Default: `2`. |
-| `open_timeout` | `Number` | Maximum time in seconds to wait for a connection to be established. (Net::HTTP)<br/>Default: `60`. |
-| `read_timeout` | `Number` | Maximum time in seconds to wait for data to be read from the server. (Net::HTTP)<br/>Default: `60`. |
+| `jwt_accepted_offset_sec` | `String, Number` | Tolerance of clock difference with the server: a generated JWT is valid since this duration in the past (`nbf`). (OAuth) A duration, e.g. `30s`, `12h`, `1d`, `1h 30m`, a plain number is seconds.<br/>Default: `300`. |
+| `jwt_expiry_offset_sec` | `String, Number` | Validity of a generated JWT, used to request a token. (OAuth) A duration, e.g. `30s`, `12h`, `1d`, `1h 30m`, a plain number is seconds.<br/>Default: `3600`. |
+| `keep_alive_timeout` | `String, Number` | Maximum time in seconds to keep an idle persistent connection open. (Net::HTTP) A duration, e.g. `30s`, `12h`, `1d`, `1h 30m`, a plain number is seconds.<br/>Default: `2`. |
+| `open_timeout` | `String, Number` | Maximum time in seconds to wait for a connection to be established. (Net::HTTP) A duration, e.g. `30s`, `12h`, `1d`, `1h 30m`, a plain number is seconds.<br/>Default: `60`. |
+| `read_timeout` | `String, Number` | Maximum time in seconds to wait for data to be read from the server. (Net::HTTP) A duration, e.g. `30s`, `12h`, `1d`, `1h 30m`, a plain number is seconds.<br/>Default: `60`. |
 | `retry_max` | `Integer` | Maximum number of retry attempts. (Rest)<br/>Default: `1`. |
 | `retry_on_error` | `Bool` | Retry the request on any HTTP error response. (Rest)<br/>Default: `false`. |
 | `retry_on_timeout` | `Bool` | Retry the request on connection timeout. (Rest)<br/>Default: `true`. |
 | `retry_on_unavailable` | `Bool` | Retry the request on HTTP 503 Service Unavailable. (Rest)<br/>Default: `true`. |
-| `retry_sleep` | `Integer` | Delay in seconds between retry attempts. (Rest)<br/>Default: `4`. |
+| `retry_sleep` | `String, Number` | Delay in seconds between retry attempts. (Rest) A duration, e.g. `30s`, `12h`, `1d`, `1h 30m`, a plain number is seconds.<br/>Default: `4`. |
 | `ssl_options` | `Array[String]` | List of OpenSSL option flags to set on the HTTP session (e.g. `IGNORE_UNEXPECTED_EOF`). (SSL) |
-| `token_cache_max_age` | `Integer` | Maximum age in seconds of a cached OAuth token before it is discarded. (OAuth)<br/>Default: `1800`. |
-| `token_refresh_threshold` | `Integer` | Remaining token lifetime in seconds below which the token is proactively refreshed. (OAuth)<br/>Default: `120`. |
+| `token_cache_max_age` | `String, Number` | Maximum age in seconds of a cached OAuth token before it is discarded. (OAuth) A duration, e.g. `30s`, `12h`, `1d`, `1h 30m`, a plain number is seconds.<br/>Default: `1800`. |
+| `token_refresh_max_age` | `String, Number` | Age in seconds (since it was obtained) above which the token is proactively refreshed, `0` for no limit. E.g. keeps a session alive when the refresh token expires at the same time as the token (Shares). (OAuth) A duration, e.g. `30s`, `12h`, `1d`, `1h 30m`, a plain number is seconds.<br/>Default: `0`. |
+| `token_refresh_threshold` | `String, Number` | Remaining token lifetime in seconds below which the token is proactively refreshed. (OAuth) A duration, e.g. `30s`, `12h`, `1d`, `1h 30m`, a plain number is seconds.<br/>Default: `120`. |
 | `user_agent` | `String` | Value sent in the `User-Agent` HTTP request header. (Rest) |
-| `write_timeout` | `Number` | Maximum time in seconds to wait for data to be written to the server. (Net::HTTP)<br/>Default: `60`. |
+| `write_timeout` | `String, Number` | Maximum time in seconds to wait for data to be written to the server. (Net::HTTP) A duration, e.g. `30s`, `12h`, `1d`, `1h 30m`, a plain number is seconds.<br/>Default: `60`. |
 
-Time values are set in **seconds** and can be of type either `Integer` or `Float`.
+Time values are durations: a number of **seconds** (`Integer` or `Float`), or a `String`, e.g. `30s`, `12h`, `1d`, `1h 30m`, `1d 02:00:00`.
 Any additional key is forwarded as a setter to the `Net::HTTP` session.
 For a full list, refer to the Ruby library: [`Net::HTTP`](https://github.com/ruby/net-http/blob/master/lib/net/http.rb).
 
@@ -4467,6 +4470,13 @@ Example:
 
 ```shell
 ascli aoc admin package list --http-options=@json:'{"read_timeout":10.0}'
+```
+
+With a server whose token and refresh token expire at the same time (e.g. Shares: 24 hours), `token_refresh_max_age` refreshes the token before its refresh token expires.
+A command run more often than this duration (e.g. scheduled every 12 hours) keeps the session alive without a new login, provided the token stays in cache (`token_cache_max_age`):
+
+```shell
+ascli shares files browse / --http-options=@json:'{"token_cache_max_age":"1d","token_refresh_max_age":"12h"}'
 ```
 
 The option `ssl_options` corresponds to a list of options as listed in `man SSL_CTX_set_options`.
