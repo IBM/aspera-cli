@@ -12,6 +12,7 @@ require_relative '../build/lib/paths'
 require_relative '../build/lib/test_env'
 require_relative '../tests/test_helpers'
 require_relative '../lib/aspera/rainbow'
+require_relative '../lib/aspera/units/duration'
 require 'rake'
 require 'uri'
 require 'zlib'
@@ -141,11 +142,7 @@ end
 # @param seconds [Numeric] Duration
 # @return [String] Duration as `1h02m03s`, `2m03s` or `3s`
 def format_duration(seconds)
-  seconds = seconds.round
-  return "#{seconds}s" if seconds < 60
-  hours, rest = seconds.divmod(3600)
-  minutes, secs = rest.divmod(60)
-  hours.positive? ? format('%dh%02dm%02ds', hours, minutes, secs) : format('%dm%02ds', minutes, secs)
+  Aspera::Units::Duration.new(seconds).to_s
 end
 
 # Log the slowest tests

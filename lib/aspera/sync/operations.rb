@@ -349,7 +349,7 @@ module Aspera
                 # a special switch sets the non-default enum value, e.g. `--continuous` sets `mode` to `continuous`
                 props.key?('enum') ? (props['enum'] - [props['default']]).first : true
               elsif props.key?('x-unit')
-                Units::Duration.to_unit(args.shift, props['x-unit'])
+                Units::Duration.new(args.shift.to_s).to_unit(props['x-unit'])
               else
                 args.shift
               end

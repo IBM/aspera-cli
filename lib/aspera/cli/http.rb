@@ -42,7 +42,7 @@ module Aspera
         # @return [Numeric] Number of seconds (integer, unless the string has milliseconds)
         def duration_seconds(value)
           return value if value.is_a?(Numeric)
-          milliseconds = Units::Duration.to_unit(value, 'ms')
+          milliseconds = Units::Duration.new(value).to_unit('ms')
           (milliseconds % 1000).zero? ? milliseconds / 1000 : milliseconds / 1000.0
         end
       end

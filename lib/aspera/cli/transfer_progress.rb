@@ -235,7 +235,7 @@ module Aspera
             fields.push(Units::Decimal.format_bytes(current).rjust(8), rate_text)
           else
             eta = bytes_per_second&.positive? ? (total - current) / bytes_per_second : nil
-            fields.push('%j%%', rate_text, "ETA: #{Units::Duration.to_hms(eta)}")
+            fields.push('%j%%', rate_text, "ETA: #{eta.nil? ? '--:--:--' : Units::Duration.new(eta).to_hms}")
           end
         end
         update_format(title_text(final: false), fields)
