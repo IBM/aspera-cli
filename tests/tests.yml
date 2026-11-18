@@ -1638,7 +1638,6 @@ nd_xfer_active_id:
     - nd_xfer_upload_bg
   tags:
     - save_output
-    - wait_value
     - no_doc
   args:
     - node
@@ -1646,6 +1645,7 @@ nd_xfer_active_id:
     - list
     - --query=@json:{"active_only":true,"count":1}
     - --fields=id
+    - --poll=@json:{"interval":5,"max":60,"until":"@","show":"last"}
 nd_xfer_show:
   depends_on:
     - nd_xfer_active_id
@@ -2982,7 +2982,6 @@ aoc_file_wait_video_preview:
   tags:
     - no_doc
     - save_output
-    - wait_value
   depends_on:
     - aoc_file_upload_video
   template: awa_user_suite
@@ -2991,6 +2990,7 @@ aoc_file_wait_video_preview:
     - thumbnail
     - "@extend:@preset:awa.test_folder@/video_file.mpg"
     - --node-api.cache=no
+    - --poll=@json:{"interval":5,"max":60,"until":"@","show":"last","errors":"retry"}
 aoc_files_upload_pair:
   tags:
     - no_doc
@@ -3242,7 +3242,6 @@ aoc_pack_recv_id:
     - aoc_pack_send_to_user
   tags:
     - save_output
-    - wait_value
     - no_doc
   template: awa_user_suite
   args:
@@ -3252,6 +3251,7 @@ aoc_pack_recv_id:
     - --fields=id
     - --out.level=data
     - --query=@json:{"max":1,"archived":false,"has_content":true,"received":true,"completed":true}
+    - --poll=@json:{"interval":5,"max":60,"until":"@","show":"last"}
 aoc_pack_recv:
   depends_on:
     - aoc_pack_recv_id
@@ -3704,7 +3704,6 @@ aoc_adm_analytics_app_events:
 aoc_adm_analytics_xfer_id:
   tags:
     - save_output
-    - wait_value
     - no_doc
   args:
     - --preset=aoc_admin
@@ -3715,6 +3714,7 @@ aoc_adm_analytics_xfer_id:
     - organization
     - --query=@json:{"status":"completed","direction":"send","limit":1}
     - --fields=uuid
+    - --poll=@json:{"interval":5,"max":60,"until":"@","show":"last"}
 aoc_ana_files:
   depends_on:
     - aoc_adm_analytics_xfer_id
@@ -4671,7 +4671,6 @@ orch_wf_start_sleep:
 orch_workstep_id:
   tags:
     - save_output
-    - wait_value
   depends_on:
     - orch_wf_start_sleep
   args:
@@ -4681,6 +4680,7 @@ orch_workstep_id:
     - $(t.saved_output :orch_wf_start_sleep)
     - --select.status=In Progress
     - --fields=id
+    - --poll=@json:{"interval":5,"max":60,"until":"@","show":"last"}
 orch_workstep_status:
   depends_on:
     - orch_workstep_id
@@ -7455,7 +7455,6 @@ f5_pack_id:
     - f5_pack_send_shared
   tags:
     - save_output
-    - wait_value
     - no_doc
   args:
     - faspex5
@@ -7464,6 +7463,7 @@ f5_pack_id:
     - --query.status=completed
     - --query.max=1
     - --fields=id
+    - --poll=@json:{"interval":5,"max":60,"until":"@","show":"last"}
 f5_pack_show:
   depends_on:
     - f5_pack_id
@@ -7571,7 +7571,6 @@ f5_pack_shbox_list_id:
     - f5_pack_shbox_list
   tags:
     - save_output
-    - wait_value
     - no_doc
   args:
     - faspex5
@@ -7582,6 +7581,7 @@ f5_pack_shbox_list_id:
     - --fields=id
     - --format=csv
     - --out.level=data
+    - --poll=@json:{"interval":5,"max":60,"until":"@","show":"last"}
 f5_pack_shbox_show:
   depends_on:
     - f5_pack_shbox_list_id
@@ -7742,7 +7742,6 @@ f5_workgroup_pack_id:
     - f5_pack_wrkgrp
   tags:
     - save_output
-    - wait_value
     - no_doc
   args:
     - faspex5
@@ -7752,6 +7751,7 @@ f5_workgroup_pack_id:
     - --group-type=workgroups
     - --query=@json:{"status":"completed","limit":1,"max":1}
     - --fields=id
+    - --poll=@json:{"interval":5,"max":60,"until":"@","show":"last"}
 f5_pack_wrkgrp_show:
   depends_on:
     - f5_workgroup_pack_id

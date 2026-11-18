@@ -10986,7 +10986,7 @@ workorder output <ID>
 workorder reset <ID>
 workorder status <ID>
 workorders stats
-workorders worksteps <ORCH_WF_START_SLEEP> --select.status='In Progress' --fields=id
+workorders worksteps <ORCH_WF_START_SLEEP> --select.status='In Progress' --fields=id --poll=@json:'{"interval":5,"max":60,"until":"@","show":"last"}'
 worksteps cancel <ID>
 worksteps stats
 worksteps status <ID>

@@ -555,9 +555,7 @@ namespace TEST_CASE_NS do
         run_options[:err] = t.err_file.to_s
         log.info("err: #{run_options[:err]}")
       end
-      # This test case can potentially be executed repeatedly, e.g. if we wait for a value
-      # Loop for possible `redo`
-      wait_attempts = 0
+      # Loop for `break` (a test that waits for a value uses option `poll`)
       loop do
         if tags[:background]
           run(*(RUBY_WRAPPER + command_line), env: info[:env], **run_options)
@@ -589,18 +587,7 @@ namespace TEST_CASE_NS do
         end
         if tags[:save_output]
           saved_value = t.saved_output
-          if saved_value.empty?
-            message = 'Empty result'
-            if tags[:wait_value]
-              wait_attempts += 1
-              raise "#{message} after #{wait_attempts} attempts" if wait_attempts >= 60
-              log.info("#{message}, retry #{wait_attempts}...")
-              sleep(5)
-              redo
-            else
-              raise message
-            end
-          end
+          raise 'Empty result' if saved_value.empty?
           log.info("Saved: #{saved_value}")
           if info[:expect]
             expected = eval_macro(info[:expect], exec_binding)
@@ -612,12 +599,6 @@ namespace TEST_CASE_NS do
         log.info("[OK]   #{name}")
         break
       rescue RuntimeError => e
-        if tags[:wait_value] && wait_attempts < 60
-          wait_attempts += 1
-          log.info("Retry #{wait_attempts} after error: #{e.message}")
-          sleep(5)
-          redo
-        end
         STATES[name] = 'failed'
         expected_fails = TestEnv::EXPECTED_FAIL.select { |tag| tags[tag] }
         if expected_fails.empty?

@@ -23,7 +23,7 @@ module TestEnv
   # Tags of tests that will (or might) fail
   EXPECTED_FAIL = %i[cleanup must_fail flaky].freeze
   # Tags that change the way a test is executed (see `rakelib/test.rake`)
-  SPECIAL_TAGS = (EXPECTED_FAIL + %i[save_output wait_value tmp_conf background tty]).freeze
+  SPECIAL_TAGS = (EXPECTED_FAIL + %i[save_output tmp_conf background tty]).freeze
   # Active tags: they have an effect, so they are valid even if used by a single test.
   # Other tags only group tests: a grouping tag used by a single test is probably a typo.
   ACTIVE_TAGS = (SPECIAL_TAGS + %i[interactive no_doc]).freeze

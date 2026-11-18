@@ -180,11 +180,12 @@ A grouping tag shall be used by at least 2 tests (the tests of the plugin with t
 | `cleanup`     | If it fails, ignore it (used for cleanup steps).                  |
 | `flaky`       | Known unstable test; failure is tolerated.                        |
 | `save_output` | Save command output to a file named after the test case.          |
-| `wait_value`  | Re-run until a value is produced (requires `save_output`).        |
 | `tmp_conf`    | Use a temporary config file (config may be modified).             |
 | `background`  | Do not wait for completion; save PID for later stop.              |
 | `tty`         | Run the command in a pseudo-terminal (see below).                 |
 | `interactive` | A human would have to act (see below).                            |
+
+A test that waits for a value (e.g. a package received) repeats its command with option `poll`, e.g. `--poll=@json:{"interval":5,"max":60,"until":"@","show":"last"}`.
 
 In `pre`/`post` Ruby code, `t.saved_output(name)` reads output saved by a test with `save_output`; `t.stop_process(name)` stops a process started with `background`.
 
