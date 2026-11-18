@@ -8,6 +8,7 @@
 require_relative '../lib/aspera/cli/extended_value'
 require 'stringio'
 require 'securerandom'
+require 'tempfile'
 
 module Aspera
   module Cli
@@ -31,6 +32,19 @@ module Aspera
         it 'evaluates embedded values anywhere with @extend:' do
           ENV['ASCLI_TEST_EXTEND'] = 'value'
           expect(evaluate("@extend:line 1\nx @env:ASCLI_TEST_EXTEND@ y")).to(eq("line 1\nx value y"))
+        ensure
+          ENV.delete('ASCLI_TEST_EXTEND')
+        end
+
+        it 'decodes first a single extended value on the right of @extend:, then evaluates embedded values' do
+          ENV['ASCLI_TEST_EXTEND'] = 'value'
+          Tempfile.create(['extend', '.json']) do |file|
+            file.write('{"a":["@env:ASCLI_TEST_EXTEND@"]}')
+            file.close
+            expect(evaluate("@json:@extend:@file:#{file.path}")).to(eq({'a' => ['value']}))
+            # Embedded value: inserted as is
+            expect(evaluate("@extend:@file:#{file.path}@")).to(eq('{"a":["@env:ASCLI_TEST_EXTEND@"]}'))
+          end
         ensure
           ENV.delete('ASCLI_TEST_EXTEND')
         end

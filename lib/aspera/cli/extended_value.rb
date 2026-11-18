@@ -213,7 +213,8 @@ module Aspera
           handler = m[1].to_sym
           handlers_reversed.unshift(handler)
           value = m[2]
-          break if SPECIAL_HANDLERS.include?(handler)
+          # `@val:` keeps the rest as is; `@extend:` too, unless the rest is a single extended value (e.g. `@extend:@file:x`): decoded first, then extended
+          break if SPECIAL_HANDLERS.include?(handler) && (handler.eql?(:val) || @regex_inner.match?(value))
         end
         Log.log.trace1 { "evaluating: #{handlers_reversed}, value: #{value.class}:#{value}" }
         handlers_reversed.each_with_index do |handler, index|
@@ -253,7 +254,7 @@ module Aspera
       MARKER_IN_END = '@'
 
       # Special handlers stop processing of handlers on right
-      # :extend includes processing of other handlers in itself
+      # :extend includes processing of other handlers in itself, except if the value on right has no embedded value
       # :val keeps the value intact
       SPECIAL_HANDLERS = %i[extend val].freeze
       # Handlers that read a secret

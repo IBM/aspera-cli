@@ -19,6 +19,7 @@ Released: [Place date of release here]
 
 * OAuth: an opaque token (not a JWT, e.g. Shares) was used until rejected by the server: its refresh token, if it expires at the same time, could no longer be used. The expiration given at creation (`expires_in`) is now kept in cache (`expires_at`), and the token is refreshed before it expires (`token_refresh_threshold`).
 * `orchestrator workflows find_constraints`: the optional workflow ID was required ("Missing argument: add_as_revision"): an optional argument of type identifier was always mandatory. `orchestrator workflows import_with_constraints`: `add_as_revision` accepts `null` (new workflow).
+* Extended value `@extend:` followed by a single extended value, e.g. `@json:@extend:@file:<PATH>`: the text on the right was taken as is (`unexpected character: '@file:...'`) instead of being decoded first, as other decoders. It is now decoded, then its embedded values (e.g. `"@vault:<LABEL>.<FIELD>@"` in a JSON file) are evaluated. With a closing `@` (`@extend:@file:<PATH>@`) the content is still inserted as is, not evaluated again.
 * `mcp server`: when the optional gem `mcp` is not installed, the error was `uninitialized constant Cli` instead of the message telling to install it.
 
 ### Breaking Changes

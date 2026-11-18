@@ -2496,7 +2496,21 @@ The following decoders are supported:
 To display the result of an [Extended Value](#extended-value-syntax), use the `config echo` command.
 
 The `extend` decoder is useful to evaluate embedded [Extended Value](#extended-value-syntax) syntax in a string.
-It expects a `@` to close the embedded [Extended Value](#extended-value-syntax) syntax.
+It expects a `@` to close the embedded [Extended Value](#extended-value-syntax) syntax: `@vault:my_label.password@`.
+A value inserted by `extend` is not evaluated again: `@extend:@file:<PATH>@` inserts the content of the file as is.
+If the text on the right of `@extend:` is a single [Extended Value](#extended-value-syntax) without closing `@` (for example `@extend:@file:<PATH>`), it is decoded first, and embedded values in the result are then evaluated.
+
+Example: a JSON file whose values are read from the [vault](#secret-vault):
+
+```json
+{"title":"Report","recipients":["@vault:my_label.username@"]}
+```
+
+```shell
+ascli config echo @json:@extend:@file:<PATH>
+```
+
+In the file, an embedded value without closing `@` (`"@vault:my_label.username"`) is not evaluated: it stays a string, and `@json:@file:<PATH>` does not evaluate values inside the JSON.
 
 Option `parser` allows definition of a default parser when the positional parameter or option expects a `Hash` or `Array`.
 For example, with `--parser=json`, the parameter `{}` will be parsed as an empty JSON Hash, even without prefix `@json:`.

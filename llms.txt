@@ -57,6 +57,7 @@ Before writing or modifying a workflow, read the development guide with `ascli`:
 ## Rules
 
 - Structured values: `@json:{...}` (preferred), or `@: key=value key2.sub=value`. See section `extended-value-syntax` of the manual.
+- Extended values inside JSON (e.g. a vault secret in a parameter file): write `"@vault:<label>.<field>@"` (closing `@`) in the file, and give `@json:@extend:@file:<path>`. Without `@extend:`, or without the closing `@`, the value stays a literal string. Check with `ascli config echo`.
 - Credentials: saved in presets. List them with `ascli config preset overview`, select one with `--preset=<name>`; a plugin may have a default preset.
 - Secrets: never ask the user to type a secret in the conversation. Use a preset, the vault (`@vault:<label>.<field>`), or `@secret:<name>`, which asks the user outside of the conversation. Values of secrets are hidden in results.
 - Results: filter and reshape with `--out.query` (JMESPath), `--out.select` and `--out.fields`, instead of post-processing a large output.
