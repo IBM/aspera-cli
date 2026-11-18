@@ -55,6 +55,8 @@ ascli server browse /
 ascli server download /aspera-test-dir-small/10MB.1
 ```
 
+Watch it first: [IBM Aspera in 60 seconds](https://youtu.be/TBf1W1mmX0A) (video, 1 min 23 s), more demos on the [Aspera CLI YouTube channel](https://www.youtube.com/@AsperaCLI).
+
 ## Examples
 
 ```bash
