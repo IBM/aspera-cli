@@ -6,13 +6,13 @@
 require_relative '../ascp/installation'
 require_relative '../agent/direct'
 require_relative '../transfer/spec'
-require_relative '../transfer/units'
+require_relative '../units/decimal'
 require_relative '../exec_spec'
 require_relative '../command_line_converter'
 require_relative '../command_line_builder'
 require_relative '../log'
 require_relative '../assert'
-require_relative '../duration'
+require_relative '../units/duration'
 require_relative '../environment'
 require_relative '../schema/registry'
 require 'json'
@@ -268,7 +268,7 @@ module Aspera
         # Convert `target_rate` given as a string with optional suffix (e.g. `100m`) into integer bps
         # @param params [Hash, nil] `transport` (`conf` format) or session (`args` format), modified in place
         def normalize_target_rate(params)
-          params['target_rate'] = Transfer::Units.rate_string_to_bps(params['target_rate']) if params.is_a?(Hash) && params['target_rate'].is_a?(String)
+          params['target_rate'] = Units::Decimal.rate_string_to_bps(params['target_rate']) if params.is_a?(Hash) && params['target_rate'].is_a?(String)
         end
 
         # Transfer specification to synchronization information
@@ -349,7 +349,7 @@ module Aspera
                 # a special switch sets the non-default enum value, e.g. `--continuous` sets `mode` to `continuous`
                 props.key?('enum') ? (props['enum'] - [props['default']]).first : true
               elsif props.key?('x-unit')
-                Duration.to_unit(args.shift, props['x-unit'])
+                Units::Duration.to_unit(args.shift, props['x-unit'])
               else
                 args.shift
               end

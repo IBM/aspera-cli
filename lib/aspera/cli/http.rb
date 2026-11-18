@@ -7,7 +7,7 @@ require_relative 'special_values'
 require_relative '../log'
 require_relative '../assert'
 require_relative '../line_logger'
-require_relative '../duration'
+require_relative '../units/duration'
 require_relative '../schema/registry'
 require_relative 'option_declarator'
 require_relative '../rest'
@@ -28,7 +28,7 @@ module Aspera
       # OpenSSL constant that disables peer verification (VERIFY_NONE)
       SELF_SIGNED_CERT = OpenSSL::SSL.const_get(:enon_yfirev.to_s.upcase.reverse) # cspell: disable-line
 
-      # Keys of `http_options` that are durations in seconds: a number, or a string decoded by {Duration}
+      # Keys of `http_options` that are durations in seconds: a number, or a string decoded by {Units::Duration}
       DURATION_KEYS = %i[
         read_timeout write_timeout open_timeout keep_alive_timeout
         retry_sleep
@@ -42,7 +42,7 @@ module Aspera
         # @return [Numeric] Number of seconds (integer, unless the string has milliseconds)
         def duration_seconds(value)
           return value if value.is_a?(Numeric)
-          milliseconds = Duration.to_unit(value, 'ms')
+          milliseconds = Units::Duration.to_unit(value, 'ms')
           (milliseconds % 1000).zero? ? milliseconds / 1000 : milliseconds / 1000.0
         end
       end

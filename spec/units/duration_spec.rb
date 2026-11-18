@@ -4,9 +4,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require 'spec_helper'
-require_relative '../lib/aspera/duration'
+require_relative '../../lib/aspera/units/duration'
 
-RSpec.describe(Aspera::Duration) do
+RSpec.describe(Aspera::Units::Duration) do
   describe '.to_unit' do
     it 'converts unit format' do
       expect(described_class.to_unit('1h 30m', 'ms')).to(eq(5_400_000))
@@ -34,6 +34,13 @@ RSpec.describe(Aspera::Duration) do
       expect { described_class.to_unit('30x', 'ms') }.to(raise_error(Aspera::ParameterError, /Invalid duration/))
       expect { described_class.to_unit('', 'ms') }.to(raise_error(Aspera::ParameterError, /Invalid duration/))
       expect { described_class.to_unit('-1', 's') }.to(raise_error(Aspera::ParameterError, /Invalid duration/))
+    end
+  end
+
+  describe '.to_hms' do
+    it 'formats durations' do
+      expect(described_class.to_hms(nil)).to(eq('--:--:--'))
+      expect(described_class.to_hms(3725.4)).to(eq('01:02:05'))
     end
   end
 end

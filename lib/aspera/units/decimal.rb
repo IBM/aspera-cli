@@ -6,10 +6,10 @@
 require_relative '../assert'
 
 module Aspera
-  module Transfer
-    # Rates, sizes and durations of transfers: parsed from user input and formatted for display.
-    # Decimal units, like `ascp`. Depends only on `aspera/assert`: usable without the CLI.
-    module Units
+  module Units
+    # Rates and sizes in decimal units (prefixes `K`, `M`, `G`... x1000, like `ascp`): parsed from user input and formatted for display.
+    # Depends only on `aspera/assert`: usable without the CLI.
+    module Decimal
       # Decimal prefixes: each one is `KILO` times the previous one
       PREFIX = ['', 'K', 'M', 'G', 'T', 'P'].freeze
       KILO = 1000
@@ -60,14 +60,6 @@ module Aspera
           return '-- Mbps' if bytes_per_second.nil?
           mbps = bytes_per_second * BITS_PER_BYTE / MULTIPLIER.fetch('M')
           mbps < 10 ? format('%.2f Mbps', mbps) : format('%.0f Mbps', mbps)
-        end
-
-        # @param seconds [Numeric, nil] Duration, `nil` if unknown
-        # @return [String] Duration as `hh:mm:ss`
-        def format_duration(seconds)
-          return '--:--:--' if seconds.nil?
-          seconds = seconds.round
-          format('%02d:%02d:%02d', seconds / 3600, (seconds / 60) % 60, seconds % 60)
         end
       end
     end

@@ -3,12 +3,12 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-require_relative '../../lib/aspera/transfer/units'
+require_relative '../../lib/aspera/units/decimal'
 require 'bundler/setup'
 
 module Aspera
-  module Transfer
-    RSpec.describe(Units) do
+  module Units
+    RSpec.describe(Decimal) do
       describe '.rate_string_to_bps' do
         context 'with a plain integer (no suffix)' do
           it 'returns the value as-is in bps' do
@@ -101,11 +101,6 @@ module Aspera
           expect(described_class.format_rate(nil)).to(eq('-- Mbps'))
           expect(described_class.format_rate(125_000)).to(eq('1.00 Mbps'))
           expect(described_class.format_rate(12_500_000)).to(eq('100 Mbps'))
-        end
-
-        it 'formats durations' do
-          expect(described_class.format_duration(nil)).to(eq('--:--:--'))
-          expect(described_class.format_duration(3725.4)).to(eq('01:02:05'))
         end
       end
     end

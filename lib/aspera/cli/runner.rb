@@ -22,7 +22,7 @@ require_relative 'info'
 require_relative 'hints'
 require_relative 'result'
 require_relative '../transfer/result'
-require_relative '../duration'
+require_relative '../units/duration'
 require_relative '../secret/hider'
 require_relative '../log'
 require_relative '../assert'
@@ -295,7 +295,7 @@ module Aspera
               case v
               when nil, false then nil
               when Numeric then v
-              else Duration.to_unit(v, 's')
+              else Units::Duration.to_unit(v, 's')
               end
           else Aspera.error_unexpected_value(k, type: BadArgument) { 'temp sub-option (folder, clean, expiry)' }
           end

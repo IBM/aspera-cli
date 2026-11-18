@@ -5,7 +5,8 @@
 
 require_relative '../log'
 require_relative '../assert'
-require_relative '../transfer/units'
+require_relative '../units/decimal'
+require_relative '../units/duration'
 require 'monitor'
 require 'ruby-progressbar'
 
@@ -229,12 +230,12 @@ module Aspera
         unless @sessions.empty?
           bytes_per_second = rate
           # Fixed width, so that bar does not change size
-          rate_text = Transfer::Units.format_rate(bytes_per_second).rjust(11)
+          rate_text = Units::Decimal.format_rate(bytes_per_second).rjust(11)
           if total.nil?
-            fields.push(Transfer::Units.format_bytes(current).rjust(8), rate_text)
+            fields.push(Units::Decimal.format_bytes(current).rjust(8), rate_text)
           else
             eta = bytes_per_second&.positive? ? (total - current) / bytes_per_second : nil
-            fields.push('%j%%', rate_text, "ETA: #{Transfer::Units.format_duration(eta)}")
+            fields.push('%j%%', rate_text, "ETA: #{Units::Duration.to_hms(eta)}")
           end
         end
         update_format(title_text(final: false), fields)
@@ -255,7 +256,7 @@ module Aspera
           update_bar(total, current)
           fields.push('%B', '%j%%')
         end
-        fields.push(Transfer::Units.format_bytes(current), Transfer::Units.format_rate(average_rate)) unless @sessions.empty?
+        fields.push(Units::Decimal.format_bytes(current), Units::Decimal.format_rate(average_rate)) unless @sessions.empty?
         # Last status (e.g. `running`) is no more relevant
         @title = success ? nil : 'failed'
         # Final line may be shorter (no bar)

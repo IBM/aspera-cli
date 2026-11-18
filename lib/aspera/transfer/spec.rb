@@ -6,7 +6,7 @@
 require_relative '../agent/factory'
 require_relative '../command_line_builder'
 require_relative '../assert'
-require_relative 'units'
+require_relative '../units/decimal'
 
 module Aspera
   module Transfer
@@ -58,7 +58,7 @@ module Aspera
         def resolve_target_rate(transfer_spec)
           return unless transfer_spec.key?('target_rate')
           rate = transfer_spec.delete('target_rate')
-          transfer_spec['target_rate_kbps'] = Units.rate_string_to_bps(rate) / 1000 unless rate.nil?
+          transfer_spec['target_rate_kbps'] = Units::Decimal.rate_string_to_bps(rate) / 1000 unless rate.nil?
         end
 
         def fix_transferd_resume_policy(transfer_spec)
