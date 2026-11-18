@@ -86,6 +86,23 @@ Each product has its own plugin (`aoc`, `faspex5`, `shares`, `node`, `server`, `
 - **In a shell** (coding agents): nothing to set up. Give the agent [`llms.txt`](https://github.com/IBM/aspera-cli/blob/main/llms.txt), or install the agent skill [`skills/ascli`](https://github.com/IBM/aspera-cli/tree/main/skills/ascli) (with Claude Code: `/plugin marketplace add IBM/aspera-cli`, then `/plugin install ascli@aspera-cli`): the agent then discovers commands, arguments and options by itself.
 - **MCP server** (Model Context Protocol): `ascli mcp server` exposes all commands to any MCP client (IBM Bob, Claude, VS Code...), locally or over HTTPS with token or OAuth authentication.
 
+MCP server setup: install the optional gem `mcp` with `ascli` (and `rack` for HTTPS), then declare the server in the MCP client (local, `stdio`):
+
+```bash
+gem install aspera-cli mcp
+```
+
+```json
+{
+  "mcpServers": {
+    "ascli": {
+      "command": "ascli",
+      "args": ["mcp", "server"]
+    }
+  }
+}
+```
+
 Safe by default: in the MCP server, the AI can neither execute code nor write files where it chooses, and never sees secrets.
 See [Leveraging AI Assistance](https://github.com/IBM/aspera-cli/blob/main/docs/README.md#leveraging-ai-assistance) in the manual.
 
