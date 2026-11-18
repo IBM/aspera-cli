@@ -94,7 +94,7 @@ module SamlCliRelayState
     # Same look as the login page of Shares: its layout (header, footer), h1, fieldset and buttons.
     render html: <<~HTML.html_safe, layout: true # rubocop:disable Rails/OutputSafety
       <h1>Login Complete</h1>
-      <p>Copy this code, and paste it in the terminal where <b>ascli</b> waits for it. You can then close this window.</p>
+      <p>Copy this code, and paste it in the terminal where <b>ascli</b> waits for it. This code is valid for #{CODE_PERIOD / 60} minutes. You can then close this window.</p>
       <fieldset style="border:1px solid #c0c0c0;padding:12px">
         <div id="cli_code" aria-live="polite" style="font-family:monospace;word-break:break-all;max-height:9em;overflow-y:auto;margin-bottom:10px;user-select:none">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;</div>
         <button type="button" id="cli_reveal" aria-pressed="false" title="Show the code" aria-label="Show the code">

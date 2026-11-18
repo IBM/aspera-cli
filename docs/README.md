@@ -1877,6 +1877,31 @@ The behavior can be controlled with:
 - `--ask-options=<yes|no>` (default=no)
   - `yes`: Optional parameters/arguments are asked to the user.
 
+#### Hidden Input
+
+Secrets (passwords, `@secret:`, code or URL pasted after a web login) are read without displaying them.
+On a terminal, a mark shows the state of the input, without revealing its length:
+
+| Mark | ASCII | State |
+|------|-------|-------|
+| `🔑` | `***` | Waiting for input: nothing typed or pasted yet. |
+| `…`  | `...` | Something was typed or pasted. |
+
+The ASCII form is used when the locale does not support Unicode.
+
+Keys:
+
+| Key | Action |
+|-----|--------|
+| `Enter` | End the input. |
+| `Backspace` | Erase the last character. |
+| `Ctrl-W` | Erase the last word. |
+| `Ctrl-U` | Erase all (for example, to paste again). |
+| `Ctrl-D` (Unix), `Ctrl-Z` (Windows) | End the input; if empty: error (end of input). |
+| `Ctrl-C` | Stop `ascli`. |
+
+If the standard input is not a terminal (for example, a pipe), the line is read as is, without mark.
+
 ### Output
 
 Command execution will result in output (terminal, stdout/stderr).
@@ -4203,7 +4228,7 @@ Option `ui.web_auth` (part of the composite option `ui`, see [Graphical Interact
 | `port` (default) | Yes: `ascli` listens on the loopback address of `redirect_uri` | The browser runs on the same system as `ascli`, or an SSH tunnel is possible. |
 | `paste`          | No: `redirect_uri` is only used in the login URL | The browser cannot reach the system that runs `ascli`, and no tunnel is possible. |
 
-With `paste`, after login the user gives the result to `ascli` through the terminal (nothing is displayed, as it contains a code or tokens):
+With `paste`, after login the user gives the result to `ascli` through the terminal (it is hidden, as it contains a code or tokens: see [Hidden Input](#hidden-input)):
 
 - the code displayed by Shares (a long text of letters, digits, `-` and `_`), or the code shown by `ascli config web_login` on the workstation,
 - or the full URL (or only the query) from the address bar of the browser, which shows a connection error on `redirect_uri`: this is expected.
@@ -4284,7 +4309,7 @@ The exchange of the code for a token is done by `ascli` on the server: the secre
 4. Log in. The browser shows a page "Login Complete" with the code to paste, hidden by default:
    - The button **Copy** puts the code in the clipboard.
    - The **eye** button shows or hides the code, to select it manually.
-5. Paste the code in the terminal of the server (nothing is displayed). `ascli` on the server checks the `state`, and the flow continues as described above, from step 6.
+5. Paste the code in the terminal of the server ([hidden](#hidden-input): `🔑` becomes `…`). `ascli` on the server checks the `state`, and the flow continues as described above, from step 6.
 
 The command on the workstation:
 
@@ -4304,7 +4329,7 @@ If `ascli` is not installed on the workstation, the URL of the error page is use
 1. In the SSH session, run the command with `--ui=terminal --ui.web_auth=paste`.
 2. Copy the displayed login URL in the browser of the workstation, and log in.
 3. The browser is redirected to `redirect_uri` (for example `http://localhost:12345/?code=...&state=...`) and shows a connection error: this is expected.
-4. Copy the full URL from the address bar of the browser, and paste it in the terminal (nothing is displayed, as it contains a code or tokens).
+4. Copy the full URL from the address bar of the browser, and paste it in the terminal ([hidden](#hidden-input), as it contains a code or tokens).
    The query alone (`code=...&state=...`) is also accepted.
    The `state` is mandatory: it is checked like in the standard flow, then the flow continues from step 6.
 
@@ -10583,7 +10608,7 @@ Option `ui.web_auth` selects how the result of the login is received (see [Web l
 - `paste`: the browser may run on another system than `ascli` (for example, `ascli` runs on a server accessed with SSH), without tunnel.
   No local port is opened and `--redirect-uri` is not used.
   `ascli` generates a random `state` and opens the SAML login page with `RelayState` `aspera://device-code?state=<state>`.
-  After login, Shares displays a code (a long text of letters, digits, `-` and `_`). The user copies it and pastes it in the terminal (nothing is displayed, as the code contains a token).
+  After login, Shares displays a code (a long text of letters, digits, `-` and `_`). The user copies it and pastes it in the terminal ([hidden](#hidden-input), as the code contains a token).
   If standard input is not a terminal, the code is read from it.
   `ascli` checks that the `state` of the code is the one it generated.
   The code is valid for **15 to 30 minutes** after its display: it is encrypted with a key derived from the `state` and from the current time in slots of 15 minutes (the previous and the next slot are also accepted).
