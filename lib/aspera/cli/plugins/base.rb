@@ -555,7 +555,7 @@ module Aspera
           else
             case arg_spec.type
             when :identifier
-              options.instance_identifier(description: arg_spec.name.to_s, &block)
+              options.instance_identifier(description: arg_spec.name.to_s, mandatory: arg_spec.mandatory, default: arg_spec.default, &block)
             else
               # Class or Array<Class> -> pass as validation type
               # When interactive: true, prompt for this argument only when no CLI argument is provided

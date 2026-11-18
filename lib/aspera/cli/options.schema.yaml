@@ -1334,10 +1334,10 @@ components:
           examples:
             - /opt/aspera/orchestrator/var/run/orchestrator/workflows/import/my_workflow.yml
         add_as_revision:
-          type: integer
+          type: [integer, 'null']
           description: >-
             ID of an existing workflow: the file is imported as a new revision of this workflow (to be published).
-            If not set, a new workflow is created.
+            If not set, or `null`, a new workflow is created.
           examples:
             - 123
         subwf_constraints:

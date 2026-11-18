@@ -435,7 +435,7 @@ module Aspera
             host_class.define_method(:build_pkg) { |pkg_id:, **| [tc.new(context: context), {root: "p-#{pkg_id}"}] }
             allow(options).to(receive(:get_next_command).with(%i[files pkg], aliases: nil).and_return(:pkg))
             allow(options).to(receive(:get_next_command).with(%i[ls perm], aliases: nil).and_return(:ls))
-            allow(options).to(receive(:instance_identifier).with(description: 'pkg_id').and_return('42'))
+            allow(options).to(receive(:instance_identifier).with(description: 'pkg_id', mandatory: true, default: nil).and_return('42'))
             expect(host_class.new(context: context).dispatch_from_registry([])).to(have_attributes(data: 'ls p-42'))
           end
 

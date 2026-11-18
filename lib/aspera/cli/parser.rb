@@ -243,13 +243,15 @@ module Aspera
       #
       # @param description [String]  description of the identifier
       # @param multiple    [Boolean] `true`: read a list of IDs (bulk operation)
+      # @param mandatory   [Boolean] `false`: the identifier may be absent, then `default` is returned
+      # @param default     [Object]  value when the identifier is absent and not mandatory
       # @param block       [Proc]    block to search for identifier based on attribute value
       # @return [String, Array<String>] identifier or list of IDs (if `multiple`)
       # @yieldparam field [String] The field name from percent selector
       # @yieldparam value [String] The value from percent selector
       # @yieldreturn [String] Resolved identifier
-      def instance_identifier(description: 'identifier', multiple: false, &block)
-        res_id = get_next_argument(description, multiple: multiple)
+      def instance_identifier(description: 'identifier', multiple: false, mandatory: true, default: nil, &block)
+        res_id = get_next_argument(description, multiple: multiple, mandatory: mandatory, default: default)
         # Can be an Array
         if res_id.is_a?(String) && (m = Parser.percent_selector(res_id))
           Aspera.assert(block_given?, type: Cli::BadArgument) { "Percent syntax for #{description} not supported in this context" }

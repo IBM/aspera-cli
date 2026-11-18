@@ -18,6 +18,7 @@ Released: [Place date of release here]
 ### Issues Fixed
 
 * OAuth: an opaque token (not a JWT, e.g. Shares) was used until rejected by the server: its refresh token, if it expires at the same time, could no longer be used. The expiration given at creation (`expires_in`) is now kept in cache (`expires_at`), and the token is refreshed before it expires (`token_refresh_threshold`).
+* `orchestrator workflows find_constraints`: the optional workflow ID was required ("Missing argument: add_as_revision"): an optional argument of type identifier was always mandatory. `orchestrator workflows import_with_constraints`: `add_as_revision` accepts `null` (new workflow).
 * `mcp server`: when the optional gem `mcp` is not installed, the error was `uninitialized constant Cli` instead of the message telling to install it.
 
 ### Breaking Changes
