@@ -52,6 +52,9 @@ module Aspera
             raise transfer_result.exception
           when Transfer::Result::Success
             return Result::Nothing.new
+          when Transfer::Result::DryRun
+            # Secrets are hidden by the formatter, as in any result
+            return Result::SingleObject.new(transfer_result.transfer_spec)
           else
             raise "Unexpected transfer result type: #{transfer_result.class}"
           end
@@ -83,6 +86,8 @@ module Aspera
               item[STATUS_FIELD] = 'success'
             when Transfer::Result::Async
               item[STATUS_FIELD] = "async:#{tr.job_id}"
+            when Transfer::Result::DryRun
+              item[STATUS_FIELD] = 'dry_run'
             else
               item[STATUS_FIELD] = tr.to_s
             end
@@ -96,8 +101,8 @@ module Aspera
       # @param argv [Array<String>] command line arguments
       # @return [nil]
       def initialize(argv)
+        # Dumped (trace2) with secrets hidden by `CommandLine`
         @argv = argv
-        Log.dump(:argv, @argv, level: :trace2)
         @option_help = false
         @option_show_config = false
         @context = Context.new
@@ -205,8 +210,9 @@ module Aspera
           end
         end
         # 2- processing of unprocessed arguments (skip when help was displayed: sub-commands are not consumed)
+        # With `show_config`, the command is not executed: its arguments are not consumed, but unknown options are reported
         unless @option_help
-          @context.options&.final_errors(after_error: !exception_info.nil?)&.each do |msg|
+          @context.options&.final_errors(after_error: !exception_info.nil? || @option_show_config)&.each do |msg|
             Log.log.error { "Argument: #{msg}" }
             exception_info = {e: Exception.new(msg), t: 'UnusedArg', exit: ExitCode::USAGE} if exception_info.nil?
           end

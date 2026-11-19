@@ -7,6 +7,9 @@ require_relative 'error'
 require_relative '../dot_container'
 require_relative '../log'
 require_relative '../assert'
+require_relative '../secret/hider'
+require 'json'
+require 'yaml'
 
 module Aspera
   module Cli
@@ -68,8 +71,11 @@ module Aspera
       # @return [String, nil] inline value, or value of next token
       def value = @inline_value || @value_token&.value
 
-      # @return [String] raw token, followed by its separate value if any
-      def to_s = @value_token.nil? ? @raw : "#{@raw} #{@value_token.value}"
+      # @return [String] raw token, with declared secret value hidden (logs, messages)
+      def raw_hidden = inline? ? "#{@raw.delete_suffix(@inline_value)}#{Secret::Hider.instance.hidden_copy(@inline_value)}" : @raw
+
+      # @return [String] raw token, followed by its separate value if any, with declared secret value hidden (logs, messages)
+      def to_s = @value_token.nil? ? raw_hidden : "#{@raw} #{Secret::Hider.instance.hidden_copy(@value_token.value)}"
 
       class << self
         # @param token [String] command line token
@@ -111,6 +117,13 @@ module Aspera
     # unless that token looks like an option.
     # If the option turns out to be a flag, the claimed token is given back to positional arguments.
     class CommandLine
+      # Decoders of extended values whose content is checked for secrets by key name
+      STRUCTURED_DECODERS = {
+        '@json:' => ->(v) { JSON.parse(v) },
+        '@yaml:' => ->(v) { YAML.safe_load(v) }
+      }.freeze
+      private_constant :STRUCTURED_DECODERS
+
       # @param argv [Array<String>] command line arguments
       def initialize(argv)
         # @type [Array<Option, Argument>]
@@ -139,6 +152,8 @@ module Aspera
             @tokens.push(argument)
           end
         end
+        declare_secrets
+        Log.dump(:argv, level: :trace2) { @tokens.map { |t| t.is_a?(Option) ? t.raw_hidden : Secret::Hider.instance.hidden_copy(t.value) } }
         Log.log.trace1 { "arguments=#{pending_arguments},options=#{pending_options}" }
       end
 
@@ -245,6 +260,28 @@ module Aspera
       end
 
       private
+
+      # Declare secret values of long options, by option name (last key for dot notation), as those of presets and env vars,
+      # so that they are hidden wherever they appear (logs, results), before the option is declared.
+      # A structured value (`@json:`, `@yaml:`) that contains a secret is declared as a whole, with its content.
+      def declare_secrets
+        hider = Secret::Hider.instance
+        @tokens.each do |tok|
+          next unless tok.is_a?(Option) && tok.short_char.nil? && tok.value.is_a?(String)
+          hider.add_named_secrets((tok.dot_path || [tok.name]).last, tok.value)
+          prefix, decoder = STRUCTURED_DECODERS.find { |p, _| tok.value.start_with?(p) }
+          next if prefix.nil?
+          content = tok.value.delete_prefix(prefix)
+          decoded = begin
+            decoder.call(content)
+          rescue StandardError
+            next
+          end
+          next unless hider.contains_secret?(decoded)
+          hider.add_secrets_in(decoded)
+          hider.add_secret_values(tok.value, content)
+        end
+      end
 
       # Give back claimed token to positional arguments.
       # @param tok [Option] flag option token

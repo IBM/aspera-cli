@@ -119,7 +119,7 @@ module Aspera
       # @param log [Boolean] whether to log the value retrieval
       # @return [Object] current value
       def value(log: true)
-        Log.log.trace1 { "#{@option} -> (#{@value.class})#{@value}" } if log
+        Log.log.trace1 { "#{@option} -> (#{@value.class})#{Secret::Hider.instance.hidden_copy(@value)}" } if log
         @value
       end
 
@@ -152,7 +152,8 @@ module Aspera
         new_value = coerce(ExtendedValue.instance.evaluate(value, context: "option: #{@option}", allowed: @types))
         check_sub_options_security(new_value) if restricted_source?(source)
         new_value = {@shorthand => new_value} if @shorthand && new_value.is_a?(String)
-        Log.log.trace1 { "#{source}: #{@option} <- (#{new_value.class})#{new_value}" }
+        declare_secrets(new_value)
+        Log.log.trace1 { "#{source}: #{@option} <- (#{new_value.class})#{Secret::Hider.instance.hidden_copy(new_value)}" }
         Aspera.assert_type(new_value, *@types, type: BadArgument) { "Option #{@option}" } if @types
         new_value = @convert.call(new_value) if @convert && new_value.is_a?(Hash)
         if merge && (new_value.is_a?(Hash) || new_value.is_a?(Array))
@@ -321,15 +322,20 @@ module Aspera
         end
       end
 
+      # Secret values are hidden wherever they appear: logs, results
+      # @param value [Object] value of option
+      def declare_secrets(value)
+        if @sensitive
+          Secret::Hider.instance.add_secret_values(value)
+        else
+          Secret::Hider.instance.add_secrets_in(value)
+        end
+      end
+
       # @param new_value [Object] value to store
       # @param source [Symbol, nil] `OptionSource` of value
       def store(new_value, source)
-        # Secret values are hidden wherever they appear: logs, results
-        if @sensitive
-          Secret::Hider.instance.add_secret_values(new_value)
-        else
-          Secret::Hider.instance.add_secrets_in(new_value)
-        end
+        declare_secrets(new_value)
         @value = new_value
         @source = source
         @on_set&.call(new_value)

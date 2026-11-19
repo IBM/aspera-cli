@@ -2444,7 +2444,7 @@ Behavior:
 - `Ctrl-C` ends polling: with `show=last`, the last result is displayed, and the exit status is `130`.
 
 For safety, option `poll` is refused, before anything is executed, on a command that is not marked read-only: a command that creates, modifies, deletes, sends, starts or cancels something, e.g. `faspex5 packages send`.
-Commands marked read-only are generic `list` and `show` commands, and some others, e.g. `status` commands of `orchestrator`, `node browse`.
+Commands named `list`, `show`, `status`, `info`, `health`, `ls`, `browse` and `find` are read-only (except `preview show`, which generates a preview file), and some others, e.g. `orchestrator workflows workorders`, `server du`, `node ssync state`.
 It is also refused with options `once_only` (state saved at each run) and `notify_to` (email sent at each run), with format `nagios`, and in [MCP server](#plugin-mcp-model-context-protocol-server) mode (the client calls the tool again instead).
 
 ### Exit status
@@ -4820,6 +4820,17 @@ Parameters in transfer-spec can be modified with option `ts`.
 
 > [!NOTE]
 > Parameters in `transfer` are specific for each agent type and are described in the agents respective sections.
+
+#### Dry run of a transfer
+
+With option `dry_run` (`--dry-run=yes`), a transfer command does not start the transfer: its result is the final transfer spec, as it would be given to the agent (with option `ts` and file list applied), with secrets hidden (unless `--out.secrets=yes`).
+Nothing is transferred.
+
+```shell
+ascli server download /aspera-test-dir-large/100MB --dry-run=yes
+```
+
+Commands that change something before the transfer are refused with option `dry_run`, before any change: `aoc packages send` and `faspex5 packages send` (the package is created first), `sync` commands, and preview generation of `preview`.
 
 #### Asynchronous Transfer Mode
 

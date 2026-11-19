@@ -405,7 +405,8 @@ module Aspera
         result = {}
         @command_line.each_long_option_with_value(after_command: after_command) do |tok|
           path = [tok.name, *tok.dot_path]
-          Log.log.debug { "option #{path.join(DotContainer::SEPARATOR)}=#{tok.value}" }
+          declare_secrets(path.last, tok.value)
+          Log.log.debug { "option #{path.join(DotContainer::SEPARATOR)}=#{Secret::Hider.instance.hidden_copy(tok.value)}" }
           DotContainer.dotted_to_container(path, Parser.smart_convert(tok.value), result)
         end
         result
@@ -694,6 +695,7 @@ module Aspera
       # @param source        [Symbol]  `OptionSource`
       # @param replace       [Boolean] replace a pending value from same source
       def add_pending_value(option_symbol, value, source, replace:)
+        declare_secrets(option_symbol, value)
         entries = (@pending_values[option_symbol] ||= [])
         index = entries.index { |e| e[:source].eql?(source) }
         if index.nil?
@@ -701,6 +703,14 @@ module Aspera
         elsif replace
           entries[index] = {value: value, source: source}
         end
+      end
+
+      # Declare secret values of an option not declared yet, by option name (as `OptionValue#store` does for a declared option),
+      # so that they are hidden wherever they appear (logs, results), also in a structure (e.g. `{value:, source:}` of a pending value)
+      # @param name  [Symbol, String] option name
+      # @param value [Object]         value
+      def declare_secrets(name, value)
+        Secret::Hider.instance.add_named_secrets(name, value)
       end
 
       # Apply pending values (presets, env) of declared options, lowest priority first

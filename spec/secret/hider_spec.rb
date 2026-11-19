@@ -192,6 +192,20 @@ RSpec.describe(Aspera::Secret::Hider) do
     end
   end
 
+  describe '#add_named_secrets' do
+    it 'declares the whole value for a secret name, else values found by key name' do
+      nested = SecureRandom.alphanumeric(12)
+      hider.add_named_secrets(:vault_password, secret)
+      hider.add_named_secrets('vault', {'password' => nested, 'name' => other})
+      expect(hider.hidden_copy("#{secret} #{nested} #{other}")).to(eq("🔑 🔑 #{other}"))
+    end
+
+    it 'does not declare a boolean value given as text' do
+      hider.add_named_secrets(:cache_tokens, 'no')
+      expect(hider.hidden_copy('no')).to(eq('no'))
+    end
+  end
+
   describe '#hidden_copy' do
     it 'hides secrets in arrays nested in hashes, without modifying them' do
       data = {'items' => [{'name' => 'a', 'password' => secret}], 'sub' => {'Token' => other}}

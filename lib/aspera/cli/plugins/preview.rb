@@ -225,6 +225,8 @@ module Aspera
         # @return [Object] transfer result returned by [`Main.result_transfer`](lib/aspera/cli/main.rb)
         def do_transfer(direction, folder_id, source_filename, destination = '/')
           Aspera.assert(!(destination.nil? && direction.eql?(Transfer::Spec::DIRECTION_RECEIVE)), 'destination must be set for receive direction')
+          # Previews are generated from downloaded files, and uploaded
+          transfer.assert_no_dry_run
           t_spec = @api_node.transfer_spec_gen4(folder_id, direction, {
             'paths' => [{'source' => source_filename}],
             'tags'  => {Transfer::Spec::TAG_RESERVED => {PREV_GEN_TAG => true}}
@@ -440,7 +442,7 @@ module Aspera
         command :events,   description: 'Process file events and generate previews',        setup: :setup_node_api, action: ->(**) { run_event_loop(:events) }
         command :trevents, description: 'Process transfer events and generate previews',    setup: :setup_node_api, action: ->(**) { run_event_loop(:trevents) }
         command :check,    description: 'Check required tools are installed', action: ->(**) { tools_cleanup { Result::Status.new('Tools validated') } }
-        command :show,     description: 'Generate and display preview of a source file',
+        command :show,     read_only: false, description: 'Generate and display preview of a source file',
           arguments: [{name: :source_file, description: 'Local file to preview', complete: :file}]
         command :test,     description: 'Test preview generation for a source file',
           arguments: [

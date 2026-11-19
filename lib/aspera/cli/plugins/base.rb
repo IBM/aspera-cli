@@ -28,8 +28,6 @@ module Aspera
           INSTANCE = (SINGLETON + %i[delete]).freeze
           # All standard operations: `create` `list` `modify` `show` `delete`
           ALL = (GLOBAL + INSTANCE).freeze
-          # Operations that change nothing: `list` `show`
-          READ = %i[list show].freeze
         end
         class << self
           include OptionDeclarator
@@ -166,8 +164,6 @@ module Aspera
                 send(:"entity_#{verb}", api: crud_api(api), entity: resolved_entity, **kwargs, **ctx)
               end
               cmd_attrs = {description: operation_description(verb, name || entity.inspect), action: action_proc}
-              # Operations that change nothing: can be repeated with option `poll`
-              cmd_attrs[:read_only] = true if Operations::READ.include?(verb)
               cmd_attrs[:arguments] = args if args
               cmd_attrs[:query_schema] = Schema::Registry.query_params(kwargs[:query_component], entity) if verb.eql?(:list) && kwargs[:query_component] && entity.is_a?(String)
               command(verb, **cmd_attrs)
@@ -400,7 +396,7 @@ module Aspera
           parameters = options.get_option(:poll)
           return if parameters.nil? || parameters.empty?
           command = [self.class.name.split('::').last.downcase, *current_path].join(' ')
-          Aspera.assert(spec.read_only, type: Cli::BadArgument) do
+          Aspera.assert(spec.read_only?, type: Cli::BadArgument) do
             "Option poll: refused on `#{command}`: only a read-only command can be repeated (e.g. list, show, status)"
           end
           # Options that make a read-only command change state at each run

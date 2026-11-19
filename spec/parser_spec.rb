@@ -572,6 +572,93 @@ module Aspera
         end
       end
 
+      describe 'secret values of options not declared yet' do
+        # @return [Boolean] `true` if value is hidden in logs
+        def hidden?(value)
+          !Secret::Hider.instance.hidden_copy("text #{value} text").include?(value)
+        end
+
+        it 'hides a secret from env var, also in the pending value structure' do
+          ENV['TEST_VAULT_PASSWORD'] = '<ENV_PASSWORD>'
+          opts = build_parser([])
+          expect(hidden?('<ENV_PASSWORD>')).to(be(true))
+          expect(Secret::Hider.instance.hidden_copy({vault_password: [{value: '<ENV_PASSWORD>', source: :env}]}).to_s).not_to(include('<ENV_PASSWORD>'))
+          opts.declare(:vault_password, description: 'Vault password')
+          expect(opts.get_option(:vault_password)).to(eq('<ENV_PASSWORD>'))
+        ensure
+          ENV.delete('TEST_VAULT_PASSWORD')
+        end
+
+        it 'hides a secret from preset, also nested' do
+          opts = build_parser([])
+          opts.add_option_preset({password: '<PRESET_PASSWORD>', vault: {'secret' => 'pending-nested-value'}, name: 'pending-public-value'}, 'test')
+          expect(hidden?('<PRESET_PASSWORD>')).to(be(true))
+          expect(hidden?('pending-nested-value')).to(be(true))
+          expect(hidden?('pending-public-value')).to(be(false))
+        end
+
+        it 'hides a secret of an unprocessed option' do
+          opts = build_parser(['--user.password=<CLI_PASSWORD>'])
+          opts.parse_options!
+          expect(opts.unprocessed_options_with_value).to(eq({'user' => {'password' => '<CLI_PASSWORD>'}}))
+          expect(hidden?('<CLI_PASSWORD>')).to(be(true))
+        end
+
+        describe 'command line, before options are declared' do
+          # @return [Array<String>] messages logged at level trace1 while executing the block
+          def trace1_messages
+            messages = []
+            allow(Log.log).to(receive(:trace1)) { |*args, &block| messages.push(block ? block.call : args.first) }
+            yield
+            messages
+          end
+
+          it 'hides the value of a secret option, also with dot notation, or as separate token' do
+            CommandLine.new(['--password=<LONG_PASSWORD>', '--vault.password=<VAULT_PASSWORD>', '--secret', '<SEPARATE_SECRET>'])
+            expect(hidden?('<LONG_PASSWORD>')).to(be(true))
+            expect(hidden?('<VAULT_PASSWORD>')).to(be(true))
+            expect(hidden?('<SEPARATE_SECRET>')).to(be(true))
+          end
+
+          it 'hides a short secret value in options shown in logs and messages' do
+            cmd = nil
+            messages = trace1_messages { cmd = CommandLine.new(['--password=<PW>', '--token', '<TK>', 'arg']) }
+            marker = Secret::Hider.instance.hidden_copy('<PW>')
+            expect(cmd.pending_options).to(eq(["--password=#{marker}", "--token #{marker}"]))
+            expect(cmd.pending_options.join).not_to(include('<PW>', '<TK>'))
+            expect(messages.join).not_to(include('<PW>', '<TK>'))
+            expect(messages.join).to(include('--password='))
+          end
+
+          it 'hides a short secret value in logs of option evaluation' do
+            opts = build_parser(['--password=<PW2>'])
+            messages = trace1_messages do
+              opts.declare(:password, description: 'Password')
+              expect(opts.get_option(:password)).to(eq('<PW2>'))
+            end
+            expect(messages.join).to(include('password <-'))
+            expect(messages.join).not_to(include('<PW2>'))
+          end
+
+          it 'hides a structured value with a secret key, as a whole' do
+            raw_json = '@json:{"user":"public-json-value","password":"<JS>"}'
+            raw_yaml = '@yaml:{user: public-yaml-value, passphrase: <YM>}'
+            CommandLine.new(["--vault=#{raw_json}", "--other=#{raw_yaml}"])
+            [raw_json, raw_yaml, raw_json.delete_prefix('@json:'), '<JS>', '<YM>'].each do |value|
+              expect(Secret::Hider.instance.hidden_copy(value)).not_to(eq(value))
+            end
+          end
+
+          it 'does not hide a structured value without secret, or that cannot be decoded' do
+            raw_values = ['@json:{"user":"public-json-only"}', '@json:{"password":', '@yaml:[public-yaml-only]']
+            CommandLine.new(raw_values.map { |v| "--vault=#{v}" })
+            raw_values.each do |value|
+              expect(Secret::Hider.instance.hidden_copy(value)).to(eq(value))
+            end
+          end
+        end
+      end
+
       describe '#get_option with schema: contextual override' do
         def build_query_option(opts)
           opts.declare(:query, description: 'Query filter', allowed: [Hash, NilClass])

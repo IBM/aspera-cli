@@ -897,8 +897,8 @@ module Aspera
             arguments: [{name: :package, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::AOC, 'packages.post')}]
           command :receive, description: 'Receive packages', aliases: [:recv], transfer_paths: :receive,
             arguments: [PACKAGE_ID_ARG]
-          command :list, read_only: true, description: 'List packages'
-          command :show, read_only: true, description: 'Show a package',
+          command :list, description: 'List packages'
+          command :show, description: 'Show a package',
             arguments: [PACKAGE_ID_ARG],
             action: ->(package_id:, **) { Result::SingleObject.new(aoc_api.read("packages/#{package_id}")) }
           command :delete, description: 'Delete packages',
@@ -1080,6 +1080,8 @@ module Aspera
 
         # packages > send
         def action_packages_send(package:, **)
+          # The package is created before the transfer
+          transfer.assert_no_dry_run
           package_data = package
           new_user_option = options.get_option(:new_user_option)
           option_validate = options.get_option(:validate_metadata)
@@ -1142,7 +1144,7 @@ module Aspera
             dest_folder = transfer.user_transfer_spec['destination_root'] || destination_folder
             formatter.display_status(%Q{Downloading package: [#{package_info['id']}] "#{package_info['name']}" to [#{dest_folder}]})
             statuses = transfer.start(transfer_spec, oauth_api: package_node_api)
-            File.write(File.join(dest_folder, "#{package_id}.info.json"), package_info.to_json) if save_metadata
+            File.write(File.join(dest_folder, "#{package_id}.info.json"), package_info.to_json) if save_metadata && !statuses.is_a?(Transfer::Result::DryRun)
             result_transfer.push({'package' => package_id, Runner::STATUS_FIELD => statuses})
             if skip_ids_persistency && statuses.is_a?(Transfer::Result::Success)
               skip_ids_persistency.data.push(package_id)

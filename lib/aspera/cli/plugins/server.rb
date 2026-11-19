@@ -223,15 +223,15 @@ module Aspera
         command :cp,     description: 'Copy files: source destination pairs, or sources with --to-folder',        condition: :ascmd_available?,                     arguments: PATHS_ARGS
         command :mkdir,  description: 'Create directory', condition: :ascmd_available?, arguments: PATHS_ARGS
         command(
-          :df, description: 'Show disk usage', condition: :ascmd_available?,
+          :df, read_only: true, description: 'Show disk usage', condition: :ascmd_available?,
           action: lambda do |**|
             execute_ascmd(:df, []) do |result|
               Result::ObjectList.new(result.map(&:stringify_keys))
             end
           end
         )
-        command :du,     description: 'Show file sizes',       condition: :ascmd_available?,                     arguments: PATHS_ARGS
-        command :md5sum, description: 'Compute MD5 checksums', condition: :ascmd_available?,                     arguments: PATHS_ARGS
+        command :du,     read_only: true, description: 'Show file sizes',       condition: :ascmd_available?,                     arguments: PATHS_ARGS
+        command :md5sum, read_only: true, description: 'Compute MD5 checksums', condition: :ascmd_available?,                     arguments: PATHS_ARGS
         command :info,   description: 'Show server system information', condition: :ascmd_available?,
           action: ->(**) { execute_ascmd(:info, []) { |r| Result::SingleObject.new(r.stringify_keys) } }
 

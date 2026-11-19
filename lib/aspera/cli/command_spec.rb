@@ -191,6 +191,9 @@ module Aspera
       end
     end
 
+    # Ids of the commands read-only by default (`read_only: :default`): they change nothing
+    READ_ONLY_IDS = %i[list show status info health ls browse find].freeze
+
     # Declares a single command node in the flat registry.
     #
     # @!attribute id               [Symbol]                      Unique identifier within its parent's namespace
@@ -207,7 +210,8 @@ module Aspera
     # @!attribute query_schema     [String, nil]                 Schema path for --query help; when set, the runner hints `--query=help`
     # @!attribute mount            [MountSpec, Hash, nil]        Expose children of another plugin's registry under this node
     # @!attribute security         [Symbol, nil]                 Most restrictive security level at which the command is available (`:low`: executes code), see `Security`
-    # @!attribute read_only        [Boolean]                     Leaf only: the command changes nothing (on the server or locally), so it can be repeated (option `poll`)
+    # @!attribute read_only        [Boolean, :default]           Leaf only: the command changes nothing (on the server or locally), so it can be repeated (option `poll`).
+    #                                                            `:default` (default): read-only if the id is one of READ_ONLY_IDS (`list`, `show`, ...)
     CommandSpec = Struct.new(
       :id,
       :parent,
@@ -226,8 +230,8 @@ module Aspera
     ) do
       def initialize(**kwargs)
         Aspera.assert_values(kwargs[:security], Security::LEVELS + [nil]) { "#{kwargs[:id]}: security" }
-        kwargs[:read_only] = false if kwargs[:read_only].nil?
-        Aspera.assert_values(kwargs[:read_only], [true, false]) { "#{kwargs[:id]}: read_only" }
+        kwargs[:read_only] = :default if kwargs[:read_only].nil?
+        Aspera.assert_values(kwargs[:read_only], [true, false, :default]) { "#{kwargs[:id]}: read_only" }
         # Coerce each element of arguments: from Hash to ArgumentSpec if needed
         if kwargs[:arguments]
           kwargs[:arguments] = kwargs[:arguments].map do |a|
@@ -246,6 +250,11 @@ module Aspera
         def action_method(path)
           :"action_#{path.join('_')}"
         end
+      end
+
+      # @return [Boolean] `true` if the command changes nothing: explicit `read_only`, or from its id (READ_ONLY_IDS)
+      def read_only?
+        read_only.eql?(:default) ? READ_ONLY_IDS.include?(id) : read_only
       end
 
       # Compute the full path as Array<Symbol> from parent + id.

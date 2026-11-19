@@ -357,8 +357,7 @@ module Aspera
               # entity_plural captured at class-load time in the closure
               entity_plural_search = entity_type.eql?(:user) ? 'users' : 'groups'
               commands_under :search do
-                command :list,
-                  description: "Search #{entity_type}s across all directories (use --query={q: '...'} to filter)",
+                command :list, description: "Search #{entity_type}s across all directories (use --query={q: '...'} to filter)",
                   action: ->(**) { entity_list(api: @api_shares_admin, entity: entity_plural_search, items_key: 'members') }
                 command :show,
                   description: "Get directory #{entity_type} details by URN",

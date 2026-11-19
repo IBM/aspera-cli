@@ -216,7 +216,7 @@ module Aspera
           # `@val:` keeps the rest as is; `@extend:` too, unless the rest is a single extended value (e.g. `@extend:@file:x`): decoded first, then extended
           break if SPECIAL_HANDLERS.include?(handler) && (handler.eql?(:val) || @regex_inner.match?(value))
         end
-        Log.log.trace1 { "evaluating: #{handlers_reversed}, value: #{value.class}:#{value}" }
+        Log.log.trace1 { "evaluating: #{handlers_reversed}, value: #{value.class}:#{Secret::Hider.instance.hidden_copy(value)}" }
         handlers_reversed.each_with_index do |handler, index|
           Security.instance.check_extended_value(handler)
           # The value read by the previous handler may be a secret

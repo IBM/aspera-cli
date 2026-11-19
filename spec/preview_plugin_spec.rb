@@ -20,7 +20,7 @@ module Aspera
     module Plugins
       RSpec.describe(Preview) do
         let(:node) { instance_double(Api::Node, base_url: 'https://node.example.com') }
-        let(:transfer) { instance_double(TransferAgent, user_transfer_spec: {}) }
+        let(:transfer) { instance_double(TransferAgent, user_transfer_spec: {}, assert_no_dry_run: nil) }
         let(:generator) { instance_double(Aspera::Preview::Generator, conversion_type: :image, error_asset: error_asset) }
         let(:tmp) { Dir.mktmpdir }
         let(:error_asset) { File.join(tmp, 'error.png').tap { |f| File.write(f, 'png') } }

@@ -267,6 +267,8 @@ module Aspera
         transfer_spec['content_protection_password'] = @context.options.prompt_user_input('content protection password', sensitive: true) if transfer_spec['content_protection'].eql?('decrypt') && !transfer_spec.key?('content_protection_password')
         # Secrets of transfer spec (e.g. `token` from the application) are hidden wherever they appear (logs, results)
         Secret::Hider.instance.add_secrets_in(transfer_spec)
+        # Option `dry_run`: no transfer, the final transfer spec is the result
+        return Transfer::Result.dry_run(transfer_spec) if dry_run?
         # Renews the bearer token of the transfer: only possible with OAuth
         token_regenerator = -> { oauth_api.oauth.renewed_authorization } if oauth_api&.auth_params&.fetch(:type, nil).eql?(:oauth2)
         # create transfer agent
@@ -318,6 +320,18 @@ module Aspera
         result = agent_instance.wait_for_completion
         @notification_cb&.call(transfer_spec, result)
         return result
+      end
+
+      # @return [Boolean] `true` if option `dry_run` is set: transfers are not started (see `start`)
+      def dry_run?
+        @context.options.get_option(:dry_run)
+      end
+
+      # For a command that changes something before its transfer (e.g. creates a package), or that does not transfer with `start`:
+      # fail before any change with option `dry_run`
+      # @raise [Cli::BadArgument] if option `dry_run` is set
+      def assert_no_dry_run
+        Aspera.assert(!dry_run?, type: Cli::BadArgument) { 'Option dry_run is not supported by this command' }
       end
 
       # shut down if agent requires it

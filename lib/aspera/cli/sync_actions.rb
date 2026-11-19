@@ -171,6 +171,8 @@ module Aspera
       # @param sync_info [Hash]      extra sync configuration (may be empty)
       # @param block     [Proc, nil] block to generate transfer spec; receives (direction, local_dir, remote_dir)
       def run_sync_transfer(direction, path:, sync_info: {}, &block)
+        # Not a transfer of `TransferAgent`: the sync session is started directly
+        transfer.assert_no_dry_run
         Sync::Operations.start(async_info_from_args(path: path, sync_info: sync_info, direction: direction), transfer.user_transfer_spec, &block)
         Result::Success.new
       end

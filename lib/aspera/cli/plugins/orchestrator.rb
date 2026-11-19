@@ -171,8 +171,8 @@ module Aspera
 
         # --- DSL ---
 
-        command :health,     read_only: true, description: 'Check Orchestrator API health'
-        command :info,       read_only: true, description: 'Check that Orchestrator responds (ping)', action: ->(**) { Result::SingleObject.new(call_ao('remote_node_ping', accept: Mime::XML, xml_opts: {'ForceArray' => false})) }
+        command :health,     description: 'Check Orchestrator API health'
+        command :info,       description: 'Check that Orchestrator responds (ping)', action: ->(**) { Result::SingleObject.new(call_ao('remote_node_ping', accept: Mime::XML, xml_opts: {'ForceArray' => false})) }
         command :processes,  read_only: true, description: 'Show Orchestrator background process status', action: ->(**) { processes_result(call_ao('processes_status', accept: Mime::XML, xml_opts: PROCESSES_XML_OPTS)) }
         command :control,    description: 'Start, stop or kill the engine, the monitor or workers of Orchestrator, and show the process status',
           arguments: [
@@ -193,16 +193,16 @@ module Aspera
         command :worksteps,  description: 'Manage work steps'
 
         commands_under :alerts do
-          command :list, read_only: true, description: 'List alerts (option query: `category`, `count_only`)',
+          command :list, description: 'List alerts (option query: `category`, `count_only`)',
             query_schema: Schema::Registry.query_params(Schema::Registry::ORCHESTRATOR, 'api/alerts/{id}'),
             action: ->(**) { Result.auto(call_ao("alerts/#{ANY_ID}")) }
         end
 
         commands_under :tasks do
-          command :list, read_only: true, description: 'List tasks waiting for a user (only an administrator can list the tasks of another user)',
+          command :list, description: 'List tasks waiting for a user (only an administrator can list the tasks of another user)',
             arguments: [{name: :user, mandatory: false, default: SELF_USER}],
             action: ->(user:, **) { Result::ObjectList.new(call_ao("list_tasks/#{URI.encode_uri_component(user)}")['tasks'] || []) }
-          command :show, read_only: true, description: 'Show a task: its user inputs and its parameters. Id is a task id, or WO<work order id> with the step name when the work order has several',
+          command :show, description: 'Show a task: its user inputs and its parameters. Id is a task id, or WO<work order id> with the step name when the work order has several',
             arguments: [
               {name: :task_id},
               {name: :step_name, mandatory: false}
@@ -220,7 +220,7 @@ module Aspera
           command :snapshot, read_only: true, description: 'Show status of monitors, of all types or of one type',
             arguments: [{name: :type, type: Symbol, mandatory: false, allowed: MONITOR_SNAPSHOT_TYPES}],
             action: ->(type: nil, **) { Result::SingleObject.new(call_ao(type.nil? ? 'monitor_snapshot' : "monitor_snapshot/#{type}")['monitor']) }
-          command :list, read_only: true, description: 'List monitors of a type: remote node monitors give the names of remote nodes',
+          command :list, description: 'List monitors of a type: remote node monitors give the names of remote nodes',
             arguments: [{name: :type, type: Symbol, allowed: MONITOR_TYPES}]
           command :activate, description: 'Activate a monitor',
             arguments: [{name: :type, type: Symbol, allowed: MONITOR_TYPES}, {name: :monitor_id, type: :identifier}],
@@ -231,9 +231,9 @@ module Aspera
         end
 
         commands_under :portlets do
-          command :list, read_only: true, description: 'List portlets with their version',
+          command :list, description: 'List portlets with their version',
             action: ->(**) { Result::ObjectList.new(call_ao('portlet_version')['Portlet'] || []) }
-          command :show, read_only: true, description: 'Show the version of a portlet',
+          command :show, description: 'Show the version of a portlet',
             arguments: [{name: :portlet}],
             action: ->(portlet:, **) { Result::ObjectList.new(call_ao("portlet_version/#{URI.encode_uri_component(portlet)}")['Portlet'] || []) }
         end
@@ -247,7 +247,7 @@ module Aspera
         commands_under :queues do
           command :stats, read_only: true, description: 'Statistics of the execution queue of the engine',
             action: ->(**) { Result::SingleObject.new(call_ao("execution_queue_stats/#{ANY_ID}")) }
-          command :list, read_only: true, description: 'List managed queues',
+          command :list, description: 'List managed queues',
             action: ->(**) { Result::ObjectList.new(call_ao('queues_list').dig('Queues', 'queue') || []) }
           command :items, read_only: true, description: 'List items of a queue',
             arguments: [{name: :queue}],
@@ -272,7 +272,7 @@ module Aspera
         end
 
         commands_under :pools do
-          command :status, read_only: true, description: 'Show resources of a resource pool and their status',
+          command :status, description: 'Show resources of a resource pool and their status',
             arguments: [{name: :pool_name}],
             action: ->(pool_name:, **) { Result::ObjectList.new(call_ao("pool_status/#{ANY_ID}", query: {name: pool_name}, json_opts: RESOURCE_JSON_OPTS)['ManagedResource'] || []) }
           command :add_resource, description: 'Add a resource to a resource pool (capacity and tags with option query)',
@@ -300,7 +300,7 @@ module Aspera
         end
 
         commands_under :plugins do
-          command :list, read_only: true, description: 'List plugins with their version', action: ->(**) { Result::ObjectList.new(call_ao('plugin_version')['Plugin']) }
+          command :list, description: 'List plugins with their version', action: ->(**) { Result::ObjectList.new(call_ao('plugin_version')['Plugin']) }
           command :reload, description: 'Reload a plugin (class name), or all enabled plugins',
             arguments: [{name: :plugin, mandatory: false}],
             action: ->(plugin: nil, **) { Result::SingleObject.new(call_ao('reload_plugin', query: {action_type: plugin}.compact)) }
@@ -327,8 +327,8 @@ module Aspera
         end
 
         commands_under :workflows do
-          command :list, read_only: true, description: 'List all workflows'
-          command :status,     read_only: true, description: 'Show running status of a workflow',
+          command :list, description: 'List all workflows'
+          command :status,     description: 'Show running status of a workflow',
             arguments: [{name: :workflow_id, type: :identifier}],
             action: ->(workflow_id:, **) { Result::ObjectList.new(call_ao(workflow_id.eql?(SpecialValues::ALL) ? 'workflows_status' : "workflows_status/#{workflow_id}")['workflows']['workflow']) }
           command :inputs,     read_only: true, description: 'Show input specification of a workflow',
@@ -405,7 +405,7 @@ module Aspera
         end
 
         commands_under :workorders do
-          command :status, read_only: true, description: 'Show status of a work order',
+          command :status, description: 'Show status of a work order',
             arguments: [{name: :workorder_id, type: :identifier}],
             action: ->(workorder_id:, **) { Result::SingleObject.new(call_ao("work_order_status/#{workorder_id}")['work_order']) }
           command :worksteps, read_only: true, description: 'List work steps of a work order (not the steps of its sub-workflows)',
@@ -430,7 +430,7 @@ module Aspera
         end
 
         commands_under :worksteps do
-          command :status, read_only: true, description: 'Show status of a work step',
+          command :status, description: 'Show status of a work step',
             arguments: [{name: :workstep_id, type: :identifier}]
           command :cancel, description: 'Cancel a work step',
             arguments: [{name: :workstep_id, type: :identifier}],

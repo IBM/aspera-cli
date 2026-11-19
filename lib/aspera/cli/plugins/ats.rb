@@ -46,7 +46,7 @@ module Aspera
         command :aws_trust_policy, description: 'Show AWS trust policy', action: ->(**) { Result::SingleObject.new(ats_api.read('aws/trustpolicy', {region: options.get_option(:region, mandatory: true)})) }
 
         commands_under :cluster do
-          command :clouds, description: 'List cloud providers', action: ->(**) { Result::ObjectList.new(@ats_api_open.cloud_names.map { |k, v| CLOUD_TABLE.zip([k, v]).to_h }) }
+          command :clouds, read_only: true, description: 'List cloud providers', action: ->(**) { Result::ObjectList.new(@ats_api_open.cloud_names.map { |k, v| CLOUD_TABLE.zip([k, v]).to_h }) }
           command :list,   description: 'List ATS servers',     action: ->(**) { Result::ObjectList.new(@ats_api_open.all_servers, fields: %w[id cloud region]) }
           command :show,   description: 'Show a specific server (or use options cloud and region)',
             arguments: [{name: :server_id, mandatory: false, default: nil}]

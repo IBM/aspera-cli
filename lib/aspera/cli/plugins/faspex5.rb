@@ -299,6 +299,8 @@ module Aspera
         end
 
         def package_send(parameters)
+          # The package is created before the transfer
+          transfer.assert_no_dry_run
           # autofill recipient for public url
           if api_v5.pub_link_context&.key?('recipient_type') && !parameters.key?('recipients')
             parameters['recipients'] = [{
@@ -506,14 +508,14 @@ module Aspera
         private_constant :PACKAGE_ID_ARG
         command :packages, description: 'Manage packages'
         commands_under :packages do
-          command :list,   read_only: true, description: 'List packages',
+          command :list,   description: 'List packages',
             arguments: [{name: :filter, mandatory: false, default: nil, type: Proc}]
           command :send,   description: 'Send a package', transfer_paths: :send,
             arguments: [{name: :package, type: Hash, schema: Schema::Registry.req_body(Schema::Registry::FASPEX, 'packages.post')}],
             action: ->(package:, **) { package_send(package) }
-          command :show,   read_only: true, description: 'Show a package', setup: :setup_package_id, arguments: PACKAGE_ID_ARG,
+          command :show,   description: 'Show a package', setup: :setup_package_id, arguments: PACKAGE_ID_ARG,
             action: ->(package_id:, **) { Result::SingleObject.new(api_v5.read("packages/#{package_id}", query_read_delete)) }
-          command :browse, read_only: true, description: 'Browse package files', setup: :setup_package_id,
+          command :browse, description: 'Browse package files', setup: :setup_package_id,
             arguments: PACKAGE_ID_ARG + [{name: :folder_path, mandatory: false, default: '/'}],
             action: ->(folder_path:, package_id:, **) { browse_folder("packages/#{package_id}/files/#{Api::Faspex.box_type(options.get_option(:box))}", recipient_query(package_id), folder_path: folder_path) }
           command :status, description: 'Wait for package status', setup: :setup_package_id,
@@ -573,7 +575,7 @@ module Aspera
         end
 
         commands_under :shared_folders do
-          command :list,   read_only: true, description: 'List shared folders', action: ->(**) { Result::ObjectList.new(api_v5.read('shared_folders')['shared_folders']) }
+          command :list,   description: 'List shared folders', action: ->(**) { Result::ObjectList.new(api_v5.read('shared_folders')['shared_folders']) }
           command :browse, description: 'Browse a shared folder',
             arguments: [{name: :shared_folder_id, type: :identifier, lookup: :lookup_shared_folder_id},
                         {name: :folder_path, mandatory: false, default: '/'}]
@@ -603,7 +605,7 @@ module Aspera
             commands_under res do
               # List is handled with Faspex 5 pagination (item_list_with_total)
               unless is_singleton
-                list_kwargs = {description: operation_description(:list, entity_noun(entity_path)), read_only: true}
+                list_kwargs = {description: operation_description(:list, entity_noun(entity_path))}
                 list_kwargs[:query_schema] = Schema::Registry.query_params(cfg[:query_component], entity_path) if cfg[:query_component]
                 command :list, **list_kwargs
               end

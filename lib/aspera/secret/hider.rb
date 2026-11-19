@@ -34,6 +34,8 @@ module Aspera
       NON_ENV_SECRETS = (KEY_SECRETS + HTTP_SECRETS).freeze
       # not secrets: `*_file` is the path of a file (e.g. `ca_file`)
       KEY_FALSE_POSITIVES = [/^access_key$/, /^fallback_private_key$/, /public_key$/, /^token_type$/, /_file$/].freeze
+      # boolean values as text: not secrets, even for a name that denotes a secret (e.g. `show_secrets`)
+      BOOLEAN_TEXTS = %w[yes no true false].freeze
       # min length of hidden secrets, use `+` or `{n,}`
       SECRET_LENGTH = '{5,}'
       # min length of a declared secret value to be hidden inside a string: shorter ones are hidden only when they are the whole string,
@@ -60,7 +62,7 @@ module Aspera
         # cred in http dump
         /(?<begin>(?:#{HTTP_SECRETS.join('|')}): )[^\\]+(?<end>\\)/i
       ].freeze
-      private_constant :HIDDEN_PASSWORD, :ASCP_ENV_SECRETS, :KEY_SECRETS, :HTTP_SECRETS, :ALL_SECRETS, :NON_ENV_SECRETS, :KEY_FALSE_POSITIVES, :SECRET_LENGTH, :VALUE_IN_STRING_LENGTH, :REGEX_LOG_REPLACES
+      private_constant :HIDDEN_PASSWORD, :ASCP_ENV_SECRETS, :KEY_SECRETS, :HTTP_SECRETS, :ALL_SECRETS, :NON_ENV_SECRETS, :KEY_FALSE_POSITIVES, :BOOLEAN_TEXTS, :SECRET_LENGTH, :VALUE_IN_STRING_LENGTH, :REGEX_LOG_REPLACES
       attr_accessor :log_secrets
 
       # @return [Proc] new log formatter that hides secrets
@@ -154,6 +156,16 @@ module Aspera
         when Array then obj.each { |i| add_secrets_in(i) }
         when Hash then obj.each { |k, v| secret?(k, v) ? add_secret_values(v) : add_secrets_in(v) }
         end
+      end
+
+      # Declare the secret values of a named value (e.g. an option): the whole value if the name denotes a secret,
+      # else the secret values found by key name in it.
+      # A boolean value given as text is not a secret, e.g. `no` for option `cache_tokens`, else it would be hidden everywhere.
+      # @param name  [String, Symbol] Name, e.g. option name
+      # @param value [Object]         Value
+      def add_named_secrets(name, value)
+        return add_secrets_in(value) unless secret?(name, '')
+        add_secret_values(value) unless BOOLEAN_TEXTS.include?(value)
       end
 
       # Declare additional exact key names whose values are secrets

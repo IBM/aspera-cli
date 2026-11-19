@@ -12,6 +12,7 @@ module Aspera
     #   Transfer::Result::Success  — all sessions completed successfully
     #   Transfer::Result::Error    — at least one session failed
     #   Transfer::Result::Async    — transfer submitted to a daemon; not yet complete
+    #   Transfer::Result::DryRun   — transfer not started (option `dry_run`): final transfer spec
     class Result
       # All sessions completed successfully.
       class Success < Result
@@ -58,6 +59,21 @@ module Aspera
         end
       end
 
+      # Transfer not started, because of option `dry_run`.
+      class DryRun < Result
+        # @return [Hash] final transfer spec, as it would be given to the agent
+        attr_reader :transfer_spec
+
+        def initialize(transfer_spec)
+          super()
+          @transfer_spec = transfer_spec
+        end
+
+        def to_s
+          'dry run'
+        end
+      end
+
       # Factory helpers
       class << self
         def success
@@ -70,6 +86,10 @@ module Aspera
 
         def async(job_id:, status: 'running')
           Async.new(job_id: job_id, status: status)
+        end
+
+        def dry_run(transfer_spec)
+          DryRun.new(transfer_spec)
         end
       end
     end

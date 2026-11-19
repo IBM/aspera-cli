@@ -121,7 +121,7 @@ module Aspera
           mkfile:      {description: 'Create a file (Gen3)', arguments: [{name: :path}, {name: :contents, mandatory: false, default: nil}]},
           rename:      {description: 'Rename a file or folder (Gen3)', arguments: [{name: :folder}, {name: :source}, {name: :destination}]},
           delete:      {description: 'Delete files or folders (Gen3)', arguments: [{name: :paths, multiple: true}]},
-          ls:          {description: 'List files (Gen3)',            arguments: [{name: :path}], aliases: [:browse], read_only: true},
+          ls:          {description: 'List files (Gen3)',            arguments: [{name: :path}], aliases: [:browse]},
           upload:      {description: 'Upload files (Gen3)',          transfer_paths: :send},
           download:    {description: 'Download files (Gen3)',        transfer_paths: :receive},
           cat:         {description: 'Show file contents (Gen3)',    arguments: [{name: :path}]},
@@ -130,7 +130,7 @@ module Aspera
           api_details: {description: 'Show API details'},
           health:      {description: 'Check node health'},
           events:      {description: 'List events', read_only: true},
-          info:        {description: 'Show node info', read_only: true},
+          info:        {description: 'Show node info'},
           slash:       {description: 'Show root info'},
           license:     {description: 'Show license'},
           access_keys: {description: 'Manage access keys'}
@@ -155,12 +155,12 @@ module Aspera
           download:          {description: 'Download files',                 transfer_paths: :receive},
           modify:            {description: 'Modify file',                    arguments: [{name: :path}, {name: :file, type: Hash, schema: 'node:components.schemas.files-id-put-request'}]},
           cat:               {description: 'Show file contents',             arguments: SINGLE_PATH_ARG},
-          show:              {description: 'Show file info',                 arguments: SINGLE_PATH_ARG, read_only: true},
+          show:              {description: 'Show file info',                 arguments: SINGLE_PATH_ARG},
           thumbnail:         {description: 'Show file thumbnail',            arguments: SINGLE_PATH_ARG, read_only: true},
           bearer_token_node: {description: 'Show bearer token for file node', arguments: SINGLE_PATH_ARG},
           node_info:         {description: 'Show node info for file',        arguments: SINGLE_PATH_ARG},
-          ls:                {description: 'List files',                     arguments: SINGLE_PATH_ARG, aliases: [:browse], read_only: true},
-          find:              {description: 'Find files',                     arguments: SINGLE_PATH_ARG + FILTER_ARGS, read_only: true}
+          ls:                {description: 'List files',                     arguments: SINGLE_PATH_ARG, aliases: [:browse]},
+          find:              {description: 'Find files',                     arguments: SINGLE_PATH_ARG + FILTER_ARGS}
         }.freeze
         private_constant :SINGLE_PATH_ARG
 
@@ -454,19 +454,19 @@ module Aspera
               Result::Status.new('Done')
             end
           )
-          command :bandwidth, description: 'Show sync bandwidth',
+          command :bandwidth, read_only: true, description: 'Show sync bandwidth',
             arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
             action: ->(ssync_id:, **) { Result::SingleObject.new(api_node.read("asyncs/#{ssync_id}/bandwidth", query_read_delete(default: {}))) }
-          command :counters, description: 'Show sync counters',
+          command :counters, read_only: true, description: 'Show sync counters',
             arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
             action: ->(ssync_id:, **) { Result::SingleObject.new(api_node.read("asyncs/#{ssync_id}/counters", query_read_delete(default: {}))) }
-          command :files, description: 'List sync files',
+          command :files, read_only: true, description: 'List sync files',
             arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
             action: ->(ssync_id:, **) { Result::SingleObject.new(api_node.read("asyncs/#{ssync_id}/files", query_read_delete(default: {}))) }
-          command :state, description: 'Show sync state',
+          command :state, read_only: true, description: 'Show sync state',
             arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
             action: ->(ssync_id:, **) { Result::SingleObject.new(api_node.read("asyncs/#{ssync_id}/state")) }
-          command :summary, description: 'Show sync summary',
+          command :summary, read_only: true, description: 'Show sync summary',
             arguments: [{name: :ssync_id, type: :identifier, lookup: :ssync_lookup}],
             action: ->(ssync_id:, **) { Result::SingleObject.new(api_node.read("asyncs/#{ssync_id}/summary")) }
         end
@@ -490,7 +490,7 @@ module Aspera
         # transfer
         command :transfer, description: 'Manage transfer operations'
         commands_under :transfer do
-          command :list, read_only: true, description: 'List transfers'
+          command :list, description: 'List transfers'
           command(
             :cancel, description: 'Cancel a transfer',
             arguments: [{name: :transfer_id, type: :identifier}],
@@ -499,7 +499,7 @@ module Aspera
               Result::Status.new('Cancelled')
             end
           )
-          command :show, read_only: true, description: 'Show a transfer',
+          command :show, description: 'Show a transfer',
             arguments: [{name: :transfer_id, type: :identifier}],
             action: ->(transfer_id:, **) { Result::SingleObject.new(api_node.read("ops/transfers/#{transfer_id}")) }
           command(
@@ -561,7 +561,7 @@ module Aspera
               Result::Status.new("#{watch_folder_id} deleted")
             end
           )
-          command :state, description: 'Show watch folder state',
+          command :state, read_only: true, description: 'Show watch folder state',
             arguments: [{name: :watch_folder_id, type: :identifier}],
             action: ->(watch_folder_id:, **) { Result::SingleObject.new(api_node.read("v3/watchfolders/#{watch_folder_id}/state")) }
         end

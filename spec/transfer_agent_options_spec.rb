@@ -18,6 +18,8 @@ module Aspera
         context.options = Parser.new('test', argv)
         # Declared by the config plugin
         context.options.declare(:notify_to, description: 'Notify')
+        # Declared by the runner
+        context.options.declare(:dry_run, description: 'Dry run', allowed: Type::BOOLEAN, default: false)
         context.options.add_option_preset(preset, 'test') unless preset.nil?
         described_class.new(context)
       end
@@ -59,6 +61,24 @@ module Aspera
         it 'overrides deprecated transfer_info' do
           ta = build_transfer_agent(['--transfer-info.url=https://i', '--transfer-info.username=a', '--transfer.url=https://u'])
           expect(ta.transfer_options).to(eq({'url' => 'https://u', 'username' => 'a'}))
+        end
+      end
+
+      describe 'option dry_run' do
+        let(:transfer_spec) { {'remote_host' => 'localhost', 'direction' => 'send', 'remote_password' => '<PASSWORD>', 'paths' => [{'source' => 'file'}]} }
+
+        it 'does not start the transfer: the final transfer spec is the result' do
+          ta = build_transfer_agent(['--dry-run=yes', '--ts.target_rate_kbps=1000', '--to-folder=/folder'])
+          expect(ta).not_to(receive(:agent_instance))
+          result = ta.start(transfer_spec)
+          expect(result).to(be_a(Transfer::Result::DryRun))
+          expect(result.transfer_spec).to(include('remote_host' => 'localhost', 'target_rate_kbps' => 1000, 'destination_root' => '/folder', 'paths' => [{'source' => 'file'}]))
+          expect(Secret::Hider.instance.hidden_copy(result.transfer_spec)['remote_password']).not_to(eq('<PASSWORD>'))
+        end
+
+        it 'refuses a command that changes something before the transfer' do
+          expect { build_transfer_agent(['--dry-run=yes']).assert_no_dry_run }.to(raise_error(Cli::BadArgument, /dry_run is not supported/))
+          expect { build_transfer_agent([]).assert_no_dry_run }.not_to(raise_error)
         end
       end
     end
