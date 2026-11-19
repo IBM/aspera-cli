@@ -132,6 +132,16 @@ module Aspera
           end
         end
 
+        # Reads the file up to its first `ascp` line only
+        # @param path [String] log file, plain or compressed with gzip
+        # @return [Boolean] true if the file contains `ascp` log lines
+        def ascp_log?(path)
+          read_lines(path, Encoding::BINARY) { |line| return true if line.match?(Lines::ASCP_LINE) }
+          false
+        rescue Zlib::Error, Errno::EPIPE
+          false
+        end
+
         private
 
         # `ascp` creates `<name>.log` as a hard link to the current rotated file `<name>.<n>.log`: keep only one of them.
@@ -147,7 +157,15 @@ module Aspera
 
         # @return [Array<String>] files, with the log files of folder added
         def scan_folder(root, folder, files)
-          Dir.children(folder).sort.each do |name|
+          children = begin
+            Dir.children(folder)
+          rescue SystemCallError => e
+            # A sub-folder that cannot be read is skipped, the folder given is not
+            raise if folder.eql?(root)
+            Log.log.warn { "Ignored, cannot read #{folder}: #{e.message}" }
+            []
+          end
+          children.sort.each do |name|
             next if name.start_with?('.')
             path = File.join(folder, name)
             if File.directory?(path)

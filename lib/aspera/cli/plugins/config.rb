@@ -383,6 +383,9 @@ module Aspera
           command :errors,   description: 'Show FASP error codes: of the management port (default), or of sessions (errcode in logs)',
             arguments: [{name: :kind, allowed: %i[management session], mandatory: false, default: :management}]
           ascp_logs_commands :logs
+          commands_under :logs do
+            command :find, description: 'Find the ascp log files of this system: of installed products, and default locations', action: :action_ascp_logs_find
+          end
           command :products, description: 'Manage installed Aspera products'
           commands_under :products do
             command :list, description: 'List installed Aspera products',

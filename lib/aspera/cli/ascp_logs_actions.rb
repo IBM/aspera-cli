@@ -62,6 +62,18 @@ module Aspera
         end
       end
 
+      # Local log files: of installed products, of `ascp` in `PATH`, and default locations
+      def action_ascp_logs_find(**)
+        require_relative '../ascp/log_locations'
+        products = begin
+          Ascp::Installation.instance.installed_products
+        rescue StandardError => e
+          Log.log.debug { "No installed product: #{e.message}" }
+          []
+        end
+        Result::ObjectList.new(Ascp::LogLocations.find(products), fields: %w[path size modified source])
+      end
+
       def action_ascp_logs_summary(paths:, **)
         Result::SingleObject.new(analyze_ascp_logs(paths).summary)
       end

@@ -234,6 +234,11 @@ module Aspera
         ascp_data = file_paths
         ascp_data.merge!(ascp_info_from_log)
         ascp_data.merge!(ascp_info_from_file)
+        # `ascp` is run with `-L-` to read its paths: report where it logs without `-L`
+        if ascp_data['log'].eql?('-')
+          require_relative 'log_locations'
+          ascp_data['log'] = LogLocations.ascp_log_location(path(:ascp), root: ascp_data['root'], conf_file: ascp_data['conf'])
+        end
         return ascp_data
       end
 

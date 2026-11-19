@@ -3391,15 +3391,15 @@ vault overview
 vault show my_label
 wizard @: url=https://console.example.com/path plugin=console override=yes --username=my_username --password=<PASSWORD>
 wizard @: url=https://f5.example.com/path plugin=faspex5 override=yes --username=my_username --private-key=@file:<PRIVATE_KEY_FILE> --client-id=<CLIENT_ID> --client-secret=<CLIENT_SECRET>
-wizard @: url=https://node.example.com/path plugin=node --username=test --password=<PASSWORD>
-wizard @: url=https://orch.example.com/path plugin=orchestrator --username=test --password=<PASSWORD>
-wizard @: url=https://server1.example.com/path plugin=server --username=my_username --password=<PASSWORD>
-wizard @: url=https://shares.example.com/path plugin=shares --username=test --password=<PASSWORD>
+wizard @: url=https://node.example.com/path plugin=node override=yes --username=test --password=<PASSWORD>
+wizard @: url=https://orch.example.com/path plugin=orchestrator override=yes --username=test --password=<PASSWORD>
+wizard @: url=https://server1.example.com/path plugin=server override=yes --username=my_username --password=<PASSWORD>
+wizard @: url=https://shares.example.com/path plugin=shares override=yes --username=test --password=<PASSWORD>
 wizard @: url=https://tst.example.com/path plugin=faspio override=yes --username=my_username --password=<PASSWORD>
-wizard @: url=https://tst.example.com/path plugin=httpgw
-wizard @: url=my_org plugin=aoc --username=my_user_email --private-key=@file:<PRIVATE_KEY_FILE> --use-generic-client=yes
+wizard @: url=https://tst.example.com/path plugin=httpgw override=yes
 wizard @: url=my_org plugin=aoc override=yes --username=my_user_email --private-key=@file:<PRIVATE_KEY_FILE> --use-generic-client=no --interactive=yes
-wizard @: url=my_org plugin=aoc preset=my_preset --username=my_user_email --private-key=@file:<PRIVATE_KEY_FILE>
+wizard @: url=my_org plugin=aoc override=yes --username=my_user_email --private-key=@file:<PRIVATE_KEY_FILE> --use-generic-client=yes
+wizard @: url=my_org plugin=aoc preset=my_aoc_preset override=yes --username=my_user_email --private-key=@file:<PRIVATE_KEY_FILE>
 ```
 
 #### Evaluation order of options
@@ -4992,6 +4992,37 @@ ascli config ascp logs sessions /path/to/folder/aspera-scp-transfer.log
 | `overdrives`        | Sessions with loss due to overdriving of network or storage.    |
 | `records`           | Log lines parsed into records: `samples`, `sessions` or `transfers` (see below). |
 | `fields`            | Description of the fields of records: `samples`, `sessions` or `transfers`. |
+| `find`              | `ascp` log files of this system (no argument): `path`, `size`, `modified`, `source`, most recent first. |
+
+Command `find` lists the local files that contain `ascp` log lines, in the log folders of the installed products (including `<logging><directory>` of their `aspera.conf`), of `ascp` found in `PATH`, of IBM Aspera for Desktop, and in the default locations of `ascp` (below). Give the paths it lists to the other commands:
+
+```shell
+ascli config ascp logs find --fields=path
+ascli config ascp logs sessions ~/Library/Logs/Aspera
+```
+
+`ascp` writes its log in the folder of option `-L`, else in `<logging><directory>` of `aspera.conf`, else in a location that depends on the OS:
+
+| OS            | Default location of the `ascp` log |
+|---------------|------------------------------------|
+| Linux, Unix   | syslog, facility `local2`: `/var/log/messages` or `/var/log/syslog` by default, `/var/log/aspera.log` if syslog is configured to separate the Aspera logs. |
+| macOS         | `~/Library/Logs/Aspera` (`/Library/Logs/Aspera` for `root`). |
+| Windows       | `var\log` of the product if this folder exists, else the folder of `ascp`. |
+
+For the `ascp` used by `ascli`, `ascli config ascp info --fields=log` gives this location (a folder, or `syslog`).
+
+In a folder, the file is `aspera-scp-transfer.<n>.log` (rotated, `n` from `0` to `log_count` of `aspera.conf`), and `aspera-scp-transfer.log` is a hard link to the current one. `ascp` 4 (`ascp4`) writes `ascp4.<n>.log`.
+
+| Application            | Location of the `ascp` log |
+|------------------------|----------------------------|
+| `ascli`, agent `direct` or `transferd` | No `-L`: default location above (e.g. on Linux in syslog). With agent `direct`, `-L` can be set with `ascp_args` (see above). |
+| IBM Aspera Connect     | `-L` set to its log folder (e.g. `~/Library/Logs/Aspera_Connect`). |
+| IBM Aspera for Desktop | Log folder of the application, also used for its own logs and those of `transferd`: `~/Library/Logs/com.ibm.software.aspera.desktop` on macOS, `%APPDATA%\com.ibm.software.aspera.desktop\logs` on Windows, `~/.config/com.ibm.software.aspera.desktop/logs` on Linux. |
+| IBM Aspera Transfer Daemon | `-L` set to `fasp_runtime.log.dir` of its configuration (or `localLog` of the transfer), else the default location above. |
+| Server side of a transfer | On the server, configured by its `aspera.conf`, or by option `-R` of the client: see [`server logs`](#analyze-ascp-logs-of-the-server). |
+
+On Linux, the syslog files are often readable only by `root`, and a container may have no syslog daemon (the log of `ascp` is then lost): use `-L`, or read the system journal, e.g. `journalctl -t ascp | ascli config ascp logs summary -`.
+For the other logs of Aspera products, see the IBM support page [Where are IBM Aspera logs located](https://www.ibm.com/support/pages/where-are-ibm-aspera-desktop-client-or-ibm-aspera-server-logs-located).
 
 Log files compressed with gzip (e.g. rotations `aspera.log-20261101.gz`, `aspera-scp-transfer.1.log.gz`) are read directly, in a folder or given as argument; gzip is detected from the first bytes of the file, not from its name. Argument `-` reads the logs from the standard input, plain or compressed with gzip:
 
