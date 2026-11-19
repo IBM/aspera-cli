@@ -1528,10 +1528,26 @@ nd_service_clean:
     - service
     - delete
     - service1
-  post: sleep TEMPORIZE_CREATE
-nd_service_create:
+nd_service_clean_wait:
+  description: The service is deleted asynchronously.
+  tags:
+    - no_doc
   depends_on:
     - nd_service_clean
+  args:
+    - --preset=node_ak_adm
+    - node
+    - service
+    - list
+  harness:
+    poll:
+      interval: 5
+      max: 60
+      until: "!contains([].id,'service1')"
+      show: last
+nd_service_create:
+  depends_on:
+    - nd_service_clean_wait
   args:
     - --preset=node_ak_adm
     - node
@@ -1546,7 +1562,12 @@ nd_service_list:
     - node
     - service
     - list
-  post: sleep TEMPORIZE_CREATE
+  harness:
+    poll:
+      interval: 5
+      max: 60
+      until: "contains([].id,'service1')"
+      show: last
 nd_service_delete:
   depends_on:
     - nd_service_list
@@ -1564,24 +1585,12 @@ nd_service_list_after_delete:
     - node
     - service
     - list
-  post: sleep TEMPORIZE_CREATE
-nd_service_list_after_delete_wait:
-  depends_on:
-    - nd_service_list_after_delete
-  args:
-    - --preset=node_ak_adm
-    - node
-    - service
-    - list
-  post: sleep TEMPORIZE_CREATE
-nd_service_list_after_delete_done:
-  depends_on:
-    - nd_service_list_after_delete_wait
-  args:
-    - --preset=node_ak_adm
-    - node
-    - service
-    - list
+  harness:
+    poll:
+      interval: 5
+      max: 60
+      until: "!contains([].id,'service1')"
+      show: last
 nd_xfer_list:
   args:
     - node
@@ -1645,7 +1654,12 @@ nd_xfer_active_id:
     - list
     - --query=@json:{"active_only":true,"count":1}
     - --fields=id
-    - --poll=@json:{"interval":5,"max":60,"until":"@","show":"last"}
+  harness:
+    poll:
+      interval: 5
+      max: 60
+      until: "@"
+      show: last
 nd_xfer_show:
   depends_on:
     - nd_xfer_active_id
@@ -1705,15 +1719,8 @@ node_emulator_start:
     - emulator
     - '@json:{"url":"http://localhost:12348","username":"sim","password":"$(secret :emulator)","password_min_bits":0,"docroot":"$(TMP)"}'
   post: |
-    require 'socket'
-    require 'timeout'
     # transferd is started before the web server listens
-    Timeout.timeout(30) do
-      TCPSocket.new('localhost', 12348).close
-    rescue Errno::ECONNREFUSED
-      sleep(1)
-      retry
-    end
+    wait_listening(12348)
 node_emulator_bad_auth:
   description: The emulator rejects wrong credentials.
   tags:
@@ -1975,7 +1982,6 @@ nd_ak_mkdir_cleanup:
     - delete
     - /tst_nd_ak
     - --secret=@preset:awa.ak_secret
-  post: sleep TEMPORIZE_CREATE
 nd_ak_mkdir:
   depends_on:
     - nd_ak_mkdir_cleanup
@@ -1988,7 +1994,6 @@ nd_ak_mkdir:
     - mkdir
     - /tst_nd_ak
     - --secret=@preset:awa.ak_secret
-  post: sleep TEMPORIZE_CREATE
 nd_ak_mkfile_cleanup:
   tags:
     - cleanup
@@ -2002,7 +2007,6 @@ nd_ak_mkfile_cleanup:
     - delete
     - /mkfile.txt
     - --secret=@preset:awa.ak_secret
-  post: sleep TEMPORIZE_CREATE
 nd_ak_mkfile:
   args:
     - --preset=node_ak_adm
@@ -2014,7 +2018,6 @@ nd_ak_mkfile:
     - /mkfile.txt
     - hello world
     - --secret=@preset:awa.ak_secret
-  post: sleep TEMPORIZE_CREATE
 nd_ak_mklink_cleanup:
   depends_on:
     - nd_ak_mkfile_cleanup
@@ -2030,7 +2033,6 @@ nd_ak_mklink_cleanup:
     - delete
     - /mklink.txt
     - --secret=@preset:awa.ak_secret
-  post: sleep TEMPORIZE_CREATE
 nd_ak_mklink:
   args:
     - --preset=node_ak_adm
@@ -2042,7 +2044,6 @@ nd_ak_mklink:
     - /mklink.txt
     - --query=@json:{"target":"/mkfile.txt","target_node_id":"123"}
     - --secret=@preset:awa.ak_secret
-  post: sleep TEMPORIZE_CREATE
 nd_ak_mvdir_browse:
   tags:
     - no_doc
@@ -2174,7 +2175,6 @@ nd_ak_bearer_reset:
     - access_key
     - delete
     - "@preset:ak_creds.username"
-  post: sleep TEMPORIZE_CREATE
 nd_ak_bearer_create:
   depends_on:
     - nd_ak_bearer_reset
@@ -2186,7 +2186,6 @@ nd_ak_bearer_create:
     - access_key
     - create
     - '@json:@extend:{"id":"@preset:ak_creds.username@","secret":"@preset:ak_creds.password@","storage":{"type":"local","path":"/"}}'
-  post: sleep TEMPORIZE_CREATE
 nd_ak_bearer_show:
   depends_on:
     - nd_ak_bearer_create
@@ -2650,7 +2649,6 @@ awa_testsrc_cleanup:
     - files
     - delete
     - /test-src
-  post: sleep TEMPORIZE_CREATE
 aoc_some_folder_cleanup:
   tags:
     - cleanup
@@ -2669,10 +2667,9 @@ aoc_testdst_cleanup:
     - files
     - delete
     - /test-dst
-  post: sleep TEMPORIZE_FILE
 aoc_testsrc_create:
   depends_on:
-    - awa_testsrc_cleanup
+    - aoc_testdst_check
   template: awa_user_suite
   args:
     - files
@@ -2688,9 +2685,8 @@ aoc_some_folder_create:
     - files
     - mkdir
     - /some_folder
-  post: sleep TEMPORIZE_CREATE
 aoc_testdst_check:
-  $comment: no-cache ensure we read the folder content on storage, not redis
+  $comment: no-cache ensure we read the folder content on storage, not redis; deletions are asynchronous
   depends_on:
     - aoc_some_folder_create
     - awa_testsrc_cleanup
@@ -2703,6 +2699,12 @@ aoc_testdst_check:
     - browse
     - /
     - --node-api.cache=false
+  harness:
+    poll:
+      interval: 5
+      max: 60
+      until: "contains([].name,'some_folder') && !contains([].name,'test-src') && !contains([].name,'test-dst')"
+      show: last
 aoc_somefolder_mount:
   depends_on:
     - aoc_testdst_check
@@ -2744,6 +2746,7 @@ aoc_testsrc_upload_utf:
 aoc_files_transfer:
   depends_on:
     - aoc_testsrc_upload_utf
+    - aoc_rename_testdst
   template: awa_user_suite
   args:
     - files
@@ -2755,6 +2758,7 @@ aoc_files_transfer:
 aoc_files_upload_utf:
   depends_on:
     - aoc_testsrc_upload_utf
+    - aoc_rename_testdst
   tags:
     - no_doc
   template: awa_user_suite
@@ -2953,7 +2957,6 @@ aoc_testfolder_cleanup:
     - files
     - delete
     - "@preset:awa.test_folder"
-  post: sleep TEMPORIZE_CREATE
 aoc_files_mkdir:
   tags:
     - no_doc
@@ -2990,7 +2993,13 @@ aoc_file_wait_video_preview:
     - thumbnail
     - "@extend:@preset:awa.test_folder@/video_file.mpg"
     - --node-api.cache=no
-    - --poll=@json:{"interval":5,"max":60,"until":"@","show":"last","errors":"retry"}
+  harness:
+    poll:
+      interval: 5
+      max: 60
+      until: "@"
+      show: last
+      errors: retry
 aoc_files_upload_pair:
   tags:
     - no_doc
@@ -3251,7 +3260,12 @@ aoc_pack_recv_id:
     - --fields=id
     - --out.level=data
     - --query=@json:{"max":1,"archived":false,"has_content":true,"received":true,"completed":true}
-    - --poll=@json:{"interval":5,"max":60,"until":"@","show":"last"}
+  harness:
+    poll:
+      interval: 5
+      max: 60
+      until: "@"
+      show: last
 aoc_pack_recv:
   depends_on:
     - aoc_pack_recv_id
@@ -3619,7 +3633,6 @@ aoc_adm_nd_mkdir_prep:
     - delete
     - /folder1
     - --node-api.cache=false
-  post: sleep 4
 aoc_adm_nd_mkdir:
   depends_on:
     - aoc_adm_nd_mkdir_prep
@@ -3633,7 +3646,6 @@ aoc_adm_nd_mkdir:
     - --secret=@preset:awa.ak_secret
     - mkdir
     - /folder1
-  post: sleep TEMPORIZE_CREATE
 aoc_adm_nd_browse_no_cache:
   tags:
     - no_doc
@@ -3650,6 +3662,12 @@ aoc_adm_nd_browse_no_cache:
     - browse
     - /
     - --node-api.cache=false
+  harness:
+    poll:
+      interval: 5
+      max: 60
+      until: "contains([].name,'folder1')"
+      show: last
 aoc_adm_nd_rmdir:
   depends_on:
     - aoc_adm_nd_mkdir
@@ -3714,7 +3732,12 @@ aoc_adm_analytics_xfer_id:
     - organization
     - --query=@json:{"status":"completed","direction":"send","limit":1}
     - --fields=uuid
-    - --poll=@json:{"interval":5,"max":60,"until":"@","show":"last"}
+  harness:
+    poll:
+      interval: 5
+      max: 60
+      until: "@"
+      show: last
 aoc_ana_files:
   depends_on:
     - aoc_adm_analytics_xfer_id
@@ -4680,7 +4703,12 @@ orch_workstep_id:
     - $(t.saved_output :orch_wf_start_sleep)
     - --select.status=In Progress
     - --fields=id
-    - --poll=@json:{"interval":5,"max":60,"until":"@","show":"last"}
+  harness:
+    poll:
+      interval: 5
+      max: 60
+      until: "@"
+      show: last
 orch_workstep_status:
   depends_on:
     - orch_workstep_id
@@ -4726,7 +4754,6 @@ ats_ak_delete_prep:
     - access_key
     - delete
     - ak2ibmcloud
-  post: sleep TEMPORIZE_CREATE
 ats_ak_create_ibm:
   depends_on:
     - ats_ak_delete_prep
@@ -4737,7 +4764,6 @@ ats_ak_create_ibm:
     - --cloud=softlayer
     - --region=@preset:icos.region
     - '@json:@extend:{"id":"ak2ibmcloud","secret":"@preset:misc.secret_here@","name":"my test key","storage":{"type":"ibm-s3","bucket":"@preset:icos.bucket@","credentials":{"access_key_id":"@preset:icos.access_key@","secret_access_key":"@preset:icos.secret_key@"},"path":"/"}}'
-  post: sleep TEMPORIZE_CREATE
 ats_ak_show_ibm:
   depends_on:
     - ats_ak_create_ibm
@@ -4746,9 +4772,16 @@ ats_ak_show_ibm:
     - access_key
     - show
     - ak2ibmcloud
+  harness:
+    poll:
+      interval: 5
+      max: 60
+      until: "@"
+      show: last
+      errors: retry
 ats_ak_entitlement_ibm:
   depends_on:
-    - ats_ak_create_ibm
+    - ats_ak_show_ibm
   args:
     - ats
     - access_key
@@ -5001,10 +5034,9 @@ sync_check:
     - ssync
     - show
     - "%name:my_node_sync"
-  post: sleep 30
 sync_bandwidth:
   depends_on:
-    - sync_check
+    - sync_summary
   args:
     - node
     - ssync
@@ -5012,7 +5044,7 @@ sync_bandwidth:
     - "%name:my_node_sync"
 sync_counters:
   depends_on:
-    - sync_check
+    - sync_summary
   args:
     - node
     - ssync
@@ -5020,7 +5052,7 @@ sync_counters:
     - "%name:my_node_sync"
 sync_files:
   depends_on:
-    - sync_check
+    - sync_summary
   args:
     - node
     - ssync
@@ -5028,7 +5060,7 @@ sync_files:
     - "%name:my_node_sync"
 sync_state:
   depends_on:
-    - sync_check
+    - sync_summary
   args:
     - node
     - ssync
@@ -5036,7 +5068,7 @@ sync_state:
     - "%name:my_node_sync"
 sync_stop:
   depends_on:
-    - sync_check
+    - sync_summary
   args:
     - node
     - ssync
@@ -5050,6 +5082,13 @@ sync_summary:
     - ssync
     - summary
     - "%name:my_node_sync"
+  harness:
+    poll:
+      interval: 5
+      max: 60
+      until: "status=='stopped' && cumulative_syncd_files > `0`"
+      show: last
+      errors: retry
 sync_other_delete:
   depends_on:
     - sync_bandwidth
@@ -7463,7 +7502,12 @@ f5_pack_id:
     - --query.status=completed
     - --query.max=1
     - --fields=id
-    - --poll=@json:{"interval":5,"max":60,"until":"@","show":"last"}
+  harness:
+    poll:
+      interval: 5
+      max: 60
+      until: "@"
+      show: last
 f5_pack_show:
   depends_on:
     - f5_pack_id
@@ -7581,7 +7625,12 @@ f5_pack_shbox_list_id:
     - --fields=id
     - --format=csv
     - --out.level=data
-    - --poll=@json:{"interval":5,"max":60,"until":"@","show":"last"}
+  harness:
+    poll:
+      interval: 5
+      max: 60
+      until: "@"
+      show: last
 f5_pack_shbox_show:
   depends_on:
     - f5_pack_shbox_list_id
@@ -7727,10 +7776,9 @@ f5_pack_wrkgrp:
     - send
     - '@json:@extend:{"title":"test title","recipients":["@preset:f5_misc.workgroup@"]}'
     - $(PATH_TST_ASC_LCL)
-  post: sleep TEMPORIZE_CREATE
 f5_pack_wrkgrp_list:
   depends_on:
-    - f5_pack_wrkgrp
+    - f5_workgroup_pack_id
   args:
     - faspex5
     - packages
@@ -7751,7 +7799,12 @@ f5_workgroup_pack_id:
     - --group-type=workgroups
     - --query=@json:{"status":"completed","limit":1,"max":1}
     - --fields=id
-    - --poll=@json:{"interval":5,"max":60,"until":"@","show":"last"}
+  harness:
+    poll:
+      interval: 5
+      max: 60
+      until: "@"
+      show: last
 f5_pack_wrkgrp_show:
   depends_on:
     - f5_workgroup_pack_id
@@ -7832,7 +7885,6 @@ f5_dist_create:
     - distribution_lists
     - create
     - '@json:{"name":"test4","contacts":[{"name":"john@example.com"}]}'
-  post: sleep TEMPORIZE_CREATE
 f5_dist_list:
   depends_on:
     - f5_dist_create
@@ -8046,7 +8098,6 @@ f5_adm_sh_invite:
     - "@extend:%name:@preset:f5_misc.shared_box_name@"
     - "@:"
     - email_address=johnny@example.com
-  post: sleep 10
 f5_adm_shbox_member_delete:
   $comment: TODO check if fail is normal
   tags:
@@ -8361,10 +8412,10 @@ f5_postproc_test:
     - '@json:@extend:{"title":"test_webhook_ascli","recipients":["@preset:f5_misc.shared_box_name@"]}'
     - faux:///test1?1m
   post: |
+    wait_listening(8553, tls: true)
     Aspera::Rest::Parameters.instance.session_cb = ->(s){s.verify_mode = OpenSSL::SSL::VERIFY_NONE}
     Aspera::Rest::Client.new(base_url: 'https://localhost:8553/asclihook').create('post_proc_test.sh', {faspex_pkg_directory: '/package test - 61ae5292-d8ef-496e-8b15-8cdc0379fc4a.aspera-package/PKG - package test',faspex_pkg_name:'Test files',faspex_pkg_note:'',faspex_pkg_id:506,faspex_pkg_delivery_id:506,faspex_recipient_list:'aspera-recipient-test@ibm.com',faspex_recipient_count:1,faspex_sender_id:30,faspex_sender_name:'aspera-sender-test@ibm.com',faspex_sender_email:'aspera-sender-test@ibm.com',faspex_pkg_total_bytes:4633,faspex_pkg_total_files:1,faspex_pkg_uuid:'61ae5299-d8ea-496e-8b15-8cdc0379fc4a',faspex_metadata_fields: '{\"_pkg_uuid\":\"61ae5292-d8ef-496e-8b15-8cdc0379fc4a\",\"_pkg_name\":\"Test files\",\"_created_utc\":\"2022-1209T17:47:03.545Z\"}',faspex_recipient_0:'aspera-sender-test@ibm.com'}, exception:false, ret: :resp)
     Aspera::Rest::Client.new(base_url: 'https://localhost:8553').create('wrong', {}, exception:false, ret: :resp)
-    sleep 20
     t.stop_process :f5_postproc_pid
 f5_postproc_test_with_key:
   tags:
@@ -8375,7 +8426,7 @@ f5_postproc_test_with_key:
     - postprocessing
     - '@json:{"url":"https://localhost:8554/asclihook","script_folder":"$(PATH_SCRIPTS)","key":"$(TMP / "key.pem")"}'
   post: |
-    sleep 5
+    wait_listening(8554, tls: true)
     t.stop_process :f5_postproc_test_with_key
 f5_postproc_test_with_key_cert:
   tags:
@@ -8386,7 +8437,7 @@ f5_postproc_test_with_key_cert:
     - postprocessing
     - '@json:{"url":"https://localhost:8555/asclihook","script_folder":"$(PATH_SCRIPTS)","cert":"$(TMP / "cert.pem")","key":"$(TMP / "key.pem")"}'
   post: |
-    sleep 5
+    wait_listening(8555, tls: true)
     t.stop_process :f5_postproc_test_with_key_cert
 f5_cert_test:
   tags:
@@ -8397,7 +8448,7 @@ f5_cert_test:
     - postprocessing
     - '@json:{"url":"http://localhost:18080/domain","script_folder":"$(PATH_SCRIPTS)"}'
   post: |
-    sleep 2
+    wait_listening(18080)
     t.stop_process :f5_cert_test
 f5_postproc_cert_pem:
   tags:
@@ -8408,7 +8459,7 @@ f5_postproc_cert_pem:
     - postprocessing
     - '@json:{"url":"https://localhost:18443/domain","script_folder":"$(PATH_SCRIPTS)"}'
   post: |
-    sleep 2
+    wait_listening(18443, tls: true)
     t.stop_process :f5_postproc_cert_pem
 f5_postproc_cert_pkcs12:
   tags:
@@ -8420,7 +8471,7 @@ f5_postproc_cert_pkcs12:
     - postprocessing
     - '@json:{"url":"https://localhost:18443/domain","cert":"$(TMP / "certificate.pem")","chain":"$(TMP / "certificate.pem")","key":"$(TMP / "private_key.pem")","script_folder":"$(PATH_SCRIPTS)"}'
   post: |
-    sleep 2
+    wait_listening(18443, tls: true)
     t.stop_process :f5_postproc_cert_pkcs12
 f5_postproc_cert_pkcs12_key:
   tags:
@@ -8432,7 +8483,7 @@ f5_postproc_cert_pkcs12_key:
     - postprocessing
     - '@json:{"url":"https://localhost:18443/domain","cert":"$(TMP / "certificate.p12")","key":"$(secret :pkcs12)","script_folder":"$(PATH_SCRIPTS)"}'
   post: |
-    sleep 2
+    wait_listening(18443, tls: true)
     t.stop_process :f5_postproc_cert_pkcs12_key
 httpgw_nagios:
   args:

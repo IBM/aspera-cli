@@ -62,7 +62,8 @@ PATH_FILE_PAIR_LIST2 = TMP / 'file_pair_list.txt'
 PATH_HOT_FOLDER = TMP / 'source_hot'
 PATH_SCRIPTS = TST
 TEMPORIZE_CREATE = 10
-TEMPORIZE_FILE = 30
+# Maximum time, in seconds, for a `background` test to start (write its pid file)
+BACKGROUND_START_TIMEOUT = 30
 # ------------------
 
 # Auto-browser configuration for tests: default is auto (set TEST_INTERACTIVE=manual for user interaction)
@@ -490,7 +491,7 @@ namespace TEST_CASE_NS do
       started = clock_now
       log.info("--#{percent_completed}%-------------------------------------------------")
       log.info("[RUN]  #{name} [#{info[:tags].join(' ')}]")
-      log.info("[EXEC] #{info[:args]&.join(' ')}")
+      log.info("[EXEC] #{(info[:args] + TestEnv.harness_args(info[:harness])).join(' ')}")
       # The options of the auto browser are selected by each test, see `select_browser`
       ENV['ASCLI_UI'] = browser_ui_option
       exec_binding = binding
@@ -522,7 +523,7 @@ namespace TEST_CASE_NS do
       else
         PATH_CONF_FILE.write(TestEnv.configuration.to_yaml) unless PATH_CONF_FILE.exist?
       end
-      command_line += info[:args].map { |i| eval_macro(i.to_s, exec_binding) }
+      command_line += (info[:args] + TestEnv.harness_args(info[:harness])).map { |i| eval_macro(i.to_s, exec_binding) }
       command_line += ["--out.file=#{t.out_file}"] if tags[:save_output]
       command_line += ['--format=csv', '--out.level=data'] if tags[:save_output] && !command_line.find { |i| i.start_with?('--format=', '--out.format=') }
       run_options = {}
@@ -558,17 +559,21 @@ namespace TEST_CASE_NS do
       # Loop for `break` (a test that waits for a value uses option `poll`)
       loop do
         if tags[:background]
-          run(*(RUBY_WRAPPER + command_line), env: info[:env], **run_options)
+          background_pid = run(*(RUBY_WRAPPER + command_line), env: info[:env], **run_options)
         elsif tags[:tty]
           # The text displayed on the terminal is saved in a `.tty` file, e.g. to check that a secret was not displayed
           run_test_pty(RUBY_WRAPPER + command_line, tty_lines.dup, test_timeout(info[:tags]), t.out_file.sub_ext('.tty'), env: info[:env], evaluate: tty_evaluate)
         else
           run_test_command(RUBY_WRAPPER + command_line, test_timeout(info[:tags]), env: info[:env], **run_options)
         end
-        # Give time to start
+        # Wait for the process to write its pid file (it is started), or to end (it failed)
         if tags[:background]
-          sleep(1)
-          raise 'Process not started' unless t.pid_file.exist?
+          Timeout.timeout(BACKGROUND_START_TIMEOUT, RuntimeError, 'Process not started') do
+            until t.pid_file.exist?
+              raise 'Process ended before start' if Process.waitpid(background_pid, Process::WNOHANG)
+              sleep(0.1)
+            end
+          end
         end
         if info[:post]
           Aspera.assert_type(info[:post], String)

@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require 'set'
+require 'json'
 require_relative '../../lib/aspera/log'
 require_relative '../../lib/aspera/assert'
 require_relative '../../lib/aspera/uri_reader'
@@ -17,7 +18,7 @@ module TestEnv
   # The configuration typically includes server URLs, credentials, and other test parameters
   ENV_VAR_REF_CONF = 'ASPERA_CLI_TEST_CONF_URL'
   # Allowed keys in test definitions (regular tests and template members, without `template`): See tests/README.md for detailed documentation
-  ALLOWED_KEYS = %i{command args tags depends_on priority description pre post env $comment stdin expect vars}.freeze
+  ALLOWED_KEYS = %i{command args harness tags depends_on priority description pre post env $comment stdin expect vars}.freeze
   # Allowed keys in template instance definitions (entries with `instantiate`)
   INSTANCE_KEYS = %i{instantiate args tags vars priority description $comment}.freeze
   # Tags of tests that will (or might) fail
@@ -172,6 +173,7 @@ module TestEnv
     properties[:tags] ||= []
     properties[:tags].map!(&:to_sym)
     properties[:tags].push(:ats) if properties[:args].include?('ats') && !properties[:tags].include?(:ats)
+    raise "harness must be a Hash in #{name}" unless properties[:harness].nil? || properties[:harness].is_a?(Hash)
     raise "Priority must be a positive integer in #{name}: #{properties[:priority].inspect}" unless properties[:priority].nil? || (properties[:priority].is_a?(Integer) && properties[:priority].positive?)
     raise "Tags `tty` and `background` cannot be combined in #{name}" if properties[:tags].include?(:tty) && properties[:tags].include?(:background)
     if properties[:args].include?('wizard')
@@ -285,5 +287,16 @@ module TestEnv
     tests.keys.sort_by(&sort_key).each { |name| visit.call(name) }
     ordered
   end
-  module_function :configuration, :conf_data, :normalize_test, :instantiate, :descriptions, :order
+
+  # Command-line options of `harness`: added to the command, not to the manual.
+  # A Hash or Array value is given as `@json:`, other values as is.
+  #
+  # @param harness [Hash, nil] Option name => value, e.g. `{poll: {interval: 5}}`
+  # @return [Array<String>] Options, e.g. `['--poll=@json:{"interval":5}']`
+  def harness_args(harness)
+    (harness || {}).map do |name, value|
+      "--#{name}=#{value.is_a?(Hash) || value.is_a?(Array) ? "@json:#{JSON.generate(value)}" : value}"
+    end
+  end
+  module_function :configuration, :conf_data, :normalize_test, :instantiate, :descriptions, :order, :harness_args
 end

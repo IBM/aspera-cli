@@ -21,6 +21,7 @@ datapoint
 delegators
 diffie
 eaddrinuse
+eaddrnotavail
 Elapsedusec
 ELOOP
 endgroup

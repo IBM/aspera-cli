@@ -20,6 +20,32 @@ require 'openssl'
 require 'shellwords'
 require 'base64'
 require 'securerandom'
+require 'socket'
+require 'timeout'
+
+# Wait until a server accepts connections, e.g. one started by a `background` test (instead of a fixed `sleep`).
+# Called in `post` of the test that starts the server, or in `pre`/`post` of a test that uses it.
+# @param port    [Integer] TCP port
+# @param host    [String]  Host name or address
+# @param tls     [Boolean] `true` for a HTTPS server: complete the TLS handshake (else the server logs an error)
+# @param timeout [Integer] Maximum wait, in seconds
+# @raise [Timeout::Error] If the server does not accept connections in time
+def wait_listening(port, host: 'localhost', tls: false, timeout: 30)
+  Timeout.timeout(timeout) do
+    socket = TCPSocket.new(host, port)
+    if tls
+      context = OpenSSL::SSL::SSLContext.new
+      # Test servers use self-signed certificates
+      context.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      socket = OpenSSL::SSL::SSLSocket.new(socket, context).tap { |s| s.hostname = host }
+      socket.connect
+    end
+    socket.close
+  rescue Errno::ECONNREFUSED, Errno::EADDRNOTAVAIL
+    sleep(0.2)
+    retry
+  end
+end
 
 # Generate a secret, unless it already exists. No secret value is stored in checked-in files: the value is kept
 # in a file of the tmp folder, so that it is the same in all test runs (e.g. a vault created by a test is opened by a later run).

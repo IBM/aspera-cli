@@ -151,6 +151,7 @@ The following keys are supported in each test entry:
 | `priority`    | `Integer`| Run earlier: 1 is the highest (see below).       |
 | `command`     | `String` | Executable name (default: `ascli`).              |
 | `args`        | `Array`  | Command-line arguments.                          |
+| `harness`     | `Hash`   | Options for the test only, not in the manual.    |
 | `env`         | `Hash`   | Environment variables for this test.             |
 | `vars`        | `Hash`   | Ruby variables for `$(...)`, `pre` and `post`.   |
 | `pre`         | `String` | Ruby code to run before the test.                |
@@ -159,6 +160,24 @@ The following keys are supported in each test entry:
 | `expect`      | `String` | Expected stdout (or stderr for must_fail).       |
 | `template`    | `String` | Member of this template (see below).             |
 | `instantiate` | `String` | Instance of this template (see below).           |
+
+The commands of the tests (`args`) are shown as examples in the manual, except for tests tagged `no_doc`.
+Options needed only by the test procedure go in `harness`: they are added after `args` when the test runs, and are not shown in the manual.
+Each key gives an option `--<key>=<value>`: a `Hash` or `Array` value is given as `@json:`, other values as is.
+For example, a test that waits for an item created by a previous test:
+
+```yaml
+  args:
+    - node
+    - service
+    - list
+  harness:
+    poll:
+      interval: 5
+      max: 60
+      until: "contains([].id,'service1')"
+      show: last
+```
 
 Tests are executed and listed in this order:
 
@@ -185,9 +204,13 @@ A grouping tag shall be used by at least 2 tests (the tests of the plugin with t
 | `tty`         | Run the command in a pseudo-terminal (see below).                 |
 | `interactive` | A human would have to act (see below).                            |
 
-A test that waits for a value (e.g. a package received) repeats its command with option `poll`, e.g. `--poll=@json:{"interval":5,"max":60,"until":"@","show":"last"}`.
+A test that waits for a value (e.g. a package received, a folder created) repeats its command with option `poll` in `harness` (see above), instead of a `sleep` in `post` of the previous test.
+When the previous test is a deletion done asynchronously by the server (e.g. `node service delete`) and the next one creates the same item again, a read test tagged `no_doc` polls between them until the item is gone (e.g. `nd_service_clean_wait`).
+
+A `background` test is started when its process has written its PID file (at most `BACKGROUND_START_TIMEOUT` seconds).
 
 In `pre`/`post` Ruby code, `t.saved_output(name)` reads output saved by a test with `save_output`; `t.stop_process(name)` stops a process started with `background`.
+`wait_listening(port, tls: false)` waits until a server accepts connections (`tls: true` for an HTTPS server: completes the TLS handshake), e.g. in `post` of a `background` test that starts a server, or before the first request to it.
 
 Values inside `$(...)` in YAML strings are evaluated as Ruby expressions.
 Constants and helpers are defined in `rakelib/test.rake` and are available in `pre`/`post` and in `$(...)`.
