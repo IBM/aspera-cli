@@ -220,6 +220,20 @@ RSpec.describe(Aspera::Cli::PresetManager) do
     end
   end
 
+  describe '#defaults_set' do
+    let(:pm) { manager("config: {version: '1'}\ndefault: {aoc: old}\nold: {url: a}\n") }
+
+    it 'refuses to replace the default of a plugin given as a Symbol, unless override' do
+      expect { pm.defaults_set(:aoc, 'new', {'url' => 'b'}, true, false) }.to(raise_error(Aspera::Cli::Error, /default configuration already exists/))
+      pm.defaults_set(:aoc, 'new', {'url' => 'b'}, true, true)
+      expect(pm.by_name('default.aoc')).to(eq('new'))
+    end
+
+    it 'refuses to replace an existing preset, unless override' do
+      expect { pm.defaults_set(:node, 'old', {'url' => 'b'}, false, false) }.to(raise_error(Aspera::Cli::Error, /Preset already exists/))
+    end
+  end
+
   describe '.deep_merge!' do
     it 'merges nested hashes, source wins on scalars' do
       dst = {'a' => {'b' => 1, 'c' => 2}, 'd' => 1}

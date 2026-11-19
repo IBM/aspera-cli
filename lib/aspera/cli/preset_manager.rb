@@ -27,9 +27,13 @@ module Aspera
     class PresetManager
       # Reserved keys in the YAML config file
       module Key
+        # Section of the config file itself (holds its version)
         CONFIG      = 'config'
+        # Key of the version of the config file, in section CONFIG
         VERSION     = 'version'
+        # Section that maps a plugin name to its default preset name
         DEFAULTS    = 'default'
+        # Name of the global default preset, when none is declared
         GLOBAL      = 'global_common_defaults'
         # Prefix for comment/meta keys ignored during preset parsing (e.g. _comment)
         META_PREFIX = '_'
@@ -37,15 +41,18 @@ module Aspera
         COMMENT     = "#{META_PREFIX}comment".freeze
       end
 
+      # Preset name given on command line to designate the global default preset
       GLOBAL_DEFAULT_KEYWORD = 'GLOBAL'
+      # Plugin name under which the global default preset is declared in section DEFAULTS
       CONF_GLOBAL_SYM        = :config
       # Separator for dot-notation digging into presets
       PRESET_DIG_SEPARATOR = '.'
 
       private_constant :PRESET_DIG_SEPARATOR
 
-      # @param config_file [String]       absolute path to the YAML config file
-      # @param use_plugin_defaults [Boolean] if false, skip default preset lookup
+      # Load the config file (created in memory if it does not exist).
+      # @param config_file         [String]  Absolute path to the YAML config file
+      # @param use_plugin_defaults [Boolean] `false`: plugin default presets are not applied (see #plugin_default_name)
       def initialize(config_file:, use_plugin_defaults: true)
         @config_file         = config_file
         @use_plugin_defaults = use_plugin_defaults
@@ -61,15 +68,19 @@ module Aspera
       # File I/O
       # ------------------------------------------------------------------
 
-      # @return [String] SHA256 of current in-memory presets
+      # Checksum of the presets in memory, compared to the one of the file to save only when changed.
+      # @return [String] SHA256 hex digest of the in-memory presets
       def checksum
         Digest::SHA256.hexdigest(JSON.generate(@config_presets))
       end
 
       # Read and validate the YAML config file.
-      # Sets @config_presets and @checksum_on_disk.
+      # Sets @config_presets and @checksum_on_disk, and declares the secrets found in presets to the secret hider.
       # A file that cannot be read (YAML error, duplicate keys, access) is left untouched: it shall be fixed.
       # A file with an unexpected structure is renamed for manual conversion, and a new one is created next time.
+      # @return [void]
+      # @raise [Psych::SyntaxError] YAML syntax error in config file
+      # @raise [Cli::Error] Config file cannot be read, or has an unexpected structure
       def read_config_file
         Log.log.debug { "config file is: #{@config_file}".red }
         if File.exist?(@config_file)
@@ -123,7 +134,10 @@ module Aspera
       # Preset read/write helpers
       # ------------------------------------------------------------------
 
-      # @return [String, nil] name of the default preset for a plugin, or nil
+      # Name of the default preset declared for a plugin in the `default` section.
+      # @param plugin_name_sym [Symbol] Plugin name (e.g. `:aoc`), or CONF_GLOBAL_SYM for the global default
+      # @return [String, nil] Name of the default preset, or `nil` if none, or if plugin defaults are disabled
+      # @raise [Cli::Error] The default preset is declared but does not exist, or is not a Hash
       def plugin_default_name(plugin_name_sym)
         Aspera.assert(!@config_presets.nil?, 'config_presets shall be defined')
         return unless @use_plugin_defaults
@@ -146,8 +160,11 @@ module Aspera
 
       # Resolve and return a deep-cloned, extended copy of a named preset.
       # Supports dot-notation (e.g. "outer.inner").
-      # @param config_name [String]
-      # @param include_path [Array] guard against include loops
+      # Meta keys (prefix `_`) are removed, extended values are evaluated, and a secret read alone is declared to the secret hider.
+      # @param config_name  [String]        Preset name, optionally followed by dot-separated sub keys
+      # @param include_path [Array<String>] Names already being resolved, to detect include loops
+      # @return [Hash, String, Object] Copy of the preset, or of the selected sub value
+      # @raise [Cli::Error] Unknown preset or sub key, or include loop
       def by_name(config_name, include_path = [])
         Aspera.assert(!include_path.include?(config_name), type: Cli::Error) { 'loop in include' }
         include_path = include_path.clone
@@ -173,6 +190,11 @@ module Aspera
       # Set a single key in a preset hash (creates the preset if absent).
       # If param_name contains dots, it is treated as a dot-path and deep-merged into the preset.
       # If param_value is nil, the key is deleted instead.
+      # Numeric secrets are converted to String (see .stringify_secrets).
+      # @param preset      [String]         Name of preset
+      # @param param_name  [String, Symbol] Key name, or dot-path of the key in the preset
+      # @param param_value [Object, nil]    Value to set, or `nil` to delete the key
+      # @return [nil]
       def set_key(preset, param_name, param_value)
         Aspera.assert_type(param_name, String, Symbol) { 'parameter' }
         param_name = param_name.to_s
@@ -216,6 +238,7 @@ module Aspera
         nil
       end
 
+      # Name of the global default preset: declared in `default` under `config`, else `global_common_defaults`.
       # @param create [Boolean] `true`: declare and create the global default preset if needed (to write in it)
       # @return [String] name of the global default preset
       def global_default_preset(create: true)
@@ -231,33 +254,46 @@ module Aspera
         result
       end
 
+      # @param preset_name [String] Name of preset
       # @return [Boolean] true if `preset_name` is declared as the global default preset (does not create it)
       def global_preset?(preset_name)
         defaults = @config_presets[Key::DEFAULTS]
         defaults.is_a?(Hash) && defaults[CONF_GLOBAL_SYM.to_s].eql?(preset_name)
       end
 
-      # Set param in the global defaults preset
+      # Set a parameter in the global default preset (created if needed).
+      # @param key   [String, Symbol] Key name, or dot-path of the key
+      # @param value [Object, nil]    Value to set, or `nil` to delete the key
+      # @return [nil]
       def set_global_default(key, value)
         set_key(global_default_preset, key, value)
       end
 
-      # Create / overwrite a preset and optionally set it as plugin default.
-      def defaults_set(plugin_name, preset_name, preset_values, option_default, option_override)
+      # Create or overwrite a preset, and optionally set it as default for the plugin (used by the wizard).
+      # @param plugin_name_sym [Symbol]  Plugin name (e.g. `:aoc`)
+      # @param preset_name     [String]  Name of preset to create
+      # @param preset_values   [Hash]    Content of preset
+      # @param option_default  [Boolean] `true`: set the preset as default for the plugin
+      # @param option_override [Boolean] `true`: replace an existing preset or plugin default
+      # @return [Hash] preset_values
+      # @raise [Cli::Error] The preset, or the plugin default, already exists, and option_override is `false`
+      def defaults_set(plugin_name_sym, preset_name, preset_values, option_default, option_override)
         @config_presets[Key::DEFAULTS] ||= {}
-        raise Cli::Error, "A default configuration already exists for plugin '#{plugin_name}' (use wizard key override=yes or default=no)" \
-          if !option_override && option_default && @config_presets[Key::DEFAULTS].key?(plugin_name)
+        raise Cli::Error, "A default configuration already exists for plugin '#{plugin_name_sym}' (use wizard key override=yes or default=no)" \
+          if !option_override && option_default && @config_presets[Key::DEFAULTS].key?(plugin_name_sym.to_s)
         raise Cli::Error, "Preset already exists: #{preset_name}  (use wizard key override=yes or provide alternate preset name)" \
           if !option_override && @config_presets.key?(preset_name)
         if option_default
-          Log.log.info("Setting config preset as default for #{plugin_name}")
-          @config_presets[Key::DEFAULTS][plugin_name.to_s] = preset_name
+          Log.log.info("Setting config preset as default for #{plugin_name_sym}")
+          @config_presets[Key::DEFAULTS][plugin_name_sym.to_s] = preset_name
         end
         @config_presets[preset_name] = preset_values
       end
 
-      # Find the first preset whose url+username match
-      # @return [Hash, nil]
+      # Find the first preset whose url and username match (URLs compared without trailing `/` and default port 443).
+      # @param url      [String] URL of server
+      # @param username [String] User name
+      # @return [Hash, nil] Copy of the preset, or `nil` if none matches
       def lookup_preset(url:, username:)
         url = canonical_url(url)
         Log.log.debug { "Lookup preset for #{username}@#{url}" }
@@ -274,11 +310,14 @@ module Aspera
       # ------------------------------------------------------------------
 
       class << self
+        # Deep copy of a value (containers included).
+        # @param val [Object] Value to copy
+        # @return [Object] Copy of val
         def deep_clone(val)
           Marshal.load(Marshal.dump(val))
         end
 
-        # Recursively merge src into dst in place (dst wins on scalar conflicts).
+        # Recursively merge src into dst in place (src wins on scalar conflicts).
         # @param dst [Hash] destination (modified in place)
         # @param src [Hash] source
         # @return [Hash] dst
@@ -310,12 +349,16 @@ module Aspera
 
       private
 
-      # Normalize a URL for comparison
+      # Normalize a URL for comparison: no trailing `/`, no default HTTPS port.
+      # @param url [String] URL
+      # @return [String] Normalized URL
       def canonical_url(url)
         url.chomp('/').sub(%r{^(https://[^/]+):443$}, '\1')
       end
 
-      # Structural validation + compatibility fixes on @config_presets
+      # Structural validation and compatibility fixes on @config_presets, stamped with the current version.
+      # @return [void]
+      # @raise [Cli::Error, StandardError] Unexpected structure
       def validate_config_presets!
         Log.dump(:available_presets, @config_presets, level: :trace1)
         Aspera.assert_type(@config_presets, Hash) { 'config file YAML' }
@@ -333,6 +376,7 @@ module Aspera
 
       # Migrates deprecated vault options in presets to the new format (stores and default)
       # and saves a backup of the original config file.
+      # @return [void]
       def migrate_vault_configs!
         migrated = false
         @config_presets.each_value do |preset|

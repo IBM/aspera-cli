@@ -26,6 +26,8 @@ Released: [Place date of release here]
 * `orchestrator workflows find_constraints`: the optional workflow ID was required ("Missing argument: add_as_revision"): an optional argument of type identifier was always mandatory. `orchestrator workflows import_with_constraints`: `add_as_revision` accepts `null` (new workflow).
 * Extended value `@extend:` followed by a single extended value, e.g. `@json:@extend:@file:<PATH>`: the text on the right was taken as is (`unexpected character: '@file:...'`) instead of being decoded first, as other decoders. It is now decoded, then its embedded values (e.g. `"@vault:<LABEL>.<FIELD>@"` in a JSON file) are evaluated. With a closing `@` (`@extend:@file:<PATH>@`) the content is still inserted as is, not evaluated again.
 * `mcp server`: when the optional gem `mcp` is not installed, the error was `uninitialized constant Cli` instead of the message telling to install it.
+* Vault 1Password (`op`): creating a secret (e.g. `config vault create`, `config preset secure`) failed with `invalid JSON in piped input`, because `op item create` reads an item template on its standard input when it is not a terminal. The fields are now given to `op` in a JSON template on its standard input, so the secret is no longer on its command line.
+* Wizard: an existing default preset for the plugin was replaced without error when `override=yes` was not given: the check (`A default configuration already exists`) never applied.
 
 ### Breaking Changes
 
