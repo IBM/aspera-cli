@@ -59,6 +59,7 @@ shares_wizard:
     - "@:"
     - url=@preset:shares_admin.url
     - plugin=shares
+    - override=yes
     - --username=test
     - --password=$(secret :dummy)
 shares_admin_node_list:
@@ -641,6 +642,7 @@ serv_wizard:
     - "@:"
     - url=@preset:server1_user.url
     - plugin=server
+    - override=yes
     - --username=@preset:server1_user.username
     - --password=@preset:server1_user.password
 serv_wizard_password:
@@ -654,6 +656,7 @@ serv_wizard_password:
     - url=@preset:server1_info.address
     - plugin=server
     - preset=srv2
+    - override=yes
     - --username=@preset:server1_user.username
     - --password=@preset:server1_user.password
 serv_wizard_stdin:
@@ -1355,6 +1358,7 @@ nd_wizard:
     - "@:"
     - url=@preset:node_user.url
     - plugin=node
+    - override=yes
     - --username=test
     - --password=$(secret :dummy)
 nd_info:
@@ -2358,6 +2362,7 @@ aoc_wizard_generic_client:
     - "@:"
     - url=@preset:awa.org
     - plugin=aoc
+    - override=yes
     - --username=@preset:awa.user_email
     - --private-key=@file:@preset:file.private_key
     - --use-generic-client=yes
@@ -2408,7 +2413,8 @@ aoc_wizard_preset:
     - "@:"
     - url=@preset:awa.org
     - plugin=aoc
-    - preset=my_preset
+    - preset=my_aoc_preset
+    - override=yes
     - --username=@preset:awa.user_email
     - --private-key=@file:@preset:file.private_key
 aoc_gateway_set_faspex_url:
@@ -2421,6 +2427,9 @@ aoc_gateway_set_faspex_url:
     - gateway
     - "@:"
     - url=https://localhost:12347/aspera/faspex
+  post: |
+    # The gateway writes its PID file before its web server listens
+    wait_listening(12347, tls: true)
 faspex_send_via_aoc_gateway:
   description: Create a package through the AoC gateway (Faspex 4 API), then upload a file with the returned transfer spec
   depends_on:
@@ -4414,6 +4423,7 @@ orch_wizard:
     - "@:"
     - url=@preset:orch_user.url
     - plugin=orchestrator
+    - override=yes
     - --username=test
     - --password=$(secret :dummy)
 orch_info:
@@ -7314,6 +7324,7 @@ f5_wizard_no_key:
     - "@:"
     - url=https://eudemo.asperademo.com
     - plugin=faspex5
+    - override=yes
     - --username=admin@ibm.com
     - --private-key=
     - --out.secrets=yes
@@ -8511,6 +8522,7 @@ httpgw_wizard:
     - "@:"
     - url=@preset:tst_httpgw.url
     - plugin=httpgw
+    - override=yes
 faspio_health:
   args:
     - faspio

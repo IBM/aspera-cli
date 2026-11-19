@@ -239,7 +239,11 @@ RSpec.describe(Aspera::Secret::Store) do
     it 'creates a new item with the website' do
       stub_failed_execute('[ERROR] item not found', 1)
       expect(Aspera::Environment).to(receive(:secure_execute)
-        .with('op', 'item', 'create', '--category', 'Login', '--title=my_label', '--url=https://site.example.com', "password[password]=#{secret}", mode: :capture, exception: true)
+        .with(
+          'op', 'item', 'create', '--category', 'Login', '--title=my_label', '--url=https://site.example.com',
+          mode: :capture, exception: true,
+          stdin_data: JSON.generate({fields: [{id: 'password', type: 'CONCEALED', purpose: 'PASSWORD', label: 'password', value: secret}]})
+        )
         .and_return(['', '', success]))
       described_class.new.set({label: 'my_label', password: secret, url: 'https://site.example.com'})
     end

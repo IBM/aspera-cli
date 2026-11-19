@@ -268,8 +268,13 @@ ensure
   kill_process_group(pid) if pid && !finished
 end
 
+# End of the text displayed by a prompt: `> `, and for hidden input the mark shown while waiting (see `Aspera::Cli::Prompt`).
+# Compared as bytes: the terminal output is read in binary.
+PTY_PROMPT_ENDS = ['> ', '> 🔑', '> ***'].map(&:b).freeze
+
 # Execute the command of a test in a pseudo-terminal: `$stdin.tty?` is true for the command, so that it prompts like with a human.
-# Each line of `lines` is sent when the command displays a prompt, i.e. its output ends with `> `.
+# Each line of `lines` is sent when the command displays a prompt, i.e. its output ends with `> `,
+# possibly followed by the mark of hidden input (`🔑`, or `***` without Unicode).
 # Same result as `run`: raises `RuntimeError` if the command fails, or after `timeout`.
 # @param command_line [Array<#to_s>]  Command and arguments
 # @param lines        [Array<String>]  Lines to send, one per prompt
@@ -305,7 +310,7 @@ def run_test_pty(command_line, lines, timeout, transcript, env: nil, evaluate: n
           break
         end
       end
-      next if lines.empty? || !screen[answered_at..].end_with?('> ')
+      next if lines.empty? || PTY_PROMPT_ENDS.none? { |prompt_end| screen[answered_at..].b.end_with?(prompt_end) }
       # Echo is disabled after the prompt is displayed: do not type before, else the answer would be displayed
       sleep(0.2)
       line = lines.shift
@@ -500,7 +505,14 @@ namespace TEST_CASE_NS do
       if info[:pre]
         Aspera.assert_type(info[:pre], String)
         log.info("Pre: Executing: #{info[:pre]}")
-        Aspera::Environment.secure_eval(info[:pre], __FILE__, __LINE__, exec_binding)
+        begin
+          Aspera::Environment.secure_eval(info[:pre], __FILE__, __LINE__, exec_binding)
+        rescue StandardError => e
+          STATES[name] = 'failed'
+          log.error("[FAIL] #{name} : pre: #{e.class}: #{e.message}")
+          save_state
+          raise
+        end
       end
       # [Hash{Symbol => Boolean}] key=special tag, value=true if present
       tags = TestEnv::SPECIAL_TAGS.to_h { |s| [s, info[:tags].include?(s)] }
@@ -603,11 +615,12 @@ namespace TEST_CASE_NS do
         raise 'Must fail, but did not' if tags[:must_fail]
         log.info("[OK]   #{name}")
         break
-      rescue RuntimeError => e
+      rescue StandardError => e
         STATES[name] = 'failed'
         expected_fails = TestEnv::EXPECTED_FAIL.select { |tag| tags[tag] }
         if expected_fails.empty?
           log.error("[FAIL] #{name} : #{e.message}")
+          save_state
           raise
         end
         if tags[:must_fail]

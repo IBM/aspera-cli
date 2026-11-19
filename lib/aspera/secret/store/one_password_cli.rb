@@ -50,11 +50,14 @@ module Aspera
           validate_set(options)
           assert_new_label(options[:label])
           args = ['item', 'create', '--category', ITEM_CATEGORY, "--title=#{options[:label]}"]
-          args << "--url=#{options[:url]}"                            if options[:url]
-          args << "#{FIELD_USERNAME}=#{options[:username]}"           if options[:username]
-          args << "#{FIELD_PASSWORD}[password]=#{options[:password]}" if options[:password]
-          args << "#{FIELD_NOTES_ID}=#{options[:description]}"        if options[:description]
-          op_run(*args)
+          args << "--url=#{options[:url]}" if options[:url]
+          # `op` reads an item template from its standard input when it is not a terminal (always the case here):
+          # fields are given in the template, which also keeps the secret out of the command line
+          fields = []
+          fields << {id: FIELD_USERNAME, type: 'STRING', purpose: 'USERNAME', label: FIELD_USERNAME, value: options[:username]} if options[:username]
+          fields << {id: FIELD_PASSWORD, type: 'CONCEALED', purpose: 'PASSWORD', label: FIELD_PASSWORD, value: options[:password]} if options[:password]
+          fields << {id: FIELD_NOTES_ID, type: 'STRING', purpose: 'NOTES', label: FIELD_NOTES_ID, value: options[:description]} if options[:description]
+          op_capture(*args, stdin_data: JSON.generate({fields: fields}), exception: true)
           nil
         end
 
@@ -97,12 +100,11 @@ module Aspera
           nil
         end
 
-        def op_capture(*args, exception: true)
-          Environment.instance.class.secure_execute(
-            OP_EXECUTABLE, *args, *common_flags,
-            mode: :capture,
-            exception: exception
-          )
+        # @param stdin_data [String, nil] Data sent to standard input of `op` (e.g. an item template)
+        def op_capture(*args, exception: true, stdin_data: nil)
+          kwargs = {mode: :capture, exception: exception}
+          kwargs[:stdin_data] = stdin_data unless stdin_data.nil?
+          Environment.instance.class.secure_execute(OP_EXECUTABLE, *args, *common_flags, **kwargs)
         end
       end
     end
