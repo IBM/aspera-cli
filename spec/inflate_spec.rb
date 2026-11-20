@@ -29,15 +29,24 @@ RSpec.describe(Aspera::Inflate) do
     inflater = Zlib::Inflate.new
     allow(Zlib::Inflate).to(receive(:new).and_return(inflater))
     # Bytes decompressed before the error
-    yielded = 0
-    allow(inflater).to(receive(:inflate).and_wrap_original do |original, data, &block|
-      original.call(data) do |out|
-        yielded += out.bytesize
-        block.call(out)
-      end
+    inflated = 0
+    allow(inflater).to(receive(:inflate).and_wrap_original do |original, data|
+      original.call(data).tap { |out| inflated += out.bytesize }
     end)
     expect { described_class.limited(bomb, max_size: 65_536, what: 'Data') }.to(raise_error(Aspera::ParameterError, /too large/))
-    expect(yielded).to(be < (1 << 20))
+    # At most one slice of input (4 KiB) beyond the limit: about 4 MiB, not 1 GiB
+    expect(inflated).to(be < (8 << 20))
+  end
+
+  it 'decompresses data larger than one slice of input' do
+    text = Random.new(1).bytes(20_000).unpack1('H*')
+    deflated = Zlib::Deflate.deflate(text)
+    expect(deflated.bytesize).to(be > 4096)
+    expect(described_class.limited(deflated, max_size: text.bytesize, what: 'Data')).to(eq(text))
+  end
+
+  it 'ignores data after the end of the zlib stream' do
+    expect(described_class.limited(Zlib::Deflate.deflate('abc') + ('x' * 5000), max_size: 10, what: 'Data')).to(eq('abc'))
   end
 
   it 'refuses incomplete data' do
