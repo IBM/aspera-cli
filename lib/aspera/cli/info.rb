@@ -26,7 +26,7 @@ module Aspera
       # Version with which this version of CLI was tested
       SDK_VERSION = '1.1.9'
       # Ruby version with which this version of CLI was tested, packaged in container image and portable packages
-      RUBY_TESTED_VERSION = '4.0.9'
+      RUBY_TESTED_VERSION = '4.0.10'
       # Suffix of the RubyInstaller release of `RUBY_TESTED_VERSION`, packaged in the Windows zip
       # (release tag: `RubyInstaller-<Ruby version><suffix>`)
       # https://github.com/oneclick/rubyinstaller2/releases
