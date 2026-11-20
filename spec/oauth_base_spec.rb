@@ -176,4 +176,34 @@ RSpec.describe(Aspera::OAuth::Base) do
       expect(oauth.renewed_authorization).to(eq("Bearer #{new_token}"))
     end
   end
+
+  describe 'token end point as absolute URL' do
+    let(:token_url) { 'https://token.example.org/token' }
+    let(:oauth_abs) { Aspera::OAuth::Generic.new(grant_type: 'client_credentials', base_url: 'https://example.com/oauth2', path_token: token_url) }
+
+    it 'gives the URL of an end point, relative to the base URL or absolute' do
+      expect(oauth.endpoint_url('authorize')).to(eq('https://example.com/oauth2/authorize'))
+      expect(oauth.endpoint_url('HTTPS://other.example.org/auth')).to(eq('HTTPS://other.example.org/auth'))
+    end
+
+    it 'uses the OAuth API for a path, and an API on the URL for an absolute URL' do
+      expect(oauth.endpoint_api('token')).to(eq([oauth.api, 'token']))
+      token_api, subpath = oauth_abs.endpoint_api(token_url)
+      expect([token_api.base_url, subpath]).to(eq([token_url, '']))
+      expect(token_api.params.except(:base_url)).to(eq(oauth_abs.api.params.except(:base_url)))
+    end
+
+    it 'creates the token on the absolute URL' do
+      token_api = instance_double(Aspera::Rest::Client)
+      allow(Aspera::Rest::Client).to(receive(:new).and_call_original)
+      allow(Aspera::Rest::Client).to(receive(:new).with(hash_including(base_url: token_url)).and_return(token_api))
+      allow(token_api).to(receive(:create).and_return(instance_double(Net::HTTPResponse, body: JSON.generate({'access_token' => new_token}))))
+      expect(oauth_abs.token).to(eq(new_token))
+      expect(token_api).to(have_received(:create).with('', include(grant_type: 'client_credentials'), any_args))
+    end
+
+    it 'keeps the token cache id of the base URL' do
+      expect(oauth_abs.instance_variable_get(:@token_cache_id)).to(eq(oauth.instance_variable_get(:@token_cache_id)))
+    end
+  end
 end

@@ -22,8 +22,13 @@ module Aspera
     # Bearer Token Usage: https://tools.ietf.org/html/rfc6750
     class Base
       Aspera.require_method!(:create_token)
+      class << self
+        # @param path [String] Path of an end point
+        # @return [Boolean] `true` if `path` is an absolute URL (`http` or `https`)
+        def absolute_url?(path) = path.match?(%r{\Ahttps?://}i)
+      end
       # @param params         [Hash]    Parameters for token creation (client_id, client_secret, scope, etc...)
-      # @param path_token     [String]  API end point to create a token from base URL
+      # @param path_token     [String]  API end point to create a token: path from base URL, or absolute URL (`http` or `https`), e.g. on another host
       # @param use_query      [Boolean] Provide parameters in query instead of body
       # @param token_field    [String]  Field in result that contains the token
       # @param cache_ids      [Array]   List of unique identifiers for cache id generation
@@ -54,6 +59,23 @@ module Aspera
       # Sub path to generate token
       attr_reader :path_token
 
+      # URL of an end point of the OAuth server
+      # @param path [String] Path from the base URL, or absolute URL (`http` or `https`), used as is
+      # @return [String] URL of the end point
+      def endpoint_url(path)
+        Base.absolute_url?(path) ? path : "#{@api.base_url}/#{path}"
+      end
+
+      # API and subpath to call an end point of the OAuth server
+      # An absolute URL (e.g. token on another host than authorization) gets its own API, same parameters.
+      # The token cache id does not depend on it: it uses the base URL.
+      # @param path [String] Path from the base URL, or absolute URL (`http` or `https`)
+      # @return [Array(Rest::Client, String)] API and subpath
+      def endpoint_api(path)
+        return [@api, path] unless Base.absolute_url?(path)
+        [Rest::Client.new(**@api.params.merge(base_url: path)), '']
+      end
+
       # Parameters for token creation call
       # @param include_secret [Boolean] Add secret in default call parameters
       # @param other_params [Hash] Other parameters to merge
@@ -70,8 +92,9 @@ module Aspera
       def create_token_base(include_secret: false, **other_params)
         Log.log.debug { 'Generating a new token'.bg(:green) }
         creation_params = base_parameters(include_secret: include_secret, **other_params)
-        return @api.create(@path_token, nil, query: creation_params, ret: :resp) if @use_query
-        @api.create(@path_token, creation_params, content_type: Mime::WWW, ret: :resp)
+        token_api, subpath = endpoint_api(@path_token)
+        return token_api.create(subpath, nil, query: creation_params, ret: :resp) if @use_query
+        token_api.create(subpath, creation_params, content_type: Mime::WWW, ret: :resp)
       end
 
       # Get the value of the HTTP `Authorization` header for this OAuth client, i.e. `Bearer <token>`.

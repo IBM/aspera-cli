@@ -22,9 +22,10 @@ module Aspera
       end
 
       def create_token
-        api.call(
+        token_api, subpath = endpoint_api(path_token)
+        token_api.call(
           operation:    'POST',
-          subpath:      path_token,
+          subpath:      subpath,
           content_type: Mime::JSON,
           body:         @body,
           headers:      {'Accept' => Mime::JSON},

@@ -26,7 +26,7 @@ module Aspera
         end
       end
       # @param redirect_uri   [String]  url to receive the code after auth (to be exchanged for token)
-      # @param path_authorize [String]  path to login page on web app
+      # @param path_authorize [String]  path to login page on web app, or absolute URL (`http` or `https`), e.g. on another host than the token
       # @param pkce           [Boolean] use PKCE (RFC 7636): the code can be exchanged only by this process
       def initialize(
         redirect_uri:,
@@ -57,7 +57,7 @@ module Aspera
           token_params[:code_verifier] = code_verifier
         end
         login_page_url = Rest.build_uri(
-          "#{api.base_url}/#{@path_authorize}",
+          endpoint_url(@path_authorize),
           base_parameters(**authorize_params)
         )
         # here, we need a human to authorize on a web page

@@ -127,8 +127,8 @@ module Aspera
       # @param operation    [String] HTTP operation (GET, POST, PUT, DELETE)
       # @param subpath      [String] subpath of REST API
       # @param query        [Hash{String,Symbol => Object}] URL parameters
-      # @param content_type [String, nil] Type of body parameters (one of MIME_*) and serialization, else use headers
-      # @param body         [Hash, Array, String, nil] Body parameters (see `build_request`)
+      # @param content_type [String, nil] Type of body parameters (one of MIME_*) and serialization, `nil` for a raw body (type in `headers`)
+      # @param body         [Hash, Array, String, IO, nil] Body parameters (see `build_request`)
       # @param headers      [Hash{String => String}] Additional headers (override Content-Type)
       # @param save_to      [String, Pathname, IO, nil] File path or IO object to save response body; progress bar is used when set
       # @param exception    [Boolean] Whether to raise an exception on HTTP error
@@ -164,6 +164,8 @@ module Aspera
         # We must have a way to check return code
         Aspera.assert(exception || !ret.eql?(:data), 'ret: :data requires exception handler')
         req_headers, req_query = prepare_call(headers, query)
+        # A raw body stream is sent again from the same position on retry
+        stream_start = body.pos if content_type.nil? && body.respond_to?(:read) && body.respond_to?(:seek)
         result_http = nil
         result_data = nil
         # number of tries on error (first call included)
@@ -173,6 +175,7 @@ module Aspera
         # start a block to be able to retry the actual HTTP request in case of OAuth token expiration
         begin
           Log.log.debug("send request (redirects=#{@redirect_max})")
+          body.seek(stream_start) unless stream_start.nil?
           req = build_request(operation, subpath, req_query, content_type, body, req_headers)
           result_mime = nil
           file_saved = false
@@ -334,9 +337,11 @@ module Aspera
       # @param operation    [String]                  HTTP operation (GET, POST, ...)
       # @param subpath      [String]                  Subpath of REST API
       # @param query        [Hash, String, Array, nil] Query of request
-      # @param content_type [String, nil]             One of Mime::JSON, Mime::WWW, Mime::TEXT, Mime::MULTIPART, or `nil` for no body
-      # @param body         [Hash, Array, String, nil] Body of request, serialized according to `content_type`
+      # @param content_type [String, nil]             One of Mime::JSON, Mime::WWW, Mime::TEXT, Mime::MULTIPART, or `nil` for a raw body
+      # @param body         [Hash, Array, String, IO, nil] Body of request, serialized according to `content_type`
       #   For Mime::MULTIPART: Hash `name => value`, or Array of `[name, value, opts]` with opts `filename`, `content_type` for a file part
+      #   For `nil`: no body, or raw body sent as is, `Content-Type` given in `headers`: String (e.g. binary),
+      #   or IO (responds to `read`) streamed from its current position, e.g. a large file not loaded in memory
       # @param headers      [Hash]                    Headers of request
       # @return [Net::HTTPRequest] The request
       def build_request(operation, subpath, query, content_type, body, headers)
@@ -352,7 +357,20 @@ module Aspera
           raise "unsupported operation : #{operation}"
         end
         case content_type
-        when nil # ignore
+        when nil
+          case body
+          when nil # no body
+          when String then req.body = body
+          else
+            Aspera.assert(body.respond_to?(:read)) { "raw body: String or IO expected, not #{body.class}" }
+            req.body_stream = body
+            # Net::HTTP needs a length or chunked encoding: length of the rest of the stream, if known
+            if body.respond_to?(:size) && body.respond_to?(:pos)
+              req['Content-Length'] = (body.size - body.pos).to_s
+            else
+              req['Transfer-Encoding'] = 'chunked'
+            end
+          end
         when Mime::JSON
           req.body = JSON.generate(body) # , ascii_only: true
           req['Content-Type'] = Mime::JSON

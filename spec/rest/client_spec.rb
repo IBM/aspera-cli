@@ -10,6 +10,7 @@ require 'tmpdir'
 require 'pathname'
 require 'stringio'
 require 'securerandom'
+require 'digest'
 
 RSpec.describe(Aspera::Rest) do
   it 'build URI' do
@@ -352,6 +353,63 @@ RSpec.describe(Aspera::Rest) do
         form = [['file', "a: 1\n", {filename: 'a.yml'}], ['name', 'a.yml']]
         expect(Aspera::Rest::Client.new(base_url: url).create('upload', form, content_type: Aspera::Mime::MULTIPART))
           .to(eq({'type' => 'multipart/form-data', 'file' => "a: 1\n", 'filename' => 'a.yml', 'name' => 'a.yml'}))
+      end
+    end
+
+    describe 'raw body' do
+      # Binary content, not valid UTF-8
+      content = Random.new(7).bytes(300_000)
+
+      before do
+        # Handler: return JSON of type, length and SHA-256 of received body
+        @url = start_server('/raw' => lambda do |req, res|
+          res['Content-Type'] = 'application/json'
+          res.body = JSON.generate({'type' => req.content_type, 'length' => req.body.to_s.bytesize, 'sha' => Digest::SHA256.hexdigest(req.body.to_s)})
+        end)
+        @api = Aspera::Rest::Client.new(base_url: @url)
+      end
+
+      def sent(data) = {'type' => 'video/mp4', 'length' => data.bytesize, 'sha' => Digest::SHA256.hexdigest(data)}
+
+      it 'sends a String as is, with the Content-Type of headers' do
+        expect(@api.call(operation: 'PUT', subpath: 'raw', body: content, headers: {'Content-Type' => 'video/mp4'})).to(eq(sent(content)))
+      end
+
+      it 'streams an IO from its current position' do
+        io = StringIO.new(content)
+        io.seek(1000)
+        expect(@api.call(operation: 'PUT', subpath: 'raw', body: io, headers: {'Content-Type' => 'video/mp4'})).to(eq(sent(content.byteslice(1000..))))
+      end
+
+      it 'streams a file' do
+        Dir.mktmpdir do |dir|
+          path = File.join(dir, 'video.mp4')
+          File.binwrite(path, content)
+          File.open(path, 'rb') do |file|
+            expect(@api.call(operation: 'PUT', subpath: 'raw', body: file, headers: {'Content-Type' => 'video/mp4'})).to(eq(sent(content)))
+          end
+        end
+      end
+
+      it 'streams again from the same position on retry' do
+        @params.retry_on_error = true
+        failed = false
+        allow_any_instance_of(Net::HTTP).to(receive(:request).and_wrap_original do |original, req, *args, &block|
+          unless failed
+            failed = true
+            # stream read before the connection fails
+            req.body_stream.read
+            raise Errno::ECONNRESET
+          end
+          original.call(req, *args, &block)
+        end)
+        io = StringIO.new(content)
+        io.seek(10)
+        expect(@api.call(operation: 'PUT', subpath: 'raw', body: io, headers: {'Content-Type' => 'video/mp4'})).to(eq(sent(content.byteslice(10..))))
+      end
+
+      it 'refuses a structured body without content type' do
+        expect { @api.call(operation: 'PUT', subpath: 'raw', body: {'a' => 1}) }.to(raise_error(Aspera::AssertError, /raw body: String or IO expected, not Hash/))
       end
     end
 

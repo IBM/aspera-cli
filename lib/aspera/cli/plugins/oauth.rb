@@ -9,6 +9,22 @@ require_relative '../error'
 module Aspera
   module Cli
     module Plugins
+      # Options of OAuth web authentication (authorization code): client and redirect URI.
+      # For a plugin that uses only this flow: `use_options OauthWebOptions` (without the options of `Oauth`)
+      module OauthWebOptions
+        extend OptionDeclarator
+        option :client_id,     description: 'OAuth client identifier'
+        option :client_secret, description: 'OAuth client secret'
+        option :redirect_uri,  description: 'OAuth (Web) redirect URI for web authentication'
+      end
+
+      # Options of OAuth JWT authentication: private key
+      module OauthJwtOptions
+        extend OptionDeclarator
+        option :private_key,   description: 'OAuth (JWT) RSA private key PEM value (prefix file path with @file:)'
+        option :passphrase,    description: 'OAuth (JWT) RSA private key passphrase'
+      end
+
       # base class for applications supporting OAuth 2.0 authentication
       class Oauth < BasicAuth
         class << self
@@ -33,11 +49,8 @@ module Aspera
         # Options used for authentication (url, auth, client_id, etc...)
         AUTH_OPTIONS = %i[url auth client_id client_secret redirect_uri private_key passphrase username password].freeze
         option :auth,          description: 'OAuth type of authentication', allowed: AUTH_TYPES, default: :jwt
-        option :client_id,     description: 'OAuth client identifier'
-        option :client_secret, description: 'OAuth client secret'
-        option :redirect_uri,  description: 'OAuth (Web) redirect URI for web authentication'
-        option :private_key,   description: 'OAuth (JWT) RSA private key PEM value (prefix file path with @file:)'
-        option :passphrase,    description: 'OAuth (JWT) RSA private key passphrase'
+        use_options OauthWebOptions
+        use_options OauthJwtOptions
       end
     end
   end

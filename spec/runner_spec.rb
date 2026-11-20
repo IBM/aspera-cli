@@ -61,6 +61,24 @@ module Aspera
         end
       end
 
+      describe '#plugin_location' do
+        before do
+          allow(Plugins::Factory.instance).to(receive(:lookup_folders).and_return(['/plugins', '/gem/lib/aspera/cli/plugins']))
+        end
+
+        def error_at(*backtrace) = StandardError.new('boom').tap { |e| e.set_backtrace(backtrace) }
+
+        it 'gives the first line of the backtrace in a plugin folder' do
+          error = error_at('/gem/lib/aspera/rest/client.rb:10:in call', '/plugins/my_plugin.rb:12:in action_list', '/gem/lib/aspera/cli/plugins/base.rb:500:in invoke_action')
+          expect(Runner.new([]).send(:plugin_location, error)).to(eq('/plugins/my_plugin.rb:12:in action_list'))
+        end
+
+        it 'gives nil if no line in a plugin folder, or no backtrace' do
+          expect(Runner.new([]).send(:plugin_location, error_at('/gem/lib/aspera/rest/client.rb:10:in call', '/plugins_other/x.rb:1:in y'))).to(be_nil)
+          expect(Runner.new([]).send(:plugin_location, StandardError.new('boom'))).to(be_nil)
+        end
+      end
+
       describe '#option_ui=' do
         let(:runner) { Runner.new([]) }
         let(:environment) { Environment.instance }

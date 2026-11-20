@@ -58,6 +58,17 @@ RSpec.describe(Aspera::OAuth::Web) do
       expect(run_login(pkce: true).last[:code_verifier]).not_to(eq(run_login(pkce: true).last[:code_verifier]))
     end
 
+    it 'opens the login page at an absolute URL' do
+      opened = nil
+      client = web('http://localhost:12345', params: {client_id: 'CLIENT'}, path_authorize: 'https://login.example.org/o/auth')
+      allow(Aspera::WebAuth).to(receive(:receiver)) do |_uri, _info, login_url:, **|
+        opened = login_url.to_s
+        raise 'stop'
+      end
+      expect { client.create_token }.to(raise_error('stop'))
+      expect(opened).to(start_with('https://login.example.org/o/auth?'))
+    end
+
     it 'sends no PKCE parameter without PKCE' do
       login_query, exchange = run_login
       expect(login_query.keys).not_to(include('code_challenge', 'code_challenge_method'))

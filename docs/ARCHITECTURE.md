@@ -144,8 +144,10 @@ The Faspex 4 plugin was removed (end of support).
 
 - [`base.rb`](../lib/aspera/cli/plugins/base.rb) - Abstract base class for all plugins
 - [`basic_auth.rb`](../lib/aspera/cli/plugins/basic_auth.rb) - Abstract base class for plugins using basic authentication (url/username/password)
-- [`oauth.rb`](../lib/aspera/cli/plugins/oauth.rb) - Abstract base class for plugins using OAuth
+- [`oauth.rb`](../lib/aspera/cli/plugins/oauth.rb) - Abstract base class for plugins using OAuth; its options come from modules `OauthWebOptions` (`client_id`, `client_secret`, `redirect_uri`) and `OauthJwtOptions` (`private_key`, `passphrase`), which a plugin of the web flow only can include with `use_options`
 - [`factory.rb`](../lib/aspera/cli/plugins/factory.rb) - Plugin factory (singleton); discovers plugins by scanning the plugin folders
+
+**External Plugins**: files `<name>.rb` of the folders of option `plugin_folder` and of folder `plugins` of the main folder (added by `Bootstrapper`), registered by `Factory` at security level `low`. The file name is the plugin name, the class is `Plugins::<CamelCase name>`. The file is loaded with `require`: it requires the files of the gem it uses (e.g. `require 'aspera/cli/plugins/base'`), since built-in files use `require_relative` and load only what they need. On an unexpected error (not a `Cli::Error`), `Runner` logs at level `info` the first line of the backtrace in a plugin folder. See "Writing a plugin" in the manual.
 
 #### Command DSL
 

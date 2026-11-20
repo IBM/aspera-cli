@@ -12,6 +12,7 @@ require_relative '../lib/aspera/cli/command_spec'
 require_relative '../lib/aspera/cli/context'
 require_relative '../lib/aspera/cli/parser'
 require_relative '../lib/aspera/cli/plugins/base'
+require_relative '../lib/aspera/cli/plugins/oauth'
 
 module Aspera
   module Cli
@@ -168,6 +169,19 @@ module Aspera
             end
             target_klass.new(context: context)
             expect(options).to(have_received(:declare).with(:mod_opt, hash_including(description: 'From module')))
+          end
+
+          it 'includes only the OAuth web options with OauthWebOptions' do
+            klass = Class.new(Base) { use_options OauthWebOptions }
+            names = klass.option_sources.each_key.flat_map { |src| src.option_specs.keys }
+            expect(names).to(include(:client_id, :client_secret, :redirect_uri))
+            expect(names).not_to(include(:auth, :private_key, :passphrase, :url, :username, :password))
+          end
+
+          it 'keeps the options of Oauth, in the same order' do
+            names = Oauth.option_sources.each_key.flat_map { |src| src.option_specs.keys }
+            expect(names.first(9)).to(eq(%i[auth client_id client_secret redirect_uri private_key passphrase url username password]))
+            expect(names).to(include(*Oauth::AUTH_OPTIONS))
           end
 
           it 'binds on_set callbacks of a source to the given target' do

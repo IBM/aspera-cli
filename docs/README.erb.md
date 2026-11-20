@@ -6142,6 +6142,77 @@ Created ./foo.rb
 <%=cmd_skip%> --plugin-folder=. foo
 ```
 
+#### Writing a plugin
+
+A plugin is a Ruby file in a plugin folder (option `plugin_folder`, or folder `plugins` of the configuration folder).
+
+- **Name**: the file name is the plugin name, which is the first command, e.g. file `my_app.rb` for command `my_app`.
+  The file defines class `Aspera::Cli::Plugins::<Class>`, the name in CamelCase (`MyApp`), subclass of:
+  - `Base`: no common option.
+  - `BasicAuth` (`aspera/cli/plugins/basic_auth`): options `url`, `username`, `password`, method `basic_auth_api` returns a REST client with HTTP Basic authentication.
+  - `Oauth` (`aspera/cli/plugins/oauth`): options of `BasicAuth`, and `auth` (default `jwt`), `client_id`, `client_secret`, `redirect_uri`, `private_key`, `passphrase`.
+- **Requires**: the plugin requires the files of the gem that it uses, e.g. `require 'aspera/cli/plugins/base'` (the `lib` folder of the gem is in the Ruby load path).
+  Built-in plugins load only what they use: a class of the gem (for example `Plugins::Oauth`, `Rest::Client`) may not be loaded yet when the plugin is read (`NameError: uninitialized constant`).
+- **Options**: `option :<name>, description: '...'` (optional: `default:`, `allowed:` a type or a list of values), value read with `options.get_option(:<name>)` (`mandatory: true` to require it).
+  `use_options <Module>` adds the options of a module, e.g. `use_options OauthWebOptions` (`client_id`, `client_secret`, `redirect_uri`) for the OAuth web flow only, without the other options of `Oauth`.
+- **Commands**: `command :<name>, description: '...'`, inside `commands_under :<name> do ... end` for sub-commands.
+  Positional arguments: `arguments: [{name: :<name>, description: '...'}]` (optional: `mandatory: false`, `default:`, `type: Hash`, `multiple: true`).
+  `read_only: true` for a command that changes nothing (allowed with option `poll`).
+- **Actions**: the method `action_<command path>`, e.g. `action_item_show` for `item show`, receives the arguments as keyword arguments (and `**` for others).
+  It returns a result, displayed according to option `format`: `Result::SingleObject.new(<Hash>)`, `Result::ObjectList.new(<Array of Hash>)`, `Result::Status.new('<text>')`, `Result::Nothing.new`.
+- **REST**: `Rest::Client.new(base_url:, auth:)` (`aspera/rest`), methods `read`, `create`, `update`, `delete` (JSON), and `call` for other cases:
+  - `auth`: `{type: :basic, username:, password:}`, or `{type: :oauth2, grant_method: :web, client_id:, ...}` (see `lib/aspera/oauth/client`).
+    Parameters `path_authorize` and `path_token` are paths from `base_url`, or absolute URLs, when the token is created on another host than the authorization page.
+  - Raw body, e.g. binary, sent as is: `call(operation: 'PUT', body: <String or IO>, headers: {'Content-Type' => '<MIME_TYPE>'})`.
+    An `IO` (e.g. `File.open(path, 'rb')`) is streamed from its current position, without loading the file in memory.
+- **Errors**: raise `Cli::BadArgument` (wrong argument or option) or `Cli::Error`.
+  For any other error, the location in the plugin (file and line) is logged at level `info`.
+- **Security**: a plugin is code: plugins from other folders than the gem are loaded at [Security Level](#security-level) `low` only.
+
+Example: plugin `my_app` for a REST API with Basic authentication: `my_app info`, `my_app item list`, `my_app item show <ID>`.
+
+```ruby
+# Plugin `my_app`, file `my_app.rb` in a plugin folder, class `MyApp`
+# Files of the gem used by the plugin (its `lib` folder is in the load path)
+require 'aspera/cli/plugins/basic_auth'
+
+module Aspera
+  module Cli
+    module Plugins
+      # Options `url`, `username` and `password` of `BasicAuth`
+      class MyApp < BasicAuth
+        application_name 'My Application'
+        option :page_size, description: 'Number of items per page', allowed: Integer, default: 100
+
+        command :info, description: 'Show application information', read_only: true
+        commands_under :item, description: 'Manage items' do
+          command :list, description: 'List items', read_only: true
+          command :show, description: 'Show an item', arguments: [{name: :id, description: 'Item identifier'}], read_only: true
+        end
+
+        # Command `info`
+        def action_info(**) = Result::SingleObject.new(api.read('info'))
+
+        # Command `item list`
+        def action_item_list(**) = Result::ObjectList.new(api.read('items', {limit: options.get_option(:page_size)}))
+
+        # Command `item show <ID>`, with arguments as keyword arguments
+        def action_item_show(id:, **) = Result::SingleObject.new(api.read("items/#{id}"))
+
+        private
+
+        # REST client of the application, with Basic authentication
+        def api = @api ||= basic_auth_api
+      end
+    end
+  end
+end
+```
+
+```shell
+<%=cmd_skip%> --plugin-folder=<FOLDER> my_app item list --url=https://app.example.com/api --username=<USERNAME> --password=<PASSWORD> --page-size=10
+```
+
 ### Plugins vs Transfer Agents
 
 Plugins typically represent a specific remote application on which <%=tool%> can operate, while transfer agents are the underlying components that handle the actual data transfer.

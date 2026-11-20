@@ -201,6 +201,7 @@ module Aspera
         unless exception_info.nil?
           Log.log.warn(exception_info[:e].message) if Log.instance.logger_type.eql?(:syslog) && exception_info[:security]
           Log.log.error { "#{exception_info[:t]}: #{exception_info[:e].message}" } unless exception_info[:e].is_a?(Cli::SchemaRequest)
+          Log.log.info { "Location: #{plugin_location(exception_info[:e])}" } if exception_info[:debug] && plugin_location(exception_info[:e])
           Log.log.debug { (['Backtrace:'] + exception_info[:e].backtrace).join("\n") } if exception_info[:debug]
           @context.formatter.display_message(:error, 'Use option -h to get help.') if exception_info[:usage]
           Hints.hint_for(exception_info[:e], @context.formatter)
@@ -314,6 +315,14 @@ module Aspera
       end
 
       private
+
+      # Location of an unexpected error in the code of a plugin (built-in or from option `plugin_folder`)
+      # @param error [Exception] Error
+      # @return [String, nil] First line of the backtrace in a plugin folder, e.g. `<FOLDER>/my_plugin.rb:12:in 'action_list'`, `nil` if none
+      def plugin_location(error)
+        folders = Plugins::Factory.instance.lookup_folders.map { |folder| File.join(folder, '') }
+        error.backtrace&.find { |line| folders.any? { |folder| line.start_with?(folder) } }
+      end
 
       # Build the usage/help text.
       #
