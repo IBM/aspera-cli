@@ -26,6 +26,7 @@ Released: [Place date of release here]
 
 ### Issues Fixed
 
+* Linux single executable, Linux and Windows portable packages, container image: Ruby 4.0.10 instead of 4.0.9, which has vulnerabilities in `Regexp` and `String` ([Ruby security release of 2026-11-18](https://www.ruby-lang.org/en/news/2026/11/18/multiple-vulnerabilities-in-regexp-and-string/)). With the gem, `ascli` runs on the Ruby of the system: update it to 4.0.10, 3.4.13 or 3.3.14.
 * Option `security`, `mcp server`: extended value `@zlib:` was accepted at levels `medium` and `high`: a client could send a small value that decompresses to gigabytes (e.g. `@zlib:@zlib:<DATA>`), and exhaust the memory of the system. It is now refused at these levels, as `@ruby:`, `@uri:` and `@env:`. It is not limited at level `low`. Reported by visionx7.
 * `orchestrator workflows import` and `check_import`: a workflow package (`.wkf`) was decompressed in memory without limit for the local check, so a small package could exhaust the memory (e.g. 1 MB for 1 GiB). A package whose files exceed 256 MiB once decompressed is now reported (issue `package.too_large`) and not decompressed: the size is read in the archive before each file.
 * Node API bearer token (e.g. option `password` of plugin `node`, or a token in cache): it was decompressed without limit, so a small token could exhaust the memory. The decoded token is now limited to 64 KiB, checked while decompressing.
