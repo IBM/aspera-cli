@@ -16,7 +16,7 @@ DO NOT EDIT: THIS FILE IS GENERATED, edit docs/README.erb.md.
 <!-- gfm2pdf
 common:
   metadata:
-    subtitle: "ascli 4.29.1"
+    subtitle: "ascli 4.30.0.pre"
     author: "Laurent Martin"
 -->
 
@@ -195,7 +195,7 @@ This section walks you through your first interaction with `ascli` on Linux.
 
 ```shell
 mkdir -p $HOME/bin
-tar -C $HOME/bin -zxvf ascli-4.29.1-linux-x86_64.tgz
+tar -C $HOME/bin -zxvf ascli-4.30.0.pre-linux-x86_64.tgz
 export PATH=$PATH:$HOME/bin
 ```
 
@@ -209,7 +209,7 @@ ascli -v
 ```
 
 ```text
-4.29.1
+4.30.0.pre
 ```
 
 - Install the Aspera transfer runtime (tested version), as it is not included in the `ascli` package:
@@ -1089,11 +1089,11 @@ Alternatively, the necessary gems can be packaged into a `tar.gz` archive as fol
 
 ```shell
 mkdir temp_folder
-gem install aspera-cli:4.29.1 --no-document --install-dir temp_folder
+gem install aspera-cli:4.30.0.pre --no-document --install-dir temp_folder
 find temp_folder
-mv temp_folder/cache aspera-cli-4.29.1-gems
+mv temp_folder/cache aspera-cli-4.30.0.pre-gems
 rm -fr temp_folder
-tar zcvf aspera-cli-4.29.1-gems.tgz aspera-cli-4.29.1-gems
+tar zcvf aspera-cli-4.30.0.pre-gems.tgz aspera-cli-4.30.0.pre-gems
 ```
 
 #### Unix-like: Alternative installation using `rvm`
@@ -1229,7 +1229,7 @@ ascli -v
 ```
 
 ```text
-4.29.1
+4.30.0.pre
 ```
 
 To persist the configuration on the host, specify your user's configuration folder as a volume for the container.
@@ -6568,7 +6568,7 @@ If the transfer user has no docroot and the transfer does not use a token, you c
 ```text
 ascli -h
 NAME
-        ascli -- a command line tool for Aspera Applications (v4.29.1)
+        ascli -- a command line tool for Aspera Applications (v4.30.0.pre)
 
 SYNOPSIS
         ascli [GLOBAL_OPTIONS] <command> [OPTIONS] [ARGS]
