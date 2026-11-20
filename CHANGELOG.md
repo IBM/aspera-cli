@@ -18,6 +18,7 @@ Released: [Place date of release here]
 * Plugins: the manual has a section "Writing a plugin" for a plugin loaded with option `plugin_folder`: file and class names, files of the gem to require, options, commands, actions, results, REST client, with an example.
 * Plugins: an unexpected error in a plugin (e.g. `Other(NoMethodError)`) also logs its location in the plugin (file and line) at level `info`.
 * Plugins: modules `OauthWebOptions` (`client_id`, `client_secret`, `redirect_uri`) and `OauthJwtOptions` (`private_key`, `passphrase`) give the options of `Oauth`: a plugin of the OAuth web flow only adds them with `use_options OauthWebOptions`. Options of the existing plugins do not change.
+* OAuth: parameter `token_field` accepts a dot-separated path of a nested field of the token answer, e.g. `authed_user.access_token` (user token of Slack OAuth v2). A plain field name is read as before.
 * OAuth: parameters `path_authorize` and `path_token` accept an absolute URL (`http` or `https`), used as is, e.g. a token created on another host than the authorization page. The token cache still depends on `base_url` only: no new login for existing configurations.
 * `transferd install`, `transferd list`: the request for the list of SDK archives (option `locations_url`) includes the version of `ascli` in the HTTP header `Referer`.
 * `transferd install`: the list of SDK archives is no longer read when the requested version is already installed, and is read once per installation instead of twice.

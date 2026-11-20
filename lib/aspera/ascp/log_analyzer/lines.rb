@@ -4,11 +4,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # cspell:words getlocal MSGID PROCID rsyslog
-require_relative '../log_analyzer'
-
 module Aspera
   module Ascp
     class LogAnalyzer
+      # Path that designates the standard input
+      STDIN_PATH = '-'
       # Formats and timestamps of log lines: shared by LogFile and Records, which define `@path` and `@timezone` (nil: time zone of the analyst)
       module Lines
         MONTHS = %w[Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec].freeze

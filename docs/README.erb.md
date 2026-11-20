@@ -6171,6 +6171,7 @@ A plugin is a Ruby file in a plugin folder (option `plugin_folder`, or folder `p
 - **REST**: `Rest::Client.new(base_url:, auth:)` (`aspera/rest`), methods `read`, `create`, `update`, `delete` (JSON), and `call` for other cases:
   - `auth`: `{type: :basic, username:, password:}`, or `{type: :oauth2, grant_method: :web, client_id:, ...}` (see `lib/aspera/oauth/client`).
     Parameters `path_authorize` and `path_token` are paths from `base_url`, or absolute URLs, when the token is created on another host than the authorization page.
+    Parameter `token_field` is the field of the token in the answer (default `access_token`), or a dot-separated path of a nested field, e.g. `authed_user.access_token` for a Slack user token.
   - Raw body, e.g. binary, sent as is: `call(operation: 'PUT', body: <String or IO>, headers: {'Content-Type' => '<MIME_TYPE>'})`.
     An `IO` (e.g. `File.open(path, 'rb')`) is streamed from its current position, without loading the file in memory.
 - **Errors**: raise `Cli::BadArgument` (wrong argument or option) or `Cli::Error`.

@@ -25,11 +25,13 @@ module Aspera
       # prefix for bearer authorization when in header
       SPACE_BEARER_AUTH_SCHEME = 'Bearer '
       TOKEN_FIELD = 'access_token'
+      # Separator of the path of a nested token field, e.g. `authed_user.access_token`
+      FIELD_PATH_SEPARATOR = '.'
       # fields added to the cached token creation response
       OBTAINED_AT_FIELD = 'obtained_at'
       EXPIRES_AT_FIELD = 'expires_at'
 
-      private_constant :PERSIST_CATEGORY_TOKEN, :SPACE_BEARER_AUTH_SCHEME
+      private_constant :PERSIST_CATEGORY_TOKEN, :SPACE_BEARER_AUTH_SCHEME, :FIELD_PATH_SEPARATOR
 
       class << self
         # Format a token for use in Authorization header
@@ -61,6 +63,14 @@ module Aspera
         # @return [String] a unique cache identifier
         def cache_id(url, creator_class, *params)
           return IdGenerator.from_list(PERSIST_CATEGORY_TOKEN, url, Factory.class_to_id(creator_class), params)
+        end
+
+        # Value of the token in a token creation response
+        # @param token_data  [Hash{String => Object}] Token creation response
+        # @param token_field [String]                 Field that contains the token, or dot-separated path of a nested field, e.g. `authed_user.access_token`
+        # @return [Object, nil] Value of the field, `nil` if absent (or an intermediate value is not a Hash)
+        def token_value(token_data, token_field)
+          token_field.split(FIELD_PATH_SEPARATOR).reduce(token_data) { |data, key| data.is_a?(Hash) ? data[key] : nil }
         end
 
         # Convert a class name to snake_case symbol
@@ -140,14 +150,14 @@ module Aspera
 
       # Get token information from cache
       # @param id [String] identifier of token
-      # @param token_field [String, nil] Field containing the token, or nil to auto-detect
+      # @param token_field [String, nil] Field containing the token (or dot-separated path), or nil to auto-detect
       # @return [Hash] token internal information , including Date object for `expiration_date`
       def get_token_info(id, token_field: nil)
         token_raw_string = persist_mgr.get(id)
         return if token_raw_string.nil?
         token_data = JSON.parse(token_raw_string)
         Aspera.assert_type(token_data, Hash)
-        token_value = token_data[token_field] || token_data[TOKEN_FIELD] || token_data['token']
+        token_value = (self.class.token_value(token_data, token_field) unless token_field.nil?) || token_data[TOKEN_FIELD] || token_data['token']
         decoded_token = decode_token(token_value)
         info = {data: token_data}
         info[:decoded] = decoded_token if decoded_token.is_a?(Hash)

@@ -134,6 +134,37 @@ RSpec.describe(Aspera::OAuth::Base) do
       server('client_credentials' => {'other' => 'x'})
       expect { oauth.token }.to(raise_error(Aspera::AssertError, /No such field in answer: access_token/))
     end
+
+    context 'with a nested token field' do
+      # e.g. Slack: the user token is in `authed_user`
+      let(:oauth) { Aspera::OAuth::Generic.new(grant_type: 'client_credentials', base_url: 'https://example.com/oauth2', token_field: 'authed_user.access_token') }
+
+      it 'generates a token read from the nested field, and uses it from cache' do
+        server('client_credentials' => {'ok' => true, 'authed_user' => {'access_token' => new_token}})
+        expect(oauth.token).to(eq(new_token))
+        expect(cached).to(include('authed_user' => {'access_token' => new_token}))
+        expect(oauth.token).to(eq(new_token))
+        expect(@grants).to(eq(['client_credentials']))
+      end
+
+      it 'rejects an answer without the nested field' do
+        server('client_credentials' => {'ok' => true, 'authed_user' => 'x', 'access_token' => valid_token})
+        expect { oauth.token }.to(raise_error(Aspera::AssertError, /No such field in answer: authed_user.access_token/))
+      end
+    end
+  end
+
+  describe 'Factory.token_value' do
+    it 'reads a field, or a dot-separated path of a nested field' do
+      expect(Aspera::OAuth::Factory.token_value({'access_token' => 'a'}, 'access_token')).to(eq('a'))
+      expect(Aspera::OAuth::Factory.token_value({'authed_user' => {'access_token' => 'b'}}, 'authed_user.access_token')).to(eq('b'))
+    end
+
+    it 'gives nil for a missing field, or an intermediate value that is not a Hash' do
+      expect(Aspera::OAuth::Factory.token_value({'other' => 'x'}, 'access_token')).to(be_nil)
+      expect(Aspera::OAuth::Factory.token_value({'authed_user' => 'x'}, 'authed_user.access_token')).to(be_nil)
+      expect(Aspera::OAuth::Factory.token_value({}, 'authed_user.access_token')).to(be_nil)
+    end
   end
 
   describe '#renew_token' do

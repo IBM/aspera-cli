@@ -30,7 +30,7 @@ module Aspera
       # @param params         [Hash]    Parameters for token creation (client_id, client_secret, scope, etc...)
       # @param path_token     [String]  API end point to create a token: path from base URL, or absolute URL (`http` or `https`), e.g. on another host
       # @param use_query      [Boolean] Provide parameters in query instead of body
-      # @param token_field    [String]  Field in result that contains the token
+      # @param token_field    [String]  Field in result that contains the token, or dot-separated path of a nested field (e.g. `authed_user.access_token`)
       # @param cache_ids      [Array]   List of unique identifiers for cache id generation
       # @param rest_params    [Hash]    Parameters for REST
       def initialize(
@@ -183,9 +183,10 @@ module Aspera
       # @param token_data [Hash{String => Object}] Token creation response
       # @return [String] The bearer token, registered as secret: hidden wherever it appears (logs, results)
       def bearer_token(token_data)
-        Aspera.assert(token_data.key?(@token_field)) { "API error: No such field in answer: #{@token_field}" }
-        Secret::Hider.instance.add_secret_values(token_data[@token_field], token_data['refresh_token'])
-        token_data[@token_field]
+        token_value = Factory.token_value(token_data, @token_field)
+        Aspera.assert(!token_value.nil?) { "API error: No such field in answer: #{@token_field}" }
+        Secret::Hider.instance.add_secret_values(token_value, token_data['refresh_token'])
+        token_value
       end
     end
   end

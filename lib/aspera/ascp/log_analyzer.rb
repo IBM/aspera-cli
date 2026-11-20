@@ -21,8 +21,6 @@ module Aspera
     class LogAnalyzer
       # Oldest ascp version for which the analysis is designed
       MIN_VERSION = '4.0'
-      # Path that designates the standard input
-      STDIN_PATH = '-'
       # First two bytes of a gzip file
       GZIP_MAGIC = "\x1F\x8B".b.freeze
       # Files analyzed when scanning a folder
