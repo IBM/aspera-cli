@@ -18,6 +18,9 @@ module Aspera
     module Backend
       # Base decoder that rescales image data to the current terminal geometry.
       class Base
+        # Rows and columns used when the size of the terminal is unknown
+        DEFAULT_TERMINAL_SIZE = [24, 80].freeze
+        private_constant :DEFAULT_TERMINAL_SIZE
         # @param reserve [Integer] number of terminal rows reserved for non-image output
         # @param double [Boolean] when `true`, render two image rows in one terminal row
         # @param font_ratio [Float] terminal font aspect ratio: height divided by width
@@ -33,7 +36,9 @@ module Aspera
         # @param columns [Integer] source image width in pixels
         # @return [Array<Integer>] scaled width and height for terminal rendering
         def terminal_scaling(rows, columns)
-          (term_rows, term_columns) = IO.console.winsize || [24, 80]
+          (term_rows, term_columns) = IO.console&.winsize
+          # A terminal that does not know its size (e.g. a pseudo-terminal created without size) reports 0 x 0
+          (term_rows, term_columns) = DEFAULT_TERMINAL_SIZE unless term_rows&.positive? && term_columns&.positive?
           term_rows = [term_rows - @reserve, 2].max
           fit_term_ratio = [term_rows.to_f * @font_ratio / rows.to_f, term_columns.to_f / columns.to_f].min
           [(columns * fit_term_ratio).to_i, (rows * fit_term_ratio * @height_ratio / @font_ratio).to_i]

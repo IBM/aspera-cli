@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require_relative 'assert'
+require_relative 'inflate'
 require 'json'
 require 'zlib'
 require 'openssl'
@@ -113,7 +114,7 @@ module Aspera
         else
           deflated = raw
         end
-        data = JSON.parse(inflate(deflated))
+        data = JSON.parse(Inflate.limited(deflated, max_size: MAX_INFLATED_SIZE, what: 'Code'))
         raise ParameterError, 'Invalid code: unexpected content' unless data.is_a?(Hash)
         data
       rescue JSON::ParserError, Zlib::Error
@@ -143,23 +144,6 @@ module Aspera
         cipher.update(raw.byteslice((IV_SIZE + TAG_SIZE)..)) + cipher.final
       rescue OpenSSL::Cipher::CipherError
         nil
-      end
-
-      # @param body [String] Deflated data
-      # @return [String] Inflated data, limited in size
-      def inflate(body)
-        output = +''
-        inflater = Zlib::Inflate.new
-        begin
-          inflater.inflate(body) do |chunk|
-            output << chunk
-            raise ParameterError, 'Invalid code: content is too large' if output.bytesize > MAX_INFLATED_SIZE
-          end
-          raise ParameterError, 'Code is incomplete' unless inflater.finished?
-        ensure
-          inflater.close
-        end
-        output
       end
     end
   end

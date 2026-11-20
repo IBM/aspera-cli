@@ -26,6 +26,10 @@ Released: [Place date of release here]
 
 ### Issues Fixed
 
+* Option `security`, `mcp server`: extended value `@zlib:` was accepted at levels `medium` and `high`: a client could send a small value that decompresses to gigabytes (e.g. `@zlib:@zlib:<DATA>`), and exhaust the memory of the system. It is now refused at these levels, as `@ruby:`, `@uri:` and `@env:`. It is not limited at level `low`. Reported by visionx7.
+* `orchestrator workflows import` and `check_import`: a workflow package (`.wkf`) was decompressed in memory without limit for the local check, so a small package could exhaust the memory (e.g. 1 MB for 1 GiB). A package whose files exceed 256 MiB once decompressed is now reported (issue `package.too_large`) and not decompressed: the size is read in the archive before each file.
+* Node API bearer token (e.g. option `password` of plugin `node`, or a token in cache): it was decompressed without limit, so a small token could exhaust the memory. The decoded token is now limited to 64 KiB, checked while decompressing.
+* Option `security`, `mcp server`: `orchestrator workflows check_import` read any local file at levels `medium` and `high`, and its issues show parts of the content. It now reads the file as `@file:`: only in `allowed_paths` at level `medium`, refused at level `high`. `workflows import` sends the file, as a transfer: not restricted.
 * `config ascp info`: key `log` was always `-` (`ascp` is run with `-L-` to read its paths). It is now where `ascp` logs without option `-L`: `<logging><directory>` of `aspera.conf`, else `~/Library/Logs/Aspera` on macOS, `var\log` of the product (or the folder of `ascp`) on Windows, `syslog` on Linux and Unix.
 * Logs (`--log-level=trace1`, `trace2`): the value of a secret option given on command line (e.g. `--password=<PASSWORD>`, `--vault.password=<PASSWORD>`) was shown in clear in the logs of the command line, of unprocessed options, and of the evaluation of the option. It is now declared as a secret when the command line is read, by option name, as is a structured value with a secret key (e.g. `--vault=@json:'{"password":"<PASSWORD>"}'`), and a short value (less than 8 characters) is hidden too in these logs.
 * Option `dry_run` was ignored by all commands except `transferd service`, e.g. `server download` transferred files. A transfer command now does not transfer, and its result is the final transfer spec (secrets hidden). Commands that change something before the transfer (`aoc packages send`, `faspex5 packages send`: the package is created first), `sync` commands and `preview` generation are refused with option `dry_run`, before any change.
@@ -37,6 +41,7 @@ Released: [Place date of release here]
 * `mcp server`: when the optional gem `mcp` is not installed, the error was `uninitialized constant Cli` instead of the message telling to install it.
 * Vault 1Password (`op`): creating a secret (e.g. `config vault create`, `config preset secure`) failed with `invalid JSON in piped input`, because `op item create` reads an item template on its standard input when it is not a terminal. The fields are now given to `op` in a JSON template on its standard input, so the secret is no longer on its command line.
 * Wizard: an existing default preset for the plugin was replaced without error when `override=yes` was not given: the check (`A default configuration already exists`) never applied.
+* Display of an image as text in a terminal that does not report its size (0 x 0, e.g. a pseudo-terminal) or without console: the image was scaled to nothing or failed (`Cannot decode picture.`). The default size 24 x 80 is now used.
 
 ### Breaking Changes
 

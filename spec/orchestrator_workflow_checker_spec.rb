@@ -491,5 +491,32 @@ RSpec.describe(Aspera::OrchestratorWorkflowChecker) do
     it 'reports a file that is not an archive' do
       expect(codes(check('not an archive', file_name: 'wf.wkf'))).to(eq(['package.archive']))
     end
+
+    it 'reports a package larger than the limit when decompressed, without decompressing all of it (decompression bomb)' do
+      stub_const('Aspera::OrchestratorWorkflowChecker::PACKAGE_MAX_SIZE', 100_000)
+      # 20 MB once decompressed, about 20 kB compressed
+      bomb = package('x/Workflow_hello__1.txt' => manifest, 'x/big.bin' => "\0" * 20_000_000, 'x/Workflow_hello__1.yml' => workflow)
+      expect(bomb.bytesize).to(be < 100_000)
+      # Bytes decompressed
+      inflated = 0
+      allow(Zlib::GzipReader).to(receive(:wrap).and_wrap_original do |original, io, &block|
+        original.call(io) do |gzip|
+          allow(gzip).to(receive(:read).and_wrap_original { |read, *args| read.call(*args).tap { |data| inflated += data.to_s.bytesize } })
+          block.call(gzip)
+        end
+      end)
+      response = check(bomb, file_name: 'wf.wkf')
+      expect(response['issues']).to(eq([{
+        'severity' => 'error', 'code' => 'package.too_large', 'file' => nil, 'path' => 'file',
+        'message'  => 'package is too large when decompressed: more than 100000 bytes'
+      }.compact]))
+      # The manifest and the header of the large entry, not its content
+      expect(inflated).to(be < 100_000)
+    end
+
+    it 'accepts a package up to the limit' do
+      stub_const('Aspera::OrchestratorWorkflowChecker::PACKAGE_MAX_SIZE', workflow.bytesize + manifest.bytesize)
+      expect(codes(check(package('x/Workflow_hello__1.yml' => workflow, 'x/Workflow_hello__1.txt' => manifest), file_name: 'wf.wkf'))).to(be_empty)
+    end
   end
 end

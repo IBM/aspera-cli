@@ -33,6 +33,20 @@ RSpec.describe(Aspera::Api::Node) do
 
   before { allow(Aspera::Log.log).to(receive(:warn)) { |*args, &block| warnings.push(block ? block.call : args.first) } }
 
+  describe '.decode_bearer_token' do
+    let(:private_key) { OpenSSL::PKey::RSA.new(2048) }
+
+    it 'decodes the payload of a bearer token' do
+      token = described_class.bearer_token(access_key: access_key, payload: {'user_id' => 'user1'}, private_key: private_key)
+      expect(described_class.decode_bearer_token(token)).to(include('user_id' => 'user1', 'scope' => "node.#{access_key}:user:all"))
+    end
+
+    it 'refuses a token that decompresses to more than the limit, without decompressing all of it' do
+      bomb = Base64.strict_encode64(Zlib::Deflate.deflate("{\"user_id\":\"#{'a' * 100_000_000}\"}", Zlib::BEST_COMPRESSION))
+      expect { described_class.decode_bearer_token(bomb) }.to(raise_error(Aspera::ParameterError, /Node bearer token is too large when decompressed/))
+    end
+  end
+
   describe '.add_public_key' do
     it 'adds the public key in OpenSSH format when a dynamic key is set' do
       expect(described_class.add_public_key({})).to(eq({}))

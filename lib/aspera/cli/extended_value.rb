@@ -110,7 +110,7 @@ module Aspera
           base64: lambda { |i| Base64.decode64(i) },
           csvt:   lambda { |i| ExtendedValue.decode_csvt(i) },
           env:    lambda { |i| ENV.fetch(i, nil) },
-          file:   lambda { |i| File.read(Security.instance.readable_path(i)) },
+          file:   lambda { |i| Security.instance.read_file(i) },
           uri:    lambda { |i| UriReader.read(i) },
           json:   lambda { |i| ExtendedValue.JSON_parse(i) },
           lines:  lambda { |i| i.split("\n") },

@@ -6087,6 +6087,7 @@ conf_vault_deprecated_store:
     - --vault=@json:{"type":"file","name":"$(PATH_VAULT_FILE)"}
     - --out.secrets=yes
 conf_preset_ask:
+  # Runs first (priority), before the test vault is set: no vault, the password stays in clear, conf_preset_secure moves it to the test vault
   priority: 1
   stdin: "username\npassword\n\nthe_user\nthe_pass\n"
   tags:
@@ -6098,6 +6099,8 @@ conf_preset_ask:
     - preset
     - ask
     - my_preset
+  harness:
+    vault: "@none:"
 conf_preset_secure:
   depends_on:
     - conf_preset_ask

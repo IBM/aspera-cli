@@ -12,6 +12,7 @@ require_relative '../lib/aspera/cli/option_value'
 require_relative '../lib/aspera/cli/command_spec'
 require_relative '../lib/aspera/schema/registry'
 require 'base64'
+require 'zlib'
 require 'fileutils'
 require 'securerandom'
 require 'tmpdir'
@@ -45,6 +46,7 @@ module Aspera
           expect(evaluate(extend_file(other_file))).to(eq("@file:#{other_file}@"))
           expect(evaluate('@ruby:1+1')).to(eq(2))
           expect(evaluate('@env:ASCLI_TEST_SECURITY')).to(eq('value'))
+          expect(evaluate("@zlib:#{Zlib::Deflate.deflate('value')}")).to(eq('value'))
         ensure
           ENV.delete('ASCLI_TEST_SECURITY')
         end
@@ -53,10 +55,18 @@ module Aspera
       describe 'level high' do
         before { security.options = {'level' => 'high'} }
 
-        it 'refuses @ruby:, @file:, @uri: and @env:' do
-          ['@ruby:1+1', "@file:#{other_file}", "@uri:file://#{other_file}", '@env:HOME'].each do |value|
+        it 'refuses @ruby:, @file:, @uri:, @env: and @zlib:' do
+          ['@ruby:1+1', "@file:#{other_file}", "@uri:file://#{other_file}", '@env:HOME', "@zlib:#{Zlib::Deflate.deflate('value')}"].each do |value|
             expect { evaluate(value) }.to(raise_error(BadArgument, /extended value is disabled by security level high/))
           end
+        end
+
+        it 'refuses @zlib: before decompressing, in MCP server mode' do
+          security.reset
+          security.lock('in MCP server mode', default: :high)
+          bomb = Zlib::Deflate.deflate(Zlib::Deflate.deflate("\0" * 10_000_000, Zlib::BEST_COMPRESSION), Zlib::BEST_COMPRESSION)
+          expect(Zlib::Inflate).not_to(receive(:inflate))
+          expect { evaluate("@zlib:@zlib:#{bomb}") }.to(raise_error(BadArgument, /@zlib: extended value is disabled by security level high/))
         end
 
         it 'does not evaluate @file: in a value decoded by @extend:' do
@@ -72,6 +82,10 @@ module Aspera
         it 'allows other extended values' do
           expect(evaluate('@json:{"a":1}')).to(eq({'a' => 1}))
         end
+
+        it 'refuses to read a file for a command' do
+          expect { security.read_file(other_file) }.to(raise_error(BadArgument, /reading files is disabled by security level high/))
+        end
       end
 
       describe 'level medium' do
@@ -82,6 +96,14 @@ module Aspera
           expect(evaluate("@file:#{other_file}")).to(eq('other'))
         end
 
+        it 'reads a file in allowed paths as text or bytes, for a command' do
+          binary = File.join(allowed_folder, 'data.bin').tap { |path| File.binwrite(path, "\xFF\x00".b) }
+          expect(security.read_file(allowed_file)).to(eq('in folder'))
+          expect(security.read_file(binary, binmode: true)).to(eq("\xFF\x00".b))
+          expect(security.read_file(binary, binmode: true).encoding).to(eq(Encoding::BINARY))
+          expect { security.read_file(File.join(folder, 'outside.txt')) }.to(raise_error(BadArgument, /no such file in security.allowed_paths/))
+        end
+
         it 'refuses files outside of allowed paths, also with .. or a symbolic link, and missing files' do
           outside = File.join(folder, 'outside.txt').tap { |path| File.write(path, 'outside') }
           link = File.join(allowed_folder, 'link').tap { |path| File.symlink(outside, path) }
@@ -90,8 +112,8 @@ module Aspera
           end
         end
 
-        it 'refuses @ruby:, @uri: and @env:' do
-          ['@ruby:1+1', "@uri:file://#{allowed_file}", '@env:HOME'].each do |value|
+        it 'refuses @ruby:, @uri:, @env: and @zlib:' do
+          ['@ruby:1+1', "@uri:file://#{allowed_file}", '@env:HOME', "@zlib:#{Zlib::Deflate.deflate('value')}"].each do |value|
             expect { evaluate(value) }.to(raise_error(BadArgument, /extended value is disabled by security level medium/))
           end
         end

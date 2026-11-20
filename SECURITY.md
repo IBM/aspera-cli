@@ -31,6 +31,20 @@ Include in the report:
 
 Remove secrets (passwords, tokens, private keys) from logs and configuration files before you send them.
 
+## Response Process
+
+1. The report is acknowledged within 14 days.
+2. It is assessed with the [Scope](#scope) and the [Trust Model](#trust-model): the reporter is told whether it is accepted, and why if it is not.
+3. An accepted vulnerability is fixed in the next release, see [Supported Versions](#supported-versions).
+   The reporter is asked not to disclose it before this release.
+4. The release notes ([CHANGELOG.md](CHANGELOG.md)) describe the fix in section "Issues Fixed", with the CVE identifier when one is assigned.
+   They credit the reporter, with the name the reporter chooses, unless the reporter asks to remain anonymous.
+5. Disclosure:
+   - A report sent on GitHub is handled in a private GitHub security advisory.
+     After the release, the advisory is published with the fixed version, so that it is in the [GitHub Advisory Database](https://github.com/advisories).
+   - A report sent to IBM PSIRT is disclosed by IBM PSIRT (CVE, security bulletin).
+     A GitHub security advisory is published with the same information.
+
 ## Scope
 
 In scope: the Ruby gem `aspera-cli` (the `ascli` command), and how it interacts with IBM Aspera components.

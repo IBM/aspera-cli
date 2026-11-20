@@ -625,9 +625,10 @@ module Aspera
         # `call_ao('check_workflow', body: [['import_file', content, {filename: file_name}], ['import_file_name', file_name]], content_type: Mime::MULTIPART)`
         # The response is a Hash, see {OrchestratorWorkflowChecker}.
         # Templates and inputs of steps are checked with the specifications of plugins (see `plugins spec show`), when they can be read.
-        # @param file_path [String] Workflow file (`.yml` or `.wkf`)
+        # @param file_name [String] Name of the workflow file (`.yml` or `.wkf`)
+        # @param content   [String] Bytes of the file
         # @return [Hash] `valid` (Boolean), `file_name`, `issues` (list of Hash: `severity`, `code`, `file`, `path`, `message`)
-        def check_workflow(file_path)
+        def check_workflow(file_name, content)
           require_relative '../../orchestrator_workflow_checker'
           specs = nil
           specs_error = nil
@@ -636,7 +637,7 @@ module Aspera
           rescue StandardError => e
             specs_error = e.message
           end
-          response = OrchestratorWorkflowChecker.check(file_name: File.basename(file_path), content: File.binread(file_path), specs: specs)
+          response = OrchestratorWorkflowChecker.check(file_name: file_name, content: content, specs: specs)
           unless specs_error.nil?
             response['issues'].push({
               'severity' => 'warning',
@@ -648,10 +649,11 @@ module Aspera
           response
         end
 
+        # The file is read as `@file:`: the issues show parts of its content
         # @param file_path [String] Workflow file
         # @return [Result] The issues found, or a status if none
         def action_workflows_check_import(file_path:, **)
-          response = check_workflow(file_path)
+          response = check_workflow(File.basename(file_path), Security.instance.read_file(file_path, binmode: true))
           return Result::Status.new('no problem found') if response['issues'].empty?
           Result::ObjectList.new(response['issues'], fields: %w[severity code file path message])
         end
@@ -704,15 +706,17 @@ module Aspera
         end
 
         # The file is uploaded as a multipart form
+        # It is sent, as a transfer sends files: not restricted by the security level, see `Security#read_file`
         # @param import [Hash] Options: `folder_id`, `publish`, `link_to_subworkflows`
         def action_workflows_import(file_path:, import: {}, **)
           import = import.transform_keys(&:to_s)
-          check_workflow(file_path)['issues'].each do |issue|
+          file_name = File.basename(file_path)
+          content = File.binread(file_path)
+          check_workflow(file_name, content)['issues'].each do |issue|
             Log.log.warn { "#{issue['severity']}: #{[issue['file'], issue['path']].compact.join(' ')}: #{issue['message']} (#{issue['code']})" }
           end
-          file_name = File.basename(file_path)
           form = [
-            ['import_file', File.binread(file_path), {filename: file_name}],
+            ['import_file', content, {filename: file_name}],
             ['import_file_name', file_name]
           ]
           form.push(['folder_id', import['folder_id'].to_s]) if import.key?('folder_id')

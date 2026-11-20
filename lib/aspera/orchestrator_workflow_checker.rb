@@ -70,6 +70,9 @@ module Aspera
     TABLE_SEPARATOR = ':::'
     # Elements of a step that a `Map_to` of type `output` gives as attributes (in lower case)
     STEP_IDENTITY = %w[Step_name Step_type Action_id].freeze
+    # Maximum size of the entries of a package once decompressed: a small package can decompress to gigabytes (decompression bomb)
+    PACKAGE_MAX_SIZE = 256 * 1024 * 1024
+    private_constant :PACKAGE_MAX_SIZE
     private_constant :WORKFLOW_ATTRIBUTES, :WHITEBOARD_ATTRIBUTES, :VALUE_TYPES, :ELEMENT_COUNTS, :TRUE_VALUES, :UNNAMED, :SUCCESS_STATUSES,
       :BOOLEAN_TEXT, :STEP_CHILDREN, :PARAMETER_MAPPINGS, :TEMPLATE_COLUMNS, :FALSE_VALUES, :INTEGER_TYPES, :SPEC_CODE, :PARTLY_DEFINED, :PLACEHOLDER,
       :STEP_IDENTITY, :SINGLE_NAME, :TABLE_SEPARATOR, :LOOKUP_DELIMITER, :LOOKUP_INDEX_INPUT
@@ -122,10 +125,16 @@ module Aspera
     # @param content [String] Bytes of a `.wkf` file: gzipped tar with a manifest (list of files, the first one is the main workflow)
     def check_package(content)
       files = {}
+      size = 0
       begin
         Zlib::GzipReader.wrap(StringIO.new(content)) do |gzip|
           Gem::Package::TarReader.new(gzip) do |tar|
-            tar.each { |entry| files[entry.full_name] = entry.read if entry.file? }
+            tar.each do |entry|
+              # Size declared in the header: checked before the entry is decompressed (read, or skipped)
+              size += entry.header.size
+              return add(ERROR, 'package.too_large', 'file', "package is too large when decompressed: more than #{PACKAGE_MAX_SIZE} bytes") if size > PACKAGE_MAX_SIZE
+              files[entry.full_name] = entry.read if entry.file?
+            end
           end
         end
       rescue Zlib::Error, Gem::Package::Error => e

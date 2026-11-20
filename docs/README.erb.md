@@ -2803,7 +2803,7 @@ It is a `Hash` with the following keys:
 | `allowed_paths` | `Array<string>` | - | With level `medium`: files and folders that `@file:` can read |
 | `writable_paths` | `Array<string>` | - | With levels `medium` and `high`: folders where files can be written |
 
-| Level | `@file:` | `@ruby:`, `@uri:`, and `@env:` | Secret processed by another extended value | Write files | Features that execute code |
+| Level | `@file:` | `@ruby:`, `@uri:`, `@env:`, and `@zlib:` | Secret processed by another extended value | Write files | Features that execute code |
 |---|---|---|---|---|---|
 | `low` | Allowed | Allowed | Allowed | Allowed | Allowed |
 | `medium` | Only files in `allowed_paths` | Refused | Refused | Only in `writable_paths` | Refused |
@@ -2811,12 +2811,15 @@ It is a `Hash` with the following keys:
 
 With level `medium`, the real path of the file is checked: a symbolic link leading outside of `allowed_paths` is refused.
 
+`@zlib:` is refused with levels `medium` and `high`: a small value can decompress to gigabytes and exhaust the memory of the system.
+
 With levels `medium` and `high`, files are written only in `writable_paths` (none by default): downloaded files (`config download`, and transfers that receive files), because a file written where the client chooses could replace a file that is used later, for example a plugin or a shell startup file.
 The real path of the folder is checked: neither `..` nor a symbolic link leading outside of `writable_paths` is accepted.
 
 > [!NOTE]
-> Reading files is not restricted for transfers: a command that sends files (for example `server upload`) reads the files that it is given, whatever the level.
+> Reading files is not restricted for transfers: a command that sends files (for example `server upload`, or `orchestrator workflows import`) reads the files that it is given, whatever the level.
 > The security level restricts extended values, not the paths of transfers.
+> A command that reads a local file to display something about its content (for example `orchestrator workflows check_import`) reads it as `@file:`.
 
 The same applies to `@file:<path>` in the parameters of stores of option `vault`, and in option `vault_password` (for example, `token`), although the file is read when used, not when the option is evaluated.
 
@@ -9920,6 +9923,7 @@ Command `workflows check_import` checks a workflow file (`.yml`) or package (`.w
 ```
 
 It displays one line per issue, or `no problem found`.
+The file is read as `@file:`: at [Security Level](#security-level) `medium`, only in `allowed_paths`, and not at level `high`.
 An issue has these fields:
 
 | Field      | Description |
@@ -9931,6 +9935,8 @@ An issue has these fields:
 | `message`  | Description. |
 
 Checked: format of the file (YAML, number of elements, plain format layout), attributes, `error_free`, action template keys, XML of the graph, `Start`, `End`, `Fail` and `Error` nodes, unique step names, step template, prerequisites, `Synch_factor`, steps that have no output or no prerequisite, references to outputs and parameters.
+
+A package (`.wkf`) whose files exceed 256 MiB once decompressed is not checked: it is reported as an issue (`package.too_large`).
 
 With the specifications of plugins (see `plugins spec show`), it also checks action templates and the inputs of steps, for the settings of each template:
 
@@ -10571,7 +10577,7 @@ With both transports:
 - Extended value `@stdin:` is refused.
 - `@secret:` is entered by the user on a web page, see [Secrets entered in a web page](#secrets-entered-in-a-web-page).
 - Secrets are hidden in responses, also a value shorter than 8 characters as a word in a text (for example, a short password in an error message).
-- The [Security Level](#security-level) is `high` by default: `@ruby:`, `@file:` (also in the parameters of stores of option `vault`), `@uri:`, and `@env:` are refused, and a secret must be the whole value: hidden in results, it cannot be processed by another extended value.
+- The [Security Level](#security-level) is `high` by default: `@ruby:`, `@file:` (also in the parameters of stores of option `vault`), `@uri:`, `@env:`, and `@zlib:` are refused, and a secret must be the whole value: hidden in results, it cannot be processed by another extended value.
   It applies to commands sent by the client, and to presets, because the client can modify presets.
   Commands sent by the client cannot change option `security`.
   Features that execute code, such as option `notify_template` or command `config plugins create`, plugins, and writing to a file chosen by the client (option `out.file`), are refused, see [Security Level](#security-level).

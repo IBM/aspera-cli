@@ -351,6 +351,33 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
         expect(orchestrator).not_to(have_received(:call_ao))
       end
     end
+
+    context 'with a security level' do
+      after { Aspera::Cli::Security.instance.reset }
+
+      # The issues show parts of the content: the file is read as `@file:`
+      it 'does not read a file refused by the level, but sends it with import, as a transfer' do
+        Dir.mktmpdir do |dir|
+          path = File.join(dir, 'wf.yml')
+          File.write(path, "---\n")
+          Aspera::Cli::Security.instance.lock('in MCP server mode', default: :high)
+          allow(Aspera::OrchestratorWorkflowChecker).to(receive(:check).and_call_original)
+          expect { orchestrator.action_workflows_check_import(file_path: path) }.to(raise_error(Aspera::Cli::BadArgument, /reading files is disabled by security level high/))
+          expect(Aspera::OrchestratorWorkflowChecker).not_to(have_received(:check))
+          allow(orchestrator).to(receive(:call_ao).and_return({'workflow' => {'id' => 1}}))
+          expect(orchestrator.action_workflows_import(file_path: path).data).to(eq({'id' => 1}))
+        end
+      end
+
+      it 'reads a file in allowed paths' do
+        Dir.mktmpdir do |dir|
+          path = File.join(dir, 'wf.yml')
+          File.write(path, "---\n")
+          Aspera::Cli::Security.instance.options = {'level' => 'medium', 'allowed_paths' => [dir]}
+          expect(orchestrator.action_workflows_check_import(file_path: path)).to(be_a(Aspera::Cli::Result::ObjectList))
+        end
+      end
+    end
   end
 
   describe 'command workflows development' do

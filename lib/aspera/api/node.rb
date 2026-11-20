@@ -9,6 +9,7 @@ require_relative '../rest'
 require_relative '../oauth/client/factory'
 require_relative '../log'
 require_relative '../assert'
+require_relative '../inflate'
 require_relative '../secret/hider'
 require_relative '../environment'
 require_relative '../rainbow'
@@ -73,7 +74,9 @@ module Aspera
       SIGNATURE_DELIMITER = '==SIGNATURE=='
       # Default validity when generating a bearer token "manually"
       BEARER_TOKEN_VALIDITY_DEFAULT = 86400
-      private_constant :SIGNATURE_DELIMITER, :BEARER_TOKEN_VALIDITY_DEFAULT
+      # Maximum size of a decoded bearer token (a few kB): it is given by the user, a client, or a server
+      BEARER_TOKEN_MAX_INFLATED_SIZE = 65_536
+      private_constant :SIGNATURE_DELIMITER, :BEARER_TOKEN_VALIDITY_DEFAULT, :BEARER_TOKEN_MAX_INFLATED_SIZE
       # Node API permissions: delete list mkdir preview read rename write
       ACCESS_LEVELS = %w[delete list mkdir preview read rename write].freeze
       # Special HTTP Headers
@@ -189,8 +192,12 @@ module Aspera
         end
 
         # Decode an Aspera Node bearer token
+        # @param token [String] Base64 of deflated payload and signature
+        # @return [Hash] Payload
+        # @raise [ParameterError] If the decoded token is too large
         def decode_bearer_token(token)
-          return JSON.parse(Zlib::Inflate.inflate(Base64.decode64(token)).partition(SIGNATURE_DELIMITER).first)
+          inflated = Inflate.limited(Base64.decode64(token), max_size: BEARER_TOKEN_MAX_INFLATED_SIZE, what: 'Node bearer token')
+          return JSON.parse(inflated.partition(SIGNATURE_DELIMITER).first)
         end
 
         # @return [Hash] Headers to call node API with access key and auth

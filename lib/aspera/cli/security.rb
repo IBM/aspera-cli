@@ -22,10 +22,12 @@ module Aspera
       # Security levels, from least to most restrictive
       LEVELS = %i[low medium high].freeze
       # Extended-value handlers restricted by security level, with the levels that allow them
+      # `zlib`: a small value can decompress to gigabytes (decompression bomb), a limit on its size would not limit the number of values
       EXTENDED_VALUE_LEVELS = {
         ruby: %i[low],
         uri:  %i[low],
         env:  %i[low],
+        zlib: %i[low],
         file: %i[low medium]
       }.freeze
       # Levels that allow processing a secret (e.g. by an extended value): the result could reveal it, as only declared values are hidden
@@ -157,6 +159,14 @@ module Aspera
         else raise BadArgument, "reading files is disabled by security level #{level}"
         end
       end
+
+      # Read a local file chosen by the caller, e.g. `@file:`, or a command that reads a file to display something about it.
+      # Not for a file that a command sends (e.g. upload, import of a workflow): not restricted, as transfers.
+      # @param path [String] Path of a file to read
+      # Other arguments are those of `File.read`, e.g. `binmode: true` for bytes
+      # @return [String] Content of the file
+      # @raise [BadArgument] If reading the file is refused at current level
+      def read_file(path, ...) = File.read(readable_path(path), ...)
 
       # Writing a file where the client chooses (e.g. downloaded file) could replace a file that is used later (e.g. plugin, shell startup file).
       # At level `medium` and `high`, files can be written only in `writable_paths` (none by default): the real path of the folder is checked,
