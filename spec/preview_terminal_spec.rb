@@ -6,7 +6,11 @@
 require_relative 'spec_helper'
 require_relative '../lib/aspera/preview/terminal'
 require 'chunky_png'
-require 'rmagick'
+begin
+  require 'rmagick'
+rescue LoadError
+  # optional gem rmagick not installed (e.g. BUNDLE_WITHOUT=optional, or JRuby): its examples are skipped
+end
 
 RSpec.describe(Aspera::Preview::Terminal) do
   # Image of 4 x 4 pixels: top half red, bottom half blue
@@ -51,8 +55,14 @@ RSpec.describe(Aspera::Preview::Terminal) do
   end
 
   it 'decodes with RMagick an image that ChunkyPNG does not decode' do
+    skip('requires gem rmagick') unless defined?(Magick)
     text = described_class.build(jpeg_blob, text: true, double: false, reserve: 0)
     expect(text.split("\n").length).to(be > 1)
+  end
+
+  it 'raises when the image cannot be decoded and gem rmagick is not installed' do
+    allow(Aspera::Preview::Backend::RMagick).to(receive(:new).and_raise(LoadError, 'cannot load such file -- rmagick'))
+    expect { described_class.build('not an image', text: true) }.to(raise_error(RuntimeError, 'Cannot decode picture.'))
   end
 
   it 'raises when the image cannot be decoded' do

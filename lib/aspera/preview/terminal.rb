@@ -150,7 +150,8 @@ module Aspera
               begin
                 Log.log.debug('Trying rmagick')
                 Backend::RMagick.new(blob, reserve: reserve, double: double, font_ratio: font_ratio).terminal_pixels
-              rescue => e
+              rescue StandardError, LoadError => e
+                # LoadError: optional gem rmagick not installed
                 Log.log.debug(e.message)
                 nil
               end

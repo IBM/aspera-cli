@@ -43,6 +43,7 @@ Released: [Place date of release here]
 * Vault 1Password (`op`): creating a secret (e.g. `config vault create`, `config preset secure`) failed with `invalid JSON in piped input`, because `op item create` reads an item template on its standard input when it is not a terminal. The fields are now given to `op` in a JSON template on its standard input, so the secret is no longer on its command line.
 * Wizard: an existing default preset for the plugin was replaced without error when `override=yes` was not given: the check (`A default configuration already exists`) never applied.
 * Display of an image as text in a terminal that does not report its size (0 x 0, e.g. a pseudo-terminal) or without console: the image was scaled to nothing or failed (`Cannot decode picture.`). The default size 24 x 80 is now used.
+* Display of an image as text without the optional gem `rmagick`: an image that ChunkyPNG does not decode (e.g. JPEG) failed with `cannot load such file -- rmagick`, instead of being displayed with the iTerm2 inline image protocol (if supported by the terminal) or failing with `Cannot decode picture.`.
 
 ### Breaking Changes
 
