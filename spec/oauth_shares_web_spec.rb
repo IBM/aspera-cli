@@ -48,15 +48,25 @@ RSpec.describe(Aspera::OAuth::SharesWeb) do
     allow(Aspera::WebAuth::Server).to(receive(:new).and_return(server))
   end
 
-  # The user pastes the code displayed by Shares (evaluated after the login page was opened)
+  # The user pastes a text in the prompt, which validates it (not valid: error, as without terminal) and returns it
+  # @yieldreturn [String] Text pasted (evaluated after the login page was opened)
+  def paste
+    allow(Aspera::Cli::Prompt).to(receive(:prompt_user_input).with('Code', sensitive: true, validate: kind_of(Proc))) { |*, validate:, **| yield.tap { |text| validate.call(text) } }
+  end
+
   # @param extra [Hash] content of the code, in addition to the state sent in RelayState
   # @param state [String, nil] state in the code, default: the one that was sent
-  def paste_code(state: nil, key_state: nil, **extra)
-    allow(Aspera::Cli::Prompt).to(receive(:prompt_user_input).with('Code', sensitive: true)) do
-      sent = relay_state_sent.delete_prefix('aspera://device-code?state=')
-      # Shares uses the state received in RelayState as secret of the code
-      Aspera::SealedHash.seal({'state' => state || sent}.merge(extra.transform_keys(&:to_s)), secret: key_state || sent, base_key: Aspera::Cli::Info::CMD_NAME)
-    end
+  # @param key_state [String, nil] state used for the key of the code, default: the one that was sent
+  # @return [String] Code displayed by Shares (to call after the login page was opened)
+  def code_of_shares(state: nil, key_state: nil, **extra)
+    sent = relay_state_sent.delete_prefix('aspera://device-code?state=')
+    # Shares uses the state received in RelayState as secret of the code
+    Aspera::SealedHash.seal({'state' => state || sent}.merge(extra.transform_keys(&:to_s)), secret: key_state || sent, base_key: Aspera::Cli::Info::CMD_NAME)
+  end
+
+  # The user pastes the code displayed by Shares
+  def paste_code(**params)
+    paste { code_of_shares(**params) }
   end
 
   def mock_token_call
@@ -130,15 +140,34 @@ RSpec.describe(Aspera::OAuth::SharesWeb) do
     end
 
     it 'refuses something that is not a code' do
-      allow(Aspera::Cli::Prompt).to(receive(:prompt_user_input).and_return('http://localhost:12345/?state=x'))
+      paste { 'http://localhost:12345/?state=x' }
       expect { oauth.token }.to(raise_error(Aspera::ParameterError, /Not a code/))
     end
 
     it 'refuses a code that is not a reply of Shares (e.g. a login code)' do
-      allow(Aspera::Cli::Prompt).to(receive(:prompt_user_input).with('Code', sensitive: true)) do
-        Aspera::SealedHash.seal({'login_url' => 'https://x'}, secret: relay_state_sent.delete_prefix('aspera://device-code?state='), base_key: Aspera::Cli::Info::CMD_NAME)
-      end
+      paste { Aspera::SealedHash.seal({'login_url' => 'https://x'}, secret: relay_state_sent.delete_prefix('aspera://device-code?state='), base_key: Aspera::Cli::Info::CMD_NAME) }
       expect { oauth.token }.to(raise_error(Aspera::AssertError, /wrong received state/))
+    end
+
+    context 'when the code is pasted in a terminal' do
+      around do |example|
+        saved = Rainbow.enabled
+        Rainbow.enabled = false
+        example.run
+      ensure
+        Rainbow.enabled = saved
+      end
+
+      it 'shows if the code is valid, and asks again if not' do
+        allow(Aspera::Environment).to(receive(:unicode_environment?).and_return(false))
+        allow($stdin).to(receive(:tty?).and_return(true))
+        inputs = [-> { code_of_shares(key_state: 'other', refresh_token: 'x') }, -> { code_of_shares(refresh_token: 'browser_refresh') }]
+        allow($stdin).to(receive(:raw)) { |&block| block.call(StringIO.new("#{inputs.shift.call}\r")) }
+        mock_token_call
+        expect { expect(oauth.token).to(eq('new_access')) }
+          .to(output(/Code> [^\n]*invalid\r\nInvalid code: [^\n]*\. Try again, or Ctrl-C to stop\.\nCode> [^\n]*\x08valid\r\n\z/).to_stderr)
+        expect(@create_args.first).to(eq(['oauth2/token', {grant_type: 'refresh_token', refresh_token: 'browser_refresh'}]))
+      end
     end
   end
 end

@@ -5,8 +5,11 @@
 
 require_relative '../assert'
 require_relative '../environment'
+require_relative '../rainbow'
 require 'io/console'
 require 'unicode/display_width'
+
+using Rainbow
 
 module Aspera
   module Cli
@@ -16,16 +19,23 @@ module Aspera
 
       # Prompt user for console input
       # The prompt is displayed on `stderr`, like for sensitive input, so that `stdout` contains only results.
-      # @param prompt [String]  prompt string to display
-      # @param sensitive [Boolean] whether to hide typed input
+      # @param prompt    [String]    prompt string to display
+      # @param sensitive [Boolean]   whether to hide typed input
+      # @param validate  [Proc, nil] Called with the input: raises `ParameterError` (with the reason) if the input is not valid. Its result is not used.
+      #   On a terminal, hidden input shows whether it is valid, and if not, the error is displayed and the input is asked again.
       # @return [String] user input stripped of trailing newline
-      def prompt_user_input(prompt, sensitive: false)
-        $stderr.print("#{prompt}> ")
-        if sensitive && $stdin.tty?
-          line = Environment.instance.hidden_silent ? silent_input : masked_input
-          return line unless line.nil?
+      def prompt_user_input(prompt, sensitive: false, validate: nil)
+        loop do
+          line = read_input(prompt, sensitive, validate)
+          begin
+            validate&.call(line)
+            return line
+          rescue ParameterError => e
+            # not a terminal: nobody to ask again
+            raise unless $stdin.tty?
+            $stderr.puts("#{e.message}. Try again, or Ctrl-C to stop.".red) # rubocop:disable Style/StderrPuts
+          end
         end
-        read_line
       end
 
       # Prompt user for input in a list of symbols
@@ -45,6 +55,35 @@ module Aspera
       # Characters that erase the last one
       ERASE_CHARS = ["\u007f", "\b"].freeze
 
+      # Mark of an input checked with `validate`, if valid (`true`) or not: Unicode character, ASCII equivalent, color
+      CHECK_MARKS = {
+        true  => {unicode: '✓', ascii: 'valid', color: :green},
+        false => {unicode: '✗', ascii: 'invalid', color: :red}
+      }.freeze
+
+      # Mark shown instead of a hidden input
+      Mark = Data.define(:text, :color) do
+        # @return [String] Text to display, colored if `color` is set (and colors are enabled)
+        def to_s = color.nil? ? text : text.color(color)
+
+        # @return [String] Characters that erase the mark, by its width on the terminal
+        def erase = "\b \b" * Unicode::DisplayWidth.of(text)
+      end
+      private_constant :ERASE_CHARS, :CHECK_MARKS, :Mark
+
+      # @param prompt    [String]    prompt string to display
+      # @param sensitive [Boolean]   whether to hide typed input
+      # @param validate  [Proc, nil] Checks the input, for the mark of hidden input
+      # @return [String] user input stripped of trailing newline
+      def read_input(prompt, sensitive, validate)
+        $stderr.print("#{prompt}> ")
+        if sensitive && $stdin.tty?
+          line = Environment.instance.hidden_silent ? silent_input : masked_input(validate)
+          return line unless line.nil?
+        end
+        read_line
+      end
+
       # @return [String] Line read from standard input, without trailing newline
       def read_line
         line = $stdin.gets
@@ -63,33 +102,57 @@ module Aspera
         nil
       end
 
-      # Read a line from the terminal without echoing it, but show a mark instead:
-      # a key while the input is empty (waiting for input), an ellipsis once not empty (the paste worked), without revealing the length of the input.
+      # Read a line from the terminal without echoing it, but show a mark instead, without revealing the length of the input:
+      # a key while the input is empty (waiting for input), then an ellipsis (the paste worked),
+      # or, if the input is checked (`validate`), a check mark if it is valid, else a cross.
       # `terminal_supports_unicode?` checks `stdout`, but the mark is on `stderr`: use the locale only.
+      # @param validate [Proc, nil] Checks the input
       # @return [String, nil] user input, or `nil` if the terminal has no raw mode (input not read)
-      def masked_input
+      def masked_input(validate)
         unicode = Environment.unicode_environment?
-        marks = {true => Environment.char('🔑', unicode: unicode), false => Environment.char('…', unicode: unicode)}
         line = +''
-        $stderr.print(marks[true])
+        mark_of = ->(text) { input_mark(text, validate, unicode) }
+        shown = mark_of.call(line)
+        $stderr.print(shown)
         begin
-          $stdin.raw { |tty| read_masked(tty, line, marks) }
+          $stdin.raw { |tty| read_masked(tty, line, shown, &mark_of) }
         rescue Errno::ENODEV, Errno::ENOTTY
           # e.g. a pseudo terminal without raw mode: erase the mark, the caller reads a line (echoed)
-          $stderr.print("\b \b" * Unicode::DisplayWidth.of(marks[true]))
+          $stderr.print(shown.erase)
           return
         end
         line
       end
 
-      # Read characters until end of line, showing the mark of `line` empty or not
-      # @param tty   [IO]                  Terminal in raw mode
-      # @param line  [String]              Input, filled
-      # @param marks [Hash{Boolean=>String}] Mark shown when input is empty (`true`) or not
+      # @param line     [String]    Input
+      # @param validate [Proc, nil] Checks the input
+      # @param unicode  [Boolean]   `true` if Unicode is supported
+      # @return [Mark] Mark of the input
+      def input_mark(line, validate, unicode)
+        return Mark.new(Environment.char('🔑', unicode: unicode), nil) if line.empty?
+        return Mark.new(Environment.char('…', unicode: unicode), nil) if validate.nil?
+        check = CHECK_MARKS[valid?(line, validate)]
+        Mark.new(check[unicode ? :unicode : :ascii], check[:color])
+      end
+
+      # @return [Boolean] `true` if `validate` accepts the input
+      def valid?(line, validate)
+        validate.call(line)
+        true
+      rescue ParameterError
+        false
+      end
+
+      # Read characters until end of line, and update the mark when the input changes
+      # @param tty   [IO]     Terminal in raw mode
+      # @param line  [String] Input, filled
+      # @param shown [Mark]   Mark displayed
+      # @yieldparam  text [String] Input
+      # @yieldreturn [Mark] Mark of the input
       # @return [nil]
-      def read_masked(tty, line, marks)
+      def read_masked(tty, line, shown)
         loop do
-          was_empty = line.empty?
+          before = line.dup
           char = tty.getc
           case char
           when nil, "\r", "\n" then break
@@ -107,13 +170,16 @@ module Aspera
             # ignore other control characters (and escape sequences start)
             line << char unless char.ord < 32
           end
-          next if was_empty.eql?(line.empty?)
-          # erase the previous mark (by its width on the terminal), and display the new one
-          $stderr.print("\b \b" * Unicode::DisplayWidth.of(marks[was_empty]), marks[line.empty?])
+          next if line.eql?(before)
+          mark = yield(line)
+          next if mark.eql?(shown)
+          $stderr.print(shown.erase, mark)
+          shown = mark
         end
         nil
       ensure
-        $stderr.print("\n")
+        # raw mode: no output processing, a line feed alone does not go back to the first column
+        $stderr.print("\r\n")
       end
     end
   end

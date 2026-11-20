@@ -62,14 +62,23 @@ module Aspera
       end
 
       # `paste`: Shares shows a code, to paste in the terminal
-      # The state is part of the key of the code: the code is not readable without it
+      # The prompt shows if the code is valid, and asks again if not.
       # @return [Hash{String=>String}] Content of the code
       def receive_code(state)
         Environment.instance.open_uri(login_page("#{DEVICE_CODE_RELAY_STATE}#{state}"))
         Log.log.warn { 'USER ACTION: Log in with the web browser, then copy the code displayed by Shares and paste it in the prompt below.' }
-        input = Cli::Prompt.prompt_user_input('Code', sensitive: true)
-        Aspera.assert(SealedHash.sealed?(input), type: ParameterError) { 'Not a code: copy the code displayed by Shares after login' }
-        SealedHash.unseal(input, secret: state, base_key: Cli::Info::CMD_NAME)
+        code = Cli::Prompt.prompt_user_input('Code', sensitive: true, validate: ->(text) { unseal_code(text, state) })
+        unseal_code(code, state)
+      end
+
+      # The state is part of the key of the code: the code is not readable without it
+      # @param text  [String] Pasted by the user
+      # @param state [String] State of this login
+      # @return [Hash{String=>String}] Content of the code
+      # @raise [ParameterError] if the text is not a valid code of this login (or it is expired)
+      def unseal_code(text, state)
+        Aspera.assert(SealedHash.sealed?(text), type: ParameterError) { 'Not a code: copy the code displayed by Shares after login' }
+        SealedHash.unseal(text, secret: state, base_key: Cli::Info::CMD_NAME)
       end
 
       # @param relay_state [String] Where Shares sends the result

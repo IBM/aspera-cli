@@ -1888,8 +1888,14 @@ On a terminal, a mark shows the state of the input, without revealing its length
 |------|-------|-------|
 | `🔑` | `***` | Waiting for input: nothing typed or pasted yet. |
 | `…`  | `...` | Something was typed or pasted. |
+| `✓` (green) | `valid` | Checked input: it is valid. |
+| `✗` (red) | `invalid` | Checked input: it is not valid (yet), e.g. incomplete, mistyped or expired. |
 
 The ASCII form is used when the locale does not support Unicode.
+
+Some inputs are checked while they are typed or pasted, e.g. the code displayed by Shares after login (see [Authentication of SAML users](#authentication-of-saml-users)): `✓` or `✗` replaces `…`.
+If `Enter` is pressed on an input that is not valid, the error is displayed and the input is asked again (`Ctrl-C` to stop).
+If the standard input is not a terminal, an input that is not valid is an error.
 
 Keys:
 
@@ -10803,7 +10809,8 @@ Option `ui.web_auth` selects how the result of the login is received (see [Web l
 - `paste`: the browser may run on another system than `ascli` (for example, `ascli` runs on a server accessed with SSH), without tunnel.
   No local port is opened and `--redirect-uri` is not used.
   `ascli` generates a random `state` and opens the SAML login page with `RelayState` `aspera://device-code?state=<state>`.
-  After login, Shares displays a code (a long text of letters, digits, `-` and `_`). The user copies it and pastes it in the terminal ([hidden](#hidden-input), as the code contains a token).
+  After login, Shares displays a code (a long text of letters, digits, `-` and `_`), and tells how long the code and the session token are valid. The user copies the code and pastes it in the prompt of `ascli` ([hidden](#hidden-input), as the code contains a token).
+  The mark of the prompt becomes `✓` if the code is valid, else `✗`. A code that is not valid is asked again.
   If standard input is not a terminal, the code is read from it.
   `ascli` checks that the `state` of the code is the one it generated.
   The code is valid for **15 to 30 minutes** after its display: it is encrypted with a key derived from the `state` and from the current time in slots of 15 minutes (the previous and the next slot are also accepted).
@@ -10811,6 +10818,7 @@ Option `ui.web_auth` selects how the result of the login is received (see [Web l
   The code is also protected against typing errors and modification.
 
 The token is saved, and renewed with its refresh token: the browser is opened again only if this fails.
+Shares gives a token and a refresh token that both expire after 24 hours: then a new login is needed, unless the token is refreshed before (see `token_refresh_max_age` in [HTTP socket parameters](#http-socket-parameters)).
 Option `username` is optional: with it, the token is saved for this user.
 
 > [!IMPORTANT]

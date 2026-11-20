@@ -30,7 +30,7 @@ module Aspera
         context 'with sensitive input on a terminal' do
           it 'hides the input, and shows only whether it is empty' do
             type_on_terminal(secret)
-            expect { expect(described_class.prompt_user_input('pw', sensitive: true)).to(eq(secret)) }.to(output("pw> ***\b \b\b \b\b \b...\n").to_stderr)
+            expect { expect(described_class.prompt_user_input('pw', sensitive: true)).to(eq(secret)) }.to(output("pw> ***\b \b\b \b\b \b...\r\n").to_stderr)
           end
 
           it 'handles erase keys' do
@@ -57,6 +57,54 @@ module Aspera
               allow($stdin).to(receive(:noecho).and_raise(Errno::ENOTTY))
               allow($stdin).to(receive(:gets).and_return("#{secret}\n"))
               expect { expect(described_class.prompt_user_input('pw', sensitive: true)).to(eq(secret)) }.to(output('pw> ').to_stderr)
+            end
+          end
+
+          context 'with validate' do
+            # accepts only "good" (its result is not used)
+            let(:validate) { ->(text) { text.eql?('good') ? :ignored : raise(Aspera::ParameterError, 'Bad input') } }
+
+            around do |example|
+              saved = Rainbow.enabled
+              Rainbow.enabled = false
+              example.run
+            ensure
+              Rainbow.enabled = saved
+            end
+
+            it 'shows if the input is valid, and returns the input' do
+              type_on_terminal('good')
+              # g, go, goo: invalid; good: valid
+              expect { expect(described_class.prompt_user_input('pw', sensitive: true, validate: validate)).to(eq('good')) }
+                .to(output("pw> ***#{"\b \b" * 3}invalid#{"\b \b" * 7}valid\r\n").to_stderr)
+            end
+
+            it 'shows a colored check mark or cross with Unicode' do
+              allow(Environment).to(receive(:unicode_environment?).and_return(true))
+              Rainbow.enabled = true
+              type_on_terminal("x\u0015good")
+              erase = "\b \b"
+              cross = Rainbow('✗').red
+              expect { described_class.prompt_user_input('pw', sensitive: true, validate: validate) }
+                .to(output("pw> 🔑#{erase * 2}#{cross}#{erase}🔑#{erase * 2}#{cross}#{erase}#{Rainbow('✓').green}\r\n").to_stderr)
+            end
+
+            it 'displays the error and asks again if the input is not valid' do
+              inputs = %W[bad\r good\r]
+              allow($stdin).to(receive(:tty?).and_return(true))
+              allow($stdin).to(receive(:raw)) { |&block| block.call(StringIO.new(inputs.shift)) }
+              expect { expect(described_class.prompt_user_input('pw', sensitive: true, validate: validate)).to(eq('good')) }
+                .to(output(/\Apw> [^\n]*invalid\r\nBad input\. Try again, or Ctrl-C to stop\.\npw> [^\n]*\x08valid\r\n\z/).to_stderr)
+            end
+
+            it 'raises the error if standard input is not a terminal' do
+              allow($stdin).to(receive_messages(tty?: false, gets: "bad\n"))
+              expect { described_class.prompt_user_input('pw', sensitive: true, validate: validate) }.to(raise_error(Aspera::ParameterError, 'Bad input').and(output('pw> ').to_stderr))
+            end
+
+            it 'returns the input if standard input is not a terminal' do
+              allow($stdin).to(receive_messages(tty?: false, gets: "good\n"))
+              expect { expect(described_class.prompt_user_input('pw', sensitive: true, validate: validate)).to(eq('good')) }.to(output('pw> ').to_stderr)
             end
           end
 

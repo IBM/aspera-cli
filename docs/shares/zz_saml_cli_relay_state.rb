@@ -94,7 +94,7 @@ module SamlCliRelayState
     # Same look as the login page of Shares: its layout (header, footer), h1, fieldset and buttons.
     render html: <<~HTML.html_safe, layout: true # rubocop:disable Rails/OutputSafety
       <h1>Login Complete</h1>
-      <p>Copy this code, and paste it in the terminal where <b>ascli</b> waits for it. This code is valid for #{CODE_PERIOD / 60} minutes. You can then close this window.</p>
+      <p>Copy this code, and paste it in the <b>ascli</b> prompt. This code is valid for #{CODE_PERIOD / 60} minutes. The session token is valid for #{session_validity}.</p>
       <fieldset style="border:1px solid #c0c0c0;padding:12px">
         <div id="cli_code" aria-live="polite" style="font-family:monospace;word-break:break-all;max-height:9em;overflow-y:auto;margin-bottom:10px;user-select:none">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;</div>
         <button type="button" id="cli_reveal" aria-pressed="false" title="Show the code" aria-label="Show the code">
@@ -138,7 +138,7 @@ module SamlCliRelayState
           }
           function done(ok) {
             status.style.color = ok ? 'green' : 'red';
-            status.textContent = ok ? 'Copied. Paste it in the terminal.' : 'Copy failed: show the code, select it and copy it.';
+            status.textContent = ok ? 'Copied. Paste it in the ascli prompt.' : 'Copy failed: show the code, select it and copy it.';
           }
           document.getElementById('cli_copy').addEventListener('click', function () {
             if (navigator.clipboard && window.isSecureContext) {
@@ -152,6 +152,15 @@ module SamlCliRelayState
         })();
       </script>
     HTML
+  end
+
+  # Shares has no constant for the validity of the refresh token: Oauth2Token.replacement_token_for accepts it for `1.day` (literal),
+  # equal to Oauth2Token::EXPIRATION_WINDOW (access token), both counted from the creation of the token.
+  # So the user logs in again after this duration, unless ascli refreshes the token before.
+  # @return [String] Validity of the token obtained with the code, e.g. "24 hours"
+  def session_validity
+    hours = Oauth2Token::EXPIRATION_WINDOW.in_hours
+    "#{format('%g', hours)} #{'hour'.pluralize(hours)}"
   end
 
   # @return [Array(Symbol, String), nil] [:loopback, url] or [:code, state], or nil for any other RelayState.
