@@ -70,13 +70,16 @@ module Aspera
       # Bare paths (no scheme) are passed to File.read directly; leading `/~/`, `/./`, `/../`
       # are expanded via `File.expand_path` after stripping the synthetic leading slash added by
       # URI.
-      def read(uri_to_read)
+      # @param uri_to_read [String] URI to read
+      # @param headers [Hash{String => String}] Additional HTTP request headers (schemes `http` and `https` only)
+      # @return [String] content
+      def read(uri_to_read, headers: {})
         # Handle file: URLs directly to honour the file:///relative vs file:////absolute convention.
         return File.read(file_path(uri_to_read)) if file?(uri_to_read)
         uri = URI.parse(uri_to_read)
         case uri.scheme
         when 'http', 'https'
-          return Rest::Client.new(base_url: uri_to_read, redirect_max: 5).read(nil, headers: {'Accept' => '*/*'})
+          return Rest::Client.new(base_url: uri_to_read, redirect_max: 5).read(nil, headers: {'Accept' => '*/*'}.merge(headers))
         when 'data'
           metadata, encoded_data = uri.opaque.split(',', 2)
           if metadata.end_with?(';base64')
@@ -95,8 +98,9 @@ module Aspera
 
       # Read URL with a short timeout and no retry (temporarily changes global HTTP parameters)
       # @param url [String] URL to read
+      # @param read_options [Hash] Options of {read} (e.g. `headers`)
       # @return [String] content
-      def read_fail_fast(url)
+      def read_fail_fast(url, **read_options)
         parameters = Rest::Parameters.instance
         session_cb = parameters.session_cb
         retry_max = parameters.retry_max
@@ -106,7 +110,7 @@ module Aspera
           http_session.open_timeout = [http_session.open_timeout, FAIL_FAST_TIMEOUT].compact.min
           http_session.read_timeout = [http_session.read_timeout, FAIL_FAST_TIMEOUT].compact.min
         end
-        read(url)
+        read(url, **read_options)
       ensure
         parameters.session_cb = session_cb
         parameters.retry_max = retry_max
@@ -118,17 +122,18 @@ module Aspera
       # The failure of the last URL is raised.
       # @param urls [Array<String>] URLs, in order of preference
       # @param what [String] description of the content, for messages
+      # @param read_options [Hash] Options of {read} (e.g. `headers`)
       # @yield [content] Optional: validates and converts content, shall raise on invalid content
       # @yieldparam content [String] content read
       # @yieldreturn [Object] value returned by this method
       # @return [Object] result of block if given, else content
-      def read_first(urls, what: 'content')
+      def read_first(urls, what: 'content', **read_options)
         Aspera.assert(!urls.empty?) { "no URL for #{what}" }
         urls.each_with_index do |url, index|
           last = index.eql?(urls.length - 1)
           Log.log.debug { "Retrieving #{what} from #{url}" }
           begin
-            content = last ? read(url) : read_fail_fast(url)
+            content = last ? read(url, **read_options) : read_fail_fast(url, **read_options)
             return block_given? ? yield(content) : content
           rescue StandardError => e
             raise if last

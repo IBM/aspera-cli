@@ -17,6 +17,7 @@ module Aspera
       let(:installation) { Ascp::Installation.instance }
       let(:plugin) { described_class.allocate }
       let(:sdk_url) { nil }
+      let(:archive_url) { 'https://sdk.example/sdk.zip' }
 
       around do |example|
         Dir.mktmpdir do |dir|
@@ -31,7 +32,7 @@ module Aspera
 
       before do
         allow(plugin).to(receive(:sdk_url_option).and_return(sdk_url))
-        allow(installation).to(receive(:sdk_location_for_platform)) { |version:, **| {'version' => version || '2.0.0'} }
+        allow(installation).to(receive(:sdk_location_for_platform)) { |version:, **| {'version' => version || '2.0.0', 'url' => archive_url} }
         allow(installation).to(receive(:install_sdk).and_return(['IBM Aspera Transfer SDK', '1.1.9', @sdk_dir]))
       end
 
@@ -39,6 +40,7 @@ module Aspera
         it 'does not install if the version is already installed' do
           allow(installation).to(receive(:installed_sdk_version).and_return('1.1.9'))
           result = plugin.action_install(version: '1.1.9')
+          expect(installation).not_to(have_received(:sdk_location_for_platform))
           expect(installation).not_to(have_received(:install_sdk))
           expect(result.instance_variable_get(:@data)).to(eq("Version 1.1.9 is already installed in #{@sdk_dir}"))
         end
@@ -46,7 +48,8 @@ module Aspera
         it 'installs if another version is installed' do
           allow(installation).to(receive(:installed_sdk_version).and_return('1.1.3'))
           plugin.action_install(version: '1.1.9')
-          expect(installation).to(have_received(:install_sdk).with(url: nil, version: '1.1.9'))
+          expect(installation).to(have_received(:sdk_location_for_platform).once)
+          expect(installation).to(have_received(:install_sdk).with(url: archive_url, version: '1.1.9'))
         end
 
         it 'installs if nothing is installed' do

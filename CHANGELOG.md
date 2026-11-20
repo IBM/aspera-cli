@@ -19,6 +19,8 @@ Released: [Place date of release here]
 * Plugins: an unexpected error in a plugin (e.g. `Other(NoMethodError)`) also logs its location in the plugin (file and line) at level `info`.
 * Plugins: modules `OauthWebOptions` (`client_id`, `client_secret`, `redirect_uri`) and `OauthJwtOptions` (`private_key`, `passphrase`) give the options of `Oauth`: a plugin of the OAuth web flow only adds them with `use_options OauthWebOptions`. Options of the existing plugins do not change.
 * OAuth: parameters `path_authorize` and `path_token` accept an absolute URL (`http` or `https`), used as is, e.g. a token created on another host than the authorization page. The token cache still depends on `base_url` only: no new login for existing configurations.
+* `transferd install`, `transferd list`: the request for the list of SDK archives (option `locations_url`) includes the version of `ascli` in the HTTP header `Referer`.
+* `transferd install`: the list of SDK archives is no longer read when the requested version is already installed, and is read once per installation instead of twice.
 * REST: a raw body is sent as is when no `content_type` is given: a `String` (e.g. binary data), or an `IO` (e.g. a file) streamed from its current position, without loading it in memory, and sent again from the same position on retry. Its type is in `headers` (`Content-Type`). It was ignored, so a binary body needed `content_type: Mime::TEXT` and a `Content-Type` header.
 
 ### Issues Fixed

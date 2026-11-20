@@ -116,6 +116,8 @@ module Aspera
         # Install the transfer SDK (ascp + transferd) from a URL or using the default source.
         # Version defaults to `Info::SDK_VERSION`; pass `LATEST` as argument to install the latest available version.
         # Nothing is done if this version is already installed in the SDK folder (not checked if option `sdk_url` is set).
+        # SDK locations are read once, and only if needed (each read is counted as a download in statistics):
+        # not if the given version is already installed, but always for `LATEST` (to know that version).
         # Also called by the deprecated command `config ascp install`.
         # @param version [String, nil] version to install; nil means use the default SDK version
         # @return [Result::Status] installation result message
@@ -125,8 +127,11 @@ module Aspera
           installation = Ascp::Installation.instance
           url = sdk_url_option
           if url.nil?
-            wanted_version = installation.sdk_location_for_platform(version: asked_version)['version']
-            return Result::Status.new("Version #{wanted_version} is already installed in #{Products::Transferd.sdk_directory}") if installation.installed_sdk_version.eql?(wanted_version)
+            installed_version = installation.installed_sdk_version
+            location = installation.sdk_location_for_platform(version: asked_version) unless !installed_version.nil? && installed_version.eql?(asked_version)
+            wanted_version = location.nil? ? asked_version : location['version']
+            return Result::Status.new("Version #{wanted_version} is already installed in #{Products::Transferd.sdk_directory}") if installed_version.eql?(wanted_version)
+            url = location['url']
           end
           name, ver, folder = installation.install_sdk(url: url, version: asked_version)
           return Result::Status.new("Installed #{name} version #{ver} in #{folder}")

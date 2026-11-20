@@ -176,6 +176,7 @@ module Aspera
         Rest::Parameters.instance.session_cb    = ->(http_session) { @context.http_config.update_session(http_session) }
         Rest::Parameters.instance.spinner_cb    = ->(title = nil, action: :spin) { @context.formatter.long_operation(title, action: action) }
         OAuth::Web.additional_info = "#{Info::CMD_NAME} v#{Cli::VERSION}"
+        Ascp::Installation.instance.referer_url = "#{Info::GEM_URL}/versions/#{Cli::VERSION}"
         Transfer::Parameters.file_list_folder = File.join(@context.main_folder, FILE_LIST_FOLDER_NAME)
         Rest::ErrorAnalyzer.instance.log_file = File.join(@context.main_folder, REST_EXCEPTIONS_LOG_FILENAME)
       end

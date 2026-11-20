@@ -978,6 +978,8 @@ The installation of the transfer binaries follows those steps:
     - This YAML file lists supported architectures (OS, CPU) and Aspera Transfer Daemon versions with their associated package URLs.
     - The SDK version is selected as follows: if an additional **positional parameter** is provided it specifies the version; if the special value `LATEST` is given the latest available version is used; otherwise the version tested with this release of `ascli` is used.
     - The package URL matching the current system architecture is then used.
+    - The request for the YAML file includes the version of `ascli` in the HTTP header `Referer`.
+    - The YAML file is not read if the requested version is already installed, or if option `sdk_url` gives the archive.
 - **Extract the archive**
   - By default, the archive is extracted to `$HOME/.aspera/sdk`.
   - The destination folder can be changed by setting the `sdk_folder` option.

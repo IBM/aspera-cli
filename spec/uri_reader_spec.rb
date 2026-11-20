@@ -65,5 +65,13 @@ RSpec.describe(Aspera::UriReader) do
       allow(Aspera::UriReader).to(receive(:read).with(urls.last).and_raise(StandardError, 'down'))
       expect { Aspera::UriReader.read_first(urls) }.to(raise_error(StandardError, 'down'))
     end
+
+    it 'gives read options to each read' do
+      headers = {'Referer' => 'https://app.example/1.0'}
+      allow(Aspera::UriReader).to(receive(:read_fail_fast).with(urls.first, headers: headers).and_raise(StandardError, 'unreachable'))
+      allow(Aspera::UriReader).to(receive(:read).with(urls.last, headers: headers).and_return('last content'))
+      expect(Aspera::UriReader.read_first(urls, headers: headers)).to(eq('last content'))
+      expect(Aspera::UriReader).to(have_received(:read_fail_fast).with(urls.first, headers: headers))
+    end
   end
 end

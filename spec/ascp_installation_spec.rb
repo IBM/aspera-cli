@@ -104,6 +104,45 @@ RSpec.describe(Aspera::Ascp::Installation) do
     end
   end
 
+  describe 'sdk_locations' do
+    let(:locations) { [{'version' => '1.1.9', 'platform' => 'linux-x86_64', 'url' => 'https://sdk.example/sdk.tar.gz'}] }
+    let(:referer_url) { 'https://app.example/versions/1.0' }
+
+    around do |example|
+      previous = described_class.instance.referer_url
+      described_class.instance.referer_url = referer_url
+      example.run
+    ensure
+      described_class.instance.referer_url = previous
+    end
+
+    before { allow(Aspera::UriReader).to(receive(:read_first).and_return(locations)) }
+
+    it 'identifies the application when the list is read' do
+      described_class.instance.sdk_locations
+      expect(Aspera::UriReader).to(have_received(:read_first).with(anything, what: 'SDK locations', headers: {'Referer' => referer_url}))
+    end
+
+    it 'tells the version and platform for a download' do
+      described_class.instance.sdk_location_for_platform(platform: 'linux-x86_64', version: '1.1.9')
+      expect(Aspera::UriReader).to(have_received(:read_first).with(anything, what: 'SDK locations', headers: {'Referer' => "#{referer_url}?sdk=1.1.9&platform=linux-x86_64"}))
+    end
+
+    it 'tells latest when no version is given' do
+      described_class.instance.sdk_location_for_platform(platform: 'linux-x86_64')
+      expect(Aspera::UriReader).to(have_received(:read_first).with(anything, what: 'SDK locations', headers: {'Referer' => "#{referer_url}?sdk=latest&platform=linux-x86_64"}))
+    end
+
+    context 'without application URL' do
+      let(:referer_url) { nil }
+
+      it 'sends no Referer' do
+        described_class.instance.sdk_locations
+        expect(Aspera::UriReader).to(have_received(:read_first).with(anything, what: 'SDK locations', headers: {}))
+      end
+    end
+  end
+
   describe 'install_sdk with folder' do
     around do |example|
       previous = Aspera::Products::Transferd.instance_variable_get(:@sdk_dir)

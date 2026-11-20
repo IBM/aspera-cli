@@ -52,11 +52,14 @@ module Aspera
       # Loads YAML from cloud with locations of SDK archives for all platforms
       # Tries each URL of option `locations_url` (default if empty) in order, until one provides a valid list.
       # All but the last URL are read with a short timeout and no retry, so that fallback is quick.
+      # The request tells which application reads the list, and what it downloads (header `Referer`, see `referer_url`):
+      # the default URL counts requests per `Referer` (download statistics).
+      # @param download [Hash, nil] SDK about to be downloaded (`sdk`: version, `platform`), `nil` if the list is only read
       # @return [Array<Hash>] location structure
-      def sdk_locations
+      def sdk_locations(download: nil)
         Aspera.assert_type(@transferd_urls, Array) { 'locations_url' }
         location_urls = @transferd_urls.empty? ? TRANSFERD_ARCHIVE_LOCATION_URLS : @transferd_urls
-        return UriReader.read_first(location_urls, what: 'SDK locations') do |content|
+        return UriReader.read_first(location_urls, what: 'SDK locations', headers: locations_headers(download)) do |content|
           locations = Yaml.safe_load(content)
           Aspera.assert_type(locations, Array) { 'SDK locations' }
           locations
@@ -246,8 +249,8 @@ module Aspera
       # @param version  [nil, String] Version, if nil: latest
       # @return [Hash] the entry of SDK locations for the given platform and version
       def sdk_location_for_platform(platform: nil, version: nil)
-        all_locations = sdk_locations
         platform = Environment.instance.architecture if platform.nil?
+        all_locations = sdk_locations(download: {sdk: version || LATEST_VERSION, platform: platform})
         locations = all_locations.select { |l| l['platform'].eql?(platform) }
         Aspera.assert(!locations.empty?) { "No SDK for platform: #{platform}, available: #{all_locations.map { |i| i['platform'] }.uniq}" }
         version = locations.max_by { |entry| Gem::Version.new(entry['version']) }['version'] if version.nil?
@@ -440,7 +443,17 @@ module Aspera
       # @return [Array<String>] URLs of SDK locations, tried in order
       attr_accessor :transferd_urls
 
+      # @return [String, nil] URL that identifies the application and its version, sent in header `Referer` when SDK locations are read, `nil`: not sent
+      attr_accessor :referer_url
+
       private
+
+      # @param download [Hash, nil] See `sdk_locations`
+      # @return [Hash] HTTP headers of the request for SDK locations
+      def locations_headers(download)
+        return {} if @referer_url.nil?
+        {'Referer' => download.nil? ? @referer_url : "#{@referer_url}?#{URI.encode_www_form(download)}"}
+      end
 
       # Run the block with another SDK folder (files of the SDK are located from it), then set the previous one back
       # @param folder [String] Temporary SDK folder
@@ -481,14 +494,18 @@ module Aspera
         'https://ibm.biz/sdk_location',
         'https://raw.githubusercontent.com/IBM/aspera-cli/refs/heads/main/docs/sdk_location.yaml'
       ].freeze
+      # Version reported in statistics when the latest version is requested (not known before the list is read)
+      LATEST_VERSION = 'latest'
       # filename for ascp with optional extension (Windows)
-      private_constant :DEFAULT_ASPERA_CONF, :EXE_FILES, :SDK_FILES, :TRANSFERD_ARCHIVE_LOCATION_URLS
+      private_constant :DEFAULT_ASPERA_CONF, :EXE_FILES, :SDK_FILES, :TRANSFERD_ARCHIVE_LOCATION_URLS, :LATEST_VERSION
 
       def initialize
         # cache for installed products found
         @found_products = nil
         # URLs of SDK locations, tried in order
         @transferd_urls = TRANSFERD_ARCHIVE_LOCATION_URLS
+        # set by the application, `nil`: no `Referer` sent
+        @referer_url = nil
         # product selected with option `sdk_folder`, or nil to use SDK folder
         @ascp_product = nil
         # cache for folder of `ascp` of selected product
