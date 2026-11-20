@@ -18,7 +18,7 @@ Released: [Place date of release here]
 * Plugins: the manual has a section "Writing a plugin" for a plugin loaded with option `plugin_folder`: file and class names, files of the gem to require, options, commands, actions, results, REST client, with an example.
 * Plugins: an unexpected error in a plugin (e.g. `Other(NoMethodError)`) also logs its location in the plugin (file and line) at level `info`.
 * Plugins: modules `OauthWebOptions` (`client_id`, `client_secret`, `redirect_uri`) and `OauthJwtOptions` (`private_key`, `passphrase`) give the options of `Oauth`: a plugin of the OAuth web flow only adds them with `use_options OauthWebOptions`. Options of the existing plugins do not change.
-* OAuth: parameters `path_authorize` and `path_token` accept an absolute URL (`http` or `https`), used as is, e.g. a token created on another host than the authorization page (Google: `https://accounts.google.com/o/oauth2/v2/auth` and `https://oauth2.googleapis.com/token`). The token cache still depends on `base_url` only: no new login for existing configurations.
+* OAuth: parameters `path_authorize` and `path_token` accept an absolute URL (`http` or `https`), used as is, e.g. a token created on another host than the authorization page. The token cache still depends on `base_url` only: no new login for existing configurations.
 * REST: a raw body is sent as is when no `content_type` is given: a `String` (e.g. binary data), or an `IO` (e.g. a file) streamed from its current position, without loading it in memory, and sent again from the same position on retry. Its type is in `headers` (`Content-Type`). It was ignored, so a binary body needed `content_type: Mime::TEXT` and a `Content-Type` header.
 
 ### Issues Fixed
