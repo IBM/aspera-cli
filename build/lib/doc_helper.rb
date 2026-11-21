@@ -189,7 +189,7 @@ class DocHelper
       platform = case m[3]
                  when nil then nil
                  when ':jruby' then '(jruby)'
-                 when 'not_jruby' then '(no jruby)'
+                 when '%i[ruby windows]' then '(no jruby)'
                  else raise "Unexpected platforms in Gemfile: #{m[3]}"
                  end
       {
