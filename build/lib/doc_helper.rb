@@ -28,7 +28,8 @@ require 'yaml'
 require 'erb'
 require 'date'
 require 'json'
-require 'English'
+require 'open3'
+require 'tmpdir'
 require 'pathname'
 using Rainbow
 
@@ -422,6 +423,8 @@ class DocHelper
   end
 
   # Generate help for the given command, by executing it with `-h`
+  # Runs in an isolated home folder (empty but for a minimal config file), without `ASCLI_*` variables:
+  # the help does not depend on the user's plugins, config file or environment.
   # @param tool_name [Symbol] Key of the executable in paths: `:ascli` or `:asession`
   # @return [String] Help text
   # @raise [RuntimeError] If the executable is unknown or fails
@@ -430,9 +433,15 @@ class DocHelper
     exec_path = @paths[tool_name]
     # Add library path for Ruby CLI execution
     lib_path = File.expand_path('../lib', File.dirname(exec_path))
-    output = %x(ruby -I #{lib_path} #{exec_path} -h 2>&1).gsub(/^Ignoring.+Try: gem pristine.*\n/, '')
-    raise "Error executing: ruby -I #{lib_path} #{exec_path} -h\nOutput:\n#{output}" unless $CHILD_STATUS.success?
-    return output
+    command = ['ruby', '-I', lib_path, exec_path, '-h']
+    output, status = Dir.mktmpdir('doc_home') do |home|
+      # Existing config file: no warning "No config file found"
+      File.write(File.join(home, 'config.yaml'), {'config' => {'version' => Aspera::Cli::VERSION}}.to_yaml)
+      env = ENV.keys.grep(/^ASCLI_/).to_h { |k| [k, nil] }.merge('ASCLI_HOME' => home)
+      Open3.capture2e(env, *command)
+    end
+    raise "Error executing: #{command.join(' ')}\nOutput:\n#{output}" unless status.success?
+    return output.gsub(/^Ignoring.+Try: gem pristine.*\n/, '')
   end
 
   # Help of `ascli`, with user-specific home folder replaced
