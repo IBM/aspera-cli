@@ -183,12 +183,18 @@ class DocHelper
   # @return [Array<Hash{Symbol => String}>] Keys: `name`, `version`, `comment`
   def gem_opt_list
     File.read(@paths[:gemfile]).lines.filter_map do |l|
-      m = l.match(/^ *gem\('([^']+)', '([^']+)'\)(.*)/)
+      m = l.match(/^ *gem\('([^']+)', '([^']+)'(?:, platforms: ([^)]+))?\)(.*)/)
       next nil unless m
+      platform = case m[3]
+                 when nil then nil
+                 when ':jruby' then '(jruby)'
+                 when 'not_jruby' then '(no jruby)'
+                 else raise "Unexpected platforms in Gemfile: #{m[3]}"
+                 end
       {
         name:    m[1],
         version: m[2],
-        comment: m[3].gsub('# ', '').strip.sub('unless defined?(JRUBY_VERSION)', '(no jruby)').sub('if defined?(JRUBY_VERSION)', '(jruby)')
+        comment: [platform, m[4].gsub('# ', '').strip].compact.join(' ').strip
       }
     end
   end

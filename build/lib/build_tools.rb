@@ -53,13 +53,13 @@ module BuildTools
     end
   end
 
-  # Extract gem specifications in a given group from the Gemfile
+  # Extract gem specifications in a given group from the Gemfile, for the current platform
   # @param gemfile [String] Path to gem file
   # @param group_name_sym [Symbol] Group name
   # @return [Array<String>] List of gem specifications in the group
   def gems_in_group(gemfile, group_name_sym)
     Bundler::Definition.build(gemfile, "#{gemfile}.lock", nil).dependencies.filter_map do |dep|
-      next unless dep.groups.include?(group_name_sym)
+      next unless dep.groups.include?(group_name_sym) && dep.should_include?
       "#{dep.name}:#{dep.requirement.to_s.delete(' ')}"
     end
   end
