@@ -96,7 +96,7 @@ module Aspera
 
         option :preset,             description: 'Load the named option preset from current config file',             short: 'P', on_set: :load_preset, complete: :preset
         option :version_check_days, description: 'Period in days to check new version (zero to disable)',             allowed: Type::INTEGER, default: DEFAULT_CHECK_NEW_VERSION_DAYS
-        option :plugin_folder,      description: 'Folder where to find additional plugins',                           on_set: :add_plugin_folders, complete: :folder, security: :low
+        option :plugin_folder,      description: "Folders where to find additional plugins (#{SpecialValues::DEF}: folder plugins of the configuration folder)", allowed: Type::STRING_ARRAY, default: [SpecialValues::DEF], complete: :folder, security: :low
         option :sdk_url,            description: 'Ascp: URL to get Aspera Transfer Executables',                      default: SpecialValues::DEF, security: :low
         option :locations_url,      description: 'Ascp: URLs to get download locations of Aspera Transfer Daemon',   allowed: Type::STRING_ARRAY, default: Ascp::Installation.instance.transferd_urls, on_set: Ascp::Installation.instance.method(:transferd_urls=), security: :low
         option :sdk_folder,         description: 'Ascp: Path to folder with ascp (or product with "product:")',      on_set: Ascp::Installation.instance.method(:sdk_folder=), complete: :folder
@@ -476,12 +476,18 @@ module Aspera
 
         attr_reader :gem_url
 
-        # `on_set` callback of option `plugin_folder`
-        # @param value [String, Array<String>] folder(s) where to find plugins
-        def add_plugin_folders(value)
-          value = Array(value)
-          Aspera.assert_array_all(value, String) { 'plugin folder(s)' }
-          value.each { |f| Plugins::Factory.instance.add_lookup_folder(f, security: :low) }
+        # Add the folders of option `plugin_folder` to the plugin lookup: `DEF` is the folder `plugins` of the configuration folder.
+        # Called once options are final, before plugins are looked up: the last folder has priority.
+        # @return [nil]
+        def add_plugin_lookup_folders
+          home_plugins = File.join(context.main_folder, ASPERA_PLUGINS_FOLDERNAME)
+          folders = options.get_option(:plugin_folder)
+          Aspera.assert_array_all(folders, String) { 'plugin folder(s)' }
+          # Before 4.30, this folder was always used: plugins there would silently stop working
+          unused_home = !folders.include?(SpecialValues::DEF) && Dir.glob("*#{Environment::RB_EXT}", base: home_plugins).any?
+          Log.log.warn { "Plugins of #{home_plugins} are not used: add #{SpecialValues::DEF} to option plugin_folder" } if unused_home
+          folders.each { |f| Plugins::Factory.instance.add_lookup_folder(f.eql?(SpecialValues::DEF) ? home_plugins : f, security: :low) }
+          nil
         end
 
         # `on_set` callback of option `preset`

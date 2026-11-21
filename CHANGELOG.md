@@ -6,9 +6,13 @@ Released: [Place date of release here]
 
 ### New Features
 
+* Option `plugin_folder`: `--show-config` lists all the folders given (it showed only the last one), and `DEF` (the default) is the folder `plugins` of the configuration folder. `--plugin-folder=@json:[]` uses no plugin folder other than the one of the gem.
+
 ### Issues Fixed
 
 ### Breaking Changes
+
+* Option `plugin_folder`: the folders given replace the folder `plugins` of the configuration folder (they were added to it). To use both, add `DEF`, e.g. `--plugin-folder=DEF --plugin-folder=<FOLDER>`. A warning tells when that folder has plugins and is not used.
 
 ## 4.29.1
 

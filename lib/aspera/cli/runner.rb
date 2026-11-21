@@ -115,6 +115,7 @@ module Aspera
       # @return [Result, nil] the result of the command, or nil if nothing to execute
       def run_with_result
         init_agents_and_options
+        @context.config.add_plugin_lookup_folders
         Plugins::Factory.instance.add_plugins_from_lookup_folders
         # Help requested without command? Show global options + plugin list
         return result_usage if @option_help && @context.options.command_or_arg_empty?

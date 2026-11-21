@@ -33,7 +33,7 @@ module Aspera
     # Responsibilities:
     #   - resolve context.main_folder (option :home)
     #   - populate context.persistency, context.presets, context.vault, context.http_config, context.progress_bar
-    #   - register plugin lookup folders
+    #   - register the plugin lookup folder of the gem (other folders: option `plugin_folder`, see `Plugins::Config#add_plugin_lookup_folders`)
     #   - register @preset / @vault extended-value handlers
     #   - configure global singletons: Rest::Parameters, OAuth::Factory, SSL, Transfer::Parameters,
     #     Rest::ErrorAnalyzer
@@ -43,8 +43,6 @@ module Aspera
       ASPERA_HOME_FOLDER_NAME  = '.aspera'
       # Default name for the YAML config file
       DEFAULT_CONFIG_FILENAME  = 'config.yaml'
-      # Sub-folder for user-installed plugins
-      ASPERA_PLUGINS_FOLDERNAME = 'plugins'
       # Sub-folder for persistency data
       PERSISTENCY_FOLDER       = 'persist_store'
       # Sub-folder for file lists used by transfers
@@ -60,7 +58,6 @@ module Aspera
 
       private_constant :ASPERA_HOME_FOLDER_NAME,
         :DEFAULT_CONFIG_FILENAME,
-        :ASPERA_PLUGINS_FOLDERNAME,
         :PERSISTENCY_FOLDER,
         :FILE_LIST_FOLDER_NAME,
         :REST_EXCEPTIONS_LOG_FILENAME,
@@ -108,7 +105,6 @@ module Aspera
       def setup_persistency_and_plugin_folders(gem_plugins_folder)
         @context.persistency = PersistencyFolder.new(File.join(@context.main_folder, PERSISTENCY_FOLDER))
         Plugins::Factory.instance.add_lookup_folder(gem_plugins_folder)
-        Plugins::Factory.instance.add_lookup_folder(File.join(@context.main_folder, ASPERA_PLUGINS_FOLDERNAME), security: :low)
       end
 
       # Declare + parse :config_file option: sets context.presets + context.http_config

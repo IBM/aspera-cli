@@ -2837,7 +2837,7 @@ Features that execute code (own, or downloaded), load code, or write a file chos
 | Option `out`, key `file` (and `output`), option `pid_file` | Write (or truncate, or delete) a file chosen by the client |
 | Option `home` | Configuration folder: its presets, and its folder `plugins` (Ruby code) are used |
 | Option `plugin_folder` | Plugins are Ruby code |
-| Plugins of the folder `plugins` of the configuration folder, and of option `plugin_folder` | Ruby code: not loaded at other levels, also if the file was there before |
+| Plugins of the folders of option `plugin_folder` (by default, folder `plugins` of the configuration folder) | Ruby code: not loaded at other levels, also if the file was there before |
 | Command `config plugins create` | Creates Ruby code, loaded as a plugin |
 | Command `faspex5 postprocessing` | Executes scripts, or Ruby code |
 
@@ -6133,7 +6133,14 @@ REST APIs of Aspera legacy applications (Aspera Node, Shares, Console, Orchestra
 
 Aspera on Cloud and Faspex 5 rely on OAuth.
 
-By default, plugins are looked up in folders specified by (multi-value) option `plugin_folder`:
+Plugins are looked up in the folder of the gem (built-in plugins), and in the folders of option `plugin_folder` (list):
+
+- By default (`DEF`): folder `plugins` of the configuration folder (option `home`).
+- Folders given replace the default, which can still be included with the special value `DEF`.
+- Each use of the option appends to the list: `--plugin-folder=DEF --plugin-folder=<FOLDER>`. A plugin of a folder later in the list has priority over one of the same name.
+- `--plugin-folder=@json:[]`: no folder other than the one of the gem.
+
+The folders of option `plugin_folder`:
 
 ```shell
 <%=cmd%> --show-config --fields=plugin_folder
@@ -6155,7 +6162,7 @@ Created ./foo.rb
 
 #### Writing a plugin
 
-A plugin is a Ruby file in a plugin folder (option `plugin_folder`, or folder `plugins` of the configuration folder).
+A plugin is a Ruby file in a plugin folder (option `plugin_folder`, by default folder `plugins` of the configuration folder).
 
 - **Name**: the file name is the plugin name, which is the first command, e.g. file `my_app.rb` for command `my_app`.
   The file defines class `Aspera::Cli::Plugins::<Class>`, the name in CamelCase (`MyApp`), subclass of:
