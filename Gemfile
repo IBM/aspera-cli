@@ -9,7 +9,7 @@ source 'https://rubygems.org'
 gemspec
 
 # Platforms other than JRuby: `%i[ruby windows]`, C Ruby (`ruby`: Linux, macOS) and Windows (`windows`).
-# Literal in each line, not in a variable: tools that read the Gemfile as text (GitHub dependency graph, Dependabot) skip a gem whose platforms is a variable
+# The GitHub dependency graph parses `platforms:` with a single symbol only: the other gems are checked by workflow `audit.yml` (`bundler-audit`)
 
 # Used for development
 group :build do

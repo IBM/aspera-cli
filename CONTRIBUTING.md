@@ -67,7 +67,7 @@ A pull request is merged after the approval of a maintainer (see [GOVERNANCE.md]
 
 The reviewer checks that:
 
-- The automated checks pass: unit tests and RuboCop (`.github/workflows/test.yml`), spell check (`.github/workflows/spell.yml`), CodeQL (`.github/workflows/codeql-analysis.yml`).
+- The automated checks pass: unit tests and RuboCop (`.github/workflows/test.yml`), spell check (`.github/workflows/spell.yml`), CodeQL (`.github/workflows/codeql-analysis.yml`), gem vulnerabilities (`.github/workflows/audit.yml`, when `Gemfile` or the gemspec changes).
 - The change does what the description says, and only that.
 - New or changed behavior has tests in `tests/tests.yml` or `spec/`, including a failure case for invalid input.
 - Inputs from users, files, and servers are validated, and the change keeps the restrictions of the [security levels](docs/README.md#security-level).
@@ -178,6 +178,7 @@ bundle exec rake tools:codeql    # security (CodeQL, as GitHub code scanning)
 ```
 
 In GitHub Actions, `tools:rubocop` (job `lint` of `.github/workflows/test.yml`, on changes of Ruby files), `tools:spell` (`.github/workflows/spell.yml`, on every push to `main` and every pull request) and CodeQL (`.github/workflows/codeql-analysis.yml`) run automatically.
+Workflow `.github/workflows/audit.yml` checks the gems of `Gemfile` and of the gemspec, for all platforms, against the Ruby advisory database with `bundler-audit`: on changes of these files, and every Monday for new advisories.
 `tools:reek` is not run in CI.
 
 `tools:codeql` requires the `codeql` CLI (macOS: `brew install --cask codeql`), it downloads the query packs on first use.
