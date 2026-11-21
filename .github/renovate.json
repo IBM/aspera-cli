@@ -3,5 +3,11 @@
   "extends": ["config:recommended"],
   "dockerfile": {
     "enabled": false
-  }
+  },
+  "packageRules": [
+    {
+      "matchPackageNames": ["ruby/setup-ruby"],
+      "schedule": ["before 6am on monday"]
+    }
+  ]
 }
