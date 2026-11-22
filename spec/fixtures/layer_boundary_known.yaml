@@ -1,0 +1,167 @@
+# Known violations of the layer rules (docs/ARCHITECTURE.md, Plugin bundles), checked by spec/layer_boundary_spec.rb.
+# File (relative to lib/aspera) -> sorted references. The list can only shrink: remove an entry when its violation is fixed.
+agent/httpgw.rb:
+- const Api::Httpgw
+- require api/httpgw
+agent/node.rb:
+- const Api::Node
+- require api/node
+api/alee.rb:
+- require api/aoc
+api/aoc.rb:
+- const Transfer::Spec
+- require api/node
+- require transfer/spec
+api/cos_node.rb:
+- const Transfer::Spec
+- require api/node
+api/httpgw.rb:
+- const Transfer::FauxFile
+- require transfer/faux_file
+api/node.rb:
+- const Api::Node
+- const Transfer::Spec
+- require transfer/spec
+cli/ascp_actions.rb:
+- const Agent::Factory
+- const Ascp::Installation
+- const Ascp::Management
+- const Ascp::SessionErrors
+- const Products::Transferd
+- const Transfer::Spec
+- require agent/factory
+- require ascp/session_errors
+cli/ascp_logs_actions.rb:
+- const Ascp::Installation
+- const Ascp::LogAnalyzer
+- const Ascp::LogLocations
+- require ascp/log_analyzer
+- require ascp/log_locations
+cli/bootstrapper.rb:
+- const Ascp::Installation
+- const Transfer::Parameters
+- require ascp/installation
+- require products/transferd
+- require transfer/parameters
+cli/hints.rb:
+- const Transfer::Error
+- require transfer/error
+cli/plugins/alee.rb:
+- const Api::Alee
+- require api/alee
+cli/plugins/aoc.rb:
+- const Agent::Node
+- const Api::AoC
+- const Api::Node
+- const Transfer::Result
+- const Transfer::Spec
+- require agent/node
+- require api/aoc
+- require api/node
+- require cli/plugins/ats
+- require cli/plugins/node
+- require transfer/result
+- require transfer/spec
+cli/plugins/ats.rb:
+- const Api::Alee
+- const Api::Ats
+- const Api::Node
+- require api/alee
+- require api/aoc
+- require api/ats
+- require cli/plugins/node
+cli/plugins/config.rb:
+- const Agent::Factory
+- const Ascp::Installation
+- const Sync::Operations
+- const Transfer::Spec
+- require agent/factory
+- require ascp/installation
+- require cli/plugins/transferd
+- require sync/operations
+- require transfer/spec
+cli/plugins/cos.rb:
+- const Api::CosNode
+- require api/cos_node
+- require cli/plugins/node
+cli/plugins/faspex5.rb:
+- const Api::Faspex
+- const Transfer::Result
+- require api/faspex
+- require transfer/result
+cli/plugins/httpgw.rb:
+- const Api::Httpgw
+- require api/httpgw
+cli/plugins/node.rb:
+- const Api::Node
+- const Api::NodeFileId
+- const Sync::Operations
+- const Transfer::Spec
+- require api/node
+- require transfer/spec
+cli/plugins/orchestrator.rb:
+- const Transfer::Spec
+- require transfer/spec
+cli/plugins/preview.rb:
+- const Api::Node
+- const Api::NodeFileId
+- const Transfer::Spec
+- require api/node
+- require transfer/spec
+cli/plugins/server.rb:
+- const Sync::Operations
+- const Transfer::Result
+- const Transfer::Spec
+- require transfer/result
+- require transfer/spec
+cli/plugins/shares.rb:
+- const Api::Node
+- require cli/plugins/node
+cli/plugins/transferd.rb:
+- const Agent::Transferd
+- const Ascp::Installation
+- const Products::Transferd
+- const Products::TransferdService
+- require agent/transferd
+- require ascp/installation
+- require products/transferd_service
+cli/runner.rb:
+- const Transfer::Error
+- const Transfer::Result
+- const Transfer::Spec
+- const TransferAgent
+- require transfer/result
+cli/sync_actions.rb:
+- const Sync::Database
+- const Sync::Operations
+- const Transfer::Spec
+- require sync/database
+- require sync/operations
+cli/transfer_actions.rb:
+- const Agent
+- require agent/factory
+cli/transfer_agent.rb:
+- const Agent::Factory
+- const Transfer::Parameters
+- const Transfer::Result
+- const Transfer::Spec
+- require agent/factory
+- require transfer/result
+- require transfer/spec
+command_line_builder.rb:
+- const Transfer::Error
+faspex_gw.rb:
+- const Api::Faspex
+- require api/faspex
+node_emulator.rb:
+- const Agent::Transferd
+- const Transfer::Error
+- const Transfer::Spec
+- require agent/transferd
+- require ascp/installation
+- require transfer/error
+- require transfer/spec
+products/connect.rb:
+- const Cli::Error
+transfer/parameters.rb:
+- require cli/formatter
