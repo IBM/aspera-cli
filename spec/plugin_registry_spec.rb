@@ -7,30 +7,33 @@
 # every leaf command has either an explicit action or a matching action_* method,
 # and every action accepts any keyword (the dispatch context), see `CommandRegistry#validate!`.
 # Also checks that the test command displayed by the wizard of each plugin exists.
+# Plugins: single files of the gem and commands of the bundles of the gem.
 # This spec does NOT require spec_helper (no live server config needed).
 
 require_relative '../lib/aspera/cli/runner'
+require_relative '../lib/aspera/bundle_registry'
 require 'bundler/setup'
 Dir[File.join(__dir__, '../lib/aspera/cli/plugins/*.rb')].each { |f| require f }
+Dir[File.join(Aspera::BundleRegistry::GEM_FOLDER, '*', 'commands.rb')].each { |f| require f }
 
 module Aspera
   module Cli
     RSpec.describe(Plugins::Base) do
-      plugins = ObjectSpace.each_object(Class).select { |c| c < described_class && c.command_registry.any? }.sort_by(&:name)
+      plugins = ObjectSpace.each_object(Class).select { |c| c < described_class && c.command_registry.any? }.sort_by(&:plugin_name)
 
       it 'finds plugins with commands' do
         expect(plugins).to(include(Plugins::Aoc, Plugins::Node, Plugins::Config))
       end
 
       plugins.each do |plugin|
-        it "#{plugin.name.split('::').last}: passes validate! with plugin_class" do
+        it "#{plugin.plugin_name}: passes validate! with plugin_class" do
           expect { plugin.command_registry.validate!(plugin_class: plugin) }.not_to(raise_error)
         end
       end
 
       # The wizard displays a test command: `<plugin> <test_args>`
       plugins.select { |plugin| plugin.method_defined?(:wizard) && plugin.instance_method(:wizard).owner.eql?(plugin) }.each do |plugin|
-        it "#{plugin.name.split('::').last}: wizard test_args designate a command" do
+        it "#{plugin.plugin_name}: wizard test_args designate a command" do
           source = File.read(plugin.instance_method(:wizard).source_location.first, encoding: Encoding::UTF_8)
           test_args = source.scan(/test_args:\s*'([^']*)'/).flatten
           expect(test_args).not_to(be_empty)

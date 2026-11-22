@@ -13,6 +13,7 @@ require_relative '../option_declarator'
 require_relative '../special_values'
 require_relative '../../rest/list'
 require_relative '../../schema/registry'
+require_relative '../../string_ext'
 
 module Aspera
   module Cli
@@ -258,14 +259,25 @@ module Aspera
             options.parse_options! if parse
           end
 
+          # Name of the plugin: its top level command, set by `Factory` when it loads the class: name of the file (single file) or of the bundle.
+          # Default (class not loaded by `Factory`, e.g. `Config`): from the class name `Aspera::Cli::Plugins::<Name>` or `Aspera::Plugins::<Name>::Commands`.
+          # @return [String]
+          def plugin_name
+            @plugin_name || (name[/\AAspera::Plugins::(\w+)::Commands\z/, 1] || name.split('::').last).capital_to_snake
+          end
+
+          # @!attribute [w] plugin_name
+          #   @param value [String] Name of the plugin, set by `Factory`
+          attr_writer :plugin_name
+
           # DSL class method: declare the human-readable application name shown in wizards.
           # When called with an argument, sets the name. When called with no argument, returns it.
-          # Falls back to the last component of the class name if never set.
+          # Falls back to the plugin name in CamelCase if never set.
           # @param name [String, nil]
           # @return [String]
           def application_name(name = nil)
             @application_name = name unless name.nil?
-            @application_name || self.name.split('::').last
+            @application_name || plugin_name.snake_to_capital
           end
 
           # Build a filter lambda from a match expression (String glob, Regexp, Proc, or nil).
@@ -299,7 +311,7 @@ module Aspera
           # Switch to the plugin-specific options group so that all options declared
           # below (DSL-registered and imperative) appear under the plugin section in
           # --help output, separate from the global options.
-          options.group(self.class.name.split('::').last.downcase) if @context.man_header
+          options.group(self.class.plugin_name) if @context.man_header
           # Auto-declare all options registered via the DSL `option` class method,
           # including those of parent plugin classes (e.g. Oauth, BasicAuth) and `use_options` sources.
           self.class.declare_options(options, target: self)
@@ -395,7 +407,7 @@ module Aspera
         def poll_result(current_path, spec)
           parameters = options.get_option(:poll)
           return if parameters.nil? || parameters.empty?
-          command = [self.class.name.split('::').last.downcase, *current_path].join(' ')
+          command = [self.class.plugin_name, *current_path].join(' ')
           Aspera.assert(spec.read_only?, type: Cli::BadArgument) do
             "Option poll: refused on `#{command}`: only a read-only command can be repeated (e.g. list, show, status)"
           end

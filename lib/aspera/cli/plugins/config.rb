@@ -31,6 +31,7 @@ require_relative 'transferd'
 require_relative '../../agent/factory'
 require_relative '../../ascp/installation'
 require_relative '../../assert'
+require_relative '../../bundle_registry'
 require_relative '../../command_line_builder'
 require_relative '../../environment'
 require_relative '../../hash_ext'
@@ -484,7 +485,7 @@ module Aspera
           folders = options.get_option(:plugin_folder)
           Aspera.assert_array_all(folders, String) { 'plugin folder(s)' }
           # Before 4.30, this folder was always used: plugins there would silently stop working
-          unused_home = !folders.include?(SpecialValues::DEF) && Dir.glob("*#{Environment::RB_EXT}", base: home_plugins).any?
+          unused_home = !folders.include?(SpecialValues::DEF) && Dir.glob(["*#{Environment::RB_EXT}", "*/#{BundleRegistry::MANIFEST}"], base: home_plugins).any?
           Log.log.warn { "Plugins of #{home_plugins} are not used: add #{SpecialValues::DEF} to option plugin_folder" } if unused_home
           folders.each { |f| Plugins::Factory.instance.add_lookup_folder(f.eql?(SpecialValues::DEF) ? home_plugins : f, security: :low) }
           nil
@@ -683,7 +684,7 @@ module Aspera
               mount = expand_mounts ? nil : reg.mount_at(path)
               description = reg[path]&.description.to_s
               if mount
-                target = mount.plugin.name.split('::').last.downcase
+                target = mount.plugin.plugin_name
                 description = "#{description} (see: #{command_syntax(target, mount.registry, mount.at)})"
               end
               {

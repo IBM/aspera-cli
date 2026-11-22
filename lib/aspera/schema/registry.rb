@@ -73,11 +73,12 @@ module Aspera
         orchestrator: 'aspera/schema/IBM Aspera Orchestrator API-v1-enhanced.yaml',
         async_tables: 'aspera/schema/async_tables.yaml',
         ascp_log:     'aspera/ascp/log.schema.yaml',
-        transferd:    'aspera/schema/transferd-config.schema.json'
+        transferd:    'aspera/schema/transferd-config.schema.json',
+        manifest:     'aspera/plugin.schema.yaml'
       }.freeze
 
       # Schemas owned by ascli: values are validated against them (vendor API schemas are validated by the API)
-      OWNED = %i[spec args conf opts preview async_tables ascp_log transferd].freeze
+      OWNED = %i[spec args conf opts preview async_tables ascp_log transferd manifest].freeze
 
       OPTIONS = 'opts'
       TRANSFER_SPEC = 'spec'
@@ -94,6 +95,8 @@ module Aspera
       SHARES = 'shares+/api/v1'
       ASYNC_TABLES = 'async_tables'
       ASCP_LOG = 'ascp_log'
+      # Manifest `plugin.yaml` of a plugin bundle, see `BundleRegistry`
+      MANIFEST = 'manifest'
       LOG_OPTIONS             = "#{OPTIONS}:components.schemas.LogOptions".freeze
       UI_OPTIONS              = "#{OPTIONS}:components.schemas.UiOptions".freeze
       SECURITY_OPTIONS        = "#{OPTIONS}:components.schemas.SecurityOptions".freeze

@@ -4,9 +4,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require_relative '../../assert'
+require_relative '../../bundle_registry'
 require_relative '../error'
 require_relative '../security'
-require_relative '../../environment'
 require_relative '../../string_ext'
 require 'singleton'
 
@@ -14,72 +14,68 @@ module Aspera
   module Cli
     # Instantiate plugin from well-known locations
     module Plugins
+      # Plugins that provide commands, from the plugin registry: single files (class `Aspera::Cli::Plugins::<Name>`)
+      # and bundles with `commands: true` (class `Aspera::Plugins::<Name>::Commands` in `commands.rb`).
       # @!method self.instance
       #   Returns the singleton instance of Factory
       #   @return [Factory] the singleton instance
       class Factory
         include Singleton
 
-        attr_reader :lookup_folders
+        # @return [BundleRegistry] Registry of plugins, shared with the domain library
+        attr_reader :registry
 
-        def initialize
-          @lookup_folders = []
-          # Security level (see `Security`) of each folder: a plugin is code
-          @folder_security = {}
-          # information on plugins
-          @plugins = {}
+        # @param registry [BundleRegistry] Registry of plugins, its security level checks are those of `Security`
+        def initialize(registry: BundleRegistry.instance)
+          @registry = registry
+          @registry.security_checks(allowed: Security.instance.method(:allowed?), check: Security.instance.method(:check_level))
         end
 
-        # @return [Array<Symbol>] Sorted list of registered plugins
+        # @return [Array<String>] Folders where plugins are looked up, the first one with priority
+        def lookup_folders = @registry.folders
+
+        # @return [Array<Symbol>] Sorted list of available plugins that provide commands
         def plugin_list
-          @plugins.keys.sort
+          @registry.names.select { |name| @registry[name].commands? && @registry.unavailable_reason(name).nil? }
         end
 
         # add a folder to the list of folders to look for plugins
         # (absolute, as `require` resolves a relative path against $LOAD_PATH)
+        # The folder of the single files of the gem comes after the folder of the bundles of the gem: a bundle hides the shim left at the path of its former single file.
         # @param folder   [String]      Folder
         # @param security [Symbol, nil] Most restrictive security level at which plugins of this folder are used, `nil` for all levels (folder of the gem).
         #   A folder that a user or a client can write is `:low`: a file written there would be loaded as code.
         def add_lookup_folder(folder, security: nil)
-          folder = File.expand_path(folder)
-          @folder_security[folder] = security
-          @lookup_folders.unshift(folder) unless @lookup_folders.include?(folder)
+          @registry.add_source(folder, security: security, ignore: IGNORE_PLUGINS, last: File.identical?(folder, GEM_SINGLE_FILES_FOLDER))
         end
 
         # find plugins in defined paths
         def add_plugins_from_lookup_folders
-          @lookup_folders.each do |folder|
-            next unless File.directory?(folder)
-            # Plugins registered at start (level low) stay, but files that appear later are not
-            next unless Security.instance.allowed?(@folder_security[folder])
-            # TODO: add gem root to load path ? and require short folder ?
-            # $LOAD_PATH.push(folder) if i[:add_path]
-            Dir.children(folder).each do |source|
-              next unless source.end_with?(Environment::RB_EXT)
-              path = File.join(folder, source)
-              plugin_symbol = File.basename(path, Environment::RB_EXT).to_sym
-              next if IGNORE_PLUGINS.include?(plugin_symbol)
-              req = path.sub(/#{Environment::RB_EXT}$/o, '')
-              next if @plugins.key?(plugin_symbol)
-              @plugins[plugin_symbol] = {source: path, require_stanza: req, security: @folder_security[folder]}
-            end
-          end
+          @registry.scan
         end
 
-        # @return [String] path to source file of plugin
+        # @return [String] path to source file of a single file plugin, or folder of a bundle
         def plugin_source(plugin_name_sym)
-          Aspera.assert(@plugins.key?(plugin_name_sym), type: NoSuchElement) { "plugin not found: #{plugin_name_sym}" }
-          @plugins[plugin_name_sym][:source]
+          command_plugin(plugin_name_sym).path
         end
 
-        # @return [Class] class object for plugin
+        # @return [Class] class object for plugin, with its plugin name set
         def plugin_class(plugin_name_sym)
-          Aspera.assert(@plugins.key?(plugin_name_sym), type: NoSuchElement) { "plugin not found: #{plugin_name_sym}" }
-          # A plugin registered at start can be replaced by a file written since: it is code
-          Security.instance.check_level(@plugins[plugin_name_sym][:security], "plugin #{plugin_name_sym}")
-          require @plugins[plugin_name_sym][:require_stanza]
-          # Module.nesting[1] is Aspera::Cli::Plugins
-          return Object.const_get("#{Module.nesting[1]}::#{plugin_name_sym.to_s.snake_to_capital}")
+          plugin = command_plugin(plugin_name_sym)
+          klass =
+            case plugin.form
+            when :single
+              @registry.require_code(plugin_name_sym)
+              # Module.nesting[1] is Aspera::Cli::Plugins
+              Object.const_get("#{Module.nesting[1]}::#{plugin_name_sym.to_s.snake_to_capital}")
+            when :bundle
+              @registry.load_constant(plugin_name_sym, COMMANDS_FILE, COMMANDS_CLASS)
+            else Aspera.error_unexpected_value(plugin.form)
+            end
+          klass.plugin_name = plugin_name_sym.to_s
+          klass
+        rescue BundleRegistry::Unavailable => e
+          raise Cli::Error, e.message
         end
 
         # Create specified plugin
@@ -90,8 +86,23 @@ module Aspera
           plugin_class(plugin_name_sym).new(**args)
         end
 
+        private
+
+        # @param plugin_name_sym [Symbol] name of plugin
+        # @return [BundleRegistry::Plugin] Registered plugin that provides commands
+        def command_plugin(plugin_name_sym)
+          plugin = @registry[plugin_name_sym]
+          Aspera.assert(plugin&.commands?, type: NoSuchElement) { "plugin not found: #{plugin_name_sym}" }
+          plugin
+        end
+
         IGNORE_PLUGINS = %i[factory base basic_auth oauth].freeze
-        private_constant :IGNORE_PLUGINS
+        # Folder of the single files of the gem: `config`, `mcp`
+        GEM_SINGLE_FILES_FOLDER = File.dirname(File.expand_path(__FILE__))
+        # Commands of a bundle
+        COMMANDS_FILE = 'commands.rb'
+        COMMANDS_CLASS = 'Commands'
+        private_constant :IGNORE_PLUGINS, :GEM_SINGLE_FILES_FOLDER, :COMMANDS_FILE, :COMMANDS_CLASS
       end
     end
   end

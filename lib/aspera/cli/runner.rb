@@ -348,7 +348,7 @@ module Aspera
           path     = plugin.help_path || []
           registry = plugin.class.command_registry
           cmds     = registry.children_of(path)
-          label    = plugin.class.name.split('::').last.downcase
+          label    = plugin.class.plugin_name
           # Build label with positional argument slots inserted after each command
           # e.g. [:access_keys, :do, :download] -> "node access_keys do <access_key_id> download"
           path.each_index do |i|

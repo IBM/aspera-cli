@@ -47,7 +47,7 @@ module Aspera
         app_url = url
         check_only = plugin_name&.to_sym
         found_apps = []
-        my_self_plugin_sym = self.class.name.split('::').last.downcase.to_sym
+        my_self_plugin_sym = @parent.class.plugin_name.to_sym
         Plugins::Factory.instance.plugin_list.each do |plugin_name_sym|
           # No detection for internal plugin
           next if plugin_name_sym.eql?(my_self_plugin_sym)

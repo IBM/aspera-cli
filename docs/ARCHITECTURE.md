@@ -959,7 +959,7 @@ lib/aspera/plugins/<name>/
 
 ### Manifest
 
-`plugin.yaml` is data only, validated by the schema `lib/aspera/cli/plugin.schema.yaml` (`additionalProperties: false` at each level). Class and module names are relative to `Aspera::Plugins::<Name>`, file names to the folder of the bundle.
+`plugin.yaml` is data only, validated by the schema `lib/aspera/plugin.schema.yaml` (`additionalProperties: false` at each level), and read by `Aspera::BundleRegistry` (`lib/aspera/bundle_registry.rb`: framework outside `cli/`, so that the domain can use it). Class and module names are relative to `Aspera::Plugins::<Name>`, file names to the folder of the bundle.
 
 | Field | Default | Content |
 | --- | --- | --- |

@@ -6,6 +6,8 @@
 # Option `plugin_folder`: list of folders where plugins are looked up, `DEF` is the folder `plugins` of the configuration folder.
 
 require_relative 'spec_helper'
+require_relative '../lib/aspera/bundle_registry'
+require_relative '../lib/aspera/cli/context'
 require_relative '../lib/aspera/cli/plugins/config'
 require_relative '../lib/aspera/cli/plugins/factory'
 require_relative '../lib/aspera/cli/special_values'
@@ -19,7 +21,7 @@ module Aspera
       RSpec.describe(Config) do
         subject(:config) { described_class.allocate }
 
-        let(:factory) { Factory.send(:new) }
+        let(:factory) { Factory.send(:new, registry: BundleRegistry.send(:new, builtin: false)) }
         let(:home) { Dir.mktmpdir }
         let(:other) { Dir.mktmpdir }
         let(:home_plugins) { File.join(home, 'plugins') }
@@ -60,6 +62,22 @@ module Aspera
           allow(Log.log).to(receive(:warn))
           plugins_with([other])
           expect(Log.log).to(have_received(:warn)) { |&block| expect(block.call).to(match(/Plugins of .+ are not used: add DEF to option plugin_folder/)) }
+        end
+
+        it 'warns when the folder plugins of the configuration folder has only a bundle and is not used' do
+          FileUtils.rm_f(File.join(home_plugins, 'mine.rb'))
+          FileUtils.mkdir_p(File.join(home_plugins, 'bundled'))
+          File.write(File.join(home_plugins, 'bundled', BundleRegistry::MANIFEST), "name: bundled\ntitle: Bundled\ncommands: true\n")
+          allow(Log.log).to(receive(:warn))
+          plugins_with([other])
+          expect(Log.log).to(have_received(:warn)) { |&block| expect(block.call).to(match(/Plugins of .+ are not used: add DEF to option plugin_folder/)) }
+        end
+
+        it 'finds the bundles of the folders' do
+          FileUtils.mkdir_p(File.join(other, 'bundled'))
+          File.write(File.join(other, 'bundled', BundleRegistry::MANIFEST), "name: bundled\ntitle: Bundled\ncommands: true\n")
+          expect(plugins_with([SpecialValues::DEF, other])).to(eq(%i[bundled mine theirs]))
+          expect(factory.plugin_source(:bundled)).to(eq(File.join(other, 'bundled')))
         end
 
         it 'does not warn when the folder plugins of the configuration folder has no plugin' do
