@@ -33,8 +33,9 @@ jobs:
         uses: ruby/setup-ruby@be3c7df29b3349ec6bcfc6b4792f1cf9f5237d18 # v1.343.0
 
       # Resolution only, no installation: native gems need not be compiled
+      # Platform ruby (source gems): also used by other platforms, and Bundler 4.0 fails to resolve sqlite3 for x86_64-linux and x64-mingw-ucrt without it
       - name: Resolve gems for all platforms
-        run: bundle lock --add-platform java x64-mingw-ucrt
+        run: bundle lock --add-platform ruby java x64-mingw-ucrt
 
       - name: Install bundler-audit
         run: gem install --no-document bundler-audit -v 0.9.3
