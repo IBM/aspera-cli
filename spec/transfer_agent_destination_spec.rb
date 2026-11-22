@@ -45,7 +45,7 @@ module Aspera
         allow(options).to(receive(:get_option).with(:transfer_info).and_return({}))
         allow(options).to(receive(:get_option).with(:transfer).and_return({'agent' => 'httpgw', 'asynchronous' => true}))
         ta.instance_variable_set(:@context, double('Context', persistency: Aspera::PersistencyFolder.new(tmpdir), main_folder: tmpdir, options: options))
-        agent = double('Agent', local_destination?: local, last_job_id: 'job')
+        agent = double('Agent', local_destination?: local, last_job_id: 'job', in_process?: true, transfer_id: 'job', async_params: {})
         allow(agent).to(receive(:start_transfer)) { |spec, **| started.push(spec) }
         ta.agent_instance = agent
         ta

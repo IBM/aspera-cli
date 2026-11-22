@@ -91,6 +91,11 @@ module Aspera
       # Returns the application_id so callers can persist it in agent_params.
       attr_reader :application_id
 
+      # @return [Hash] `application_id`: for `transfer_status`
+      def async_params
+        {'application_id' => @application_id}
+      end
+
       # :reek:UnusedParameters token_regenerator
       def start_transfer(transfer_spec, token_regenerator: nil)
         Transfer::Spec.fix_transferd_resume_policy(transfer_spec)

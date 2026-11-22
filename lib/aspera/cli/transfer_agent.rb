@@ -109,30 +109,10 @@ module Aspera
         agent_type = Parser.get_from_list(raw_type.to_s, 'transfer agent', Agent::Factory::ALL.keys)
         # set keys as symbols, strip internal keys not forwarded to the agent constructor
         agent_options = transfer_options.except('agent', 'asynchronous').symbolize_keys
-        agent_options[:progress] = @context.progress_bar
-        agent_options[:config_dir] = @context.main_folder
-        # special cases
-        case agent_type
-        when :node
-          if !agent_options.key?(:url)
-            param_set_name = @context.presets.plugin_default_name(:node)
-            Aspera.assert(!param_set_name.nil?, type: Cli::BadArgument) { "No default node configured. Please specify #{Options.option_name_to_line(:transfer)}.url or #{Options.option_name_to_line(:transfer)}" }
-            agent_options.merge!(@context.presets.by_name(param_set_name).symbolize_keys)
-          end
-        when :direct
-          # By default, no native `ascp` progress bar
-          agent_options[:quiet] = true unless agent_options.key?(:quiet)
-          # Native `ascp` progress bar requested: no other progress bar, unless option `progress_bar` is set
-          agent_options[:progress] = nil if !agent_options[:quiet] && @context.options.option_def(:progress_bar).source.eql?(:default)
-          agent_options[:check_ignore_cb] = ->(host, port) { @context.http_config.ignore_cert?(host, port) }
-          # JRuby
-          agent_options[:trusted_certs] = @context.http_config.trusted_cert_locations unless agent_options.key?(:trusted_certs)
-        when :httpgw
-          unless agent_options.key?(:url) || @httpgw_url_lambda.nil?
-            Log.log.debug('retrieving HTTPGW URL from webapp')
-            agent_options[:url] = @httpgw_url_lambda.call
-          end
-        end
+        # Same base options for every agent, each agent uses those it needs (see `Agent::Base#initialize`)
+        # JRuby: given value, else trusted certificates of the HTTP configuration
+        agent_options[:trusted_certs] = @context.http_config.trusted_cert_locations unless agent_options.key?(:trusted_certs)
+        agent_options.merge!(base_agent_options)
         # get agent instance
         self.agent_instance = Agent::Factory.instance.create(agent_type, agent_options)
         Log.log.debug { "transfer agent is a #{@agent.class}" }
@@ -279,33 +259,17 @@ module Aspera
           # In-process agents (direct, httpgw) expose last_job_id directly.
           # Remote-daemon agents do not override last_job_id (returns nil): generate a UUID.
           job_id = agent_instance.last_job_id || SecureRandom.uuid
-          # Base agent_params from transfer options (strip internal keys)
-          agent_params = transfer_options.except('agent', 'asynchronous')
-          # For daemon agents: capture any runtime-resolved connection detail
-          case agent_type
-          when 'desktop'
-            agent_params['application_id'] = agent_instance.application_id
-          when 'connect'
-            agent_params['app_id'] = agent_instance.app_id
-          when 'transferd'
-            agent_params['url'] = agent_instance.daemon_endpoint
-          end
+          # Base agent_params from transfer options (strip internal keys), and connection details resolved by the agent (daemon agents)
+          agent_params = transfer_options.except('agent', 'asynchronous').merge(agent_instance.async_params)
           # Register an in-process agent reference for direct/httpgw agents so that
           # config transfer status can re-query them while the same process is alive
           # (e.g. MCP server mode). The ref is stored in AsyncTransferStore's memory map,
           # never on disk.
-          async_store.register_agent_ref(job_id, agent_instance) if %w[direct httpgw].include?(agent_type)
-          # transfer_id: in-process agents use job_id; transferd has a reader; other daemon agents keep @transfer_id
-          transfer_id =
-            case agent_type
-            when 'direct', 'httpgw' then job_id
-            when 'transferd' then agent_instance.transfer_id.to_s
-            else agent_instance.instance_variable_get(:@transfer_id).to_s
-            end
+          async_store.register_agent_ref(job_id, agent_instance) if agent_instance.in_process?
           async_store.write(job_id, {
             'job_id'            => job_id,
             'agent_type'        => agent_type,
-            'transfer_id'       => transfer_id,
+            'transfer_id'       => agent_instance.transfer_id.to_s,
             'agent_params'      => agent_params,
             'status'            => 'running',
             'bytes_transferred' => 0,
@@ -342,6 +306,28 @@ module Aspera
       # Lazy accessor for the async transfer store (shared with TransferActions via context.transfer).
       def async_store
         @async_store ||= AsyncTransferStore.new(@context.persistency)
+      end
+
+      private
+
+      # Base options given to every agent: plain values and callable objects (Proc), see `Agent::Base#initialize`
+      # @return [Hash] base options
+      def base_agent_options
+        {
+          progress:         @context.progress_bar,
+          # Option `progress_bar` not set: an agent that displays its own progress (direct, not `quiet`) does not use it
+          progress_default: @context.options.option_def(:progress_bar).source.eql?(:default),
+          config_dir:       @context.main_folder,
+          check_ignore_cb:  ->(host, port) { @context.http_config.ignore_cert?(host, port) },
+          # Values of the default preset of a plugin (e.g. node agent without `url`)
+          preset_lookup:    ->(plugin) do
+            param_set_name = @context.presets.plugin_default_name(plugin)
+            Aspera.assert(!param_set_name.nil?, type: Cli::BadArgument) { "No default #{plugin} configured. Please specify #{Parser.option_name_to_line(:transfer)}.url or #{Parser.option_name_to_line(:transfer)}" }
+            @context.presets.by_name(param_set_name)
+          end,
+          # URL given by the web application (httpgw agent without `url`)
+          url_provider:     @httpgw_url_lambda
+        }
       end
     end
   end

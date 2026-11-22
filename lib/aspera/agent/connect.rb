@@ -106,6 +106,11 @@ module Aspera
         @connect_settings['app_id']
       end
 
+      # @return [Hash] `app_id`: for `transfer_status`
+      def async_params
+        {'app_id' => app_id}
+      end
+
       # :reek:UnusedParameters token_regenerator
       def start_transfer(transfer_spec, token_regenerator: nil)
         if transfer_spec['direction'] == 'send'

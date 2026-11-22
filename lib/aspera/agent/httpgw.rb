@@ -33,14 +33,25 @@ module Aspera
         end
       end
 
+      # Base options used: `progress`, `url_provider` (when `url` is not given)
+      # @param url               [String]  URL of the HTTP Gateway, else from base option `url_provider`
+      # @param api_version       [String]  Version of the API of the gateway
+      # @param upload_chunk_size [Integer] Size in bytes of each upload chunk
+      # @param synchronous       [Boolean] Wait for acknowledgment after each message
+      # @param base_options      [Hash]    base options (see `Base#initialize`)
       def initialize(
-        url:,
-        api_version: Api::Httpgw::API_V2,
+        url:               nil,
+        api_version:       Api::Httpgw::API_V2,
         upload_chunk_size: 64_000,
         synchronous:       false,
         **base_options
       )
         super(**base_options)
+        if url.nil?
+          Aspera.assert(!url_provider.nil?, type: ArgumentError) { 'missing keyword: :url' }
+          Log.log.debug('retrieving HTTPGW URL from webapp')
+          url = url_provider.call
+        end
         @gw_api = Api::Httpgw.new(
           # remove /v1 from end of user-provided GW url: we need the base url only
           url:               url,
@@ -79,6 +90,16 @@ module Aspera
 
       # @return [String, nil] job_id of the last submitted transfer
       attr_reader :last_job_id
+
+      # @return [String, nil] the job id: for `transfer_status`
+      def transfer_id
+        last_job_id
+      end
+
+      # @return [Boolean] `true`: the transfer runs in a thread of this process
+      def in_process?
+        true
+      end
 
       private
 

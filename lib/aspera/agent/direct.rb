@@ -61,28 +61,28 @@ module Aspera
       # Options: same as values in option `transfer`
       # (Args) : Options that influence `ascp` arguments.
       #
+      # Base options used: `progress`, `progress_default`, `config_dir`,
+      # `trusted_certs` (Args) (WSS) Optional list of files with trusted certificates (stores),
+      # `check_ignore_cb` (Args) (WSS) Callback with host,port to check if WSS connection shall ignore certificate validity
+      #
       # @param ascp_args         [Array]   (Args) Optional Additional arguments to ascp
       # @param wss               [Boolean] (Args) `true`: if both SSH and wss in ts: prefer wss
       # @param quiet             [Boolean] (Args) By default no native `ascp` progress bar
       # @param file_list         [Boolean] (Args) true: provide file list in a file, else on command line.
       # @param client_ssh_key    [String]  (Args) Client SSH key option (from CLIENT_SSH_KEY_OPTIONS)
-      # @param trusted_certs     [Array<String>] (Args) (WSS) Optional list of files with trusted certificates (stores)
-      # @param check_ignore_cb   [Proc]    (Args) (WSS) Callback with host,port to check if WSS connection shall ignore certificate validity
       # @param spawn_timeout_sec [Integer] Timeout for ascp spawn
       # @param spawn_delay_sec   [Integer] Optional delay to start between sessions
       # @param multi_incr_udp    [Boolean] Optional `true`: increment UDP port for each session
       # @param resume            [Hash]    Optional Resume policy
       # @param monitor           [Boolean] Set to `false` to eliminate management port
       # @param management_cb     [Proc]    callback for management events
-      # @param base_options      [Hash]    other options for base class
+      # @param base_options      [Hash]    base options (see `Base#initialize`)
       def initialize(
         ascp_args:         nil,
         wss:               true,
         quiet:             true,
         file_list:         true,
         client_ssh_key:    nil,
-        trusted_certs:     nil,
-        check_ignore_cb:   nil,
         spawn_timeout_sec: 2,
         spawn_delay_sec:   2,
         multi_incr_udp:    nil,
@@ -92,6 +92,8 @@ module Aspera
         **base_options
       )
         super(**base_options)
+        # Native `ascp` progress bar: no other progress bar, unless requested
+        own_progress_display unless quiet
         # Options that have impact on `ascp` command line generated
         @tr_opts = {
           ascp_args:       ascp_args,
@@ -211,6 +213,16 @@ module Aspera
       # @return [String, nil] job_id of the last submitted transfer
       def last_job_id
         @sessions.last&.dig(:job_id)
+      end
+
+      # @return [String, nil] the job id: for `transfer_status`
+      def transfer_id
+        last_job_id
+      end
+
+      # @return [Boolean] `true`: `ascp` sessions are monitored by threads of this process
+      def in_process?
+        true
       end
 
       # wait for completion of all jobs started

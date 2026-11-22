@@ -288,10 +288,13 @@ module Aspera
 
       # Actual endpoint the daemon is listening on (resolved after connect, e.g. when port 0 was used)
       attr_reader :daemon_endpoint
-      # Identifier of the last transfer started, given by the daemon: for `transfer_status` and `transfer_cancel`
-      attr_reader :transfer_id
       # gRPC client of the daemon
       attr_reader :transfer_client
+
+      # @return [Hash] `url`: actual endpoint of the daemon, for `transfer_status` and `transfer_cancel` (`transfer_id` is given by the daemon)
+      def async_params
+        {'url' => @daemon_endpoint}
+      end
 
       # :reek:UnusedParameters token_regenerator
       def start_transfer(transfer_spec, token_regenerator: nil)

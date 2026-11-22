@@ -14,6 +14,8 @@ module Aspera
     # - `notify_progress`                : called back by transfer agent to notify transfer progress
     # - `self.transfer_status`           : (optional) re-query a previously started transfer by id
     # - `self.transfer_cancel`           : (optional) stop a previously started transfer by id
+    # Every agent receives the same base options (see `initialize`): plain values and callable objects (Proc), never objects of the CLI.
+    # Each agent uses those it needs.
     class Base
       class << self
         # Re-query the status of a transfer that was started asynchronously.
@@ -67,6 +69,23 @@ module Aspera
         nil
       end
 
+      # Identifier of the last transfer started, for class methods `transfer_status` and `transfer_cancel`.
+      # In-process agents (direct, httpgw): the job id (`last_job_id`).
+      # @return [String, nil] `nil` if no transfer was started
+      attr_reader :transfer_id
+
+      # Connection details resolved when the agent runs (e.g. the port of a daemon started by the agent),
+      # added to the agent parameters given to `transfer_status` and `transfer_cancel`.
+      # @return [Hash] JSON-compatible values, String keys
+      def async_params
+        {}
+      end
+
+      # @return [Boolean] `true` if transfers run in this process (threads): their status is known only while it runs
+      def in_process?
+        false
+      end
+
       private
 
       Aspera.require_method!(:start_transfer)
@@ -76,21 +95,48 @@ module Aspera
         nil
       end
 
-      attr_reader :config_dir
+      attr_reader :config_dir, :check_ignore_cb, :trusted_certs, :url_provider
 
-      # Base transfer agent object
-      # @param progress   [Object] Progress bar
-      # @param config_dir [String] Config folder
+      # Base transfer agent object.
+      # Base options: given to every agent by the application, each agent uses those it needs.
+      # @param progress         [#event, nil]          Receives progress events: `event(type, session_id:, info:)`
+      # @param progress_default [Boolean]              `true` if `progress` is a default choice, not requested by the user: an agent that displays its own progress does not use it
+      # @param config_dir       [String, nil]          Configuration folder of the application
+      # @param check_ignore_cb  [Proc, nil]            Called with host and port: `true` if the certificate of that server is not checked
+      # @param trusted_certs    [Array<String>, nil]   Files of trusted certificates
+      # @param preset_lookup    [Proc, nil]            Called with a plugin name (Symbol): values of the default preset of that plugin (Hash)
+      # @param url_provider     [Proc, nil]            Returns the URL of the server of the agent given by the application (e.g. HTTP Gateway of AoC)
       def initialize(
-        progress: nil,
-        config_dir: nil
+        progress:         nil,
+        progress_default: false,
+        config_dir:       nil,
+        check_ignore_cb:  nil,
+        trusted_certs:    nil,
+        preset_lookup:    nil,
+        url_provider:     nil
       )
         @progress = progress
+        @progress_default = progress_default
         @config_dir = config_dir
+        @check_ignore_cb = check_ignore_cb
+        @trusted_certs = trusted_certs
+        @preset_lookup = preset_lookup
+        @url_provider = url_provider
       end
 
       def notify_progress(*pos_args, **kw_args)
         @progress&.event(*pos_args, **kw_args)
+      end
+
+      # The agent displays its own progress: no notification to `progress` if it is a default choice
+      def own_progress_display
+        @progress = nil if @progress_default
+      end
+
+      # @param plugin [Symbol] Plugin name
+      # @return [Hash, nil] Values of the default preset of the plugin (String keys), `nil` if no preset lookup was given
+      def preset_values(plugin)
+        @preset_lookup&.call(plugin)
       end
     end
   end

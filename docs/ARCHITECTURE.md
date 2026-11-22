@@ -488,6 +488,11 @@ The Transfer Agent provides a unified interface for initiating transfers across 
 class Base
   # Optional: re-query a previously started transfer by id (desktop, node, connect, transferd, ...)
   def self.transfer_status(transfer_id, agent_params)
+  # Optional: stop a previously started transfer by id (transferd)
+  def self.transfer_cancel(transfer_id, agent_params)
+
+  # Base options, the same for every agent
+  def initialize(progress:, progress_default:, config_dir:, check_ignore_cb:, trusted_certs:, preset_lookup:, url_provider:)
 
   # Not defined in Base, each subclass must implement:
   #   start_transfer(transfer_spec, token_regenerator: nil)  start a transfer asynchronously
@@ -499,10 +504,31 @@ class Base
   # Job id of the last submitted transfer (in-process agents)
   def last_job_id
 
+  # Async contract: id for transfer_status, runtime connection details, transfers in this process
+  def transfer_id
+  def async_params
+  def in_process?
+
   # Optional: release resources
   def shutdown
 end
 ```
+
+**Agent library contract**: agents are used without the CLI (e.g. by Orchestrator add-ons), so they never require `cli/` and receive no CLI object.
+
+- Base options: `TransferAgent#agent_instance` gives the same base options to every agent, after the agent parameters of option `transfer`; each agent uses those it needs. They are plain values and callable objects (duck-typed, e.g. Proc), all optional:
+
+  | Base option | Type | Used by |
+  | --- | --- | --- |
+  | `progress` | object with `event(type, session_id:, info:)` | all |
+  | `progress_default` | Boolean: `progress` is a default choice (option `progress_bar` not set) | `direct`: drops `progress` when not `quiet` (native `ascp` progress bar) |
+  | `config_dir` | String | `direct` |
+  | `check_ignore_cb` | callable `(host, port)` → Boolean: certificate not checked | `direct` (WSS) |
+  | `trusted_certs` | Array of String: files of trusted certificates (parameter `trusted_certs` of option `transfer` overrides it) | `direct` (WSS) |
+  | `preset_lookup` | callable `(plugin)` → Hash: values of the default preset of the plugin | `node`, when `url` is not given |
+  | `url_provider` | callable → String: URL given by the web application (`TransferAgent#httpgw_url_cb=`) | `httpgw`, when `url` is not given |
+
+- Async: `TransferAgent#start` with parameter `asynchronous` stores `transfer_id` and the agent parameters merged with `async_params` (`application_id` of `desktop`, `app_id` of `connect`, `url` of the daemon of `transferd`). Class methods `transfer_status(transfer_id, agent_params)` and `transfer_cancel` take them back. Parameters and results are JSON-compatible Hashes with String keys, except `'_agent_ref'`: for an agent with `in_process?` (`direct`, `httpgw`: `transfer_id` is the job id), the live agent is added to `agent_params` while the same process runs (never stored on disk).
 
 Transfer outcomes are typed ([`transfer/result.rb`](../lib/aspera/transfer/result.rb)): `Transfer::Result::Success`, `Transfer::Result::Error`, `Transfer::Result::Async`.
 

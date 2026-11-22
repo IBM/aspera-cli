@@ -50,33 +50,27 @@ module Aspera
         end
       end
 
-      # @param url          [String] the base url of the node api
+      # Base options used: `progress`, `preset_lookup` (when `url` is not given)
+      # @param url          [String] the base url of the node api, else from the default preset of plugin `node`
       # @param username     [String] the username to use for the node api
       # @param password     [String] the password to use for the node api
       # @param root_id      [String] root file id if the node is an access key
-      # @param base_options [Hash] options for base class
+      # @param base_options [Hash] base options (see `Base#initialize`)
       def initialize(
-        url:,
-        username:,
-        password:,
-        root_id: nil,
+        url:      nil,
+        username: nil,
+        password: nil,
+        root_id:  nil,
         **base_options
       )
         super(**base_options)
-        # root id is required for access key
-        @root_id = root_id
-        rest_params = {base_url: url}
-        if OAuth::Factory.bearer_auth?(password)
-          Aspera.assert(!@root_id.nil?, 'root_id not allowed for access key')
-          rest_params[:headers] = Api::Node.bearer_headers(password, access_key: username)
-        else
-          rest_params[:auth] = {
-            type:     :basic,
-            username: username,
-            password: password
-          }
+        node_params = {url: url, username: username, password: password, root_id: root_id}.compact
+        # No URL: parameters of the default preset of plugin `node` (override the given ones)
+        if url.nil?
+          preset = preset_values(:node)
+          node_params.merge!(preset.symbolize_keys) unless preset.nil?
         end
-        @node_api = Rest::Client.new(**rest_params)
+        setup_api(**node_params)
         # TODO: currently only supports one transfer. This is bad shortcut. but ok for CLI.
         @transfer_id = nil
       end
@@ -155,6 +149,28 @@ module Aspera
       end
 
       private
+
+      # Keywords are checked here: missing or unknown ones raise `ArgumentError`
+      # @param url      [String] the base url of the node api
+      # @param username [String] the username to use for the node api
+      # @param password [String] the password to use for the node api
+      # @param root_id  [String] root file id if the node is an access key
+      def setup_api(url:, username:, password:, root_id: nil)
+        # root id is required for access key
+        @root_id = root_id
+        rest_params = {base_url: url}
+        if OAuth::Factory.bearer_auth?(password)
+          Aspera.assert(!@root_id.nil?, 'root_id not allowed for access key')
+          rest_params[:headers] = Api::Node.bearer_headers(password, access_key: username)
+        else
+          rest_params[:auth] = {
+            type:     :basic,
+            username: username,
+            password: password
+          }
+        end
+        @node_api = Rest::Client.new(**rest_params)
+      end
 
       # used internally to ensure node api is set before using.
       def node_api_

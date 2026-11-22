@@ -61,7 +61,7 @@ module Aspera
         let(:job_id) { 'httpgw-job-uuid' }
 
         let(:agent_double) do
-          d = double('Agent::Httpgw')
+          d = double('Agent::Httpgw', in_process?: true, transfer_id: job_id, async_params: {})
           allow(d).to(receive(:start_transfer))
           allow(d).to(receive(:last_job_id).and_return(job_id))
           d
@@ -108,10 +108,9 @@ module Aspera
 
       describe 'asynchronous: true with node' do
         let(:agent_double) do
-          d = double('Agent::Node')
+          d = double('Agent::Node', in_process?: false, transfer_id: 'node-tid-abc', async_params: {})
           allow(d).to(receive(:start_transfer))
           allow(d).to(receive(:last_job_id).and_return(nil))
-          allow(d).to(receive(:instance_variable_get).with(:@transfer_id).and_return('node-tid-abc'))
           d
         end
 
@@ -166,7 +165,7 @@ module Aspera
         let(:job_id) { 'direct-job-uuid' }
 
         let(:agent_double) do
-          d = double('Agent::Direct')
+          d = double('Agent::Direct', in_process?: true, transfer_id: job_id, async_params: {})
           allow(d).to(receive(:start_transfer))
           allow(d).to(receive(:last_job_id).and_return(job_id))
           d
