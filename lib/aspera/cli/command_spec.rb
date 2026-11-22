@@ -69,6 +69,9 @@ module Aspera
         super
       end
 
+      # The accessor of the Struct is removed first: redefining it would give a Ruby warning
+      remove_method :allowed
+
       # @return [Array<Symbol>, nil] Allowed values: the result of the callable given to `allowed:`, evaluated at each read
       def allowed
         values = self[:allowed]
