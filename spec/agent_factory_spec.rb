@@ -14,7 +14,7 @@ require_relative '../lib/aspera/schema/registry'
 require_relative '../lib/aspera/schema/validator'
 require_relative '../lib/aspera/cli/context'
 require_relative '../lib/aspera/cli/parser'
-require_relative '../lib/aspera/cli/transfer_agent'
+require_relative '../lib/aspera/plugins/transfer/transfer_agent'
 require_relative '../lib/aspera/log'
 require 'tmpdir'
 require 'fileutils'
@@ -240,6 +240,18 @@ module Aspera
         expect(validator.errors({'agent' => 'bogus'}, Schema::Registry::TRANSFER_AGENT_OPTIONS, partial: true).first).to(include('"fake"'))
       end
 
+      it 'reads the variants again when the entries of the extension point change (bundles of a plugin folder added later)' do
+        agents = -> { schemas.reader(Schema::Registry::TRANSFER_AGENT_OPTIONS)['discriminator']['mapping'].keys }
+        expect(agents.call).to(eq(AgentFactorySpecHelper::TODAY_VARIANTS.keys))
+        expect(validator.errors({'agent' => 'fake'}, Schema::Registry::TRANSFER_AGENT_OPTIONS, partial: true)).not_to(be_empty)
+        write_point_bundle(folder)
+        write_agent_bundle(folder)
+        registry.add_source(folder)
+        expect(agents.call).to(eq(AgentFactorySpecHelper::TODAY_VARIANTS.keys + ['fake']))
+        expect(validator.errors({'agent' => 'fake', 'color' => 'blue'}, Schema::Registry::TRANSFER_AGENT_OPTIONS)).to(be_empty)
+        expect(schemas.reader(Schema::Registry::LOG_OPTIONS).current).to(be(schemas.reader(Schema::Registry::LOG_OPTIONS).current))
+      end
+
       it 'replaces the variant of an agent of the schema by the one of the bundle' do
         write_point_bundle(folder)
         write_agent_bundle(folder, entries: [{'name' => 'direct', 'short' => 'a'}])
@@ -260,7 +272,7 @@ module Aspera
       end
     end
 
-    describe(Cli::TransferAgent) do
+    describe(Plugins::Transfer::TransferAgent) do
       let(:schemas) { Schema::Registry.send(:new) }
 
       before do
@@ -293,6 +305,11 @@ module Aspera
       it 'accepts the parameters of an agent of a bundle, checked with the schema of its entry' do
         expect(agent_for(['--transfer=@json:{"agent":"fake","color":"blue"}']).options).to(include(color: 'blue'))
         expect { agent_for(['--transfer=@json:{"agent":"fake","color":1}']) }.to(raise_error(Cli::BadArgument, %r{/color` is not a string}))
+      end
+
+      it 'gives a CLI error for an agent of a bundle that cannot be loaded' do
+        allow(registry).to(receive(:missing_gems).and_return(['spec_gem']))
+        expect { agent_for(['--transfer=fake']) }.to(raise_error(Cli::Error, 'plugin spec_bundle_agent requires gem spec_gem: gem install spec_gem'))
       end
     end
   end

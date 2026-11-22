@@ -15,11 +15,9 @@ module Aspera
     class Context
       # @type [Array<Symbol>]
       # Members that must be non-nil after bootstrap (validated in #validate)
-      MEMBERS = %i[options transfer config formatter persistency man_header presets vault http_config main_folder mailer secret_finder].freeze
+      MEMBERS = %i[options config formatter persistency man_header presets vault http_config main_folder mailer secret_finder].freeze
       # @!attribute [rw] options
       #   @return [Parser] the command line options manager
-      # @!attribute [rw] transfer
-      #   @return [TransferAgent] the transfer agent, used by transfer plugins
       # @!attribute [rw] config
       #   @return [Plugins::Config] the configuration plugin, used by plugins to get configuration values and presets
       # @!attribute [rw] formatter
@@ -69,6 +67,15 @@ module Aspera
         raise Cli::Error, e.message
       end
 
+      # Service `transfer`: transfer agent of bundle `transfer`, used by plugins that transfer files
+      # @return [Object] The service, see `service`
+      def transfer = service(:transfer)
+
+      # @param value [Object] Object used as service `transfer` (e.g. a test double)
+      def transfer=(value)
+        @services[:transfer] = value
+      end
+
       # Validate that all mandatory members are non-nil (detect bootstrap bugs)
       # @raise [Aspera::AssertionError] if any member is not set
       # @return [nil]
@@ -82,13 +89,13 @@ module Aspera
       # Check if the context is in manual-only mode
       # @return [Boolean] true if in manual-only mode
       def only_manual?
-        transfer.eql?(:only_manual)
+        @services[:transfer].eql?(:only_manual)
       end
 
       # Set the context to manual-only mode
       # @return [Symbol] :only_manual
       def only_manual!
-        @transfer = :only_manual
+        self.transfer = :only_manual
       end
     end
   end

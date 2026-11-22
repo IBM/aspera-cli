@@ -11129,7 +11129,7 @@ The documentation is available in the terminal with:
 > <%=tool%> accepts the following fields within the `sync_info` Hash.
 > The options listed in the **Description** column correspond to the equivalent parameters used by the low-level `async` command.
 
-<%=spec_to_table(Aspera::Sync::Operations::CONF_SCHEMA, annotate: Aspera::CommandLineBuilder.method(:doc_lines))%>
+<%=spec_to_table(Aspera::Sync::Operations::CONF_SCHEMA, annotate: Aspera::Transfer::CommandLineBuilder.method(:doc_lines))%>
 
 ##### `sync_info`: `args` format
 

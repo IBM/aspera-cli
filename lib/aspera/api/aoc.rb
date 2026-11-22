@@ -7,7 +7,7 @@ require_relative '../log'
 require_relative '../assert'
 require_relative '../rest'
 require_relative '../hash_ext'
-require_relative '../data_repository'
+require_relative '../ascp/data_repository'
 require_relative '../transfer/spec'
 require_relative 'node'
 require_relative '../rest/list'
@@ -70,7 +70,7 @@ module Aspera
       MAX_AOC_URL_REDIRECT = 10
       CLIENT_ID_PREFIX = 'aspera.'
       # Well-known AoC global client apps
-      GLOBAL_CLIENT_APPS = DataRepository::ELEMENTS.select { |i| i.to_s.start_with?(CLIENT_ID_PREFIX) }.freeze
+      GLOBAL_CLIENT_APPS = Ascp::DataRepository::ELEMENTS.select { |i| i.to_s.start_with?(CLIENT_ID_PREFIX) }.freeze
       # cookie prefix so that console can decode identity
       COOKIE_PREFIX_CONSOLE_AOC = 'aspera.aoc'
       # path in URL of public links (warning if not in list)
@@ -115,7 +115,7 @@ module Aspera
         # strings /Applications/Aspera\ Drive.app/Contents/MacOS/AsperaDrive|grep -E '.{100}==$'|base64 --decode
         def get_client_info(client_name = nil)
           client_key = client_name.nil? ? GLOBAL_CLIENT_APPS.first : client_name.to_sym
-          return client_key, DataRepository.instance.item(client_key)
+          return client_key, Ascp::DataRepository.instance.item(client_key)
         end
 
         # Base API url depends on domain, which could be "qa.xxx" or self-managed domain

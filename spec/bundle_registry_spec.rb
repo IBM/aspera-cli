@@ -397,6 +397,9 @@ module Aspera
             allow(runner.context.config).to(receive(:add_plugin_lookup_folders))
             allow(runner.context.config).to(receive(:periodic_check_newer_gem_version))
             allow(runner.context).to(receive(:options).and_return(instance_double(Cli::Parser, command_or_arg_empty?: false)))
+            # Options of the mounts of config and of the service transfer
+            allow(Config).to(receive(:declare_options))
+            allow(runner.context).to(receive(:transfer))
             allow(runner.context.options).to(receive(:next_arguments?)) { |values| values.eql?([name]) }
             expect { runner.run_with_result }.to(raise_error(Cli::Error, message))
           end

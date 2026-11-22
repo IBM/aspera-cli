@@ -5,7 +5,7 @@
 #   include/async/common/Sync_types.h     (SSSTATE values)
 #   Verified against a live snap.db using: ascli config sync admin overview <path>
 $schema: https://json-schema.org/draft/2020-12/schema
-$id: https://github.com/IBM/aspera-cli/tree/main/lib/aspera/schema/async_tables.yaml
+$id: https://github.com/IBM/aspera-cli/tree/main/lib/aspera/sync/async_tables.yaml
 title: Async snap database tables
 description: Schemas for the SQLite tables stored inside the Async snap database (`snap.db`).
 type: object

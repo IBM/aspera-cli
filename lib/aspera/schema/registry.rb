@@ -84,7 +84,7 @@ module Aspera
         node:         'aspera/schema/IBM Aspera Node API-4.4.6.yaml',
         shares:       'aspera/schema/IBM_Aspera_Shares.yaml',
         orchestrator: 'aspera/schema/IBM Aspera Orchestrator API-v1-enhanced.yaml',
-        async_tables: 'aspera/schema/async_tables.yaml',
+        async_tables: 'aspera/sync/async_tables.yaml',
         ascp_log:     'aspera/ascp/log.schema.yaml',
         transferd:    'aspera/schema/transferd-config.schema.json',
         manifest:     'aspera/plugin.schema.yaml'
@@ -132,7 +132,6 @@ module Aspera
       PRESET_LOOKUP_CRITERIA  = "#{OPTIONS}:components.schemas.PresetLookupCriteria".freeze
       WIZARD_OPTIONS          = "#{OPTIONS}:components.schemas.WizardOptions".freeze
       IMAGE_OPTIONS           = "#{OPTIONS}:components.schemas.ImageOptions".freeze
-      ASCP_LOGS_OPTIONS       = "#{OPTIONS}:components.schemas.AscpLogsOptions".freeze
       OUT_OPTIONS             = "#{OPTIONS}:components.schemas.OutOptions".freeze
       POLL_OPTIONS            = "#{OPTIONS}:components.schemas.PollOptions".freeze
       PACKAGE_FOLDER_OPTIONS  = "#{OPTIONS}:components.schemas.PackageFolderOptions".freeze
@@ -148,6 +147,8 @@ module Aspera
 
       def initialize
         @cache = {}
+        # Entries of the extension points used for the variants of a document, by file and by point (see `add_variants`)
+        @variant_entries = {}
         @main_folder = File.expand_path('../..', __dir__)
       end
 
@@ -164,7 +165,8 @@ module Aspera
         Aspera.assert(Registry.known?(sym)) { "schema: #{sym}" }
         spec_file = LOCATIONS.key?(sym) ? File.join(@main_folder, LOCATIONS[sym]) : Registry.bundle_schema(sym).file
         # JSON is read with the YAML loader: it accepts the header comment added by `rake tools:openapi`
-        @cache[spec_file] = add_variants(Yaml.safe_load(File.read(spec_file))) unless @cache.key?(spec_file)
+        # Read again when the entries of its variants changed (e.g. bundles of a plugin folder added since)
+        @cache[spec_file] = add_variants(Yaml.safe_load(File.read(spec_file)), spec_file) unless @cache.key?(spec_file) && variants_current?(spec_file)
         # Query-params path: strip the suffix, navigate to the operation node, extract parameters
         if path&.end_with?(QUERY_PARAMS_SUFFIX)
           parent_path = path.delete_suffix(QUERY_PARAMS_SUFFIX)
@@ -182,15 +184,26 @@ module Aspera
 
       private
 
+      # @param spec_file [String] Schema file read in the cache
+      # @return [Boolean] `true` if the entries of the extension points of its variants are the same as when it was read
+      def variants_current?(spec_file)
+        entries = @variant_entries.fetch(spec_file, {})
+        return true if entries.empty?
+        entries.all? { |point, used| BundleRegistry.instance.extensions(point).eql?(used) }
+      end
+
       # Add the variants given by bundles to the components of `components.schemas` that have the marker `x-cli-variants`
       # (`point`: extension point, `value`: field of an entry with the value of the discriminator, `schema`: field with the schema file of the variant,
       # relative to the folder of the bundle, `suffix`: of the name of the component).
       # For each entry of the point: a component `<Value><suffix>` read from the file, a `$ref` in `oneOf`, an entry in `discriminator.mapping`.
       # An entry with the value of a variant of the document replaces it; an entry with the value of an earlier entry,
       # or whose schema file cannot be read, is skipped with a warning. The marker is removed.
-      # @param document [Object] Document read from a schema file
+      # The entries used are kept: the document is read again when they change (see `variants_current?`).
+      # @param document  [Object] Document read from a schema file
+      # @param spec_file [String] Schema file of the document
       # @return [Object] The document, with the variants added
-      def add_variants(document)
+      def add_variants(document, spec_file)
+        @variant_entries[spec_file] = {}
         schemas = document.dig('components', 'schemas') if document.is_a?(Hash) && document['components'].is_a?(Hash)
         return document unless schemas.is_a?(Hash)
         schemas.values.select { |schema| schema.is_a?(Hash) && schema.key?(VARIANTS) }.each do |selector|
@@ -202,7 +215,10 @@ module Aspera
           # Loaded on use: `bundle_registry` requires this file
           require_relative '../bundle_registry'
           added = []
-          BundleRegistry.instance.extensions(marker.fetch('point').to_sym).each do |entry|
+          point = marker.fetch('point').to_sym
+          entries = BundleRegistry.instance.extensions(point)
+          @variant_entries[spec_file][point] = entries
+          entries.each do |entry|
             value, file = entry.fields.values_at(marker.fetch('value'), marker.fetch('schema'))
             label = "Variant #{value} of bundle #{entry.bundle} is skipped"
             next Log.log.warn { "#{label}: no #{marker['value']} or #{marker['schema']}" } unless value.is_a?(String) && file.is_a?(String)

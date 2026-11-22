@@ -96,16 +96,26 @@ module Aspera
 
       # Register a CommandSpec. Raises if the full_path is already registered.
       # Also updates the children index so children_of remains O(1).
-      # @param spec [CommandSpec]
-      # @raise [ArgumentError] on duplicate full path
+      # @param spec   [CommandSpec]
+      # @param before [Symbol, nil] Id of a registered child of the same parent: the command is placed before it; `nil`: after the other children
+      # @raise [ArgumentError] on duplicate full path, or unknown `before`
       # @return [CommandSpec] the registered spec
-      def register(spec)
+      def register(spec, before: nil)
         path = spec.full_path
         raise ArgumentError, "Duplicate command path: #{path.inspect}" if @specs.key?(path)
-        @specs[path] = spec
         # Index: parent_path -> { child_id -> spec }
         parent = path[0..-2] # [] for root-level commands
-        (@children_index[parent] ||= {})[spec.id] = spec
+        siblings = (@children_index[parent] ||= {})
+        raise ArgumentError, "#{path.inspect}: no command #{before.inspect} to place it before" unless before.nil? || siblings.key?(before)
+        @specs[path] = spec
+        if before.nil?
+          siblings[spec.id] = spec
+        else
+          @children_index[parent] = siblings.each_with_object({}) do |(id, sibling), placed|
+            placed[spec.id] = spec if id.eql?(before)
+            placed[id] = sibling
+          end
+        end
         spec
       end
 

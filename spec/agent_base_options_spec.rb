@@ -3,7 +3,7 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Unit tests for the base options of agents (`Agent::Base#initialize`), given the same way to every agent by `Cli::TransferAgent`,
+# Unit tests for the base options of agents (`Agent::Base#initialize`), given the same way to every agent by `Plugins::Transfer::TransferAgent`,
 # and for the async contract of agents: `transfer_id`, `async_params`, `in_process?`.
 # No transfer is started: REST clients are doubled.
 
@@ -15,7 +15,7 @@ require_relative '../lib/aspera/agent/desktop'
 require_relative '../lib/aspera/agent/connect'
 require_relative '../lib/aspera/cli/parser'
 require_relative '../lib/aspera/cli/context'
-require_relative '../lib/aspera/cli/transfer_agent'
+require_relative '../lib/aspera/plugins/transfer/transfer_agent'
 require 'securerandom'
 
 module Aspera
@@ -224,7 +224,7 @@ module Aspera
   end
 
   module Cli
-    RSpec.describe(TransferAgent) do
+    RSpec.describe(Aspera::Plugins::Transfer::TransferAgent) do
       # Base options of `Agent::Base#initialize`
       let(:base_option_keys) { %i[progress progress_default config_dir check_ignore_cb trusted_certs preset_lookup url_provider] }
       let(:created) { [] }

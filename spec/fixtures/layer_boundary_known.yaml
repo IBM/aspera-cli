@@ -3,8 +3,10 @@
 api/alee.rb:
 - require api/aoc
 api/aoc.rb:
+- const Ascp::DataRepository
 - const Transfer::Spec
 - require api/node
+- require ascp/data_repository
 - require transfer/spec
 api/cos_node.rb:
 - const Transfer::Spec
@@ -19,21 +21,6 @@ api/node.rb:
 ascp/log_locations.rb:
 - const Products::TransferdService
 - require products/transferd_service
-cli/ascp_actions.rb:
-- const Agent::Factory
-- const Ascp::Installation
-- const Ascp::Management
-- const Ascp::SessionErrors
-- const Products::Transferd
-- const Transfer::Spec
-- require agent/factory
-- require ascp/session_errors
-cli/ascp_logs_actions.rb:
-- const Ascp::Installation
-- const Ascp::LogAnalyzer
-- const Ascp::LogLocations
-- require ascp/log_analyzer
-- require ascp/log_locations
 cli/bootstrapper.rb:
 - const Ascp::Installation
 - const Transfer::Parameters
@@ -68,14 +55,10 @@ cli/plugins/ats.rb:
 - require api/ats
 - require cli/plugins/node
 cli/plugins/config.rb:
-- const Agent::Factory
 - const Ascp::Installation
-- const Sync::Operations
 - const Transfer::Spec
-- require agent/factory
 - require ascp/installation
 - require cli/plugins/transferd
-- require sync/operations
 - require transfer/spec
 cli/plugins/cos.rb:
 - const Api::CosNode
@@ -92,9 +75,11 @@ cli/plugins/httpgw.rb:
 cli/plugins/node.rb:
 - const Api::Node
 - const Api::NodeFileId
+- const Plugins::Transfer
 - const Sync::Operations
 - const Transfer::Spec
 - require api/node
+- require plugins/transfer/sync_actions
 - require transfer/spec
 cli/plugins/orchestrator.rb:
 - const Transfer::Spec
@@ -112,9 +97,12 @@ cli/plugins/preview.rb:
 - require preview/utils
 - require transfer/spec
 cli/plugins/server.rb:
+- const Plugins::Transfer
 - const Sync::Operations
 - const Transfer::Result
 - const Transfer::Spec
+- require plugins/transfer/ascp_logs_actions
+- require plugins/transfer/sync_actions
 - require transfer/result
 - require transfer/spec
 cli/plugins/shares.rb:
@@ -132,27 +120,7 @@ cli/runner.rb:
 - const Transfer::Error
 - const Transfer::Result
 - const Transfer::Spec
-- const TransferAgent
 - require transfer/result
-cli/sync_actions.rb:
-- const Sync::Database
-- const Sync::Operations
-- const Transfer::Spec
-- require sync/database
-- require sync/operations
-cli/transfer_actions.rb:
-- const Agent
-- require agent/factory
-cli/transfer_agent.rb:
-- const Agent::Factory
-- const Transfer::Parameters
-- const Transfer::Result
-- const Transfer::Spec
-- require agent/factory
-- require transfer/result
-- require transfer/spec
-command_line_builder.rb:
-- const Transfer::Error
 faspex_gw.rb:
 - const Api::Faspex
 - require api/faspex

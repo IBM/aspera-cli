@@ -3,96 +3,13 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-require_relative 'async_transfer_store'
-require_relative '../agent/factory'
+# Shim: moved to aspera/plugins/transfer/transfer_actions, removed in 5.0
 require_relative '../log'
-require_relative '../assert'
-
+require_relative '../plugins/transfer/transfer_actions'
+Aspera::Log.log.warn('aspera/cli/transfer_actions is deprecated: use aspera/plugins/transfer/transfer_actions (removed in 5.0)')
 module Aspera
   module Cli
-    # Mixin for Config plugin: async transfer management actions.
-    # Exposes three sub-commands under `config agents jobs` (`config transfer` is a deprecated alias):
-    #   status  <job_id>        Re-query a running/completed transfer
-    #   list                    List all persisted async transfer entries
-    #   cleanup                 Remove completed/failed/cancelled entries
-    #
-    # Architecture:
-    #   - remote-daemon agents (desktop, node, connect, transferd): transfer_id + agent_params
-    #     are persisted in AsyncTransferStore (without secrets, taken from current options);
-    #     status is re-queried via Agent::Xxx.transfer_status
-    #   - direct agent: transfers live in Ruby threads - store is the agent's @sessions;
-    #     status is not persistable across process restarts (returns an informational message)
-    module TransferActions
-      # Re-query the status of a single async transfer job.
-      # @param job_id [String] UUID returned at submission time
-      def action_agents_jobs_status(job_id:, **)
-        store = async_transfer_store
-        entry = store.read(job_id)
-        Aspera.assert(!entry.nil?, type: Cli::BadArgument) { "Unknown job_id: #{job_id}" }
-        # Secrets are not persisted: take them from current transfer options (e.g. `--transfer`), for the same agent type
-        agent_params = current_agent_params(entry['agent_type']).merge(entry['agent_params'] || {})
-        # Inject the in-process agent reference (direct/httpgw) if still alive in this process.
-        ref = store.agent_ref(job_id)
-        agent_params['_agent_ref'] = ref if ref
-        live = query_live_status(entry.merge('agent_params' => agent_params))
-        if live
-          entry.merge!(live)
-          store.write(job_id, entry)
-        end
-        Result::SingleObject.new(entry)
-      end
-
-      TERMINAL_STATUSES = %w[completed failed cancelled].freeze
-      private_constant :TERMINAL_STATUSES
-
-      # Delete completed, failed, and cancelled entries from the store.
-      def action_agents_jobs_cleanup(**)
-        store = async_transfer_store
-        deleted = store.list
-          .select { |e| TERMINAL_STATUSES.include?(e['status']) }
-          .map do |e|
-          store.delete(e['job_id'])
-          e['job_id']
-        end
-        Result::Status.new("Deleted #{deleted.size} completed transfer(s)#{": #{deleted.join(', ')}" unless deleted.empty?}")
-      end
-
-      private
-
-      # @param agent_type [String] agent of the async transfer
-      # @return [Hash] agent parameters from current transfer options (e.g. `--transfer`), if for the same agent type
-      def current_agent_params(agent_type)
-        current = context.transfer.transfer_options
-        return {} unless (current['agent'] || 'direct').to_s.eql?(agent_type)
-        current.except('agent', 'asynchronous')
-      end
-
-      # Lazy accessor - requires context.persistency (available in all Base sub-classes).
-      # Delegate to the TransferAgent's store so that the in-memory agent-ref
-      # registry is shared between the two components in the same process.
-      def async_transfer_store
-        context.transfer.async_store
-      end
-
-      # Delegate to the appropriate agent class method.
-      # All agent types are supported:
-      # - in-process agents (direct, httpgw): re-queryable while the same process lives
-      #   (e.g. MCP mode); '_agent_ref' in agent_params points to the live instance.
-      #   When the process has restarted, '_agent_ref' is nil and transfer_status returns
-      #   {'status' => 'unknown'} — which is the correct and safe answer.
-      # - daemon agents (node, desktop, connect, transferd): re-query via their REST/IPC API.
-      def query_live_status(entry)
-        agent_type   = entry['agent_type']
-        transfer_id  = entry['transfer_id']
-        agent_params = entry['agent_params'] || {}
-
-        require "aspera/agent/#{agent_type}"
-        agent_class = Aspera::Agent.const_get(agent_type.capitalize)
-        agent_class.transfer_status(transfer_id, agent_params)
-      rescue StandardError => e
-        Log.log.warn { "Could not re-query #{entry['agent_type']} agent for job #{entry['job_id']}: #{e}" }
-        nil
-      end
-    end
+    TransferActions = Aspera::Plugins::Transfer::TransferActions
+    deprecate_constant :TransferActions
   end
 end

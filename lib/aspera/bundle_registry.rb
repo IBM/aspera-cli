@@ -300,19 +300,23 @@ module Aspera
     end
 
     # Modules mounted on a plugin, from the available bundles, data only: the code of a module is loaded by `load_entry`.
+    # Registers the plugins of the sources first if it was not done (e.g. `config` includes its mounts when it is loaded).
     # @param target [Symbol] Name of the plugin that includes the modules
     # @return [Array<Mount>] Mounts, by name of bundle, then in the order of the manifest
     def mounts(target)
       Aspera.assert_type(target, Symbol)
+      scan unless @scanned
       available_plugins.flat_map { |plugin| plugin.mounts.select { |mount| mount.target.eql?(target) } }
     end
 
     # Service of the bundle that declares it, data only: its class is loaded by `load_entry`.
+    # Registers the plugins of the sources first if it was not done.
     # @param name [Symbol] Name of the service
     # @return [Service] The service
     # @raise [Unavailable] If no plugin declares the service, or if the plugin that declares it is unavailable
     def service(name)
       Aspera.assert_type(name, Symbol)
+      scan unless @scanned
       provider = claims[[:service, name]]
       raise Unavailable, "no plugin provides service #{name}" if provider.nil?
       reason = unavailable_reason(provider)

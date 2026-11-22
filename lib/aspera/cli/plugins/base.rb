@@ -58,12 +58,13 @@ module Aspera
 
           # DSL class method: register a command in this plugin's registry.
           # Inherits parent from the enclosing commands_under block when parent: is omitted.
-          # @param id [Symbol]
+          # @param id     [Symbol]
+          # @param before [Symbol, nil] Command of the same parent before which this one is placed (e.g. by a mounted module), `nil`: after the others
           # @param kwargs [Hash] forwarded to [CommandSpec]
-          def command(id, **kwargs)
+          def command(id, before: nil, **kwargs)
             kwargs[:parent] = @current_parent if kwargs[:parent].nil? && @current_parent
             kwargs[:security] = mounted_level(kwargs[:security])
-            command_registry.register(CommandSpec.new(id: id, **kwargs))
+            command_registry.register(CommandSpec.new(id: id, **kwargs), before: before)
           end
 
           # Words displayed with specific case in descriptions
@@ -365,7 +366,8 @@ module Aspera
 
         # @return [Aspera::Cli::Parser]
         def options; @context.options; end
-        # @return [Aspera::Cli::TransferAgent]
+        # Plugins of bundles use `Aspera::Plugins::Transfer::Helper#transfer` (bundle `transfer`)
+        # @return [Object] Service `transfer` of the context (`Aspera::Plugins::Transfer::TransferAgent`)
         def transfer; @context.transfer; end
         # @return [Aspera::Cli::Plugins::Config]
         def config; @context.config; end

@@ -1,0 +1,99 @@
+openapi: 3.1.0
+info:
+  title: Options of bundle transfer
+  version: 1.0.0
+  description: Schema definitions of the options of bundle `transfer`
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+paths: {}
+components:
+  schemas:
+    AscpLogsOptions:
+      type: object
+      description: Analysis of `ascp` log files (`config ascp logs`).
+      additionalProperties: false
+      properties:
+        period:
+          type: integer
+          description: Snapshot period, in minutes.
+          default: 1
+        zero_bytes:
+          type: boolean
+          description: Include sessions without transferred bytes.
+          default: false
+        mtu:
+          type: integer
+          description: MTU, when not found in logs.
+        resolve:
+          type: boolean
+          description: Resolve peer addresses to host names.
+          default: false
+        timezone:
+          type: string
+          description: Time zone of the log lines (`UTC` or `+HH:MM`), to read a log from another time zone. Default is the local time zone.
+        health_minutes:
+          type: integer
+          description: Window in minutes to report transfer errors and low efficiency.
+          default: 60
+        remote_max_size:
+          type: integer
+          description: Maximum total size in bytes of the log files read from a server (`server logs`).
+          default: 536870912
+        thresholds:
+          type: object
+          description: Diagnostic thresholds.
+          additionalProperties: false
+          properties:
+            efficiency:
+              type: number
+              description: Minimum efficiency percentage below which a warning is emitted.
+              default: 90.0
+            control_loss_percent:
+              type: number
+              description: Minimum percentage of lost control messages to trigger a warning.
+              default: 5.0
+            control_loss_sent:
+              type: integer
+              description: Minimum number of control messages sent before checking control loss.
+              default: 10
+            retry_window:
+              type: integer
+              description: Maximum interval in seconds between sessions to link a retry.
+              default: 3600
+            last_error_window:
+              type: integer
+              description: Window in seconds before exit to attribute the last logged error.
+              default: 60
+            rate_decline_ratio:
+              type: number
+              description: Ratio of second half rate to first half rate below which rate decline is diagnosed.
+              default: 0.7
+            rate_decline_min_samples:
+              type: integer
+              description: Minimum number of samples to evaluate rate decline.
+              default: 10
+            rate_decline_delay:
+              type: integer
+              description: Delay in seconds after session start before evaluating rate decline samples.
+              default: 20
+            rate_decline_end_fraction:
+              type: number
+              description: Fraction of samples to discard from the end of a session when evaluating rate decline.
+              default: 0.1
+            license_expiry_days:
+              type: integer
+              description: Number of days before the expiry of the license of ascp (or less, if already expired) at which a warning is emitted.
+              default: 30
+            small_files_min_count:
+              type: integer
+              description: Minimum number of transferred files to check for the small-files diagnostic.
+              default: 100
+            small_files_max_mean:
+              type: integer
+              description: Maximum mean file size in bytes below which the small-files diagnostic is emitted.
+              default: 1000000
+            small_mtu_max:
+              type: integer
+              description: Path MTU in bytes below which the small-MTU diagnostic is emitted (ascp measures 1492, 1006, 508 or 296).
+              default: 1400

@@ -8,8 +8,8 @@ require_relative '../agent/direct'
 require_relative '../transfer/spec'
 require_relative '../units/decimal'
 require_relative '../exec_spec'
-require_relative '../command_line_converter'
-require_relative '../command_line_builder'
+require_relative '../transfer/command_line_converter'
+require_relative '../transfer/command_line_builder'
 require_relative '../log'
 require_relative '../assert'
 require_relative '../units/duration'
@@ -145,14 +145,14 @@ module Aspera
             end
             if sync_info.key?('instance')
               Aspera.assert_type(sync_info['instance'], Hash)
-              instance_builder = CommandLineBuilder.new(sync_info['instance'], ARGS_INSTANCE_SCHEMA, CommandLineConverter)
+              instance_builder = Transfer::CommandLineBuilder.new(sync_info['instance'], ARGS_INSTANCE_SCHEMA, Transfer::CommandLineConverter)
               instance_builder.process_params
               instance_builder.add_to_exec_spec(exec_spec)
             end
             sync_info['sessions'].each do |session_params|
               Aspera.assert_type(session_params, Hash)
               Aspera.assert(session_params.key?('name'), 'session must contain at least: name')
-              session_builder = CommandLineBuilder.new(session_params, ARGS_SESSION_SCHEMA, CommandLineConverter)
+              session_builder = Transfer::CommandLineBuilder.new(session_params, ARGS_SESSION_SCHEMA, Transfer::CommandLineConverter)
               session_builder.process_params
               session_builder.add_to_exec_spec(exec_spec)
             end
@@ -282,7 +282,7 @@ module Aspera
             if property.key?('x-ts-name')
               tspec_param = property['x-ts-name']
               if transfer_spec.key?(tspec_param) && !sync_info.key?(name)
-                sync_info[name] = property['x-ts-convert'] ? CommandLineConverter.send(property['x-ts-convert'], transfer_spec[tspec_param]) : transfer_spec[tspec_param]
+                sync_info[name] = property['x-ts-convert'] ? Transfer::CommandLineConverter.send(property['x-ts-convert'], transfer_spec[tspec_param]) : transfer_spec[tspec_param]
               end
             end
             if property['type'].eql?('object') && property.key?('properties')
@@ -359,10 +359,10 @@ module Aspera
       end
       # Private stuff:
       # Read JSON schema and mapping to command line options
-      ARGS_INSTANCE_SCHEMA = CommandLineBuilder.read_schema(Schema::Registry::SYNC_ARGS)
+      ARGS_INSTANCE_SCHEMA = Transfer::CommandLineBuilder.read_schema(Schema::Registry::SYNC_ARGS)
       ARGS_SESSION_SCHEMA = ARGS_INSTANCE_SCHEMA.dig(*%w[properties sessions items])
       ARGS_INSTANCE_SCHEMA.dig('properties').current.delete('sessions')
-      CONF_SCHEMA = CommandLineBuilder.read_schema(Schema::Registry::SYNC_CONF)
+      CONF_SCHEMA = Transfer::CommandLineBuilder.read_schema(Schema::Registry::SYNC_CONF)
       CMDLINE_PARAMS_KEYS = %w[instance sessions].freeze
       ASYNC_ADMIN_EXECUTABLE = 'asyncadmin'
       PRIVATE_FOLDER = "#{Environment.instance.os.eql?(Environment::OS_WINDOWS) ? '~' : '.'}private-asp".freeze

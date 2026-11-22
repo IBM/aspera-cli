@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require_relative '../agent/factory'
-require_relative '../command_line_builder'
+require_relative 'command_line_builder'
 require_relative '../assert'
 require_relative '../units/decimal'
 

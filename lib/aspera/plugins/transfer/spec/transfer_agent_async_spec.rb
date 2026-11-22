@@ -7,19 +7,19 @@
 # The agent_instance is fully doubled; no real transfer is started.
 # PersistencyFolder uses a temp directory.
 
-require_relative '../lib/aspera/hash_ext'
-require_relative '../lib/aspera/persistency_folder'
-require_relative '../lib/aspera/cli/async_transfer_store'
-require_relative '../lib/aspera/cli/error'
-require_relative '../lib/aspera/cli/transfer_agent'
-require_relative '../lib/aspera/transfer/result'
+require_relative '../../../hash_ext'
+require_relative '../../../persistency_folder'
+require_relative '../async_transfer_store'
+require_relative '../../../cli/error'
+require_relative '../transfer_agent'
+require_relative '../../../transfer/result'
 require 'bundler/setup'
 require 'tmpdir'
 require 'securerandom'
 
 module Aspera
   module Cli
-    RSpec.describe(TransferAgent) do
+    RSpec.describe(Aspera::Plugins::Transfer::TransferAgent) do
       # ── helpers ────────────────────────────────────────────────────────────
 
       let(:tmpdir) { Dir.mktmpdir('transfer_agent_spec') }
@@ -86,7 +86,7 @@ module Aspera
 
         it 'persists the entry in AsyncTransferStore' do
           result = ta.start(ts)
-          store = AsyncTransferStore.new(persistency)
+          store = Aspera::Plugins::Transfer::AsyncTransferStore.new(persistency)
           entry = store.read(result.job_id)
           expect(entry).not_to(be_nil)
           expect(entry['agent_type']).to(eq('httpgw'))
@@ -96,7 +96,7 @@ module Aspera
 
         it 'does NOT persist _agent_ref to the store' do
           ta.start(ts)
-          store = AsyncTransferStore.new(persistency)
+          store = Aspera::Plugins::Transfer::AsyncTransferStore.new(persistency)
           entry = store.read(job_id)
           expect(entry).not_to(have_key('_agent_ref'))
           # also check nested agent_params
@@ -142,7 +142,7 @@ module Aspera
         it 'persists the entry in AsyncTransferStore' do
           result = ta.start(ts)
           job_id = result.job_id
-          store = AsyncTransferStore.new(persistency)
+          store = Aspera::Plugins::Transfer::AsyncTransferStore.new(persistency)
           entry = store.read(job_id)
           expect(entry).not_to(be_nil)
           expect(entry['agent_type']).to(eq('node'))
@@ -153,7 +153,7 @@ module Aspera
 
         it 'does NOT persist _agent_ref to the store' do
           result = ta.start(ts)
-          store = AsyncTransferStore.new(persistency)
+          store = Aspera::Plugins::Transfer::AsyncTransferStore.new(persistency)
           entry = store.read(result.job_id)
           expect(entry['agent_params']).not_to(have_key('_agent_ref'))
         end
@@ -190,7 +190,7 @@ module Aspera
 
         it 'persists the entry in AsyncTransferStore (like all agents)' do
           result = ta.start(ts)
-          store = AsyncTransferStore.new(persistency)
+          store = Aspera::Plugins::Transfer::AsyncTransferStore.new(persistency)
           entry = store.read(result.job_id)
           expect(entry).not_to(be_nil)
           expect(entry['agent_type']).to(eq('direct'))
@@ -200,7 +200,7 @@ module Aspera
 
         it 'does NOT persist _agent_ref to the store' do
           result = ta.start(ts)
-          store = AsyncTransferStore.new(persistency)
+          store = Aspera::Plugins::Transfer::AsyncTransferStore.new(persistency)
           entry = store.read(result.job_id)
           expect(entry['agent_params']).not_to(have_key('_agent_ref'))
         end
@@ -227,7 +227,7 @@ module Aspera
 
         it 'does NOT write to AsyncTransferStore' do
           ta.start(ts)
-          expect(AsyncTransferStore.new(persistency).list).to(be_empty)
+          expect(Aspera::Plugins::Transfer::AsyncTransferStore.new(persistency).list).to(be_empty)
         end
       end
 
@@ -275,7 +275,7 @@ module Aspera
 
       describe 'AsyncTransferStore#write' do
         it 'strips _ keys at every nesting level before persisting' do
-          store = AsyncTransferStore.new(persistency)
+          store = Aspera::Plugins::Transfer::AsyncTransferStore.new(persistency)
           live_object = Object.new
           store.write('test-job-1', {
             'job_id'       => 'test-job-1',
@@ -294,7 +294,7 @@ module Aspera
         end
 
         it 'preserves non-underscore keys' do
-          store = AsyncTransferStore.new(persistency)
+          store = Aspera::Plugins::Transfer::AsyncTransferStore.new(persistency)
           store.write('test-job-2', {'job_id' => 'test-job-2', 'status' => 'running', '_ref' => 'ignored'})
           entry = store.read('test-job-2')
           expect(entry['status']).to(eq('running'))
@@ -305,7 +305,7 @@ module Aspera
       # ── Agent::Direct.transfer_status ───────────────────────────────────────
 
       describe 'Agent::Direct.transfer_status' do
-        before { require_relative '../lib/aspera/agent/direct' }
+        before { require_relative '../../../agent/direct' }
 
         it 'returns unknown when _agent_ref is nil' do
           result = Aspera::Agent::Direct.transfer_status('some-job', {})
@@ -358,7 +358,7 @@ module Aspera
       # ── Agent::Httpgw.transfer_status ───────────────────────────────────────
 
       describe 'Agent::Httpgw.transfer_status' do
-        before { require_relative '../lib/aspera/agent/httpgw' }
+        before { require_relative '../../../agent/httpgw' }
 
         it 'returns unknown when _agent_ref is nil' do
           result = Aspera::Agent::Httpgw.transfer_status('some-job', {})
@@ -407,7 +407,7 @@ module Aspera
       # ── Runner.result_transfer with typed Transfer::Result ──────────────────
 
       describe 'Runner.result_transfer' do
-        before { require_relative '../lib/aspera/cli/runner' }
+        before { require_relative '../../../cli/runner' }
 
         it 'returns a SingleObject for Transfer::Result::Async' do
           async_result = Aspera::Transfer::Result.async(job_id: 'abc-123')
@@ -430,7 +430,7 @@ module Aspera
       # ── Runner.result_object_transfer: created object (e.g. package) and its transfer ──
 
       describe 'Runner.result_object_transfer' do
-        before { require_relative '../lib/aspera/cli/runner' }
+        before { require_relative '../../../cli/runner' }
 
         let(:package) { {'id' => '3909', 'title' => 'test'} }
 

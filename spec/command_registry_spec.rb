@@ -51,6 +51,23 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
     it 'returns nil for an unknown path' do
       expect(registry[[:unknown]]).to(be_nil)
     end
+
+    it 'places a command before a child of the same parent' do
+      %i[first last].each { |id| registry.register(spec(id: id)) }
+      registry.register(spec(id: :one, parent: :first))
+      registry.register(spec(id: :middle), before: :last)
+      registry.register(spec(id: :zero, parent: :first), before: :one)
+      expect(registry.children_of([]).keys).to(eq(%i[first middle last]))
+      expect(registry.children_of([:first]).keys).to(eq(%i[zero one]))
+      expect(registry[[:middle]]).not_to(be_nil)
+    end
+
+    it 'refuses to place a command before a command that is not a child of the same parent' do
+      registry.register(spec(id: :first))
+      registry.register(spec(id: :one, parent: :first))
+      expect { registry.register(spec(id: :two), before: :one) }.to(raise_error(ArgumentError, '[:two]: no command :one to place it before'))
+      expect(registry[[:two]]).to(be_nil)
+    end
   end
 
   # -----------------------------------------------------------------------

@@ -18,7 +18,7 @@ module Aspera
       include Singleton
 
       def initialize
-        # compiled documents, key: [registry key, partial]
+        # Compiled documents, key: [registry key, partial], value: [document of the registry, compiled document]
         @documents = {}
       end
 
@@ -42,20 +42,21 @@ module Aspera
 
       # @param key     [String]  registry key
       # @param partial [Boolean] remove `required` from schema
-      # @return [JSONSchemer::Schema] compiled schema document
+      # @return [JSONSchemer::Schema] compiled schema document, compiled again when the registry reads the document again (see `Registry#reader`)
       def document(key, partial)
-        @documents[[key, partial]] ||=
-          begin
-            require 'json_schemer'
-            root = Registry.instance.reader(key).current
-            root = without_required(root) if partial
-            meta =
-              case root['openapi']
-              when /^3\.0\./ then JSONSchemer.openapi30
-              when /^3\.1\./ then JSONSchemer.openapi31
-              end
-            meta ? JSONSchemer.schema(root, meta_schema: meta) : JSONSchemer.schema(root)
+        source = Registry.instance.reader(key).current
+        compiled_source, compiled = @documents[[key, partial]]
+        return compiled if compiled_source.equal?(source)
+        require 'json_schemer'
+        root = partial ? without_required(source) : source
+        meta =
+          case root['openapi']
+          when /^3\.0\./ then JSONSchemer.openapi30
+          when /^3\.1\./ then JSONSchemer.openapi31
           end
+        compiled = meta ? JSONSchemer.schema(root, meta_schema: meta) : JSONSchemer.schema(root)
+        @documents[[key, partial]] = [source, compiled]
+        compiled
       end
 
       # @param node [Object] schema node

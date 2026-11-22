@@ -7,19 +7,19 @@
 # applies to the destination folder only when the transfer agent writes on the local system.
 # The agent_instance is doubled; no real transfer is started.
 
-require_relative '../lib/aspera/hash_ext'
-require_relative '../lib/aspera/persistency_folder'
-require_relative '../lib/aspera/cli/error'
-require_relative '../lib/aspera/cli/security'
-require_relative '../lib/aspera/cli/transfer_agent'
-require_relative '../lib/aspera/agent/base'
-require_relative '../lib/aspera/agent/node'
+require_relative '../../../hash_ext'
+require_relative '../../../persistency_folder'
+require_relative '../../../cli/error'
+require_relative '../../../cli/security'
+require_relative '../transfer_agent'
+require_relative '../../../agent/base'
+require_relative '../../../agent/node'
 require 'bundler/setup'
 require 'tmpdir'
 
 module Aspera
   module Cli
-    RSpec.describe(TransferAgent) do
+    RSpec.describe(Aspera::Plugins::Transfer::TransferAgent) do
       let(:tmpdir) { Dir.mktmpdir('transfer_agent_destination_spec') }
       let(:security) { Security.instance }
       # Transfer spec given to the agent

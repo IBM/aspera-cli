@@ -252,6 +252,12 @@ module Aspera
         ]))
         expect(registry.mounts(:spec_bundle_none)).to(be_empty)
       end
+
+      it 'registers the plugins of the sources first (a target loaded before the scan, e.g. config)' do
+        write_mounting_bundle(folder)
+        registry.add_source(folder)
+        expect(registry.mounts(:spec_bundle_target).map(&:constant)).to(eq(%w[MountA MountB]))
+      end
     end
 
     describe 'services' do
@@ -259,6 +265,12 @@ module Aspera
         write_service_bundle(folder, code: "raise 'code of the service loaded'")
         scan
         expect(registry.service(:spec_service)).to(have_attributes(bundle: :spec_bundle_service, name: :spec_service, file: 'service.rb', constant: 'Service'))
+      end
+
+      it 'registers the plugins of the sources first' do
+        write_service_bundle(folder)
+        registry.add_source(folder)
+        expect(registry.service(:spec_service).bundle).to(eq(:spec_bundle_service))
       end
 
       it 'makes a bundle unavailable when it declares a service already declared by a plugin registered before' do
@@ -306,6 +318,18 @@ module Aspera
         expect(service.context).to(be(context))
         expect(context.service(:spec_service)).to(be(service))
         expect(described_class.new(registry: registry).service(:spec_service)).not_to(be(service))
+      end
+
+      it 'gives the service transfer as member transfer, or the object set for it' do
+        write_service_bundle(folder, service: 'transfer')
+        registry.add_source(folder)
+        service = context.transfer
+        expect(service).to(be_a(Aspera::Plugins::SpecBundleService::Service))
+        expect(context.service(:transfer)).to(be(service))
+        other = described_class.new(registry: registry)
+        other.transfer = :spec_double
+        expect(other.service(:transfer)).to(eq(:spec_double))
+        expect(other.transfer).to(eq(:spec_double))
       end
 
       it 'raises a CLI error for a service that no available bundle provides' do
@@ -386,6 +410,19 @@ module Aspera
           allow(BundleRegistry).to(receive(:instance).and_return(registry))
           scan
           expect(factory.plugin_class(:spec_bundle_target).command_registry.children_of([]).keys).to(eq(%i[first mounted_a mounted_b last]))
+        end
+
+        it 'places a mounted command before a command of the target' do
+          write_single(other, 'spec_bundle_target', body: BundleHooksSpecHelper::TARGET_BODY)
+          write_one_mount('spec_bundle_before', <<~RUBY)
+            module Mount
+              def self.included(base)
+                base.class_exec { command :placed, description: 'Placed', action: ->(**) {}, before: :last }
+              end
+            end
+          RUBY
+          scan
+          expect(factory.plugin_class(:spec_bundle_target).command_registry.children_of([]).keys).to(eq(%i[first placed last]))
         end
 
         it 'mounts on the commands of a bundle' do

@@ -3,15 +3,15 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-require_relative '../lib/aspera/persistency_folder'
-require_relative '../lib/aspera/cli/async_transfer_store'
+require_relative '../../../persistency_folder'
+require_relative '../async_transfer_store'
 require 'bundler/setup'
 require 'tmpdir'
 require 'securerandom'
 
 module Aspera
   module Cli
-    RSpec.describe(AsyncTransferStore) do
+    RSpec.describe(Aspera::Plugins::Transfer::AsyncTransferStore) do
       # Use a real PersistencyFolder backed by a temp directory
       let(:tmpdir) { Dir.mktmpdir('async_store_spec') }
       let(:persistency) { Aspera::PersistencyFolder.new(tmpdir) }

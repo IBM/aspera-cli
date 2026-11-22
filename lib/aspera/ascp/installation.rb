@@ -6,7 +6,7 @@
 # cspell:ignore ckpt
 require_relative '../yaml'
 require_relative '../environment'
-require_relative '../data_repository'
+require_relative 'data_repository'
 require_relative '../log'
 require_relative '../rest'
 require_relative '../uri_reader'

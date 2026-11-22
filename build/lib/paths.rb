@@ -97,7 +97,7 @@ module Paths
   # Async (sync) configuration schema
   ASYNC_YAML_SCHEMA        = LIB / 'aspera/sync/conf.schema.yaml'
   # Schema of the SQLite tables of the async snap database (`snap.db`)
-  ASYNC_TABLES_YAML_SCHEMA = LIB / 'aspera/schema/async_tables.yaml'
+  ASYNC_TABLES_YAML_SCHEMA = LIB / 'aspera/sync/async_tables.yaml'
   # Main executable: `ascli`
   COMMAND = BIN / Aspera::Cli::Info::CMD_NAME
   # Executable: `asession`

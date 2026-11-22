@@ -4,7 +4,7 @@
     ".cspell.json",
     ".git",
     ".secrets.baseline",
-    "lib/aspera/data",
+    "lib/aspera/ascp/data",
     "lib/transfer_pb.rb",
     "lib/transfer_services_pb.rb",
     "lib/transferd_pb.rb",

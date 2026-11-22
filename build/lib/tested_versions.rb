@@ -131,7 +131,7 @@ module TestedVersions
       agents = []
       # Default SDK folder, as `ascli` (the test configuration does not set `sdk_folder`)
       require 'aspera/cli/plugins/config'
-      Aspera::Products::Transferd.sdk_directory = Aspera::Cli::Plugins::Config.default_app_main_folder(app_name: Aspera::Cli::AscpActions::TRANSFERD_APP_NAME)
+      Aspera::Products::Transferd.sdk_directory = Aspera::Cli::Plugins::Config.default_app_main_folder(app_name: Aspera::Plugins::Transfer::AscpActions::TRANSFERD_APP_NAME)
       sdk = find_product(Aspera::Products::Transferd)
       if sdk
         # `ascp` of the SDK (the SDK version is the one of `transferd`)

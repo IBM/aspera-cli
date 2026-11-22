@@ -3,29 +3,29 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Unit tests for Aspera::Cli::TransferActions (`config agents jobs status`) — no server needed.
+# Unit tests for Aspera::Plugins::Transfer::TransferActions (`config agents jobs status`) — no server needed.
 
-require_relative '../lib/aspera/persistency_folder'
-require_relative '../lib/aspera/cli/async_transfer_store'
-require_relative '../lib/aspera/cli/result'
-require_relative '../lib/aspera/cli/error'
-require_relative '../lib/aspera/cli/transfer_agent'
-require_relative '../lib/aspera/cli/transfer_actions'
+require_relative '../../../persistency_folder'
+require_relative '../async_transfer_store'
+require_relative '../../../cli/result'
+require_relative '../../../cli/error'
+require_relative '../transfer_agent'
+require_relative '../transfer_actions'
 require 'tmpdir'
 require 'securerandom'
 
 module Aspera
   module Cli
-    RSpec.describe(TransferActions) do
+    RSpec.describe(Aspera::Plugins::Transfer::TransferActions) do
       let(:tmpdir) { Dir.mktmpdir('transfer_actions_spec') }
-      let(:store) { AsyncTransferStore.new(PersistencyFolder.new(tmpdir)) }
+      let(:store) { Aspera::Plugins::Transfer::AsyncTransferStore.new(PersistencyFolder.new(tmpdir)) }
       let(:transfer_options) { {} }
       # Host of the mixin, as Plugins::Config: provides `context`
       let(:host) do
-        transfer = instance_double(TransferAgent, async_store: store, transfer_options: transfer_options)
+        transfer = instance_double(Aspera::Plugins::Transfer::TransferAgent, async_store: store, transfer_options: transfer_options)
         context = Struct.new(:transfer).new(transfer)
         Class.new do
-          include TransferActions
+          include Aspera::Plugins::Transfer::TransferActions
 
           define_method(:context) { context }
           attr_reader :queried
@@ -65,6 +65,27 @@ module Aspera
         it 'queries with the stored parameters only' do
           host.action_agents_jobs_status(job_id: 'job1')
           expect(host.queried['agent_params']).to(eq({'url' => 'https://node', 'username' => 'ak'}))
+        end
+      end
+
+      describe 'query of the agent' do
+        # Host that queries the agent
+        let(:querying) { Class.new { include Aspera::Plugins::Transfer::TransferActions }.new }
+        let(:entry) { {'job_id' => 'job1', 'agent_type' => 'node', 'transfer_id' => 't1', 'agent_params' => {'url' => 'https://node'}} }
+        let(:agent_class) { double('agent class') }
+
+        before { allow(Agent::Factory.instance).to(receive(:agent_class).with('node').and_return(agent_class)) }
+
+        it 'asks the status to the class of the agent given by the factory of agents (agent of a bundle or legacy)' do
+          allow(agent_class).to(receive(:transfer_status).with('t1', {'url' => 'https://node'}).and_return({'status' => 'completed'}))
+          expect(querying.send(:query_live_status, entry)).to(eq({'status' => 'completed'}))
+        end
+
+        it 'gives no status, with a warning, when the agent cannot be queried' do
+          allow(agent_class).to(receive(:transfer_status).and_raise(BundleRegistry::Unavailable, 'plugin spec is unavailable'))
+          allow(Log.log).to(receive(:warn))
+          expect(querying.send(:query_live_status, entry)).to(be_nil)
+          expect(Log.log).to(have_received(:warn)) { |&block| expect(block.call).to(eq('Could not re-query node agent for job job1: plugin spec is unavailable')) }
         end
       end
     end

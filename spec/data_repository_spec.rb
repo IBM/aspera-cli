@@ -4,21 +4,21 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require 'spec_helper'
-require_relative '../lib/aspera/data_repository'
+require_relative '../lib/aspera/ascp/data_repository'
 require 'open3'
 require 'rbconfig'
 
-RSpec.describe(Aspera::DataRepository) do
+RSpec.describe(Aspera::Ascp::DataRepository) do
   subject(:repository) { described_class.instance }
 
   let(:source_root) { File.expand_path('..', __dir__) }
 
   it 'has one data file per item' do
-    expect(Dir.children(File.join(source_root, 'lib', 'aspera', 'data')).size).to(eq(described_class::ELEMENTS.size))
+    expect(Dir.children(File.join(source_root, 'lib', 'aspera', 'ascp', 'data')).size).to(eq(described_class::ELEMENTS.size))
   end
 
   it 'decodes all items when loaded alone (no dependency on other files)' do
-    script = 'require "aspera/data_repository"; Aspera::DataRepository::ELEMENTS.each { |i| Aspera::DataRepository.instance.item(i) }'
+    script = 'require "aspera/ascp/data_repository"; Aspera::Ascp::DataRepository::ELEMENTS.each { |i| Aspera::Ascp::DataRepository.instance.item(i) }'
     output, status = Open3.capture2e(RbConfig.ruby, "-I#{File.join(source_root, 'lib')}", '-e', script)
     expect(status).to(be_success, output)
   end

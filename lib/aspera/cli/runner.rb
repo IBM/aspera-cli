@@ -16,7 +16,6 @@ require_relative 'mailer'
 require_relative 'secret_finder'
 require_relative 'extended_value'
 require_relative 'security'
-require_relative 'transfer_agent'
 require_relative 'version'
 require_relative 'info'
 require_relative 'hints'
@@ -117,6 +116,11 @@ module Aspera
         init_agents_and_options
         @context.config.add_plugin_lookup_folders
         Plugins::Factory.instance.add_plugins_from_lookup_folders
+        # Config is created before the plugin folders are added: modules mounted on config by their bundles, with their options
+        Plugins::Config.include_mounts(Plugins::Factory.instance.registry)
+        Plugins::Config.declare_options(@context.options, target: @context.config, parse: true)
+        # The service `transfer` declares its options (after those of config), and parses option `transfer`: agents of the bundles of the plugin folders are known
+        @context.transfer
         # Help requested without command? Show global options + plugin list
         return result_usage if @option_help && @context.options.command_or_arg_empty?
         # Shell completion is executed on each `Tab`: no network access
@@ -377,10 +381,12 @@ module Aspera
             display_args = registry.arguments_at(path)
             # transfer_paths commands use --sources for the file list; default is positional args (@args)
             if spec&.transfer_paths
+              # Default value of option `sources` of the service `transfer`
+              from_args = @context.transfer.class::FILE_LIST_FROM_ARGS
               file_desc = if spec.transfer_paths == :receive
-                "Remote path(s) to download (default --sources=#{TransferAgent::FILE_LIST_FROM_ARGS}; see also --to-folder)"
+                "Remote path(s) to download (default --sources=#{from_args}; see also --to-folder)"
               else
-                "Source file(s) to upload (default --sources=#{TransferAgent::FILE_LIST_FROM_ARGS}; see also --src-type, --to-folder)"
+                "Source file(s) to upload (default --sources=#{from_args}; see also --src-type, --to-folder)"
               end
               display_args += [ArgumentSpec.new(name: :source_file, description: file_desc, mandatory: false, multiple: true)]
             end
@@ -493,8 +499,7 @@ module Aspera
         @context.mailer = Mailer.new(@context.options, @context.main_folder)
         # Secret finder: depends on options (:secret) and presets, both set by Bootstrapper
         @context.secret_finder = SecretFinder.new(@context.options, @context.presets)
-        # The TransferAgent plugin may use the @preset parser
-        @context.transfer = TransferAgent.new(@context)
+        # The service `transfer` is created once the plugin folders are added (see `run_with_result`)
         @context.validate
         # Set banner when all environment is created so that additional extended value modifiers are known, e.g. @preset
       end

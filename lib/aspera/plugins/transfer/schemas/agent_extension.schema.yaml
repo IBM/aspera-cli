@@ -1,0 +1,26 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://github.com/IBM/aspera-cli/tree/main/lib/aspera/plugins/transfer/schemas/agent_extension.schema.yaml
+title: Transfer agent of a bundle
+description: >-
+  Entry of the extension point `agent` of bundle `transfer` (manifest `extensions.agent` of a bundle), besides `file` and `class` of its code.
+type: object
+additionalProperties: false
+required:
+  - name
+  - short
+  - options_schema
+properties:
+  name:
+    description: Name of the agent, value of option `transfer`, unique.
+    type: string
+    pattern: '^[a-z][a-z0-9_]*$'
+  short:
+    description: Letter of the agent, unique.
+    type: string
+    pattern: '^[a-z]$'
+  options_schema:
+    description: >-
+      Schema file of the parameters of the agent (component `<Name>AgentOptions` of `TransferAgentOptions`), relative to the folder of the bundle:
+      no segment starts with a dot (no `..`, no hidden file).
+    type: string
+    pattern: '^[^./\\][^/\\]*(/[^./\\][^/\\]*)*$'
