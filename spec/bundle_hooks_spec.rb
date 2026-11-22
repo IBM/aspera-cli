@@ -15,6 +15,8 @@ require_relative '../lib/aspera/cli/plugins/factory'
 require_relative '../lib/aspera/cli/security'
 require_relative '../lib/aspera/log'
 require 'tmpdir'
+require 'open3'
+require 'rbconfig'
 require 'fileutils'
 
 # Fake bundles of the hooks
@@ -160,6 +162,18 @@ module Aspera
         expect(extensions.map { |extension| [extension.bundle, extension.fields] }).to(eq([[:spec_bundle_one, {'label' => 'a'}], [:spec_bundle_two, {'label' => 'b'}], [:spec_bundle_two, {'label' => 'c'}]]))
         expect(extensions.first).to(have_attributes(point: :spec_point, file: 'other.rb', constant: 'Sub::Other'))
         expect(registry.extensions(:spec_none)).to(be_empty)
+      end
+
+      it 'gives the same entries until the plugins or the sources change' do
+        write_point_bundle(folder)
+        write_extending_bundle(folder, 'spec_bundle_one', [{'label' => 'a'}])
+        scan
+        entries = registry.extensions(:spec_point)
+        expect(registry.extensions(:spec_point)).to(be(entries))
+        write_extending_bundle(other = Dir.mktmpdir, 'spec_bundle_two', [{'label' => 'b'}], depends: %w[spec_bundle_point])
+        registry.add_source(other)
+        expect(registry.extensions(:spec_point).map(&:bundle)).to(eq(%i[spec_bundle_one spec_bundle_two]))
+        FileUtils.rm_rf(other)
       end
 
       it 'loads the code of an entry on demand' do
@@ -484,6 +498,14 @@ module Aspera
           end
         end
 
+        it 'skips a mounting bundle that declares a command path of the target (duplicate), with a warning, the target works' do
+          write_single(other, 'spec_bundle_target', body: BundleHooksSpecHelper::TARGET_BODY)
+          write_one_mount('spec_bundle_dup', "module Mount\n  def self.included(base) = base.class_exec { command :last, description: 'Again' }\nend")
+          scan
+          expect(factory.plugin_class(:spec_bundle_target).command_registry.leaf_paths).to(eq([%i[first one], %i[last]]))
+          expect(warnings).to(include(/\ACommands of plugin spec_bundle_dup are not added to spec_bundle_target: Duplicate command path/))
+        end
+
         it 'adds no command of a bundle with a missing gem, with a warning, the target works' do
           write_single(other, 'spec_bundle_target', body: BundleHooksSpecHelper::TARGET_BODY)
           write_mounting_bundle(folder, manifest: {'gems' => %w[aspera_spec_missing_gem]}, code: "raise 'code of the mount loaded'")
@@ -492,6 +514,23 @@ module Aspera
           expect(warnings).to(include(/\ACommands of plugin spec_bundle_mounter are not added to spec_bundle_target: .+gem install aspera_spec_missing_gem\z/))
         end
       end
+    end
+  end
+
+  RSpec.describe('Config without the mounts of bundle transfer') do
+    it 'still works when a module mounted on config is missing (e.g. its mount failed)' do
+      home = Dir.mktmpdir
+      script = <<~RUBY
+        require 'aspera/cli/runner'
+        require 'aspera/cli/plugins/config'
+        Aspera::Cli::Plugins::Config.send(:undef_method, :set_sdk_dir)
+        Aspera::Environment.instance.fix_home
+        Aspera::Cli::Runner.new(['config', 'preset', 'list', '--format=json']).run
+      RUBY
+      out, status = Open3.capture2e({'ASCLI_HOME' => home}, RbConfig.ruby, '-I', File.expand_path('../lib', __dir__), '-e', script)
+      expect(status.success?).to(be(true), out)
+    ensure
+      FileUtils.rm_rf(home)
     end
   end
 end

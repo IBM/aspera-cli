@@ -103,6 +103,15 @@ module Aspera
 
         def agent_instance=(instance)
           @agent = instance
+          # Name of the agent is found from the instance when needed, see `agent_name`
+          @agent_type = nil
+        end
+
+        # @return [String] Name of the agent in use (resolved name, not an abbreviation of option `transfer`), also if the instance was given
+        def agent_name
+          @agent_type ||= Aspera::Agent::Factory.instance.agent_name(agent_instance)&.to_s
+          Aspera.assert(@agent_type) { "unknown agent class: #{agent_instance.class}" }
+          @agent_type
         end
 
         # analyze options and create new agent if not already created or set
@@ -120,6 +129,7 @@ module Aspera
           # get agent instance
           begin
             self.agent_instance = Aspera::Agent::Factory.instance.create(agent_type, agent_options)
+            @agent_type = agent_type.to_s
           rescue BundleRegistry::Unavailable => e
             # Agent of a bundle that cannot be loaded (e.g. missing gem): same error as an unavailable plugin
             raise Cli::Error, e.message
@@ -264,9 +274,9 @@ module Aspera
           agent_instance.start_transfer(transfer_spec, token_regenerator: token_regenerator)
           # --- async mode ---
           if transfer_options['asynchronous']
-            agent_type = (transfer_options['agent'] || 'direct').to_s
             # In-process agents (direct, httpgw) expose last_job_id directly.
             # Remote-daemon agents do not override last_job_id (returns nil): generate a UUID.
+            agent_type = agent_name
             job_id = agent_instance.last_job_id || SecureRandom.uuid
             # Base agent_params from transfer options (strip internal keys), and connection details resolved by the agent (daemon agents)
             agent_params = transfer_options.except('agent', 'asynchronous').merge(agent_instance.async_params)

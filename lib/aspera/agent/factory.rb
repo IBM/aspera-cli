@@ -74,6 +74,24 @@ module Aspera
         Aspera::Agent.const_get(name.to_s.capitalize)
       end
 
+      # @param agent [Symbol, String] Name of an agent of `all`
+      # @return [Boolean] `true` if the agent is provided by an entry of a bundle, `false` for the agents of this folder
+      def provided?(agent)
+        all
+        @provided.key?(agent.to_sym)
+      end
+
+      # @param instance [Base] An agent
+      # @return [Symbol, nil] Name of the agent of `all` this is an instance of, `nil` if none (a bundle that cannot be loaded is skipped)
+      def agent_name(instance)
+        all.each_key do |name|
+          return name if agent_class(name).equal?(instance.class)
+        rescue BundleRegistry::Unavailable
+          next
+        end
+        nil
+      end
+
       # Create new agent
       # @param agent   [Symbol, String] Name of an agent of `all`
       # @param options [Hash]           Keyword arguments of the constructor of the agent
@@ -112,14 +130,25 @@ module Aspera
             Log.log.warn { "Agent #{name} of bundle #{entry.bundle} is left out: provided by bundle #{provided[name].bundle}" }
             next
           end
-          # A legacy agent keeps its letter unless an entry provides it
-          owner = provided.find { |_, other| other.fields['short'].eql?(short.to_s) }&.first ||
-            legacy.find { |other, letter| letter.eql?(short) && !other.eql?(name) && !provided.key?(other) }&.first
+          owner = provided.find { |_, other| other.fields['short'].eql?(short.to_s) }&.first
           unless owner.nil?
             Log.log.warn { "Agent #{name} of bundle #{entry.bundle} is left out: letter #{short} is taken by agent #{owner}" }
             next
           end
           provided[name] = entry
+        end
+        # A legacy agent keeps its letter unless an entry provides it: checked once all entries are known, so that the order of entries does not matter.
+        # An entry left out gives its legacy agent back, which can take the letter of another entry: repeat until stable.
+        loop do
+          clash = nil
+          provided.each do |name, entry|
+            owner = legacy.find { |other, letter| letter.to_s.eql?(entry.fields['short']) && !other.eql?(name) && !provided.key?(other) }&.first
+            clash = [name, entry, owner] unless owner.nil?
+            break unless clash.nil?
+          end
+          break if clash.nil?
+          Log.log.warn { "Agent #{clash[0]} of bundle #{clash[1].bundle} is left out: letter #{clash[1].fields['short']} is taken by agent #{clash[2]}" }
+          provided.delete(clash[0])
         end
         provided
       end

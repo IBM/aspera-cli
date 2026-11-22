@@ -21,10 +21,6 @@ module Aspera
       # command trees `sync`, `ascp`, `agents` and the deprecated `transfer`.
       # `sync` is placed before `gem`, the other trees where config includes the mounts: the command tree of config is the same as before the bundle.
       module ConfigCommands
-        # Last released version with `config ascp install` and `config transfer` not deprecated
-        DEPRECATED_LAST = '4.28.0'
-        private_constant :DEPRECATED_LAST
-
         class << self
           # Declare the command trees in the plugin class that includes the module
           # @param base [Class] Plugin class (config)
@@ -37,19 +33,19 @@ module Aspera
               commands_under :ascp do
                 command :show,    description: 'Show ascp binary path', action: ->(**) { Cli::Result::Text.new(Ascp::Installation.instance.path(:ascp)) }
                 command :info,    description: 'Show ascp and transfer spec information'
-                command :install, description: "Install the transfer SDK (#{Cli::Deprecation.new(last: DEPRECATED_LAST, message: 'use transferd install')})",
+                command :install, description: "Install the transfer SDK (#{Cli::Deprecation.new(last: Cli::Plugins::Config::DEPRECATED_LAST, message: 'use transferd install')})",
                   arguments: [{name: :version, mandatory: false, default: nil}],
                   action: ->(version: nil, **) { transferd_plugin(command: 'config ascp install', replacement: 'transferd install').action_install(version: version) }
                 command(
                   :spec, description: 'Show the transfer spec schema',
-                  arguments: [{name: :agent_name, allowed: Aspera::Agent::Factory::ALL.keys + [Aspera::Transfer::Spec::DOC_OVERVIEW], mandatory: false, default: nil}],
+                  arguments: [{name: :agent_name, allowed: -> { Aspera::Agent::Factory::ALL.keys + [Aspera::Transfer::Spec::DOC_OVERVIEW] }, mandatory: false, default: nil}],
                   action: lambda do |agent_name: nil, **|
                     builder = Schema::Documentation.new(Cli::TerminalFormatter, Aspera::Transfer::Spec::SCHEMA, **Aspera::Transfer::Spec.doc_options(agent_name)).build
                     Cli::Result::ObjectList.new(builder.rows, fields: builder.columns)
                   end
                 )
                 command :schema, description: 'Show the transfer spec JSON schema',
-                  arguments: [{name: :agent_name, allowed: Aspera::Agent::Factory::ALL.keys, mandatory: false, default: nil}]
+                  arguments: [{name: :agent_name, allowed: -> { Aspera::Agent::Factory::ALL.keys }, mandatory: false, default: nil}]
                 command :errors,   description: 'Show FASP error codes: of the management port (default), or of sessions (errcode in logs)',
                   arguments: [{name: :kind, allowed: %i[management session], mandatory: false, default: :management}]
                 ascp_logs_commands :logs
@@ -68,9 +64,9 @@ module Aspera
               commands_under :agents do
                 command :list,       description: 'List all transfer agents'
                 command :show,       description: 'Show details for a transfer agent',
-                  arguments: [{name: :agent_name, allowed: Aspera::Agent::Factory::ALL.keys}]
+                  arguments: [{name: :agent_name, allowed: -> { Aspera::Agent::Factory::ALL.keys }}]
                 command :parameters, description: 'Show configurable parameters for a transfer agent',
-                  arguments: [{name: :agent_name, allowed: Aspera::Agent::Factory::ALL.keys}]
+                  arguments: [{name: :agent_name, allowed: -> { Aspera::Agent::Factory::ALL.keys }}]
               end
 
               # async transfer jobs: moved to `agents jobs`, `transfer` is kept as deprecated alias
@@ -86,7 +82,7 @@ module Aspera
                   arguments: [{name: :job_id, complete: :transfer_job}]
                 command :cleanup, description: 'Remove completed/failed/cancelled transfer entries'
               end
-              command :transfer, description: "Manage asynchronous transfers (#{Cli::Deprecation.new(last: DEPRECATED_LAST, message: 'use agents jobs')})",
+              command :transfer, description: "Manage asynchronous transfers (#{Cli::Deprecation.new(last: Cli::Plugins::Config::DEPRECATED_LAST, message: 'use agents jobs')})",
                 setup: :deprecated_transfer_setup, mount: {plugin: self, at: %i[agents jobs], instance: :itself}
 
               # sync sub-commands
@@ -109,7 +105,7 @@ module Aspera
 
         # Setup of the deprecated `config transfer` (alias of `config agents jobs`, same plugin)
         def deprecated_transfer_setup(**)
-          Log.log.warn { "Command config transfer is #{Cli::Deprecation.new(last: DEPRECATED_LAST, message: 'use config agents jobs')}" }
+          Log.log.warn { "Command config transfer is #{Cli::Deprecation.new(last: Cli::Plugins::Config::DEPRECATED_LAST, message: 'use config agents jobs')}" }
           {}
         end
       end

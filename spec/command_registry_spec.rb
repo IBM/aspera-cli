@@ -526,6 +526,17 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
   # ArgumentSpec defaults
   # -----------------------------------------------------------------------
   describe Aspera::Cli::ArgumentSpec do
+    it 'evaluates allowed values given as a callable each time they are read, and gives a list as it is' do
+      values = %i[a]
+      spec = Aspera::Cli::ArgumentSpec.new(name: :x, allowed: -> { values })
+      expect(spec.allowed).to(eq(%i[a]))
+      values = %i[a b]
+      expect(spec.allowed).to(eq(%i[a b]))
+      expect(spec.syntax).to(eq('<a|b>'))
+      expect(Aspera::Cli::ArgumentSpec.new(name: :x, allowed: %i[c]).allowed).to(eq(%i[c]))
+      expect(Aspera::Cli::ArgumentSpec.new(name: :x).allowed).to(be_nil)
+    end
+
     it 'defaults mandatory to true' do
       expect(Aspera::Cli::ArgumentSpec.new(name: :x, type: String).mandatory).to(be(true))
     end

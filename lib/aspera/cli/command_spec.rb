@@ -26,7 +26,8 @@ module Aspera
     #                                                     Symbol → resolved via send(lookup, field, value, **ctx).
     #                                                     Proc/lambda → called via instance_exec(field, value, **ctx, &lookup).
     #                                                     Style: use Symbol for named methods; ->(){} for 1-liners; lambda do…end for 2–3 statements.
-    # @!attribute allowed     [Array<Symbol>, nil]        Allowed Symbol values; when set, type is forced to Symbol and accept_list is applied
+    # @!attribute allowed     [Array<Symbol>, #call, nil] Allowed Symbol values; when set, type is forced to Symbol and accept_list is applied.
+    #   A callable returns the values when read: the list of values that bundles add after the command is declared (e.g. agents)
     # @!attribute interactive [Boolean]                   When true, prompts for this argument (only) when no CLI args are provided
     # @!attribute evaluate    [Symbol]                    How the value is read, one of `EVALUATIONS`. Default `:extended`.
     #                                                     `:extended`: extended value (`@json:`, `@file:`, `@val:`...); a value without prefix stays a string.
@@ -66,6 +67,12 @@ module Aspera
         kwargs[:type] = String unless kwargs.key?(:type) || kwargs[:allowed]
         raise ArgumentError, "evaluate: #{kwargs[:evaluate].inspect}, expecting one of: #{EVALUATIONS.join(', ')}" unless EVALUATIONS.include?(kwargs[:evaluate])
         super
+      end
+
+      # @return [Array<Symbol>, nil] Allowed values: the result of the callable given to `allowed:`, evaluated at each read
+      def allowed
+        values = self[:allowed]
+        values.respond_to?(:call) ? values.call : values
       end
 
       # Syntax of argument for help, e.g. `<name>`, `[<name>]`, `<paths...>`, `<account:Hash>`.

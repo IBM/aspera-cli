@@ -43,6 +43,8 @@ module Aspera
         allow(options_double).to(receive(:get_option).with(:transfer).and_return({'agent' => agent_type}.merge(extra_transfer_options)))
         context_double = double('Context', persistency: persistency, main_folder: tmpdir, options: options_double)
         ta.instance_variable_set(:@context, context_double)
+        # The agents are doubles: the name of the agent of an instance is the one of the option
+        allow(Aspera::Agent::Factory.instance).to(receive(:agent_name).and_return(agent_type.to_sym))
 
         ta
       end
@@ -156,6 +158,13 @@ module Aspera
           store = Aspera::Plugins::Transfer::AsyncTransferStore.new(persistency)
           entry = store.read(result.job_id)
           expect(entry['agent_params']).not_to(have_key('_agent_ref'))
+        end
+
+        it 'stores the type of the agent instance, not the one of option transfer (agent given by the application)' do
+          agent = build_agent(agent_type: 'direct', extra_transfer_options: {'asynchronous' => true}).tap { |a| a.agent_instance = agent_double }
+          allow(Aspera::Agent::Factory.instance).to(receive(:agent_name).with(agent_double).and_return(:node))
+          entry = Aspera::Plugins::Transfer::AsyncTransferStore.new(persistency).read(agent.start(ts).job_id)
+          expect(entry['agent_type']).to(eq('node'))
         end
       end
 

@@ -81,7 +81,7 @@ module Aspera
         DEFAULT_CHECK_NEW_VERSION_DAYS = 7
         # Last released version with `config transferd`, `config ascp install` and `config transfer` not deprecated
         DEPRECATED_LAST = '4.28.0'
-        private_constant :DEFAULT_CHECK_NEW_VERSION_DAYS, :DEPRECATED_LAST
+        private_constant :DEFAULT_CHECK_NEW_VERSION_DAYS
 
         def initialize(**_)
           super
@@ -89,8 +89,8 @@ module Aspera
           @wizard = Wizard.new(self, context.main_folder)
           # Values set through `on_set` callbacks are used below (sdk_folder)
           options.parse_options!
-          # Method of the module `AscpActions` mounted by bundle `transfer`
-          set_sdk_dir
+          # Method of the module `AscpActions` mounted by bundle `transfer`: config still works if this mount failed (see `include_mounts`)
+          set_sdk_dir if respond_to?(:set_sdk_dir)
         end
 
         command :preset, description: 'Manage configuration presets'

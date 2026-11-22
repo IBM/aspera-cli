@@ -137,6 +137,8 @@ module Aspera
       @scanned = false
       # Cache of `claims`
       @claims = nil
+      # Cache of `extensions`, by point: emptied when plugins, sources or security checks change
+      @extensions_cache = {}
       # Compiled schemas of extension points, by file
       @point_schemas = {}
       @security_allowed = ->(_level) { true }
@@ -153,6 +155,7 @@ module Aspera
       @security_allowed = allowed
       @security_check = check
       @scanned = false
+      @extensions_cache.clear
       nil
     end
 
@@ -171,6 +174,7 @@ module Aspera
       source = Source.new(folder: File.expand_path(folder), security: security, ignore: ignore)
       index = folders.index(source.folder)
       @scanned = false
+      @extensions_cache.clear
       if index
         @sources[index] = source
         # Plugins already registered from this folder get the new level
@@ -213,6 +217,7 @@ module Aspera
       end
       return if added.empty?
       @reasons.clear
+      @extensions_cache.clear
       @claims = nil
       added.each do |name|
         reason = unavailable_reason(name)
@@ -292,11 +297,12 @@ module Aspera
     # A bundle that extends a point depends on the bundle that declares it, its entries are valid for the schema of the point (else it is unavailable).
     # Registers the plugins of the sources first if it was not done.
     # @param point [Symbol] Name of the extension point
-    # @return [Array<Extension>] Entries, by name of bundle, then in the order of the manifest; empty if no available bundle declares the point
+    # @return [Array<Extension>] Entries, by name of bundle, then in the order of the manifest; empty if no available bundle declares the point.
+    #   The same frozen Array is returned until the plugins, the sources or the security checks change.
     def extensions(point)
       Aspera.assert_type(point, Symbol)
       scan unless @scanned
-      available_plugins.flat_map { |plugin| plugin.extensions.select { |extension| extension.point.eql?(point) } }
+      @extensions_cache[point] ||= available_plugins.flat_map { |plugin| plugin.extensions.select { |extension| extension.point.eql?(point) } }.freeze
     end
 
     # Modules mounted on a plugin, from the available bundles, data only: the code of a module is loaded by `load_entry`.

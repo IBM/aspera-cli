@@ -75,9 +75,20 @@ module Aspera
           Cli::Result::ObjectList.new(error_data)
         end
 
+        # @param agent [Symbol] Name of an agent
+        # @return [String, nil] Schema of the parameters of the agent: built-in agent, or options schema declared by the bundle that provides it; `nil` if none
+        def agent_schema_key(agent)
+          return AGENT_SCHEMA_KEY[agent] unless Aspera::Agent::Factory.instance.provided?(agent)
+          # Component added to `TransferAgentOptions` variants, see `Schema::Registry#add_variants`
+          component = "#{agent.to_s.snake_to_capital}AgentOptions"
+          return unless Schema::Registry.instance.reader(Schema::Registry::OPTIONS)['components']['schemas'].key?(component)
+          "#{Schema::Registry::OPTIONS}:components.schemas.#{component}"
+        end
+        private :agent_schema_key
+
         def action_agents_list(**)
           rows = Aspera::Agent::Factory::ALL.map do |sym, names|
-            schema_key = AGENT_SCHEMA_KEY[sym]
+            schema_key = agent_schema_key(sym)
             param_names =
               if schema_key
                 Schema::Registry.instance.reader(schema_key).current['properties']&.keys&.sort&.join(', ') || ''
@@ -95,7 +106,7 @@ module Aspera
 
         def action_agents_show(agent_name:, **)
           names = Aspera::Agent::Factory::ALL[agent_name]
-          schema_key = AGENT_SCHEMA_KEY[agent_name]
+          schema_key = agent_schema_key(agent_name)
           Cli::Result::SingleObject.new({
             'name'        => agent_name.to_s,
             'short'       => names[:short].to_s,
@@ -104,7 +115,7 @@ module Aspera
         end
 
         def action_agents_parameters(agent_name:, **)
-          schema_key = AGENT_SCHEMA_KEY[agent_name]
+          schema_key = agent_schema_key(agent_name)
           return Cli::Result::Nothing.new if schema_key.nil?
           builder = Schema::Documentation.new(Cli::TerminalFormatter, Schema::Registry.instance.reader(schema_key)).build
           Cli::Result::ObjectList.new(builder.rows, fields: builder.columns)
