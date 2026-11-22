@@ -934,18 +934,21 @@ The user installs the gem with `HighSecurity` or `MediumSecurity`: this will suc
 gem install -P MediumSecurity aspera-cli
 ```
 
-#### Installing a beta release of the gem
+#### Installing the development version of the gem
 
-A beta version of the gem can be found here: <https://ibm.biz/aspera-cli-beta>
+The development version of the gem is built from the branch `main` of the GitHub repository, every day it changes, and attached to the pre-release [`nightly`](https://github.com/IBM/aspera-cli/releases/tag/nightly).
+It is not a release, and it is not signed.
+
+Its version is the version in development followed by the number of commits of `main`, e.g. `4.30.0.pre.5592`: the build of a newer commit has a higher number, and the release (`4.30.0`) is higher than all.
 
 On Linux/macOS, install in a terminal:
 
 ```shell
-curl -sLo aspera-cli-beta.gem https://ibm.biz/aspera-cli-beta
-gem install aspera-cli-beta.gem
+curl -sLo aspera-cli-nightly.gem https://github.com/IBM/aspera-cli/releases/download/nightly/aspera-cli-nightly.gem
+gem install aspera-cli-nightly.gem
 ```
 
-On Windows, download the file `aspera-cli-beta.gem` from the link, then install it with `gem install aspera-cli-beta.gem`.
+On Windows, download the file `aspera-cli-nightly.gem` from the link, then install it with `gem install aspera-cli-nightly.gem`.
 
 ### FASP Protocol: `ascp`
 

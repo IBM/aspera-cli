@@ -50,6 +50,8 @@ env:
 jobs:
   version:
     name: Version
+    # Only releases of a version (tag v*): not the pre-release `nightly` of nightly.yml (all jobs depend on this one)
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.release.tag_name, 'v')
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}

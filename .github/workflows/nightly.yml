@@ -1,0 +1,136 @@
+# Workflow to build the gem of the development version (unsigned) and attach it to the GitHub pre-release `nightly`
+# Triggered daily (only if main changed since the last build), or manually via GitHub Actions UI (always builds)
+# Download link (fixed): https://github.com/<repository>/releases/download/nightly/aspera-cli-nightly.gem
+# Version: the one of version.rb (a pre-release, e.g. x.y.z.pre) followed by the number of commits of main, e.g. x.y.z.pre.5592:
+# each commit of main has its own version, higher than the one of the previous commit, and lower than the release x.y.z
+# The tag `nightly` is moved to the commit built. Tag and release are created with GITHUB_TOKEN: no other workflow is triggered
+name: Nightly Gem
+
+on:
+  schedule:
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A build started while another one runs waits for it: both update the same release
+concurrency:
+  group: nightly-gem
+  cancel-in-progress: false
+
+env:
+  TAG: nightly
+
+jobs:
+  check:
+    name: Check for changes
+    # Manual: only from main (the release is the one of main)
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      build: ${{ steps.check.outputs.build }}
+      commit: ${{ steps.check.outputs.commit }}
+    steps:
+      - name: Compare main with tag nightly
+        id: check
+        env:
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          commit=$(git ls-remote "${REPO_URL}" refs/heads/main | cut -f1)
+          built=$(git ls-remote "${REPO_URL}" "refs/tags/${TAG}" | cut -f1)
+          case "${GITHUB_EVENT_NAME}" in
+            workflow_dispatch) build=true ;;
+            schedule) if [ "${commit}" = "${built}" ]; then build=false; else build=true; fi ;;
+            *) echo "Unexpected event: ${GITHUB_EVENT_NAME}"; exit 1 ;;
+          esac
+          echo "main: ${commit}, last build: ${built:-none}, build: ${build}"
+          echo "commit=${commit}" >> "$GITHUB_OUTPUT"
+          echo "build=${build}" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build, test and attach
+    needs: check
+    if: needs.check.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      BUNDLE_WITHOUT: optional:development:special
+      COMMIT: ${{ needs.check.outputs.commit }}
+      ASSET: aspera-cli-nightly.gem
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ needs.check.outputs.commit }}
+          # Full history: number of commits
+          fetch-depth: 0
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@be3c7df29b3349ec6bcfc6b4792f1cf9f5237d18 # v1.343.0
+        with:
+          bundler-cache: true
+
+      # Only a pre-release can be followed by a number: x.y.z.N would be higher than the release x.y.z
+      - name: Set nightly version
+        id: version
+        run: |
+          base=$(sed -n "s/^ *VERSION = '\(.*\)'$/\1/p" lib/aspera/cli/version.rb)
+          ruby -e 'exit(Gem::Version.new(ARGV[0]).prerelease?)' "${base}" || { echo "Not a pre-release version in version.rb: ${base}"; exit 1; }
+          version="${base}.$(git rev-list --count HEAD)"
+          sed -i "s/VERSION = '${base}'/VERSION = '${version}'/" lib/aspera/cli/version.rb
+          grep -q "VERSION = '${version}'" lib/aspera/cli/version.rb
+          echo "Version: ${version}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Build gem
+        run: bundle exec rake unsigned
+
+      # Installed outside of the repository: not the gems of the bundle
+      # --version: output must be only the version, no warning (e.g. about gems)
+      # config echo: output must be the argument
+      - name: Check gem installs and runs
+        working-directory: ${{ runner.temp }}
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          GEM_FILE: ${{ github.workspace }}/pkg/aspera-cli-${{ steps.version.outputs.version }}.gem
+        run: |
+          gem install --no-document "${GEM_FILE}"
+          output=$(ascli --version 2>&1) || true
+          [ "$output" = "${VERSION}" ] || { echo "Unexpected output of --version: $output"; exit 1; }
+          output=$(ascli config echo ok --format=text 2>&1) || true
+          [ "$(echo "$output" | tail -n1)" = ok ] || { echo "Unexpected output of config echo: $output"; exit 1; }
+
+      # Tag moved first: a release refers to its tag
+      - name: Attach to release nightly
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          git push --force origin "${COMMIT}:refs/tags/${TAG}"
+          cp "pkg/aspera-cli-${VERSION}.gem" "${ASSET}"
+          latest=$(gh release view --repo "${GITHUB_REPOSITORY}" --json tagName --jq .tagName)
+          title="Nightly ${VERSION}"
+          cat > notes.md << EOF
+          Development version of the gem: not a release, not signed.
+
+          - Version: \`${VERSION}\`
+          - Commit: ${COMMIT}
+          - Built: $(date -u '+%F %H:%M') UTC
+          - Changes since ${latest}: [compare](${REPO_URL}/compare/${latest}...${COMMIT}), [CHANGELOG](${REPO_URL}/blob/${COMMIT}/CHANGELOG.md)
+
+          Install:
+
+          \`\`\`shell
+          curl -sLo ${ASSET} ${REPO_URL}/releases/download/${TAG}/${ASSET}
+          gem install ${ASSET}
+          \`\`\`
+          EOF
+          if gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" > /dev/null 2>&1; then
+            gh release edit "${TAG}" --repo "${GITHUB_REPOSITORY}" --title "${title}" --notes-file notes.md --prerelease
+          else
+            gh release create "${TAG}" --repo "${GITHUB_REPOSITORY}" --title "${title}" --notes-file notes.md --prerelease --verify-tag
+          fi
+          gh release upload "${TAG}" "${ASSET}" --repo "${GITHUB_REPOSITORY}" --clobber

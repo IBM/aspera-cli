@@ -398,6 +398,10 @@ bundle exec rake -T ^binary:
 This project maintains a single `main` branch.
 During development, the version in `lib/aspera/cli/version.rb` includes a `.pre` suffix (e.g., `x.y.z.pre`).
 
+The workflow `Nightly Gem` (`.github/workflows/nightly.yml`) builds the unsigned gem of `main` every day it changes, or when started manually from the GitHub Actions UI.
+Its version is `x.y.z.pre.N`, where `N` is the number of commits of `main`.
+It attaches the gem as `aspera-cli-nightly.gem` to the pre-release `nightly`, and moves the tag `nightly` to the commit built.
+
 Contributions are handled as follows:
 
 - **Direct commits** to `main`: Permitted for minor changes.
