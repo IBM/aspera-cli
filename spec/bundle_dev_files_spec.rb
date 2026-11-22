@@ -81,6 +81,13 @@ module Aspera
         expect(registry.schemas.map(&:source)).to(eq([source]))
       end
 
+      it 'makes a bundle unavailable if its key is a built-in schema' do
+        fake_bundle('spec_bundle_schema', schemas: [{'key' => 'opts', 'file' => 'api.schema.yaml'}])
+        registry.scan
+        expect(registry.unavailable_reason(:spec_bundle_schema)).to(eq('schema opts is a built-in schema'))
+        expect(registry.schemas).to(eq([]))
+      end
+
       it 'makes the second bundle unavailable if a key is declared twice' do
         fake_bundle('spec_bundle_a', schemas: [{'key' => 'spec_bundle_api', 'file' => 'api.schema.yaml'}])
         fake_bundle('spec_bundle_b', schemas: [{'key' => 'spec_bundle_api', 'file' => 'api.schema.yaml'}])
@@ -116,7 +123,7 @@ module Aspera
           File.write(File.join(plugins, name, 'spec/tests.yml'), {"#{name}_health" => test_def}.to_yaml)
         end
         files = TestEnv.definition_files(top).map { |file| file.relative_path_from(top).to_s }
-        expect(Pathname.new(files.first).expand_path(top)).to(eq(Paths::TEST_DEFS.expand_path))
+        expect(files.first).to(eq('tests/tests.yml'))
         expect(files.drop(1)).to(eq(%w[lib/aspera/plugins/spec_bundle_a/spec/tests.yml lib/aspera/plugins/spec_bundle_b/spec/tests.yml]))
         all = TestEnv.descriptions([top / 'tests/tests.yml'].concat(TestEnv.definition_files(top).drop(1)))
         expect(all.keys).to(contain_exactly('main_one', 'spec_bundle_a_health', 'spec_bundle_b_health'))
@@ -127,6 +134,10 @@ module Aspera
         file = top / 'one.yml'
         file.write({'same' => test_def}.to_yaml)
         expect { TestEnv.descriptions([file, file]) }.to(raise_error(/already defined/))
+      end
+
+      it 'of another top folder are not those of the project' do
+        expect(TestEnv.definition_files(top).first).to(eq(top / 'tests/tests.yml'))
       end
 
       it 'of the project are all defined' do

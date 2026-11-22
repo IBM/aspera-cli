@@ -217,6 +217,19 @@ module Aspera
         expect(registry.unavailable_reason(:spec_bundle_one)).to(be_nil)
       end
 
+      it 'makes a bundle unavailable when it declares a point, a service or a schema twice' do
+        point = {'name' => 'spec_point', 'schema' => 'point.schema.yaml'}
+        write_bundle(folder, 'spec_bundle_a', manifest: {'commands' => false, 'extension_points' => [point, point.dup]}, code: nil)
+        service = {'name' => 'spec_service', 'file' => 'service.rb', 'class' => 'Service'}
+        write_bundle(folder, 'spec_bundle_b', manifest: {'commands' => false, 'services' => [service, service.dup]}, code: nil)
+        schema = {'key' => 'spec_bundle_api', 'file' => 'api.schema.yaml'}
+        write_bundle(folder, 'spec_bundle_c', manifest: {'commands' => false, 'schemas' => [schema, schema.dup]}, code: nil)
+        scan
+        expect(registry.unavailable_reason(:spec_bundle_a)).to(eq('extension point spec_point is declared twice'))
+        expect(registry.unavailable_reason(:spec_bundle_b)).to(eq('service spec_service is declared twice'))
+        expect(registry.unavailable_reason(:spec_bundle_c)).to(eq('schema spec_bundle_api is declared twice'))
+      end
+
       it 'makes a bundle unavailable when it declares a point already declared by a plugin registered before' do
         write_point_bundle(folder, 'spec_bundle_a')
         write_point_bundle(folder, 'spec_bundle_b')
@@ -409,6 +422,29 @@ module Aspera
           scan(security: :low)
           Security.instance.lock('in MCP server mode', default: :high)
           expect(factory.plugin_class(:spec_bundle_target).command_registry.leaf_paths).to(eq([%i[first one], %i[last]]))
+        end
+
+        # Bundle with one mount `Mount` of file `mount.rb`
+        # @param name [String] Name of the bundle
+        # @param body [String] Code inside the module of the bundle
+        # @param code [String] Code at the top of the file
+        def write_one_mount(name, body, code: '')
+          bundle = write_bundle(folder, name, manifest: {'commands' => false, 'mounts' => [{'target' => 'spec_bundle_target', 'file' => 'mount.rb', 'module' => 'Mount'}]}, code: nil)
+          write_bundle_file(bundle, 'mount.rb', body, code: code)
+        end
+
+        it 'skips a mounting bundle that is broken, with a warning, the target works' do
+          write_single(other, 'spec_bundle_target', body: BundleHooksSpecHelper::TARGET_BODY)
+          write_one_mount('spec_bundle_wrong', 'module Other; end')
+          write_one_mount('spec_bundle_syntax', 'module Mount; end', code: 'def (')
+          write_one_mount('spec_bundle_load', 'module Mount; end', code: "require 'aspera_spec_missing_file'")
+          write_one_mount('spec_bundle_class', 'class Mount; end')
+          write_one_mount('spec_bundle_hook', 'module Mount; def self.included(base) = base.no_such_method; end')
+          scan
+          expect(factory.plugin_class(:spec_bundle_target).command_registry.leaf_paths).to(eq([%i[first one], %i[last]]))
+          %w[wrong syntax load class hook].each do |name|
+            expect(warnings).to(include(/\ACommands of plugin spec_bundle_#{name} are not added to spec_bundle_target: /))
+          end
         end
 
         it 'adds no command of a bundle with a missing gem, with a warning, the target works' do

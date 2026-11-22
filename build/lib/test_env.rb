@@ -267,7 +267,7 @@ module TestEnv
   # @param top [Pathname] Top folder of the project
   # @return [Array<Pathname>] `tests/tests.yml`, then the `spec/tests.yml` of each bundle in `lib/aspera/plugins/`, by name of bundle
   def definition_files(top = Paths::TOP)
-    [Paths::TEST_DEFS].concat(top.glob(Paths::BUNDLE_TEST_DEFS_GLOB).sort)
+    [top / Paths::TEST_DEFS.relative_path_from(Paths::TOP)].concat(top.glob(Paths::BUNDLE_TEST_DEFS_GLOB).sort)
   end
 
   # Order tests for execution.

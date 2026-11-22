@@ -11,6 +11,7 @@ require_relative '../lib/aspera/bundle_registry'
 require_relative '../lib/aspera/cli/plugins/base'
 require_relative '../lib/aspera/cli/plugins/config'
 require_relative '../lib/aspera/cli/plugins/factory'
+require_relative '../lib/aspera/cli/runner'
 require_relative '../lib/aspera/log'
 require 'tmpdir'
 require 'fileutils'
@@ -65,6 +66,39 @@ module Aspera
         expect(registry.folders).to(eq([other, folder]))
         expect(registry[:spec_bundle_one].security).to(eq(:low))
       end
+
+      it 'gives the new security level to the plugins already registered from a folder added again' do
+        write_single(folder, 'spec_bundle_one')
+        write_bundle(folder, 'spec_bundle_two')
+        scan(folder)
+        expect(registry[:spec_bundle_two].security).to(be_nil)
+        registry.add_source(folder, security: :low)
+        expect(registry.names.map { |name| registry[name].security }).to(eq(%i[low low]))
+      end
+
+      it 'replaces a plugin registered from a source of less priority by the one of a source added later' do
+        write_bundle(folder, 'spec_bundle_two', manifest: {'title' => 'Gem'})
+        write_bundle(other, 'spec_bundle_two', manifest: {'title' => 'User'})
+        scan(folder)
+        expect(registry[:spec_bundle_two].title).to(eq('Gem'))
+        registry.add_source(other, security: :low)
+        registry.scan
+        expect(registry[:spec_bundle_two]).to(have_attributes(title: 'User', security: :low))
+        registry.add_source(folder)
+        registry.scan
+        expect(registry[:spec_bundle_two].title).to(eq('User'))
+      end
+
+      it 'scans the sources once for the schemas' do
+        write_bundle(folder, 'spec_bundle_two')
+        registry.add_source(folder)
+        allow(registry).to(receive(:children).and_call_original)
+        3.times { registry.schemas }
+        expect(registry).to(have_received(:children).once)
+        registry.add_source(other)
+        registry.schemas
+        expect(registry).to(have_received(:children).exactly(3).times)
+      end
     end
 
     describe 'lookup' do
@@ -106,11 +140,12 @@ module Aspera
         expect(registry[:spec_bundle_one].form).to(eq(:single))
       end
 
-      it 'keeps a registered plugin when a source with priority gets the same name later' do
+      it 'keeps a registered plugin when a source of less priority gets the same name later' do
         write_single(folder, 'spec_bundle_one')
         scan(folder)
         write_bundle(other, 'spec_bundle_one')
-        scan(other)
+        registry.add_source(other, last: true)
+        registry.scan
         expect(registry[:spec_bundle_one].form).to(eq(:single))
       end
 
@@ -298,7 +333,20 @@ module Aspera
           write_bundle(folder, 'spec_bundle_agent', manifest: {'commands' => false}, code: nil)
           write_bundle(folder, 'spec_bundle_bad', manifest: {'depends' => %w[spec_bundle_none]})
           scan
-          expect(factory.plugin_list).to(eq(%i[spec_bundle_gem spec_bundle_one spec_bundle_two]))
+          expect(factory.plugin_list).to(eq(%i[spec_bundle_one spec_bundle_two]))
+        end
+
+        it 'leaves out of the list a bundle with a missing gem, so that loading every class works, and gives the reason' do
+          write_single(folder, 'spec_bundle_one')
+          write_bundle(folder, 'spec_bundle_gem', manifest: {'gems' => %w[aspera_spec_missing_gem]}, code: "raise 'code of the bundle loaded'")
+          write_bundle(folder, 'spec_bundle_dep', manifest: {'depends' => %w[spec_bundle_none]})
+          write_bundle(folder, 'spec_bundle_agent', manifest: {'commands' => false}, code: nil)
+          scan
+          expect(factory.plugin_list.map { |name| factory.plugin_class(name) }).to(eq([SpecBundleOne]))
+          expect(factory.unavailable_plugins).to(eq(
+            spec_bundle_dep: 'plugin spec_bundle_dep is unavailable: dependency spec_bundle_none is missing',
+            spec_bundle_gem: 'plugin spec_bundle_gem requires gem aspera_spec_missing_gem: gem install aspera_spec_missing_gem'
+          ))
         end
 
         it 'gives the class of a single file, with its plugin name' do
@@ -333,6 +381,25 @@ module Aspera
           expect { factory.plugin_class(:spec_bundle_agent) }.to(raise_error(NoSuchElement, /plugin not found: spec_bundle_agent/))
           expect { factory.plugin_class(:spec_bundle_bad) }.to(raise_error(NoSuchElement, /plugin not found: spec_bundle_bad/))
           expect { factory.plugin_class(:spec_bundle_dep) }.to(raise_error(Cli::Error, /plugin spec_bundle_dep is unavailable: dependency spec_bundle_none is missing/))
+        end
+
+        it 'makes the runner give the reason when the command names a plugin that cannot be loaded, not an unknown command' do
+          write_bundle(folder, 'spec_bundle_gem', manifest: {'gems' => %w[aspera_spec_missing_gem]})
+          write_bundle(folder, 'spec_bundle_dep', manifest: {'depends' => %w[spec_bundle_none]})
+          scan
+          allow(Plugins::Factory).to(receive(:instance).and_return(factory))
+          {
+            'spec_bundle_gem' => /plugin spec_bundle_gem requires gem aspera_spec_missing_gem: gem install aspera_spec_missing_gem/,
+            'spec_bundle_dep' => /plugin spec_bundle_dep is unavailable: dependency spec_bundle_none is missing/
+          }.each do |name, message|
+            runner = Cli::Runner.new([name])
+            allow(runner).to(receive(:init_agents_and_options))
+            allow(runner.context.config).to(receive(:add_plugin_lookup_folders))
+            allow(runner.context.config).to(receive(:periodic_check_newer_gem_version))
+            allow(runner.context).to(receive(:options).and_return(instance_double(Cli::Parser, command_or_arg_empty?: false)))
+            allow(runner.context.options).to(receive(:next_arguments?)) { |values| values.eql?([name]) }
+            expect { runner.run_with_result }.to(raise_error(Cli::Error, message))
+          end
         end
 
         it 'looks up the user folders, then the bundles of the gem, then the single files of the gem' do

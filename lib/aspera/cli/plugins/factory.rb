@@ -34,9 +34,15 @@ module Aspera
         # @return [Array<String>] Folders where plugins are looked up, the first one with priority
         def lookup_folders = @registry.folders
 
-        # @return [Array<Symbol>] Sorted list of available plugins that provide commands
+        # @return [Array<Symbol>] Sorted list of plugins that provide commands and can be loaded: available, with their gems installed.
+        #   Callers load the class of each one: `unavailable_plugins` gives the others, with the reason (a `status` column is for T25).
         def plugin_list
-          @registry.names.select { |name| @registry[name].commands? && @registry.unavailable_reason(name).nil? }
+          @registry.names.select { |name| @registry[name].commands? && load_reason(name).nil? }
+        end
+
+        # @return [Hash{Symbol => String}] Reason why a plugin that provides commands is not in `plugin_list`, by name
+        def unavailable_plugins
+          @registry.names.select { |name| @registry[name].commands? }.to_h { |name| [name, load_reason(name)] }.compact
         end
 
         # add a folder to the list of folders to look for plugins
@@ -88,6 +94,16 @@ module Aspera
         end
 
         private
+
+        # @param name [Symbol] name of a registered plugin
+        # @return [String, nil] Why the code of the plugin cannot be loaded: unavailable or missing gem, `nil` if it can
+        def load_reason(name)
+          reason = @registry.unavailable_reason(name)
+          return "plugin #{name} is unavailable: #{reason}" unless reason.nil?
+          missing = @registry.missing_gems(name)
+          return if missing.empty?
+          "plugin #{name} requires gem #{missing.join(', ')}: gem install #{missing.join(' ')}"
+        end
 
         # @param plugin_name_sym [Symbol] name of plugin
         # @return [BundleRegistry::Plugin] Registered plugin that provides commands

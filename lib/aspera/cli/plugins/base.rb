@@ -291,7 +291,8 @@ module Aspera
               Aspera.assert(mounted.instance_of?(Module)) { "plugin #{mount.bundle}: #{mount.constant} is not a module" }
               @mount_security = registry[mount.bundle].security
               include(mounted)
-            rescue BundleRegistry::Unavailable => e
+            rescue BundleRegistry::Unavailable, AssertError, NameError, ScriptError => e
+              # A broken module (wrong constant, syntax error, failing hook) is skipped as an unavailable bundle: the target plugin still works
               Log.log.warn { "Commands of plugin #{mount.bundle} are not added to #{plugin_name}: #{e.message}" }
             ensure
               @mount_security = nil

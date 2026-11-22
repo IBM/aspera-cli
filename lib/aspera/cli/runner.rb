@@ -121,6 +121,10 @@ module Aspera
         return result_usage if @option_help && @context.options.command_or_arg_empty?
         # Shell completion is executed on each `Tab`: no network access
         @context.config.periodic_check_newer_gem_version unless @context.options.next_arguments?(COMPLETION_COMMAND)
+        # A plugin that cannot be loaded is not in the list of commands: give the reason, not an unknown command
+        Plugins::Factory.instance.unavailable_plugins.each do |name, reason|
+          raise Cli::Error, reason if @context.options.next_arguments?([name.to_s])
+        end
         command_sym =
           if @option_show_config && @context.options.command_or_arg_empty?
             COMMAND_CONFIG

@@ -65,7 +65,6 @@ module Aspera
     # @!attribute constant [String] Class defined by the file, relative to `Aspera::Plugins::<Name>`
     Service = Data.define(:bundle, :name, :file, :constant)
 
-    # Plugin found in a source
     # Schema file of a bundle, added to `Schema::Registry`
     # @!attribute bundle [Symbol]      Name of the bundle that provides the schema
     # @!attribute key    [Symbol]      Key of the schema in `Schema::Registry`
@@ -74,6 +73,7 @@ module Aspera
     # @!attribute source [Hash, nil]   Origin of a downloaded schema: `url` and optionally `version`
     SchemaFile = Data.define(:bundle, :key, :file, :owned, :source)
 
+    # Plugin found in a source
     # @!attribute name     [Symbol]       Name of the plugin
     # @!attribute form     [Symbol]       `:single` (file `<name>.rb`: commands only) or `:bundle` (folder `<name>/` with a manifest)
     # @!attribute path     [String]       File of a single file, folder of a bundle
@@ -108,6 +108,14 @@ module Aspera
       # @return [Array<Service>] Services provided by this bundle, in the order of the manifest
       def services = manifest.fetch('services', []).map { |service| Service.new(bundle: name, name: service['name'].to_sym, file: service['file'], constant: service['class']) }
 
+      # @return [Array<Array(Symbol, Symbol)>] Names declared by this bundle, in the order of the manifest, with repetitions:
+      #   `[:service, <name>]`, `[:extension_point, <name>]` and `[:schema, <name>]`
+      def declared
+        services.map { |service| [:service, service.name] }
+          .concat(manifest.fetch('extension_points', []).map { |point| [:extension_point, point['name'].to_sym] })
+          .concat(schemas.map { |schema| [:schema, schema.key] })
+      end
+
       # @return [Array<SchemaFile>] Schemas of this bundle, in the order of the manifest
       def schemas
         manifest.fetch('schemas', []).map do |schema|
@@ -123,6 +131,10 @@ module Aspera
       @plugins = {}
       # Cache of `unavailable_reason`, by name
       @reasons = {}
+      # Source folder of each registered plugin, by name
+      @origins = {}
+      # `true` if the sources were scanned since the last change of sources or of security checks
+      @scanned = false
       # Cache of `claims`
       @claims = nil
       # Compiled schemas of extension points, by file
@@ -140,6 +152,7 @@ module Aspera
     def security_checks(allowed:, check:)
       @security_allowed = allowed
       @security_check = check
+      @scanned = false
       nil
     end
 
@@ -157,8 +170,12 @@ module Aspera
     def add_source(folder, security: nil, ignore: [], last: false)
       source = Source.new(folder: File.expand_path(folder), security: security, ignore: ignore)
       index = folders.index(source.folder)
+      @scanned = false
       if index
         @sources[index] = source
+        # Plugins already registered from this folder get the new level
+        @origins.each { |name, origin| @plugins[name] = @plugins[name].with(security: security) if origin.eql?(source.folder) }
+        @reasons.clear
       elsif last
         @sources.push(source)
       else
@@ -168,18 +185,22 @@ module Aspera
     end
 
     # Register the plugins of the sources that are not registered yet.
-    # A registered plugin stays, even if its source is not scanned anymore (e.g. at a higher security level).
+    # A registered plugin stays, even if its source is not scanned anymore (e.g. at a higher security level),
+    # unless a source added since, with more priority, provides a plugin of the same name.
     # Reads the manifests of bundles: never loads code. An unavailable plugin is logged with the reason.
     # @return [nil]
     def scan
       added = []
-      @sources.each do |source|
+      @scanned = true
+      @sources.each_with_index do |source, rank|
         next unless File.directory?(source.folder)
         # Plugins registered at start (level low) stay, but files that appear later are not
         next unless @security_allowed.call(source.security)
         singles, bundles = children(source)
         (bundles.keys | singles.keys).each do |name|
-          next if @plugins.key?(name)
+          origin = @origins[name]
+          next if origin && folders.index(origin) <= rank
+          @origins[name] = source.folder
           @plugins[name] =
             if bundles.key?(name)
               Log.log.warn { "Plugin #{name}: bundle #{bundles[name]} is used, not #{singles[name]}" } if singles.key?(name)
@@ -216,6 +237,13 @@ module Aspera
       @reasons[name]
     end
 
+    # @param name [Symbol] Name of a registered plugin
+    # @return [Array<String>] Gems of the plugin that are not installed
+    def missing_gems(name)
+      Aspera.assert(@plugins.key?(name), type: EntityNotFound) { "plugin not found: #{name}" }
+      @plugins[name].gems.reject { |gem| gem_installed?(gem) }
+    end
+
     # Load a file of the code of a plugin: checks the security level of its source, its availability and its gems.
     # @param name [Symbol]      Name of a registered plugin
     # @param file [String, nil] File relative to the folder of a bundle, `nil` for a single file
@@ -229,7 +257,7 @@ module Aspera
       @security_check.call(plugin.security, "plugin #{name}")
       reason = unavailable_reason(name)
       raise Unavailable, "plugin #{name} is unavailable: #{reason}" unless reason.nil?
-      missing = plugin.gems.reject { |gem| gem_installed?(gem) }
+      missing = missing_gems(name)
       raise Unavailable, "plugin #{name} requires gem #{missing.join(', ')}: gem install #{missing.join(' ')}" unless missing.empty?
       require(file.nil? ? plugin.path : File.join(plugin.path, file))
       nil
@@ -294,7 +322,7 @@ module Aspera
     # Registers the plugins of the sources first if it was not done.
     # @return [Array<SchemaFile>] Schemas, by name of bundle, then in the order of the manifest
     def schemas
-      scan
+      scan unless @scanned
       available_plugins.flat_map(&:schemas)
     end
 
@@ -315,18 +343,20 @@ module Aspera
     def claims
       @claims ||= @plugins.each_value.each_with_object({}) do |plugin, result|
         next unless plugin.error.nil?
-        plugin.services.each { |service| result[[:service, service.name]] ||= plugin.name }
-        plugin.extension_points.each_key { |point| result[[:extension_point, point]] ||= plugin.name }
-        plugin.schemas.each { |schema| result[[:schema, schema.key]] ||= plugin.name }
+        plugin.declared.each { |claim| result[claim] ||= plugin.name }
       end
     end
 
     # @param plugin [Plugin] Registered plugin
-    # @return [String, nil] Why a service or extension point of the plugin is declared by another plugin, `nil` if none
+    # @return [String, nil] Why a service, extension point or schema of the plugin is declared twice by it, is a built-in schema or is declared by another plugin, `nil` if none
     def claim_reason(plugin)
-      plugin.services.map { |service| [:service, service.name] }.concat(plugin.extension_points.keys.map { |point| [:extension_point, point] }, plugin.schemas.map { |schema| [:schema, schema.key] }).each do |kind, name|
+      declared = plugin.declared
+      declared.each do |kind, name|
+        label = "#{kind.to_s.tr('_', ' ')} #{name}"
+        return "#{label} is declared twice" if declared.count([kind, name]) > 1
+        return "#{label} is a built-in schema" if kind.eql?(:schema) && Schema::Registry::LOCATIONS.key?(name)
         owner = claims[[kind, name]]
-        return "#{kind.to_s.tr('_', ' ')} #{name} is declared by plugin #{owner}" unless owner.eql?(plugin.name)
+        return "#{label} is declared by plugin #{owner}" unless owner.eql?(plugin.name)
       end
       nil
     end
