@@ -18,14 +18,25 @@ module Aspera
       include Singleton
 
       class << self
+        # @param sym [Symbol] Key of a schema: of the gem (`LOCATIONS`) or provided by a bundle
         def known?(sym)
-          LOCATIONS.key?(sym)
+          LOCATIONS.key?(sym) || !bundle_schema(sym).nil?
         end
 
         # @param name_path [String] schema path, e.g. `opts:components.schemas.HttpOptions`
         # @return [Boolean] `true` if schema is owned by ascli (not a vendor API)
         def owned?(name_path)
-          OWNED.include?(name_path.split(':', 2).first.to_sym)
+          sym = name_path.split(':', 2).first.to_sym
+          return OWNED.include?(sym) if LOCATIONS.key?(sym)
+          bundle_schema(sym)&.owned || false
+        end
+
+        # @param sym [Symbol] Key of a schema
+        # @return [BundleRegistry::SchemaFile, nil] Schema provided by an available bundle (its folder, declared in its manifest), `nil` if none
+        def bundle_schema(sym)
+          # Loaded on use: `bundle_registry` requires this file
+          require_relative '../bundle_registry'
+          BundleRegistry.instance.schema(sym)
         end
 
         # Split a component string into registry key and optional path prefix.
@@ -147,20 +158,20 @@ module Aspera
         name, path = name_path.split(':', 2)
         sym = name.to_sym
         Aspera.assert(Registry.known?(sym)) { "schema: #{sym}" }
-        spec_file = File.join(@main_folder, LOCATIONS[sym])
+        spec_file = LOCATIONS.key?(sym) ? File.join(@main_folder, LOCATIONS[sym]) : Registry.bundle_schema(sym).file
         # JSON is read with the YAML loader: it accepts the header comment added by `rake tools:openapi`
-        @cache[sym] = Yaml.safe_load(File.read(spec_file)) unless @cache.key?(sym)
+        @cache[spec_file] = Yaml.safe_load(File.read(spec_file)) unless @cache.key?(spec_file)
         # Query-params path: strip the suffix, navigate to the operation node, extract parameters
         if path&.end_with?(QUERY_PARAMS_SUFFIX)
           parent_path = path.delete_suffix(QUERY_PARAMS_SUFFIX)
-          node = @cache[sym].dig(*parent_path.split('.'))
+          node = @cache[spec_file].dig(*parent_path.split('.'))
           # Parameters may be references to components.parameters
           params = (node&.fetch('parameters', []) || []).map do |param|
-            param.key?('$ref') ? @cache[sym].dig(*param['$ref'].delete_prefix('#/').split('/')) : param
+            param.key?('$ref') ? @cache[spec_file].dig(*param['$ref'].delete_prefix('#/').split('/')) : param
           end
           return Reader.from_query_params(params.compact)
         end
-        reader = Reader.new(@cache[sym])
+        reader = Reader.new(@cache[spec_file])
         return reader unless path
         reader.dig(*path.split('.'))
       end

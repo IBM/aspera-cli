@@ -87,6 +87,7 @@ DOC_FILES = [
   Paths::COMMAND,
   Paths::ASESSION,
   Paths::TEST_DEFS,
+  *Paths::TOP.glob(Paths::BUNDLE_TEST_DEFS_GLOB),
   Paths::GEMSPEC,
   Paths::GEMFILE
 ].freeze

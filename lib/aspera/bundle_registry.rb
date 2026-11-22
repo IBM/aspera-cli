@@ -66,6 +66,14 @@ module Aspera
     Service = Data.define(:bundle, :name, :file, :constant)
 
     # Plugin found in a source
+    # Schema file of a bundle, added to `Schema::Registry`
+    # @!attribute bundle [Symbol]      Name of the bundle that provides the schema
+    # @!attribute key    [Symbol]      Key of the schema in `Schema::Registry`
+    # @!attribute file   [String]      Absolute path of the schema file
+    # @!attribute owned  [Boolean]     `true`: schema of ascli, values are validated against it
+    # @!attribute source [Hash, nil]   Origin of a downloaded schema: `url` and optionally `version`
+    SchemaFile = Data.define(:bundle, :key, :file, :owned, :source)
+
     # @!attribute name     [Symbol]       Name of the plugin
     # @!attribute form     [Symbol]       `:single` (file `<name>.rb`: commands only) or `:bundle` (folder `<name>/` with a manifest)
     # @!attribute path     [String]       File of a single file, folder of a bundle
@@ -99,6 +107,13 @@ module Aspera
       def mounts = manifest.fetch('mounts', []).map { |mount| Mount.new(bundle: name, target: mount['target'].to_sym, file: mount['file'], constant: mount['module']) }
       # @return [Array<Service>] Services provided by this bundle, in the order of the manifest
       def services = manifest.fetch('services', []).map { |service| Service.new(bundle: name, name: service['name'].to_sym, file: service['file'], constant: service['class']) }
+
+      # @return [Array<SchemaFile>] Schemas of this bundle, in the order of the manifest
+      def schemas
+        manifest.fetch('schemas', []).map do |schema|
+          SchemaFile.new(bundle: name, key: schema['key'].to_sym, file: File.join(path, schema['file']), owned: schema.fetch('owned', false), source: schema['source'])
+        end
+      end
     end
 
     # @param builtin [Boolean] `true`: the folder of the bundles of the gem is a source
@@ -193,7 +208,7 @@ module Aspera
     def [](name) = @plugins[name]
 
     # @param name [Symbol] Name of a registered plugin
-    # @return [String, nil] Why the plugin is unavailable, `nil` if available: invalid manifest, name of a service or extension point already declared by a plugin registered before,
+    # @return [String, nil] Why the plugin is unavailable, `nil` if available: invalid manifest, name of a service, extension point or schema already declared by a plugin registered before,
     #   dependency missing or unavailable, extension of a point not declared by a dependency or invalid for the schema of the point
     def unavailable_reason(name)
       Aspera.assert(@plugins.key?(name), type: EntityNotFound) { "plugin not found: #{name}" }
@@ -275,25 +290,41 @@ module Aspera
       @plugins[provider].services.find { |service| service.name.eql?(name) }
     end
 
+    # Schemas of the available bundles, data only: the file is read by `Schema::Registry`.
+    # Registers the plugins of the sources first if it was not done.
+    # @return [Array<SchemaFile>] Schemas, by name of bundle, then in the order of the manifest
+    def schemas
+      scan
+      available_plugins.flat_map(&:schemas)
+    end
+
+    # @param key [Symbol] Key of a schema
+    # @return [SchemaFile, nil] The schema, `nil` if no available bundle provides it
+    def schema(key)
+      Aspera.assert_type(key, Symbol)
+      schemas.find { |schema| schema.key.eql?(key) }
+    end
+
     private
 
     # @return [Array<Plugin>] Available plugins, by name
     def available_plugins = names.select { |name| unavailable_reason(name).nil? }.map { |name| @plugins[name] }
 
-    # Names of services and extension points, by the plugin that declares them: the first one registered with a valid manifest.
-    # @return [Hash{Array(Symbol, Symbol) => Symbol}] Name of the plugin, by `[:service, <name>]` and `[:extension_point, <name>]`
+    # Names of services, extension points and schemas, by the plugin that declares them: the first one registered with a valid manifest.
+    # @return [Hash{Array(Symbol, Symbol) => Symbol}] Name of the plugin, by `[:service, <name>]`, `[:extension_point, <name>]` and `[:schema, <name>]`
     def claims
       @claims ||= @plugins.each_value.each_with_object({}) do |plugin, result|
         next unless plugin.error.nil?
         plugin.services.each { |service| result[[:service, service.name]] ||= plugin.name }
         plugin.extension_points.each_key { |point| result[[:extension_point, point]] ||= plugin.name }
+        plugin.schemas.each { |schema| result[[:schema, schema.key]] ||= plugin.name }
       end
     end
 
     # @param plugin [Plugin] Registered plugin
     # @return [String, nil] Why a service or extension point of the plugin is declared by another plugin, `nil` if none
     def claim_reason(plugin)
-      plugin.services.map { |service| [:service, service.name] }.concat(plugin.extension_points.keys.map { |point| [:extension_point, point] }).each do |kind, name|
+      plugin.services.map { |service| [:service, service.name] }.concat(plugin.extension_points.keys.map { |point| [:extension_point, point] }, plugin.schemas.map { |schema| [:schema, schema.key] }).each do |kind, name|
         owner = claims[[kind, name]]
         return "#{kind.to_s.tr('_', ' ')} #{name} is declared by plugin #{owner}" unless owner.eql?(plugin.name)
       end

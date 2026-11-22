@@ -52,6 +52,8 @@ module Paths
   GEM_PACK = RELEASE / 'gempack.zip'
   # Command-line test suite definitions
   TEST_DEFS = TST / 'tests.yml'
+  # Test definitions of the plugin bundles: `tests.yml` in the `spec` folder of each bundle (not shipped in the gem)
+  BUNDLE_TEST_DEFS_GLOB = 'lib/aspera/plugins/*/spec/tests.yml'
   # Versions of servers used in tests
   SERVERS_TESTED = TST / 'servers_tested.yaml'
   # Change log
