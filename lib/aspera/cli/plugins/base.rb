@@ -10,7 +10,10 @@ require_relative '../result'
 require_relative '../poll'
 require_relative '../command_registry'
 require_relative '../option_declarator'
+require_relative '../security'
 require_relative '../special_values'
+require_relative '../../bundle_registry'
+require_relative '../../log'
 require_relative '../../rest/list'
 require_relative '../../schema/registry'
 require_relative '../../string_ext'
@@ -59,6 +62,7 @@ module Aspera
           # @param kwargs [Hash] forwarded to [CommandSpec]
           def command(id, **kwargs)
             kwargs[:parent] = @current_parent if kwargs[:parent].nil? && @current_parent
+            kwargs[:security] = mounted_level(kwargs[:security])
             command_registry.register(CommandSpec.new(id: id, **kwargs))
           end
 
@@ -228,6 +232,7 @@ module Aspera
                 klass.command_registry.option_specs.key?(spec.name)
             end
             raise ArgumentError, "#{self}: option :#{spec.name} already declared in ancestor #{ancestor_owner}" if ancestor_owner
+            spec.security = mounted_level(spec.security)
             command_registry.register_option(spec)
           end
 
@@ -270,6 +275,30 @@ module Aspera
           #   @param value [String] Name of the plugin, set by `Factory`
           attr_writer :plugin_name
 
+          # Include the modules that bundles mount on this plugin (manifest `mounts`), each once, by name of bundle, then in the order of the manifest.
+          # The `included` hook of a module declares its commands and options in this class, as an `include` of the module at this place of the class body would.
+          # Called by `Factory` when it loads the class: mounted commands come after the ones of the class body; a class body may call it to place them.
+          # The module of a bundle whose source is refused at the current security level is not loaded; the commands and options declared by a module
+          # get the security level of its source, if more restrictive.
+          # @param registry [BundleRegistry] Registry of the bundles
+          # @return [nil]
+          def include_mounts(registry = BundleRegistry.instance)
+            @included_mounts ||= []
+            registry.mounts(plugin_name.to_sym).each do |mount|
+              next if @included_mounts.include?(mount) || !registry.allowed?(mount.bundle)
+              @included_mounts.push(mount)
+              mounted = registry.load_entry(mount)
+              Aspera.assert(mounted.instance_of?(Module)) { "plugin #{mount.bundle}: #{mount.constant} is not a module" }
+              @mount_security = registry[mount.bundle].security
+              include(mounted)
+            rescue BundleRegistry::Unavailable => e
+              Log.log.warn { "Commands of plugin #{mount.bundle} are not added to #{plugin_name}: #{e.message}" }
+            ensure
+              @mount_security = nil
+            end
+            nil
+          end
+
           # DSL class method: declare the human-readable application name shown in wizards.
           # When called with an argument, sets the name. When called with no argument, returns it.
           # Falls back to the plugin name in CamelCase if never set.
@@ -291,6 +320,16 @@ module Aspera
             when NilClass then ->(_) { true }
             else Aspera.error_unexpected_value(match_expression.class.name, type: ParameterError)
             end
+          end
+
+          private
+
+          # @param level [Symbol, nil] Security level of a command or option declared in this class
+          # @return [Symbol, nil] The most restrictive of this level and the one of the source of the module being mounted (see `include_mounts`)
+          def mounted_level(level)
+            return level if @mount_security.nil?
+            return @mount_security if level.nil?
+            [level, @mount_security].min_by { |item| Security::LEVELS.index(item) }
           end
         end
 

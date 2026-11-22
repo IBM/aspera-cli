@@ -130,6 +130,15 @@ RSpec.describe(Aspera::BundleRegistry::MANIFEST) do
     expect(errors(minimal.merge('gems' => %w[grpc grpc]))).not_to(be_empty)
   end
 
+  it 'makes every bundle of the gem available, with its manifest and its extension entries validated' do
+    registry = Aspera::BundleRegistry.send(:new, builtin: false)
+    registry.add_source(Aspera::BundleRegistry::GEM_FOLDER)
+    # Validated as a bundle that is not in the gem
+    stub_const('Aspera::BundleRegistry::GEM_FOLDER', File.join(__dir__, 'not_the_gem_folder'))
+    registry.scan
+    expect(registry.names.to_h { |name| [name, registry.unavailable_reason(name)] }.compact).to(be_empty)
+  end
+
   Dir.glob(File.join(Aspera::BundleRegistry::GEM_FOLDER, '*', Aspera::BundleRegistry::MANIFEST)).each do |file|
     name = File.basename(File.dirname(file))
     it "#{name}: manifest of the gem is valid" do

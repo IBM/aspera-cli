@@ -59,7 +59,7 @@ module Aspera
           command_plugin(plugin_name_sym).path
         end
 
-        # @return [Class] class object for plugin, with its plugin name set
+        # @return [Class] class object for plugin, with its plugin name set and the modules mounted on it by bundles included
         def plugin_class(plugin_name_sym)
           plugin = command_plugin(plugin_name_sym)
           klass =
@@ -73,6 +73,7 @@ module Aspera
             else Aspera.error_unexpected_value(plugin.form)
             end
           klass.plugin_name = plugin_name_sym.to_s
+          klass.include_mounts(@registry)
           klass
         rescue BundleRegistry::Unavailable => e
           raise Cli::Error, e.message

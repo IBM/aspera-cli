@@ -15,6 +15,8 @@ module Aspera
   # Registry of plugins: single files `<name>.rb` and bundles `<name>/plugin.yaml` of the plugin folders (sources).
   # Reads the manifests of bundles (data only): the code of a plugin is loaded on use, after the check of the security level of its source,
   # of its availability (manifest, dependencies) and of its gems.
+  # Gives the hooks of bundles as data: entries of extension points (`extensions`), modules mounted on a plugin (`mounts`), services (`service`);
+  # their code is loaded by `load_entry`.
   # Usable without the CLI: the default source is the folder of the bundles of the gem; the CLI adds its folders.
   #
   # @!method self.instance
@@ -41,6 +43,28 @@ module Aspera
     # @!attribute ignore   [Array<Symbol>] Names of single files that are not plugins (e.g. base classes)
     Source = Data.define(:folder, :security, :ignore)
 
+    # Entry of an extension point, from manifest `extensions` of the bundle that provides it: data, its code is loaded by `load_entry`
+    # @!attribute bundle   [Symbol] Name of the bundle that provides the entry
+    # @!attribute point    [Symbol] Name of the extension point
+    # @!attribute fields   [Hash]   Fields of the entry defined by the schema of the point: all but `file` and `class`
+    # @!attribute file     [String] File of the code, relative to the folder of the bundle
+    # @!attribute constant [String] Class defined by the file, relative to `Aspera::Plugins::<Name>`
+    Extension = Data.define(:bundle, :point, :fields, :file, :constant)
+
+    # Module added to the command tree of another plugin, from manifest `mounts`
+    # @!attribute bundle   [Symbol] Name of the bundle that provides the module
+    # @!attribute target   [Symbol] Name of the plugin that includes the module
+    # @!attribute file     [String] File of the module, relative to the folder of the bundle
+    # @!attribute constant [String] Module defined by the file, relative to `Aspera::Plugins::<Name>`
+    Mount = Data.define(:bundle, :target, :file, :constant)
+
+    # Object shared through the context of the CLI, from manifest `services`
+    # @!attribute bundle   [Symbol] Name of the bundle that provides the service
+    # @!attribute name     [Symbol] Name of the service
+    # @!attribute file     [String] File of the class, relative to the folder of the bundle
+    # @!attribute constant [String] Class defined by the file, relative to `Aspera::Plugins::<Name>`
+    Service = Data.define(:bundle, :name, :file, :constant)
+
     # Plugin found in a source
     # @!attribute name     [Symbol]       Name of the plugin
     # @!attribute form     [Symbol]       `:single` (file `<name>.rb`: commands only) or `:bundle` (folder `<name>/` with a manifest)
@@ -59,6 +83,22 @@ module Aspera
       def depends = manifest.fetch('depends', []).map(&:to_sym)
       # @return [Array<String>] Gems required by the code
       def gems = manifest.fetch('gems', [])
+      # @return [Hash{Symbol => String}] Schema file of an entry, relative to the folder of the bundle, by name of the extension points it declares
+      def extension_points = manifest.fetch('extension_points', []).to_h { |point| [point['name'].to_sym, point['schema']] }
+
+      # @return [Array<Extension>] Entries of this bundle for extension points, in the order of the manifest
+      def extensions
+        manifest.fetch('extensions', {}).flat_map do |point, entries|
+          entries.map do |entry|
+            Extension.new(bundle: name, point: point.to_sym, fields: entry.except('file', 'class').freeze, file: entry['file'], constant: entry['class'])
+          end
+        end
+      end
+
+      # @return [Array<Mount>] Modules mounted by this bundle, in the order of the manifest
+      def mounts = manifest.fetch('mounts', []).map { |mount| Mount.new(bundle: name, target: mount['target'].to_sym, file: mount['file'], constant: mount['module']) }
+      # @return [Array<Service>] Services provided by this bundle, in the order of the manifest
+      def services = manifest.fetch('services', []).map { |service| Service.new(bundle: name, name: service['name'].to_sym, file: service['file'], constant: service['class']) }
     end
 
     # @param builtin [Boolean] `true`: the folder of the bundles of the gem is a source
@@ -68,6 +108,10 @@ module Aspera
       @plugins = {}
       # Cache of `unavailable_reason`, by name
       @reasons = {}
+      # Cache of `claims`
+      @claims = nil
+      # Compiled schemas of extension points, by file
+      @point_schemas = {}
       @security_allowed = ->(_level) { true }
       @security_check = ->(_level, _what) {}
       add_source(GEM_FOLDER) if builtin
@@ -133,6 +177,7 @@ module Aspera
       end
       return if added.empty?
       @reasons.clear
+      @claims = nil
       added.each do |name|
         reason = unavailable_reason(name)
         Log.log.warn { "Plugin #{name} is unavailable: #{reason}" } unless reason.nil?
@@ -148,7 +193,8 @@ module Aspera
     def [](name) = @plugins[name]
 
     # @param name [Symbol] Name of a registered plugin
-    # @return [String, nil] Why the plugin is unavailable (invalid manifest, dependency missing or unavailable), `nil` if available
+    # @return [String, nil] Why the plugin is unavailable, `nil` if available: invalid manifest, name of a service or extension point already declared by a plugin registered before,
+    #   dependency missing or unavailable, extension of a point not declared by a dependency or invalid for the schema of the point
     def unavailable_reason(name)
       Aspera.assert(@plugins.key?(name), type: EntityNotFound) { "plugin not found: #{name}" }
       @reasons[name] = dependency_reason(name, []) unless @reasons.key?(name)
@@ -185,14 +231,115 @@ module Aspera
       Object.const_get("#{BUNDLE_MODULE}::#{name.to_s.snake_to_capital}::#{constant}")
     end
 
+    # Load the code of an entry of a bundle, see `load_constant`
+    # @param entry [Extension, Mount, Service] Entry given by `extensions`, `mounts` or `service`
+    # @return [Class, Module] The class or module of the entry
+    # @raise [Unavailable] If the bundle is unavailable or a gem is missing
+    def load_entry(entry) = load_constant(entry.bundle, entry.file, entry.constant)
+
+    # @param name [Symbol] Name of a registered plugin
+    # @return [Boolean] `true` if the security level of the source of the plugin allows to load its code at the current level
+    def allowed?(name)
+      plugin = @plugins[name]
+      Aspera.assert(!plugin.nil?, type: EntityNotFound) { "plugin not found: #{name}" }
+      @security_allowed.call(plugin.security)
+    end
+
+    # Entries of an extension point, from the available bundles, data only: the code of an entry is loaded by `load_entry`.
+    # A bundle that extends a point depends on the bundle that declares it, its entries are valid for the schema of the point (else it is unavailable).
+    # @param point [Symbol] Name of the extension point
+    # @return [Array<Extension>] Entries, by name of bundle, then in the order of the manifest; empty if no available bundle declares the point
+    def extensions(point)
+      Aspera.assert_type(point, Symbol)
+      available_plugins.flat_map { |plugin| plugin.extensions.select { |extension| extension.point.eql?(point) } }
+    end
+
+    # Modules mounted on a plugin, from the available bundles, data only: the code of a module is loaded by `load_entry`.
+    # @param target [Symbol] Name of the plugin that includes the modules
+    # @return [Array<Mount>] Mounts, by name of bundle, then in the order of the manifest
+    def mounts(target)
+      Aspera.assert_type(target, Symbol)
+      available_plugins.flat_map { |plugin| plugin.mounts.select { |mount| mount.target.eql?(target) } }
+    end
+
+    # Service of the bundle that declares it, data only: its class is loaded by `load_entry`.
+    # @param name [Symbol] Name of the service
+    # @return [Service] The service
+    # @raise [Unavailable] If no plugin declares the service, or if the plugin that declares it is unavailable
+    def service(name)
+      Aspera.assert_type(name, Symbol)
+      provider = claims[[:service, name]]
+      raise Unavailable, "no plugin provides service #{name}" if provider.nil?
+      reason = unavailable_reason(provider)
+      raise Unavailable, "service #{name}: plugin #{provider} is unavailable: #{reason}" unless reason.nil?
+      @plugins[provider].services.find { |service| service.name.eql?(name) }
+    end
+
     private
 
+    # @return [Array<Plugin>] Available plugins, by name
+    def available_plugins = names.select { |name| unavailable_reason(name).nil? }.map { |name| @plugins[name] }
+
+    # Names of services and extension points, by the plugin that declares them: the first one registered with a valid manifest.
+    # @return [Hash{Array(Symbol, Symbol) => Symbol}] Name of the plugin, by `[:service, <name>]` and `[:extension_point, <name>]`
+    def claims
+      @claims ||= @plugins.each_value.each_with_object({}) do |plugin, result|
+        next unless plugin.error.nil?
+        plugin.services.each { |service| result[[:service, service.name]] ||= plugin.name }
+        plugin.extension_points.each_key { |point| result[[:extension_point, point]] ||= plugin.name }
+      end
+    end
+
+    # @param plugin [Plugin] Registered plugin
+    # @return [String, nil] Why a service or extension point of the plugin is declared by another plugin, `nil` if none
+    def claim_reason(plugin)
+      plugin.services.map { |service| [:service, service.name] }.concat(plugin.extension_points.keys.map { |point| [:extension_point, point] }).each do |kind, name|
+        owner = claims[[kind, name]]
+        return "#{kind.to_s.tr('_', ' ')} #{name} is declared by plugin #{owner}" unless owner.eql?(plugin.name)
+      end
+      nil
+    end
+
+    # Entries of a bundle for extension points: each point is declared by a dependency, and, for a bundle that is not in the gem, each entry is valid for its schema.
+    # The manifests of the gem are validated by a spec: `json_schemer` is not loaded on each start.
+    # @param plugin [Plugin] Registered plugin, with available dependencies
+    # @return [String, nil] Why an entry is not valid, `nil` if all are valid
+    def extensions_reason(plugin)
+      plugin.extensions.group_by(&:point).each do |point, extensions|
+        declaring = plugin.depends.find { |dependency| @plugins[dependency].extension_points.key?(point) }
+        return "extension point #{point} is not declared by a dependency" if declaring.nil?
+        next if File.dirname(plugin.path).eql?(GEM_FOLDER)
+        schema_file = File.join(@plugins[declaring].path, @plugins[declaring].extension_points[point])
+        extensions.each_with_index do |extension, index|
+          errors = point_errors(extension.fields, schema_file)
+          return "invalid extension #{point} #{index + 1}: #{errors.join('; ')}" unless errors.empty?
+        end
+      end
+      nil
+    end
+
+    # @param fields      [Hash]   Fields of an extension entry
+    # @param schema_file [String] Schema of an entry of the extension point (JSON or YAML)
+    # @return [Array<String>] Errors of validation, empty if valid
+    def point_errors(fields, schema_file)
+      require 'json_schemer'
+      @point_schemas[schema_file] ||=
+        begin
+          schema = Yaml.safe_load(File.read(schema_file))
+          Aspera.assert_type(schema, Hash) { "schema #{schema_file}" }
+          JSONSchemer.schema(schema)
+        end
+      @point_schemas[schema_file].validate(fields).map { |error| error['error'] }
+    rescue Psych::Exception, AssertError, SystemCallError => e
+      ["schema of the extension point: #{e.message}"]
+    end
+
     # @param source [Source] Source to scan
-    # @return [Array(Hash, Hash)] Single files and folders of bundles, by name
+    # @return [Array(Hash, Hash)] Single files and folders of bundles, by name, sorted: plugins are registered in a stable order (see `claims`)
     def children(source)
       singles = {}
       bundles = {}
-      Dir.children(source.folder).each do |child|
+      Dir.children(source.folder).sort.each do |child|
         path = File.join(source.folder, child)
         if child.end_with?(RB_EXT)
           name = File.basename(child, RB_EXT).to_sym
@@ -235,6 +382,8 @@ module Aspera
     def dependency_reason(name, chain)
       plugin = @plugins[name]
       return plugin.error unless plugin.error.nil?
+      reason = claim_reason(plugin)
+      return reason unless reason.nil?
       chain += [name]
       plugin.depends.each do |dependency|
         return "dependency cycle: #{(chain + [dependency]).join(' → ')}" if chain.include?(dependency)
@@ -242,7 +391,7 @@ module Aspera
         reason = dependency_reason(dependency, chain)
         return "dependency #{dependency} is unavailable: #{reason}" unless reason.nil?
       end
-      nil
+      extensions_reason(plugin)
     end
 
     # @param name [String] Name of a gem

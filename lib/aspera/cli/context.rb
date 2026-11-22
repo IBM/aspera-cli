@@ -4,6 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require_relative '../assert'
+require_relative '../bundle_registry'
+require_relative 'error'
 require_relative 'mailer'
 require_relative 'secret_finder'
 
@@ -45,12 +47,26 @@ module Aspera
       attr_accessor :help_requested
 
       # Initialize all members to nil, so that they are defined and can be validated later
+      # @param registry [BundleRegistry] Registry of the bundles that provide services
       # @return [nil]
-      def initialize
+      def initialize(registry: BundleRegistry.instance)
         MEMBERS.each { |i| instance_variable_set(:"@#{i}", nil) }
         @progress_bar = nil
         @pac_executor = nil
         @help_requested = false
+        @registry = registry
+        # Services created, by name
+        @services = {}
+      end
+
+      # Object shared by plugins, provided by a bundle (manifest `services`): created once, on first use, with the context (`new(context)`).
+      # @param name [Symbol] Name of the service
+      # @return [Object] The service
+      # @raise [Cli::Error] If no available bundle provides the service, or its code cannot be loaded
+      def service(name)
+        @services[name] ||= @registry.load_entry(@registry.service(name)).new(self)
+      rescue BundleRegistry::Unavailable => e
+        raise Cli::Error, e.message
       end
 
       # Validate that all mandatory members are non-nil (detect bootstrap bugs)
