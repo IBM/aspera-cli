@@ -916,6 +916,219 @@ The plugin factory discovers the plugin automatically; `CommandRegistry#validate
 1. Add the format to `DISPLAY_FORMATS` in [`formatter.rb`](../lib/aspera/cli/formatter.rb) (allowed values of option `format`)
 2. Implement the format-specific rendering in `Formatter#display_results`
 
+## Plugin bundles
+
+> **In progress**: this section is the target design. Files move bundle after bundle; until the move of a product is done, the sections above describe its code.
+
+Each Aspera product is a **bundle**: one folder `lib/aspera/plugins/<name>/` with a manifest and all its capabilities (commands, API client, transfer agent, local runtime, schemas), its specs and its integration tests.
+The **framework** finds, validates and loads bundles, and offers the hooks they use (extension points, mounts, services): it knows nothing of Aspera products.
+
+### Layers
+
+| Layer | Paths under `lib/aspera/` | May reference |
+| --- | --- | --- |
+| Framework | All the others: `cli/` (built-in plugins `config` and `mcp`, base classes `base`, `basic_auth`, `oauth`, `factory` in `cli/plugins/`), `rest/`, `oauth/`, `secret/`, `schema/`, `web_auth/`, `json_rpc/`, `units/`, `preview/terminal.rb`, `*.rb` | Framework |
+| Domain library | `agent/` (`base.rb`, `factory.rb`), `ascp/`, `products/`, `sync/`, `transfer/` | Framework except `cli/`, domain |
+| Bundle | `plugins/<name>/` | Framework, domain, the bundles listed in its `depends` |
+
+- A reference is a `require` or `require_relative` path, or a constant. Comments are not references. Shims (see [Compatibility until 5.0](#compatibility-until-50)) are exempt.
+- The rules are checked by `spec/layer_boundary_spec.rb`; until the end of the moves, the violations of today are listed in `spec/fixtures/layer_boundary_known.yaml`, a list that can only shrink.
+- The domain library is the Aspera transfer library, without CLI: transfer spec, `ascp`, `async`, base class and factory of agents, locations of installed Aspera products (`products/`: where `ascp` and the logs are, used by `Ascp::Installation`).
+  The runtime of a product used only by its bundle (e.g. the `transferd` daemon and its system service) is in the bundle.
+
+### Layout of a bundle
+
+```text
+lib/aspera/plugins/<name>/
+  plugin.yaml      manifest: data only
+  commands.rb      Aspera::Plugins::<Name>::Commands < Cli::Plugins::Base (or BasicAuth, Oauth)
+  api.rb           Aspera::Plugins::<Name>::Api: client of the product API
+  agent.rb         Aspera::Plugins::<Name>::Agent < Aspera::Agent::Base
+  product.rb       Aspera::Plugins::<Name>::Product: local runtime of the product
+  <other>.rb       other classes, e.g. emulator.rb: Aspera::Plugins::Node::Emulator
+  schemas/         OpenAPI of the product, agent_options.yaml, options.yaml
+  spec/            specs, fixtures, tests.yml: not in the gem
+```
+
+- **Role files**: `commands`, `api`, `agent`, `product`, each present only if the bundle has the role. A large one becomes a folder of the same name next to it (`commands.rb` and `commands/*.rb`), never in the same change as a move.
+- **CLI**: the files used without the CLI (`api`, `agent`, `product`, other library classes) never require `cli/`; `commands.rb`, mounted modules and services may.
+- **Path ↔ constant**: `plugins/<name>/<file>.rb` defines `Aspera::Plugins::<Name>::<Const>`, where `<Name>` is `<name>.snake_to_capital` and `<file>` without `_` is `<Const>` in lower case (`api.rb`: `Api`, `ascmd.rb`: `AsCmd`). Other constants of the file are inside `Aspera::Plugins::<Name>`.
+- **Names**: role files take the role name; other classes keep their name, without the name of the bundle when it starts with it (`NodeEmulator` → `Emulator`). OAuth token creators keep their name: the grant id comes from it (`SharesWeb` → `shares_web`).
+- **Constant lookup**: inside `module Aspera; module Plugins; module <Name>`, `Transfer` resolves to the bundle `Aspera::Plugins::Transfer` once it is loaded, and `Agent`, `Api` to the classes of the bundle. Bundle code writes framework and domain constants qualified: `Aspera::Transfer::Spec`, `Aspera::Agent::Base`, `Aspera::Rest::Client`, and `::Transferd::Api` for the gRPC classes (`Cli::` is safe).
+- **Single file**: a file `<name>.rb` of a plugin folder (class `Aspera::Cli::Plugins::<Name>`) stays the simple form of a plugin: a bundle with commands only, without manifest.
+
+### Manifest
+
+`plugin.yaml` is data only, validated by the schema `lib/aspera/cli/plugin.schema.yaml` (`additionalProperties: false` at each level). Class and module names are relative to `Aspera::Plugins::<Name>`, file names to the folder of the bundle.
+
+| Field | Default | Content |
+| --- | --- | --- |
+| `name` | (mandatory) | Name of the plugin, same as the folder: `[a-z][a-z0-9_]*` |
+| `title` | (mandatory) | Name of the product, for listings and the MCP instructions |
+| `depends` | `[]` | Bundles referenced by this one (layer rule). One missing or unavailable: this bundle is unavailable |
+| `gems` | `[]` | Optional gems required by the code of the bundle: checked when the code is loaded, not when listed |
+| `commands` | `false` | `true`: `commands.rb` defines `Commands`, the top level command `<name>` |
+| `schemas` | `[]` | Schemas added to `Schema::Registry`: `key` (unique), `file`, `owned` (default `false`: schema of a vendor API, not used to validate values), `source` (`url` and `version` of a downloaded schema, used by `rake tools:openapi`) |
+| `extension_points` | `[]` | Points that other bundles extend: `name`, `schema` (file: schema of one entry) |
+| `extensions` | `{}` | Entries for the points of other bundles, by point name: data validated by the schema of the point, with `file` and `class` of the code |
+| `mounts` | `[]` | Modules added to the command tree of another plugin: `target` (plugin name), `file`, `module` |
+| `services` | `[]` | Objects shared through the context: `name`, `file`, `class` |
+
+Full example, bundle `transferd`:
+
+```yaml
+name: transferd
+title: IBM Aspera Transfer Daemon
+depends:
+  - transfer
+gems:
+  - grpc
+commands: true
+schemas:
+  - key: transferd
+    file: schemas/transferd-config.schema.json
+    owned: true
+    source:
+      url: https://raw.githubusercontent.com/laurent-martin/aspera-api-examples/refs/heads/main/openapi/transferd-config.schema.json
+  - key: transferd_opts
+    file: schemas/options.yaml
+    owned: true
+extensions:
+  agent:
+    - name: transferd
+      short: t
+      file: agent.rb
+      class: Agent
+      options_schema: schemas/agent_options.yaml
+mounts:
+  - target: config
+    file: config_commands.rb
+    module: ConfigCommands
+```
+
+Minimal example, bundle `console`:
+
+```yaml
+name: console
+title: IBM Aspera Console
+commands: true
+schemas:
+  - key: console
+    file: schemas/IBM Aspera Console-enhanced.yaml
+    source:
+      url: https://raw.githubusercontent.com/laurent-martin/aspera-api-examples/refs/heads/main/openapi/IBM%20Aspera%20Console-enhanced.yaml
+```
+
+The bundle `transfer` (the CLI part of the domain) declares the other fields:
+
+```yaml
+name: transfer
+title: Aspera transfer agents, ascp and async
+schemas:
+  - key: transfer_opts
+    file: schemas/options.yaml
+    owned: true
+extension_points:
+  - name: agent
+    schema: schemas/agent_extension.schema.yaml
+services:
+  - name: transfer
+    file: transfer_agent.rb
+    class: TransferAgent
+mounts:
+  - target: config
+    file: config_commands.rb
+    module: ConfigCommands
+  - target: config
+    file: ascp_actions.rb
+    module: AscpActions
+  - target: config
+    file: ascp_logs_actions.rb
+    module: AscpLogsActions
+  - target: config
+    file: sync_actions.rb
+    module: SyncActions
+  - target: config
+    file: transfer_actions.rb
+    module: TransferActions
+```
+
+### Discovery and loading
+
+Sources of plugins, first one wins for a given name:
+
+| Source | Security level | Content |
+| --- | --- | --- |
+| Folders of option `plugin_folder` (default: `plugins` of the configuration folder) | `low` | Single files and bundles |
+| `lib/aspera/plugins/` of the gem | all | Built-in bundles |
+| `lib/aspera/cli/plugins/` of the gem | all | `config`, `mcp` (base classes and shims are not plugins) |
+| Other gems: `Gem.find_files('aspera/plugins/*/plugin.yaml')`, only if decided (GATE 0) | `low` | Bundles; never replace a built-in name |
+
+- In a folder, `<name>.rb` is a single-file plugin and `<name>/plugin.yaml` a bundle; with both for the same name, the bundle is used and a warning is logged.
+- Listing reads the manifests only: it never runs code of a bundle. Code is loaded on first use of a capability: the `Commands` class when the plugin runs (and by `config plugins list` for its columns `detect` and `wizard`, as today), an agent when selected, a service on its first use, a mounted module when the target plugin class is loaded.
+- Unavailable bundle (invalid manifest, dependency missing or unavailable, duplicate schema key, agent letter or service name): listed with the reason, the other plugins work. A missing gem of `gems` does not make it unavailable in the listing: loading its code fails with a message `gem install <gem>`.
+- Security: the level of the source applies to every capability of the bundle (commands, agents, services, mounts), checked when the code is loaded (`Security#check_level`), as `Factory#plugin_class` does today. A source not allowed at the current level is not scanned. Commands mounted by a bundle of a `low` source are `low`.
+- Plugin name: from the manifest (bundle) or the file name (single file), given to the class by the registry; never derived from the class name (the class of a bundle is `Commands`).
+
+### Extension points, mounts and services
+
+- **Extension point `agent`**, declared by bundle `transfer`: an entry has `name` (value of `--transfer`), `short` (one letter, unique), `file`, `class`, `options_schema`. Bundles `direct`, `desktop`, `connect`, `httpgw`, `node`, `transferd` provide one each. `Agent::Factory::ALL` (same shape: `long`, `short`) is built from the entries; `TransferAgentOptions` (`oneOf` and `discriminator` mapping) is assembled from their `options_schema`. A bundle that extends a point depends on the bundle that declares it.
+- **Mounts**: bundle `transfer` adds the command trees `ascp`, `agents`, `sync` (and the deprecated `transfer`) to plugin `config`, with the modules of its manifest, included when `Config` is loaded, in the order of the manifest: the command tree of `config` does not change. A mount adds commands to another plugin; the `mount:` attribute of the command DSL (see [Mounting another plugin's commands](#mounting-another-plugins-commands)) exposes commands of another plugin class under a node: both can be used together (bundle `transferd` mounts the deprecated `config transferd`, a node with `mount:` on its commands).
+- **Services**: `Context#service(:transfer)` creates the `TransferAgent` of bundle `transfer` once, on first use, with the context. Plugins of bundles use it through the helper module `Aspera::Plugins::Transfer::Helper` (method `transfer`) and declare `depends: - transfer`. `Plugins::Base#transfer` remains for single-file plugins: it asks the service by name, without reference to the bundle.
+
+### Compatibility until 5.0
+
+- Framework names used by external plugins do not move: `cli/plugins/base`, `basic_auth`, `oauth`.
+- A moved file leaves a shim at its old path: it logs a warning (once: `require` loads it once), requires the new file, and defines the old constants as deprecated aliases. Internal code uses only the new paths and names: an old constant exists only once its shim is loaded.
+- `deprecate_constant` warns only when deprecation warnings are enabled (`Warning[:deprecated]`, off by default): the warning of the shim is the visible one.
+- Shims are not plugins and are exempt from the layer rules (recognized by the comment `# Shim:` of the template below). They are listed in the CHANGELOG and removed in 5.0.
+
+```ruby
+# frozen_string_literal: true
+
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+# Shim: moved to aspera/plugins/node/api, removed in 5.0
+require_relative '../log'
+require_relative '../plugins/node/api'
+Aspera::Log.log.warn('aspera/api/node is deprecated: use aspera/plugins/node/api (removed in 5.0)')
+module Aspera
+  module Api
+    Node = Plugins::Node::Api
+    NodeFileId = Plugins::Node::NodeFileId
+    deprecate_constant :Node, :NodeFileId
+  end
+end
+```
+
+### Development files
+
+- Specs of a bundle are in `plugins/<name>/spec/` (with their fixtures), run by `bundle exec rspec` and `rake spec` (pattern `lib/aspera/plugins/*/spec/**/*_spec.rb` added to `spec/**/*_spec.rb`).
+- Integration tests of a bundle are in `plugins/<name>/spec/tests.yml`, loaded by `build/lib/test_env.rb` with `tests/tests.yml`: `rake test:list` and `rake test:run` see them.
+- `aspera-cli.gemspec` excludes `lib/aspera/plugins/*/spec/**` from the gem.
+
+### Bundles
+
+| Bundle | Commands | Agent | Other content | `depends` |
+| --- | --- | --- | --- | --- |
+| `transfer` | under `config`: `ascp`, `agents`, `sync` | extension point `agent` | service `transfer` | |
+| `direct` | | `a` | | `transfer` |
+| `desktop` | | `d` | | `transfer` |
+| `connect` | | `c` | | `transfer` |
+| `httpgw` | yes | `h` | API | `transfer` |
+| `transferd` | yes | `t` | API (gRPC), daemon, system service | `transfer` |
+| `node` | yes | `n` | API, Node API emulator | `transfer` |
+| `cos` | yes | | API | `node` |
+| `shares` | yes | | OAuth SAML flow | `node` |
+| `ats` | yes | | API | `node` |
+| `preview` | yes | | preview generator | `node`, `transfer` |
+| `aoc` | yes | | API, GraphQL queries | `node`, `ats`, `faspex5`, `transfer` |
+| `faspex5` | yes | | API, Faspex 4 gateway, postprocessing | `transfer` |
+| `orchestrator` | yes | | workflow checker | `transfer` |
+| `server` | yes | | `ascmd` | `transfer` |
+| `console`, `faspio`, `alee` | yes | | API (`alee`) | |
+
 ## Performance Considerations
 
 ### Transfer Optimization
