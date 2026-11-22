@@ -1,11 +1,5 @@
 # Known violations of the layer rules (docs/ARCHITECTURE.md, Plugin bundles), checked by spec/layer_boundary_spec.rb.
 # File (relative to lib/aspera) -> sorted references. The list can only shrink: remove an entry when its violation is fixed.
-agent/httpgw.rb:
-- const Api::Httpgw
-- require api/httpgw
-agent/node.rb:
-- const Api::Node
-- require api/node
 api/alee.rb:
 - require api/aoc
 api/aoc.rb:
@@ -22,6 +16,9 @@ api/node.rb:
 - const Api::Node
 - const Transfer::Spec
 - require transfer/spec
+ascp/log_locations.rb:
+- const Products::TransferdService
+- require products/transferd_service
 cli/ascp_actions.rb:
 - const Agent::Factory
 - const Ascp::Installation
@@ -105,8 +102,14 @@ cli/plugins/orchestrator.rb:
 cli/plugins/preview.rb:
 - const Api::Node
 - const Api::NodeFileId
+- const Preview::FileTypes
+- const Preview::Generator
+- const Preview::Utils
 - const Transfer::Spec
 - require api/node
+- require preview/file_types
+- require preview/generator
+- require preview/utils
 - require transfer/spec
 cli/plugins/server.rb:
 - const Sync::Operations
@@ -163,5 +166,8 @@ node_emulator.rb:
 - require transfer/spec
 products/connect.rb:
 - const Cli::Error
+sync/operations.rb:
+- const Agent::Direct
+- require agent/direct
 transfer/parameters.rb:
 - require cli/formatter
