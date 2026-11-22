@@ -6,11 +6,13 @@
 require_relative '../environment'
 require_relative 'base'
 require_relative '../products/transferd'
+require_relative '../ascp/installation'
 require_relative '../temp_file_manager'
 require_relative '../transfer/error'
 require_relative '../transfer/spec'
 require_relative '../../transferd_services_pb'
 require 'json'
+require 'securerandom'
 require 'time'
 require 'uri'
 
@@ -52,8 +54,10 @@ module Aspera
       FINAL_STATUSES = %i[COMPLETED FAILED CANCELED].freeze
       # Time in the daemon is in microseconds, but some versions give milliseconds: values below this are milliseconds
       MIN_USEC_EPOCH = 10**14
+      # Size in bytes of the random API key of a daemon started here (same as `transferd service`)
+      API_KEY_BYTES = 32
 
-      private_constant :LOCAL_SOCKET_ADDR, :PORT_SEP, :AUTO_LOCAL_TCP_PORT, :ASYNC_STATUS, :MIN_USEC_EPOCH
+      private_constant :LOCAL_SOCKET_ADDR, :PORT_SEP, :AUTO_LOCAL_TCP_PORT, :ASYNC_STATUS, :MIN_USEC_EPOCH, :API_KEY_BYTES
 
       class << self
         # Client of a daemon
@@ -65,6 +69,25 @@ module Aspera
           credentials = ca_file.nil? ? :this_channel_is_insecure : GRPC::Core::ChannelCredentials.new(File.read(ca_file))
           return ::Transferd::Api::TransferService::Stub.new(url, credentials) if api_key.nil?
           ::Transferd::Api::TransferService::Stub.new(url, credentials, interceptors: [ApiKeyInterceptor.new(api_key)])
+        end
+
+        # API key of a daemon started here
+        # @param api_key [String, nil] API key given by the user
+        # @param stop    [Boolean]     `true` if the daemon is stopped on exit
+        # @return [String, nil] The key given, else a random one if the daemon is stopped on exit,
+        #   else `nil` (no authentication): the next executions that attach to the daemon left running cannot know a random key
+        def daemon_api_key(api_key, stop:)
+          return api_key unless api_key.nil?
+          return SecureRandom.hex(API_KEY_BYTES) if stop
+          Log.log.warn('Daemon left running (stop: false) without authentication: other users of the host can use it. Set parameter api_key.')
+          nil
+        end
+
+        # Write the configuration file of a daemon started here: created only by this call, readable only by the user (it may contain the API key)
+        # @param path   [String] Path of the file, in the global temporary folder
+        # @param config [Hash]   Configuration of the daemon
+        def write_config(path, config)
+          File.open(path, File::WRONLY | File::CREAT | File::EXCL, 0o600) { |file| file.write(config.to_json) }
         end
 
         # @param agent_params [Hash] `url`: endpoint of the daemon; optional `api_key`, `ca_file`
@@ -172,7 +195,7 @@ module Aspera
       # @param url   [String]  URL of the transfer manager daemon
       # @param start [Boolean] If `false`, expect that an external daemon is already running
       # @param stop  [Boolean] If `false`, do not shutdown daemon on exit
-      # @param api_key [String, nil] API key of an external daemon with `authentication` enabled
+      # @param api_key [String, nil] API key of the daemon: of an external daemon with `authentication` enabled, or of the daemon started here (else a random one)
       # @param ca_file [String, nil] Certificate authority (PEM file) of an external daemon with `tls` enabled
       # @param base  [Hash]    Base class options
       def initialize(
@@ -197,7 +220,7 @@ module Aspera
         begin
           # no address: local bind
           daemon_endpoint = "#{LOCAL_SOCKET_ADDR}#{daemon_endpoint}" if daemon_endpoint.match?(/^#{PORT_SEP}[0-9]+$/o)
-          # Create stub: no credentials for a daemon started here, API key and TLS only for an external daemon
+          # Create stub: API key of the daemon (given, or the one of the daemon started here), TLS only for an external daemon
           @transfer_client = self.class.create_client(daemon_endpoint, api_key: api_key, ca_file: ca_file)
           # Initiate actual connection
           get_info_response = @transfer_client.get_info(::Transferd::Api::InstanceInfoRequest.new)
@@ -215,6 +238,8 @@ module Aspera
           # transferd only supports local ip and port
           daemon_uri = URI.parse("ipv4://#{daemon_endpoint}")
           Aspera.assert(daemon_uri.scheme.eql?('ipv4')) { "Invalid scheme daemon URI #{daemon_endpoint}" }
+          # The daemon listens on a local port: clients must give its API key, so that other users of the host cannot use it
+          api_key = self.class.daemon_api_key(api_key, stop: @stop)
           # create a config file for daemon
           config = {
             address:      daemon_uri.host,
@@ -227,13 +252,14 @@ module Aspera
               }
             }
           }
+          config[:authentication] = {enabled: true, api_key: api_key} unless api_key.nil?
           # config file and logs are created in same folder
           transferd_base_tmp = TempFileManager.instance.new_file_path_global('transferd')
           Log.log.debug { "transferd base tmp #{transferd_base_tmp}" }
           conf_file = "#{transferd_base_tmp}.conf"
           log_stdout = "#{transferd_base_tmp}.out"
           log_stderr = "#{transferd_base_tmp}.err"
-          File.write(conf_file, config.to_json)
+          self.class.write_config(conf_file, config)
           @daemon_pid = Environment.secure_execute(
             Ascp::Installation.instance.path(:transferd), '--config', conf_file,
             mode: :background,

@@ -5369,7 +5369,7 @@ Options for `transfer` are:
 
 | Field | Type | Description |
 | ------- | ------ | -------------------------------------------------------------------------------- |
-| `api_key` | `String` | API key of an existing daemon (`start` is `false`) that has `authentication` enabled in its configuration. It is sent in the metadata `api_key` of each call. |
+| `api_key` | `String` | API key of the daemon, sent in the metadata `api_key` of each call. For an existing daemon: required if it has `authentication` enabled in its configuration. For a daemon started by `ascli`: it is given `authentication` with this key, else with a random key if `stop` is `true`, else without authentication (warning): set it so that a daemon left running can be used only by the executions that know it. |
 | `ca_file` | `String` | Path to the certificate authority file (PEM) that signed the certificate of an existing daemon (`start` is `false`) that has `tls` enabled in its configuration. A self-signed certificate is its own authority. |
 | `start` | `Bool` | Start a new daemon instance.<br/>Default: `true`. |
 | `stop` | `Bool` | Stop the daemon when `ascli` exits.<br/>Default: `true`. |
@@ -5378,6 +5378,10 @@ Options for `transfer` are:
 > [!NOTE]
 > If port zero is specified in the URL, then the daemon will listen on a random available port.
 > If no address is specified, then `127.0.0.1` is used.
+
+A daemon started by `ascli` requires an API key, so that other users of the host cannot use it: the one of parameter `api_key`, else a random one.
+A daemon left running (`stop` is `false`) never gets a random key, as the next executions could not know it: set parameter `api_key` (for all executions), else it has no authentication (a warning tells it).
+Its configuration file is in the temporary folder, readable only by the user.
 
 For example, to use an external, already running `transferd`, use option:
 

@@ -7,8 +7,11 @@ Released: [Place date of release here]
 ### New Features
 
 * Option `plugin_folder`: `--show-config` lists all the folders given (it showed only the last one), and `DEF` (the default) is the folder `plugins` of the configuration folder. `--plugin-folder=@json:[]` uses no plugin folder other than the one of the gem.
+* Development version of the gem: built from `main` every day it changes, not signed, and attached as `aspera-cli-nightly.gem` to the GitHub pre-release `nightly`. Its version is the version in development followed by the number of commits of `main`, e.g. `4.30.0.pre.5592`. See the manual, section "Installing the development version of the gem".
 
 ### Issues Fixed
+
+* Agent `transferd`: the daemon started by `ascli` had no authentication: during the transfer, another user of the host could call its API on the local port. It now requires an API key: the one of parameter `api_key`, else a random one, sent by `ascli` in each call. Its configuration file, in the temporary folder, is readable only by the user (it was readable by all). A daemon left running (`stop` is `false`) gets the key of parameter `api_key`, else it has no authentication, with a warning.
 
 ### Breaking Changes
 

@@ -435,8 +435,10 @@ components:
         api_key:
           type: string
           description: >-
-            API key of an existing daemon (`start` is `false`) that has `authentication` enabled in its configuration.
-            It is sent in the metadata `api_key` of each call.
+            API key of the daemon, sent in the metadata `api_key` of each call.
+            For an existing daemon: required if it has `authentication` enabled in its configuration.
+            For a daemon started by `ascli`: it is given `authentication` with this key, else with a random key if `stop` is `true`,
+            else without authentication (warning): set it so that a daemon left running can be used only by the executions that know it.
         ca_file:
           type: string
           description: >-

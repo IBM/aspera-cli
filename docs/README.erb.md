@@ -870,18 +870,21 @@ The user installs the gem with `HighSecurity` or `MediumSecurity`: this will suc
 gem install -P MediumSecurity <%=gemspec.name%>
 ```
 
-#### Installing a beta release of the gem
+#### Installing the development version of the gem
 
-A beta version of the gem can be found here: <https://ibm.biz/aspera-cli-beta>
+The development version of the gem is built from the branch `main` of the GitHub repository, every day it changes, and attached to the pre-release [`nightly`](https://github.com/IBM/aspera-cli/releases/tag/nightly).
+It is not a release, and it is not signed.
+
+Its version is the version in development followed by the number of commits of `main`, e.g. `4.30.0.pre.5592`: the build of a newer commit has a higher number, and the release (`4.30.0`) is higher than all.
 
 On Linux/macOS, install in a terminal:
 
 ```shell
-curl -sLo aspera-cli-beta.gem https://ibm.biz/aspera-cli-beta
-gem install aspera-cli-beta.gem
+curl -sLo <%=gemspec.name%>-nightly.gem https://github.com/IBM/aspera-cli/releases/download/nightly/<%=gemspec.name%>-nightly.gem
+gem install <%=gemspec.name%>-nightly.gem
 ```
 
-On Windows, download the file `aspera-cli-beta.gem` from the link, then install it with `gem install aspera-cli-beta.gem`.
+On Windows, download the file `<%=gemspec.name%>-nightly.gem` from the link, then install it with `gem install <%=gemspec.name%>-nightly.gem`.
 
 ### FASP Protocol: `ascp`
 
@@ -5058,6 +5061,10 @@ Options for `transfer` are:
 > [!NOTE]
 > If port zero is specified in the URL, then the daemon will listen on a random available port.
 > If no address is specified, then `127.0.0.1` is used.
+
+A daemon started by <%=tool%> requires an API key, so that other users of the host cannot use it: the one of parameter `api_key`, else a random one.
+A daemon left running (`stop` is `false`) never gets a random key, as the next executions could not know it: set parameter `api_key` (for all executions), else it has no authentication (a warning tells it).
+Its configuration file is in the temporary folder, readable only by the user.
 
 For example, to use an external, already running `transferd`, use option:
 
