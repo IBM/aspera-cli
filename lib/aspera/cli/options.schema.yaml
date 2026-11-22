@@ -449,6 +449,12 @@ components:
         Transfer agent selector and agent-specific parameters.
         Set `agent` to select the agent type (default: `direct`).
         Remaining keys are passed to the selected agent.
+      # Variants of the agents of bundles are added when the schema is read: see `Schema::Registry#add_variants`
+      x-cli-variants:
+        point: agent
+        value: name
+        schema: options_schema
+        suffix: AgentOptions
       oneOf:
         - $ref: "#/components/schemas/DirectAgentOptions"
         - $ref: "#/components/schemas/NodeAgentOptions"

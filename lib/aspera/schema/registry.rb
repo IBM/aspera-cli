@@ -4,7 +4,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require_relative '../assert'
+require_relative '../log'
 require_relative '../yaml'
+require_relative '../string_ext'
 require_relative 'reader'
 require 'singleton'
 
@@ -141,6 +143,8 @@ module Aspera
       REQ_BODY = '.requestBody.content.application/json.schema'
       # Suffix appended to a dotted path to signal query-param extraction in reader()
       QUERY_PARAMS_SUFFIX = '.parameters'
+      # Marker of a component whose `oneOf` variants are also given by the entries of an extension point of bundles, see `add_variants`
+      VARIANTS = 'x-cli-variants'
 
       def initialize
         @cache = {}
@@ -160,7 +164,7 @@ module Aspera
         Aspera.assert(Registry.known?(sym)) { "schema: #{sym}" }
         spec_file = LOCATIONS.key?(sym) ? File.join(@main_folder, LOCATIONS[sym]) : Registry.bundle_schema(sym).file
         # JSON is read with the YAML loader: it accepts the header comment added by `rake tools:openapi`
-        @cache[spec_file] = Yaml.safe_load(File.read(spec_file)) unless @cache.key?(spec_file)
+        @cache[spec_file] = add_variants(Yaml.safe_load(File.read(spec_file))) unless @cache.key?(spec_file)
         # Query-params path: strip the suffix, navigate to the operation node, extract parameters
         if path&.end_with?(QUERY_PARAMS_SUFFIX)
           parent_path = path.delete_suffix(QUERY_PARAMS_SUFFIX)
@@ -174,6 +178,62 @@ module Aspera
         reader = Reader.new(@cache[spec_file])
         return reader unless path
         reader.dig(*path.split('.'))
+      end
+
+      private
+
+      # Add the variants given by bundles to the components of `components.schemas` that have the marker `x-cli-variants`
+      # (`point`: extension point, `value`: field of an entry with the value of the discriminator, `schema`: field with the schema file of the variant,
+      # relative to the folder of the bundle, `suffix`: of the name of the component).
+      # For each entry of the point: a component `<Value><suffix>` read from the file, a `$ref` in `oneOf`, an entry in `discriminator.mapping`.
+      # An entry with the value of a variant of the document replaces it; an entry with the value of an earlier entry,
+      # or whose schema file cannot be read, is skipped with a warning. The marker is removed.
+      # @param document [Object] Document read from a schema file
+      # @return [Object] The document, with the variants added
+      def add_variants(document)
+        schemas = document.dig('components', 'schemas') if document.is_a?(Hash) && document['components'].is_a?(Hash)
+        return document unless schemas.is_a?(Hash)
+        schemas.values.select { |schema| schema.is_a?(Hash) && schema.key?(VARIANTS) }.each do |selector|
+          marker = selector.delete(VARIANTS)
+          one_of = selector['oneOf']
+          mapping = selector.dig('discriminator', 'mapping')
+          Aspera.assert_type(one_of, Array) { "#{VARIANTS}: oneOf" }
+          Aspera.assert_type(mapping, Hash) { "#{VARIANTS}: discriminator.mapping" }
+          # Loaded on use: `bundle_registry` requires this file
+          require_relative '../bundle_registry'
+          added = []
+          BundleRegistry.instance.extensions(marker.fetch('point').to_sym).each do |entry|
+            value, file = entry.fields.values_at(marker.fetch('value'), marker.fetch('schema'))
+            label = "Variant #{value} of bundle #{entry.bundle} is skipped"
+            next Log.log.warn { "#{label}: no #{marker['value']} or #{marker['schema']}" } unless value.is_a?(String) && file.is_a?(String)
+            next Log.log.warn { "#{label}: added by an earlier entry" } if added.include?(value)
+            component = "#{value.snake_to_capital}#{marker.fetch('suffix')}"
+            ref = "#/components/schemas/#{component}"
+            next Log.log.warn { "#{label}: component #{component} exists" } if schemas.key?(component) && !mapping[value].eql?(ref)
+            path = File.join(BundleRegistry.instance[entry.bundle].path, file)
+            variant = read_variant(path)
+            next Log.log.warn { "#{label}: cannot read #{path}: #{variant}" } if variant.is_a?(String)
+            schemas[component] = variant
+            index = one_of.index { |item| item['$ref'].eql?(mapping[value]) } if mapping.key?(value)
+            if index.nil?
+              one_of.push({'$ref' => ref})
+            else
+              one_of[index] = {'$ref' => ref}
+            end
+            mapping[value] = ref
+            added.push(value)
+          end
+        end
+        document
+      end
+
+      # @param path [String] Schema file of a variant (YAML or JSON)
+      # @return [Hash, String] The schema, or why it cannot be read
+      def read_variant(path)
+        variant = Yaml.safe_load(File.read(path))
+        variant.is_a?(Hash) ? variant : 'not a mapping'
+      rescue Psych::Exception, AssertError, SystemCallError => e
+        e.message
       end
     end
   end

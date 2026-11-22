@@ -290,10 +290,12 @@ module Aspera
 
     # Entries of an extension point, from the available bundles, data only: the code of an entry is loaded by `load_entry`.
     # A bundle that extends a point depends on the bundle that declares it, its entries are valid for the schema of the point (else it is unavailable).
+    # Registers the plugins of the sources first if it was not done.
     # @param point [Symbol] Name of the extension point
     # @return [Array<Extension>] Entries, by name of bundle, then in the order of the manifest; empty if no available bundle declares the point
     def extensions(point)
       Aspera.assert_type(point, Symbol)
+      scan unless @scanned
       available_plugins.flat_map { |plugin| plugin.extensions.select { |extension| extension.point.eql?(point) } }
     end
 
