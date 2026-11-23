@@ -3,13 +3,14 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-require_relative '../lib/aspera/faspex_postproc'
+require 'spec_helper'
+require_relative '../faspex4_post_proc_servlet'
 require 'fileutils'
 require 'json'
 require 'securerandom'
 require 'tmpdir'
 
-RSpec.describe(Aspera::Faspex4PostProcServlet) do
+RSpec.describe(Aspera::Plugins::Faspex5::Faspex4PostProcServlet) do
   subject(:servlet) { described_class.new(webrick, described_class.normalize_parameters(parameters)) }
 
   let(:webrick) { WEBrick::HTTPServer.new(BindAddress: '127.0.0.1', Port: 0, Logger: WEBrick::Log.new(File::NULL), AccessLog: [], DoNotListen: true) }

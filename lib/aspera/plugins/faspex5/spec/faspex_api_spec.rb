@@ -3,13 +3,13 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Unit tests for Aspera::Api::Faspex — no server needed.
+# Unit tests for Aspera::Plugins::Faspex5::Api — no server needed.
 
 require 'spec_helper'
-require_relative '../lib/aspera/api/faspex'
+require_relative '../api'
 require 'securerandom'
 
-RSpec.describe(Aspera::Api::Faspex) do
+RSpec.describe(Aspera::Plugins::Faspex5::Api) do
   describe 'web authentication' do
     # @return [Aspera::OAuth::Web]
     def web_oauth(**kwargs)

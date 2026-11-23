@@ -1,8 +1,6 @@
 # Configuration file for OpenAPI schema downloads
 # Each entry specifies a remote URL and the local destination file
 schemas:
-  - url: https://raw.githubusercontent.com/laurent-martin/aspera-api-examples/refs/heads/main/openapi/IBM%20Aspera%20Faspex%20API-5.0-enhanced.yaml
-    destination: lib/aspera/schema/IBM Aspera Faspex API-5.0-enhanced.yaml
   - url: https://raw.githubusercontent.com/laurent-martin/aspera-api-examples/refs/heads/main/openapi/IBM%20Aspera%20faspio%20Gateway%20API-1.0.0-enhanced.yaml
     destination: lib/aspera/schema/IBM Aspera faspio Gateway API-1.0.0-enhanced.yaml
   - url: https://raw.githubusercontent.com/laurent-martin/aspera-api-examples/refs/heads/main/openapi/IBM%20Aspera%20Console-enhanced.yaml

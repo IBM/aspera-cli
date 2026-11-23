@@ -7,28 +7,25 @@ require_relative '../lib/aspera/faspex_gw'
 require 'securerandom'
 
 RSpec.describe(Aspera::Faspex4GWServlet) do
-  subject(:servlet) { described_class.new(webrick, described_class.normalize_parameters(parameters), app_api, nil) }
+  subject(:servlet) { described_class.new(webrick, described_class.normalize_parameters(parameters), package_sender) }
 
   let(:parameters) { {} }
 
   let(:webrick) { WEBrick::HTTPServer.new(BindAddress: '127.0.0.1', Port: 0, Logger: WEBrick::Log.new(File::NULL), AccessLog: [], DoNotListen: true) }
-  # Faspex 5 API: records created packages
-  let(:app_api) do
-    stub_const('Aspera::Api::Faspex', Class.new do
-      const_set(:TRANSFER_CONNECT, 'connect')
+  # Package sender of the product: records the received packages, returns the transfer spec
+  let(:package_sender) do
+    Class.new do
       attr_reader :packages
 
       def initialize = @packages = []
 
-      def create(_subpath, package)
-        raise 'Faspex error' if package['title'].eql?('fail')
-        @packages.push(package)
-        {'id' => 'pkg1'}
+      def call(faspex_pkg_parameters)
+        delivery = faspex_pkg_parameters['delivery']
+        raise 'Faspex error' if delivery['title'].eql?('fail')
+        @packages.push(delivery)
+        {'remote_host' => 'faspex.example.com'}
       end
-
-      def call(**) = {'remote_host' => 'faspex.example.com', 'authentication' => 'token'}
-    end)
-    Aspera::Api::Faspex.new
+    end.new
   end
   let(:request_class) do
     Struct.new(:path, :body, :headers) do
@@ -65,18 +62,18 @@ RSpec.describe(Aspera::Faspex4GWServlet) do
   it 'creates the package and returns the upload transfer spec' do
     status, body = send_package
     expect(status).to(eq(200))
-    expect(body['xfer_sessions']).to(eq([{'remote_host' => 'faspex.example.com'}]))
-    expect(app_api.packages).to(eq([{'title' => 'test', 'note' => '', 'recipients' => [{'name' => 'user@example.com'}]}]))
+    expect(body).to(eq({'links' => {'status' => 'unused'}, 'xfer_sessions' => [{'remote_host' => 'faspex.example.com'}]}))
+    expect(package_sender.packages).to(eq([{'title' => 'test', 'note' => '', 'recipients' => ['user@example.com']}]))
   end
 
   it 'refuses a package sent by a web page without preflight' do
     expect(send_package(headers: {'Content-Type' => 'text/plain'})).to(match([415, include('error' => /Content-Type/)]))
-    expect(app_api.packages).to(be_empty)
+    expect(package_sender.packages).to(be_empty)
   end
 
   it 'refuses a package sent by a web page of another site' do
     expect(send_package(headers: {'Origin' => 'https://attacker.example.com'}).first).to(eq(403))
-    expect(app_api.packages).to(be_empty)
+    expect(package_sender.packages).to(be_empty)
   end
 
   it 'refuses an unknown endpoint' do
@@ -95,7 +92,7 @@ RSpec.describe(Aspera::Faspex4GWServlet) do
     expect(send_package(body: {delivery: {title: 'test'}}.to_json).first).to(eq(400))
     expect(send_package(body: {delivery: {recipients: []}}.to_json).first).to(eq(400))
     expect(send_package(body: {delivery: {recipients: [{}]}}.to_json).first).to(eq(400))
-    expect(app_api.packages).to(be_empty)
+    expect(package_sender.packages).to(be_empty)
   end
 
   describe 'with username and password' do
@@ -107,14 +104,14 @@ RSpec.describe(Aspera::Faspex4GWServlet) do
 
     it 'accepts the expected credentials' do
       expect(send_package(headers: basic('fx4', password)).first).to(eq(200))
-      expect(app_api.packages.length).to(eq(1))
+      expect(package_sender.packages.length).to(eq(1))
     end
 
     it 'refuses missing or wrong credentials' do
       [{}, basic('fx4', SecureRandom.hex(32)), basic('other', password), {'Authorization' => "Bearer #{password}"}].each do |headers|
         expect(send_package(headers: headers)).to(eq([401, {'error' => 'Invalid or missing credentials'}]))
       end
-      expect(app_api.packages).to(be_empty)
+      expect(package_sender.packages).to(be_empty)
     end
 
     it 'asks for Basic credentials' do
@@ -122,6 +119,10 @@ RSpec.describe(Aspera::Faspex4GWServlet) do
       servlet.do_POST(request_class.new('/aspera/faspex/send', '{}', {'Host' => 'localhost:9443', 'Content-Type' => 'application/json'}), res)
       expect(res['WWW-Authenticate']).to(eq('Basic realm="Faspex 4 Gateway"'))
     end
+  end
+
+  it 'refuses a package sender that cannot be called' do
+    expect { described_class.new(webrick, described_class.normalize_parameters(parameters), nil) }.to(raise_error(Aspera::ParameterError, /callable/))
   end
 
   describe '.normalize_parameters' do

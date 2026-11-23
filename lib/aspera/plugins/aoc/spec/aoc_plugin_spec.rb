@@ -42,6 +42,20 @@ module Aspera
           end
         end
 
+        describe '#faspex4_send_to_aoc' do
+          it 'creates the package in the workspace, and returns the upload transfer spec' do
+            api = instance_double(Api, create_package_simple: {spec: {'remote_host' => 'aoc.example.com'}})
+            context = Cli::Context.new
+            context.man_header = false
+            context.options = Cli::Parser.new('test', [])
+            instance = described_class.new(context: context)
+            instance.define_singleton_method(:aoc_api) { api }
+            spec = instance.send(:faspex4_send_to_aoc, {'delivery' => {'title' => 'T', 'note' => 'N', 'recipients' => ['user@example.com']}}, 'ws1')
+            expect(spec).to(eq({'remote_host' => 'aoc.example.com'}))
+            expect(api).to(have_received(:create_package_simple).with({'name' => 'T', 'note' => 'N', 'recipients' => ['user@example.com'], 'workspace_id' => 'ws1'}, true, nil))
+          end
+        end
+
         context 'with a command line' do
           # @param argv [Array<String>] command line
           # @param automation_api [Object, nil] Automation API, set by `setup_automation_api`

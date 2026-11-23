@@ -17,11 +17,6 @@ cli/plugins/config.rb:
 - const Transfer::Spec
 - require ascp/installation
 - require transfer/spec
-cli/plugins/faspex5.rb:
-- const Api::Faspex
-- const Transfer::Result
-- require api/faspex
-- require transfer/result
 cli/plugins/orchestrator.rb:
 - const Transfer::Spec
 - require transfer/spec
@@ -39,9 +34,6 @@ cli/runner.rb:
 - const Transfer::Result
 - const Transfer::Spec
 - require transfer/result
-faspex_gw.rb:
-- const Api::Faspex
-- require api/faspex
 plugins/ats/commands.rb:
 - const Api::Alee
 - require api/alee

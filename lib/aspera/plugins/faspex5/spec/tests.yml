@@ -1,0 +1,1225 @@
+# Faspex 5 ------------------------------------------------------
+f5_health:
+  tags:
+    - health
+  args:
+    - -N
+    - faspex5
+    - health
+    - --url=@preset:f5_user.url
+f5_health_bad:
+  tags:
+    - no_doc
+  args:
+    - -N
+    - faspex5
+    - health
+    - --url=https://www.ibm.com
+f5_health_nagios:
+  tags:
+    - must_fail
+    - no_doc
+  expect: ""
+  args:
+    - -N
+    - faspex5
+    - health
+    - --url=https://www.ibm.com
+    - --format=nagios
+f5_detect:
+  tags:
+    - faspex5
+  args:
+    - config
+    - detect
+    - "@:"
+    - url=@preset:f5_user.url
+    - plugin=faspex5
+f5_wizard:
+  tags:
+    - faspex5
+  args:
+    - config
+    - wizard
+    - "@:"
+    - url=@preset:f5_user.url
+    - plugin=faspex5
+    - override=yes
+    - --username=@preset:f5_user.username
+    - --private-key=@file:@preset:file.private_key
+    - --client-id=@preset:f5_user.client_id
+    - --client-secret=@preset:f5_user.client_secret
+f5_wizard_show_secrets:
+  tags:
+    - faspex5
+    - no_doc
+  args:
+    - config
+    - wizard
+    - "@:"
+    - url=@preset:f5_user.url
+    - plugin=faspex5
+    - override=yes
+    - --username=a@b.c
+    - --private-key=@file:@preset:file.private_key
+f5_wizard_no_key:
+  tags:
+    - faspex5
+    - no_doc
+  pre: generated_secret(:dummy)
+  args:
+    - config
+    - wizard
+    - "@:"
+    - url=https://eudemo.asperademo.com
+    - plugin=faspex5
+    - override=yes
+    - --username=admin@ibm.com
+    - --private-key=
+    - --out.secrets=yes
+    - --client-id=abc
+    - --client-secret=$(secret :dummy)
+f5_wizard_stdin:
+  priority: 1
+  description: Wizard without ASCLI_WIZ_TEST, the private key (empty to generate) and the Enter that validates the public key are read on the terminal.
+  tags:
+    - faspex5
+    - no_doc
+    - interactive
+  pre: generated_secret(:dummy)
+  env:
+    ASCLI_WIZ_TEST: ~
+  stdin: "\n\n"
+  args:
+    - config
+    - wizard
+    - "@:"
+    - url=https://eudemo.asperademo.com
+    - plugin=faspex5
+    - preset=f5_stdin
+    - override=yes
+    - --username=admin@ibm.com
+    - --out.secrets=yes
+    - --client-id=abc
+    - --client-secret=$(secret :dummy)
+f5_detect_fail:
+  tags:
+    - faspex5
+    - must_fail
+    - no_doc
+  expect: No known application found
+  args:
+    - config
+    - detect
+    - "@:"
+    - url=https://eudemo.asperademo.com:33001
+    - plugin=faspex5
+f5_detect_ok:
+  description: Auto-detect without specifying plugin (-N flag)
+  args:
+    - -N
+    - config
+    - detect
+    - "@:"
+    - url=@preset:f5_user.url
+f5_detect_ok_faspex5:
+  description: Auto-detect with explicit faspex5 plugin hint
+  args:
+    - config
+    - detect
+    - "@:"
+    - url=@preset:f5_user.url
+f5_version:
+  args:
+    - faspex5
+    - version
+f5_pack_recv_init:
+  args:
+    - faspex5
+    - packages
+    - receive
+    - INIT
+    - --once-only=yes
+f5_pack_send:
+  pre: generated_secret(:content_protection)
+  args:
+    - faspex5
+    - packages
+    - send
+    - "@:"
+    - title=test title
+    - recipients.0.name=@preset:f5_user.username
+    #    - metadata=@preset:f5_misc.meta
+    - END
+    - $(PATH_TST_ASC_LCL)
+    - --ts.content_protection_password=$(secret :content_protection)
+f5_pack_send_ear:
+  description: Send a package with encryption at rest, set by transfer spec parameter content_protection
+  pre: generated_secret(:f5_ear)
+  args:
+    - faspex5
+    - packages
+    - send
+    - "@:"
+    - title=test ear
+    - recipients.0.name=@preset:f5_user.username
+    - END
+    - $(PATH_TST_ASC_LCL)
+    - --ts.content_protection=encrypt
+    - --ts.content_protection_password=$(secret :f5_ear)
+f5_pack_send_recipient_types:
+  description: Send a package to a recipient given by name, looked up in the given recipient types
+  args:
+    - faspex5
+    - packages
+    - send
+    - "@:"
+    - title=test recipient types
+    - recipients.0=@preset:f5_user.username
+    - recipient_types.0=user
+    - END
+    - $(PATH_TST_ASC_LCL)
+f5_pack_recv_once:
+  description: Receive packages not received since INIT, with option once_only
+  depends_on:
+    - f5_pack_recv_init
+    - f5_pack_send
+  args:
+    - faspex5
+    - packages
+    - receive
+    - ALL
+    - --once-only=yes
+    - --to-folder=$(TMP)
+f5_pack_list:
+  args:
+    - faspex5
+    - packages
+    - list
+    - --query=@json:{"mailbox":"inbox","status":"completed"}
+f5_pack_list_admin:
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - packages
+    - list
+    - --box=ALL
+f5_pack_list_out:
+  args:
+    - faspex5
+    - packages
+    - list
+    - --box=outbox
+    - --fields=DEF,sender.email,recipients.0.recipient_type
+f5_sh_folder_list:
+  args:
+    - faspex5
+    - shared_folders
+    - list
+f5_sh_folder_browse:
+  args:
+    - faspex5
+    - shared_folders
+    - browse
+    - "@extend:%name:@preset:f5_misc.shared_folder_name@"
+f5_pack_send_shared:
+  description: Send package to normal user
+  tags:
+    - save_output
+    - no_doc
+  args:
+    - faspex5
+    - packages
+    - send
+    - --shared-folder=@extend:%name:@preset:f5_misc.shared_folder_name@
+    - "@:"
+    - title=test title
+    - recipients.0=@preset:f5_user.username
+    - END
+    - "@preset:f5_misc.shared_folder_file"
+    - --fields=id
+    - --out.level=data
+  post: 'puts "Sent package with id: #{t.saved_output :f5_pack_send_shared}"'
+f5_pack_send_shared_status:
+  depends_on:
+    - f5_pack_send_shared
+  args:
+    - faspex5
+    - packages
+    - status
+    - $(t.saved_output :f5_pack_send_shared)
+    - "@list:,failed,completed"
+f5_pack_id:
+  depends_on:
+    - f5_pack_send_shared
+  tags:
+    - save_output
+    - no_doc
+  args:
+    - faspex5
+    - packages
+    - list
+    - --query.status=completed
+    - --query.max=1
+    - --fields=id
+  harness:
+    poll:
+      interval: 5
+      max: 60
+      until: "@"
+      show: last
+f5_pack_show:
+  depends_on:
+    - f5_pack_id
+  args:
+    - faspex5
+    - packages
+    - show
+    - $(t.saved_output :f5_pack_id)
+f5_pack_status:
+  depends_on:
+    - f5_pack_id
+  args:
+    - faspex5
+    - packages
+    - status
+    - $(t.saved_output :f5_pack_id)
+f5_pack_browse:
+  depends_on:
+    - f5_pack_id
+  args:
+    - faspex5
+    - packages
+    - browse
+    - $(t.saved_output :f5_pack_id)
+    - --query.recursive=true
+f5_pack_recv:
+  depends_on:
+    - f5_pack_id
+  pre: generated_secret(:content_protection)
+  args:
+    - faspex5
+    - packages
+    - receive
+    - $(t.saved_output :f5_pack_id)
+    - --to-folder=$(TMP)
+    - --ts.content_protection_password=$(secret :content_protection)
+f5_pack_first_file:
+  depends_on:
+    - f5_pack_id
+  tags:
+    - save_output
+    - no_doc
+  args:
+    - faspex5
+    - packages
+    - browse
+    - $(t.saved_output :f5_pack_id)
+    - --fields=path
+    - --query.max=1
+f5_pack_recv_file:
+  depends_on:
+    - f5_pack_first_file
+  pre: generated_secret(:content_protection)
+  args:
+    - faspex5
+    - packages
+    - receive
+    - $(t.saved_output :f5_pack_id)
+    - $(t.saved_output :f5_pack_first_file)
+    - --to-folder=$(TMP)
+    - --ts.content_protection_password=$(secret :content_protection)
+f5_pack_recv_all:
+  depends_on:
+    - f5_pack_id
+    - f5_pack_send_ear
+  args:
+    - faspex5
+    - packages
+    - receive
+    - ALL
+    - --once-only=yes
+    - --to-folder=$(TMP)
+    - --query.max=5
+    - --ts.content_protection_password=$(secret :f5_ear)
+f5_pack_delete:
+  depends_on:
+    - f5_pack_recv_all
+  args:
+    - faspex5
+    - packages
+    - delete
+    - $(t.saved_output :f5_pack_id)
+f5_pack_shbox_send:
+  args:
+    - faspex5
+    - packages
+    - send
+    - "@:"
+    - title=for shared inbox
+    - recipients.0=@preset:f5_misc.shared_box_name
+    - metadata.Options=Opt1
+    - metadata.TextInput=example text
+    - END
+    - $(PATH_TST_ASC_LCL)
+f5_pack_shbox_list:
+  depends_on:
+    - f5_pack_shbox_send
+  args:
+    - faspex5
+    - packages
+    - list
+    - --box=@preset:f5_misc.shared_box_name
+f5_pack_shbox_list_id:
+  depends_on:
+    - f5_pack_shbox_list
+  tags:
+    - save_output
+    - no_doc
+  args:
+    - faspex5
+    - packages
+    - list
+    - --box=@preset:f5_misc.shared_box_name
+    - --query=@json:{"status":"completed","limit":1,"max":1}
+    - --fields=id
+    - --format=csv
+    - --out.level=data
+  harness:
+    poll:
+      interval: 5
+      max: 60
+      until: "@"
+      show: last
+f5_pack_shbox_show:
+  depends_on:
+    - f5_pack_shbox_list_id
+  args:
+    - faspex5
+    - packages
+    - show
+    - --box=@preset:f5_misc.shared_box_name
+    - $(t.saved_output :f5_pack_shbox_list_id)
+f5_pack_shbox_recv:
+  depends_on:
+    - f5_pack_shbox_list_id
+  args:
+    - faspex5
+    - packages
+    - receive
+    - --box=@preset:f5_misc.shared_box_name
+    - $(t.saved_output :f5_pack_shbox_list_id)
+    - --to-folder=$(TMP)
+f5_pack_shbox_public:
+  args:
+    - -N
+    - faspex5
+    - packages
+    - send
+    - --url=@preset:f5_misc.public_link_send_shared_box
+    - '@json:@extend:{"title":"test title"}'
+    - $(PATH_TST_ASC_LCL)
+f5_pack_user_public:
+  args:
+    - -N
+    - faspex5
+    - packages
+    - send
+    - --url=@preset:f5_misc.public_link_send_to_user
+    - '@json:@extend:{"title":"test title"}'
+    - $(PATH_TST_ASC_LCL)
+f5_pub_link_gen_send_user:
+  description: Generate a public link to send a package to the user (field `access_url`). Copy it to preset `f5_misc.public_link_send_to_user`.
+  tags:
+    - setup
+    - f5_pub_link
+    - no_doc
+  args:
+    - faspex5
+    - invitations
+    - create
+    - "@:"
+    - email_address=@preset:misc.email_external
+    - --fields=access_url
+f5_pub_link_gen_send_shared_box:
+  description: Generate a public link to send a package to the shared inbox (field `access_url`). Copy it to preset `f5_misc.public_link_send_shared_box`.
+  tags:
+    - setup
+    - f5_pub_link
+    - no_doc
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - invitations
+    - create
+    - "@:"
+    - email_address=@preset:misc.email_external
+    - recipient_name=ascli-shinbox
+    - recipient_type=shared_inbox
+    - --fields=access_url
+f5_pub_link_gen_recv:
+  description: The link to receive a package is built by the server (random passcode, not returned by the API), it is only sent by email to the recipient. Copy it to preset `f5_misc.public_link_recv_fr_user`.
+  tags:
+    - setup
+    - f5_pub_link
+    - no_doc
+  args:
+    - faspex5
+    - packages
+    - send
+    - '@json:@extend:{"title":"test public link","recipients":[{"name":"@preset:misc.email_external@","recipient_type":"external_user","public_download":true}]}'
+    - $(PATH_TST_ASC_LCL)
+f5_pub_link_no_expire:
+  description: Links received by email expire (3 days by default), so disable the expiration for the link in `f5_misc.public_link_recv_fr_user`.
+  tags:
+    - setup
+    - f5_pub_link
+    - no_doc
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - configuration
+    - modify
+    - "@:"
+    - package_link_expires=false
+    - package_link_expires_after_full_download=false
+f5_pack_recv_public_link_all:
+  tags:
+    - f5_pub_link
+  args:
+    - -N
+    - faspex5
+    - packages
+    - receive
+    - --url=@preset:f5_misc.public_link_recv_fr_user
+    - ALL
+    - --to-folder=$(TMP)
+f5_pack_recv_public_link_simple:
+  tags:
+    - f5_pub_link
+  args:
+    - -N
+    - faspex5
+    - packages
+    - receive
+    - --url=@preset:f5_misc.public_link_recv_fr_user
+    - --to-folder=$(TMP)
+f5_pack_browse_public_link:
+  tags:
+    - f5_pub_link
+  args:
+    - -N
+    - faspex5
+    - packages
+    - browse
+    - --url=@preset:f5_misc.public_link_recv_fr_user
+    - /
+f5_pack_browse_public_link_wrong_folder:
+  description: With a public link, the folder argument is used (it was ignored).
+  expect: "Rest: An error occurred in browsing directory on the HSTS node."
+  tags:
+    - must_fail
+    - no_doc
+    - f5_pub_link
+  args:
+    - -N
+    - faspex5
+    - packages
+    - browse
+    - --url=@preset:f5_misc.public_link_recv_fr_user
+    - /not_a_folder_in_package
+f5_pack_wrkgrp:
+  args:
+    - faspex5
+    - packages
+    - send
+    - '@json:@extend:{"title":"test title","recipients":["@preset:f5_misc.workgroup@"]}'
+    - $(PATH_TST_ASC_LCL)
+f5_pack_wrkgrp_list:
+  depends_on:
+    - f5_workgroup_pack_id
+  args:
+    - faspex5
+    - packages
+    - list
+    - --box=@preset:f5_misc.workgroup
+    - --group-type=workgroups
+f5_workgroup_pack_id:
+  depends_on:
+    - f5_pack_wrkgrp
+  tags:
+    - save_output
+    - no_doc
+  args:
+    - faspex5
+    - packages
+    - list
+    - --box=@preset:f5_misc.workgroup
+    - --group-type=workgroups
+    - --query=@json:{"status":"completed","limit":1,"max":1}
+    - --fields=id
+  harness:
+    poll:
+      interval: 5
+      max: 60
+      until: "@"
+      show: last
+f5_pack_wrkgrp_show:
+  depends_on:
+    - f5_workgroup_pack_id
+  args:
+    - faspex5
+    - packages
+    - show
+    - --box=@preset:f5_misc.workgroup
+    - --group-type=workgroups
+    - $(t.saved_output :f5_workgroup_pack_id)
+f5_pack_wrkgrp_recv:
+  depends_on:
+    - f5_workgroup_pack_id
+  args:
+    - faspex5
+    - packages
+    - receive
+    - --box=@preset:f5_misc.workgroup
+    - --group-type=workgroups
+    - $(t.saved_output :f5_workgroup_pack_id)
+    - --to-folder=$(TMP)
+f5_shared_list:
+  args:
+    - faspex5
+    - shared
+    - list
+f5_shared_browse:
+  args:
+    - faspex5
+    - shared
+    - browse
+    - "%name:@preset:f5_misc.shared_folder_name"
+f5_user_bearer:
+  args:
+    - faspex5
+    - bearer_token
+f5_user_contacts:
+  args:
+    - faspex5
+    - admin
+    - contacts
+    - list
+f5_admin_workgroups:
+  args:
+    - faspex5
+    - admin
+    - workgroups
+    - list
+f5_admin_shared_inboxes:
+  args:
+    - faspex5
+    - admin
+    - shared_inboxes
+    - list
+f5_admin_saml_configs:
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - saml_configs
+    - list
+f5_admin_metadata_profiles:
+  args:
+    - faspex5
+    - admin
+    - metadata_profiles
+    - list
+f5_admin_configuration:
+  args:
+    - faspex5
+    - admin
+    - configuration
+    - show
+f5_dist_create:
+  args:
+    - faspex5
+    - admin
+    - distribution_lists
+    - create
+    - '@json:{"name":"test4","contacts":[{"name":"john@example.com"}]}'
+f5_dist_list:
+  depends_on:
+    - f5_dist_create
+  args:
+    - faspex5
+    - admin
+    - distribution_lists
+    - list
+    - --query.type=global
+f5_dist_delete:
+  depends_on:
+    - f5_dist_list
+  args:
+    - faspex5
+    - admin
+    - distribution_lists
+    - delete
+    - "%name:test4"
+f5_adm_acc_list:
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - accounts
+    - list
+f5_adm_job_list:
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - jobs
+    - list
+    - --query=@json:{"job_type":"email","status":"failed"}
+    - --fields=id,error_desc
+f5_adm_nd_list:
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - node
+    - list
+f5_adm_nd_show:
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - node
+    - show
+    - "%name:Local"
+f5_adm_nd_browse:
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - node
+    - browse
+    - "%name:Local"
+f5_adm_nd_sh_list:
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - node
+    - shared_folders
+    - "%name:Local"
+    - list
+f5_adm_nd_sh_show:
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - node
+    - shared_folders
+    - "%name:Local"
+    - show
+    - "%name:Main"
+f5_adm_nd_sh_usr_list:
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - node
+    - shared_folders
+    - "%name:Local"
+    - user
+    - "%name:Main"
+    - list
+f5_adm_api_list:
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - oauth_clients
+    - list
+f5_adm_alternate_addresses:
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - alternate_addresses
+    - list
+f5_adm_email_notifications:
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - email_notifications
+    - list
+f5_adm_email_notif_welcome:
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - email_notifications
+    - show
+    - welcome_email
+f5_adm_email_notif_modif:
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - configuration
+    - modify
+    - "@:"
+    - mfa_required=false
+f5_adm_reg_list:
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - registrations
+    - list
+f5_adm_sbx_list:
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - shared_inboxes
+    - list
+    - --query.all=true
+f5_adm_sbx_mem:
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - shared_inboxes
+    - members
+    - "@extend:%name:@preset:f5_misc.shared_box_name@"
+    - list
+f5_adm_sbx_cr:
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - shared_inboxes
+    - members
+    - "@extend:%name:@preset:f5_misc.shared_box_name@"
+    - create
+    - "%name:john@example.com"
+    - submit_only
+f5_adm_sbx_delete:
+  depends_on:
+    - f5_adm_sbx_cr
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - shared_inboxes
+    - members
+    - "@extend:%name:@preset:f5_misc.shared_box_name@"
+    - delete
+    - "%name:john@example.com"
+f5_adm_sbx_saml_lookup:
+  description: SAML group of shared inbox looked up by name (fails before any deletion).
+  tags:
+    - must_fail
+    - no_doc
+  expect: "group_name=no_such_saml_group: not found"
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - shared_inboxes
+    - saml_groups
+    - "@extend:%name:@preset:f5_misc.shared_box_name@"
+    - delete
+    - "%name:no_such_saml_group"
+f5_adm_evt_app:
+  description: Retrieve successful login in the last hour.
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - event
+    - application
+    - --query=@ruby:{"event_type[]"=>["login_success"],"created_at_start"=>(Time.now.utc-60).strftime("%Y-%m-%dT%H:%M:%S.%LZ")}
+f5_adm_evt_web:
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - event
+    - webhook
+f5_adm_sh_invite:
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - shared_inboxes
+    - invite
+    - "@extend:%name:@preset:f5_misc.shared_box_name@"
+    - "@:"
+    - email_address=johnny@example.com
+f5_adm_shbox_member_delete:
+  $comment: TODO check if fail is normal
+  tags:
+  #    - cleanup
+  depends_on:
+    - f5_adm_sh_invite
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - shared_inboxes
+    - members
+    - "@extend:%name:@preset:f5_misc.shared_box_name@"
+    - delete
+    - "%name:johnny@example.com"
+f5_clean_delete:
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - clean_deleted
+f5_smtp:
+  tags:
+    - must_fail
+  expect: This SMTP configuration already exists
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - smtp
+    - create
+    - '@json:{"auth_type":"open","server_address":"smtp.gmail.com","server_port":587,"domain":"gmail.com","tls_enabled":true,"packages_recipient_from":"sender"}'
+f5_smtp_mod:
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - smtp
+    - modify
+    - "@:"
+    - default_time_zone_offset=@val:0
+f5_smtp_sh:
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - smtp
+    - show
+f5_smtp_tst:
+  tags:
+    - f5_pub_link
+  args:
+    - --preset=f5_admin
+    - faspex5
+    - admin
+    - smtp
+    - test
+    - "@preset:misc.email_external"
+f5_user_account:
+  args:
+    - faspex5
+    - user
+    - account
+f5_user_account_query:
+  args:
+    - faspex5
+    - user
+    - account
+    - --query.expand=true
+f5_user_profile_show:
+  args:
+    - faspex5
+    - user
+    - profile
+    - show
+f5_user_profile_mod:
+  args:
+    - faspex5
+    - user
+    - profile
+    - modify
+    - "@:"
+    - preference.rows_per_page=10
+f5_invite_create:
+  $comment: public invitation
+  args:
+    - faspex5
+    - invitations
+    - create
+    - "@:"
+    - email_address=aspera.user1+u@gmail.com
+f5_invite_list:
+  depends_on:
+    - f5_invite_create
+  args:
+    - faspex5
+    - invitation
+    - list
+f5_invite_id:
+  depends_on:
+    - f5_invite_list
+  tags:
+    - save_output
+    - no_doc
+  args:
+    - faspex5
+    - invitation
+    - list
+    - --fields=id
+    - --format=csv
+f5_invite_show:
+  tags:
+    - no_doc
+  depends_on:
+    - f5_invite_id
+  args:
+    - faspex5
+    - invitation
+    - show
+    - $(t.saved_output(:f5_invite_id).split("\n").first)
+f5_invite_resend:
+  tags:
+    - no_doc
+  depends_on:
+    - f5_invite_id
+  args:
+    - faspex5
+    - invitation
+    - resend
+    - $(t.saved_output(:f5_invite_id).split("\n").first)
+f5_invite_delete:
+  tags:
+    - no_doc
+  depends_on:
+    - f5_invite_show
+    - f5_invite_resend
+  args:
+    - faspex5
+    - invitation
+    - delete
+    - --bulk=yes
+    - "@lines:@file:$(t.out_file('f5_invite_id'))"
+f5_webauth:
+  priority: 1
+  tags:
+    - interactive
+  pre: "select_browser(login_preset: 'f5_user_web')"
+  args:
+    - --preset=f5_web
+    - faspex5
+    - version
+f5_mock_idp_start:
+  description: Start the local mock IdP server for --auth=web tests.
+  tags:
+    - background
+    - no_doc
+    - faspex5
+  pre: |
+    t.stop_process(:f5_mock_idp_start) rescue nil
+    generated_secret(:mock_idp_auth)
+  command: ../tests/mock_idp.rb
+  args:
+    - --port=13783
+    - --access-code=$(secret :mock_idp_auth)
+f5_mock_webauth:
+  priority: 1
+  description: Faspex 5 package list with --auth=web against local mock IdP.
+  tags:
+    - interactive
+    - no_doc
+    - faspex5
+  depends_on:
+    - f5_mock_idp_start
+  pre: "select_browser(access_code: :mock_idp_auth)"
+  args:
+    - faspex5
+    - package
+    - list
+    - --url=http://127.0.0.1:13783/aspera/faspex
+    - --auth=web
+    - --client-id=mock_client_id
+    - --redirect-uri=http://127.0.0.1:12345
+  expect: 'mock_pkg_1,Mock Package 1,completed,mock_user,"",2026-01-01T00:00:00Z,1024,1'
+  post: t.stop_process(:f5_mock_idp_start)
+f5_mock_idp_https_start:
+  description: Start the local mock IdP server with HTTPS (self-signed certificate), the login page of `config web_login` shall be https.
+  tags:
+    - background
+    - no_doc
+    - faspex5
+  pre: |
+    t.stop_process(:f5_mock_idp_https_start) rescue nil
+    generated_secret(:mock_idp_auth)
+  command: ../tests/mock_idp.rb
+  args:
+    - --port=13783
+    - --https
+    - --access-code=$(secret :mock_idp_auth)
+f5_mock_idp_paste_start:
+  description: Start the local mock IdP server for the test with --ui.web_auth=paste, with its own start because the server is stopped by the test that uses it.
+  tags:
+    - background
+    - no_doc
+    - faspex5
+  pre: |
+    t.stop_process(:f5_mock_idp_paste_start) rescue nil
+    generated_secret(:mock_idp_auth)
+  command: ../tests/mock_idp.rb
+  args:
+    - --port=13783
+    - --access-code=$(secret :mock_idp_auth)
+f5_mock_webauth_paste:
+  priority: 1
+  description: Faspex 5 package list with --auth=web and --ui.web_auth=paste against local mock IdP, the URL of redirection is pasted on the terminal.
+  tags:
+    - interactive
+    - tty
+    - no_doc
+    - faspex5
+  depends_on:
+    - f5_mock_idp_paste_start
+  stdin: "$(mock_idp_paste_reply(screen, :mock_idp_auth))\n"
+  env:
+    ASCLI_UI: ~
+  expect: 'mock_pkg_1,Mock Package 1,completed,mock_user,"",2026-01-01T00:00:00Z,1024,1'
+  post: t.stop_process(:f5_mock_idp_paste_start)
+  args:
+    - faspex5
+    - package
+    - list
+    - --url=http://127.0.0.1:13783/aspera/faspex
+    - --auth=web
+    - --client-id=mock_client_id
+    - --redirect-uri=http://127.0.0.1:12345
+    - --ui.web_auth=paste
+f5_fxgw_start:
+  description: Start a faspex4->faspex5 gateway in background.
+  tags:
+    - background
+    - fx_gateway
+  args:
+    - faspex5
+    - gateway
+    - "@:"
+    - url=https://localhost:12346/aspera/faspex
+f5_fxgw_test:
+  description: Test the faspex4->faspex5 gateway.
+  tags:
+    - no_doc
+    - fx_gateway
+  depends_on:
+    - f5_fxgw_start
+  pre: |
+    transfer_spec = faspex4_send_transfer_spec(url: 'https://localhost:12346/aspera/faspex', recipients: ['laurent.martin.aspera@fr.ibm.com'], title: 'gateway aoc')
+    (TMP / 'f5_fxgw_ts.json').write(JSON.generate(transfer_spec))
+  args:
+    - --preset=no_wss
+    - server
+    - upload
+    - --url=https://eudemo.asperademo.com:443
+    - --ts=@json:@file:$(TMP / 'f5_fxgw_ts.json')
+    - faux:///test1?1m
+  post: |
+    Aspera::Rest::Parameters.instance.session_cb = ->(s){s.verify_mode = OpenSSL::SSL::VERIFY_NONE}
+    Aspera::Rest::Client.new(base_url: 'https://localhost:12346/aspera/faspex').call(operation: 'POST', subpath: 'send', content_type: Aspera::Mime::TEXT, body: 'bad', exception:false, ret: :resp)
+    Aspera::Rest::Client.new(base_url: 'https://localhost:12346/aspera/faspex').call(operation: 'POST', subpath: 'bad', content_type: Aspera::Mime::TEXT, body: 'bad', exception:false, ret: :resp)
+    t.stop_process :f5_fxgw_start
+f5_postproc_pid:
+  tags:
+    - background
+  pre: |
+    generated_secret(:pkcs12)
+    run('openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-sha256', '-days', 365, '-nodes', '-keyout', TMP / 'key.pem', '-out', TMP / 'cert.pem', '-subj', '/CN=localhost')
+    run('openssl', 'pkcs12', '-export', '-out', TMP / 'localhost.p12', '-inkey', TMP / 'key.pem', '-in', TMP / 'cert.pem', '-passout', "pass:#{secret(:pkcs12)}")
+  args:
+    - faspex5
+    - postprocessing
+    - "@:"
+    - url=https://localhost:8553/asclihook
+    - script_folder=$(PATH_SCRIPTS)
+    - cert=$(TMP / "localhost.p12")
+    - key=$(secret :pkcs12)
+f5_postproc_test:
+  depends_on:
+    - f5_postproc_pid
+  args:
+    - faspex5
+    - packages
+    - send
+    - '@json:@extend:{"title":"test_webhook_ascli","recipients":["@preset:f5_misc.shared_box_name@"]}'
+    - faux:///test1?1m
+  post: |
+    wait_listening(8553, tls: true)
+    Aspera::Rest::Parameters.instance.session_cb = ->(s){s.verify_mode = OpenSSL::SSL::VERIFY_NONE}
+    Aspera::Rest::Client.new(base_url: 'https://localhost:8553/asclihook').create('post_proc_test.sh', {faspex_pkg_directory: '/package test - 61ae5292-d8ef-496e-8b15-8cdc0379fc4a.aspera-package/PKG - package test',faspex_pkg_name:'Test files',faspex_pkg_note:'',faspex_pkg_id:506,faspex_pkg_delivery_id:506,faspex_recipient_list:'aspera-recipient-test@ibm.com',faspex_recipient_count:1,faspex_sender_id:30,faspex_sender_name:'aspera-sender-test@ibm.com',faspex_sender_email:'aspera-sender-test@ibm.com',faspex_pkg_total_bytes:4633,faspex_pkg_total_files:1,faspex_pkg_uuid:'61ae5299-d8ea-496e-8b15-8cdc0379fc4a',faspex_metadata_fields: '{\"_pkg_uuid\":\"61ae5292-d8ef-496e-8b15-8cdc0379fc4a\",\"_pkg_name\":\"Test files\",\"_created_utc\":\"2022-1209T17:47:03.545Z\"}',faspex_recipient_0:'aspera-sender-test@ibm.com'}, exception:false, ret: :resp)
+    Aspera::Rest::Client.new(base_url: 'https://localhost:8553').create('wrong', {}, exception:false, ret: :resp)
+    t.stop_process :f5_postproc_pid
+f5_postproc_test_with_key:
+  tags:
+    - background
+    - no_doc
+  args:
+    - faspex5
+    - postprocessing
+    - '@json:{"url":"https://localhost:8554/asclihook","script_folder":"$(PATH_SCRIPTS)","key":"$(TMP / "key.pem")"}'
+  post: |
+    wait_listening(8554, tls: true)
+    t.stop_process :f5_postproc_test_with_key
+f5_postproc_test_with_key_cert:
+  tags:
+    - background
+    - no_doc
+  args:
+    - faspex5
+    - postprocessing
+    - '@json:{"url":"https://localhost:8555/asclihook","script_folder":"$(PATH_SCRIPTS)","cert":"$(TMP / "cert.pem")","key":"$(TMP / "key.pem")"}'
+  post: |
+    wait_listening(8555, tls: true)
+    t.stop_process :f5_postproc_test_with_key_cert
+f5_cert_test:
+  tags:
+    - background
+    - no_doc
+  args:
+    - faspex5
+    - postprocessing
+    - '@json:{"url":"http://localhost:18080/domain","script_folder":"$(PATH_SCRIPTS)"}'
+  post: |
+    wait_listening(18080)
+    t.stop_process :f5_cert_test
+f5_postproc_cert_pem:
+  tags:
+    - background
+    - no_doc
+  args:
+    - faspex5
+    - postprocessing
+    - '@json:{"url":"https://localhost:18443/domain","script_folder":"$(PATH_SCRIPTS)"}'
+  post: |
+    wait_listening(18443, tls: true)
+    t.stop_process :f5_postproc_cert_pem
+f5_postproc_cert_pkcs12:
+  tags:
+    - background
+    - no_doc
+  pre: run('openssl', 'req', '-newkey', 'rsa:2048', '-x509', '-days', 365, '-nodes', '-keyout', TMP / 'private_key.pem', '-out', TMP / 'certificate.pem', '-subj', '/CN=MyCert')
+  args:
+    - faspex5
+    - postprocessing
+    - '@json:{"url":"https://localhost:18443/domain","cert":"$(TMP / "certificate.pem")","chain":"$(TMP / "certificate.pem")","key":"$(TMP / "private_key.pem")","script_folder":"$(PATH_SCRIPTS)"}'
+  post: |
+    wait_listening(18443, tls: true)
+    t.stop_process :f5_postproc_cert_pkcs12
+f5_postproc_cert_pkcs12_key:
+  tags:
+    - background
+    - no_doc
+  pre: generated_secret(:pkcs12); run('openssl', 'pkcs12', '-export', '-out', TMP / 'certificate.p12', '-inkey', TMP / 'private_key.pem', '-in', TMP / 'certificate.pem', '-name', 'MyCertAlias', '-passout', "pass:#{secret(:pkcs12)}")
+  args:
+    - faspex5
+    - postprocessing
+    - '@json:{"url":"https://localhost:18443/domain","cert":"$(TMP / "certificate.p12")","key":"$(secret :pkcs12)","script_folder":"$(PATH_SCRIPTS)"}'
+  post: |
+    wait_listening(18443, tls: true)
+    t.stop_process :f5_postproc_cert_pkcs12_key

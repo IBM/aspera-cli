@@ -3,11 +3,9 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-require_relative 'api/faspex'
 require_relative 'log'
 require_relative 'assert'
 require_relative 'hash_ext'
-require_relative 'mime'
 require_relative 'secret/strength'
 require_relative 'servlet_helpers'
 require_relative 'web_server_simple'
@@ -15,7 +13,7 @@ require 'webrick'
 require 'json'
 
 module Aspera
-  # Simulate the Faspex 4 /send API and creates a package on Aspera on Cloud or Faspex 5
+  # Simulate the Faspex 4 /send API; the package is created by the product that starts the gateway (Aspera on Cloud, Faspex 5), see `serve`
   #
   # Security notes:
   # - Packages are created as the user of the application, to any recipient, and the caller receives an upload transfer spec.
@@ -25,8 +23,6 @@ module Aspera
   class Faspex4GWServlet < WEBrick::HTTPServlet::AbstractServlet
     include ServletHelpers
 
-    AOC_API = 'Aspera::Plugins::Aoc::Api'
-    FX_API = 'Aspera::Api::Faspex'
     ALLOWED_PARAMETERS = %i[username password password_min_bits].freeze
     REALM = 'Faspex 4 Gateway'
     private_constant :REALM
@@ -50,69 +46,23 @@ module Aspera
       # Start the gateway, until signal INT or TERM
       # @param parameters [Hash]      Parameters of the server (see `WebServerSimple.url`) and of the servlet (see `normalize_parameters`)
       # @param type       [Exception] Exception raised when the server is not protected
-      # @yieldreturn [Array] API of the application, and workspace id (AoC only), see `initialize`: called once parameters are checked
+      # @yieldreturn [#call] Creates the package in the application, see `initialize`: called once parameters are checked
       def serve(parameters, type: ParameterError)
         servlet_parameters = normalize_parameters(WebServerSimple.servlet_parameters(parameters))
         # Packages can be sent to anyone by anyone who can reach the server
-        WebServerSimple.serve(parameters, self, protected: !servlet_parameters[:username].nil?, what: 'username and password', type: type) { [servlet_parameters, *yield] }
+        WebServerSimple.serve(parameters, self, protected: !servlet_parameters[:username].nil?, what: 'username and password', type: type) { [servlet_parameters, yield] }
       end
     end
 
-    # @param server      [WEBrick::HTTPServer] Server
-    # @param parameters  [Hash]         Parameters from `normalize_parameters`
-    # @param app_api     [Rest::Client] API object
-    # @param app_context [String]       workspace id (aoc only)
-    def initialize(server, parameters, app_api, app_context)
-      Aspera.assert_values(app_api.class.name, [AOC_API, FX_API])
+    # @param server         [WEBrick::HTTPServer] Server
+    # @param parameters     [Hash]                Parameters from `normalize_parameters`
+    # @param package_sender [#call]               Creates the package in the application: receives the parameters of the Faspex 4 package creation (with `delivery`),
+    #                                             returns the transfer spec to upload the package files
+    def initialize(server, parameters, package_sender)
+      Aspera.assert(package_sender.respond_to?(:call), type: ParameterError) { 'package_sender shall be callable' }
       super(server)
       @expected_auth = "#{parameters[:username]}:#{parameters[:password]}" unless parameters[:username].nil?
-      @app_api = app_api
-      @app_context = app_context
-    end
-
-    # Map Faspex 4 /send API to AoC package create
-    # parameters from user to Faspex API call
-    # https://developer.ibm.com/apis/catalog/aspera--aspera-faspex-client-sdk/Sending%20Packages%20(API%20v.3)
-    def faspex4_send_to_aoc(faspex_pkg_parameters)
-      faspex_pkg_delivery = faspex_pkg_parameters['delivery']
-      package_data = {
-        # 'file_names'   => faspex_pkg_delivery['sources'][0]['paths'],
-        'name'         => faspex_pkg_delivery['title'],
-        'note'         => faspex_pkg_delivery['note'],
-        'recipients'   => faspex_pkg_delivery['recipients'],
-        'workspace_id' => @app_context
-      }
-      created_package = @app_api.create_package_simple(package_data, true, nil)
-      # but we place it in a Faspex package creation response
-      return {
-        'links'         => {'status' => 'unused'},
-        'xfer_sessions' => [created_package[:spec]]
-      }
-    end
-
-    def faspex4_send_to_faspex5(faspex_pkg_parameters)
-      faspex_pkg_delivery = faspex_pkg_parameters['delivery']
-      package_data = {
-        'title'      => faspex_pkg_delivery['title'],
-        'note'       => faspex_pkg_delivery['note'],
-        'recipients' => faspex_pkg_delivery['recipients'].map { |name| {'name'=>name} }
-      }
-      package = @app_api.create('packages', package_data)
-      # TODO: option to send from remote source or httpgw
-      transfer_spec = @app_api.call(
-        operation:    'POST',
-        subpath:      "packages/#{package['id']}/transfer_spec/upload",
-        query:        {transfer_type: Api::Faspex::TRANSFER_CONNECT},
-        content_type: Mime::JSON,
-        body:         {paths: [{'destination'=>'/'}]},
-        headers:      {'Accept' => Mime::JSON}
-      )
-      transfer_spec.delete('authentication')
-      # but we place it in a Faspex package creation response
-      return {
-        'links'         => {'status' => 'unused'},
-        'xfer_sessions' => [transfer_spec]
-      }
+      @package_sender = package_sender
     end
 
     def do_POST(request, response)
@@ -122,15 +72,11 @@ module Aspera
       return json_error(response, 400, 'Unsupported endpoint') unless request.path.eql?('/aspera/faspex/send')
       faspex_pkg_parameters = package_parameters(request.body)
       Log.dump(:faspex_pkg_parameters, faspex_pkg_parameters)
-      # compare string, as class is not yet known here
-      faspex_package_create_result =
-        case @app_api.class.name
-        when AOC_API
-          faspex4_send_to_aoc(faspex_pkg_parameters)
-        when FX_API
-          faspex4_send_to_faspex5(faspex_pkg_parameters)
-        else Aspera.error_unexpected_value(@app_api.class.name)
-        end
+      # the transfer spec is placed in a Faspex package creation response
+      faspex_package_create_result = {
+        'links'         => {'status' => 'unused'},
+        'xfer_sessions' => [@package_sender.call(faspex_pkg_parameters)]
+      }
       Log.dump(:faspex_package_create_result, faspex_package_create_result)
       json_response(response, 200, faspex_package_create_result)
     rescue WEBrick::HTTPStatus::Error => e

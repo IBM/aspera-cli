@@ -75,7 +75,6 @@ module Aspera
         args:         'aspera/sync/args.schema.yaml',
         conf:         'aspera/sync/conf.schema.yaml',
         opts:         'aspera/cli/options.schema.yaml',
-        faspex:       'aspera/schema/IBM Aspera Faspex API-5.0-enhanced.yaml',
         faspio:       'aspera/schema/IBM Aspera faspio Gateway API-1.0.0-enhanced.yaml',
         console:      'aspera/schema/IBM Aspera Console-enhanced.yaml',
         orchestrator: 'aspera/schema/IBM Aspera Orchestrator API-v1-enhanced.yaml',
@@ -91,7 +90,6 @@ module Aspera
       TRANSFER_SPEC = 'spec'
       SYNC_CONF = 'conf'
       SYNC_ARGS = 'args'
-      FASPEX = 'faspex'
       FASPIO = 'faspio'
       CONSOLE = 'console'
       ORCHESTRATOR = 'orchestrator'

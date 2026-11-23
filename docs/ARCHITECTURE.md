@@ -121,7 +121,7 @@ The plugin architecture enables modular command implementation for different Asp
 
 - [`aoc/commands.rb`](../lib/aspera/plugins/aoc/commands.rb) - Aspera on Cloud
 - [`ats/commands.rb`](../lib/aspera/plugins/ats/commands.rb) - Aspera Transfer Service
-- [`faspex5.rb`](../lib/aspera/cli/plugins/faspex5.rb) - Faspex 5
+- [`faspex5/commands.rb`](../lib/aspera/plugins/faspex5/commands.rb) - Faspex 5
 - [`shares/commands.rb`](../lib/aspera/plugins/shares/commands.rb) - Aspera Shares
 - [`node/commands.rb`](../lib/aspera/plugins/node/commands.rb) - Node API
 - [`console.rb`](../lib/aspera/cli/plugins/console.rb) - Aspera Console
@@ -349,7 +349,7 @@ All forms receive the `ctx` hash as keyword arguments and behave identically at 
 | `crud_commands` generates one leaf per verb | CRUD declarations stay DRY while each verb remains a real, introspectable `CommandSpec`; `api:` is resolved at runtime so the API object can be created lazily |
 | `mount:` instead of re-declaring another plugin's commands | The target sub-tree is declared once: dispatch, `--help`, completion and `config commands` see it entirely, and changes in the target need no change in the hosts |
 | `transfer_paths: :send\|:receive` | The `--sources` mechanism in `TransferAgent` cannot be expressed as static arguments |
-| `define_action_method` for homogeneous command groups | Avoids repetitive action definitions for commands sharing the same body (e.g. `ADMIN_OBJECTS` in `aoc/commands.rb`, `RESOURCE_CONFIG` in `faspex5.rb`) |
+| `define_action_method` for homogeneous command groups | Avoids repetitive action definitions for commands sharing the same body (e.g. `ADMIN_OBJECTS` in `aoc/commands.rb`, `RESOURCE_CONFIG` in `faspex5/commands.rb`) |
 
 #### Entity identifier placement
 
@@ -373,7 +373,7 @@ def action_admin_workspace_dropbox_list(**)
 end
 ```
 
-**Correct** — identifier declared on the intermediate node, derived context from `setup:` (from `faspex5.rb`):
+**Correct** — identifier declared on the intermediate node, derived context from `setup:` (from `faspex5/commands.rb`):
 
 ```ruby
 commands_under %i[admin nodes] do
@@ -401,8 +401,8 @@ end
 | --- | --- | --- |
 | `aoc admin workspace dropbox` | `workspace_id` | [`setup_admin_workspace_dropbox`](../lib/aspera/plugins/aoc/commands.rb) → `ws_res_id:` |
 | `aoc admin workspace shared_folder` | `workspace_id` | [`setup_admin_workspace_shared_folder`](../lib/aspera/plugins/aoc/commands.rb) → `ws_res_id:`, `shared_folders:` |
-| `faspex5 admin nodes shared_folders` | `node_id` | [`setup_admin_nodes_shared_folders`](../lib/aspera/cli/plugins/faspex5.rb) → `sf_entity:` |
-| `faspex5 admin nodes shared_folders user` | `sf_id` | [`setup_admin_nodes_shared_folders_user`](../lib/aspera/cli/plugins/faspex5.rb) → `user_path:` |
+| `faspex5 admin nodes shared_folders` | `node_id` | [`setup_admin_nodes_shared_folders`](../lib/aspera/plugins/faspex5/commands.rb) → `sf_entity:` |
+| `faspex5 admin nodes shared_folders user` | `sf_id` | [`setup_admin_nodes_shared_folders_user`](../lib/aspera/plugins/faspex5/commands.rb) → `user_path:` |
 | `node access_keys do` | `access_key_id` | [`setup_access_key_do`](../lib/aspera/plugins/node/commands.rb) → `do_root_file_id:` |
 | `node access_keys do <id> permission` | `path` | [`setup_access_key_do_permission`](../lib/aspera/plugins/node/commands.rb) → `apifid:` |
 | `aoc packages shared_inboxes short_link` | `link_type`, `dropbox_id` | [`setup_packages_short_link`](../lib/aspera/plugins/aoc/commands.rb) → `shared_data:`, … |
@@ -571,7 +571,7 @@ Global HTTP settings are held in the `Rest::Parameters` singleton. The CLI HTTP/
 
 #### Product API Clients
 
-**Directory**: [`lib/aspera/api/`](../lib/aspera/api/) — `alee`, `faspex`, `httpgw`, and the shims `aoc` (`plugins/aoc/api.rb`), `ats` (`plugins/ats/api.rb`), `node` (`plugins/node/api.rb`), `cos_node` (`plugins/cos/api.rb`)
+**Directory**: [`lib/aspera/api/`](../lib/aspera/api/) — `alee`, `httpgw`, and the shims `aoc` (`plugins/aoc/api.rb`), `ats` (`plugins/ats/api.rb`), `faspex` (`plugins/faspex5/api.rb`), `node` (`plugins/node/api.rb`), `cos_node` (`plugins/cos/api.rb`)
 
 **Node API Client** ([`api.rb`](../lib/aspera/plugins/node/api.rb)):
 
@@ -586,7 +586,7 @@ Global HTTP settings are held in the `Rest::Parameters` singleton. The CLI HTTP/
 
 **Directory**: [`lib/aspera/schema/`](../lib/aspera/schema/)
 
-OpenAPI definitions of the product APIs (Faspex 5, Console, faspio; those of AoC, AoC Automation, Node and Shares are in their bundles), `async` database tables (`async_tables.yaml`) and `Schema::Registry`, used to:
+OpenAPI definitions of the product APIs (Console, faspio; those of AoC, AoC Automation, Faspex 5, Node and Shares are in their bundles), `async` database tables (`async_tables.yaml`) and `Schema::Registry`, used to:
 
 - document request bodies of `create` / `modify` (`body_component:` in `crud_commands`)
 - document `--query` parameters (`query_schema:`, shown with `--query=help`)
@@ -1151,11 +1151,13 @@ end
 | `shares` | yes | | OAuth SAML flow | `node` |
 | `ats` | yes | | API | `node` |
 | `preview` | yes | | preview generator | `node`, `transfer_agents` |
-| `aoc` | yes | | API, GraphQL queries | `node`, `ats`, `faspex5`, `transfer_agents` |
-| `faspex5` | yes | | API, Faspex 4 gateway, postprocessing | `transfer_agents` |
+| `aoc` | yes | | API, GraphQL queries | `node`, `ats`, `transfer_agents` |
+| `faspex5` | yes | | API, OAuth public link flow, Faspex 4 postprocessing servlet | `transfer_agents` |
 | `orchestrator` | yes | | workflow checker | `transfer_agents` |
 | `server` | yes | | `ascmd` | `transfer_agents` |
 | `console`, `faspio`, `alee` | yes | | API (`alee`) | |
+
+The bundles `aoc` and `faspex5` do not depend on each other: the Faspex 4 gateway ([`faspex_gw.rb`](../lib/aspera/faspex_gw.rb), framework) is started by the command `gateway` of each one, which gives it the function that creates the package with its own API. The options of the gateway and of the post-processing server (`Faspex4GatewayOptions`, `Faspex4PostProcOptions`) stay in `cli/options.schema.yaml`: they refer to `WebServerOptions` and the schema reader has no reference to another file.
 
 ## Performance Considerations
 

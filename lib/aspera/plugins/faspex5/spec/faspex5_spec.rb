@@ -3,21 +3,21 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Unit tests for Aspera::Cli::Plugins::Faspex5 — no server needed.
+# Unit tests for Aspera::Plugins::Faspex5::Commands — no server needed.
 
-require_relative '../lib/aspera/cli/context'
-require_relative '../lib/aspera/cli/parser'
-require_relative '../lib/aspera/cli/plugins/faspex5'
-require_relative '../lib/aspera/web_server_simple'
+require_relative '../../../cli/context'
+require_relative '../../../cli/parser'
+require_relative '../commands'
+require_relative '../../../web_server_simple'
 require 'securerandom'
 
 module Aspera
   module Cli
     module Plugins
-      RSpec.describe(Faspex5) do
+      RSpec.describe(Aspera::Plugins::Faspex5::Commands) do
         # @param argv [Array<String>] command line
         # @param link_context [Hash, nil] context of public link, or nil
-        # @return [Faspex5] plugin with an API double
+        # @return [Aspera::Plugins::Faspex5::Commands] plugin with an API double
         def plugin(argv, link_context)
           context = Context.new
           context.man_header = false
@@ -78,6 +78,40 @@ module Aspera
           it 'refuses a weak password' do
             expect { gateway({'username' => 'fx4', 'password' => SecureRandom.alphanumeric(3)}) }.to(raise_error(ParameterError, /password_min_bits/))
             expect(WebServerSimple).not_to(have_received(:new))
+          end
+        end
+
+        describe '#faspex4_send_to_faspex5' do
+          # Faspex 5 API: records the package and the transfer spec request
+          let(:faspex_api) do
+            Class.new do
+              attr_reader :created, :requests
+
+              def initialize
+                @created = []
+                @requests = []
+              end
+
+              def create(endpoint, package)
+                @created.push([endpoint, package])
+                {'id' => 'pkg1'}
+              end
+
+              def call(**kwargs)
+                @requests.push(kwargs)
+                {'remote_host' => 'faspex.example.com', 'authentication' => 'token'}
+              end
+            end.new
+          end
+
+          it 'creates the package for the recipients, and returns the upload transfer spec without authentication' do
+            instance = plugin([], nil)
+            fx_api = faspex_api
+            instance.define_singleton_method(:api_v5) { fx_api }
+            spec = instance.send(:faspex4_send_to_faspex5, {'delivery' => {'title' => 'T', 'note' => 'N', 'recipients' => ['user@example.com']}})
+            expect(spec).to(eq({'remote_host' => 'faspex.example.com'}))
+            expect(faspex_api.created).to(eq([['packages', {'title' => 'T', 'note' => 'N', 'recipients' => [{'name' => 'user@example.com'}]}]]))
+            expect(faspex_api.requests.first).to(include(operation: 'POST', subpath: 'packages/pkg1/transfer_spec/upload', query: {transfer_type: Aspera::Plugins::Faspex5::Api::TRANSFER_CONNECT}))
           end
         end
 

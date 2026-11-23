@@ -8,7 +8,7 @@
 require_relative '../lib/aspera/cli/runner'
 require_relative '../lib/aspera/cli/poll'
 require_relative '../lib/aspera/cli/plugins/orchestrator'
-require_relative '../lib/aspera/cli/plugins/faspex5'
+require_relative '../lib/aspera/plugins/faspex5/commands'
 require_relative '../lib/aspera/plugins/node/commands'
 require_relative '../lib/aspera/plugins/aoc/commands'
 require_relative '../lib/aspera/cli/plugins/server'
@@ -251,13 +251,13 @@ module Aspera
         it 'marks the generic list and show operations, and the commands of the demo' do
           {
             Plugins::Orchestrator => [%i[workflows workorders], %i[workorders status], %i[tasks list], %i[pools status], %i[queues list], %i[queues items]],
-            Plugins::Faspex5      => [%i[packages list], %i[packages show], %i[admin workgroups list]],
+            Aspera::Plugins::Faspex5::Commands => [%i[packages list], %i[packages show], %i[admin workgroups list]],
             Aspera::Plugins::Node::Commands => [%i[ls], %i[transfer list], %i[access_keys list], %i[access_keys show], %i[access_keys do thumbnail]],
             Aspera::Plugins::Aoc::Commands => [%i[packages list], %i[admin analytics transfers]]
           }.each do |plugin, paths|
             paths.each { |path| expect(plugin.command_registry[path].read_only?).to(be(true), "#{plugin} #{path}") }
           end
-          expect(Plugins::Faspex5.command_registry[%i[packages send]].read_only?).to(be(false))
+          expect(Aspera::Plugins::Faspex5::Commands.command_registry[%i[packages send]].read_only?).to(be(false))
           expect(Aspera::Plugins::Node::Commands.command_registry[%i[access_keys delete]].read_only?).to(be(false))
         end
 
@@ -265,7 +265,7 @@ module Aspera
           {
             Plugins::Server  => [%i[ls], %i[df], %i[du], %i[md5sum], %i[info]],
             Aspera::Plugins::Node::Commands => [%i[async list], %i[ssync state], %i[stream list], %i[service list], %i[watch_folder show]],
-            Plugins::Faspex5 => [%i[user profile show], %i[admin configuration show], %i[admin smtp show]],
+            Aspera::Plugins::Faspex5::Commands => [%i[user profile show], %i[admin configuration show], %i[admin smtp show]],
             Aspera::Plugins::Shares::Commands => [%i[info], %i[share list]],
             Aspera::Plugins::Ats::Commands => [%i[cluster list], %i[access_key show]],
             Aspera::Plugins::Httpgw::Commands => [%i[info]]

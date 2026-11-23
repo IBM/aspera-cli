@@ -1824,8 +1824,29 @@ module Aspera
 
         def action_gateway(parameters: {}, **)
           require_relative '../../faspex_gw'
-          Faspex4GWServlet.serve(parameters.symbolize_keys, type: Cli::BadArgument) { [aoc_api, aoc_api.workspace_info[:id]] }
+          Aspera::Faspex4GWServlet.serve(parameters.symbolize_keys, type: Cli::BadArgument) do
+            workspace_id = aoc_api.workspace_info[:id]
+            ->(faspex_pkg_parameters) { faspex4_send_to_aoc(faspex_pkg_parameters, workspace_id) }
+          end
           return Cli::Result::Status.new('Gateway terminated')
+        end
+
+        # Map Faspex 4 /send API to AoC package create
+        # parameters from user to Faspex API call
+        # https://developer.ibm.com/apis/catalog/aspera--aspera-faspex-client-sdk/Sending%20Packages%20(API%20v.3)
+        # @param faspex_pkg_parameters [Hash]   Faspex 4 package creation
+        # @param workspace_id          [String] Workspace of the package
+        # @return [Hash] Transfer spec to upload the package files
+        def faspex4_send_to_aoc(faspex_pkg_parameters, workspace_id)
+          faspex_pkg_delivery = faspex_pkg_parameters['delivery']
+          package_data = {
+            # 'file_names'   => faspex_pkg_delivery['sources'][0]['paths'],
+            'name'         => faspex_pkg_delivery['title'],
+            'note'         => faspex_pkg_delivery['note'],
+            'recipients'   => faspex_pkg_delivery['recipients'],
+            'workspace_id' => workspace_id
+          }
+          aoc_api.create_package_simple(package_data, true, nil)[:spec]
         end
       end
     end

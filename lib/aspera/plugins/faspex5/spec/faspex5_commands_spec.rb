@@ -3,17 +3,17 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Unit tests for Aspera::Cli::Plugins::Faspex5: commands with an API double — no Faspex server needed.
+# Unit tests for Aspera::Plugins::Faspex5::Commands: commands with an API double — no Faspex server needed.
 
-require_relative '../lib/aspera/cli/context'
-require_relative '../lib/aspera/cli/parser'
-require_relative '../lib/aspera/cli/plugins/faspex5'
-require_relative '../lib/aspera/cli/runner'
+require_relative '../../../cli/context'
+require_relative '../../../cli/parser'
+require_relative '../commands'
+require_relative '../../../cli/runner'
 
 module Aspera
   module Cli
     module Plugins
-      RSpec.describe(Faspex5) do
+      RSpec.describe(Aspera::Plugins::Faspex5::Commands) do
         # Calls received by the API double: [method, path, *args]
         let(:calls) { [] }
         # Response of the API double, by [method, path], default: empty Hash
@@ -21,7 +21,7 @@ module Aspera
         let(:progress_bar) { double('progress', event: nil) }
 
         let(:api) do
-          api = instance_double(Api::Faspex, pub_link_context: nil)
+          api = instance_double(Aspera::Plugins::Faspex5::Api, pub_link_context: nil)
           %i[read create update delete].each do |method|
             allow(api).to(receive(method)) do |path, *args|
               calls.push([method, path, *args])
@@ -119,7 +119,7 @@ module Aspera
 
           it 'browses pages with the iteration token' do
             pages(
-              [{'items' => [{'path' => '/a'}]}, {Api::Faspex::HEADER_X_NEXT_ITER_TOKEN => 'next'}],
+              [{'items' => [{'path' => '/a'}]}, {Aspera::Plugins::Faspex5::Api::HEADER_X_NEXT_ITER_TOKEN => 'next'}],
               [{'items' => [{'path' => '/b'}]}, {}]
             )
             expect(execute('admin', 'nodes', 'browse', 'n1', '/').data).to(eq([{'path' => '/a'}, {'path' => '/b'}]))

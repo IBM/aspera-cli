@@ -1,0 +1,10 @@
+name: faspex5
+title: IBM Aspera Faspex 5
+depends:
+  - transfer_agents
+commands: true
+schemas:
+  - key: faspex
+    file: schemas/IBM Aspera Faspex API-5.0-enhanced.yaml
+    source:
+      url: https://raw.githubusercontent.com/laurent-martin/aspera-api-examples/refs/heads/main/openapi/IBM%20Aspera%20Faspex%20API-5.0-enhanced.yaml
