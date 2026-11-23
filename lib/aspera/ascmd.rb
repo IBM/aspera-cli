@@ -3,246 +3,327 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# cspell:ignore smode errstr zstr zmode zuid zgid zctime zatime zmtime fcount dcount btype blist ascmdtypes
+# cspell:ignore errstr fstat zstr zmode zuid zgid zctime zatime zmtime fcount dcount ascmdtypes
 require_relative 'log'
 require_relative 'assert'
-require_relative 'rainbow'
-using Rainbow
 
 module Aspera
   # Run `ascmd` commands using specified executor (usually, remotely on transfer node)
   # Equivalent of SDK "command client"
   # execute: "ascmd -h" to get syntax
-  # Note: "ls" can take filters: as_ls -f *.txt -f *.bin /
+  #
+  # Protocol (see `ascmdtypes.h`):
+  # - Input: one command per line (`as_<operation> <arguments>`), then `as_exit`.
+  # - Output: one reply per command, `ascmd` continues after a failed command.
+  #   The first reply is the system information: sent at start (protocol 1), or for `as_session_init` (protocol 2).
+  # - Replies and their fields are Type-Length-Value: type (1 byte), length (4 bytes), value. Numbers are big endian.
   class AsCmd
-    # number of arguments for each operation (to allow splitting into batches)
-    OPS_ARGS = {
-      cp:     2,
-      df:     0,
-      du:     1,
-      info:   nil,
-      ls:     1,
-      md5sum: 1,
-      mkdir:  1,
-      mv:     2,
-      rm:     1
+    # Operations:
+    # - `args`: Integer: the arguments are split into one command per group of this size (at least one group).
+    #           Range: all arguments in a single command, their number in the range.
+    # - `reply`: types of reply of a successful command (else: `error`).
+    OPERATION_SPECS = {
+      ls:     {args: 1,    reply: %i[file dir]},
+      rm:     {args: 1,    reply: %i[success]},
+      mv:     {args: 2,    reply: %i[success]},
+      cp:     {args: 2,    reply: %i[success]},
+      mkdir:  {args: 1,    reply: %i[success]},
+      du:     {args: 1,    reply: %i[size]},
+      md5sum: {args: 1,    reply: %i[md5sum]},
+      df:     {args: 0..1, reply: %i[df]},
+      info:   {args: 0..0, reply: %i[info]}
     }.freeze
 
-    # Protocol is based on Type-Length-Value
-    # Type start at one, but array index start at zero
+    # Enumerations of the protocol start at one: TLV type = index in the list + `ENUM_START`
     ENUM_START = 1
 
-    # Description of result structures (see ascmdtypes.h).
-    # Base types are big endian.
-    # Keys are type names; the index in each `fields` array equals (TLV numerical type - `ENUM_START`).
-    # Decoding always starts at `result`.
-    # Some fields have special handling indicated by `special`:
-    #   - `:field_list`       : a Hash or Array of child TLVs
-    #   - `:list_tlv_list`    : a list of TLV sub-lists (Array of Hash)
-    #   - `:list_tlv_restart` : same but restarted per entry
-    # `decode` values:
-    #   - `:base`        : a single scalar value (unpack with `unpack`)
-    #   - `:buffer_list` : an Array of `{btype, buffer}` entries
-    #   - `:field_list`  : a Hash or Array built from child TLVs
-    # rubocop:disable-next Layout/FirstHashElementLineBreak
-    TYPES_DESCR = {
-      result: {decode: :field_list,
-               fields: [{name: :file, is_a: :stat}, {name: :dir, is_a: :stat, special: :list_tlv_list}, {name: :size, is_a: :size}, {name: :error, is_a: :error},
-                        {name: :info, is_a: :info}, {name: :success, is_a: nil, special: :return_true}, {name: :exit, is_a: nil},
-                        {name: :df, is_a: :mnt, special: :list_tlv_restart}, {name: :md5sum, is_a: :md5sum}]},
-      stat:   {decode: :field_list,
-               fields: [{name: :name, is_a: :zstr}, {name: :size, is_a: :int64}, {name: :mode, is_a: :int32, check: nil}, {name: :zmode, is_a: :zstr},
-                        {name: :uid, is_a: :int32, check: nil}, {name: :zuid, is_a: :zstr}, {name: :gid, is_a: :int32, check: nil}, {name: :zgid, is_a: :zstr},
-                        {name: :ctime, is_a: :epoch}, {name: :zctime, is_a: :zstr}, {name: :mtime, is_a: :epoch}, {name: :zmtime, is_a: :zstr},
-                        {name: :atime, is_a: :epoch}, {name: :zatime, is_a: :zstr}, {name: :symlink, is_a: :zstr}, {name: :errno, is_a: :int32},
-                        {name: :errstr, is_a: :zstr}]},
-      info:   {decode: :field_list,
-               fields: [{name: :platform, is_a: :zstr}, {name: :version, is_a: :zstr}, {name: :lang, is_a: :zstr}, {name: :territory, is_a: :zstr},
-                        {name: :codeset, is_a: :zstr}, {name: :lc_ctype, is_a: :zstr}, {name: :lc_numeric, is_a: :zstr}, {name: :lc_time, is_a: :zstr},
-                        {name: :lc_all, is_a: :zstr}, {name: :dev, is_a: :zstr, special: :list_multiple}, {name: :browse_caps, is_a: :zstr},
-                        {name: :protocol, is_a: :zstr}]},
-      size:   {decode: :field_list,
-               fields: [{name: :size, is_a: :int64}, {name: :fcount, is_a: :int32}, {name: :dcount, is_a: :int32}, {name: :failed_fcount, is_a: :int32},
-                        {name: :failed_dcount, is_a: :int32}]},
-      error:  {decode: :field_list,
-               fields: [{name: :errno, is_a: :int32}, {name: :errstr, is_a: :zstr}]},
-      mnt:    {decode: :field_list,
-               fields: [{name: :fs, is_a: :zstr}, {name: :dir, is_a: :zstr}, {name: :is_a, is_a: :zstr}, {name: :total, is_a: :int64},
-                        {name: :used, is_a: :int64}, {name: :free, is_a: :int64}, {name: :fcount, is_a: :int64}, {name: :errno, is_a: :int32},
-                        {name: :errstr, is_a: :zstr}]},
-      md5sum: {decode: :field_list, fields: [{name: :md5sum, is_a: :zstr}]},
-      int8:   {decode: :base, unpack: 'C', size: 1},
-      int32:  {decode: :base, unpack: 'L>', size: 4},
-      int64:  {decode: :base, unpack: 'Q>', size: 8},
-      epoch:  {decode: :base, unpack: 'Q>', size: 8},
-      zstr:   {decode: :base, unpack: 'Z*'},
-      blist:  {decode: :buffer_list}
+    # Reply types (`as_ftype_e`)
+    REPLY_TYPES = %i[file dir size error info success exit df md5sum].freeze
+
+    # Fields of structures, in the order of their enumeration: name and base type, plus `:multiple` for a field that repeats (Array of values).
+    # Fields `mode`, `uid` and `gid` are not sent by `ascmd`.
+    STRUCTURES = {
+      # as_fstat_e
+      stat:   [
+        %i[name zstr], %i[size int64], %i[mode int32], %i[zmode zstr], %i[uid int32], %i[zuid zstr], %i[gid int32], %i[zgid zstr],
+        %i[ctime epoch], %i[zctime zstr], %i[mtime epoch], %i[zmtime zstr], %i[atime epoch], %i[zatime zstr], %i[symlink zstr],
+        %i[errno int32], %i[errstr zstr]
+      ],
+      # as_info_e
+      info:   [
+        %i[platform zstr], %i[version zstr], %i[lang zstr], %i[territory zstr], %i[codeset zstr], %i[lc_ctype zstr], %i[lc_numeric zstr],
+        %i[lc_time zstr], %i[lc_all zstr], %i[dev zstr multiple], %i[browse_caps zstr], %i[protocol zstr]
+      ],
+      # as_size_e
+      size:   [%i[size int64], %i[fcount int32], %i[dcount int32], %i[failed_fcount int32], %i[failed_dcount int32]],
+      # as_error_e
+      error:  [%i[errno int32], %i[errstr zstr]],
+      # as_mnt_e
+      mnt:    [
+        %i[fs zstr], %i[dir zstr], %i[type zstr], %i[total int64], %i[used int64], %i[free int64], %i[fcount int64], %i[errno int32],
+        %i[errstr zstr]
+      ],
+      # as_md5sum_e
+      md5sum: [%i[md5sum zstr]]
     }.freeze
 
-    private_constant :TYPES_DESCR, :ENUM_START, :OPS_ARGS
+    # Size of the header of a TLV: type (1 byte) and length (4 bytes)
+    TLV_HEADER_SIZE = 5
+    # `ascmd` reads a command line with `fgets` in a buffer of `AS_MAX_BUFFER` (4096): newline and NUL included
+    MAX_LINE_BYTES = 4094
+
+    # A decoded reply
+    Reply = Data.define(:type, :value)
+
+    private_constant :OPERATION_SPECS, :ENUM_START, :REPLY_TYPES, :STRUCTURES, :TLV_HEADER_SIZE, :MAX_LINE_BYTES, :Reply
 
     # list of supported actions
-    OPERATIONS = OPS_ARGS.keys.freeze
+    OPERATIONS = OPERATION_SPECS.keys.freeze
 
-    #  @param command_executor [Object] provides the "execute" method, taking a command to execute, and stdin to feed to it, typically: ssh or local
+    # Raised when one or more commands of `ascmd` failed. The other commands were executed.
+    class Error < StandardError
+      # A failed command
+      # @!attribute [r] errno     [Integer, nil]  Error number (-1: error of `ascmd` itself), `nil` if no reply
+      # @!attribute [r] errstr    [String]        Error message
+      # @!attribute [r] arguments [Array<String>] Arguments of the command
+      Failure = Data.define(:errno, :errstr, :arguments)
+
+      # @return [Symbol] the operation
+      attr_reader :operation
+      # @return [Array<Failure>] failed commands, in order
+      attr_reader :failures
+
+      # @param operation [Symbol]         the operation
+      # @param failures  [Array<Failure>] failed commands
+      def initialize(operation, failures)
+        @operation = operation
+        @failures = failures
+        super(failures.map { |f| "ascmd: #{f.errstr}#{" (#{f.errno})" unless f.errno.nil?}" }.join("\n"))
+      end
+
+      # @return [String] one line per failed command, with its arguments
+      def extended_message
+        @failures.map { |f| %Q{ascmd: errno=#{f.errno} errstr="#{f.errstr}" command=#{@operation} arguments=#{f.arguments.join(',')}} }.join("\n")
+      end
+    end
+
+    # @param command_executor [Object] provides the "execute" method, taking a command to execute, and stdin to feed to it, typically: ssh or local
     def initialize(command_executor)
       @command_executor = command_executor
     end
 
-    # execute an "as" command on a remote server
-    # Version 2 allows use of reverse proxy with multiple addresses.
-    # @param action_sym [Symbol] one of OPERATIONS
-    # @param arguments  [Array]  parameters for "as" command
-    # @return [Boolean,Array,Hash] result of command, type depends on command
-    def execute_single(action_sym, arguments, version: 2, host: nil)
+    # Execute an operation in one session of `ascmd`: one command per group of arguments.
+    # All commands are executed, even after one failed.
+    # @param operation [Symbol]        One of OPERATIONS
+    # @param arguments [Array<String>] Paths (`mv`, `cp`: source and destination pairs)
+    # @param version   [Integer]       Protocol: 1 or 2
+    # @param host      [String, nil]   Sent with `as_session_init` (protocol 2)
+    # @return [true, Array<Hash>, Hash] depending on operation:
+    #   `rm`, `mv`, `cp`, `mkdir`: `true`;
+    #   `ls`: entries of all paths;
+    #   `du`, `md5sum`: one Hash per path, with key `path`;
+    #   `df`: mount points;
+    #   `info`: system information.
+    # @raise [Error] if one or more commands failed
+    # @raise [ParameterError] if the arguments do not fit the operation, or cannot be sent to `ascmd`
+    def execute_single(operation, arguments, version: 2, host: nil)
       arguments = [] if arguments.nil?
-      Log.log.debug { "execute_single:#{action_sym}:#{arguments}" }
-      Aspera.assert_type(action_sym, Symbol)
+      Log.log.debug { "execute_single:#{operation}:#{arguments}" }
+      Aspera.assert_values(operation, OPERATIONS)
+      Aspera.assert_values(version, [1, 2]) { 'protocol' }
       Aspera.assert_array_all(arguments, String) { 'arguments' }
+      commands = command_arguments(operation, arguments)
       remote_cmd = 'ascmd'
-      # lines of commands (String's)
-      command_lines = []
+      lines = []
       if version.eql?(2)
-        cmd = "as_session_init --protocol=#{version}"
-        cmd += " --host=#{host}" if host
-        command_lines.push(cmd)
+        lines.push(['as_session_init', "--protocol=#{version}", (quote("--host=#{host}") unless host.nil?)].compact.join(' '))
         remote_cmd += ' -V2'
       end
-      # add "as_" command
-      main_command = "as_#{action_sym}"
-      arg_batches =
-        if OPS_ARGS[action_sym].nil? || OPS_ARGS[action_sym].zero?
-          [arguments]
-        else
-          # split arguments into batches
-          arguments.each_slice(OPS_ARGS[action_sym]).to_a
-        end
-      arg_batches.each do |args|
-        command = [main_command]
-        # enclose arguments in double quotes, protect backslash and double quotes
-        # ascmd uses space as token separator, and optional quotes ('") or \ to escape
-        args.each do |v|
-          command.push(%Q{"#{v.gsub(/["\\]/) { |s| "\\#{s}" }}"})
-        end
-        command_lines.push(command.join(' '))
+      commands.each { |args| lines.push(["as_#{operation}", *args.map { |arg| quote(arg) }].join(' ')) }
+      lines.each do |line|
+        Aspera.assert(line.bytesize <= MAX_LINE_BYTES, type: ParameterError) { "ascmd: command longer than #{MAX_LINE_BYTES} bytes: #{line[0, 80]}..." }
       end
-      command_lines.push('as_exit')
-      command_lines.push('')
-      # execute the main command and then exit
-      stdin_input = command_lines.join("\n")
+      lines.push('as_exit', '')
+      stdin_input = lines.join("\n")
       Log.log.trace1 { "execute_single:#{stdin_input}" }
-      # execute, get binary output
-      byte_buffer = @command_executor.execute(remote_cmd, input: stdin_input).unpack('C*')
-      Aspera.assert(!byte_buffer.empty?, 'empty answer from server')
-      # get hash or table result
-      result = self.class.parse(byte_buffer, :result)
-      Aspera.assert(byte_buffer.empty?, 'unparsed bytes remaining')
-      # get and delete info,always present in results
-      system_info = result[:info]
-      result.delete(:info)
-      # make single file result like a folder
-      result[:dir] = [result.delete(:file)] if result.key?(:file)
-      # add type field for stats
-      if result.key?(:dir)
-        result[:dir].each do |file|
-          if file.key?(:smode)
-            # Converts the first character of the file mode (see 'man ls') into a type.
-            file[:type] = case file[:smode][0, 1]; when 'd' then:directory; when '-' then:file; when 'l' then:link; else; :other; end
-          end
+      output = @command_executor.execute(remote_cmd, input: stdin_input)
+      Aspera.assert(!output.empty?, 'empty answer from server')
+      replies = each_tlv(output).map { |id, value| decode_reply(id, value) }
+      Log.log.trace1 { "execute_single:replies=#{replies}" }
+      system_info = replies.shift
+      # `ascmd` failed to start, e.g. invalid docroot
+      raise Error.new(operation, [failure(system_info.value, [])]) if system_info.type.eql?(:error)
+      Aspera.assert(system_info.type.eql?(:info)) { "ascmd: expecting system information first, but have: #{system_info.type}" }
+      Aspera.assert(replies.length <= commands.length) { "ascmd: #{replies.length} replies for #{commands.length} commands" }
+      failures = []
+      commands.each_with_index do |args, index|
+        reply = replies[index]
+        if reply.nil?
+          # `ascmd` stopped before this command
+          failures.push(Error::Failure.new(errno: nil, errstr: 'no reply', arguments: args))
+        elsif reply.type.eql?(:error)
+          failures.push(failure(reply.value, args))
+        else
+          Aspera.assert_values(reply.type, OPERATION_SPECS[operation][:reply]) { "ascmd: reply to #{operation}" }
         end
       end
-      # for info, second overrides first, so restore it
-      case result.keys.length
-      when 0 then result = system_info
-      when 1 then result = result[result.keys.first]
-      else Aspera.error_unexpected_value(result.keys.length)
-      end
-      # raise error as exception
-      raise Error.new(result[:errno], result[:errstr], action_sym, arguments) if
-        result.is_a?(Hash) && (result.keys.sort == TYPES_DESCR[:error][:fields].map { |i| i[:name] }.sort)
-      return result
+      raise Error.new(operation, failures) unless failures.empty?
+      return result_of(operation, commands, replies)
     end
 
-    # This exception is raised when `ascmd` returns an error.
-    class Error < StandardError
-      # rubocop:disable Style/Semicolon
-      def initialize(errno, errstr, cmd, arguments); super(); @errno = errno; @errstr = errstr; @command = cmd; @arguments = arguments; end
-      def message; "ascmd: #{@errstr} (#{@errno})"; end
-      def extended_message; "ascmd: errno=#{@errno} errstr=\"#{@errstr}\" command=#{@command} arguments=#{@arguments&.join(',')}"; end
-      # rubocop:enable Style/Semicolon
-    end
+    private
 
-    class << self
-      # Get description of structure's field
-      # @param struct_name   [Symbol] name of the structure type
-      # @param typed_buffer  [Hash]   typed buffer providing the field name via `:btype`
-      # @return [Hash] field description
-      def field_description(struct_name, typed_buffer)
-        result = TYPES_DESCR[struct_name][:fields][typed_buffer[:btype] - ENUM_START]
-        Aspera.assert(!result.nil?) { "Unrecognized field for #{struct_name}: #{typed_buffer[:btype]}\n#{typed_buffer[:buffer]}" }
-        return result
-      end
-
-      # Decodes the provided buffer as provided type name
-      # @return [Boolean, Array, Hash] a decoded type: single, Array, or Hash
-      def parse(buffer, type_name, indent_level = nil)
-        indent_level = (indent_level || -1) + 1
-        type_descr = TYPES_DESCR[type_name]
-        Aspera.assert(!type_descr.nil?) { "Unexpected type #{type_name}" }
-        Log.log.trace1 { "#{'   .' * indent_level}parse:#{type_name}:#{type_descr[:decode]}:#{buffer[0, 16]}...".red }
-        result = nil
-        case type_descr[:decode]
-        when :base
-          num_bytes = type_name.eql?(:zstr) ? buffer.length : type_descr[:size]
-          Aspera.assert(buffer.length >= num_bytes, 'not enough bytes')
-          byte_array = buffer.shift(num_bytes)
-          byte_array = Array(byte_array)
-          result = byte_array.pack('C*').unpack1(type_descr[:unpack])
-          result.force_encoding('UTF-8') if type_name.eql?(:zstr)
-          Log.log.trace1 { "#{'   .' * indent_level}-> base:#{byte_array} -> #{result}" }
-          result = Time.at(result) if type_name.eql?(:epoch)
-        when :buffer_list
-          # return a list of type_buffer
-          result = []
-          until buffer.empty?
-            btype = parse(buffer, :int8, indent_level)
-            length = parse(buffer, :int32, indent_level)
-            Aspera.assert(buffer.length >= length, 'not enough bytes')
-            value = buffer.shift(length)
-            result.push({btype: btype, buffer: value})
-            Log.log.trace1 { "#{'   .' * indent_level}:buffer_list[#{result.length - 1}] #{result.last}" }
-          end
-        when :field_list
-          # by default the result is one struct
-          result = {}
-          # get individual binary fields
-          parse(buffer, :blist, indent_level).each do |typed_buffer|
-            # what type of field is it ?
-            field_info = field_description(type_name, typed_buffer)
-            Log.log.trace1 { "#{'   .' * indent_level}+ field(special=#{field_info[:special]})=#{field_info[:name]}".green }
-            case field_info[:special]
-            when nil # normal case
-              result[field_info[:name]] = parse(typed_buffer[:buffer], field_info[:is_a], indent_level)
-            when :return_true # nothing to parse, just return true
-              result[field_info[:name]] = true
-            when :list_multiple # field appears multiple times, and is an array of values (base type)
-              result[field_info[:name]] ||= []
-              result[field_info[:name]].push(parse(typed_buffer[:buffer], field_info[:is_a], indent_level))
-            when :list_tlv_list # field is an array of values in a list of buffers
-              result[field_info[:name]] = parse(typed_buffer[:buffer], :blist, indent_level).map { |r| parse(r[:buffer], field_info[:is_a], indent_level) }
-            when :list_tlv_restart # field is an array of values, but a new value is started on index 1
-              fl = result[field_info[:name]] = []
-              parse(typed_buffer[:buffer], :blist, indent_level).map do |tb|
-                fl.push({}) if tb[:btype].eql?(ENUM_START)
-                fi = field_description(field_info[:is_a], tb)
-                fl.last[fi[:name]] = parse(tb[:buffer], fi[:is_a], indent_level)
-              end
-            end
-          end
-        else Aspera.error_unexpected_value(type_descr[:decode])
+    # Arguments of each command of the operation
+    # @param operation [Symbol]        One of OPERATIONS
+    # @param arguments [Array<String>] Arguments of the operation
+    # @return [Array<Array<String>>] arguments of each command
+    def command_arguments(operation, arguments)
+      count = OPERATION_SPECS[operation][:args]
+      case count
+      when Integer
+        Aspera.assert(!arguments.empty? && (arguments.length % count).zero?, type: ParameterError) do
+          "ascmd #{operation}: expecting a non-zero multiple of #{count} arguments, but have #{arguments.length}"
         end
-        return result
+        arguments.each_slice(count).to_a
+      when Range
+        Aspera.assert(count.cover?(arguments.length), type: ParameterError) { "ascmd #{operation}: expecting #{count} arguments, but have #{arguments.length}" }
+        [arguments]
+      else Aspera.error_unexpected_value(count) { 'args' }
       end
+    end
+
+    # Argument of a command line of `ascmd`: in double quotes, `"` and `\` escaped.
+    # A newline cannot be escaped: it ends the command, the rest would be another command.
+    # @param value [String] the argument
+    # @return [String] quoted argument
+    def quote(value)
+      Aspera.assert(!value.match?(/[\n\0]/), type: ParameterError) { "ascmd: newline and NUL characters are not supported: #{value.inspect}" }
+      %Q{"#{value.gsub(/["\\]/) { |s| "\\#{s}" }}"}
+    end
+
+    # @param error     [Hash]          Value of a reply `error`
+    # @param arguments [Array<String>] Arguments of the command
+    # @return [Error::Failure]
+    def failure(error, arguments)
+      Error::Failure.new(errno: error[:errno], errstr: error[:errstr], arguments: arguments)
+    end
+
+    # Result of the operation, from the replies of its successful commands
+    # @param operation [Symbol]               One of OPERATIONS
+    # @param commands  [Array<Array<String>>] Arguments of each command
+    # @param replies   [Array<Reply>]         Reply of each command
+    def result_of(operation, commands, replies)
+      case operation
+      when :rm, :mv, :cp, :mkdir then true
+      when :ls
+        replies.flat_map do |reply|
+          case reply.type
+          when :dir then reply.value
+          when :file then [reply.value]
+          else Aspera.error_unexpected_value(reply.type) { 'reply' }
+          end
+        end
+      when :du, :md5sum then commands.zip(replies).map { |args, reply| {path: args.first}.merge(reply.value) }
+      when :df, :info then replies.first.value
+      else Aspera.error_unexpected_value(operation) { 'operation' }
+      end
+    end
+
+    # Iterate on a sequence of TLV
+    # @param data [String] Binary data
+    # @yieldparam id    [Integer] TLV type
+    # @yieldparam value [String]  TLV value
+    # @return [Enumerator] if no block given
+    def each_tlv(data)
+      return enum_for(__method__, data) unless block_given?
+      offset = 0
+      while offset < data.bytesize
+        Aspera.assert(offset + TLV_HEADER_SIZE <= data.bytesize) { "ascmd: truncated header at #{offset}" }
+        id, length = data.unpack('CL>', offset: offset)
+        offset += TLV_HEADER_SIZE
+        Aspera.assert(offset + length <= data.bytesize) { "ascmd: truncated value at #{offset}, length #{length}" }
+        yield(id, data.byteslice(offset, length))
+        offset += length
+      end
+    end
+
+    # @param id    [Integer] TLV type of the reply
+    # @param value [String]  TLV value
+    # @return [Reply]
+    def decode_reply(id, value)
+      type = enum_value(REPLY_TYPES, id)
+      Aspera.assert(!type.nil?) { "ascmd: unknown reply type: #{id}" }
+      decoded =
+        case type
+        when :file then decode_structure(:stat, value)
+        # entries are replies `file`
+        when :dir
+          each_tlv(value).map do |entry_id, entry|
+            Aspera.assert(enum_value(REPLY_TYPES, entry_id).eql?(:file)) { "ascmd: dir: unexpected entry type: #{entry_id}" }
+            decode_structure(:stat, entry)
+          end
+        # mount points one after the other, each one starts with its first field
+        when :df then decode_structure(:mnt, value, list: true)
+        when :size, :error, :info, :md5sum then decode_structure(type, value)
+        when :success then true
+        else Aspera.error_unexpected_value(type) { 'reply' }
+        end
+      Reply.new(type: type, value: decoded)
+    end
+
+    # @param name  [Symbol]  Structure name
+    # @param data  [String]  Its fields as TLV
+    # @param list  [Boolean] `true`: several structures, each one starts with its first field
+    # @return [Hash, Array<Hash>] decoded structure, or list of structures
+    def decode_structure(name, data, list: false)
+      structures = []
+      each_tlv(data) do |id, value|
+        structures.push({}) if structures.empty? || (list && id.eql?(ENUM_START))
+        field_name, type, repeat = enum_value(STRUCTURES[name], id)
+        Aspera.assert(!field_name.nil?) { "ascmd: #{name}: unknown field: #{id}" }
+        decoded = decode_value(type, value)
+        fields = structures.last
+        case repeat
+        when nil
+          Aspera.assert(!fields.key?(field_name)) { "ascmd: #{name}: duplicate field: #{field_name}" }
+          fields[field_name] = decoded
+        when :multiple then (fields[field_name] ||= []).push(decoded)
+        else Aspera.error_unexpected_value(repeat) { 'field' }
+        end
+      end
+      return structures if list
+      return structures.first || {}
+    end
+
+    # @param list [Array]   Values of an enumeration of the protocol, in order
+    # @param id   [Integer] TLV type
+    # @return [Object, nil] the value, `nil` if unknown (a negative index would wrap around)
+    def enum_value(list, id)
+      list[id - ENUM_START] if id >= ENUM_START
+    end
+
+    # @param type  [Symbol] Base type
+    # @param value [String] Binary value
+    # @return [String, Integer, Time] decoded value
+    def decode_value(type, value)
+      case type
+      when :zstr then value.unpack1('Z*').force_encoding(Encoding::UTF_8)
+      # signed: errno is -1 for an error of ascmd itself
+      when :int32 then decode_number(value, 'l>', 4)
+      when :int64 then decode_number(value, 'Q>', 8)
+      # signed: seconds since 1970
+      when :epoch then Time.at(decode_number(value, 'q>', 8))
+      else Aspera.error_unexpected_value(type) { 'base type' }
+      end
+    end
+
+    # @param value  [String]  Binary value
+    # @param format [String]  Format of `unpack1`
+    # @param size   [Integer] Expected size in bytes
+    # @return [Integer]
+    def decode_number(value, format, size)
+      Aspera.assert(value.bytesize.eql?(size)) { "ascmd: expecting #{size} bytes, but have #{value.bytesize}" }
+      value.unpack1(format)
     end
   end
 end

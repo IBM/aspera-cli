@@ -206,7 +206,7 @@ module Aspera
         ascp_logs_commands(:logs, arguments: [{name: :paths, description: 'Log files on the server (gzip supported)', multiple: true}])
 
         # AsCmd operations (available only when SSH/local - not WSS)
-        # Arguments follow AsCmd::OPS_ARGS: one path per operation, or source and destination
+        # Arguments: paths, one command of `ascmd` per path (`mv`, `cp`: per source and destination pair)
         PATHS_ARGS = [{name: :paths, multiple: true}].freeze
         private_constant :PATHS_ARGS
 
@@ -248,9 +248,10 @@ module Aspera
           end
         end
 
+        # One row per path
         %i[du md5sum].each do |op|
           define_action_method([op]) do |paths:, **|
-            execute_ascmd(op, paths) { |r| Result::SingleObject.new(r.stringify_keys) }
+            execute_ascmd(op, paths) { |r| Result::ObjectList.new(r.map(&:stringify_keys)) }
           end
         end
 
@@ -369,6 +370,8 @@ module Aspera
             yield(result)
           rescue AsCmd::Error => e
             raise Cli::BadArgument, e.extended_message
+          rescue ParameterError => e
+            raise Cli::BadArgument, e.message
           end
         end
       end

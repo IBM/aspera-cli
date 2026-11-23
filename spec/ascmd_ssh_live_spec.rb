@@ -122,8 +122,9 @@ RSpec.describe(Aspera::AsCmd, :live) do
   describe 'md5sum' do
     it 'works on file' do
       res = ascmd.execute_single(:md5sum, [PATH_FILE_EXIST])
-      expect(res).to(be_a(Hash))
-      expect(res[:md5sum]).to(be_a(String))
+      expect(res).to(be_a(Array))
+      expect(res.first[:path]).to(eq(PATH_FILE_EXIST))
+      expect(res.first[:md5sum]).to(be_a(String))
     end
     it 'fails if no such file' do
       expect do
@@ -142,7 +143,7 @@ RSpec.describe(Aspera::AsCmd, :live) do
     end
     it 'fails if no such file' do
       expect do
-        ascmd.execute_single(:mv, ['/does_not_exist', PATH_FOLDER_NEW])
+        ascmd.execute_single(:rm, ['/does_not_exist'])
       end.to(raise_error(Aspera::AsCmd::Error, 'ascmd: No such file or directory (2)'))
     end
   end
@@ -153,11 +154,6 @@ RSpec.describe(Aspera::AsCmd, :live) do
       expect(res.first).to(be_a(Hash))
       expect(res.first[:fs]).to(be_a(String))
       expect(res.first[:total]).to(be_a(Integer))
-    end
-    it 'fails if no such file' do
-      expect do
-        ascmd.execute_single(:mv, ['/does_not_exist', PATH_FOLDER_NEW])
-      end.to(raise_error(Aspera::AsCmd::Error, 'ascmd: No such file or directory (2)'))
     end
   end
 end

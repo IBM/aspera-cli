@@ -12,10 +12,14 @@ Released: [Place date of release here]
 ### Issues Fixed
 
 * Agent `transferd`: the daemon started by `ascli` had no authentication: during the transfer, another user of the host could call its API on the local port. It now requires an API key: the one of parameter `api_key`, else a random one, sent by `ascli` in each call. Its configuration file, in the temporary folder, is readable only by the user (it was readable by all). A daemon left running (`stop` is `false`) gets the key of parameter `api_key`, else it has no authentication, with a warning.
+* `server ls`, `du`, `md5sum`, `rm`, `mv`, `cp`, `mkdir` with several paths: only the result of the last path was shown, e.g. `server du <PATH_A> <PATH_B>` showed the size of `<PATH_B>`, and `server ls <FILE> <FOLDER>` did not list the folder. When a path failed and another one succeeded, the error was `unexpected value: 2` (the other paths were processed), and when several failed, only the last one was reported. All results are now shown, and each failed path is reported with its error, after all paths are processed.
+* `server` commands executed by `ascmd` (`ls`, `rm`...): a path with newlines was sent as several command lines, and the lines between the first and the last one were executed as commands of `ascmd` (e.g. `as_rm`), for example with a file name made for that. A newline or NUL character in a path is now refused, as is a command longer than what `ascmd` reads (4094 bytes, it stopped with `Internal server error`). An error of `ascmd` itself (e.g. usage) showed errno `4294967295` instead of `-1`, and a date before 1970 was wrong.
 
 ### Breaking Changes
 
 * Option `plugin_folder`: the folders given replace the folder `plugins` of the configuration folder (they were added to it). To use both, add `DEF`, e.g. `--plugin-folder=DEF --plugin-folder=<FOLDER>`. A warning tells when that folder has plugins and is not used.
+* `server du` and `server md5sum`: the result is a list with one row per path, with column `path` (it was a single object, of the last path only).
+* `server df`: the column of the type of file system is `type` (it was `is_a`).
 
 ## 4.29.1
 
