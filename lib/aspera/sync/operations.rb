@@ -122,6 +122,7 @@ module Aspera
             exec_spec.args = ["--conf64=#{Base64.strict_encode64(JSON.generate(sync_info))}"]
             Log.dump(:sync_conf, sync_info)
             agent = Agent::Factory.instance.create(:direct, {})
+            Aspera.assert(agent.respond_to?(:start_and_monitor_process)) { "agent direct (#{agent.class}) cannot run async: it does not provide start_and_monitor_process" }
             agent.start_and_monitor_process(session: {}, exec_spec: exec_spec)
           else
             # `args` format

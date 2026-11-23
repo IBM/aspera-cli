@@ -63,7 +63,7 @@ module Aspera
         let(:job_id) { 'httpgw-job-uuid' }
 
         let(:agent_double) do
-          d = double('Agent::Httpgw', in_process?: true, transfer_id: job_id, async_params: {})
+          d = double('Plugins::Httpgw::Agent', in_process?: true, transfer_id: job_id, async_params: {})
           allow(d).to(receive(:start_transfer))
           allow(d).to(receive(:last_job_id).and_return(job_id))
           d
@@ -364,28 +364,28 @@ module Aspera
         end
       end
 
-      # ── Agent::Httpgw.transfer_status ───────────────────────────────────────
+      # ── Plugins::Httpgw::Agent.transfer_status ───────────────────────────────────────
 
-      describe 'Agent::Httpgw.transfer_status' do
-        before { require_relative '../../../agent/httpgw' }
+      describe 'Plugins::Httpgw::Agent.transfer_status' do
+        before { require_relative '../../httpgw/agent' }
 
         it 'returns unknown when _agent_ref is nil' do
-          result = Aspera::Agent::Httpgw.transfer_status('some-job', {})
+          result = Aspera::Plugins::Httpgw::Agent.transfer_status('some-job', {})
           expect(result['status']).to(eq('unknown'))
         end
 
         it 'returns unknown when no transfer has been started' do
-          agent = double('Agent::Httpgw instance')
+          agent = double('Plugins::Httpgw::Agent instance')
           allow(agent).to(receive(:instance_variable_get).with(:@transfer_thread).and_return(nil))
-          result = Aspera::Agent::Httpgw.transfer_status('job-1', {'_agent_ref' => agent})
+          result = Aspera::Plugins::Httpgw::Agent.transfer_status('job-1', {'_agent_ref' => agent})
           expect(result['status']).to(eq('unknown'))
         end
 
         it 'returns running when the transfer thread is alive' do
           live_thread = Thread.new { sleep(60) }
-          agent = double('Agent::Httpgw instance')
+          agent = double('Plugins::Httpgw::Agent instance')
           allow(agent).to(receive(:instance_variable_get).with(:@transfer_thread).and_return(live_thread))
-          result = Aspera::Agent::Httpgw.transfer_status('job-2', {'_agent_ref' => agent})
+          result = Aspera::Plugins::Httpgw::Agent.transfer_status('job-2', {'_agent_ref' => agent})
           expect(result['status']).to(eq('running'))
           live_thread.kill
         end
@@ -393,10 +393,10 @@ module Aspera
         it 'returns completed when thread finished without error' do
           dead_thread = Thread.new {}
           dead_thread.join
-          agent = double('Agent::Httpgw instance')
+          agent = double('Plugins::Httpgw::Agent instance')
           allow(agent).to(receive(:instance_variable_get).with(:@transfer_thread).and_return(dead_thread))
           allow(agent).to(receive(:instance_variable_get).with(:@transfer_error).and_return(nil))
-          result = Aspera::Agent::Httpgw.transfer_status('job-3', {'_agent_ref' => agent})
+          result = Aspera::Plugins::Httpgw::Agent.transfer_status('job-3', {'_agent_ref' => agent})
           expect(result['status']).to(eq('completed'))
         end
 
@@ -404,10 +404,10 @@ module Aspera
           dead_thread = Thread.new {}
           dead_thread.join
           err = RuntimeError.new('ws error')
-          agent = double('Agent::Httpgw instance')
+          agent = double('Plugins::Httpgw::Agent instance')
           allow(agent).to(receive(:instance_variable_get).with(:@transfer_thread).and_return(dead_thread))
           allow(agent).to(receive(:instance_variable_get).with(:@transfer_error).and_return(err))
-          result = Aspera::Agent::Httpgw.transfer_status('job-4', {'_agent_ref' => agent})
+          result = Aspera::Plugins::Httpgw::Agent.transfer_status('job-4', {'_agent_ref' => agent})
           expect(result['status']).to(eq('failed'))
           expect(result['error']).to(eq('ws error'))
         end

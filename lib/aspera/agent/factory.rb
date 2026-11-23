@@ -70,10 +70,12 @@ module Aspera
         name = agent.to_sym
         Aspera.assert(all.key?(name)) { "unknown agent: #{name}" }
         return @registry.load_entry(@provided[name]) if @provided.key?(name)
-        # A bundle of this name that is unavailable (e.g. invalid manifest) is not replaced by the shim of the former file of this folder
+        # A bundle that is unavailable and that is, or may be (manifest not readable), the provider of this agent is not replaced by the shim of the former file of this folder.
+        # A bundle of the same name that does not declare an agent of this name (e.g. commands only) does not prevent the legacy agent.
         bundle = @registry[name]
-        reason = bundle.nil? || !bundle.form.eql?(:bundle) ? nil : @registry.unavailable_reason(name)
-        raise BundleRegistry::Unavailable, "plugin #{name} is unavailable: #{reason}" unless reason.nil?
+        if !bundle.nil? && bundle.bundle? && (reason = @registry.unavailable_reason(name)) && (!bundle.error.nil? || declares_agent?(bundle, name))
+          raise BundleRegistry::Unavailable, "plugin #{name} is unavailable: #{reason}"
+        end
         require "aspera/agent/#{name}"
         Aspera::Agent.const_get(name.to_s.capitalize)
       end
@@ -106,6 +108,13 @@ module Aspera
       end
 
       private
+
+      # @param bundle [BundleRegistry::Plugin] A bundle with a valid manifest
+      # @param name   [Symbol]                 Name of an agent
+      # @return [Boolean] `true` if the manifest of the bundle declares an agent of this name
+      def declares_agent?(bundle, name)
+        bundle.extensions.any? { |entry| entry.point.eql?(POINT) && entry.fields['name'].to_s.eql?(name.to_s) }
+      end
 
       # Agents of this folder, letter by today's rule: first letter, except `direct`
       # @return [Hash{Symbol => Symbol}] Letter, by name

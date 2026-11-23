@@ -16,13 +16,6 @@ module Aspera
       module AscpActions
         TRANSFERD_APP_NAME = 'sdk'
 
-        # Mapping from agent symbol to schema key in options.schema.yaml
-        # Agents without dedicated schema (connect, desktop) are omitted, and agents of bundles (see `agent_schema_key`).
-        AGENT_SCHEMA_KEY = {
-          node: Schema::Registry::NODE_AGENT_OPTIONS
-        }.freeze
-        private_constant :AGENT_SCHEMA_KEY
-
         # Set the SDK directory, checking default and former locations
         # If a product is selected for `ascp`, the SDK directory is still needed (keys, conf, transferd)
         def set_sdk_dir
@@ -73,12 +66,12 @@ module Aspera
         end
 
         # @param agent [Symbol] Name of an agent
-        # @return [String, nil] Schema of the parameters of the agent: built-in agent, or options schema declared by the bundle that provides it; `nil` if none
+        # @return [String, nil] Schema of the parameters of the agent: component `<Name>AgentOptions` of the options schema (node, or declared by the bundle that provides the agent); `nil` if none or if it has no parameter
         def agent_schema_key(agent)
-          return AGENT_SCHEMA_KEY[agent] unless Aspera::Agent::Factory.instance.provided?(agent)
-          # Component added to `TransferAgentOptions` variants, see `Schema::Registry#add_variants`
+          # Component of the file, or added to `TransferAgentOptions` variants, see `Schema::Registry#add_variants`
           component = "#{agent.to_s.snake_to_capital}AgentOptions"
-          return unless Schema::Registry.instance.reader(Schema::Registry::OPTIONS)['components']['schemas'].key?(component)
+          schema = Schema::Registry.instance.reader(Schema::Registry::OPTIONS)['components']['schemas'][component]
+          return if schema.nil? || schema['properties'].to_h.empty?
           "#{Schema::Registry::OPTIONS}:components.schemas.#{component}"
         end
         private :agent_schema_key

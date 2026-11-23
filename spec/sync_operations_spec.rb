@@ -5,6 +5,7 @@
 
 require 'spec_helper'
 require_relative '../lib/aspera/sync/operations'
+require_relative '../lib/aspera/plugins/direct/agent'
 
 RSpec.describe(Aspera::Sync::Operations) do
   # `conf` format: `local` at top level, `args` format: `sessions` list
@@ -95,6 +96,11 @@ RSpec.describe(Aspera::Sync::Operations) do
 
     def args_info(session = {})
       {'sessions' => [{'name' => 's2', 'local_dir' => '/l', 'remote_dir' => '/r'}.merge(session)]}
+    end
+
+    it 'fails with a clear message if the agent direct cannot run async' do
+      allow(Aspera::Agent::Factory.instance).to(receive(:create).with(:direct, {}).and_return(Object.new))
+      expect { described_class.start(conf_info, {}) { server_ts.dup } }.to(raise_error(Aspera::AssertError, /agent direct \(Object\) cannot run async.*start_and_monitor_process/))
     end
 
     it 'uses target_rate_kbps of transfer spec (conf)' do

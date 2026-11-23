@@ -163,6 +163,27 @@ module Aspera
         expect { factory.create(:fake, {}) }.to(raise_error(BundleRegistry::Unavailable, /requires gem spec_gem/))
       end
 
+      it 'loads the legacy agent when an unavailable bundle of the same name declares no agent' do
+        write_bundle(folder, 'node', manifest: {'depends' => %w[spec_bundle_missing]})
+        registry.add_source(folder)
+        factory.all
+        expect(registry.unavailable_reason(:node)).to(include('spec_bundle_missing'))
+        expect(factory.agent_class(:node)).to(be(Aspera::Agent::Node))
+      end
+
+      it 'refuses the legacy agent when an unavailable bundle of the same name declares this agent' do
+        write_point_bundle(folder)
+        write_bundle(folder, 'node', manifest: {'commands' => false, 'depends' => %w[spec_bundle_missing], 'extensions' => {'agent' => [AgentFactorySpecHelper::ENTRY.merge('name' => 'node')]}}, code: nil)
+        registry.add_source(folder)
+        expect { factory.agent_class(:node) }.to(raise_error(BundleRegistry::Unavailable, /plugin node is unavailable: .*spec_bundle_missing/))
+      end
+
+      it 'refuses the legacy agent when the manifest of the bundle of the same name cannot be read' do
+        write_bundle(folder, 'node', manifest: "name: [\n", code: nil)
+        registry.add_source(folder)
+        expect { factory.agent_class(:node) }.to(raise_error(BundleRegistry::Unavailable, /plugin node is unavailable: invalid manifest/))
+      end
+
       it 'uses the agent of a bundle instead of the legacy agent of the same name' do
         write_point_bundle(folder)
         write_agent_bundle(folder, entries: [{'name' => 'direct', 'short' => 'a'}, {'name' => 'node', 'short' => 'm'}])
@@ -329,6 +350,36 @@ module Aspera
         expect(actions.action_agents_show(agent_name: :fake).data['description']).to(eq('Parameters of the fake agent.'))
         expect(actions.action_agents_parameters(agent_name: :fake)).to(be_a(Cli::Result::ObjectList))
         expect(actions.action_agents_parameters(agent_name: :desktop)).to(be_a(Cli::Result::Nothing))
+      end
+    end
+
+    describe('parameters of the agents of the gem bundles') do
+      let(:schemas) { Schema::Registry.send(:new) }
+      let(:actions) { Class.new { include Aspera::Plugins::Transfer::AscpActions }.new }
+      let(:gem_registry) { BundleRegistry.send(:new) }
+      let(:gem_factory) { Agent::Factory.send(:new, registry: gem_registry) }
+
+      before do
+        allow(BundleRegistry).to(receive(:instance).and_return(gem_registry))
+        allow(Agent::Factory).to(receive(:instance).and_return(gem_factory))
+        allow(Schema::Registry).to(receive(:instance).and_return(schemas))
+      end
+
+      it 'gives nothing and "(no configurable parameters)" for the agents without parameter (connect, desktop)' do
+        %i[connect desktop].each do |agent|
+          expect(actions.action_agents_parameters(agent_name: agent)).to(be_a(Cli::Result::Nothing))
+          expect(actions.action_agents_show(agent_name: agent).data['description']).to(eq('(no configurable parameters)'))
+        end
+        rows = actions.action_agents_list.data.to_h { |row| [row['name'], row['parameters']] }
+        expect(rows.values_at('connect', 'desktop')).to(eq(['', '']))
+      end
+
+      it 'gives the parameters of the other agents' do
+        %i[direct httpgw transferd node].each do |agent|
+          expect(actions.action_agents_parameters(agent_name: agent)).to(be_a(Cli::Result::ObjectList))
+          expect(actions.action_agents_show(agent_name: agent).data['description']).not_to(eq('(no configurable parameters)'))
+          expect(actions.action_agents_list.data.find { |row| row['name'].eql?(agent.to_s) }['parameters']).not_to(be_empty)
+        end
       end
     end
 

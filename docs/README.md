@@ -13034,7 +13034,7 @@ EXAMPLES
 Main components:
 
 - `Aspera` generic classes for REST and OAuth
-- `Aspera::Agent::Direct`: Starting and monitoring transfers using `ascp`.
+- `Aspera::Plugins::Direct::Agent`: Starting and monitoring transfers using `ascp` (former name `Aspera::Agent::Direct`: deprecated, removed in 5.0).
 - `Aspera::Cli`: `ascli`.
 
 Working examples can be found in repo: <https://github.com/laurent-martin/aspera-api-examples> in Ruby examples.
