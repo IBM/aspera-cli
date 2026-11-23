@@ -299,7 +299,8 @@ module Aspera
           api_url_base = self.class.api_base_url(url_info[:instance_domain])
           Aspera.assert(scope, 'Missing mandatory option: scope', type: ParameterError) unless auth.eql?(:none)
           # default values for client id
-          client_id, client_secret = self.class.get_client_info if client_id.nil?
+          global_client = client_id.nil?
+          client_id, client_secret = self.class.get_client_info if global_client
           # access key secrets are provided out of band to get node api access
           # maps access key (String) to its associated secret (String)
           @secret_finder = secret_finder
@@ -328,6 +329,8 @@ module Aspera
           # fill other auth parameters based on OAuth method
           case auth_params[:grant_method]
           when :web
+            # AoC accepts only the redirect URIs registered in the API client: the global client has none for loopback
+            Aspera.assert(!global_client, 'auth=web requires an API client of the organization: set options client_id and client_secret (the global client supports only auth=jwt)', type: ParameterError)
             Aspera.assert(redirect_uri, 'Missing mandatory option: redirect_uri', type: ParameterError)
             auth_params[:redirect_uri] = redirect_uri
           when :jwt
