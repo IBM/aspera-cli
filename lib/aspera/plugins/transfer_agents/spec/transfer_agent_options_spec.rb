@@ -3,7 +3,7 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Unit tests for Aspera::Plugins::Transfer::TransferAgent option handling: `ts`, `transfer` and `transfer_info`.
+# Unit tests for Aspera::Plugins::TransferAgents::TransferAgent option handling: `ts`, `transfer` and `transfer_info`.
 
 require_relative '../../../cli/parser'
 require_relative '../../../cli/context'
@@ -11,7 +11,7 @@ require_relative '../transfer_agent'
 
 module Aspera
   module Cli
-    RSpec.describe(Aspera::Plugins::Transfer::TransferAgent) do
+    RSpec.describe(Aspera::Plugins::TransferAgents::TransferAgent) do
       # @return [TransferAgent] transfer agent with options from the given command line and preset
       def build_transfer_agent(argv, preset: nil)
         context = Context.new

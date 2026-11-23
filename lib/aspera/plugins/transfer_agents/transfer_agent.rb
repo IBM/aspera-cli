@@ -20,7 +20,7 @@ require 'securerandom'
 
 module Aspera
   module Plugins
-    module Transfer
+    module TransferAgents
       # The Transfer agent is a common interface to start a transfer using
       # one of the supported transfer agents.
       # Provide CLI options to select one of the transfer agents (FASP/ascp client)

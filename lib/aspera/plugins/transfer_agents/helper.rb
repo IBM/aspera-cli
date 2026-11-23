@@ -5,8 +5,8 @@
 
 module Aspera
   module Plugins
-    module Transfer
-      # Included by the commands of the bundles that transfer files (manifest: `depends: - transfer`):
+    module TransferAgents
+      # Included by the commands of the bundles that transfer files (manifest: `depends: - transfer_agents`):
       # the transfer agent is the service `transfer` of this bundle.
       # Single-file plugins use `Cli::Plugins::Base#transfer`.
       module Helper

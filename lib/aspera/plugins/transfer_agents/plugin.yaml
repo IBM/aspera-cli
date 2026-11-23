@@ -1,4 +1,4 @@
-name: transfer
+name: transfer_agents
 title: Aspera transfer agents, ascp and async
 schemas:
   - key: transfer_opts

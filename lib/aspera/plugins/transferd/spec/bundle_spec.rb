@@ -45,7 +45,7 @@ module Aspera
         describe 'commands' do
           it 'are those of plugin transferd, from the bundle (which hides the shim of the former plugin file)' do
             expect(registry.unavailable_reason(:transferd)).to(be_nil)
-            expect(registry[:transferd].depends).to(eq([:transfer]))
+            expect(registry[:transferd].depends).to(eq([:transfer_agents]))
             expect(registry[:transferd].gems).to(eq([]))
             expect(Cli::Plugins::Factory.instance.plugin_source(:transferd)).to(eq(bundle_folder))
             expect(Cli::Plugins::Factory.instance.plugin_class(:transferd)).to(be(Commands))

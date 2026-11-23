@@ -4,8 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require_relative 'basic_auth'
-require_relative '../../plugins/transfer/sync_actions'
-require_relative '../../plugins/transfer/ascp_logs_actions'
+require_relative '../../plugins/transfer_agents/sync_actions'
+require_relative '../../plugins/transfer_agents/ascp_logs_actions'
 require_relative '../../transfer/result'
 require_relative '../../transfer/spec'
 require_relative '../../ascmd'
@@ -21,8 +21,8 @@ module Aspera
     module Plugins
       # Operations on HSTS with SSH/FASP (ascmd/ascp)
       class Server < BasicAuth
-        include Aspera::Plugins::Transfer::SyncActions
-        include Aspera::Plugins::Transfer::AscpLogsActions
+        include Aspera::Plugins::TransferAgents::SyncActions
+        include Aspera::Plugins::TransferAgents::AscpLogsActions
 
         SSH_SCHEME = 'ssh'
         LOCAL_SCHEME = 'local'
@@ -193,7 +193,7 @@ module Aspera
         command :sync, description: 'Synchronize files with server'
         commands_under :sync do
           Sync::Operations::DIRECTIONS.each do |dir|
-            command dir, description: "#{dir.capitalize}-sync with server", transfer_paths: :send, arguments: Aspera::Plugins::Transfer::SyncActions::PATH_AND_INFO_ARGS
+            command dir, description: "#{dir.capitalize}-sync with server", transfer_paths: :send, arguments: Aspera::Plugins::TransferAgents::SyncActions::PATH_AND_INFO_ARGS
           end
           sync_admin_commands :admin
         end

@@ -32,7 +32,7 @@ module Aspera
         describe 'commands' do
           it 'are those of plugin httpgw, from the bundle (which hides the shim of the former plugin file)' do
             expect(registry.unavailable_reason(:httpgw)).to(be_nil)
-            expect(registry[:httpgw].depends).to(eq([:transfer]))
+            expect(registry[:httpgw].depends).to(eq([:transfer_agents]))
             expect(registry[:httpgw].gems).to(eq([]))
             expect(Cli::Plugins::Factory.instance.plugin_source(:httpgw)).to(eq(bundle_folder))
             expect(Cli::Plugins::Factory.instance.plugin_class(:httpgw)).to(be(Commands))

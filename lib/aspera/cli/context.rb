@@ -67,7 +67,7 @@ module Aspera
         raise Cli::Error, e.message
       end
 
-      # Service `transfer`: transfer agent of bundle `transfer`, used by plugins that transfer files
+      # Service `transfer`: transfer agent of bundle `transfer_agents`, used by plugins that transfer files
       # @return [Object] The service, see `service`
       def transfer = service(:transfer)
 

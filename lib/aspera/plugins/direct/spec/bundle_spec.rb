@@ -34,10 +34,10 @@ module Aspera
         end
 
         describe 'manifest' do
-          it 'is available, depends on the bundle transfer, has no command and no gem' do
+          it 'is available, depends on the bundle transfer_agents, has no command and no gem' do
             registry.scan
             expect(registry.unavailable_reason(:direct)).to(be_nil)
-            expect(registry[:direct].depends).to(eq([:transfer]))
+            expect(registry[:direct].depends).to(eq([:transfer_agents]))
             expect(registry[:direct].gems).to(eq([]))
             expect(registry[:direct].commands?).to(be(false))
           end

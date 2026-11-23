@@ -7,7 +7,7 @@
 require_relative '../../schema/registry'
 require_relative '../../sealed_hash'
 require_relative 'basic_auth'
-require_relative '../../plugins/transfer/sync_actions'
+require_relative '../../plugins/transfer_agents/sync_actions'
 require_relative '../special_values'
 require_relative '../../transfer/spec'
 require_relative '../../nagios'
@@ -23,7 +23,7 @@ module Aspera
   module Cli
     module Plugins
       class Node < BasicAuth
-        include Aspera::Plugins::Transfer::SyncActions
+        include Aspera::Plugins::TransferAgents::SyncActions
 
         application_name 'HSTS Node API'
 
@@ -358,7 +358,7 @@ module Aspera
         command :sync, description: 'Synchronize folders (Gen3)'
         commands_under :sync do
           Sync::Operations::DIRECTIONS.each do |dir|
-            command dir, description: "#{dir.capitalize}-sync (Gen3)", transfer_paths: :send, arguments: Aspera::Plugins::Transfer::SyncActions::PATH_AND_INFO_ARGS
+            command dir, description: "#{dir.capitalize}-sync (Gen3)", transfer_paths: :send, arguments: Aspera::Plugins::TransferAgents::SyncActions::PATH_AND_INFO_ARGS
           end
           sync_admin_commands :admin
         end
@@ -388,7 +388,7 @@ module Aspera
           command :sync, description: 'Synchronize folders'
           commands_under :sync do
             Sync::Operations::DIRECTIONS.each do |dir|
-              command dir, description: "#{dir.capitalize}-sync", transfer_paths: :send, arguments: Aspera::Plugins::Transfer::SyncActions::PATH_AND_INFO_ARGS
+              command dir, description: "#{dir.capitalize}-sync", transfer_paths: :send, arguments: Aspera::Plugins::TransferAgents::SyncActions::PATH_AND_INFO_ARGS
             end
             sync_admin_commands :admin
           end

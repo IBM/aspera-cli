@@ -22,8 +22,8 @@ require 'yaml'
 
 module Aspera
   module Plugins
-    module Transfer
-      RSpec.describe('Bundle transfer') do
+    module TransferAgents
+      RSpec.describe('Bundle transfer_agents') do
         let(:source_root) { File.expand_path('../../../../..', __dir__) }
         let(:bundle_folder) { File.expand_path('..', __dir__) }
         let(:registry) { BundleRegistry.instance }
@@ -32,7 +32,7 @@ module Aspera
           let(:commands) { Cli::Plugins::Config.command_registry }
 
           it 'are the modules of the manifest, in its order' do
-            mounts = registry.mounts(:config).select { |mount| mount.bundle.eql?(:transfer) }
+            mounts = registry.mounts(:config).select { |mount| mount.bundle.eql?(:transfer_agents) }
             expect(mounts.map(&:constant)).to(eq(%w[SyncActions AscpLogsActions AscpActions TransferActions ConfigCommands]))
             expect(Cli::Plugins::Config.ancestors).to(include(SyncActions, AscpLogsActions, AscpActions, TransferActions, ConfigCommands))
           end
@@ -56,7 +56,7 @@ module Aspera
         describe 'service transfer' do
           it 'is the transfer agent of the bundle' do
             service = registry.service(:transfer)
-            expect(service).to(have_attributes(bundle: :transfer, file: 'transfer_agent.rb', constant: 'TransferAgent'))
+            expect(service).to(have_attributes(bundle: :transfer_agents, file: 'transfer_agent.rb', constant: 'TransferAgent'))
             expect(registry.load_entry(service)).to(be(TransferAgent))
           end
 
@@ -74,11 +74,11 @@ module Aspera
         end
 
         describe 'extension point agent' do
-          let(:schema) { JSONSchemer.schema(Aspera::Yaml.safe_load(File.read(File.join(bundle_folder, registry[:transfer].extension_points[:agent])))) }
+          let(:schema) { JSONSchemer.schema(Aspera::Yaml.safe_load(File.read(File.join(bundle_folder, registry[:transfer_agents].extension_points[:agent])))) }
           let(:entry) { {'name' => 'spec_agent', 'short' => 's', 'options_schema' => 'schemas/agent_options.yaml'} }
 
           it 'is declared by the bundle' do
-            expect(registry[:transfer].extension_points).to(eq({agent: 'schemas/agent_extension.schema.yaml'}))
+            expect(registry[:transfer_agents].extension_points).to(eq({agent: 'schemas/agent_extension.schema.yaml'}))
           end
 
           it 'accepts an entry with a name, a letter and the schema of the parameters of the agent' do
@@ -98,12 +98,12 @@ module Aspera
         describe 'shims of the moved files' do
           # Former path => former constant, new constant
           MOVED = {
-            'aspera/cli/ascp_actions'          => %w[Aspera::Cli::AscpActions Aspera::Plugins::Transfer::AscpActions],
-            'aspera/cli/ascp_logs_actions'     => %w[Aspera::Cli::AscpLogsActions Aspera::Plugins::Transfer::AscpLogsActions],
-            'aspera/cli/async_transfer_store'  => %w[Aspera::Cli::AsyncTransferStore Aspera::Plugins::Transfer::AsyncTransferStore],
-            'aspera/cli/sync_actions'          => %w[Aspera::Cli::SyncActions Aspera::Plugins::Transfer::SyncActions],
-            'aspera/cli/transfer_actions'      => %w[Aspera::Cli::TransferActions Aspera::Plugins::Transfer::TransferActions],
-            'aspera/cli/transfer_agent'        => %w[Aspera::Cli::TransferAgent Aspera::Plugins::Transfer::TransferAgent],
+            'aspera/cli/ascp_actions'          => %w[Aspera::Cli::AscpActions Aspera::Plugins::TransferAgents::AscpActions],
+            'aspera/cli/ascp_logs_actions'     => %w[Aspera::Cli::AscpLogsActions Aspera::Plugins::TransferAgents::AscpLogsActions],
+            'aspera/cli/async_transfer_store'  => %w[Aspera::Cli::AsyncTransferStore Aspera::Plugins::TransferAgents::AsyncTransferStore],
+            'aspera/cli/sync_actions'          => %w[Aspera::Cli::SyncActions Aspera::Plugins::TransferAgents::SyncActions],
+            'aspera/cli/transfer_actions'      => %w[Aspera::Cli::TransferActions Aspera::Plugins::TransferAgents::TransferActions],
+            'aspera/cli/transfer_agent'        => %w[Aspera::Cli::TransferAgent Aspera::Plugins::TransferAgents::TransferAgent],
             'aspera/command_line_builder'      => %w[Aspera::CommandLineBuilder Aspera::Transfer::CommandLineBuilder],
             'aspera/command_line_converter'    => %w[Aspera::CommandLineConverter Aspera::Transfer::CommandLineConverter],
             'aspera/data_repository'           => %w[Aspera::DataRepository Aspera::Ascp::DataRepository]
@@ -122,7 +122,7 @@ module Aspera
             expect(stdout.lines(chomp: true)).to(eq(MOVED.values.map { |former, moved| "#{former}=#{moved}" }))
             MOVED.each_key do |path|
               moved = path.sub(%r{\Aaspera/(cli/)?}, '')
-              new_path = path.start_with?('aspera/cli/') ? "aspera/plugins/transfer/#{moved}" : MOVED[path].last.delete_prefix('Aspera::').split('::').map(&:capital_to_snake).join('/').prepend('aspera/')
+              new_path = path.start_with?('aspera/cli/') ? "aspera/plugins/transfer_agents/#{moved}" : MOVED[path].last.delete_prefix('Aspera::').split('::').map(&:capital_to_snake).join('/').prepend('aspera/')
               expect(stderr.scan("#{path} is deprecated: use #{new_path} (removed in 5.0)").length).to(eq(1), stderr)
             end
           end
@@ -169,7 +169,7 @@ module Aspera
             RUBY
             entry = {'name' => 'spec_user', 'short' => 'u', 'file' => 'agent.rb', 'class' => 'Agent', 'options_schema' => 'agent_options.yaml'}
             write_bundle(
-              'spec_bundle_agent', {'depends' => %w[transfer], 'extensions' => {'agent' => [entry]}},
+              'spec_bundle_agent', {'depends' => %w[transfer_agents], 'extensions' => {'agent' => [entry]}},
               'agent.rb'           => 'class Agent; end',
               'agent_options.yaml' => {'type' => 'object', 'properties' => {'color' => {'type' => 'string'}}}.to_yaml
             )

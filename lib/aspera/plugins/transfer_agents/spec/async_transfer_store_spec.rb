@@ -11,7 +11,7 @@ require 'securerandom'
 
 module Aspera
   module Cli
-    RSpec.describe(Aspera::Plugins::Transfer::AsyncTransferStore) do
+    RSpec.describe(Aspera::Plugins::TransferAgents::AsyncTransferStore) do
       # Use a real PersistencyFolder backed by a temp directory
       let(:tmpdir) { Dir.mktmpdir('async_store_spec') }
       let(:persistency) { Aspera::PersistencyFolder.new(tmpdir) }

@@ -11,7 +11,7 @@ require_relative '../../ascp/session_errors'
 
 module Aspera
   module Plugins
-    module Transfer
+    module TransferAgents
       # Mounted on plugin config (manifest `mounts`): ASCP / Transferd related actions
       module AscpActions
         TRANSFERD_APP_NAME = 'sdk'

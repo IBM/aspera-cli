@@ -88,7 +88,7 @@ module Aspera
           @wizard = Wizard.new(self, context.main_folder)
           # Values set through `on_set` callbacks are used below (sdk_folder)
           options.parse_options!
-          # Method of the module `AscpActions` mounted by bundle `transfer`: config still works if this mount failed (see `include_mounts`)
+          # Method of the module `AscpActions` mounted by bundle `transfer_agents`: config still works if this mount failed (see `include_mounts`)
           set_sdk_dir if respond_to?(:set_sdk_dir)
         end
 
@@ -335,7 +335,7 @@ module Aspera
             ]
         end
 
-        # Commands of the modules that bundles mount on config (manifest `mounts`), here: bundle `transfer` adds `ascp`, `agents`, `transfer`, and `sync` (before `gem`),
+        # Commands of the modules that bundles mount on config (manifest `mounts`), here: bundle `transfer_agents` adds `ascp`, `agents`, `transfer`, and `sync` (before `gem`),
         # then bundle `transferd` adds the deprecated `transferd`
         include_mounts
 
@@ -429,7 +429,7 @@ module Aspera
           params['url'] || options.with_interactive { options.get_interactive('url') }
         end
 
-        # Instance of plugin `transferd`, found by name, for the deprecated commands `config transferd` (mounted by bundle `transferd`) and `config ascp install` (bundle `transfer`)
+        # Instance of plugin `transferd`, found by name, for the deprecated commands `config transferd` (mounted by bundle `transferd`) and `config ascp install` (bundle `transfer_agents`)
         # @param command     [String] Deprecated command
         # @param replacement [String] Command to use instead
         # @return [Base] Plugin instance

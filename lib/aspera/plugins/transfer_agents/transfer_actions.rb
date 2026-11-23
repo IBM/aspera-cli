@@ -10,7 +10,7 @@ require_relative '../../assert'
 
 module Aspera
   module Plugins
-    module Transfer
+    module TransferAgents
       # Mounted on plugin config (manifest `mounts`): async transfer management actions.
       # Exposes three sub-commands under `config agents jobs` (`config transfer` is a deprecated alias):
       #   status  <job_id>        Re-query a running/completed transfer

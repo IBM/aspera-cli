@@ -16,7 +16,7 @@ require_relative '../../cli/terminal_formatter'
 
 module Aspera
   module Plugins
-    module Transfer
+    module TransferAgents
       # Mounted on plugin config (manifest `mounts`), after the modules that give the actions and the DSL methods `ascp_logs_commands` and `sync_admin_commands`:
       # command trees `sync`, `ascp`, `agents` and the deprecated `transfer`.
       # `sync` is placed before `gem`, the other trees where config includes the mounts: the command tree of config is the same as before the bundle.

@@ -65,11 +65,11 @@ cli/plugins/faspex5.rb:
 cli/plugins/node.rb:
 - const Api::Node
 - const Api::NodeFileId
-- const Plugins::Transfer
+- const Plugins::TransferAgents
 - const Sync::Operations
 - const Transfer::Spec
 - require api/node
-- require plugins/transfer/sync_actions
+- require plugins/transfer_agents/sync_actions
 - require transfer/spec
 cli/plugins/orchestrator.rb:
 - const Transfer::Spec
@@ -87,12 +87,12 @@ cli/plugins/preview.rb:
 - require preview/utils
 - require transfer/spec
 cli/plugins/server.rb:
-- const Plugins::Transfer
+- const Plugins::TransferAgents
 - const Sync::Operations
 - const Transfer::Result
 - const Transfer::Spec
-- require plugins/transfer/ascp_logs_actions
-- require plugins/transfer/sync_actions
+- require plugins/transfer_agents/ascp_logs_actions
+- require plugins/transfer_agents/sync_actions
 - require transfer/result
 - require transfer/spec
 cli/plugins/shares.rb:

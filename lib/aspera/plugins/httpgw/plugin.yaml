@@ -1,7 +1,7 @@
 name: httpgw
 title: HTTP Gateway
 depends:
-  - transfer
+  - transfer_agents
 commands: true
 extensions:
   agent:

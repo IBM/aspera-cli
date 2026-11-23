@@ -10,7 +10,7 @@ require_relative 'commands'
 module Aspera
   module Plugins
     module Transferd
-      # Mounted on plugin config (manifest `mounts`), after the modules of bundle `transfer`: the deprecated command `config transferd`,
+      # Mounted on plugin config (manifest `mounts`), after the modules of bundle `transfer_agents`: the deprecated command `config transferd`,
       # where config included it before the bundle (last command of config).
       module ConfigCommands
         # Instance of the plugin of this bundle (`Commands`, the class of the mount), for the deprecated command `config transferd`

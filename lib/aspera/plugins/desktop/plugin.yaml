@@ -1,7 +1,7 @@
 name: desktop
 title: IBM Aspera for Desktop
 depends:
-  - transfer
+  - transfer_agents
 extensions:
   agent:
     - name: desktop

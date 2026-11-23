@@ -14,8 +14,8 @@ require_relative '../lib/aspera/schema/registry'
 require_relative '../lib/aspera/schema/validator'
 require_relative '../lib/aspera/cli/context'
 require_relative '../lib/aspera/cli/parser'
-require_relative '../lib/aspera/plugins/transfer/transfer_agent'
-require_relative '../lib/aspera/plugins/transfer/ascp_actions'
+require_relative '../lib/aspera/plugins/transfer_agents/transfer_agent'
+require_relative '../lib/aspera/plugins/transfer_agents/ascp_actions'
 require_relative '../lib/aspera/cli/plugins/config'
 require_relative '../lib/aspera/log'
 require 'tmpdir'
@@ -312,7 +312,7 @@ module Aspera
       end
     end
 
-    describe(Plugins::Transfer::ConfigCommands) do
+    describe(Plugins::TransferAgents::ConfigCommands) do
       let(:specs) { Cli::Plugins::Config.command_registry }
 
       it 'accepts an agent of a bundle added after the class of config is loaded, for the commands of agents and of ascp' do
@@ -330,9 +330,9 @@ module Aspera
       end
     end
 
-    describe(Plugins::Transfer::AscpActions) do
+    describe(Plugins::TransferAgents::AscpActions) do
       let(:schemas) { Schema::Registry.send(:new) }
-      let(:actions) { Class.new { include Aspera::Plugins::Transfer::AscpActions }.new }
+      let(:actions) { Class.new { include Aspera::Plugins::TransferAgents::AscpActions }.new }
 
       before do
         write_point_bundle(folder)
@@ -355,7 +355,7 @@ module Aspera
 
     describe('parameters of the agents of the gem bundles') do
       let(:schemas) { Schema::Registry.send(:new) }
-      let(:actions) { Class.new { include Aspera::Plugins::Transfer::AscpActions }.new }
+      let(:actions) { Class.new { include Aspera::Plugins::TransferAgents::AscpActions }.new }
       let(:gem_registry) { BundleRegistry.send(:new) }
       let(:gem_factory) { Agent::Factory.send(:new, registry: gem_registry) }
 
@@ -383,7 +383,7 @@ module Aspera
       end
     end
 
-    describe(Plugins::Transfer::TransferAgent) do
+    describe(Plugins::TransferAgents::TransferAgent) do
       let(:schemas) { Schema::Registry.send(:new) }
 
       before do

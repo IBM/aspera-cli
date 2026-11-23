@@ -25,7 +25,7 @@ RSpec.describe(Aspera::BundleRegistry::MANIFEST) do
       name: transferd
       title: IBM Aspera Transfer Daemon
       depends:
-        - transfer
+        - transfer_agents
       gems:
         - grpc
       commands: true
@@ -66,9 +66,9 @@ RSpec.describe(Aspera::BundleRegistry::MANIFEST) do
     YAML
   end
 
-  it 'accepts extension points and services (bundle transfer)' do
+  it 'accepts extension points and services (bundle transfer_agents)' do
     expect(errors(<<~YAML)).to(be_empty)
-      name: transfer
+      name: transfer_agents
       title: Aspera transfer agents, ascp and async
       extension_points:
         - name: agent

@@ -34,10 +34,10 @@ module Aspera
         describe("bundle #{name}") do
           let(:bundle_folder) { File.expand_path("../../#{name}", __dir__) }
 
-          it 'is available, depends on the bundle transfer, has no command and no gem' do
+          it 'is available, depends on the bundle transfer_agents, has no command and no gem' do
             registry.scan
             expect(registry.unavailable_reason(name)).to(be_nil)
-            expect(registry[name].depends).to(eq([:transfer]))
+            expect(registry[name].depends).to(eq([:transfer_agents]))
             expect(registry[name].gems).to(eq([]))
             expect(registry[name].commands?).to(be(false))
           end
