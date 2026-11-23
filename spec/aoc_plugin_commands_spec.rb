@@ -157,7 +157,7 @@ module Aspera
           end
 
           it 'shows members, or the error when a member cannot be read' do
-            node_api = recording_api(:node, Api::Node)
+            node_api = recording_api(:node, Aspera::Plugins::Node::Api)
             allow(aoc_api).to(receive(:node_api_from).and_return(node_api))
             responses[[:read, 'permissions']] = [
               {'access_type' => 'user', 'access_id' => 'u1'},
@@ -220,7 +220,7 @@ module Aspera
         # Node API double of a Gen4 node
         # @param name [Symbol] name of API in recorded calls
         def node_api_double(name)
-          api = recording_api(name, Api::Node)
+          api = recording_api(name, Aspera::Plugins::Node::Api)
           allow(api).to(receive_messages(
             app_info:  double(node_info: {'id' => "#{name}_id", 'access_key' => "#{name}_ak", 'name' => name.to_s}),
             base_url:  "https://#{name}.example.com",
@@ -272,7 +272,7 @@ module Aspera
             allow(aoc_api).to(receive_messages(home: {node_id: 'n1', file_id: 'f1'}, node_api_from: top_node_api))
             allow(transfer).to(receive(:destination_folder).and_return('/dest'))
             allow(transfer).to(receive(:agent_instance=))
-            allow(Agent::Node).to(receive(:new).and_return(:node_agent))
+            allow(Aspera::Plugins::Node::Agent).to(receive(:new).and_return(:node_agent))
             allow(server_node_api).to(receive(:transfer_spec_gen4).and_return({'paths' => []}))
           end
 
@@ -287,7 +287,7 @@ module Aspera
           it 'pulls from the home folder: the client folder is the destination' do
             folders(client: '/dest', server: '/src', root: 'f1')
             expect(execute('files', 'transfer', 'pull', '/src', transfer: transfer)).to(be_a(Result::Nothing))
-            expect(Agent::Node).to(have_received(:new).with(url: 'https://client.example.com', username: 'client_ak', password: '<TOKEN>', root_id: 'fc'))
+            expect(Aspera::Plugins::Node::Agent).to(have_received(:new).with(url: 'https://client.example.com', username: 'client_ak', password: '<TOKEN>', root_id: 'fc'))
             expect(server_node_api).to(have_received(:transfer_spec_gen4).with(
               'fs', Transfer::Spec::DIRECTION_RECEIVE, {'remote_access_key' => 'server_ak', 'destination_root_id' => 'fs', 'source_root_id' => 'fc'}
             ))
@@ -304,7 +304,7 @@ module Aspera
             responses[[:read_with_paging, 'workspaces/w1/permissions']] = {items: [{'id' => 'sf1', 'node_id' => 'n1', 'file_id' => 'f1'}], total: 1}
             folders(client: '/src', server: '/dest', root: 'f1')
             execute('admin', 'workspace', 'shared_folder', 'w1', 'node', 'sf1', 'transfer', 'push', '/src', transfer: transfer)
-            expect(aoc_api).to(have_received(:node_api_from).with(hash_including(node_id: 'n1', scope: Api::Node::Scope::ADMIN)))
+            expect(aoc_api).to(have_received(:node_api_from).with(hash_including(node_id: 'n1', scope: Aspera::Plugins::Node::Api::Scope::ADMIN)))
           end
         end
 

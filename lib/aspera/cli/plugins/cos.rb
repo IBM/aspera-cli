@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require_relative 'base'
-require_relative 'node'
+require_relative '../../plugins/node/commands'
 require_relative '../error'
 require_relative '../../api/cos_node'
 require_relative '../../assert'
@@ -16,7 +16,7 @@ module Aspera
         application_name 'IBM Cloud Object Storage'
 
         command :node, description: 'Execute COS node commands',
-          mount: {plugin: Node, instance: :cos_node_plugin, only: Node::COMMANDS_COS}
+          mount: {plugin: Aspera::Plugins::Node::Commands, instance: :cos_node_plugin, only: Aspera::Plugins::Node::Commands::COMMANDS_COS}
 
         option :bucket,              description: 'Bucket name'
         option :endpoint,            description: 'Storage endpoint (URL)'
@@ -26,7 +26,7 @@ module Aspera
         option :region,              description: 'Storage region'
         option :identity,            description: "Authentication URL (#{Api::CosNode::IBM_CLOUD_TOKEN_URL})", default: Api::CosNode::IBM_CLOUD_TOKEN_URL
 
-        use_options Node
+        use_options Aspera::Plugins::Node::Commands
 
         # node - mount target: build the COS Node API and plugin from CLI options.
         # @return [Node] Node plugin instance on the COS bucket
@@ -47,7 +47,7 @@ module Aspera
             cos_node_params.merge!(Api::CosNode.parameters_from_svc_credentials(service_credentials, options.get_option(:region, mandatory: true)))
           end
           api_node = Api::CosNode.new(**cos_node_params)
-          Node.new(context: context, api: api_node)
+          Aspera::Plugins::Node::Commands.new(context: context, api: api_node)
         end
       end
     end

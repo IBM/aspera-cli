@@ -12,7 +12,7 @@ require_relative '../../transfer/spec'
 require_relative '../../schema/registry'
 require_relative '../../persistency_action_once'
 require_relative '../../temp_file_manager'
-require_relative '../../api/node'
+require_relative '../../plugins/node/api'
 require_relative '../../hash_ext'
 require_relative '../../timer_limiter'
 require_relative '../../id_generator'
@@ -96,7 +96,7 @@ module Aspera
           @option_overwrite = options.get_option(:overwrite)
           # Tell which tool we will use for office docs
           Aspera::Preview::Utils.office_tool = @gen_options.office_conversion
-          Api::Node.api_options[:cache] = !@option_folder_reset_cache.eql?(:header)
+          Aspera::Plugins::Node::Api.api_options[:cache] = !@option_folder_reset_cache.eql?(:header)
           # Start from the full supported format list, then remove any skipped format.
           @preview_formats_to_generate = Aspera::Preview::Generator::PREVIEW_FORMATS.dup
           skip = options.get_option(:skip_format)
@@ -272,7 +272,7 @@ module Aspera
           # original_mtime=DateTime.parse(entry['modified_time'])
           # Local directory where previews are generated before being uploaded back.
           local_entry_preview_dir = File.join(@tmp_folder, entry_preview_folder_name(entry))
-          file_info = @api_node.read("files/#{entry['id']}", headers: Api::Node.add_cache_control)
+          file_info = @api_node.read("files/#{entry['id']}", headers: Aspera::Plugins::Node::Api.add_cache_control)
           # Check if preview exists either from file_info or by checking preview endpoint
           preview_exist = file_info.key?('preview')
           unless preview_exist
@@ -455,7 +455,7 @@ module Aspera
         # Build the Node API and set up storage references for scan/events/trevents.
         # @return [Hash] empty ctx (state stored in instance variables)
         def setup_node_api(**)
-          @api_node = Api::Node.new(**basic_auth_params)
+          @api_node = Aspera::Plugins::Node::Api.new(**basic_auth_params)
           @transfer_server_address = URI.parse(@api_node.base_url).host
           # Get current access key information
           @access_key_self = @api_node.read('access_keys/self')
@@ -502,7 +502,7 @@ module Aspera
             apifid =
               if (selector = Parser.percent_selector(path))
                 Aspera.assert_values(selector[:field], ['id'], type: BadArgument) { 'file id' }
-                Api::NodeFileId.new(@api_node, selector[:value].to_s.empty? ? @access_key_self['root_file_id'] : selector[:value])
+                Aspera::Plugins::Node::NodeFileId.new(@api_node, selector[:value].to_s.empty? ? @access_key_self['root_file_id'] : selector[:value])
               else
                 @api_node.resolve_api_fid(@access_key_self['root_file_id'], path)
               end

@@ -13,7 +13,7 @@ require_relative '../../../cli/error'
 require_relative '../../../cli/security'
 require_relative '../transfer_agent'
 require_relative '../../../agent/base'
-require_relative '../../../agent/node'
+require_relative '../../node/agent'
 require 'bundler/setup'
 require 'tmpdir'
 
@@ -60,7 +60,7 @@ module Aspera
 
       it 'tells that agents write on the local system, except agent node' do
         expect(Agent::Base.allocate.local_destination?).to(be(true))
-        expect(Agent::Node.allocate.local_destination?).to(be(false))
+        expect(Aspera::Plugins::Node::Agent.allocate.local_destination?).to(be(false))
       end
 
       it 'gives the destination as is at level low' do

@@ -115,8 +115,8 @@ module TestedVersions
         Aspera::Log.log.warn('server: no Node API on the same host')
         nil
       when :node
-        require_relative '../../lib/aspera/api/node'
-        normalize(Aspera::Api::Node.new(
+        require_relative '../../lib/aspera/plugins/node/api'
+        normalize(Aspera::Plugins::Node::Api.new(
           base_url: url,
           auth:     {type: :basic, username: preset_param(preset, 'username'), password: preset_param(preset, 'password')}
         ).read('info')['version'])

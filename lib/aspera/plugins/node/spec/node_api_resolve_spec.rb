@@ -3,10 +3,11 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-require_relative '../lib/aspera/api/node'
+require 'spec_helper'
+require_relative '../api'
 require 'bundler/setup'
 
-RSpec.describe(Aspera::Api::Node) do
+RSpec.describe(Aspera::Plugins::Node::Api) do
   describe '#resolve_api_fid' do
     # Folder contents by file id (listing order matters: siblings listed after the matching folder)
     let(:tree) do
@@ -40,7 +41,7 @@ RSpec.describe(Aspera::Api::Node) do
 
     # Node API without server, folder contents from `tree`, links on same node
     let(:api) do
-      api = Aspera::Api::Node.allocate
+      api = Aspera::Plugins::Node::Api.allocate
       allow(api).to(receive(:read_folder_content)) do |file_id, *_args, **_kwargs|
         listed.push(file_id)
         tree.fetch(file_id)

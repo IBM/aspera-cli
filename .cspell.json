@@ -9,6 +9,7 @@
     "lib/transfer_services_pb.rb",
     "lib/aspera/plugins/transferd/grpc",
     "lib/aspera/schema/IBM*",
+    "lib/aspera/plugins/*/schemas/IBM*",
     "docs/README.md",
     "docs/aspera.conf.xsd",
     "docs/spec.schema.json",
@@ -98,7 +99,7 @@
   ],
   "overrides": [
     {
-      "filename": "tests/tests.yml",
+      "filename": ["tests/tests.yml", "lib/aspera/plugins/*/spec/tests.yml"],
       "ignoreRegExpList": ["snake_case_identifier"]
     }
   ]

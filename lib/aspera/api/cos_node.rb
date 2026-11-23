@@ -5,13 +5,13 @@
 
 require_relative '../log'
 require_relative '../assert'
-require_relative 'node'
+require_relative '../plugins/node/api'
 require 'xmlsimple'
 
 module Aspera
   module Api
     # Cloud Object Storage Node API Client
-    class CosNode < Node
+    class CosNode < Aspera::Plugins::Node::Api
       IBM_CLOUD_TOKEN_URL = 'https://iam.cloud.ibm.com/identity'
       TOKEN_FIELD = 'delegated_refresh_token'
       FASP_INFO_KEYS = %w[ATSEndpoint AccessKey].freeze

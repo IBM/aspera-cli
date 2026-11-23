@@ -1,0 +1,22 @@
+name: node
+title: IBM Aspera High Speed Transfer Server Node
+depends:
+  - transfer_agents
+  # `node emulator` executes transfers with the transfer daemon (`emulator.rb`)
+  - transferd
+commands: true
+schemas:
+  - key: node
+    file: schemas/IBM Aspera Node API-4.4.6.yaml
+    source:
+      url: https://raw.githubusercontent.com/laurent-martin/aspera-api-examples/refs/heads/main/openapi/IBM%20Aspera%20Node%20API-4.4.6.yaml
+  - key: node_opts
+    file: schemas/options.yaml
+    owned: true
+extensions:
+  agent:
+    - name: node
+      short: n
+      file: agent.rb
+      class: Agent
+      options_schema: schemas/agent_options.yaml

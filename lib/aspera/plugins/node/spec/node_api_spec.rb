@@ -3,13 +3,14 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Unit tests for Aspera::Api::Node — `read` is stubbed, no node server needed.
+# Unit tests for Aspera::Plugins::Node::Api — `read` is stubbed, no node server needed.
 
-require_relative '../lib/aspera/api/node'
+require 'spec_helper'
+require_relative '../api'
 require 'openssl'
 require 'securerandom'
 
-RSpec.describe(Aspera::Api::Node) do
+RSpec.describe(Aspera::Plugins::Node::Api) do
   let(:access_key) { 'my_access_key' }
   let(:token) { "Bearer #{SecureRandom.hex(16)}" }
   let(:api) do
@@ -149,7 +150,7 @@ RSpec.describe(Aspera::Api::Node) do
 
   describe '#resolve_api_fid_paths' do
     it 'transfers the content of a single folder' do
-      allow(api).to(receive(:resolve_api_fid).and_return(Aspera::Api::NodeFileId.new(api, 'd1')))
+      allow(api).to(receive(:resolve_api_fid).and_return(Aspera::Plugins::Node::NodeFileId.new(api, 'd1')))
       allow(api).to(receive(:read).with('files/d1').and_return({'type' => 'folder'}))
       expect(api.resolve_api_fid_paths('root', [{'source' => 'dir'}])[1]).to(eq([{'source' => '.'}]))
     end

@@ -10,7 +10,7 @@
 require_relative '../lib/aspera/agent/base'
 require_relative '../lib/aspera/plugins/direct/agent'
 require_relative '../lib/aspera/plugins/httpgw/agent'
-require_relative '../lib/aspera/agent/node'
+require_relative '../lib/aspera/plugins/node/agent'
 require_relative '../lib/aspera/plugins/desktop/agent'
 require_relative '../lib/aspera/plugins/connect/agent'
 require_relative '../lib/aspera/cli/parser'
@@ -147,7 +147,7 @@ module Aspera
     end
   end
 
-  RSpec.describe(Agent::Node) do
+  RSpec.describe(Aspera::Plugins::Node::Agent) do
     let(:rest_params) { [] }
     let(:rest) { instance_double(Rest::Client, base_url: 'https://node.example.com') }
     let(:password) { SecureRandom.alphanumeric(12) }

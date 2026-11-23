@@ -3,18 +3,19 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Unit tests for Aspera::Cli::Plugins::Node commands — Node API is doubled, no node server needed.
+# Unit tests for Aspera::Plugins::Node::Commands — Node API is doubled, no node server needed.
 
-require_relative '../lib/aspera/cli/context'
-require_relative '../lib/aspera/cli/parser'
-require_relative '../lib/aspera/cli/formatter'
-require_relative '../lib/aspera/cli/plugins/node'
+require 'spec_helper'
+require_relative '../../../cli/context'
+require_relative '../../../cli/parser'
+require_relative '../../../cli/formatter'
+require_relative '../commands'
 
 module Aspera
   module Cli
     module Plugins
-      RSpec.describe(Node) do
-        let(:api) { instance_double(Api::Node, base_url: 'https://node.example.com') }
+      RSpec.describe(Aspera::Plugins::Node::Commands) do
+        let(:api) { instance_double(Aspera::Plugins::Node::Api, base_url: 'https://node.example.com') }
         let(:formatter) { instance_double(Formatter, display_item_count: nil) }
 
         # @param argv [Array<String>] command line

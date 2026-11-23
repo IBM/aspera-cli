@@ -19,7 +19,7 @@ module Aspera
   module Cli
     module Plugins
       RSpec.describe(Preview) do
-        let(:node) { instance_double(Api::Node, base_url: 'https://node.example.com') }
+        let(:node) { instance_double(Aspera::Plugins::Node::Api, base_url: 'https://node.example.com') }
         let(:transfer) { instance_double(Aspera::Plugins::TransferAgents::TransferAgent, user_transfer_spec: {}, assert_no_dry_run: nil) }
         let(:generator) { instance_double(Aspera::Preview::Generator, conversion_type: :image, error_asset: error_asset) }
         let(:tmp) { Dir.mktmpdir }
@@ -32,7 +32,7 @@ module Aspera
         let(:file_entry) { {'id' => 'f2', 'name' => 'a.png', 'type' => 'file', 'content_type' => 'image/png'} }
 
         before do
-          allow(Api::Node).to(receive(:new).and_return(node))
+          allow(Aspera::Plugins::Node::Api).to(receive(:new).and_return(node))
           allow(Aspera::Preview::Utils).to(receive(:check_tools))
           allow(Aspera::Preview::Generator).to(receive(:new).and_return(generator))
           allow(generator).to(receive(:generate).and_raise('conversion failed'))

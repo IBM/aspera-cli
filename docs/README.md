@@ -6730,7 +6730,7 @@ ascli config plugins list
 │ plugin │ detect │ wizard │ path                                            │
 ╞════════╪════════╪════════╪═════════════════════════════════════════════════╡
 │ shares │ ✓      │ ✓      │ .../aspera-cli/lib/aspera/cli/plugins/shares.rb │
-│ node   │ ✓      │ ✓      │ .../aspera-cli/lib/aspera/cli/plugins/node.rb   │
+│ node   │ ✓      │ ✓      │ .../aspera-cli/lib/aspera/plugins/node          │
 ...
 ╰────────┴────────┴────────┴─────────────────────────────────────────────────╯
 ```
@@ -9730,7 +9730,7 @@ ascli node access_keys modify %id:self @ruby:'{token_verification_key: File.read
 > [!NOTE]
 > The Bearer token can also be created using command `asnodeadmin` on HSTS.
 > See the [HSTS manual](https://www.ibm.com/docs/en/ahts): `Bearer tokens` section.
-> Code for token generation is provided in [`lib/aspera/api/node.rb`](../lib/aspera/api/node.rb)
+> Code for token generation is provided in [`lib/aspera/plugins/node/api.rb`](../lib/aspera/plugins/node/api.rb)
 
 #### Bearer token: User side
 

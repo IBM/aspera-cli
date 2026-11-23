@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require_relative 'base'
-require_relative 'node'
+require_relative '../../plugins/node/commands'
 require_relative '../../api/ats'
 require_relative '../../api/aoc'
 require_relative '../../api/alee'
@@ -30,7 +30,7 @@ module Aspera
         option :cloud,       description: 'Cloud provider'
         option :region,      description: 'Cloud region'
 
-        use_options Node
+        use_options Aspera::Plugins::Node::Commands
 
         def initialize(api: nil, **base_args)
           super(**base_args)
@@ -74,7 +74,7 @@ module Aspera
           )
           command :node,        description: 'Execute node commands via ATS access key',
             arguments: [{name: :access_key_id, type: :identifier}],
-            mount: {plugin: Node, at: %i[access_keys do], instance: :ak_node_plugin}
+            mount: {plugin: Aspera::Plugins::Node::Commands, at: %i[access_keys do], instance: :ak_node_plugin}
           command :cluster,     description: 'Show cluster info for an access key',
             arguments: [{name: :access_key_id, type: :identifier}]
           command(
@@ -219,7 +219,7 @@ module Aspera
           server_data = @ats_api_open.all_servers.find { |i| i['id'].start_with?(ak_data['transfer_server_id']) }
           Aspera.assert(!server_data.nil?, type: Cli::Error) { 'no such server found' }
           node_url = server_data['transfer_setup_url']
-          api_node = Api::Node.new(
+          api_node = Aspera::Plugins::Node::Api.new(
             base_url: node_url,
             auth:     {
               type:     :basic,
@@ -227,7 +227,7 @@ module Aspera
               password: context.secret_finder.lookup(url: node_url, username: access_key_id)
             }
           )
-          [Node.new(context: context, api: api_node), {do_root_file_id: ak_data['root_file_id']}]
+          [Aspera::Plugins::Node::Commands.new(context: context, api: api_node), {do_root_file_id: ak_data['root_file_id']}]
         end
 
         def action_access_key_cluster(access_key_id:, **)

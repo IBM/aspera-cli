@@ -37,13 +37,18 @@ module AgentFactorySpecHelper
     transferd: {long: 'Transferd', short: :t}
   }.freeze
 
-  # Variants of `TransferAgentOptions` in `options.schema.yaml`: component, by agent, in the order of `oneOf`
-  SCHEMA_VARIANTS = {
-    'node' => 'NodeAgentOptions'
-  }.freeze
+  # Variants of `TransferAgentOptions` in `options.schema.yaml`: component, by agent, in the order of `oneOf` (none: every agent is in a bundle)
+  SCHEMA_VARIANTS = {}.freeze
 
   # Variants with the bundles of the gem: those of the schema, then the agents of the bundles (by name of bundle)
-  TODAY_VARIANTS = SCHEMA_VARIANTS.merge('connect' => 'ConnectAgentOptions', 'desktop' => 'DesktopAgentOptions', 'direct' => 'DirectAgentOptions', 'httpgw' => 'HttpgwAgentOptions', 'transferd' => 'TransferdAgentOptions').freeze
+  TODAY_VARIANTS = SCHEMA_VARIANTS.merge(
+    'connect'   => 'ConnectAgentOptions',
+    'desktop'   => 'DesktopAgentOptions',
+    'direct'    => 'DirectAgentOptions',
+    'httpgw'    => 'HttpgwAgentOptions',
+    'node'      => 'NodeAgentOptions',
+    'transferd' => 'TransferdAgentOptions'
+  ).freeze
 
   # Schema of an entry of the extension point `agent`
   POINT_SCHEMA = {
@@ -168,7 +173,7 @@ module Aspera
         registry.add_source(folder)
         factory.all
         expect(registry.unavailable_reason(:node)).to(include('spec_bundle_missing'))
-        expect(factory.agent_class(:node)).to(be(Aspera::Agent::Node))
+        expect(factory.agent_class(:node)).to(be(Aspera::Plugins::Node::Agent))
       end
 
       it 'refuses the legacy agent when an unavailable bundle of the same name declares this agent' do
@@ -292,11 +297,36 @@ module Aspera
         expect(schemas.reader(Schema::Registry::LOG_OPTIONS).current).to(be(schemas.reader(Schema::Registry::LOG_OPTIONS).current))
       end
 
-      it 'replaces the variant of an agent of the schema by the one of the bundle' do
+      # @param selector [Hash] `oneOf` and `discriminator` of the component with the marker
+      # @param others   [Hash] Other components of the document
+      # @return [Hash] Components of a document with that component (`Selector`), after the variants are added
+      def assembled(selector, others = {})
+        marker = {'point' => 'agent', 'value' => 'name', 'schema' => 'options_schema', 'suffix' => 'AgentOptions'}
+        document = {'components' => {'schemas' => {'Selector' => selector.merge(Schema::Registry::VARIANTS => marker)}.merge(others)}}
+        schemas.send(:add_variants, document, File.join(folder, 'document.yaml')).dig('components', 'schemas')
+      end
+
+      it 'replaces a variant of the document by the one of the bundle with the same agent, at its place' do
         write_point_bundle(folder)
-        write_agent_bundle(folder, entries: [{'name' => 'node', 'short' => 'n'}])
-        expect(variants.to_a).to(eq(AgentFactorySpecHelper::SCHEMA_VARIANTS.to_a))
-        expect(schemas.reader(Schema::Registry::NODE_AGENT_OPTIONS).current).to(eq(AgentFactorySpecHelper::OPTIONS_SCHEMA))
+        write_agent_bundle(folder)
+        components = assembled({
+          'oneOf'         => [{'$ref' => '#/components/schemas/FakeAgentOptions'}, {'$ref' => '#/components/schemas/Other'}],
+          'discriminator' => {'propertyName' => 'agent', 'mapping' => {'fake' => '#/components/schemas/FakeAgentOptions', 'other' => '#/components/schemas/Other'}}
+        }, 'FakeAgentOptions' => {'type' => 'object'})
+        expect(components['Selector']['oneOf']).to(eq([{'$ref' => '#/components/schemas/FakeAgentOptions'}, {'$ref' => '#/components/schemas/Other'}]))
+        expect(components['Selector']['discriminator']['mapping'].keys).to(eq(%w[fake other]))
+        expect(components['FakeAgentOptions']).to(eq(AgentFactorySpecHelper::OPTIONS_SCHEMA))
+      end
+
+      it 'creates oneOf and the mapping of the discriminator when the document has no variant' do
+        write_point_bundle(folder)
+        write_agent_bundle(folder)
+        components = assembled('discriminator' => {'propertyName' => 'agent'})
+        expect(components['Selector']).to(eq(
+          'oneOf'         => [{'$ref' => '#/components/schemas/FakeAgentOptions'}],
+          'discriminator' => {'propertyName' => 'agent', 'mapping' => {'fake' => '#/components/schemas/FakeAgentOptions'}}
+        ))
+        expect { assembled({}) }.to(raise_error(AssertError, /discriminator/))
       end
 
       it 'skips a variant with a warning: schema file that cannot be read, component of another schema, agent of an earlier entry' do
@@ -346,7 +376,6 @@ module Aspera
       it 'gives the parameters of an agent of a bundle, from the schema of its entry' do
         rows = actions.action_agents_list.data
         expect(rows.find { |row| row['name'].eql?('fake') }).to(include('short' => 'f', 'parameters' => 'color'))
-        expect(rows.find { |row| row['name'].eql?('node') }['parameters']).not_to(be_empty)
         expect(actions.action_agents_show(agent_name: :fake).data['description']).to(eq('Parameters of the fake agent.'))
         expect(actions.action_agents_parameters(agent_name: :fake)).to(be_a(Cli::Result::ObjectList))
         expect(actions.action_agents_parameters(agent_name: :desktop)).to(be_a(Cli::Result::Nothing))

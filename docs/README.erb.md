@@ -5010,7 +5010,7 @@ This is especially useful for direct node-to-node transfers.
 
 Parameters provided in option `transfer` are:
 
-<%=schema_to_table(Aspera::Schema::Registry::NODE_AGENT_OPTIONS)%>
+<%=schema_to_table("#{Aspera::Schema::Registry::OPTIONS}:components.schemas.NodeAgentOptions")%>
 
 Like any other option, `transfer` can get its value from a pre-configured [Option Preset](#option-preset):
 
@@ -6130,7 +6130,7 @@ Available plugins can be found using command:
 │ plugin │ detect │ wizard │ path                                            │
 ╞════════╪════════╪════════╪═════════════════════════════════════════════════╡
 │ shares │ ✓      │ ✓      │ .../aspera-cli/lib/aspera/cli/plugins/shares.rb │
-│ node   │ ✓      │ ✓      │ .../aspera-cli/lib/aspera/cli/plugins/node.rb   │
+│ node   │ ✓      │ ✓      │ .../aspera-cli/lib/aspera/plugins/node          │
 ...
 ╰────────┴────────┴────────┴─────────────────────────────────────────────────╯
 ```
@@ -8899,7 +8899,7 @@ Alternatively, use the following equivalent command, as `config genkey` also sav
 > [!NOTE]
 > The Bearer token can also be created using command `asnodeadmin` on HSTS.
 > See the [HSTS manual](https://www.ibm.com/docs/en/ahts): `Bearer tokens` section.
-> Code for token generation is provided in [`lib/aspera/api/node.rb`](<%=link_repo('lib/aspera/api/node.rb')%>)
+> Code for token generation is provided in [`lib/aspera/plugins/node/api.rb`](<%=link_repo('lib/aspera/plugins/node/api.rb')%>)
 
 #### Bearer token: User side
 
@@ -8969,7 +8969,7 @@ The emulator starts its own `transferd`, and stops it on exit.
 
 It takes an optional `Hash` argument with the following parameters:
 
-<%=schema_to_table('opts:components.schemas.NodeEmulatorOptions')%>
+<%=schema_to_table('node_opts:components.schemas.NodeEmulatorOptions')%>
 
 For details on `url` and HTTPS, see [Web service](#web-service).
 

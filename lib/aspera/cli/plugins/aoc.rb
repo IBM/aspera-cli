@@ -5,16 +5,16 @@
 
 require_relative '../../schema/registry'
 require_relative 'oauth'
-require_relative 'node'
+require_relative '../../plugins/node/commands'
 require_relative 'ats'
 require_relative '../special_values'
 require_relative '../../environment'
 require_relative '../wizard'
-require_relative '../../agent/node'
+require_relative '../../plugins/node/agent'
 require_relative '../../transfer/result'
 require_relative '../../transfer/spec'
 require_relative '../../api/aoc'
-require_relative '../../api/node'
+require_relative '../../plugins/node/api'
 require_relative '../../persistency_action_once'
 require_relative '../../id_generator'
 require_relative '../../assert'
@@ -284,7 +284,7 @@ module Aspera
         option :package_folder,    schema: Schema::Registry::PACKAGE_FOLDER_OPTIONS
         option :use_generic_client, description: 'Wizard: AoC: use global or org specific jwt client id (default: global for SaaS URL)', allowed: Type::BOOLEAN
 
-        use_options Node
+        use_options Aspera::Plugins::Node::Commands
 
         def initialize(**_)
           super
@@ -413,7 +413,7 @@ module Aspera
         # Arguments of the node-to-node `transfer` command (files, admin node do, shared folder node)
         TRANSFER_ARGS = [{name: :direction, allowed: %i[push pull]}, {name: :source_folder}].freeze
         # Mount of the Node plugin Gen4 commands (`node access_keys do <id> ...`), instance: set per mount point
-        NODE_GEN4_MOUNT = {plugin: Node, at: %i[access_keys do]}.freeze
+        NODE_GEN4_MOUNT = {plugin: Aspera::Plugins::Node::Commands, at: %i[access_keys do]}.freeze
         # Package identifier argument, `%name:` selector (lookup method shared with `admin package`)
         PACKAGE_ID_ARG = {name: :package_id, type: :identifier, lookup: :lookup_aoc_package_id}.freeze
         # Resource of analytics events (`admin analytics transfers|files`)
@@ -424,8 +424,8 @@ module Aspera
         # Node API on a Gen4 node, and its root file id.
         # @param node_id [String]      Node identifier
         # @param file_id [String, nil] Root file id; if nil, the access key root file id is used
-        # @param scope   [String, nil] node scope (Api::Node::Scope::USER/ADMIN), or nil (requires secret)
-        # @return [Array(Api::Node, String)]
+        # @param scope   [String, nil] node scope (Aspera::Plugins::Node::Api::Scope::USER/ADMIN), or nil (requires secret)
+        # @return [Array(Aspera::Plugins::Node::Api, String)]
         def nodegen4_root(node_id, file_id: nil, scope: nil)
           node_api = aoc_api.node_api_from(
             node_id:        node_id,
@@ -441,7 +441,7 @@ module Aspera
         # @return [Array(Node, Hash)]
         def nodegen4_plugin(node_id, file_id: nil, scope: nil)
           node_api, file_id = nodegen4_root(node_id, file_id: file_id, scope: scope)
-          [Node.new(context: context, api: node_api), {do_root_file_id: file_id}]
+          [Aspera::Plugins::Node::Commands.new(context: context, api: node_api), {do_root_file_id: file_id}]
         end
 
         # Node-to-node transfer: client side is agent, server side is transfer server, in same workspace.
@@ -464,7 +464,7 @@ module Aspera
           client_apifid = top_node_api.resolve_api_fid(file_id, client_folder)
           server_apifid = top_node_api.resolve_api_fid(file_id, server_folder)
           # force node as transfer agent
-          transfer.agent_instance = Agent::Node.new(
+          transfer.agent_instance = Aspera::Plugins::Node::Agent.new(
             url:      client_apifid.node_api.base_url,
             username: client_apifid.node_api.app_info.node_info['access_key'],
             password: client_apifid.node_api.oauth.authorization,
@@ -611,7 +611,7 @@ module Aspera
         command :user,              description: 'Manage current user'
         # Node Gen4 read-only commands on packages: `packages <command> <package_id> ...`
         command :packages,          description: 'Manage packages', setup: :setup_workspace_display,
-          mount: NODE_GEN4_MOUNT.merge(instance: :package_node_plugin, only: Node::NODE4_READ_ACTIONS, arguments: [PACKAGE_ID_ARG])
+          mount: NODE_GEN4_MOUNT.merge(instance: :package_node_plugin, only: Aspera::Plugins::Node::Commands::NODE4_READ_ACTIONS, arguments: [PACKAGE_ID_ARG])
         command :files,             description: 'Manage files (workspace-aware)', setup: :setup_workspace_display,
           mount: NODE_GEN4_MOUNT.merge(instance: :files_node_plugin)
         command :admin, description: 'Administer AoC', setup: :setup_admin_scope
@@ -688,7 +688,7 @@ module Aspera
         # admin > workspace > shared_folder > node: Gen4 commands are mounted, plus node-to-node transfer
         commands_under %i[admin workspace shared_folder node] do
           command :transfer, description: 'Transfer files (node-to-node)', arguments: TRANSFER_ARGS,
-            action: ->(sf_item:, direction:, source_folder:, **) { nodegen4_transfer(sf_item['node_id'], file_id: sf_item['file_id'], scope: Api::Node::Scope::ADMIN, direction: direction, source_folder: source_folder) }
+            action: ->(sf_item:, direction:, source_folder:, **) { nodegen4_transfer(sf_item['node_id'], file_id: sf_item['file_id'], scope: Aspera::Plugins::Node::Api::Scope::ADMIN, direction: direction, source_folder: source_folder) }
         end
         commands_under %i[admin workspace shared_folder member] do
           command :list, description: 'List members of a shared folder'
@@ -706,7 +706,7 @@ module Aspera
         # admin > node > do: Gen4 commands are mounted (op_mount), plus node-to-node transfer
         commands_under %i[admin node do] do
           command :transfer, description: 'Transfer files (node-to-node)', arguments: TRANSFER_ARGS,
-            action: ->(node_id:, direction:, source_folder:, **) { nodegen4_transfer(node_id, scope: Api::Node::Scope::ADMIN, direction: direction, source_folder: source_folder) }
+            action: ->(node_id:, direction:, source_folder:, **) { nodegen4_transfer(node_id, scope: Aspera::Plugins::Node::Api::Scope::ADMIN, direction: direction, source_folder: source_folder) }
         end
         # admin > user > preferences|notifications sub-trees
         %i[preferences notifications].each do |pref|
@@ -930,7 +930,7 @@ module Aspera
             setup: :setup_files_short_link
           short_link_commands :short_link
           command :transfer, description: 'Transfer files (node-to-node)', arguments: TRANSFER_ARGS,
-            action: ->(direction:, source_folder:, **) { nodegen4_transfer(aoc_api.home[:node_id], file_id: aoc_api.home[:file_id], scope: Api::Node::Scope::USER, direction: direction, source_folder: source_folder) }
+            action: ->(direction:, source_folder:, **) { nodegen4_transfer(aoc_api.home[:node_id], file_id: aoc_api.home[:file_id], scope: Aspera::Plugins::Node::Api::Scope::USER, direction: direction, source_folder: source_folder) }
         end
 
         # automation sub-commands
@@ -1178,7 +1178,7 @@ module Aspera
           package_info = aoc_api.read("packages/#{package_id}")
           # An id that is not a single path segment (e.g. `/`) reads the list of packages
           Aspera.assert(package_info.is_a?(Hash), type: Cli::BadArgument) { "invalid package id: #{package_id}" }
-          nodegen4_plugin(package_info['node_id'], file_id: package_info['contents_file_id'], scope: Api::Node::Scope::USER)
+          nodegen4_plugin(package_info['node_id'], file_id: package_info['contents_file_id'], scope: Aspera::Plugins::Node::Api::Scope::USER)
         end
 
         # setup: files > short_link
@@ -1340,7 +1340,7 @@ module Aspera
 
         # files - mount target: Gen4 commands on the user's home folder
         def files_node_plugin(**)
-          nodegen4_plugin(aoc_api.home[:node_id], file_id: aoc_api.home[:file_id], scope: Api::Node::Scope::USER)
+          nodegen4_plugin(aoc_api.home[:node_id], file_id: aoc_api.home[:file_id], scope: Aspera::Plugins::Node::Api::Scope::USER)
         end
 
         # admin > application > instance > <type> > show|modify
@@ -1737,12 +1737,12 @@ module Aspera
 
         # admin > node > do - mount target: Gen4 commands on the node, admin scope
         def admin_node_do_plugin(node_id:, **)
-          nodegen4_plugin(node_id, scope: Api::Node::Scope::ADMIN)
+          nodegen4_plugin(node_id, scope: Aspera::Plugins::Node::Api::Scope::ADMIN)
         end
 
         # admin > node > bearer_token
         def action_admin_node_bearer_token(scope:, node_id:, **)
-          scope ||= Api::Node::Scope::ADMIN
+          scope ||= Aspera::Plugins::Node::Api::Scope::ADMIN
           node_api = aoc_api.node_api_from(node_id: node_id, scope: scope)
           Result::Text.new(node_api.oauth.authorization)
         end
@@ -1777,7 +1777,7 @@ module Aspera
 
         # admin > workspace > shared_folder > node - mount target: Gen4 commands on the shared folder, admin scope
         def admin_workspace_shared_folder_node_plugin(sf_item:, **)
-          nodegen4_plugin(sf_item['node_id'], file_id: sf_item['file_id'], scope: Api::Node::Scope::ADMIN)
+          nodegen4_plugin(sf_item['node_id'], file_id: sf_item['file_id'], scope: Aspera::Plugins::Node::Api::Scope::ADMIN)
         end
 
         # admin > workspace > shared_folder > member > list
@@ -1786,7 +1786,7 @@ module Aspera
             node_id:        sf_item['node_id'],
             workspace_id:   ws_res_id,
             workspace_name: nil,
-            scope:          Api::Node::Scope::USER
+            scope:          Aspera::Plugins::Node::Api::Scope::USER
           )
           result = node_api.read('permissions', {'file_id' => sf_item['file_id'], 'tag' => "aspera.files.workspace.id=#{ws_res_id}"})
           result.each do |item|

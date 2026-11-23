@@ -69,7 +69,7 @@ module Aspera
           it 'is no longer in the file of the framework schema' do
             framework = Yaml.safe_load(File.read(File.join(source_root, 'lib', Schema::Registry::LOCATIONS[:opts])))['components']['schemas']
             expect(framework.keys).not_to(include('DirectAgentOptions'))
-            expect(framework['TransferAgentOptions']['discriminator']['mapping']).not_to(include('direct'))
+            expect(framework['TransferAgentOptions']['discriminator'].fetch('mapping', {})).not_to(include('direct'))
           end
         end
 

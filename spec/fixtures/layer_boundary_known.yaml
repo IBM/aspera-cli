@@ -4,17 +4,15 @@ api/alee.rb:
 - require api/aoc
 api/aoc.rb:
 - const Ascp::DataRepository
+- const Plugins::Node
 - const Transfer::Spec
-- require api/node
 - require ascp/data_repository
+- require plugins/node/api
 - require transfer/spec
 api/cos_node.rb:
+- const Plugins::Node
 - const Transfer::Spec
-- require api/node
-api/node.rb:
-- const Api::Node
-- const Transfer::Spec
-- require transfer/spec
+- require plugins/node/api
 cli/bootstrapper.rb:
 - const Ascp::Installation
 - const Transfer::Parameters
@@ -28,26 +26,25 @@ cli/plugins/alee.rb:
 - const Api::Alee
 - require api/alee
 cli/plugins/aoc.rb:
-- const Agent::Node
 - const Api::AoC
-- const Api::Node
+- const Plugins::Node
 - const Transfer::Result
 - const Transfer::Spec
-- require agent/node
 - require api/aoc
-- require api/node
 - require cli/plugins/ats
-- require cli/plugins/node
+- require plugins/node/agent
+- require plugins/node/api
+- require plugins/node/commands
 - require transfer/result
 - require transfer/spec
 cli/plugins/ats.rb:
 - const Api::Alee
 - const Api::Ats
-- const Api::Node
+- const Plugins::Node
 - require api/alee
 - require api/aoc
 - require api/ats
-- require cli/plugins/node
+- require plugins/node/commands
 cli/plugins/config.rb:
 - const Ascp::Installation
 - const Transfer::Spec
@@ -55,33 +52,24 @@ cli/plugins/config.rb:
 - require transfer/spec
 cli/plugins/cos.rb:
 - const Api::CosNode
+- const Plugins::Node
 - require api/cos_node
-- require cli/plugins/node
+- require plugins/node/commands
 cli/plugins/faspex5.rb:
 - const Api::Faspex
 - const Transfer::Result
 - require api/faspex
 - require transfer/result
-cli/plugins/node.rb:
-- const Api::Node
-- const Api::NodeFileId
-- const Plugins::TransferAgents
-- const Sync::Operations
-- const Transfer::Spec
-- require api/node
-- require plugins/transfer_agents/sync_actions
-- require transfer/spec
 cli/plugins/orchestrator.rb:
 - const Transfer::Spec
 - require transfer/spec
 cli/plugins/preview.rb:
-- const Api::Node
-- const Api::NodeFileId
+- const Plugins::Node
 - const Preview::FileTypes
 - const Preview::Generator
 - const Preview::Utils
 - const Transfer::Spec
-- require api/node
+- require plugins/node/api
 - require preview/file_types
 - require preview/generator
 - require preview/utils
@@ -96,8 +84,8 @@ cli/plugins/server.rb:
 - require transfer/result
 - require transfer/spec
 cli/plugins/shares.rb:
-- const Api::Node
-- require cli/plugins/node
+- const Plugins::Node
+- require plugins/node/commands
 cli/runner.rb:
 - const Transfer::Error
 - const Transfer::Result
@@ -106,13 +94,5 @@ cli/runner.rb:
 faspex_gw.rb:
 - const Api::Faspex
 - require api/faspex
-node_emulator.rb:
-- const Plugins::Transferd
-- const Transfer::Error
-- const Transfer::Spec
-- require ascp/installation
-- require plugins/transferd/agent
-- require transfer/error
-- require transfer/spec
 transfer/parameters.rb:
 - require cli/formatter

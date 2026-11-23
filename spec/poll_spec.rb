@@ -9,7 +9,7 @@ require_relative '../lib/aspera/cli/runner'
 require_relative '../lib/aspera/cli/poll'
 require_relative '../lib/aspera/cli/plugins/orchestrator'
 require_relative '../lib/aspera/cli/plugins/faspex5'
-require_relative '../lib/aspera/cli/plugins/node'
+require_relative '../lib/aspera/plugins/node/commands'
 require_relative '../lib/aspera/cli/plugins/aoc'
 require_relative '../lib/aspera/cli/plugins/server'
 require_relative '../lib/aspera/cli/plugins/shares'
@@ -252,13 +252,13 @@ module Aspera
           {
             Plugins::Orchestrator => [%i[workflows workorders], %i[workorders status], %i[tasks list], %i[pools status], %i[queues list], %i[queues items]],
             Plugins::Faspex5      => [%i[packages list], %i[packages show], %i[admin workgroups list]],
-            Plugins::Node         => [%i[ls], %i[transfer list], %i[access_keys list], %i[access_keys show], %i[access_keys do thumbnail]],
+            Aspera::Plugins::Node::Commands => [%i[ls], %i[transfer list], %i[access_keys list], %i[access_keys show], %i[access_keys do thumbnail]],
             Plugins::Aoc          => [%i[packages list], %i[admin analytics transfers]]
           }.each do |plugin, paths|
             paths.each { |path| expect(plugin.command_registry[path].read_only?).to(be(true), "#{plugin} #{path}") }
           end
           expect(Plugins::Faspex5.command_registry[%i[packages send]].read_only?).to(be(false))
-          expect(Plugins::Node.command_registry[%i[access_keys delete]].read_only?).to(be(false))
+          expect(Aspera::Plugins::Node::Commands.command_registry[%i[access_keys delete]].read_only?).to(be(false))
         end
 
         it 'marks the read-only commands of server, and other commands that only read' do

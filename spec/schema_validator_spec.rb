@@ -29,7 +29,7 @@ RSpec.describe(Aspera::Schema::Validator) do
   end
 
   it 'enforces required unless partial' do
-    telemetry = 'opts:components.schemas.NodeTelemetryOptions'
+    telemetry = 'node_opts:components.schemas.NodeTelemetryOptions'
     expect(validator.errors({}, telemetry).first).to(include('required'))
     expect(validator.errors({}, telemetry, partial: true)).to(be_empty)
   end

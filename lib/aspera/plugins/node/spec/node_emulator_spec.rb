@@ -3,22 +3,23 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Tests for NodeEmulator: mapping of transferd messages to Node API, and transfer store.
+# Tests for Emulator: mapping of transferd messages to Node API, and transfer store.
 # transferd is replaced by a fake gRPC client — no daemon required.
 # Test values are the ones seen on real transfers (time stamps in milliseconds).
 # Tests for NodeEmulatorServlet: HTTP server on a free port, with a fake backend.
 
+require 'spec_helper'
 require 'bundler/setup'
 begin
-  require_relative '../lib/aspera/node_emulator'
+  require_relative '../emulator'
 rescue LoadError => e
   # optional gem grpc not installed (e.g. BUNDLE_WITHOUT=optional, or JRuby)
-  RSpec.describe('Aspera::NodeEmulator') { it('requires gem grpc') { skip(e.message) } }
+  RSpec.describe('Aspera::Plugins::Node::Emulator') { it('requires gem grpc') { skip(e.message) } }
   return
 end
-require_relative '../lib/aspera/cli/context'
-require_relative '../lib/aspera/cli/parser'
-require_relative '../lib/aspera/cli/plugins/node'
+require_relative '../../../cli/context'
+require_relative '../../../cli/parser'
+require_relative '../commands'
 require 'net/http'
 require 'securerandom'
 require 'tmpdir'
@@ -163,10 +164,10 @@ module Aspera
     )
 
     def entry_after(events, start_spec = {})
-      {start_spec: start_spec, sessions: {}, files: {}, rates: {}}.tap { |entry| events.each { |event| NodeEmulator.update_entry(entry, event) } }
+      {start_spec: start_spec, sessions: {}, files: {}, rates: {}}.tap { |entry| events.each { |event| Plugins::Node::Emulator.update_entry(entry, event) } }
     end
 
-    RSpec.describe(NodeEmulator) do
+    RSpec.describe(Plugins::Node::Emulator) do
       include NodeEmulatorTest
 
       describe '.node_status' do
@@ -451,7 +452,7 @@ module Aspera
       end
 
       describe 'retention' do
-        # @return [NodeEmulator] retention 60 s, with a completed and a running transfer, ended at time 1000
+        # @return [Plugins::Node::Emulator] retention 60 s, with a completed and a running transfer, ended at time 1000
         def started
           client = FakeTransferClient.new(
             [transfer_response(:COMPLETED, :SESSION_STOP, transfer_id: 'done')],
@@ -558,7 +559,7 @@ module Aspera
 
         it 'shows the docroot and the user executing transfers' do
           simulator = described_class.new(retention_sec: RETENTION_SEC, docroot: '/', transfer_client: FakeTransferClient.new([]))
-          expect(simulator.info).to(include('docroot' => 'file:////', 'transfer_user' => Etc.getpwuid(Process.euid).name))
+          expect(simulator.info).to(include('docroot' => 'file:////', 'transfer_user' => Etc.getpwuid(::Process.euid).name))
         end
       end
 
@@ -675,7 +676,7 @@ module Aspera
       end
     end
 
-    RSpec.describe(NodeEmulatorServlet) do
+    RSpec.describe(Plugins::Node::NodeEmulatorServlet) do
       let(:password) { SecureRandom.alphanumeric(12) }
       let(:basic_sim) { "Basic #{["sim:#{password}"].pack('m0')}" }
       let(:fake_simulator) { FakeSimulator.new }
@@ -848,7 +849,7 @@ module Aspera
 
         before do
           %w[c a d b].each { |name| File.write(File.join(docroot, name), name) }
-          start_server(simulator: NodeEmulator.new(retention_sec: RETENTION_SEC, docroot: docroot, transfer_client: FakeTransferClient.new([])))
+          start_server(simulator: Plugins::Node::Emulator.new(retention_sec: RETENTION_SEC, docroot: docroot, transfer_client: FakeTransferClient.new([])))
         end
 
         after { FileUtils.rm_rf(docroot) }
@@ -878,12 +879,12 @@ module Aspera
       end
     end
 
-    RSpec.describe(Cli::Plugins::Node) do
+    RSpec.describe(Plugins::Node::Commands) do
       describe '#action_emulator' do
         let(:password) { SecureRandom.hex(32) }
 
         before do
-          allow(NodeEmulator).to(receive(:new).and_return(instance_double(NodeEmulator)))
+          allow(Plugins::Node::Emulator).to(receive(:new).and_return(instance_double(Plugins::Node::Emulator)))
           allow(WebServerSimple).to(receive(:new).and_return(instance_double(WebServerSimple, mount: nil, start: nil)))
         end
 

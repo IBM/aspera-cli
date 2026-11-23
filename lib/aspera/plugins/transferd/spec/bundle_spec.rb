@@ -90,7 +90,7 @@ module Aspera
             # The file, not the document of the registry: `TransferdAgentOptions` is added to it as variant of `TransferAgentOptions`
             framework = Yaml.safe_load(File.read(File.join(source_root, 'lib', Schema::Registry::LOCATIONS[:opts])))['components']['schemas']
             expect(framework.keys).not_to(include('TransferdAgentOptions', 'ServiceOptions', 'TransferdServiceConfig'))
-            expect(framework['TransferAgentOptions']['discriminator']['mapping']).not_to(include('transferd'))
+            expect(framework['TransferAgentOptions']['discriminator'].fetch('mapping', {})).not_to(include('transferd'))
           end
         end
 

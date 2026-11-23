@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require_relative 'basic_auth'
-require_relative 'node'
+require_relative '../../plugins/node/commands'
 require_relative '../../assert'
 require_relative '../../rest/list'
 
@@ -200,7 +200,7 @@ module Aspera
         command :health,   description: 'Check Shares health'
         command :info,     description: 'Show server information', action: ->(**) { Result::SingleObject.new(basic_auth_api(NODE_API_PATH).read('info', headers: {'Content-Type' => Mime::JSON})) }
         command :files,    description: 'Browse and transfer files on Shares', aliases: [:repository],
-          mount: {plugin: Node, instance: :shares_node_plugin, only: Node::COMMANDS_SHARES}
+          mount: {plugin: Aspera::Plugins::Node::Commands, instance: :shares_node_plugin, only: Aspera::Plugins::Node::Commands::COMMANDS_SHARES}
         command :admin,    description: 'Administer Shares', setup: :setup_admin
         command :share,    description: 'Shares accessible to current user'
 
@@ -428,10 +428,10 @@ module Aspera
         # --- setup ---
 
         # files - mount target: Node plugin on the Shares node API.
-        # Api::Node (not plain Rest::Client) so that Node commands using its helpers work (e.g. spec, transport).
+        # Aspera::Plugins::Node::Api (not plain Rest::Client) so that Node commands using its helpers work (e.g. spec, transport).
         # @return [Node]
         def shares_node_plugin(**)
-          Node.new(context: context, api: Api::Node.new(**basic_auth_params(NODE_API_PATH)))
+          Aspera::Plugins::Node::Commands.new(context: context, api: Aspera::Plugins::Node::Api.new(**basic_auth_params(NODE_API_PATH)))
         end
 
         # Build the admin REST API and store in ivar.

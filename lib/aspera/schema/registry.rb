@@ -81,7 +81,6 @@ module Aspera
         faspex:       'aspera/schema/IBM Aspera Faspex API-5.0-enhanced.yaml',
         faspio:       'aspera/schema/IBM Aspera faspio Gateway API-1.0.0-enhanced.yaml',
         console:      'aspera/schema/IBM Aspera Console-enhanced.yaml',
-        node:         'aspera/schema/IBM Aspera Node API-4.4.6.yaml',
         shares:       'aspera/schema/IBM_Aspera_Shares.yaml',
         orchestrator: 'aspera/schema/IBM Aspera Orchestrator API-v1-enhanced.yaml',
         async_tables: 'aspera/sync/async_tables.yaml',
@@ -102,7 +101,6 @@ module Aspera
       FASPEX = 'faspex'
       FASPIO = 'faspio'
       CONSOLE = 'console'
-      NODE = 'node'
       ORCHESTRATOR = 'orchestrator'
       SHARES = 'shares+/api/v1'
       ASYNC_TABLES = 'async_tables'
@@ -113,8 +111,6 @@ module Aspera
       UI_OPTIONS              = "#{OPTIONS}:components.schemas.UiOptions".freeze
       SECURITY_OPTIONS        = "#{OPTIONS}:components.schemas.SecurityOptions".freeze
       TEMP_OPTIONS            = "#{OPTIONS}:components.schemas.TempOptions".freeze
-      NODE_AGENT_OPTIONS      = "#{OPTIONS}:components.schemas.NodeAgentOptions".freeze
-      NODE_EMULATOR_OPTIONS   = "#{OPTIONS}:components.schemas.NodeEmulatorOptions".freeze
       TRANSFER_AGENT_OPTIONS  = "#{OPTIONS}:components.schemas.TransferAgentOptions".freeze
       SMTP_OPTIONS            = "#{OPTIONS}:components.schemas.SmtpOptions".freeze
       HTTP_OPTIONS            = "#{OPTIONS}:components.schemas.HttpOptions".freeze
@@ -189,7 +185,8 @@ module Aspera
       # Add the variants given by bundles to the components of `components.schemas` that have the marker `x-cli-variants`
       # (`point`: extension point, `value`: field of an entry with the value of the discriminator, `schema`: field with the schema file of the variant,
       # relative to the folder of the bundle, `suffix`: of the name of the component).
-      # For each entry of the point: a component `<Value><suffix>` read from the file, a `$ref` in `oneOf`, an entry in `discriminator.mapping`.
+      # For each entry of the point: a component `<Value><suffix>` read from the file, a `$ref` in `oneOf`, an entry in `discriminator.mapping`
+      # (both created if the document has none).
       # An entry with the value of a variant of the document replaces it; an entry with the value of an earlier entry,
       # or whose schema file cannot be read, is skipped with a warning. The marker is removed.
       # The entries used are kept: the document is read again when they change (see `variants_current?`).
@@ -202,8 +199,11 @@ module Aspera
         return document unless schemas.is_a?(Hash)
         schemas.values.select { |schema| schema.is_a?(Hash) && schema.key?(VARIANTS) }.each do |selector|
           marker = selector.delete(VARIANTS)
-          one_of = selector['oneOf']
-          mapping = selector.dig('discriminator', 'mapping')
+          # A document without variants of its own has no `oneOf` nor `discriminator.mapping`: created
+          one_of = selector['oneOf'] ||= []
+          discriminator = selector['discriminator']
+          Aspera.assert_type(discriminator, Hash) { "#{VARIANTS}: discriminator" }
+          mapping = discriminator['mapping'] ||= {}
           Aspera.assert_type(one_of, Array) { "#{VARIANTS}: oneOf" }
           Aspera.assert_type(mapping, Hash) { "#{VARIANTS}: discriminator.mapping" }
           # Loaded on use: `bundle_registry` requires this file

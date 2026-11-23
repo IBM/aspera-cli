@@ -1,0 +1,20 @@
+# Component `NodeAgentOptions` of `TransferAgentOptions` (see `Schema::Registry#add_variants`): parameters of the agent `node`
+type: object
+description: Parameters for the Node API transfer agent.
+required:
+  - url
+  - username
+  - password
+properties:
+  url:
+    type: string
+    description: URL of the Node API.
+  username:
+    type: string
+    description: Node API user or access key.
+  password:
+    type: string
+    description: Password, secret, or bearer token.
+  root_id:
+    type: string
+    description: Root file ID. Mandatory only when `password` is a bearer token.

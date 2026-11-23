@@ -63,7 +63,7 @@ module Aspera
           it 'is no longer in the file of the framework schema' do
             framework = Yaml.safe_load(File.read(File.join(source_root, 'lib', Schema::Registry::LOCATIONS[:opts])))['components']['schemas']
             expect(framework.keys).not_to(include("#{info[:klass]}AgentOptions"))
-            expect(framework['TransferAgentOptions']['discriminator']['mapping']).not_to(include(name.to_s))
+            expect(framework['TransferAgentOptions']['discriminator'].fetch('mapping', {})).not_to(include(name.to_s))
           end
 
           it 'has a shim that warns once when loaded, and gives the moved constant under its former name' do

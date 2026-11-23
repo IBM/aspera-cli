@@ -19,7 +19,7 @@ RSpec.describe(Aspera::Api::AoC) do
     end
 
     it 'does not modify auth parameters of AoC API' do
-      node_params = aoc.node_api_from(node_id: 'n1', scope: Aspera::Api::Node::Scope::ADMIN).auth_params[:params]
+      node_params = aoc.node_api_from(node_id: 'n1', scope: Aspera::Plugins::Node::Api::Scope::ADMIN).auth_params[:params]
       expect(node_params).to(eq({scope: 'node.ak1:admin:all', owner_access: true}))
       expect(auth[:params]).to(eq({scope: 'user:all'}))
       expect(aoc.node_api_from(node_id: 'n1').auth_params[:params]).to(eq({scope: 'node.ak1:user:all'}))

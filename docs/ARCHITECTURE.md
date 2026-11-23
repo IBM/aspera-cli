@@ -123,7 +123,7 @@ The plugin architecture enables modular command implementation for different Asp
 - [`ats.rb`](../lib/aspera/cli/plugins/ats.rb) - Aspera Transfer Service
 - [`faspex5.rb`](../lib/aspera/cli/plugins/faspex5.rb) - Faspex 5
 - [`shares.rb`](../lib/aspera/cli/plugins/shares.rb) - Aspera Shares
-- [`node.rb`](../lib/aspera/cli/plugins/node.rb) - Node API
+- [`node/commands.rb`](../lib/aspera/plugins/node/commands.rb) - Node API
 - [`console.rb`](../lib/aspera/cli/plugins/console.rb) - Aspera Console
 - [`orchestrator.rb`](../lib/aspera/cli/plugins/orchestrator.rb) - Aspera Orchestrator
 - [`server.rb`](../lib/aspera/cli/plugins/server.rb) - HSTS (High-Speed Transfer Server)
@@ -320,7 +320,7 @@ command :show, description: 'Show a package',
 command(
   :flush, description: 'Delete all cached OAuth tokens',
   action: lambda do |**|
-    require 'aspera/api/node'
+    require 'aspera/plugins/node/api'
     Result::ValueList.new(OAuth::Factory.instance.flush_tokens, name: 'file')
   end
 )
@@ -403,8 +403,8 @@ end
 | `aoc admin workspace shared_folder` | `workspace_id` | [`setup_admin_workspace_shared_folder`](../lib/aspera/cli/plugins/aoc.rb) → `ws_res_id:`, `shared_folders:` |
 | `faspex5 admin nodes shared_folders` | `node_id` | [`setup_admin_nodes_shared_folders`](../lib/aspera/cli/plugins/faspex5.rb) → `sf_entity:` |
 | `faspex5 admin nodes shared_folders user` | `sf_id` | [`setup_admin_nodes_shared_folders_user`](../lib/aspera/cli/plugins/faspex5.rb) → `user_path:` |
-| `node access_keys do` | `access_key_id` | [`setup_access_key_do`](../lib/aspera/cli/plugins/node.rb) → `do_root_file_id:` |
-| `node access_keys do <id> permission` | `path` | [`setup_access_key_do_permission`](../lib/aspera/cli/plugins/node.rb) → `apifid:` |
+| `node access_keys do` | `access_key_id` | [`setup_access_key_do`](../lib/aspera/plugins/node/commands.rb) → `do_root_file_id:` |
+| `node access_keys do <id> permission` | `path` | [`setup_access_key_do_permission`](../lib/aspera/plugins/node/commands.rb) → `apifid:` |
 | `aoc packages shared_inboxes short_link` | `link_type`, `dropbox_id` | [`setup_packages_short_link`](../lib/aspera/cli/plugins/aoc.rb) → `shared_data:`, … |
 
 ---
@@ -573,7 +573,7 @@ Global HTTP settings are held in the `Rest::Parameters` singleton. The CLI HTTP/
 
 **Directory**: [`lib/aspera/api/`](../lib/aspera/api/) — `aoc`, `ats`, `alee`, `cos_node`, `faspex`, `httpgw`, `node`
 
-**Node API Client** ([`node.rb`](../lib/aspera/api/node.rb)):
+**Node API Client** ([`api.rb`](../lib/aspera/plugins/node/api.rb)):
 
 - **Access Key Management**: Gen4 access key support
 - **Bearer Token Generation**: JWT-based authentication
@@ -1099,7 +1099,7 @@ Sources of plugins, first one wins for a given name:
 
 ### Extension points, mounts and services
 
-- **Extension point `agent`**, declared by bundle `transfer_agents`: an entry has `name` (value of `--transfer`), `short` (one letter, unique), `file`, `class`, `options_schema`. Bundles `direct`, `desktop`, `connect`, `httpgw`, `node`, `transferd` provide one each. `Agent::Factory::ALL` (same shape: `long`, `short`, computed on access) is built from the entries, then the agents of `lib/aspera/agent/` that no entry provides (legacy, until they move); an entry whose name is provided by an earlier entry, or whose letter is taken, is left out with a warning. `Factory#create` loads the file of the entry with the checks of `load_entry`. The schema of an entry is `schemas/agent_extension.schema.yaml` of bundle `transfer_agents`. `TransferAgentOptions` has the marker `x-cli-variants`: when `Schema::Registry` reads `options.schema.yaml`, it adds a component `<Name>AgentOptions` (read from `options_schema`), its `$ref` in `oneOf` and its `discriminator` mapping for each entry; an entry replaces the variant of the same name. The document is read again when the entries change (bundles of a plugin folder added after it was read), and `Schema::Validator` compiles it again. `TransferAgentOptions` stays in `options.schema.yaml` until the components of its variants leave it (no `$ref` to another file). A bundle that extends a point depends on the bundle that declares it.
+- **Extension point `agent`**, declared by bundle `transfer_agents`: an entry has `name` (value of `--transfer`), `short` (one letter, unique), `file`, `class`, `options_schema`. Bundles `direct`, `desktop`, `connect`, `httpgw`, `node`, `transferd` provide one each. `Agent::Factory::ALL` (same shape: `long`, `short`, computed on access) is built from the entries, then the agents of `lib/aspera/agent/` that no entry provides (legacy, until they move); an entry whose name is provided by an earlier entry, or whose letter is taken, is left out with a warning. `Factory#create` loads the file of the entry with the checks of `load_entry`. The schema of an entry is `schemas/agent_extension.schema.yaml` of bundle `transfer_agents`. `TransferAgentOptions` has the marker `x-cli-variants`: when `Schema::Registry` reads `options.schema.yaml`, it adds a component `<Name>AgentOptions` (read from `options_schema`), its `$ref` in `oneOf` and its `discriminator` mapping for each entry; an entry replaces the variant of the same name. The document is read again when the entries change (bundles of a plugin folder added after it was read), and `Schema::Validator` compiles it again. `TransferAgentOptions` stays in `options.schema.yaml`: the components of its variants have all left the file, which has no `oneOf` nor `discriminator.mapping` of its own; they are created when the schema is read. A bundle that extends a point depends on the bundle that declares it.
 - **Mounts**: bundle `transfer_agents` adds the command trees `ascp`, `agents`, `sync` (and the deprecated `transfer`) to plugin `config`, with the modules of its manifest, included by the body of `Config` (where its trees were, `sync` with `before: :gem`), in the order of the manifest: the command tree and the options of `config` do not change. The runner includes again the mounts on `config` once the plugin folders are added. A mount adds commands to another plugin; the `mount:` attribute of the command DSL (see [Mounting another plugin's commands](#mounting-another-plugins-commands)) exposes commands of another plugin class under a node: both can be used together (bundle `transferd` mounts the deprecated `config transferd`, a node with `mount:` on its commands).
 - **Framework API**: `BundleRegistry#extensions(:<point>)`, `#mounts(:<target>)` and `#service(:<name>)` give the entries of the available bundles as data (by name of bundle, then in the order of the manifest); `#load_entry` loads the code of an entry, with the checks of `load_constant`. The fields of an extension entry other than `file` and `class` are validated by the schema of the point (bundles of the gem: by a spec). `Base.include_mounts` includes the mounted modules, each once: the `included` hook of a module declares its commands and options in the target class (`base.class_exec { commands_under … }`). `Factory#plugin_class` calls it after loading the class, so mounted commands come after the commands of the class body; a class body calls it to place them, and `command <id>, before: <id>` places a command before a command of the same parent. A module of a source refused at the current level is not loaded; one of a bundle with a missing gem is skipped with a warning; commands and options declared by a module get the level of its source.
 - **Services**: `Context#service(:transfer)` creates the `TransferAgent` of bundle `transfer_agents` once, on first use, with the context (`Context#transfer` gives it). Plugins of bundles use it through the helper module `Aspera::Plugins::TransferAgents::Helper` (method `transfer`) and declare `depends: - transfer`. `Plugins::Base#transfer` remains for single-file plugins: it asks the service by name, without reference to the bundle.
@@ -1146,7 +1146,7 @@ end
 | `connect` | | `c` | | `transfer` |
 | `httpgw` | yes | `h` | API | `transfer` |
 | `transferd` | yes | `t` | API (gRPC), daemon, system service | `transfer` |
-| `node` | yes | `n` | API, Node API emulator | `transfer` |
+| `node` | yes | `n` | API, Node API emulator | `transfer_agents`, `transferd` |
 | `cos` | yes | | API | `node` |
 | `shares` | yes | | OAuth SAML flow | `node` |
 | `ats` | yes | | API | `node` |
