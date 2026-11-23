@@ -5036,7 +5036,7 @@ By specifying option: `--transfer=httpgw`, <%=tool%> will start transfers using 
 
 Parameters provided in option `transfer` are:
 
-<%=schema_to_table(Aspera::Schema::Registry::HTTPGW_AGENT_OPTIONS)%>
+<%=schema_to_table("#{Aspera::Schema::Registry::OPTIONS}:components.schemas.HttpgwAgentOptions")%>
 
 Example:
 

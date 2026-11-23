@@ -14,7 +14,7 @@ require_relative '../lib/aspera/cli/plugins/aoc'
 require_relative '../lib/aspera/cli/plugins/server'
 require_relative '../lib/aspera/cli/plugins/shares'
 require_relative '../lib/aspera/cli/plugins/ats'
-require_relative '../lib/aspera/cli/plugins/httpgw'
+require_relative '../lib/aspera/plugins/httpgw/commands'
 require 'json'
 require 'tmpdir'
 
@@ -268,7 +268,7 @@ module Aspera
             Plugins::Faspex5 => [%i[user profile show], %i[admin configuration show], %i[admin smtp show]],
             Plugins::Shares  => [%i[info], %i[share list]],
             Plugins::Ats     => [%i[cluster list], %i[access_key show]],
-            Plugins::Httpgw  => [%i[info]]
+            Aspera::Plugins::Httpgw::Commands => [%i[info]]
           }.each do |plugin, paths|
             paths.each { |path| expect(plugin.command_registry[path].read_only?).to(be(true), "#{plugin} #{path}") }
           end

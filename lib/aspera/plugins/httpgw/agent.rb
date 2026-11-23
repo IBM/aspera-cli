@@ -1,0 +1,123 @@
+# frozen_string_literal: true
+
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+require_relative '../../agent/base'
+require_relative 'api'
+require_relative '../../log'
+require_relative '../../assert'
+require 'securerandom'
+
+module Aspera
+  module Plugins
+    module Httpgw
+      class Agent < Aspera::Agent::Base
+        class << self
+          # Re-query the status of an httpgw transfer that was started in-process.
+          # Only works if the same Ruby process is still alive (e.g. MCP mode).
+          # agent_params must contain '_agent_ref' pointing to the live Httpgw instance.
+          # @param transfer_id  [String] job_id returned by last_job_id
+          # @param agent_params [Hash]   '_agent_ref' is the live agent instance
+          # @return [Hash] status hash with at least 'status' key
+          def transfer_status(transfer_id, agent_params)
+            agent = agent_params['_agent_ref']
+            return {'status' => 'unknown', 'note' => 'httpgw agent not available (different process?)'} if agent.nil?
+            return {'status' => 'unknown', 'note' => 'no transfer started'} if agent.instance_variable_get(:@transfer_thread).nil?
+            if agent.instance_variable_get(:@transfer_thread).alive?
+              {'status' => 'running'}
+            elsif (err = agent.instance_variable_get(:@transfer_error))
+              {'status' => 'failed', 'error' => err.message}
+            else
+              {'status' => 'completed'}
+            end
+          end
+        end
+
+        # Base options used: `progress`, `url_provider` (when `url` is not given)
+        # @param url               [String]  URL of the HTTP Gateway, else from base option `url_provider`
+        # @param api_version       [String]  Version of the API of the gateway
+        # @param upload_chunk_size [Integer] Size in bytes of each upload chunk
+        # @param synchronous       [Boolean] Wait for acknowledgment after each message
+        # @param base_options      [Hash]    base options (see `Base#initialize`)
+        def initialize(
+          url:               nil,
+          api_version:       Api::API_V2,
+          upload_chunk_size: 64_000,
+          synchronous:       false,
+          **base_options
+        )
+          super(**base_options)
+          if url.nil?
+            Aspera.assert(!url_provider.nil?, type: ArgumentError) { 'missing keyword: :url' }
+            Log.log.debug('retrieving HTTPGW URL from webapp')
+            url = url_provider.call
+          end
+          @gw_api = Api.new(
+            # remove /v1 from end of user-provided GW url: we need the base url only
+            url:               url,
+            api_version:       api_version,
+            upload_chunk_size: upload_chunk_size,
+            synchronous:       synchronous,
+            notify_cb:         ->(*pa, **ka) { notify_progress(*pa, **ka) }
+          )
+          @last_job_id = nil
+          @transfer_thread = nil
+          @transfer_error  = nil
+        end
+
+        # Start FASP transfer based on transfer spec (hash table).
+        # Non-blocking: the actual upload/download runs in a dedicated thread.
+        # HTTP download only supports file list.
+        # :reek:UnusedParameters token_regenerator
+        def start_transfer(transfer_spec, token_regenerator: nil)
+          Aspera.assert(!@gw_api.nil?, 'GW URL must be set')
+          Aspera.assert_type(transfer_spec['paths'], Array) { 'paths' }
+          Aspera.assert_type(transfer_spec['token'], String) { 'only token based transfer is supported in GW' }
+          Log.dump(:user_spec, transfer_spec)
+          transfer_spec['authentication'] ||= 'token'
+          @last_job_id     = SecureRandom.uuid
+          @transfer_error  = nil
+          @transfer_thread = Thread.new { run_transfer(transfer_spec) }
+          @last_job_id
+        end
+
+        # Wait for the transfer thread to complete.
+        # @return [Array] list of :success or error
+        def wait_for_transfers_completion
+          @transfer_thread&.join
+          return [@transfer_error || :success]
+        end
+
+        # @return [String, nil] job_id of the last submitted transfer
+        attr_reader :last_job_id
+
+        # @return [String, nil] the job id: for `transfer_status`
+        def transfer_id
+          last_job_id
+        end
+
+        # @return [Boolean] `true`: the transfer runs in a thread of this process
+        def in_process?
+          true
+        end
+
+        private
+
+        # Execute the actual transfer (runs inside the transfer thread).
+        def run_transfer(transfer_spec)
+          case transfer_spec['direction']
+          when Aspera::Transfer::Spec::DIRECTION_SEND
+            @gw_api.upload(transfer_spec)
+          when Aspera::Transfer::Spec::DIRECTION_RECEIVE
+            @gw_api.download(transfer_spec)
+          else Aspera.error_unexpected_value(transfer_spec['direction']) { 'direction' }
+          end
+        rescue => e
+          @transfer_error = e
+          Log.log.error { "httpgw transfer thread error: #{e}" }
+        end
+      end
+    end
+  end
+end

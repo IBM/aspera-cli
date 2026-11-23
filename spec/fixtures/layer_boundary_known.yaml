@@ -11,9 +11,6 @@ api/aoc.rb:
 api/cos_node.rb:
 - const Transfer::Spec
 - require api/node
-api/httpgw.rb:
-- const Transfer::FauxFile
-- require transfer/faux_file
 api/node.rb:
 - const Api::Node
 - const Transfer::Spec
@@ -65,9 +62,6 @@ cli/plugins/faspex5.rb:
 - const Transfer::Result
 - require api/faspex
 - require transfer/result
-cli/plugins/httpgw.rb:
-- const Api::Httpgw
-- require api/httpgw
 cli/plugins/node.rb:
 - const Api::Node
 - const Api::NodeFileId

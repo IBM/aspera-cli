@@ -9,7 +9,7 @@
 
 require_relative '../lib/aspera/agent/base'
 require_relative '../lib/aspera/agent/direct'
-require_relative '../lib/aspera/agent/httpgw'
+require_relative '../lib/aspera/plugins/httpgw/agent'
 require_relative '../lib/aspera/agent/node'
 require_relative '../lib/aspera/agent/desktop'
 require_relative '../lib/aspera/agent/connect'
@@ -113,13 +113,13 @@ module Aspera
     end
   end
 
-  RSpec.describe(Agent::Httpgw) do
+  RSpec.describe(Aspera::Plugins::Httpgw::Agent) do
     let(:gateway_urls) { [] }
 
     before do
-      allow(Api::Httpgw).to(receive(:new)) do |url:, **|
+      allow(Aspera::Plugins::Httpgw::Api).to(receive(:new)) do |url:, **|
         gateway_urls.push(url)
-        instance_double(Api::Httpgw)
+        instance_double(Aspera::Plugins::Httpgw::Api)
       end
     end
 

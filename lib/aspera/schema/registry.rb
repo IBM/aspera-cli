@@ -116,7 +116,6 @@ module Aspera
       DIRECT_AGENT_OPTIONS    = "#{OPTIONS}:components.schemas.DirectAgentOptions".freeze
       NODE_AGENT_OPTIONS      = "#{OPTIONS}:components.schemas.NodeAgentOptions".freeze
       NODE_EMULATOR_OPTIONS   = "#{OPTIONS}:components.schemas.NodeEmulatorOptions".freeze
-      HTTPGW_AGENT_OPTIONS    = "#{OPTIONS}:components.schemas.HttpgwAgentOptions".freeze
       TRANSFER_AGENT_OPTIONS  = "#{OPTIONS}:components.schemas.TransferAgentOptions".freeze
       SMTP_OPTIONS            = "#{OPTIONS}:components.schemas.SmtpOptions".freeze
       HTTP_OPTIONS            = "#{OPTIONS}:components.schemas.HttpOptions".freeze

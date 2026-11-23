@@ -3,61 +3,16 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-require_relative 'base'
-require_relative '../../rest'
-require_relative '../../api/httpgw'
-require_relative '../../nagios'
-
+# Shim: moved to aspera/plugins/httpgw/commands, removed in 5.0
+# Not a plugin: the bundle `httpgw` has priority over this file (see `Plugins::Factory#add_lookup_folder`)
+require_relative '../../log'
+require_relative '../../plugins/httpgw/commands'
+Aspera::Log.log.warn('aspera/cli/plugins/httpgw is deprecated: use aspera/plugins/httpgw/commands (removed in 5.0)')
 module Aspera
   module Cli
     module Plugins
-      class Httpgw < Base
-        application_name 'HTTP Gateway'
-
-        class << self
-          # @return [Hash,NilClass]
-          def detect(base_url)
-            api = Api::Httpgw.new(url: base_url)
-            api_info = api.info
-            return {
-              url:     api.base_url,
-              version: api_info['version']
-            } if api_info.is_a?(Hash) && api_info.key?('download_endpoint')
-            return
-          end
-        end
-
-        # @param wizard  [Wizard] The wizard object
-        # @param app_url [String] Tested URL
-        # @return [Hash] :preset_value, :test_args
-        def wizard(wizard, app_url)
-          return {
-            preset_ids:   [],
-            preset_value: {
-              url: app_url
-            },
-            test_args:    'info'
-          }
-        end
-
-        command :health, description: 'Check HTTP Gateway health'
-
-        command :info, description: 'Show HTTP Gateway information',
-          action: ->(**) { Result::SingleObject.new(Api::Httpgw.new(url: options.get_option(:url, mandatory: true)).info) }
-
-        option :url, description: 'URL of application, e.g. https://app.example.com/aspera/app'
-
-        def action_health(**)
-          nagios = Nagios.new
-          begin
-            Api::Httpgw.new(url: options.get_option(:url, mandatory: true))
-            nagios.add_ok('api', 'answered ok')
-          rescue StandardError => e
-            nagios.add_critical('api', e.to_s)
-          end
-          Result::ObjectList.new(nagios.status_list)
-        end
-      end
+      Httpgw = Aspera::Plugins::Httpgw::Commands
+      deprecate_constant :Httpgw
     end
   end
 end

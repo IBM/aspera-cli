@@ -41,13 +41,12 @@ module AgentFactorySpecHelper
   SCHEMA_VARIANTS = {
     'direct'  => 'DirectAgentOptions',
     'node'    => 'NodeAgentOptions',
-    'httpgw'  => 'HttpgwAgentOptions',
     'desktop' => 'DesktopAgentOptions',
     'connect' => 'ConnectAgentOptions'
   }.freeze
 
   # Variants with the bundles of the gem: those of the schema, then the agents of the bundles (by name of bundle)
-  TODAY_VARIANTS = SCHEMA_VARIANTS.merge('transferd' => 'TransferdAgentOptions').freeze
+  TODAY_VARIANTS = SCHEMA_VARIANTS.merge('httpgw' => 'HttpgwAgentOptions', 'transferd' => 'TransferdAgentOptions').freeze
 
   # Schema of an entry of the extension point `agent`
   POINT_SCHEMA = {

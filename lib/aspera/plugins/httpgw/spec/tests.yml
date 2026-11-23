@@ -1,0 +1,27 @@
+httpgw_nagios:
+  args:
+    - httpgw
+    - health
+httpgw_info:
+  args:
+    - httpgw
+    - info
+httpgw_detect:
+  tags:
+    - httpgw
+  args:
+    - config
+    - detect
+    - "@:"
+    - url=@preset:tst_httpgw.url
+    - plugin=httpgw
+httpgw_wizard:
+  tags:
+    - httpgw
+  args:
+    - config
+    - wizard
+    - "@:"
+    - url=@preset:tst_httpgw.url
+    - plugin=httpgw
+    - override=yes

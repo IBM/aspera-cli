@@ -377,30 +377,6 @@ components:
         root_id:
           type: string
           description: Root file ID. Mandatory only when `password` is a bearer token.
-    HttpgwAgentOptions:
-      type: object
-      description: Parameters for the HTTP Gateway transfer agent.
-      required:
-        - url
-      properties:
-        url:
-          type: string
-          description: URL of the HTTP Gateway.
-        upload_chunk_size:
-          type: integer
-          description: Size in bytes of each upload chunk.
-          default: 64000
-        api_version:
-          type: string
-          description: Force use of a specific API version.
-          enum:
-            - v1
-            - v2
-          default: v2
-        synchronous:
-          type: boolean
-          description: Wait for acknowledgment after each message.
-          default: false
     DesktopAgentOptions:
       type: object
       description: >-
@@ -427,7 +403,6 @@ components:
       oneOf:
         - $ref: "#/components/schemas/DirectAgentOptions"
         - $ref: "#/components/schemas/NodeAgentOptions"
-        - $ref: "#/components/schemas/HttpgwAgentOptions"
         - $ref: "#/components/schemas/DesktopAgentOptions"
         - $ref: "#/components/schemas/ConnectAgentOptions"
       discriminator:
@@ -435,7 +410,6 @@ components:
         mapping:
           direct: "#/components/schemas/DirectAgentOptions"
           node: "#/components/schemas/NodeAgentOptions"
-          httpgw: "#/components/schemas/HttpgwAgentOptions"
           desktop: "#/components/schemas/DesktopAgentOptions"
           connect: "#/components/schemas/ConnectAgentOptions"
     SmtpOptions:
