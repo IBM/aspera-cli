@@ -61,7 +61,7 @@ Designed for automation, scripting, and integration scenarios, <%=tool%> enables
 : Secrets kept in a vault (encrypted file, HashiCorp Vault, Keeper, 1Password, macOS keychain, Linux Secret Service), never in scripts.
 
 **AI Assistants and Agents**
-: AI assistants operate IBM Aspera products with <%=tool%>, in a shell (with `llms.txt` or the agent skill) or through the built-in MCP server, with restrictions and without seeing secrets.
+: AI assistants and agents (IBM Bob, Claude, GitHub Copilot, Cursor, agents built with Langflow) operate IBM Aspera products with <%=tool%>, in a shell (with `llms.txt` or the agent skill) or through the built-in MCP server, with restrictions and without seeing secrets.
 
 **Developer Friendly**
 : Comprehensive logging, debugging capabilities, and API exploration tools for development and troubleshooting.
@@ -93,6 +93,7 @@ This manual is organized into the following sections:
 | ---- | ----------- | --- |
 | Script or schedule transfers, packages, file management or administration of Aspera products (shell, `cron`, CI/CD) | <%=tool%> | One tool for all products, presets and vault per environment, structured output, automatic resume |
 | Let an AI assistant or agent operate Aspera products | <%=tool%>: in a shell, or its MCP server | Same commands as people, restrictions, secrets never shown (see [Leveraging AI Assistance](#leveraging-ai-assistance)) |
+| Give an AI agent built with Langflow (or another agent builder) access to Aspera products | <%=tool%> MCP server | No code: component **MCP Tools**, one tool for all Aspera products (see [Langflow](#langflow)) |
 | Administer, troubleshoot, or analyze `ascp` logs, interactively | <%=tool%> | Commands for every product, `ascp` log diagnostics |
 | Learn or test an Aspera REST API | <%=tool%> | Shows the API calls (see [Logging, Debugging](#logging-debugging)) |
 | Simple transfer with an HSTS, where nothing else can be installed | `ascp` | Included with every Aspera transfer product (see [<%=tool%> or `ascp`?](#ascli-or-ascp)) |
@@ -316,7 +317,7 @@ There are three ways, the first one is the simplest:
   /plugin install <%=cmd%>@aspera-cli
   ```
 
-- **The AI executes commands through MCP**: for an AI client without a shell, start the [MCP server](#plugin-mcp-model-context-protocol-server) and register it in the AI client.
+- **The AI executes commands through MCP**: for an AI client without a shell, or an agent built with [Langflow](#langflow), start the [MCP server](#plugin-mcp-model-context-protocol-server) and register it in the AI client.
   The AI discovers commands and their arguments by itself, and executes them.
   By default, the server restricts what the AI can do (see [Security](#security)), and the AI never sees secrets.
 
@@ -10496,7 +10497,7 @@ Nevertheless, <%=tool%> may or may not have direct file system access to the acc
 
 ## Plugin: `mcp`: Model Context Protocol server
 
-The `mcp` plugin starts a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that exposes <%=tool%> to AI assistants and LLM-based tools.
+The `mcp` plugin starts a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that exposes <%=tool%> to AI assistants, LLM-based tools and agent builders such as [Langflow](#langflow).
 The server registers a single tool, `execute_<%=cmd%>_command`, which executes any <%=tool%> command in-process and returns the result as text.
 
 > [!IMPORTANT]
@@ -10919,6 +10920,78 @@ Add the `RUBYLIB` environment variable pointing to the `lib/` directory of the p
   }
 }
 ```
+
+#### Langflow
+
+[Langflow](https://docs.langflow.org/) is an open-source visual builder of AI agents.
+An agent built with Langflow operates IBM Aspera products with <%=tool%> through the **MCP Tools** component, an MCP client (`stdio`, and Streamable HTTP since Langflow 1.7): no code to write.
+
+##### Register the server in Langflow
+
+In Langflow, click the profile icon, select **Settings**, then **MCP Servers**, and click **Add MCP Server**.
+
+With the `stdio` transport, when <%=tool%> is installed on the host of Langflow, select **STDIO**:
+
+| Field | Value |
+|-------|-------|
+| **Name** | `ascli` |
+| **Command** | Absolute path of <%=tool%>, given by `which <%=cmd%>` (Windows: `where <%=cmd%>`) |
+| **Arguments** | `mcp`, then `server` |
+
+With the `http` transport, for example when Langflow runs in a container (its image has no Ruby), start the server with a static token (the MCP client of Langflow does not support OAuth):
+
+```shell
+export MCP_TOKEN=$(openssl rand -hex 32)
+<%=cmd%> mcp server @: transport=http url=http://0.0.0.0:3000 auth_token=@env:MCP_TOKEN
+```
+
+<%=tool%> can also run in its own container, next to Langflow: the [container image](#container) includes the gems `mcp` and `rack`.
+To keep the presets and the transferred files, mount the configuration folder and a transfer folder (see [Container: Details](#container-details)), and let the agent write files in the transfer folder only (see [Security](#security)).
+With the same variable `MCP_TOKEN`:
+
+```shell
+podman run --rm --name <%=cmd%> --publish 3000:3000 --env MCP_TOKEN --user root --env <%=opt_env :home%>=/home/cliuser/.aspera/<%=cmd%> --volume $HOME/.aspera/<%=cmd%>:/home/cliuser/.aspera/<%=cmd%> --volume $HOME/xferdir:/xferfiles <%=container_image%>:latest mcp server --security.writable_paths.0=/xferfiles @: transport=http url=http://0.0.0.0:3000 auth_token=@env:MCP_TOKEN
+```
+
+The agent then uploads from, and downloads to, folder `/xferfiles`.
+
+Then, in Langflow:
+
+1. In **Settings** > **Global Variables**, create a **Credential** variable, for example `ASCLI_MCP_TOKEN`, with value `Bearer` followed by a space and the token.
+1. In **Add MCP Server**, select **HTTP/SSE**:
+   - **Name**: `ascli`
+   - **URL**: `http://<%=ph :host%>:3000/mcp`.
+     When Langflow runs in Docker Desktop and <%=tool%> on the host (or with a published port): `http://host.docker.internal:3000/mcp`.
+     When both containers are on the same network (option `--network`, or the same Docker Compose project): the name of the container (or of the service) of <%=tool%>, for example, `http://<%=cmd%>:3000/mcp`.
+   - **Headers**: key `Authorization`, value `ASCLI_MCP_TOKEN` (the name of the variable: Langflow replaces it with its value)
+
+##### Add <%=tool%> to an agent
+
+1. From the **MCP** sidebar, drag the server `ascli` to the flow: it adds an **MCP Tools** component.
+1. In field **Tool**, select `execute_<%=cmd%>_command`.
+1. In the header menu of the component, enable **Tool mode**.
+1. Connect the port **Toolset** of the component to the port **Tools** of the **Agent** component.
+
+Langflow gives the model the description of the tool, but not the instructions of the server.
+So that the agent uses <%=tool%> for requests about Aspera, and the presets for credentials, add this text to field **Agent Instructions** of the **Agent** component:
+
+```text
+For any request about IBM Aspera, use the tool execute_<%=cmd%>_command: file transfer (FASP), Aspera on Cloud (aoc), Faspex 5 (faspex5), Node API (node), HSTS and SSH servers (server), Shares (shares), Orchestrator (orchestrator), Console (console), IBM Cloud Object Storage (cos).
+Before a command whose syntax you have not checked in this conversation, list the commands of the plugin with ["config","commands","<%=ph :plugin%>"], and get the fields of a Hash argument with "help" in its place.
+Credentials are in presets: list them with ["config","preset","overview"] and use --preset=<%=ph :preset_name%>. Never ask the user for a password: if no preset fits, tell the user which preset to create.
+A transfer returns immediately with a job_id: check it with ["config","agents","jobs","status","<%=ph :job_id%>"].
+Filter long lists with --query, --out.select and --out.fields.
+```
+
+##### Limits of Langflow
+
+- **Secrets**: the MCP client of Langflow does not support URL mode elicitation: `@secret:` fails (see [Secrets entered in a web page](#secrets-entered-in-a-web-page)).
+  Create the presets beforehand, with secrets in the [Secret Vault](#secret-vault).
+- **Results**: Langflow gives the model the text of the result only, not `structuredContent`.
+  A list larger than `max_text_bytes` (100000 bytes by default) is truncated for the model: filter it (see [Filtering results](#filtering-results)), or raise `max_text_bytes`.
+- **Timeout**: a tool call fails after 180 seconds by default.
+  The MCP server starts transfers in [asynchronous mode](#asynchronous-transfer-mode): a transfer returns immediately.
+  For other long commands, raise **Tool Execution Timeout (seconds)** in the advanced settings of the **MCP Tools** component, or the environment variable `LANGFLOW_MCP_TOOL_EXECUTION_TIMEOUT` of Langflow.
 
 <%=include_commands_for_plugin(:mcp)%>
 
