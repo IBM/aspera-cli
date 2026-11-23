@@ -11,7 +11,7 @@ module Aspera
       # Single-file plugins use `Cli::Plugins::Base#transfer`.
       module Helper
         # @return [TransferAgent] Service `transfer` of the context of the plugin: created once, on first use
-        # @raise [Cli::Error] If the bundle `transfer` is unavailable
+        # @raise [Cli::Error] If the bundle `transfer_agents` is unavailable
         def transfer = context.service(:transfer)
       end
     end

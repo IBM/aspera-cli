@@ -15,7 +15,7 @@ include BuildTools
 include Paths
 
 # Scan of secrets: files with fake secrets (unit tests, examples in API specifications)
-SECRETS_EXCLUDED_FILES = ['^\.secrets\.baseline$', '^spec/', '^lib/aspera/schema/IBM.*\.yaml$', '^lib/aspera/plugins/[^/]+/schemas/IBM.*\.yaml$'].freeze
+SECRETS_EXCLUDED_FILES = ['^\.secrets\.baseline$', '^spec/', '^lib/aspera/plugins/[^/]+/spec/', '^lib/aspera/schema/IBM.*\.yaml$', '^lib/aspera/plugins/[^/]+/schemas/IBM.*\.yaml$'].freeze
 # Scan of secrets: fake secrets in documentation, examples and integration tests
 SECRETS_EXCLUDED_VALUES = ['^my_[a-z_]+_here$', '^your value here$', '^Bearer ', '^your-', '^sim$', '^S3cret', '^password$', '^DOCKERHUB_'].freeze
 # CodeQL: workflow and configuration of GitHub code scanning, and folder of local analysis

@@ -120,16 +120,22 @@ module TestedVersions
           base_url: url,
           auth:     {type: :basic, username: preset_param(preset, 'username'), password: preset_param(preset, 'password')}
         ).read('info')['version'])
-      when :aoc
-        require_relative '../../lib/aspera/plugins/aoc/commands'
-        normalize(Aspera::Plugins::Aoc::Commands.detect(url)&.dig(:version))
-      when :shares
-        require_relative '../../lib/aspera/plugins/shares/commands'
-        normalize(Aspera::Plugins::Shares::Commands.detect(url)&.dig(:version))
       else
-        require "aspera/cli/plugins/#{plugin}"
-        normalize(Aspera::Cli::Plugins.const_get(plugin.to_s.capitalize).detect(url)&.dig(:version))
+        normalize(plugin_class(plugin).detect(url)&.dig(:version))
       end
+    end
+
+    # @param plugin [Symbol] Name of a plugin that provides commands (single file or bundle)
+    # @return [Class] Commands class of the plugin
+    def plugin_class(plugin)
+      require 'aspera/cli/plugins/config'
+      factory = Aspera::Cli::Plugins::Factory.instance
+      unless @plugins_scanned
+        factory.add_lookup_folder(Aspera::Cli::Plugins::Config.gem_plugins_folder)
+        factory.add_plugins_from_lookup_folders
+        @plugins_scanned = true
+      end
+      factory.plugin_class(plugin)
     end
 
     # @return [Array<Hash>] `agent`, `product`, `version`

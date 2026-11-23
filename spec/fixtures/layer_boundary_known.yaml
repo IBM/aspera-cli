@@ -1,8 +1,5 @@
 # Known violations of the layer rules (docs/ARCHITECTURE.md, Plugin bundles), checked by spec/layer_boundary_spec.rb.
 # File (relative to lib/aspera) -> sorted references. The list can only shrink: remove an entry when its violation is fixed.
-api/alee.rb:
-- const Plugins::Aoc
-- require plugins/aoc/api
 cli/bootstrapper.rb:
 - const Ascp::Installation
 - const Transfer::Parameters

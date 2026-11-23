@@ -256,15 +256,15 @@ module Aspera
           # @return [Array] Expanded access levels
           def expand_access_levels(levels)
             case levels
-            when nil, 'edit' then Aspera::Plugins::Node::Api::ACCESS_LEVELS
+            when nil, 'edit' then Node::Api::ACCESS_LEVELS
             when 'preview' then %w[list preview]
             when 'download' then %w[list preview read]
             when 'upload' then %w[mkdir write]
             when Array
               Aspera.assert_array_all(levels, String) { 'access_levels' }
-              levels.each { |level| Aspera.assert_values(level, Aspera::Plugins::Node::Api::ACCESS_LEVELS) { 'access_level' } }
+              levels.each { |level| Aspera.assert_values(level, Node::Api::ACCESS_LEVELS) { 'access_level' } }
               levels
-            else Aspera.error_unexpected_value(levels) { "access_levels must be a list of #{Aspera::Plugins::Node::Api::ACCESS_LEVELS.join(', ')} or one of edit, preview, download, upload" }
+            else Aspera.error_unexpected_value(levels) { "access_levels must be a list of #{Node::Api::ACCESS_LEVELS.join(', ')} or one of edit, preview, download, upload" }
             end
           end
         end
@@ -483,7 +483,7 @@ module Aspera
         # @param scope          [String,nil] e.g. Plugins::Node::Api::Scope::USER, or Plugins::Node::Api::Scope::ADMIN, or nil (requires secret)
         # @param package_info   [Hash,nil] created package information
         # @return [Node] a node API for access key
-        def node_api_from(node_id:, workspace_id: nil, workspace_name: nil, scope: Aspera::Plugins::Node::Api::Scope::USER, package_info: nil)
+        def node_api_from(node_id:, workspace_id: nil, workspace_name: nil, scope: Node::Api::Scope::USER, package_info: nil)
           Aspera.assert_type(node_id, String)
           node_info = read("nodes/#{node_id}")
           workspace_name = read("workspaces/#{workspace_id}")['name'] if workspace_name.nil? && !workspace_id.nil?
@@ -502,13 +502,13 @@ module Aspera
             # OAuth bearer token
             # copy nested params, so that auth params of this API are not modified
             node_params[:auth] = auth_params.merge(params: auth_params[:params]&.dup || {})
-            node_params[:auth][:params][:scope] = Aspera::Plugins::Node::Api::Scope.join(access_key: node_info['access_key'], scope: scope)
-            node_params[:auth][:params][:owner_access] = true if scope.eql?(Aspera::Plugins::Node::Api::Scope::ADMIN)
+            node_params[:auth][:params][:scope] = Node::Api::Scope.join(access_key: node_info['access_key'], scope: scope)
+            node_params[:auth][:params][:owner_access] = true if scope.eql?(Node::Api::Scope::ADMIN)
             # Special header required for bearer token only
-            node_params[:headers] = {Aspera::Plugins::Node::Api::HEADER_X_ASPERA_ACCESS_KEY => node_info['access_key']}
+            node_params[:headers] = {Node::Api::HEADER_X_ASPERA_ACCESS_KEY => node_info['access_key']}
           end
           node_params[:app_info] = app_info
-          return Aspera::Plugins::Node::Api.new(**node_params)
+          return Node::Api.new(**node_params)
         end
 
         # Check metadata: remove when validation is done server side

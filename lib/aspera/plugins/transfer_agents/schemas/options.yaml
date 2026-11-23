@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
-  title: Options of bundle transfer
+  title: Options of bundle transfer_agents
   version: 1.0.0
-  description: Schema definitions of the options of bundle `transfer`
+  description: Schema definitions of the options of bundle `transfer_agents`
   license:
     name: Apache-2.0
     identifier: Apache-2.0

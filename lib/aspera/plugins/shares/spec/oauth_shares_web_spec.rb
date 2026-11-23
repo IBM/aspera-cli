@@ -18,7 +18,7 @@ RSpec.describe(Aspera::Plugins::Shares::SharesWeb) do
   let(:redirect_uri) { 'http://localhost:12345' }
   let(:opened) { [] }
   let(:environment) { Aspera::Environment.instance }
-  let(:token_json) { JSON.generate({'token_type' => 'bearer', 'access_token' => 'new_access', 'refresh_token' => 'new_refresh', 'expires_in' => 86400}) }
+  let(:token_json) { JSON.generate({'token_type' => 'bearer', 'access_token' => '<ACCESS_TOKEN>', 'refresh_token' => '<REFRESH_TOKEN>', 'expires_in' => 86400}) }
 
   around do |example|
     saved = environment.web_auth
@@ -82,20 +82,20 @@ RSpec.describe(Aspera::Plugins::Shares::SharesWeb) do
     before { environment.web_auth = :port }
 
     it 'opens the SAML login page with a loopback RelayState, then exchanges the received refresh token' do
-      receive_on_loopback(access_token: 'browser_access', refresh_token: 'browser_refresh')
+      receive_on_loopback(access_token: '<BROWSER_ACCESS_TOKEN>', refresh_token: '<BROWSER_REFRESH_TOKEN>')
       mock_token_call
-      expect(oauth.token).to(eq('new_access'))
+      expect(oauth.token).to(eq('<ACCESS_TOKEN>'))
       # the page of the browser shows the Shares server
       expect(Aspera::WebAuth::Server).to(have_received(:new).with('http://localhost:12345/', include('shares.example.com')))
       login = URI.parse(opened.first)
       expect([login.host, login.path]).to(eq(['shares.example.com', '/auth/saml']))
       expect(relay_state_sent).to(match(%r{\Ahttp://localhost:12345/\?state=[0-9a-f-]{36}\z}))
       expect(relay_state_sent.bytesize).to(be <= 80)
-      expect(@create_args.first).to(eq(['oauth2/token', {grant_type: 'refresh_token', refresh_token: 'browser_refresh'}]))
+      expect(@create_args.first).to(eq(['oauth2/token', {grant_type: 'refresh_token', refresh_token: '<BROWSER_REFRESH_TOKEN>'}]))
     end
 
     it 'refuses an answer with another state' do
-      allow(Aspera::WebAuth::Server).to(receive(:new).and_return(instance_double(Aspera::WebAuth::Server, received_request: {'state' => 'other', 'refresh_token' => 'x'})))
+      allow(Aspera::WebAuth::Server).to(receive(:new).and_return(instance_double(Aspera::WebAuth::Server, received_request: {'state' => 'other', 'refresh_token' => '<OTHER_REFRESH_TOKEN>'})))
       expect { oauth.token }.to(raise_error(Aspera::AssertError, /wrong received state/))
     end
 
@@ -112,25 +112,25 @@ RSpec.describe(Aspera::Plugins::Shares::SharesWeb) do
     end
 
     it 'opens the SAML login page with a device-code RelayState, then exchanges the refresh token of the pasted code' do
-      paste_code(refresh_token: 'browser_refresh')
+      paste_code(refresh_token: '<BROWSER_REFRESH_TOKEN>')
       mock_token_call
-      expect(oauth.token).to(eq('new_access'))
+      expect(oauth.token).to(eq('<ACCESS_TOKEN>'))
       login = URI.parse(opened.first)
       expect([login.host, login.path]).to(eq(['shares.example.com', '/auth/saml']))
       expect(relay_state_sent).to(match(%r{\Aaspera://device-code\?state=[0-9a-f-]{36}\z}))
       expect(relay_state_sent.bytesize).to(be <= 80)
-      expect(@create_args.first).to(eq(['oauth2/token', {grant_type: 'refresh_token', refresh_token: 'browser_refresh'}]))
+      expect(@create_args.first).to(eq(['oauth2/token', {grant_type: 'refresh_token', refresh_token: '<BROWSER_REFRESH_TOKEN>'}]))
       # no local port
       expect(Aspera::WebAuth::Server).not_to(have_received(:new))
     end
 
     it 'refuses a code with another state' do
-      paste_code(state: 'other', refresh_token: 'x')
+      paste_code(state: 'other', refresh_token: '<OTHER_REFRESH_TOKEN>')
       expect { oauth.token }.to(raise_error(Aspera::AssertError, /wrong received state/))
     end
 
     it 'refuses a code made for another login' do
-      paste_code(key_state: 'other', refresh_token: 'x')
+      paste_code(key_state: 'other', refresh_token: '<OTHER_REFRESH_TOKEN>')
       expect { oauth.token }.to(raise_error(Aspera::ParameterError, /Invalid code/))
     end
 
@@ -161,12 +161,12 @@ RSpec.describe(Aspera::Plugins::Shares::SharesWeb) do
       it 'shows if the code is valid, and asks again if not' do
         allow(Aspera::Environment).to(receive(:unicode_environment?).and_return(false))
         allow($stdin).to(receive(:tty?).and_return(true))
-        inputs = [-> { code_of_shares(key_state: 'other', refresh_token: 'x') }, -> { code_of_shares(refresh_token: 'browser_refresh') }]
+        inputs = [-> { code_of_shares(key_state: 'other', refresh_token: '<OTHER_REFRESH_TOKEN>') }, -> { code_of_shares(refresh_token: '<BROWSER_REFRESH_TOKEN>') }]
         allow($stdin).to(receive(:raw)) { |&block| block.call(StringIO.new("#{inputs.shift.call}\r")) }
         mock_token_call
-        expect { expect(oauth.token).to(eq('new_access')) }
+        expect { expect(oauth.token).to(eq('<ACCESS_TOKEN>')) }
           .to(output(/Code> [^\n]*invalid\r\nInvalid code: [^\n]*\. Try again, or Ctrl-C to stop\.\nCode> [^\n]*\x08valid\r\n\z/).to_stderr)
-        expect(@create_args.first).to(eq(['oauth2/token', {grant_type: 'refresh_token', refresh_token: 'browser_refresh'}]))
+        expect(@create_args.first).to(eq(['oauth2/token', {grant_type: 'refresh_token', refresh_token: '<BROWSER_REFRESH_TOKEN>'}]))
       end
     end
   end
@@ -185,8 +185,8 @@ module Aspera
         end
 
         it 'uses user and password by default' do
-          params = plugin('--url=https://shares.example.com', '--username=u', '--password=p').basic_auth_params('api/v1')
-          expect(params).to(eq(base_url: 'https://shares.example.com/api/v1', auth: {type: :basic, username: 'u', password: 'p'}))
+          params = plugin('--url=https://shares.example.com', '--username=u', '--password=<PASSWORD>').basic_auth_params('api/v1')
+          expect(params).to(eq(base_url: 'https://shares.example.com/api/v1', auth: {type: :basic, username: 'u', password: '<PASSWORD>'}))
         end
 
         it 'uses OAuth with a web browser for auth=web' do

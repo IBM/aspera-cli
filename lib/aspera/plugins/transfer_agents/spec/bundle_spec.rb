@@ -3,7 +3,7 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Bundle `transfer`: modules mounted on plugin config, service `transfer` and helper of the bundles that transfer files,
+# Bundle `transfer_agents`: modules mounted on plugin config, service `transfer` and helper of the bundles that transfer files,
 # extension point `agent`, shims of the files moved from `cli/`, and bundles of a plugin folder that use its hooks.
 
 require 'spec_helper'

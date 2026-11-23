@@ -149,7 +149,7 @@ components:
           type: string
           description: Instana API key sent in the `x-instana-key` header.
           examples:
-            - my-instana-api-key
+            - <API_KEY>
         interval:
           type: number
           description: >-

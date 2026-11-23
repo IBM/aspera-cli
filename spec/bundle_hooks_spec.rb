@@ -517,7 +517,7 @@ module Aspera
     end
   end
 
-  RSpec.describe('Config without the mounts of bundle transfer') do
+  RSpec.describe('Config without the mounts of bundle transfer_agents') do
     it 'still works when a module mounted on config is missing (e.g. its mount failed)' do
       home = Dir.mktmpdir
       script = <<~RUBY

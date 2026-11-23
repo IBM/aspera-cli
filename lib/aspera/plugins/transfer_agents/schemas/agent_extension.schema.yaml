@@ -2,7 +2,7 @@ $schema: https://json-schema.org/draft/2020-12/schema
 $id: https://github.com/IBM/aspera-cli/tree/main/lib/aspera/plugins/transfer_agents/schemas/agent_extension.schema.yaml
 title: Transfer agent of a bundle
 description: >-
-  Entry of the extension point `agent` of bundle `transfer` (manifest `extensions.agent` of a bundle), besides `file` and `class` of its code.
+  Entry of the extension point `agent` of bundle `transfer_agents` (manifest `extensions.agent` of a bundle), besides `file` and `class` of its code.
 type: object
 additionalProperties: false
 required:
