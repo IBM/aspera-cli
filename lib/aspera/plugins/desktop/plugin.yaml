@@ -1,0 +1,11 @@
+name: desktop
+title: IBM Aspera for Desktop
+depends:
+  - transfer
+extensions:
+  agent:
+    - name: desktop
+      short: d
+      file: agent.rb
+      class: Agent
+      options_schema: schemas/agent_options.yaml

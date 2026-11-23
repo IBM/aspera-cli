@@ -11,8 +11,8 @@ require_relative '../lib/aspera/agent/base'
 require_relative '../lib/aspera/plugins/direct/agent'
 require_relative '../lib/aspera/plugins/httpgw/agent'
 require_relative '../lib/aspera/agent/node'
-require_relative '../lib/aspera/agent/desktop'
-require_relative '../lib/aspera/agent/connect'
+require_relative '../lib/aspera/plugins/desktop/agent'
+require_relative '../lib/aspera/plugins/connect/agent'
 require_relative '../lib/aspera/cli/parser'
 require_relative '../lib/aspera/cli/context'
 require_relative '../lib/aspera/plugins/transfer/transfer_agent'
@@ -196,13 +196,13 @@ module Aspera
 
   RSpec.describe('async parameters of daemon agents') do
     it 'gives the application id of desktop' do
-      agent = Agent::Desktop.allocate.tap { |a| a.instance_variable_set(:@application_id, 'app-1') }
+      agent = Aspera::Plugins::Desktop::Agent.allocate.tap { |a| a.instance_variable_set(:@application_id, 'app-1') }
       expect(agent.async_params).to(eq('application_id' => 'app-1'))
       expect(agent.in_process?).to(be(false))
     end
 
     it 'gives the app id of connect' do
-      agent = Agent::Connect.allocate.tap { |a| a.instance_variable_set(:@connect_settings, {'app_id' => 'app-2'}) }
+      agent = Aspera::Plugins::Connect::Agent.allocate.tap { |a| a.instance_variable_set(:@connect_settings, {'app_id' => 'app-2'}) }
       expect(agent.async_params).to(eq('app_id' => 'app-2'))
       expect(agent.in_process?).to(be(false))
     end

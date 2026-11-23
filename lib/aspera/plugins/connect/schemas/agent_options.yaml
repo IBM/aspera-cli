@@ -1,0 +1,6 @@
+# Component `ConnectAgentOptions` of `TransferAgentOptions` (see `Schema::Registry#add_variants`): parameters of the agent `connect`
+type: object
+description: >-
+  Parameters for the IBM Aspera Connect Client transfer agent.
+  The Connect Client must be running locally. No additional options are required.
+properties: {}

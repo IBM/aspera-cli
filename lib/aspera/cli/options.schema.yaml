@@ -294,18 +294,6 @@ components:
         root_id:
           type: string
           description: Root file ID. Mandatory only when `password` is a bearer token.
-    DesktopAgentOptions:
-      type: object
-      description: >-
-        Parameters for the IBM Aspera Desktop Client transfer agent.
-        The Desktop Client must be running locally. No additional options are required.
-      properties: {}
-    ConnectAgentOptions:
-      type: object
-      description: >-
-        Parameters for the IBM Aspera Connect Client transfer agent.
-        The Connect Client must be running locally. No additional options are required.
-      properties: {}
     TransferAgentOptions:
       description: >-
         Transfer agent selector and agent-specific parameters.
@@ -319,14 +307,10 @@ components:
         suffix: AgentOptions
       oneOf:
         - $ref: "#/components/schemas/NodeAgentOptions"
-        - $ref: "#/components/schemas/DesktopAgentOptions"
-        - $ref: "#/components/schemas/ConnectAgentOptions"
       discriminator:
         propertyName: agent
         mapping:
           node: "#/components/schemas/NodeAgentOptions"
-          desktop: "#/components/schemas/DesktopAgentOptions"
-          connect: "#/components/schemas/ConnectAgentOptions"
     SmtpOptions:
       type: object
       description: SMTP email server configuration.

@@ -114,7 +114,5 @@ node_emulator.rb:
 - require plugins/transferd/agent
 - require transfer/error
 - require transfer/spec
-products/connect.rb:
-- const Cli::Error
 transfer/parameters.rb:
 - require cli/formatter

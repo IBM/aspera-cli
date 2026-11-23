@@ -39,13 +39,11 @@ module AgentFactorySpecHelper
 
   # Variants of `TransferAgentOptions` in `options.schema.yaml`: component, by agent, in the order of `oneOf`
   SCHEMA_VARIANTS = {
-    'node'    => 'NodeAgentOptions',
-    'desktop' => 'DesktopAgentOptions',
-    'connect' => 'ConnectAgentOptions'
+    'node' => 'NodeAgentOptions'
   }.freeze
 
   # Variants with the bundles of the gem: those of the schema, then the agents of the bundles (by name of bundle)
-  TODAY_VARIANTS = SCHEMA_VARIANTS.merge('direct' => 'DirectAgentOptions', 'httpgw' => 'HttpgwAgentOptions', 'transferd' => 'TransferdAgentOptions').freeze
+  TODAY_VARIANTS = SCHEMA_VARIANTS.merge('connect' => 'ConnectAgentOptions', 'desktop' => 'DesktopAgentOptions', 'direct' => 'DirectAgentOptions', 'httpgw' => 'HttpgwAgentOptions', 'transferd' => 'TransferdAgentOptions').freeze
 
   # Schema of an entry of the extension point `agent`
   POINT_SCHEMA = {
@@ -171,7 +169,7 @@ module Aspera
         registry.add_source(folder)
         expect(factory.all.to_a).to(eq(AgentFactorySpecHelper::TODAY.merge(node: {long: 'Node', short: :m}).to_a))
         expect(factory.agent_class(:direct)).to(be(Aspera::Plugins::SpecBundleAgent::Agent))
-        expect(factory.agent_class(:desktop)).to(be(Agent::Desktop))
+        expect(factory.agent_class(:desktop)).to(be(Aspera::Plugins::Desktop::Agent))
       end
 
       it 'leaves out an agent whose name is provided by an earlier entry or whose letter is taken, with a warning, once' do

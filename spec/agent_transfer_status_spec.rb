@@ -3,15 +3,13 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Tests for Agent::Xxx.transfer_status class methods (async re-query interface),
+# Tests for Agent::Node.transfer_status class method (async re-query interface),
 # and for the status loop of Agent::Node.
-# All external I/O (REST, JSON-RPC, gRPC) is doubled — no real daemons required.
+# All external I/O (REST) is doubled — no real daemons required.
 
 require_relative '../lib/aspera/rest'
 require_relative '../lib/aspera/transfer/error'
 require_relative '../lib/aspera/agent/node'
-require_relative '../lib/aspera/agent/desktop'
-require_relative '../lib/aspera/json_rpc/client'
 require 'bundler/setup'
 require 'securerandom'
 
@@ -99,43 +97,5 @@ RSpec.describe('Aspera::Agent::Node#wait_for_transfers_completion') do
     agent = agent_reading({'status' => 'paused', 'bytes_transferred' => 0, 'error_desc' => ''}, {'status' => 'completed', 'bytes_transferred' => 1024})
     expect(agent.wait_for_completion).to(be_a(Aspera::Transfer::Result::Success))
     expect(events).to(eq([:sessions_init, :session_end, [:end, true]]))
-  end
-end
-
-# ── Desktop ───────────────────────────────────────────────────────────────────
-
-RSpec.describe('Aspera::Agent::Desktop.transfer_status') do
-  before do
-    allow(Aspera::Agent::Desktop).to(receive(:desktop_api_url).and_return('http://127.0.0.1:33024'))
-    # Stub JSON-RPC client
-    client_double = double('JsonRpc::Client')
-    allow(Aspera::JsonRpc::Client).to(receive(:new).and_return(client_double))
-    allow(client_double).to(receive(:get_transfer)) do |args|
-      case args[:transfer_id]
-      when 'tid-running'    then {'status' => 'running',   'bytes_written' => 512,  'error_desc' => ''}
-      when 'tid-completed'  then {'status' => 'completed', 'bytes_written' => 2048, 'error_desc' => ''}
-      when 'tid-cancelled'  then {'status' => 'cancelled', 'bytes_written' => 0,    'error_desc' => ''}
-      end
-    end
-  end
-
-  let(:params) { {'application_id' => 'app-uuid-001'} }
-
-  it 'returns running status' do
-    result = Aspera::Agent::Desktop.transfer_status('tid-running', params)
-    expect(result['status']).to(eq('running'))
-    expect(result['bytes_transferred']).to(eq(512))
-  end
-
-  it 'returns completed status with ended_at' do
-    result = Aspera::Agent::Desktop.transfer_status('tid-completed', params)
-    expect(result['status']).to(eq('completed'))
-    expect(result['ended_at']).not_to(be_nil)
-  end
-
-  it 'returns cancelled status with ended_at' do
-    result = Aspera::Agent::Desktop.transfer_status('tid-cancelled', params)
-    expect(result['status']).to(eq('cancelled'))
-    expect(result['ended_at']).not_to(be_nil)
   end
 end

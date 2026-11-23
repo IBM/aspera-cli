@@ -3,14 +3,14 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Unit tests for Aspera::Agent::Connect — Connect local REST API is doubled, no Connect application needed.
+# Unit tests for Aspera::Plugins::Connect::Agent — Connect local REST API is doubled, no Connect application needed.
 
-require_relative '../lib/aspera/agent/connect'
-require_relative '../lib/aspera/transfer/error'
-require_relative '../lib/aspera/transfer/spec'
+require_relative '../agent'
+require_relative '../../../transfer/error'
+require_relative '../../../transfer/spec'
 require 'tmpdir'
 
-RSpec.describe(Aspera::Agent::Connect) do
+RSpec.describe(Aspera::Plugins::Connect::Agent) do
   let(:rest) { instance_double(Aspera::Rest::Client) }
   let(:events) { [] }
   # Successive values of `transfer_info`
@@ -69,7 +69,7 @@ RSpec.describe(Aspera::Agent::Connect) do
     end
 
     before do
-      stub_const('Aspera::Agent::Connect::SLEEP_SEC_BETWEEN_RETRY', 0)
+      stub_const('Aspera::Plugins::Connect::Agent::SLEEP_SEC_BETWEEN_RETRY', 0)
       allow(Aspera::Environment.instance).to(receive_messages(graphical?: true, open_uri_graphical: nil))
       allow(described_class).to(receive(:connect_api_url).and_return('http://127.0.0.1:33003'))
       allow(rest).to(receive(:read).with('info/version').and_return({'version' => '4.2'}))

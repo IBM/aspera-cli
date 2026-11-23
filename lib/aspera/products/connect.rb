@@ -68,7 +68,7 @@ module Aspera
           Log.dump(:javascript, connect_versions_javascript)
           # get javascript object only
           found = connect_versions_javascript.match(/^.*? = (.*);/)
-          Aspera.assert(!found.nil?, type: Cli::Error) { 'Problem when getting connect versions from internet' }
+          Aspera.assert(!found.nil?, type: Aspera::Error) { 'Problem when getting connect versions from internet' }
           all_data = JSON.parse(found[1])
           @connect_versions = all_data['entries']
         end
