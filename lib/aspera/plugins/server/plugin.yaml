@@ -1,0 +1,5 @@
+name: server
+title: IBM Aspera High-Speed Transfer Server
+depends:
+  - transfer_agents
+commands: true

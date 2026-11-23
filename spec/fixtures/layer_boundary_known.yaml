@@ -17,18 +17,6 @@ cli/plugins/config.rb:
 - const Transfer::Spec
 - require ascp/installation
 - require transfer/spec
-cli/plugins/orchestrator.rb:
-- const Transfer::Spec
-- require transfer/spec
-cli/plugins/server.rb:
-- const Plugins::TransferAgents
-- const Sync::Operations
-- const Transfer::Result
-- const Transfer::Spec
-- require plugins/transfer_agents/ascp_logs_actions
-- require plugins/transfer_agents/sync_actions
-- require transfer/result
-- require transfer/spec
 cli/runner.rb:
 - const Transfer::Error
 - const Transfer::Result

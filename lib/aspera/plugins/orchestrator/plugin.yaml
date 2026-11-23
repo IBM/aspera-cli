@@ -1,0 +1,13 @@
+name: orchestrator
+title: IBM Aspera Orchestrator
+depends:
+  - transfer_agents
+commands: true
+schemas:
+  - key: orchestrator
+    file: schemas/IBM Aspera Orchestrator API-v1-enhanced.yaml
+    source:
+      url: https://raw.githubusercontent.com/laurent-martin/aspera-api-examples/refs/heads/main/openapi/IBM%20Aspera%20Orchestrator%20API-v1-enhanced.yaml
+  - key: orchestrator_opts
+    file: schemas/options.yaml
+    owned: true

@@ -10,7 +10,7 @@ RSpec.describe(Aspera::Schema::Validator) do
   subject(:validator) { described_class.instance }
 
   let(:agent_options) { Aspera::Schema::Registry::TRANSFER_AGENT_OPTIONS }
-  let(:workflow_start) { 'opts:components.schemas.OrchestratorWorkflowStart' }
+  let(:workflow_start) { 'orchestrator_opts:components.schemas.OrchestratorWorkflowStart' }
 
   it 'accepts a valid value' do
     expect(validator.errors({'synchronous' => true, 'variable' => 'x'}, workflow_start)).to(be_empty)

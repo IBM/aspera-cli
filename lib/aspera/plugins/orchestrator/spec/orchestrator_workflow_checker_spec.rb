@@ -3,14 +3,14 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-require_relative 'spec_helper'
-require_relative '../lib/aspera/orchestrator_workflow_checker'
+require 'spec_helper'
+require_relative '../workflow_checker'
 require 'json'
 require 'stringio'
 require 'zlib'
 require 'rubygems/package'
 
-RSpec.describe(Aspera::OrchestratorWorkflowChecker) do
+RSpec.describe(Aspera::Plugins::Orchestrator::WorkflowChecker) do
   # Plain format, one step: the example of the Workflow Authoring Guide
   let(:workflow) do
     <<~YAML
@@ -493,7 +493,7 @@ RSpec.describe(Aspera::OrchestratorWorkflowChecker) do
     end
 
     it 'reports a package larger than the limit when decompressed, without decompressing all of it (decompression bomb)' do
-      stub_const('Aspera::OrchestratorWorkflowChecker::PACKAGE_MAX_SIZE', 100_000)
+      stub_const('Aspera::Plugins::Orchestrator::WorkflowChecker::PACKAGE_MAX_SIZE', 100_000)
       # 20 MB once decompressed, about 20 kB compressed
       bomb = package('x/Workflow_hello__1.txt' => manifest, 'x/big.bin' => "\0" * 20_000_000, 'x/Workflow_hello__1.yml' => workflow)
       expect(bomb.bytesize).to(be < 100_000)
@@ -515,7 +515,7 @@ RSpec.describe(Aspera::OrchestratorWorkflowChecker) do
     end
 
     it 'accepts a package up to the limit' do
-      stub_const('Aspera::OrchestratorWorkflowChecker::PACKAGE_MAX_SIZE', workflow.bytesize + manifest.bytesize)
+      stub_const('Aspera::Plugins::Orchestrator::WorkflowChecker::PACKAGE_MAX_SIZE', workflow.bytesize + manifest.bytesize)
       expect(codes(check(package('x/Workflow_hello__1.yml' => workflow, 'x/Workflow_hello__1.txt' => manifest), file_name: 'wf.wkf'))).to(be_empty)
     end
   end

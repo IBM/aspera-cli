@@ -380,7 +380,7 @@ module Aspera
       end
 
       describe 'free-form schema' do
-        let(:schema) { 'opts:components.schemas.OrchestratorInitiateParameters' }
+        let(:schema) { 'orchestrator_opts:components.schemas.OrchestratorInitiateParameters' }
 
         it 'is displayed as its description' do
           runner = Runner.new([])

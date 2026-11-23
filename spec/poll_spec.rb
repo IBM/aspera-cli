@@ -7,11 +7,11 @@
 
 require_relative '../lib/aspera/cli/runner'
 require_relative '../lib/aspera/cli/poll'
-require_relative '../lib/aspera/cli/plugins/orchestrator'
+require_relative '../lib/aspera/plugins/orchestrator/commands'
 require_relative '../lib/aspera/plugins/faspex5/commands'
 require_relative '../lib/aspera/plugins/node/commands'
 require_relative '../lib/aspera/plugins/aoc/commands'
-require_relative '../lib/aspera/cli/plugins/server'
+require_relative '../lib/aspera/plugins/server/commands'
 require_relative '../lib/aspera/plugins/shares/commands'
 require_relative '../lib/aspera/plugins/ats/commands'
 require_relative '../lib/aspera/plugins/httpgw/commands'
@@ -250,7 +250,7 @@ module Aspera
 
         it 'marks the generic list and show operations, and the commands of the demo' do
           {
-            Plugins::Orchestrator => [%i[workflows workorders], %i[workorders status], %i[tasks list], %i[pools status], %i[queues list], %i[queues items]],
+            Aspera::Plugins::Orchestrator::Commands => [%i[workflows workorders], %i[workorders status], %i[tasks list], %i[pools status], %i[queues list], %i[queues items]],
             Aspera::Plugins::Faspex5::Commands => [%i[packages list], %i[packages show], %i[admin workgroups list]],
             Aspera::Plugins::Node::Commands => [%i[ls], %i[transfer list], %i[access_keys list], %i[access_keys show], %i[access_keys do thumbnail]],
             Aspera::Plugins::Aoc::Commands => [%i[packages list], %i[admin analytics transfers]]
@@ -263,7 +263,7 @@ module Aspera
 
         it 'marks the read-only commands of server, and other commands that only read' do
           {
-            Plugins::Server  => [%i[ls], %i[df], %i[du], %i[md5sum], %i[info]],
+            Aspera::Plugins::Server::Commands => [%i[ls], %i[df], %i[du], %i[md5sum], %i[info]],
             Aspera::Plugins::Node::Commands => [%i[async list], %i[ssync state], %i[stream list], %i[service list], %i[watch_folder show]],
             Aspera::Plugins::Faspex5::Commands => [%i[user profile show], %i[admin configuration show], %i[admin smtp show]],
             Aspera::Plugins::Shares::Commands => [%i[info], %i[share list]],
@@ -272,7 +272,7 @@ module Aspera
           }.each do |plugin, paths|
             paths.each { |path| expect(plugin.command_registry[path].read_only?).to(be(true), "#{plugin} #{path}") }
           end
-          %i[rm mv cp mkdir upload download].each { |cmd| expect(Plugins::Server.command_registry[[cmd]].read_only?).to(be(false), "server #{cmd}") }
+          %i[rm mv cp mkdir upload download].each { |cmd| expect(Aspera::Plugins::Server::Commands.command_registry[[cmd]].read_only?).to(be(false), "server #{cmd}") }
         end
 
         it 'makes read-only by default the commands with a generic id, unless explicit' do

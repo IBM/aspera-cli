@@ -4,11 +4,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # cspell:ignore errstr zmode zstr fcount dcount
-require_relative 'spec_helper'
-require_relative '../lib/aspera/ascmd'
-require_relative '../lib/aspera/cli/plugins/server'
-require_relative '../lib/aspera/cli/parser'
-require_relative '../lib/aspera/cli/context'
+require 'spec_helper'
+require_relative '../ascmd'
+require_relative '../commands'
+require_relative '../../../cli/parser'
+require_relative '../../../cli/context'
 
 # Replies of `ascmd`, encoded as by `asfield.c`: type (1 byte), length (4 bytes, big endian), value
 module AscmdReplies
@@ -45,7 +45,7 @@ class AscmdExecutor
   end
 end
 
-RSpec.describe(Aspera::AsCmd) do
+RSpec.describe(Aspera::Plugins::Server::AsCmd) do
   include AscmdReplies
 
   def execute(output, operation, arguments, **)
@@ -190,7 +190,7 @@ RSpec.describe(Aspera::AsCmd) do
 end
 
 # Commands of `ascmd` in plugin `server`
-RSpec.describe(Aspera::Cli::Plugins::Server) do
+RSpec.describe(Aspera::Plugins::Server::Commands) do
   include AscmdReplies
 
   let(:parser) { Aspera::Cli::Parser.new('server') }

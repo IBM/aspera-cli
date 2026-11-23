@@ -3,13 +3,13 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-require_relative '../build/lib/test_env'
-require_relative '../lib/aspera/log'
+require_relative '../../../../../build/lib/test_env'
+require_relative '../../../log'
 require 'rspec'
 # Aspera::Log.instance.level = :debug
 # Aspera::Log.instance.logger_type = :stderr
-require_relative '../lib/aspera/ascmd'
-require_relative '../lib/aspera/ssh'
+require_relative '../ascmd'
+require_relative '../../../ssh'
 require 'uri'
 require 'openssl'
 
@@ -61,8 +61,8 @@ PATH_FILE_COPY = File.join(PATH_FOLDER_DEST, "#{NAME_FILE1}.copy1-#{TEST_RUN_ID}
 PATH_FILE_RENAMED = File.join(PATH_FOLDER_DEST, "#{NAME_FILE1}.renamed-#{TEST_RUN_ID}")
 puts "Openssl version: #{OpenSSL::OPENSSL_VERSION}"
 
-RSpec.describe(Aspera::AsCmd, :live) do
-  let(:ascmd) { Aspera::AsCmd.new(Aspera::Ssh.new(ssh_url.host, server_info['username'], **ssh_options)) }
+RSpec.describe(Aspera::Plugins::Server::AsCmd, :live) do
+  let(:ascmd) { Aspera::Plugins::Server::AsCmd.new(Aspera::Ssh.new(ssh_url.host, server_info['username'], **ssh_options)) }
   #    ['du','/Users/xfer'],
   #    ['df','/'],
   #    ['df'],
@@ -101,7 +101,7 @@ RSpec.describe(Aspera::AsCmd, :live) do
     it 'fails if no such folder' do
       expect do
         ascmd.execute_single(:cp, ['/does_not_exist', PATH_FOLDER_NEW])
-      end.to(raise_error(Aspera::AsCmd::Error, 'ascmd: No such file or directory (2)'))
+      end.to(raise_error(Aspera::Plugins::Server::AsCmd::Error, 'ascmd: No such file or directory (2)'))
     end
   end
   describe 'rename' do
@@ -116,7 +116,7 @@ RSpec.describe(Aspera::AsCmd, :live) do
     it 'fails if no such file' do
       expect do
         ascmd.execute_single(:mv, ['/does_not_exist', PATH_FOLDER_NEW])
-      end.to(raise_error(Aspera::AsCmd::Error, 'ascmd: No such file or directory (2)'))
+      end.to(raise_error(Aspera::Plugins::Server::AsCmd::Error, 'ascmd: No such file or directory (2)'))
     end
   end
   describe 'md5sum' do
@@ -129,7 +129,7 @@ RSpec.describe(Aspera::AsCmd, :live) do
     it 'fails if no such file' do
       expect do
         ascmd.execute_single(:md5sum, ['/does_not_exist'])
-      end.to(raise_error(Aspera::AsCmd::Error, 'ascmd: No such file or directory (2)'))
+      end.to(raise_error(Aspera::Plugins::Server::AsCmd::Error, 'ascmd: No such file or directory (2)'))
     end
   end
   describe 'delete' do
@@ -144,7 +144,7 @@ RSpec.describe(Aspera::AsCmd, :live) do
     it 'fails if no such file' do
       expect do
         ascmd.execute_single(:rm, ['/does_not_exist'])
-      end.to(raise_error(Aspera::AsCmd::Error, 'ascmd: No such file or directory (2)'))
+      end.to(raise_error(Aspera::Plugins::Server::AsCmd::Error, 'ascmd: No such file or directory (2)'))
     end
   end
   describe 'df' do

@@ -1,0 +1,142 @@
+openapi: 3.1.0
+info:
+  title: Options of bundle orchestrator
+  version: 1.0.0
+  description: Schema definitions of the options of bundle `orchestrator`
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+paths: {}
+components:
+  schemas:
+    OrchestratorWorkflowStart:
+      type: object
+      description: >-
+        Execution of the work order created by `orchestrator workflows start`.
+        By default, the call is asynchronous and returns the work order information.
+        A synchronous call returns the value of the output variable, if specified.
+      additionalProperties: false
+      properties:
+        synchronous:
+          type: boolean
+          description: Wait for completion of the work order.
+          default: false
+        step:
+          type: string
+          description: >-
+            Name of the work step providing the result.
+            Requires `variable`, and implies `synchronous`.
+          examples:
+            - ResultStep
+        variable:
+          type: string
+          description: >-
+            Name of the output variable of `step` returned as result.
+            Requires `step`, and implies `synchronous`.
+          examples:
+            - Complete_status_message
+    OrchestratorInitiateParameters:
+      type: object
+      description: >-
+        Input parameters for the workflow (key-value pairs).
+        Valid keys are defined by the workflow's input specification.
+        Use `orchestrator workflows inputs WORKFLOW_ID` to discover required parameters.
+      additionalProperties: true
+    OrchestratorWorkflowExport:
+      type: object
+      description: Options of `orchestrator workflows export`.
+      additionalProperties: false
+      properties:
+        dependencies:
+          type: boolean
+          description: >-
+            Export the sub-workflows and remote nodes used by the workflow in a package (`.wkf`),
+            saved in the folder given by option `to_folder` (default: current folder), instead of displaying the workflow.
+          default: false
+    OrchestratorWorkflowImport:
+      type: object
+      description: Options of `orchestrator workflows import`.
+      additionalProperties: false
+      properties:
+        folder_id:
+          type: integer
+          description: >-
+            Folder of the new workflow (default: the default folder).
+            The `folder_id` of existing workflows is in `orchestrator workflows list`.
+        publish:
+          type: boolean
+          description: >-
+            Publish the workflow after import.
+            If not set, the server option `publish_api_imported_workflow` decides.
+        link_to_subworkflows:
+          type: boolean
+          description: Link to existing sub-workflows instead of importing those of the package (`.wkf`).
+          default: false
+    OrchestratorImportWithConstraints:
+      type: object
+      description: >-
+        Import of a workflow file present on the Orchestrator host, as a new workflow or as a new revision of an existing workflow.
+        `orchestrator workflows import` stores each uploaded file in `<run_dir>/workflows/import/`.
+        Conflicts with existing global templates, sub-workflows and remote nodes are resolved by name.
+        Use `orchestrator workflows find_constraints` to list the conflicts, and `orchestrator workflows check_import` to check the file beforehand.
+      additionalProperties: false
+      required:
+        - filename
+      properties:
+        filename:
+          type: string
+          description: Path of the workflow file (`.yml` or `.wkf`) on the Orchestrator host.
+          examples:
+            - /opt/aspera/orchestrator/var/run/orchestrator/workflows/import/my_workflow.yml
+        add_as_revision:
+          type: [integer, 'null']
+          description: >-
+            ID of an existing workflow: the file is imported as a new revision of this workflow (to be published).
+            If not set, or `null`, a new workflow is created.
+          examples:
+            - 123
+        subwf_constraints:
+          type: object
+          description: 'Resolution for each sub-workflow, by name: `Map to the Existing Sub-Workflow`, `Create a new Sub-Workflow with a unique name`, or `Add a new revision to the existing Sub-Workflow`.'
+          additionalProperties:
+            type: string
+            enum:
+              - Map to the Existing Sub-Workflow
+              - Create a new Sub-Workflow with a unique name
+              - Add a new revision to the existing Sub-Workflow
+        action_template_constraints:
+          type: object
+          description: 'Resolution for each global action template, by name: `Map to the existing Global Template`, `Create a new Global Template with a different name`, or `Override the existing Global Template with this new template`.'
+          additionalProperties:
+            type: string
+            enum:
+              - Map to the existing Global Template
+              - Create a new Global Template with a different name
+              - Override the existing Global Template with this new template
+        remote_node_constraints:
+          type: object
+          description: 'Resolution for each remote node, by name: `Map to the existing Remote Node`, `Create a new Remote Node with a different name`, or `Override the Existing Remote Node with this importing node`.'
+          additionalProperties:
+            type: string
+            enum:
+              - Map to the existing Remote Node
+              - Create a new Remote Node with a different name
+              - Override the Existing Remote Node with this importing node
+        auto_enable_missing_plugins:
+          type: boolean
+          description: Enable the plugins used by the workflow that are not enabled.
+          default: false
+    OrchestratorReloadPluginSet:
+      type: object
+      description: Set of plugins to reload.
+      required:
+        - plugin_names
+      properties:
+        plugin_names:
+          type: array
+          description: List of plugin names to reload.
+          items:
+            type: string
+          examples:
+            - - soap_requests
+              - frameio_operations # cspell:disable-line

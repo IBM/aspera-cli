@@ -3,15 +3,15 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-require_relative 'spec_helper'
-require_relative '../lib/aspera/cli/plugins/server'
-require_relative '../lib/aspera/cli/parser'
-require_relative '../lib/aspera/cli/context'
-require_relative '../lib/aspera/ssh'
+require 'spec_helper'
+require_relative '../commands'
+require_relative '../../../cli/parser'
+require_relative '../../../cli/context'
+require_relative '../../../ssh'
 
 # Command `server logs`: the SSH connection is replaced by a double that serves the fixture files
-RSpec.describe(Aspera::Cli::Plugins::Server) do
-  fixtures_dir = File.expand_path('fixtures/ascp_logs', __dir__)
+RSpec.describe(Aspera::Plugins::Server::Commands) do
+  fixtures_dir = File.expand_path('../../../../../spec/fixtures/ascp_logs', __dir__)
   let(:parser) { Aspera::Cli::Parser.new('server') }
   let(:context) do
     ctx = Aspera::Cli::Context.new

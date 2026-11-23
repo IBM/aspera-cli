@@ -125,8 +125,8 @@ The plugin architecture enables modular command implementation for different Asp
 - [`shares/commands.rb`](../lib/aspera/plugins/shares/commands.rb) - Aspera Shares
 - [`node/commands.rb`](../lib/aspera/plugins/node/commands.rb) - Node API
 - [`console.rb`](../lib/aspera/cli/plugins/console.rb) - Aspera Console
-- [`orchestrator.rb`](../lib/aspera/cli/plugins/orchestrator.rb) - Aspera Orchestrator
-- [`server.rb`](../lib/aspera/cli/plugins/server.rb) - HSTS (High-Speed Transfer Server)
+- [`orchestrator/commands.rb`](../lib/aspera/plugins/orchestrator/commands.rb) - Aspera Orchestrator
+- [`server/commands.rb`](../lib/aspera/plugins/server/commands.rb) - HSTS (High-Speed Transfer Server)
 - [`cos/commands.rb`](../lib/aspera/plugins/cos/commands.rb) - IBM Cloud Object Storage
 - [`httpgw.rb`](../lib/aspera/cli/plugins/httpgw.rb) - HTTP Gateway
 - [`faspio.rb`](../lib/aspera/cli/plugins/faspio.rb) - Fasp.io Gateway
@@ -857,7 +857,7 @@ StandardError
 │   └── SchemaRequest (control flow: `help` given as option or argument value — lib/aspera/cli/option_types.rb)
 ├── Aspera::Cli::HelpRequest (control flow: --help reached in dispatch)
 ├── Aspera::Rest::CallError (HTTP call errors — lib/aspera/rest/call_error.rb)
-├── Aspera::Ascmd::Error (ascmd errors — lib/aspera/ascmd.rb)
+├── Aspera::Plugins::Server::AsCmd::Error (ascmd errors — lib/aspera/plugins/server/ascmd.rb)
 └── Aspera::Transfer::Error (transfer failures — lib/aspera/transfer/error.rb)
 ```
 
@@ -1153,7 +1153,7 @@ end
 | `preview` | yes | | preview generator | `node`, `transfer_agents` |
 | `aoc` | yes | | API, GraphQL queries | `node`, `ats`, `transfer_agents` |
 | `faspex5` | yes | | API, OAuth public link flow, Faspex 4 postprocessing servlet | `transfer_agents` |
-| `orchestrator` | yes | | workflow checker | `transfer_agents` |
+| `orchestrator` | yes | | workflow checker, options schemas | `transfer_agents` |
 | `server` | yes | | `ascmd` | `transfer_agents` |
 | `console`, `faspio`, `alee` | yes | | API (`alee`) | |
 

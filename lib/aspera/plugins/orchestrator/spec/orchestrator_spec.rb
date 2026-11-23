@@ -3,14 +3,14 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-require_relative 'spec_helper'
-require_relative '../lib/aspera/cli/plugins/orchestrator'
-require_relative '../lib/aspera/cli/parser'
-require_relative '../lib/aspera/cli/context'
-require_relative '../lib/aspera/plugins/transfer_agents/transfer_agent'
+require 'spec_helper'
+require_relative '../commands'
+require_relative '../../../cli/parser'
+require_relative '../../../cli/context'
+require_relative '../../transfer_agents/transfer_agent'
 require 'securerandom'
 
-RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
+RSpec.describe(Aspera::Plugins::Orchestrator::Commands) do
   let(:parser) { Aspera::Cli::Parser.new('orchestrator') }
   let(:context) do
     ctx = Aspera::Cli::Context.new
@@ -315,9 +315,9 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
       Dir.mktmpdir do |dir|
         path = File.join(dir, 'wf.yml')
         File.write(path, "---\n")
-        allow(Aspera::OrchestratorWorkflowChecker).to(receive(:check).and_call_original)
+        allow(Aspera::Plugins::Orchestrator::WorkflowChecker).to(receive(:check).and_call_original)
         orchestrator.action_workflows_check_import(file_path: path)
-        expect(Aspera::OrchestratorWorkflowChecker).to(have_received(:check).with(hash_including(file_name: 'wf.yml', specs: specs)))
+        expect(Aspera::Plugins::Orchestrator::WorkflowChecker).to(have_received(:check).with(hash_including(file_name: 'wf.yml', specs: specs)))
       end
     end
 
@@ -361,9 +361,9 @@ RSpec.describe(Aspera::Cli::Plugins::Orchestrator) do
           path = File.join(dir, 'wf.yml')
           File.write(path, "---\n")
           Aspera::Cli::Security.instance.lock('in MCP server mode', default: :high)
-          allow(Aspera::OrchestratorWorkflowChecker).to(receive(:check).and_call_original)
+          allow(Aspera::Plugins::Orchestrator::WorkflowChecker).to(receive(:check).and_call_original)
           expect { orchestrator.action_workflows_check_import(file_path: path) }.to(raise_error(Aspera::Cli::BadArgument, /reading files is disabled by security level high/))
-          expect(Aspera::OrchestratorWorkflowChecker).not_to(have_received(:check))
+          expect(Aspera::Plugins::Orchestrator::WorkflowChecker).not_to(have_received(:check))
           allow(orchestrator).to(receive(:call_ao).and_return({'workflow' => {'id' => 1}}))
           expect(orchestrator.action_workflows_import(file_path: path).data).to(eq({'id' => 1}))
         end
