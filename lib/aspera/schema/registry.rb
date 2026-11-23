@@ -91,6 +91,31 @@ module Aspera
       ASCP_LOG = 'ascp_log'
       # Manifest `plugin.yaml` of a plugin bundle, see `BundleRegistry`
       MANIFEST = 'manifest'
+      # Constants of v4.29.1 moved to the bundles: plain values (the framework does not name a bundle), removed in 5.0
+      # removed in 5.0: use `Aspera::Plugins::Aoc::Commands::AOC_SCHEMA` (key `aoc` of the bundle aoc)
+      AOC = 'aoc'
+      # removed in 5.0: use `Aspera::Plugins::Aoc::Commands::AUTOMATION_SCHEMA` (key `automation` of the bundle aoc)
+      AUTOMATION = 'automation'
+      # removed in 5.0: use `Aspera::Plugins::Console::Commands::API_SCHEMA`
+      CONSOLE = 'console'
+      # removed in 5.0: use `Aspera::Plugins::Faspex5::Commands::API_SCHEMA`
+      FASPEX = 'faspex'
+      # removed in 5.0: use `Aspera::Plugins::Faspio::Commands::API_SCHEMA`
+      FASPIO = 'faspio'
+      # removed in 5.0: use `Aspera::Plugins::Node::Commands::API_SCHEMA`
+      NODE = 'node'
+      # removed in 5.0: use `Aspera::Plugins::Orchestrator::Commands::API_SCHEMA`
+      ORCHESTRATOR = 'orchestrator'
+      # removed in 5.0: use `Aspera::Plugins::Shares::Commands::API_SCHEMA`
+      SHARES = 'shares+/api/v1'
+      # removed in 5.0: use the key `preview` of the bundle preview
+      PREVIEW_OPTIONS = 'preview'
+      # removed in 5.0: use the component `TransferdAgentOptions`, variant of `TransferAgentOptions` added by the bundle transferd
+      TRANSFERD_AGENT_OPTIONS = "#{OPTIONS}:components.schemas.TransferdAgentOptions".freeze
+      # removed in 5.0: use `Aspera::Plugins::Transferd::Service::SERVICE_CONFIG`
+      TRANSFERD_SERVICE_CONFIG = 'transferd_opts:components.schemas.TransferdServiceConfig'
+      deprecate_constant :AOC, :AUTOMATION, :CONSOLE, :FASPEX, :FASPIO, :NODE, :ORCHESTRATOR, :SHARES,
+        :PREVIEW_OPTIONS, :TRANSFERD_AGENT_OPTIONS, :TRANSFERD_SERVICE_CONFIG
       LOG_OPTIONS             = "#{OPTIONS}:components.schemas.LogOptions".freeze
       UI_OPTIONS              = "#{OPTIONS}:components.schemas.UiOptions".freeze
       SECURITY_OPTIONS        = "#{OPTIONS}:components.schemas.SecurityOptions".freeze

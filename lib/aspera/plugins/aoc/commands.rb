@@ -1848,6 +1848,7 @@ module Aspera
           }
           aoc_api.create_package_simple(package_data, true, nil)[:spec]
         end
+        private :faspex4_send_to_aoc
       end
     end
   end

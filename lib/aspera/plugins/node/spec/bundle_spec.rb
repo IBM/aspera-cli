@@ -108,7 +108,7 @@ module Aspera
             expect(Schema::Registry.owned?(Commands::EMULATOR_OPTIONS)).to(be(true))
             expect(Schema::Registry.owned?("#{Commands::API_SCHEMA}:components.schemas.transferPostRequest")).to(be(false))
             expect(Schema::Registry.instance.reader(Commands::EMULATOR_OPTIONS).current['properties']).to(include('url', 'docroot', 'retention_sec'))
-            %i[NODE NODE_AGENT_OPTIONS NODE_EMULATOR_OPTIONS].each { |name| expect(Schema::Registry.const_defined?(name, false)).to(be(false), name) }
+            %i[NODE_AGENT_OPTIONS NODE_EMULATOR_OPTIONS].each { |name| expect(Schema::Registry.const_defined?(name, false)).to(be(false), name) }
             # The file, not the document of the registry: `NodeAgentOptions` is added to it as variant of `TransferAgentOptions`
             framework = Yaml.safe_load(File.read(File.join(source_root, 'lib', Schema::Registry::LOCATIONS[:opts])))['components']['schemas']
             expect(framework.keys).not_to(include('NodeAgentOptions', 'NodeBearerTokenOptions', 'NodeEmulatorOptions', 'NodeTelemetryOptions'))

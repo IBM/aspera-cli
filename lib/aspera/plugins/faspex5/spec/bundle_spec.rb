@@ -59,7 +59,6 @@ module Aspera
             expect(api).to(have_attributes(bundle: :faspex5, file: File.join(bundle_folder, 'schemas/IBM Aspera Faspex API-5.0-enhanced.yaml'), owned: false))
             expect(api.source['url']).to(end_with('/openapi/IBM%20Aspera%20Faspex%20API-5.0-enhanced.yaml'))
             expect(Schema::Registry::LOCATIONS).not_to(include(:faspex))
-            expect(Schema::Registry.const_defined?(:FASPEX, false)).to(be(false))
             expect(Schema::Registry.req_body(Commands::API_SCHEMA, 'packages.post')).to(eq('faspex:paths./packages.post.requestBody.content.application/json.schema'))
             expect(Schema::Registry.instance.reader(Schema::Registry.req_body(Commands::API_SCHEMA, 'packages.post')).current).to(be_a(Hash))
           end

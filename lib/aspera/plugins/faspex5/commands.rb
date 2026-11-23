@@ -986,7 +986,11 @@ module Aspera
 
         def action_gateway(parameters: {}, **)
           require_relative '../../faspex_gw'
-          Aspera::Faspex4GWServlet.serve(parameters.symbolize_keys, type: Cli::BadArgument) { ->(faspex_pkg_parameters) { faspex4_send_to_faspex5(faspex_pkg_parameters) } }
+          Aspera::Faspex4GWServlet.serve(parameters.symbolize_keys, type: Cli::BadArgument) do
+            # evaluated before the server listens: invalid options fail at startup, and no lazy memo is shared by request threads
+            api_v5
+            ->(faspex_pkg_parameters) { faspex4_send_to_faspex5(faspex_pkg_parameters) }
+          end
           Cli::Result::Status.new('Gateway terminated')
         end
 
@@ -1013,6 +1017,7 @@ module Aspera
           transfer_spec.delete('authentication')
           transfer_spec
         end
+        private :faspex4_send_to_faspex5
 
         def action_postprocessing(parameters: {}, **)
           require_relative 'faspex4_post_proc_servlet'

@@ -53,7 +53,6 @@ module Aspera
             expect(schema.file).to(eq(File.join(bundle_folder, 'schemas', 'IBM Aspera Orchestrator API-v1-enhanced.yaml')))
             expect(schema.source['url']).to(end_with('-enhanced.yaml'))
             expect(Schema::Registry::LOCATIONS).not_to(include(:orchestrator))
-            expect(Schema::Registry.const_defined?(:ORCHESTRATOR, false)).to(be(false))
             expect(registry.schema(:orchestrator_opts)).to(have_attributes(bundle: :orchestrator, file: File.join(bundle_folder, 'schemas/options.yaml'), owned: true))
             expect(File.read(File.join(source_root, 'lib/aspera/cli/options.schema.yaml'))).not_to(include('Orchestrator'))
           end

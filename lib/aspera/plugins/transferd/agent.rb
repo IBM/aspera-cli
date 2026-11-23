@@ -175,7 +175,7 @@ module Aspera
 
         # @return [Client] Calls to the daemon with plain Ruby arguments
         def client
-          Client.new(@transfer_client)
+          @client ||= Client.new(@transfer_client)
         end
 
         # @return [Hash] `url`: actual endpoint of the daemon, for `transfer_status` and `transfer_cancel` (`transfer_id` is given by the daemon)

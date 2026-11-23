@@ -253,10 +253,13 @@ module Aspera
           private
 
           # The transferd agent is resolved when needed, so that the bundle `node` does not depend on the bundle `transferd`.
+          # Resolved once, then reused.
+          # @param refresh [Boolean] true to resolve again (when an emulator starts), so that an unavailable bundle is always detected then
           # @return [Class] class of the agent `transferd`
           # @raise [BundleRegistry::Unavailable] if the bundle `transferd` is unavailable
-          def transferd_agent_class
-            Aspera::Agent::Factory.instance.agent_class(:transferd)
+          def transferd_agent_class(refresh: false)
+            @transferd_agent_class = nil if refresh
+            @transferd_agent_class ||= Aspera::Agent::Factory.instance.agent_class(:transferd)
           end
 
           # Extract the current rates from an ascp management message
@@ -295,11 +298,12 @@ module Aspera
           # paths of browse and local paths of transfers are relative to it
           @docroot = File.realpath(docroot || Dir.pwd)
           # the daemon is stopped at exit by the agent
+          agent_class = self.class.send(:transferd_agent_class, refresh: true)
           @transfer_client =
             if transfer_client.nil?
               Aspera::Agent::Factory.instance.create(:transferd, {}).client
             else
-              self.class.send(:transferd_agent_class).wrap_client(transfer_client)
+              agent_class.wrap_client(transfer_client)
             end
           @retention_sec = retention_sec
           # transfer id → store entry: `start_spec` (secrets hidden), last `status`, last `info`, `sessions` by id, `files` by id, current `rates` by session id, `error`,

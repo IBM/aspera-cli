@@ -45,7 +45,6 @@ module Aspera
           it 'give the options of the generator, owned by ascli, no longer in the framework' do
             expect(registry.schema(:preview)).to(have_attributes(bundle: :preview, file: File.join(bundle_folder, 'schemas/options.yaml'), owned: true))
             expect(Schema::Registry::LOCATIONS).not_to(include(:preview))
-            expect(Schema::Registry.const_defined?(:PREVIEW_OPTIONS, false)).to(be(false))
             expect(Schema::Registry.owned?(Generator::OPTIONS_SCHEMA)).to(be(true))
             expect(Generator::Options.members).to(include(:office_conversion, :video_conversion))
           end

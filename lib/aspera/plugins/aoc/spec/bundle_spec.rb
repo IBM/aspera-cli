@@ -77,7 +77,7 @@ module Aspera
               expect(Schema::Registry::LOCATIONS).not_to(include(key))
             end
             expect(registry.schema(:aoc_opts)).to(have_attributes(bundle: :aoc, file: File.join(bundle_folder, 'schemas/options.yaml'), owned: true))
-            %i[AOC AUTOMATION PACKAGE_FOLDER_OPTIONS].each do |name|
+            %i[PACKAGE_FOLDER_OPTIONS].each do |name|
               expect(Schema::Registry.const_defined?(name, false)).to(be(false))
             end
             expect(File.read(File.join(source_root, 'lib/aspera/cli/options.schema.yaml'))).not_to(include('PackageFolderOptions'))

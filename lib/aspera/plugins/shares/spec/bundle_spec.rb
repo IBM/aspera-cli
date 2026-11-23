@@ -51,7 +51,6 @@ module Aspera
             expect(api).to(have_attributes(bundle: :shares, file: File.join(bundle_folder, 'schemas/IBM_Aspera_Shares.yaml'), owned: false))
             expect(api.source['url']).to(end_with('/openapi/IBM_Aspera_Shares.yaml'))
             expect(Schema::Registry::LOCATIONS).not_to(include(:shares))
-            expect(Schema::Registry.const_defined?(:SHARES, false)).to(be(false))
             expect(Schema::Registry.req_body(Commands::API_SCHEMA, 'data/shares.post')).to(eq('shares:paths./api/v1/data/shares.post.requestBody.content.application/json.schema'))
             expect(Schema::Registry.instance.reader(Schema::Registry.req_body(Commands::API_SCHEMA, 'data/shares.post')).current).to(be_a(Hash))
           end

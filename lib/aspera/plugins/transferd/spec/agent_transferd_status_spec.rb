@@ -237,4 +237,13 @@ RSpec.describe(Aspera::Plugins::Transferd::Agent) do
   it 'is not supported by the base agent' do
     expect(Aspera::Agent::Base.transfer_cancel('tid', params)).to(be_nil)
   end
+
+  describe '#client' do
+    it 'builds the facade once' do
+      agent = Aspera::Plugins::Transferd::Agent.allocate
+      agent.instance_variable_set(:@transfer_client, instance_double(Transferd::Api::TransferService::Stub))
+      expect(agent.client).to(be_a(Aspera::Plugins::Transferd::Client))
+      expect(agent.client).to(be(agent.client))
+    end
+  end
 end

@@ -220,16 +220,11 @@ namespace :tools do
     puts("Beta version set to: #{BuildTools.build_version}")
   end
 
-  desc 'Download OpenAPI schemas from GitHub: those of `docs/openapi_sources.yaml` and those declared with a `source` in the manifest of bundles'
+  desc 'Download OpenAPI schemas from GitHub: those declared with a `source` in the manifest of bundles'
   task :openapi do
-    config_file = TOP / 'docs' / 'openapi_sources.yaml'
-    Aspera.assert(File.exist?(config_file), "Configuration file not found: #{config_file}")
-    config = YAML.load_file(config_file)
-    Aspera.assert(config['schemas'], "No 'schemas' section found in configuration file")
-    downloads = config['schemas'].map { |schema| [schema['url'], TOP / schema['destination']] }
-    # schemas of bundles: the file is in the folder of the bundle, the origin is in its manifest
-    Aspera::BundleRegistry.instance.schemas.each do |schema|
-      downloads.push([schema.source['url'], Pathname.new(schema.file)]) unless schema.source.nil?
+    # the file is in the folder of the bundle, the origin is in its manifest
+    downloads = Aspera::BundleRegistry.instance.schemas.filter_map do |schema|
+      [schema.source['url'], Pathname.new(schema.file)] unless schema.source.nil?
     end
     downloads.each do |url, destination|
       log.info("Downloading: #{url}")
