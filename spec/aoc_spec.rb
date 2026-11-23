@@ -7,6 +7,22 @@ require_relative '../lib/aspera/api/aoc'
 require 'bundler/setup'
 
 RSpec.describe(Aspera::Api::AoC) do
+  describe '.new with auth web' do
+    let(:web_args) { {scope: 'user:all', url: 'https://org.ibmaspera.com', auth: :web, redirect_uri: 'http://localhost:12345'} }
+
+    before do
+      allow(described_class).to(receive(:link_info).and_return({instance_domain: 'ibmaspera.com', organization: 'org'}))
+    end
+
+    it 'refuses the global client' do
+      expect { described_class.new(**web_args) }.to(raise_error(Aspera::ParameterError, /API client of the organization/))
+    end
+
+    it 'accepts an API client of the organization' do
+      expect(described_class.new(client_id: 'c1', **web_args).auth_params[:redirect_uri]).to(eq('http://localhost:12345'))
+    end
+  end
+
   describe '#node_api_from' do
     let(:auth) { {type: :oauth2, grant_method: :jwt, params: {scope: 'user:all'}} }
 

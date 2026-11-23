@@ -7316,7 +7316,8 @@ The tool reuses valid tokens and automatically triggers a refresh or regeneratio
 #### API Client Registration
 
 > [!NOTE]
-> If you use the pre-registered `client_id` and `client_secret`, skip this and do not set them in next section.
+> The pre-registered `client_id` (default, and used by the wizard) supports only `auth=jwt`: in that case, skip this and do not set `client_id` and `client_secret` in next section.
+> For `auth=web`, register an API client as below, and set its `client_id`, `client_secret` and a `redirect_uri` equal to one of its **Redirect URIs**.
 
 You can use a specific OAuth API `client_id`.
 The first step is to declare `ascli` in Aspera on Cloud using the admin interface.
@@ -7370,8 +7371,17 @@ ascli config preset set default aoc <AOC_ORG>
 ```
 
 > [!NOTE]
-> Default `auth` method is `web` and default `redirect_uri` is `http://localhost:12345`.
-> Leave those default values.
+> Default `auth` is `jwt` (see next section).
+> For web authentication, also set `auth=web` and `redirect_uri=http://localhost:12345` (the value registered in the API client):
+>
+> ```shell
+> ascli config preset set <AOC_ORG> @: auth=web redirect_uri=http://localhost:12345
+> ```
+
+If the browser shows: _Add the redirect URI for your API client in the admin application of IBM Aspera on Cloud and make sure it matches 'redirect_uri' query parameter exactly_, then either:
+
+- no `client_id` is set: the pre-registered client does not support `auth=web`, or
+- `redirect_uri` is not exactly one of the **Redirect URIs** of the API client: scheme (`http` or `https`), host (`localhost` or `127.0.0.1`), port, and trailing `/` shall be identical.
 
 #### Authentication with private key
 
