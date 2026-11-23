@@ -3,192 +3,65 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-require_relative '../environment'
 require_relative 'base'
-require_relative '../products/transferd'
-require_relative '../ascp/installation'
-require_relative '../temp_file_manager'
+require_relative '../log'
+require_relative '../api/transferd'
+require_relative '../products/transferd_daemon'
 require_relative '../transfer/error'
 require_relative '../transfer/spec'
-require_relative '../../transferd_services_pb'
 require 'json'
-require 'securerandom'
-require 'time'
 require 'uri'
 
 module Aspera
   module Agent
+    # Transfers with a Transfer Daemon (`transferd`): an external one, or one started here (`Products::TransferdDaemon`).
+    # Calls to a running daemon: `Api::Transferd`.
     class Transferd < Base
-      # Sends the API key of the daemon (`authentication` of its configuration) in the metadata `api_key` of each call
-      class ApiKeyInterceptor < GRPC::ClientInterceptor
-        # @param api_key [String] API key
-        def initialize(api_key)
-          super()
-          @api_key = api_key
-        end
-
-        %i[request_response client_streamer server_streamer bidi_streamer].each do |rpc_type|
-          define_method(rpc_type) do |metadata: nil, **_rest, &block|
-            metadata['api_key'] = @api_key
-            block.call
-          end
-        end
-      end
-
       # https://github.com/grpc/grpc/blob/master/doc/naming.md
       # https://grpc.io/docs/guides/custom-name-resolution/
       LOCAL_SOCKET_ADDR = '127.0.0.1'
       PORT_SEP = ':'
       # port zero means select a random available high port
       AUTO_LOCAL_TCP_PORT = "#{PORT_SEP}0".freeze
-      # Default timeout in seconds of the calls of `transfer_status` and `transfer_cancel` (`agent_params['timeout']`)
-      CALL_TIMEOUT_SEC = 10
-      # Status of the daemon → status of an asynchronous transfer (as other agents): other statuses are `running`
-      ASYNC_STATUS = {
-        COMPLETED:      'completed',
-        FAILED:         'failed',
-        CANCELED:       'cancelled',
-        UNKNOWN_STATUS: 'unknown'
-      }.freeze
-      # Statuses of the daemon after which a transfer does not change
-      FINAL_STATUSES = %i[COMPLETED FAILED CANCELED].freeze
-      # Time in the daemon is in microseconds, but some versions give milliseconds: values below this are milliseconds
-      MIN_USEC_EPOCH = 10**14
-      # Size in bytes of the random API key of a daemon started here (same as `transferd service`)
-      API_KEY_BYTES = 32
 
-      private_constant :LOCAL_SOCKET_ADDR, :PORT_SEP, :AUTO_LOCAL_TCP_PORT, :ASYNC_STATUS, :MIN_USEC_EPOCH, :API_KEY_BYTES
+      private_constant :LOCAL_SOCKET_ADDR, :PORT_SEP, :AUTO_LOCAL_TCP_PORT
+
+      # Moved to `Api::Transferd`, removed in 5.0
+      ApiKeyInterceptor = Api::Transferd::ApiKeyInterceptor
+      CALL_TIMEOUT_SEC = Api::Transferd::CALL_TIMEOUT_SEC
+      FINAL_STATUSES = Api::Transferd::FINAL_STATUSES
+
+      deprecate_constant :ApiKeyInterceptor, :CALL_TIMEOUT_SEC, :FINAL_STATUSES
 
       class << self
-        # Client of a daemon
-        # @param url     [String]      Endpoint of the daemon, e.g. `127.0.0.1:55002`
-        # @param api_key [String, nil] API key, if the daemon has `authentication` enabled
-        # @param ca_file [String, nil] File with the certificate authority of the daemon (PEM), if the daemon has `tls` enabled
-        # @return [Transferd::Api::TransferService::Stub] gRPC client
-        def create_client(url, api_key: nil, ca_file: nil)
-          credentials = ca_file.nil? ? :this_channel_is_insecure : GRPC::Core::ChannelCredentials.new(File.read(ca_file))
-          return ::Transferd::Api::TransferService::Stub.new(url, credentials) if api_key.nil?
-          ::Transferd::Api::TransferService::Stub.new(url, credentials, interceptors: [ApiKeyInterceptor.new(api_key)])
-        end
-
-        # API key of a daemon started here
-        # @param api_key [String, nil] API key given by the user
-        # @param stop    [Boolean]     `true` if the daemon is stopped on exit
-        # @return [String, nil] The key given, else a random one if the daemon is stopped on exit,
-        #   else `nil` (no authentication): the next executions that attach to the daemon left running cannot know a random key
-        def daemon_api_key(api_key, stop:)
-          return api_key unless api_key.nil?
-          return SecureRandom.hex(API_KEY_BYTES) if stop
-          Log.log.warn('Daemon left running (stop: false) without authentication: other users of the host can use it. Set parameter api_key.')
-          nil
-        end
-
-        # Write the configuration file of a daemon started here: created only by this call, readable only by the user (it may contain the API key)
-        # @param path   [String] Path of the file, in the global temporary folder
-        # @param config [Hash]   Configuration of the daemon
-        def write_config(path, config)
-          File.open(path, File::WRONLY | File::CREAT | File::EXCL, 0o600) { |file| file.write(config.to_json) }
-        end
-
-        # @param agent_params [Hash] `url`: endpoint of the daemon; optional `api_key`, `ca_file`
-        # @return [Transferd::Api::TransferService::Stub] Client of the daemon
-        def client(agent_params)
-          Aspera.assert(agent_params['url'].is_a?(String) && !agent_params['url'].empty?) { 'agent_params: missing url' }
-          create_client(agent_params['url'], api_key: agent_params['api_key'], ca_file: agent_params['ca_file'])
-        end
-
-        # Re-query a previously started transfer from a running transferd daemon (unary call `QueryTransfer`).
-        # The daemon keeps a transfer for some time after its end (`workers.transfer_max_age` of its configuration): then it is `unknown`.
+        # Re-query a previously started transfer: see `Api::Transferd.transfer_status`
         # @param transfer_id  [String] Identifier of transfer, given by the daemon (`transfer_id`)
-        # @param agent_params [Hash]   `url`: endpoint of the daemon, e.g. `127.0.0.1:55002`; optional `timeout`: seconds, `api_key`, `ca_file`
-        # @return [Hash] Normalized status: `status` (`running`, `completed`, `failed`, `cancelled`, or `unknown` if the daemon cannot tell),
-        #   `bytes_transferred`, and when known: `state` (status of the daemon), `bytes_written` (by the receiver, with the bytes of a resumed transfer),
-        #   `files_completed`, `rate_kbps` (average), `target_rate_kbps`,
-        #   `elapsed_sec`, `started_at`, `ended_at`, `error_code`, `error`
+        # @param agent_params [Hash]   `url`: endpoint of the daemon; optional `timeout`: seconds, `api_key`, `ca_file`
+        # @return [Hash] Normalized status
         def transfer_status(transfer_id, agent_params)
-          response = client(agent_params).query_transfer(::Transferd::Api::TransferInfoRequest.new(transferId: transfer_id), deadline: deadline(agent_params))
-          # An unknown transfer is not an exception: status is not set, and error has code 404
-          error = response.error&.description.to_s
-          return {'status' => 'unknown', 'bytes_transferred' => 0, 'error' => error} if response.status.eql?(:UNKNOWN_STATUS) && !error.empty?
-          normalize_status(response)
-        rescue GRPC::BadStatus => e
-          # Daemon not reachable, or timeout: the transfer may still run
-          {'status' => 'unknown', 'bytes_transferred' => 0, 'error' => "#{e.class.name.split('::').last}: #{e.details}"}
+          Api::Transferd.transfer_status(transfer_id, agent_params)
         end
 
-        # Information on a running daemon (unary call `GetInfo`)
-        # @param agent_params [Hash] `url`: endpoint of the daemon; optional `timeout`: seconds, `api_key`, `ca_file`
-        # @return [Hash] Version of the API (`apiVersion`) and information on the instance (`info`)
-        # @raise [Transfer::Error] The daemon is not reachable, or gave an error
-        def info(agent_params)
-          response = client(agent_params).get_info(::Transferd::Api::InstanceInfoRequest.new, deadline: deadline(agent_params))
-          error = response.error&.description.to_s
-          Aspera.assert(error.empty?, type: Transfer::Error) { error }
-          JSON.parse(response.to_h.except(:error).to_json)
-        rescue GRPC::BadStatus => e
-          raise Transfer::Error, "#{e.class.name.split('::').last}: #{e.details}"
-        end
-
-        # Stop a transfer (call `StopTransfer`)
+        # Stop a transfer: see `Api::Transferd.transfer_cancel`
         # @param transfer_id  [String] Identifier of transfer, given by the daemon
         # @param agent_params [Hash]   `url`: endpoint of the daemon; optional `timeout`: seconds, `api_key`, `ca_file`
         # @return [Boolean] `true`: stopped
         # @raise [Transfer::Error] The daemon did not stop it: unknown or terminated transfer
         def transfer_cancel(transfer_id, agent_params)
-          response = client(agent_params).stop_transfer(::Transferd::Api::StopTransferRequest.new(transferId: [transfer_id]), deadline: deadline(agent_params))
-          result = response.stopResult.find { |item| item.transferId.eql?(transfer_id) }
-          Aspera.assert(!result.nil?, type: Transfer::Error) { "transfer id=#{transfer_id}: no result of stop" }
-          Aspera.assert(result.stopped, type: Transfer::Error) { result.error&.description || "transfer id=#{transfer_id}: not stopped" }
-          true
+          Api::Transferd.transfer_cancel(transfer_id, agent_params)
         end
 
-        # @param response [Transferd::Api::QueryTransferResponse, Transferd::Api::TransferResponse] Response of the daemon
-        # @return [Hash] Normalized status, see `transfer_status`
-        def normalize_status(response)
-          info = response.transferInfo
-          result = {
-            'status'            => ASYNC_STATUS.fetch(response.status, 'running'),
-            'state'             => response.status.to_s.downcase,
-            'bytes_transferred' => info&.bytesTransferred.to_i
-          }
-          return result if info.nil?
-          result.merge!(
-            'bytes_written'    => info.bytesWritten,
-            'files_completed'  => info.filesCompleted,
-            'rate_kbps'        => info.averageRateKbps,
-            'target_rate_kbps' => info.targetRateKbps,
-            'elapsed_sec'      => info.elapsedUsec / 1_000_000.0,
-            'started_at'       => epoch_time(info.startTimeUsec),
-            'ended_at'         => epoch_time(info.endTimeUsec)
-          )
-          if FINAL_STATUSES.include?(response.status)
-            result['ended_at'] ||= Time.now.utc.iso8601
-          else
-            result.delete('ended_at')
+        # @deprecated Use `Api::Transferd.create_client` (removed in 5.0)
+        # @param url     [String]      Endpoint of the daemon, e.g. `127.0.0.1:55002`
+        # @param api_key [String, nil] API key, if the daemon has `authentication` enabled
+        # @param ca_file [String, nil] File with the certificate authority of the daemon (PEM), if the daemon has `tls` enabled
+        # @return [Transferd::Api::TransferService::Stub] gRPC client
+        def create_client(url, api_key: nil, ca_file: nil)
+          unless @create_client_deprecation_shown
+            Log.log.warn('Aspera::Agent::Transferd.create_client is deprecated: use Aspera::Api::Transferd.create_client (removed in 5.0)')
+            @create_client_deprecation_shown = true
           end
-          error = info.errorDescription.to_s.strip
-          error = response.error&.description.to_s if error.empty?
-          unless error.empty?
-            result['error_code'] = info.errorCode
-            result['error'] = error
-          end
-          result.compact
-        end
-
-        private
-
-        # @param agent_params [Hash] Optional `timeout`: seconds
-        # @return [Time] Deadline of a call
-        def deadline(agent_params)
-          Time.now + (agent_params['timeout'] || CALL_TIMEOUT_SEC).to_f
-        end
-
-        # @param value [Integer] Time since epoch, in microseconds or milliseconds, 0 if not known
-        # @return [String, nil] Time in ISO 8601, `nil` if not known
-        def epoch_time(value)
-          return if value.nil? || value <= 0
-          seconds = value >= MIN_USEC_EPOCH ? value / 1_000_000.0 : value / 1000.0
-          Time.at(seconds).utc.iso8601
+          Api::Transferd.create_client(url, api_key: api_key, ca_file: ca_file)
         end
       end
 
@@ -211,8 +84,8 @@ module Aspera
         @stop = stop
         is_local_auto_port = url.eql?(AUTO_LOCAL_TCP_PORT)
         Aspera.assert(!(is_local_auto_port && (!@stop || !start)), type: Error) { 'Cannot set options `stop` or `start` to false with port zero' }
-        # keep PID for optional shutdown
-        @daemon_pid = nil
+        # daemon started here, kept for optional shutdown
+        @daemon = nil
         @daemon_endpoint = nil
         daemon_endpoint = url
         Log.dump(:daemon_endpoint, daemon_endpoint)
@@ -221,66 +94,29 @@ module Aspera
           # no address: local bind
           daemon_endpoint = "#{LOCAL_SOCKET_ADDR}#{daemon_endpoint}" if daemon_endpoint.match?(/^#{PORT_SEP}[0-9]+$/o)
           # Create stub: API key of the daemon (given, or the one of the daemon started here), TLS only for an external daemon
-          @transfer_client = self.class.create_client(daemon_endpoint, api_key: api_key, ca_file: ca_file)
+          @transfer_client = Api::Transferd.create_client(daemon_endpoint, api_key: api_key, ca_file: ca_file)
           # Initiate actual connection
           get_info_response = @transfer_client.get_info(::Transferd::Api::InstanceInfoRequest.new)
           @daemon_endpoint = daemon_endpoint
           Log.log.debug { "Daemon info: #{get_info_response}" }
-          Log.log.warn('Attached to existing daemon') unless @daemon_pid || !start || !@stop
+          Log.log.warn('Attached to existing daemon') unless @daemon || !start || !@stop
           # `shutdown` is registered with `at_exit` only when the daemon is started here:
           # a long-running process (e.g. Orchestrator) that attaches to an external daemon for each transfer would accumulate them
         rescue GRPC::Unavailable => e
           # if transferd is external: do not start it, or other error
           raise if !start || !e.message.include?('failed to connect')
           # we already tried to start a daemon, but it failed
-          Aspera.assert(@daemon_pid.nil?) { "Daemon started with PID #{@daemon_pid}, but connection failed to #{daemon_endpoint}" }
+          Aspera.assert(@daemon.nil?) { "Daemon started with PID #{@daemon.pid}, but connection failed to #{daemon_endpoint}" }
           Log.log.warn('no daemon present, starting daemon...') if !start
           # transferd only supports local ip and port
           daemon_uri = URI.parse("ipv4://#{daemon_endpoint}")
           Aspera.assert(daemon_uri.scheme.eql?('ipv4')) { "Invalid scheme daemon URI #{daemon_endpoint}" }
-          # The daemon listens on a local port: clients must give its API key, so that other users of the host cannot use it
-          api_key = self.class.daemon_api_key(api_key, stop: @stop)
-          # create a config file for daemon
-          config = {
-            address:      daemon_uri.host,
-            port:         daemon_uri.port,
-            fasp_runtime: {
-              use_embedded: false,
-              user_defined: {
-                bin: Products::Transferd.sdk_directory,
-                etc: Products::Transferd.sdk_directory
-              }
-            }
-          }
-          config[:authentication] = {enabled: true, api_key: api_key} unless api_key.nil?
-          # config file and logs are created in same folder
-          transferd_base_tmp = TempFileManager.instance.new_file_path_global('transferd')
-          Log.log.debug { "transferd base tmp #{transferd_base_tmp}" }
-          conf_file = "#{transferd_base_tmp}.conf"
-          log_stdout = "#{transferd_base_tmp}.out"
-          log_stderr = "#{transferd_base_tmp}.err"
-          self.class.write_config(conf_file, config)
-          @daemon_pid = Environment.secure_execute(
-            Ascp::Installation.instance.path(:transferd), '--config', conf_file,
-            mode: :background,
-            out: log_stdout,
-            err: log_stderr
-          )
-          begin
-            # wait for process to initialize, max 2 seconds
-            Timeout.timeout(2.0) do
-              # this returns if process dies (within 2 seconds)
-              _, status = ::Process.wait2(@daemon_pid)
-              raise "Transfer daemon exited with status #{status.exitstatus}. Check files: #{log_stdout} and #{log_stderr}"
-            end
-          rescue Timeout::Error
-            nil
-          end
-          Log.log.debug { "Daemon started with pid #{@daemon_pid}" }
-          ::Process.detach(@daemon_pid) unless @stop
+          @daemon = Products::TransferdDaemon.new(address: daemon_uri.host, port: daemon_uri.port, api_key: api_key, stop: @stop)
+          # API key of the daemon started here, for next connection attempt
+          api_key = @daemon.api_key
           at_exit { shutdown }
           # update port for next connection attempt (if auto high port was requested)
-          daemon_endpoint = "#{LOCAL_SOCKET_ADDR}#{PORT_SEP}#{Products::Transferd.daemon_port_from_log(log_stdout)}" if is_local_auto_port
+          daemon_endpoint = "#{LOCAL_SOCKET_ADDR}#{PORT_SEP}#{@daemon.port_from_log}" if is_local_auto_port
           # local daemon started, try again
           retry
         end
@@ -351,19 +187,7 @@ module Aspera
       end
 
       def shutdown
-        stop_daemon if @stop
-      end
-
-      private
-
-      def stop_daemon
-        if !@daemon_pid.nil?
-          Log.log.debug("Stopping daemon #{@daemon_pid}")
-          ::Process.kill(:KILL, @daemon_pid)
-          _, status = ::Process.wait2(@daemon_pid)
-          Log.log.debug("daemon stopped #{status}")
-          @daemon_pid = nil
-        end
+        @daemon&.stop if @stop
       end
     end
   end

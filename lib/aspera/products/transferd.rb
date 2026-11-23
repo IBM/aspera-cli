@@ -15,6 +15,8 @@ module Aspera
       V2_DAEMON_NAME = 'transferd'
       # folders to extract from SDK archive
       RUNTIME_FOLDERS = %w[bin lib sbin aspera].freeze
+      # Configuration file of the service installed by `transferd service install`, also the default of the daemon
+      SERVICE_CONFIG_FILE = '/etc/transferd/transferd.json'
       class << self
         # standard folder locations
         def locations
@@ -41,24 +43,6 @@ module Aspera
           v1_path = File.join(sdk_directory, Environment.instance.exe_file(V1_DAEMON_NAME))
           return v1_path if File.exist?(v1_path)
           return File.join(sdk_directory, Environment.instance.exe_file(V2_DAEMON_NAME))
-        end
-
-        # Well, the port number is only in log file
-        def daemon_port_from_log(log_file)
-          result = nil
-          # if port is zero, a dynamic port was created, get it
-          File.open(log_file, 'r') do |file|
-            file.each_line do |line|
-              # Well, it's tricky to depend on log
-              if (m = line.match(/Info: API Server: Listening on ([^:]+):(\d+) /))
-                result = m[2].to_i
-                # no "break" , need to read last matching log line
-              end
-            end
-          end
-          Aspera.assert(!result.nil?, 'Port not found in daemon logs')
-          Log.log.debug { "Got port #{result} from log" }
-          return result
         end
       end
     end

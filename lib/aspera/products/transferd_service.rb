@@ -10,6 +10,7 @@ require_relative '../yaml'
 require_relative '../secret/hider'
 require_relative '../schema/registry'
 require_relative '../schema/validator'
+require_relative 'transferd'
 require 'json'
 require 'securerandom'
 require 'etc'
@@ -27,7 +28,7 @@ module Aspera
       DEFAULT_UNIT_DIR = '/etc/systemd/system'
       DEFAULT_AFTER = ['network.target'].freeze
       # Default location of the configuration file, also the default of the daemon
-      CONFIG_FILE = '/etc/transferd/transferd.json'
+      CONFIG_FILE = Products::Transferd::SERVICE_CONFIG_FILE
       # Environment variables of the daemon that override the configuration file
       ENV_OVERRIDES = %w[TRANSFERD_ADDRESS TRANSFERD_PORT TRANSFERD_MGMT_ADDRESS TRANSFERD_MGMT_PORT].freeze
       # Mode of files that may contain a secret, and of the folder of the configuration

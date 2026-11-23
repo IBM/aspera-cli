@@ -96,6 +96,13 @@ RSpec.describe(Aspera::Products::TransferdService) do
     end
   end
 
+  describe 'CONFIG_FILE' do
+    it 'is the location given by Products::Transferd, which the domain reads without loading the service' do
+      expect(described_class::CONFIG_FILE).to(be(Aspera::Products::Transferd::SERVICE_CONFIG_FILE))
+      expect(described_class::CONFIG_FILE).to(eq(file))
+    end
+  end
+
   describe 'service schema' do
     let(:validator) { Aspera::Schema::Validator.instance }
     let(:path) { Aspera::Schema::Registry::SERVICE_OPTIONS }

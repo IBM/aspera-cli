@@ -22,7 +22,7 @@ module Aspera
         class << self
           # Seam for the client commands: object that gives `info(params)`, `transfer_status(id, params)` and `transfer_cancel(id, params)`,
           # with `params` a Hash with `url`, and optional `api_key`, `ca_file`.
-          # `nil` (default): `Agent::Transferd`, loaded on first use, because it requires the optional gem `grpc`.
+          # `nil` (default): `Api::Transferd`, loaded on first use, because it requires the optional gem `grpc`.
           # @return [#info, #transfer_status, #transfer_cancel, nil]
           attr_accessor :daemon_client
         end
@@ -151,11 +151,11 @@ module Aspera
           injected = self.class.daemon_client
           return injected unless injected.nil?
           begin
-            require_relative '../../agent/transferd'
+            require_relative '../../api/transferd'
           rescue LoadError => e
             raise Cli::Error, "Commands that query a running daemon require the gem grpc (#{e.message}). Install it with: gem install grpc"
           end
-          Agent::Transferd
+          Api::Transferd
         end
 
         # Parameters of the connection to the daemon: option `url` is mandatory, `api_key` and `ca_file` are optional.

@@ -117,8 +117,17 @@ module Aspera
     RSpec.describe('transferd client without the gem grpc') do
       it 'gives a clear error, only when a client command runs' do
         plugin = Plugins::Transferd.allocate
-        allow(plugin).to(receive(:require_relative).with('../../agent/transferd').and_raise(LoadError, 'cannot load such file -- grpc'))
+        allow(plugin).to(receive(:require_relative).with('../../api/transferd').and_raise(LoadError, 'cannot load such file -- grpc'))
         expect { plugin.send(:daemon_client) }.to(raise_error(Cli::Error, /gem install grpc/))
+      end
+
+      it 'uses Api::Transferd when the gem grpc is installed' do
+        begin
+          require_relative '../lib/aspera/api/transferd'
+        rescue LoadError => e
+          skip("optional gem grpc: #{e.message}")
+        end
+        expect(Plugins::Transferd.allocate.send(:daemon_client)).to(be(Aspera::Api::Transferd))
       end
 
       it 'does not load grpc for the local commands' do
@@ -126,13 +135,13 @@ module Aspera
         script = <<~RUBY
           require 'aspera/cli/runner'
           ARGV.replace(%w[transferd service spec --format=json --version-check-days=0])
-          at_exit { $stderr.puts("GRPC=\#{defined?(::GRPC).inspect} AGENT=\#{$LOADED_FEATURES.any? { |f| f.end_with?('aspera/agent/transferd.rb') }}") }
+          at_exit { $stderr.puts("GRPC=\#{defined?(::GRPC).inspect} CLIENT=\#{$LOADED_FEATURES.any? { |f| f.end_with?('aspera/api/transferd.rb', 'aspera/agent/transferd.rb') }}") }
           Aspera::Cli::Runner.new(ARGV).run
         RUBY
         Dir.mktmpdir do |home|
           _stdout, stderr, status = Open3.capture3({'ASCLI_HOME' => home}, RbConfig.ruby, "-I#{source_root}/lib", '-e', script)
           expect(status.exitstatus).to(eq(0), stderr)
-          expect(stderr).to(include('GRPC=nil AGENT=false'))
+          expect(stderr).to(include('GRPC=nil CLIENT=false'))
         end
       end
     end

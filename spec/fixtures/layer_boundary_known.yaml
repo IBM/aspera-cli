@@ -18,9 +18,9 @@ api/node.rb:
 - const Api::Node
 - const Transfer::Spec
 - require transfer/spec
-ascp/log_locations.rb:
-- const Products::TransferdService
-- require products/transferd_service
+api/transferd.rb:
+- const Transfer::Error
+- require transfer/error
 cli/bootstrapper.rb:
 - const Ascp::Installation
 - const Transfer::Parameters
@@ -109,11 +109,11 @@ cli/plugins/shares.rb:
 - const Api::Node
 - require cli/plugins/node
 cli/plugins/transferd.rb:
-- const Agent::Transferd
+- const Api::Transferd
 - const Ascp::Installation
 - const Products::Transferd
 - const Products::TransferdService
-- require agent/transferd
+- require api/transferd
 - require ascp/installation
 - require products/transferd_service
 cli/runner.rb:
