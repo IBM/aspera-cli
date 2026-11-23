@@ -14,13 +14,19 @@ require_relative '../../../schema/validator'
 require_relative '../../cos/commands'
 require_relative '../../shares/commands'
 require_relative '../commands'
+require_relative '../emulator'
+require_relative '../../../../../spec/bundle_registry_helper'
+require 'fileutils'
 require 'open3'
+require 'tmpdir'
 require 'rbconfig'
 
 module Aspera
   module Plugins
     module Node
       RSpec.describe('Bundle node') do
+        include BundleRegistrySpecHelper
+
         let(:source_root) { File.expand_path('../../../../..', __dir__) }
         let(:bundle_folder) { File.expand_path('..', __dir__) }
         let(:registry) { BundleRegistry.instance }
@@ -37,8 +43,8 @@ module Aspera
         describe 'commands' do
           it 'are those of plugin node, from the bundle (which hides the shim of the former plugin file)' do
             expect(registry.unavailable_reason(:node)).to(be_nil)
-            # transferd: the emulator executes its transfers with the transfer daemon
-            expect(registry[:node].depends).to(eq(%i[transfer_agents transferd]))
+            # no `transferd`: the emulator gets the agent `transferd` from the factory when it starts
+            expect(registry[:node].depends).to(eq(%i[transfer_agents]))
             expect(registry[:node].gems).to(eq([]))
             expect(Cli::Plugins::Factory.instance.plugin_source(:node)).to(eq(bundle_folder))
             expect(Cli::Plugins::Factory.instance.plugin_class(:node)).to(be(Commands))
@@ -48,6 +54,15 @@ module Aspera
           it 'are mounted by the bundles that use the Node API' do
             expect(Cos::Commands.command_registry.mount_of([:node])).to(have_attributes(plugin: Commands, only: Commands::COMMANDS_COS))
             expect(Shares::Commands.command_registry.mount_of([:files])).to(have_attributes(plugin: Commands, only: Commands::COMMANDS_SHARES))
+          end
+        end
+
+        describe 'emulator' do
+          it 'and the other files of the bundle load neither the bundle transferd nor grpc' do
+            script = "%w[commands agent api emulator].each { |file| require \"aspera/plugins/node/\#{file}\" }\nputs $LOADED_FEATURES.grep(%r{plugins/transferd|grpc}).length\n"
+            stdout, stderr, status = run_ruby(script)
+            expect(status.success?).to(be(true), stderr)
+            expect(stdout.chomp).to(eq('0'))
           end
         end
 
@@ -99,6 +114,38 @@ module Aspera
             expect(framework.keys).not_to(include('NodeAgentOptions', 'NodeBearerTokenOptions', 'NodeEmulatorOptions', 'NodeTelemetryOptions'))
             expect(framework['TransferAgentOptions']).not_to(include('oneOf'))
             expect(framework['TransferAgentOptions']['discriminator']).not_to(include('mapping'))
+          end
+        end
+
+        describe 'without the bundle transferd' do
+          let(:folder) { Dir.mktmpdir }
+          let(:test_registry) { BundleRegistry.send(:new, builtin: false) }
+          let(:factory) { Aspera::Agent::Factory.send(:new, registry: test_registry) }
+
+          before do
+            allow(Log.log).to(receive(:warn))
+            # the bundles of the gem, with an unavailable transferd
+            Dir.children(BundleRegistry::GEM_FOLDER).each do |name|
+              next if name.eql?('transferd')
+              File.symlink(File.join(BundleRegistry::GEM_FOLDER, name), File.join(folder, name))
+            end
+            write_bundle(folder, 'transferd', manifest: "name: transferd\nbogus: [\n", code: nil)
+            test_registry.add_source(folder)
+            test_registry.scan
+          end
+
+          after { FileUtils.rm_rf(folder) }
+
+          it 'keeps node and the bundles that depend on it available, and the agent node can be created' do
+            expect(test_registry.unavailable_reason(:transferd)).to(start_with('invalid manifest'))
+            %i[node cos shares ats preview aoc].each { |name| expect(test_registry.unavailable_reason(name)).to(be_nil, name.to_s) }
+            expect(factory.agent_class(:node)).to(be(Agent))
+            expect { factory.agent_class(:transferd) }.to(raise_error(BundleRegistry::Unavailable, /\Aplugin transferd is unavailable: invalid manifest/))
+          end
+
+          it 'fails to start the emulator, naming transferd' do
+            allow(Aspera::Agent::Factory).to(receive(:instance).and_return(factory))
+            expect { Emulator.new(retention_sec: 60) }.to(raise_error(BundleRegistry::Unavailable, /\Aplugin transferd is unavailable: /))
           end
         end
 

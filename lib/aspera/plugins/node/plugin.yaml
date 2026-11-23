@@ -2,8 +2,6 @@ name: node
 title: IBM Aspera High Speed Transfer Server Node
 depends:
   - transfer_agents
-  # `node emulator` executes transfers with the transfer daemon (`emulator.rb`)
-  - transferd
 commands: true
 schemas:
   - key: node

@@ -8,6 +8,7 @@ require_relative '../../log'
 require_relative '../../transfer/error'
 require_relative '../../transfer/spec'
 require_relative 'api'
+require_relative 'client'
 require_relative 'product'
 require 'json'
 require 'uri'
@@ -35,6 +36,18 @@ module Aspera
         deprecate_constant :ApiKeyInterceptor, :CALL_TIMEOUT_SEC, :FINAL_STATUSES
 
         class << self
+          # @param stub [Transferd::Api::TransferService::Stub] gRPC client of a daemon
+          # @return [Client] Calls to this daemon with plain Ruby arguments
+          def wrap_client(stub)
+            Client.new(stub)
+          end
+
+          # @param name [Symbol] see `Client.empty_message`
+          # @return [Google::Protobuf::AbstractMessage] empty gRPC message
+          def empty_message(name)
+            Client.empty_message(name)
+          end
+
           # Re-query a previously started transfer: see `Api.transfer_status`
           # @param transfer_id  [String] Identifier of transfer, given by the daemon (`transfer_id`)
           # @param agent_params [Hash]   `url`: endpoint of the daemon; optional `timeout`: seconds, `api_key`, `ca_file`
@@ -159,6 +172,11 @@ module Aspera
         attr_reader :daemon_endpoint
         # gRPC client of the daemon
         attr_reader :transfer_client
+
+        # @return [Client] Calls to the daemon with plain Ruby arguments
+        def client
+          Client.new(@transfer_client)
+        end
 
         # @return [Hash] `url`: actual endpoint of the daemon, for `transfer_status` and `transfer_cancel` (`transfer_id` is given by the daemon)
         def async_params

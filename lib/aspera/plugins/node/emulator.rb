@@ -5,7 +5,7 @@
 
 require_relative '../../assert'
 require_relative '../../ascp/installation'
-require_relative '../transferd/agent'
+require_relative '../../agent/factory'
 require_relative '../../transfer/spec'
 require_relative '../../transfer/error'
 require_relative '../../secret/hider'
@@ -159,7 +159,7 @@ module Aspera
           # @param node_id [String] node id of the emulator
           # @return [Hash] Node API transfer (`transferResponseSessionSpec`)
           def transfer_to_node(id, entry, node_id: '')
-            info = message_to_hash(entry[:info] || ::Transferd::Api::TransferInfo.new, TRANSFER_OVERRIDES)
+            info = message_to_hash(entry[:info] || transferd_agent_class.empty_message(:transfer_info), TRANSFER_OVERRIDES)
             terminal = TERMINAL.include?(entry[:status])
             retry_timeout = xfer_retry(entry[:start_spec])
             sessions = entry[:sessions].map { |session_id, session| session_to_node(session, retry_timeout: retry_timeout, node_id: node_id).merge(entry[:rates].fetch(session_id, {})) }
@@ -233,8 +233,8 @@ module Aspera
           # @param transfer_user [String] system user executing transfers
           # @return [Hash] Node API node information (`info-get-200`)
           def info_to_node(info, node_id:, cluster_id:, docroot:, transfer_user:)
-            ascp = info.asperaInfo.find { |binary| binary.asperaBinary.eql?('ascp') } || ::Transferd::Api::AsperaInfo.new
-            license = info.licenseInfo || ::Transferd::Api::LicenseInfo.new
+            ascp = info.asperaInfo.find { |binary| binary.asperaBinary.eql?('ascp') } || transferd_agent_class.empty_message(:aspera_info)
+            license = info.licenseInfo || transferd_agent_class.empty_message(:license_info)
             {
               'application'             => 'node',
               # without build id
@@ -251,6 +251,13 @@ module Aspera
           end
 
           private
+
+          # The transferd agent is resolved when needed, so that the bundle `node` does not depend on the bundle `transferd`.
+          # @return [Class] class of the agent `transferd`
+          # @raise [BundleRegistry::Unavailable] if the bundle `transferd` is unavailable
+          def transferd_agent_class
+            Aspera::Agent::Factory.instance.agent_class(:transferd)
+          end
 
           # Extract the current rates from an ascp management message
           # @param message [String] ascp management message of event `RATE_MODIFICATION` (JSON)
@@ -281,14 +288,19 @@ module Aspera
 
         # Create an emulator, start a transferd daemon if no client is given
         # @param docroot         [String, nil]  folder of the node files, default: current folder
-        # @param transfer_client [Transferd::Api::TransferService::Stub, nil] gRPC client, default: start a transferd daemon
+        # @param transfer_client [Transferd::Api::TransferService::Stub, nil] gRPC client (wrapped by the agent `transferd`), default: start a transferd daemon
         # @param retention_sec   [Integer]      time a transfer is kept after it ended (CLI default in schema)
         def initialize(retention_sec:, docroot: nil, transfer_client: nil)
           Aspera.assert(retention_sec.is_a?(Integer) && retention_sec.positive?) { "retention_sec must be a positive integer: #{retention_sec.inspect}" }
           # paths of browse and local paths of transfers are relative to it
           @docroot = File.realpath(docroot || Dir.pwd)
           # the daemon is stopped at exit by the agent
-          @transfer_client = transfer_client || Aspera::Plugins::Transferd::Agent.new.transfer_client
+          @transfer_client =
+            if transfer_client.nil?
+              Aspera::Agent::Factory.instance.create(:transferd, {}).client
+            else
+              self.class.send(:transferd_agent_class).wrap_client(transfer_client)
+            end
           @retention_sec = retention_sec
           # transfer id → store entry: `start_spec` (secrets hidden), last `status`, last `info`, `sessions` by id, `files` by id, current `rates` by session id, `error`,
           # `ended` (monotonic time of the end), accessed with `store`
@@ -305,10 +317,10 @@ module Aspera
         # Get the node information
         # @return [Hash] Node API node information, from transferd
         def info
-          response = @transfer_client.get_info(::Transferd::Api::InstanceInfoRequest.new)
+          response = @transfer_client.instance_info
           Log.dump(:get_info_response, response.to_h, level: :trace2)
           Aspera.assert(response.error.nil? || response.error.description.empty?, type: RuntimeError) { response.error.description }
-          self.class.info_to_node(response.info || ::Transferd::Api::InstanceInfo.new, node_id: @node_id, cluster_id: @cluster_id, docroot: @docroot, transfer_user: @transfer_user)
+          self.class.info_to_node(response.info || self.class.send(:transferd_agent_class).empty_message(:instance_info), node_id: @node_id, cluster_id: @cluster_id, docroot: @docroot, transfer_user: @transfer_user)
         end
 
         # List a folder of the docroot
@@ -351,11 +363,7 @@ module Aspera
           # copy without secrets, returned in transfer `start_spec`
           start_spec = Secret::Hider.instance.hidden_copy(transfer_spec)
           Log.dump(:start_spec, start_spec)
-          request = ::Transferd::Api::TransferRequest.new(
-            transferType: ::Transferd::Api::TransferType::FILE_REGULAR,
-            config:       ::Transferd::Api::TransferConfig.new,
-            transferSpec: apply_docroot(transfer_spec).to_json
-          )
+          request = apply_docroot(transfer_spec).to_json
           first_event = Thread::Queue.new
           Thread.new { monitor(request, start_spec, first_event) }
           result = first_event.pop(timeout: START_TIMEOUT_SEC)
@@ -397,7 +405,7 @@ module Aspera
         # @return [Boolean] `false` if unknown
         def cancel(id)
           return false unless known?(id)
-          response = @transfer_client.stop_transfer(::Transferd::Api::StopTransferRequest.new(transferId: [id]))
+          response = @transfer_client.stop(id)
           Log.dump(:stop_response, response.to_h, level: :trace2)
           result = response.stopResult.find { |info| info.transferId.eql?(id) }
           Aspera.assert(result&.stopped, type: Aspera::Transfer::Error) { result&.error&.description || 'Transfer not stopped by transferd' }
@@ -410,7 +418,7 @@ module Aspera
         # @return [Boolean] `false` if unknown
         def modify(id, changes)
           return false unless known?(id)
-          response = @transfer_client.modify_transfer(::Transferd::Api::TransferModificationRequest.new(transferId: id, transferSpec: changes.to_json))
+          response = @transfer_client.modify(id, changes.to_json)
           Log.dump(:modify_response, response.to_h, level: :trace2)
           Aspera.assert(response.error.nil? || response.error.description.empty?, type: Aspera::Transfer::Error) { response.error.description }
           true
@@ -545,12 +553,12 @@ module Aspera
 
         # Start the transfer and update the store with its events, until terminated.
         # Runs in a thread.
-        # @param request     [Transferd::Api::TransferRequest]
+        # @param request     [String] transfer spec, as JSON
         # @param start_spec  [Hash] transfer spec without secrets
         # @param first_event [Thread::Queue] receives the transfer id, or the exception if the transfer could not start
         def monitor(request, start_spec, first_event)
           id = nil
-          @transfer_client.start_transfer_with_monitor(request) do |response|
+          @transfer_client.start_with_monitor(request) do |response|
             Log.dump(:transferd_event, response.to_h, level: :trace2)
             new_transfer = id.nil?
             if new_transfer

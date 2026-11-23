@@ -11,6 +11,7 @@
 require 'spec_helper'
 require 'bundler/setup'
 begin
+  require_relative '../../transferd/client'
   require_relative '../emulator'
 rescue LoadError => e
   # optional gem grpc not installed (e.g. BUNDLE_WITHOUT=optional, or JRuby)

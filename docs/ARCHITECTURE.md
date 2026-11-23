@@ -1146,7 +1146,7 @@ end
 | `connect` | | `c` | | `transfer_agents` |
 | `httpgw` | yes | `h` | API | `transfer_agents` |
 | `transferd` | yes | `t` | API (gRPC), daemon, system service | `transfer_agents` |
-| `node` | yes | `n` | API, Node API emulator | `transfer_agents`, `transferd` |
+| `node` | yes | `n` | API, Node API emulator | `transfer_agents` (the emulator gets the agent `transferd` from the factory when it starts) |
 | `cos` | yes | | API | `node` |
 | `shares` | yes | | OAuth SAML flow | `node` |
 | `ats` | yes | | API | `node` |
