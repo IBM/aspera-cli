@@ -5056,7 +5056,7 @@ Set option `transfer` to `transferd`.
 
 Options for `transfer` are:
 
-<%=schema_to_table(Aspera::Schema::Registry::TRANSFERD_AGENT_OPTIONS)%>
+<%=schema_to_table("#{Aspera::Schema::Registry::OPTIONS}:components.schemas.TransferdAgentOptions")%>
 
 > [!NOTE]
 > If port zero is specified in the URL, then the daemon will listen on a random available port.
@@ -5140,7 +5140,7 @@ Except `spec` and `versions`, commands take the optional **last** positional arg
 
 Parameters of section `service`:
 
-<%=schema_to_table(Aspera::Schema::Registry::SERVICE_OPTIONS)%>
+<%=schema_to_table(Aspera::Plugins::Transferd::Service::SERVICE_OPTIONS)%>
 
 Section `config` follows the JSON schema of the daemon, displayed with:
 

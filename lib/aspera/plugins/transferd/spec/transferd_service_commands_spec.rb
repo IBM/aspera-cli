@@ -4,14 +4,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require 'spec_helper'
-require_relative '../lib/aspera/cli/info'
-require_relative '../lib/aspera/products/transferd_service'
+require_relative '../../../cli/info'
+require_relative '../service'
 require 'open3'
 require 'rbconfig'
 require 'tmpdir'
 require 'fileutils'
 
-RSpec.describe(Aspera::Products::TransferdService) do
+RSpec.describe(Aspera::Plugins::Transferd::Service) do
   let(:root) { Dir.mktmpdir('transferd_commands') }
   let(:sdk_folder) { File.join(root, 'sdk') }
   let(:answers) { {} }
@@ -90,7 +90,7 @@ RSpec.describe(Aspera::Products::TransferdService) do
 end
 
 RSpec.describe('transferd service commands') do
-  let(:source_root) { File.expand_path('..', __dir__) }
+  let(:source_root) { File.expand_path('../../../../..', __dir__) }
 
   def run_cli(*args)
     Dir.mktmpdir do |home|
@@ -100,7 +100,7 @@ RSpec.describe('transferd service commands') do
   end
 
   it 'refuses to run for real when not root or not on Linux with systemd' do
-    skip('running as root') if Process.euid.zero?
+    skip('running as root') if ::Process.euid.zero?
     _stdout, stderr, status = run_cli('transferd', 'service', 'status')
     expect(status.exitstatus).not_to(eq(0))
     expect(stderr).to(match(/requires (Linux with systemd|systemd)|as root/))

@@ -3,21 +3,21 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Tests for the daemon started by Agent::Transferd (Products::TransferdDaemon): API key, configuration file, port, start and stop.
+# Tests for the daemon started by the agent (Product): API key, configuration file, port, start and stop.
 # The gRPC stub and the start of the daemon are doubled: no daemon required. Requires the optional gem grpc.
 
 require 'bundler/setup'
 begin
-  require_relative '../lib/aspera/products/transferd_daemon'
-  require_relative '../lib/aspera/agent/transferd'
+  require_relative '../product'
+  require_relative '../agent'
 rescue LoadError => e
-  warn("Skipping Agent::Transferd daemon specs: #{e.message}")
+  warn("Skipping transferd daemon specs: #{e.message}")
   return
 end
 require 'tmpdir'
 require 'json'
 
-RSpec.describe(Aspera::Products::TransferdDaemon) do
+RSpec.describe(Aspera::Plugins::Transferd::Product) do
   let(:tmp_dir) { Dir.mktmpdir('transferd_daemon') }
 
   describe '.daemon_api_key' do
@@ -81,13 +81,13 @@ RSpec.describe(Aspera::Products::TransferdDaemon) do
     end
 
     it 'fails when the daemon exits during its initialization' do
-      allow(Process).to(receive(:wait2).with(12_345).and_return([12_345, instance_double(Process::Status, exitstatus: 3)]))
+      allow(::Process).to(receive(:wait2).with(12_345).and_return([12_345, instance_double(::Process::Status, exitstatus: 3)]))
       expect { described_class.new(address: '127.0.0.1', port: 0, api_key: 'KEY', stop: true) }
         .to(raise_error(RuntimeError, /exited with status 3\. Check files: #{Regexp.escape(base)}\.out and #{Regexp.escape(base)}\.err/))
     end
 
     it 'gives the port of its log, and the API key of its configuration' do
-      allow(Process).to(receive(:wait2).with(12_345).and_raise(Timeout::Error))
+      allow(::Process).to(receive(:wait2).with(12_345).and_raise(Timeout::Error))
       daemon = described_class.new(address: '127.0.0.1', port: 0, api_key: 'KEY', stop: true)
       File.write("#{base}.out", "Info: API Server: Listening on 127.0.0.1:55004 (x)\n")
       expect(daemon.port_from_log).to(eq(55_004))
@@ -98,14 +98,14 @@ RSpec.describe(Aspera::Products::TransferdDaemon) do
   end
 end
 
-RSpec.describe(Aspera::Agent::Transferd) do
+RSpec.describe(Aspera::Plugins::Transferd::Agent) do
   let(:api) { Transferd::Api }
   let(:url) { '127.0.0.1:55002' }
   let(:tmp_dir) { Dir.mktmpdir('transferd_daemon') }
 
   describe '#initialize' do
     # Process that stands for the daemon: killed by `shutdown`
-    let(:daemon_pid) { Process.spawn('sleep', '60') }
+    let(:daemon_pid) { ::Process.spawn('sleep', '60') }
     let(:offline) { instance_double(Transferd::Api::TransferService::Stub) }
     let(:daemon) { instance_double(Transferd::Api::TransferService::Stub) }
     let(:info) { api::InstanceInfoResponse.new(apiVersion: 'v1') }
@@ -135,11 +135,11 @@ RSpec.describe(Aspera::Agent::Transferd) do
         daemon_pid
       end
       # The daemon does not exit within the delay
-      allow(Process).to(receive(:wait2).with(daemon_pid).and_raise(Timeout::Error))
+      allow(::Process).to(receive(:wait2).with(daemon_pid).and_raise(Timeout::Error))
     end
 
     after do
-      allow(Process).to(receive(:wait2).and_call_original)
+      allow(::Process).to(receive(:wait2).and_call_original)
       agents.each(&:shutdown)
     end
 
@@ -163,9 +163,9 @@ RSpec.describe(Aspera::Agent::Transferd) do
     it 'stops the daemon started here on shutdown' do
       agents.push(described_class.new(url: ':55002'))
       expect(started.dig('config', 'port')).to(eq(55_002))
-      allow(Process).to(receive(:wait2).and_call_original)
+      allow(::Process).to(receive(:wait2).and_call_original)
       agents.first.shutdown
-      expect { Process.kill(0, daemon_pid) }.to(raise_error(Errno::ESRCH))
+      expect { ::Process.kill(0, daemon_pid) }.to(raise_error(Errno::ESRCH))
     end
   end
 end

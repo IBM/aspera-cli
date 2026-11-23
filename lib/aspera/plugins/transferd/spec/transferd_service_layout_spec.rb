@@ -4,13 +4,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require 'spec_helper'
-require_relative '../lib/aspera/products/transferd_service'
+require_relative '../service'
 require 'tmpdir'
 require 'etc'
 require 'fileutils'
 require 'json'
 
-RSpec.describe(Aspera::Products::TransferdService) do
+RSpec.describe(Aspera::Plugins::Transferd::Service) do
   let(:root) { Dir.mktmpdir('transferd_layout') }
   let(:prefix) { File.join(root, 'opt/transferd') }
   let(:current) { File.join(prefix, 'current') }
@@ -23,7 +23,7 @@ RSpec.describe(Aspera::Products::TransferdService) do
     end
   end
   let(:host) { described_class::Host.new(root: root, runner: runner, listening: ->(_a, _p) { true }, timeout: 1) }
-  let(:current_user) { Etc.getpwuid(Process.uid).name }
+  let(:current_user) { Etc.getpwuid(::Process.uid).name }
   let(:user_config) { {'service' => {'user' => current_user}, 'config' => {'port' => 55002}} }
   let(:config_file) { File.join(root, 'etc/transferd/transferd.json') }
   let(:unit_file) { File.join(root, 'etc/systemd/system/aspera-transferd.service') }

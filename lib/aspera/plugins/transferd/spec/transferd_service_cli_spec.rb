@@ -4,14 +4,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require 'spec_helper'
-require_relative '../lib/aspera/cli/info'
+require_relative '../../../cli/info'
 require 'open3'
 require 'rbconfig'
 require 'tmpdir'
 require 'json'
 
 RSpec.describe('transferd service CLI') do
-  let(:source_root) { File.expand_path('..', __dir__) }
+  let(:source_root) { File.expand_path('../../../../..', __dir__) }
 
   def run_cli(*args)
     Dir.mktmpdir do |home|

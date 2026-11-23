@@ -86,12 +86,11 @@ module Aspera
         orchestrator: 'aspera/schema/IBM Aspera Orchestrator API-v1-enhanced.yaml',
         async_tables: 'aspera/sync/async_tables.yaml',
         ascp_log:     'aspera/ascp/log.schema.yaml',
-        transferd:    'aspera/schema/transferd-config.schema.json',
         manifest:     'aspera/plugin.schema.yaml'
       }.freeze
 
       # Schemas owned by ascli: values are validated against them (vendor API schemas are validated by the API)
-      OWNED = %i[spec args conf opts preview async_tables ascp_log transferd manifest].freeze
+      OWNED = %i[spec args conf opts preview async_tables ascp_log manifest].freeze
 
       OPTIONS = 'opts'
       TRANSFER_SPEC = 'spec'
@@ -118,11 +117,8 @@ module Aspera
       NODE_AGENT_OPTIONS      = "#{OPTIONS}:components.schemas.NodeAgentOptions".freeze
       NODE_EMULATOR_OPTIONS   = "#{OPTIONS}:components.schemas.NodeEmulatorOptions".freeze
       HTTPGW_AGENT_OPTIONS    = "#{OPTIONS}:components.schemas.HttpgwAgentOptions".freeze
-      TRANSFERD_AGENT_OPTIONS = "#{OPTIONS}:components.schemas.TransferdAgentOptions".freeze
       TRANSFER_AGENT_OPTIONS  = "#{OPTIONS}:components.schemas.TransferAgentOptions".freeze
       SMTP_OPTIONS            = "#{OPTIONS}:components.schemas.SmtpOptions".freeze
-      SERVICE_OPTIONS         = "#{OPTIONS}:components.schemas.ServiceOptions".freeze
-      TRANSFERD_SERVICE_CONFIG = "#{OPTIONS}:components.schemas.TransferdServiceConfig".freeze
       HTTP_OPTIONS            = "#{OPTIONS}:components.schemas.HttpOptions".freeze
       VAULT_OPTIONS           = "#{OPTIONS}:components.schemas.VaultOptions".freeze
       VAULT_SECRET            = "#{OPTIONS}:components.schemas.VaultSecret".freeze

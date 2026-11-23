@@ -82,14 +82,15 @@ def pdf_rule(pdf, md = nil, extra: [])
 end
 
 # Generated Paths::MD_MANUAL uses these files
+# The first ones are also the arguments of `DocHelper.new`, in its order: the test definitions of the bundles (a list that grows) come last
 DOC_FILES = [
   Paths::MD_ERB,
   Paths::COMMAND,
   Paths::ASESSION,
   Paths::TEST_DEFS,
-  *Paths::TOP.glob(Paths::BUNDLE_TEST_DEFS_GLOB),
   Paths::GEMSPEC,
-  Paths::GEMFILE
+  Paths::GEMFILE,
+  *Paths::TOP.glob(Paths::BUNDLE_TEST_DEFS_GLOB)
 ].freeze
 
 # Source file that contain constants used to generate doc (version, urls)

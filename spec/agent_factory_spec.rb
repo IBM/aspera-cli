@@ -37,15 +37,17 @@ module AgentFactorySpecHelper
     transferd: {long: 'Transferd', short: :t}
   }.freeze
 
-  # Variants of `TransferAgentOptions` before the extension point `agent`: component, by agent, in the order of `oneOf`
-  TODAY_VARIANTS = {
-    'direct'    => 'DirectAgentOptions',
-    'node'      => 'NodeAgentOptions',
-    'httpgw'    => 'HttpgwAgentOptions',
-    'transferd' => 'TransferdAgentOptions',
-    'desktop'   => 'DesktopAgentOptions',
-    'connect'   => 'ConnectAgentOptions'
+  # Variants of `TransferAgentOptions` in `options.schema.yaml`: component, by agent, in the order of `oneOf`
+  SCHEMA_VARIANTS = {
+    'direct'  => 'DirectAgentOptions',
+    'node'    => 'NodeAgentOptions',
+    'httpgw'  => 'HttpgwAgentOptions',
+    'desktop' => 'DesktopAgentOptions',
+    'connect' => 'ConnectAgentOptions'
   }.freeze
+
+  # Variants with the bundles of the gem: those of the schema, then the agents of the bundles (by name of bundle)
+  TODAY_VARIANTS = SCHEMA_VARIANTS.merge('transferd' => 'TransferdAgentOptions').freeze
 
   # Schema of an entry of the extension point `agent`
   POINT_SCHEMA = {
@@ -101,7 +103,8 @@ module Aspera
     # Messages logged at level warn
     let(:warnings) { [] }
 
-    before { allow(Log.log).to(receive(:warn)) { |&block| warnings.push(block.call) } }
+    # A shim warns with a message, not a block (e.g. `agent/transferd.rb`, legacy agent when no bundle provides it)
+    before { allow(Log.log).to(receive(:warn)) { |message = nil, &block| warnings.push(block.nil? ? message : block.call) } }
 
     after do
       FileUtils.rm_rf(folder)
@@ -243,7 +246,7 @@ module Aspera
         mapping.transform_values { |ref| ref.delete_prefix('#/components/schemas/') }
       end
 
-      it 'gives the variants of today when no bundle provides an agent' do
+      it 'gives the variants of today: those of the schema, then the agents of the bundles of the gem' do
         allow(BundleRegistry).to(receive(:instance).and_call_original)
         expect(variants.to_a).to(eq(AgentFactorySpecHelper::TODAY_VARIANTS.to_a))
         expect(selector['discriminator']['propertyName']).to(eq('agent'))
@@ -253,7 +256,7 @@ module Aspera
       it 'adds a variant for each agent of the bundles, from the schema of its entry' do
         write_point_bundle(folder)
         write_agent_bundle(folder)
-        expect(variants.to_a).to(eq(AgentFactorySpecHelper::TODAY_VARIANTS.merge('fake' => 'FakeAgentOptions').to_a))
+        expect(variants.to_a).to(eq(AgentFactorySpecHelper::SCHEMA_VARIANTS.merge('fake' => 'FakeAgentOptions').to_a))
         expect(schemas.reader('opts:components.schemas.FakeAgentOptions').current).to(eq(AgentFactorySpecHelper::OPTIONS_SCHEMA))
         expect(validator.errors({'agent' => 'fake', 'color' => 'blue'}, Schema::Registry::TRANSFER_AGENT_OPTIONS)).to(be_empty)
         expect(validator.errors({'agent' => 'fake', 'color' => 1}, Schema::Registry::TRANSFER_AGENT_OPTIONS)).to(eq(['value at `/color` is not a string']))
@@ -262,12 +265,12 @@ module Aspera
 
       it 'reads the variants again when the entries of the extension point change (bundles of a plugin folder added later)' do
         agents = -> { schemas.reader(Schema::Registry::TRANSFER_AGENT_OPTIONS)['discriminator']['mapping'].keys }
-        expect(agents.call).to(eq(AgentFactorySpecHelper::TODAY_VARIANTS.keys))
+        expect(agents.call).to(eq(AgentFactorySpecHelper::SCHEMA_VARIANTS.keys))
         expect(validator.errors({'agent' => 'fake'}, Schema::Registry::TRANSFER_AGENT_OPTIONS, partial: true)).not_to(be_empty)
         write_point_bundle(folder)
         write_agent_bundle(folder)
         registry.add_source(folder)
-        expect(agents.call).to(eq(AgentFactorySpecHelper::TODAY_VARIANTS.keys + ['fake']))
+        expect(agents.call).to(eq(AgentFactorySpecHelper::SCHEMA_VARIANTS.keys + ['fake']))
         expect(validator.errors({'agent' => 'fake', 'color' => 'blue'}, Schema::Registry::TRANSFER_AGENT_OPTIONS)).to(be_empty)
         expect(schemas.reader(Schema::Registry::LOG_OPTIONS).current).to(be(schemas.reader(Schema::Registry::LOG_OPTIONS).current))
       end
@@ -275,7 +278,7 @@ module Aspera
       it 'replaces the variant of an agent of the schema by the one of the bundle' do
         write_point_bundle(folder)
         write_agent_bundle(folder, entries: [{'name' => 'direct', 'short' => 'a'}])
-        expect(variants.to_a).to(eq(AgentFactorySpecHelper::TODAY_VARIANTS.to_a))
+        expect(variants.to_a).to(eq(AgentFactorySpecHelper::SCHEMA_VARIANTS.to_a))
         expect(schemas.reader(Schema::Registry::DIRECT_AGENT_OPTIONS).current).to(eq(AgentFactorySpecHelper::OPTIONS_SCHEMA))
       end
 
@@ -283,7 +286,7 @@ module Aspera
         write_point_bundle(folder)
         write_agent_bundle(folder, entries: [{'name' => 'fake'}, {'name' => 'transfer', 'short' => 'x'}, {'name' => 'fake', 'short' => 'g'}])
         write_agent_bundle(folder, 'spec_bundle_none', entries: [{'name' => 'none', 'short' => 'o'}], options_schema: nil)
-        expect(variants.keys).to(eq(AgentFactorySpecHelper::TODAY_VARIANTS.keys + ['fake']))
+        expect(variants.keys).to(eq(AgentFactorySpecHelper::SCHEMA_VARIANTS.keys + ['fake']))
         expect(warnings.grep(/Variant/)).to(match([
           'Variant transfer of bundle spec_bundle_agent is skipped: component TransferAgentOptions exists',
           'Variant fake of bundle spec_bundle_agent is skipped: added by an earlier entry',

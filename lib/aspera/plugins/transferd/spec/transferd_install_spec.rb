@@ -6,14 +6,14 @@
 # Command `transferd install`: nothing is done if the version is already installed
 
 require 'spec_helper'
-require_relative '../lib/aspera/cli/runner'
-require_relative '../lib/aspera/cli/plugins/transferd'
+require_relative '../../../cli/runner'
+require_relative '../commands'
 require 'tmpdir'
 require 'fileutils'
 
 module Aspera
   module Cli
-    RSpec.describe(Plugins::Transferd) do
+    RSpec.describe(Aspera::Plugins::Transferd::Commands) do
       let(:installation) { Ascp::Installation.instance }
       let(:plugin) { described_class.allocate }
       let(:sdk_url) { nil }

@@ -3,20 +3,20 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Tests for Api::Transferd: transfer_status, info, transfer_cancel (async re-query interface), create_client;
-# and the old entry points of Agent::Transferd, that delegate to it.
+# Tests for Api: transfer_status, info, transfer_cancel (async re-query interface), create_client;
+# and the old entry points of the agent (deprecated `Aspera::Agent::Transferd`), that delegate to it.
 # The gRPC stub is doubled: no daemon required. Requires the optional gem grpc.
 
 require 'bundler/setup'
 begin
-  require_relative '../lib/aspera/api/transferd'
-  require_relative '../lib/aspera/agent/transferd'
+  require_relative '../api'
+  require_relative '../agent'
 rescue LoadError => e
-  warn("Skipping Api::Transferd specs: #{e.message}")
+  warn("Skipping transferd Api specs: #{e.message}")
   return
 end
 
-RSpec.describe(Aspera::Api::Transferd) do
+RSpec.describe(Aspera::Plugins::Transferd::Api) do
   let(:api) { Transferd::Api }
   let(:stub) { instance_double(Transferd::Api::TransferService::Stub) }
   let(:params) { {'url' => '127.0.0.1:55002'} }
@@ -180,7 +180,7 @@ RSpec.describe(Aspera::Api::Transferd) do
   end
 end
 
-RSpec.describe(Aspera::Agent::Transferd) do
+RSpec.describe(Aspera::Plugins::Transferd::Agent) do
   let(:api) { Transferd::Api }
   let(:stub) { instance_double(Transferd::Api::TransferService::Stub) }
   let(:params) { {'url' => '127.0.0.1:55002'} }
@@ -189,19 +189,19 @@ RSpec.describe(Aspera::Agent::Transferd) do
     allow(Transferd::Api::TransferService::Stub).to(receive(:new).with('127.0.0.1:55002', :this_channel_is_insecure).and_return(stub))
   end
 
-  it 'gives the status of a transfer with Api::Transferd' do
+  it 'gives the status of a transfer with Api' do
     allow(stub).to(receive(:query_transfer).and_return(api::QueryTransferResponse.new(transferId: 'tid', status: :QUEUED)))
     expect(described_class.transfer_status('tid', params)).to(eq('status' => 'running', 'state' => 'queued', 'bytes_transferred' => 0))
   end
 
-  it 'stops a transfer with Api::Transferd' do
+  it 'stops a transfer with Api' do
     allow(stub).to(receive(:stop_transfer).and_return(api::StopTransferResponse.new(stopResult: [api::StopInfo.new(transferId: 'tid', stopped: true)])))
     expect(described_class.transfer_cancel('tid', params)).to(be(true))
   end
 
-  it 'creates a client with Api::Transferd, with a deprecation warning given once' do
+  it 'creates a client with Api, with a deprecation warning given once' do
     described_class.instance_variable_set(:@create_client_deprecation_shown, nil)
-    expect(Aspera::Log.log).to(receive(:warn).with(/create_client is deprecated: use Aspera::Api::Transferd.create_client/).once)
+    expect(Aspera::Log.log).to(receive(:warn).with(/create_client is deprecated: use Aspera::Plugins::Transferd::Api.create_client/).once)
     expect(described_class.create_client('127.0.0.1:55002')).to(be(stub))
     expect(described_class.create_client('127.0.0.1:55002')).to(be(stub))
   end
@@ -212,9 +212,9 @@ RSpec.describe(Aspera::Agent::Transferd) do
     deprecated = Warning[:deprecated]
     $VERBOSE = true
     Warning[:deprecated] = true
-    expect { expect(described_class::ApiKeyInterceptor).to(be(Aspera::Api::Transferd::ApiKeyInterceptor)) }.to(output(/ApiKeyInterceptor is deprecated/).to_stderr)
-    expect { expect(described_class::CALL_TIMEOUT_SEC).to(eq(Aspera::Api::Transferd::CALL_TIMEOUT_SEC)) }.to(output(/CALL_TIMEOUT_SEC is deprecated/).to_stderr)
-    expect { expect(described_class::FINAL_STATUSES).to(be(Aspera::Api::Transferd::FINAL_STATUSES)) }.to(output(/FINAL_STATUSES is deprecated/).to_stderr)
+    expect { expect(described_class::ApiKeyInterceptor).to(be(Aspera::Plugins::Transferd::Api::ApiKeyInterceptor)) }.to(output(/ApiKeyInterceptor is deprecated/).to_stderr)
+    expect { expect(described_class::CALL_TIMEOUT_SEC).to(eq(Aspera::Plugins::Transferd::Api::CALL_TIMEOUT_SEC)) }.to(output(/CALL_TIMEOUT_SEC is deprecated/).to_stderr)
+    expect { expect(described_class::FINAL_STATUSES).to(be(Aspera::Plugins::Transferd::Api::FINAL_STATUSES)) }.to(output(/FINAL_STATUSES is deprecated/).to_stderr)
   ensure
     Warning[:deprecated] = deprecated
     $VERBOSE = verbose

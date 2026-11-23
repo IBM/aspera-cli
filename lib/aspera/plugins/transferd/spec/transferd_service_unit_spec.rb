@@ -4,9 +4,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require 'spec_helper'
-require_relative '../lib/aspera/products/transferd_service'
+require_relative '../service'
 
-RSpec.describe(Aspera::Products::TransferdService) do
+RSpec.describe(Aspera::Plugins::Transferd::Service) do
   describe '.unit' do
     let(:default_unit) do
       <<~UNIT

@@ -195,7 +195,8 @@ namespace :tools do
   end
 
   PROTO_PATH = TMP / 'protos'
-  GRPC_DEST = LIB
+  # Folder of the generated files: in the bundle, `api.rb` puts it in the load path (`transferd_services_pb.rb` requires `transferd_pb`)
+  GRPC_DEST = LIB / 'aspera/plugins/transferd/grpc'
   desc 'Build Transfer SDK stub from proto'
   task grpc: [] do
     PROTO_PATH.mkpath

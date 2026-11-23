@@ -6,8 +6,8 @@
 # Client commands of plugin `transferd` (`info`, `transfers show|cancel`): no daemon and no gem `grpc` required, the client is a fake.
 
 require 'spec_helper'
-require_relative '../lib/aspera/cli/runner'
-require_relative '../lib/aspera/cli/plugins/transferd'
+require_relative '../../../cli/runner'
+require_relative '../commands'
 require 'open3'
 require 'rbconfig'
 require 'tmpdir'
@@ -15,8 +15,8 @@ require 'json'
 
 module Aspera
   module Cli
-    RSpec.describe(Plugins::Transferd) do
-      let(:source_root) { File.expand_path('..', __dir__) }
+    RSpec.describe(Aspera::Plugins::Transferd::Commands) do
+      let(:source_root) { File.expand_path('../../../../..', __dir__) }
       # Fake client: records the calls
       let(:fake) do
         Class.new do
@@ -116,26 +116,26 @@ module Aspera
 
     RSpec.describe('transferd client without the gem grpc') do
       it 'gives a clear error, only when a client command runs' do
-        plugin = Plugins::Transferd.allocate
-        allow(plugin).to(receive(:require_relative).with('../../api/transferd').and_raise(LoadError, 'cannot load such file -- grpc'))
+        plugin = Aspera::Plugins::Transferd::Commands.allocate
+        allow(plugin).to(receive(:require_relative).with('api').and_raise(LoadError, 'cannot load such file -- grpc'))
         expect { plugin.send(:daemon_client) }.to(raise_error(Cli::Error, /gem install grpc/))
       end
 
-      it 'uses Api::Transferd when the gem grpc is installed' do
+      it 'uses Api when the gem grpc is installed' do
         begin
-          require_relative '../lib/aspera/api/transferd'
+          require_relative '../api'
         rescue LoadError => e
           skip("optional gem grpc: #{e.message}")
         end
-        expect(Plugins::Transferd.allocate.send(:daemon_client)).to(be(Aspera::Api::Transferd))
+        expect(Aspera::Plugins::Transferd::Commands.allocate.send(:daemon_client)).to(be(Aspera::Plugins::Transferd::Api))
       end
 
       it 'does not load grpc for the local commands' do
-        source_root = File.expand_path('..', __dir__)
+        source_root = File.expand_path('../../../../..', __dir__)
         script = <<~RUBY
           require 'aspera/cli/runner'
           ARGV.replace(%w[transferd service spec --format=json --version-check-days=0])
-          at_exit { $stderr.puts("GRPC=\#{defined?(::GRPC).inspect} CLIENT=\#{$LOADED_FEATURES.any? { |f| f.end_with?('aspera/api/transferd.rb', 'aspera/agent/transferd.rb') }}") }
+          at_exit { $stderr.puts("GRPC=\#{defined?(::GRPC).inspect} CLIENT=\#{$LOADED_FEATURES.any? { |f| f.end_with?('aspera/plugins/transferd/api.rb', 'aspera/plugins/transferd/agent.rb') }}") }
           Aspera::Cli::Runner.new(ARGV).run
         RUBY
         Dir.mktmpdir do |home|

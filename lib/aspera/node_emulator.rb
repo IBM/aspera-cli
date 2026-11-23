@@ -5,7 +5,7 @@
 
 require_relative 'assert'
 require_relative 'ascp/installation'
-require_relative 'agent/transferd'
+require_relative 'plugins/transferd/agent'
 require_relative 'transfer/spec'
 require_relative 'transfer/error'
 require_relative 'secret/hider'
@@ -286,7 +286,7 @@ module Aspera
       # paths of browse and local paths of transfers are relative to it
       @docroot = File.realpath(docroot || Dir.pwd)
       # the daemon is stopped at exit by the agent
-      @transfer_client = transfer_client || Agent::Transferd.new.transfer_client
+      @transfer_client = transfer_client || Plugins::Transferd::Agent.new.transfer_client
       @retention_sec = retention_sec
       # transfer id → store entry: `start_spec` (secrets hidden), last `status`, last `info`, `sessions` by id, `files` by id, current `rates` by session id, `error`,
       # `ended` (monotonic time of the end), accessed with `store`

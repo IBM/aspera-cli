@@ -17,12 +17,11 @@ module Aspera
         TRANSFERD_APP_NAME = 'sdk'
 
         # Mapping from agent symbol to schema key in options.schema.yaml
-        # Agents without dedicated schema (connect, desktop) are omitted.
+        # Agents without dedicated schema (connect, desktop) are omitted, and agents of bundles (see `agent_schema_key`).
         AGENT_SCHEMA_KEY = {
-          direct:    Schema::Registry::DIRECT_AGENT_OPTIONS,
-          node:      Schema::Registry::NODE_AGENT_OPTIONS,
-          httpgw:    Schema::Registry::HTTPGW_AGENT_OPTIONS,
-          transferd: Schema::Registry::TRANSFERD_AGENT_OPTIONS
+          direct: Schema::Registry::DIRECT_AGENT_OPTIONS,
+          node:   Schema::Registry::NODE_AGENT_OPTIONS,
+          httpgw: Schema::Registry::HTTPGW_AGENT_OPTIONS
         }.freeze
         private_constant :AGENT_SCHEMA_KEY
 

@@ -209,11 +209,11 @@ module Aspera
 
     it 'gives the endpoint of transferd' do
       begin
-        require_relative '../lib/aspera/agent/transferd'
+        require_relative '../lib/aspera/plugins/transferd/agent'
       rescue LoadError => e
         skip("optional gem grpc: #{e.message}")
       end
-      agent = Agent::Transferd.allocate.tap do |a|
+      agent = Plugins::Transferd::Agent.allocate.tap do |a|
         a.instance_variable_set(:@daemon_endpoint, '127.0.0.1:55002')
         a.instance_variable_set(:@transfer_id, 'tid')
       end

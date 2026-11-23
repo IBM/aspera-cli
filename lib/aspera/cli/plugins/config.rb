@@ -23,7 +23,6 @@ require_relative '../version'
 require_relative '../wizard'
 require_relative 'base'
 require_relative 'factory'
-require_relative 'transferd'
 require_relative '../../ascp/installation'
 require_relative '../../assert'
 require_relative '../../bundle_registry'
@@ -336,7 +335,8 @@ module Aspera
             ]
         end
 
-        # Commands of the modules that bundles mount on config (manifest `mounts`), here: bundle `transfer` adds `ascp`, `agents`, `transfer`, and `sync` (before `gem`)
+        # Commands of the modules that bundles mount on config (manifest `mounts`), here: bundle `transfer` adds `ascp`, `agents`, `transfer`, and `sync` (before `gem`),
+        # then bundle `transferd` adds the deprecated `transferd`
         include_mounts
 
         # Options of config come after the options of the mounted modules (`sql`, `ascp_logs`): same order as when config included them
@@ -354,10 +354,6 @@ module Aspera
         option :no_default,         description: 'Do not load default configuration for plugin', allowed: Type::NONE, short: 'N', on_set: -> { presets.use_plugin_defaults = false }
         # `on_set` callbacks of HTTP options are methods of `http_config`
         use_options Http, target: -> { http_config }
-
-        # transferd sub-commands: moved to plugin `transferd`, kept as deprecated alias
-        command :transferd, description: "Manage the transfer daemon (#{Deprecation.new(last: DEPRECATED_LAST, message: 'use plugin transferd')})",
-          mount: {plugin: Transferd, instance: :transferd_plugin, only: %i[install list service]}
 
         # gem sub-commands
         commands_under :gem do
@@ -433,13 +429,13 @@ module Aspera
           params['url'] || options.with_interactive { options.get_interactive('url') }
         end
 
-        # Instance of plugin `transferd`, for the deprecated commands `config transferd` and `config ascp install`
+        # Instance of plugin `transferd`, found by name, for the deprecated commands `config transferd` (mounted by bundle `transferd`) and `config ascp install` (bundle `transfer`)
         # @param command     [String] Deprecated command
         # @param replacement [String] Command to use instead
-        # @return [Transferd] Plugin instance
+        # @return [Base] Plugin instance
         def transferd_plugin(command: 'config transferd', replacement: 'transferd', **)
           Log.log.warn { "Command #{command} is #{Deprecation.new(last: DEPRECATED_LAST, message: "use #{replacement}")}" }
-          Transferd.new(context: context)
+          Factory.instance.plugin_class(:transferd).new(context: context)
         end
 
         def action_documentation(location: :github, section: nil, **)

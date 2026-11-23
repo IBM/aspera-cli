@@ -1,0 +1,27 @@
+name: transferd
+title: IBM Aspera Transfer Daemon
+depends:
+  - transfer
+# No `gems`: the gem `grpc` is needed only by the agent and the client commands (`api.rb`, loaded on use),
+# the other commands (`install`, `list`, `service`) work without it
+commands: true
+schemas:
+  - key: transferd
+    file: schemas/transferd-config.schema.json
+    owned: true
+    source:
+      url: https://raw.githubusercontent.com/laurent-martin/aspera-api-examples/refs/heads/main/openapi/transferd-config.schema.json
+  - key: transferd_opts
+    file: schemas/options.yaml
+    owned: true
+extensions:
+  agent:
+    - name: transferd
+      short: t
+      file: agent.rb
+      class: Agent
+      options_schema: schemas/agent_options.yaml
+mounts:
+  - target: config
+    file: config_commands.rb
+    module: ConfigCommands

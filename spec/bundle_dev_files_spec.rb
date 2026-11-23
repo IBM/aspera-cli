@@ -71,8 +71,8 @@ module Aspera
       end
 
       it 'keeps the schemas of the gem' do
-        expect(Schema::Registry.known?(:transferd)).to(be(true))
-        expect(Schema::Registry.owned?('transferd')).to(be(true))
+        expect(Schema::Registry.known?(:ascp_log)).to(be(true))
+        expect(Schema::Registry.owned?('ascp_log')).to(be(true))
       end
 
       it 'gives the origin of a downloaded schema, for `rake tools:openapi`' do

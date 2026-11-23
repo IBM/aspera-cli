@@ -4,10 +4,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require 'spec_helper'
-require_relative '../lib/aspera/products/transferd_service'
-require_relative '../lib/aspera/schema/validator'
+require_relative '../service'
+require_relative '../../../schema/validator'
 
-RSpec.describe(Aspera::Products::TransferdService) do
+RSpec.describe(Aspera::Plugins::Transferd::Service) do
   let(:sdk) { '/opt/sdk/1.1.10' }
   let(:file) { '/etc/transferd/transferd.json' }
 
@@ -105,7 +105,7 @@ RSpec.describe(Aspera::Products::TransferdService) do
 
   describe 'service schema' do
     let(:validator) { Aspera::Schema::Validator.instance }
-    let(:path) { Aspera::Schema::Registry::SERVICE_OPTIONS }
+    let(:path) { described_class::SERVICE_OPTIONS }
 
     it 'is registered' do
       expect(Aspera::Schema::Registry.instance.reader(path)['properties']).to(include('name', 'user', 'group', 'unit_dir', 'after', 'environment'))
@@ -119,7 +119,7 @@ RSpec.describe(Aspera::Products::TransferdService) do
 
   describe 'service config schema' do
     let(:validator) { Aspera::Schema::Validator.instance }
-    let(:path) { Aspera::Schema::Registry::TRANSFERD_SERVICE_CONFIG }
+    let(:path) { described_class::SERVICE_CONFIG }
 
     it 'is registered' do
       expect(Aspera::Schema::Registry.instance.reader(path)['properties']).to(include('service', 'config'))

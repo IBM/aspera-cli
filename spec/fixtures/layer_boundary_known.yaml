@@ -18,9 +18,6 @@ api/node.rb:
 - const Api::Node
 - const Transfer::Spec
 - require transfer/spec
-api/transferd.rb:
-- const Transfer::Error
-- require transfer/error
 cli/bootstrapper.rb:
 - const Ascp::Installation
 - const Transfer::Parameters
@@ -58,7 +55,6 @@ cli/plugins/config.rb:
 - const Ascp::Installation
 - const Transfer::Spec
 - require ascp/installation
-- require cli/plugins/transferd
 - require transfer/spec
 cli/plugins/cos.rb:
 - const Api::CosNode
@@ -108,14 +104,6 @@ cli/plugins/server.rb:
 cli/plugins/shares.rb:
 - const Api::Node
 - require cli/plugins/node
-cli/plugins/transferd.rb:
-- const Api::Transferd
-- const Ascp::Installation
-- const Products::Transferd
-- const Products::TransferdService
-- require api/transferd
-- require ascp/installation
-- require products/transferd_service
 cli/runner.rb:
 - const Transfer::Error
 - const Transfer::Result
@@ -125,11 +113,11 @@ faspex_gw.rb:
 - const Api::Faspex
 - require api/faspex
 node_emulator.rb:
-- const Agent::Transferd
+- const Plugins::Transferd
 - const Transfer::Error
 - const Transfer::Spec
-- require agent/transferd
 - require ascp/installation
+- require plugins/transferd/agent
 - require transfer/error
 - require transfer/spec
 products/connect.rb:

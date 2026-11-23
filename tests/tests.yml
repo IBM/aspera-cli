@@ -5316,18 +5316,6 @@ conf_transferd_url:
     - list
     - --select=@json:{"platform":"osx-arm64","version":"1.1.3"}
     - --fields=url
-transferd_service_spec:
-  args:
-    - transferd
-    - service
-    - spec
-transferd_service_configure_dry_run:
-  args:
-    - transferd
-    - service
-    - configure
-    - --dry-run=yes
-    - '@json:{"service":{"user":"aspweb"},"config":{"port":55002}}'
 conf_agents_list:
   args:
     - config

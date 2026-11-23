@@ -413,37 +413,6 @@ components:
         Parameters for the IBM Aspera Connect Client transfer agent.
         The Connect Client must be running locally. No additional options are required.
       properties: {}
-    TransferdAgentOptions:
-      type: object
-      description: Parameters for the Transfer Daemon transfer agent.
-      properties:
-        url:
-          type: string
-          description: >-
-            Address and port listened by the daemon (e.g. `:55002`).
-            If port is `0`, the daemon listens on a random available port.
-            If no address is given, `127.0.0.1` is used.
-          default: ":0"
-        start:
-          type: boolean
-          description: Start a new daemon instance.
-          default: true
-        stop:
-          type: boolean
-          description: Stop the daemon when `ascli` exits.
-          default: true
-        api_key:
-          type: string
-          description: >-
-            API key of the daemon, sent in the metadata `api_key` of each call.
-            For an existing daemon: required if it has `authentication` enabled in its configuration.
-            For a daemon started by `ascli`: it is given `authentication` with this key, else with a random key if `stop` is `true`,
-            else without authentication (warning): set it so that a daemon left running can be used only by the executions that know it.
-        ca_file:
-          type: string
-          description: >-
-            Path to the certificate authority file (PEM) that signed the certificate of an existing daemon (`start` is `false`)
-            that has `tls` enabled in its configuration. A self-signed certificate is its own authority.
     TransferAgentOptions:
       description: >-
         Transfer agent selector and agent-specific parameters.
@@ -459,7 +428,6 @@ components:
         - $ref: "#/components/schemas/DirectAgentOptions"
         - $ref: "#/components/schemas/NodeAgentOptions"
         - $ref: "#/components/schemas/HttpgwAgentOptions"
-        - $ref: "#/components/schemas/TransferdAgentOptions"
         - $ref: "#/components/schemas/DesktopAgentOptions"
         - $ref: "#/components/schemas/ConnectAgentOptions"
       discriminator:
@@ -468,7 +436,6 @@ components:
           direct: "#/components/schemas/DirectAgentOptions"
           node: "#/components/schemas/NodeAgentOptions"
           httpgw: "#/components/schemas/HttpgwAgentOptions"
-          transferd: "#/components/schemas/TransferdAgentOptions"
           desktop: "#/components/schemas/DesktopAgentOptions"
           connect: "#/components/schemas/ConnectAgentOptions"
     SmtpOptions:
@@ -525,73 +492,6 @@ components:
           description: Display name of the sender. Defaults to the local-part of `from_email`.
           examples:
             - John Wayne
-    ServiceOptions:
-      type: object
-      description: >-
-        Installation parameters of the transfer daemon (`transferd`) as a system service.
-        The content of the daemon configuration file is described by its own schema.
-      additionalProperties: false
-      properties:
-        name:
-          type: string
-          description: >-
-            Name of the service.
-            The unit file is `<name>.service`.
-          default: aspera-transferd
-          minLength: 1
-        user:
-          type: string
-          description: >-
-            Account that runs the daemon.
-            It must exist, it is not created.
-          default: asperadaemon
-          minLength: 1
-        group:
-          type: string
-          description: Group that runs the daemon. Defaults to the primary group of `user`.
-          minLength: 1
-        unit_dir:
-          type: string
-          description: Folder where the unit file is created.
-          default: /etc/systemd/system
-          minLength: 1
-        after:
-          type: array
-          description: Units that shall be started before the daemon (`After=` in the unit).
-          items:
-            type: string
-          default:
-            - network.target
-        environment:
-          type: object
-          description: >-
-            Environment variables set in the unit.
-            None is set unless given here.
-            `TRANSFERD_ADDRESS`, `TRANSFERD_PORT`, `TRANSFERD_MGMT_PORT` and `TRANSFERD_MGMT_ADDRESS` override the configuration file.
-          additionalProperties:
-            type: string
-        version:
-          type: string
-          description: >-
-            Version of the SDK to install, used by `install` when the SDK folder is named `current` (versions side by side).
-            Defaults to the SDK version of this tool.
-          pattern: '^\d+(\.\d+)*$'
-        purge:
-          type: boolean
-          description: Used by `uninstall`. Also remove the configuration file and the log folder.
-          default: false
-    TransferdServiceConfig:
-      type: object
-      description: >-
-        Configuration of the transfer daemon (`transferd`) as a system service.
-      additionalProperties: false
-      properties:
-        service:
-          $ref: "#/components/schemas/ServiceOptions"
-        config:
-          type: object
-          description: >-
-            Content of `transferd.json`, validated against the transfer daemon configuration schema.
     HttpOptions:
       type: object
       description: >-

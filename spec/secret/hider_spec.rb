@@ -134,10 +134,13 @@ RSpec.describe(Aspera::Secret::Hider) do
 
     it 'matches additional exact keys' do
       expect(hider.secret?('dsa', secret)).to(be(false))
-      hider.add_secret_keys(%i[dsa])
-      hider.add_secret_keys(%i[dsa])
+      # The instance is shared: other specs may have added keys before (e.g. `api_key` of the transferd service)
+      keys = hider.instance_variable_get(:@additional_keys)
+      expect do
+        hider.add_secret_keys(%i[dsa])
+        hider.add_secret_keys(%i[dsa])
+      end.to(change(keys, :size).by(1))
       expect(hider.secret?('dsa', secret)).to(be(true))
-      expect(hider.instance_variable_get(:@additional_keys).size).to(eq(1))
     end
   end
 

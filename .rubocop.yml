@@ -10,6 +10,7 @@ AllCops:
   Exclude:
     - tmp/**/*
     - "lib/*_pb.rb"
+    - "lib/aspera/plugins/*/grpc/*_pb.rb"
     # Patch for Shares (Rails): follows the style of Shares
     - docs/shares/**/*
 Naming/MethodName:
