@@ -81,7 +81,6 @@ module Aspera
         faspex:       'aspera/schema/IBM Aspera Faspex API-5.0-enhanced.yaml',
         faspio:       'aspera/schema/IBM Aspera faspio Gateway API-1.0.0-enhanced.yaml',
         console:      'aspera/schema/IBM Aspera Console-enhanced.yaml',
-        shares:       'aspera/schema/IBM_Aspera_Shares.yaml',
         orchestrator: 'aspera/schema/IBM Aspera Orchestrator API-v1-enhanced.yaml',
         async_tables: 'aspera/sync/async_tables.yaml',
         ascp_log:     'aspera/ascp/log.schema.yaml',
@@ -102,7 +101,6 @@ module Aspera
       FASPIO = 'faspio'
       CONSOLE = 'console'
       ORCHESTRATOR = 'orchestrator'
-      SHARES = 'shares+/api/v1'
       ASYNC_TABLES = 'async_tables'
       ASCP_LOG = 'ascp_log'
       # Manifest `plugin.yaml` of a plugin bundle, see `BundleRegistry`

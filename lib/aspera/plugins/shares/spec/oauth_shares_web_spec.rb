@@ -4,16 +4,16 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require 'spec_helper'
-require_relative '../lib/aspera/rest'
-require_relative '../lib/aspera/oauth/client/shares_web'
-require_relative '../lib/aspera/cli/context'
-require_relative '../lib/aspera/cli/parser'
-require_relative '../lib/aspera/cli/formatter'
-require_relative '../lib/aspera/cli/wizard'
-require_relative '../lib/aspera/cli/plugins/shares'
+require_relative '../../../rest'
+require_relative '../../../cli/context'
+require_relative '../../../cli/parser'
+require_relative '../../../cli/formatter'
+require_relative '../../../cli/wizard'
+require_relative '../commands'
+require_relative '../shares_web'
 require 'securerandom'
 
-RSpec.describe(Aspera::OAuth::SharesWeb) do
+RSpec.describe(Aspera::Plugins::Shares::SharesWeb) do
   let(:oauth) { described_class.new(redirect_uri: redirect_uri, base_url: 'https://shares.example.com/auth') }
   let(:redirect_uri) { 'http://localhost:12345' }
   let(:opened) { [] }
@@ -173,14 +173,14 @@ RSpec.describe(Aspera::OAuth::SharesWeb) do
 end
 
 module Aspera
-  module Cli
-    module Plugins
-      RSpec.describe(Shares) do
+  module Plugins
+    module Shares
+      RSpec.describe(Commands) do
         def plugin(*argv)
-          context = Context.new
+          context = Cli::Context.new
           context.man_header = false
-          context.options = Parser.new('test', argv)
-          context.formatter = instance_double(Formatter, display_status: nil, display_results: nil)
+          context.options = Cli::Parser.new('test', argv)
+          context.formatter = instance_double(Cli::Formatter, display_status: nil, display_results: nil)
           described_class.new(context: context).tap { context.options.parse_options! }
         end
 

@@ -122,12 +122,12 @@ The plugin architecture enables modular command implementation for different Asp
 - [`aoc.rb`](../lib/aspera/cli/plugins/aoc.rb) - Aspera on Cloud
 - [`ats.rb`](../lib/aspera/cli/plugins/ats.rb) - Aspera Transfer Service
 - [`faspex5.rb`](../lib/aspera/cli/plugins/faspex5.rb) - Faspex 5
-- [`shares.rb`](../lib/aspera/cli/plugins/shares.rb) - Aspera Shares
+- [`shares/commands.rb`](../lib/aspera/plugins/shares/commands.rb) - Aspera Shares
 - [`node/commands.rb`](../lib/aspera/plugins/node/commands.rb) - Node API
 - [`console.rb`](../lib/aspera/cli/plugins/console.rb) - Aspera Console
 - [`orchestrator.rb`](../lib/aspera/cli/plugins/orchestrator.rb) - Aspera Orchestrator
 - [`server.rb`](../lib/aspera/cli/plugins/server.rb) - HSTS (High-Speed Transfer Server)
-- [`cos.rb`](../lib/aspera/cli/plugins/cos.rb) - IBM Cloud Object Storage
+- [`cos/commands.rb`](../lib/aspera/plugins/cos/commands.rb) - IBM Cloud Object Storage
 - [`httpgw.rb`](../lib/aspera/cli/plugins/httpgw.rb) - HTTP Gateway
 - [`faspio.rb`](../lib/aspera/cli/plugins/faspio.rb) - Fasp.io Gateway
 - [`alee.rb`](../lib/aspera/cli/plugins/alee.rb) - Aspera Line Enterprise Edition
@@ -416,10 +416,10 @@ The `mount:` attribute of a command node exposes the children of a node of anoth
 
 ```ruby
 command :node, description: 'Execute COS node commands',
-  mount: {plugin: Node, instance: :cos_node_plugin, only: Node::COMMANDS_COS}
+  mount: {plugin: Node::Commands, instance: :cos_node_plugin, only: Node::Commands::COMMANDS_COS}
 
 def cos_node_plugin(**)
-  Node.new(context: context, api: Api::CosNode.new(...))
+  Node::Commands.new(context: context, api: Api.new(...))
 end
 ```
 
@@ -571,7 +571,7 @@ Global HTTP settings are held in the `Rest::Parameters` singleton. The CLI HTTP/
 
 #### Product API Clients
 
-**Directory**: [`lib/aspera/api/`](../lib/aspera/api/) — `aoc`, `ats`, `alee`, `cos_node`, `faspex`, `httpgw`, `node`
+**Directory**: [`lib/aspera/api/`](../lib/aspera/api/) — `aoc`, `ats`, `alee`, `faspex`, `httpgw`, `node` (and `cos_node`, shim of `plugins/cos/api.rb`)
 
 **Node API Client** ([`api.rb`](../lib/aspera/plugins/node/api.rb)):
 
@@ -586,7 +586,7 @@ Global HTTP settings are held in the `Rest::Parameters` singleton. The CLI HTTP/
 
 **Directory**: [`lib/aspera/schema/`](../lib/aspera/schema/)
 
-OpenAPI definitions of the product APIs (AoC, AoC Automation, Faspex 5, Node, Shares, Console, faspio), `async` database tables (`async_tables.yaml`) and `Schema::Registry`, used to:
+OpenAPI definitions of the product APIs (AoC, AoC Automation, Faspex 5, Console, faspio; those of Node and Shares are in their bundles), `async` database tables (`async_tables.yaml`) and `Schema::Registry`, used to:
 
 - document request bodies of `create` / `modify` (`body_component:` in `crud_commands`)
 - document `--query` parameters (`query_schema:`, shown with `--query=help`)
@@ -1140,21 +1140,21 @@ end
 
 | Bundle | Commands | Agent | Other content | `depends` |
 | --- | --- | --- | --- | --- |
-| `transfer` | under `config`: `ascp`, `agents`, `sync` | extension point `agent` | service `transfer` | |
-| `direct` | | `a` | | `transfer` |
-| `desktop` | | `d` | | `transfer` |
-| `connect` | | `c` | | `transfer` |
-| `httpgw` | yes | `h` | API | `transfer` |
-| `transferd` | yes | `t` | API (gRPC), daemon, system service | `transfer` |
+| `transfer_agents` | under `config`: `ascp`, `agents`, `sync` | extension point `agent` | service `transfer` | |
+| `direct` | | `a` | | `transfer_agents` |
+| `desktop` | | `d` | | `transfer_agents` |
+| `connect` | | `c` | | `transfer_agents` |
+| `httpgw` | yes | `h` | API | `transfer_agents` |
+| `transferd` | yes | `t` | API (gRPC), daemon, system service | `transfer_agents` |
 | `node` | yes | `n` | API, Node API emulator | `transfer_agents`, `transferd` |
 | `cos` | yes | | API | `node` |
 | `shares` | yes | | OAuth SAML flow | `node` |
 | `ats` | yes | | API | `node` |
-| `preview` | yes | | preview generator | `node`, `transfer` |
-| `aoc` | yes | | API, GraphQL queries | `node`, `ats`, `faspex5`, `transfer` |
-| `faspex5` | yes | | API, Faspex 4 gateway, postprocessing | `transfer` |
-| `orchestrator` | yes | | workflow checker | `transfer` |
-| `server` | yes | | `ascmd` | `transfer` |
+| `preview` | yes | | preview generator | `node`, `transfer_agents` |
+| `aoc` | yes | | API, GraphQL queries | `node`, `ats`, `faspex5`, `transfer_agents` |
+| `faspex5` | yes | | API, Faspex 4 gateway, postprocessing | `transfer_agents` |
+| `orchestrator` | yes | | workflow checker | `transfer_agents` |
+| `server` | yes | | `ascmd` | `transfer_agents` |
 | `console`, `faspio`, `alee` | yes | | API (`alee`) | |
 
 ## Performance Considerations

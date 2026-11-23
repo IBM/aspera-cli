@@ -6129,7 +6129,7 @@ Available plugins can be found using command:
 ╭────────┬────────┬────────┬─────────────────────────────────────────────────╮
 │ plugin │ detect │ wizard │ path                                            │
 ╞════════╪════════╪════════╪═════════════════════════════════════════════════╡
-│ shares │ ✓      │ ✓      │ .../aspera-cli/lib/aspera/cli/plugins/shares.rb │
+│ shares │ ✓      │ ✓      │ .../aspera-cli/lib/aspera/plugins/shares        │
 │ node   │ ✓      │ ✓      │ .../aspera-cli/lib/aspera/plugins/node          │
 ...
 ╰────────┴────────┴────────┴─────────────────────────────────────────────────╯

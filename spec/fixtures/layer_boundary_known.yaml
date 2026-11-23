@@ -9,10 +9,6 @@ api/aoc.rb:
 - require ascp/data_repository
 - require plugins/node/api
 - require transfer/spec
-api/cos_node.rb:
-- const Plugins::Node
-- const Transfer::Spec
-- require plugins/node/api
 cli/bootstrapper.rb:
 - const Ascp::Installation
 - const Transfer::Parameters
@@ -50,11 +46,6 @@ cli/plugins/config.rb:
 - const Transfer::Spec
 - require ascp/installation
 - require transfer/spec
-cli/plugins/cos.rb:
-- const Api::CosNode
-- const Plugins::Node
-- require api/cos_node
-- require plugins/node/commands
 cli/plugins/faspex5.rb:
 - const Api::Faspex
 - const Transfer::Result
@@ -83,9 +74,6 @@ cli/plugins/server.rb:
 - require plugins/transfer_agents/sync_actions
 - require transfer/result
 - require transfer/spec
-cli/plugins/shares.rb:
-- const Plugins::Node
-- require plugins/node/commands
 cli/runner.rb:
 - const Transfer::Error
 - const Transfer::Result

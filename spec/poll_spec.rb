@@ -12,7 +12,7 @@ require_relative '../lib/aspera/cli/plugins/faspex5'
 require_relative '../lib/aspera/plugins/node/commands'
 require_relative '../lib/aspera/cli/plugins/aoc'
 require_relative '../lib/aspera/cli/plugins/server'
-require_relative '../lib/aspera/cli/plugins/shares'
+require_relative '../lib/aspera/plugins/shares/commands'
 require_relative '../lib/aspera/cli/plugins/ats'
 require_relative '../lib/aspera/plugins/httpgw/commands'
 require 'json'
@@ -266,7 +266,7 @@ module Aspera
             Plugins::Server  => [%i[ls], %i[df], %i[du], %i[md5sum], %i[info]],
             Plugins::Node    => [%i[async list], %i[ssync state], %i[stream list], %i[service list], %i[watch_folder show]],
             Plugins::Faspex5 => [%i[user profile show], %i[admin configuration show], %i[admin smtp show]],
-            Plugins::Shares  => [%i[info], %i[share list]],
+            Aspera::Plugins::Shares::Commands => [%i[info], %i[share list]],
             Plugins::Ats     => [%i[cluster list], %i[access_key show]],
             Aspera::Plugins::Httpgw::Commands => [%i[info]]
           }.each do |plugin, paths|

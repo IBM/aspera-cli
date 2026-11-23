@@ -1,0 +1,10 @@
+name: shares
+title: IBM Aspera Shares
+depends:
+  - node
+commands: true
+schemas:
+  - key: shares
+    file: schemas/IBM_Aspera_Shares.yaml
+    source:
+      url: https://raw.githubusercontent.com/laurent-martin/aspera-api-examples/refs/heads/main/openapi/IBM_Aspera_Shares.yaml

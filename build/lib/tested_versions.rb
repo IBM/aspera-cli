@@ -120,6 +120,9 @@ module TestedVersions
           base_url: url,
           auth:     {type: :basic, username: preset_param(preset, 'username'), password: preset_param(preset, 'password')}
         ).read('info')['version'])
+      when :shares
+        require_relative '../../lib/aspera/plugins/shares/commands'
+        normalize(Aspera::Plugins::Shares::Commands.detect(url)&.dig(:version))
       else
         require "aspera/cli/plugins/#{plugin}"
         normalize(Aspera::Cli::Plugins.const_get(plugin.to_s.capitalize).detect(url)&.dig(:version))

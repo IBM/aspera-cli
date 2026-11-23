@@ -1,0 +1,5 @@
+name: cos
+title: IBM Cloud Object Storage
+depends:
+  - node
+commands: true

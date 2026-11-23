@@ -11,8 +11,8 @@ require_relative '../../../bundle_registry'
 require_relative '../../../cli/plugins/factory'
 require_relative '../../../schema/registry'
 require_relative '../../../schema/validator'
-require_relative '../../../cli/plugins/cos'
-require_relative '../../../cli/plugins/shares'
+require_relative '../../cos/commands'
+require_relative '../../shares/commands'
 require_relative '../commands'
 require 'open3'
 require 'rbconfig'
@@ -45,9 +45,9 @@ module Aspera
             expect(Commands.plugin_name).to(eq('node'))
           end
 
-          it 'are mounted by the single-file plugins that use the Node API' do
-            expect(Cli::Plugins::Cos.command_registry.mount_of([:node])).to(have_attributes(plugin: Commands, only: Commands::COMMANDS_COS))
-            expect(Cli::Plugins::Shares.command_registry.mount_of([:files])).to(have_attributes(plugin: Commands, only: Commands::COMMANDS_SHARES))
+          it 'are mounted by the bundles that use the Node API' do
+            expect(Cos::Commands.command_registry.mount_of([:node])).to(have_attributes(plugin: Commands, only: Commands::COMMANDS_COS))
+            expect(Shares::Commands.command_registry.mount_of([:files])).to(have_attributes(plugin: Commands, only: Commands::COMMANDS_SHARES))
           end
         end
 

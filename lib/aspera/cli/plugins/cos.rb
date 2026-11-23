@@ -3,53 +3,16 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-require_relative 'base'
-require_relative '../../plugins/node/commands'
-require_relative '../error'
-require_relative '../../api/cos_node'
-require_relative '../../assert'
-
+# Shim: moved to aspera/plugins/cos/commands, removed in 5.0
+# Not a plugin: the bundle `cos` has priority over this file (see `Plugins::Factory#add_lookup_folder`)
+require_relative '../../log'
+require_relative '../../plugins/cos/commands'
+Aspera::Log.log.warn('aspera/cli/plugins/cos is deprecated: use aspera/plugins/cos/commands (removed in 5.0)')
 module Aspera
   module Cli
     module Plugins
-      class Cos < Base
-        application_name 'IBM Cloud Object Storage'
-
-        command :node, description: 'Execute COS node commands',
-          mount: {plugin: Aspera::Plugins::Node::Commands, instance: :cos_node_plugin, only: Aspera::Plugins::Node::Commands::COMMANDS_COS}
-
-        option :bucket,              description: 'Bucket name'
-        option :endpoint,            description: 'Storage endpoint (URL)'
-        option :apikey,              description: 'Storage API key'
-        option :crn,                 description: 'Resource instance id (CRN)'
-        option :service_credentials, description: 'IBM Cloud service credentials', allowed: [Hash, NilClass]
-        option :region,              description: 'Storage region'
-        option :identity,            description: "Authentication URL (#{Api::CosNode::IBM_CLOUD_TOKEN_URL})", default: Api::CosNode::IBM_CLOUD_TOKEN_URL
-
-        use_options Aspera::Plugins::Node::Commands
-
-        # node - mount target: build the COS Node API and plugin from CLI options.
-        # @return [Node] Node plugin instance on the COS bucket
-        def cos_node_plugin(**)
-          # get service credentials, Hash, e.g. @json:@file:...
-          service_credentials = options.get_option(:service_credentials)
-          cos_node_params = {
-            auth_url: options.get_option(:identity, mandatory: true),
-            bucket:   options.get_option(:bucket, mandatory: true),
-            endpoint: options.get_option(:endpoint)
-          }
-          if service_credentials.nil?
-            Aspera.assert(!cos_node_params[:endpoint].nil?, 'endpoint required when service credentials not provided', type: Cli::BadArgument)
-            cos_node_params[:api_key] = options.get_option(:apikey, mandatory: true)
-            cos_node_params[:instance_id] = options.get_option(:crn, mandatory: true)
-          else
-            Aspera.assert(cos_node_params[:endpoint].nil?, 'endpoint not allowed when service credentials provided', type: Cli::BadArgument)
-            cos_node_params.merge!(Api::CosNode.parameters_from_svc_credentials(service_credentials, options.get_option(:region, mandatory: true)))
-          end
-          api_node = Api::CosNode.new(**cos_node_params)
-          Aspera::Plugins::Node::Commands.new(context: context, api: api_node)
-        end
-      end
+      Cos = Aspera::Plugins::Cos::Commands
+      deprecate_constant :Cos
     end
   end
 end
