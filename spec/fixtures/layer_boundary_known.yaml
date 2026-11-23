@@ -9,9 +9,6 @@ cli/bootstrapper.rb:
 cli/hints.rb:
 - const Transfer::Error
 - require transfer/error
-cli/plugins/alee.rb:
-- const Api::Alee
-- require api/alee
 cli/plugins/config.rb:
 - const Ascp::Installation
 - const Transfer::Spec
@@ -22,8 +19,5 @@ cli/runner.rb:
 - const Transfer::Result
 - const Transfer::Spec
 - require transfer/result
-plugins/ats/commands.rb:
-- const Api::Alee
-- require api/alee
 transfer/parameters.rb:
 - require cli/formatter

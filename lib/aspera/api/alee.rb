@@ -3,21 +3,13 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-require_relative '../rest'
-
+# Shim: moved to aspera/plugins/alee/api, removed in 5.0
+require_relative '../log'
+require_relative '../plugins/alee/api'
+Aspera::Log.log.warn('aspera/api/alee is deprecated: use aspera/plugins/alee/api (removed in 5.0)')
 module Aspera
   module Api
-    # Aspera License Entitlement Engine API client
-    class Alee < Aspera::Rest::Client
-      # Same IBM Aspera SaaS domain as AoC
-      SAAS_DOMAIN_PROD = 'ibmaspera.com'
-
-      def initialize(entitlement_id, customer_id, api_domain: SAAS_DOMAIN_PROD, version: 'v1')
-        super(
-          base_url: "https://api.#{api_domain}/metering/#{version}",
-          headers:  {'X-Aspera-Entitlement-Authorization' => Rest.basic_authorization(entitlement_id, customer_id)}
-        )
-      end
-    end
+    Alee = Aspera::Plugins::Alee::Api
+    deprecate_constant :Alee
   end
 end

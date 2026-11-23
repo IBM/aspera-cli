@@ -1,0 +1,10 @@
+# Alee ------------------------------------------------------
+alee_nagios:
+  args:
+    - -N
+    - alee
+    - health
+alee_entitlement:
+  args:
+    - alee
+    - entitlement

@@ -124,13 +124,13 @@ The plugin architecture enables modular command implementation for different Asp
 - [`faspex5/commands.rb`](../lib/aspera/plugins/faspex5/commands.rb) - Faspex 5
 - [`shares/commands.rb`](../lib/aspera/plugins/shares/commands.rb) - Aspera Shares
 - [`node/commands.rb`](../lib/aspera/plugins/node/commands.rb) - Node API
-- [`console.rb`](../lib/aspera/cli/plugins/console.rb) - Aspera Console
+- [`console/commands.rb`](../lib/aspera/plugins/console/commands.rb) - Aspera Console
 - [`orchestrator/commands.rb`](../lib/aspera/plugins/orchestrator/commands.rb) - Aspera Orchestrator
 - [`server/commands.rb`](../lib/aspera/plugins/server/commands.rb) - HSTS (High-Speed Transfer Server)
 - [`cos/commands.rb`](../lib/aspera/plugins/cos/commands.rb) - IBM Cloud Object Storage
 - [`httpgw.rb`](../lib/aspera/cli/plugins/httpgw.rb) - HTTP Gateway
-- [`faspio.rb`](../lib/aspera/cli/plugins/faspio.rb) - Fasp.io Gateway
-- [`alee.rb`](../lib/aspera/cli/plugins/alee.rb) - Aspera Line Enterprise Edition
+- [`faspio/commands.rb`](../lib/aspera/plugins/faspio/commands.rb) - Fasp.io Gateway
+- [`alee/commands.rb`](../lib/aspera/plugins/alee/commands.rb) - Aspera Line Enterprise Edition
 - [`transferd.rb`](../lib/aspera/cli/plugins/transferd.rb) - Transfer Daemon: SDK installation and system service
 
 The Faspex 4 plugin was removed (end of support).
@@ -571,7 +571,7 @@ Global HTTP settings are held in the `Rest::Parameters` singleton. The CLI HTTP/
 
 #### Product API Clients
 
-**Directory**: [`lib/aspera/api/`](../lib/aspera/api/) — `alee`, `httpgw`, and the shims `aoc` (`plugins/aoc/api.rb`), `ats` (`plugins/ats/api.rb`), `faspex` (`plugins/faspex5/api.rb`), `node` (`plugins/node/api.rb`), `cos_node` (`plugins/cos/api.rb`)
+**Directory**: [`lib/aspera/api/`](../lib/aspera/api/) — `httpgw`, and the shims `aoc` (`plugins/aoc/api.rb`), `alee` (`plugins/alee/api.rb`), `ats` (`plugins/ats/api.rb`), `faspex` (`plugins/faspex5/api.rb`), `node` (`plugins/node/api.rb`), `cos_node` (`plugins/cos/api.rb`)
 
 **Node API Client** ([`api.rb`](../lib/aspera/plugins/node/api.rb)):
 
@@ -586,7 +586,7 @@ Global HTTP settings are held in the `Rest::Parameters` singleton. The CLI HTTP/
 
 **Directory**: [`lib/aspera/schema/`](../lib/aspera/schema/)
 
-OpenAPI definitions of the product APIs (Console, faspio; those of AoC, AoC Automation, Faspex 5, Node and Shares are in their bundles), `async` database tables (`async_tables.yaml`) and `Schema::Registry`, used to:
+OpenAPI definitions of the product APIs (those of AoC, AoC Automation, Console, Faspex 5, Faspio, Node and Shares are in their bundles), `async` database tables (`async_tables.yaml`) and `Schema::Registry`, used to:
 
 - document request bodies of `create` / `modify` (`body_component:` in `crud_commands`)
 - document `--query` parameters (`query_schema:`, shown with `--query=help`)
@@ -1155,7 +1155,9 @@ end
 | `faspex5` | yes | | API, OAuth public link flow, Faspex 4 postprocessing servlet | `transfer_agents` |
 | `orchestrator` | yes | | workflow checker, options schemas | `transfer_agents` |
 | `server` | yes | | `ascmd` | `transfer_agents` |
-| `console`, `faspio`, `alee` | yes | | API (`alee`) | |
+| `console` | yes | | API schema | |
+| `faspio` | yes | | API schema | |
+| `alee` | yes | | Commands, API | |
 
 The bundles `aoc` and `faspex5` do not depend on each other: the Faspex 4 gateway ([`faspex_gw.rb`](../lib/aspera/faspex_gw.rb), framework) is started by the command `gateway` of each one, which gives it the function that creates the package with its own API. The options of the gateway and of the post-processing server (`Faspex4GatewayOptions`, `Faspex4PostProcOptions`) stay in `cli/options.schema.yaml`: they refer to `WebServerOptions` and the schema reader has no reference to another file.
 

@@ -6,7 +6,7 @@
 require_relative '../../cli/plugins/base'
 require_relative '../node/commands'
 require_relative 'api'
-require_relative '../../api/alee'
+require_relative '../alee/api'
 require_relative '../../assert'
 require_relative '../../rainbow'
 using Rainbow
@@ -81,7 +81,7 @@ module Aspera
             arguments: [{name: :access_key_id, type: :identifier}],
             action: lambda do |access_key_id:, **|
               ak = ats_api.read("access_keys/#{access_key_id}")
-              api_bss = Aspera::Api::Alee.new(ak['license']['entitlement_id'], ak['license']['customer_id'])
+              api_bss = Alee::Api.new(ak['license']['entitlement_id'], ak['license']['customer_id'])
               return Cli::Result::SingleObject.new(api_bss.read('entitlement'))
             end
           )

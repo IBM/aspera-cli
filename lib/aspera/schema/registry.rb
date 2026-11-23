@@ -75,8 +75,6 @@ module Aspera
         args:         'aspera/sync/args.schema.yaml',
         conf:         'aspera/sync/conf.schema.yaml',
         opts:         'aspera/cli/options.schema.yaml',
-        faspio:       'aspera/schema/IBM Aspera faspio Gateway API-1.0.0-enhanced.yaml',
-        console:      'aspera/schema/IBM Aspera Console-enhanced.yaml',
         async_tables: 'aspera/sync/async_tables.yaml',
         ascp_log:     'aspera/ascp/log.schema.yaml',
         manifest:     'aspera/plugin.schema.yaml'
@@ -89,8 +87,6 @@ module Aspera
       TRANSFER_SPEC = 'spec'
       SYNC_CONF = 'conf'
       SYNC_ARGS = 'args'
-      FASPIO = 'faspio'
-      CONSOLE = 'console'
       ASYNC_TABLES = 'async_tables'
       ASCP_LOG = 'ascp_log'
       # Manifest `plugin.yaml` of a plugin bundle, see `BundleRegistry`

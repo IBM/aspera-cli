@@ -1,0 +1,121 @@
+# Console ------------------------------------------------------
+cons_health:
+  tags:
+    - health
+  args:
+    - console
+    - health
+cons_health_bad:
+  tags:
+    - no_doc
+  args:
+    - console
+    - health
+    - --url=https://wrong.example.com
+cons_detect:
+  tags:
+    - no_doc
+  args:
+    - config
+    - detect
+    - "@:"
+    - url=@preset:console_admin.url
+cons_wizard:
+  tags:
+    - console
+  args:
+    - config
+    - wizard
+    - "@:"
+    - url=@preset:console_admin.url
+    - plugin=console
+    - override=yes
+    - --username=@preset:console_admin.username
+    - --password=@preset:console_admin.password
+cons_cur_list:
+  args:
+    - console
+    - transfer
+    - current
+    - list
+    - --query=@json:{"filter1":"transfer_name","comp1":"contain","val1":"aoc"}
+cons_endpoint_list:
+  args:
+    - console
+    - endpoint
+    - list
+cons_ssh_key_list:
+  args:
+    - console
+    - ssh_key
+    - list
+cons_cur_list_ex:
+  args:
+    - console
+    - transfer
+    - current
+    - list
+    - --query.filter=(transfer_name contain aoc)
+cons_xfer_id:
+  tags:
+    - save_output
+    - no_doc
+  args:
+    - console
+    - transfer
+    - current
+    - list
+    - --fields=id
+    - --format=csv
+cons_cur_show_one:
+  depends_on:
+    - cons_xfer_id
+  tags:
+    - flaky
+  args:
+    - console
+    - transfer
+    - current
+    - show
+    - $((t.saved_output :cons_xfer_id).split("\n").last)
+cons_xfer_current_files:
+  depends_on:
+    - cons_xfer_id
+  args:
+    - console
+    - transfer
+    - current
+    - files
+    - $((t.saved_output :cons_xfer_id).split("\n").last)
+cons_xfer_current_resume:
+  $comment: Gives 500 Internal Server Error
+  tags:
+    - no_doc
+    - flaky
+  depends_on:
+    - cons_xfer_id
+  args:
+    - console
+    - transfer
+    - current
+    - resume
+    - $((t.saved_output :cons_xfer_id).split("\n").last)
+cons_smart_list:
+  args:
+    - console
+    - transfer
+    - smart
+    - list
+cons_smart_sub:
+  $comment: Smart transfer does not exist
+  tags:
+    - flaky
+  args:
+    - console
+    - transfer
+    - smart
+    - sub
+    - "@preset:console.smart_id"
+    - "@:"
+    - source.paths.0=@preset:console.smart_file
+    - source_type=user_selected

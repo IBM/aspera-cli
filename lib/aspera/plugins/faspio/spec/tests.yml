@@ -1,0 +1,66 @@
+# Faspio ------------------------------------------------------
+faspio_health:
+  args:
+    - faspio
+    - health
+faspio_detect:
+  tags:
+    - faspio
+  args:
+    - config
+    - detect
+    - "@:"
+    - url=@preset:tst_faspio.url
+    - plugin=faspio
+faspio_wizard:
+  tags:
+    - faspio
+  args:
+    - config
+    - wizard
+    - "@:"
+    - url=@preset:tst_faspio.url
+    - plugin=faspio
+    - override=yes
+    - --username=@preset:tst_faspio.username
+    - --password=@preset:tst_faspio.password
+faspio_blist:
+  args:
+    - faspio
+    - bridges
+    - list
+faspio_bcreate:
+  args:
+    - faspio
+    - bridges
+    - create
+    - '@json:{"name":"test1","local":{"protocol":"tcp","tls_enabled":false,"port":"3000","bind_address":"127.0.0.1"},"forward":{"protocol":"fasp","tls_enabled":false,"port":"3994","bind_address":"127.0.0.1","host":["10.0.0.1"]}}'
+faspio_bshow:
+  depends_on:
+    - faspio_bcreate
+  args:
+    - faspio
+    - bridges
+    - show
+    - "1"
+faspio_bclean_list:
+  depends_on:
+    - faspio_bcreate
+  tags:
+    - save_output
+    - no_doc
+  args:
+    - faspio
+    - bridges
+    - list
+    - --fields=id
+    - --format=json
+faspio_bclean:
+  depends_on:
+    - faspio_bclean_list
+  args:
+    - faspio
+    - bridges
+    - delete
+    - --bulk=yes
+    - "@json:$(t.saved_output :faspio_bclean_list)"

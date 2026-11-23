@@ -3,39 +3,15 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-require_relative '../../assert'
-require_relative '../../api/alee'
-require_relative '../../nagios'
-require_relative 'basic_auth'
-
+# Shim: moved to aspera/plugins/alee/commands, removed in 5.0
+require_relative '../../log'
+require_relative '../../plugins/alee/commands'
+Aspera::Log.log.warn('aspera/cli/plugins/alee is deprecated: use aspera/plugins/alee/commands (removed in 5.0)')
 module Aspera
   module Cli
     module Plugins
-      class Alee < BasicAuth
-        application_name 'Aspera License Entitlement Engine'
-        command :health, description: 'Check ALEE metering server health'
-        command :entitlement, description: 'Show entitlement information'
-
-        def action_health(**)
-          nagios = Nagios.new
-          begin
-            api = Api::Alee.new(nil, nil, version: 'ping')
-            http = api.read(nil, ret: :resp)
-            Aspera.assert(http.body.eql?('pong')) { "unexpected response: #{http.body}" }
-            nagios.add_ok('api', 'answered ok')
-          rescue StandardError => e
-            nagios.add_critical('api', e.to_s)
-          end
-          Result::ObjectList.new(nagios.status_list)
-        end
-
-        def action_entitlement(**)
-          Result::SingleObject.new(Api::Alee.new(
-            options.get_option(:username, mandatory: true),
-            options.get_option(:password, mandatory: true)
-          ).read('entitlement'))
-        end
-      end
+      Alee = Aspera::Plugins::Alee::Commands
+      deprecate_constant :Alee
     end
   end
 end
