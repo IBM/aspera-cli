@@ -3,17 +3,17 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Unit tests for Aspera::Agent::Direct: the temporary files of `ascp` (file list) exist until the end of the transfer,
+# Unit tests for Aspera::Plugins::Direct::Agent: the temporary files of `ascp` (file list) exist until the end of the transfer,
 # also after the end of the command (asynchronous transfer, MCP server), and are deleted then.
 # `ascp` is not started: start_and_monitor_process is replaced by a wait.
 
-require_relative '../lib/aspera/agent/direct'
-require_relative '../lib/aspera/temp_file_manager'
-require_relative '../lib/aspera/transfer/parameters'
+require_relative '../agent'
+require_relative '../../../temp_file_manager'
+require_relative '../../../transfer/parameters'
 require 'bundler/setup'
 require 'tmpdir'
 
-RSpec.describe(Aspera::Agent::Direct) do
+RSpec.describe(Aspera::Plugins::Direct::Agent) do
   let(:manager) { Aspera::TempFileManager.instance }
   let(:agent) { described_class.new(spawn_delay_sec: 0) }
   let(:transfer_spec) do

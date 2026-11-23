@@ -75,7 +75,7 @@ RSpec.describe(Aspera::Sync::Operations) do
     # @return [Hash] `conf` given to async
     def start_conf(sync_info, opt_ts)
       exec_spec = nil
-      allow_any_instance_of(Aspera::Agent::Direct).to(receive(:start_and_monitor_process)) { |_agent, **kwargs| exec_spec = kwargs[:exec_spec] }
+      allow_any_instance_of(Aspera::Plugins::Direct::Agent).to(receive(:start_and_monitor_process)) { |_agent, **kwargs| exec_spec = kwargs[:exec_spec] }
       described_class.start(sync_info, opt_ts) { server_ts.dup }
       JSON.parse(Base64.strict_decode64(exec_spec.args.first.delete_prefix('--conf64=')))
     end

@@ -8,7 +8,7 @@
 # No transfer is started: REST clients are doubled.
 
 require_relative '../lib/aspera/agent/base'
-require_relative '../lib/aspera/agent/direct'
+require_relative '../lib/aspera/plugins/direct/agent'
 require_relative '../lib/aspera/plugins/httpgw/agent'
 require_relative '../lib/aspera/agent/node'
 require_relative '../lib/aspera/agent/desktop'
@@ -74,7 +74,7 @@ module Aspera
     end
   end
 
-  RSpec.describe(Agent::Direct) do
+  RSpec.describe(Aspera::Plugins::Direct::Agent) do
     let(:events) { [] }
     let(:progress) { double('progress').tap { |recorder| allow(recorder).to(receive(:event)) { |type, **| events.push(type) } } }
 

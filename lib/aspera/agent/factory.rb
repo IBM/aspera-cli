@@ -70,6 +70,10 @@ module Aspera
         name = agent.to_sym
         Aspera.assert(all.key?(name)) { "unknown agent: #{name}" }
         return @registry.load_entry(@provided[name]) if @provided.key?(name)
+        # A bundle of this name that is unavailable (e.g. invalid manifest) is not replaced by the shim of the former file of this folder
+        bundle = @registry[name]
+        reason = bundle.nil? || !bundle.form.eql?(:bundle) ? nil : @registry.unavailable_reason(name)
+        raise BundleRegistry::Unavailable, "plugin #{name} is unavailable: #{reason}" unless reason.nil?
         require "aspera/agent/#{name}"
         Aspera::Agent.const_get(name.to_s.capitalize)
       end

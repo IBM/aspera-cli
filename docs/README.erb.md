@@ -4619,7 +4619,7 @@ See [FASP](#fasp-configuration).
 
 The `transfer` option accepts the following optional parameters to control multi-session, Web Socket Session, Resume policy and add any argument to `ascp`:
 
-<%=schema_to_table(Aspera::Schema::Registry::DIRECT_AGENT_OPTIONS)%>
+<%=schema_to_table("#{Aspera::Schema::Registry::OPTIONS}:components.schemas.DirectAgentOptions")%>
 
 In case of transfer interruption, the agent will **resume** a transfer up to `iter_max` times.
 Sleep between iterations is given by the following formula where `iter_index` is the current iteration index, starting at 0:

@@ -314,10 +314,10 @@ module Aspera
       # ── Agent::Direct.transfer_status ───────────────────────────────────────
 
       describe 'Agent::Direct.transfer_status' do
-        before { require_relative '../../../agent/direct' }
+        before { require_relative '../../direct/agent' }
 
         it 'returns unknown when _agent_ref is nil' do
-          result = Aspera::Agent::Direct.transfer_status('some-job', {})
+          result = Aspera::Plugins::Direct::Agent.transfer_status('some-job', {})
           expect(result['status']).to(eq('unknown'))
         end
 
@@ -325,7 +325,7 @@ module Aspera
           live_thread = Thread.new { sleep(60) }
           agent = double('Agent::Direct instance')
           allow(agent).to(receive(:sessions_by_job).with('job-123').and_return([{thread: live_thread, error: nil}]))
-          result = Aspera::Agent::Direct.transfer_status('job-123', {'_agent_ref' => agent})
+          result = Aspera::Plugins::Direct::Agent.transfer_status('job-123', {'_agent_ref' => agent})
           expect(result['status']).to(eq('running'))
           live_thread.kill
         end
@@ -335,7 +335,7 @@ module Aspera
           dead_thread.join
           agent = double('Agent::Direct instance')
           allow(agent).to(receive(:sessions_by_job).with('job-456').and_return([{thread: dead_thread, error: nil}]))
-          result = Aspera::Agent::Direct.transfer_status('job-456', {'_agent_ref' => agent})
+          result = Aspera::Plugins::Direct::Agent.transfer_status('job-456', {'_agent_ref' => agent})
           expect(result['status']).to(eq('completed'))
         end
 
@@ -348,7 +348,7 @@ module Aspera
           ]
           agent = double('Agent::Direct instance')
           allow(agent).to(receive(:sessions_by_job).with('job-multi').and_return(sessions))
-          expect(Aspera::Agent::Direct.transfer_status('job-multi', {'_agent_ref' => agent}))
+          expect(Aspera::Plugins::Direct::Agent.transfer_status('job-multi', {'_agent_ref' => agent}))
             .to(eq({'status' => 'completed', 'bytes_transferred' => 1500, 'ended_at' => '2026-10-21T08:37:15Z'}))
         end
 
@@ -358,7 +358,7 @@ module Aspera
           err = RuntimeError.new('ascp failed')
           agent = double('Agent::Direct instance')
           allow(agent).to(receive(:sessions_by_job).with('job-789').and_return([{thread: dead_thread, error: err}]))
-          result = Aspera::Agent::Direct.transfer_status('job-789', {'_agent_ref' => agent})
+          result = Aspera::Plugins::Direct::Agent.transfer_status('job-789', {'_agent_ref' => agent})
           expect(result['status']).to(eq('failed'))
           expect(result['error']).to(eq('ascp failed'))
         end

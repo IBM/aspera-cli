@@ -113,7 +113,6 @@ module Aspera
       UI_OPTIONS              = "#{OPTIONS}:components.schemas.UiOptions".freeze
       SECURITY_OPTIONS        = "#{OPTIONS}:components.schemas.SecurityOptions".freeze
       TEMP_OPTIONS            = "#{OPTIONS}:components.schemas.TempOptions".freeze
-      DIRECT_AGENT_OPTIONS    = "#{OPTIONS}:components.schemas.DirectAgentOptions".freeze
       NODE_AGENT_OPTIONS      = "#{OPTIONS}:components.schemas.NodeAgentOptions".freeze
       NODE_EMULATOR_OPTIONS   = "#{OPTIONS}:components.schemas.NodeEmulatorOptions".freeze
       TRANSFER_AGENT_OPTIONS  = "#{OPTIONS}:components.schemas.TransferAgentOptions".freeze

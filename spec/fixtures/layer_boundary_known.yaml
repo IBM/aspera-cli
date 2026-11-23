@@ -116,8 +116,5 @@ node_emulator.rb:
 - require transfer/spec
 products/connect.rb:
 - const Cli::Error
-sync/operations.rb:
-- const Agent::Direct
-- require agent/direct
 transfer/parameters.rb:
 - require cli/formatter

@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require_relative '../ascp/installation'
-require_relative '../agent/direct'
+require_relative '../agent/factory'
 require_relative '../transfer/spec'
 require_relative '../units/decimal'
 require_relative '../exec_spec'
@@ -121,7 +121,7 @@ module Aspera
             # '--exclusive-mgmt-port=12345', '--arg-err-path=-',
             exec_spec.args = ["--conf64=#{Base64.strict_encode64(JSON.generate(sync_info))}"]
             Log.dump(:sync_conf, sync_info)
-            agent = Agent::Direct.new
+            agent = Agent::Factory.instance.create(:direct, {})
             agent.start_and_monitor_process(session: {}, exec_spec: exec_spec)
           else
             # `args` format

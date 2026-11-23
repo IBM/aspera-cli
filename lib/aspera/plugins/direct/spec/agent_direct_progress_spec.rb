@@ -3,12 +3,12 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Unit tests for Aspera::Agent::Direct: progress events from `ascp` management events.
+# Unit tests for Aspera::Plugins::Direct::Agent: progress events from `ascp` management events.
 # Management events are excerpts of actual transfers.
 
-require_relative '../lib/aspera/agent/direct'
+require_relative '../agent'
 
-RSpec.describe(Aspera::Agent::Direct) do
+RSpec.describe(Aspera::Plugins::Direct::Agent) do
   let(:events) { [] }
   # Records progress events as: [type, info]
   let(:progress) { double('progress').tap { |recorder| allow(recorder).to(receive(:event)) { |type, info: nil, **| events.push([type, info]) } } }

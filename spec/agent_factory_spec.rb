@@ -39,14 +39,13 @@ module AgentFactorySpecHelper
 
   # Variants of `TransferAgentOptions` in `options.schema.yaml`: component, by agent, in the order of `oneOf`
   SCHEMA_VARIANTS = {
-    'direct'  => 'DirectAgentOptions',
     'node'    => 'NodeAgentOptions',
     'desktop' => 'DesktopAgentOptions',
     'connect' => 'ConnectAgentOptions'
   }.freeze
 
   # Variants with the bundles of the gem: those of the schema, then the agents of the bundles (by name of bundle)
-  TODAY_VARIANTS = SCHEMA_VARIANTS.merge('httpgw' => 'HttpgwAgentOptions', 'transferd' => 'TransferdAgentOptions').freeze
+  TODAY_VARIANTS = SCHEMA_VARIANTS.merge('direct' => 'DirectAgentOptions', 'httpgw' => 'HttpgwAgentOptions', 'transferd' => 'TransferdAgentOptions').freeze
 
   # Schema of an entry of the extension point `agent`
   POINT_SCHEMA = {
@@ -128,7 +127,7 @@ module Aspera
         RUBY
         out, status = Open3.capture2e(RbConfig.ruby, '-I', File.expand_path('../lib', __dir__), '-e', script)
         expect(status.success?).to(be(true), out)
-        expect(out).to(eq("#{AgentFactorySpecHelper::TODAY.keys.join(',')} [] Aspera::Agent::Direct"))
+        expect(out).to(eq("#{AgentFactorySpecHelper::TODAY.keys.join(',')} [] Aspera::Plugins::Direct::Agent"))
       end
 
       it 'adds the agents of the bundles, with the letter of the manifest, and the registry scans the sources' do
@@ -276,9 +275,9 @@ module Aspera
 
       it 'replaces the variant of an agent of the schema by the one of the bundle' do
         write_point_bundle(folder)
-        write_agent_bundle(folder, entries: [{'name' => 'direct', 'short' => 'a'}])
+        write_agent_bundle(folder, entries: [{'name' => 'node', 'short' => 'n'}])
         expect(variants.to_a).to(eq(AgentFactorySpecHelper::SCHEMA_VARIANTS.to_a))
-        expect(schemas.reader(Schema::Registry::DIRECT_AGENT_OPTIONS).current).to(eq(AgentFactorySpecHelper::OPTIONS_SCHEMA))
+        expect(schemas.reader(Schema::Registry::NODE_AGENT_OPTIONS).current).to(eq(AgentFactorySpecHelper::OPTIONS_SCHEMA))
       end
 
       it 'skips a variant with a warning: schema file that cannot be read, component of another schema, agent of an earlier entry' do
@@ -328,7 +327,7 @@ module Aspera
       it 'gives the parameters of an agent of a bundle, from the schema of its entry' do
         rows = actions.action_agents_list.data
         expect(rows.find { |row| row['name'].eql?('fake') }).to(include('short' => 'f', 'parameters' => 'color'))
-        expect(rows.find { |row| row['name'].eql?('direct') }['parameters']).not_to(be_empty)
+        expect(rows.find { |row| row['name'].eql?('node') }['parameters']).not_to(be_empty)
         expect(actions.action_agents_show(agent_name: :fake).data['description']).to(eq('Parameters of the fake agent.'))
         expect(actions.action_agents_parameters(agent_name: :fake)).to(be_a(Cli::Result::ObjectList))
         expect(actions.action_agents_parameters(agent_name: :desktop)).to(be_a(Cli::Result::Nothing))

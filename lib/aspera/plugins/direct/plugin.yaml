@@ -1,0 +1,11 @@
+name: direct
+title: Local ascp
+depends:
+  - transfer
+extensions:
+  agent:
+    - name: direct
+      short: a
+      file: agent.rb
+      class: Agent
+      options_schema: schemas/agent_options.yaml
