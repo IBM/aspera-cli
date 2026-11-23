@@ -32,7 +32,7 @@ module LayerBoundary
   # files (and constants, in snake case) of those folders -> bundle that will own them
   FOLDER_BUNDLE = {
     'agent'    => {'connect' => 'connect', 'desktop' => 'desktop', 'direct' => 'direct', 'httpgw' => 'httpgw', 'node' => 'node', 'transferd' => 'transferd'},
-    'products' => {'transferd_daemon' => 'transferd', 'transferd_service' => 'transferd'},
+    'products' => {'transferd_service' => 'transferd'},
     'preview'  => {'file_types' => 'preview', 'generator' => 'preview', 'utils' => 'preview'}
   }.freeze
   # plugin files of cli/plugins that are part of the framework
@@ -47,8 +47,7 @@ module LayerBoundary
     'faspex'    => 'faspex5',
     'httpgw'    => 'httpgw',
     'node'      => 'node',
-    'queries'   => 'aoc',
-    'transferd' => 'transferd'
+    'queries'   => 'aoc'
   }.freeze
   # constant of Api -> bundle that will own it
   API_CONSTANT_BUNDLE = {
@@ -59,8 +58,7 @@ module LayerBoundary
     'Faspex'     => 'faspex5',
     'Httpgw'     => 'httpgw',
     'Node'       => 'node',
-    'NodeFileId' => 'node',
-    'Transferd'  => 'transferd'
+    'NodeFileId' => 'node'
   }.freeze
   DOMAIN_CONSTANTS = %w[Ascp Sync Transfer].freeze
   # constants of Agent that are the domain ones, even in a bundle that has its own Agent

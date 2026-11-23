@@ -582,8 +582,8 @@ module Aspera
 
           # @return [Hash] Schema of `transferd.json`
           def schema_hash
-            # JSON is read with the YAML loader: it accepts the header comment added by `rake tools:openapi`
-            @schema_hash ||= Yaml.safe_load(File.read(Schema::Registry.bundle_schema(DAEMON_CONFIG_SCHEMA.to_sym).file))
+            # the registry asserts that the schema is known
+            @schema_hash ||= Schema::Registry.instance.reader(DAEMON_CONFIG_SCHEMA).current
           end
 
           # @param config   [Hash]        Configuration to validate

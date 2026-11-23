@@ -22,8 +22,8 @@ RSpec.describe(Aspera::Plugins::Transferd::Product) do
 
   describe '.daemon_api_key' do
     it 'uses the key given' do
-      expect(described_class.daemon_api_key('KEY', stop: true)).to(eq('KEY'))
-      expect(described_class.daemon_api_key('KEY', stop: false)).to(eq('KEY'))
+      expect(described_class.daemon_api_key('<API_KEY>', stop: true)).to(eq('<API_KEY>'))
+      expect(described_class.daemon_api_key('<API_KEY>', stop: false)).to(eq('<API_KEY>'))
     end
 
     it 'generates a different random key for each daemon stopped on exit' do
@@ -56,17 +56,17 @@ RSpec.describe(Aspera::Plugins::Transferd::Product) do
     end
   end
 
-  describe '.daemon_port_from_log' do
+  describe 'Aspera::Products::Transferd.daemon_port_from_log' do
     let(:log_file) { File.join(tmp_dir, 'transferd.out') }
 
     it 'reads the port of the last line of the API server' do
       File.write(log_file, "Info: API Server: Listening on 127.0.0.1:55002 (x)\nother\nInfo: API Server: Listening on 127.0.0.1:55003 (x)\n")
-      expect(described_class.daemon_port_from_log(log_file)).to(eq(55_003))
+      expect(Aspera::Products::Transferd.daemon_port_from_log(log_file)).to(eq(55_003))
     end
 
     it 'fails when the log has no port' do
       File.write(log_file, "other\n")
-      expect { described_class.daemon_port_from_log(log_file) }.to(raise_error(Aspera::AssertError, /Port not found/))
+      expect { Aspera::Products::Transferd.daemon_port_from_log(log_file) }.to(raise_error(Aspera::AssertError, /Port not found/))
     end
   end
 
@@ -82,18 +82,18 @@ RSpec.describe(Aspera::Plugins::Transferd::Product) do
 
     it 'fails when the daemon exits during its initialization' do
       allow(::Process).to(receive(:wait2).with(12_345).and_return([12_345, instance_double(::Process::Status, exitstatus: 3)]))
-      expect { described_class.new(address: '127.0.0.1', port: 0, api_key: 'KEY', stop: true) }
+      expect { described_class.new(address: '127.0.0.1', port: 0, api_key: '<API_KEY>', stop: true) }
         .to(raise_error(RuntimeError, /exited with status 3\. Check files: #{Regexp.escape(base)}\.out and #{Regexp.escape(base)}\.err/))
     end
 
     it 'gives the port of its log, and the API key of its configuration' do
       allow(::Process).to(receive(:wait2).with(12_345).and_raise(Timeout::Error))
-      daemon = described_class.new(address: '127.0.0.1', port: 0, api_key: 'KEY', stop: true)
+      daemon = described_class.new(address: '127.0.0.1', port: 0, api_key: '<API_KEY>', stop: true)
       File.write("#{base}.out", "Info: API Server: Listening on 127.0.0.1:55004 (x)\n")
       expect(daemon.port_from_log).to(eq(55_004))
-      expect(daemon.api_key).to(eq('KEY'))
+      expect(daemon.api_key).to(eq('<API_KEY>'))
       expect(daemon.pid).to(eq(12_345))
-      expect(JSON.parse(File.read("#{base}.conf"))).to(include('address' => '127.0.0.1', 'port' => 0, 'authentication' => {'enabled' => true, 'api_key' => 'KEY'}))
+      expect(JSON.parse(File.read("#{base}.conf"))).to(include('address' => '127.0.0.1', 'port' => 0, 'authentication' => {'enabled' => true, 'api_key' => '<API_KEY>'}))
     end
   end
 end
@@ -154,10 +154,10 @@ RSpec.describe(Aspera::Plugins::Transferd::Agent) do
     it 'starts the daemon with the API key given' do
       allow(Transferd::Api::TransferService::Stub).to(receive(:new).with(url, :this_channel_is_insecure, interceptors: anything)) do |*_args, interceptors:|
         # Before the start (no daemon), then after
-        interceptors.first.instance_variable_get(:@api_key).eql?('KEY') && started.empty? ? offline : daemon
+        interceptors.first.instance_variable_get(:@api_key).eql?('<API_KEY>') && started.empty? ? offline : daemon
       end
-      agents.push(described_class.new(url: ':55002', api_key: 'KEY'))
-      expect(started.dig('config', 'authentication')).to(eq('enabled' => true, 'api_key' => 'KEY'))
+      agents.push(described_class.new(url: ':55002', api_key: '<API_KEY>'))
+      expect(started.dig('config', 'authentication')).to(eq('enabled' => true, 'api_key' => '<API_KEY>'))
     end
 
     it 'stops the daemon started here on shutdown' do

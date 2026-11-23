@@ -44,6 +44,26 @@ module Aspera
           return v1_path if File.exist?(v1_path)
           return File.join(sdk_directory, Environment.instance.exe_file(V2_DAEMON_NAME))
         end
+
+        # Well, the port number is only in log file
+        # @param log_file [String] Log file (standard output) of a daemon started locally
+        # @return [Integer] Port of the last line of the API server
+        def daemon_port_from_log(log_file)
+          result = nil
+          # if port is zero, a dynamic port was created, get it
+          File.open(log_file, 'r') do |file|
+            file.each_line do |line|
+              # Well, it's tricky to depend on log
+              if (m = line.match(/Info: API Server: Listening on ([^:]+):(\d+) /))
+                result = m[2].to_i
+                # no "break" , need to read last matching log line
+              end
+            end
+          end
+          Aspera.assert(!result.nil?, 'Port not found in daemon logs')
+          Log.log.debug { "Got port #{result} from log" }
+          return result
+        end
       end
     end
   end

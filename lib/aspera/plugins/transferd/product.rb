@@ -43,24 +43,6 @@ module Aspera
           def write_config(path, config)
             File.open(path, File::WRONLY | File::CREAT | File::EXCL, 0o600) { |file| file.write(config.to_json) }
           end
-
-          # Well, the port number is only in log file
-          def daemon_port_from_log(log_file)
-            result = nil
-            # if port is zero, a dynamic port was created, get it
-            File.open(log_file, 'r') do |file|
-              file.each_line do |line|
-                # Well, it's tricky to depend on log
-                if (m = line.match(/Info: API Server: Listening on ([^:]+):(\d+) /))
-                  result = m[2].to_i
-                  # no "break" , need to read last matching log line
-                end
-              end
-            end
-            Aspera.assert(!result.nil?, 'Port not found in daemon logs')
-            Log.log.debug { "Got port #{result} from log" }
-            return result
-          end
         end
 
         # Start the daemon, and wait for its initialization
@@ -119,7 +101,7 @@ module Aspera
 
         # @return [Integer] Port the daemon listens on, from its log (when started with port `0`)
         def port_from_log
-          self.class.daemon_port_from_log(@log_stdout)
+          Products::Transferd.daemon_port_from_log(@log_stdout)
         end
 
         # Stop the daemon, if not stopped yet

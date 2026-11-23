@@ -154,12 +154,12 @@ RSpec.describe(Aspera::Plugins::Transferd::Api) do
         interceptor = interceptors.first
         stub
       end
-      described_class.create_client('h:1', api_key: 'KEY')
+      described_class.create_client('h:1', api_key: '<API_KEY>')
       expect(interceptor).to(be_a(GRPC::ClientInterceptor))
       %i[request_response client_streamer server_streamer bidi_streamer].each do |rpc_type|
         metadata = {'other' => 'value'}
         expect(interceptor.public_send(rpc_type, metadata: metadata) { :called }).to(eq(:called))
-        expect(metadata).to(eq('other' => 'value', 'api_key' => 'KEY'))
+        expect(metadata).to(eq('other' => 'value', 'api_key' => '<API_KEY>'))
       end
     end
 
@@ -175,7 +175,7 @@ RSpec.describe(Aspera::Plugins::Transferd::Api) do
       allow(GRPC::Core::ChannelCredentials).to(receive(:new).and_return(credentials))
       expect(Transferd::Api::TransferService::Stub).to(receive(:new).with('h:1', credentials, interceptors: [an_instance_of(described_class::ApiKeyInterceptor)]).and_return(stub))
       allow(stub).to(receive(:query_transfer).and_return(query_response(:RUNNING)))
-      described_class.transfer_status('tid', {'url' => 'h:1', 'api_key' => 'KEY', 'ca_file' => ca_file})
+      described_class.transfer_status('tid', {'url' => 'h:1', 'api_key' => '<API_KEY>', 'ca_file' => ca_file})
     end
   end
 end
@@ -200,10 +200,24 @@ RSpec.describe(Aspera::Plugins::Transferd::Agent) do
   end
 
   it 'creates a client with Api, with a deprecation warning given once' do
-    described_class.instance_variable_set(:@create_client_deprecation_shown, nil)
-    expect(Aspera::Log.log).to(receive(:warn).with(/create_client is deprecated: use Aspera::Plugins::Transferd::Api.create_client/).once)
+    described_class.instance_variable_set(:@deprecation_shown, nil)
+    expect(Aspera::Log.log).to(receive(:warn).with(/Agent.create_client is deprecated: use Aspera::Plugins::Transferd::Api.create_client/).once)
     expect(described_class.create_client('127.0.0.1:55002')).to(be(stub))
     expect(described_class.create_client('127.0.0.1:55002')).to(be(stub))
+  end
+
+  it 'forwards client, info and normalize_status to Api, each with a deprecation warning given once' do
+    described_class.instance_variable_set(:@deprecation_shown, nil)
+    response = api::InstanceInfoResponse.new
+    allow(stub).to(receive(:get_info).and_return(response))
+    %i[client info normalize_status].each do |name|
+      expect(Aspera::Log.log).to(receive(:warn).with(/Agent.#{name} is deprecated: use Aspera::Plugins::Transferd::Api.#{name}/).once)
+    end
+    expect(described_class.client(params)).to(be(stub))
+    expect(described_class.client(params)).to(be(stub))
+    expect(described_class.info(params)).to(be_a(Hash))
+    expect(described_class.normalize_status(api::QueryTransferResponse.new(transferId: 'tid', status: :RUNNING))).to(include('status' => 'running'))
+    expect(described_class.normalize_status(api::QueryTransferResponse.new(transferId: 'tid', status: :RUNNING))).to(include('status' => 'running'))
   end
 
   it 'keeps the moved constants as deprecated aliases' do

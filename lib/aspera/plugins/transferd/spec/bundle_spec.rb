@@ -102,7 +102,7 @@ module Aspera
             expect(mounts.map(&:constant)).to(eq(%w[ConfigCommands]))
             expect(Cli::Plugins::Config.ancestors).to(include(ConfigCommands))
             expect(commands.children_of([]).keys.last).to(eq(:transferd))
-            expect(commands.mount_of([:transferd])).to(have_attributes(plugin: Commands, instance: :transferd_plugin, only: %i[install list service]))
+            expect(commands.mount_of([:transferd])).to(have_attributes(plugin: Commands, instance: :transferd_commands_plugin, only: %i[install list service]))
           end
 
           it 'creates the plugin found by name, with a deprecation warning' do
@@ -111,6 +111,14 @@ module Aspera
             allow(Commands).to(receive(:new).with(context: :context).and_return(:plugin))
             expect(Log.log).to(receive(:warn)) { |&block| expect(block.call).to(eq('Command config ascp install is deprecated after 4.28.0: use transferd install')) }
             expect(config.transferd_plugin(command: 'config ascp install', replacement: 'transferd install')).to(be(:plugin))
+          end
+
+          it 'creates the class of the mount, with a deprecation warning' do
+            config = Cli::Plugins::Config.allocate
+            allow(config).to(receive(:context).and_return(:context))
+            allow(Commands).to(receive(:new).with(context: :context).and_return(:plugin))
+            expect(Log.log).to(receive(:warn)) { |&block| expect(block.call).to(eq('Command config transferd is deprecated after 4.28.0: use transferd')) }
+            expect(config.transferd_commands_plugin).to(be(:plugin))
           end
 
           it 'runs the commands of the plugin' do

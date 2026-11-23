@@ -67,9 +67,9 @@ module Aspera
       end
 
       it 'gives information on the daemon, with the options url, api_key and ca_file' do
-        output = run_cli('transferd', 'info', '--url=127.0.0.1:55002', '--api-key=KEY', '--ca-file=/path/ca.pem')
+        output = run_cli('transferd', 'info', '--url=127.0.0.1:55002', '--api-key=<API_KEY>', '--ca-file=/path/ca.pem')
         expect(JSON.parse(output)).to(include('apiVersion' => 'v1'))
-        expect(fake.calls).to(eq([[:info, {'url' => '127.0.0.1:55002', 'api_key' => 'KEY', 'ca_file' => '/path/ca.pem'}]]))
+        expect(fake.calls).to(eq([[:info, {'url' => '127.0.0.1:55002', 'api_key' => '<API_KEY>', 'ca_file' => '/path/ca.pem'}]]))
       end
 
       it 'does not need api_key and ca_file' do
