@@ -5,16 +5,16 @@
 
 # #203: with `once_only`, a package is marked as downloaded only when its transfer succeeded.
 
-require_relative '../lib/aspera/cli/runner'
-require_relative '../lib/aspera/cli/plugins/aoc'
-require_relative '../lib/aspera/persistency_action_once'
-require_relative '../lib/aspera/transfer/result'
+require_relative '../../../cli/runner'
+require_relative '../commands'
+require_relative '../../../persistency_action_once'
+require_relative '../../../transfer/result'
 require 'bundler/setup'
 
 module Aspera
-  module Cli
-    module Plugins
-      RSpec.describe(Aoc) do
+  module Plugins
+    module Aoc
+      RSpec.describe(Commands) do
         # Persistency manager in memory
         let(:store) do
           Class.new do

@@ -22,7 +22,7 @@ module Aspera
       plugins = ObjectSpace.each_object(Class).select { |c| c < described_class && c.command_registry.any? }.sort_by(&:plugin_name)
 
       it 'finds plugins with commands' do
-        expect(plugins).to(include(Plugins::Aoc, Aspera::Plugins::Node::Commands, Plugins::Config))
+        expect(plugins).to(include(Aspera::Plugins::Aoc::Commands, Aspera::Plugins::Node::Commands, Plugins::Config))
       end
 
       plugins.each do |plugin|

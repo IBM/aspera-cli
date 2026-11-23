@@ -10,7 +10,7 @@ require_relative '../lib/aspera/cli/poll'
 require_relative '../lib/aspera/cli/plugins/orchestrator'
 require_relative '../lib/aspera/cli/plugins/faspex5'
 require_relative '../lib/aspera/plugins/node/commands'
-require_relative '../lib/aspera/cli/plugins/aoc'
+require_relative '../lib/aspera/plugins/aoc/commands'
 require_relative '../lib/aspera/cli/plugins/server'
 require_relative '../lib/aspera/plugins/shares/commands'
 require_relative '../lib/aspera/plugins/ats/commands'
@@ -253,7 +253,7 @@ module Aspera
             Plugins::Orchestrator => [%i[workflows workorders], %i[workorders status], %i[tasks list], %i[pools status], %i[queues list], %i[queues items]],
             Plugins::Faspex5      => [%i[packages list], %i[packages show], %i[admin workgroups list]],
             Aspera::Plugins::Node::Commands => [%i[ls], %i[transfer list], %i[access_keys list], %i[access_keys show], %i[access_keys do thumbnail]],
-            Plugins::Aoc          => [%i[packages list], %i[admin analytics transfers]]
+            Aspera::Plugins::Aoc::Commands => [%i[packages list], %i[admin analytics transfers]]
           }.each do |plugin, paths|
             paths.each { |path| expect(plugin.command_registry[path].read_only?).to(be(true), "#{plugin} #{path}") }
           end

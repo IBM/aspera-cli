@@ -3,16 +3,16 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-require_relative '../lib/aspera/api/aoc'
+require_relative '../api'
 require 'bundler/setup'
 
-RSpec.describe(Aspera::Api::AoC) do
+RSpec.describe(Aspera::Plugins::Aoc::Api) do
   describe '#node_api_from' do
     let(:auth) { {type: :oauth2, grant_method: :jwt, params: {scope: 'user:all'}} }
 
     # AoC API with OAuth auth parameters, without server
     let(:aoc) do
-      api = Aspera::Api::AoC.allocate
+      api = Aspera::Plugins::Aoc::Api.allocate
       api.instance_variable_set(:@auth_params, auth)
       allow(api).to(receive(:read).with('nodes/n1').and_return({'url' => 'https://node', 'access_key' => 'ak1'}))
       api

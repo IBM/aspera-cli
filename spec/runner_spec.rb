@@ -41,7 +41,7 @@ module Aspera
           argument = ArgumentSpec.new(
             name: :action,
             type: [Hash],
-            schema: Schema::Registry.req_body(Schema::Registry::AUTOMATION, 'actions.post')
+            schema: Schema::Registry.req_body('automation', 'actions.post')
           )
 
           output = Runner.new([]).send(:schema_help_lines, argument).join("\n")

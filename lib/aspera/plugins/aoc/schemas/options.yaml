@@ -1,0 +1,46 @@
+openapi: 3.1.0
+info:
+  title: Options of bundle aoc
+  version: 1.0.0
+  description: Schema definitions of the options of bundle `aoc`
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+paths: {}
+components:
+  schemas:
+    PackageFolderOptions:
+      type: object
+      title: Package download folder organization
+      description: >-
+        Controls how downloaded packages are organized into subfolders under `to_folder`.
+        If not specified or empty, packages are downloaded directly into `to_folder`.
+      properties:
+        fld:
+          type: array
+          description: >-
+            List of package fields (up to 2) used to build the subfolder name.
+            Field values are joined with `.`.
+          items:
+            type: string
+          maxItems: 2
+          examples:
+            - - name
+              - id
+        seq:
+          type: boolean
+          description: >-
+            If `true`, appends an incrementing number to the folder name when a conflict occurs.
+          default: false
+        opt:
+          type: boolean
+          description: >-
+            If `false` (default), all fields in `fld` are always used.
+            If `true`, the first field is used unless the folder already exists.
+          default: false
+        inf:
+          type: boolean
+          description: >-
+            If `true`, creates a `<ID>.info.json` sidecar file inside the folder
+            containing package metadata.
+          default: false

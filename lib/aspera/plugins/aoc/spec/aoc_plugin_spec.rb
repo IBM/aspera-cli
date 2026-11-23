@@ -3,17 +3,17 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Unit tests for Aspera::Cli::Plugins::Aoc: package folders, automation guide and jobs — no AoC server needed.
+# Unit tests for Aspera::Plugins::Aoc::Commands: package folders, automation guide and jobs — no AoC server needed.
 
-require_relative '../lib/aspera/cli/context'
-require_relative '../lib/aspera/cli/parser'
-require_relative '../lib/aspera/cli/plugins/aoc'
+require_relative '../../../cli/context'
+require_relative '../../../cli/parser'
+require_relative '../commands'
 require 'tmpdir'
 
 module Aspera
-  module Cli
-    module Plugins
-      RSpec.describe(Aoc) do
+  module Plugins
+    module Aoc
+      RSpec.describe(Commands) do
         describe '.unique_folder' do
           let(:package) { {'id' => 'p1', 'name' => 'my package'} }
 
@@ -46,9 +46,9 @@ module Aspera
           # @param argv [Array<String>] command line
           # @param automation_api [Object, nil] Automation API, set by `setup_automation_api`
           def execute(*argv, automation_api: nil)
-            context = Context.new
+            context = Cli::Context.new
             context.man_header = false
-            context.options = Parser.new('test', argv)
+            context.options = Cli::Parser.new('test', argv)
             instance = described_class.new(context: context)
             instance.define_singleton_method(:setup_automation_api) do |**|
               @automation_api = automation_api
@@ -93,7 +93,7 @@ module Aspera
 
             it 'searches a UUID in one call' do
               pages([])
-              expect { execute('automation', 'instances', 'show', 'a-b', automation_api: api) }.to(raise_error(BadIdentifier))
+              expect { execute('automation', 'instances', 'show', 'a-b', automation_api: api) }.to(raise_error(Cli::BadIdentifier))
               expect(queries).to(eq([{'limit' => 1000, 'offset' => 0, 'sort' => '-state_change_time', 'q' => 'a-b'}]))
             end
           end

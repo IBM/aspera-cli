@@ -1,0 +1,18 @@
+name: aoc
+title: IBM Aspera on Cloud
+depends:
+  - node
+  - ats
+commands: true
+schemas:
+  - key: aoc
+    file: schemas/IBM Aspera on Cloud API-0.2.6-enhanced.yaml
+    source:
+      url: https://raw.githubusercontent.com/laurent-martin/aspera-api-examples/refs/heads/main/openapi/IBM%20Aspera%20on%20Cloud%20API-0.2.6-enhanced.yaml
+  - key: automation
+    file: schemas/IBM Aspera on Cloud Automation API-1.0.5-enhanced.yaml
+    source:
+      url: https://raw.githubusercontent.com/laurent-martin/aspera-api-examples/refs/heads/main/openapi/IBM%20Aspera%20on%20Cloud%20Automation%20API-1.0.5-enhanced.yaml
+  - key: aoc_opts
+    file: schemas/options.yaml
+    owned: true

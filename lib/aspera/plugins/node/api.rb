@@ -216,10 +216,10 @@ module Aspera
           end
         end
 
-        # @return [Api::AoC::AppInfo,nil] set for AoC
+        # @return [Aoc::Api::AppInfo,nil] set for AoC
         attr_reader :app_info
 
-        # @param app_info  [Api::AoC::AppInfo,nil] App information, typically AoC
+        # @param app_info  [Aoc::Api::AppInfo,nil] App information, typically AoC
         # @param add_tspec [Hash,nil]   Additional transfer spec
         # @param base_url  [String]     Rest parameters
         # @param auth      [String,nil] Rest parameters

@@ -75,8 +75,6 @@ module Aspera
         args:         'aspera/sync/args.schema.yaml',
         conf:         'aspera/sync/conf.schema.yaml',
         opts:         'aspera/cli/options.schema.yaml',
-        aoc:          'aspera/schema/IBM Aspera on Cloud API-0.2.6-enhanced.yaml',
-        automation:   'aspera/schema/IBM Aspera on Cloud Automation API-1.0.5-enhanced.yaml',
         faspex:       'aspera/schema/IBM Aspera Faspex API-5.0-enhanced.yaml',
         faspio:       'aspera/schema/IBM Aspera faspio Gateway API-1.0.0-enhanced.yaml',
         console:      'aspera/schema/IBM Aspera Console-enhanced.yaml',
@@ -93,8 +91,6 @@ module Aspera
       TRANSFER_SPEC = 'spec'
       SYNC_CONF = 'conf'
       SYNC_ARGS = 'args'
-      AOC = 'aoc'
-      AUTOMATION = 'automation'
       FASPEX = 'faspex'
       FASPIO = 'faspio'
       CONSOLE = 'console'
@@ -120,7 +116,6 @@ module Aspera
       IMAGE_OPTIONS           = "#{OPTIONS}:components.schemas.ImageOptions".freeze
       OUT_OPTIONS             = "#{OPTIONS}:components.schemas.OutOptions".freeze
       POLL_OPTIONS            = "#{OPTIONS}:components.schemas.PollOptions".freeze
-      PACKAGE_FOLDER_OPTIONS  = "#{OPTIONS}:components.schemas.PackageFolderOptions".freeze
       WEB_SERVER_OPTIONS      = "#{OPTIONS}:components.schemas.WebServerOptions".freeze
       GATEWAY_OPTIONS         = "#{OPTIONS}:components.schemas.Faspex4GatewayOptions".freeze
       POSTPROC_OPTIONS        = "#{OPTIONS}:components.schemas.Faspex4PostProcOptions".freeze

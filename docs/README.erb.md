@@ -7717,7 +7717,7 @@ The `package_folder` option (`Hash`) controls how downloaded packages are organi
 
 **Supported Fields**:
 
-<%=schema_to_table(Aspera::Schema::Registry::PACKAGE_FOLDER_OPTIONS)%>
+<%=schema_to_table('aoc_opts:components.schemas.PackageFolderOptions')%>
 
 **Examples**:
 

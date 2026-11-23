@@ -25,7 +25,7 @@ module Aspera
   class Faspex4GWServlet < WEBrick::HTTPServlet::AbstractServlet
     include ServletHelpers
 
-    AOC_API = 'Aspera::Api::AoC'
+    AOC_API = 'Aspera::Plugins::Aoc::Api'
     FX_API = 'Aspera::Api::Faspex'
     ALLOWED_PARAMETERS = %i[username password password_min_bits].freeze
     REALM = 'Faspex 4 Gateway'

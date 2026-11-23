@@ -3,20 +3,20 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Unit tests for Aspera::Cli::Plugins::Aoc: simple commands that map to one API call — no AoC server needed.
+# Unit tests for Aspera::Plugins::Aoc::Commands: simple commands that map to one API call — no AoC server needed.
 # The AoC API (and the automation and analytics APIs) are replaced by doubles that record calls.
 
-require_relative '../lib/aspera/cli/context'
-require_relative '../lib/aspera/cli/parser'
-require_relative '../lib/aspera/cli/plugins/aoc'
-require_relative '../lib/aspera/cli/runner'
+require_relative '../../../cli/context'
+require_relative '../../../cli/parser'
+require_relative '../commands'
+require_relative '../../../cli/runner'
 require 'openssl'
 require 'tempfile'
 
 module Aspera
-  module Cli
-    module Plugins
-      RSpec.describe(Aoc) do
+  module Plugins
+    module Aoc
+      RSpec.describe(Commands) do
         # Calls received by the API doubles: [api, method, path, *args]
         let(:calls) { [] }
         # Response of the API doubles, by [method, path], default: empty Hash
@@ -39,7 +39,7 @@ module Aspera
         end
 
         let(:aoc_api) do
-          api = recording_api(:aoc, Api::AoC)
+          api = recording_api(:aoc, Aspera::Plugins::Aoc::Api)
           allow(api).to(receive_messages(current_user_info: user_info, workspace_info: {id: 'w1', name: 'ws'}, default_workspace?: true, private_link: nil))
           allow(api).to(receive(:read_with_paging)) do |path, query|
             calls.push([:aoc, :read_with_paging, path, query])
@@ -53,14 +53,14 @@ module Aspera
         # Plugin with API doubles
         # @param argv     [Array<String>] command line
         # @param transfer [Object, nil]   transfer agent manager
-        # @param stub_aoc [Boolean]       `false` to build the AoC API from options (`Api::AoC.new` is then stubbed by caller)
+        # @param stub_aoc [Boolean]       `false` to build the AoC API from options (`Aspera::Plugins::Aoc::Api.new` is then stubbed by caller)
         # @return [Aoc] plugin instance
         def plugin(*argv, transfer: nil, stub_aoc: true)
-          context = Context.new
+          context = Cli::Context.new
           context.man_header = false
           context.formatter = double(display_status: nil)
           context.transfer = transfer
-          context.options = Parser.new('test', argv)
+          context.options = Cli::Parser.new('test', argv)
           instance = described_class.new(context: context)
           apis = {aoc: aoc_api, automation: automation_api, analytics: analytics_api}
           instance.define_singleton_method(:aoc_api) { apis[:aoc] } if stub_aoc
@@ -73,7 +73,7 @@ module Aspera
         end
 
         # Execute a command line with API doubles (arguments: see `plugin`)
-        # @return [Result::Base] command result
+        # @return [Cli::Result::Base] command result
         def execute(*, **) = plugin(*, **).execute_action
 
         describe 'admin application' do
@@ -123,7 +123,7 @@ module Aspera
             Tempfile.create('key') do |file|
               file.write(private_key.to_pem)
               file.close
-              expect(execute('admin', 'client', 'set_pub_key', 'c1', "@file:#{file.path}")).to(be_a(Result::Success))
+              expect(execute('admin', 'client', 'set_pub_key', 'c1', "@file:#{file.path}")).to(be_a(Cli::Result::Success))
             end
             expect(calls).to(eq([[:aoc, :update, 'clients/c1', {jwt_grant_enabled: true, public_key: private_key.public_key.to_s}]]))
           end
@@ -286,7 +286,7 @@ module Aspera
 
           it 'pulls from the home folder: the client folder is the destination' do
             folders(client: '/dest', server: '/src', root: 'f1')
-            expect(execute('files', 'transfer', 'pull', '/src', transfer: transfer)).to(be_a(Result::Nothing))
+            expect(execute('files', 'transfer', 'pull', '/src', transfer: transfer)).to(be_a(Cli::Result::Nothing))
             expect(Aspera::Plugins::Node::Agent).to(have_received(:new).with(url: 'https://client.example.com', username: 'client_ak', password: '<TOKEN>', root_id: 'fc'))
             expect(server_node_api).to(have_received(:transfer_spec_gen4).with(
               'fs', Transfer::Spec::DIRECTION_RECEIVE, {'remote_access_key' => 'server_ak', 'destination_root_id' => 'fs', 'source_root_id' => 'fc'}
@@ -321,7 +321,7 @@ module Aspera
         describe '#wizard' do
           it 'creates a preset for a public link protected by a password' do
             app_url = 'https://org.example.com/public/files?token=<TOKEN>'
-            allow(Api::AoC).to(receive(:link_info).with(app_url).and_return({url: 'https://org.example.com/public/files', token: '<TOKEN>'}))
+            allow(Aspera::Plugins::Aoc::Api).to(receive(:link_info).with(app_url).and_return({url: 'https://org.example.com/public/files', token: '<TOKEN>'}))
             public_api = instance_double(Rest::Client)
             allow(public_api).to(receive(:read).with('env/url_token_check', {token: '<TOKEN>'}).and_return({'password_protected' => true}))
             allow(Rest::Client).to(receive(:new).with(base_url: 'https://org.example.com/api/v1').and_return(public_api))
@@ -339,7 +339,7 @@ module Aspera
 
           before do
             allow(aoc_api).to(receive(:ws_ids).and_return({id: nil, name: nil}))
-            allow(Api::AoC).to(receive(:new).and_return(aoc_api))
+            allow(Aspera::Plugins::Aoc::Api).to(receive(:new).and_return(aoc_api))
             allow(transfer).to(receive(:httpgw_url_cb=)) { |callback| callbacks.push(callback) }
           end
 

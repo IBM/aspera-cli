@@ -57,7 +57,7 @@ RSpec.describe(Aspera::Plugins::Node::Api) do
   end
 
   describe '#node_id_to_node' do
-    let(:app_api) { instance_double('Aspera::Api::AoC') }
+    let(:app_api) { instance_double('Aspera::Plugins::Aoc::Api') }
     let(:app_info) { Struct.new(:node_info, :api, :workspace_id, :workspace_name).new({'id' => 'n1'}, app_api, 'w1', 'ws') }
     let(:app_node) { described_class.new(base_url: 'https://node.example.com', app_info: app_info) }
 

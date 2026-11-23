@@ -5,14 +5,14 @@
 
 # Unit tests for the import of an AoC Automation workflow — no server needed.
 
-require_relative '../lib/aspera/cli/context'
-require_relative '../lib/aspera/cli/parser'
-require_relative '../lib/aspera/cli/plugins/aoc'
+require_relative '../../../cli/context'
+require_relative '../../../cli/parser'
+require_relative '../commands'
 
 module Aspera
-  module Cli
-    module Plugins
-      RSpec.describe(Aoc) do
+  module Plugins
+    module Aoc
+      RSpec.describe(Commands) do
         # Fake Automation API: records calls and enforces the rule of the real API,
         # an action is accepted only if its step is already in the `step_order` of the workflow.
         let(:api_class) do
@@ -90,9 +90,9 @@ module Aspera
         # @param api [Object] fake Automation API
         # @return [Aoc] plugin that uses the fake API
         def plugin(api)
-          context = Context.new
+          context = Cli::Context.new
           context.man_header = false
-          context.options = Parser.new('test', [])
+          context.options = Cli::Parser.new('test', [])
           instance = described_class.new(context: context)
           instance.instance_variable_set(:@automation_api, api)
           instance
