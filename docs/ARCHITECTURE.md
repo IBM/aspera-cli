@@ -120,7 +120,7 @@ The plugin architecture enables modular command implementation for different Asp
 **Product Plugins** (registered and exposed as top-level commands):
 
 - [`aoc.rb`](../lib/aspera/cli/plugins/aoc.rb) - Aspera on Cloud
-- [`ats.rb`](../lib/aspera/cli/plugins/ats.rb) - Aspera Transfer Service
+- [`ats/commands.rb`](../lib/aspera/plugins/ats/commands.rb) - Aspera Transfer Service
 - [`faspex5.rb`](../lib/aspera/cli/plugins/faspex5.rb) - Faspex 5
 - [`shares/commands.rb`](../lib/aspera/plugins/shares/commands.rb) - Aspera Shares
 - [`node/commands.rb`](../lib/aspera/plugins/node/commands.rb) - Node API
@@ -138,7 +138,7 @@ The Faspex 4 plugin was removed (end of support).
 **Utility Plugins** (registered commands but not product-specific):
 
 - [`config.rb`](../lib/aspera/cli/plugins/config.rb) - Configuration management (includes `VaultActions`, `GemChecker`, `PresetActions`, `CompletionActions` mixins; bundle `transfer_agents` mounts `SyncActions`, `AscpLogsActions`, `AscpActions`, `TransferActions`, `ConfigCommands`)
-- [`preview.rb`](../lib/aspera/cli/plugins/preview.rb) - File preview generation
+- [`preview/commands.rb`](../lib/aspera/plugins/preview/commands.rb) - File preview generation
 - [`mcp.rb`](../lib/aspera/cli/plugins/mcp.rb) - Model Context Protocol server (exposes `ascli` to AI assistants)
 
 **Internal Base Classes** (excluded from factory registration via `IGNORE_PLUGINS`):

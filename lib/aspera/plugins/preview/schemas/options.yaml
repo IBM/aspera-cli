@@ -1,5 +1,5 @@
 $schema: https://json-schema.org/draft/2020-12/schema
-$id: https://github.com/IBM/aspera-cli/tree/main/lib/aspera/preview/options.schema.yaml
+$id: https://github.com/IBM/aspera-cli/tree/main/lib/aspera/plugins/preview/schemas/options.yaml
 title: Preview generator options
 description: >-
   Options of the preview generator: tools and parameters used to generate PNG thumbnails and MP4 video previews.

@@ -13,7 +13,7 @@ require_relative '../lib/aspera/plugins/node/commands'
 require_relative '../lib/aspera/cli/plugins/aoc'
 require_relative '../lib/aspera/cli/plugins/server'
 require_relative '../lib/aspera/plugins/shares/commands'
-require_relative '../lib/aspera/cli/plugins/ats'
+require_relative '../lib/aspera/plugins/ats/commands'
 require_relative '../lib/aspera/plugins/httpgw/commands'
 require 'json'
 require 'tmpdir'
@@ -264,10 +264,10 @@ module Aspera
         it 'marks the read-only commands of server, and other commands that only read' do
           {
             Plugins::Server  => [%i[ls], %i[df], %i[du], %i[md5sum], %i[info]],
-            Plugins::Node    => [%i[async list], %i[ssync state], %i[stream list], %i[service list], %i[watch_folder show]],
+            Aspera::Plugins::Node::Commands => [%i[async list], %i[ssync state], %i[stream list], %i[service list], %i[watch_folder show]],
             Plugins::Faspex5 => [%i[user profile show], %i[admin configuration show], %i[admin smtp show]],
             Aspera::Plugins::Shares::Commands => [%i[info], %i[share list]],
-            Plugins::Ats     => [%i[cluster list], %i[access_key show]],
+            Aspera::Plugins::Ats::Commands => [%i[cluster list], %i[access_key show]],
             Aspera::Plugins::Httpgw::Commands => [%i[info]]
           }.each do |plugin, paths|
             paths.each { |path| expect(plugin.command_registry[path].read_only?).to(be(true), "#{plugin} #{path}") }
@@ -282,8 +282,8 @@ module Aspera
           expect(CommandSpec.new(id: :show, read_only: false).read_only?).to(be(false))
           expect(CommandSpec.new(id: :stats, read_only: true).read_only?).to(be(true))
           expect { CommandSpec.new(id: :list, read_only: :yes) }.to(raise_error(StandardError, /read_only/))
-          require_relative '../lib/aspera/cli/plugins/preview'
-          expect(Plugins::Preview.command_registry[%i[show]].read_only?).to(be(false))
+          require_relative '../lib/aspera/plugins/preview/commands'
+          expect(Aspera::Plugins::Preview::Commands.command_registry[%i[show]].read_only?).to(be(false))
         end
       end
     end

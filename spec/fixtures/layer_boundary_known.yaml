@@ -23,24 +23,17 @@ cli/plugins/alee.rb:
 - require api/alee
 cli/plugins/aoc.rb:
 - const Api::AoC
+- const Plugins::Ats
 - const Plugins::Node
 - const Transfer::Result
 - const Transfer::Spec
 - require api/aoc
-- require cli/plugins/ats
+- require plugins/ats/commands
 - require plugins/node/agent
 - require plugins/node/api
 - require plugins/node/commands
 - require transfer/result
 - require transfer/spec
-cli/plugins/ats.rb:
-- const Api::Alee
-- const Api::Ats
-- const Plugins::Node
-- require api/alee
-- require api/aoc
-- require api/ats
-- require plugins/node/commands
 cli/plugins/config.rb:
 - const Ascp::Installation
 - const Transfer::Spec
@@ -53,17 +46,6 @@ cli/plugins/faspex5.rb:
 - require transfer/result
 cli/plugins/orchestrator.rb:
 - const Transfer::Spec
-- require transfer/spec
-cli/plugins/preview.rb:
-- const Plugins::Node
-- const Preview::FileTypes
-- const Preview::Generator
-- const Preview::Utils
-- const Transfer::Spec
-- require plugins/node/api
-- require preview/file_types
-- require preview/generator
-- require preview/utils
 - require transfer/spec
 cli/plugins/server.rb:
 - const Plugins::TransferAgents
@@ -82,5 +64,8 @@ cli/runner.rb:
 faspex_gw.rb:
 - const Api::Faspex
 - require api/faspex
+plugins/ats/commands.rb:
+- const Api::Alee
+- require api/alee
 transfer/parameters.rb:
 - require cli/formatter

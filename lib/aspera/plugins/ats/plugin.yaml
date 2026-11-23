@@ -1,0 +1,5 @@
+name: ats
+title: IBM Aspera Transfer Service
+depends:
+  - node
+commands: true

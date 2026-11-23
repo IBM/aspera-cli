@@ -3,47 +3,13 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-require_relative '../rest'
-
+# Shim: moved to aspera/plugins/ats/api, removed in 5.0
+require_relative '../log'
+require_relative '../plugins/ats/api'
+Aspera::Log.log.warn('aspera/api/ats is deprecated: use aspera/plugins/ats/api (removed in 5.0)')
 module Aspera
   module Api
-    # Aspera Transfer Service API client without authentication
-    class Ats < Aspera::Rest::Client
-      SERVICE_BASE_URL = 'https://ats.aspera.io'
-      # currently supported clouds
-      # Note to Aspera: shall be an API call
-      CLOUD_NAME = {
-        aws:       'Amazon Web Services',
-        azure:     'Microsoft Azure',
-        google:    'Google Cloud',
-        limelight: 'Limelight',
-        rackspace: 'Rackspace',
-        softlayer: 'IBM Cloud'
-      }.freeze
-
-      private_constant :CLOUD_NAME
-
-      def initialize
-        super(base_url: "#{SERVICE_BASE_URL}/pub/v1")
-        # cache of server data
-        @all_servers_cache = nil
-      end
-
-      def cloud_names; CLOUD_NAME; end
-
-      # all available ATS servers
-      # NOTE to Aspera: an API shall be created to retrieve all servers at once
-      def all_servers
-        if @all_servers_cache.nil?
-          @all_servers_cache = []
-          CLOUD_NAME.each_key do |name|
-            read("servers/#{name.to_s.upcase}").each do |i|
-              @all_servers_cache.push(i)
-            end
-          end
-        end
-        return @all_servers_cache
-      end
-    end
+    Ats = Aspera::Plugins::Ats::Api
+    deprecate_constant :Ats
   end
 end

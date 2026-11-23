@@ -6,7 +6,7 @@
 require_relative '../../schema/registry'
 require_relative 'oauth'
 require_relative '../../plugins/node/commands'
-require_relative 'ats'
+require_relative '../../plugins/ats/commands'
 require_relative '../special_values'
 require_relative '../../environment'
 require_relative '../wizard'
@@ -620,7 +620,7 @@ module Aspera
             action: ->(**) { Result::Text.new(aoc_api.oauth.authorization) }
           command :application,    description: 'Manage applications'
           command :ats, description: 'Manage ATS (Aspera Transfer Service)',
-            mount: {plugin: Ats, instance: :build_ats_plugin}
+            mount: {plugin: Aspera::Plugins::Ats::Commands, instance: :build_ats_plugin}
           command :usage_reports,  description: 'List usage reports',
             action: ->(**) { result_list('usage_reports', base_query: workspace_id_hash) }
           command :auth_providers, description: 'Manage auth providers'
@@ -1726,13 +1726,13 @@ module Aspera
 
         # admin > ats — build and return an Ats plugin instance wired to the AoC ATS API.
         # Mount target of `admin ats`.
-        # @return [Ats] configured Ats plugin instance
+        # @return [Aspera::Plugins::Ats::Commands] configured Ats plugin instance
         def build_ats_plugin(**)
           ats_api = Rest::Client.new(**aoc_api.params.deep_merge({
             base_url: "#{aoc_api.base_url}/admin/ats/pub/v1",
             auth:     {params: {scope: Api::AoC::Scope::ADMIN_USER}}
           }))
-          Ats.new(context: context, api: ats_api)
+          Aspera::Plugins::Ats::Commands.new(context: context, api: ats_api)
         end
 
         # admin > node > do - mount target: Gen4 commands on the node, admin scope

@@ -3,25 +3,25 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Unit tests for Aspera::Cli::Plugins::Preview event processing on remote storage (`--root-url=aspera:`).
+# Unit tests for Aspera::Plugins::Preview::Commands event processing on remote storage (`--root-url=aspera:`).
 # Node API, transfer agent and preview generator are doubled: no node server, no ImageMagick/ffmpeg needed.
 
-require_relative '../lib/aspera/cli/context'
-require_relative '../lib/aspera/cli/parser'
-require_relative '../lib/aspera/cli/plugins/preview'
-require_relative '../lib/aspera/plugins/transfer_agents/transfer_agent'
-require_relative '../lib/aspera/cli/runner'
-require_relative '../lib/aspera/persistency_folder'
+require_relative '../../../cli/context'
+require_relative '../../../cli/parser'
+require_relative '../commands'
+require_relative '../../transfer_agents/transfer_agent'
+require_relative '../../../cli/runner'
+require_relative '../../../persistency_folder'
 require 'securerandom'
 require 'tmpdir'
 
 module Aspera
-  module Cli
-    module Plugins
-      RSpec.describe(Preview) do
-        let(:node) { instance_double(Aspera::Plugins::Node::Api, base_url: 'https://node.example.com') }
-        let(:transfer) { instance_double(Aspera::Plugins::TransferAgents::TransferAgent, user_transfer_spec: {}, assert_no_dry_run: nil) }
-        let(:generator) { instance_double(Aspera::Preview::Generator, conversion_type: :image, error_asset: error_asset) }
+  module Plugins
+    module Preview
+      RSpec.describe(Commands) do
+        let(:node) { instance_double(Node::Api, base_url: 'https://node.example.com') }
+        let(:transfer) { instance_double(TransferAgents::TransferAgent, user_transfer_spec: {}, assert_no_dry_run: nil) }
+        let(:generator) { instance_double(Generator, conversion_type: :image, error_asset: error_asset) }
         let(:tmp) { Dir.mktmpdir }
         let(:error_asset) { File.join(tmp, 'error.png').tap { |f| File.write(f, 'png') } }
         # Directions of started transfers
@@ -32,9 +32,9 @@ module Aspera
         let(:file_entry) { {'id' => 'f2', 'name' => 'a.png', 'type' => 'file', 'content_type' => 'image/png'} }
 
         before do
-          allow(Aspera::Plugins::Node::Api).to(receive(:new).and_return(node))
-          allow(Aspera::Preview::Utils).to(receive(:check_tools))
-          allow(Aspera::Preview::Generator).to(receive(:new).and_return(generator))
+          allow(Node::Api).to(receive(:new).and_return(node))
+          allow(Utils).to(receive(:check_tools))
+          allow(Generator).to(receive(:new).and_return(generator))
           allow(generator).to(receive(:generate).and_raise('conversion failed'))
           allow(TempFileManager.instance).to(receive(:global_temp).and_return(tmp))
           %i[error warn].each do |level|
@@ -70,10 +70,10 @@ module Aspera
 
         # @param argv [Array<String>] command line
         def execute(*argv)
-          context = Context.new
+          context = Cli::Context.new
           context.man_header = false
-          context.options = Parser.new('test', argv + ['--url=https://node.example.com', '--username=ak1', "--password=#{SecureRandom.alphanumeric(12)}"])
-          context.options.declare(:once_only, description: 'Process only new items', allowed: Type::BOOLEAN, default: false)
+          context.options = Cli::Parser.new('test', argv + ['--url=https://node.example.com', '--username=ak1', "--password=#{SecureRandom.alphanumeric(12)}"])
+          context.options.declare(:once_only, description: 'Process only new items', allowed: Cli::Type::BOOLEAN, default: false)
           context.transfer = transfer
           context.persistency = PersistencyFolder.new(File.join(tmp, 'persistency'))
           described_class.new(context: context).execute_action
