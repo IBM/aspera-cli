@@ -67,7 +67,9 @@ require 'tmpdir'
 RSpec.describe(Aspera::Cli::Plugins::Mcp) do
   # Build a minimal plugin instance without a real CLI context.
   subject(:plugin) do
-    described_class.allocate
+    described_class.allocate.tap do |p|
+      allow(p).to(receive(:context).and_return(instance_double(Aspera::Cli::Context, main_folder: '/server/home')))
+    end
   end
 
   # -------------------------------------------------------------------------
@@ -219,7 +221,16 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
       security.reset
     end
 
-    before { allow(plugin).to(receive(:start_mcp_server)) }
+    before do
+      allow(plugin).to(receive(:start_mcp_server))
+    end
+
+    after { Aspera::Cli::Mcp::Tool.main_folder = nil }
+
+    it 'gives the main folder of the server to the tool' do
+      plugin.action_server
+      expect(Aspera::Cli::Mcp::Tool.main_folder).to(eq('/server/home'))
+    end
 
     it 'is high by default, and cannot be changed by the client' do
       plugin.action_server

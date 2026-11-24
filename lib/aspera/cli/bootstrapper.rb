@@ -60,9 +60,12 @@ module Aspera
         :CONF_GLOBAL_SYM
 
       # @param context [Context] the shared context to populate
-      def initialize(context)
+      # @param main_folder [String, nil] main folder set by the program, as by code: not restricted by the security level; `nil`: option `home`
+      def initialize(context, main_folder: nil)
         Aspera.assert_type(context, Context) { 'context' }
+        Aspera.assert_type(main_folder, String, NilClass) { 'main_folder' }
         @context = context
+        @main_folder = main_folder
         @pac_exec = nil
       end
 
@@ -91,6 +94,8 @@ module Aspera
           on_set: @context.method(:main_folder=), complete: :folder, security: :low,
           default: default_app_main_folder(app_name: Info::CMD_NAME)
         )
+        # Set by code before parsing: a value on the command line has the same priority, and is refused if the security level does not allow option `home`
+        @context.options.set_option(:home, @main_folder, source: :code) unless @main_folder.nil?
         @context.options.parse_options!
         Log.log.debug { "#{Info::CMD_NAME} folder: #{@context.main_folder}" }
       end

@@ -36,8 +36,10 @@ module Aspera
     class Runner
       # Minimum initialization, no exception raised
       # @param argv [Array<String>] command line arguments
+      # @param main_folder [String, nil] main folder set by the program (not by the arguments), e.g. the one of the MCP server; `nil`: option `home`
       # @return [nil]
-      def initialize(argv)
+      def initialize(argv, main_folder: nil)
+        @main_folder = main_folder
         # Dumped (trace2) with secrets hidden by `CommandLine`
         @argv = argv
         @option_help = false
@@ -421,7 +423,7 @@ module Aspera
         declare_global_options
         # Bootstrap: populate context services (main_folder, persistency, presets, vault, http_config,
         # progress_bar) and configure global singletons before any plugin is instantiated.
-        @bootstrapper = Bootstrapper.new(@context)
+        @bootstrapper = Bootstrapper.new(@context, main_folder: @main_folder)
         @bootstrapper.run(gem_plugins_folder: Plugins::Config.gem_plugins_folder)
         # Do not display config commands if help is asked
         @context.man_header = false

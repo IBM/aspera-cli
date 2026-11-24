@@ -6707,6 +6707,8 @@ With the `http` transport:
 With both transports:
 
 - Extended value `@stdin:` is refused.
+- Commands sent by the client run in the main folder of the server (option `home`, `<%=opt_env :home%>`, or the default one).
+  The client cannot change it: option `home` is refused at levels `medium` and `high`.
 - `@secret:` is entered by the user on a web page, see [Secrets entered in a web page](#secrets-entered-in-a-web-page).
 - Secrets are hidden in responses, also a value shorter than 8 characters as a word in a text (for example, a short password in an error message).
 - The [Security Level](#security-level) is `high` by default: `@ruby:`, `@file:` (also in the parameters of stores of option `vault`), `@uri:`, `@env:`, and `@zlib:` are refused, and a secret must be the whole value: hidden in results, it cannot be processed by another extended value.
