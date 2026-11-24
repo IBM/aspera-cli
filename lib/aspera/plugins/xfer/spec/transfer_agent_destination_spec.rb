@@ -19,7 +19,7 @@ require 'tmpdir'
 
 module Aspera
   module Cli
-    RSpec.describe(Aspera::Plugins::TransferAgents::TransferAgent) do
+    RSpec.describe(Aspera::Plugins::Xfer::TransferAgent) do
       let(:tmpdir) { Dir.mktmpdir('transfer_agent_destination_spec') }
       let(:security) { Security.instance }
       # Transfer spec given to the agent

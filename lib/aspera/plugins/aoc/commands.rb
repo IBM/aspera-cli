@@ -21,7 +21,7 @@ require_relative '../../id_generator'
 require_relative '../../assert'
 require_relative 'graphql'
 require_relative '../../rainbow'
-require_relative '../transfer_agents/transfer_agent'
+require_relative '../xfer/transfer_agent'
 require_relative '../faspex4/gateway_options'
 require 'securerandom'
 require 'date'
@@ -485,7 +485,7 @@ module Aspera
             'destination_root_id' => server_apifid.file_id,
             'source_root_id'      => client_apifid.file_id
           }
-          TransferAgents::TransferAgent.result_transfer(transfer.start(server_apifid.node_api.transfer_spec_gen4(
+          Xfer::TransferAgent.result_transfer(transfer.start(server_apifid.node_api.transfer_spec_gen4(
             server_apifid.file_id,
             client_direction,
             add_ts
@@ -1102,7 +1102,7 @@ module Aspera
           end
           package_data['encryption_at_rest'] = true if transfer.user_transfer_spec['content_protection'].eql?('encrypt')
           created_package = aoc_api.create_package_simple(package_data, option_validate, new_user_option)
-          return TransferAgents::TransferAgent.result_object_transfer(created_package[:info], transfer.start(created_package[:spec], oauth_api: created_package[:node]))
+          return Xfer::TransferAgent.result_object_transfer(created_package[:info], transfer.start(created_package[:spec], oauth_api: created_package[:node]))
         end
 
         # packages > receive — package_id: from arguments:(:identifier) (or overridden by public_link)
@@ -1153,13 +1153,13 @@ module Aspera
             formatter.display_status(%Q{Downloading package: [#{package_info['id']}] "#{package_info['name']}" to [#{dest_folder}]})
             statuses = transfer.start(transfer_spec, oauth_api: package_node_api)
             File.write(File.join(dest_folder, "#{package_id}.info.json"), package_info.to_json) if save_metadata && !statuses.is_a?(Aspera::Transfer::Result::DryRun)
-            result_transfer.push({'package' => package_id, TransferAgents::TransferAgent::STATUS_FIELD => statuses})
+            result_transfer.push({'package' => package_id, Xfer::TransferAgent::STATUS_FIELD => statuses})
             if skip_ids_persistency && statuses.is_a?(Aspera::Transfer::Result::Success)
               skip_ids_persistency.data.push(package_id)
               skip_ids_persistency.save
             end
           end
-          return TransferAgents::TransferAgent.result_transfer_multiple(result_transfer)
+          return Xfer::TransferAgent.result_transfer_multiple(result_transfer)
         end
 
         # packages > list

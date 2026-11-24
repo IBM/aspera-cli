@@ -77,7 +77,7 @@ module Aspera
 
         it 'describes a built-in bundle' do
           description = factory.describe(:node)
-          expect(description).to(include(plugin: :node, source: 'gem', form: :bundle, security: 'any', status: 'available', commands: true, agents: %w[node], depends: %i[transfer_agents]))
+          expect(description).to(include(plugin: :node, source: 'gem', form: :bundle, security: 'any', status: 'available', commands: true, agents: %w[node], depends: %i[xfer]))
           expect(description[:schemas]).to(include(:node))
           expect(description[:path]).to(eq(File.join(BundleRegistry::GEM_FOLDER, 'node')))
         end

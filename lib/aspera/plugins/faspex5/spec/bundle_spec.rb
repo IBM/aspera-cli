@@ -25,7 +25,7 @@ module Aspera
         describe 'commands' do
           it 'are those of plugin faspex5, from the bundle' do
             expect(registry.unavailable_reason(:faspex5)).to(be_nil)
-            expect(registry[:faspex5].depends).to(eq(%i[transfer_agents faspex4]))
+            expect(registry[:faspex5].depends).to(eq(%i[xfer faspex4]))
             expect(registry[:faspex5].gems).to(eq([]))
             expect(Cli::Plugins::Factory.instance.describe(:faspex5)[:path]).to(eq(bundle_folder))
             expect(Cli::Plugins::Factory.instance.plugin_class(:faspex5)).to(be(Commands))

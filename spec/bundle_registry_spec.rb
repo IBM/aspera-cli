@@ -260,6 +260,15 @@ module Aspera
         expect(registry.unavailable_reason(:spec_bundle_two)).not_to(be_nil)
       end
 
+      it 'gives the mounts of a bundle after those of its dependencies, not by name' do
+        mount = [{'target' => 'config', 'file' => 'mount.rb', 'module' => 'Mount'}]
+        write_bundle(folder, 'spec_bundle_a', manifest: {'depends' => %w[spec_bundle_z], 'mounts' => mount})
+        write_bundle(folder, 'spec_bundle_z', manifest: {'mounts' => mount})
+        write_bundle(folder, 'spec_bundle_m', manifest: {'mounts' => mount})
+        scan(folder)
+        expect(registry.mounts(:config).map(&:bundle)).to(eq(%i[spec_bundle_z spec_bundle_a spec_bundle_m]))
+      end
+
       it 'keeps available a bundle whose dependencies are available, in other sources' do
         write_bundle(folder, 'spec_bundle_two', manifest: {'depends' => %w[spec_bundle_one]})
         write_bundle(other, 'spec_bundle_one')

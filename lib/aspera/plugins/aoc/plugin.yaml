@@ -3,7 +3,7 @@ title: IBM Aspera on Cloud
 depends:
   - node
   - ats
-  - transfer_agents
+  - xfer
   - faspex4
 commands: true
 schemas:

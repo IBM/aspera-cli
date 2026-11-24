@@ -67,7 +67,7 @@ The `Runner` class orchestrates the full command lifecycle:
 - **`run_with_result`**: Pure computation entry point — initializes all agents and options, resolves the target plugin, executes the action, and returns a `Result` object. Raises on error. Used by the MCP server ([`mcp/tool.rb`](../lib/aspera/cli/mcp/tool.rb)) to run commands in-process.
 
 All shared objects are held in a `Context` instance and passed to plugins by reference.
-Members: `options` (`Parser`), `transfer` (service `transfer` of bundle `transfer_agents`: `Plugins::TransferAgents::TransferAgent`, created on first use), `config` (`Plugins::Config`), `formatter`, `persistency`, `man_header`, `presets` (`PresetManager`), `vault` (`VaultManager`), `http_config` (`Http`), `main_folder`, `mailer` (`Mailer`), `secret_finder`, plus `progress_bar`, `pac_executor` and `help_requested`.
+Members: `options` (`Parser`), `transfer` (service `transfer` of bundle `xfer`: `Plugins::Xfer::TransferAgent`, created on first use), `config` (`Plugins::Config`), `formatter`, `persistency`, `man_header`, `presets` (`PresetManager`), `vault` (`VaultManager`), `http_config` (`Http`), `main_folder`, `mailer` (`Mailer`), `secret_finder`, plus `progress_bar`, `pac_executor` and `help_requested`.
 
 `Runner#init_agents_and_options` builds the context in this order:
 
@@ -139,7 +139,7 @@ The Faspex 4 plugin was removed (end of support).
 
 **Utility Plugins** (registered commands but not product-specific):
 
-- [`config.rb`](../lib/aspera/cli/plugins/config.rb) - Configuration management (includes `VaultActions`, `GemChecker`, `PresetActions`, `CompletionActions` mixins; bundle `transfer_agents` mounts `SyncActions`, `AscpLogsActions`, `AscpActions`, `TransferActions`, `ConfigCommands`)
+- [`config.rb`](../lib/aspera/cli/plugins/config.rb) - Configuration management (includes `VaultActions`, `GemChecker`, `PresetActions`, `CompletionActions` mixins; bundle `xfer` mounts `SyncActions`, `AscpLogsActions`, `AscpActions`, `TransferActions`, `ConfigCommands`)
 - [`preview/commands.rb`](../lib/aspera/plugins/preview/commands.rb) - File preview generation
 - [`mcp.rb`](../lib/aspera/cli/plugins/mcp.rb) - Model Context Protocol server (exposes `ascli` to AI assistants)
 
@@ -465,14 +465,14 @@ Plugin-level imperative dispatch and argument reads have been eliminated. The re
 | [`base.rb`](../lib/aspera/cli/plugins/base.rb) | `dispatch_child` | Infrastructure — the DSL dispatcher itself calls `get_next_command` |
 | [`runner.rb`](../lib/aspera/cli/runner.rb) | `run_with_result` | Top-level plugin selector (`case command_sym`), not a per-plugin dispatch |
 | [`base.rb`](../lib/aspera/cli/plugins/base.rb) | `dispatch_from_registry`, `execute_leaf`, `resolve_argument` | Infrastructure — resolution of declared `arguments:` |
-| [`transfer_agent.rb`](../lib/aspera/plugins/transfer_agents/transfer_agent.rb) | `ts_source_paths` | Infrastructure — source file list of `transfer_paths:` commands (depends on `--sources`) |
+| [`transfer_agent.rb`](../lib/aspera/plugins/xfer/transfer_agent.rb) | `ts_source_paths` | Infrastructure — source file list of `transfer_paths:` commands (depends on `--sources`) |
 | [`preset_actions.rb`](../lib/aspera/cli/preset_actions.rb) | `action_preset_ask` | `options.get_interactive(option_name)`: option names are only known at runtime, cannot be declared as interactive arguments |
 
 No plugin file uses `get_next_command`, `get_next_argument` or `instance_identifier`.
 
 #### Transfer Agent Abstraction
 
-**File**: [`lib/aspera/plugins/transfer_agents/transfer_agent.rb`](../lib/aspera/plugins/transfer_agents/transfer_agent.rb) (service `transfer` of bundle `transfer_agents`)
+**File**: [`lib/aspera/plugins/xfer/transfer_agent.rb`](../lib/aspera/plugins/xfer/transfer_agent.rb) (service `transfer` of bundle `xfer`)
 
 The Transfer Agent provides a unified interface for initiating transfers across different FASP clients:
 
@@ -483,7 +483,7 @@ The Transfer Agent provides a unified interface for initiating transfers across 
 - Handle file list sources (`@args`, `@ts`, arrays)
 - Coordinate transfer progress monitoring ([`transfer_progress.rb`](../lib/aspera/cli/transfer_progress.rb))
 - Send transfer completion notifications
-- Track asynchronous transfers: jobs are persisted by `job_id` in [`async_transfer_store.rb`](../lib/aspera/plugins/transfer_agents/async_transfer_store.rb) and can be re-queried later
+- Track asynchronous transfers: jobs are persisted by `job_id` in [`async_transfer_store.rb`](../lib/aspera/plugins/xfer/async_transfer_store.rb) and can be re-queried later
 
 **Agent Base Class** ([`lib/aspera/agent/base.rb`](../lib/aspera/agent/base.rb)):
 
@@ -778,7 +778,7 @@ Each plugin declares its command tree at class level (see [Command DSL](#command
 
 Large classes are decomposed into focused mixins included by the host class:
 
-- `Config` plugin includes `VaultActions`, `GemChecker`, `PresetActions`, `CompletionActions`; bundle `transfer_agents` mounts `SyncActions`, `AscpLogsActions`, `AscpActions`, `TransferActions` on it
+- `Config` plugin includes `VaultActions`, `GemChecker`, `PresetActions`, `CompletionActions`; bundle `xfer` mounts `SyncActions`, `AscpLogsActions`, `AscpActions`, `TransferActions` on it
 - Each mixin owns a single responsibility and depends on `options`, `context`, and other accessors provided by the host
 - A mixin that declares commands adds class-level DSL methods with `extend` in its `included` hook (e.g. `SyncActions::ClassMethods#sync_admin_commands`), called inside `commands_under` like the other DSL methods
 
@@ -904,7 +904,7 @@ Analyzes API errors and provides:
 - Suggested remediation steps
 - Context-specific guidance
 
-The runner gives each category of error a label and an exit code (`Cli::ExitCode`). An error class of the code used by a bundle (e.g. `Aspera::Transfer::Error` of the domain library) gets its category from the bundle (`ExitCode.add_error`, bundle `transfer_agents`). The hints (`Cli::Hints`) of a product are added by its bundle (`Hints.add`) when its code is loaded.
+The runner gives each category of error a label and an exit code (`Cli::ExitCode`). An error class of the code used by a bundle (e.g. `Aspera::Transfer::Error` of the domain library) gets its category from the bundle (`ExitCode.add_error`, bundle `xfer`). The hints (`Cli::Hints`) of a product are added by its bundle (`Hints.add`) when its code is loaded.
 
 ## Logging and Debugging
 
@@ -938,7 +938,7 @@ The runner gives each category of error a label and an exit code (`Cli::ExitCode
   - `command/registry_spec.rb` — `Command::Registry` validation rules
   - `plugin_registry_spec.rb` — `validate!(plugin_class:)` consistency of every plugin registry (every leaf has an action or a matching `action_*` method, and every action accepts `**`)
   - `parser_spec.rb`, `option/declarator_spec.rb`, `preset_actions_spec.rb`, `vault_manager_spec.rb`, `runner_spec.rb`, `mcp/tool_spec.rb`, `formatter_spec.rb`, `http_spec.rb`
-  - `transfer_result_spec.rb`, `agent_transfer_status_spec.rb`; in `lib/aspera/plugins/transfer_agents/spec/`: `async_transfer_store_spec.rb`, `transfer_agent_async_spec.rb`, `transfer_agent_options_spec.rb`
+  - `transfer_result_spec.rb`, `agent_transfer_status_spec.rb`; in `lib/aspera/plugins/xfer/spec/`: `async_transfer_store_spec.rb`, `transfer_agent_async_spec.rb`, `transfer_agent_options_spec.rb`
   - `secret/store_spec.rb`, `secret/store/factory_spec.rb`, `secret/reference_spec.rb`, `secret/reference_vault_spec.rb` (fake Vault server), `secret/reference_encrypted_file_spec.rb`, `secret/strength_spec.rb`
   - `rest/client_spec.rb`, `secret/hider_spec.rb`, `proxy_auto_config_spec.rb`, `schema_reader_spec.rb`, `string_ext_spec.rb`, `uri_reader_spec.rb`, `temp_file_manager_spec.rb`, `assert_spec.rb`, `environment_spec.rb`, `version_spec.rb`, …
 - Live tests requiring a server, tagged `:live` (e.g. `ascmd_ssh_live_spec.rb`)
@@ -1015,7 +1015,7 @@ lib/aspera/plugins/<name>/
 - **CLI**: the files used without the CLI (`api`, `agent`, `product`, other library classes) never require `cli/`; `commands.rb`, mounted modules and services may.
 - **Path ↔ constant**: `plugins/<name>/<file>.rb` defines `Aspera::Plugins::<Name>::<Const>`, where `<Name>` is `<name>.snake_to_capital` and `<file>` without `_` is `<Const>` in lower case (`api.rb`: `Api`, `ascmd.rb`: `AsCmd`). Other constants of the file are inside `Aspera::Plugins::<Name>`.
 - **Names**: role files take the role name; other classes keep their name, without the name of the bundle when it starts with it (`NodeEmulator` → `Emulator`). OAuth token creators keep their name: the grant id comes from it (`SharesWeb` → `shares_web`).
-- **Constant lookup**: inside `module Aspera; module Plugins; module <Name>`, `Transfer` resolves to the bundle `Aspera::Plugins::TransferAgents` once it is loaded, and `Agent`, `Api` to the classes of the bundle. Bundle code writes framework and domain constants qualified: `Aspera::Transfer::Spec`, `Aspera::Agent::Base`, `Aspera::Rest::Client`, and `::Transferd::Api` for the gRPC classes (`Cli::` is safe).
+- **Constant lookup**: inside `module Aspera; module Plugins; module <Name>`, `Transfer` resolves to the bundle `Aspera::Plugins::Xfer` once it is loaded, and `Agent`, `Api` to the classes of the bundle. Bundle code writes framework and domain constants qualified: `Aspera::Transfer::Spec`, `Aspera::Agent::Base`, `Aspera::Rest::Client`, and `::Transferd::Api` for the gRPC classes (`Cli::` is safe).
 - **Single file**: a file `<name>.rb` of a plugin folder (class `Aspera::Cli::Plugins::<Name>`) stays the simple form of a plugin: a bundle with commands only, without manifest.
 
 ### Manifest
@@ -1042,7 +1042,7 @@ Full example, bundle `transferd`:
 name: transferd
 title: IBM Aspera Transfer Daemon
 depends:
-  - transfer_agents
+  - xfer
 gems:
   - grpc
 commands: true
@@ -1081,10 +1081,10 @@ schemas:
       url: https://raw.githubusercontent.com/laurent-martin/aspera-api-examples/refs/heads/main/openapi/IBM%20Aspera%20Console-enhanced.yaml
 ```
 
-The bundle `transfer_agents` (the CLI part of the domain) declares the other fields:
+The bundle `xfer` (the CLI part of the domain) declares the other fields:
 
 ```yaml
-name: transfer_agents
+name: xfer
 title: Aspera transfer agents, ascp and async
 schemas:
   - key: transfer_opts
@@ -1134,11 +1134,11 @@ Sources of plugins, first one wins for a given name:
 
 ### Extension points, mounts and services
 
-- **Extension point `agent`**, declared by bundle `transfer_agents`: an entry has `name` (value of `--transfer`), `short` (one letter, unique), `file`, `class`, `options_schema`. Bundles `direct`, `desktop`, `connect`, `httpgw`, `node`, `transferd` provide one each. `Agent::Factory::ALL` (same shape: `long`, `short`, computed on access) is built from the entries; an entry whose name is provided by an earlier entry, or whose letter is taken, is left out with a warning; the agent of an unavailable bundle of the same name gives the reason. `Factory#create` loads the file of the entry with the checks of `load_entry`. The schema of an entry is `schemas/agent_extension.schema.yaml` of bundle `transfer_agents`. `TransferAgentOptions` (schema of option `transfer`, in `schemas/options.yaml` of bundle `transfer_agents`, key `transfer_opts`) has the marker `x-cli-variants` (`unique: short`): when `Schema::Registry` reads the file, it adds a component `<Name>AgentOptions` (read from `options_schema`), its `$ref` in `oneOf` and its `discriminator` mapping for each entry, except an entry whose letter is taken by an earlier one (as in `Agent::Factory::ALL`); an entry replaces the variant of the same name. The document is read again when the entries change (bundles of a plugin folder added after it was read), and `Schema::Validator` compiles it again. The file has no `oneOf` nor `discriminator.mapping` of its own: they are created when the schema is read. Its own `properties` (`agent`, `asynchronous`) and `unevaluatedProperties: false` make a key that is not a parameter of the selected agent refused: the file `options_schema` of an agent does not state `additionalProperties` at its root (see `Schema::Validator`). A bundle that extends a point depends on the bundle that declares it.
-- **Mounts**: bundle `transfer_agents` adds the command trees `ascp`, `agents`, `sync` (and the deprecated `transfer`) to plugin `config`, with the modules of its manifest, included by the body of `Config` (where its trees were, `sync` with `before: :gem`), in the order of the manifest: the command tree and the options of `config` do not change. The runner includes again the mounts on `config` once the plugin folders are added. A mount adds commands to another plugin; the `mount:` attribute of the command DSL (see [Mounting another plugin's commands](#mounting-another-plugins-commands)) exposes commands of another plugin class under a node: both can be used together (bundle `transferd` mounts the deprecated `config transferd`, a node with `mount:` on its commands).
-- **Framework API**: `BundleRegistry#extensions(:<point>)`, `#mounts(:<target>)` and `#service(:<name>)` give the entries of the available bundles as data (by name of bundle, then in the order of the manifest); `#load_entry` loads the code of an entry, with the checks of `load_constant`. The fields of an extension entry other than `file` and `class` are validated by the schema of the point (bundles of the gem: by a spec). `Base.include_mounts` includes the mounted modules, each once: the `included` hook of a module declares its commands and options in the target class (`base.class_exec { commands_under … }`). `Factory#plugin_class` calls it after loading the class, so mounted commands come after the commands of the class body; a class body calls it to place them, and `command <id>, before: <id>` places a command before a command of the same parent; `option <name>, before: <name>` places an option before an option of the class, also when that option is declared later, or is itself placed before another one (chains, any order of declaration; an option whose anchor is unknown, or in a cycle, goes at the end with one warning in the log, so that a wrong anchor of a module does not break its target) (bundle `transfer_agents` places the options `sdk_url`, `locations_url`, `sdk_folder` before `smtp` of `config`). A module of a source refused at the current level is not loaded; one of a bundle with a missing gem is skipped with a warning; commands and options declared by a module get the level of its source.
+- **Extension point `agent`**, declared by bundle `xfer`: an entry has `name` (value of `--transfer`), `short` (one letter, unique), `file`, `class`, `options_schema`. Bundles `direct`, `desktop`, `connect`, `httpgw`, `node`, `transferd` provide one each. `Agent::Factory::ALL` (same shape: `long`, `short`, computed on access) is built from the entries; an entry whose name is provided by an earlier entry, or whose letter is taken, is left out with a warning; the agent of an unavailable bundle of the same name gives the reason. `Factory#create` loads the file of the entry with the checks of `load_entry`. The schema of an entry is `schemas/agent_extension.schema.yaml` of bundle `xfer`. `TransferAgentOptions` (schema of option `transfer`, in `schemas/options.yaml` of bundle `xfer`, key `transfer_opts`) has the marker `x-cli-variants` (`unique: short`): when `Schema::Registry` reads the file, it adds a component `<Name>AgentOptions` (read from `options_schema`), its `$ref` in `oneOf` and its `discriminator` mapping for each entry, except an entry whose letter is taken by an earlier one (as in `Agent::Factory::ALL`); an entry replaces the variant of the same name. The document is read again when the entries change (bundles of a plugin folder added after it was read), and `Schema::Validator` compiles it again. The file has no `oneOf` nor `discriminator.mapping` of its own: they are created when the schema is read. Its own `properties` (`agent`, `asynchronous`) and `unevaluatedProperties: false` make a key that is not a parameter of the selected agent refused: the file `options_schema` of an agent does not state `additionalProperties` at its root (see `Schema::Validator`). A bundle that extends a point depends on the bundle that declares it.
+- **Mounts**: bundle `xfer` adds the command trees `ascp`, `agents`, `sync` (and the deprecated `transfer`) to plugin `config`, with the modules of its manifest, included by the body of `Config` (where its trees were, `sync` with `before: :gem`), in the order of the manifest: the command tree and the options of `config` do not change. The runner includes again the mounts on `config` once the plugin folders are added. A mount adds commands to another plugin; the `mount:` attribute of the command DSL (see [Mounting another plugin's commands](#mounting-another-plugins-commands)) exposes commands of another plugin class under a node: both can be used together (bundle `transferd` mounts the deprecated `config transferd`, a node with `mount:` on its commands).
+- **Framework API**: `BundleRegistry#extensions(:<point>)`, `#mounts(:<target>)` and `#service(:<name>)` give the entries of the available bundles as data (by name of bundle, then in the order of the manifest); `#load_entry` loads the code of an entry, with the checks of `load_constant`. The fields of an extension entry other than `file` and `class` are validated by the schema of the point (bundles of the gem: by a spec). `Base.include_mounts` includes the mounted modules, each once: the `included` hook of a module declares its commands and options in the target class (`base.class_exec { commands_under … }`). `Factory#plugin_class` calls it after loading the class, so mounted commands come after the commands of the class body; a class body calls it to place them, and `command <id>, before: <id>` places a command before a command of the same parent; `option <name>, before: <name>` places an option before an option of the class, also when that option is declared later, or is itself placed before another one (chains, any order of declaration; an option whose anchor is unknown, or in a cycle, goes at the end with one warning in the log, so that a wrong anchor of a module does not break its target) (bundle `xfer` places the options `sdk_url`, `locations_url`, `sdk_folder` before `smtp` of `config`). A module of a source refused at the current level is not loaded; one of a bundle with a missing gem is skipped with a warning; commands and options declared by a module get the level of its source.
 - **Other hooks of the framework**, used by the code of bundles when it is loaded: `Rest::ErrorAnalyzer#add_handler` (errors of a product API; `before: '<name of a handler>'` places it before that one, so that the messages keep their order: node before `Type 7`, orchestrator before `T10`; without `before:` it is placed first), `Cli::Hints.add` (hints of errors), `Cli::ExitCode.add_error` (label and exit code of an error class of the domain library; `error_category` gives the most specific class, whatever the order of addition); `Schema::Registry::RESERVED` lists the keys of the domain schemas (`spec`, `args`, `conf`, `async_tables`, `ascp_log`) as plain data: a bundle cannot claim them even if the file of the domain is not loaded yet, and `Schema::Registry.register` of a key provided by a bundle is an error naming both; the help of a command with `transfer_paths` gets its argument from the service `transfer` (`paths_argument`); the instructions of the MCP server list the plugins with the titles of their bundles, then add the section `mcp` of each manifest.
-- **Services**: `Context#service(:transfer)` creates the `TransferAgent` of bundle `transfer_agents` once, on first use, with the context (`Context#transfer` gives it). Plugins of bundles use it through the helper module `Aspera::Plugins::TransferAgents::Helper` (method `transfer`) and declare `depends: - transfer_agents`. `Plugins::Base#transfer` remains for single-file plugins: it asks the service by name, without reference to the bundle.
+- **Services**: `Context#service(:transfer)` creates the `TransferAgent` of bundle `xfer` once, on first use, with the context (`Context#transfer` gives it). Plugins of bundles use it through the helper module `Aspera::Plugins::Xfer::Helper` (method `transfer`) and declare `depends: - xfer`. `Plugins::Base#transfer` remains for single-file plugins: it asks the service by name, without reference to the bundle.
 
 ### Moved names
 
@@ -1164,22 +1164,22 @@ A program that embeds the library (e.g. an add-on of Orchestrator) uses the file
 
 | Bundle | Commands | Agent | Other content | `depends` |
 | --- | --- | --- | --- | --- |
-| `transfer_agents` | under `config`: `ascp`, `agents`, `sync` | extension point `agent` | service `transfer` | |
-| `direct` | | `a` | | `transfer_agents` |
-| `desktop` | | `d` | | `transfer_agents` |
-| `connect` | | `c` | | `transfer_agents` |
-| `httpgw` | yes | `h` | API | `transfer_agents` |
-| `transferd` | yes | `t` | API (gRPC), daemon, system service | `transfer_agents` |
-| `node` | yes | `n` | API, Node API emulator | `transfer_agents` (the emulator gets the agent `transferd` from the factory when it starts) |
+| `xfer` | under `config`: `ascp`, `agents`, `sync` | extension point `agent` | service `transfer` | |
+| `direct` | | `a` | | `xfer` |
+| `desktop` | | `d` | | `xfer` |
+| `connect` | | `c` | | `xfer` |
+| `httpgw` | yes | `h` | API | `xfer` |
+| `transferd` | yes | `t` | API (gRPC), daemon, system service | `xfer` |
+| `node` | yes | `n` | API, Node API emulator | `xfer` (the emulator gets the agent `transferd` from the factory when it starts) |
 | `cos` | yes | | API | `node` |
 | `shares` | yes | | OAuth SAML flow | `node` |
 | `ats` | yes | | API | `node` |
-| `preview` | yes | | preview generator | `node`, `transfer_agents` |
-| `aoc` | yes | | API, GraphQL queries | `node`, `ats`, `transfer_agents`, `faspex4` |
-| `faspex5` | yes | | API, OAuth public link flow, Faspex 4 postprocessing servlet | `transfer_agents`, `faspex4` |
+| `preview` | yes | | preview generator | `node`, `xfer` |
+| `aoc` | yes | | API, GraphQL queries | `node`, `ats`, `xfer`, `faspex4` |
+| `faspex5` | yes | | API, OAuth public link flow, Faspex 4 postprocessing servlet | `xfer`, `faspex4` |
 | `faspex4` | | | Faspex 4 gateway (servlet, options) | |
-| `orchestrator` | yes | | workflow checker, options schemas | `transfer_agents` |
-| `server` | yes | | `ascmd` | `transfer_agents` |
+| `orchestrator` | yes | | workflow checker, options schemas | `xfer` |
+| `server` | yes | | `ascmd` | `xfer` |
 | `console` | yes | | API schema | |
 | `faspio` | yes | | API schema | |
 | `alee` | yes | | Commands, API | |

@@ -6292,13 +6292,13 @@ Manifest `plugin.yaml` (schema `lib/aspera/plugin.schema.yaml`: no other field t
 | `mounts` | `[]` | Modules added to the commands of another plugin: `target` (plugin name), `file`, `module` |
 | `services` | `[]` | Objects shared through the context, created on first use: `name`, `file`, `class` |
 
-A bundle can add a transfer agent: the built-in bundle `transfer_agents` declares the extension point `agent`. An entry has `name` (value of option `transfer`), `short` (one letter, unique), `file`, `class` (subclass of `Aspera::Agent::Base`) and `options_schema` (schema file of the parameters of the agent):
+A bundle can add a transfer agent: the built-in bundle `xfer` declares the extension point `agent`. An entry has `name` (value of option `transfer`), `short` (one letter, unique), `file`, `class` (subclass of `Aspera::Agent::Base`) and `options_schema` (schema file of the parameters of the agent):
 
 ```yaml
 name: my_agent
 title: My transfer agent
 depends:
-  - transfer_agents
+  - xfer
 extensions:
   agent:
     - name: my_agent

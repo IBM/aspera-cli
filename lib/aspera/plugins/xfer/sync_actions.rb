@@ -10,7 +10,7 @@ require 'pathname'
 
 module Aspera
   module Plugins
-    module TransferAgents
+    module Xfer
       # Helpers shared by plugins that expose Aspera Sync (async) operations.
       # Provides DSL registration, argument-to-sync-info conversion, and action methods.
       module SyncActions

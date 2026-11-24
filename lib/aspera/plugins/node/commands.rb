@@ -8,7 +8,7 @@ require_relative '../../schema/registry'
 require_relative '../../sealed_hash'
 require_relative '../../cli/plugins/basic_auth'
 require_relative '../../cli/hints'
-require_relative '../transfer_agents/sync_actions'
+require_relative '../xfer/sync_actions'
 require_relative '../../cli/special_values'
 require_relative '../../transfer/spec'
 require_relative '../../nagios'
@@ -18,7 +18,7 @@ require_relative 'api'
 require_relative '../../oauth/client/factory'
 require_relative '../../rest/list'
 require_relative '../../assert'
-require_relative '../transfer_agents/transfer_agent'
+require_relative '../xfer/transfer_agent'
 require 'base64'
 
 module Aspera
@@ -27,7 +27,7 @@ module Aspera
       class Commands < Cli::Plugins::Base
         include Cli::Plugins::BasicAuth
 
-        include Aspera::Plugins::TransferAgents::SyncActions
+        include Aspera::Plugins::Xfer::SyncActions
 
         application_name 'HSTS Node API'
 
@@ -365,7 +365,7 @@ module Aspera
         command :sync, description: 'Synchronize folders (Gen3)'
         commands_under :sync do
           Sync::Operations::DIRECTIONS.each do |dir|
-            command dir, description: "#{dir.capitalize}-sync (Gen3)", transfer_paths: :send, arguments: Aspera::Plugins::TransferAgents::SyncActions::PATH_AND_INFO_ARGS
+            command dir, description: "#{dir.capitalize}-sync (Gen3)", transfer_paths: :send, arguments: Aspera::Plugins::Xfer::SyncActions::PATH_AND_INFO_ARGS
           end
           sync_admin_commands :admin
         end
@@ -395,7 +395,7 @@ module Aspera
           command :sync, description: 'Synchronize folders'
           commands_under :sync do
             Sync::Operations::DIRECTIONS.each do |dir|
-              command dir, description: "#{dir.capitalize}-sync", transfer_paths: :send, arguments: Aspera::Plugins::TransferAgents::SyncActions::PATH_AND_INFO_ARGS
+              command dir, description: "#{dir.capitalize}-sync", transfer_paths: :send, arguments: Aspera::Plugins::Xfer::SyncActions::PATH_AND_INFO_ARGS
             end
             sync_admin_commands :admin
           end
@@ -687,7 +687,7 @@ module Aspera
           transfer_spec = api_node.create('files/upload_setup', setup_payload)['transfer_specs'].first&.fetch('transfer_spec')
           Api.add_private_key(transfer_spec)
           transfer_spec.delete('paths')
-          TransferAgents::TransferAgent.result_transfer(transfer.start(transfer_spec))
+          Xfer::TransferAgent.result_transfer(transfer.start(transfer_spec))
         end
 
         def action_download(**)
@@ -700,7 +700,7 @@ module Aspera
           setup_payload = {transfer_requests: [{transfer_request: request_transfer_spec}]}
           transfer_spec = api_node.create('files/download_setup', setup_payload)['transfer_specs'].first&.fetch('transfer_spec')
           Api.add_private_key(transfer_spec)
-          TransferAgents::TransferAgent.result_transfer(transfer.start(transfer_spec))
+          Xfer::TransferAgent.result_transfer(transfer.start(transfer_spec))
         end
 
         def action_cat(path:, **)
@@ -842,13 +842,13 @@ module Aspera
         # access_keys > do > upload
         def action_access_keys_do_upload(do_root_file_id:, **)
           apifid = api_node.resolve_api_fid(do_root_file_id, transfer.destination_folder(Aspera::Transfer::Spec::DIRECTION_SEND), true)
-          TransferAgents::TransferAgent.result_transfer(transfer.start(apifid.node_api.transfer_spec_gen4(apifid.file_id, Aspera::Transfer::Spec::DIRECTION_SEND)))
+          Xfer::TransferAgent.result_transfer(transfer.start(apifid.node_api.transfer_spec_gen4(apifid.file_id, Aspera::Transfer::Spec::DIRECTION_SEND)))
         end
 
         # access_keys > do > download
         def action_access_keys_do_download(do_root_file_id:, **)
           apifid, source_paths = api_node.resolve_api_fid_paths(do_root_file_id, transfer.ts_source_paths)
-          TransferAgents::TransferAgent.result_transfer(transfer.start(apifid.node_api.transfer_spec_gen4(apifid.file_id, Aspera::Transfer::Spec::DIRECTION_RECEIVE, {'paths'=>source_paths})))
+          Xfer::TransferAgent.result_transfer(transfer.start(apifid.node_api.transfer_spec_gen4(apifid.file_id, Aspera::Transfer::Spec::DIRECTION_RECEIVE, {'paths'=>source_paths})))
         end
 
         # access_keys > do > v3 - mount target: Node plugin on the node hosting the root file

@@ -19,7 +19,7 @@ require 'securerandom'
 
 module Aspera
   module Cli
-    RSpec.describe(Aspera::Plugins::TransferAgents::TransferAgent) do
+    RSpec.describe(Aspera::Plugins::Xfer::TransferAgent) do
       # ── helpers ────────────────────────────────────────────────────────────
 
       let(:tmpdir) { Dir.mktmpdir('transfer_agent_spec') }
@@ -88,7 +88,7 @@ module Aspera
 
         it 'persists the entry in AsyncTransferStore' do
           result = ta.start(ts)
-          store = Aspera::Plugins::TransferAgents::AsyncTransferStore.new(persistency)
+          store = Aspera::Plugins::Xfer::AsyncTransferStore.new(persistency)
           entry = store.read(result.job_id)
           expect(entry).not_to(be_nil)
           expect(entry['agent_type']).to(eq('httpgw'))
@@ -98,7 +98,7 @@ module Aspera
 
         it 'does NOT persist _agent_ref to the store' do
           ta.start(ts)
-          store = Aspera::Plugins::TransferAgents::AsyncTransferStore.new(persistency)
+          store = Aspera::Plugins::Xfer::AsyncTransferStore.new(persistency)
           entry = store.read(job_id)
           expect(entry).not_to(have_key('_agent_ref'))
           # also check nested agent_params
@@ -144,7 +144,7 @@ module Aspera
         it 'persists the entry in AsyncTransferStore' do
           result = ta.start(ts)
           job_id = result.job_id
-          store = Aspera::Plugins::TransferAgents::AsyncTransferStore.new(persistency)
+          store = Aspera::Plugins::Xfer::AsyncTransferStore.new(persistency)
           entry = store.read(job_id)
           expect(entry).not_to(be_nil)
           expect(entry['agent_type']).to(eq('node'))
@@ -155,7 +155,7 @@ module Aspera
 
         it 'does NOT persist _agent_ref to the store' do
           result = ta.start(ts)
-          store = Aspera::Plugins::TransferAgents::AsyncTransferStore.new(persistency)
+          store = Aspera::Plugins::Xfer::AsyncTransferStore.new(persistency)
           entry = store.read(result.job_id)
           expect(entry['agent_params']).not_to(have_key('_agent_ref'))
         end
@@ -163,7 +163,7 @@ module Aspera
         it 'stores the type of the agent instance, not the one of option transfer (agent given by the application)' do
           agent = build_agent(agent_type: 'direct', extra_transfer_options: {'asynchronous' => true}).tap { |a| a.agent_instance = agent_double }
           allow(Aspera::Agent::Factory.instance).to(receive(:agent_name).with(agent_double).and_return(:node))
-          entry = Aspera::Plugins::TransferAgents::AsyncTransferStore.new(persistency).read(agent.start(ts).job_id)
+          entry = Aspera::Plugins::Xfer::AsyncTransferStore.new(persistency).read(agent.start(ts).job_id)
           expect(entry['agent_type']).to(eq('node'))
         end
       end
@@ -199,7 +199,7 @@ module Aspera
 
         it 'persists the entry in AsyncTransferStore (like all agents)' do
           result = ta.start(ts)
-          store = Aspera::Plugins::TransferAgents::AsyncTransferStore.new(persistency)
+          store = Aspera::Plugins::Xfer::AsyncTransferStore.new(persistency)
           entry = store.read(result.job_id)
           expect(entry).not_to(be_nil)
           expect(entry['agent_type']).to(eq('direct'))
@@ -209,7 +209,7 @@ module Aspera
 
         it 'does NOT persist _agent_ref to the store' do
           result = ta.start(ts)
-          store = Aspera::Plugins::TransferAgents::AsyncTransferStore.new(persistency)
+          store = Aspera::Plugins::Xfer::AsyncTransferStore.new(persistency)
           entry = store.read(result.job_id)
           expect(entry['agent_params']).not_to(have_key('_agent_ref'))
         end
@@ -236,7 +236,7 @@ module Aspera
 
         it 'does NOT write to AsyncTransferStore' do
           ta.start(ts)
-          expect(Aspera::Plugins::TransferAgents::AsyncTransferStore.new(persistency).list).to(be_empty)
+          expect(Aspera::Plugins::Xfer::AsyncTransferStore.new(persistency).list).to(be_empty)
         end
       end
 
@@ -284,7 +284,7 @@ module Aspera
 
       describe 'AsyncTransferStore#write' do
         it 'strips _ keys at every nesting level before persisting' do
-          store = Aspera::Plugins::TransferAgents::AsyncTransferStore.new(persistency)
+          store = Aspera::Plugins::Xfer::AsyncTransferStore.new(persistency)
           live_object = Object.new
           store.write('test-job-1', {
             'job_id'       => 'test-job-1',
@@ -303,7 +303,7 @@ module Aspera
         end
 
         it 'preserves non-underscore keys' do
-          store = Aspera::Plugins::TransferAgents::AsyncTransferStore.new(persistency)
+          store = Aspera::Plugins::Xfer::AsyncTransferStore.new(persistency)
           store.write('test-job-2', {'job_id' => 'test-job-2', 'status' => 'running', '_ref' => 'ignored'})
           entry = store.read('test-job-2')
           expect(entry['status']).to(eq('running'))

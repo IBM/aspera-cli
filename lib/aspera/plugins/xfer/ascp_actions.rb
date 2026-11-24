@@ -15,7 +15,7 @@ require_relative 'transfer_agent'
 
 module Aspera
   module Plugins
-    module TransferAgents
+    module Xfer
       # Mounted on plugin config (manifest `mounts`): ASCP / Transferd related actions
       module AscpActions
         TRANSFERD_APP_NAME = 'sdk'

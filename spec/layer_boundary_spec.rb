@@ -204,7 +204,7 @@ module LayerBoundary
         Aspera.error_unexpected_value(chain[1]) unless API_CONSTANT_BUNDLE.key?(chain[1])
         [{layer: :bundle, bundle: API_CONSTANT_BUNDLE[chain[1]]}, "Api::#{chain[1]}"]
       when 'TransferAgent'
-        [{layer: :bundle, bundle: 'transfer_agents'}, 'TransferAgent']
+        [{layer: :bundle, bundle: 'xfer'}, 'TransferAgent']
       when 'Agent', 'Products', 'Preview'
         # the module itself: Agent, Products are domain
         return (chain[0].eql?('Preview') ? nil : [{layer: :domain}, chain[0]]) if chain.length < 2

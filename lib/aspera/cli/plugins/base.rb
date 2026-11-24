@@ -367,8 +367,8 @@ module Aspera
 
         # @return [Aspera::Cli::Parser]
         def options; @context.options; end
-        # Plugins of bundles use `Aspera::Plugins::TransferAgents::Helper#transfer` (bundle `transfer_agents`)
-        # @return [Object] Service `transfer` of the context (`Aspera::Plugins::TransferAgents::TransferAgent`)
+        # Plugins of bundles use `Aspera::Plugins::Xfer::Helper#transfer` (bundle `xfer`)
+        # @return [Object] Service `transfer` of the context (`Aspera::Plugins::Xfer::TransferAgent`)
         def transfer; @context.transfer; end
         # @return [Aspera::Cli::Plugins::Config]
         def config; @context.config; end

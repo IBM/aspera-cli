@@ -1,7 +1,7 @@
 name: direct
 title: Local ascp
 depends:
-  - transfer_agents
+  - xfer
 extensions:
   agent:
     - name: direct

@@ -3,7 +3,7 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Bundle `transfer_agents`: modules mounted on plugin config, service `transfer` and helper of the bundles that transfer files,
+# Bundle `xfer`: modules mounted on plugin config, service `transfer` and helper of the bundles that transfer files,
 # extension point `agent`, and bundles of a plugin folder that use its hooks.
 
 require 'spec_helper'
@@ -23,8 +23,8 @@ require 'yaml'
 
 module Aspera
   module Plugins
-    module TransferAgents
-      RSpec.describe('Bundle transfer_agents') do
+    module Xfer
+      RSpec.describe('Bundle xfer') do
         let(:source_root) { File.expand_path('../../../../..', __dir__) }
         let(:bundle_folder) { File.expand_path('..', __dir__) }
         let(:registry) { BundleRegistry.instance }
@@ -33,7 +33,7 @@ module Aspera
           let(:commands) { Cli::Plugins::Config.command_registry }
 
           it 'are the modules of the manifest, in its order' do
-            mounts = registry.mounts(:config).select { |mount| mount.bundle.eql?(:transfer_agents) }
+            mounts = registry.mounts(:config).select { |mount| mount.bundle.eql?(:xfer) }
             expect(mounts.map(&:constant)).to(eq(%w[SyncActions AscpLogsActions AscpActions TransferActions ConfigCommands]))
             expect(Cli::Plugins::Config.ancestors).to(include(SyncActions, AscpLogsActions, AscpActions, TransferActions, ConfigCommands))
           end
@@ -76,7 +76,7 @@ module Aspera
         describe 'service transfer' do
           it 'is the transfer agent of the bundle' do
             service = registry.service(:transfer)
-            expect(service).to(have_attributes(bundle: :transfer_agents, file: 'transfer_agent.rb', constant: 'TransferAgent'))
+            expect(service).to(have_attributes(bundle: :xfer, file: 'transfer_agent.rb', constant: 'TransferAgent'))
             expect(registry.load_entry(service)).to(be(TransferAgent))
           end
 
@@ -94,11 +94,11 @@ module Aspera
         end
 
         describe 'extension point agent' do
-          let(:schema) { JSONSchemer.schema(Aspera::Yaml.safe_load(File.read(File.join(bundle_folder, registry[:transfer_agents].extension_points[:agent])))) }
+          let(:schema) { JSONSchemer.schema(Aspera::Yaml.safe_load(File.read(File.join(bundle_folder, registry[:xfer].extension_points[:agent])))) }
           let(:entry) { {'name' => 'spec_agent', 'short' => 's', 'options_schema' => 'schemas/agent_options.yaml'} }
 
           it 'is declared by the bundle' do
-            expect(registry[:transfer_agents].extension_points).to(eq({agent: 'schemas/agent_extension.schema.yaml'}))
+            expect(registry[:xfer].extension_points).to(eq({agent: 'schemas/agent_extension.schema.yaml'}))
           end
 
           it 'accepts an entry with a name, a letter and the schema of the parameters of the agent' do
@@ -156,7 +156,7 @@ module Aspera
             RUBY
             entry = {'name' => 'spec_user', 'short' => 'u', 'file' => 'agent.rb', 'class' => 'Agent', 'options_schema' => 'agent_options.yaml'}
             write_bundle(
-              'spec_bundle_agent', {'depends' => %w[transfer_agents], 'extensions' => {'agent' => [entry]}},
+              'spec_bundle_agent', {'depends' => %w[xfer], 'extensions' => {'agent' => [entry]}},
               'agent.rb'           => 'class Agent; end',
               'agent_options.yaml' => {'type' => 'object', 'properties' => {'color' => {'type' => 'string'}}}.to_yaml
             )

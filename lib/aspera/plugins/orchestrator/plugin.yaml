@@ -1,7 +1,7 @@
 name: orchestrator
 title: IBM Aspera Orchestrator
 depends:
-  - transfer_agents
+  - xfer
 commands: true
 schemas:
   - key: orchestrator

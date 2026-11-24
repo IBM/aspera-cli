@@ -4,8 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require_relative '../../cli/plugins/basic_auth'
-require_relative '../transfer_agents/sync_actions'
-require_relative '../transfer_agents/ascp_logs_actions'
+require_relative '../xfer/sync_actions'
+require_relative '../xfer/ascp_logs_actions'
 require_relative '../../transfer/result'
 require_relative '../../transfer/spec'
 require_relative 'ascmd'
@@ -14,7 +14,7 @@ require_relative '../../nagios'
 require_relative '../../log'
 require_relative '../../assert'
 require_relative '../../environment'
-require_relative '../transfer_agents/transfer_agent'
+require_relative '../xfer/transfer_agent'
 require 'shellwords'
 require 'tmpdir'
 module Aspera
@@ -24,8 +24,8 @@ module Aspera
       class Commands < Cli::Plugins::Base
         include Cli::Plugins::BasicAuth
 
-        include Aspera::Plugins::TransferAgents::SyncActions
-        include Aspera::Plugins::TransferAgents::AscpLogsActions
+        include Aspera::Plugins::Xfer::SyncActions
+        include Aspera::Plugins::Xfer::AscpLogsActions
 
         SSH_SCHEME = 'ssh'
         LOCAL_SCHEME = 'local'
@@ -183,7 +183,7 @@ module Aspera
         command :health, description: 'Check transfer health'
         command(:upload, description: 'Upload files to server', transfer_paths: :send, action: lambda do |**|
           server_transfer_spec['direction'] = Aspera::Transfer::Spec.transfer_type_to_direction(:upload)
-          TransferAgents::TransferAgent.result_transfer(transfer.start(server_transfer_spec))
+          Xfer::TransferAgent.result_transfer(transfer.start(server_transfer_spec))
         end)
         command(
           :download,
@@ -191,13 +191,13 @@ module Aspera
           transfer_paths: :receive,
           action: lambda do |**|
             server_transfer_spec['direction'] = Aspera::Transfer::Spec.transfer_type_to_direction(:download)
-            TransferAgents::TransferAgent.result_transfer(transfer.start(server_transfer_spec))
+            Xfer::TransferAgent.result_transfer(transfer.start(server_transfer_spec))
           end
         )
         command :sync, description: 'Synchronize files with server'
         commands_under :sync do
           Sync::Operations::DIRECTIONS.each do |dir|
-            command dir, description: "#{dir.capitalize}-sync with server", transfer_paths: :send, arguments: Aspera::Plugins::TransferAgents::SyncActions::PATH_AND_INFO_ARGS
+            command dir, description: "#{dir.capitalize}-sync with server", transfer_paths: :send, arguments: Aspera::Plugins::Xfer::SyncActions::PATH_AND_INFO_ARGS
           end
           sync_admin_commands :admin
         end

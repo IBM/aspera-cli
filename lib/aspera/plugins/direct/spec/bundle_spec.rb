@@ -11,7 +11,7 @@ require_relative '../../../agent/factory'
 require_relative '../../../bundle_registry'
 require_relative '../../../schema/registry'
 require_relative '../../../schema/validator'
-require_relative '../../transfer_agents/transfer_agent'
+require_relative '../../xfer/transfer_agent'
 require_relative '../agent'
 require 'fileutils'
 require 'tmpdir'
@@ -27,10 +27,10 @@ module Aspera
         let(:registry) { BundleRegistry.instance }
 
         describe 'manifest' do
-          it 'is available, depends on the bundle transfer_agents, has no command and no gem' do
+          it 'is available, depends on the bundle xfer, has no command and no gem' do
             registry.scan
             expect(registry.unavailable_reason(:direct)).to(be_nil)
-            expect(registry[:direct].depends).to(eq([:transfer_agents]))
+            expect(registry[:direct].depends).to(eq([:xfer]))
             expect(registry[:direct].gems).to(eq([]))
             expect(registry[:direct].commands?).to(be(false))
           end
@@ -50,18 +50,18 @@ module Aspera
           end
 
           it 'has its parameters in the schema of option transfer, from the file of its entry' do
-            selector = Schema::Registry.instance.reader(TransferAgents::TransferAgent::TRANSFER_OPTION_SCHEMA)
+            selector = Schema::Registry.instance.reader(Xfer::TransferAgent::TRANSFER_OPTION_SCHEMA)
             expect(selector['discriminator']['mapping']['direct']).to(eq('#/components/schemas/DirectAgentOptions'))
             parameters = Schema::Registry.instance.reader('transfer_opts:components.schemas.DirectAgentOptions')
             expect(parameters.current).to(eq(Yaml.safe_load(File.read(File.join(bundle_folder, 'schemas/agent_options.yaml')))))
             validator = Schema::Validator.instance
-            expect(validator.errors({'agent' => 'direct', 'wss' => false, 'quiet' => false}, TransferAgents::TransferAgent::TRANSFER_OPTION_SCHEMA)).to(be_empty)
-            expect(validator.errors({'agent' => 'direct', 'wss' => 'maybe'}, TransferAgents::TransferAgent::TRANSFER_OPTION_SCHEMA)).not_to(be_empty)
+            expect(validator.errors({'agent' => 'direct', 'wss' => false, 'quiet' => false}, Xfer::TransferAgent::TRANSFER_OPTION_SCHEMA)).to(be_empty)
+            expect(validator.errors({'agent' => 'direct', 'wss' => 'maybe'}, Xfer::TransferAgent::TRANSFER_OPTION_SCHEMA)).not_to(be_empty)
           end
 
           it 'is no longer in the file of the framework schema' do
             framework = Yaml.safe_load(File.read(File.join(source_root, 'lib', Schema::Registry::LOCATIONS[:opts])))['components']['schemas']
-            selector_file = Yaml.safe_load(File.read(File.join(source_root, 'lib/aspera/plugins/transfer_agents/schemas/options.yaml')))['components']['schemas']
+            selector_file = Yaml.safe_load(File.read(File.join(source_root, 'lib/aspera/plugins/xfer/schemas/options.yaml')))['components']['schemas']
             expect(framework.keys).not_to(include('DirectAgentOptions'))
             expect(selector_file['TransferAgentOptions']['discriminator'].fetch('mapping', {})).not_to(include('direct'))
           end

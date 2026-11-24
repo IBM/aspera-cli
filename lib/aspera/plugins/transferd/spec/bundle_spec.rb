@@ -14,7 +14,7 @@ require_relative '../../../cli/plugins/config'
 require_relative '../../../cli/plugins/factory'
 require_relative '../../../schema/registry'
 require_relative '../../../schema/validator'
-require_relative '../../transfer_agents/transfer_agent'
+require_relative '../../xfer/transfer_agent'
 require_relative '../commands'
 require_relative '../config_commands'
 require 'open3'
@@ -46,7 +46,7 @@ module Aspera
         describe 'commands' do
           it 'are those of plugin transferd, from the bundle' do
             expect(registry.unavailable_reason(:transferd)).to(be_nil)
-            expect(registry[:transferd].depends).to(eq([:transfer_agents]))
+            expect(registry[:transferd].depends).to(eq([:xfer]))
             expect(registry[:transferd].gems).to(eq([]))
             expect(Cli::Plugins::Factory.instance.describe(:transferd)[:path]).to(eq(bundle_folder))
             expect(Cli::Plugins::Factory.instance.plugin_class(:transferd)).to(be(Commands))
@@ -70,13 +70,13 @@ module Aspera
           end
 
           it 'has its parameters in the schema of option transfer, from the file of its entry' do
-            selector = Schema::Registry.instance.reader(TransferAgents::TransferAgent::TRANSFER_OPTION_SCHEMA)
+            selector = Schema::Registry.instance.reader(Xfer::TransferAgent::TRANSFER_OPTION_SCHEMA)
             expect(selector['discriminator']['mapping']['transferd']).to(eq('#/components/schemas/TransferdAgentOptions'))
             parameters = Schema::Registry.instance.reader('transfer_opts:components.schemas.TransferdAgentOptions')
             expect(parameters.current).to(eq(Yaml.safe_load(File.read(File.join(bundle_folder, 'schemas/agent_options.yaml')))))
             validator = Schema::Validator.instance
-            expect(validator.errors({'agent' => 'transferd', 'url' => ':0', 'stop' => false}, TransferAgents::TransferAgent::TRANSFER_OPTION_SCHEMA)).to(be_empty)
-            expect(validator.errors({'agent' => 'transferd', 'stop' => 'no'}, TransferAgents::TransferAgent::TRANSFER_OPTION_SCHEMA)).not_to(be_empty)
+            expect(validator.errors({'agent' => 'transferd', 'url' => ':0', 'stop' => false}, Xfer::TransferAgent::TRANSFER_OPTION_SCHEMA)).to(be_empty)
+            expect(validator.errors({'agent' => 'transferd', 'stop' => 'no'}, Xfer::TransferAgent::TRANSFER_OPTION_SCHEMA)).not_to(be_empty)
           end
         end
 
@@ -90,7 +90,7 @@ module Aspera
             expect(Schema::Registry.owned?(Service::SERVICE_CONFIG)).to(be(true))
             # The file, not the document of the registry: `TransferdAgentOptions` is added to it as variant of `TransferAgentOptions`
             framework = Yaml.safe_load(File.read(File.join(source_root, 'lib', Schema::Registry::LOCATIONS[:opts])))['components']['schemas']
-            selector_file = Yaml.safe_load(File.read(File.join(source_root, 'lib/aspera/plugins/transfer_agents/schemas/options.yaml')))['components']['schemas']
+            selector_file = Yaml.safe_load(File.read(File.join(source_root, 'lib/aspera/plugins/xfer/schemas/options.yaml')))['components']['schemas']
             expect(framework.keys).not_to(include('TransferdAgentOptions', 'ServiceOptions', 'TransferdServiceConfig'))
             expect(selector_file['TransferAgentOptions']['discriminator'].fetch('mapping', {})).not_to(include('transferd'))
           end

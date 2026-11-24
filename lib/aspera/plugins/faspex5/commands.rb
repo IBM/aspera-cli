@@ -20,7 +20,7 @@ require_relative '../../mime'
 require_relative '../../environment'
 require_relative '../../assert'
 require_relative '../../rainbow'
-require_relative '../transfer_agents/transfer_agent'
+require_relative '../xfer/transfer_agent'
 require_relative '../faspex4/gateway_options'
 require 'securerandom'
 require 'digest'
@@ -297,14 +297,14 @@ module Aspera
             # delete flag for Connect Client
             transfer_spec.delete('authentication')
             statuses = transfer.start(transfer_spec)
-            result_transfer.push({'package' => pkg_id, TransferAgents::TransferAgent::STATUS_FIELD => statuses})
+            result_transfer.push({'package' => pkg_id, Xfer::TransferAgent::STATUS_FIELD => statuses})
             # skip only if all sessions completed
             if statuses.is_a?(Aspera::Transfer::Result::Success) && skip_ids_persistency
               skip_ids_persistency.data.push(pkg_id)
               skip_ids_persistency.save
             end
           end
-          return TransferAgents::TransferAgent.result_transfer_multiple(result_transfer)
+          return Xfer::TransferAgent.result_transfer_multiple(result_transfer)
         end
 
         def package_send(parameters)
@@ -335,7 +335,7 @@ module Aspera
             )
             # well, we asked a TS for connect, but we actually want a generic one
             transfer_spec.delete('authentication')
-            return TransferAgents::TransferAgent.result_object_transfer(package, transfer.start(transfer_spec))
+            return Xfer::TransferAgent.result_object_transfer(package, transfer.start(transfer_spec))
           else
             # send from remote shared folder
             if (m = Cli::Parser.percent_selector(shared_folder))

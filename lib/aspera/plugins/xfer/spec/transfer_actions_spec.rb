@@ -3,7 +3,7 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Unit tests for Aspera::Plugins::TransferAgents::TransferActions (`config agents jobs status`) — no server needed.
+# Unit tests for Aspera::Plugins::Xfer::TransferActions (`config agents jobs status`) — no server needed.
 
 require_relative '../../../persistency_folder'
 require_relative '../async_transfer_store'
@@ -16,16 +16,16 @@ require 'securerandom'
 
 module Aspera
   module Cli
-    RSpec.describe(Aspera::Plugins::TransferAgents::TransferActions) do
+    RSpec.describe(Aspera::Plugins::Xfer::TransferActions) do
       let(:tmpdir) { Dir.mktmpdir('transfer_actions_spec') }
-      let(:store) { Aspera::Plugins::TransferAgents::AsyncTransferStore.new(PersistencyFolder.new(tmpdir)) }
+      let(:store) { Aspera::Plugins::Xfer::AsyncTransferStore.new(PersistencyFolder.new(tmpdir)) }
       let(:transfer_options) { {} }
       # Host of the mixin, as Plugins::Config: provides `context`
       let(:host) do
-        transfer = instance_double(Aspera::Plugins::TransferAgents::TransferAgent, async_store: store, transfer_options: transfer_options)
+        transfer = instance_double(Aspera::Plugins::Xfer::TransferAgent, async_store: store, transfer_options: transfer_options)
         context = Struct.new(:transfer).new(transfer)
         Class.new do
-          include Aspera::Plugins::TransferAgents::TransferActions
+          include Aspera::Plugins::Xfer::TransferActions
 
           define_method(:context) { context }
           attr_reader :queried
@@ -70,7 +70,7 @@ module Aspera
 
       describe 'query of the agent' do
         # Host that queries the agent
-        let(:querying) { Class.new { include Aspera::Plugins::TransferAgents::TransferActions }.new }
+        let(:querying) { Class.new { include Aspera::Plugins::Xfer::TransferActions }.new }
         let(:entry) { {'job_id' => 'job1', 'agent_type' => 'node', 'transfer_id' => 't1', 'agent_params' => {'url' => 'https://node'}} }
         let(:agent_class) { double('agent class') }
 

@@ -5,13 +5,13 @@
 
 module Aspera
   module Plugins
-    module TransferAgents
-      # Included by the commands of the bundles that transfer files (manifest: `depends: - transfer_agents`):
+    module Xfer
+      # Included by the commands of the bundles that transfer files (manifest: `depends: - xfer`):
       # the transfer agent is the service `transfer` of this bundle.
       # Single-file plugins use `Cli::Plugins::Base#transfer`.
       module Helper
         # @return [TransferAgent] Service `transfer` of the context of the plugin: created once, on first use
-        # @raise [Cli::Error] If the bundle `transfer_agents` is unavailable
+        # @raise [Cli::Error] If the bundle `xfer` is unavailable
         def transfer = context.service(:transfer)
       end
     end

@@ -23,7 +23,7 @@ module Aspera
         describe 'commands' do
           it 'are those of plugin server, from the bundle' do
             expect(registry.unavailable_reason(:server)).to(be_nil)
-            expect(registry[:server].depends).to(eq([:transfer_agents]))
+            expect(registry[:server].depends).to(eq([:xfer]))
             expect(registry[:server].gems).to(eq([]))
             expect(Cli::Plugins::Factory.instance.describe(:server)[:path]).to(eq(bundle_folder))
             expect(Cli::Plugins::Factory.instance.plugin_class(:server)).to(be(Commands))

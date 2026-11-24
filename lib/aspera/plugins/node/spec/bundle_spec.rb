@@ -11,7 +11,7 @@ require_relative '../../../bundle_registry'
 require_relative '../../../cli/plugins/factory'
 require_relative '../../../schema/registry'
 require_relative '../../../schema/validator'
-require_relative '../../transfer_agents/transfer_agent'
+require_relative '../../xfer/transfer_agent'
 require_relative '../../cos/commands'
 require_relative '../../shares/commands'
 require_relative '../commands'
@@ -46,7 +46,7 @@ module Aspera
           it 'are those of plugin node, from the bundle' do
             expect(registry.unavailable_reason(:node)).to(be_nil)
             # no `transferd`: the emulator gets the agent `transferd` from the factory when it starts
-            expect(registry[:node].depends).to(eq(%i[transfer_agents]))
+            expect(registry[:node].depends).to(eq(%i[xfer]))
             expect(registry[:node].gems).to(eq([]))
             expect(Cli::Plugins::Factory.instance.describe(:node)[:path]).to(eq(bundle_folder))
             expect(Cli::Plugins::Factory.instance.plugin_class(:node)).to(be(Commands))
@@ -116,13 +116,13 @@ module Aspera
           end
 
           it 'has its parameters in the schema of option transfer, from the file of its entry' do
-            selector = Schema::Registry.instance.reader(TransferAgents::TransferAgent::TRANSFER_OPTION_SCHEMA)
+            selector = Schema::Registry.instance.reader(Xfer::TransferAgent::TRANSFER_OPTION_SCHEMA)
             expect(selector['discriminator']['mapping']['node']).to(eq('#/components/schemas/NodeAgentOptions'))
             parameters = Schema::Registry.instance.reader('transfer_opts:components.schemas.NodeAgentOptions')
             expect(parameters.current).to(eq(Yaml.safe_load(File.read(File.join(bundle_folder, 'schemas/agent_options.yaml')))))
             validator = Schema::Validator.instance
-            expect(validator.errors({'agent' => 'node', 'url' => 'https://node.example.com', 'username' => 'u', 'password' => '<PASSWORD>'}, TransferAgents::TransferAgent::TRANSFER_OPTION_SCHEMA)).to(be_empty)
-            expect(validator.errors({'agent' => 'node', 'url' => 'https://node.example.com'}, TransferAgents::TransferAgent::TRANSFER_OPTION_SCHEMA)).not_to(be_empty)
+            expect(validator.errors({'agent' => 'node', 'url' => 'https://node.example.com', 'username' => 'u', 'password' => '<PASSWORD>'}, Xfer::TransferAgent::TRANSFER_OPTION_SCHEMA)).to(be_empty)
+            expect(validator.errors({'agent' => 'node', 'url' => 'https://node.example.com'}, Xfer::TransferAgent::TRANSFER_OPTION_SCHEMA)).not_to(be_empty)
           end
         end
 
@@ -139,7 +139,7 @@ module Aspera
             %i[NODE_AGENT_OPTIONS NODE_EMULATOR_OPTIONS].each { |name| expect(Schema::Registry.const_defined?(name, false)).to(be(false), name) }
             # The file, not the document of the registry: `NodeAgentOptions` is added to it as variant of `TransferAgentOptions`
             framework = Yaml.safe_load(File.read(File.join(source_root, 'lib', Schema::Registry::LOCATIONS[:opts])))['components']['schemas']
-            selector_file = Yaml.safe_load(File.read(File.join(source_root, 'lib/aspera/plugins/transfer_agents/schemas/options.yaml')))['components']['schemas']
+            selector_file = Yaml.safe_load(File.read(File.join(source_root, 'lib/aspera/plugins/xfer/schemas/options.yaml')))['components']['schemas']
             expect(framework.keys).not_to(include('NodeAgentOptions', 'NodeBearerTokenOptions', 'NodeEmulatorOptions', 'NodeTelemetryOptions'))
             expect(selector_file['TransferAgentOptions']).not_to(include('oneOf'))
             expect(selector_file['TransferAgentOptions']['discriminator']).not_to(include('mapping'))

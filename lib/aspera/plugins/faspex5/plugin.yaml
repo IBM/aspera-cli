@@ -1,7 +1,7 @@
 name: faspex5
 title: IBM Aspera Faspex 5
 depends:
-  - transfer_agents
+  - xfer
   - faspex4
 commands: true
 schemas:

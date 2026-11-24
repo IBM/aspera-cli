@@ -9,7 +9,7 @@
 require_relative '../../../cli/context'
 require_relative '../../../cli/parser'
 require_relative '../commands'
-require_relative '../../transfer_agents/transfer_agent'
+require_relative '../../xfer/transfer_agent'
 require_relative '../../../cli/runner'
 require_relative '../../../persistency_folder'
 require 'securerandom'
@@ -20,7 +20,7 @@ module Aspera
     module Preview
       RSpec.describe(Commands) do
         let(:node) { instance_double(Node::Api, base_url: 'https://node.example.com') }
-        let(:transfer) { instance_double(TransferAgents::TransferAgent, user_transfer_spec: {}, assert_no_dry_run: nil) }
+        let(:transfer) { instance_double(Xfer::TransferAgent, user_transfer_spec: {}, assert_no_dry_run: nil) }
         let(:generator) { instance_double(Generator, conversion_type: :image, error_asset: error_asset) }
         let(:tmp) { Dir.mktmpdir }
         let(:error_asset) { File.join(tmp, 'error.png').tap { |f| File.write(f, 'png') } }

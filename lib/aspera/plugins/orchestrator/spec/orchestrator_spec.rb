@@ -7,7 +7,7 @@ require 'spec_helper'
 require_relative '../commands'
 require_relative '../../../cli/parser'
 require_relative '../../../cli/context'
-require_relative '../../transfer_agents/transfer_agent'
+require_relative '../../xfer/transfer_agent'
 require 'securerandom'
 
 RSpec.describe(Aspera::Plugins::Orchestrator::Commands) do
@@ -204,7 +204,7 @@ RSpec.describe(Aspera::Plugins::Orchestrator::Commands) do
       Dir.mktmpdir do |dir|
         resp = instance_double(Net::HTTPResponse, body: 'binary')
         allow(resp).to(receive(:[]).with('Content-Disposition').and_return('attachment; filename="Workflow_wf_v9.wkf"'))
-        allow(orchestrator).to(receive_messages(call_ao: resp, transfer: instance_double(Aspera::Plugins::TransferAgents::TransferAgent, destination_folder: dir)))
+        allow(orchestrator).to(receive_messages(call_ao: resp, transfer: instance_double(Aspera::Plugins::Xfer::TransferAgent, destination_folder: dir)))
         result = orchestrator.action_workflows_export(workflow_id: '1', export: {'dependencies' => true})
         expect(orchestrator).to(have_received(:call_ao).with('export_workflow/1', accept: nil, query: {export_with_dependencies: true}, http: true))
         expect(File.binread(File.join(dir, 'Workflow_wf_v9.wkf'))).to(eq('binary'))

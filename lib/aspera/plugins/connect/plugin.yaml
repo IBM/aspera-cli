@@ -1,7 +1,7 @@
 name: connect
 title: IBM Aspera Connect
 depends:
-  - transfer_agents
+  - xfer
 extensions:
   agent:
     - name: connect

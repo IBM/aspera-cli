@@ -9,7 +9,7 @@ require_relative '../../log'
 
 module Aspera
   module Plugins
-    module TransferAgents
+    module Xfer
       # Mounted on plugin config (manifest `mounts`), included by other plugins: commands of `ascp logs`, analysis of `ascp` log files (sessions, statistics and diagnostics)
       module AscpLogsActions
         # Schema of option `ascp_logs`, in the schemas of the bundle (manifest `schemas`)

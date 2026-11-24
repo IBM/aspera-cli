@@ -325,11 +325,11 @@ module Aspera
     # Modules mounted on a plugin, from the available bundles, data only: the code of a module is loaded by `load_entry`.
     # Registers the plugins of the sources first if it was not done (e.g. `config` includes its mounts when it is loaded).
     # @param target [Symbol] Name of the plugin that includes the modules
-    # @return [Array<Mount>] Mounts, by name of bundle, then in the order of the manifest
+    # @return [Array<Mount>] Mounts, by name of bundle (a bundle after the bundles it depends on), then in the order of the manifest
     def mounts(target)
       Aspera.assert_type(target, Symbol)
       scan unless @scanned
-      available_plugins.flat_map { |plugin| plugin.mounts.select { |mount| mount.target.eql?(target) } }
+      dependencies_first(available_plugins).flat_map { |plugin| plugin.mounts.select { |mount| mount.target.eql?(target) } }
     end
 
     # Service of the bundle that declares it, data only: its class is loaded by `load_entry`.
@@ -366,6 +366,22 @@ module Aspera
 
     # @return [Array<Plugin>] Available plugins, by name
     def available_plugins = names.select { |name| unavailable_reason(name).nil? }.map { |name| @plugins[name] }
+
+    # @param plugins [Array<Plugin>] Plugins, in order of name
+    # @return [Array<Plugin>] Same plugins, each one after those it depends on (among the given ones), else in the given order
+    def dependencies_first(plugins)
+      by_name = plugins.to_h { |plugin| [plugin.name, plugin] }
+      done = {}
+      result = []
+      visit = lambda do |plugin|
+        next if done[plugin.name]
+        done[plugin.name] = true # before the dependencies: a cycle stops here
+        plugin.depends.each { |dependency| visit.call(by_name[dependency]) if by_name.key?(dependency) }
+        result.push(plugin)
+      end
+      plugins.each { |plugin| visit.call(plugin) }
+      result
+    end
 
     # @return [Array<Plugin>] Registered plugins: by source in order of priority, then by name
     def ordered_plugins = @plugins.values.sort_by { |plugin| [folders.index(@origins[plugin.name]), plugin.name] }

@@ -10,7 +10,7 @@ require_relative '../../../agent/factory'
 require_relative '../../../bundle_registry'
 require_relative '../../../schema/registry'
 require_relative '../../../schema/validator'
-require_relative '../../transfer_agents/transfer_agent'
+require_relative '../../xfer/transfer_agent'
 require_relative '../../desktop/agent'
 require_relative '../../connect/agent'
 
@@ -30,10 +30,10 @@ module Aspera
         describe("bundle #{name}") do
           let(:bundle_folder) { File.expand_path("../../#{name}", __dir__) }
 
-          it 'is available, depends on the bundle transfer_agents, has no command and no gem' do
+          it 'is available, depends on the bundle xfer, has no command and no gem' do
             registry.scan
             expect(registry.unavailable_reason(name)).to(be_nil)
-            expect(registry[name].depends).to(eq([:transfer_agents]))
+            expect(registry[name].depends).to(eq([:xfer]))
             expect(registry[name].gems).to(eq([]))
             expect(registry[name].commands?).to(be(false))
           end
@@ -48,17 +48,17 @@ module Aspera
 
           it 'has its parameters in the schema of option transfer, from the file of its entry' do
             component = "#{info[:klass]}AgentOptions"
-            selector = Schema::Registry.instance.reader(TransferAgents::TransferAgent::TRANSFER_OPTION_SCHEMA)
+            selector = Schema::Registry.instance.reader(Xfer::TransferAgent::TRANSFER_OPTION_SCHEMA)
             expect(selector['discriminator']['mapping'][name.to_s]).to(eq("#/components/schemas/#{component}"))
             parameters = Schema::Registry.instance.reader("transfer_opts:components.schemas.#{component}")
             expect(parameters.current).to(eq(Yaml.safe_load(File.read(File.join(bundle_folder, 'schemas/agent_options.yaml')))))
             validator = Schema::Validator.instance
-            expect(validator.errors({'agent' => name.to_s}, TransferAgents::TransferAgent::TRANSFER_OPTION_SCHEMA)).to(be_empty)
+            expect(validator.errors({'agent' => name.to_s}, Xfer::TransferAgent::TRANSFER_OPTION_SCHEMA)).to(be_empty)
           end
 
           it 'is no longer in the file of the framework schema' do
             framework = Yaml.safe_load(File.read(File.join(source_root, 'lib', Schema::Registry::LOCATIONS[:opts])))['components']['schemas']
-            selector_file = Yaml.safe_load(File.read(File.join(source_root, 'lib/aspera/plugins/transfer_agents/schemas/options.yaml')))['components']['schemas']
+            selector_file = Yaml.safe_load(File.read(File.join(source_root, 'lib/aspera/plugins/xfer/schemas/options.yaml')))['components']['schemas']
             expect(framework.keys).not_to(include("#{info[:klass]}AgentOptions"))
             expect(selector_file['TransferAgentOptions']['discriminator'].fetch('mapping', {})).not_to(include(name.to_s))
           end

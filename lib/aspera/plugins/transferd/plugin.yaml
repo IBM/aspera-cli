@@ -1,7 +1,7 @@
 name: transferd
 title: IBM Aspera Transfer Daemon
 depends:
-  - transfer_agents
+  - xfer
 # No `gems`: the gem `grpc` is needed only by the agent and the client commands (`api.rb`, loaded on use),
 # the other commands (`install`, `list`, `service`) work without it
 commands: true

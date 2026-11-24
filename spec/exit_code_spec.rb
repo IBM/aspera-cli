@@ -136,7 +136,7 @@ module Aspera
           %W[node info --url=http://127.0.0.1:1 --username=u --password=#{password}] => ExitCode::NETWORK,
           # Nagios reports the failure of the check as UNKNOWN
           ['config', 'echo', '@json:{"a":1}', '--format=nagios']                     => 3,
-          # Category added by the bundle transfer_agents
+          # Category added by the bundle xfer
           %w[config test throw Aspera::Transfer::Error failed]                       => ExitCode::TRANSFER
         }.each do |args, code|
           it "exits with #{code} for: #{args.join(' ')}" do

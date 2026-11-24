@@ -1,7 +1,7 @@
 name: node
 title: IBM Aspera High Speed Transfer Server Node
 depends:
-  - transfer_agents
+  - xfer
 commands: true
 schemas:
   - key: node

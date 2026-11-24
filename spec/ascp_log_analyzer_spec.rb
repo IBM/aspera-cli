@@ -911,7 +911,7 @@ RSpec.describe(Aspera::Ascp::LogAnalyzer) do
     before do
       require_relative '../lib/aspera/cli/error'
       require_relative '../lib/aspera/cli/result'
-      require_relative '../lib/aspera/plugins/transfer_agents/ascp_logs_actions'
+      require_relative '../lib/aspera/plugins/xfer/ascp_logs_actions'
     end
 
     # Helper to create a dummy CLI plugin that includes AscpLogsActions
@@ -925,7 +925,7 @@ RSpec.describe(Aspera::Ascp::LogAnalyzer) do
                 def option(*_args); end
               end
 
-              include Aspera::Plugins::TransferAgents::AscpLogsActions
+              include Aspera::Plugins::Xfer::AscpLogsActions
 
               BadArgument = Aspera::Cli::BadArgument
               ParameterError = Aspera::ParameterError

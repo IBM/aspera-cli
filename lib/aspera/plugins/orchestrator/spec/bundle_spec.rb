@@ -34,7 +34,7 @@ module Aspera
         describe 'commands' do
           it 'are those of plugin orchestrator, from the bundle' do
             expect(registry.unavailable_reason(:orchestrator)).to(be_nil)
-            expect(registry[:orchestrator].depends).to(eq([:transfer_agents]))
+            expect(registry[:orchestrator].depends).to(eq([:xfer]))
             expect(registry[:orchestrator].gems).to(eq([]))
             expect(Cli::Plugins::Factory.instance.describe(:orchestrator)[:path]).to(eq(bundle_folder))
             expect(Cli::Plugins::Factory.instance.plugin_class(:orchestrator)).to(be(Commands))

@@ -14,8 +14,8 @@ require_relative '../lib/aspera/schema/registry'
 require_relative '../lib/aspera/schema/validator'
 require_relative '../lib/aspera/cli/context'
 require_relative '../lib/aspera/cli/parser'
-require_relative '../lib/aspera/plugins/transfer_agents/transfer_agent'
-require_relative '../lib/aspera/plugins/transfer_agents/ascp_actions'
+require_relative '../lib/aspera/plugins/xfer/transfer_agent'
+require_relative '../lib/aspera/plugins/xfer/ascp_actions'
 require_relative '../lib/aspera/cli/plugins/config'
 require_relative '../lib/aspera/log'
 require_relative '../lib/aspera/yaml'
@@ -38,10 +38,10 @@ module AgentFactorySpecHelper
     transferd: {long: 'Transferd', short: :t}
   }.freeze
 
-  # Variants of `TransferAgentOptions` in its file (bundle transfer_agents): component, by agent, in the order of `oneOf` (none: every agent is in a bundle)
+  # Variants of `TransferAgentOptions` in its file (bundle xfer): component, by agent, in the order of `oneOf` (none: every agent is in a bundle)
   SCHEMA_VARIANTS = {}.freeze
   # Schema of option `transfer`
-  OPTION_SCHEMA = Aspera::Plugins::TransferAgents::TransferAgent::TRANSFER_OPTION_SCHEMA
+  OPTION_SCHEMA = Aspera::Plugins::Xfer::TransferAgent::TRANSFER_OPTION_SCHEMA
 
   # Variants with the bundles of the gem: those of the schema, then the agents of the bundles (by name of bundle)
   TODAY_VARIANTS = SCHEMA_VARIANTS.merge(
@@ -67,14 +67,14 @@ module AgentFactorySpecHelper
   # Schema of the parameters of the fake agent
   OPTIONS_SCHEMA = {'type' => 'object', 'description' => 'Parameters of the fake agent.', 'properties' => {'color' => {'type' => 'string'}}}.freeze
 
-  # Bundle that declares the extension point `agent`, and the schema of option `transfer` (`TransferAgentOptions` of the bundle transfer_agents, which has the marker of the variants)
+  # Bundle that declares the extension point `agent`, and the schema of option `transfer` (`TransferAgentOptions` of the bundle xfer, which has the marker of the variants)
   # @param folder [String] Plugin folder
   def write_point_bundle(folder)
     key = OPTION_SCHEMA.split(':', 2).first
     manifest = {'commands' => false, 'extension_points' => [{'name' => 'agent', 'schema' => 'agent.schema.yaml'}], 'schemas' => [{'key' => key, 'file' => 'options.yaml', 'owned' => true}]}
     bundle = write_bundle(folder, 'spec_bundle_transfer', manifest: manifest, code: nil)
     File.write(File.join(bundle, 'agent.schema.yaml'), POINT_SCHEMA.to_yaml)
-    selector = Aspera::Yaml.safe_load(File.read(File.join(Aspera::BundleRegistry::GEM_FOLDER, 'transfer_agents', 'schemas', 'options.yaml'))).dig('components', 'schemas', 'TransferAgentOptions')
+    selector = Aspera::Yaml.safe_load(File.read(File.join(Aspera::BundleRegistry::GEM_FOLDER, 'xfer', 'schemas', 'options.yaml'))).dig('components', 'schemas', 'TransferAgentOptions')
     File.write(File.join(bundle, 'options.yaml'), {'openapi' => '3.1.0', 'components' => {'schemas' => {'TransferAgentOptions' => selector}}}.to_yaml)
   end
 
@@ -109,7 +109,7 @@ module Aspera
         class << self
           def option(*, **); end
         end
-        include Aspera::Plugins::TransferAgents::AscpActions
+        include Aspera::Plugins::Xfer::AscpActions
       end
     end
 
@@ -381,7 +381,7 @@ module Aspera
       end
     end
 
-    describe(Plugins::TransferAgents::ConfigCommands) do
+    describe(Plugins::Xfer::ConfigCommands) do
       let(:specs) { Cli::Plugins::Config.command_registry }
 
       it 'accepts an agent of a bundle added after the class of config is loaded, for the commands of agents and of ascp' do
@@ -399,7 +399,7 @@ module Aspera
       end
     end
 
-    describe(Plugins::TransferAgents::AscpActions) do
+    describe(Plugins::Xfer::AscpActions) do
       let(:schemas) { Schema::Registry.send(:new) }
       let(:actions) { actions_class.new }
 
@@ -451,7 +451,7 @@ module Aspera
       end
     end
 
-    describe(Plugins::TransferAgents::TransferAgent) do
+    describe(Plugins::Xfer::TransferAgent) do
       let(:schemas) { Schema::Registry.send(:new) }
 
       before do
