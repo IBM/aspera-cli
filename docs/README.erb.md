@@ -6126,13 +6126,20 @@ Available plugins can be found using command:
 ```
 
 ```text
-╭────────┬────────┬────────┬─────────────────────────────────────────────────╮
-│ plugin │ detect │ wizard │ path                                            │
-╞════════╪════════╪════════╪═════════════════════════════════════════════════╡
-│ shares │ ✓      │ ✓      │ .../aspera-cli/lib/aspera/plugins/shares        │
-│ node   │ ✓      │ ✓      │ .../aspera-cli/lib/aspera/plugins/node          │
+╭────────┬────────┬────────┬───────────┬─────────────────────────────────────────────────╮
+│ plugin │ detect │ wizard │ status    │ path                                            │
+╞════════╪════════╪════════╪═══════════╪═════════════════════════════════════════════════╡
+│ shares │ ✓      │ ✓      │ available │ .../aspera-cli/lib/aspera/plugins/shares        │
+│ node   │ ✓      │ ✓      │ available │ .../aspera-cli/lib/aspera/plugins/node          │
 ...
-╰────────┴────────┴────────┴─────────────────────────────────────────────────╯
+╰────────┴────────┴────────┴───────────┴─────────────────────────────────────────────────╯
+```
+
+Column `status` is `available`, or the reason why the plugin cannot be used (e.g. `missing gem <gem>`).
+Details of one plugin (source, form, capabilities, dependencies, gems, security level):
+
+```shell
+<%=cmd%> config plugins show node
 ```
 
 Most plugins will take the URL option: `url` to identify their location.

@@ -325,7 +325,9 @@ module Aspera
 
         # plugins sub-commands
         commands_under :plugins do
-          command :list, description: 'List all available plugins'
+          command :list, description: 'List all plugins, with their status'
+          command :show, description: 'Show the details of a plugin: source, form, capabilities, dependencies, gems, security level',
+            arguments: [{name: :name}]
           command :create, description: 'Create a new plugin skeleton file', security: :low,
             arguments: [
               {name: :name},
@@ -503,16 +505,23 @@ module Aspera
         end
 
         def action_plugins_list(**)
-          result = Plugins::Factory.instance.plugin_list.map do |name|
-            plugin_class = Plugins::Factory.instance.plugin_class(name)
+          factory = Plugins::Factory.instance
+          result = factory.listed_plugins.map do |name|
+            status = factory.status(name)
+            loaded = status.eql?('available') ? factory.plugin_class(name) : nil
             {
               plugin: name,
-              detect: TerminalFormatter.tick(plugin_class.respond_to?(:detect)),
-              wizard: TerminalFormatter.tick(plugin_class.method_defined?(:wizard)),
-              path:   Plugins::Factory.instance.plugin_source(name)
+              detect: loaded.nil? ? nil : TerminalFormatter.tick(loaded.respond_to?(:detect)),
+              wizard: loaded.nil? ? nil : TerminalFormatter.tick(loaded.method_defined?(:wizard)),
+              status: status,
+              path:   factory.registry[name].path
             }
           end
-          Result::ObjectList.new(result, fields: %w[plugin detect wizard path])
+          Result::ObjectList.new(result, fields: %w[plugin detect wizard status path])
+        end
+
+        def action_plugins_show(name:, **)
+          Result::SingleObject.new(Plugins::Factory.instance.describe(name.to_sym))
         end
 
         def action_plugins_create(name:, folder: nil, **)

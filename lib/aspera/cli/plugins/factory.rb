@@ -35,7 +35,7 @@ module Aspera
         def lookup_folders = @registry.folders
 
         # @return [Array<Symbol>] Sorted list of plugins that provide commands and can be loaded: available, with their gems installed.
-        #   Callers load the class of each one: `unavailable_plugins` gives the others, with the reason (a `status` column is for T25).
+        #   Callers load the class of each one: `unavailable_plugins` gives the others, with the reason.
         def plugin_list
           @registry.names.select { |name| @registry[name].commands? && load_reason(name).nil? }
         end
@@ -43,6 +43,48 @@ module Aspera
         # @return [Hash{Symbol => String}] Reason why a plugin that provides commands is not in `plugin_list`, by name
         def unavailable_plugins
           @registry.names.select { |name| @registry[name].commands? }.to_h { |name| [name, load_reason(name)] }.compact
+        end
+
+        # @return [Array<Symbol>] Sorted names of the plugins to list: those that provide commands, and those that cannot be loaded (their manifest may be invalid)
+        def listed_plugins
+          @registry.names.select { |name| @registry[name].commands? || !status_reason(name).nil? }
+        end
+
+        # @param name [Symbol] Name of a registered plugin
+        # @return [String] `available`, or why the plugin cannot be loaded: unavailable, or a gem is missing
+        def status(name)
+          status_reason(name) || 'available'
+        end
+
+        # Description of a registered plugin, for introspection (data only: no code of the plugin is loaded).
+        # @param name [Symbol] Name of a registered plugin
+        # @return [Hash] `plugin`, `title`, `source` (`gem` or the folder), `form`, `path`, `security`, `status`, `commands`, then for a bundle:
+        #   `agents`, `schemas`, `mounts`, `services`, `extension_points`, `depends`, `gems`, `missing_gems`
+        # @raise [NoSuchElement] If no plugin has this name
+        def describe(name)
+          plugin = @registry[name]
+          Aspera.assert(!plugin.nil?, type: NoSuchElement) { "plugin not found: #{name}" }
+          result = {
+            plugin:   name,
+            title:    plugin.title,
+            source:   source_of(plugin),
+            form:     plugin.form,
+            path:     plugin.path,
+            security: plugin.security || 'any',
+            status:   status(name),
+            commands: plugin.commands?
+          }
+          return result unless plugin.bundle?
+          result.merge(
+            agents:           plugin.extensions.select { |extension| extension.point.eql?(:agent) }.map { |extension| extension.fields['name'] },
+            schemas:          plugin.schemas.map(&:key),
+            mounts:           plugin.mounts.map(&:target),
+            services:         plugin.services.map(&:name),
+            extension_points: plugin.extension_points.keys,
+            depends:          plugin.depends,
+            gems:             plugin.gems,
+            missing_gems:     @registry.missing_gems(name)
+          )
         end
 
         # add a folder to the list of folders to look for plugins
@@ -93,6 +135,22 @@ module Aspera
         end
 
         private
+
+        # @param name [Symbol] name of a registered plugin
+        # @return [String, nil] Why the plugin cannot be loaded, short form: unavailable reason, or missing gems; `nil` if it can
+        def status_reason(name)
+          reason = @registry.unavailable_reason(name)
+          return reason unless reason.nil?
+          missing = @registry.missing_gems(name)
+          "missing gem #{missing.join(', ')}" unless missing.empty?
+        end
+
+        # @param plugin [BundleRegistry::Plugin] Registered plugin
+        # @return [String] `gem` if in the gem, else the folder where it was found
+        def source_of(plugin)
+          folder = File.dirname(plugin.path)
+          [BundleRegistry::GEM_FOLDER, GEM_SINGLE_FILES_FOLDER].any? { |gem_folder| File.identical?(folder, gem_folder) } ? 'gem' : folder
+        end
 
         # @param name [Symbol] name of a registered plugin
         # @return [String, nil] Why the code of the plugin cannot be loaded: unavailable or missing gem, `nil` if it can

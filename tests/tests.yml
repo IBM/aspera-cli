@@ -1677,6 +1677,12 @@ conf_plugins_list:
     - config
     - plugins
     - list
+conf_plugins_show:
+  args:
+    - config
+    - plugins
+    - show
+    - node
 conf_plugins_create:
   args:
     - config
