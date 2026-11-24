@@ -4,6 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require_relative '../environment'
+require_relative '../log'
+require 'xmlsimple'
 
 module Aspera
   # Location of Aspera products, for which an Agent is not proposed

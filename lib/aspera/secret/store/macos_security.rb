@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # https://github.com/fastlane-community/security
-require_relative '../../cli/info'
 require_relative '../../log'
 require_relative '../../assert'
 require_relative '../../environment'

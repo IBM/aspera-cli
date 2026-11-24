@@ -268,7 +268,7 @@ ensure
   kill_process_group(pid) if pid && !finished
 end
 
-# End of the text displayed by a prompt: `> `, and for hidden input the mark shown while waiting (see `Aspera::Cli::Prompt`).
+# End of the text displayed by a prompt: `> `, and for hidden input the mark shown while waiting (see `Aspera::Prompt`).
 # Compared as bytes: the terminal output is read in binary.
 PTY_PROMPT_ENDS = ['> ', '> 🔑', '> ***'].map(&:b).freeze
 

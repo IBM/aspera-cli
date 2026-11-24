@@ -64,19 +64,18 @@ module Aspera
             (e.g. `ascli plugin command --option=value`).
         INST
 
-        # Default instructions shown to the AI client when none are provided by the user.
-        DEFAULT_INSTRUCTIONS = <<~INST.strip
+        # Instructions shown to the AI client when none are provided by the user (see `default_instructions`): start
+        INSTRUCTIONS_START = <<~INST.strip
           This is the Aspera CLI (ascli) MCP server (IBM Aspera file transfer and management).
           It exposes a single tool, execute_ascli_command, which runs any ascli command in-process.
           Its description gives the syntax and the discovery sequence: follow it before any
           command whose syntax you have not verified in this session.
 
           #{COMMAND_DISPLAY_INSTRUCTIONS}
+        INST
 
-          Plugins: aoc (Aspera on Cloud), faspex5 (Faspex 5), node (Node API), server (FASP/SSH
-          server), config (local configuration), console, orchestrator, ats, preview, shares,
-          cos, httpgw, faspio, alee.
-
+        # Instructions after the list of plugins, before the sections of the bundles
+        CREDENTIALS_INSTRUCTIONS = <<~INST.strip
           CREDENTIALS
           Use saved presets by default: call ["config", "preset", "overview"] first, then pass
           --preset=<name>, or nothing if a default preset exists for the plugin.
@@ -86,50 +85,53 @@ module Aspera
           For a secret the user did not give (password, passphrase), pass "@secret:<name>" as value:
           the user enters it on a web page, you never see it. Prefer it to asking in the conversation.
           On error, report it as-is and stop.
+        INST
 
-          TRANSFERS
-          Pass verbatim any flag the user requests (--transfer.agent=<agent>, --to-folder, …).
-          Agents: direct (default, in-process ascp), desktop (IBM Aspera Desktop Client,
-          graphical), node, transferd, httpgw, connect.
-          Transfers are asynchronous: the command returns a job_id immediately — never retry it.
-            monitor → ["config", "transfer", "status", "<job_id>"]
-            list    → ["config", "transfer", "list"]
-            cleanup → ["config", "transfer", "cleanup"]
-
-          ORCHESTRATOR WORKFLOW DEVELOPMENT
-          Before writing or modifying an Orchestrator workflow, read the development guide (large: read
-          sections, not the whole document). Start with the sections "quick-start" and "authoring-checklist":
-            ["orchestrator", "workflows", "development", "guide", "section", "authoring-checklist"]
-          then the sections you need (file format, graph, inputs of steps, execution, recipes, known issues):
-          "workflow-file", "graph-xml", "inputs-of-a-step", "execution", "recipes", "known-issues".
-          Command "toc" lists the anchors of the sections of a document, up to a default level, or the level
-          given after it:
-            ["orchestrator", "workflows", "development", "guide", "toc"]
-          For the template attributes (allowed values), inputs and outputs of an action plugin, and the
-          template settings they depend on, read its specification (fields: section "plugin-specifications"
-          of the development guide); the list of plugins is given by ["orchestrator", "plugins", "spec", "toc"]:
-            ["orchestrator", "plugins", "spec", "show", "<PluginClass>"]
-          For the functional description and the setup of a plugin (for example the API client of Faspex),
-          read its section of the Plugin Manual (large: read one section only). The anchor of the section is
-          field "manual_anchor" of the specification of the plugin (also in the list of plugins):
-            ["orchestrator", "workflows", "development", "manual", "section", "<manual_anchor>"]
-          Before importing a workflow file, check it (graph, templates, inputs of steps) and fix all errors:
-            ["orchestrator", "workflows", "check_import", "<file>"]
-
-          AOC AUTOMATION WORKFLOW DEVELOPMENT
-          Before writing or modifying an Aspera on Cloud Automation workflow, read the development guide
-          (large: read sections, not the whole document). Start with the section of each trigger and action
-          used (for example "Send a package" is action type package_transfer, section "package-transfer"),
-          then "payload-rules-enforced-by-the-api" and "finding-the-identifiers":
-            ["aoc", "automation", "guide", "section", "package-transfer"]
-          Other sections: "triggers", "actions", "substitution-variables", "importing-a-workflow",
-          "design-recipes-and-patterns", "common-pitfalls-and-resolutions". List the anchors with:
-            ["aoc", "automation", "guide", "toc"]
-
+        # Instructions after the sections of the bundles
+        INSTRUCTIONS_END = <<~INST.strip
           GENERAL GUIDANCE
           For the general rules of use of ascli by an AI (written for a shell: each command line maps to args):
             ["config", "skill"]
         INST
+
+        # Description of the plugins of the framework in the list of plugins (a bundle has its title)
+        FRAMEWORK_PLUGINS = {config: 'local configuration'}.freeze
+        # In the section of a bundle (manifest `mcp`): list of the bundles that provide an entry of an extension point, e.g. `%{agent}`
+        POINT_PLACEHOLDER = /%\{([a-z][a-z0-9_]*)\}/
+
+        class << self
+          # Instructions shown to the AI client when none are provided by the user:
+          # generic text, list of the plugins (with the title of their bundle), and the section of each bundle that has one (manifest `mcp`)
+          # @param factory [Factory] Plugins and their bundles
+          # @return [String] Instructions
+          def default_instructions(factory = Factory.instance)
+            registry = factory.registry
+            plugins = factory.plugin_list.reject { |name| name.eql?(:mcp) }.sort.map do |name|
+              described(name, registry[name].title || FRAMEWORK_PLUGINS[name])
+            end
+            sections = registry.names.filter_map do |name|
+              next unless registry.unavailable_reason(name).nil?
+              registry[name].mcp&.strip&.gsub(POINT_PLACEHOLDER) { bundles_of_point(registry, Regexp.last_match(1).to_sym) }
+            end
+            [INSTRUCTIONS_START, "Plugins: #{plugins.join(', ')}.", CREDENTIALS_INSTRUCTIONS, *sections, INSTRUCTIONS_END].join("\n\n")
+          end
+
+          private
+
+          # @param name        [Symbol]      Name of a plugin or bundle
+          # @param description [String, nil] Its description
+          # @return [String] The name, followed by the description in parentheses if any
+          def described(name, description)
+            description.nil? ? name.to_s : "#{name} (#{description})"
+          end
+
+          # @param registry [BundleRegistry] Registry of the bundles
+          # @param point    [Symbol]         Name of an extension point
+          # @return [String] Bundles that provide an entry of the extension point, with their title
+          def bundles_of_point(registry, point)
+            registry.extensions(point).map(&:bundle).uniq.map { |bundle| described(bundle, registry[bundle].title) }.join(', ')
+          end
+        end
 
         # Keys forwarded to MCP::Server constructor (symbolized)
         SERVER_KEYS      = %i[instructions description].freeze
@@ -189,7 +191,7 @@ module Aspera
           tool = Cli::Mcp::Tool
           config_opts = mcp_options.slice(*CONFIG_KEYS)
           server_opts = mcp_options.slice(*SERVER_KEYS)
-          server_opts[:instructions] ||= DEFAULT_INSTRUCTIONS
+          server_opts[:instructions] ||= self.class.default_instructions
           server_opts[:description]  ||= "#{Info::GEM_NAME} MCP server (IBM Aspera file transfer and management)"
           configuration = config_opts.empty? ? nil : MCP::Configuration.new(**config_opts)
           MCP::Server.new(

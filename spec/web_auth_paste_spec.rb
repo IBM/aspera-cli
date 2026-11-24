@@ -70,10 +70,10 @@ RSpec.describe(Aspera::WebAuth::Paste) do
     end
 
     it 'reads the pasted URL as a sensitive input' do
-      allow(Aspera::Cli::Prompt).to(receive(:prompt_user_input).and_return('http://localhost:12345/?code=abc&state=xyz'))
+      allow(Aspera::Prompt).to(receive(:prompt_user_input).and_return('http://localhost:12345/?code=abc&state=xyz'))
       expect(paste.received_request).to(eq('code' => 'abc', 'state' => 'xyz'))
       expect(shown.join("\n")).to(match(/connection error.*localhost:12345/m))
-      expect(Aspera::Cli::Prompt).to(have_received(:prompt_user_input).with('Code or URL', sensitive: true))
+      expect(Aspera::Prompt).to(have_received(:prompt_user_input).with('Code or URL', sensitive: true))
     end
 
     it 'reads the URL from standard input if it is not a terminal' do
@@ -82,7 +82,7 @@ RSpec.describe(Aspera::WebAuth::Paste) do
     end
 
     it 'does not propose the workstation command without login URL' do
-      allow(Aspera::Cli::Prompt).to(receive(:prompt_user_input).and_return('code=abc&state=xyz'))
+      allow(Aspera::Prompt).to(receive(:prompt_user_input).and_return('code=abc&state=xyz'))
       paste.received_request
       expect(shown.join("\n")).not_to(match(/web_login/))
     end
@@ -90,14 +90,14 @@ RSpec.describe(Aspera::WebAuth::Paste) do
     it 'gives the login URL in its message only with the login page' do
       expect(paste.shows_login_url?).to(be(false))
       expect(login_paste.shows_login_url?).to(be(true))
-      allow(Aspera::Cli::Prompt).to(receive(:prompt_user_input).and_return('code=abc&state=xyz'))
+      allow(Aspera::Prompt).to(receive(:prompt_user_input).and_return('code=abc&state=xyz'))
       login_paste.received_request
       expect(shown.join("\n")).to(include('https://idp.example.com/authorize?a=1&b=2'))
     end
 
     it 'gives the code of the command for the workstation, with the login page, then reads the reply code' do
       reply = Aspera::SealedHash.seal({'code' => 'abc', 'state' => 'xyz'}, base_key: Aspera::Cli::Info::CMD_NAME)
-      allow(Aspera::Cli::Prompt).to(receive(:prompt_user_input).and_return(reply))
+      allow(Aspera::Prompt).to(receive(:prompt_user_input).and_return(reply))
       expect(login_paste.received_request).to(eq('code' => 'abc', 'state' => 'xyz'))
       command = shown.join("\n")[/ascli config web_login ([A-Za-z0-9_-]+)/, 1]
       expect(command).not_to(be_nil)

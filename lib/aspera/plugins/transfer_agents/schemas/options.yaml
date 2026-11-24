@@ -97,3 +97,16 @@ components:
               type: integer
               description: Path MTU in bytes below which the small-MTU diagnostic is emitted (ascp measures 1492, 1006, 508 or 296).
               default: 1400
+    TransferAgentOptions:
+      description: >-
+        Transfer agent selector and agent-specific parameters.
+        Set `agent` to select the agent type (default: `direct`).
+        Remaining keys are passed to the selected agent.
+      # Variants: entries of the extension point `agent`, added when the schema is read (see `Schema::Registry#add_variants`)
+      x-cli-variants:
+        point: agent
+        value: name
+        schema: options_schema
+        suffix: AgentOptions
+      discriminator:
+        propertyName: agent

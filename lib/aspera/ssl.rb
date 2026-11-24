@@ -24,7 +24,7 @@ module Aspera
             @extra_options = opt
           when String
             name = "OP_#{opt.start_with?('-') ? opt[1..] : opt}".upcase
-            Aspera.assert(OpenSSL::SSL.const_defined?(name), type: Cli::BadArgument) { "Unknown ssl_option: #{name}, use one of: #{OpenSSL::SSL.constants.grep(/^OP_/).map { |c| c.to_s.sub(/^OP_/, '') }.join(', ')}" }
+            Aspera.assert(OpenSSL::SSL.const_defined?(name), type: ParameterError) { "Unknown ssl_option: #{name}, use one of: #{OpenSSL::SSL.constants.grep(/^OP_/).map { |c| c.to_s.sub(/^OP_/, '') }.join(', ')}" }
             if opt.start_with?('-')
               @extra_options &= ~OpenSSL::SSL.const_get(name)
             else

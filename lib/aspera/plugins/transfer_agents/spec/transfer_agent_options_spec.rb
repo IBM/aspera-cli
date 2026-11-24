@@ -8,6 +8,7 @@
 require_relative '../../../cli/parser'
 require_relative '../../../cli/context'
 require_relative '../transfer_agent'
+require 'tmpdir'
 
 module Aspera
   module Cli
@@ -79,6 +80,45 @@ module Aspera
         it 'refuses a command that changes something before the transfer' do
           expect { build_transfer_agent(['--dry-run=yes']).assert_no_dry_run }.to(raise_error(Cli::BadArgument, /dry_run is not supported/))
           expect { build_transfer_agent([]).assert_no_dry_run }.not_to(raise_error)
+        end
+      end
+
+      describe '#paths_argument' do
+        it 'describes the files of a command that sends or receives, read from option sources' do
+          ta = build_transfer_agent([])
+          expect(ta.paths_argument(:send)).to(have_attributes(name: :source_file, mandatory: false, multiple: true, description: 'Source file(s) to upload (default --sources=@args; see also --src-type, --to-folder)'))
+          expect(ta.paths_argument(:receive).description).to(eq('Remote path(s) to download (default --sources=@args; see also --to-folder)'))
+          expect { ta.paths_argument(:other) }.to(raise_error(InternalError, /other/))
+        end
+      end
+
+      describe 'runtime of transfers' do
+        around do |example|
+          referer = Ascp::Installation.instance.referer_url
+          file_list_folder = Transfer::Parameters.instance_variable_get(:@file_list_folder)
+          example.run
+        ensure
+          Ascp::Installation.instance.referer_url = referer
+          Transfer::Parameters.instance_variable_set(:@file_list_folder, file_list_folder)
+        end
+
+        it 'is set when the service is created: referer of the downloads of the SDK, file lists in the configuration folder' do
+          Dir.mktmpdir do |folder|
+            context = Context.new
+            context.options = Parser.new('test', [])
+            context.options.declare(:notify_to, description: 'Notify')
+            context.main_folder = folder
+            described_class.new(context)
+            expect(Ascp::Installation.instance.referer_url).to(eq("#{Info::GEM_URL}/versions/#{VERSION}"))
+            expect(Transfer::Parameters.file_list_folder).to(eq(File.join(folder, 'filelists')))
+            expect(File.directory?(File.join(folder, 'filelists'))).to(be(true))
+          end
+        end
+
+        it 'keeps the default folder of file lists without configuration folder' do
+          Transfer::Parameters.instance_variable_set(:@file_list_folder, '/default')
+          build_transfer_agent([])
+          expect(Transfer::Parameters.file_list_folder).to(eq('/default'))
         end
       end
     end

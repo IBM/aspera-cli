@@ -20,6 +20,7 @@ require_relative '../../mime'
 require_relative '../../environment'
 require_relative '../../assert'
 require_relative '../../rainbow'
+require_relative '../transfer_agents/transfer_agent'
 require 'securerandom'
 require 'digest'
 require 'json'
@@ -31,6 +32,10 @@ module Aspera
       class Commands < Cli::Plugins::Oauth
         # Key of the Faspex 5 API in the schemas of the bundle (manifest)
         API_SCHEMA = 'faspex'
+        # Options of the Faspex 4 gateway, in the schemas of the bundle faspex4
+        GATEWAY_OPTIONS = 'faspex4_opts:components.schemas.Faspex4GatewayOptions'
+        # Options of the Faspex 4 post-processing servlet, in the schemas of the bundle
+        POSTPROC_OPTIONS = 'faspex5_opts:components.schemas.Faspex4PostProcOptions'
         application_name 'Faspex v5'
         # Commands that may carry a query_schema annotation
         QUERY_SCHEMA_COMMANDS = %i[list delete].freeze
@@ -291,14 +296,14 @@ module Aspera
             # delete flag for Connect Client
             transfer_spec.delete('authentication')
             statuses = transfer.start(transfer_spec)
-            result_transfer.push({'package' => pkg_id, Cli::Runner::STATUS_FIELD => statuses})
+            result_transfer.push({'package' => pkg_id, TransferAgents::TransferAgent::STATUS_FIELD => statuses})
             # skip only if all sessions completed
             if statuses.is_a?(Aspera::Transfer::Result::Success) && skip_ids_persistency
               skip_ids_persistency.data.push(pkg_id)
               skip_ids_persistency.save
             end
           end
-          return Cli::Runner.result_transfer_multiple(result_transfer)
+          return TransferAgents::TransferAgent.result_transfer_multiple(result_transfer)
         end
 
         def package_send(parameters)
@@ -329,7 +334,7 @@ module Aspera
             )
             # well, we asked a TS for connect, but we actually want a generic one
             transfer_spec.delete('authentication')
-            return Cli::Runner.result_object_transfer(package, transfer.start(transfer_spec))
+            return TransferAgents::TransferAgent.result_object_transfer(package, transfer.start(transfer_spec))
           else
             # send from remote shared folder
             if (m = Cli::Parser.percent_selector(shared_folder))
@@ -536,9 +541,9 @@ module Aspera
         command :user,           description: 'Manage current user'
         command :shared_folders, description: 'Browse shared folders'
         command :gateway,        description: 'Start Faspex 4 gateway emulation',
-          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: Schema::Registry::GATEWAY_OPTIONS}]
+          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: GATEWAY_OPTIONS}]
         command :postprocessing, description: 'Start Faspex 4 post-processing server', security: :low,
-          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: Schema::Registry::POSTPROC_OPTIONS}]
+          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: POSTPROC_OPTIONS}]
         command :invitations,    description: 'Manage invitations'
 
         commands_under :invitations do
@@ -985,8 +990,9 @@ module Aspera
         end
 
         def action_gateway(parameters: {}, **)
-          require_relative '../../faspex_gw'
-          Aspera::Faspex4GWServlet.serve(parameters.symbolize_keys, type: Cli::BadArgument) do
+          # Loaded on use: web server
+          require_relative '../faspex4/gw_servlet'
+          Faspex4::GWServlet.serve(parameters.symbolize_keys, type: Cli::BadArgument) do
             # evaluated before the server listens: invalid options fail at startup, and no lazy memo is shared by request threads
             api_v5
             ->(faspex_pkg_parameters) { faspex4_send_to_faspex5(faspex_pkg_parameters) }

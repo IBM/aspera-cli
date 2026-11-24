@@ -10,6 +10,7 @@ require_relative '../../../agent/factory'
 require_relative '../../../bundle_registry'
 require_relative '../../../schema/registry'
 require_relative '../../../schema/validator'
+require_relative '../../transfer_agents/transfer_agent'
 require_relative '../../desktop/agent'
 require_relative '../../connect/agent'
 require 'open3'
@@ -20,6 +21,9 @@ module Aspera
     RSpec.describe('Bundles desktop and connect') do
       let(:source_root) { File.expand_path('../../../../..', __dir__) }
       let(:registry) { BundleRegistry.instance }
+
+      # The registry scans the plugin folders on first use: this spec also runs alone
+      before { registry.extensions(:agent) }
 
       # @param script [String] Ruby code run in another process: the former constant is not defined in the process of the specs
       # @return [Array(String, String, Process::Status)] stdout, stderr, status
@@ -52,18 +56,19 @@ module Aspera
 
           it 'has its parameters in the schema of option transfer, from the file of its entry' do
             component = "#{info[:klass]}AgentOptions"
-            selector = Schema::Registry.instance.reader(Schema::Registry::TRANSFER_AGENT_OPTIONS)
+            selector = Schema::Registry.instance.reader(TransferAgents::TransferAgent::TRANSFER_OPTION_SCHEMA)
             expect(selector['discriminator']['mapping'][name.to_s]).to(eq("#/components/schemas/#{component}"))
-            parameters = Schema::Registry.instance.reader("#{Schema::Registry::OPTIONS}:components.schemas.#{component}")
+            parameters = Schema::Registry.instance.reader("transfer_opts:components.schemas.#{component}")
             expect(parameters.current).to(eq(Yaml.safe_load(File.read(File.join(bundle_folder, 'schemas/agent_options.yaml')))))
             validator = Schema::Validator.instance
-            expect(validator.errors({'agent' => name.to_s}, Schema::Registry::TRANSFER_AGENT_OPTIONS)).to(be_empty)
+            expect(validator.errors({'agent' => name.to_s}, TransferAgents::TransferAgent::TRANSFER_OPTION_SCHEMA)).to(be_empty)
           end
 
           it 'is no longer in the file of the framework schema' do
             framework = Yaml.safe_load(File.read(File.join(source_root, 'lib', Schema::Registry::LOCATIONS[:opts])))['components']['schemas']
+            selector_file = Yaml.safe_load(File.read(File.join(source_root, 'lib/aspera/plugins/transfer_agents/schemas/options.yaml')))['components']['schemas']
             expect(framework.keys).not_to(include("#{info[:klass]}AgentOptions"))
-            expect(framework['TransferAgentOptions']['discriminator'].fetch('mapping', {})).not_to(include(name.to_s))
+            expect(selector_file['TransferAgentOptions']['discriminator'].fetch('mapping', {})).not_to(include(name.to_s))
           end
 
           it 'has a shim that warns once when loaded, and gives the moved constant under its former name' do

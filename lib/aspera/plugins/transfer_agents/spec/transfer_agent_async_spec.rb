@@ -413,49 +413,75 @@ module Aspera
         end
       end
 
-      # ── Runner.result_transfer with typed Transfer::Result ──────────────────
+      # ── .result_transfer with typed Transfer::Result ──────────────────
 
-      describe 'Runner.result_transfer' do
-        before { require_relative '../../../cli/runner' }
-
+      describe '.result_transfer' do
         it 'returns a SingleObject for Transfer::Result::Async' do
           async_result = Aspera::Transfer::Result.async(job_id: 'abc-123')
-          result = Aspera::Cli::Runner.result_transfer(async_result)
+          result = described_class.result_transfer(async_result)
           expect(result).to(be_a(Aspera::Cli::Result::SingleObject))
           expect(result.data['job_id']).to(eq('abc-123'))
         end
 
         it 'returns Result::Nothing for Transfer::Result::Success' do
-          result = Aspera::Cli::Runner.result_transfer(Aspera::Transfer::Result.success)
+          result = described_class.result_transfer(Aspera::Transfer::Result.success)
           expect(result).to(be_a(Aspera::Cli::Result::Nothing))
         end
 
         it 'raises the exception for Transfer::Result::Error' do
           err = RuntimeError.new('transfer failed')
-          expect { Aspera::Cli::Runner.result_transfer(Aspera::Transfer::Result.error(err)) }.to(raise_error(RuntimeError, 'transfer failed'))
+          expect { described_class.result_transfer(Aspera::Transfer::Result.error(err)) }.to(raise_error(RuntimeError, 'transfer failed'))
+        end
+
+        it 'raises on an unexpected result type' do
+          expect { described_class.result_transfer('done') }.to(raise_error(/Unexpected transfer result type: String/))
+        end
+
+        it 'returns the transfer spec of a dry run' do
+          transfer_spec = {'remote_host' => 'localhost', 'direction' => 'send'}
+          expect(described_class.result_transfer(Aspera::Transfer::Result.dry_run(transfer_spec)).data).to(eq(transfer_spec))
         end
       end
 
-      # ── Runner.result_object_transfer: created object (e.g. package) and its transfer ──
+      # ── .result_object_transfer: created object (e.g. package) and its transfer ──
 
-      describe 'Runner.result_object_transfer' do
-        before { require_relative '../../../cli/runner' }
-
+      describe '.result_object_transfer' do
         let(:package) { {'id' => '3909', 'title' => 'test'} }
 
         it 'adds the job id of an asynchronous transfer to the object' do
-          result = Aspera::Cli::Runner.result_object_transfer(package, Aspera::Transfer::Result.async(job_id: 'abc-123'))
+          result = described_class.result_object_transfer(package, Aspera::Transfer::Result.async(job_id: 'abc-123'))
           expect(result).to(be_a(Aspera::Cli::Result::SingleObject))
           expect(result.data).to(eq(package.merge('transfer' => {'job_id' => 'abc-123', 'status' => 'running'})))
         end
 
         it 'returns the object alone after a successful transfer' do
-          expect(Aspera::Cli::Runner.result_object_transfer(package, Aspera::Transfer::Result.success).data).to(eq(package))
+          expect(described_class.result_object_transfer(package, Aspera::Transfer::Result.success).data).to(eq(package))
         end
 
         it 'raises the exception of a failed transfer' do
           err = RuntimeError.new('transfer failed')
-          expect { Aspera::Cli::Runner.result_object_transfer(package, Aspera::Transfer::Result.error(err)) }.to(raise_error(RuntimeError, 'transfer failed'))
+          expect { described_class.result_object_transfer(package, Aspera::Transfer::Result.error(err)) }.to(raise_error(RuntimeError, 'transfer failed'))
+        end
+      end
+
+      # ── .result_transfer_multiple: several transfer jobs ──
+
+      describe '.result_transfer_multiple' do
+        it 'converts each status to text' do
+          field = described_class::STATUS_FIELD
+          table = [
+            {'id' => 1, field => Aspera::Transfer::Result::Success.new},
+            {'id' => 2, field => Aspera::Transfer::Result::Async.new(job_id: 'j1')},
+            {'id' => 3, field => Aspera::Transfer::Result.dry_run({})},
+            {'id' => 4, field => 'other'}
+          ]
+          expect(described_class.result_transfer_multiple(table).data.map { |item| item[field] }).to(eq(%w[success async:j1 dry_run other]))
+        end
+
+        it 'raises the exception of the first failed transfer' do
+          field = described_class::STATUS_FIELD
+          table = [{'id' => 1, field => Aspera::Transfer::Result.error(RuntimeError.new('first'))}, {'id' => 2, field => Aspera::Transfer::Result.error(RuntimeError.new('second'))}]
+          expect { described_class.result_transfer_multiple(table) }.to(raise_error(RuntimeError, 'first'))
         end
       end
     end

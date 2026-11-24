@@ -20,7 +20,6 @@ require_relative 'version'
 require_relative 'info'
 require_relative 'hints'
 require_relative 'result'
-require_relative '../transfer/result'
 require_relative '../units/duration'
 require_relative '../secret/hider'
 require_relative '../log'
@@ -35,67 +34,6 @@ module Aspera
   module Cli
     # The main CLI class
     class Runner
-      # Plugins store transfer result using this key and use result_transfer_multiple()
-      STATUS_FIELD = 'status'
-
-      class << self
-        # Process the typed result of a finished (or submitted) transfer.
-        # @param transfer_result [Transfer::Result] typed result from TransferAgent#start
-        # @raise [StandardError] if the transfer failed
-        # @return [Result] CLI result object
-        def result_transfer(transfer_result)
-          case transfer_result
-          when Transfer::Result::Async
-            return Result::SingleObject.new(transfer_result.to_h)
-          when Transfer::Result::Error
-            raise transfer_result.exception
-          when Transfer::Result::Success
-            return Result::Nothing.new
-          when Transfer::Result::DryRun
-            # Secrets are hidden by the formatter, as in any result
-            return Result::SingleObject.new(transfer_result.transfer_spec)
-          else
-            raise "Unexpected transfer result type: #{transfer_result.class}"
-          end
-        end
-
-        # Result of a command that creates an object and transfers its files, e.g. `packages send`.
-        # @param object          [Hash]             Created object
-        # @param transfer_result [Transfer::Result] Typed result from TransferAgent#start
-        # @raise [StandardError] if the transfer failed
-        # @return [Result::SingleObject] The object, with field `transfer` (`job_id`) if the transfer is asynchronous
-        def result_object_transfer(object, transfer_result)
-          status = result_transfer(transfer_result)
-          object = object.merge('transfer' => status.data) if status.is_a?(Result::SingleObject)
-          Result::SingleObject.new(object)
-        end
-
-        # Used when one command executes several transfer jobs (each job being possibly multi session)
-        # @param status_table [Array] [{STATUS_FIELD=>Transfer::Result,...},...]
-        # @return [Result] a status object suitable as command result
-        def result_transfer_multiple(status_table)
-          failed_result = nil
-          status_table.each do |item|
-            tr = item[STATUS_FIELD]
-            case tr
-            when Transfer::Result::Error
-              failed_result ||= tr
-              item[STATUS_FIELD] = tr.exception.message
-            when Transfer::Result::Success
-              item[STATUS_FIELD] = 'success'
-            when Transfer::Result::Async
-              item[STATUS_FIELD] = "async:#{tr.job_id}"
-            when Transfer::Result::DryRun
-              item[STATUS_FIELD] = 'dry_run'
-            else
-              item[STATUS_FIELD] = tr.to_s
-            end
-          end
-          raise failed_result.exception unless failed_result.nil?
-          return Result::ObjectList.new(status_table)
-        end
-      end
-
       # Minimum initialization, no exception raised
       # @param argv [Array<String>] command line arguments
       # @return [nil]
@@ -200,10 +138,9 @@ module Aspera
         rescue Cli::SchemaRequest => e;                exception_info = {e: e, t: 'Schema', exit: ExitCode::SUCCESS}
         rescue Cli::PollConditionNotMet => e;          exception_info = {e: e, t: 'Poll', exit: ExitCode::ERROR}
         rescue Cli::Error => e;                        exception_info = {e: e, t: 'Tool', usage: true, exit: ExitCode::ERROR}
-        rescue Transfer::Error => e;                   exception_info = {e: e, t: 'Transfer', exit: ExitCode::TRANSFER}
         rescue Rest::CallError => e;                   exception_info = {e: e, t: 'Rest', exit: ExitCode.for_call_error(e)}
         rescue *NETWORK_ERRORS => e;                   exception_info = {e: e, t: 'Network', exit: ExitCode::NETWORK}
-        rescue StandardError => e;                     exception_info = {e: e, t: "Other(#{e.class.name})", debug: true, exit: ExitCode::ERROR}
+        rescue StandardError => e;                     exception_info = other_error_info(e)
         rescue Interrupt => e;                         exception_info = {e: e, t: 'Interruption', debug: true, exit: ExitCode::INTERRUPTED}
         end
         # 1- processing of error condition
@@ -325,6 +262,14 @@ module Aspera
 
       private
 
+      # @param error [StandardError] Error that is neither of the CLI, nor of a REST call, nor of the network
+      # @return [Hash] Information on the error: label and exit code of its category if a bundle added one (`ExitCode.add_error`), else `Other`
+      def other_error_info(error)
+        category = ExitCode.error_category(error)
+        return {e: error, t: category[:label], exit: category[:code]} unless category.nil?
+        {e: error, t: "Other(#{error.class.name})", debug: true, exit: ExitCode::ERROR}
+      end
+
       # Location of an unexpected error in the code of a plugin (built-in or from option `plugin_folder`)
       # @param error [Exception] Error
       # @return [String, nil] First line of the backtrace in a plugin folder, e.g. `<FOLDER>/my_plugin.rb:12:in 'action_list'`, `nil` if none
@@ -379,17 +324,8 @@ module Aspera
             lines << "\nCOMMAND: #{label}"
             lines << "    #{spec.description}" if spec&.description
             display_args = registry.arguments_at(path)
-            # transfer_paths commands use --sources for the file list; default is positional args (@args)
-            if spec&.transfer_paths
-              # Default value of option `sources` of the service `transfer`
-              from_args = @context.transfer.class::FILE_LIST_FROM_ARGS
-              file_desc = if spec.transfer_paths == :receive
-                "Remote path(s) to download (default --sources=#{from_args}; see also --to-folder)"
-              else
-                "Source file(s) to upload (default --sources=#{from_args}; see also --src-type, --to-folder)"
-              end
-              display_args += [ArgumentSpec.new(name: :source_file, description: file_desc, mandatory: false, multiple: true)]
-            end
+            # The files of a command with `transfer_paths` are given as the service `transfer` reads them (e.g. positional arguments)
+            display_args += [@context.transfer.paths_argument(spec.transfer_paths)] if spec&.transfer_paths
             if display_args.any?
               lines << "\nARGUMENTS:"
               col_w = display_args.map { |a| a.name.to_s.length }.max + 2
@@ -461,10 +397,9 @@ module Aspera
       end
 
       # @param schema_path [String] Path of the schema in the registry
-      # @return [Schema::Documentation] Documentation of the schema, for the terminal
+      # @return [Schema::Documentation] Documentation of the schema, for the terminal, with the options given by the code that registered it
       def schema_documentation(schema_path)
-        options = schema_path.eql?(Schema::Registry::TRANSFER_SPEC) ? Transfer::Spec.doc_options : {}
-        Schema::Documentation.new(TerminalFormatter, Schema::Registry.instance.reader(schema_path), **options).build
+        Schema::Documentation.new(TerminalFormatter, Schema::Registry.instance.reader(schema_path), **Schema::Registry.instance.doc_options(schema_path)).build
       end
 
       # Initialize agents and options

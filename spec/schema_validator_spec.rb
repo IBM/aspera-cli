@@ -5,11 +5,12 @@
 
 require 'spec_helper'
 require_relative '../lib/aspera/schema/validator'
+require_relative '../lib/aspera/plugins/transfer_agents/transfer_agent'
 
 RSpec.describe(Aspera::Schema::Validator) do
   subject(:validator) { described_class.instance }
 
-  let(:agent_options) { Aspera::Schema::Registry::TRANSFER_AGENT_OPTIONS }
+  let(:agent_options) { Aspera::Plugins::TransferAgents::TransferAgent::TRANSFER_OPTION_SCHEMA }
   let(:workflow_start) { 'orchestrator_opts:components.schemas.OrchestratorWorkflowStart' }
 
   it 'accepts a valid value' do

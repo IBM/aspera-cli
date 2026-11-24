@@ -8,6 +8,10 @@ require_relative '../../schema/registry'
 require_relative '../../schema/reader'
 require_relative '../../schema/documentation'
 require_relative '../../ascp/session_errors'
+require_relative '../../ascp/installation'
+require_relative '../../cli/option_types'
+require_relative '../../cli/special_values'
+require_relative 'transfer_agent'
 
 module Aspera
   module Plugins
@@ -15,6 +19,16 @@ module Aspera
       # Mounted on plugin config (manifest `mounts`): ASCP / Transferd related actions
       module AscpActions
         TRANSFERD_APP_NAME = 'sdk'
+
+        class << self
+          # Options of `ascp`, in the plugin class that includes the module (config): before its option `smtp`
+          # @param base [Class] Plugin class
+          def included(base)
+            base.option(:sdk_url,       description: 'Ascp: URL to get Aspera Transfer Executables',                    default: Cli::SpecialValues::DEF, security: :low, before: :smtp)
+            base.option(:locations_url, description: 'Ascp: URLs to get download locations of Aspera Transfer Daemon', allowed: Cli::Type::STRING_ARRAY, default: Ascp::Installation.instance.transferd_urls, on_set: Ascp::Installation.instance.method(:transferd_urls=), security: :low, before: :smtp)
+            base.option(:sdk_folder,    description: 'Ascp: Path to folder with ascp (or product with "product:")',    on_set: Ascp::Installation.instance.method(:sdk_folder=), complete: :folder, before: :smtp)
+          end
+        end
 
         # Set the SDK directory, checking default and former locations
         # If a product is selected for `ascp`, the SDK directory is still needed (keys, conf, transferd)
@@ -66,13 +80,14 @@ module Aspera
         end
 
         # @param agent [Symbol] Name of an agent
-        # @return [String, nil] Schema of the parameters of the agent: component `<Name>AgentOptions` of the options schema (node, or declared by the bundle that provides the agent); `nil` if none or if it has no parameter
+        # @return [String, nil] Schema of the parameters of the agent: component `<Name>AgentOptions` of the schema of option `transfer` (declared by the bundle that provides the agent); `nil` if none or if it has no parameter
         def agent_schema_key(agent)
-          # Component of the file, or added to `TransferAgentOptions` variants, see `Schema::Registry#add_variants`
+          # Variant of `TransferAgentOptions`, see `Schema::Registry#add_variants`
           component = "#{agent.to_s.snake_to_capital}AgentOptions"
-          schema = Schema::Registry.instance.reader(Schema::Registry::OPTIONS)['components']['schemas'][component]
+          key = TransferAgent::TRANSFER_OPTION_SCHEMA.split(':', 2).first
+          schema = Schema::Registry.instance.reader(key)['components']['schemas'][component]
           return if schema.nil? || schema['properties'].to_h.empty?
-          "#{Schema::Registry::OPTIONS}:components.schemas.#{component}"
+          "#{key}:components.schemas.#{component}"
         end
         private :agent_schema_key
 

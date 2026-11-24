@@ -5,6 +5,7 @@
 
 require_relative '../../schema/registry'
 require_relative '../../cli/plugins/oauth'
+require_relative '../../cli/hints'
 require_relative '../node/commands'
 require_relative '../ats/commands'
 require_relative '../../cli/special_values'
@@ -20,6 +21,7 @@ require_relative '../../id_generator'
 require_relative '../../assert'
 require_relative 'graphql'
 require_relative '../../rainbow'
+require_relative '../transfer_agents/transfer_agent'
 require 'securerandom'
 require 'date'
 using Rainbow
@@ -32,6 +34,8 @@ module Aspera
         AOC_SCHEMA = 'aoc'
         AUTOMATION_SCHEMA = 'automation'
         PACKAGE_FOLDER_OPTIONS = 'aoc_opts:components.schemas.PackageFolderOptions'
+        # Options of the Faspex 4 gateway, in the schemas of the bundle faspex4
+        GATEWAY_OPTIONS = 'faspex4_opts:components.schemas.Faspex4GatewayOptions'
         # default redirect for AoC web auth
         REDIRECT_LOCALHOST = 'http://localhost:12345'
         # admin objects that can be manipulated
@@ -480,7 +484,7 @@ module Aspera
             'destination_root_id' => server_apifid.file_id,
             'source_root_id'      => client_apifid.file_id
           }
-          Cli::Runner.result_transfer(transfer.start(server_apifid.node_api.transfer_spec_gen4(
+          TransferAgents::TransferAgent.result_transfer(transfer.start(server_apifid.node_api.transfer_spec_gen4(
             server_apifid.file_id,
             client_direction,
             add_ts
@@ -816,7 +820,7 @@ module Aspera
         end
         command :automation,        description: 'Manage automation'
         command :gateway,           description: 'Start AoC Faspex4 gateway',
-          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: Schema::Registry::GATEWAY_OPTIONS}]
+          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: GATEWAY_OPTIONS}]
 
         # user sub-commands
         commands_under :user do
@@ -1097,7 +1101,7 @@ module Aspera
           end
           package_data['encryption_at_rest'] = true if transfer.user_transfer_spec['content_protection'].eql?('encrypt')
           created_package = aoc_api.create_package_simple(package_data, option_validate, new_user_option)
-          return Cli::Runner.result_object_transfer(created_package[:info], transfer.start(created_package[:spec], oauth_api: created_package[:node]))
+          return TransferAgents::TransferAgent.result_object_transfer(created_package[:info], transfer.start(created_package[:spec], oauth_api: created_package[:node]))
         end
 
         # packages > receive — package_id: from arguments:(:identifier) (or overridden by public_link)
@@ -1148,13 +1152,13 @@ module Aspera
             formatter.display_status(%Q{Downloading package: [#{package_info['id']}] "#{package_info['name']}" to [#{dest_folder}]})
             statuses = transfer.start(transfer_spec, oauth_api: package_node_api)
             File.write(File.join(dest_folder, "#{package_id}.info.json"), package_info.to_json) if save_metadata && !statuses.is_a?(Aspera::Transfer::Result::DryRun)
-            result_transfer.push({'package' => package_id, Cli::Runner::STATUS_FIELD => statuses})
+            result_transfer.push({'package' => package_id, TransferAgents::TransferAgent::STATUS_FIELD => statuses})
             if skip_ids_persistency && statuses.is_a?(Aspera::Transfer::Result::Success)
               skip_ids_persistency.data.push(package_id)
               skip_ids_persistency.save
             end
           end
-          return Cli::Runner.result_transfer_multiple(result_transfer)
+          return TransferAgents::TransferAgent.result_transfer_multiple(result_transfer)
         end
 
         # packages > list
@@ -1823,8 +1827,9 @@ module Aspera
         end
 
         def action_gateway(parameters: {}, **)
-          require_relative '../../faspex_gw'
-          Aspera::Faspex4GWServlet.serve(parameters.symbolize_keys, type: Cli::BadArgument) do
+          # Loaded on use: web server
+          require_relative '../faspex4/gw_servlet'
+          Faspex4::GWServlet.serve(parameters.symbolize_keys, type: Cli::BadArgument) do
             workspace_id = aoc_api.workspace_info[:id]
             ->(faspex_pkg_parameters) { faspex4_send_to_aoc(faspex_pkg_parameters, workspace_id) }
           end
@@ -1850,6 +1855,14 @@ module Aspera
         end
         private :faspex4_send_to_aoc
       end
+      # Hint of an error of authentication with a private key (JWT)
+      Cli::Hints.add(
+        exception:   Rest::CallError,
+        match:       /invalid_grant/,
+        remediation: [
+          'Check your public key in your AoC user profile.'
+        ]
+      )
     end
   end
 end

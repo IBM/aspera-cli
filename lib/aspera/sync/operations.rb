@@ -359,6 +359,10 @@ module Aspera
         end
       end
       # Private stuff:
+      # Schemas of the arguments of `async`, of the configuration of sync, and of the tables of the `async` database (see `Database`)
+      Schema::Registry.register(Schema::Registry::SYNC_ARGS, File.join(__dir__, 'args.schema.yaml'))
+      Schema::Registry.register(Schema::Registry::SYNC_CONF, File.join(__dir__, 'conf.schema.yaml'))
+      Schema::Registry.register(Schema::Registry::ASYNC_TABLES, File.join(__dir__, 'async_tables.yaml'))
       # Read JSON schema and mapping to command line options
       ARGS_INSTANCE_SCHEMA = Transfer::CommandLineBuilder.read_schema(Schema::Registry::SYNC_ARGS)
       ARGS_SESSION_SCHEMA = ARGS_INSTANCE_SCHEMA.dig(*%w[properties sessions items])

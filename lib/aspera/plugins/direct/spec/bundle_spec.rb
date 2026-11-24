@@ -11,6 +11,7 @@ require_relative '../../../agent/factory'
 require_relative '../../../bundle_registry'
 require_relative '../../../schema/registry'
 require_relative '../../../schema/validator'
+require_relative '../../transfer_agents/transfer_agent'
 require_relative '../agent'
 require 'fileutils'
 require 'open3'
@@ -57,19 +58,20 @@ module Aspera
           end
 
           it 'has its parameters in the schema of option transfer, from the file of its entry' do
-            selector = Schema::Registry.instance.reader(Schema::Registry::TRANSFER_AGENT_OPTIONS)
+            selector = Schema::Registry.instance.reader(TransferAgents::TransferAgent::TRANSFER_OPTION_SCHEMA)
             expect(selector['discriminator']['mapping']['direct']).to(eq('#/components/schemas/DirectAgentOptions'))
-            parameters = Schema::Registry.instance.reader("#{Schema::Registry::OPTIONS}:components.schemas.DirectAgentOptions")
+            parameters = Schema::Registry.instance.reader('transfer_opts:components.schemas.DirectAgentOptions')
             expect(parameters.current).to(eq(Yaml.safe_load(File.read(File.join(bundle_folder, 'schemas/agent_options.yaml')))))
             validator = Schema::Validator.instance
-            expect(validator.errors({'agent' => 'direct', 'wss' => false, 'quiet' => false}, Schema::Registry::TRANSFER_AGENT_OPTIONS)).to(be_empty)
-            expect(validator.errors({'agent' => 'direct', 'wss' => 'maybe'}, Schema::Registry::TRANSFER_AGENT_OPTIONS)).not_to(be_empty)
+            expect(validator.errors({'agent' => 'direct', 'wss' => false, 'quiet' => false}, TransferAgents::TransferAgent::TRANSFER_OPTION_SCHEMA)).to(be_empty)
+            expect(validator.errors({'agent' => 'direct', 'wss' => 'maybe'}, TransferAgents::TransferAgent::TRANSFER_OPTION_SCHEMA)).not_to(be_empty)
           end
 
           it 'is no longer in the file of the framework schema' do
             framework = Yaml.safe_load(File.read(File.join(source_root, 'lib', Schema::Registry::LOCATIONS[:opts])))['components']['schemas']
+            selector_file = Yaml.safe_load(File.read(File.join(source_root, 'lib/aspera/plugins/transfer_agents/schemas/options.yaml')))['components']['schemas']
             expect(framework.keys).not_to(include('DirectAgentOptions'))
-            expect(framework['TransferAgentOptions']['discriminator'].fetch('mapping', {})).not_to(include('direct'))
+            expect(selector_file['TransferAgentOptions']['discriminator'].fetch('mapping', {})).not_to(include('direct'))
           end
         end
 
@@ -82,7 +84,7 @@ module Aspera
 
           after { FileUtils.rm_rf(folder) }
 
-          it 'fails with the reason when its manifest is invalid, and is not replaced by the shim of the former file' do
+          it 'fails with the reason when its manifest is invalid' do
             write_bundle(folder, 'direct', manifest: "name: direct\nbogus: [\n", code: nil)
             test_registry.add_source(folder)
             test_registry.scan
@@ -90,8 +92,9 @@ module Aspera
             expect { factory.create(:direct, {}) }.to(raise_error(BundleRegistry::Unavailable, /\Aplugin direct is unavailable: invalid manifest .*plugin.yaml/))
           end
 
-          it 'is the agent of the shim when no bundle of this name exists' do
-            expect(factory.agent_class(:direct)).to(be(Aspera::Plugins::Direct::Agent))
+          it 'is unknown when no bundle provides it (no agent of the former folder of the agents)' do
+            expect(factory.all).not_to(include(:direct))
+            expect { factory.agent_class(:direct) }.to(raise_error(AssertError, 'assertion failed: unknown agent: direct'))
           end
         end
 

@@ -9,6 +9,7 @@
 require_relative 'bundle_registry_helper'
 require_relative '../lib/aspera/bundle_registry'
 require_relative '../lib/aspera/schema/registry'
+require_relative '../lib/aspera/ascp/log_analyzer'
 require_relative '../lib/aspera/hash_ext'
 require_relative '../build/lib/test_env'
 require 'tmpdir'
@@ -70,7 +71,7 @@ module Aspera
         expect { Schema::Registry.instance.reader('spec_bundle_none') }.to(raise_error(AssertError))
       end
 
-      it 'keeps the schemas of the gem' do
+      it 'keeps the schemas of the gem: of the framework, and of the domain library (added by the file that reads it)' do
         expect(Schema::Registry.known?(:ascp_log)).to(be(true))
         expect(Schema::Registry.owned?('ascp_log')).to(be(true))
       end

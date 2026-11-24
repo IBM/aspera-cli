@@ -13,7 +13,6 @@ require_relative '../option_types'
 require_relative '../parser'
 require_relative '../preset_actions'
 require_relative '../preset_manager'
-require_relative '../prompt'
 require_relative '../result'
 require_relative '../security'
 require_relative '../special_values'
@@ -23,7 +22,6 @@ require_relative '../version'
 require_relative '../wizard'
 require_relative 'base'
 require_relative 'factory'
-require_relative '../../ascp/installation'
 require_relative '../../assert'
 require_relative '../../bundle_registry'
 require_relative '../../environment'
@@ -31,10 +29,10 @@ require_relative '../../hash_ext'
 require_relative '../../log'
 require_relative '../../oauth/client/factory'
 require_relative '../../oauth/client/jwt'
+require_relative '../../prompt'
 require_relative '../../rest'
 require_relative '../../schema/registry'
 require_relative '../../string_ext'
-require_relative '../../transfer/spec'
 require_relative '../../sealed_hash'
 require_relative '../../web_auth/relay'
 require 'openssl'
@@ -339,13 +337,11 @@ module Aspera
         # then bundle `transferd` adds the deprecated `transferd`
         include_mounts
 
-        # Options of config come after the options of the mounted modules (`sql`, `ascp_logs`): same order as when config included them
+        # Options of config come after the options of the mounted modules (`sql`, `ascp_logs`): same order as when config included them.
+        # Mounted modules may place theirs before an option of config (`option ..., before:`).
         option :preset,             description: 'Load the named option preset from current config file',             short: 'P', on_set: :load_preset, complete: :preset
         option :version_check_days, description: 'Period in days to check new version (zero to disable)',             allowed: Type::INTEGER, default: DEFAULT_CHECK_NEW_VERSION_DAYS
         option :plugin_folder,      description: "Folders where to find additional plugins (#{SpecialValues::DEF}: folder plugins of the configuration folder)", allowed: Type::STRING_ARRAY, default: [SpecialValues::DEF], complete: :folder, security: :low
-        option :sdk_url,            description: 'Ascp: URL to get Aspera Transfer Executables',                      default: SpecialValues::DEF, security: :low
-        option :locations_url,      description: 'Ascp: URLs to get download locations of Aspera Transfer Daemon',   allowed: Type::STRING_ARRAY, default: Ascp::Installation.instance.transferd_urls, on_set: Ascp::Installation.instance.method(:transferd_urls=), security: :low
-        option :sdk_folder,         description: 'Ascp: Path to folder with ascp (or product with "product:")',      on_set: Ascp::Installation.instance.method(:sdk_folder=), complete: :folder
         option :smtp,               schema: Schema::Registry::SMTP_OPTIONS
         option :notify_to,          description: 'Email: Recipient for notification of transfers'
         option :notify_template,    description: 'Email: ERB template for notification of transfers', security: :low
@@ -429,15 +425,6 @@ module Aspera
           params['url'] || options.with_interactive { options.get_interactive('url') }
         end
 
-        # Instance of plugin `transferd`, found by name, for the deprecated commands `config transferd` (mounted by bundle `transferd`) and `config ascp install` (bundle `transfer_agents`)
-        # @param command     [String] Deprecated command
-        # @param replacement [String] Command to use instead
-        # @return [Base] Plugin instance
-        def transferd_plugin(command: 'config transferd', replacement: 'transferd', **)
-          Log.log.warn { "Command #{command} is #{Deprecation.new(last: DEPRECATED_LAST, message: "use #{replacement}")}" }
-          Factory.instance.plugin_class(:transferd).new(context: context)
-        end
-
         def action_documentation(location: :github, section: nil, **)
           case location
           when :github
@@ -501,7 +488,8 @@ module Aspera
 
         def action_download(file_url:, file_dest: nil, **)
           file_url = file_url.chomp
-          file_dest = File.join(transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE), file_url.rpartition('/').last) if file_dest.nil?
+          # Default: destination folder of downloads of the service `transfer` (option `to_folder`)
+          file_dest = File.join(transfer.destination_folder(:receive), file_url.rpartition('/').last) if file_dest.nil?
           file_dest = Security.instance.writable_path(file_dest)
           Log.log.info("Downloading: #{file_url}")
           Rest::Client.new(base_url: file_url).call(operation: 'GET', save_to: file_dest)
@@ -659,7 +647,6 @@ module Aspera
         PERSISTENCY_FOLDER = 'persist_store'
         # Persistency identifier of the hosts of login pages that the user accepted for `web_login`
         WEB_LOGIN_HOSTS_ID = 'web_login_hosts'
-        FILE_LIST_FOLDER_NAME = 'filelists'
         REST_EXCEPTIONS_LOG_FILENAME = 'rest_exceptions.log'
         ASPERA = 'aspera'
         SERVER_COMMAND = 'server'
@@ -684,7 +671,6 @@ module Aspera
           :ASPERA_PLUGINS_FOLDERNAME,
           :PERSISTENCY_FOLDER,
           :WEB_LOGIN_HOSTS_ID,
-          :FILE_LIST_FOLDER_NAME,
           :REST_EXCEPTIONS_LOG_FILENAME,
           :ASPERA,
           :SERVER_COMMAND,

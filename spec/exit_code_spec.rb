@@ -47,6 +47,31 @@ module Aspera
         end
       end
 
+      describe '.add_error' do
+        # Error class of the examples
+        spec_error = Class.new(StandardError)
+
+        around do |example|
+          errors = described_class.instance_variable_get(:@errors).dup
+          example.run
+        ensure
+          described_class.instance_variable_set(:@errors, errors)
+        end
+
+        it 'gives the label and exit code of an added error class, also for its subclasses' do
+          expect(described_class.error_category(spec_error.new)).to(be_nil)
+          described_class.add_error(spec_error, label: 'Spec', code: ExitCode::TRANSFER)
+          expect(described_class.error_category(spec_error.new)).to(eq({label: 'Spec', code: ExitCode::TRANSFER}))
+          expect(described_class.error_category(Class.new(spec_error).new)).to(eq({label: 'Spec', code: ExitCode::TRANSFER}))
+          expect(described_class.error_category(StandardError.new)).to(be_nil)
+        end
+
+        it 'refuses a class that is not an error, or an unknown exit code' do
+          expect { described_class.add_error(String, label: 'Spec', code: ExitCode::ERROR) }.to(raise_error(ArgumentError, /not an error class/))
+          expect { described_class.add_error(spec_error, label: 'Spec', code: 42) }.to(raise_error(ArgumentError, /unknown exit code: 42/))
+        end
+      end
+
       describe 'exit status of the process' do
         # @param args [Array<String>] arguments of `ascli`
         # @return [Integer] exit status, with a configuration folder of its own
@@ -68,7 +93,9 @@ module Aspera
           ['config', 'echo', 'hello', '--out.query=[?']                              => ExitCode::USAGE,
           %W[node info --url=http://127.0.0.1:1 --username=u --password=#{password}] => ExitCode::NETWORK,
           # Nagios reports the failure of the check as UNKNOWN
-          ['config', 'echo', '@json:{"a":1}', '--format=nagios']                     => 3
+          ['config', 'echo', '@json:{"a":1}', '--format=nagios']                     => 3,
+          # Category added by the bundle transfer_agents
+          %w[config test throw Aspera::Transfer::Error failed]                       => ExitCode::TRANSFER
         }.each do |args, code|
           it "exits with #{code} for: #{args.join(' ')}" do
             expect(exit_status(*args)).to(eq(code))

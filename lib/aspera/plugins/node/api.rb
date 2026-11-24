@@ -682,6 +682,17 @@ module Aspera
           return false
         end
       end
+      # Errors of the transfer specs in the answer of `upload_setup` and `download_setup`
+      Rest::ErrorAnalyzer.instance.add_handler('T8:node: *_setup') do |type, context|
+        next unless context[:data].is_a?(Hash)
+        d_t_s = context[:data]['transfer_specs']
+        next unless d_t_s.is_a?(Array)
+        d_t_s.each do |res|
+          r_err = res.dig(*%w[transfer_spec error]) || res['error']
+          next unless r_err.is_a?(Hash)
+          Rest::ErrorAnalyzer.add_error(context, type, r_err.values.join(': '))
+        end
+      end
     end
   end
 end

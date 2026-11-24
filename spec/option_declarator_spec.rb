@@ -30,6 +30,10 @@ RSpec.describe(Aspera::Cli::OptionDeclarator) do
         dummy_class.option(:opt_a, description: 'Duplicate')
       end.to(raise_error(ArgumentError, /Duplicate option/))
     end
+
+    it 'refuses a placement: only for the options of plugins' do
+      expect { dummy_class.option(:opt_c, description: 'C', before: :opt_a) }.to(raise_error(ArgumentError, /placement is only for options of plugins/))
+    end
   end
 
   describe '.declare_options' do

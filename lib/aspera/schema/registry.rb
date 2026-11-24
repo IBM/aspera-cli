@@ -19,10 +19,40 @@ module Aspera
     class Registry
       include Singleton
 
+      # Schemas added by the libraries that read them (`register`), by key: `file`, `doc_options`
+      @registered = {}
+
       class << self
-        # @param sym [Symbol] Key of a schema: of the gem (`LOCATIONS`) or provided by a bundle
+        # Add a schema of a library that uses the registry, e.g. the domain library: called by the file that reads it.
+        # The schema is owned (values are validated against it).
+        # @param key         [Symbol, String] Key of the schema
+        # @param file        [String]         Absolute path of the schema file
+        # @param doc_options [Proc, nil]      Called without argument: options of `Documentation` for the whole schema (e.g. annotations of properties)
+        # @return [nil]
+        def register(key, file, doc_options: nil)
+          key = key.to_sym
+          Aspera.assert(!LOCATIONS.key?(key)) { "schema #{key} is a built-in schema" }
+          Aspera.assert(!@registered.key?(key) || @registered[key][:file].eql?(file)) { "schema #{key} is registered with another file: #{@registered[key][:file]}" }
+          Aspera.assert_type(doc_options, Proc, NilClass) { 'doc_options' }
+          @registered[key] = {file: file, doc_options: doc_options}.freeze
+          nil
+        end
+
+        # @param sym [Symbol] Key of a schema
+        # @return [Hash, nil] Schema added by `register`: `file`, `doc_options`, `nil` if none
+        def registered(sym)
+          @registered[sym]
+        end
+
+        # @param sym [Symbol] Key of a schema: of the gem (`LOCATIONS`), added by a library (`register`) or provided by a bundle
         def known?(sym)
-          LOCATIONS.key?(sym) || !bundle_schema(sym).nil?
+          LOCATIONS.key?(sym) || @registered.key?(sym) || !bundle_schema(sym).nil?
+        end
+
+        # @param sym [Symbol] Key of a schema
+        # @return [Boolean] `true` if the key is a schema of the gem or added by a library: a bundle cannot use it
+        def built_in?(sym)
+          LOCATIONS.key?(sym) || @registered.key?(sym)
         end
 
         # @param name_path [String] schema path, e.g. `opts:components.schemas.HttpOptions`
@@ -30,6 +60,7 @@ module Aspera
         def owned?(name_path)
           sym = name_path.split(':', 2).first.to_sym
           return OWNED.include?(sym) if LOCATIONS.key?(sym)
+          return true if @registered.key?(sym)
           bundle_schema(sym)&.owned || false
         end
 
@@ -70,20 +101,17 @@ module Aspera
         end
       end
 
+      # Schemas of the framework, relative to `lib`: the other ones are added by the libraries that use them (`register`) and by bundles (manifest)
       LOCATIONS = {
-        spec:         'aspera/transfer/spec.schema.yaml',
-        args:         'aspera/sync/args.schema.yaml',
-        conf:         'aspera/sync/conf.schema.yaml',
-        opts:         'aspera/cli/options.schema.yaml',
-        async_tables: 'aspera/sync/async_tables.yaml',
-        ascp_log:     'aspera/ascp/log.schema.yaml',
-        manifest:     'aspera/plugin.schema.yaml'
+        opts:     'aspera/cli/options.schema.yaml',
+        manifest: 'aspera/plugin.schema.yaml'
       }.freeze
 
       # Schemas owned by ascli: values are validated against them (vendor API schemas are validated by the API)
-      OWNED = %i[spec args conf opts async_tables ascp_log manifest].freeze
+      OWNED = %i[opts manifest].freeze
 
       OPTIONS = 'opts'
+      # Keys of the schemas of the domain library, added by their files (`register`)
       TRANSFER_SPEC = 'spec'
       SYNC_CONF = 'conf'
       SYNC_ARGS = 'args'
@@ -110,17 +138,14 @@ module Aspera
       SHARES = 'shares+/api/v1'
       # removed in 5.0: use the key `preview` of the bundle preview
       PREVIEW_OPTIONS = 'preview'
-      # removed in 5.0: use the component `TransferdAgentOptions`, variant of `TransferAgentOptions` added by the bundle transferd
-      TRANSFERD_AGENT_OPTIONS = "#{OPTIONS}:components.schemas.TransferdAgentOptions".freeze
       # removed in 5.0: use `Aspera::Plugins::Transferd::Service::SERVICE_CONFIG`
       TRANSFERD_SERVICE_CONFIG = 'transferd_opts:components.schemas.TransferdServiceConfig'
       deprecate_constant :AOC, :AUTOMATION, :CONSOLE, :FASPEX, :FASPIO, :NODE, :ORCHESTRATOR, :SHARES,
-        :PREVIEW_OPTIONS, :TRANSFERD_AGENT_OPTIONS, :TRANSFERD_SERVICE_CONFIG
+        :PREVIEW_OPTIONS, :TRANSFERD_SERVICE_CONFIG
       LOG_OPTIONS             = "#{OPTIONS}:components.schemas.LogOptions".freeze
       UI_OPTIONS              = "#{OPTIONS}:components.schemas.UiOptions".freeze
       SECURITY_OPTIONS        = "#{OPTIONS}:components.schemas.SecurityOptions".freeze
       TEMP_OPTIONS            = "#{OPTIONS}:components.schemas.TempOptions".freeze
-      TRANSFER_AGENT_OPTIONS  = "#{OPTIONS}:components.schemas.TransferAgentOptions".freeze
       SMTP_OPTIONS            = "#{OPTIONS}:components.schemas.SmtpOptions".freeze
       HTTP_OPTIONS            = "#{OPTIONS}:components.schemas.HttpOptions".freeze
       VAULT_OPTIONS           = "#{OPTIONS}:components.schemas.VaultOptions".freeze
@@ -134,17 +159,19 @@ module Aspera
       OUT_OPTIONS             = "#{OPTIONS}:components.schemas.OutOptions".freeze
       POLL_OPTIONS            = "#{OPTIONS}:components.schemas.PollOptions".freeze
       WEB_SERVER_OPTIONS      = "#{OPTIONS}:components.schemas.WebServerOptions".freeze
-      GATEWAY_OPTIONS         = "#{OPTIONS}:components.schemas.Faspex4GatewayOptions".freeze
-      POSTPROC_OPTIONS        = "#{OPTIONS}:components.schemas.Faspex4PostProcOptions".freeze
 
       REQ_BODY = '.requestBody.content.application/json.schema'
       # Suffix appended to a dotted path to signal query-param extraction in reader()
       QUERY_PARAMS_SUFFIX = '.parameters'
       # Marker of a component whose `oneOf` variants are also given by the entries of an extension point of bundles, see `add_variants`
       VARIANTS = 'x-cli-variants'
+      # `$ref` to a node of another schema of the registry: `<key>:#/<path>`, see `add_references`
+      EXTERNAL_REF = %r{\A([a-z][a-z0-9_]*):#/(.+)\z}
 
       def initialize
         @cache = {}
+        # Schema files being read (see `add_references`)
+        @loading = []
         # Entries of the extension points used for the variants of a document, by file and by point (see `add_variants`)
         @variant_entries = {}
         @main_folder = File.expand_path('../..', __dir__)
@@ -161,10 +188,10 @@ module Aspera
         name, path = name_path.split(':', 2)
         sym = name.to_sym
         Aspera.assert(Registry.known?(sym)) { "schema: #{sym}" }
-        spec_file = LOCATIONS.key?(sym) ? File.join(@main_folder, LOCATIONS[sym]) : Registry.bundle_schema(sym).file
+        spec_file = schema_file(sym)
         # JSON is read with the YAML loader: it accepts the header comment added by `rake tools:openapi`
         # Read again when the entries of its variants changed (e.g. bundles of a plugin folder added since)
-        @cache[spec_file] = add_variants(Yaml.safe_load(File.read(spec_file)), spec_file) unless @cache.key?(spec_file) && variants_current?(spec_file)
+        load_document(spec_file, sym) unless @cache.key?(spec_file) && variants_current?(spec_file)
         # Query-params path: strip the suffix, navigate to the operation node, extract parameters
         if path&.end_with?(QUERY_PARAMS_SUFFIX)
           parent_path = path.delete_suffix(QUERY_PARAMS_SUFFIX)
@@ -180,7 +207,68 @@ module Aspera
         reader.dig(*path.split('.'))
       end
 
+      # @param name_path [String] Schema path: key, and optional path in the schema (`<key>:<path>`)
+      # @return [Hash] Options of `Documentation` for the schema, given when its key was added (`register`): only for the whole schema (no path); empty if none
+      def doc_options(name_path)
+        name, path = name_path.split(':', 2)
+        doc_options = Registry.registered(name.to_sym)&.fetch(:doc_options)
+        return {} if !path.nil? || doc_options.nil?
+        doc_options.call
+      end
+
       private
+
+      # Read a schema file in the cache, with the references to other schemas and the variants of bundles added
+      # @param spec_file [String] Schema file
+      # @param sym       [Symbol] Key of the schema
+      # @return [nil]
+      def load_document(spec_file, sym)
+        Aspera.assert(!@loading.include?(spec_file)) { "schema #{sym}: circular reference between schemas" }
+        @loading.push(spec_file)
+        @cache[spec_file] = add_variants(add_references(Yaml.safe_load(File.read(spec_file)), sym), spec_file)
+        nil
+      ensure
+        @loading.delete(spec_file)
+      end
+
+      # @param sym [Symbol] Key of a known schema
+      # @return [String] Absolute path of its file
+      def schema_file(sym)
+        return File.join(@main_folder, LOCATIONS[sym]) if LOCATIONS.key?(sym)
+        return Registry.registered(sym)[:file] if Registry.registered(sym)
+        Registry.bundle_schema(sym).file
+      end
+
+      # Replace each `$ref` to a node of another schema of the registry (`<key>:#/<path>`) with a copy of that node:
+      # the readers and the validator see one document, with local references only. The node may not contain references.
+      # @param node [Object] Document read from a schema file, or a node of it
+      # @param sym  [Symbol] Key of the document
+      # @return [Object] The node, with the references replaced
+      def add_references(node, sym)
+        case node
+        when Hash
+          match = node['$ref'].is_a?(String) ? EXTERNAL_REF.match(node['$ref']) : nil
+          return node.transform_values { |value| add_references(value, sym) } if match.nil?
+          Aspera.assert(node.keys.eql?(['$ref'])) { "schema #{sym}: #{node['$ref']}: a reference to another schema has no sibling keys" }
+          Aspera.assert(!match[1].to_sym.eql?(sym)) { "schema #{sym}: #{node['$ref']}: use a local reference" }
+          target = reader(match[1]).current.dig(*match[2].split('/'))
+          Aspera.assert_type(target, Hash) { "schema #{sym}: #{node['$ref']}" }
+          Aspera.assert(!reference?(target)) { "schema #{sym}: #{node['$ref']}: the referenced node may not contain references" }
+          Marshal.load(Marshal.dump(target))
+        when Array then node.map { |value| add_references(value, sym) }
+        else node
+        end
+      end
+
+      # @param node [Object] Node of a schema
+      # @return [Boolean] `true` if the node contains a `$ref`
+      def reference?(node)
+        case node
+        when Hash then node.key?('$ref') || node.each_value.any? { |value| reference?(value) }
+        when Array then node.any? { |value| reference?(value) }
+        else false
+        end
+      end
 
       # @param spec_file [String] Schema file read in the cache
       # @return [Boolean] `true` if the entries of the extension points of its variants are the same as when it was read

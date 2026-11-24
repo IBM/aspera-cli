@@ -33,7 +33,7 @@ module Aspera
         describe 'commands' do
           it 'are those of plugin preview, from the bundle (which hides the shim of the former plugin file)' do
             expect(registry.unavailable_reason(:preview)).to(be_nil)
-            expect(registry[:preview].depends).to(eq([:node]))
+            expect(registry[:preview].depends).to(eq(%i[node transfer_agents]))
             expect(registry[:preview].gems).to(eq(['marcel']))
             expect(Cli::Plugins::Factory.instance.plugin_source(:preview)).to(eq(bundle_folder))
             expect(Cli::Plugins::Factory.instance.plugin_class(:preview)).to(be(Commands))

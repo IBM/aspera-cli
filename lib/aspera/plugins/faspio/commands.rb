@@ -5,6 +5,7 @@
 
 require_relative '../../rest'
 require_relative '../../nagios'
+require_relative '../../oauth/client/jwt'
 require_relative '../../cli/plugins/basic_auth'
 
 module Aspera

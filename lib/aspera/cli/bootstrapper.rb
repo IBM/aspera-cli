@@ -11,9 +11,6 @@ require_relative 'transfer_progress'
 require_relative 'preset_manager'
 require_relative 'vault_manager'
 require_relative 'http'
-require_relative '../ascp/installation'
-require_relative '../products/transferd'
-require_relative '../transfer/parameters'
 require_relative '../proxy_auto_config'
 require_relative '../environment'
 require_relative '../persistency_folder'
@@ -35,8 +32,8 @@ module Aspera
     #   - populate context.persistency, context.presets, context.vault, context.http_config, context.progress_bar
     #   - register the plugin lookup folder of the gem (other folders: option `plugin_folder`, see `Plugins::Config#add_plugin_lookup_folders`)
     #   - register @preset / @vault extended-value handlers
-    #   - configure global singletons: Rest::Parameters, OAuth::Factory, SSL, Transfer::Parameters,
-    #     Rest::ErrorAnalyzer
+    #   - configure global singletons: Rest::Parameters, OAuth::Factory, SSL, Rest::ErrorAnalyzer
+    #     (those of transfers are configured by the service `transfer`)
     #   - set up the PAC proxy executor (option :fpac)
     class Bootstrapper
       # Folder name inside $HOME for all Aspera tool data (~/.aspera)
@@ -45,8 +42,6 @@ module Aspera
       DEFAULT_CONFIG_FILENAME  = 'config.yaml'
       # Sub-folder for persistency data
       PERSISTENCY_FOLDER       = 'persist_store'
-      # Sub-folder for file lists used by transfers
-      FILE_LIST_FOLDER_NAME    = 'filelists'
       # Log file for REST call exceptions
       REST_EXCEPTIONS_LOG_FILENAME = 'rest_exceptions.log'
       # Extended-value prefix that resolves a named preset
@@ -59,7 +54,6 @@ module Aspera
       private_constant :ASPERA_HOME_FOLDER_NAME,
         :DEFAULT_CONFIG_FILENAME,
         :PERSISTENCY_FOLDER,
-        :FILE_LIST_FOLDER_NAME,
         :REST_EXCEPTIONS_LOG_FILENAME,
         :EXTEND_PRESET,
         :EXTEND_VAULT,
@@ -85,7 +79,7 @@ module Aspera
         setup_extended_value_handlers
         setup_progress_bar
         setup_pac_executor
-        setup_rest_and_transfer_runtime
+        setup_rest_runtime
       end
 
       private
@@ -163,17 +157,15 @@ module Aspera
         end
       end
 
-      # Configure global singletons: Rest::Parameters, SSL, Transfer, Rest::ErrorAnalyzer.
+      # Configure global singletons: Rest::Parameters, SSL, Rest::ErrorAnalyzer.
       # OAuth persist_mgr is NOT set here: it depends on :cache_tokens which is parsed later
       # by Config#initialize. Runner sets it after Config.new.
-      def setup_rest_and_transfer_runtime
+      def setup_rest_runtime
         Rest::Parameters.instance.user_agent    = Info::CMD_NAME
         Rest::Parameters.instance.progress_bar  = @context.progress_bar
         Rest::Parameters.instance.session_cb    = ->(http_session) { @context.http_config.update_session(http_session) }
         Rest::Parameters.instance.spinner_cb    = ->(title = nil, action: :spin) { @context.formatter.long_operation(title, action: action) }
         OAuth::Web.additional_info = "#{Info::CMD_NAME} v#{Cli::VERSION}"
-        Ascp::Installation.instance.referer_url = "#{Info::GEM_URL}/versions/#{Cli::VERSION}"
-        Transfer::Parameters.file_list_folder = File.join(@context.main_folder, FILE_LIST_FOLDER_NAME)
         Rest::ErrorAnalyzer.instance.log_file = File.join(@context.main_folder, REST_EXCEPTIONS_LOG_FILENAME)
       end
 

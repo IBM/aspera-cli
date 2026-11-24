@@ -4620,7 +4620,7 @@ See [FASP](#fasp-configuration).
 
 The `transfer` option accepts the following optional parameters to control multi-session, Web Socket Session, Resume policy and add any argument to `ascp`:
 
-<%=schema_to_table("#{Aspera::Schema::Registry::OPTIONS}:components.schemas.DirectAgentOptions")%>
+<%=schema_to_table('transfer_opts:components.schemas.DirectAgentOptions')%>
 
 In case of transfer interruption, the agent will **resume** a transfer up to `iter_max` times.
 Sleep between iterations is given by the following formula where `iter_index` is the current iteration index, starting at 0:
@@ -5010,7 +5010,7 @@ This is especially useful for direct node-to-node transfers.
 
 Parameters provided in option `transfer` are:
 
-<%=schema_to_table("#{Aspera::Schema::Registry::OPTIONS}:components.schemas.NodeAgentOptions")%>
+<%=schema_to_table('transfer_opts:components.schemas.NodeAgentOptions')%>
 
 Like any other option, `transfer` can get its value from a pre-configured [Option Preset](#option-preset):
 
@@ -5037,7 +5037,7 @@ By specifying option: `--transfer=httpgw`, <%=tool%> will start transfers using 
 
 Parameters provided in option `transfer` are:
 
-<%=schema_to_table("#{Aspera::Schema::Registry::OPTIONS}:components.schemas.HttpgwAgentOptions")%>
+<%=schema_to_table('transfer_opts:components.schemas.HttpgwAgentOptions')%>
 
 Example:
 
@@ -5057,7 +5057,7 @@ Set option `transfer` to `transferd`.
 
 Options for `transfer` are:
 
-<%=schema_to_table("#{Aspera::Schema::Registry::OPTIONS}:components.schemas.TransferdAgentOptions")%>
+<%=schema_to_table('transfer_opts:components.schemas.TransferdAgentOptions')%>
 
 > [!NOTE]
 > If port zero is specified in the URL, then the daemon will listen on a random available port.
@@ -9624,7 +9624,7 @@ It is invoked like this:
 
 An optional positional parameter can be provided as [Extended Value](#extended-value-syntax) `Hash`:
 
-<%=schema_to_table('opts:components.schemas.Faspex4PostProcOptions')%>
+<%=schema_to_table('faspex5_opts:components.schemas.Faspex4PostProcOptions')%>
 
 For details on `url` and HTTPS (`cert`, `key`, `chain`), see [Web service](#web-service).
 
@@ -9688,7 +9688,7 @@ For legacy Faspex client applications that use the `send` API (only) of Faspex v
 
 It takes an optional `Hash` argument:
 
-<%=schema_to_table(Aspera::Schema::Registry::GATEWAY_OPTIONS)%>
+<%=schema_to_table('faspex4_opts:components.schemas.Faspex4GatewayOptions')%>
 
 For details on `url` and HTTPS (`cert`, `key`, `chain`), see [Web service](#web-service).
 

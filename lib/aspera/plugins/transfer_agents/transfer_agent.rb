@@ -6,8 +6,15 @@
 require_relative '../../agent/factory'
 require_relative '../../bundle_registry'
 require_relative '../../schema/registry'
+require_relative '../../ascp/installation'
+require_relative '../../cli/command_spec'
 require_relative '../../cli/error'
+require_relative '../../cli/hints'
 require_relative '../../cli/option_declarator'
+require_relative '../../cli/result'
+require_relative '../../cli/version'
+require_relative '../../transfer/error'
+require_relative '../../transfer/parameters'
 require_relative '../../transfer/result'
 require_relative '../../transfer/spec'
 require_relative '../../cli/info'
@@ -26,6 +33,10 @@ module Aspera
       # Provide CLI options to select one of the transfer agents (FASP/ascp client)
       # Service `transfer` of the bundle (manifest `services`): created once per context, see `Cli::Context#service`
       class TransferAgent
+        # Plugins store transfer result using this key and use `result_transfer_multiple`
+        STATUS_FIELD = 'status'
+        # Schema of option `transfer`, in the schemas of the bundle (manifest `schemas`): its variants are the agents (extension point `agent`)
+        TRANSFER_OPTION_SCHEMA = 'transfer_opts:components.schemas.TransferAgentOptions'
         # `@args` special value for --sources : read file list from arguments
         FILE_LIST_FROM_ARGS = '@args'
         # `@ts` special value for --sources : read file list from transfer spec (--ts)
@@ -41,6 +52,8 @@ module Aspera
           <%=ts.to_yaml%>
         END_OF_TEMPLATE
         CP4I_REMOTE_HOST_LB = 'N/A'
+        # Folder of the configuration folder for file lists used by transfers
+        FILE_LIST_FOLDER_NAME = 'filelists'
         # Transfer spec parameters overridden by option `ts`
         TS_DEFAULTS = {
           'create_dir'    => true,
@@ -49,6 +62,7 @@ module Aspera
         private_constant :FILE_LIST_FROM_TRANSFER_SPEC,
           :FILE_LIST_OPTIONS,
           :DEFAULT_TRANSFER_NOTIFY_TEMPLATE,
+          :FILE_LIST_FOLDER_NAME,
           :TS_DEFAULTS
 
         extend Cli::OptionDeclarator
@@ -57,14 +71,75 @@ module Aspera
         option :to_folder,     description: 'Destination folder for transferred files', complete: :destination_folder
         option :sources,       description: "How list of transferred files is provided (#{FILE_LIST_OPTIONS.join(',')})",               default: FILE_LIST_FROM_ARGS
         option :src_type,      description: 'Type of file list',                                                                        allowed: %i[list pair], default: :list
-        option :transfer,      description: 'Transfer agent type, or agent parameters with optional agent key',                         allowed: [Hash, String], shorthand: 'agent', schema: Schema::Registry::TRANSFER_AGENT_OPTIONS
-        option :transfer_info, description: 'Parameters for transfer agent',                                                            deprecation: {last: '4.26.2', message: 'use --transfer instead'}, schema: Schema::Registry::TRANSFER_AGENT_OPTIONS
+        option :transfer,      description: 'Transfer agent type, or agent parameters with optional agent key',                         allowed: [Hash, String], shorthand: 'agent', schema: TRANSFER_OPTION_SCHEMA
+        option :transfer_info, description: 'Parameters for transfer agent',                                                            deprecation: {last: '4.26.2', message: 'use --transfer instead'}, schema: TRANSFER_OPTION_SCHEMA
+
+        class << self
+          # Process the typed result of a finished (or submitted) transfer.
+          # @param transfer_result [Aspera::Transfer::Result] typed result from `start`
+          # @raise [StandardError] if the transfer failed
+          # @return [Cli::Result] CLI result object
+          def result_transfer(transfer_result)
+            case transfer_result
+            when Aspera::Transfer::Result::Async
+              return Cli::Result::SingleObject.new(transfer_result.to_h)
+            when Aspera::Transfer::Result::Error
+              raise transfer_result.exception
+            when Aspera::Transfer::Result::Success
+              return Cli::Result::Nothing.new
+            when Aspera::Transfer::Result::DryRun
+              # Secrets are hidden by the formatter, as in any result
+              return Cli::Result::SingleObject.new(transfer_result.transfer_spec)
+            else
+              raise "Unexpected transfer result type: #{transfer_result.class}"
+            end
+          end
+
+          # Result of a command that creates an object and transfers its files, e.g. `packages send`.
+          # @param object          [Hash]                     Created object
+          # @param transfer_result [Aspera::Transfer::Result] Typed result from `start`
+          # @raise [StandardError] if the transfer failed
+          # @return [Cli::Result::SingleObject] The object, with field `transfer` (`job_id`) if the transfer is asynchronous
+          def result_object_transfer(object, transfer_result)
+            status = result_transfer(transfer_result)
+            object = object.merge('transfer' => status.data) if status.is_a?(Cli::Result::SingleObject)
+            Cli::Result::SingleObject.new(object)
+          end
+
+          # Used when one command executes several transfer jobs (each job being possibly multi session)
+          # @param status_table [Array] [{STATUS_FIELD=>Aspera::Transfer::Result,...},...]
+          # @return [Cli::Result] a status object suitable as command result
+          def result_transfer_multiple(status_table)
+            failed_result = nil
+            status_table.each do |item|
+              tr = item[STATUS_FIELD]
+              case tr
+              when Aspera::Transfer::Result::Error
+                failed_result ||= tr
+                item[STATUS_FIELD] = tr.exception.message
+              when Aspera::Transfer::Result::Success
+                item[STATUS_FIELD] = 'success'
+              when Aspera::Transfer::Result::Async
+                item[STATUS_FIELD] = "async:#{tr.job_id}"
+              when Aspera::Transfer::Result::DryRun
+                item[STATUS_FIELD] = 'dry_run'
+              else
+                item[STATUS_FIELD] = tr.to_s
+              end
+            end
+            raise failed_result.exception unless failed_result.nil?
+            return Cli::Result::ObjectList.new(status_table)
+          end
+        end
 
         # @param context [Cli::Context] Application context
         def initialize(context)
           Aspera.assert_type(context, Cli::Context) { 'context' }
           Aspera.assert_type(context.options, Cli::Parser) { 'context.options' }
           @context = context
+          # Runtime of transfers: SDK downloads refer to the version of the gem, file lists are in the configuration folder (if any, else a temporary folder)
+          Ascp::Installation.instance.referer_url = "#{Cli::Info::GEM_URL}/versions/#{Cli::VERSION}"
+          Aspera::Transfer::Parameters.file_list_folder = File.join(@context.main_folder, FILE_LIST_FOLDER_NAME) unless @context.main_folder.nil?
           # Command line can override transfer spec
           @user_transfer_spec = TS_DEFAULTS.dup
           # the currently selected transfer agent
@@ -89,6 +164,19 @@ module Aspera
         end
 
         attr_reader :user_transfer_spec
+
+        # Argument shown in the help of a command with `transfer_paths`: the files are read by `ts_source_paths`
+        # @param direction [Symbol] `:send` (files to upload) or `:receive` (remote paths to download)
+        # @return [Cli::ArgumentSpec] Description of the list of files, depending on option `sources`
+        def paths_argument(direction)
+          description =
+            case direction
+            when :receive then "Remote path(s) to download (default --sources=#{FILE_LIST_FROM_ARGS}; see also --to-folder)"
+            when :send then "Source file(s) to upload (default --sources=#{FILE_LIST_FROM_ARGS}; see also --src-type, --to-folder)"
+            else Aspera.error_unexpected_value(direction) { 'transfer_paths' }
+            end
+          Cli::ArgumentSpec.new(name: :source_file, description: description, mandatory: false, multiple: true)
+        end
 
         # `on_set` callback of option `ts`: values override defaults
         # @param value [Hash] transfer spec parameters
@@ -349,6 +437,37 @@ module Aspera
           }
         end
       end
+      # A failed transfer exits with its own code
+      Cli::ExitCode.add_error(Aspera::Transfer::Error, label: 'Transfer', code: Cli::ExitCode::TRANSFER)
+      Cli::Hints.add(
+        exception:   Aspera::Transfer::Error,
+        match:       'Remote host is not who we expected',
+        remediation: [
+          'For this specific error, refer to:',
+          "#{Cli::Info::SRC_URL}#error-remote-host-is-not-who-we-expected",
+          'Add this to arguments:',
+          %q{--ts=@json:'{"sshfp":null}'"}
+        ]
+      )
+      Cli::Hints.add(
+        exception:   RuntimeError,
+        match:       /unexpected last event type: INIT/,
+        remediation: [
+          'ascp exited unexpectedly',
+          'it might be due to SSH handshake failure',
+          'one can check SSH connection using ssh command'
+        ]
+      )
+      # Raised by `TransferAgent#start`
+      Cli::Hints.add(
+        exception:   RuntimeError,
+        match:       /Wrong remote host:/,
+        remediation: [
+          'If remote node is Cloud Pak For Integration',
+          'Make sure that a LoadBalancer is active on cluster',
+          'Check the external address of Aspera tcp-proxy Pod'
+        ]
+      )
     end
   end
 end

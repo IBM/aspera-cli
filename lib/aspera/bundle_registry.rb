@@ -85,6 +85,8 @@ module Aspera
       def bundle? = form.eql?(:bundle)
       # @return [String, nil] Title of a bundle
       def title = manifest['title']
+      # @return [String, nil] Section of the instructions of the MCP server about the bundle
+      def mcp = manifest['mcp']
       # @return [Boolean] `true` if the plugin provides a top level command
       def commands? = manifest['commands'].eql?(true)
       # @return [Array<Symbol>] Bundles referenced by this one
@@ -366,7 +368,7 @@ module Aspera
       declared.each do |kind, name|
         label = "#{kind.to_s.tr('_', ' ')} #{name}"
         return "#{label} is declared twice" if declared.count([kind, name]) > 1
-        return "#{label} is a built-in schema" if kind.eql?(:schema) && Schema::Registry::LOCATIONS.key?(name)
+        return "#{label} is a built-in schema" if kind.eql?(:schema) && Schema::Registry.built_in?(name)
         owner = claims[[kind, name]]
         return "#{label} is declared by plugin #{owner}" unless owner.eql?(plugin.name)
       end

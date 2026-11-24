@@ -87,7 +87,7 @@ module Aspera
           transfer_id  = entry['transfer_id']
           agent_params = entry['agent_params'] || {}
 
-          # Class of the agent: the file of the entry of its bundle, or the legacy file
+          # Class of the agent: the file of the entry of its bundle
           agent_class = Aspera::Agent::Factory.instance.agent_class(agent_type)
           agent_class.transfer_status(transfer_id, agent_params)
         rescue StandardError => e

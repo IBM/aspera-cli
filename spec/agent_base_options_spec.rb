@@ -237,6 +237,8 @@ module Aspera
           created.push([type, options])
           double('agent')
         end
+        # The configuration folder does not exist: no folder of file lists
+        allow(Aspera::Transfer::Parameters).to(receive(:file_list_folder=))
       end
 
       # @param argv [Array<String>] Command line

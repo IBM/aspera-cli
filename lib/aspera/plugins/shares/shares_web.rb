@@ -7,7 +7,7 @@ require_relative '../../oauth/client/web'
 require_relative '../../oauth/client/factory'
 require_relative '../../sealed_hash'
 require_relative '../../cli/info'
-require_relative '../../cli/prompt'
+require_relative '../../prompt'
 require 'securerandom'
 
 module Aspera
@@ -69,7 +69,7 @@ module Aspera
         def receive_code(state)
           Environment.instance.open_uri(login_page("#{DEVICE_CODE_RELAY_STATE}#{state}"))
           Log.log.warn { 'USER ACTION: Log in with the web browser, then copy the code displayed by Shares and paste it in the prompt below.' }
-          code = Cli::Prompt.prompt_user_input('Code', sensitive: true, validate: ->(text) { unseal_code(text, state) })
+          code = Aspera::Prompt.prompt_user_input('Code', sensitive: true, validate: ->(text) { unseal_code(text, state) })
           unseal_code(code, state)
         end
 

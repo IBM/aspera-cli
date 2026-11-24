@@ -5,7 +5,7 @@
 
 require_relative '../assert'
 require_relative '../log'
-require_relative '../cli/prompt'
+require_relative '../prompt'
 require_relative '../cli/info'
 require_relative '../sealed_hash'
 require_relative '../rainbow'
@@ -102,7 +102,7 @@ module Aspera
             ].join("\n")
           end
         end
-        self.class.parse(Cli::Prompt.prompt_user_input('Code or URL', sensitive: true))
+        self.class.parse(Prompt.prompt_user_input('Code or URL', sensitive: true))
       end
     end
   end

@@ -11,6 +11,7 @@ require_relative '../../../bundle_registry'
 require_relative '../../../cli/plugins/factory'
 require_relative '../../../schema/registry'
 require_relative '../../../schema/validator'
+require_relative '../../transfer_agents/transfer_agent'
 require_relative '../commands'
 require 'open3'
 require 'rbconfig'
@@ -22,6 +23,9 @@ module Aspera
         let(:source_root) { File.expand_path('../../../../..', __dir__) }
         let(:bundle_folder) { File.expand_path('..', __dir__) }
         let(:registry) { BundleRegistry.instance }
+
+        # The registry scans the plugin folders on first use: this spec also runs alone
+        before { registry.extensions(:agent) }
 
         # @param script [String] Ruby code run in another process: the former constants are not defined in the process of the specs
         # @return [Array(String, String, Process::Status)] stdout, stderr, status
@@ -54,19 +58,20 @@ module Aspera
           end
 
           it 'has its parameters in the schema of option transfer, from the file of its entry' do
-            selector = Schema::Registry.instance.reader(Schema::Registry::TRANSFER_AGENT_OPTIONS)
+            selector = Schema::Registry.instance.reader(TransferAgents::TransferAgent::TRANSFER_OPTION_SCHEMA)
             expect(selector['discriminator']['mapping']['httpgw']).to(eq('#/components/schemas/HttpgwAgentOptions'))
-            parameters = Schema::Registry.instance.reader("#{Schema::Registry::OPTIONS}:components.schemas.HttpgwAgentOptions")
+            parameters = Schema::Registry.instance.reader('transfer_opts:components.schemas.HttpgwAgentOptions')
             expect(parameters.current).to(eq(Yaml.safe_load(File.read(File.join(bundle_folder, 'schemas/agent_options.yaml')))))
             validator = Schema::Validator.instance
-            expect(validator.errors({'agent' => 'httpgw', 'url' => 'https://gw.example.com', 'synchronous' => true}, Schema::Registry::TRANSFER_AGENT_OPTIONS)).to(be_empty)
-            expect(validator.errors({'agent' => 'httpgw', 'url' => 'https://gw.example.com', 'api_version' => 'v3'}, Schema::Registry::TRANSFER_AGENT_OPTIONS)).not_to(be_empty)
+            expect(validator.errors({'agent' => 'httpgw', 'url' => 'https://gw.example.com', 'synchronous' => true}, TransferAgents::TransferAgent::TRANSFER_OPTION_SCHEMA)).to(be_empty)
+            expect(validator.errors({'agent' => 'httpgw', 'url' => 'https://gw.example.com', 'api_version' => 'v3'}, TransferAgents::TransferAgent::TRANSFER_OPTION_SCHEMA)).not_to(be_empty)
           end
 
           it 'is no longer in the file of the framework schema' do
             framework = Yaml.safe_load(File.read(File.join(source_root, 'lib', Schema::Registry::LOCATIONS[:opts])))['components']['schemas']
+            selector_file = Yaml.safe_load(File.read(File.join(source_root, 'lib/aspera/plugins/transfer_agents/schemas/options.yaml')))['components']['schemas']
             expect(framework.keys).not_to(include('HttpgwAgentOptions'))
-            expect(framework['TransferAgentOptions']['discriminator'].fetch('mapping', {})).not_to(include('httpgw'))
+            expect(selector_file['TransferAgentOptions']['discriminator'].fetch('mapping', {})).not_to(include('httpgw'))
           end
         end
 

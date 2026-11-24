@@ -11,12 +11,14 @@ require_relative '../../../bundle_registry'
 require_relative '../../../cli/plugins/factory'
 require_relative '../../../schema/registry'
 require_relative '../../../schema/validator'
+require_relative '../../transfer_agents/transfer_agent'
 require_relative '../../cos/commands'
 require_relative '../../shares/commands'
 require_relative '../commands'
 require_relative '../emulator'
 require_relative '../../../../../spec/bundle_registry_helper'
 require 'fileutils'
+require 'net/http'
 require 'open3'
 require 'tmpdir'
 require 'rbconfig'
@@ -72,6 +74,21 @@ module Aspera
             expect(status.success?).to(be(true), stderr)
             expect(stdout.chomp).to(eq('0'))
           end
+
+          it 'registers the handler of the errors of the transfer specs of upload_setup and download_setup' do
+            req = Net::HTTP::Post.new('/files/upload_setup')
+            req['host'] = 'node.example.com'
+            http = instance_double(Net::HTTPResponse, code: '200', message: 'OK')
+            body = {'transfer_specs' => [{'transfer_spec' => {'error' => {'code' => 1, 'reason' => 'Forbidden'}}}]}
+            expect { Rest::ErrorAnalyzer.instance.raise_on_error(req, body, http) }.to(raise_error(Rest::CallError, '1: Forbidden'))
+          end
+        end
+
+        describe 'hints' do
+          it 'are given for the errors of configuration of the server' do
+            hints = Cli::Hints.instance_variable_get(:@added).select { |hint| hint[:exception].eql?(Rest::CallError) }.map { |hint| hint[:match] }
+            expect(hints).to(include(/Server is not configured for this request/, /Please configure ACLs for this URI/))
+          end
         end
 
         describe 'agent' do
@@ -88,13 +105,13 @@ module Aspera
           end
 
           it 'has its parameters in the schema of option transfer, from the file of its entry' do
-            selector = Schema::Registry.instance.reader(Schema::Registry::TRANSFER_AGENT_OPTIONS)
+            selector = Schema::Registry.instance.reader(TransferAgents::TransferAgent::TRANSFER_OPTION_SCHEMA)
             expect(selector['discriminator']['mapping']['node']).to(eq('#/components/schemas/NodeAgentOptions'))
-            parameters = Schema::Registry.instance.reader("#{Schema::Registry::OPTIONS}:components.schemas.NodeAgentOptions")
+            parameters = Schema::Registry.instance.reader('transfer_opts:components.schemas.NodeAgentOptions')
             expect(parameters.current).to(eq(Yaml.safe_load(File.read(File.join(bundle_folder, 'schemas/agent_options.yaml')))))
             validator = Schema::Validator.instance
-            expect(validator.errors({'agent' => 'node', 'url' => 'https://node.example.com', 'username' => 'u', 'password' => '<PASSWORD>'}, Schema::Registry::TRANSFER_AGENT_OPTIONS)).to(be_empty)
-            expect(validator.errors({'agent' => 'node', 'url' => 'https://node.example.com'}, Schema::Registry::TRANSFER_AGENT_OPTIONS)).not_to(be_empty)
+            expect(validator.errors({'agent' => 'node', 'url' => 'https://node.example.com', 'username' => 'u', 'password' => '<PASSWORD>'}, TransferAgents::TransferAgent::TRANSFER_OPTION_SCHEMA)).to(be_empty)
+            expect(validator.errors({'agent' => 'node', 'url' => 'https://node.example.com'}, TransferAgents::TransferAgent::TRANSFER_OPTION_SCHEMA)).not_to(be_empty)
           end
         end
 
@@ -111,9 +128,10 @@ module Aspera
             %i[NODE_AGENT_OPTIONS NODE_EMULATOR_OPTIONS].each { |name| expect(Schema::Registry.const_defined?(name, false)).to(be(false), name) }
             # The file, not the document of the registry: `NodeAgentOptions` is added to it as variant of `TransferAgentOptions`
             framework = Yaml.safe_load(File.read(File.join(source_root, 'lib', Schema::Registry::LOCATIONS[:opts])))['components']['schemas']
+            selector_file = Yaml.safe_load(File.read(File.join(source_root, 'lib/aspera/plugins/transfer_agents/schemas/options.yaml')))['components']['schemas']
             expect(framework.keys).not_to(include('NodeAgentOptions', 'NodeBearerTokenOptions', 'NodeEmulatorOptions', 'NodeTelemetryOptions'))
-            expect(framework['TransferAgentOptions']).not_to(include('oneOf'))
-            expect(framework['TransferAgentOptions']['discriminator']).not_to(include('mapping'))
+            expect(selector_file['TransferAgentOptions']).not_to(include('oneOf'))
+            expect(selector_file['TransferAgentOptions']['discriminator']).not_to(include('mapping'))
           end
         end
 

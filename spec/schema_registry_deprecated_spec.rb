@@ -27,7 +27,6 @@ RSpec.describe(Aspera::Schema::Registry) do
     ORCHESTRATOR:             plugins::Orchestrator::Commands::API_SCHEMA,
     SHARES:                   plugins::Shares::Commands::API_SCHEMA,
     PREVIEW_OPTIONS:          'preview',
-    TRANSFERD_AGENT_OPTIONS:  'opts:components.schemas.TransferdAgentOptions',
     TRANSFERD_SERVICE_CONFIG: plugins::Transferd::Service::SERVICE_CONFIG
   }.each do |old_name, new_value|
     describe "constant #{old_name}" do

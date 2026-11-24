@@ -21,6 +21,12 @@ properties:
     description: Name of the product, for listings and the MCP instructions.
     type: string
     minLength: 1
+  mcp:
+    description: >-
+      Section of the instructions of the MCP server for the AI client, about the use of the plugin (e.g. development guides).
+      `%{<point>}` is replaced by the list of the bundles that provide an entry of the extension point `<point>`, with their title.
+    type: string
+    minLength: 1
   depends:
     description: 'Bundles referenced by this one. One missing or unavailable: this bundle is unavailable.'
     type: array

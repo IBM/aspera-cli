@@ -10,6 +10,7 @@ require_relative '../../../bundle_registry'
 require_relative '../../../cli/plugins/factory'
 require_relative '../../../schema/registry'
 require_relative '../commands'
+require 'net/http'
 require 'open3'
 require 'rbconfig'
 
@@ -62,6 +63,42 @@ module Aspera
             %w[WorkflowStart InitiateParameters WorkflowExport WorkflowImport ImportWithConstraints ReloadPluginSet].each do |name|
               expect(Schema::Registry.instance.reader("orchestrator_opts:components.schemas.Orchestrator#{name}").current).to(include('type'))
             end
+          end
+        end
+
+        describe 'errors of the API' do
+          let(:analyzer) { Rest::ErrorAnalyzer.instance }
+
+          # @param body [Object] Answer of the API
+          # @return [Rest::CallError] Error raised for the answer
+          def call_error(body, code: '404', message: 'Not Found')
+            req = Net::HTTP::Get.new('/aspera/orchestrator/api/export_workflow/130')
+            req['host'] = 'example.com'
+            http = instance_double(Net::HTTPResponse, code: code, message: message)
+            analyzer.raise_on_error(req, body, http)
+          rescue Rest::CallError => e
+            e
+          end
+
+          it 'have a handler registered by the bundle' do
+            expect(analyzer.instance_variable_get(:@error_handlers).map { |handler| handler[:name] }).to(include('Orchestrator'))
+          end
+
+          it 'removes the backtrace of a Ruby exception returned by Orchestrator' do
+            message = [
+              "/opt/aspera/orchestrator/lib/import_exporter.rb:171:in `write': Minitar::Writer::WriteBoundaryOverflow (Minitar::Writer::WriteBoundaryOverflow)",
+              "\tfrom /opt/aspera/orchestrator/lib/import_exporter.rb:171:in `block in export'",
+              "\tfrom /opt/aspera/orchestrator/app/models/workflow.rb:12:in 'Workflow#export'"
+            ].join("\n")
+            body = %Q(<?xml version="1.0"?><error time="2026-10-21 07:54:01 UTC" action="export_workflow" id="130">\n#{message}\n</error>)
+            error = call_error(body)
+            expect(error.message).not_to(include('from /opt'))
+            expect(error.message).to(match(/import_exporter.rb:171:in `write': Minitar::Writer::WriteBoundaryOverflow/))
+          end
+
+          it 'gives the status of a failed work order and the missing parameters' do
+            error = call_error({'work_order' => {'statusDetails' => 'Failed'}, 'missing_parameters' => ['name']}, code: '400', message: 'Bad Request')
+            expect(error.message.lines.map(&:chomp)).to(include('Failed', 'missing parameter: name'))
           end
         end
 

@@ -6,6 +6,8 @@
 require_relative '../../assert'
 require_relative '../../rest'
 require_relative '../../oauth/client/base'
+require_relative '../../oauth/client/jwt'
+require_relative '../../oauth/client/web'
 require_relative '../../rest/list'
 require 'digest'
 

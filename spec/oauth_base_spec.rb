@@ -154,6 +154,18 @@ RSpec.describe(Aspera::OAuth::Base) do
     end
   end
 
+  describe 'Factory#create' do
+    it 'creates an instance of a registered grant method' do
+      expect(Aspera::OAuth::Factory.instance.create(grant_method: :generic, base_url: 'https://example.com', grant_type: 'client_credentials')).to(be_a(Aspera::OAuth::Generic))
+    end
+
+    it 'refuses a grant method that is not registered, without loading a file for it' do
+      allow(Aspera::OAuth::Factory.instance).to(receive(:require))
+      expect { Aspera::OAuth::Factory.instance.create(grant_method: :url_json_unknown) }.to(raise_error(Aspera::AssertError, /token grant method unknown: 'url_json_unknown'/))
+      expect(Aspera::OAuth::Factory.instance).not_to(have_received(:require))
+    end
+  end
+
   describe 'Factory.token_value' do
     it 'reads a field, or a dot-separated path of a nested field' do
       expect(Aspera::OAuth::Factory.token_value({'access_token' => 'a'}, 'access_token')).to(eq('a'))

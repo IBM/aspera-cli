@@ -17,6 +17,8 @@ require 'fileutils'
 # - framework: everything not listed below, references only the framework
 # - domain library: agent, ascp, products, sync, transfer; references the framework (except cli/) and the domain
 # - bundle: plugins/<name>/; references framework, domain, itself and the bundles of its `depends`
+# Library rule: the files used without the CLI never reference cli/ (except `cli/info`, the identity of the gem: constants only):
+# framework files outside cli/, and files of bundles other than `commands.rb`, `commands/`, mounted modules and services.
 # A reference is a require path, or a constant. Comments and strings are not references.
 # Files with the comment `# Shim:` are exempt, and generated files (gRPC stubs, `rake tools:grpc`).
 module LayerBoundary
@@ -37,6 +39,10 @@ module LayerBoundary
   }.freeze
   # plugin files of cli/plugins that are part of the framework
   FRAMEWORK_PLUGIN_FILES = %w[base basic_auth oauth factory config mcp].freeze
+  # file of cli/ (and its constant) that the files used without the CLI may reference: identity of the gem (name, URLs), constants only
+  LIBRARY_CLI = {path: 'cli/info', constant: 'Cli::Info'}.freeze
+  # files of a bundle that are of the CLI, besides its mounted modules and services: `commands.rb` and the folder `commands/`
+  BUNDLE_CLI_FILES = %r{\Acommands(\.rb\z|/)}
   FRAMEWORK_PLUGIN_CONSTANTS = %w[Base BasicAuth Oauth Factory Config Mcp].freeze
   # file of api/ -> bundle that will own it
   API_FILE_BUNDLE = {
@@ -111,22 +117,36 @@ module LayerBoundary
       end
     end
 
-    # @return [Hash] Layer of a source file, by its path today (files of agent, products and preview that will move to a bundle count as bundle files, others keep their layer until they move)
-    def source_layer(rel)
+    # @return [Hash] Layer of a source file, by its path today (files of agent, products and preview that will move to a bundle count as bundle files, others keep their layer until they move),
+    #   with `cli`: `true` if the file is of the CLI (it may reference cli/)
+    def source_layer(aspera_dir, rel)
       parts = rel.split('/')
-      return {layer: :bundle, bundle: parts[1]} if parts[0].eql?('plugins') && parts.length > 2
+      return {layer: :bundle, bundle: parts[1], cli: bundle_cli_file?(aspera_dir, parts[1], parts.drop(2).join('/'))} if parts[0].eql?('plugins') && parts.length > 2
       return {layer: :domain} if DOMAIN_FOLDERS.include?(parts[0])
-      return folder_target(parts[0], parts[1].delete_suffix('.rb')) if FOLDER_LAYER.key?(parts[0]) && parts.length > 1
-      {layer: :framework}
+      return folder_target(parts[0], parts[1].delete_suffix('.rb')).merge(cli: false) if FOLDER_LAYER.key?(parts[0]) && parts.length > 1
+      {layer: :framework, cli: parts[0].eql?('cli')}
+    end
+
+    # @return [Hash] Manifest of a bundle, empty if none
+    def manifest(aspera_dir, bundle)
+      @manifest_cache ||= {}
+      @manifest_cache[[aspera_dir, bundle]] ||= begin
+        file = File.join(aspera_dir, 'plugins', bundle, 'plugin.yaml')
+        File.exist?(file) ? YAML.safe_load_file(file) || {} : {}
+      end
     end
 
     # @return [Array<String>] Bundles that the bundle depends on
     def depends(aspera_dir, bundle)
-      @depends_cache ||= {}
-      @depends_cache[[aspera_dir, bundle]] ||= begin
-        manifest = File.join(aspera_dir, 'plugins', bundle, 'plugin.yaml')
-        File.exist?(manifest) ? Array((YAML.safe_load_file(manifest) || {})['depends']) : []
-      end
+      Array(manifest(aspera_dir, bundle)['depends'])
+    end
+
+    # @param inner [String] Path of a file relative to the folder of the bundle
+    # @return [Boolean] `true` if the file is of the CLI: commands, or a mounted module or a service of the manifest
+    def bundle_cli_file?(aspera_dir, bundle, inner)
+      return true if inner.match?(BUNDLE_CLI_FILES)
+      entries = manifest(aspera_dir, bundle).values_at('mounts', 'services').flat_map { |list| Array(list) }
+      entries.any? { |entry| entry.is_a?(Hash) && entry['file'].eql?(inner) }
     end
 
     # @return [Boolean] true if the bundle has its own role class (api, agent): file or folder
@@ -135,8 +155,11 @@ module LayerBoundary
       File.exist?("#{path}.rb") || File.directory?(path)
     end
 
+    # @param text [String] Reference: `<kind> <path or constant>`
     # @return [Boolean] true if source may reference target
-    def allowed?(aspera_dir, source, target)
+    def allowed?(aspera_dir, source, target, text = nil)
+      # Library rule: only the CLI references cli/
+      return false if target[:layer].eql?(:framework) && target[:cli] && !source[:cli] && !library_cli?(text)
       case source[:layer]
       when :framework
         target[:layer].eql?(:framework)
@@ -150,6 +173,12 @@ module LayerBoundary
         end
       else Aspera.error_unexpected_value(source[:layer])
       end
+    end
+
+    # @param text [String, nil] Reference: `<kind> <path or constant>`
+    # @return [Boolean] `true` if the reference is to the file of cli/ that the files used without the CLI may reference
+    def library_cli?(text)
+      ["require #{LIBRARY_CLI[:path]}", "const #{LIBRARY_CLI[:constant]}"].include?(text)
     end
 
     # @param chain [Array<String>] Constant path, without leading Aspera
@@ -170,7 +199,7 @@ module LayerBoundary
         Aspera.error_unexpected_value(chain[1]) unless API_CONSTANT_BUNDLE.key?(chain[1])
         [{layer: :bundle, bundle: API_CONSTANT_BUNDLE[chain[1]]}, "Api::#{chain[1]}"]
       when 'TransferAgent'
-        [{layer: :bundle, bundle: 'transfer'}, 'TransferAgent']
+        [{layer: :bundle, bundle: 'transfer_agents'}, 'TransferAgent']
       when 'Agent', 'Products', 'Preview'
         # the module itself: Agent, Products are domain
         return (chain[0].eql?('Preview') ? nil : [{layer: :domain}, chain[0]]) if chain.length < 2
@@ -248,7 +277,7 @@ module LayerBoundary
       rel = file.delete_prefix("#{aspera_dir}/")
       source = File.read(file)
       return [] if source.include?(SHIM_MARKER) || source.include?(GENERATED_MARKER)
-      source_info = source_layer(rel)
+      source_info = source_layer(aspera_dir, rel)
       tokens = Ripper.lex(source)
       root = "#{File.expand_path(aspera_dir)}/"
       found = []
@@ -290,13 +319,14 @@ module LayerBoundary
       end
       # no target: always a violation
       found.filter_map do |kind, text, target|
-        "#{kind} #{text}" if target.nil? || !allowed?(aspera_dir, source_info, target)
+        reference = "#{kind} #{text}"
+        reference if target.nil? || !allowed?(aspera_dir, source_info, target, reference)
       end.uniq.sort
     end
 
     # @return [Hash] File (relative to aspera_dir) -> sorted violations, for all the files
     def violations(aspera_dir)
-      @depends_cache = {}
+      @manifest_cache = {}
       Dir.glob("#{aspera_dir}/**/*.rb").sort.each_with_object({}) do |file, result|
         rel = file.delete_prefix("#{aspera_dir}/")
         # development files of bundles
@@ -367,8 +397,6 @@ end
 
 RSpec.describe(LayerBoundary) do
   let(:aspera_dir) { File.expand_path('../lib/aspera', __dir__) }
-  let(:known_file) { File.join(__dir__, 'fixtures', 'layer_boundary_known.yaml') }
-  let(:known) { YAML.safe_load_file(known_file) }
 
   # Create files in a temporary folder that mimics lib/aspera
   # @param files [Hash] relative path -> content
@@ -384,17 +412,9 @@ RSpec.describe(LayerBoundary) do
   end
 
   describe 'current code' do
-    it 'has no violation outside of the known list, and no obsolete known violation' do
-      actual = described_class.violations(aspera_dir)
-      new_ones = actual.flat_map { |file, list| (list - known.fetch(file, [])).map { |v| "#{file}: #{v}" } }
-      obsolete = known.flat_map { |file, list| (list - actual.fetch(file, [])).map { |v| "#{file}: #{v}" } }
-      expect(new_ones).to(be_empty, "new violations of the layer rules:\n#{new_ones.join("\n")}")
-      expect(obsolete).to(be_empty, "known violations that no longer exist, remove them from #{known_file}:\n#{obsolete.join("\n")}")
-    end
-
-    it 'has a sorted known list' do
-      expect(known.keys).to(eq(known.keys.sort))
-      known.each_value { |list| expect(list).to(eq(list.sort.uniq)) }
+    it 'has no violation of the layer rules' do
+      found = described_class.violations(aspera_dir).flat_map { |file, list| list.map { |v| "#{file}: #{v}" } }
+      expect(found).to(be_empty, "violations of the layer rules:\n#{found.join("\n")}")
     end
 
     it 'has files of bundles consistent with their constants' do
@@ -419,13 +439,44 @@ RSpec.describe(LayerBoundary) do
     it 'detects framework referencing domain or bundle, by require and by constant' do
       with_tree(
         'rest/a.rb'                => "require_relative '../agent/base'\nAspera::Agent::Direct\nTransferAgent\n",
-        'rest/b.rb'                => "require 'aspera/cli/plugins/node'\nCli::Plugins::Aoc\nApi::AoC\nrequire 'aspera/cli/plugins/base'\n",
-        'rest/c.rb'                => "require 'json'\nrequire_relative '../cli/plugins/config'\nCli::Plugins::Base\nAspera::Rest\n",
+        'cli/b.rb'                 => "require 'aspera/cli/plugins/node'\nCli::Plugins::Aoc\nApi::AoC\nrequire 'aspera/cli/plugins/base'\n",
+        'cli/c.rb'                 => "require 'json'\nrequire_relative 'plugins/config'\nCli::Plugins::Base\nAspera::Rest\n",
         'cli/plugins/transfer.rb'  => ''
       ) do |dir|
         expect(described_class.violations(dir)).to(eq(
-          'rest/a.rb' => ['const Agent::Direct', 'const TransferAgent', 'require agent/base'],
-          'rest/b.rb' => ['const Api::AoC', 'const Plugins::Aoc', 'require cli/plugins/node']
+          'cli/b.rb'  => ['const Api::AoC', 'const Plugins::Aoc', 'require cli/plugins/node'],
+          'rest/a.rb' => ['const Agent::Direct', 'const TransferAgent', 'require agent/base']
+        ))
+      end
+    end
+
+    it 'applies the library rule: only the files of the CLI reference cli/, except its file of constants info' do
+      manifest = <<~YAML
+        name: node
+        mounts:
+          - target: config
+            file: config_commands.rb
+            module: ConfigCommands
+        services:
+          - name: emulator
+            file: service.rb
+            class: Service
+      YAML
+      with_tree(
+        'rest/a.rb'                      => "require_relative '../cli/error'\nCli::BadIdentifier\nrequire_relative '../cli/info'\nCli::Info::CMD_NAME\n",
+        'cli/b.rb'                       => "require_relative 'error'\nCli::Error\n",
+        'plugins/node/plugin.yaml'       => manifest,
+        'plugins/node/api.rb'            => "require_relative '../../cli/error'\nAspera::Cli::Error\nCli::Info::CMD_NAME\n",
+        'plugins/node/commands.rb'       => "require_relative '../../cli/plugins/base'\nCli::Plugins::Base\n",
+        'plugins/node/commands/files.rb' => "Cli::Result\n",
+        'plugins/node/config_commands.rb' => "Cli::Result\n",
+        'plugins/node/service.rb'        => "Cli::Context\n",
+        'transfer/a.rb'                  => "Aspera::Cli::Info::CMD_NAME\n"
+      ) do |dir|
+        expect(described_class.violations(dir)).to(eq(
+          'plugins/node/api.rb' => ['const Cli::Error', 'require cli/error'],
+          'rest/a.rb'           => ['const Cli::BadIdentifier', 'require cli/error'],
+          'transfer/a.rb'       => ['const Cli::Info']
         ))
       end
     end

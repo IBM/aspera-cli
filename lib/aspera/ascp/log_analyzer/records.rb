@@ -23,6 +23,8 @@ module Aspera
       class Records
         include Lines
 
+        # Fields of the records: schema `ascp_log` of the files of `ascp`
+        Schema::Registry.register(Schema::Registry::ASCP_LOG, File.expand_path('../log.schema.yaml', __dir__))
         # Kind of record => schema
         SCHEMAS = {
           samples:   "#{Schema::Registry::ASCP_LOG}:components.schemas.Sample",

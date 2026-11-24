@@ -30,9 +30,10 @@ module Aspera
       #                                              when description: is nil, the schema title or first description line is used
       # @param complete    [Symbol, nil]             Values proposed by shell completion, one of `Complete::KINDS`
       # @param security    [Symbol, nil]             Most restrictive security level at which the option is available (see `Security`)
+      # @param before      [Symbol, nil]             Option of a plugin class to place this one before, e.g. option of a module mounted on another plugin (see `CommandRegistry#register_option`)
       def option(name, description: nil,
         short: nil, allowed: nil, default: nil,
-        on_set: nil, shorthand: nil, deprecation: nil, schema: nil, complete: nil, security: nil)
+        on_set: nil, shorthand: nil, deprecation: nil, schema: nil, complete: nil, security: nil, before: nil)
         register_option_spec(
           OptionSpec.new(
             name:        name,
@@ -46,14 +47,17 @@ module Aspera
             schema:      schema,
             complete:    complete,
             security:    security
-          )
+          ),
+          before: before
         )
       end
 
       # Store an OptionSpec in this class's registry.
-      # @param spec [OptionSpec]
+      # @param spec   [OptionSpec]
+      # @param before [nil]        Placement: only for the options of plugin classes (see `Plugins::Base.register_option_spec`)
       # @raise [ArgumentError] on duplicate option name
-      def register_option_spec(spec)
+      def register_option_spec(spec, before: nil)
+        raise ArgumentError, "Option #{spec.name.inspect}: placement is only for options of plugins" unless before.nil?
         raise ArgumentError, "Duplicate option: #{spec.name.inspect}" if option_specs.key?(spec.name)
         option_specs[spec.name] = spec
       end

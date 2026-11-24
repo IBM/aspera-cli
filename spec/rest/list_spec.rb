@@ -6,7 +6,6 @@
 require 'spec_helper'
 require_relative '../../lib/aspera/rest'
 require_relative '../../lib/aspera/rest/list'
-require_relative '../../lib/aspera/cli/error'
 
 RSpec.describe(Aspera::Rest::List) do
   # Minimal API returning a fixed list for `read`
@@ -62,8 +61,8 @@ RSpec.describe(Aspera::Rest::List) do
     end
 
     it 'raises when not found or ambiguous' do
-      expect { described_class.lookup_entity_generic(field: 'name', value: 'c', entity: 'x') { items } }.to(raise_error(Aspera::Cli::BadIdentifier, /not found/))
-      expect { described_class.lookup_entity_generic(field: 'name', value: 'b', entity: 'x') { items } }.to(raise_error(Aspera::Cli::BadIdentifier, /found 2/))
+      expect { described_class.lookup_entity_generic(field: 'name', value: 'c', entity: 'x') { items } }.to(raise_error(Aspera::EntityNotFound, 'x with name=c: not found'))
+      expect { described_class.lookup_entity_generic(field: 'name', value: 'b', entity: 'x') { items } }.to(raise_error(Aspera::EntityNotFound, 'x with name=b: found 2'))
     end
   end
 end

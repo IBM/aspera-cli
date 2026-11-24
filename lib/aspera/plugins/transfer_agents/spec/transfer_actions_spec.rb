@@ -76,7 +76,7 @@ module Aspera
 
         before { allow(Agent::Factory.instance).to(receive(:agent_class).with('node').and_return(agent_class)) }
 
-        it 'asks the status to the class of the agent given by the factory of agents (agent of a bundle or legacy)' do
+        it 'asks the status to the class of the agent given by the factory of agents (agent of a bundle)' do
           allow(agent_class).to(receive(:transfer_status).with('t1', {'url' => 'https://node'}).and_return({'status' => 'completed'}))
           expect(querying.send(:query_live_status, entry)).to(eq({'status' => 'completed'}))
         end

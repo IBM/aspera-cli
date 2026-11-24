@@ -11,6 +11,7 @@ require_relative '../../sync/operations'
 require_relative '../../transfer/command_line_builder'
 require_relative '../../transfer/spec'
 require_relative '../../cli/deprecation'
+require_relative '../../cli/plugins/factory'
 require_relative '../../cli/result'
 require_relative '../../cli/terminal_formatter'
 
@@ -107,6 +108,15 @@ module Aspera
         def deprecated_transfer_setup(**)
           Log.log.warn { "Command config transfer is #{Cli::Deprecation.new(last: Cli::Plugins::Config::DEPRECATED_LAST, message: 'use config agents jobs')}" }
           {}
+        end
+
+        # Instance of plugin `transferd`, found by name, for the deprecated command `config ascp install`
+        # @param command     [String] Deprecated command
+        # @param replacement [String] Command to use instead
+        # @return [Cli::Plugins::Base] Plugin instance
+        def transferd_plugin(command:, replacement:)
+          Log.log.warn { "Command #{command} is #{Cli::Deprecation.new(last: Cli::Plugins::Config::DEPRECATED_LAST, message: "use #{replacement}")}" }
+          Cli::Plugins::Factory.instance.plugin_class(:transferd).new(context: context)
         end
       end
     end

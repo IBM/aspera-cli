@@ -3,7 +3,7 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Agents found through the extension point `agent` of bundles, with the agents of `lib/aspera/agent/` that no bundle provides (legacy):
+# Agents found through the extension point `agent` of bundles:
 # `Agent::Factory::ALL`, `Factory#create`, values of option `transfer`, variants of the schema `TransferAgentOptions`.
 
 require 'spec_helper'
@@ -18,6 +18,7 @@ require_relative '../lib/aspera/plugins/transfer_agents/transfer_agent'
 require_relative '../lib/aspera/plugins/transfer_agents/ascp_actions'
 require_relative '../lib/aspera/cli/plugins/config'
 require_relative '../lib/aspera/log'
+require_relative '../lib/aspera/yaml'
 require 'tmpdir'
 require 'fileutils'
 require 'open3'
@@ -27,7 +28,7 @@ require 'rbconfig'
 module AgentFactorySpecHelper
   include BundleRegistrySpecHelper
 
-  # `Agent::Factory::ALL` before the extension point `agent`
+  # `Agent::Factory::ALL` with the bundles of the gem
   TODAY = {
     connect:   {long: 'Connect', short: :c},
     desktop:   {long: 'Desktop', short: :d},
@@ -37,8 +38,10 @@ module AgentFactorySpecHelper
     transferd: {long: 'Transferd', short: :t}
   }.freeze
 
-  # Variants of `TransferAgentOptions` in `options.schema.yaml`: component, by agent, in the order of `oneOf` (none: every agent is in a bundle)
+  # Variants of `TransferAgentOptions` in its file (bundle transfer_agents): component, by agent, in the order of `oneOf` (none: every agent is in a bundle)
   SCHEMA_VARIANTS = {}.freeze
+  # Schema of option `transfer`
+  OPTION_SCHEMA = Aspera::Plugins::TransferAgents::TransferAgent::TRANSFER_OPTION_SCHEMA
 
   # Variants with the bundles of the gem: those of the schema, then the agents of the bundles (by name of bundle)
   TODAY_VARIANTS = SCHEMA_VARIANTS.merge(
@@ -64,11 +67,15 @@ module AgentFactorySpecHelper
   # Schema of the parameters of the fake agent
   OPTIONS_SCHEMA = {'type' => 'object', 'description' => 'Parameters of the fake agent.', 'properties' => {'color' => {'type' => 'string'}}}.freeze
 
-  # Bundle that declares the extension point `agent`
+  # Bundle that declares the extension point `agent`, and the schema of option `transfer` (`TransferAgentOptions` of the bundle transfer_agents, which has the marker of the variants)
   # @param folder [String] Plugin folder
   def write_point_bundle(folder)
-    bundle = write_bundle(folder, 'spec_bundle_transfer', manifest: {'commands' => false, 'extension_points' => [{'name' => 'agent', 'schema' => 'agent.schema.yaml'}]}, code: nil)
+    key = OPTION_SCHEMA.split(':', 2).first
+    manifest = {'commands' => false, 'extension_points' => [{'name' => 'agent', 'schema' => 'agent.schema.yaml'}], 'schemas' => [{'key' => key, 'file' => 'options.yaml', 'owned' => true}]}
+    bundle = write_bundle(folder, 'spec_bundle_transfer', manifest: manifest, code: nil)
     File.write(File.join(bundle, 'agent.schema.yaml'), POINT_SCHEMA.to_yaml)
+    selector = Aspera::Yaml.safe_load(File.read(File.join(Aspera::BundleRegistry::GEM_FOLDER, 'transfer_agents', 'schemas', 'options.yaml'))).dig('components', 'schemas', 'TransferAgentOptions')
+    File.write(File.join(bundle, 'options.yaml'), {'openapi' => '3.1.0', 'components' => {'schemas' => {'TransferAgentOptions' => selector}}}.to_yaml)
   end
 
   # @param folder         [String]      Plugin folder
@@ -96,6 +103,16 @@ end
 
 module Aspera
   RSpec.describe('Agents of bundles') do
+    # @return [Class] Class that includes the module of `config ascp` and `config agents`, with the class method `option` of plugins (options are not tested here)
+    def actions_class
+      Class.new do
+        class << self
+          def option(*, **); end
+        end
+        include Aspera::Plugins::TransferAgents::AscpActions
+      end
+    end
+
     include AgentFactorySpecHelper
 
     let(:folder) { Dir.mktmpdir }
@@ -104,7 +121,7 @@ module Aspera
     # Messages logged at level warn
     let(:warnings) { [] }
 
-    # A shim warns with a message, not a block (e.g. `agent/transferd.rb`, legacy agent when no bundle provides it)
+    # A shim warns with a message, not a block
     before { allow(Log.log).to(receive(:warn)) { |message = nil, &block| warnings.push(block.nil? ? message : block.call) } }
 
     after do
@@ -113,15 +130,16 @@ module Aspera
     end
 
     describe(Agent::Factory) do
-      it 'gives the agents of today when no bundle provides an agent' do
+      it 'gives the agents of the bundles of the gem, and none without bundle' do
         expect(described_class::ALL.to_a).to(eq(AgentFactorySpecHelper::TODAY.to_a))
+        expect(described_class.send(:new, registry: BundleRegistry.send(:new)).all.to_a).to(eq(AgentFactorySpecHelper::TODAY.to_a))
         registry.add_source(folder)
-        expect(factory.all.to_a).to(eq(AgentFactorySpecHelper::TODAY.to_a))
+        expect(factory.all).to(eq({}))
         expect(factory.all).to(be_frozen)
       end
 
       it 'gives the agents and creates one without the CLI' do
-        # Files of the CLI loaded by the factory (Bundler loads the version of the gem; the direct agent loads `cli/formatter` until T24)
+        # Files of the CLI loaded by the factory (Bundler loads the version of the gem)
         script = <<~RUBY
           before = $LOADED_FEATURES.grep(%r{/aspera/cli/})
           require 'aspera/agent/factory'
@@ -137,7 +155,7 @@ module Aspera
         write_point_bundle(folder)
         write_agent_bundle(folder, code: "raise 'code of the agent loaded'")
         registry.add_source(folder)
-        expect(factory.all.to_a).to(eq(AgentFactorySpecHelper::TODAY.merge(fake: {long: 'Fake', short: :f}).sort.to_a))
+        expect(factory.all.to_a).to(eq([[:fake, {long: 'Fake', short: :f}]]))
       end
 
       it 'creates an agent of a bundle from the file of its entry' do
@@ -168,34 +186,25 @@ module Aspera
         expect { factory.create(:fake, {}) }.to(raise_error(BundleRegistry::Unavailable, /requires gem spec_gem/))
       end
 
-      it 'loads the legacy agent when an unavailable bundle of the same name declares no agent' do
+      it 'refuses an agent that no bundle provides, also when an unavailable bundle of the same name declares no agent' do
         write_bundle(folder, 'node', manifest: {'depends' => %w[spec_bundle_missing]})
         registry.add_source(folder)
         factory.all
         expect(registry.unavailable_reason(:node)).to(include('spec_bundle_missing'))
-        expect(factory.agent_class(:node)).to(be(Aspera::Plugins::Node::Agent))
+        expect { factory.agent_class(:node) }.to(raise_error(AssertError, 'assertion failed: unknown agent: node'))
       end
 
-      it 'refuses the legacy agent when an unavailable bundle of the same name declares this agent' do
+      it 'refuses an agent of an unavailable bundle of the same name that declares it, with the reason' do
         write_point_bundle(folder)
         write_bundle(folder, 'node', manifest: {'commands' => false, 'depends' => %w[spec_bundle_missing], 'extensions' => {'agent' => [AgentFactorySpecHelper::ENTRY.merge('name' => 'node')]}}, code: nil)
         registry.add_source(folder)
         expect { factory.agent_class(:node) }.to(raise_error(BundleRegistry::Unavailable, /plugin node is unavailable: .*spec_bundle_missing/))
       end
 
-      it 'refuses the legacy agent when the manifest of the bundle of the same name cannot be read' do
+      it 'refuses an agent of a bundle of the same name whose manifest cannot be read, with the reason' do
         write_bundle(folder, 'node', manifest: "name: [\n", code: nil)
         registry.add_source(folder)
         expect { factory.agent_class(:node) }.to(raise_error(BundleRegistry::Unavailable, /plugin node is unavailable: invalid manifest/))
-      end
-
-      it 'uses the agent of a bundle instead of the legacy agent of the same name' do
-        write_point_bundle(folder)
-        write_agent_bundle(folder, entries: [{'name' => 'direct', 'short' => 'a'}, {'name' => 'node', 'short' => 'm'}])
-        registry.add_source(folder)
-        expect(factory.all.to_a).to(eq(AgentFactorySpecHelper::TODAY.merge(node: {long: 'Node', short: :m}).to_a))
-        expect(factory.agent_class(:direct)).to(be(Aspera::Plugins::SpecBundleAgent::Agent))
-        expect(factory.agent_class(:desktop)).to(be(Aspera::Plugins::Desktop::Agent))
       end
 
       it 'leaves out an agent whose name is provided by an earlier entry or whose letter is taken, with a warning, once' do
@@ -203,22 +212,13 @@ module Aspera
         write_agent_bundle(folder)
         write_agent_bundle(folder, 'spec_bundle_other', entries: [{'name' => 'fake', 'short' => 'g'}, {'name' => 'other', 'short' => 'f'}, {'name' => 'third', 'short' => 'n'}, {'name' => 'fourth', 'short' => 'yz'}])
         registry.add_source(folder)
-        expect(factory.all.keys).to(eq(AgentFactorySpecHelper::TODAY.merge(fake: nil).keys.sort))
+        expect(factory.all.keys).to(eq(%i[fake third]))
         expect(factory.all).to(be(factory.all))
         expect(warnings.grep(/left out/)).to(eq([
           'Agent fake of bundle spec_bundle_other is left out: provided by bundle spec_bundle_agent',
           'Agent other of bundle spec_bundle_other is left out: letter f is taken by agent fake',
-          'Agent of bundle spec_bundle_other is left out: invalid name "fourth" or letter "yz"',
-          'Agent third of bundle spec_bundle_other is left out: letter n is taken by agent node'
+          'Agent of bundle spec_bundle_other is left out: invalid name "fourth" or letter "yz"'
         ]))
-      end
-
-      it 'frees the letter of a legacy agent that a later entry replaces, whatever the order of the entries' do
-        write_point_bundle(folder)
-        write_agent_bundle(folder, entries: [{'name' => 'early', 'short' => 'n'}, {'name' => 'node', 'short' => 'm'}])
-        registry.add_source(folder)
-        expect(factory.all).to(include(early: {long: 'Early', short: :n}, node: {long: 'Node', short: :m}))
-        expect(warnings.grep(/left out/)).to(be_empty)
       end
 
       it 'gives the name of the agent of an instance, and tells agents of bundles' do
@@ -226,7 +226,6 @@ module Aspera
         write_agent_bundle(folder)
         registry.add_source(folder)
         expect(factory.agent_name(factory.create(:fake, {}))).to(eq(:fake))
-        expect(factory.agent_name(factory.agent_class(:node).allocate)).to(eq(:node))
         expect(factory.agent_name(Object.new)).to(be_nil)
         expect([factory.provided?(:fake), factory.provided?('node')]).to(eq([true, false]))
       end
@@ -234,7 +233,7 @@ module Aspera
       it 'is recomputed when the entries of the bundles change, also for ALL' do
         registry.add_source(folder)
         allow(described_class).to(receive(:instance).and_return(factory))
-        expect(described_class::ALL.keys).to(eq(AgentFactorySpecHelper::TODAY.keys))
+        expect(described_class::ALL.keys).to(eq([]))
         write_point_bundle(folder)
         write_agent_bundle(folder)
         registry.add_source(folder)
@@ -253,9 +252,11 @@ module Aspera
     describe 'schema of option transfer' do
       let(:schemas) { Schema::Registry.send(:new) }
       let(:validator) { Schema::Validator.send(:new) }
-      let(:selector) { schemas.reader(Schema::Registry::TRANSFER_AGENT_OPTIONS) }
+      let(:selector) { schemas.reader(AgentFactorySpecHelper::OPTION_SCHEMA) }
 
       before do
+        # The schema of option transfer: given by the bundle of the extension point
+        write_point_bundle(folder)
         registry.add_source(folder)
         allow(BundleRegistry).to(receive(:instance).and_return(registry))
         allow(Schema::Registry).to(receive(:instance).and_return(schemas))
@@ -279,21 +280,21 @@ module Aspera
         write_point_bundle(folder)
         write_agent_bundle(folder)
         expect(variants.to_a).to(eq(AgentFactorySpecHelper::SCHEMA_VARIANTS.merge('fake' => 'FakeAgentOptions').to_a))
-        expect(schemas.reader('opts:components.schemas.FakeAgentOptions').current).to(eq(AgentFactorySpecHelper::OPTIONS_SCHEMA))
-        expect(validator.errors({'agent' => 'fake', 'color' => 'blue'}, Schema::Registry::TRANSFER_AGENT_OPTIONS)).to(be_empty)
-        expect(validator.errors({'agent' => 'fake', 'color' => 1}, Schema::Registry::TRANSFER_AGENT_OPTIONS)).to(eq(['value at `/color` is not a string']))
-        expect(validator.errors({'agent' => 'bogus'}, Schema::Registry::TRANSFER_AGENT_OPTIONS, partial: true).first).to(include('"fake"'))
+        expect(schemas.reader('transfer_opts:components.schemas.FakeAgentOptions').current).to(eq(AgentFactorySpecHelper::OPTIONS_SCHEMA))
+        expect(validator.errors({'agent' => 'fake', 'color' => 'blue'}, AgentFactorySpecHelper::OPTION_SCHEMA)).to(be_empty)
+        expect(validator.errors({'agent' => 'fake', 'color' => 1}, AgentFactorySpecHelper::OPTION_SCHEMA)).to(eq(['value at `/color` is not a string']))
+        expect(validator.errors({'agent' => 'bogus'}, AgentFactorySpecHelper::OPTION_SCHEMA, partial: true).first).to(include('"fake"'))
       end
 
       it 'reads the variants again when the entries of the extension point change (bundles of a plugin folder added later)' do
-        agents = -> { schemas.reader(Schema::Registry::TRANSFER_AGENT_OPTIONS)['discriminator']['mapping'].keys }
+        agents = -> { schemas.reader(AgentFactorySpecHelper::OPTION_SCHEMA)['discriminator']['mapping'].keys }
         expect(agents.call).to(eq(AgentFactorySpecHelper::SCHEMA_VARIANTS.keys))
-        expect(validator.errors({'agent' => 'fake'}, Schema::Registry::TRANSFER_AGENT_OPTIONS, partial: true)).not_to(be_empty)
+        expect(validator.errors({'agent' => 'fake'}, AgentFactorySpecHelper::OPTION_SCHEMA, partial: true)).not_to(be_empty)
         write_point_bundle(folder)
         write_agent_bundle(folder)
         registry.add_source(folder)
         expect(agents.call).to(eq(AgentFactorySpecHelper::SCHEMA_VARIANTS.keys + ['fake']))
-        expect(validator.errors({'agent' => 'fake', 'color' => 'blue'}, Schema::Registry::TRANSFER_AGENT_OPTIONS)).to(be_empty)
+        expect(validator.errors({'agent' => 'fake', 'color' => 'blue'}, AgentFactorySpecHelper::OPTION_SCHEMA)).to(be_empty)
         expect(schemas.reader(Schema::Registry::LOG_OPTIONS).current).to(be(schemas.reader(Schema::Registry::LOG_OPTIONS).current))
       end
 
@@ -351,7 +352,7 @@ module Aspera
         registry.add_source(folder)
         allow(Agent::Factory).to(receive(:instance).and_return(factory))
         [%i[agents show], %i[agents parameters], %i[ascp schema], %i[ascp spec]].each do |path|
-          expect(specs[path].arguments.first.allowed).to(include(:fake, :direct))
+          expect(specs[path].arguments.first.allowed).to(include(:fake))
         end
       end
 
@@ -362,7 +363,7 @@ module Aspera
 
     describe(Plugins::TransferAgents::AscpActions) do
       let(:schemas) { Schema::Registry.send(:new) }
-      let(:actions) { Class.new { include Aspera::Plugins::TransferAgents::AscpActions }.new }
+      let(:actions) { actions_class.new }
 
       before do
         write_point_bundle(folder)
@@ -384,7 +385,7 @@ module Aspera
 
     describe('parameters of the agents of the gem bundles') do
       let(:schemas) { Schema::Registry.send(:new) }
-      let(:actions) { Class.new { include Aspera::Plugins::TransferAgents::AscpActions }.new }
+      let(:actions) { actions_class.new }
       let(:gem_registry) { BundleRegistry.send(:new) }
       let(:gem_factory) { Agent::Factory.send(:new, registry: gem_registry) }
 
@@ -416,6 +417,8 @@ module Aspera
       let(:schemas) { Schema::Registry.send(:new) }
 
       before do
+        # The folder of file lists of transfers is not used here
+        allow(Transfer::Parameters).to(receive(:file_list_folder=))
         write_point_bundle(folder)
         write_agent_bundle(folder)
         registry.add_source(folder)
@@ -448,6 +451,8 @@ module Aspera
       end
 
       it 'gives the name of the agent: of option transfer, of an agent instance given' do
+        write_agent_bundle(folder, 'spec_bundle_other', entries: [{'name' => 'other', 'short' => 'o'}])
+        registry.add_source(folder)
         context = Cli::Context.new(registry: registry)
         context.options = Cli::Parser.new('test', ['--transfer=fake'])
         context.options.declare(:notify_to, description: 'Notify')
@@ -457,8 +462,8 @@ module Aspera
         transfer = described_class.new(context)
         transfer.agent_instance
         expect(transfer.agent_name).to(eq('fake'))
-        transfer.agent_instance = factory.agent_class(:node).allocate
-        expect(transfer.agent_name).to(eq('node'))
+        transfer.agent_instance = factory.agent_class(:other).allocate
+        expect(transfer.agent_name).to(eq('other'))
       end
 
       it 'gives a CLI error for an agent of a bundle that cannot be loaded' do

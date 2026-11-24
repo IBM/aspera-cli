@@ -51,7 +51,7 @@ RSpec.describe(Aspera::Plugins::Shares::SharesWeb) do
   # The user pastes a text in the prompt, which validates it (not valid: error, as without terminal) and returns it
   # @yieldreturn [String] Text pasted (evaluated after the login page was opened)
   def paste
-    allow(Aspera::Cli::Prompt).to(receive(:prompt_user_input).with('Code', sensitive: true, validate: kind_of(Proc))) { |*, validate:, **| yield.tap { |text| validate.call(text) } }
+    allow(Aspera::Prompt).to(receive(:prompt_user_input).with('Code', sensitive: true, validate: kind_of(Proc))) { |*, validate:, **| yield.tap { |text| validate.call(text) } }
   end
 
   # @param extra [Hash] content of the code, in addition to the state sent in RelayState

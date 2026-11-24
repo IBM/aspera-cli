@@ -14,6 +14,7 @@ require_relative '../../nagios'
 require_relative '../../log'
 require_relative '../../assert'
 require_relative '../../environment'
+require_relative '../transfer_agents/transfer_agent'
 require 'shellwords'
 require 'tmpdir'
 module Aspera
@@ -179,7 +180,7 @@ module Aspera
         command :health, description: 'Check transfer health'
         command(:upload, description: 'Upload files to server', transfer_paths: :send, action: lambda do |**|
           server_transfer_spec['direction'] = Aspera::Transfer::Spec.transfer_type_to_direction(:upload)
-          Cli::Runner.result_transfer(transfer.start(server_transfer_spec))
+          TransferAgents::TransferAgent.result_transfer(transfer.start(server_transfer_spec))
         end)
         command(
           :download,
@@ -187,7 +188,7 @@ module Aspera
           transfer_paths: :receive,
           action: lambda do |**|
             server_transfer_spec['direction'] = Aspera::Transfer::Spec.transfer_type_to_direction(:download)
-            Cli::Runner.result_transfer(transfer.start(server_transfer_spec))
+            TransferAgents::TransferAgent.result_transfer(transfer.start(server_transfer_spec))
           end
         )
         command :sync, description: 'Synchronize files with server'

@@ -3,10 +3,11 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-require_relative '../lib/aspera/faspex_gw'
+require 'spec_helper'
+require_relative '../gw_servlet'
 require 'securerandom'
 
-RSpec.describe(Aspera::Faspex4GWServlet) do
+RSpec.describe(Aspera::Plugins::Faspex4::GWServlet) do
   subject(:servlet) { described_class.new(webrick, described_class.normalize_parameters(parameters), package_sender) }
 
   let(:parameters) { {} }
@@ -97,7 +98,7 @@ RSpec.describe(Aspera::Faspex4GWServlet) do
 
   describe 'with username and password' do
     let(:password) { SecureRandom.hex(32) }
-    let(:parameters) { {'username' => 'fx4', 'password' => password} }
+    let(:parameters) { {'username' => 'fx4', 'password' => password} } # HashiCorpIgnore
 
     # @return [Hash] Header of Basic authentication
     def basic(username, password) = {'Authorization' => "Basic #{["#{username}:#{password}"].pack('m0')}"}

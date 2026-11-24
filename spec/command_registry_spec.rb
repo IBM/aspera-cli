@@ -560,4 +560,36 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
       expect { Aspera::Cli::ArgumentSpec.new(name: :x, omit_absent: true) }.to(raise_error(ArgumentError, /omit_absent/))
     end
   end
+
+  # -----------------------------------------------------------------------
+  # Options: order, placement before another option
+  # -----------------------------------------------------------------------
+  describe '#register_option' do
+    # @param names [Array<Symbol>] Options to register, a Hash `name => anchor` places it before the anchor
+    def register(*names)
+      names.each do |name|
+        name, before = name.is_a?(Hash) ? name.first : [name, nil]
+        registry.register_option(Aspera::Cli::OptionSpec.new(name: name), before: before)
+      end
+      registry.option_specs.keys
+    end
+
+    it 'keeps the order of registration' do
+      expect(register(:a, :b, :c)).to(eq(%i[a b c]))
+    end
+
+    it 'places an option before another one, also registered later, in their order of registration' do
+      expect(register(:a, {x: :c}, {y: :c}, :b, :c, :d)).to(eq(%i[a b x y c d]))
+      expect(register({z: :a})).to(eq(%i[z a b x y c d]))
+    end
+
+    it 'places at the end an option whose anchor is never registered' do
+      expect(register({x: :none}, :a, :b)).to(eq(%i[a b x]))
+    end
+
+    it 'refuses a duplicate option' do
+      register(:a)
+      expect { register({a: :b}) }.to(raise_error(ArgumentError, /Duplicate option: :a/))
+    end
+  end
 end

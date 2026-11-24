@@ -8,6 +8,7 @@ require_relative '../node/commands'
 require_relative 'api'
 require_relative '../alee/api'
 require_relative '../../assert'
+require_relative '../../oauth/client/generic'
 require_relative '../../rainbow'
 using Rainbow
 

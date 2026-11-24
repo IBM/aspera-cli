@@ -77,7 +77,7 @@ module Aspera
       # Durations (`DURATION_KEYS`) are converted to seconds first.
       # @param new_options [Hash] merged http_options hash
       # @return [nil]
-      # @raise [BadArgument] if a duration is invalid
+      # @raise [BadArgument] if a duration or an SSL option is invalid
       def http_options=(new_options)
         Aspera.assert_type(new_options, Hash)
         kept = {}
@@ -91,7 +91,11 @@ module Aspera
           if Rest::Parameters.instance.respond_to?(method)
             Rest::Parameters.instance.send(method, v)
           elsif k.to_s.eql?('ssl_options')
-            Aspera::SSL.option_list = v
+            begin
+              Aspera::SSL.option_list = v
+            rescue ParameterError => e
+              raise BadArgument, e.message
+            end
           elsif OAuth::Factory.instance.parameters.key?(k.to_sym)
             OAuth::Factory.instance.parameters[k.to_sym] = v
           else

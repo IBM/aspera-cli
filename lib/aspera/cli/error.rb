@@ -32,8 +32,29 @@ module Aspera
       # OAuth 2.0 error codes of a refused authentication (RFC 6749, RFC 6750)
       OAUTH_AUTH_ERRORS = %w[invalid_client invalid_grant unauthorized_client access_denied invalid_token insufficient_scope].freeze
       private_constant :OAUTH_AUTH_ERRORS
+      # Category of errors of the code used by bundles (e.g. domain library), by class, see `add_error`
+      @errors = {}
 
       class << self
+        # Add the category of an error class (and its subclasses) raised by code that is not of the CLI, e.g. the domain library used by a bundle.
+        # The runner gives such an error its label and exit code, instead of `Other`.
+        # @param error_class [Class]   Class of the error
+        # @param label       [String]  Label of the error message, e.g. `Transfer`
+        # @param code        [Integer] Exit code, one of the constants of this module
+        # @return [nil]
+        def add_error(error_class, label:, code:)
+          raise ArgumentError, "not an error class: #{error_class}" unless error_class.is_a?(Class) && error_class <= StandardError
+          raise ArgumentError, "unknown exit code: #{code}" unless DESCRIPTIONS.key?(code)
+          @errors[error_class] = {label: label, code: code}.freeze
+          nil
+        end
+
+        # @param error [Exception] An error
+        # @return [Hash, nil] `label` and `code` of the first added class of the error, `nil` if none
+        def error_category(error)
+          @errors.find { |error_class, _| error.is_a?(error_class) }&.last
+        end
+
         # @param error [Rest::CallError] Failed API call
         # @return [Integer] Exit code for the HTTP status, or OAuth error
         def for_call_error(error)

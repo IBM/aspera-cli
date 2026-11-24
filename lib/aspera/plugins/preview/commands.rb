@@ -20,6 +20,7 @@ require_relative '../../uri_reader'
 require_relative '../../log'
 require_relative '../../assert'
 require_relative '../../rainbow'
+require_relative '../transfer_agents/transfer_agent'
 require 'securerandom'
 using Rainbow
 
@@ -222,7 +223,7 @@ module Aspera
         # @param folder_id [String] Node API identifier of the reference folder
         # @param source_filename [String] relative source path inside the transfer root
         # @param destination [String, nil] local destination root for receive operations
-        # @return [Object] transfer result returned by [`Main.result_transfer`](lib/aspera/cli/main.rb)
+        # @return [Object] transfer result returned by `TransferAgents::TransferAgent.result_transfer`
         def do_transfer(direction, folder_id, source_filename, destination = '/')
           Aspera.assert(!(destination.nil? && direction.eql?(Aspera::Transfer::Spec::DIRECTION_RECEIVE)), 'destination must be set for receive direction')
           # Previews are generated from downloaded files, and uploaded
@@ -234,7 +235,7 @@ module Aspera
           # Force the destination on the transfer agent object.
           # Setting `t_spec['destination_root']` directly would later be overwritten.
           transfer.user_transfer_spec['destination_root'] = destination
-          Cli::Runner.result_transfer(transfer.start(t_spec))
+          TransferAgents::TransferAgent.result_transfer(transfer.start(t_spec))
         end
 
         # Populate generation metadata for a source file available on the local filesystem.

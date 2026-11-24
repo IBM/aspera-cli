@@ -2,6 +2,7 @@ name: preview
 title: Preview generation for Aspera access keys
 depends:
   - node
+  - transfer_agents
 gems:
   - marcel
 commands: true

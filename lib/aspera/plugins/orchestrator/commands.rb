@@ -8,8 +8,10 @@ require_relative '../../cli/special_values'
 require_relative '../../nagios'
 require_relative '../../log'
 require_relative '../../assert'
+require_relative '../../oauth/client/json_credentials'
 require_relative '../../transfer/spec'
 require_relative '../../schema/registry'
+require_relative '../../rest/error_analyzer'
 require 'xmlsimple'
 
 module Aspera
@@ -790,6 +792,29 @@ module Aspera
           end
           # Work order information, or value of the explicit output (any JSON value)
           Cli::Result.auto(call_ao('initiate', body: json_body, query: query_params.empty? ? nil : query_params))
+        end
+      end
+      # Errors of the Orchestrator API: XML document, or failed work order
+      Rest::ErrorAnalyzer.instance.add_handler('Orchestrator') do |type, context|
+        next if context[:response].code.start_with?('2')
+        data = context[:data]
+        if data.is_a?(String) && data.start_with?('<?xml')
+          parsed = XmlSimple.xml_in(data, {'ForceArray' => false}) rescue nil
+          if parsed.is_a?(Hash) && parsed['content'].is_a?(String)
+            Rest::ErrorAnalyzer.add_error(context, type, parsed['content'].gsub(/\A"|"\z/, ''))
+            parsed.each do |k, v|
+              next if k.eql?('content')
+              Rest::ErrorAnalyzer.add_error(context, "#{type}(sub)", "#{k}: #{v}") if [String, Integer].include?(v.class)
+            end
+          end
+          next
+        end
+        next unless data.is_a?(Hash)
+        work_order = data['work_order']
+        next unless work_order.is_a?(Hash)
+        Rest::ErrorAnalyzer.add_error(context, type, work_order['statusDetails'])
+        data['missing_parameters']&.each do |param|
+          Rest::ErrorAnalyzer.add_error(context, type, "missing parameter: #{param}")
         end
       end
     end

@@ -1,0 +1,7 @@
+name: faspex4
+title: IBM Aspera Faspex 4 gateway
+# Emulation of the Faspex 4 API: the gateway started by the commands `gateway` of aoc and faspex5, which create the package with their own API
+schemas:
+  - key: faspex4_opts
+    file: schemas/options.yaml
+    owned: true

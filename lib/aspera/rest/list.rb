@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require_relative 'parameters'
-require_relative '../cli/error'
 require_relative '../mime'
 require_relative '../assert'
 require_relative '../log'
@@ -135,14 +134,14 @@ module Aspera
       # @param entity [String] Type of entity to lookup (typically, API path, only used for exception)
       # @yieldreturn [Array<Hash>] The list of entities to search (block is mandatory).
       # @return [Hash] The unique matching object.
-      # @raise  [Cli::BadIdentifier] If 0 or >1 matches are found.
+      # @raise  [EntityNotFound] If 0 or >1 matches are found.
       def lookup_entity_generic(field:, value:, entity:)
         Aspera.assert(block_given?, 'block required for lookup_entity_generic')
         found = yield
         Aspera.assert_array_all(found, Hash)
         found = found.select { |i| i[field].eql?(value) }
         return found.first if found.length.eql?(1)
-        raise Cli::BadIdentifier.new(entity, value, field: field, count: found.length)
+        raise EntityNotFound, "#{entity} with #{field}=#{value}: #{found.empty? ? 'not found' : "found #{found.length}"}"
       end
 
       PER_PAGE_DEFAULT = 1000

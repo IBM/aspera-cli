@@ -34,14 +34,14 @@ module Aspera
         describe 'commands' do
           it 'are those of plugin faspex5, from the bundle (which hides the shim of the former plugin file)' do
             expect(registry.unavailable_reason(:faspex5)).to(be_nil)
-            expect(registry[:faspex5].depends).to(eq([:transfer_agents]))
+            expect(registry[:faspex5].depends).to(eq(%i[transfer_agents faspex4]))
             expect(registry[:faspex5].gems).to(eq([]))
             expect(Cli::Plugins::Factory.instance.plugin_source(:faspex5)).to(eq(bundle_folder))
             expect(Cli::Plugins::Factory.instance.plugin_class(:faspex5)).to(be(Commands))
             expect(Commands.plugin_name).to(eq('faspex5'))
           end
 
-          it 'have the gateway (servlet of the framework, shared with aoc) and the post-processing (servlet of the bundle)' do
+          it 'have the gateway (servlet of the bundle faspex4, shared with aoc) and the post-processing (servlet of the bundle)' do
             expect(Commands.command_registry[%i[gateway]]).not_to(be_nil)
             expect(Commands.command_registry[%i[postprocessing]]).not_to(be_nil)
             expect(Faspex4PostProcServlet.name).to(eq('Aspera::Plugins::Faspex5::Faspex4PostProcServlet'))
@@ -63,9 +63,11 @@ module Aspera
             expect(Schema::Registry.instance.reader(Schema::Registry.req_body(Commands::API_SCHEMA, 'packages.post')).current).to(be_a(Hash))
           end
 
-          it 'keep the options of the Faspex 4 servlets in the framework (they refer to WebServerOptions: no cross-file reference)' do
-            expect(Schema::Registry.instance.reader(Schema::Registry::GATEWAY_OPTIONS).current).to(be_a(Hash))
-            expect(Schema::Registry.instance.reader(Schema::Registry::POSTPROC_OPTIONS).current).to(be_a(Hash))
+          it 'give the options of the Faspex 4 servlets: post-processing in the bundle, gateway in the bundle faspex4' do
+            expect(registry.schema(:faspex5_opts)).to(have_attributes(bundle: :faspex5, file: File.join(bundle_folder, 'schemas/options.yaml'), owned: true))
+            expect(Schema::Registry.instance.reader(Commands::POSTPROC_OPTIONS).current).to(be_a(Hash))
+            expect(Schema::Registry.instance.reader(Commands::GATEWAY_OPTIONS).current).to(be_a(Hash))
+            expect(Schema::Registry.instance.reader(Commands::POSTPROC_OPTIONS)['allOf'].first).to(eq(Schema::Registry.instance.reader(Schema::Registry::WEB_SERVER_OPTIONS).current))
           end
         end
 

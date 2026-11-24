@@ -5,12 +5,11 @@
 
 require_relative '../log'
 require_relative '../assert'
-require_relative '../environment'
 require_relative '../bundle_registry'
 require 'singleton'
 module Aspera
   module Agent
-    # Factory for Agents: the entries of the extension point `agent` of bundles, and the agents of this folder that no entry provides (legacy).
+    # Factory for Agents: the entries of the extension point `agent` of bundles.
     #
     # `ALL` [Hash{Symbol => Hash}]: available agents, sorted by name: `long` capitalized name string, `short` single character symbol.
     # Computed on access (`instance.all`): bundles of folders added after this file is loaded are included.
@@ -23,9 +22,6 @@ module Aspera
 
       # Extension point of the agents of bundles
       POINT = :agent
-      # Files of this folder that are not agents
-      IGNORED_ITEMS = %i[factory base].freeze
-      private_constant :IGNORED_ITEMS
 
       class << self
         # `ALL`: available agents, see `#all`
@@ -46,7 +42,7 @@ module Aspera
         @provided = {}
       end
 
-      # Available agents: entries of the extension point `agent`, then the agents of this folder that no entry provides.
+      # Available agents: entries of the extension point `agent`.
       # An entry whose name is provided by an earlier entry, or whose letter is taken, is left out with a warning.
       # Recomputed when the entries change.
       # @return [Hash{Symbol => Hash}] By name, sorted: `long` capitalized name string, `short` single character symbol
@@ -54,34 +50,32 @@ module Aspera
         entries = @registry.extensions(POINT)
         unless entries.eql?(@entries)
           @entries = entries
-          legacy = legacy_agents
-          @provided = provided_agents(entries, legacy)
-          shorts = legacy.reject { |name, _| @provided.key?(name) }.merge(@provided.transform_values { |entry| entry.fields['short'].to_sym })
-          @all = shorts.sort.to_h { |name, short| [name, {long: name.to_s.capitalize, short: short}.freeze] }.freeze
+          @provided = provided_agents(entries)
+          @all = @provided.sort.to_h { |name, entry| [name, {long: name.to_s.capitalize, short: entry.fields['short'].to_sym}.freeze] }.freeze
         end
         @all
       end
 
-      # Load the class of an agent: the file of the entry of its bundle (with the checks of the registry: security level, availability, gems), or the legacy file
+      # Load the class of an agent: the file of the entry of its bundle, with the checks of the registry: security level, availability, gems
       # @param agent [Symbol, String] Name of an agent of `all`
       # @return [Class] The class of the agent
       # @raise [BundleRegistry::Unavailable] If the bundle of the agent is unavailable or a gem is missing
       def agent_class(agent)
         name = agent.to_sym
-        Aspera.assert(all.key?(name)) { "unknown agent: #{name}" }
-        return @registry.load_entry(@provided[name]) if @provided.key?(name)
-        # A bundle that is unavailable and that is, or may be (manifest not readable), the provider of this agent is not replaced by the shim of the former file of this folder.
-        # A bundle of the same name that does not declare an agent of this name (e.g. commands only) does not prevent the legacy agent.
-        bundle = @registry[name]
-        if !bundle.nil? && bundle.bundle? && (reason = @registry.unavailable_reason(name)) && (!bundle.error.nil? || declares_agent?(bundle, name))
-          raise BundleRegistry::Unavailable, "plugin #{name} is unavailable: #{reason}"
+        all
+        unless @provided.key?(name)
+          # An unavailable bundle that is, or may be (manifest not readable), the provider of this agent: why it is not available
+          bundle = @registry[name]
+          if !bundle.nil? && bundle.bundle? && (reason = @registry.unavailable_reason(name)) && (!bundle.error.nil? || declares_agent?(bundle, name))
+            raise BundleRegistry::Unavailable, "plugin #{name} is unavailable: #{reason}"
+          end
         end
-        require "aspera/agent/#{name}"
-        Aspera::Agent.const_get(name.to_s.capitalize)
+        Aspera.assert(@provided.key?(name)) { "unknown agent: #{name}" }
+        @registry.load_entry(@provided[name])
       end
 
-      # @param agent [Symbol, String] Name of an agent of `all`
-      # @return [Boolean] `true` if the agent is provided by an entry of a bundle, `false` for the agents of this folder
+      # @param agent [Symbol, String] Name of an agent
+      # @return [Boolean] `true` if the agent is provided by an entry of a bundle
       def provided?(agent)
         all
         @provided.key?(agent.to_sym)
@@ -116,20 +110,9 @@ module Aspera
         bundle.extensions.any? { |entry| entry.point.eql?(POINT) && entry.fields['name'].to_s.eql?(name.to_s) }
       end
 
-      # Agents of this folder, letter by today's rule: first letter, except `direct`
-      # @return [Hash{Symbol => Symbol}] Letter, by name
-      def legacy_agents
-        Dir.children(__dir__)
-          .select { |file| file.end_with?(Environment::RB_EXT) }
-          .map { |file| File.basename(file, Environment::RB_EXT).to_sym }
-          .reject { |item| IGNORED_ITEMS.include?(item) }
-          .to_h { |name| [name, name.eql?(:direct) ? :a : name.to_s[0].to_sym] }
-      end
-
       # @param entries [Array<BundleRegistry::Extension>] Entries of the extension point, in the order of the registry
-      # @param legacy  [Hash{Symbol => Symbol}]         Letter of the agents of this folder, by name
       # @return [Hash{Symbol => BundleRegistry::Extension}] Entries kept, by name of agent
-      def provided_agents(entries, legacy)
+      def provided_agents(entries)
         provided = {}
         entries.each do |entry|
           name, short = entry.fields.values_at('name', 'short')
@@ -149,19 +132,6 @@ module Aspera
             next
           end
           provided[name] = entry
-        end
-        # A legacy agent keeps its letter unless an entry provides it: checked once all entries are known, so that the order of entries does not matter.
-        # An entry left out gives its legacy agent back, which can take the letter of another entry: repeat until stable.
-        loop do
-          clash = nil
-          provided.each do |name, entry|
-            owner = legacy.find { |other, letter| letter.to_s.eql?(entry.fields['short']) && !other.eql?(name) && !provided.key?(other) }&.first
-            clash = [name, entry, owner] unless owner.nil?
-            break unless clash.nil?
-          end
-          break if clash.nil?
-          Log.log.warn { "Agent #{clash[0]} of bundle #{clash[1].bundle} is left out: letter #{clash[1].fields['short']} is taken by agent #{clash[2]}" }
-          provided.delete(clash[0])
         end
         provided
       end

@@ -7,6 +7,7 @@
 require_relative '../../schema/registry'
 require_relative '../../sealed_hash'
 require_relative '../../cli/plugins/basic_auth'
+require_relative '../../cli/hints'
 require_relative '../transfer_agents/sync_actions'
 require_relative '../../cli/special_values'
 require_relative '../../transfer/spec'
@@ -17,6 +18,7 @@ require_relative 'api'
 require_relative '../../oauth/client/factory'
 require_relative '../../rest/list'
 require_relative '../../assert'
+require_relative '../transfer_agents/transfer_agent'
 require 'base64'
 
 module Aspera
@@ -683,7 +685,7 @@ module Aspera
           transfer_spec = api_node.create('files/upload_setup', setup_payload)['transfer_specs'].first&.fetch('transfer_spec')
           Api.add_private_key(transfer_spec)
           transfer_spec.delete('paths')
-          Cli::Runner.result_transfer(transfer.start(transfer_spec))
+          TransferAgents::TransferAgent.result_transfer(transfer.start(transfer_spec))
         end
 
         def action_download(**)
@@ -696,7 +698,7 @@ module Aspera
           setup_payload = {transfer_requests: [{transfer_request: request_transfer_spec}]}
           transfer_spec = api_node.create('files/download_setup', setup_payload)['transfer_specs'].first&.fetch('transfer_spec')
           Api.add_private_key(transfer_spec)
-          Cli::Runner.result_transfer(transfer.start(transfer_spec))
+          TransferAgents::TransferAgent.result_transfer(transfer.start(transfer_spec))
         end
 
         def action_cat(path:, **)
@@ -838,13 +840,13 @@ module Aspera
         # access_keys > do > upload
         def action_access_keys_do_upload(do_root_file_id:, **)
           apifid = api_node.resolve_api_fid(do_root_file_id, transfer.destination_folder(Aspera::Transfer::Spec::DIRECTION_SEND), true)
-          Cli::Runner.result_transfer(transfer.start(apifid.node_api.transfer_spec_gen4(apifid.file_id, Aspera::Transfer::Spec::DIRECTION_SEND)))
+          TransferAgents::TransferAgent.result_transfer(transfer.start(apifid.node_api.transfer_spec_gen4(apifid.file_id, Aspera::Transfer::Spec::DIRECTION_SEND)))
         end
 
         # access_keys > do > download
         def action_access_keys_do_download(do_root_file_id:, **)
           apifid, source_paths = api_node.resolve_api_fid_paths(do_root_file_id, transfer.ts_source_paths)
-          Cli::Runner.result_transfer(transfer.start(apifid.node_api.transfer_spec_gen4(apifid.file_id, Aspera::Transfer::Spec::DIRECTION_RECEIVE, {'paths'=>source_paths})))
+          TransferAgents::TransferAgent.result_transfer(transfer.start(apifid.node_api.transfer_spec_gen4(apifid.file_id, Aspera::Transfer::Spec::DIRECTION_RECEIVE, {'paths'=>source_paths})))
         end
 
         # access_keys > do > v3 - mount target: Node plugin on the node hosting the root file
@@ -1262,6 +1264,22 @@ module Aspera
           return Cli::Result::ObjectList.new(obj_list, fields: %w[path result])
         end
       end
+      # Hints of errors of the Node API on configuration of the server
+      Cli::Hints.add(
+        exception:   Rest::CallError,
+        match:       /Server is not configured for this request/,
+        remediation: [
+          'Transfer user shall have those parameters in aspera.conf set to: token',
+          'authorization_transfer_in_value authorization_transfer_out_value'
+        ]
+      )
+      Cli::Hints.add(
+        exception:   Rest::CallError,
+        match:       /Please configure ACLs for this URI/,
+        remediation: [
+          'server must have: asnodeadmin -mu <node user> --acl-add=internal --internal'
+        ]
+      )
     end
   end
 end

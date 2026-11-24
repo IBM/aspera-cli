@@ -13,6 +13,7 @@ require_relative '../../../cli/info'
 require_relative '../../../cli/plugins/config'
 require_relative '../../../yaml'
 require_relative '../helper'
+require_relative '../transfer_agent'
 require 'fileutils'
 require 'json_schemer'
 require 'open3'
@@ -50,6 +51,25 @@ module Aspera
             expect(Cli::Plugins::Config.option_specs.keys.first(3)).to(eq(%i[sql ascp_logs preset]))
             expect(Cli::Plugins::Config.option_specs[:ascp_logs].schema).to(eq(AscpLogsActions::OPTIONS_SCHEMA))
             expect(Schema::Registry.instance.reader(AscpLogsActions::OPTIONS_SCHEMA)['properties']).to(include('period', 'thresholds'))
+          end
+
+          it 'place the options of ascp before the option smtp of config' do
+            expect(Cli::Plugins::Config.option_specs.keys.each_cons(5).to_a).to(include(%i[plugin_folder sdk_url locations_url sdk_folder smtp]))
+          end
+        end
+
+        describe 'errors' do
+          it 'of transfers have their own exit code' do
+            expect(Cli::ExitCode.error_category(Aspera::Transfer::Error.new('failed'))).to(eq({label: 'Transfer', code: Cli::ExitCode::TRANSFER}))
+          end
+
+          it 'have hints' do
+            hints = Cli::Hints.instance_variable_get(:@added).map { |hint| [hint[:exception], hint[:match]] }
+            expect(hints).to(include([Aspera::Transfer::Error, 'Remote host is not who we expected'], [RuntimeError, /Wrong remote host:/]))
+            lines = []
+            allow(Log.log).to(receive(:info)) { |&block| lines.push(block.call) }
+            Cli::Hints.hint_for(Aspera::Transfer::Error.new('Remote host is not who we expected'), nil)
+            expect(lines.join("\n")).to(include('#error-remote-host-is-not-who-we-expected', '"sshfp":null'))
           end
         end
 

@@ -211,17 +211,32 @@ module Aspera
       end
 
       # Register an OptionSpec. Raises if the option name is already registered.
-      # @param spec [OptionSpec]
+      # @param spec   [OptionSpec]
+      # @param before [Symbol, nil] Name of an option to place this one before, also when that option is registered later
+      #                             (e.g. by the body of a plugin class, after the modules mounted on it); at the end if it is never registered
       # @raise [ArgumentError] on duplicate option name
       # @return [OptionSpec] the registered spec
-      def register_option(spec)
+      def register_option(spec, before: nil)
         raise ArgumentError, "Duplicate option: #{spec.name.inspect}" if @option_specs.key?(spec.name)
+        @option_before[spec.name] = before unless before.nil?
         @option_specs[spec.name] = spec
       end
 
-      # @return [Hash{Symbol => OptionSpec}] all registered option specs
+      # @return [Hash{Symbol => OptionSpec}] all registered option specs, in order of registration, except those placed before another one (see `register_option`)
       def option_specs
-        @option_specs.dup
+        ordered = @option_specs.except(*@option_before.keys)
+        @option_before.each do |name, anchor|
+          spec = @option_specs[name]
+          if ordered.key?(anchor)
+            ordered = ordered.each_with_object({}) do |(id, other), placed|
+              placed[name] = spec if id.eql?(anchor)
+              placed[id] = other
+            end
+          else
+            ordered[name] = spec
+          end
+        end
+        ordered
       end
 
       # @return [Boolean] true if at least one spec is registered
@@ -372,6 +387,8 @@ module Aspera
         @specs = {}
         # Keyed by Symbol option name
         @option_specs = {}
+        # Option name => name of the option it is placed before
+        @option_before = {}
         # Children index: parent Array<Symbol> -> Hash{child_id Symbol => CommandSpec}
         # Built incrementally in register(); enables O(1) children_of lookups.
         @children_index = {}

@@ -259,29 +259,6 @@ module Aspera
         end
       end
 
-      describe '.result_transfer' do
-        it 'raises on an unexpected result type' do
-          expect { Runner.result_transfer('done') }.to(raise_error(/Unexpected transfer result type: String/))
-        end
-
-        it 'returns the transfer spec of a dry run' do
-          transfer_spec = {'remote_host' => 'localhost', 'direction' => 'send'}
-          expect(Runner.result_transfer(Transfer::Result.dry_run(transfer_spec)).data).to(eq(transfer_spec))
-        end
-      end
-
-      describe '.result_transfer_multiple' do
-        it 'converts each status to text' do
-          table = [
-            {'id' => 1, Runner::STATUS_FIELD => Transfer::Result::Success.new},
-            {'id' => 2, Runner::STATUS_FIELD => Transfer::Result::Async.new(job_id: 'j1')},
-            {'id' => 3, Runner::STATUS_FIELD => Transfer::Result.dry_run({})},
-            {'id' => 4, Runner::STATUS_FIELD => 'other'}
-          ]
-          expect(Runner.result_transfer_multiple(table).data.map { |item| item[Runner::STATUS_FIELD] }).to(eq(%w[success async:j1 dry_run other]))
-        end
-      end
-
       describe '#option_log=' do
         it 'sets the logger type and format' do
           allow(Log.instance).to(receive(:logger_type=))

@@ -76,7 +76,7 @@ Members: `options` (`Parser`), `transfer` (service `transfer` of bundle `transfe
    - `main_folder` (option `home`), `persistency`, `presets` (config file), `vault` (options `vault`, `vault_password`), `http_config`, `progress_bar`
    - plugin lookup folders
    - `@preset:` and `@vault:` extended-value handlers
-   - global singletons: `Rest::Parameters`, `OAuth::Factory`, SSL, `Transfer::Parameters`, `Rest::ErrorAnalyzer`
+   - global singletons: `Rest::Parameters`, `OAuth::Factory`, SSL, `Rest::ErrorAnalyzer` (those of transfers, `Ascp::Installation` and `Transfer::Parameters`, are set by the service `transfer` when it is created)
    - PAC proxy executor (option `fpac`)
 3. `Plugins::Config` (only a CLI plugin: option declaration and command handlers), then `Mailer` and `SecretFinder`
 
@@ -555,7 +555,7 @@ Transfer outcomes are typed ([`transfer/result.rb`](../lib/aspera/transfer/resul
 | [`util.rb`](../lib/aspera/rest/util.rb) | `Rest.build_uri`, `Rest.php_style`, `Rest.query_to_h`, `Rest.parse_header`, `Rest.basic_authorization`, `Rest.start_http_session`, … |
 | [`call_error.rb`](../lib/aspera/rest/call_error.rb) | `Rest::CallError`: raised on HTTP call errors |
 | [`error_analyzer.rb`](../lib/aspera/rest/error_analyzer.rb) | `Rest::ErrorAnalyzer`: extracts error messages from responses (singleton) |
-| [`aspera_errors.rb`](../lib/aspera/rest/aspera_errors.rb) | Error handlers for Aspera APIs, registered on require |
+| [`aspera_errors.rb`](../lib/aspera/rest/aspera_errors.rb) | Error handlers for the shapes of error answers (JSON paths), registered on require; the handlers of a product API are registered by its bundle (`ErrorAnalyzer#add_handler`: node, orchestrator) |
 | [`list.rb`](../lib/aspera/rest/list.rb) | `Rest::List`: paginated listing and lookup, included in API clients |
 
 `Rest::Client` is a custom HTTP client implementation providing:
@@ -586,12 +586,12 @@ Global HTTP settings are held in the `Rest::Parameters` singleton. The CLI HTTP/
 
 **Directory**: [`lib/aspera/schema/`](../lib/aspera/schema/)
 
-OpenAPI definitions of the product APIs (those of AoC, AoC Automation, Console, Faspex 5, Faspio, Node and Shares are in their bundles), `async` database tables (`async_tables.yaml`) and `Schema::Registry`, used to:
+`Schema::Registry`: schemas by key. Those of the framework are in `LOCATIONS` (`opts`: `cli/options.schema.yaml`, `manifest`); the domain library adds its own when the file that reads them is loaded (`Registry.register`: transfer spec, sync, `async` database tables, `ascp` logs), with options of `Documentation` for the whole schema (`doc_options`, e.g. the agents of the parameters of the transfer spec); the bundles add theirs with their manifest (OpenAPI definitions of the product APIs, options of the plugins). A `$ref` to a node of another schema of the registry, `<key>:#/<path>` (e.g. `opts:#/components/schemas/WebServerOptions`), is replaced by a copy of the node when the document is read. The schemas are used to:
 
 - document request bodies of `create` / `modify` (`body_component:` in `crud_commands`)
 - document `--query` parameters (`query_schema:`, shown with `--query=help`)
 
-`Schema::Validator` validates values of options and arguments against their `schema:` (gem `json_schemer`), only for schemas owned by ascli (`Registry::OWNED`: options, transfer spec, sync, async tables): vendor API schemas are validated by the API. Option values are partial (merged from presets and command line): `required` is not enforced, and a `oneOf` whose `discriminator` property is absent is not checked.
+`Schema::Validator` validates values of options and arguments against their `schema:` (gem `json_schemer`), only for schemas owned by ascli (`Registry::OWNED`, the schemas added by the domain library, and those of bundles with `owned: true`): vendor API schemas are validated by the API. Option values are partial (merged from presets and command line): `required` is not enforced, and a `oneOf` whose `discriminator` property is absent is not checked.
 
 #### OAuth Implementation
 
@@ -871,6 +871,8 @@ Analyzes API errors and provides:
 - Suggested remediation steps
 - Context-specific guidance
 
+The runner gives each category of error a label and an exit code (`Cli::ExitCode`). An error class of the code used by a bundle (e.g. `Aspera::Transfer::Error` of the domain library) gets its category from the bundle (`ExitCode.add_error`, bundle `transfer_agents`). The hints (`Cli::Hints`) of a product are added by its bundle (`Hints.add`) when its code is loaded.
+
 ## Logging and Debugging
 
 ### Log Levels
@@ -959,7 +961,8 @@ The **framework** finds, validates and loads bundles, and offers the hooks they 
 | Bundle | `plugins/<name>/` | Framework, domain, the bundles listed in its `depends` |
 
 - A reference is a `require` or `require_relative` path, or a constant. Comments are not references. Shims (see [Compatibility until 5.0](#compatibility-until-50)) are exempt.
-- The rules are checked by `spec/layer_boundary_spec.rb`; until the end of the moves, the violations of today are listed in `spec/fixtures/layer_boundary_known.yaml`, a list that can only shrink.
+- The rules are checked by `spec/layer_boundary_spec.rb`, with no list of known violations.
+- Library rule: the files used without the CLI never reference `cli/`: framework files outside `cli/`, and files of bundles other than `commands.rb`, `commands/`, their mounted modules and services. The only exception is `cli/info` (identity of the gem: name of the command and URLs, constants only), used by the web login that gives a code for `ascli` on another host (`web_auth/`) and by the SAML login of Shares.
 - The domain library is the Aspera transfer library, without CLI: transfer spec, `ascp`, `async`, base class and factory of agents, locations of installed Aspera products (`products/`: where `ascp` and the logs are, used by `Ascp::Installation`).
   The runtime of a product used only by its bundle (e.g. the `transferd` daemon and its system service) is in the bundle.
 
@@ -992,6 +995,7 @@ lib/aspera/plugins/<name>/
 | --- | --- | --- |
 | `name` | (mandatory) | Name of the plugin, same as the folder: `[a-z][a-z0-9_]*` |
 | `title` | (mandatory) | Name of the product, for listings and the MCP instructions |
+| `mcp` | none | Section of the instructions of the MCP server about the plugin (e.g. development guides); `%{<point>}` is the list of the bundles that provide an entry of the extension point `<point>`, with their title |
 | `depends` | `[]` | Bundles referenced by this one (layer rule). One missing or unavailable: this bundle is unavailable |
 | `gems` | `[]` | Optional gems required by the code of the bundle: checked when the code is loaded, not when listed |
 | `commands` | `false` | `true`: `commands.rb` defines `Commands`, the top level command `<name>` |
@@ -1099,9 +1103,10 @@ Sources of plugins, first one wins for a given name:
 
 ### Extension points, mounts and services
 
-- **Extension point `agent`**, declared by bundle `transfer_agents`: an entry has `name` (value of `--transfer`), `short` (one letter, unique), `file`, `class`, `options_schema`. Bundles `direct`, `desktop`, `connect`, `httpgw`, `node`, `transferd` provide one each. `Agent::Factory::ALL` (same shape: `long`, `short`, computed on access) is built from the entries, then the agents of `lib/aspera/agent/` that no entry provides (legacy, until they move); an entry whose name is provided by an earlier entry, or whose letter is taken, is left out with a warning. `Factory#create` loads the file of the entry with the checks of `load_entry`. The schema of an entry is `schemas/agent_extension.schema.yaml` of bundle `transfer_agents`. `TransferAgentOptions` has the marker `x-cli-variants`: when `Schema::Registry` reads `options.schema.yaml`, it adds a component `<Name>AgentOptions` (read from `options_schema`), its `$ref` in `oneOf` and its `discriminator` mapping for each entry; an entry replaces the variant of the same name. The document is read again when the entries change (bundles of a plugin folder added after it was read), and `Schema::Validator` compiles it again. `TransferAgentOptions` stays in `options.schema.yaml`: the components of its variants have all left the file, which has no `oneOf` nor `discriminator.mapping` of its own; they are created when the schema is read. A bundle that extends a point depends on the bundle that declares it.
+- **Extension point `agent`**, declared by bundle `transfer_agents`: an entry has `name` (value of `--transfer`), `short` (one letter, unique), `file`, `class`, `options_schema`. Bundles `direct`, `desktop`, `connect`, `httpgw`, `node`, `transferd` provide one each. `Agent::Factory::ALL` (same shape: `long`, `short`, computed on access) is built from the entries; an entry whose name is provided by an earlier entry, or whose letter is taken, is left out with a warning; the agent of an unavailable bundle of the same name gives the reason. `Factory#create` loads the file of the entry with the checks of `load_entry`. The schema of an entry is `schemas/agent_extension.schema.yaml` of bundle `transfer_agents`. `TransferAgentOptions` (schema of option `transfer`, in `schemas/options.yaml` of bundle `transfer_agents`, key `transfer_opts`) has the marker `x-cli-variants`: when `Schema::Registry` reads the file, it adds a component `<Name>AgentOptions` (read from `options_schema`), its `$ref` in `oneOf` and its `discriminator` mapping for each entry; an entry replaces the variant of the same name. The document is read again when the entries change (bundles of a plugin folder added after it was read), and `Schema::Validator` compiles it again. The file has no `oneOf` nor `discriminator.mapping` of its own: they are created when the schema is read. A bundle that extends a point depends on the bundle that declares it.
 - **Mounts**: bundle `transfer_agents` adds the command trees `ascp`, `agents`, `sync` (and the deprecated `transfer`) to plugin `config`, with the modules of its manifest, included by the body of `Config` (where its trees were, `sync` with `before: :gem`), in the order of the manifest: the command tree and the options of `config` do not change. The runner includes again the mounts on `config` once the plugin folders are added. A mount adds commands to another plugin; the `mount:` attribute of the command DSL (see [Mounting another plugin's commands](#mounting-another-plugins-commands)) exposes commands of another plugin class under a node: both can be used together (bundle `transferd` mounts the deprecated `config transferd`, a node with `mount:` on its commands).
-- **Framework API**: `BundleRegistry#extensions(:<point>)`, `#mounts(:<target>)` and `#service(:<name>)` give the entries of the available bundles as data (by name of bundle, then in the order of the manifest); `#load_entry` loads the code of an entry, with the checks of `load_constant`. The fields of an extension entry other than `file` and `class` are validated by the schema of the point (bundles of the gem: by a spec). `Base.include_mounts` includes the mounted modules, each once: the `included` hook of a module declares its commands and options in the target class (`base.class_exec { commands_under … }`). `Factory#plugin_class` calls it after loading the class, so mounted commands come after the commands of the class body; a class body calls it to place them, and `command <id>, before: <id>` places a command before a command of the same parent. A module of a source refused at the current level is not loaded; one of a bundle with a missing gem is skipped with a warning; commands and options declared by a module get the level of its source.
+- **Framework API**: `BundleRegistry#extensions(:<point>)`, `#mounts(:<target>)` and `#service(:<name>)` give the entries of the available bundles as data (by name of bundle, then in the order of the manifest); `#load_entry` loads the code of an entry, with the checks of `load_constant`. The fields of an extension entry other than `file` and `class` are validated by the schema of the point (bundles of the gem: by a spec). `Base.include_mounts` includes the mounted modules, each once: the `included` hook of a module declares its commands and options in the target class (`base.class_exec { commands_under … }`). `Factory#plugin_class` calls it after loading the class, so mounted commands come after the commands of the class body; a class body calls it to place them, and `command <id>, before: <id>` places a command before a command of the same parent; `option <name>, before: <name>` places an option before an option of the class, also when that option is declared later (bundle `transfer_agents` places the options `sdk_url`, `locations_url`, `sdk_folder` before `smtp` of `config`). A module of a source refused at the current level is not loaded; one of a bundle with a missing gem is skipped with a warning; commands and options declared by a module get the level of its source.
+- **Other hooks of the framework**, used by the code of bundles when it is loaded: `Rest::ErrorAnalyzer#add_handler` (errors of a product API), `Cli::Hints.add` (hints of errors), `Cli::ExitCode.add_error` (label and exit code of an error class of the domain library); the help of a command with `transfer_paths` gets its argument from the service `transfer` (`paths_argument`); the instructions of the MCP server list the plugins with the titles of their bundles, then add the section `mcp` of each manifest.
 - **Services**: `Context#service(:transfer)` creates the `TransferAgent` of bundle `transfer_agents` once, on first use, with the context (`Context#transfer` gives it). Plugins of bundles use it through the helper module `Aspera::Plugins::TransferAgents::Helper` (method `transfer`) and declare `depends: - transfer_agents`. `Plugins::Base#transfer` remains for single-file plugins: it asks the service by name, without reference to the bundle.
 
 ### Compatibility until 5.0
@@ -1151,15 +1156,16 @@ end
 | `shares` | yes | | OAuth SAML flow | `node` |
 | `ats` | yes | | API | `node` |
 | `preview` | yes | | preview generator | `node`, `transfer_agents` |
-| `aoc` | yes | | API, GraphQL queries | `node`, `ats`, `transfer_agents` |
-| `faspex5` | yes | | API, OAuth public link flow, Faspex 4 postprocessing servlet | `transfer_agents` |
+| `aoc` | yes | | API, GraphQL queries | `node`, `ats`, `transfer_agents`, `faspex4` |
+| `faspex5` | yes | | API, OAuth public link flow, Faspex 4 postprocessing servlet | `transfer_agents`, `faspex4` |
+| `faspex4` | | | Faspex 4 gateway (servlet, options) | |
 | `orchestrator` | yes | | workflow checker, options schemas | `transfer_agents` |
 | `server` | yes | | `ascmd` | `transfer_agents` |
 | `console` | yes | | API schema | |
 | `faspio` | yes | | API schema | |
 | `alee` | yes | | Commands, API | |
 
-The bundles `aoc` and `faspex5` do not depend on each other: the Faspex 4 gateway ([`faspex_gw.rb`](../lib/aspera/faspex_gw.rb), framework) is started by the command `gateway` of each one, which gives it the function that creates the package with its own API. The options of the gateway and of the post-processing server (`Faspex4GatewayOptions`, `Faspex4PostProcOptions`) stay in `cli/options.schema.yaml`: they refer to `WebServerOptions` and the schema reader has no reference to another file.
+The bundles `aoc` and `faspex5` do not depend on each other: the Faspex 4 gateway ([`gw_servlet.rb`](../lib/aspera/plugins/faspex4/gw_servlet.rb), `Aspera::Plugins::Faspex4::GWServlet`, bundle `faspex4`, no commands) is started by the command `gateway` of each one, which gives it the function that creates the package with its own API. Its options (`Faspex4GatewayOptions`, key `faspex4_opts`) are in the bundle `faspex4`, those of the post-processing server (`Faspex4PostProcOptions`, key `faspex5_opts`) in the bundle `faspex5`: both refer to `WebServerOptions` of the framework (`opts:#/components/schemas/WebServerOptions`).
 
 ## Performance Considerations
 

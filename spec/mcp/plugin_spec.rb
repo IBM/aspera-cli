@@ -60,7 +60,9 @@ end
 
 require_relative '../../lib/aspera/cli/plugins/mcp'
 require_relative '../../lib/aspera/oauth/server/pkce'
+require_relative '../bundle_registry_helper'
 require 'securerandom'
+require 'tmpdir'
 
 RSpec.describe(Aspera::Cli::Plugins::Mcp) do
   # Build a minimal plugin instance without a real CLI context.
@@ -80,6 +82,9 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
     let(:mounted) { [] }
 
     around do |example|
+      # Loaded on use by the plugin, also when this spec runs alone
+      require_relative '../../lib/aspera/cli/mcp/tool'
+      require_relative '../../lib/aspera/cli/mcp/http_servlet'
       saved = Aspera::Cli::Mcp::Tool.web_secret
       example.run
     ensure
@@ -87,8 +92,6 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
     end
 
     before do
-      require_relative '../../lib/aspera/cli/mcp/tool'
-      require_relative '../../lib/aspera/cli/mcp/http_servlet'
       web_server = instance_double(Aspera::WebServerSimple, start: nil)
       allow(web_server).to(receive(:mount)) { |*args| mounted.replace(args) }
       allow(Aspera::WebServerSimple).to(receive(:new)) do |uri, **tls|
@@ -250,6 +253,46 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
 
     it 'refuses unknown options' do
       expect { plugin.action_server(mcp_options: {'foo' => 1}) }.to(raise_error(Aspera::Cli::BadArgument, /Unknown MCP option\(s\): foo/))
+    end
+  end
+
+  # -------------------------------------------------------------------------
+  # default_instructions: generated from the manifests of the bundles
+  # -------------------------------------------------------------------------
+  describe '.default_instructions' do
+    include BundleRegistrySpecHelper
+
+    let(:folder) { Dir.mktmpdir('mcp_spec') }
+    let(:registry) { Aspera::BundleRegistry.send(:new, builtin: false) }
+    let(:factory) { Aspera::Cli::Plugins::Factory.send(:new, registry: registry) }
+
+    after { FileUtils.rm_rf(folder) }
+
+    it 'lists the plugins with the title of their bundle, and adds the sections of the bundles, with the bundles of an extension point' do
+      write_bundle(folder, 'spec_bundle_point', manifest: {'commands' => false, 'mcp' => "TRANSFERS\nAgents: %{spec_point}.\n", 'extension_points' => [{'name' => 'spec_point', 'schema' => 'point.yaml'}]}, code: nil)
+      File.write(File.join(folder, 'spec_bundle_point', 'point.yaml'), {'type' => 'object'}.to_yaml)
+      write_bundle(folder, 'spec_bundle_agent', manifest: {'commands' => false, 'depends' => ['spec_bundle_point'], 'extensions' => {'spec_point' => [{'file' => 'agent.rb', 'class' => 'Agent'}]}}, code: nil)
+      write_bundle(folder, 'spec_bundle_cmd', manifest: {'mcp' => 'GUIDE'})
+      write_single(folder, 'spec_bundle_single')
+      write_single(folder, 'config')
+      write_single(folder, 'mcp')
+      factory.add_lookup_folder(folder)
+      factory.add_plugins_from_lookup_folders
+      instructions = described_class.default_instructions(factory)
+      expect(instructions).to(start_with(described_class::INSTRUCTIONS_START))
+      expect(instructions).to(include("\n\nPlugins: config (local configuration), spec_bundle_cmd (Product spec_bundle_cmd), spec_bundle_single.\n\nCREDENTIALS\n"))
+      expect(instructions).to(include("#{described_class::CREDENTIALS_INSTRUCTIONS}\n\nGUIDE\n\nTRANSFERS\nAgents: spec_bundle_agent (Product spec_bundle_agent).\n\nGENERAL GUIDANCE"))
+      expect(instructions).to(end_with(described_class::INSTRUCTIONS_END))
+    end
+
+    it 'gives the sections of the bundles of the gem: transfers with the agents, guides of Orchestrator and AoC Automation' do
+      gem_factory = Aspera::Cli::Plugins::Factory.send(:new, registry: Aspera::BundleRegistry.send(:new))
+      gem_factory.add_plugins_from_lookup_folders
+      instructions = described_class.default_instructions(gem_factory)
+      expect(instructions).to(include('aoc (IBM Aspera on Cloud)', 'faspex5 (IBM Aspera Faspex 5)', 'transferd (IBM Aspera Transfer Daemon)'))
+      expect(instructions).not_to(include('mcp ('))
+      expect(instructions).to(include('ORCHESTRATOR WORKFLOW DEVELOPMENT', 'AOC AUTOMATION WORKFLOW DEVELOPMENT', "TRANSFERS\n"))
+      expect(instructions).to(include('Agents (default: direct): connect (IBM Aspera Connect), desktop (IBM Aspera for Desktop), direct (Local ascp), httpgw (HTTP Gateway), node ('))
     end
   end
 end

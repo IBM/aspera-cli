@@ -225,8 +225,9 @@ module Aspera
           # Store an OptionSpec in the command registry.
           # Raises ArgumentError at class-load time if the same option name is already
           # declared by any ancestor class, preventing silent shadowing.
-          # @param spec [OptionSpec]
-          def register_option_spec(spec)
+          # @param spec   [OptionSpec]
+          # @param before [Symbol, nil] Name of an option of this class to place it before (see `CommandRegistry#register_option`)
+          def register_option_spec(spec, before: nil)
             ancestor_owner = ancestors.drop(1).find do |klass|
               klass.is_a?(Class) && klass <= Base &&
                 klass.instance_variable_defined?(:@command_registry) &&
@@ -234,7 +235,7 @@ module Aspera
             end
             raise ArgumentError, "#{self}: option :#{spec.name} already declared in ancestor #{ancestor_owner}" if ancestor_owner
             spec.security = mounted_level(spec.security)
-            command_registry.register_option(spec)
+            command_registry.register_option(spec, before: before)
           end
 
           # Classes and modules whose options apply to this plugin:
