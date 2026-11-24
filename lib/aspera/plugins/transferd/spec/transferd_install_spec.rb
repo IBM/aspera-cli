@@ -96,7 +96,7 @@ module Aspera
         end
 
         def write_meta(version)
-          File.write(File.join(@sdk_dir, Products::Other::INFO_META_FILE), "<product><name>SDK</name><version>#{version}</version></product>")
+          File.write(File.join(@sdk_dir, Products::INFO_META_FILE), "<product><name>SDK</name><version>#{version}</version></product>")
         end
 
         it 'is nil if transferd is not installed' do

@@ -16,7 +16,10 @@ require_relative '../hash_ext'
 require_relative '../products/desktop'
 require_relative '../products/connect'
 require_relative '../products/transferd'
-require_relative '../products/other'
+require_relative '../products'
+require_relative '../products/cli_v3'
+require_relative '../products/hsts'
+require_relative '../products/drive'
 require 'fileutils'
 require 'openssl'
 require 'singleton'
@@ -267,7 +270,7 @@ module Aspera
       # @return [String, nil] Version of the SDK installed in the SDK folder (from its meta data file), or nil if not installed
       def installed_sdk_version
         return unless File.exist?(sdk_exe_path(:transferd))
-        meta_data_file = File.join(Products::Transferd.sdk_directory, Products::Other::INFO_META_FILE)
+        meta_data_file = File.join(Products::Transferd.sdk_directory, Products::INFO_META_FILE)
         return unless File.exist?(meta_data_file)
         return File.read(meta_data_file).scan(%r{<version>(.*?)</version>}).flatten.first
       end
@@ -424,7 +427,7 @@ module Aspera
           end
         end
         # Generate meta data XML file in SDK if needed, based on actual binaries versions
-        meta_data_file = File.join(folder, Products::Other::INFO_META_FILE)
+        meta_data_file = File.join(folder, Products::INFO_META_FILE)
         if File.exist?(meta_data_file)
           # file is there, read values:
           meta_data = File.read(meta_data_file)
@@ -549,9 +552,11 @@ module Aspera
         scan_locations = Products::Transferd.locations +
           Products::Desktop.locations +
           Products::Connect.locations +
-          Products::Other::LOCATION_ON_THIS_OS
+          Products::CliV3.locations +
+          Products::Hsts.locations +
+          Products::Drive.locations
         # search installed products: with ascp
-        @found_products = Products::Other.find(scan_locations)
+        @found_products = Products.find(scan_locations)
       end
     end
   end

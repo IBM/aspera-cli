@@ -31,7 +31,7 @@ RSpec.describe(Aspera::Plugins::Connect::Agent) do
   describe '.connect_api_url' do
     it 'reads the URL from the URI file in the run folder' do
       Dir.mktmpdir do |dir|
-        allow(Aspera::Products::Other).to(receive(:find).and_return([{run_root: dir}]))
+        allow(Aspera::Products).to(receive(:find).and_return([{run_root: dir}]))
         expect { described_class.connect_api_url }.to(raise_error(/no connect uri file found/))
         FileUtils.mkdir_p(File.join(dir, 'var', 'run'))
         File.write(File.join(dir, 'var', 'run', 'https.uri'), "https://127.0.0.1:43003\n")

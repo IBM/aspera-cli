@@ -28,7 +28,7 @@ module LayerBoundary
   # files (and constants, in snake case) of those folders that stay in their layer
   FOLDER_STAYS = {
     'agent'    => %w[base factory],
-    'products' => %w[connect desktop other transferd],
+    'products' => %w[cli_v3 connect desktop drive hsts transferd],
     'preview'  => []
   }.freeze
   # files (and constants, in snake case) of those folders -> bundle that will own them
@@ -96,12 +96,17 @@ module LayerBoundary
       {layer: FOLDER_LAYER.fetch(folder)}
     end
 
+    # @return [Boolean] true if the path (relative to lib/aspera, without extension) is the module file of a domain folder (e.g. products.rb), which has the layer of the folder
+    def domain_module_file?(rel)
+      !rel.include?('/') && (DOMAIN_FOLDERS.include?(rel) || FOLDER_LAYER[rel].eql?(:domain))
+    end
+
     # @return [Hash] Layer description {layer:, bundle:, cli:} of a path relative to lib/aspera, without extension
     def path_target(rel)
       parts = rel.split('/')
       if parts[0].eql?('plugins') && parts.length > 2
         {layer: :bundle, bundle: parts[1]}
-      elsif DOMAIN_FOLDERS.include?(parts[0])
+      elsif domain_module_file?(rel) || DOMAIN_FOLDERS.include?(parts[0])
         {layer: :domain}
       elsif FOLDER_LAYER.key?(parts[0]) && parts.length > 1
         folder_target(parts[0], parts[1])
@@ -120,6 +125,7 @@ module LayerBoundary
     #   with `cli`: `true` if the file is of the CLI (it may reference cli/)
     def source_layer(aspera_dir, rel)
       parts = rel.split('/')
+      return {layer: :domain} if domain_module_file?(rel.delete_suffix('.rb'))
       return {layer: :bundle, bundle: parts[1], cli: bundle_cli_file?(aspera_dir, parts[1], parts.drop(2).join('/'))} if parts[0].eql?('plugins') && parts.length > 2
       return {layer: :domain} if DOMAIN_FOLDERS.include?(parts[0])
       return folder_target(parts[0], parts[1].delete_suffix('.rb')).merge(cli: false) if FOLDER_LAYER.key?(parts[0]) && parts.length > 1
@@ -202,6 +208,8 @@ module LayerBoundary
       when 'Agent', 'Products', 'Preview'
         # the module itself: Agent, Products are domain
         return (chain[0].eql?('Preview') ? nil : [{layer: :domain}, chain[0]]) if chain.length < 2
+        # a constant of the module itself (Products::INFO_META_FILE), not a product class
+        return [{layer: :domain}, chain[0]] if chain[0].eql?('Products') && chain[1].eql?(chain[1].upcase)
         [folder_target(chain[0].downcase, chain[1].capital_to_snake), chain.first(2).join('::')]
       when *DOMAIN_CONSTANTS
         [{layer: :domain}, chain.first(2).join('::')]
@@ -428,7 +436,7 @@ RSpec.describe(LayerBoundary) do
         x = 'Transfer::Spec'
         y = "Agent::Base 1"
         z = <<~TEXT
-          Products::Other
+          Products::Hsts
         TEXT
       RUBY
         expect(described_class.violations(dir)).to(eq({}))
@@ -558,6 +566,16 @@ RSpec.describe(LayerBoundary) do
           'agent/base.rb' => ['require preview/generator', 'require products/transferd_service'],
           'rest/a.rb'     => ['const Preview::Utils', 'const Products::TransferdService', 'require agent/base', 'require agent/node', 'require preview/generator']
         ))
+      end
+    end
+
+    it 'gives the module file of a domain folder the layer of the folder' do
+      with_tree(
+        'rest/a.rb'     => "require_relative '../products'\nAspera::Products.find([])\nProducts::INFO_META_FILE\n",
+        'products.rb'   => "require_relative 'rest'\nmodule Products\nend\n",
+        'agent/base.rb' => "require_relative '../products'\nProducts.find([])\n"
+      ) do |dir|
+        expect(described_class.violations(dir)).to(eq('rest/a.rb' => ['const Products', 'require products']))
       end
     end
 

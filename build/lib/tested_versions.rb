@@ -9,7 +9,7 @@ require_relative '../../lib/aspera/rest'
 require_relative '../../lib/aspera/products/transferd'
 require_relative '../../lib/aspera/products/desktop'
 require_relative '../../lib/aspera/products/connect'
-require_relative '../../lib/aspera/products/other'
+require_relative '../../lib/aspera/products'
 require_relative 'paths'
 require_relative 'test_env'
 require 'uri'
@@ -174,7 +174,7 @@ module TestedVersions
 
     # @return [Hash, nil] First installed product of this class (with `ascp`)
     def find_product(product_class)
-      Aspera::Products::Other.find(product_class.locations).first
+      Aspera::Products.find(product_class.locations).first
     rescue StandardError => e
       Aspera::Log.log.warn(e.message)
       nil

@@ -6,7 +6,7 @@
 require_relative '../../agent/base'
 require_relative '../../products/connect'
 require_relative '../../products/desktop'
-require_relative '../../products/other'
+require_relative '../../products'
 require_relative '../../rest'
 require_relative '../../transfer/spec'
 require_relative '../../environment'
@@ -61,7 +61,7 @@ module Aspera
 
           # Auto-discover the Connect API base URL from its local URI file.
           def connect_api_url
-            folder = File.join(Aspera::Products::Other.find(Aspera::Products::Connect.locations).first[:run_root], 'var', 'run')
+            folder = File.join(Aspera::Products.find(Aspera::Products::Connect.locations).first[:run_root], 'var', 'run')
             ['', 's'].each do |ext|
               uri_file = File.join(folder, "http#{ext}.uri")
               return File.open(uri_file, &:gets).strip if File.exist?(uri_file)

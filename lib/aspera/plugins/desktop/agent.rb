@@ -8,6 +8,7 @@ require_relative '../../rest'
 require_relative '../../environment'
 require_relative '../../json_rpc/client'
 require_relative '../../products/desktop'
+require_relative '../../products'
 require_relative '../../transfer/spec'
 require 'securerandom'
 
@@ -53,7 +54,7 @@ module Aspera
 
           # Auto-discover the JSON-RPC URL from the Desktop log file (same logic as instance method).
           def desktop_api_url
-            log_file = File.join(Aspera::Products::Other.find(Aspera::Products::Desktop.locations).first[:log_root], Aspera::Products::Desktop::LOG_FILENAME)
+            log_file = File.join(Aspera::Products.find(Aspera::Products::Desktop.locations).first[:log_root], Aspera::Products::Desktop::LOG_FILENAME)
             url = 'http://127.0.0.1:33024'
             File.open(log_file, 'r') do |file|
               file.each_line do |line|
