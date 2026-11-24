@@ -922,8 +922,8 @@ module Aspera
         def action_access_keys_do_mklink(path:, do_root_file_id:, **)
           apifid, payload = gen4_mk_resolve(do_root_file_id, path)
           payload[:type] = :link
-          Aspera.assert(payload[:target_id], 'Missing target_id')
-          Aspera.assert(payload[:target_node_id], 'Missing target_node_id')
+          Aspera.assert(payload[:target_id], 'Missing target_id', type: Cli::BadArgument)
+          Aspera.assert(payload[:target_node_id], 'Missing target_node_id', type: Cli::BadArgument)
           Cli::Result::SingleObject.new(apifid.node_api.create("files/#{apifid.file_id}/files", payload))
         end
 

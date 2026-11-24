@@ -95,14 +95,14 @@ module Aspera
           if sync_info.key?('sessions') || sync_info.key?('instance')
             # `args`
             sync_info['sessions'] ||= [{}]
-            Aspera.assert(sync_info['sessions'].length == 1, 'Only one session is supported')
+            Aspera.assert(sync_info['sessions'].length == 1, 'Only one session is supported', type: Cli::BadArgument)
             session = sync_info['sessions'].first
             dir_key = path_is_remote ? 'remote_dir' : 'local_dir'
-            Aspera.assert(!session.key?(dir_key)) { "Parameter #{dir_key} shall not be in sync_info" }
+            Aspera.assert(!session.key?(dir_key), type: Cli::BadArgument) { "Parameter #{dir_key} shall not be in sync_info" }
             session[dir_key] = path
             if direction
               dir_key = path_is_remote ? 'local_dir' : 'remote_dir'
-              Aspera.assert(!session.key?(dir_key)) { "Parameter #{dir_key} shall not be in sync_info" }
+              Aspera.assert(!session.key?(dir_key), type: Cli::BadArgument) { "Parameter #{dir_key} shall not be in sync_info" }
               session[dir_key] = transfer.destination_folder(path_is_remote ? Aspera::Transfer::Spec::DIRECTION_RECEIVE : Aspera::Transfer::Spec::DIRECTION_SEND)
               local_remote = %w[local remote].map { |i| session["#{i}_dir"] }
             end
@@ -111,12 +111,12 @@ module Aspera
             session = sync_info
             dir_key = path_is_remote ? 'remote' : 'local'
             session[dir_key] ||= {}
-            Aspera.assert(!session[dir_key].key?('path')) { "Parameter #{dir_key}.path shall not be in sync_info" }
+            Aspera.assert(!session[dir_key].key?('path'), type: Cli::BadArgument) { "Parameter #{dir_key}.path shall not be in sync_info" }
             session[dir_key]['path'] = path
             if direction
               dir_key = path_is_remote ? 'local' : 'remote'
               session[dir_key] ||= {}
-              Aspera.assert(!session[dir_key].key?('path')) { "Parameter #{dir_key}.path shall not be in sync_info" }
+              Aspera.assert(!session[dir_key].key?('path'), type: Cli::BadArgument) { "Parameter #{dir_key}.path shall not be in sync_info" }
               session[dir_key]['path'] = transfer.destination_folder(path_is_remote ? Aspera::Transfer::Spec::DIRECTION_RECEIVE : Aspera::Transfer::Spec::DIRECTION_SEND)
               local_remote = %w[local remote].map { |i| session[i]['path'] }
             end
@@ -151,7 +151,7 @@ module Aspera
           if !session.key?('name')
             local_db_dir = Sync::Operations.local_db_folder(sync_info)
             dbs = Sync::Operations.list_db_files(local_db_dir)
-            Aspera.assert(dbs.length == 1) { "#{dbs.length} session found in #{local_db_dir}, please provide a name" }
+            Aspera.assert(dbs.length == 1, type: Cli::BadArgument) { "#{dbs.length} session found in #{local_db_dir}, please provide a name" }
             session['name'] = dbs.keys.first
           end
           Sync::Database.new(Sync::Operations.session_db_file(sync_info))

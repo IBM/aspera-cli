@@ -59,7 +59,7 @@ module Aspera
         smtp[:from_name] ||= smtp[:from_email].sub(/@.*$/, '').gsub(/[^a-zA-Z]/, ' ').capitalize if smtp.key?(:username)
         smtp[:domain] ||= smtp[:from_email].sub(/^.*@/, '') if smtp.key?(:from_email)
         %i[server port domain].each do |n|
-          Aspera.assert(smtp.key?(n)) { "Missing mandatory smtp parameter: #{n}" }
+          Aspera.assert(smtp.key?(n), type: Cli::BadArgument) { "Missing mandatory smtp parameter: #{n}" }
         end
         Log.dump(:smtp, smtp)
         return smtp
@@ -75,7 +75,7 @@ module Aspera
         values[:from_name] ||= mail_conf[:from_name]
         values[:from_email] ||= mail_conf[:from_email]
         %i[to from_email].each do |n|
-          Aspera.assert_type(values[n], String) { "Missing email parameter: #{n} in config" }
+          Aspera.assert_type(values[n], String, type: Cli::BadArgument) { "Missing email parameter: #{n} in config" }
         end
         start_options = [mail_conf[:domain]]
         start_options.push(mail_conf[:username], mail_conf[:password], :login) if mail_conf.key?(:username) && mail_conf.key?(:password)

@@ -82,7 +82,7 @@ module Aspera
         end
 
         def get(label:, exception: true)
-          Aspera.assert(secrets.key?(label)) { "Label not found: #{label}" } if exception
+          Aspera.assert(secrets.key?(label), type: NotFound) { "Label not found: #{label}" } if exception
           result = secrets[label].clone
           result[:label] = label if result.is_a?(Hash)
           return result
@@ -90,7 +90,7 @@ module Aspera
 
         def delete(label:)
           with_lock do
-            Aspera.assert(secrets_unlocked.key?(label)) { "Label not found: #{label}" }
+            Aspera.assert(secrets_unlocked.key?(label), type: NotFound) { "Label not found: #{label}" }
             secrets_unlocked.delete(label)
             save
           end
@@ -191,9 +191,9 @@ module Aspera
             vault_file = File.read(@path)
             if vault_file.start_with?('---')
               vault_info = Yaml.safe_load(vault_file)
-              Aspera.assert_type(vault_info, Hash) { "Invalid vault file: #{@path}" }
+              Aspera.assert_type(vault_info, Hash, type: Error) { "Invalid vault file: #{@path}" }
               sorted_keys = vault_info.keys.sort
-              Aspera.assert(sorted_keys == FILE_KEYS || sorted_keys == FILE_KEYS_KDF) { "Invalid vault file: #{@path}: #{sorted_keys}" }
+              Aspera.assert(sorted_keys == FILE_KEYS || sorted_keys == FILE_KEYS_KDF, type: Error) { "Invalid vault file: #{@path}: #{sorted_keys}" }
               @cipher_name = vault_info['cipher']
               @kdf_params  = vault_info['kdf']
               # vault created before PBKDF2 was introduced (v4.26.0 format: no kdf field)
@@ -213,12 +213,12 @@ module Aspera
 
         # @param data [String] Encrypted secrets
         # @return [Hash] Secrets
-        # @raise [Error] Wrong password
+        # @raise [AuthenticationError] Wrong password
         def decrypt(data)
           Yaml.safe_load(@cipher.decrypt(data)) || {}
         rescue OpenSSL::Cipher::CipherError, Psych::Exception
           # Psych: rarely, a wrong key gives valid padding, then garbage
-          raise Error, "cannot decrypt #{@path} (password?)"
+          raise AuthenticationError, "cannot decrypt #{@path} (password?)"
         end
 
         # Minimal cipher wrapper using OpenSSL, compatible with the SymmetricEncryption

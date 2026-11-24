@@ -656,7 +656,7 @@ module Aspera
                 # We found it
                 other_node = nil
                 other_node = node_id_to_node(entry['target_node_id']) if entry_has_link_information(entry)
-                Aspera.assert(!other_node.nil?, type: Error) { 'Cannot resolve link' }
+                Aspera.assert(!other_node.nil?, type: EntityNotFound) { 'Cannot resolve link' }
                 state[:result] = NodeFileId.new(other_node, entry['target_id'])
               else
                 # We found it but we do not process the link

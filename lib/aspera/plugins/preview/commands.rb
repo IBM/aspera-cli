@@ -479,7 +479,7 @@ module Aspera
           else
             @local_storage_root = UriReader.file_path(option_root_url)
             # TODO: Windows could have "C:" ?
-            Aspera.assert(@local_storage_root.start_with?('/')) { "not local storage: #{@local_storage_root}" }
+            Aspera.assert(@local_storage_root.start_with?('/'), type: Cli::BadArgument) { "not local storage: #{@local_storage_root}" }
             Aspera.assert(File.directory?(@local_storage_root), type: Cli::Error) { "Local storage root folder #{@local_storage_root} does not exist." }
             @local_preview_folder = File.join(@local_storage_root, @option_previews_folder)
             Aspera.assert(File.directory?(@local_preview_folder), type: Cli::Error) { "Folder #{@local_preview_folder} does not exist locally. Please create it, or specify an alternate name." }

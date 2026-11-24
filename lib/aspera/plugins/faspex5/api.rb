@@ -53,7 +53,7 @@ module Aspera
           # code / state located in redirected URL query
           info = Rest.query_to_h(URI.parse(http['Location']).query)
           Log.dump(:info, info)
-          raise Error, info['action_message'] if info['action_message']
+          raise AuthenticationError, info['action_message'] if info['action_message']
           Aspera.assert(info['code'], 'Missing code in answer')
           # Exchange code for token
           create_token_base(

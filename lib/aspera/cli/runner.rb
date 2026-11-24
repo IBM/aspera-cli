@@ -22,6 +22,8 @@ require_relative 'hints'
 require_relative 'result'
 require_relative '../units/duration'
 require_relative '../secret/hider'
+require_relative '../secret/reference'
+require_relative '../ssh'
 require_relative '../log'
 require_relative '../assert'
 require_relative '../schema/documentation'
@@ -136,12 +138,19 @@ module Aspera
           @context.formatter.display_results(result) if result
         rescue Net::SSH::AuthenticationFailed => e;    exception_info = {e: e, t: 'SSH', security: true, exit: ExitCode::AUTH}
         rescue OpenSSL::SSL::SSLError => e;            exception_info = {e: e, t: 'SSL', exit: ExitCode::NETWORK}
-        rescue Cli::BadArgument => e;                  exception_info = {e: e, t: 'Argument', usage: true, exit: ExitCode::USAGE}
+        rescue Cli::BadArgument, ParameterError => e;  exception_info = {e: e, t: 'Argument', usage: true, exit: ExitCode::USAGE}
         rescue Cli::MissingArgument => e;              exception_info = {e: e, t: 'Missing', exit: ExitCode::USAGE}
-        rescue Cli::BadIdentifier, EntityNotFound => e; exception_info = {e: e, t: 'Identifier', exit: ExitCode::NOT_FOUND}
+        rescue Cli::BadIdentifier, EntityNotFound, Aspera::Secret::NotFound => e
+          exception_info = {e: e, t: 'Identifier', exit: ExitCode::NOT_FOUND}
+        rescue AuthenticationError, Aspera::Secret::AuthenticationError => e
+          exception_info = {e: e, t: 'Authentication', exit: ExitCode::AUTH}
         rescue Cli::SchemaRequest => e;                exception_info = {e: e, t: 'Schema', exit: ExitCode::SUCCESS}
         rescue Cli::PollConditionNotMet => e;          exception_info = {e: e, t: 'Poll', exit: ExitCode::ERROR}
         rescue Cli::Error => e;                        exception_info = {e: e, t: 'Tool', usage: true, exit: ExitCode::ERROR}
+        rescue EnvironmentError => e;                  exception_info = {e: e, t: 'Environment', exit: ExitCode::ERROR}
+        # Label `Vault`, as the option: with `Secret`, the log would hide a message of one word, as a secret value
+        rescue Aspera::Secret::Error => e;             exception_info = {e: e, t: 'Vault', exit: ExitCode::ERROR}
+        rescue Aspera::Ssh::Error => e;                exception_info = {e: e, t: 'SSH', exit: ExitCode::ERROR}
         rescue Rest::CallError => e;                   exception_info = {e: e, t: 'Rest', exit: ExitCode.for_call_error(e)}
         rescue *NETWORK_ERRORS => e;                   exception_info = {e: e, t: 'Network', exit: ExitCode::NETWORK}
         rescue StandardError => e;                     exception_info = other_error_info(e)
@@ -267,10 +276,12 @@ module Aspera
       private
 
       # @param error [StandardError] Error that is neither of the CLI, nor of a REST call, nor of the network
-      # @return [Hash] Information on the error: label and exit code of its category if a bundle added one (`ExitCode.add_error`), else `Other`
+      # @return [Hash] Information on the error: label and exit code of its category if a bundle added one (`ExitCode.add_error`),
+      #   else `Error` for an error raised on purpose by the gem, else `Other` with location: a bug (`AssertError`, `InternalError`), or an error not of the gem
       def other_error_info(error)
         category = ExitCode.error_category(error)
         return {e: error, t: category[:label], exit: category[:code]} unless category.nil?
+        return {e: error, t: 'Error', exit: ExitCode::ERROR} if error.is_a?(Aspera::Error) && !error.is_a?(AssertError) && !error.is_a?(InternalError)
         {e: error, t: "Other(#{error.class.name})", debug: true, exit: ExitCode::ERROR}
       end
 

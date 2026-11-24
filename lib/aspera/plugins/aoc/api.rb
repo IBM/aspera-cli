@@ -478,7 +478,7 @@ module Aspera
                 file_id: user_info['read_only_home_file_id']
               }
             end
-          Aspera.assert(!@home_info[:node_id].to_s.empty?, "Cannot get user's home node id, check your default workspace or specify one", type: Error)
+          Aspera.assert(!@home_info[:node_id].to_s.empty?, "Cannot get user's home node id, check your default workspace or specify one", type: ParameterError)
           Log.dump(:context, @home_info)
           @home_info
         end
@@ -499,7 +499,7 @@ module Aspera
           ak_secret = @secret_finder&.lookup(url: node_info['url'], username: node_info['access_key'])
           # If secret is available, or no scope, use basic auth
           if scope.nil? || ak_secret
-            Aspera.assert(ak_secret, type: Error) { "Secret not found for access key #{node_info['access_key']}@#{node_info['url']}" }
+            Aspera.assert(ak_secret, type: ParameterError) { "Secret not found for access key #{node_info['access_key']}@#{node_info['url']}" }
             node_params[:auth] = {
               type:     :basic,
               username: node_info['access_key'],
@@ -543,8 +543,8 @@ module Aspera
           end
           meta_schema.each do |field|
             provided = pkg_meta.select { |i| i['name'].eql?(field['name']) }
-            Aspera.assert(provided.count <= 1, type: Error) { "only one field with name #{field['name']} allowed" }
-            Aspera.assert(!provided.empty?, type: Error) { "missing mandatory field: #{field['name']}" } if field['required']
+            Aspera.assert(provided.count <= 1, type: ParameterError) { "only one field with name #{field['name']} allowed" }
+            Aspera.assert(!provided.empty?, type: ParameterError) { "missing mandatory field: #{field['name']}" } if field['required']
           end
         end
 
@@ -574,7 +574,7 @@ module Aspera
                 full_recipient_info = lookup_with_q(entity_type, value: short_recipient_info, query: {'workspace_id' => ws_id})
               rescue EntityNotFound
                 # dropboxes cannot be created on the fly
-                Aspera.assert_values(entity_type, %w[contacts], type: Error) { "No such shared inbox in workspace #{ws_id}" }
+                Aspera.assert_values(entity_type, %w[contacts], type: EntityNotFound) { "No such shared inbox in workspace #{ws_id}" }
                 # unknown user: create it as external user
                 full_recipient_info = create('contacts', {
                   'current_workspace_id' => ws_id,

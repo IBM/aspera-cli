@@ -71,10 +71,10 @@ module Aspera
         # Resolve an item id from its title, or else from its id; raises if ambiguous or missing
         def resolve_id(label, exception: true)
           items = @api.read("v1/vaults/#{@vault_id}/items", {filter: "title eq \"#{label}\""})
-          raise "Multiple secrets found with label '#{label}': use id to disambiguate" if items.length > 1
+          raise NotFound, "Multiple secrets found with label '#{label}': use id to disambiguate" if items.length > 1
           # No title matches: the identifier may be an item id
           items = @api.read("v1/vaults/#{@vault_id}/items").select { |item| item['id'] == label } if items.empty?
-          raise "Secret '#{label}' not found" if items.empty? && exception
+          raise NotFound, "Secret '#{label}' not found" if items.empty? && exception
           items.first&.fetch('id')
         end
 

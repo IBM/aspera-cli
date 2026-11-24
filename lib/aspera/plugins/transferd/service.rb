@@ -330,9 +330,9 @@ module Aspera
           # @raise [Error] if the host is not supported or the user is not root
           def assert_supported(host, dry_run: false)
             return if dry_run
-            Aspera.assert(host.os.eql?(Environment::OS_LINUX), type: Error) { "The service requires Linux with systemd, this is: #{host.os}" }
-            Aspera.assert(host.systemctl?, type: Error) { 'The service requires systemd: command systemctl not found' }
-            Aspera.assert(host.euid.zero?, type: Error) { 'The service must be managed as root (use sudo), or use --dry-run=yes to only see the actions' }
+            Aspera.assert(host.os.eql?(Environment::OS_LINUX), type: EnvironmentError) { "The service requires Linux with systemd, this is: #{host.os}" }
+            Aspera.assert(host.systemctl?, type: EnvironmentError) { 'The service requires systemd: command systemctl not found' }
+            Aspera.assert(host.euid.zero?, type: EnvironmentError) { 'The service must be managed as root (use sudo), or use --dry-run=yes to only see the actions' }
           end
 
           # @return [String] Version of transferd that the configuration schema matches
@@ -374,7 +374,7 @@ module Aspera
 
           # Atomically set the link to a version (relative target)
           def switch_link(link, version)
-            Aspera.assert(File.symlink?(link) || !File.exist?(link), type: Error) { "#{link} exists and is not a link" }
+            Aspera.assert(File.symlink?(link) || !File.exist?(link), type: EnvironmentError) { "#{link} exists and is not a link" }
             temporary = "#{link}.new"
             FileUtils.rm_f(temporary)
             File.symlink(version, temporary)
@@ -435,7 +435,7 @@ module Aspera
           # @return [String] Output
           def systemctl(host, *args, check: true)
             out, success = host.run('systemctl', *args)
-            Aspera.assert(success || !check, type: Error) { "systemctl #{args.join(' ')} failed: #{out}" }
+            Aspera.assert(success || !check, type: EnvironmentError) { "systemctl #{args.join(' ')} failed: #{out}" }
             out
           end
 
@@ -542,7 +542,7 @@ module Aspera
           def wait_listening(host, address, port, name)
             deadline = ::Process.clock_gettime(::Process::CLOCK_MONOTONIC) + host.timeout
             until host.listening?(address, port)
-              Aspera.assert(::Process.clock_gettime(::Process::CLOCK_MONOTONIC) < deadline, type: Error) do
+              Aspera.assert(::Process.clock_gettime(::Process::CLOCK_MONOTONIC) < deadline, type: EnvironmentError) do
                 "Service #{name} does not listen on #{address}:#{port} after #{host.timeout} seconds, see: journalctl -u #{name}"
               end
               sleep(WAIT_INTERVAL)

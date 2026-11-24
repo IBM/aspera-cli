@@ -116,7 +116,7 @@ module Aspera
         def normalize_recipients(parameters, type)
           type = type.to_s
           return unless parameters.key?(type)
-          Aspera.assert_type(parameters[type], Array) { type }
+          Aspera.assert_type(parameters[type], Array, type: Cli::BadArgument) { type }
           recipient_types = Api::RECIPIENT_TYPES
           if parameters.key?('recipient_types')
             recipient_types = Array(parameters.delete('recipient_types'))
@@ -245,7 +245,7 @@ module Aspera
           packages = []
           case package_ids
           when Cli::SpecialValues::INIT
-            Aspera.assert(skip_ids_persistency, 'Only with option once_only')
+            Aspera.assert(skip_ids_persistency, 'Only with option once_only', type: Cli::BadArgument)
             skip_ids_persistency.data.clear.concat(list_packages_with_filter.first.map { |p| p['id'] }) # no filter: all packages, max ignored
             skip_ids_persistency.save
             return Cli::Result::Status.new("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
@@ -261,7 +261,7 @@ module Aspera
           else
             # a single id was provided, or a list of ids
             package_ids = Array(package_ids)
-            Aspera.assert_array_all(package_ids, String) { 'Package id(s)' }
+            Aspera.assert_array_all(package_ids, String, type: Cli::BadArgument) { 'Package id(s)' }
             # packages = package_ids.map{|pkg_id|api_v5.read("packages/#{pkg_id}")}
             packages = package_ids.map { |pkg_id| {'id'=>pkg_id} }
             # The package of a public link is received only once, like with `ALL`
@@ -362,9 +362,9 @@ module Aspera
           folders_to_process = [folder_path]
           query = base_query.merge(query_read_delete(default: {}))
           filters = query.delete('filters') { {} }
-          Aspera.assert_type(filters, Hash)
+          Aspera.assert_type(filters, Hash, type: Cli::BadArgument) { 'filters' }
           filters['basenames'] ||= []
-          Aspera.assert_type(filters, Hash) { 'filters' }
+          Aspera.assert_type(filters, Hash, type: Cli::BadArgument) { 'filters' }
           max_items = query.delete(Rest::List::MAX_ITEMS)
           recursive = query.delete('recursive')
           use_paging = query.delete('paging') { true }
@@ -845,7 +845,7 @@ module Aspera
         # @return [Array<String>] resolved user ids
         def resolve_member_user_ids(users)
           users = Array(users)
-          Aspera.assert_array_all(users, String) { 'users' }
+          Aspera.assert_array_all(users, String, type: Cli::BadArgument) { 'users' }
           users.map do |user|
             if (m = Cli::Parser.percent_selector(user))
               api_v5.lookup_entity_by_field(entity: 'accounts', field: m[:field], value: m[:value], query: Rest.php_style({type: ACCOUNT_TYPES}))['id']
@@ -933,7 +933,7 @@ module Aspera
 
         def action_packages_delete(package_id:, **)
           ids = package_id.is_a?(Array) ? package_id : [package_id]
-          Aspera.assert_array_all(ids, String) { 'Package id(s)' }
+          Aspera.assert_array_all(ids, String, type: Cli::BadArgument) { 'Package id(s)' }
           # API returns 204, empty on success
           api_v5.call(
             operation:    'DELETE',
@@ -967,15 +967,14 @@ module Aspera
         def lookup_shared_folder_id(field, value, **)
           all = api_v5.read('shared_folders')['shared_folders']
           matches = all.select { |i| i[field].eql?(value) }
-          Aspera.assert(!matches.empty?) { "no match for #{field} = #{value}" }
-          Aspera.assert(matches.length == 1) { "multiple matches for #{field} = #{value}" }
+          raise Cli::BadIdentifier.new('Shared folder', value, field: field, count: matches.length) unless matches.length.eql?(1)
           matches.first['id']
         end
 
         def action_shared_folders_browse(folder_path:, shared_folder_id:, **)
           all_shared_folders = api_v5.read('shared_folders')['shared_folders']
           node = all_shared_folders.find { |i| i['id'].eql?(shared_folder_id) }
-          Aspera.assert(!node.nil?) { "No such shared folder id #{shared_folder_id}" }
+          raise Cli::BadIdentifier.new('Shared folder', shared_folder_id) if node.nil?
           browse_folder("nodes/#{node['node_id']}/shared_folders/#{shared_folder_id}/browse", {}, folder_path: folder_path)
         end
 

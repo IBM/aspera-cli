@@ -34,19 +34,19 @@ module Aspera
           # Return the first H.264 encoder available in the local ffmpeg installation.
           # Result is memoized after the first call.
           # @return [String] encoder name (e.g. 'libx264', 'libopenh264')
-          # @raise [RuntimeError] if no supported H.264 encoder is found
+          # @raise [EnvironmentError] if no supported H.264 encoder is found
           def available_h264_encoder
             return @available_h264_encoder if defined?(@available_h264_encoder)
             stdout, = execute(:ffmpeg, '-encoders', mode: :capture, exception: false)
             available = stdout.lines.grep(/h264/i).map { |l| l.split[1] }
             @available_h264_encoder = H264_ENCODER_PREFERENCE.find { |enc| available.include?(enc) }
-            Aspera.assert(@available_h264_encoder) { "No supported H.264 encoder found in ffmpeg. Available: #{available.join(', ')}" }
+            Aspera.assert(@available_h264_encoder, type: EnvironmentError) { "No supported H.264 encoder found in ffmpeg. Available: #{available.join(', ')}" }
             @available_h264_encoder
           end
 
           # Check that external tools can be executed.
           # @param skip_types [Array<Symbol>] list of tools to skip
-          # @raise [RuntimeError] if a required tool binary is missing
+          # @raise [EnvironmentError] if a required tool binary is missing
           # @return [nil]
           def check_tools(skip_types = [])
             tools_to_check = EXTERNAL_TOOLS.dup
@@ -56,7 +56,7 @@ module Aspera
             tools_to_check.each do |command_sym|
               silent_execute(command_sym, '-h')
             rescue Errno::ENOENT => e
-              raise "missing #{command_sym} binary: #{e}"
+              raise EnvironmentError, "missing #{command_sym} binary: #{e}"
             rescue
               nil
             end

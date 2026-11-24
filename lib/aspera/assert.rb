@@ -24,6 +24,14 @@ module Aspera
   class EntityNotFound < Error
   end
 
+  # A component of the local system is missing or unsuitable, e.g. SDK, tool, font, encoder: neither a bug nor a parameter error
+  class EnvironmentError < Error
+  end
+
+  # Credentials refused, e.g. by the login of a server, or password of a file
+  class AuthenticationError < Error
+  end
+
   class << self
     # Replaces `raise` in assertion
     # Allows sending exception, or just error log, when type is `:error`

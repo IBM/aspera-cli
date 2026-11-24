@@ -116,7 +116,7 @@ module Aspera
           # @return [String] Folder path in destination folder
           def unique_folder(package_info, destination_folder, fld: nil, seq: false, opt: false)
             Aspera.assert_array_all(fld, String, type: Cli::BadArgument) { 'fld' }
-            Aspera.assert_values(fld.length, [1, 2]) { 'fld length' }
+            Aspera.assert_values(fld.length, [1, 2], type: Cli::BadArgument) { 'fld length' }
             # Existence is checked in the destination folder
             folder = File.join(destination_folder, Environment.instance.sanitized_filename(package_info[fld[0]].to_s))
             if seq
@@ -409,7 +409,7 @@ module Aspera
         # @return [Array(Hash, Integer, nil)] [{items:,total:} paging result, max (or nil)]
         def list_all_packages_with_query
           query = query_read_delete(default: {}, schema: Schema::Registry.query_params(AOC_SCHEMA, 'packages'))
-          Aspera.assert_type(query, Hash) { 'query' }
+          Aspera.assert_type(query, Hash, type: Cli::BadArgument) { 'query' }
           PACKAGE_RECEIVED_BASE_QUERY.each { |k, v| query[k] = v unless query.key?(k) }
           resolve_dropbox_name_default_ws_id(query)
           # Extract `max` before paging so callers can apply it after post-API filtering
@@ -1115,7 +1115,7 @@ module Aspera
           case ids_to_download
           when Cli::SpecialValues::INIT
             all_packages, = list_all_packages_with_query
-            Aspera.assert(skip_ids_persistency, 'INIT requires option once_only')
+            Aspera.assert(skip_ids_persistency, 'INIT requires option once_only', type: Cli::BadArgument)
             skip_ids_persistency.data.clear.concat(all_packages[:items].map { |e| e['id'] })
             skip_ids_persistency.save
             return Cli::Result::Status.new("Initialized skip for #{skip_ids_persistency.data.count} package(s)")
@@ -1127,7 +1127,7 @@ module Aspera
             formatter.display_status("Found #{ids_to_download.length} package(s).")
           else
             ids_to_download = Array(ids_to_download)
-            Aspera.assert_array_all(ids_to_download, String) { 'Package id(s)' }
+            Aspera.assert_array_all(ids_to_download, String, type: Cli::BadArgument) { 'Package id(s)' }
           end
           ts_paths = transfer.ts_source_paths(default: ['.'])
           per_package_def = options.get_option(:package_folder).symbolize_keys
@@ -1174,7 +1174,7 @@ module Aspera
         # packages > delete
         def action_packages_delete(package_id:, **)
           bulk_result(package_id, command: :delete) do |one_id|
-            Aspera.assert_type(one_id, String, Integer) { 'identifier' }
+            Aspera.assert_type(one_id, String, Integer, type: Cli::BadArgument) { 'identifier' }
             aoc_api.delete("packages/#{one_id}")
           end
         end
@@ -1383,8 +1383,8 @@ module Aspera
         def action_admin_application_membership_create(membership:, **)
           data = membership.dup
           app_type = data.delete('app_type')
-          Aspera.assert_type(app_type, String) { 'app_type' }
-          Aspera.assert_values(app_type.to_sym, APP_TYPES) { 'app_type' }
+          Aspera.assert_type(app_type, String, type: Cli::BadArgument) { 'app_type' }
+          Aspera.assert_values(app_type.to_sym, APP_TYPES, type: Cli::BadArgument) { 'app_type' }
           Cli::Result::SingleObject.new(aoc_api.create("apps/#{app_type}/app_memberships", data))
         end
 
@@ -1775,7 +1775,7 @@ module Aspera
         # admin > workspace > shared_folder > node|member — shared_folder_id: already in ctx via arguments:(:identifier)
         def resolve_sf_item(shared_folders:, shared_folder_id:, **)
           sf_item = shared_folders.find { |i| i['id'].eql?(shared_folder_id) }
-          Aspera.assert(sf_item, 'shared folder not found')
+          raise Cli::BadIdentifier.new('Shared folder', shared_folder_id) if sf_item.nil?
           {sf_item: sf_item}
         end
 

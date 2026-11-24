@@ -77,7 +77,7 @@ module Aspera
           @connect_settings = {
             'app_id' => SecureRandom.uuid
           }
-          Aspera.assert(Environment.instance.graphical?, type: Error) { 'Using connect requires a graphical environment' }
+          Aspera.assert(Environment.instance.graphical?, type: EnvironmentError) { 'Using connect requires a graphical environment' }
           method_index = 0
           begin
             # raise exception if connect not started and file does not exist

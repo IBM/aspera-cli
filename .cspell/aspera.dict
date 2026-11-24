@@ -50,6 +50,7 @@ dropboxes
 ecdsha
 endef
 errcode
+ERRR
 errstr
 eudemo
 fanout

@@ -97,10 +97,6 @@ module Aspera
           allow(Log.log).to(receive(:warn))
           expect(plugins_with([])).to(be_empty)
         end
-
-        it 'raises for a value that is not a list of String' do
-          expect { plugins_with([1]) }.to(raise_error(/plugin folder/))
-        end
       end
     end
   end

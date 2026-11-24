@@ -45,11 +45,11 @@ RSpec.describe(Aspera::Rest::List) do
     end
 
     it 'raises when partial matches but no full match' do
-      expect { lookup([{'name' => 'Bobby'}, {'name' => 'Bobo'}], 'bob') }.to(raise_error(Aspera::Error, /no case insensitive full match/))
+      expect { lookup([{'name' => 'Bobby'}, {'name' => 'Bobo'}], 'bob') }.to(raise_error(Aspera::EntityNotFound, /no case insensitive full match/))
     end
 
     it 'raises when several full matches' do
-      expect { lookup([{'name' => 'bob'}, {'name' => 'Bob'}], 'bob') }.to(raise_error(Aspera::Error, /Multiple entities/))
+      expect { lookup([{'name' => 'bob'}, {'name' => 'Bob'}], 'bob') }.to(raise_error(Aspera::EntityNotFound, /Multiple entities/))
     end
   end
 

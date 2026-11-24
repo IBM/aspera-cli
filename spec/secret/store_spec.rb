@@ -153,7 +153,7 @@ RSpec.describe(Aspera::Secret::Store) do
     it 'returns nil for a missing secret when exception is false' do
       stub_failed_execute("security: SecKeychainSearchCopyNext: The specified item could not be found in the keychain.\n", 44)
       expect(system_vault.get(label: 'missing', exception: false)).to(be_nil)
-      expect { system_vault.get(label: 'missing') }.to(raise_error(RuntimeError, /not found/))
+      expect { system_vault.get(label: 'missing') }.to(raise_error(Aspera::Secret::NotFound, /not found/))
     end
 
     it 'passes values unescaped (no shell)' do
@@ -184,7 +184,7 @@ RSpec.describe(Aspera::Secret::Store) do
     it 'returns nil for a missing secret when exception is false' do
       allow(Aspera::Environment).to(receive(:secure_execute).and_return(['', '', failure(1)]))
       expect(store.get(label: 'missing', exception: false)).to(be_nil)
-      expect { store.get(label: 'missing') }.to(raise_error(RuntimeError, /not found/))
+      expect { store.get(label: 'missing') }.to(raise_error(Aspera::Secret::NotFound, /not found/))
     end
 
     it 'sends the password on stdin, not in arguments' do
@@ -206,19 +206,19 @@ RSpec.describe(Aspera::Secret::Store) do
       stub_failed_execute('[ERROR] item not found', 1)
       vault = described_class.new
       expect(vault.get(label: 'missing', exception: false)).to(be_nil)
-      expect { vault.get(label: 'missing') }.to(raise_error(RuntimeError, /not found/))
+      expect { vault.get(label: 'missing') }.to(raise_error(Aspera::Secret::NotFound, /not found/))
     end
 
     it 'does not report a missing secret when op is not signed in' do
       stub_failed_execute('[ERROR] 2026/11/15 14:47:58 error initializing client: You are not currently signed in.', 1)
       vault = described_class.new
-      expect { vault.get(label: 'my_label') }.to(raise_error(RuntimeError, /\A1Password CLI failed for 'my_label': error initializing client: You are not currently signed in/))
+      expect { vault.get(label: 'my_label') }.to(raise_error(Aspera::Secret::Error, /\A1Password CLI failed for 'my_label': error initializing client: You are not currently signed in/) { |e| expect(e).not_to(be_a(Aspera::Secret::NotFound)) })
       expect { vault.get(label: 'my_label', exception: false) }.to(raise_error(/not currently signed in/))
     end
 
     it 'asks for an id when several items share the same label' do
       stub_failed_execute('[ERROR] More than one item matches "my_label". Try again and specify the item by its ID', 1)
-      expect { described_class.new.get(label: 'my_label') }.to(raise_error(/Multiple secrets found.*use id/))
+      expect { described_class.new.get(label: 'my_label') }.to(raise_error(Aspera::Secret::NotFound, /Multiple secrets found.*use id/))
     end
 
     it 'reads url from the website or from a custom field found by label' do

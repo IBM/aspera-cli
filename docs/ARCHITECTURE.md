@@ -850,6 +850,11 @@ StandardError
 │   ├── Aspera::InternalError
 │   ├── Aspera::AssertError
 │   ├── Aspera::EntityNotFound (resource not found — lib/aspera/assert.rb)
+│   ├── Aspera::EnvironmentError (component of the local system missing — lib/aspera/assert.rb)
+│   ├── Aspera::AuthenticationError (credentials refused — lib/aspera/assert.rb)
+│   ├── Aspera::Secret::Error (secret references and stores — lib/aspera/secret/reference.rb)
+│   │   ├── Aspera::Secret::NotFound (no secret, or several, for the label)
+│   │   └── Aspera::Secret::AuthenticationError (credentials of the store refused)
 │   └── Aspera::Ssh::Error
 ├── Aspera::Cli::Error (CLI base — lib/aspera/cli/error.rb)
 │   ├── BadArgument
@@ -862,6 +867,30 @@ StandardError
 ├── Aspera::Plugins::Server::AsCmd::Error (ascmd errors — lib/aspera/plugins/server/ascmd.rb)
 └── Aspera::Transfer::Error (transfer failures — lib/aspera/transfer/error.rb)
 ```
+
+### Error of a Failed Check
+
+The class of the error depends on who is at fault, not on where the check is (argument of a method or state inside it).
+`Aspera.assert*` raise `AssertError` by default, another class is given with `type:`.
+
+| Cause                                                                                                         | Class                                                         | Runner: label, exit code                            |
+|---------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------|-----------------------------------------------------|
+| Bug of `ascli`: invariant, argument passed by another method of `ascli`, unexpected data from a remote API    | `AssertError` (default), `InternalError`                      | `Other(<class>)`, 1, location and backtrace (debug) |
+| Value given by the user, in code of the CLI                                                                   | `Cli::BadArgument`, `Cli::BadIdentifier` (entity not found)   | `Argument`, 2; `Identifier`, 4                      |
+| Value given by the user, in code used without the CLI (no reference to `cli/`)                                | `ParameterError`, `EntityNotFound` (none, or several, found)  | `Argument`, 2; `Identifier`, 4                      |
+| Configuration file, or resource given by the user (e.g. no certificate at a URL), in code of the CLI          | `Cli::Error`                                                  | `Tool`, 1                                           |
+| Credentials refused: login of a server, password of a file                                                    | `AuthenticationError`, `Secret::AuthenticationError`          | `Authentication`, 3                                 |
+| Secret reference or store (option `vault`)                                                                    | `Secret::Error`, `Secret::NotFound` (none, or several, found) | `Vault`, 1; `Identifier`, 4                         |
+| Component of the local system missing or unsuitable: SDK, tool, font, encoder, graphical environment, systemd | `EnvironmentError`                                            | `Environment`, 1                                    |
+| Failure of a remote service or command: neither a bug nor of the user                                         | `Error` (`Aspera::Error` itself), `Ssh::Error`                | `Error`, 1; `SSH`, 1                                |
+| Wrong argument from the code of a plugin (`plugin_folder`) to the API of `ascli`, e.g. `Cli::Result`          | `ArgumentError`, `TypeError`                                  | `Other(<class>)`, 1, location in the plugin (debug) |
+
+Only a bug is reported with its location in the code: `AssertError`, `InternalError`, and an error not raised on purpose by the gem, e.g. `NoMethodError`, or `RuntimeError` of a bare `raise '<message>'`.
+Any other `Aspera::Error` is reported without location, with the label of its class (`Runner#other_error_info`), after the categories added by bundles (`ExitCode.add_error`).
+
+The resolver of secret references (`Secret::Resolver`) adds the reference to the message of an error of a store, and keeps its class if it is a `Secret::Error` (e.g. `NotFound`), else raises a `Secret::Error`: applications that use the library rescue `Secret::Error`.
+
+Values of options are checked by the option (`allowed:`, `schema:`), e.g. the elements of `Option::Type::STRING_ARRAY` are `String`: no check is needed where they are used.
 
 ### Error Analysis
 

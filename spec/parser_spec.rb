@@ -271,6 +271,18 @@ module Aspera
           expect { opts.parse_options! }.to(raise_error(BadArgument, /count: invalid integer: abc/))
         end
 
+        it 'converts a String to a list for a list option' do
+          opts = build_parser(['--folders=a'])
+          opts.declare(:folders, description: 'Folders', allowed: Option::Type::STRING_ARRAY)
+          expect(opts.get_option(:folders)).to(eq(['a']))
+        end
+
+        it 'raises for a list option with an element that is not a String' do
+          opts = build_parser(['--folders=@json:["a",1]'])
+          opts.declare(:folders, description: 'Folders', allowed: Option::Type::STRING_ARRAY)
+          expect { opts.parse_options! }.to(raise_error(BadArgument, /Option folders: expecting all as String, but have \[String, Integer\]/))
+        end
+
         it 'converts a decimal integer argument, also with leading zero' do
           expect(build_parser(['08']).get_next_argument('count', validation: Option::Type::INTEGER)).to(eq(8))
         end

@@ -223,7 +223,7 @@ module Aspera
           allowed_options = Preview::Terminal.method(:build).parameters.select { |i| i[0].eql?(:key) }.map { |i| i[1] }
           # check that only supported options are given
           unknown_options = value.keys.map(&:to_sym) - allowed_options
-          Aspera.assert(unknown_options.empty?) { "Invalid parameter(s) for option image: #{unknown_options.join(', ')}, use #{allowed_options.join(', ')}" }
+          Aspera.assert(unknown_options.empty?, type: Cli::BadArgument) { "Invalid parameter(s) for option image: #{unknown_options.join(', ')}, use #{allowed_options.join(', ')}" }
         end
         nil
       end
@@ -355,7 +355,7 @@ module Aspera
           when Proc then return all_fields(data).select { |i| @options[:fields].call(i) }
           else Aspera.error_unexpected_value(@options[:fields])
           end
-        Aspera.assert_array_all(request, String)
+        Aspera.assert_array_all(request, String, type: Cli::BadArgument) { 'option fields' }
         result = []
         until request.empty?
           item = request.shift

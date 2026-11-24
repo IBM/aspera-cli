@@ -317,7 +317,10 @@ module Aspera
               value.nil? ? value : Float(value)
             end
           when :string_list
-            value.is_a?(String) ? [value] : value
+            value = [value] if value.is_a?(String)
+            # Not an `Array`: refused by the type check of `assign_value`
+            Aspera.assert_array_all(value, String, type: BadArgument) { "Option #{@option}" } if value.is_a?(Array)
+            value
           when :enum_list
             value = [value] if value.is_a?(String)
             Aspera.assert_array_all(value, String, type: BadArgument)

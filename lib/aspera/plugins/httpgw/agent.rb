@@ -73,7 +73,7 @@ module Aspera
         def start_transfer(transfer_spec, token_regenerator: nil)
           Aspera.assert(!@gw_api.nil?, 'GW URL must be set')
           Aspera.assert_type(transfer_spec['paths'], Array) { 'paths' }
-          Aspera.assert_type(transfer_spec['token'], String) { 'only token based transfer is supported in GW' }
+          Aspera.assert_type(transfer_spec['token'], String, type: ParameterError) { 'only token based transfer is supported in GW' }
           Log.dump(:user_spec, transfer_spec)
           transfer_spec['authentication'] ||= 'token'
           @last_job_id     = SecureRandom.uuid

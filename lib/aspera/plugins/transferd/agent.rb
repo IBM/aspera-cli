@@ -77,7 +77,7 @@ module Aspera
           @transfer_id = nil
           @stop = stop
           is_local_auto_port = url.eql?(AUTO_LOCAL_TCP_PORT)
-          Aspera.assert(!(is_local_auto_port && (!@stop || !start)), type: Error) { 'Cannot set options `stop` or `start` to false with port zero' }
+          Aspera.assert(!(is_local_auto_port && (!@stop || !start)), type: ParameterError) { 'Cannot set options `stop` or `start` to false with port zero' }
           # daemon started here, kept for optional shutdown
           @daemon = nil
           @daemon_endpoint = nil
@@ -104,7 +104,7 @@ module Aspera
             Log.log.warn('no daemon present, starting daemon...')
             # transferd only supports local ip and port
             daemon_uri = URI.parse("ipv4://#{daemon_endpoint}")
-            Aspera.assert(daemon_uri.scheme.eql?('ipv4')) { "Invalid scheme daemon URI #{daemon_endpoint}" }
+            Aspera.assert(!daemon_uri.host.to_s.empty? && !daemon_uri.port.nil?, type: ParameterError) { "Invalid address of daemon: #{daemon_endpoint}, expecting <ADDRESS>:<PORT> or :<PORT>" }
             @daemon = Product.new(address: daemon_uri.host, port: daemon_uri.port, api_key: api_key, stop: @stop)
             # API key of the daemon started here, for next connection attempt
             api_key = @daemon.api_key

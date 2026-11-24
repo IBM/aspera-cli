@@ -144,7 +144,7 @@ module Aspera
           # KV v2: a deleted secret may have metadata but no data
           data = call { |client| client.logical.read(path(label)) }&.data&.[](:data)
           if data.nil?
-            raise "Secret '#{label}' not found" if exception
+            raise NotFound, "Secret '#{label}' not found" if exception
             return
           end
           return data
@@ -185,7 +185,7 @@ module Aspera
         def read_reference(ref)
           mount, path = mount_and_path(ref)
           secret = read(path: path, mount: mount, version: reference_version(ref))
-          raise Error, 'not found' if secret.nil?
+          raise NotFound, 'not found' if secret.nil?
           {value: field_value(secret[:data], ref), version: secret[:version], updated_time: secret[:created_time]}
         end
 
@@ -218,7 +218,7 @@ module Aspera
         def read_fields(ref)
           mount, path = mount_and_path(ref)
           secret = read(path: path, mount: mount, version: reference_version(ref))
-          raise Error, 'not found' if secret.nil?
+          raise NotFound, 'not found' if secret.nil?
           {fields: field_names(secret[:data]), version: secret[:version], updated_time: secret[:created_time]}
         end
 

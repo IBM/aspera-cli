@@ -120,12 +120,12 @@ END_OF_JAVASCRIPT
         proxy_type = parts.shift
         case proxy_type
         when 'DIRECT'
-          Aspera.assert(parts.empty?, 'DIRECT has no param')
+          Aspera.assert(parts.empty?, 'DIRECT has no param', type: Aspera::ParameterError)
           Log.log.debug('ignoring proxy DIRECT')
         when 'PROXY'
           addr_port = parts.shift
-          Aspera.assert_type(addr_port, String)
-          Aspera.assert(parts.empty?, 'PROXY shall have one param')
+          Aspera.assert_type(addr_port, String, type: Aspera::ParameterError) { 'PROXY address' }
+          Aspera.assert(parts.empty?, 'PROXY shall have one param', type: Aspera::ParameterError)
           begin
             # PAC proxy addresses are <host>:<port>
             if /:[0-9]+$/.match?(addr_port)

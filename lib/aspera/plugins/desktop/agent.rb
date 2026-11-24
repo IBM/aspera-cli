@@ -69,7 +69,7 @@ module Aspera
           @application_id = SecureRandom.uuid
           @transfer_id = nil
           super
-          Aspera.assert(Environment.instance.graphical?, type: Error) { 'Using client requires a graphical environment' }
+          Aspera.assert(Environment.instance.graphical?, type: EnvironmentError) { 'Using client requires a graphical environment' }
           method_index = 0
           begin
             # curl 'http://127.0.0.1:33024/' -X POST -H 'content-type: application/json' --data-raw '{"jsonrpc":"2.0","params":[],"id":999999,"method":"rpc.discover"}'

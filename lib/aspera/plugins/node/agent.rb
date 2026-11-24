@@ -161,7 +161,7 @@ module Aspera
           @root_id = root_id
           rest_params = {base_url: url}
           if OAuth::Factory.bearer_auth?(password)
-            Aspera.assert(!@root_id.nil?, 'root_id not allowed for access key')
+            Aspera.assert(!@root_id.nil?, 'root_id is required with a bearer token (access key)', type: ParameterError)
             rest_params[:headers] = Api.bearer_headers(password, access_key: username)
           else
             rest_params[:auth] = {

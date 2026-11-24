@@ -72,7 +72,7 @@ module Aspera
           Aspera.assert(respond_to?(@processing_method, true)) { "no processing known for #{conversion_type} -> #{@preview_format_sym}" }
           command = [:magick] + %w[identify -list font]
           magick_fonts = Utils.parse_magick_fonts(Utils.execute(*command, mode: :capture).first)
-          Aspera.assert(magick_fonts[:fonts].any? { |f| f[:name].eql?(@options.thumb_text_font) }) { "Missing font #{@options.thumb_text_font} in #{command}" }
+          Aspera.assert(magick_fonts[:fonts].any? { |f| f[:name].eql?(@options.thumb_text_font) }, type: EnvironmentError) { "Missing font #{@options.thumb_text_font} in #{command}" }
         end
 
         # Creates preview as specified in constructor.
@@ -189,10 +189,10 @@ module Aspera
         # Performs a simple re-encoding with configurable ffmpeg options.
         def convert_video_to_mp4_using_reencode
           options = @options.reencode_ffmpeg
-          Aspera.assert_type(options, Hash) { 'reencode_ffmpeg' }
+          Aspera.assert_type(options, Hash, type: ParameterError) { 'reencode_ffmpeg' }
           options.each do |k, v|
-            Aspera.assert_values(k, FFMPEG_OPTIONS_LIST) { 'key' }
-            Aspera.assert_type(v, Array) { k }
+            Aspera.assert_values(k, FFMPEG_OPTIONS_LIST, type: ParameterError) { 'key' }
+            Aspera.assert_type(v, Array, type: ParameterError) { k }
           end
           codec = @options.video_codec || Utils.available_h264_encoder
           in_opts = options['in'] || ['-ss', @options.video_start_sec.to_i * 0.9]

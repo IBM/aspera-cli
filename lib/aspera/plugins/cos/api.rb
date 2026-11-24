@@ -25,16 +25,16 @@ module Aspera
         class << self
           def parameters_from_svc_credentials(service_credentials, bucket_region)
             # check necessary contents
-            Aspera.assert_type(service_credentials, Hash) { 'service_credentials' }
+            Aspera.assert_type(service_credentials, Hash, type: ParameterError) { 'service_credentials' }
             Log.dump(:service_credentials, service_credentials)
             SERVICE_CREDS_PARAMS.each do |field|
-              Aspera.assert(service_credentials.key?(field)) { "service_credentials must have a field: #{field}" }
+              Aspera.assert(service_credentials.key?(field), type: ParameterError) { "service_credentials must have a field: #{field}" }
             end
             # read endpoints from service provided in service credentials
             endpoints = Aspera::Rest::Client.new(base_url: service_credentials['endpoints']).read('')
             Log.dump(:endpoints, endpoints)
             endpoint = endpoints.dig('service-endpoints', 'regional', bucket_region, 'public', bucket_region)
-            Aspera.assert(!endpoint.nil?) { "no such region: #{bucket_region}" }
+            Aspera.assert(!endpoint.nil?, type: ParameterError) { "no such region: #{bucket_region}" }
             return {
               instance_id: service_credentials['resource_instance_id'],
               api_key:     service_credentials['apikey'],

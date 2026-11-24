@@ -159,7 +159,7 @@ module Aspera
         # end of input: Ctrl-D (Unix), Ctrl-Z (Windows)
         when "\u0004", "\u001a"
           break unless line.empty?
-          raise Aspera::Error, 'Unexpected end of standard input'
+          raise ParameterError, 'Unexpected end of standard input'
         when *ERASE_CHARS then line.chop!
         # Ctrl-W: erase the last word (and spaces after it), like the terminal does
         when "\u0017" then line.sub!(/\S*\s*\z/, '')

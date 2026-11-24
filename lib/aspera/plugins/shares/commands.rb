@@ -593,10 +593,10 @@ module Aspera
             path = admin_entity_path(entity_type, :saml)
             bulk_result(kwargs.fetch(entity_type), command: :import) do |entity_parameters|
               entity_parameters = entity_parameters.transform_keys { |k| k.gsub(/\s+/, '_').downcase }
-              Aspera.assert_type(entity_parameters, Hash)
-              SAML_IMPORT_MANDATORY.each { |p| raise "missing mandatory field: #{p}" if entity_parameters[p].nil? }
+              Aspera.assert_type(entity_parameters, Hash, type: Cli::BadArgument) { 'SAML import entry' }
+              SAML_IMPORT_MANDATORY.each { |p| raise Cli::BadArgument, "SAML import entry: missing mandatory field: #{p}" if entity_parameters[p].nil? }
               entity_parameters.each_key do |p|
-                Aspera.assert_values(p, SAML_IMPORT_ALLOWED) { 'SAML field' }
+                Aspera.assert_values(p, SAML_IMPORT_ALLOWED, type: Cli::BadArgument) { 'SAML field' }
               end
               @api_shares_admin.create("#{path}/import", entity_parameters)
             end

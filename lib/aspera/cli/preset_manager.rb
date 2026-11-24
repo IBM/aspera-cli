@@ -142,7 +142,7 @@ module Aspera
         Aspera.assert(!@config_presets.nil?, 'config_presets shall be defined')
         return unless @use_plugin_defaults
         return unless @config_presets.key?(Key::DEFAULTS)
-        Aspera.assert_type(@config_presets[Key::DEFAULTS], Hash) { 'default section' }
+        Aspera.assert_type(@config_presets[Key::DEFAULTS], Hash, type: Cli::Error) { 'default section' }
         return unless @config_presets[Key::DEFAULTS].key?(plugin_name_sym.to_s)
         default_name = @config_presets[Key::DEFAULTS][plugin_name_sym.to_s]
         unless @config_presets.key?(default_name)
@@ -204,7 +204,7 @@ module Aspera
           Log.log.debug { "Unknown preset name: #{preset}, initializing" }
           selected = @config_presets[preset] = {}
         end
-        Aspera.assert_type(selected, Hash) { "#{preset}.#{param_name}" }
+        Aspera.assert_type(selected, Hash, type: Cli::Error) { "#{preset}.#{param_name}" }
         if param_name.include?(DotContainer::SEPARATOR)
           keys = param_name.split(DotContainer::SEPARATOR)
           # Navigate to the parent hash
@@ -361,8 +361,8 @@ module Aspera
       # @raise [Cli::Error, StandardError] Unexpected structure
       def validate_config_presets!
         Log.dump(:available_presets, @config_presets, level: :trace1)
-        Aspera.assert_type(@config_presets, Hash) { 'config file YAML' }
-        Aspera.assert(@config_presets.key?(Key::CONFIG)) { "Cannot find key: #{Key::CONFIG}" }
+        Aspera.assert_type(@config_presets, Hash, type: Cli::Error) { 'config file YAML' }
+        Aspera.assert(@config_presets.key?(Key::CONFIG), type: Cli::Error) { "Cannot find key: #{Key::CONFIG}" }
         version = @config_presets[Key::CONFIG][Key::VERSION]
         Aspera.assert(!version.nil?, type: Cli::Error) { 'No version found in config section.' }
         Log.log.debug { "conf version: #{version}" }

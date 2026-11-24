@@ -77,7 +77,7 @@ RSpec.describe(Aspera::Secret::Store::EncryptedHash) do
   it 'reads the password file again when the password changes' do
     expect(resolver.resolve('secret://ops/faspex5')).to(eq(secret))
     rewrite(file) { Aspera::Secret::Store::EncryptedHash.new(file: file, password: vault_password).change_password(new_vault_password) }
-    expect { resolver.resolve('secret://ops/faspex5') }.to(raise_error(Aspera::Secret::Error, /: cannot decrypt .*ops_vault.bin/))
+    expect { resolver.resolve('secret://ops/faspex5') }.to(raise_error(Aspera::Secret::AuthenticationError, /: cannot decrypt .*ops_vault.bin/))
     rewrite(password_file) { File.write(password_file, new_vault_password) }
     expect(resolver.resolve('secret://ops/faspex5')).to(eq(secret))
   end
@@ -117,7 +117,7 @@ RSpec.describe(Aspera::Secret::Store::EncryptedHash) do
           begin
             vault = Aspera::Secret::Store::EncryptedHash.new(file: file, password: vault_password)
             vault.write_reference(Aspera::Secret.parse_reference("secret://ops/child_#{SecureRandom.alphanumeric(4)}"), {'password' => SecureRandom.alphanumeric(16)})
-          rescue Aspera::Secret::Error, Aspera::AssertError
+          rescue Aspera::Secret::Error
             # label collision: fine (two operations may pick the same random suffix)
           end
         end
@@ -140,13 +140,13 @@ RSpec.describe(Aspera::Secret::Store::EncryptedHash) do
     end
   end
 
-  it 'gives the reference and the reason in errors' do
+  it 'gives the reference and the reason in errors, and keeps the class of a secret not found' do
     {
-      'secret://ops/missing'           => 'no label: missing',
-      'secret://ops/faspex5#url'       => 'no field: url',
-      'secret://ops/faspex5?version=1' => 'unsupported options: version'
-    }.each do |text, reason|
-      expect { resolver.resolve(text) }.to(raise_error(Aspera::Secret::Error, "secret reference #{text}: #{reason}"))
+      'secret://ops/missing'           => [Aspera::Secret::NotFound, 'no label: missing'],
+      'secret://ops/faspex5#url'       => [Aspera::Secret::NotFound, 'no field: url'],
+      'secret://ops/faspex5?version=1' => [Aspera::Secret::Error, 'unsupported options: version']
+    }.each do |text, (error_class, reason)|
+      expect { resolver.resolve(text) }.to(raise_error(error_class, "secret reference #{text}: #{reason}"))
     end
     File.delete(password_file)
     expect { resolver.resolve('secret://ops/faspex5') }.to(raise_error(Aspera::Secret::Error, /: No such file .*ops_vault.pass/))

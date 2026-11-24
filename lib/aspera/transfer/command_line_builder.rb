@@ -200,7 +200,7 @@ module Aspera
         return if parameter_value.nil?
 
         # check that value is of an accepted type (string, integer, boolean)
-        Aspera.assert(!(properties.key?('enum') && !properties['enum'].include?(parameter_value))) { "Enum value #{parameter_value} is not allowed for #{name}" }
+        Aspera.assert(!(properties.key?('enum') && !properties['enum'].include?(parameter_value)), type: ParameterError) { "Enum value #{parameter_value} is not allowed for #{name}" }
 
         # convert some values if value on command line needs processing from value in structure
         if (convert = properties['x-cli-convert'])
@@ -210,7 +210,7 @@ module Aspera
             when String then @convert.send(convert, parameter_value)
             else Aspera.error_unexpected_value(convert) { "Conversion type for #{name} is Hash or String only." }
             end
-          Aspera.assert(!converted_value.nil?) { "No conversion for: #{name}=#{parameter_value}" }
+          Aspera.assert(!converted_value.nil?, type: ParameterError) { "No conversion for: #{name}=#{parameter_value}" }
           parameter_value = converted_value
         end
 

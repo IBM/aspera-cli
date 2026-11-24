@@ -124,7 +124,7 @@ module Aspera
         Aspera.assert_type(url_list, Array) { 'ignore certificate URLs' }
         @ignore_cert_host_port = url_list.map do |url|
           uri = URI.parse(url)
-          Aspera.assert(uri.scheme.eql?('https')) { "Expecting https scheme: #{url}" }
+          Aspera.assert(uri.scheme.eql?('https'), type: Cli::BadArgument) { "Expecting https scheme: #{url}" }
           [uri.host, uri.port].freeze
         end
       end
@@ -163,7 +163,6 @@ module Aspera
         @certificate_store = OpenSSL::X509::Store.new
         @certificate_paths = []
         path_list.each do |path|
-          Aspera.assert_type(path, String) { 'Expecting a String for certificate location' }
           paths_to_add = [path]
           Log.log.debug { "Adding cert location: #{path}" }
           if path.eql?(SpecialValues::DEF)

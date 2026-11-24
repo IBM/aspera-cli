@@ -55,6 +55,27 @@ module Aspera
           instance.execute_action
         end
 
+        describe 'shared_folders browse' do
+          before do
+            responses[[:read, 'shared_folders']] = {
+              'shared_folders' => [
+                {'id' => 'sf1', 'name' => 'one', 'node_id' => 'n1'},
+                {'id' => 'sf2', 'name' => 'twin', 'node_id' => 'n1'},
+                {'id' => 'sf3', 'name' => 'twin', 'node_id' => 'n1'}
+              ]
+            }
+          end
+
+          it 'reports an unknown shared folder as an identifier not found' do
+            expect { execute('shared_folders', 'browse', 'sf9') }.to(raise_error(BadIdentifier, 'Shared folder with identifier=sf9: not found'))
+          end
+
+          it 'reports a lookup that matches no shared folder, or several, as an identifier not found' do
+            expect { execute('shared_folders', 'browse', '%name:none') }.to(raise_error(BadIdentifier, 'Shared folder with name=none: not found'))
+            expect { execute('shared_folders', 'browse', '%name:twin') }.to(raise_error(BadIdentifier, 'Shared folder with name=twin: found 2'))
+          end
+        end
+
         describe 'admin' do
           it 'deletes the SMTP configuration' do
             expect(execute('admin', 'smtp', 'delete').data).to(eq('SMTP configuration deleted'))

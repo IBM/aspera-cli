@@ -44,8 +44,8 @@ module Aspera
           value_matches = matching_items.select { |i| i[field].casecmp?(value) }
           case value_matches.length
           when 1 then return value_matches.first
-          when 0 then raise Error, "#{entity}: Multiple case insensitive partial match for: \"#{value}\" in #{matching_items.map { |i| i[field] }.join(', ')} but no case insensitive full match. Please be more specific or give exact #{field}."
-          else raise Error, "#{entity}: Multiple entities with #{field}: \"#{value}\". Please use the identifier instead."
+          when 0 then raise EntityNotFound, "#{entity}: Multiple case insensitive partial match for: \"#{value}\" in #{matching_items.map { |i| i[field] }.join(', ')} but no case insensitive full match. Please be more specific or give exact #{field}."
+          else raise EntityNotFound, "#{entity}: Multiple entities with #{field}: \"#{value}\". Please use the identifier instead."
           end
         end
       end

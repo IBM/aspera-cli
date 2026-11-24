@@ -16,9 +16,9 @@ module Aspera
       attr_reader :extra_options
 
       def option_list=(options)
-        Aspera.assert_type(options, Array) { 'ssl_options' }
+        Aspera.assert_type(options, Array, type: ParameterError) { 'ssl_options' }
         options.each do |opt|
-          Aspera.assert_type(opt, String, Integer) { 'Expected String or Integer in ssl_options' }
+          Aspera.assert_type(opt, String, Integer, type: ParameterError) { 'Expected String or Integer in ssl_options' }
           case opt
           when Integer
             @extra_options = opt

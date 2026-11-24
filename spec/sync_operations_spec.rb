@@ -124,7 +124,7 @@ RSpec.describe(Aspera::Sync::Operations) do
     end
 
     it 'fails on invalid target_rate' do
-      expect { start_args(args_info('target_rate' => 'fast'), {}) }.to(raise_error(Aspera::AssertError, /Invalid rate/))
+      expect { start_args(args_info('target_rate' => 'fast'), {}) }.to(raise_error(Aspera::ParameterError, /Invalid rate/))
     end
   end
 

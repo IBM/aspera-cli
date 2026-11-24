@@ -75,7 +75,7 @@ module Aspera
       # @return [nil]
       def sdk_folder=(ascp_location)
         Aspera.assert_type(ascp_location, String) { 'ascp_location' }
-        Aspera.assert(!ascp_location.empty?, 'ascp location cannot be empty: check your config file')
+        Aspera.assert(!ascp_location.empty?, 'ascp location cannot be empty: check your config file', type: ParameterError)
         @ascp_folder = nil
         if self.class.product_selector?(ascp_location)
           # Resolved on first use: product scan requires the SDK folder, which is set later
@@ -252,10 +252,10 @@ module Aspera
         platform = Environment.instance.architecture if platform.nil?
         all_locations = sdk_locations(download: {sdk: version || LATEST_VERSION, platform: platform})
         locations = all_locations.select { |l| l['platform'].eql?(platform) }
-        Aspera.assert(!locations.empty?) { "No SDK for platform: #{platform}, available: #{all_locations.map { |i| i['platform'] }.uniq}" }
+        Aspera.assert(!locations.empty?, type: ParameterError) { "No SDK for platform: #{platform}, available: #{all_locations.map { |i| i['platform'] }.uniq}" }
         version = locations.max_by { |entry| Gem::Version.new(entry['version']) }['version'] if version.nil?
         info = locations.select { |entry| entry['version'].eql?(version) }
-        Aspera.assert(!info.empty?) { "No such version: #{version} for #{platform}" }
+        Aspera.assert(!info.empty?, type: ParameterError) { "No such version: #{version} for #{platform}" }
         return info.first
       end
 
@@ -525,10 +525,10 @@ module Aspera
         if @ascp_folder.nil?
           if @ascp_product.eql?(FIRST_FOUND)
             pl = installed_products.first
-            Aspera.assert(!pl.nil?) { "No Aspera transfer module or SDK found.\nRefer to the manual or install SDK with command:\nascli config ascp install" }
+            Aspera.assert(!pl.nil?, type: EnvironmentError) { "No Aspera transfer module or SDK found.\nRefer to the manual or install SDK with command:\nascli config ascp install" }
           else
             pl = installed_products.find { |i| i[:name].eql?(@ascp_product) }
-            Aspera.assert(!pl.nil?) { "No such product installed: #{@ascp_product}" }
+            Aspera.assert(!pl.nil?, type: ParameterError) { "No such product installed: #{@ascp_product}" }
           end
           @ascp_folder = File.dirname(pl[:ascp_path])
           Log.log.debug { "ascp_folder=#{@ascp_folder}" }

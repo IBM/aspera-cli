@@ -105,8 +105,8 @@ module Aspera
           records = @client.get_secrets
           matches = records.select { |record| record.uid.eql?(identifier) }
           matches = records.select { |record| record.title.eql?(identifier) } if matches.empty?
-          raise "Multiple secrets found with label '#{identifier}': use id to disambiguate" if matches.size > 1
-          raise "Secret '#{identifier}' not found" if matches.empty? && exception
+          raise NotFound, "Multiple secrets found with label '#{identifier}': use id to disambiguate" if matches.size > 1
+          raise NotFound, "Secret '#{identifier}' not found" if matches.empty? && exception
           matches.first
         end
 

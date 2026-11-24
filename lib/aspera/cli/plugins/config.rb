@@ -255,7 +255,7 @@ module Aspera
             :password, description: 'Set a new password for the vault',
             arguments: [{name: :new_password}],
             action: lambda do |new_password:, **|
-              Aspera.assert(vault_required.respond_to?(:change_password), 'Vault does not support password change')
+              Aspera.assert(vault_required.respond_to?(:change_password), 'Vault does not support password change', type: Cli::BadArgument)
               vault_required.change_password(new_password)
               Result::Status.new('Vault password updated')
             end
@@ -281,7 +281,7 @@ module Aspera
             arguments: [{name: :remote_url}],
             action: lambda do |remote_url:, **|
               remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
-              Aspera.assert(remote_chain&.first) { "No certificate found for #{remote_url}" }
+              Aspera.assert(remote_chain&.first, type: Cli::Error) { "No certificate found for #{remote_url}" }
               Result::Text.new(remote_chain.map(&:to_pem).join("\n"))
             end
           )
@@ -290,7 +290,7 @@ module Aspera
             arguments: [{name: :remote_url}],
             action: lambda do |remote_url:, **|
               remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
-              Aspera.assert(remote_chain&.first) { "No certificate found for #{remote_url}" }
+              Aspera.assert(remote_chain&.first, type: Cli::Error) { "No certificate found for #{remote_url}" }
               Result::Text.new(remote_chain.first.to_pem)
             end
           )
@@ -299,7 +299,7 @@ module Aspera
             arguments: [{name: :remote_url}],
             action: lambda do |remote_url:, **|
               remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
-              Aspera.assert(remote_chain&.first) { "No certificate found for #{remote_url}" }
+              Aspera.assert(remote_chain&.first, type: Cli::Error) { "No certificate found for #{remote_url}" }
               Result::Text.new(remote_chain.first.subject.to_a.find { |name, _, _| name == 'CN' }[1])
             end
           )
@@ -397,7 +397,6 @@ module Aspera
         def add_plugin_lookup_folders
           home_plugins = File.join(context.main_folder, ASPERA_PLUGINS_FOLDERNAME)
           folders = options.get_option(:plugin_folder)
-          Aspera.assert_array_all(folders, String) { 'plugin folder(s)' }
           # Before 4.30, this folder was always used: plugins there would silently stop working
           unused_home = !folders.include?(SpecialValues::DEF) && Dir.glob(["*#{Environment::RB_EXT}", "*/#{BundleRegistry::MANIFEST}"], base: home_plugins).any?
           Log.log.warn { "Plugins of #{home_plugins} are not used: add #{SpecialValues::DEF} to option plugin_folder" } if unused_home

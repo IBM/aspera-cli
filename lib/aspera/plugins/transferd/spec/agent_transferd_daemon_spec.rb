@@ -160,6 +160,12 @@ RSpec.describe(Aspera::Plugins::Transferd::Agent) do
       expect(started.dig('config', 'authentication')).to(eq('enabled' => true, 'api_key' => '<API_KEY>'))
     end
 
+    it 'refuses an address without port, before starting the daemon' do
+      allow(Transferd::Api::TransferService::Stub).to(receive(:new).with('localhost', :this_channel_is_insecure).and_return(offline))
+      expect { described_class.new(url: 'localhost') }.to(raise_error(Aspera::ParameterError, 'Invalid address of daemon: localhost, expecting <ADDRESS>:<PORT> or :<PORT>'))
+      expect(started).to(be_empty)
+    end
+
     it 'stops the daemon started here on shutdown' do
       agents.push(described_class.new(url: ':55002'))
       expect(started.dig('config', 'port')).to(eq(55_002))
