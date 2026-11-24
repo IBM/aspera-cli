@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require_relative '../../assert'
+require_relative '../../log'
 require_relative '../../bundle_registry'
 require_relative '../error'
 require_relative '../security'
@@ -37,12 +38,12 @@ module Aspera
         # @return [Array<Symbol>] Sorted list of plugins that provide commands and can be loaded: available, with their gems installed.
         #   Callers load the class of each one: `unavailable_plugins` gives the others, with the reason.
         def plugin_list
-          @registry.names.select { |name| @registry[name].commands? && load_reason(name).nil? }
+          @registry.names.select { |name| @registry[name].commands? && @registry.load_error(name).nil? }
         end
 
-        # @return [Hash{Symbol => String}] Reason why a plugin that provides commands is not in `plugin_list`, by name
+        # @return [Hash{Symbol => String}] Reason why a plugin that provides commands, or whose manifest is invalid, is not in `plugin_list`, by name
         def unavailable_plugins
-          @registry.names.select { |name| @registry[name].commands? }.to_h { |name| [name, load_reason(name)] }.compact
+          listed_plugins.to_h { |name| [name, @registry.load_error(name)] }.compact
         end
 
         # @return [Array<Symbol>] Sorted names of the plugins to list: those that provide commands, and those that cannot be loaded (their manifest may be invalid)
@@ -119,6 +120,12 @@ module Aspera
           klass
         rescue BundleRegistry::Unavailable => e
           raise Cli::Error, e.message
+        rescue NameError, ScriptError => e
+          # Broken code of a plugin of the gem is a bug of ascli: reported as such, with its location
+          raise if !plugin.nil? && source_of(plugin).eql?('gem')
+          # Broken code of an external plugin (no `commands.rb`, wrong constant, syntax error): same error as an unavailable plugin
+          Log.log.debug { "plugin #{plugin_name_sym}: #{e.class}: #{e.message}" }
+          raise Cli::Error, "plugin #{plugin_name_sym} cannot be loaded: #{e.class}: #{e.message}"
         end
 
         # Create specified plugin
@@ -131,27 +138,13 @@ module Aspera
 
         private
 
-        # The only place that tells whether a plugin can be loaded.
-        # @param name [Symbol] name of a registered plugin
-        # @return [Array(Symbol, Object), nil] `[:unavailable, <reason>]` or `[:missing_gems, <gems>]`, `nil` if the plugin can be loaded
-        def blocked(name)
-          reason = @registry.unavailable_reason(name)
-          return [:unavailable, reason] unless reason.nil?
-          missing = @registry.missing_gems(name)
-          return [:missing_gems, missing] unless missing.empty?
-          nil
-        end
-
         # @param name [Symbol] name of a registered plugin
         # @return [String, nil] Why the plugin cannot be loaded, short form: unavailable reason, or missing gems; `nil` if it can
         def status_reason(name)
-          kind, detail = blocked(name)
-          case kind
-          when nil then nil
-          when :unavailable then detail
-          when :missing_gems then "missing gem #{detail.join(', ')}"
-          else Aspera.error_unexpected_value(kind)
-          end
+          reason = @registry.unavailable_reason(name)
+          return reason unless reason.nil?
+          missing = @registry.missing_gems(name)
+          missing.empty? ? nil : "missing gem #{missing.join(', ')}"
         end
 
         # @param plugin [BundleRegistry::Plugin] Registered plugin
@@ -159,18 +152,6 @@ module Aspera
         def source_of(plugin)
           folder = File.dirname(plugin.path)
           [BundleRegistry::GEM_FOLDER, GEM_SINGLE_FILES_FOLDER].any? { |gem_folder| File.identical?(folder, gem_folder) } ? 'gem' : folder
-        end
-
-        # @param name [Symbol] name of a registered plugin
-        # @return [String, nil] Why the code of the plugin cannot be loaded: unavailable or missing gem, `nil` if it can
-        def load_reason(name)
-          kind, detail = blocked(name)
-          case kind
-          when nil then nil
-          when :unavailable then "plugin #{name} is unavailable: #{detail}"
-          when :missing_gems then "plugin #{name} requires gem #{detail.join(', ')}: gem install #{detail.join(' ')}"
-          else Aspera.error_unexpected_value(kind)
-          end
         end
 
         # @param plugin_name_sym [Symbol] name of plugin

@@ -507,7 +507,16 @@ module Aspera
           factory = Plugins::Factory.instance
           result = factory.listed_plugins.map do |name|
             status = factory.status(name)
-            loaded = status.eql?('available') ? factory.plugin_class(name) : nil
+            loaded =
+              if status.eql?('available')
+                begin
+                  factory.plugin_class(name)
+                rescue Cli::Error => e
+                  # Broken code: the reason replaces the status
+                  status = e.message
+                  nil
+                end
+              end
             {
               plugin: name,
               detect: loaded.nil? ? nil : TerminalFormatter.tick(loaded.respond_to?(:detect)),
@@ -581,7 +590,14 @@ module Aspera
           Aspera.assert(words.empty? || plugin_names.length.eql?(1), type: Cli::BadArgument) { 'command path requires a plugin name' }
           expand_mounts = options.get_option(:expand_mounts)
           commands = plugin_names.flat_map do |name|
-            reg = Plugins::Factory.instance.plugin_class(name).command_registry
+            begin
+              reg = Plugins::Factory.instance.plugin_class(name).command_registry
+            rescue Cli::Error => e
+              # Named plugin: the error; else the plugin is left out
+              raise if plugin_name
+              Log.log.warn(e.message)
+              next []
+            end
             prefix = listed_command_path(name, reg, words)
             paths = prefix.empty? || reg.children_of(prefix).any? ? reg.leaf_paths(prefix, expand_mounts: expand_mounts) : [prefix]
             # Commands refused by security level are not proposed

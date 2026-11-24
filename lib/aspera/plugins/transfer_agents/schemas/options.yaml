@@ -108,6 +108,7 @@ components:
         value: name
         schema: options_schema
         suffix: AgentOptions
+        unique: short
       discriminator:
         propertyName: agent
       # Keys common to all agents. The parameters of the variant selected by `agent` are evaluated by it, other keys are refused.

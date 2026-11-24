@@ -36,6 +36,45 @@ module Aspera
 
         after { FileUtils.rm_rf(folder) }
 
+        it 'gives a CLI error for a plugin whose code cannot be loaded: no commands.rb, wrong constant, syntax error' do
+          write_bundle(folder, 'spec_bundle_no_code', code: nil)
+          bundle = write_bundle(folder, 'spec_bundle_wrong', code: nil)
+          File.write(File.join(bundle, 'commands.rb'), "module Aspera; module Plugins; module SpecBundleOther; end; end; end\n")
+          bundle = write_bundle(folder, 'spec_bundle_syntax', code: nil)
+          File.write(File.join(bundle, 'commands.rb'), "def (\n")
+          factory.add_plugins_from_lookup_folders
+          expect { factory.plugin_class(:spec_bundle_no_code) }.to(raise_error(Cli::Error, /\Aplugin spec_bundle_no_code cannot be loaded: LoadError/))
+          expect { factory.plugin_class(:spec_bundle_wrong) }.to(raise_error(Cli::Error, /\Aplugin spec_bundle_wrong cannot be loaded: NameError/))
+          expect { factory.plugin_class(:spec_bundle_syntax) }.to(raise_error(Cli::Error, /\Aplugin spec_bundle_syntax cannot be loaded: SyntaxError/))
+        ensure
+          remove_spec_constants
+        end
+
+        it 'does not convert the error of a broken plugin of the gem: it is a bug of ascli, reported with its location' do
+          allow(registry).to(receive(:load_constant).and_raise(NameError, 'uninitialized constant Broken'))
+          expect(factory.send(:source_of, registry[:node])).to(eq('gem'))
+          expect { factory.plugin_class(:node) }.to(raise_error(NameError, /Broken/))
+          allow(registry).to(receive(:load_constant).and_raise(LoadError, 'cannot load such file'))
+          expect { factory.plugin_class(:node) }.to(raise_error(LoadError))
+        end
+
+        it 'gives the reason of a bundle whose manifest is invalid, with the plugins that cannot be loaded' do
+          write_bundle(folder, 'spec_bundle_invalid', manifest: "name: [\n")
+          factory.add_plugins_from_lookup_folders
+          expect(factory.unavailable_plugins[:spec_bundle_invalid]).to(match(/\Aplugin spec_bundle_invalid is unavailable: invalid manifest/))
+          expect(factory.unavailable_plugins.keys).to(include(:spec_bundle_broken, :spec_bundle_missing_gem))
+          expect(factory.unavailable_plugins).not_to(include(:spec_bundle_ok, :spec_bundle_single))
+          expect(factory.plugin_list).not_to(include(:spec_bundle_invalid))
+        end
+
+        it 'looks for the gems of each plugin once' do
+          allow(Gem::Specification).to(receive(:find_all_by_name).and_call_original)
+          factory.plugin_list
+          factory.unavailable_plugins
+          factory.listed_plugins.each { |name| factory.status(name) }
+          expect(Gem::Specification).to(have_received(:find_all_by_name).with('spec-bundle-no-such-gem').once)
+        end
+
         it 'describes a built-in bundle' do
           description = factory.describe(:node)
           expect(description).to(include(plugin: :node, source: 'gem', form: :bundle, security: 'any', status: 'available', commands: true, agents: %w[node], depends: %i[transfer_agents]))
@@ -105,6 +144,14 @@ module Aspera
           row = config.action_plugins_list.data.find { |item| item[:plugin].eql?(:spec_bundle_broken) }
           expect(row[:status]).to(match(/spec_bundle_nowhere/))
           expect(row).to(include(detect: nil, wizard: nil))
+        end
+
+        it 'lists a plugin whose code cannot be loaded with the reason, the others are listed' do
+          write_bundle(folder, 'spec_bundle_no_code', code: nil)
+          factory.add_plugins_from_lookup_folders
+          rows = config.action_plugins_list.data
+          expect(rows.find { |item| item[:plugin].eql?(:spec_bundle_no_code) }).to(include(detect: nil, wizard: nil, status: match(/cannot be loaded: LoadError/)))
+          expect(rows.find { |item| item[:plugin].eql?(:spec_bundle_single) }).to(include(status: 'available'))
         end
 
         it 'shows a plugin' do

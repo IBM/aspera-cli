@@ -133,14 +133,16 @@ module Aspera
       @plugins = {}
       # Cache of `unavailable_reason`, by name
       @reasons = {}
+      # Cache of `missing_gems`, by name
+      @missing_gems = {}
       # Source folder of each registered plugin, by name
       @origins = {}
       # `true` if the sources were scanned since the last change of sources or of security checks
       @scanned = false
       # Cache of `claims`
       @claims = nil
-      # Cache of `extensions`, by point: emptied when plugins, sources or security checks change
-      @extensions_cache = {}
+      # Cache of `extensions` (key `[:extensions, <point>]`) and of `schemas` (key `:schemas`): emptied when plugins, sources or security checks change
+      @cache = {}
       # Compiled schemas of extension points, by file
       @point_schemas = {}
       @security_allowed = ->(_level) { true }
@@ -157,7 +159,7 @@ module Aspera
       @security_allowed = allowed
       @security_check = check
       @scanned = false
-      @extensions_cache.clear
+      @cache.clear
       nil
     end
 
@@ -176,12 +178,12 @@ module Aspera
       source = Source.new(folder: File.expand_path(folder), security: security, ignore: ignore)
       index = folders.index(source.folder)
       @scanned = false
-      @extensions_cache.clear
+      @cache.clear
       if index
         @sources[index] = source
         # Plugins already registered from this folder get the new level
         @origins.each { |name, origin| @plugins[name] = @plugins[name].with(security: security) if origin.eql?(source.folder) }
-        @reasons.clear
+        clear_reasons
       elsif last
         @sources.push(source)
       else
@@ -218,8 +220,8 @@ module Aspera
         end
       end
       return if added.empty?
-      @reasons.clear
-      @extensions_cache.clear
+      clear_reasons
+      @cache.clear
       @claims = nil
       added.each do |name|
         reason = unavailable_reason(name)
@@ -248,7 +250,17 @@ module Aspera
     # @return [Array<String>] Gems of the plugin that are not installed
     def missing_gems(name)
       Aspera.assert(@plugins.key?(name), type: EntityNotFound) { "plugin not found: #{name}" }
-      @plugins[name].gems.reject { |gem| gem_installed?(gem) }
+      @missing_gems[name] ||= @plugins[name].gems.reject { |gem| gem_installed?(gem) }.freeze
+    end
+
+    # @param name [Symbol] Name of a registered plugin
+    # @return [String, nil] Why the code of the plugin cannot be loaded: unavailable, or a gem is missing; `nil` if it can
+    def load_error(name)
+      reason = unavailable_reason(name)
+      return "plugin #{name} is unavailable: #{reason}" unless reason.nil?
+      missing = missing_gems(name)
+      return "plugin #{name} requires gem #{missing.join(', ')}: gem install #{missing.join(' ')}" unless missing.empty?
+      nil
     end
 
     # Load a file of the code of a plugin: checks the security level of its source, its availability and its gems.
@@ -262,10 +274,8 @@ module Aspera
       Aspera.assert(file.nil?.eql?(!plugin.bundle?)) { "plugin #{name}: file #{file.inspect} for a #{plugin.form}" }
       # A plugin registered at start can be replaced by a file written since: it is code
       @security_check.call(plugin.security, "plugin #{name}")
-      reason = unavailable_reason(name)
-      raise Unavailable, "plugin #{name} is unavailable: #{reason}" unless reason.nil?
-      missing = missing_gems(name)
-      raise Unavailable, "plugin #{name} requires gem #{missing.join(', ')}: gem install #{missing.join(' ')}" unless missing.empty?
+      error = load_error(name)
+      raise Unavailable, error unless error.nil?
       require(file.nil? ? plugin.path : File.join(plugin.path, file))
       nil
     end
@@ -278,8 +288,13 @@ module Aspera
     # @raise [Unavailable] If the bundle is unavailable or a gem is missing
     def load_constant(name, file, constant)
       require_code(name, file)
-      Object.const_get("#{BUNDLE_MODULE}::#{name.to_s.snake_to_capital}::#{constant}")
+      Object.const_get(constant_name(name, constant))
     end
+
+    # @param name     [Symbol] Name of a bundle
+    # @param constant [String] Constant relative to `Aspera::Plugins::<Name>`
+    # @return [String] Full name of the constant, without loading any code
+    def constant_name(name, constant) = "#{BUNDLE_MODULE}::#{name.to_s.snake_to_capital}::#{constant}"
 
     # Load the code of an entry of a bundle, see `load_constant`
     # @param entry [Extension, Mount, Service] Entry given by `extensions`, `mounts` or `service`
@@ -304,7 +319,7 @@ module Aspera
     def extensions(point)
       Aspera.assert_type(point, Symbol)
       scan unless @scanned
-      @extensions_cache[point] ||= available_plugins.flat_map { |plugin| plugin.extensions.select { |extension| extension.point.eql?(point) } }.freeze
+      @cache[[:extensions, point]] ||= available_plugins.flat_map { |plugin| plugin.extensions.select { |extension| extension.point.eql?(point) } }.freeze
     end
 
     # Modules mounted on a plugin, from the available bundles, data only: the code of a module is loaded by `load_entry`.
@@ -337,7 +352,7 @@ module Aspera
     # @return [Array<SchemaFile>] Schemas, by name of bundle, then in the order of the manifest
     def schemas
       scan unless @scanned
-      available_plugins.flat_map(&:schemas)
+      @cache[:schemas] ||= available_plugins.flat_map(&:schemas).freeze
     end
 
     # @param key [Symbol] Key of a schema
@@ -352,13 +367,23 @@ module Aspera
     # @return [Array<Plugin>] Available plugins, by name
     def available_plugins = names.select { |name| unavailable_reason(name).nil? }.map { |name| @plugins[name] }
 
-    # Names of services, extension points and schemas, by the plugin that declares them: the first one registered with a valid manifest.
+    # @return [Array<Plugin>] Registered plugins: by source in order of priority, then by name
+    def ordered_plugins = @plugins.values.sort_by { |plugin| [folders.index(@origins[plugin.name]), plugin.name] }
+
+    # Names of services, extension points and schemas, by the plugin that declares them: the first one with a valid manifest, in the order of the sources (priority), then by name:
+    # not the order of registration, which depends on when the sources were scanned.
     # @return [Hash{Array(Symbol, Symbol) => Symbol}] Name of the plugin, by `[:service, <name>]`, `[:extension_point, <name>]` and `[:schema, <name>]`
     def claims
-      @claims ||= @plugins.each_value.each_with_object({}) do |plugin, result|
+      @claims ||= ordered_plugins.each_with_object({}) do |plugin, result|
         next unless plugin.error.nil?
         plugin.declared.each { |claim| result[claim] ||= plugin.name }
       end
+    end
+
+    # Forget the reasons that plugins are unavailable or miss gems
+    def clear_reasons
+      @reasons.clear
+      @missing_gems.clear
     end
 
     # @param plugin [Plugin] Registered plugin

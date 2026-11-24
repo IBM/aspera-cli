@@ -62,14 +62,8 @@ module Aspera
       # @raise [BundleRegistry::Unavailable] If the bundle of the agent is unavailable or a gem is missing
       def agent_class(agent)
         name = agent.to_sym
-        all
-        unless @provided.key?(name)
-          # An unavailable bundle that is, or may be (manifest not readable), the provider of this agent: why it is not available
-          bundle = @registry[name]
-          if !bundle.nil? && bundle.bundle? && (reason = @registry.unavailable_reason(name)) && (!bundle.error.nil? || declares_agent?(bundle, name))
-            raise BundleRegistry::Unavailable, "plugin #{name} is unavailable: #{reason}"
-          end
-        end
+        reason = unavailable_reason(name)
+        raise BundleRegistry::Unavailable, reason unless reason.nil?
         Aspera.assert(@provided.key?(name)) { "unknown agent: #{name}" }
         @registry.load_entry(@provided[name])
       end
@@ -81,14 +75,29 @@ module Aspera
         @provided.key?(agent.to_sym)
       end
 
-      # @param instance [Base] An agent
-      # @return [Symbol, nil] Name of the agent of `all` this is an instance of, `nil` if none (a bundle that cannot be loaded is skipped)
-      def agent_name(instance)
-        all.each_key do |name|
-          return name if agent_class(name).equal?(instance.class)
-        rescue BundleRegistry::Unavailable
-          next
+      # @param agent [Symbol, String] Name of an agent
+      # @return [String, nil] Why the agent is not in `all`: its bundle is unavailable (a bundle that declares it, or, if its manifest is invalid, a bundle of this name); `nil` if it is in `all` or unknown
+      def unavailable_reason(agent)
+        name = agent.to_sym
+        all
+        return if @provided.key?(name)
+        @registry.names.each do |bundle_name|
+          bundle = @registry[bundle_name]
+          next unless bundle.bundle?
+          reason = @registry.unavailable_reason(bundle_name)
+          next if reason.nil?
+          return "plugin #{bundle_name} is unavailable: #{reason}" if declares_agent?(bundle, name) || (bundle_name.eql?(name) && !bundle.error.nil?)
         end
+        nil
+      end
+
+      # Found by the name of the class: no code is loaded (a bundle that cannot be loaded does not hide the others).
+      # @param instance [Base] An agent
+      # @return [Symbol, nil] Name of the agent of `all` this is an instance of, `nil` if none
+      def agent_name(instance)
+        class_name = instance.class.name
+        all
+        @provided.each { |name, entry| return name if @registry.constant_name(entry.bundle, entry.constant).eql?(class_name) }
         nil
       end
 

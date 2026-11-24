@@ -138,11 +138,13 @@ module Aspera
     subject(:registry) { described_class.send(:new, builtin: false) }
 
     let(:folder) { Dir.mktmpdir }
+    let(:other) { Dir.mktmpdir }
 
     before { allow(Log.log).to(receive(:warn)) }
 
     after do
       FileUtils.rm_rf(folder)
+      FileUtils.rm_rf(other)
       remove_spec_constants
     end
 
@@ -162,6 +164,26 @@ module Aspera
         expect(extensions.map { |extension| [extension.bundle, extension.fields] }).to(eq([[:spec_bundle_one, {'label' => 'a'}], [:spec_bundle_two, {'label' => 'b'}], [:spec_bundle_two, {'label' => 'c'}]]))
         expect(extensions.first).to(have_attributes(point: :spec_point, file: 'other.rb', constant: 'Sub::Other'))
         expect(registry.extensions(:spec_none)).to(be_empty)
+      end
+
+      it 'does not mix the entries of an extension point named schemas with the schemas of the bundles' do
+        bundle = write_bundle(folder, 'spec_bundle_point', manifest: {'commands' => false, 'extension_points' => [{'name' => 'schemas', 'schema' => 'point.schema.yaml'}], 'schemas' => [{'key' => 'spec_schema', 'file' => 'spec.yaml'}]}, code: nil)
+        File.write(File.join(bundle, 'point.schema.yaml'), BundleHooksSpecHelper::POINT_SCHEMA.to_yaml)
+        File.write(File.join(bundle, 'spec.yaml'), {'openapi' => '3.1.0'}.to_yaml)
+        write_bundle(folder, 'spec_bundle_one', manifest: {'commands' => false, 'depends' => %w[spec_bundle_point], 'extensions' => {'schemas' => [{'label' => 'a', 'file' => 'entry.rb', 'class' => 'Entry'}]}}, code: nil)
+        scan
+        [%i[extensions schemas], %i[schemas extensions]].each do |order|
+          registry.add_source(folder)
+          registry.scan
+          order.each do |kind|
+            if kind.eql?(:extensions)
+              expect(registry.extensions(:schemas).map(&:bundle)).to(eq([:spec_bundle_one]))
+            else
+              expect(registry.schemas.map(&:key)).to(eq([:spec_schema]))
+            end
+          end
+          registry.send(:instance_variable_get, :@cache).clear
+        end
       end
 
       it 'gives the same entries until the plugins or the sources change' do
@@ -293,6 +315,18 @@ module Aspera
         scan
         expect(registry.unavailable_reason(:spec_bundle_b)).to(eq('service spec_service is declared by plugin spec_bundle_a'))
         expect(registry.service(:spec_service).bundle).to(eq(:spec_bundle_a))
+      end
+
+      it 'gives a name to the plugin of the source of more priority, also when the sources were scanned in two steps' do
+        write_service_bundle(folder, 'spec_bundle_b')
+        write_service_bundle(other, 'spec_bundle_z')
+        # Early scan: the folder alone, then a folder of more priority (e.g. plugin folders added by `config`)
+        scan
+        registry.add_source(other, security: :low)
+        registry.scan
+        expect(registry.service(:spec_service).bundle).to(eq(:spec_bundle_z))
+        expect(registry.unavailable_reason(:spec_bundle_b)).to(eq('service spec_service is declared by plugin spec_bundle_z'))
+        expect(registry.unavailable_reason(:spec_bundle_z)).to(be_nil)
       end
 
       it 'refuses a service that no plugin declares, or whose plugin is unavailable, with the reason' do

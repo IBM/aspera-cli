@@ -230,6 +230,36 @@ module Aspera
         expect([factory.provided?(:fake), factory.provided?('node')]).to(eq([true, false]))
       end
 
+      it 'gives the name of the agent of an instance without loading the code of the other bundles' do
+        write_point_bundle(folder)
+        write_agent_bundle(folder, code: "raise 'code of the agent loaded'")
+        write_agent_bundle(folder, 'spec_bundle_other', entries: [{'name' => 'other', 'short' => 'o'}])
+        registry.add_source(folder)
+        expect(factory.agent_name(factory.create(:other, {}))).to(eq(:other))
+        expect(factory.agent_name(Class.new.new)).to(be_nil)
+      end
+
+      it 'gives the name of the agent of an instance when the security level refuses another bundle' do
+        write_point_bundle(folder)
+        write_agent_bundle(folder)
+        write_agent_bundle(folder, 'spec_bundle_other', entries: [{'name' => 'other', 'short' => 'o'}])
+        registry.add_source(folder)
+        instance = factory.create(:other, {})
+        registry.security_checks(allowed: ->(_level) { true }, check: ->(level, what) { raise Error, "refused #{level} #{what}" })
+        registry.add_source(folder, security: :low)
+        expect(factory.agent_name(instance)).to(eq(:other))
+      end
+
+      it 'refuses an agent of an unavailable bundle that is not named like the agent, with the reason' do
+        write_point_bundle(folder)
+        write_bundle(folder, 'spec_bundle_agents', manifest: {'commands' => false, 'depends' => %w[spec_bundle_missing], 'extensions' => {'agent' => [AgentFactorySpecHelper::ENTRY.merge('name' => 'foo', 'short' => 'o')]}}, code: nil)
+        registry.add_source(folder)
+        expect(factory.unavailable_reason(:foo)).to(match(/plugin spec_bundle_agents is unavailable: .*spec_bundle_missing/))
+        expect { factory.create(:foo, {}) }.to(raise_error(BundleRegistry::Unavailable, /plugin spec_bundle_agents is unavailable: .*spec_bundle_missing/))
+        expect(factory.unavailable_reason(:bogus)).to(be_nil)
+        expect(factory.unavailable_reason(:fake)).to(be_nil)
+      end
+
       it 'is recomputed when the entries of the bundles change, also for ALL' do
         registry.add_source(folder)
         allow(described_class).to(receive(:instance).and_return(factory))
@@ -284,6 +314,14 @@ module Aspera
         expect(validator.errors({'agent' => 'fake', 'color' => 'blue'}, AgentFactorySpecHelper::OPTION_SCHEMA)).to(be_empty)
         expect(validator.errors({'agent' => 'fake', 'color' => 1}, AgentFactorySpecHelper::OPTION_SCHEMA)).to(eq(['value at `/color` is not a string']))
         expect(validator.errors({'agent' => 'bogus'}, AgentFactorySpecHelper::OPTION_SCHEMA, partial: true).first).to(include('"fake"'))
+      end
+
+      it 'adds no variant for an agent left out by Agent::Factory: its letter is taken' do
+        write_agent_bundle(folder, entries: [{}, {'name' => 'other', 'short' => 'f'}, {'name' => 'third', 'short' => 't'}])
+        allow(Agent::Factory).to(receive(:instance).and_return(factory))
+        expect(factory.all.keys).to(eq(%i[fake third]))
+        expect(variants.keys).to(eq(AgentFactorySpecHelper::SCHEMA_VARIANTS.keys + %w[fake third]))
+        expect(warnings.grep(/Variant other/)).to(eq(['Variant other of bundle spec_bundle_agent is skipped: short f is taken by fake']))
       end
 
       it 'reads the variants again when the entries of the extension point change (bundles of a plugin folder added later)' do
@@ -464,6 +502,14 @@ module Aspera
         expect(transfer.agent_name).to(eq('fake'))
         transfer.agent_instance = factory.agent_class(:other).allocate
         expect(transfer.agent_name).to(eq('other'))
+      end
+
+      it 'gives a CLI error with the reason for the default agent when its bundle is unavailable' do
+        write_bundle(folder, 'direct', manifest: "name: [\n", code: nil)
+        registry.add_source(folder)
+        expect { agent_for([]) }.to(raise_error(Cli::Error, /plugin direct is unavailable: invalid manifest/))
+        # An explicit value is refused by the schema of option transfer, which lists the available agents only
+        expect { agent_for(['--transfer=bogus']) }.to(raise_error(Cli::BadArgument, /is not one of/))
       end
 
       it 'gives a CLI error for an agent of a bundle that cannot be loaded' do

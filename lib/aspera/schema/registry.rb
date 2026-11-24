@@ -268,11 +268,11 @@ module Aspera
 
       # Add the variants given by bundles to the components of `components.schemas` that have the marker `x-cli-variants`
       # (`point`: extension point, `value`: field of an entry with the value of the discriminator, `schema`: field with the schema file of the variant,
-      # relative to the folder of the bundle, `suffix`: of the name of the component).
+      # relative to the folder of the bundle, `suffix`: of the name of the component, optional `unique`: field whose value is unique among the variants).
       # For each entry of the point: a component `<Value><suffix>` read from the file, a `$ref` in `oneOf`, an entry in `discriminator.mapping`
       # (both created if the document has none).
       # An entry with the value of a variant of the document replaces it; an entry with the value of an earlier entry,
-      # or whose schema file cannot be read, is skipped with a warning. The marker is removed.
+      # with the `unique` field of an earlier entry, or whose schema file cannot be read, is skipped with a warning. The marker is removed.
       # The entries used are kept: the document is read again when they change (see `variants_current?`).
       # @param document  [Object] Document read from a schema file
       # @param spec_file [String] Schema file of the document
@@ -293,6 +293,9 @@ module Aspera
           # Loaded on use: `bundle_registry` requires this file
           require_relative '../bundle_registry'
           added = []
+          # Value of the field `unique` taken, by value of the variant
+          taken = {}
+          unique = marker['unique']
           point = marker.fetch('point').to_sym
           entries = BundleRegistry.instance.extensions(point)
           @variant_entries[spec_file][point] = entries
@@ -301,6 +304,8 @@ module Aspera
             label = "Variant #{value} of bundle #{entry.bundle} is skipped"
             next Log.log.warn { "#{label}: no #{marker['value']} or #{marker['schema']}" } unless value.is_a?(String) && file.is_a?(String)
             next Log.log.warn { "#{label}: added by an earlier entry" } if added.include?(value)
+            owner = taken.key(entry.fields[unique]) unless unique.nil?
+            next Log.log.warn { "#{label}: #{unique} #{entry.fields[unique]} is taken by #{owner}" } unless owner.nil?
             component = "#{value.snake_to_capital}#{marker.fetch('suffix')}"
             ref = "#/components/schemas/#{component}"
             next Log.log.warn { "#{label}: component #{component} exists" } if schemas.key?(component) && !mapping[value].eql?(ref)
@@ -316,6 +321,7 @@ module Aspera
             end
             mapping[value] = ref
             added.push(value)
+            taken[value] = entry.fields[unique] unless unique.nil?
           end
         end
         document

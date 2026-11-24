@@ -53,7 +53,13 @@ module Aspera
           next if plugin_name_sym.eql?(my_self_plugin_sym)
           next if check_only && !check_only.eql?(plugin_name_sym)
           # Load plugin class
-          plugin_klass = Plugins::Factory.instance.plugin_class(plugin_name_sym)
+          begin
+            plugin_klass = Plugins::Factory.instance.plugin_class(plugin_name_sym)
+          rescue Cli::Error => e
+            # A plugin that cannot be loaded is not a candidate
+            Log.log.warn(e.message)
+            next
+          end
           # Requires detection method
           next unless plugin_klass.respond_to?(:detect)
           detection_info = nil

@@ -313,7 +313,13 @@ module Aspera
           lines << "\nPLUGINS"
           col_w = plugin_names.map { |n| n.to_s.length }.max + 2
           plugin_names.each do |name|
-            app = Plugins::Factory.instance.plugin_class(name).application_name
+            app =
+              begin
+                Plugins::Factory.instance.plugin_class(name).application_name
+              rescue Cli::Error => e
+                # A plugin that cannot be loaded does not prevent the help
+                e.message
+              end
             lines << "    #{name.to_s.ljust(col_w)}  #{app}"
           end
         else

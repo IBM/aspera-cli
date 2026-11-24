@@ -207,7 +207,8 @@ module Aspera
           return @agent unless @agent.nil?
           # agent type: from composite option 'agent' key, default :direct
           raw_type = transfer_options['agent'] || :direct
-          agent_type = Cli::Parser.get_from_list(raw_type.to_s, 'transfer agent', Aspera::Agent::Factory::ALL.keys)
+          # An agent of an unavailable bundle is given as is: creating it tells why it is unavailable
+          agent_type = Aspera::Agent::Factory.instance.unavailable_reason(raw_type).nil? ? Cli::Parser.get_from_list(raw_type.to_s, 'transfer agent', Aspera::Agent::Factory::ALL.keys) : raw_type.to_s
           # set keys as symbols, strip internal keys not forwarded to the agent constructor
           agent_options = transfer_options.except('agent', 'asynchronous').symbolize_keys
           # Same base options for every agent, each agent uses those it needs (see `Aspera::Agent::Base#initialize`)

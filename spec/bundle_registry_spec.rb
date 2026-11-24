@@ -89,6 +89,33 @@ module Aspera
         expect(registry[:spec_bundle_two].title).to(eq('User'))
       end
 
+      it 'computes the schemas once until the plugins, the sources or the security checks change' do
+        write_bundle(folder, 'spec_bundle_two')
+        registry.add_source(folder)
+        allow(registry).to(receive(:available_plugins).and_call_original)
+        first = registry.schemas
+        3.times { registry.schemas }
+        registry.schema(:spec_none)
+        expect(registry.schemas).to(be(first))
+        expect(registry).to(have_received(:available_plugins).once)
+        registry.add_source(other)
+        registry.schemas
+        expect(registry).to(have_received(:available_plugins).twice)
+      end
+
+      it 'looks for the gems of a plugin once until the plugins change' do
+        write_bundle(folder, 'spec_bundle_two', manifest: {'gems' => %w[spec-bundle-no-such-gem]})
+        registry.add_source(folder)
+        registry.scan
+        allow(Gem::Specification).to(receive(:find_all_by_name).and_call_original)
+        3.times { expect(registry.missing_gems(:spec_bundle_two)).to(eq(%w[spec-bundle-no-such-gem])) }
+        expect(Gem::Specification).to(have_received(:find_all_by_name).once)
+        write_bundle(other, 'spec_bundle_two', manifest: {'gems' => %w[spec-bundle-other-gem]})
+        registry.add_source(other)
+        registry.scan
+        expect(registry.missing_gems(:spec_bundle_two)).to(eq(%w[spec-bundle-other-gem]))
+      end
+
       it 'scans the sources once for the schemas' do
         write_bundle(folder, 'spec_bundle_two')
         registry.add_source(folder)
