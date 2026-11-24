@@ -1,0 +1,9 @@
+name: server
+title: IBM Aspera High-Speed Transfer Server
+depends:
+  - xfer
+commands: true
+schemas:
+  - key: server_opts
+    file: schemas/options.yaml
+    owned: true

@@ -1,0 +1,6 @@
+# Component `DesktopAgentOptions` of `TransferAgentOptions` (see `Schema::Registry#add_variants`): parameters of the agent `desktop`
+type: object
+description: >-
+  Parameters for the IBM Aspera Desktop Client transfer agent.
+  The Desktop Client must be running locally. No additional options are required.
+properties: {}

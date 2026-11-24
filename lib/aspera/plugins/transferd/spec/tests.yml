@@ -1,0 +1,12 @@
+transferd_service_spec:
+  args:
+    - transferd
+    - service
+    - spec
+transferd_service_configure_dry_run:
+  args:
+    - transferd
+    - service
+    - configure
+    - --dry-run=yes
+    - '@json:{"service":{"user":"aspweb"},"config":{"port":55002}}'

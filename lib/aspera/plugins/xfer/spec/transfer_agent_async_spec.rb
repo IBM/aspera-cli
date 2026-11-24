@@ -1,0 +1,489 @@
+# frozen_string_literal: true
+
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+# Tests for TransferAgent#start in asynchronous mode.
+# The agent_instance is fully doubled; no real transfer is started.
+# PersistencyFolder uses a temp directory.
+
+require_relative '../../../hash_ext'
+require_relative '../../../persistency_folder'
+require_relative '../async_transfer_store'
+require_relative '../../../cli/error'
+require_relative '../transfer_agent'
+require_relative '../../../transfer/result'
+require 'bundler/setup'
+require 'tmpdir'
+require 'securerandom'
+
+module Aspera
+  module Cli
+    RSpec.describe(Aspera::Plugins::Xfer::TransferAgent) do
+      # ── helpers ────────────────────────────────────────────────────────────
+
+      let(:tmpdir) { Dir.mktmpdir('transfer_agent_spec') }
+      let(:persistency) { Aspera::PersistencyFolder.new(tmpdir) }
+
+      after { FileUtils.rm_rf(tmpdir) }
+
+      # Build a TransferAgent with all Context dependencies doubled.
+      # We bypass the constructor's option wiring by using instance_variable_set.
+      def build_agent(agent_type:, extra_transfer_options: {})
+        ta = described_class.allocate
+
+        ta.instance_variable_set(:@user_transfer_spec, {'create_dir' => true, 'resume_policy' => 'sparse_csum'})
+        ta.instance_variable_set(:@transfer_paths, [{'source' => '/src/file.txt'}])
+        ta.instance_variable_set(:@notification_cb, nil)
+        ta.instance_variable_set(:@httpgw_url_lambda, nil)
+
+        options_double = double('Options')
+        allow(options_double).to(receive(:get_option).and_return(nil))
+        allow(options_double).to(receive(:get_option).with(:transfer_info).and_return({}))
+        allow(options_double).to(receive(:get_option).with(:transfer).and_return({'agent' => agent_type}.merge(extra_transfer_options)))
+        context_double = double('Context', persistency: persistency, main_folder: tmpdir, options: options_double)
+        ta.instance_variable_set(:@context, context_double)
+        # The agents are doubles: the name of the agent of an instance is the one of the option
+        allow(Aspera::Agent::Factory.instance).to(receive(:agent_name).and_return(agent_type.to_sym))
+
+        ta
+      end
+
+      # Build a minimal transfer spec (direction send, no token — uses default destination)
+      def ts
+        {
+          'direction' => 'send', 'remote_host' => 'host.example.com',
+         'remote_user' => 'xfer', 'paths' => [{'source' => '/src/file.txt'}]
+        }
+      end
+
+      # ── httpgw async (now supported) ────────────────────────────────────────
+
+      describe 'asynchronous: true with httpgw' do
+        let(:job_id) { 'httpgw-job-uuid' }
+
+        let(:agent_double) do
+          d = double('Plugins::Httpgw::Agent', in_process?: true, transfer_id: job_id, async_params: {})
+          allow(d).to(receive(:start_transfer))
+          allow(d).to(receive(:last_job_id).and_return(job_id))
+          d
+        end
+
+        let(:ta) do
+          build_agent(agent_type: 'httpgw', extra_transfer_options: {'asynchronous' => true})
+            .tap { |a| a.agent_instance = agent_double }
+        end
+
+        it 'returns Transfer::Result::Async (no longer raises)' do
+          result = ta.start(ts)
+          expect(result).to(be_a(Aspera::Transfer::Result::Async))
+          expect(result.status).to(eq('running'))
+          expect(result.job_id).to(eq(job_id))
+        end
+
+        it 'does NOT call wait_for_completion' do
+          expect(agent_double).not_to(receive(:wait_for_completion))
+          ta.start(ts)
+        end
+
+        it 'persists the entry in AsyncTransferStore' do
+          result = ta.start(ts)
+          store = Aspera::Plugins::Xfer::AsyncTransferStore.new(persistency)
+          entry = store.read(result.job_id)
+          expect(entry).not_to(be_nil)
+          expect(entry['agent_type']).to(eq('httpgw'))
+          expect(entry['status']).to(eq('running'))
+          expect(entry['transfer_id']).to(eq(job_id))
+        end
+
+        it 'does NOT persist _agent_ref to the store' do
+          ta.start(ts)
+          store = Aspera::Plugins::Xfer::AsyncTransferStore.new(persistency)
+          entry = store.read(job_id)
+          expect(entry).not_to(have_key('_agent_ref'))
+          # also check nested agent_params
+          expect(entry['agent_params']).not_to(have_key('_agent_ref'))
+        end
+      end
+
+      # ── node async ──────────────────────────────────────────────────────────
+
+      describe 'asynchronous: true with node' do
+        let(:agent_double) do
+          d = double('Agent::Node', in_process?: false, transfer_id: 'node-tid-abc', async_params: {})
+          allow(d).to(receive(:start_transfer))
+          allow(d).to(receive(:last_job_id).and_return(nil))
+          d
+        end
+
+        let(:ta) do
+          build_agent(
+            agent_type: 'node',
+            extra_transfer_options: {
+              'asynchronous' => true,
+              'url'          => 'https://node.example.com',
+              'username'     => 'u',
+              'password'     => SecureRandom.alphanumeric(12)
+            }
+          ).tap { |a| a.agent_instance = agent_double }
+        end
+
+        it 'returns a Transfer::Result::Async with running status' do
+          result = ta.start(ts)
+          expect(result).to(be_a(Aspera::Transfer::Result::Async))
+          expect(result.status).to(eq('running'))
+          expect(result.job_id).to(be_a(String))
+          expect(result.job_id).not_to(be_empty)
+        end
+
+        it 'does NOT call wait_for_completion' do
+          expect(agent_double).not_to(receive(:wait_for_completion))
+          ta.start(ts)
+        end
+
+        it 'persists the entry in AsyncTransferStore' do
+          result = ta.start(ts)
+          job_id = result.job_id
+          store = Aspera::Plugins::Xfer::AsyncTransferStore.new(persistency)
+          entry = store.read(job_id)
+          expect(entry).not_to(be_nil)
+          expect(entry['agent_type']).to(eq('node'))
+          expect(entry['transfer_id']).to(eq('node-tid-abc'))
+          expect(entry['status']).to(eq('running'))
+          expect(entry['agent_params']['url']).to(eq('https://node.example.com'))
+        end
+
+        it 'does NOT persist _agent_ref to the store' do
+          result = ta.start(ts)
+          store = Aspera::Plugins::Xfer::AsyncTransferStore.new(persistency)
+          entry = store.read(result.job_id)
+          expect(entry['agent_params']).not_to(have_key('_agent_ref'))
+        end
+
+        it 'stores the type of the agent instance, not the one of option transfer (agent given by the application)' do
+          agent = build_agent(agent_type: 'direct', extra_transfer_options: {'asynchronous' => true}).tap { |a| a.agent_instance = agent_double }
+          allow(Aspera::Agent::Factory.instance).to(receive(:agent_name).with(agent_double).and_return(:node))
+          entry = Aspera::Plugins::Xfer::AsyncTransferStore.new(persistency).read(agent.start(ts).job_id)
+          expect(entry['agent_type']).to(eq('node'))
+        end
+      end
+
+      # ── direct async ────────────────────────────────────────────────────────
+
+      describe 'asynchronous: true with direct' do
+        let(:job_id) { 'direct-job-uuid' }
+
+        let(:agent_double) do
+          d = double('Agent::Direct', in_process?: true, transfer_id: job_id, async_params: {})
+          allow(d).to(receive(:start_transfer))
+          allow(d).to(receive(:last_job_id).and_return(job_id))
+          d
+        end
+
+        let(:ta) do
+          build_agent(agent_type: 'direct', extra_transfer_options: {'asynchronous' => true})
+            .tap { |a| a.agent_instance = agent_double }
+        end
+
+        it 'returns Transfer::Result::Async with the direct job_id' do
+          result = ta.start(ts)
+          expect(result).to(be_a(Aspera::Transfer::Result::Async))
+          expect(result.job_id).to(eq(job_id))
+          expect(result.status).to(eq('running'))
+        end
+
+        it 'does NOT call wait_for_completion' do
+          expect(agent_double).not_to(receive(:wait_for_completion))
+          ta.start(ts)
+        end
+
+        it 'persists the entry in AsyncTransferStore (like all agents)' do
+          result = ta.start(ts)
+          store = Aspera::Plugins::Xfer::AsyncTransferStore.new(persistency)
+          entry = store.read(result.job_id)
+          expect(entry).not_to(be_nil)
+          expect(entry['agent_type']).to(eq('direct'))
+          expect(entry['status']).to(eq('running'))
+          expect(entry['transfer_id']).to(eq(job_id))
+        end
+
+        it 'does NOT persist _agent_ref to the store' do
+          result = ta.start(ts)
+          store = Aspera::Plugins::Xfer::AsyncTransferStore.new(persistency)
+          entry = store.read(result.job_id)
+          expect(entry['agent_params']).not_to(have_key('_agent_ref'))
+        end
+      end
+
+      # ── synchronous (default) ───────────────────────────────────────────────
+
+      describe 'synchronous mode (no asynchronous key)' do
+        let(:agent_double) do
+          d = double('Agent::Node')
+          allow(d).to(receive(:start_transfer))
+          allow(d).to(receive(:wait_for_completion).and_return(Aspera::Transfer::Result.success))
+          d
+        end
+
+        let(:ta) do
+          build_agent(agent_type: 'node').tap { |a| a.agent_instance = agent_double }
+        end
+
+        it 'calls wait_for_completion and returns a Transfer::Result::Success' do
+          result = ta.start(ts)
+          expect(result).to(be_a(Aspera::Transfer::Result::Success))
+        end
+
+        it 'does NOT write to AsyncTransferStore' do
+          ta.start(ts)
+          expect(Aspera::Plugins::Xfer::AsyncTransferStore.new(persistency).list).to(be_empty)
+        end
+      end
+
+      # ── bearer token renewal by the agent ───────────────────────────────────
+
+      describe 'token regenerator' do
+        let(:agent_double) do
+          d = double('Agent::Direct')
+          allow(d).to(receive(:start_transfer))
+          allow(d).to(receive(:wait_for_completion).and_return(Aspera::Transfer::Result.success))
+          d
+        end
+
+        let(:ta) do
+          build_agent(agent_type: 'direct').tap { |a| a.agent_instance = agent_double }
+        end
+
+        # @return [Proc, nil] Token regenerator given to the agent
+        def regenerator_given
+          regenerator = :not_called
+          expect(agent_double).to(have_received(:start_transfer)) { |_ts, token_regenerator:| regenerator = token_regenerator }
+          regenerator
+        end
+
+        it 'renews the OAuth token of the API' do
+          # Generated, none in source
+          new_authorization = "Bearer #{SecureRandom.hex(8)}"
+          oauth = double('OAuth', renewed_authorization: new_authorization)
+          ta.start(ts, oauth_api: double('Node', auth_params: {type: :oauth2}, oauth: oauth))
+          expect(regenerator_given.call).to(eq(new_authorization))
+        end
+
+        it 'is not given for an API without OAuth' do
+          ta.start(ts, oauth_api: double('Node', auth_params: {type: :basic}))
+          expect(regenerator_given).to(be_nil)
+        end
+
+        it 'is not given without API' do
+          ta.start(ts)
+          expect(regenerator_given).to(be_nil)
+        end
+      end
+
+      # ── AsyncTransferStore: _* keys are not persisted ───────────────────────
+
+      describe 'AsyncTransferStore#write' do
+        it 'strips _ keys at every nesting level before persisting' do
+          store = Aspera::Plugins::Xfer::AsyncTransferStore.new(persistency)
+          live_object = Object.new
+          store.write('test-job-1', {
+            'job_id'       => 'test-job-1',
+            'status'       => 'running',
+            '_agent_ref'   => live_object,
+            'agent_params' => {'url' => 'https://example.com', '_agent_ref' => live_object}
+          })
+          raw = persistency.get('async_transfer_test-job-1')
+          parsed = JSON.parse(raw)
+          # top-level _agent_ref must be absent
+          expect(parsed).not_to(have_key('_agent_ref'))
+          # nested _agent_ref must also be absent
+          expect(parsed['agent_params']).not_to(have_key('_agent_ref'))
+          # non-underscore keys must be preserved
+          expect(parsed['agent_params']['url']).to(eq('https://example.com'))
+        end
+
+        it 'preserves non-underscore keys' do
+          store = Aspera::Plugins::Xfer::AsyncTransferStore.new(persistency)
+          store.write('test-job-2', {'job_id' => 'test-job-2', 'status' => 'running', '_ref' => 'ignored'})
+          entry = store.read('test-job-2')
+          expect(entry['status']).to(eq('running'))
+          expect(entry).not_to(have_key('_ref'))
+        end
+      end
+
+      # ── Agent::Direct.transfer_status ───────────────────────────────────────
+
+      describe 'Agent::Direct.transfer_status' do
+        before { require_relative '../../direct/agent' }
+
+        it 'returns unknown when _agent_ref is nil' do
+          result = Aspera::Plugins::Direct::Agent.transfer_status('some-job', {})
+          expect(result['status']).to(eq('unknown'))
+        end
+
+        it 'returns running when sessions have a live thread' do
+          live_thread = Thread.new { sleep(60) }
+          agent = double('Agent::Direct instance')
+          allow(agent).to(receive(:sessions_by_job).with('job-123').and_return([{thread: live_thread, error: nil}]))
+          result = Aspera::Plugins::Direct::Agent.transfer_status('job-123', {'_agent_ref' => agent})
+          expect(result['status']).to(eq('running'))
+          live_thread.kill
+        end
+
+        it 'returns completed when all threads have finished without error' do
+          dead_thread = Thread.new {}
+          dead_thread.join
+          agent = double('Agent::Direct instance')
+          allow(agent).to(receive(:sessions_by_job).with('job-456').and_return([{thread: dead_thread, error: nil}]))
+          result = Aspera::Plugins::Direct::Agent.transfer_status('job-456', {'_agent_ref' => agent})
+          expect(result['status']).to(eq('completed'))
+        end
+
+        it 'returns the bytes transferred by all sessions, and the end time of the last one' do
+          dead_thread = Thread.new {}
+          dead_thread.join
+          sessions = [
+            {thread: dead_thread, error: nil, last_size: 1000, ended_at: '2026-10-21T08:37:14Z'},
+            {thread: dead_thread, error: nil, last_size: 500, ended_at: '2026-10-21T08:37:15Z'}
+          ]
+          agent = double('Agent::Direct instance')
+          allow(agent).to(receive(:sessions_by_job).with('job-multi').and_return(sessions))
+          expect(Aspera::Plugins::Direct::Agent.transfer_status('job-multi', {'_agent_ref' => agent}))
+            .to(eq({'status' => 'completed', 'bytes_transferred' => 1500, 'ended_at' => '2026-10-21T08:37:15Z'}))
+        end
+
+        it 'returns failed when a session has an error' do
+          dead_thread = Thread.new {}
+          dead_thread.join
+          err = RuntimeError.new('ascp failed')
+          agent = double('Agent::Direct instance')
+          allow(agent).to(receive(:sessions_by_job).with('job-789').and_return([{thread: dead_thread, error: err}]))
+          result = Aspera::Plugins::Direct::Agent.transfer_status('job-789', {'_agent_ref' => agent})
+          expect(result['status']).to(eq('failed'))
+          expect(result['error']).to(eq('ascp failed'))
+        end
+      end
+
+      # ── Plugins::Httpgw::Agent.transfer_status ───────────────────────────────────────
+
+      describe 'Plugins::Httpgw::Agent.transfer_status' do
+        before { require_relative '../../httpgw/agent' }
+
+        it 'returns unknown when _agent_ref is nil' do
+          result = Aspera::Plugins::Httpgw::Agent.transfer_status('some-job', {})
+          expect(result['status']).to(eq('unknown'))
+        end
+
+        it 'returns unknown when no transfer has been started' do
+          agent = double('Plugins::Httpgw::Agent instance')
+          allow(agent).to(receive(:instance_variable_get).with(:@transfer_thread).and_return(nil))
+          result = Aspera::Plugins::Httpgw::Agent.transfer_status('job-1', {'_agent_ref' => agent})
+          expect(result['status']).to(eq('unknown'))
+        end
+
+        it 'returns running when the transfer thread is alive' do
+          live_thread = Thread.new { sleep(60) }
+          agent = double('Plugins::Httpgw::Agent instance')
+          allow(agent).to(receive(:instance_variable_get).with(:@transfer_thread).and_return(live_thread))
+          result = Aspera::Plugins::Httpgw::Agent.transfer_status('job-2', {'_agent_ref' => agent})
+          expect(result['status']).to(eq('running'))
+          live_thread.kill
+        end
+
+        it 'returns completed when thread finished without error' do
+          dead_thread = Thread.new {}
+          dead_thread.join
+          agent = double('Plugins::Httpgw::Agent instance')
+          allow(agent).to(receive(:instance_variable_get).with(:@transfer_thread).and_return(dead_thread))
+          allow(agent).to(receive(:instance_variable_get).with(:@transfer_error).and_return(nil))
+          result = Aspera::Plugins::Httpgw::Agent.transfer_status('job-3', {'_agent_ref' => agent})
+          expect(result['status']).to(eq('completed'))
+        end
+
+        it 'returns failed when thread finished with error' do
+          dead_thread = Thread.new {}
+          dead_thread.join
+          err = RuntimeError.new('ws error')
+          agent = double('Plugins::Httpgw::Agent instance')
+          allow(agent).to(receive(:instance_variable_get).with(:@transfer_thread).and_return(dead_thread))
+          allow(agent).to(receive(:instance_variable_get).with(:@transfer_error).and_return(err))
+          result = Aspera::Plugins::Httpgw::Agent.transfer_status('job-4', {'_agent_ref' => agent})
+          expect(result['status']).to(eq('failed'))
+          expect(result['error']).to(eq('ws error'))
+        end
+      end
+
+      # ── .result_transfer with typed Transfer::Result ──────────────────
+
+      describe '.result_transfer' do
+        it 'returns a SingleObject for Transfer::Result::Async' do
+          async_result = Aspera::Transfer::Result.async(job_id: 'abc-123')
+          result = described_class.result_transfer(async_result)
+          expect(result).to(be_a(Aspera::Cli::Result::SingleObject))
+          expect(result.data['job_id']).to(eq('abc-123'))
+        end
+
+        it 'returns Result::Nothing for Transfer::Result::Success' do
+          result = described_class.result_transfer(Aspera::Transfer::Result.success)
+          expect(result).to(be_a(Aspera::Cli::Result::Nothing))
+        end
+
+        it 'raises the exception for Transfer::Result::Error' do
+          err = RuntimeError.new('transfer failed')
+          expect { described_class.result_transfer(Aspera::Transfer::Result.error(err)) }.to(raise_error(RuntimeError, 'transfer failed'))
+        end
+
+        it 'raises on an unexpected result type' do
+          expect { described_class.result_transfer('done') }.to(raise_error(/Unexpected transfer result type: String/))
+        end
+
+        it 'returns the transfer spec of a dry run' do
+          transfer_spec = {'remote_host' => 'localhost', 'direction' => 'send'}
+          expect(described_class.result_transfer(Aspera::Transfer::Result.dry_run(transfer_spec)).data).to(eq(transfer_spec))
+        end
+      end
+
+      # ── .result_object_transfer: created object (e.g. package) and its transfer ──
+
+      describe '.result_object_transfer' do
+        let(:package) { {'id' => '3909', 'title' => 'test'} }
+
+        it 'adds the job id of an asynchronous transfer to the object' do
+          result = described_class.result_object_transfer(package, Aspera::Transfer::Result.async(job_id: 'abc-123'))
+          expect(result).to(be_a(Aspera::Cli::Result::SingleObject))
+          expect(result.data).to(eq(package.merge('transfer' => {'job_id' => 'abc-123', 'status' => 'running'})))
+        end
+
+        it 'returns the object alone after a successful transfer' do
+          expect(described_class.result_object_transfer(package, Aspera::Transfer::Result.success).data).to(eq(package))
+        end
+
+        it 'raises the exception of a failed transfer' do
+          err = RuntimeError.new('transfer failed')
+          expect { described_class.result_object_transfer(package, Aspera::Transfer::Result.error(err)) }.to(raise_error(RuntimeError, 'transfer failed'))
+        end
+      end
+
+      # ── .result_transfer_multiple: several transfer jobs ──
+
+      describe '.result_transfer_multiple' do
+        it 'converts each status to text' do
+          field = described_class::STATUS_FIELD
+          table = [
+            {'id' => 1, field => Aspera::Transfer::Result::Success.new},
+            {'id' => 2, field => Aspera::Transfer::Result::Async.new(job_id: 'j1')},
+            {'id' => 3, field => Aspera::Transfer::Result.dry_run({})},
+            {'id' => 4, field => 'other'}
+          ]
+          expect(described_class.result_transfer_multiple(table).data.map { |item| item[field] }).to(eq(%w[success async:j1 dry_run other]))
+        end
+
+        it 'raises the exception of the first failed transfer' do
+          field = described_class::STATUS_FIELD
+          table = [{'id' => 1, field => Aspera::Transfer::Result.error(RuntimeError.new('first'))}, {'id' => 2, field => Aspera::Transfer::Result.error(RuntimeError.new('second'))}]
+          expect { described_class.result_transfer_multiple(table) }.to(raise_error(RuntimeError, 'first'))
+        end
+      end
+    end
+  end
+end

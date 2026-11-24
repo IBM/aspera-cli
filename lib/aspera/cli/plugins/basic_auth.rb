@@ -9,8 +9,19 @@ require_relative 'base'
 module Aspera
   module Cli
     module Plugins
-      # base class for applications supporting basic authentication
-      class BasicAuth < Base
+      # Module for plugins of applications supporting basic authentication: `include Cli::Plugins::BasicAuth` in a plugin class.
+      # Its `included` hook gives the options of the module to the plugin class (`use_options`); `Oauth` includes this module and adds the options itself.
+      module BasicAuth
+        extend Option::Declarator
+
+        class << self
+          # @param base [Class] Plugin class that includes the module
+          def included(base)
+            super
+            base.use_options(self) if base.is_a?(Class)
+          end
+        end
+
         option :url,      description: 'URL of application, e.g. https://app.example.com/aspera/app'
         option :username, description: "User's identifier"
         option :password, description: "User's password"

@@ -40,11 +40,11 @@ module Aspera
       # @!attribute option   [Option, nil]   option token whose value is built, `nil` for a positional argument
       Collecting = Struct.new(:marker, :assigned, :option, keyword_init: true)
       # Command reached by the positional words
-      # @!attribute registry  [CommandRegistry, nil] registry of plugin, `nil` at root
+      # @!attribute registry  [Command::Registry, nil] registry of plugin, `nil` at root
       # @!attribute path      [Array<Symbol>, nil]   command path, `nil` if words are not a command
       # @!attribute arguments [Array<String>]        arguments given to the command
       Position = Struct.new(:registry, :path, :arguments, keyword_init: true) do
-        # @return [CommandSpec, nil] command reached
+        # @return [Command, nil] command reached
         def spec = path && registry[path]
       end
       # Value starting a structure built with `@:`: the optional text after `:` is the end marker
@@ -129,9 +129,9 @@ module Aspera
       # @param current [String] word at cursor
       # @return [String] part of the word that precedes the value of an option given in the same word: `--opt=` or `-O`, empty if none
       def completion_inline_prefix(current)
-        return current[0..current.index(Option::VALUE_SEP)] if current.start_with?(Option::PREFIX) && current.include?(Option::VALUE_SEP)
-        return '' if current.start_with?(Option::PREFIX) || !Option.option?(current)
-        short = completion_option(Option.parse(current[0, 2]))
+        return current[0..current.index(CommandLine::Option::VALUE_SEP)] if current.start_with?(CommandLine::Option::PREFIX) && current.include?(CommandLine::Option::VALUE_SEP)
+        return '' if current.start_with?(CommandLine::Option::PREFIX) || !CommandLine::Option.option?(current)
+        short = completion_option(CommandLine::Option.parse(current[0, 2]))
         short.nil? || short.flag? ? '' : current[0, 2]
       end
 
@@ -197,10 +197,10 @@ module Aspera
         Completion.new(candidates: candidates)
       end
 
-      # @param registry [CommandRegistry] registry of plugin
+      # @param registry [Command::Registry] registry of plugin
       # @param path     [Array<Symbol>]   command path
       # @param given    [Integer]         number of arguments given to the command
-      # @return [ArgumentSpec, nil] argument expected after the given ones
+      # @return [Argument, nil] argument expected after the given ones
       def completion_next_argument(registry, path, given)
         arguments = registry.arguments_at(path)
         return arguments[given] if given < arguments.length
@@ -225,7 +225,7 @@ module Aspera
             path, given = registry.command_position(positional[1..-2].map(&:to_sym))
             completion_next_argument(registry, path, given)&.schema unless path.nil?
           end
-        if (index = value.index(Option::VALUE_SEP))
+        if (index = value.index(CommandLine::Option::VALUE_SEP))
           return completion_key_value(schema, value[0...index].split(DotContainer::SEPARATOR), value[(index + 1)..], position).prefixed(value[0..index])
         end
         end_marker = collecting.assigned.empty? ? [] : [[collecting.marker, 'End of structure built with @:']]
@@ -245,7 +245,7 @@ module Aspera
           if join_next
             result[-1] += word
             join_next = false
-          elsif word.eql?(Option::VALUE_SEP) && result.last&.start_with?(Option::PREFIX) && !result.last.include?(Option::VALUE_SEP)
+          elsif word.eql?(CommandLine::Option::VALUE_SEP) && result.last&.start_with?(CommandLine::Option::PREFIX) && !result.last.include?(CommandLine::Option::VALUE_SEP)
             result[-1] += word
             join_next = true
           else
@@ -267,11 +267,11 @@ module Aspera
         collecting = nil
         stop = false
         words.each do |word|
-          if !stop && word.eql?(Option::STOP)
+          if !stop && word.eql?(CommandLine::Option::STOP)
             stop = true
             waiting = nil
-          elsif !stop && Option.option?(word)
-            tok = Option.parse(word)
+          elsif !stop && CommandLine::Option.option?(word)
+            tok = CommandLine::Option.parse(word)
             # `--opt=` at end of line (from bash split): value is being typed
             waiting = (tok.inline? && !tok.inline_value.empty?) || completion_option(tok)&.flag? ? nil : tok
             collecting = completion_collecting_start(tok.inline_value, tok) || collecting
@@ -283,7 +283,7 @@ module Aspera
             if word.eql?(collecting.marker)
               collecting = nil
             else
-              collecting.assigned.push(word.split(Option::VALUE_SEP, 2).first)
+              collecting.assigned.push(word.split(CommandLine::Option::VALUE_SEP, 2).first)
             end
           else
             positional.push(word)
@@ -303,13 +303,13 @@ module Aspera
       end
 
       # @param tok [Option] option token
-      # @return [OptionValue, nil] declared option designated by the token
+      # @return [Option::Value, nil] declared option designated by the token
       def completion_option(tok)
         return options.declared_options.values.find { |o| o.short.eql?(tok.short_char) } if tok.short_char
         options.declared_options[tok.name.to_sym]
       end
 
-      # @param option   [OptionValue] declared option
+      # @param option   [Option::Value] declared option
       # @param position [Position]    command reached
       # @return [String, nil] schema of the value of option: the one of option `query` depends on the command
       def completion_option_schema(option, position)
@@ -350,10 +350,12 @@ module Aspera
       # @param key    [String]      key of a `String` value
       # @return [Array(Array<String>, Symbol)] allowed values of the key, from its schema or the discriminator of its variants, and kind of value
       def completion_shorthand(schema, key)
-        row = completion_schema_row(schema, [key])
-        return [completion_row_values(row), row['complete']&.to_sym] unless row.nil?
         node = Schema::Registry.instance.reader(schema).current
-        [(node.dig('discriminator', 'mapping')&.keys if node.dig('discriminator', 'propertyName').eql?(key)), nil]
+        # Key that selects the variant: its values are those of the variants
+        return [node.dig('discriminator', 'mapping')&.keys, nil] if node.dig('discriminator', 'propertyName').eql?(key)
+        row = completion_schema_row(schema, [key])
+        return [nil, nil] if row.nil?
+        [completion_row_values(row), row['complete']&.to_sym]
       rescue StandardError
         [nil, nil]
       end
@@ -368,7 +370,7 @@ module Aspera
         option = options.declared_options[Parser.option_line_to_name(match[1]).to_sym]
         return Completion.new(candidates: []) if option.nil?
         rows = completion_schema_rows(completion_option_schema(option, position))
-        Completion.new(candidates: completion_schema_keys(rows, match[2])).prefixed("#{Option::PREFIX}#{match[1]}#{DotContainer::SEPARATOR}")
+        Completion.new(candidates: completion_schema_keys(rows, match[2])).prefixed("#{CommandLine::Option::PREFIX}#{match[1]}#{DotContainer::SEPARATOR}")
       end
 
       # Keys of a structure at the level of the path typed: `key=` for a value, `key.` for a structure, `key.0.` for a list of structures.
@@ -388,10 +390,10 @@ module Aspera
           suffix =
             if names.any? { |n| n.start_with?("#{row['name']}#{DotContainer::SEPARATOR}") } then DotContainer::SEPARATOR
             elsif names.any? { |n| n.start_with?("#{row['name']}[]#{DotContainer::SEPARATOR}") } then "#{DotContainer::SEPARATOR}0#{DotContainer::SEPARATOR}"
-            else Option::VALUE_SEP
+            else CommandLine::Option::VALUE_SEP
             end
           key = "#{parents}#{path.last}"
-          next if suffix.eql?(Option::VALUE_SEP) && assigned.include?(key)
+          next if suffix.eql?(CommandLine::Option::VALUE_SEP) && assigned.include?(key)
           description = completion_description(row['description']) || completion_type(row['type'])
           description = [description, '(required)'].compact.join(' ') if required && row['required']
           ["#{key}#{suffix}", description, required && row['required']]
@@ -548,7 +550,7 @@ module Aspera
         type.to_s.split(', ').reject { |t| t.eql?('null') }.map { |t| Schema::Documentation::JSON_TYPE_TO_DOC.fetch(t, t) }.join('|')
       end
 
-      # @param arg_spec [ArgumentSpec] expected argument
+      # @param arg_spec [Argument] expected argument
       # @param value    [String]       value typed
       # @param position [Position]     command reached
       # @return [Completion] allowed values of the argument, or its type (and keys of its schema) as hint

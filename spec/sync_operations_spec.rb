@@ -5,6 +5,7 @@
 
 require 'spec_helper'
 require_relative '../lib/aspera/sync/operations'
+require_relative '../lib/aspera/plugins/direct/agent'
 
 RSpec.describe(Aspera::Sync::Operations) do
   # `conf` format: `local` at top level, `args` format: `sessions` list
@@ -75,7 +76,7 @@ RSpec.describe(Aspera::Sync::Operations) do
     # @return [Hash] `conf` given to async
     def start_conf(sync_info, opt_ts)
       exec_spec = nil
-      allow_any_instance_of(Aspera::Agent::Direct).to(receive(:start_and_monitor_process)) { |_agent, **kwargs| exec_spec = kwargs[:exec_spec] }
+      allow_any_instance_of(Aspera::Plugins::Direct::Agent).to(receive(:start_and_monitor_process)) { |_agent, **kwargs| exec_spec = kwargs[:exec_spec] }
       described_class.start(sync_info, opt_ts) { server_ts.dup }
       JSON.parse(Base64.strict_decode64(exec_spec.args.first.delete_prefix('--conf64=')))
     end
@@ -95,6 +96,11 @@ RSpec.describe(Aspera::Sync::Operations) do
 
     def args_info(session = {})
       {'sessions' => [{'name' => 's2', 'local_dir' => '/l', 'remote_dir' => '/r'}.merge(session)]}
+    end
+
+    it 'fails with a clear message if the agent direct cannot run async' do
+      allow(Aspera::Agent::Factory.instance).to(receive(:create).with(:direct, {}).and_return(Object.new))
+      expect { described_class.start(conf_info, {}) { server_ts.dup } }.to(raise_error(Aspera::AssertError, /agent direct \(Object\) cannot run async.*start_and_monitor_process/))
     end
 
     it 'uses target_rate_kbps of transfer spec (conf)' do
@@ -118,7 +124,7 @@ RSpec.describe(Aspera::Sync::Operations) do
     end
 
     it 'fails on invalid target_rate' do
-      expect { start_args(args_info('target_rate' => 'fast'), {}) }.to(raise_error(Aspera::AssertError, /Invalid rate/))
+      expect { start_args(args_info('target_rate' => 'fast'), {}) }.to(raise_error(Aspera::ParameterError, /Invalid rate/))
     end
   end
 

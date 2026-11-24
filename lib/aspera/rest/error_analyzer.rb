@@ -67,8 +67,12 @@ module Aspera
       # @param block [Proc]   processing of response: takes two parameters: `name`, `context`
       # name is the one provided here
       # context is built in method raise_on_error
-      def add_handler(name, &block)
-        @error_handlers.unshift({name: name, block: block})
+      # @param before [String, nil] Name of a handler: this one is placed just before it (so that the messages come in a given order). `nil`: placed first.
+      # @raise [ArgumentError] if `before` is not the name of a handler
+      def add_handler(name, before: nil, &block)
+        index = before.nil? ? 0 : @error_handlers.index { |handler| handler[:name].eql?(before) }
+        raise ArgumentError, "no error handler named #{before}" if index.nil?
+        @error_handlers.insert(index, {name: name, block: block})
         nil
       end
 

@@ -52,6 +52,10 @@ module Paths
   GEM_PACK = RELEASE / 'gempack.zip'
   # Command-line test suite definitions
   TEST_DEFS = TST / 'tests.yml'
+  # Test definitions of the plugin bundles: `tests.yml` in the `spec` folder of each bundle (not shipped in the gem)
+  BUNDLE_TEST_DEFS_GLOB = 'lib/aspera/plugins/*/spec/tests.yml'
+  # Manual section of each plugin bundle: ERB template included in `MD_ERB`
+  BUNDLE_MANUAL_GLOB = 'lib/aspera/plugins/*/manual.erb.md'
   # Versions of servers used in tests
   SERVERS_TESTED = TST / 'servers_tested.yaml'
   # Change log
@@ -95,7 +99,7 @@ module Paths
   # Async (sync) configuration schema
   ASYNC_YAML_SCHEMA        = LIB / 'aspera/sync/conf.schema.yaml'
   # Schema of the SQLite tables of the async snap database (`snap.db`)
-  ASYNC_TABLES_YAML_SCHEMA = LIB / 'aspera/schema/async_tables.yaml'
+  ASYNC_TABLES_YAML_SCHEMA = LIB / 'aspera/sync/async_tables.yaml'
   # Main executable: `ascli`
   COMMAND = BIN / Aspera::Cli::Info::CMD_NAME
   # Executable: `asession`

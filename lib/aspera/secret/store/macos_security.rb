@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # https://github.com/fastlane-community/security
-require_relative '../../cli/info'
 require_relative '../../log'
 require_relative '../../assert'
 require_relative '../../environment'
@@ -226,7 +225,7 @@ module Aspera
           raise Error, 'type system: only on macOS' unless Environment.instance.os.eql?(Environment::OS_MACOS)
           @keychain_name = name.nil? ? 'default keychain' : name
           @keychain = name.nil? ? MacosSecurity::Keychain.default : MacosSecurity::Keychain.by_name(name)
-          Aspera.assert(!@keychain.nil?) { "no such keychain #{name}" }
+          Aspera.assert(!@keychain.nil?, type: Error) { "no such keychain #{name}" }
         end
 
         # @return [Hash] Vault information metadata
@@ -261,7 +260,7 @@ module Aspera
         def get(label:, exception: true)
           info = @keychain.password(:find, :generic, label: label)
           if info.nil?
-            raise "Secret '#{label}' not found" if exception
+            raise NotFound, "Secret '#{label}' not found" if exception
             return
           end
           return {

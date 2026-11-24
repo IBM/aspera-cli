@@ -1,0 +1,510 @@
+# frozen_string_literal: true
+
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+require_relative '../../agent/base'
+require_relative '../../ascp/installation'
+require_relative '../../ascp/management'
+require_relative '../../exec_spec'
+require_relative '../../temp_file_manager'
+require_relative '../../transfer/parameters'
+require_relative '../../transfer/error'
+require_relative '../../transfer/spec'
+require_relative '../../transfer/resumer'
+require_relative '../../log'
+require_relative '../../assert'
+require_relative '../../rainbow'
+require 'socket'
+require 'securerandom'
+require 'shellwords'
+require 'English'
+require 'time'
+using Rainbow
+
+module Aspera
+  module Plugins
+    module Direct
+      # Execute a local `ascp` and use its management port to monitor progress
+      class Agent < Aspera::Agent::Base
+        class << self
+          # Re-query the status of a direct transfer that was started in-process.
+          # Only works if the same Ruby process is still alive (e.g. MCP mode).
+          # agent_params must contain '_agent_ref' pointing to the live Direct instance.
+          # @param transfer_id  [String] job_id returned by start_transfer / last_job_id
+          # @param agent_params [Hash]   connection parameters; '_agent_ref' is the live agent
+          # @return [Hash] status hash with at least 'status' key, and `bytes_transferred`, and `ended_at` when all sessions ended
+          def transfer_status(transfer_id, agent_params)
+            agent = agent_params['_agent_ref']
+            return {'status' => 'unknown', 'note' => 'direct agent not available (different process?)'} if agent.nil?
+            sessions = agent.sessions_by_job(transfer_id)
+            return {'status' => 'unknown', 'note' => "no sessions found for job #{transfer_id}"} if sessions.empty?
+            errors  = sessions.filter_map { |s| s[:error] }
+            running = sessions.any? { |s| s[:thread]&.alive? }
+            result = {'bytes_transferred' => sessions.sum { |s| s[:last_size].to_i }}
+            result['ended_at'] = sessions.filter_map { |s| s[:ended_at] }.max unless running
+            if errors.any?
+              result.merge('status' => 'failed', 'error' => errors.first.message)
+            elsif running
+              result.merge('status' => 'running')
+            else
+              result.merge('status' => 'completed')
+            end
+          end
+        end
+
+        # `ascp` started locally, so listen local
+        LISTEN_LOCAL_ADDRESS = '127.0.0.1'
+        # 0 means: use any available port
+        SELECT_AVAILABLE_PORT = 0
+        private_constant :LISTEN_LOCAL_ADDRESS, :SELECT_AVAILABLE_PORT
+
+        # Options: same as values in option `transfer`
+        # (Args) : Options that influence `ascp` arguments.
+        #
+        # Base options used: `progress`, `progress_default`, `config_dir`,
+        # `trusted_certs` (Args) (WSS) Optional list of files with trusted certificates (stores),
+        # `check_ignore_cb` (Args) (WSS) Callback with host,port to check if WSS connection shall ignore certificate validity
+        #
+        # @param ascp_args         [Array]   (Args) Optional Additional arguments to ascp
+        # @param wss               [Boolean] (Args) `true`: if both SSH and wss in ts: prefer wss
+        # @param quiet             [Boolean] (Args) By default no native `ascp` progress bar
+        # @param file_list         [Boolean] (Args) true: provide file list in a file, else on command line.
+        # @param client_ssh_key    [String]  (Args) Client SSH key option (from CLIENT_SSH_KEY_OPTIONS)
+        # @param spawn_timeout_sec [Integer] Timeout for ascp spawn
+        # @param spawn_delay_sec   [Integer] Optional delay to start between sessions
+        # @param multi_incr_udp    [Boolean] Optional `true`: increment UDP port for each session
+        # @param resume            [Hash]    Optional Resume policy
+        # @param monitor           [Boolean] Set to `false` to eliminate management port
+        # @param management_cb     [Proc]    callback for management events
+        # @param base_options      [Hash]    base options (see `Base#initialize`)
+        def initialize(
+          ascp_args:         nil,
+          wss:               true,
+          quiet:             true,
+          file_list:         true,
+          client_ssh_key:    nil,
+          spawn_timeout_sec: 2,
+          spawn_delay_sec:   2,
+          multi_incr_udp:    nil,
+          resume:            {},
+          monitor:           true,
+          management_cb:     nil,
+          **base_options
+        )
+          super(**base_options)
+          # Native `ascp` progress bar: no other progress bar, unless requested
+          own_progress_display unless quiet
+          # Options that have impact on `ascp` command line generated
+          @tr_opts = {
+            ascp_args:       ascp_args,
+            wss:             wss,
+            quiet:           quiet,
+            file_list:       file_list,
+            trusted_certs:   trusted_certs,
+            client_ssh_key:  client_ssh_key,
+            check_ignore_cb: check_ignore_cb
+          }
+          @spawn_timeout_sec = spawn_timeout_sec
+          @spawn_delay_sec = spawn_delay_sec
+          # default is true on Windows, false on other OSes
+          @multi_incr_udp = multi_incr_udp.nil? ? Environment.instance.os.eql?(Environment::OS_WINDOWS) : multi_incr_udp
+          @monitor = monitor
+          @management_cb = management_cb
+          Aspera.assert_type(resume, Hash) { 'resume' }
+          @resume_policy = Aspera::Transfer::Resumer.new(**resume.symbolize_keys)
+          # all transfer jobs, key = SecureRandom.uuid, protected by mutex, cond var on change
+          @sessions = []
+          # mutex protects global data accessed by threads
+          @mutex = Mutex.new
+          # Check on all management messages if that file exists, and if so, read commands from it
+          @command_file = File.join(config_dir || '.', "send_#{$PROCESS_ID}")
+        end
+
+        # Start `ascp` transfer(s) (non blocking), single or multi-session
+        # Session information added to @sessions
+        # @param transfer_spec     [Hash]   Aspera transfer specification
+        # @param token_regenerator [Proc, nil] Returns a renewed value for the bearer token of the transfer
+        def start_transfer(transfer_spec, token_regenerator: nil)
+          # clone transfer spec because we modify it (first level keys)
+          transfer_spec = transfer_spec.clone
+          # if there are aspera tags
+          if transfer_spec.dig('tags', Aspera::Transfer::Spec::TAG_RESERVED).is_a?(Hash)
+            # TODO: what is this for ? only on local ascp ?
+            # NOTE: important: transfer id must be unique: generate random id
+            # using a non unique id results in discard of tags in AoC, and a package is never finalized
+            # all sessions in a multi-session transfer must have the same xfer_id (see admin manual)
+            transfer_spec['tags'][Aspera::Transfer::Spec::TAG_RESERVED]['xfer_id'] ||= SecureRandom.uuid
+            Log.log.debug { "xfer id=#{transfer_spec['xfer_id']}" }
+            # TODO: useful ? node only ? seems to be a timeout for retry in node
+            transfer_spec['tags'][Aspera::Transfer::Spec::TAG_RESERVED]['xfer_retry'] ||= 3600
+          end
+          Log.dump(:ts, transfer_spec)
+          # Compute this before using transfer spec because it potentially modifies the transfer spec
+          # (even if the var is not used in single session)
+          multi_session_info = nil
+          if transfer_spec.key?('multi_session')
+            # Managed by multi-session, so delete from transfer spec
+            multi_session_info = {
+              count: transfer_spec.delete('multi_session').to_i
+            }
+            if multi_session_info[:count].negative?
+              Log.log.error { "multi_session(#{transfer_spec['multi_session']}) shall be integer >= 0" }
+              multi_session_info = nil
+            elsif multi_session_info[:count].eql?(0)
+              Log.log.debug('multi_session count is zero: no multi session')
+              multi_session_info = nil
+            elsif @multi_incr_udp # multi_session_info[:count] > 0
+              # if option not `true`: keep default UDP port for all sessions
+              multi_session_info[:udp_base] = transfer_spec.key?('fasp_port') ? transfer_spec['fasp_port'] : Aspera::Transfer::Spec::UDP_PORT
+              # delete from original transfer spec, as we will increment values
+              transfer_spec.delete('fasp_port')
+              # override if specified, else use default value
+            end
+          end
+
+          # generic session information
+          session = {
+            id:                nil, # SessionId from INIT message in mgt port
+            job_id:            SecureRandom.uuid, # job id (regroup sessions)
+            ts:                transfer_spec,     # global transfer spec
+            thread:            nil,               # Thread object monitoring management port, not nil when pushed to :sessions
+            error:             nil,               # exception if failed
+            io:                nil,               # management port server socket
+            token_regenerator: token_regenerator, # regenerate bearer token with oauth
+            progress_id:       nil,               # session identifier for progress, one per `ascp` process, same on resume
+            size_sent:         false,             # `true` when total size was notified (PreTransferBytes)
+            last_size:         nil,               # last notified transferred size
+            skipped:           0,                 # size of whole files already at destination
+            last_skipped:      nil,               # last notified size not transferred (already at destination)
+            # env vars and args for ascp (from transfer spec)
+            exec_spec:         Aspera::Transfer::Parameters.new(transfer_spec, **@tr_opts).ascp_args
+          }
+
+          # Temporary files of `ascp` (file list) are deleted when the last session ends,
+          # also after the end of the command (asynchronous transfer): hold them once per session, before any session starts
+          (multi_session_info.nil? ? 1 : multi_session_info[:count]).times { TempFileManager.instance.hold(session[:exec_spec].temp_files) }
+
+          if multi_session_info.nil?
+            Log.log.debug('Starting single session thread')
+            # single session for transfer : simple
+            session[:thread] = Thread.new { transfer_thread_entry(session) }
+            @sessions.push(session)
+          else
+            Log.log.debug('Starting multi session threads')
+            1.upto(multi_session_info[:count]) do |i|
+              # do not delay the first session
+              sleep(@spawn_delay_sec) unless i.eql?(1)
+              # do deep copy (each thread has its own copy because it is modified here below and in thread)
+              this_session = session.clone
+              this_session[:ts] = this_session[:ts].clone
+              exec_spec = this_session[:exec_spec] = this_session[:exec_spec].deep_clone
+              # set multi session part
+              exec_spec.args.unshift("-C#{i}:#{multi_session_info[:count]}")
+              # option: increment (default as per ascp manual) or not (cluster on other side ?)
+              exec_spec.args.unshift('-O', (multi_session_info[:udp_base] + i - 1).to_s) if @multi_incr_udp
+              # finally start the thread
+              this_session[:thread] = Thread.new { transfer_thread_entry(this_session) }
+              @sessions.push(this_session)
+            end
+          end
+          return session[:job_id]
+        end
+
+        # @return [String, nil] job_id of the last submitted transfer
+        def last_job_id
+          @sessions.last&.dig(:job_id)
+        end
+
+        # @return [String, nil] the job id: for `transfer_status`
+        def transfer_id
+          last_job_id
+        end
+
+        # @return [Boolean] `true`: `ascp` sessions are monitored by threads of this process
+        def in_process?
+          true
+        end
+
+        # wait for completion of all jobs started
+        # @return [Array] list of :success or error message
+        def wait_for_transfers_completion
+          Log.log.debug('wait_for_transfers_completion')
+          # set to non-nil to exit loop
+          result = []
+          @sessions.each do |session|
+            Log.log.debug { "join #{session[:thread]}" }
+            session[:thread].join
+            result.push(session[:error] || :success)
+          end
+          Log.log.debug('all transfers joined')
+          # since all are finished and we return the result, clear statuses
+          @sessions.clear
+          return result
+        end
+
+        # used by asession (to be removed ?)
+        def shutdown
+          Log.log.debug('fasp local shutdown')
+        end
+
+        # @param id [String] Transfer session identifier
+        # @return [Array] list of sessions for a job
+        def sessions_by_job(id)
+          @sessions.select { |session| session[:job_id].eql?(id) }
+        end
+
+        # Send command to management port of command (used in `asession).
+        # Examples:
+        # {'type'=>'START','source'=>_path_,'destination'=>_path_}
+        # {'type'=>'DONE'}
+        # @param data [Hash]   Command on mgt port (snake case)
+        # @param id   [String] Optional identifier of transfer session
+        def send_command(data, id: nil)
+          Log.dump(:command, data)
+          sessions = id ? sessions_by_job(id) : @sessions
+          if sessions.empty?
+            Log.log.warn('No transfer session')
+            return
+          end
+          message = Aspera::Ascp::Management.command_to_stream(data)
+          sessions.each do |session|
+            session[:io].puts(message)
+          end
+        end
+
+        private
+
+        # transfer thread entry
+        # @param session [Hash] transfer session information
+        def transfer_thread_entry(session)
+          begin
+            # set name for logging
+            Thread.current[:name] = 'transfer'
+            Log.log.debug { "ENTER (#{Thread.current[:name]})" }
+            # start transfer with selected resumer policy
+            @resume_policy.execute_with_resume do
+              start_and_monitor_process(session: session, exec_spec: session[:exec_spec])
+            end
+            Log.log.debug('transfer ok'.bg(:green))
+          rescue => e
+            session[:error] = e
+            raise if Log.log.debug? || !e.is_a?(Aspera::Transfer::Error)
+          ensure
+            session[:ended_at] = Time.now.utc.iso8601
+            TempFileManager.instance.release(session[:exec_spec].temp_files)
+          end
+          Log.log.debug { "EXIT (#{Thread.current[:name]})" }
+        end
+
+        public
+
+        # This is the low level method to start the transfer process.
+        # Typically started in a thread.
+        # Start process with management port.
+        # @param session  [Hash]            This session information, keys :io and :token_regenerator
+        # @param exec_spec [ExecSpec] Executable, environment variables and arguments (comes from ascp_args)
+        # @return [nil] when process has exited
+        # @raise [Aspera::Transfer::FaspError] on error
+        def start_and_monitor_process(
+          session:,
+          exec_spec:
+        )
+          exec = exec_spec.exec
+          env  = exec_spec.env
+          args = exec_spec.args
+          Aspera.assert_type(session, Hash)
+          notify_progress(:sessions_init, info: 'starting')
+          # Do not use `capture_stderr`
+          capture_stderr = false
+          stderr_r, stderr_w = nil
+          spawn_args = {}
+          command_pid = nil
+          # Get location of command executable (ascp, async)
+          command_path = Aspera::Ascp::Installation.instance.path(exec)
+          command_arguments = [command_path]
+          begin
+            if @monitor
+              # we use Socket directly, instead of TCPServer, as it gives access to lower level options
+              socket_class = defined?(JRUBY_VERSION) ? ServerSocket : Socket
+              mgt_server_socket = socket_class.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+              # open any available (0) local TCP port for use as management port
+              mgt_server_socket.bind(Addrinfo.tcp(LISTEN_LOCAL_ADDRESS, SELECT_AVAILABLE_PORT))
+              # make port ready to accept connections, before starting ascp
+              mgt_server_socket.listen(1)
+              # build arguments and add mgt port
+              command_arguments = if exec.eql?(:async)
+                [command_path, "--exclusive-mgmt-port=#{mgt_server_socket.local_address.ip_port}"]
+              else
+                [command_path, '-M', mgt_server_socket.local_address.ip_port.to_s]
+              end
+            end
+            command_arguments.concat(args)
+            if capture_stderr
+              # capture process stderr
+              stderr_r, stderr_w = IO.pipe
+              spawn_args[:err] = stderr_w
+            end
+            command_pid = Environment.secure_execute(*command_arguments, mode: :background, env: env, **spawn_args)
+            # close here, but still used in other process (pipe)
+            stderr_w&.close
+            notify_progress(:sessions_init, info: "waiting for #{exec} to start")
+            # "ensure" block will wait for process
+            return unless @monitor
+            # TODO: timeout does not work when Process.spawn is used... until process exits, then it works
+            # So we use select to detect that anything happens on the socket (connection)
+            Log.log.debug { "before select, timeout: #{@spawn_timeout_sec}" }
+            readable, _, _ = IO.select([mgt_server_socket], nil, nil, @spawn_timeout_sec)
+            Log.log.debug('after select, before accept')
+            Aspera.assert(readable, 'timeout waiting mgt port connect (select not readable)', type: Aspera::Transfer::Error)
+            # There is a connection to accept
+            client_socket, _client_addrinfo = mgt_server_socket.accept
+            Log.log.debug('after accept')
+            management_port_io = client_socket.to_io
+            # by default socket is US-ASCII
+            # management messages include file names which may be UTF-8
+            # TODO: use same value as Encoding.default_external ?
+            management_port_io.set_encoding(Encoding::UTF_8)
+            session[:io] = management_port_io
+            processor = Aspera::Ascp::Management.new
+            # read management port, until socket is closed (gets returns nil)
+            while (line = management_port_io.gets)
+              event = processor.process_line(line.chomp)
+              next unless event
+              # event is ready
+              Log.dump(:management_port, event, level: :trace1)
+              # store session identifier
+              session[:id] = event['SessionId'] if event['Type'].eql?('INIT')
+              @management_cb&.call(event)
+              process_progress(session, event)
+              next unless File.exist?(@command_file)
+              begin
+                commands = JSON.parse(File.read(@command_file))
+                send_command(commands)
+              rescue => e
+                Log.log.error { e.to_s }
+              end
+              File.delete(@command_file)
+            end
+            Log.log.debug('management io closed')
+            # check that last status was received before process exit
+            last_event = processor.last_event
+            Aspera.assert_type(last_event, Hash, type: Aspera::Transfer::Error) { 'management event' }
+            case last_event['Type']
+            when 'DONE'
+              Log.log.trace1 { 'Graceful shutdown, DONE message received' }
+            when 'ERROR'
+              if /bearer token/i.match?(last_event['Description']) &&
+                  !session[:token_regenerator].nil?
+                # regenerate token here, expired, or error on it
+                # Note: in multi-session, each session will have a different one.
+                Log.log.warn('Regenerating token for transfer')
+                env['ASPERA_SCP_TOKEN'] = session[:token_regenerator].call
+              end
+              raise Aspera::Transfer::Error.new(last_event['Description'], code: last_event['Code'].to_i)
+            else
+              # e.g. process was killed: like a lost connection (code 16), so that transfer is resumed
+              raise Aspera::Transfer::Error.new("#{exec} ended without final status (last event: #{last_event['Type']})", code: 16)
+            end
+          rescue SystemCallError => e
+            # Process.spawn failed, or socket error
+            raise Aspera::Transfer::Error, e.message
+          rescue Interrupt
+            raise Aspera::Transfer::Error, 'transfer interrupted by user'
+          ensure
+            mgt_server_socket&.close
+            session.delete(:io)
+            # if command was successfully started, check its status
+            unless command_pid.nil?
+              ::Process.kill(:INT, command_pid) if @monitor && !Environment.instance.os.eql?(Environment::OS_WINDOWS)
+              # collect process exit status or wait for termination
+              _, status = ::Process.wait2(command_pid)
+              if capture_stderr
+                # process stderr of ascp
+                stderr_flag = false
+                stderr_r.each_line do |line|
+                  Log.log.error { "BEGIN stderr #{exec}" } unless stderr_flag
+                  Log.log.error { line.chomp }
+                  stderr_flag = true
+                end
+                Log.log.error { "END stderr #{exec}" } if stderr_flag
+                stderr_r.close
+              end
+              # status is nil if an exception occurred before starting command
+              if !status&.success?
+                message = "#{exec} failed (#{status})"
+                # raise error only if there was not already an exception (`$ERROR_INFO`)
+                raise Aspera::Transfer::Error, message unless $ERROR_INFO
+                # else display this message also, as main exception is already here
+                Log.log.error(message)
+              end
+            end
+          end
+          nil
+        end
+
+        private
+
+        # [Array<Hash>] List of sessions, one per `ascp` process
+        attr_reader :sessions
+
+        # Notify progress to callback
+        # @param session [Hash] This session information, progress state is stored in it
+        # @param event   [Hash] management port event
+        def process_progress(session, event)
+          # Not the `ascp` session id: must be the same when session is resumed
+          progress_id = session[:progress_id] ||= SecureRandom.uuid
+          case event['Type']
+          when 'INIT'
+            session[:size_sent] = false
+            session[:last_size] = nil
+            session[:skipped] = 0
+            session[:last_skipped] = nil
+            notify_progress(:session_start, session_id: progress_id)
+          when 'NOTIFICATION' # sent from remote
+            if event.key?('PreTransferBytes')
+              session[:size_sent] = true
+              notify_progress(:session_size, session_id: progress_id, info: event['PreTransferBytes'])
+            end
+          when 'STATS' # during transfer
+            notify_transferred(session, event)
+          when 'STOP' # one file is completed
+            size = event['Size'].to_i
+            # Whole file already at destination (resume): not transferred, and not in `FileBytes`.
+            # Note: in multi-session, each session notifies all such files: progress bar limits progress to size of session.
+            session[:skipped] += size if size.positive? && event['StartByte'].to_i.eql?(size)
+            notify_transferred(session, event)
+          when 'DONE', 'ERROR' # end of session
+            notify_transferred(session, event)
+            total_size = session[:last_size] + session[:last_skipped]
+            notify_progress(:session_size, session_id: progress_id, info: total_size) if !session[:size_sent] && !total_size.zero?
+            notify_progress(:session_end, session_id: progress_id)
+          when 'SESSION'
+          when 'ARGSTOP'
+          when 'FILEERROR'
+            Log.log.error { "#{event['Type']} #{event['Description']}" }
+          else
+            Log.log.debug { "Unknown event type for progress: #{event['Type']}" }
+          end
+        end
+
+        # Notify transferred size, and size not transferred because already at destination (resume), if changed
+        # @param session [Hash] This session information, progress state is stored in it
+        # @param event   [Hash] management port event, with `TransferBytes` and `FileBytes`
+        def notify_transferred(session, event)
+          transferred = event['TransferBytes'].to_i
+          # `FileBytes` also includes the part of files already at destination.
+          # Note: `StartByte` is not used: in multi-session, it is the offset of the part of file transferred by the session.
+          skipped = session[:skipped] + [event['FileBytes'].to_i - transferred, 0].max
+          if session[:last_skipped] != skipped
+            session[:last_skipped] = skipped
+            notify_progress(:skip, session_id: session[:progress_id], info: skipped)
+          end
+          return if session[:last_size].eql?(transferred)
+          session[:last_size] = transferred
+          notify_progress(:transfer, session_id: session[:progress_id], info: transferred)
+        end
+      end
+    end
+  end
+end

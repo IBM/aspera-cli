@@ -1,0 +1,12 @@
+name: preview
+title: Preview generation for Aspera access keys
+depends:
+  - node
+  - xfer
+gems:
+  - marcel
+commands: true
+schemas:
+  - key: preview
+    file: schemas/options.yaml
+    owned: true

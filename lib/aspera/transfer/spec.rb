@@ -4,7 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require_relative '../agent/factory'
-require_relative '../command_line_builder'
+require_relative '../schema/registry'
+require_relative 'command_line_builder'
 require_relative '../assert'
 require_relative '../units/decimal'
 
@@ -95,6 +96,8 @@ module Aspera
           lines.concat(CommandLineBuilder.doc_lines(node, formatter))
         end
       end
+      # Schema of the parameters, documented with the agents that support them and their option of the command line of `ascp`
+      Schema::Registry.register(Schema::Registry::TRANSFER_SPEC, File.join(__dir__, 'spec.schema.yaml'), doc_options: -> { doc_options })
       SCHEMA = CommandLineBuilder.read_schema(Schema::Registry::TRANSFER_SPEC, ascp: true)
       # Define constants for enums of parameters: <parameter>_<enum>, e.g. CIPHER_AES_128, DIRECTION_SEND, ...
       SCHEMA.current['properties'].each do |name, description|

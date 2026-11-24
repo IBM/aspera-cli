@@ -1,0 +1,178 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://github.com/IBM/aspera-cli/tree/main/lib/aspera/plugin.schema.yaml
+title: Plugin bundle manifest
+description: >-
+  Manifest `plugin.yaml` of a plugin bundle: folder `<name>/` of a plugin folder, with its commands, API client, transfer agent, schemas.
+  Data only: reading it never loads code of the bundle.
+$comment: >-
+  Read by `BundleRegistry`. Class and module names are relative to `Aspera::Plugins::<Name>` (`<Name>` is `<name>` in CamelCase),
+  file names to the folder of the bundle. `additionalProperties: false` at each level, except in an entry of `extensions`:
+  its other fields are defined by the schema of the extension point.
+type: object
+additionalProperties: false
+required:
+  - name
+  - title
+properties:
+  name:
+    description: Name of the plugin, same as the folder of the bundle.
+    $ref: "#/$defs/Name"
+  title:
+    description: Name of the product, for listings and the MCP instructions.
+    type: string
+    minLength: 1
+  mcp:
+    description: >-
+      Section of the instructions of the MCP server for the AI client, about the use of the plugin (e.g. development guides).
+      `%{<point>}` is replaced by the list of the bundles that provide an entry of the extension point `<point>`, with their title.
+    type: string
+    minLength: 1
+  depends:
+    description: 'Bundles referenced by this one. One missing or unavailable: this bundle is unavailable.'
+    type: array
+    uniqueItems: true
+    items:
+      $ref: "#/$defs/Name"
+    default: []
+  gems:
+    description: 'Optional gems required by the code of the bundle: checked when the code is loaded, not when listed.'
+    type: array
+    uniqueItems: true
+    items:
+      type: string
+      pattern: '^[A-Za-z0-9][A-Za-z0-9._-]*$'
+    default: []
+  commands:
+    description: '`true`: `commands.rb` defines `Commands`, the top level command `<name>`.'
+    type: boolean
+    default: false
+  schemas:
+    description: Schemas added to `Schema::Registry`.
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required:
+        - key
+        - file
+      properties:
+        key:
+          description: Key of the schema in `Schema::Registry`, unique.
+          $ref: "#/$defs/Name"
+        file:
+          description: Schema file (JSON or YAML).
+          $ref: "#/$defs/File"
+        owned:
+          description: '`false`: schema of a vendor API, not used to validate values.'
+          type: boolean
+          default: false
+        source:
+          description: Origin of a downloaded schema, used by `rake tools:openapi`.
+          type: object
+          additionalProperties: false
+          required:
+            - url
+          properties:
+            url:
+              description: URL of the original file.
+              type: string
+              pattern: '^https?://'
+            version:
+              description: Version of the API.
+              type: string
+    default: []
+  extension_points:
+    description: Points that other bundles extend.
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - schema
+      properties:
+        name:
+          description: Name of the extension point, key in `extensions` of other bundles.
+          $ref: "#/$defs/Name"
+        schema:
+          description: Schema of one entry.
+          $ref: "#/$defs/File"
+    default: []
+  extensions:
+    description: Entries for the extension points of other bundles, by name of extension point.
+    type: object
+    propertyNames:
+      $ref: "#/$defs/Name"
+    additionalProperties:
+      type: array
+      items:
+        description: Data validated by the schema of the extension point, with the code of the entry.
+        type: object
+        # Open: the other fields are defined by the schema of the extension point, which checks them
+        additionalProperties: true
+        required:
+          - file
+          - class
+        properties:
+          file:
+            description: File of the code.
+            $ref: "#/$defs/File"
+          class:
+            description: Class defined by the file.
+            $ref: "#/$defs/Constant"
+    default: {}
+  mounts:
+    description: Modules added to the command tree of another plugin.
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required:
+        - target
+        - file
+        - module
+      properties:
+        target:
+          description: Name of the plugin that includes the module.
+          $ref: "#/$defs/Name"
+        file:
+          description: File of the module.
+          $ref: "#/$defs/File"
+        module:
+          description: Module defined by the file.
+          $ref: "#/$defs/Constant"
+    default: []
+  services:
+    description: Objects shared through the context, created on first use.
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - file
+        - class
+      properties:
+        name:
+          description: Name of the service.
+          $ref: "#/$defs/Name"
+        file:
+          description: File of the class.
+          $ref: "#/$defs/File"
+        class:
+          description: Class defined by the file.
+          $ref: "#/$defs/Constant"
+    default: []
+$defs:
+  Name:
+    description: Lower case letters, digits and underscores, starting with a letter.
+    type: string
+    pattern: '^[a-z][a-z0-9_]*$'
+  File:
+    description: 'Path relative to the folder of the bundle: no segment starts with a dot (no `..`, no hidden file).'
+    type: string
+    pattern: '^[^./\\][^/\\]*(/[^./\\][^/\\]*)*$'
+  Constant:
+    description: Ruby constant path, relative to `Aspera::Plugins::<Name>`.
+    type: string
+    pattern: '^[A-Z][A-Za-z0-9_]*(::[A-Z][A-Za-z0-9_]*)*$'

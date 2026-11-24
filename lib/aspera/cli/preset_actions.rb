@@ -44,7 +44,7 @@ module Aspera
       def action_preset_lookup(criteria:, **)
         Aspera.assert((criteria.keys - LOOKUP_KEYS).empty? && (LOOKUP_KEYS - criteria.keys).empty?, type: BadArgument) { "Expected keys: #{LOOKUP_KEYS.join(', ')}" }
         result = presets.lookup_preset(url: criteria['url'], username: criteria['username'])
-        Aspera.assert(!result.nil?, type: Error) { 'no such config found' }
+        Aspera.assert(!result.nil?, type: EntityNotFound) { 'no such config found' }
         Result::SingleObject.new(result)
       end
 

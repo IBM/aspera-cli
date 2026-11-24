@@ -47,13 +47,19 @@ module Aspera
         app_url = url
         check_only = plugin_name&.to_sym
         found_apps = []
-        my_self_plugin_sym = self.class.name.split('::').last.downcase.to_sym
+        my_self_plugin_sym = @parent.class.plugin_name.to_sym
         Plugins::Factory.instance.plugin_list.each do |plugin_name_sym|
           # No detection for internal plugin
           next if plugin_name_sym.eql?(my_self_plugin_sym)
           next if check_only && !check_only.eql?(plugin_name_sym)
           # Load plugin class
-          plugin_klass = Plugins::Factory.instance.plugin_class(plugin_name_sym)
+          begin
+            plugin_klass = Plugins::Factory.instance.plugin_class(plugin_name_sym)
+          rescue Cli::Error => e
+            # A plugin that cannot be loaded is not a candidate
+            Log.log.warn(e.message)
+            next
+          end
           # Requires detection method
           next unless plugin_klass.respond_to?(:detect)
           detection_info = nil
@@ -76,7 +82,7 @@ module Aspera
           found_apps.push({product: plugin_name_sym, name: app_name, url: app_url, version: 'unknown'}.merge(detection_info))
         end
         Rest::Parameters.instance.spinner_cb.call(action: :success)
-        Aspera.assert(!found_apps.empty?) { "No known application found at #{app_url}" }
+        Aspera.assert(!found_apps.empty?, type: Cli::Error) { "No known application found at #{app_url}" }
         Aspera.assert(found_apps.all? { |a| a.keys.all?(Symbol) }, 'all app info keys must be symbols')
         return found_apps
       end

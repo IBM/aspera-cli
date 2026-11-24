@@ -7,6 +7,7 @@ require_relative '../build/lib/build_tools'
 require_relative '../lib/aspera/uri_reader'
 require_relative '../lib/aspera/rest'
 require_relative '../lib/aspera/assert'
+require_relative '../lib/aspera/bundle_registry'
 require 'json'
 require 'yaml'
 require 'zlib'
@@ -14,7 +15,7 @@ include BuildTools
 include Paths
 
 # Scan of secrets: files with fake secrets (unit tests, examples in API specifications)
-SECRETS_EXCLUDED_FILES = ['^\.secrets\.baseline$', '^spec/', '^lib/aspera/schema/IBM.*\.yaml$'].freeze
+SECRETS_EXCLUDED_FILES = ['^\.secrets\.baseline$', '^spec/', '^lib/aspera/plugins/[^/]+/spec/', '^lib/aspera/schema/IBM.*\.yaml$', '^lib/aspera/plugins/[^/]+/schemas/IBM.*\.yaml$'].freeze
 # Scan of secrets: fake secrets in documentation, examples and integration tests
 SECRETS_EXCLUDED_VALUES = ['^my_[a-z_]+_here$', '^your value here$', '^Bearer ', '^your-', '^sim$', '^S3cret', '^password$', '^DOCKERHUB_'].freeze
 # CodeQL: workflow and configuration of GitHub code scanning, and folder of local analysis
@@ -194,7 +195,8 @@ namespace :tools do
   end
 
   PROTO_PATH = TMP / 'protos'
-  GRPC_DEST = LIB
+  # Folder of the generated files: in the bundle, `api.rb` puts it in the load path (`transferd_services_pb.rb` requires `transferd_pb`)
+  GRPC_DEST = LIB / 'aspera/plugins/transferd/grpc'
   desc 'Build Transfer SDK stub from proto'
   task grpc: [] do
     PROTO_PATH.mkpath
@@ -218,15 +220,13 @@ namespace :tools do
     puts("Beta version set to: #{BuildTools.build_version}")
   end
 
-  desc 'Download OpenAPI schemas from GitHub'
+  desc 'Download OpenAPI schemas from GitHub: those declared with a `source` in the manifest of bundles'
   task :openapi do
-    config_file = TOP / 'docs' / 'openapi_sources.yaml'
-    Aspera.assert(File.exist?(config_file), "Configuration file not found: #{config_file}")
-    config = YAML.load_file(config_file)
-    Aspera.assert(config['schemas'], "No 'schemas' section found in configuration file")
-    config['schemas'].each do |schema|
-      url = schema['url']
-      destination = TOP / schema['destination']
+    # the file is in the folder of the bundle, the origin is in its manifest
+    downloads = Aspera::BundleRegistry.instance.schemas.filter_map do |schema|
+      [schema.source['url'], Pathname.new(schema.file)] unless schema.source.nil?
+    end
+    downloads.each do |url, destination|
       log.info("Downloading: #{url}")
       log.info("Destination: #{destination}")
       begin

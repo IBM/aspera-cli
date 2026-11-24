@@ -19,6 +19,14 @@ module Aspera
     class Error < Aspera::Error
     end
 
+    # No secret, or several secrets, for the label or identifier
+    class NotFound < Error
+    end
+
+    # Credentials of the store refused, e.g. password of the file
+    class AuthenticationError < Error
+    end
+
     # Parsed reference
     # @!attribute text    [String]             Reference as given
     # @!attribute store   [String]             Name of store

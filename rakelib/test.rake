@@ -268,7 +268,7 @@ ensure
   kill_process_group(pid) if pid && !finished
 end
 
-# End of the text displayed by a prompt: `> `, and for hidden input the mark shown while waiting (see `Aspera::Cli::Prompt`).
+# End of the text displayed by a prompt: `> `, and for hidden input the mark shown while waiting (see `Aspera::Prompt`).
 # Compared as bytes: the terminal output is read in binary.
 PTY_PROMPT_ENDS = ['> ', '> 🔑', '> ***'].map(&:b).freeze
 
@@ -348,6 +348,27 @@ def select_test_cases(selection)
   end
 end
 
+# @param names [Array<String>] Test case names
+# @return [Array<String>] Names of the tests that the given tests depend on, directly or not
+def all_dependencies(names)
+  result = []
+  pending = names.dup
+  until pending.empty?
+    (ALL_TESTS[pending.shift][:depends_on] || []).each do |dependency|
+      next if result.include?(dependency)
+      result.push(dependency)
+      pending.push(dependency)
+    end
+  end
+  result
+end
+
+# @param name [String] Test case name
+# @return [Boolean] `true` if a `background` test passed, but its process has ended (no pid file), e.g. stopped by the `post` of a test that uses it
+def background_ended?(name)
+  ALL_TESTS[name][:tags].include?(:background) && STATES[name].eql?('passed') && !TestEnv::Context.new(name).pid_file.exist?
+end
+
 # @return [Integer] Percentage of completed tests
 def percent_completed
   completed = STATES.count { |_, v| SKIP_STATES.include?(v) }
@@ -414,15 +435,16 @@ namespace :test do
   selector_desc 'Reset tests'
   task :reset, [:name_list] do |_, args|
     to_reset = select_test_cases(args[:name_list])
-    # find all reverse dependencies
     loop do
       # find tests that depend on current selection
-      revdep = ALL_TESTS.filter_map do |name, info|
+      added = ALL_TESTS.filter_map do |name, info|
         name if info[:depends_on]&.intersect?(to_reset)
       end
-      # end if no new dependency
-      break if (revdep - to_reset).empty?
-      to_reset |= revdep
+      # `background` tests needed by the selection, whose process has ended: started again, with the tests that stop them
+      added |= all_dependencies(to_reset).select { |name| background_ended?(name) }
+      # end if no new test
+      break if (added - to_reset).empty?
+      to_reset |= added
     end
     to_reset.each do |name|
       log.info("[RESET] #{name}") if STATES.delete(name)
@@ -536,6 +558,8 @@ namespace TEST_CASE_NS do
         PATH_CONF_FILE.write(TestEnv.configuration.to_yaml) unless PATH_CONF_FILE.exist?
       end
       command_line += (info[:args] + TestEnv.harness_args(info[:harness])).map { |i| eval_macro(i.to_s, exec_binding) }
+      # Environment variables of the test: macros evaluated, e.g. `$(PATH_CLI_HOME)`
+      test_env = info[:env]&.transform_values { |v| v.is_a?(String) ? eval_macro(v, exec_binding) : v }
       command_line += ["--out.file=#{t.out_file}"] if tags[:save_output]
       command_line += ['--format=csv', '--out.level=data'] if tags[:save_output] && !command_line.find { |i| i.start_with?('--format=', '--out.format=') }
       run_options = {}
@@ -571,12 +595,12 @@ namespace TEST_CASE_NS do
       # Loop for `break` (a test that waits for a value uses option `poll`)
       loop do
         if tags[:background]
-          background_pid = run(*(RUBY_WRAPPER + command_line), env: info[:env], **run_options)
+          background_pid = run(*(RUBY_WRAPPER + command_line), env: test_env, **run_options)
         elsif tags[:tty]
           # The text displayed on the terminal is saved in a `.tty` file, e.g. to check that a secret was not displayed
-          run_test_pty(RUBY_WRAPPER + command_line, tty_lines.dup, test_timeout(info[:tags]), t.out_file.sub_ext('.tty'), env: info[:env], evaluate: tty_evaluate)
+          run_test_pty(RUBY_WRAPPER + command_line, tty_lines.dup, test_timeout(info[:tags]), t.out_file.sub_ext('.tty'), env: test_env, evaluate: tty_evaluate)
         else
-          run_test_command(RUBY_WRAPPER + command_line, test_timeout(info[:tags]), env: info[:env], **run_options)
+          run_test_command(RUBY_WRAPPER + command_line, test_timeout(info[:tags]), env: test_env, **run_options)
         end
         # Wait for the process to write its pid file (it is started), or to end (it failed)
         if tags[:background]

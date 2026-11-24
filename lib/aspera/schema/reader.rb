@@ -101,6 +101,8 @@ module Aspera
             end
           end
           discriminant_property = @current.dig('discriminator', 'propertyName')
+          # Properties common to the variants, except the selector, given with each variant (`on_variant`)
+          each_listed_property(prefix, on_variant, required_names, except: discriminant_property, &block) if @current.key?('properties')
           @current['oneOf'].each do |variant_node|
             ref = variant_node['$ref']
             variant_reader = ref ? resolve_ref(ref) : Reader.new(@root, variant_node)
@@ -127,8 +129,19 @@ module Aspera
           end
           return
         end
+        each_listed_property(prefix, on_variant, required_names, &block)
+      end
+
+      # Properties listed in `properties` of the current node, and recursively their own properties.
+      # @param prefix         [String]        Prefix for property names
+      # @param on_variant     [Proc, nil]     See `each_property`
+      # @param required_names [Array<String>] Names of required properties
+      # @param except         [String, nil]   Name of a property not to list
+      # @return [nil]
+      def each_listed_property(prefix, on_variant, required_names, except: nil, &block)
         properties = dig('properties')
         properties.current.each_key do |name|
+          next if name.eql?(except)
           property_full_name = "#{prefix}#{name}"
           property_schema = properties.dig(name)
           node = property_schema.current
@@ -146,7 +159,9 @@ module Aspera
           # allOf without explicit type: object — recurse to merge all branches
           property_schema.each_property("#{property_full_name}.", on_variant: on_variant, &block) if node['allOf']
         end
+        nil
       end
+      private :each_listed_property
 
       # Convert this schema to a flat array of field descriptors.
       # Returns raw semantic fields with no ANSI or formatting, suitable for

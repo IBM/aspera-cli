@@ -1,0 +1,651 @@
+# Server ------------------------------------------------------
+serv_health:
+  args:
+    - server
+    - health
+    - transfer
+    - --to-folder=@preset:server1_info.upload_folder
+serv_health_bad:
+  tags:
+    - no_doc
+  args:
+    - server
+    - health
+    - transfer
+    - --url=ssh://wrong.example.com
+serv_detect:
+  args:
+    - config
+    - detect
+    - "@:"
+    - url=@preset:server1_user.url
+serv_wizard:
+  tags:
+    - server
+  args:
+    - config
+    - wizard
+    - "@:"
+    - url=@preset:server1_user.url
+    - plugin=server
+    - override=yes
+    - --username=@preset:server1_user.username
+    - --password=@preset:server1_user.password
+serv_wizard_password:
+  tags:
+    - server
+    - no_doc
+  args:
+    - config
+    - wizard
+    - "@:"
+    - url=@preset:server1_info.address
+    - plugin=server
+    - preset=srv2
+    - override=yes
+    - --username=@preset:server1_user.username
+    - --password=@preset:server1_user.password
+serv_wizard_stdin:
+  priority: 1
+  description: Wizard without --username and --password, the values are read on the terminal.
+  tags:
+    - server
+    - no_doc
+    - interactive
+  stdin: "$(conf_data('server1_user.username'))\n$(conf_data('server1_user.password'))\n"
+  args:
+    - config
+    - wizard
+    - "@:"
+    - url=@preset:server1_info.address
+    - plugin=server
+    - preset=srv3
+    - override=yes
+serv_browse:
+  tags:
+    - smoke_test
+  args:
+    - server
+    - browse
+    - /
+serv_browse_ed25519:
+  tags:
+    - no_doc
+  env:
+    ASCLI_ENABLE_ED25519: "false"
+  args:
+    - server
+    - browse
+    - /
+serv_mkdir:
+  args:
+    - server
+    - mkdir
+    - "@preset:server1_info.inside_folder"
+    - --logger=stdout
+serv_upload_wrong_password:
+  description: Try to transfer with wrong password.
+  tags:
+    - must_fail
+    - no_doc
+  expect: failed to authenticate
+  args:
+    - server
+    - --preset=server2_user
+    - --password=wrong
+    - upload
+    - $(PATH_TST_ASC_LCL)
+    - --transfer=@json:{"monitor":false,"resume":{"iter_max":0}}
+serv_browse_wrong_password:
+  description: Try to browse with wrong password.
+  tags:
+    - must_fail
+    - no_doc
+  expect: Authentication failed
+  args:
+    - server
+    - --preset=server2_user
+    - --password=wrong
+    - browse
+    - /
+    - --ssh-options.number_of_password_prompts=0
+serv_wrong_url_scheme:
+  description: Try to use a wrong URL.
+  tags:
+    - must_fail
+    - no_doc
+  expect: Scheme [foo] not supported
+  args:
+    - -N
+    - server
+    - --url=foo://
+    - ls
+    - .
+serv_upload_missing_file_token:
+  description: Try to upload file that does not exist, with token.
+  tags:
+    - must_fail
+    - no_doc
+  expect: No such file or directory
+  pre: generated_secret(:dummy)
+  args:
+    - -N
+    - server
+    - --url=@preset:server1_user.url
+    - upload
+    - wrong
+    - --ts.token=$(secret :dummy)
+    - --transfer.resume.iter_max=0
+serv_upload_missing_file:
+  description: Try to upload file that does not exist.
+  tags:
+    - must_fail
+    - no_doc
+  expect: No such file or directory
+  args:
+    - server
+    - upload
+    - wrong
+    - --transfer.resume.iter_max=0
+serv_ls_local:
+  tags:
+    - no_doc
+  args:
+    - -N
+    - server
+    - --url=local://
+    - ls
+    - .
+serv_upload_simple:
+  tags:
+    - smoke_test
+  depends_on:
+    - conf_transferd_install_latest
+  args:
+    - server
+    - upload
+    - faux:///test.$(SecureRandom.uuid).bin?1k
+    - --to-folder=@preset:server1_info.upload_folder
+serv_upload_target_rate:
+  description: Upload generated data with a target rate with unit, as in README.md
+  depends_on:
+    - conf_transferd_install_latest
+  args:
+    - server
+    - upload
+    - faux:///test.$(SecureRandom.uuid).bin?1m
+    - --to-folder=@preset:server1_info.upload_folder
+    - --ts.target_rate=500m
+serv_upload_multi_session:
+  depends_on:
+    - serv_mkdir
+  args:
+    - server
+    - upload
+    - $(PATH_TST_LCL_FILE)
+    - --to-folder=@preset:server1_info.inside_folder
+    - --ts=@json:{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}
+    - --transfer=@json:{"spawn_delay_sec":2.5,"multi_incr_udp":false}
+    - --progress-bar=yes
+serv_upload_multi_test:
+  $comment: Previously had --transfer.multi_incr_udp=true
+  tags:
+    - no_doc
+  depends_on:
+    - serv_mkdir
+  args:
+    - server
+    - upload
+    - faux:///serv_upload_multi_test?1k
+    - --to-folder=@preset:server1_info.inside_folder
+    - --ts=@json:{"multi_session":2,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}
+    - --transfer.multi_incr_udp=false
+serv_upload_multi_session_cancel:
+  $comment: Previously had --transfer.multi_incr_udp=true
+  tags:
+    - no_doc
+    - background
+  depends_on:
+    - serv_mkdir
+  args:
+    - server
+    - upload
+    - faux:///serv_upload_multi_session_cancel?100k
+    - --to-folder=@preset:server1_info.inside_folder
+    - --ts=@json:{"multi_session":-10,"resume_policy":"none","target_rate_kbps":100}
+    - --transfer.multi_incr_udp=false
+  post: |
+    sleep 2
+    pid = t.pid_of_test('serv_upload_multi_session_cancel')
+    (PATH_CLI_HOME / "send_#{pid}").write({type: 'CANCEL'}.to_json)
+    Process.wait(pid)
+serv_browse_uploaded:
+  depends_on:
+    - serv_upload_multi_session
+  args:
+    - server
+    - browse
+    - "@extend:@preset:server1_info.inside_folder@/$(FILENAME_UNICODE)"
+serv_upload_pair_notify:
+  depends_on:
+    - serv_mkdir
+  args:
+    - server
+    - upload
+    - --src-type=pair
+    - $(PATH_TST_LCL_FILE)
+    - "@extend:@preset:server1_info.inside_folder@/other_name_2"
+    - --notify-to=@preset:misc.email_external
+    - "--transfer.ascp_args=@list: -l 100m"
+serv_upload_pair_sources_prep:
+  tags:
+    - cleanup
+    - no_doc
+  depends_on:
+    - serv_mkdir
+  args:
+    - server
+    - delete
+    - "@extend:@preset:server1_info.inside_folder@/other_name_3"
+serv_upload_pair_sources:
+  depends_on:
+    - serv_upload_pair_sources_prep
+  args:
+    - server
+    - upload
+    - --src-type=pair
+    - --sources=@json:@extend:["$(PATH_TST_ASC_LCL)","@preset:server1_info.inside_folder@/other_name_3"]
+    - --transfer.quiet=false
+serv_upload_transferd:
+  tags:
+    - grpc
+  depends_on:
+    - serv_mkdir
+  args:
+    - server
+    - upload
+    - --sources=@ts
+    - --ts=@json:@extend:{"paths":[{"source":"$(PATH_TST_ASC_LCL)","destination":"@preset:server1_info.inside_folder@/other_name_4"}]}
+    - --transfer.agent=transferd
+serv_upload_ts_options:
+  depends_on:
+    - serv_mkdir
+  pre: generated_secret(:content_protection)
+  args:
+    - server
+    - upload
+    - --src-type=pair
+    - $(PATH_TST_ASC_LCL)
+    - "@extend:@preset:server1_info.upload_folder@/other_name_5"
+    - --ts=@json:{"cipher":"aes-192-gcm","content_protection":"encrypt","content_protection_password":"$(secret :content_protection)","cookie":"biscuit","create_dir":true,"delete_before_transfer":false,"delete_source":false,"exclude_newer_than":"-1","exclude_older_than":"-10000","fasp_port":33001,"http_fallback":false,"multi_session":0,"overwrite":"diff+older","precalculate_job_size":true,"preserve_access_time":true,"preserve_creation_time":true,"rate_policy":"fair","resume_policy":"sparse_csum"}
+serv_sync_pull_args_reset:
+  description: Sync using args syntax (reset)
+  pre: |
+    (PATH_TMP_SYNCS / 'serv_sync_pull_args').rmtree
+    (PATH_TMP_SYNCS / 'serv_sync_pull_args').mkdir
+  tags:
+    - no_doc
+  depends_on:
+    - serv_upload_multi_session
+    - serv_upload_pair_notify
+    - serv_upload_pair_sources
+    - serv_upload_ts_options
+  args:
+    - server
+    - sync
+    - pull
+    - "@preset:server1_info.inside_folder"
+    - --to-folder=$(PATH_TMP_SYNCS / 'serv_sync_pull_args')
+    - '@json:@extend:{"instance":{"quiet":false},"sessions":[{"name":"serv_sync_pull_args","target_rate":"@preset:sync.bps@","reset":true}]}'
+serv_sync_pull_args_status:
+  tags:
+    - no_doc
+  depends_on:
+    - serv_sync_pull_args_reset
+  args:
+    - server
+    - sync
+    - admin
+    - status
+    - $(PATH_TMP_SYNCS / 'serv_sync_pull_args')
+    - '@json:{"sessions":[{"name":"serv_sync_pull_args"}]}'
+serv_sync_pull_args_meta:
+  tags:
+    - no_doc
+  depends_on:
+    - serv_sync_pull_args_status
+  args:
+    - server
+    - sync
+    - admin
+    - meta
+    - $(PATH_TMP_SYNCS / 'serv_sync_pull_args')
+    - '@json:{"sessions":[{"name":"serv_sync_pull_args"}]}'
+serv_sync_pull_args_counters:
+  tags:
+    - no_doc
+  depends_on:
+    - serv_sync_pull_args_meta
+  args:
+    - config
+    - sync
+    - admin
+    - counters
+    - $(PATH_TMP_SYNCS / 'serv_sync_pull_args')
+    - '@json:{"sessions":[{"name":"serv_sync_pull_args"}]}'
+serv_sync_pull_conf_reset:
+  description: Pull with reset=true, initializes the sync session
+  pre: |
+    (PATH_TMP_SYNCS / 'serv_sync_pull_conf').rmtree
+    (PATH_TMP_SYNCS / 'serv_sync_pull_conf').mkdir
+  depends_on:
+    - serv_sync_pull_args_counters
+  args:
+    - server
+    - sync
+    - pull
+    - "@preset:server1_info.inside_folder"
+    - --to-folder=$(PATH_TMP_SYNCS / 'serv_sync_pull_conf')
+    - '@json:@extend:{"name":"serv_sync_pull_conf","reset":true,"transport":{"target_rate":@preset:sync.bps@}}'
+serv_sync_pull_conf_status_fail:
+  description: Check failure if wrong arg type.
+  depends_on:
+    - serv_sync_pull_conf_reset
+  tags:
+    - must_fail
+    - no_doc
+  expect: Argument path is a Hash but must be String
+  args:
+    - server
+    - sync
+    - admin
+    - status
+    - "@:"
+    - name=serv_sync_pull_conf
+serv_sync_pull_conf_status:
+  tags:
+    - no_doc
+  depends_on:
+    - serv_sync_pull_conf_reset
+  args:
+    - server
+    - sync
+    - admin
+    - status
+    - $(PATH_TMP_SYNCS / 'serv_sync_pull_conf')
+    - "@:"
+    - name=serv_sync_pull_conf
+serv_sync_pull_conf_sync:
+  description: Pull without reset, runs incremental sync
+  depends_on:
+    - serv_sync_pull_conf_reset
+  args:
+    - server
+    - sync
+    - pull
+    - "@preset:server1_info.inside_folder"
+    - --to-folder=$(PATH_TMP_SYNCS / 'serv_sync_pull_conf')
+    - '@:'
+    - name=serv_sync_pull_conf
+serv_sync_pull_conf_status_after_sync:
+  depends_on:
+    - serv_sync_pull_conf_sync
+  args:
+    - server
+    - sync
+    - admin
+    - status
+    - $(PATH_TMP_SYNCS / 'serv_sync_pull_conf')
+serv_sync_pull_conf_overview:
+  depends_on:
+    - serv_sync_pull_conf_sync
+  args:
+    - server
+    - sync
+    - admin
+    - overview
+    - $(PATH_TMP_SYNCS / 'serv_sync_pull_conf')
+serv_sync_pull_conf_fileinfo:
+  depends_on:
+    - serv_sync_pull_conf_sync
+  args:
+    - server
+    - sync
+    - admin
+    - file_info
+    - $(PATH_TMP_SYNCS / 'serv_sync_pull_conf')
+serv_sync_pull_conf_fileinfo_sql:
+  depends_on:
+    - serv_sync_pull_conf_sync
+  args:
+    - server
+    - sync
+    - admin
+    - file_info
+    - --sql=WHERE state=19
+    - $(PATH_TMP_SYNCS / 'serv_sync_pull_conf')
+serv_sync_pull_conf_query:
+  depends_on:
+    - serv_sync_pull_conf_sync
+  args:
+    - server
+    - sync
+    - admin
+    - query
+    - "--sql=SELECT name FROM sqlite_master WHERE type='table'"
+    - $(PATH_TMP_SYNCS / 'serv_sync_pull_conf')
+serv_upload_ex_list:
+  depends_on:
+    - serv_mkdir
+  args:
+    - server
+    - upload
+    - --sources=@ts
+    - --transfer.ascp_args=@list:,--file-list,$(PATH_FILE_LIST)
+    - --to-folder=@preset:server1_info.inside_folder
+serv_upload_ex_pair:
+  depends_on:
+    - serv_mkdir
+  args:
+    - server
+    - upload
+    - --sources=@ts
+    - --transfer.ascp_args=@list:,--file-pair-list,$(path_file_pair_list)
+serv_md5:
+  depends_on:
+    - serv_upload_multi_session
+  args:
+    - server
+    - md5sum
+    - "@extend:@preset:server1_info.inside_folder@/$(FILENAME_ASCII)"
+serv_down_lcl:
+  depends_on:
+    - serv_upload_multi_session
+  args:
+    - server
+    - download
+    - "@extend:@preset:server1_info.inside_folder@/$(FILENAME_ASCII)"
+    - --to-folder=$(TMP)
+    - --transfer=@json:{"wss":false,"resume":{"iter_max":1}}
+serv_down_from_node:
+  args:
+    - server
+    - download
+    - "@preset:server1_info.large_file"
+    - --to-folder=@preset:server1_info.upload_folder
+    - --transfer.agent=node
+    - --ts.resume_policy=none
+serv_down_from_node_fail:
+  description: Try to download file that does not exist.
+  tags:
+    - must_fail
+    - no_doc
+  expect: "Server aborted session: No such file or directory"
+  args:
+    - server
+    - download
+    - file_does_not_exist.random
+    - --to-folder=@preset:server1_info.upload_folder
+    - --transfer.agent=node
+serv_cp:
+  depends_on:
+    - serv_upload_multi_session
+  args:
+    - server
+    - cp
+    - "@extend:@preset:server1_info.inside_folder@/$(FILENAME_ASCII)"
+    - "@extend:@preset:server1_info.upload_folder@/200KB.2"
+serv_mv:
+  depends_on:
+    - serv_cp
+  args:
+    - server
+    - mv
+    - "@extend:@preset:server1_info.upload_folder@/200KB.2"
+    - "@extend:@preset:server1_info.upload_folder@/to.delete"
+serv_delete:
+  depends_on:
+    - serv_mv
+  args:
+    - server
+    - delete
+    - "@extend:@preset:server1_info.upload_folder@/to.delete"
+serv_cleanup:
+  depends_on:
+    - serv_cp
+    - serv_down_from_node
+    - serv_down_lcl
+    - serv_md5
+  args:
+    - server
+    - delete
+    - "@preset:server1_info.inside_folder"
+serv_info:
+  args:
+    - server
+    - info
+serv_du:
+  args:
+    - server
+    - du
+    - /
+serv_df:
+  args:
+    - server
+    - df
+serv_health_xfer_nagios:
+  tags:
+    - health
+  args:
+    - server
+    - health
+    - transfer
+    - --to-folder=@preset:server1_info.upload_folder
+    - --format=nagios
+serv_health_xfer_nagios_fail:
+  tags:
+    - must_fail
+    - no_doc
+  expect: (EACCES) creating destination path
+  args:
+    - server
+    - health
+    - transfer
+    - --to-folder=/wrong
+    - --format=nagios
+serv_key_path:
+  tags:
+    - save_output
+    - no_doc
+  args:
+    - config
+    - ascp
+    - info
+    - --fields=ssh_private_rsa
+serv_key:
+  args:
+    - server
+    - browse
+    - /
+    - --password
+    - "@none:"
+    - --ssh-options.number_of_password_prompts=0
+    - --ssh-keys=$(t.saved_output :serv_key_path)
+serv_upload_progress_quiet:
+  tags:
+    - no_doc
+  args:
+    - server
+    - upload
+    - faux:///test1?100m
+    - faux:///test2?100m
+    - --to-folder=@preset:server1_info.upload_folder
+    - --ts=@json:{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}
+    - --transfer.quiet=false
+serv_upload_progress:
+  tags:
+    - no_doc
+  args:
+    - server
+    - upload
+    - faux:///test1?100m
+    - faux:///test2?100m
+    - --to-folder=@preset:server1_info.upload_folder
+    - --ts=@json:{"target_rate_kbps":1000000,"resume_policy":"none","precalculate_job_size":true}
+serv_hot_prep:
+  tags:
+    - cleanup
+    - no_doc
+  args:
+    - server
+    - delete
+    - "@extend:@preset:server1_info.upload_folder@/target_hot"
+serv_hot_mkdir:
+  depends_on:
+    - serv_hot_prep
+  args:
+    - server
+    - mkdir
+    - "@extend:@preset:server1_info.upload_folder@/target_hot"
+serv_hot_run:
+  $comment: First run transfers nothing because file is too recent
+  pre: |
+    PATH_HOT_FOLDER.rmtree
+    PATH_HOT_FOLDER.mkdir
+    (PATH_HOT_FOLDER / 'new_file').write('hello')
+  args:
+    - server
+    - upload
+    - --to-folder=@extend:@preset:server1_info.upload_folder@/target_hot
+    - --lock-port=50101
+    - --transfer.ascp_args=@list:,--remove-after-transfer,--remove-empty-directories,--exclude-newer-than=-8,--src-base,$(PATH_HOT_FOLDER)
+    - $(PATH_HOT_FOLDER)
+serv_hot_check:
+  description: Verify target folder after first run (no transfer, file too recent)
+  depends_on:
+    - serv_hot_run
+  pre: ls_l PATH_HOT_FOLDER
+  args:
+    - server
+    - browse
+    - "@extend:@preset:server1_info.upload_folder@/target_hot"
+  post: sleep TEMPORIZE_CREATE
+serv_hot_run_second:
+  $comment: Second run transfers file
+  depends_on:
+    - serv_hot_check
+  args:
+    - server
+    - upload
+    - --to-folder=@extend:@preset:server1_info.upload_folder@/target_hot
+    - --lock-port=50101
+    - --transfer.ascp_args=@list:,--remove-after-transfer,--remove-empty-directories,--exclude-newer-than=-8,--src-base,$(PATH_HOT_FOLDER)
+    - $(PATH_HOT_FOLDER)
+serv_hot_check_second:
+  description: Verify target folder after second run (file transferred)
+  depends_on:
+    - serv_hot_run_second
+  args:
+    - server
+    - browse
+    - "@extend:@preset:server1_info.upload_folder@/target_hot"

@@ -1,0 +1,11 @@
+name: connect
+title: IBM Aspera Connect
+depends:
+  - xfer
+extensions:
+  agent:
+    - name: connect
+      short: c
+      file: agent.rb
+      class: Agent
+      options_schema: schemas/agent_options.yaml

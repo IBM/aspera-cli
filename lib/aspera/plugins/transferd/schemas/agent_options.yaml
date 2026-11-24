@@ -1,0 +1,31 @@
+# Component `TransferdAgentOptions` of `TransferAgentOptions` (see `Schema::Registry#add_variants`): parameters of the agent `transferd`
+type: object
+description: Parameters for the Transfer Daemon transfer agent.
+properties:
+  url:
+    type: string
+    description: >-
+      Address and port listened by the daemon (e.g. `:55002`).
+      If port is `0`, the daemon listens on a random available port.
+      If no address is given, `127.0.0.1` is used.
+    default: ":0"
+  start:
+    type: boolean
+    description: Start a new daemon instance.
+    default: true
+  stop:
+    type: boolean
+    description: Stop the daemon when `ascli` exits.
+    default: true
+  api_key:
+    type: string
+    description: >-
+      API key of the daemon, sent in the metadata `api_key` of each call.
+      For an existing daemon: required if it has `authentication` enabled in its configuration.
+      For a daemon started by `ascli`: it is given `authentication` with this key, else with a random key if `stop` is `true`,
+      else without authentication (warning): set it so that a daemon left running can be used only by the executions that know it.
+  ca_file:
+    type: string
+    description: >-
+      Path to the certificate authority file (PEM) that signed the certificate of an existing daemon (`start` is `false`)
+      that has `tls` enabled in its configuration. A self-signed certificate is its own authority.

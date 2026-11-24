@@ -5,12 +5,13 @@
 
 require 'spec_helper'
 require_relative '../lib/aspera/schema/validator'
+require_relative '../lib/aspera/plugins/xfer/transfer_agent'
 
 RSpec.describe(Aspera::Schema::Validator) do
   subject(:validator) { described_class.instance }
 
-  let(:agent_options) { Aspera::Schema::Registry::TRANSFER_AGENT_OPTIONS }
-  let(:workflow_start) { 'opts:components.schemas.OrchestratorWorkflowStart' }
+  let(:agent_options) { Aspera::Plugins::Xfer::TransferAgent::TRANSFER_OPTION_SCHEMA }
+  let(:workflow_start) { 'orchestrator_opts:components.schemas.OrchestratorWorkflowStart' }
 
   it 'accepts a valid value' do
     expect(validator.errors({'synchronous' => true, 'variable' => 'x'}, workflow_start)).to(be_empty)
@@ -29,7 +30,7 @@ RSpec.describe(Aspera::Schema::Validator) do
   end
 
   it 'enforces required unless partial' do
-    telemetry = 'opts:components.schemas.NodeTelemetryOptions'
+    telemetry = 'node_opts:components.schemas.NodeTelemetryOptions'
     expect(validator.errors({}, telemetry).first).to(include('required'))
     expect(validator.errors({}, telemetry, partial: true)).to(be_empty)
   end
@@ -49,7 +50,35 @@ RSpec.describe(Aspera::Schema::Validator) do
   end
 
   it 'ignores missing discriminator in partial value' do
-    expect(validator.errors({'multi_session' => 2}, agent_options, partial: true)).to(be_empty)
+    expect(validator.errors({'wss' => true}, agent_options, partial: true)).to(be_empty)
+  end
+
+  describe 'keys of variants (unevaluatedProperties of the selector)' do
+    it 'accepts the keys of the selector and of the selected variant' do
+      expect(validator.errors({'agent' => 'direct', 'wss' => true, 'asynchronous' => true}, agent_options, partial: true)).to(be_empty)
+    end
+
+    it 'refuses a key that is not of the selected variant' do
+      expect(validator.errors({'agent' => 'node', 'wss' => true}, agent_options, partial: true)).to(eq(['object property at `/wss` is a disallowed additional property']))
+    end
+
+    it 'refuses an unknown key when the selector is missing in a partial value (default variant)' do
+      expect(validator.errors({'spawn_timout_sec' => 5}, agent_options, partial: true)).to(eq(['object property at `/spawn_timout_sec` is a disallowed additional property']))
+    end
+
+    it 'reports only the error of the variant when its value is wrong' do
+      expect(validator.errors({'agent' => 'direct', 'wss' => 'yes', 'quiet' => true}, agent_options, partial: true)).to(eq(['value at `/wss` is not a boolean']))
+    end
+
+    it 'reports only the selector when it is not valid' do
+      expect(validator.errors({'agent' => 'bogus', 'wss' => true}, agent_options, partial: true).size).to(eq(1))
+    end
+  end
+
+  it 'ignores null values when asked, with required enforced' do
+    telemetry = 'node_opts:components.schemas.NodeTelemetryOptions'
+    expect(validator.errors({'url' => 'https://x', 'key' => nil}, telemetry, ignore_null: true).first).to(include('key'))
+    expect(validator.errors({'url' => 'https://x', 'key' => 'k', 'hostname' => nil}, telemetry, ignore_null: true)).to(be_empty)
   end
 
   it 'skips vendor API schemas' do

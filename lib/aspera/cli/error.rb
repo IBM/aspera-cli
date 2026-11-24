@@ -32,8 +32,30 @@ module Aspera
       # OAuth 2.0 error codes of a refused authentication (RFC 6749, RFC 6750)
       OAUTH_AUTH_ERRORS = %w[invalid_client invalid_grant unauthorized_client access_denied invalid_token insufficient_scope].freeze
       private_constant :OAUTH_AUTH_ERRORS
+      # Category of errors of the code used by bundles (e.g. domain library), by class, see `add_error`
+      @errors = {}
 
       class << self
+        # Add the category of an error class (and its subclasses) raised by code that is not of the CLI, e.g. the domain library used by a bundle.
+        # The runner gives such an error its label and exit code, instead of `Other`.
+        # @param error_class [Class]   Class of the error
+        # @param label       [String]  Label of the error message, e.g. `Transfer`
+        # @param code        [Integer] Exit code, one of the constants of this module
+        # @return [nil]
+        def add_error(error_class, label:, code:)
+          raise ArgumentError, "not an error class: #{error_class}" unless error_class.is_a?(Class) && error_class <= StandardError
+          raise ArgumentError, "unknown exit code: #{code}" unless DESCRIPTIONS.key?(code)
+          @errors[error_class] = {label: label, code: code}.freeze
+          nil
+        end
+
+        # @param error [Exception] An error
+        # @return [Hash, nil] `label` and `code` of the most specific added class of the error (whatever the order of `add_error`), `nil` if none
+        def error_category(error)
+          error.class.ancestors.each { |klass| return @errors[klass] if @errors.key?(klass) }
+          nil
+        end
+
         # @param error [Rest::CallError] Failed API call
         # @return [Integer] Exit code for the HTTP status, or OAuth error
         def for_call_error(error)
@@ -72,6 +94,23 @@ module Aspera
 
     # Raised when the condition of option `poll` (`until`) is not met after the last run.
     class PollConditionNotMet < Error; end
+
+    # Exception raised when schema is asked (`help`)
+    class SchemaRequest < Error
+      # Value of option or argument that requests its schema
+      KEYWORD = 'help'
+
+      # @return [String, nil] path to schema file
+      attr_reader :path
+
+      # @param type [Symbol] :argument or :option
+      # @param name [String] name of the option/argument
+      # @param schema_path [String, nil] path to schema file, or `nil` if not available
+      def initialize(type, name, schema_path)
+        super("#{type}: #{name}")
+        @path = schema_path
+      end
+    end
 
     # Raised when a lookup for a specific entity fails to return exactly one result.
     #

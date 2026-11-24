@@ -3,46 +3,36 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-require_relative '../ascp_actions'
-require_relative '../ascp_logs_actions'
 require_relative '../completion_actions'
 require_relative '../deprecation'
 require_relative '../error'
 require_relative '../gem_checker'
 require_relative '../http'
 require_relative '../info'
-require_relative '../option_types'
+require_relative '../option/type'
 require_relative '../parser'
 require_relative '../preset_actions'
 require_relative '../preset_manager'
-require_relative '../prompt'
 require_relative '../result'
 require_relative '../security'
 require_relative '../special_values'
-require_relative '../sync_actions'
 require_relative '../terminal_formatter'
-require_relative '../transfer_actions'
 require_relative '../vault_actions'
 require_relative '../version'
 require_relative '../wizard'
 require_relative 'base'
 require_relative 'factory'
-require_relative 'transferd'
-require_relative '../../agent/factory'
-require_relative '../../ascp/installation'
 require_relative '../../assert'
-require_relative '../../command_line_builder'
+require_relative '../../bundle_registry'
 require_relative '../../environment'
 require_relative '../../hash_ext'
 require_relative '../../log'
 require_relative '../../oauth/client/factory'
 require_relative '../../oauth/client/jwt'
+require_relative '../../prompt'
 require_relative '../../rest'
-require_relative '../../schema/documentation'
 require_relative '../../schema/registry'
 require_relative '../../string_ext'
-require_relative '../../sync/operations'
-require_relative '../../transfer/spec'
 require_relative '../../sealed_hash'
 require_relative '../../web_auth/relay'
 require 'openssl'
@@ -52,13 +42,9 @@ module Aspera
     module Plugins
       # Manage the CLI config file
       class Config < Base
-        include SyncActions
         include VaultActions
         include GemChecker
-        include AscpActions
-        include AscpLogsActions
         include PresetActions
-        include TransferActions
         include CompletionActions
 
         class << self
@@ -92,22 +78,7 @@ module Aspera
         DEFAULT_CHECK_NEW_VERSION_DAYS = 7
         # Last released version with `config transferd`, `config ascp install` and `config transfer` not deprecated
         DEPRECATED_LAST = '4.28.0'
-        private_constant :DEFAULT_CHECK_NEW_VERSION_DAYS, :DEPRECATED_LAST
-
-        option :preset,             description: 'Load the named option preset from current config file',             short: 'P', on_set: :load_preset, complete: :preset
-        option :version_check_days, description: 'Period in days to check new version (zero to disable)',             allowed: Type::INTEGER, default: DEFAULT_CHECK_NEW_VERSION_DAYS
-        option :plugin_folder,      description: "Folders where to find additional plugins (#{SpecialValues::DEF}: folder plugins of the configuration folder)", allowed: Type::STRING_ARRAY, default: [SpecialValues::DEF], complete: :folder, security: :low
-        option :sdk_url,            description: 'Ascp: URL to get Aspera Transfer Executables',                      default: SpecialValues::DEF, security: :low
-        option :locations_url,      description: 'Ascp: URLs to get download locations of Aspera Transfer Daemon',   allowed: Type::STRING_ARRAY, default: Ascp::Installation.instance.transferd_urls, on_set: Ascp::Installation.instance.method(:transferd_urls=), security: :low
-        option :sdk_folder,         description: 'Ascp: Path to folder with ascp (or product with "product:")',      on_set: Ascp::Installation.instance.method(:sdk_folder=), complete: :folder
-        option :smtp,               schema: Schema::Registry::SMTP_OPTIONS
-        option :notify_to,          description: 'Email: Recipient for notification of transfers'
-        option :notify_template,    description: 'Email: ERB template for notification of transfers', security: :low
-        option :cache_tokens,       description: 'Save and reuse OAuth tokens', allowed: Type::BOOLEAN, default: true
-        option :expand_mounts,      description: 'Commands: list commands of sub-trees provided by another plugin', allowed: Type::BOOLEAN, default: false
-        option :no_default,         description: 'Do not load default configuration for plugin', allowed: Type::NONE, short: 'N', on_set: -> { presets.use_plugin_defaults = false }
-        # `on_set` callbacks of HTTP options are methods of `http_config`
-        use_options Http, target: -> { http_config }
+        private_constant :DEFAULT_CHECK_NEW_VERSION_DAYS
 
         def initialize(**_)
           super
@@ -115,7 +86,8 @@ module Aspera
           @wizard = Wizard.new(self, context.main_folder)
           # Values set through `on_set` callbacks are used below (sdk_folder)
           options.parse_options!
-          set_sdk_dir
+          # Method of the module `AscpActions` mounted by bundle `xfer`: config still works if this mount failed (see `include_mounts`)
+          set_sdk_dir if respond_to?(:set_sdk_dir)
         end
 
         command :preset, description: 'Manage configuration presets'
@@ -222,7 +194,6 @@ module Aspera
         command :image, description: 'Show an image',
           arguments: [{name: :image_uri, type: nil}],
           action: ->(image_uri:, **) { Result::Image.new(image_uri) }
-        command :sync, description: 'Manage Aspera Sync operations'
         command :gem, description: 'Show gem information'
         command :folder, description: 'Show the configuration folder path', action: ->(**) { Result::Text.new(context.main_folder) }
         command :file, description: 'Show the configuration file path', action: ->(**) { Result::Text.new(context.presets.config_file) }
@@ -284,7 +255,7 @@ module Aspera
             :password, description: 'Set a new password for the vault',
             arguments: [{name: :new_password}],
             action: lambda do |new_password:, **|
-              Aspera.assert(vault_required.respond_to?(:change_password), 'Vault does not support password change')
+              Aspera.assert(vault_required.respond_to?(:change_password), 'Vault does not support password change', type: Cli::BadArgument)
               vault_required.change_password(new_password)
               Result::Status.new('Vault password updated')
             end
@@ -310,7 +281,7 @@ module Aspera
             arguments: [{name: :remote_url}],
             action: lambda do |remote_url:, **|
               remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
-              Aspera.assert(remote_chain&.first) { "No certificate found for #{remote_url}" }
+              Aspera.assert(remote_chain&.first, type: Cli::Error) { "No certificate found for #{remote_url}" }
               Result::Text.new(remote_chain.map(&:to_pem).join("\n"))
             end
           )
@@ -319,7 +290,7 @@ module Aspera
             arguments: [{name: :remote_url}],
             action: lambda do |remote_url:, **|
               remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
-              Aspera.assert(remote_chain&.first) { "No certificate found for #{remote_url}" }
+              Aspera.assert(remote_chain&.first, type: Cli::Error) { "No certificate found for #{remote_url}" }
               Result::Text.new(remote_chain.first.to_pem)
             end
           )
@@ -328,7 +299,7 @@ module Aspera
             arguments: [{name: :remote_url}],
             action: lambda do |remote_url:, **|
               remote_chain = Rest.remote_certificate_chain(remote_url, as_string: false)
-              Aspera.assert(remote_chain&.first) { "No certificate found for #{remote_url}" }
+              Aspera.assert(remote_chain&.first, type: Cli::Error) { "No certificate found for #{remote_url}" }
               Result::Text.new(remote_chain.first.subject.to_a.find { |name, _, _| name == 'CN' }[1])
             end
           )
@@ -354,7 +325,9 @@ module Aspera
 
         # plugins sub-commands
         commands_under :plugins do
-          command :list, description: 'List all available plugins'
+          command :list, description: 'List all plugins, with their status'
+          command :show, description: 'Show the details of a plugin: source, form, capabilities, dependencies, gems, security level',
+            arguments: [{name: :name}]
           command :create, description: 'Create a new plugin skeleton file', security: :low,
             arguments: [
               {name: :name},
@@ -362,81 +335,23 @@ module Aspera
             ]
         end
 
-        # ascp sub-commands
-        command :ascp, description: 'Manage FASP/ascp transfer engine'
-        commands_under :ascp do
-          command :show,    description: 'Show ascp binary path', action: ->(**) { Result::Text.new(Ascp::Installation.instance.path(:ascp)) }
-          command :info,    description: 'Show ascp and transfer spec information'
-          command :install, description: "Install the transfer SDK (#{Deprecation.new(last: DEPRECATED_LAST, message: 'use transferd install')})",
-            arguments: [{name: :version, mandatory: false, default: nil}],
-            action: ->(version: nil, **) { transferd_plugin(command: 'config ascp install', replacement: 'transferd install').action_install(version: version) }
-          command(
-            :spec, description: 'Show the transfer spec schema',
-            arguments: [{name: :agent_name, allowed: Agent::Factory::ALL.keys + [Transfer::Spec::DOC_OVERVIEW], mandatory: false, default: nil}],
-            action: lambda do |agent_name: nil, **|
-              builder = Schema::Documentation.new(TerminalFormatter, Transfer::Spec::SCHEMA, **Transfer::Spec.doc_options(agent_name)).build
-              Result::ObjectList.new(builder.rows, fields: builder.columns)
-            end
-          )
-          command :schema, description: 'Show the transfer spec JSON schema',
-            arguments: [{name: :agent_name, allowed: Agent::Factory::ALL.keys, mandatory: false, default: nil}]
-          command :errors,   description: 'Show FASP error codes: of the management port (default), or of sessions (errcode in logs)',
-            arguments: [{name: :kind, allowed: %i[management session], mandatory: false, default: :management}]
-          ascp_logs_commands :logs
-          commands_under :logs do
-            command :find, description: 'Find the ascp log files of this system: of installed products, and default locations', action: :action_ascp_logs_find
-          end
-          command :products, description: 'Manage installed Aspera products'
-          commands_under :products do
-            command :list, description: 'List installed Aspera products',
-              action: ->(**) { Result::ObjectList.new(Ascp::Installation.instance.installed_products, fields: %w[name app_root]) }
-          end
-        end
+        # Commands of the modules that bundles mount on config (manifest `mounts`), here: bundle `xfer` adds `ascp`, `agents`, `transfer`, and `sync` (before `gem`),
+        # then bundle `transferd` adds the deprecated `transferd`
+        include_mounts
 
-        # agents sub-commands
-        command :agents, description: 'Manage transfer agents'
-        commands_under :agents do
-          command :list,       description: 'List all transfer agents'
-          command :show,       description: 'Show details for a transfer agent',
-            arguments: [{name: :agent_name, allowed: Agent::Factory::ALL.keys}]
-          command :parameters, description: 'Show configurable parameters for a transfer agent',
-            arguments: [{name: :agent_name, allowed: Agent::Factory::ALL.keys}]
-        end
-
-        # async transfer jobs: moved to `agents jobs`, `transfer` is kept as deprecated alias
-        commands_under %i[agents jobs], description: 'Manage asynchronous transfer jobs' do
-          command(
-            :list, description: 'List all async transfer jobs',
-            action: lambda do |**|
-              rows = async_transfer_store.list
-              Result::ObjectList.new(rows, fields: %w[job_id agent_type status started_at ended_at bytes_transferred transfer_id])
-            end
-          )
-          command :status,  description: 'Show status of an async transfer job',
-            arguments: [{name: :job_id, complete: :transfer_job}]
-          command :cleanup, description: 'Remove completed/failed/cancelled transfer entries'
-        end
-        command :transfer, description: "Manage asynchronous transfers (#{Deprecation.new(last: DEPRECATED_LAST, message: 'use agents jobs')})",
-          setup: :deprecated_transfer_setup, mount: {plugin: self, at: %i[agents jobs], instance: :itself}
-
-        # transferd sub-commands: moved to plugin `transferd`, kept as deprecated alias
-        command :transferd, description: "Manage the transfer daemon (#{Deprecation.new(last: DEPRECATED_LAST, message: 'use plugin transferd')})",
-          mount: {plugin: Transferd, instance: :transferd_plugin, only: %i[install list service]}
-
-        # sync sub-commands
-        commands_under :sync do
-          command(
-            :spec, description: 'Show the sync configuration schema',
-            action: lambda do |**|
-              builder = Schema::Documentation.new(TerminalFormatter, Sync::Operations::CONF_SCHEMA, annotate: CommandLineBuilder.method(:doc_lines)).build
-              Result::ObjectList.new(builder.rows, fields: builder.columns)
-            end
-          )
-          sync_admin_commands :admin
-          command :translate, description: 'Translate async-style arguments to sync config format',
-            arguments: [{name: :async_arguments, multiple: true}],
-            action: ->(async_arguments:, **) { Result::SingleObject.new(Sync::Operations.args_to_conf(async_arguments)) }
-        end
+        # Options of config come after the options of the mounted modules (`sql`, `ascp_logs`): same order as when config included them.
+        # Mounted modules may place theirs before an option of config (`option ..., before:`).
+        option :preset,             description: 'Load the named option preset from current config file',             short: 'P', on_set: :load_preset, complete: :preset
+        option :version_check_days, description: 'Period in days to check new version (zero to disable)',             allowed: Option::Type::INTEGER, default: DEFAULT_CHECK_NEW_VERSION_DAYS
+        option :plugin_folder,      description: "Folders where to find additional plugins (#{SpecialValues::DEF}: folder plugins of the configuration folder)", allowed: Option::Type::STRING_ARRAY, default: [SpecialValues::DEF], complete: :folder, security: :low
+        option :smtp,               schema: Schema::Registry::SMTP_OPTIONS
+        option :notify_to,          description: 'Email: Recipient for notification of transfers'
+        option :notify_template,    description: 'Email: ERB template for notification of transfers', security: :low
+        option :cache_tokens,       description: 'Save and reuse OAuth tokens', allowed: Option::Type::BOOLEAN, default: true
+        option :expand_mounts,      description: 'Commands: list commands of sub-trees provided by another plugin', allowed: Option::Type::BOOLEAN, default: false
+        option :no_default,         description: 'Do not load default configuration for plugin', allowed: Option::Type::NONE, short: 'N', on_set: -> { presets.use_plugin_defaults = false }
+        # `on_set` callbacks of HTTP options are methods of `http_config`
+        use_options Http, target: -> { http_config }
 
         # gem sub-commands
         commands_under :gem do
@@ -482,9 +397,8 @@ module Aspera
         def add_plugin_lookup_folders
           home_plugins = File.join(context.main_folder, ASPERA_PLUGINS_FOLDERNAME)
           folders = options.get_option(:plugin_folder)
-          Aspera.assert_array_all(folders, String) { 'plugin folder(s)' }
           # Before 4.30, this folder was always used: plugins there would silently stop working
-          unused_home = !folders.include?(SpecialValues::DEF) && Dir.glob("*#{Environment::RB_EXT}", base: home_plugins).any?
+          unused_home = !folders.include?(SpecialValues::DEF) && Dir.glob(["*#{Environment::RB_EXT}", "*/#{BundleRegistry::MANIFEST}"], base: home_plugins).any?
           Log.log.warn { "Plugins of #{home_plugins} are not used: add #{SpecialValues::DEF} to option plugin_folder" } if unused_home
           folders.each { |f| Plugins::Factory.instance.add_lookup_folder(f.eql?(SpecialValues::DEF) ? home_plugins : f, security: :low) }
           nil
@@ -510,21 +424,6 @@ module Aspera
         # @return [String] URL
         def ask_url(params)
           params['url'] || options.with_interactive { options.get_interactive('url') }
-        end
-
-        # Instance of plugin `transferd`, for the deprecated commands `config transferd` and `config ascp install`
-        # @param command     [String] Deprecated command
-        # @param replacement [String] Command to use instead
-        # @return [Transferd] Plugin instance
-        def transferd_plugin(command: 'config transferd', replacement: 'transferd', **)
-          Log.log.warn { "Command #{command} is #{Deprecation.new(last: DEPRECATED_LAST, message: "use #{replacement}")}" }
-          Transferd.new(context: context)
-        end
-
-        # Setup of the deprecated `config transfer` (alias of `config agents jobs`, same plugin)
-        def deprecated_transfer_setup(**)
-          Log.log.warn { "Command config transfer is #{Deprecation.new(last: DEPRECATED_LAST, message: 'use config agents jobs')}" }
-          {}
         end
 
         def action_documentation(location: :github, section: nil, **)
@@ -590,7 +489,8 @@ module Aspera
 
         def action_download(file_url:, file_dest: nil, **)
           file_url = file_url.chomp
-          file_dest = File.join(transfer.destination_folder(Transfer::Spec::DIRECTION_RECEIVE), file_url.rpartition('/').last) if file_dest.nil?
+          # Default: destination folder of downloads of the service `transfer` (option `to_folder`)
+          file_dest = File.join(transfer.destination_folder(:receive), file_url.rpartition('/').last) if file_dest.nil?
           file_dest = Security.instance.writable_path(file_dest)
           Log.log.info("Downloading: #{file_url}")
           Rest::Client.new(base_url: file_url).call(operation: 'GET', save_to: file_dest)
@@ -604,16 +504,32 @@ module Aspera
         end
 
         def action_plugins_list(**)
-          result = Plugins::Factory.instance.plugin_list.map do |name|
-            plugin_class = Plugins::Factory.instance.plugin_class(name)
+          factory = Plugins::Factory.instance
+          result = factory.listed_plugins.map do |name|
+            status = factory.status(name)
+            loaded =
+              if status.eql?('available')
+                begin
+                  factory.plugin_class(name)
+                rescue Cli::Error => e
+                  # Broken code: the reason replaces the status
+                  status = e.message
+                  nil
+                end
+              end
             {
               plugin: name,
-              detect: TerminalFormatter.tick(plugin_class.respond_to?(:detect)),
-              wizard: TerminalFormatter.tick(plugin_class.method_defined?(:wizard)),
-              path:   Plugins::Factory.instance.plugin_source(name)
+              detect: loaded.nil? ? nil : TerminalFormatter.tick(loaded.respond_to?(:detect)),
+              wizard: loaded.nil? ? nil : TerminalFormatter.tick(loaded.method_defined?(:wizard)),
+              status: status,
+              path:   factory.registry[name].path
             }
           end
-          Result::ObjectList.new(result, fields: %w[plugin detect wizard path])
+          Result::ObjectList.new(result, fields: %w[plugin detect wizard status path])
+        end
+
+        def action_plugins_show(name:, **)
+          Result::SingleObject.new(Plugins::Factory.instance.describe(name.to_sym))
         end
 
         def action_plugins_create(name:, folder: nil, **)
@@ -674,7 +590,14 @@ module Aspera
           Aspera.assert(words.empty? || plugin_names.length.eql?(1), type: Cli::BadArgument) { 'command path requires a plugin name' }
           expand_mounts = options.get_option(:expand_mounts)
           commands = plugin_names.flat_map do |name|
-            reg = Plugins::Factory.instance.plugin_class(name).command_registry
+            begin
+              reg = Plugins::Factory.instance.plugin_class(name).command_registry
+            rescue Cli::Error => e
+              # Named plugin: the error; else the plugin is left out
+              raise if plugin_name
+              Log.log.warn(e.message)
+              next []
+            end
             prefix = listed_command_path(name, reg, words)
             paths = prefix.empty? || reg.children_of(prefix).any? ? reg.leaf_paths(prefix, expand_mounts: expand_mounts) : [prefix]
             # Commands refused by security level are not proposed
@@ -683,7 +606,7 @@ module Aspera
               mount = expand_mounts ? nil : reg.mount_at(path)
               description = reg[path]&.description.to_s
               if mount
-                target = mount.plugin.name.split('::').last.downcase
+                target = mount.plugin.plugin_name
                 description = "#{description} (see: #{command_syntax(target, mount.registry, mount.at)})"
               end
               {
@@ -698,7 +621,7 @@ module Aspera
         # Command path to list, from words that may include positional arguments, as on a command line.
         # e.g. `faspex5 packages receive ALL` lists `faspex5 packages receive`.
         # @param name  [Symbol]          plugin name
-        # @param reg   [CommandRegistry] registry of plugin
+        # @param reg   [Command::Registry] registry of plugin
         # @param words [Array<Symbol>]   sub-commands (or aliases), possibly mixed with their arguments
         # @return [Array<Symbol>] command path
         # @raise [Cli::BadArgument] if a word is neither a sub-command nor an expected argument
@@ -710,7 +633,7 @@ module Aspera
 
         # Build syntax by interleaving each path segment with the arguments declared on that node
         # @param name [String, Symbol]       plugin name
-        # @param reg  [CommandRegistry]      registry of plugin
+        # @param reg  [Command::Registry]      registry of plugin
         # @param path [Array<Symbol>]        command path
         # @return [String] e.g. `node access_keys do <access_key_id> ls <path>`
         def command_syntax(name, reg, path)
@@ -748,7 +671,6 @@ module Aspera
         PERSISTENCY_FOLDER = 'persist_store'
         # Persistency identifier of the hosts of login pages that the user accepted for `web_login`
         WEB_LOGIN_HOSTS_ID = 'web_login_hosts'
-        FILE_LIST_FOLDER_NAME = 'filelists'
         REST_EXCEPTIONS_LOG_FILENAME = 'rest_exceptions.log'
         ASPERA = 'aspera'
         SERVER_COMMAND = 'server'
@@ -773,7 +695,6 @@ module Aspera
           :ASPERA_PLUGINS_FOLDERNAME,
           :PERSISTENCY_FOLDER,
           :WEB_LOGIN_HOSTS_ID,
-          :FILE_LIST_FOLDER_NAME,
           :REST_EXCEPTIONS_LOG_FILENAME,
           :ASPERA,
           :SERVER_COMMAND,

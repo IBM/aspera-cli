@@ -11,9 +11,6 @@ require_relative 'transfer_progress'
 require_relative 'preset_manager'
 require_relative 'vault_manager'
 require_relative 'http'
-require_relative '../ascp/installation'
-require_relative '../products/transferd'
-require_relative '../transfer/parameters'
 require_relative '../proxy_auto_config'
 require_relative '../environment'
 require_relative '../persistency_folder'
@@ -35,8 +32,8 @@ module Aspera
     #   - populate context.persistency, context.presets, context.vault, context.http_config, context.progress_bar
     #   - register the plugin lookup folder of the gem (other folders: option `plugin_folder`, see `Plugins::Config#add_plugin_lookup_folders`)
     #   - register @preset / @vault extended-value handlers
-    #   - configure global singletons: Rest::Parameters, OAuth::Factory, SSL, Transfer::Parameters,
-    #     Rest::ErrorAnalyzer
+    #   - configure global singletons: Rest::Parameters, OAuth::Factory, SSL, Rest::ErrorAnalyzer
+    #     (those of transfers are configured by the service `transfer`)
     #   - set up the PAC proxy executor (option :fpac)
     class Bootstrapper
       # Folder name inside $HOME for all Aspera tool data (~/.aspera)
@@ -45,8 +42,6 @@ module Aspera
       DEFAULT_CONFIG_FILENAME  = 'config.yaml'
       # Sub-folder for persistency data
       PERSISTENCY_FOLDER       = 'persist_store'
-      # Sub-folder for file lists used by transfers
-      FILE_LIST_FOLDER_NAME    = 'filelists'
       # Log file for REST call exceptions
       REST_EXCEPTIONS_LOG_FILENAME = 'rest_exceptions.log'
       # Extended-value prefix that resolves a named preset
@@ -59,16 +54,27 @@ module Aspera
       private_constant :ASPERA_HOME_FOLDER_NAME,
         :DEFAULT_CONFIG_FILENAME,
         :PERSISTENCY_FOLDER,
-        :FILE_LIST_FOLDER_NAME,
         :REST_EXCEPTIONS_LOG_FILENAME,
         :EXTEND_PRESET,
         :EXTEND_VAULT,
         :CONF_GLOBAL_SYM
 
       # @param context [Context] the shared context to populate
-      def initialize(context)
+      # @param main_folder [String, nil] main folder set by the program, as by code: not restricted by the security level; `nil`: option `home`
+      # @param config_file [String, nil] configuration file set by the program, as by code: not restricted by the security level; `nil`: option `config_file`
+      # @param vault [Hash, nil] option `vault` set by the program, as by code: not restricted by the security level; `nil`: option `vault`
+      # @param vault_password [String, nil] option `vault_password` set by the program, as by code; `nil`: option `vault_password`
+      def initialize(context, main_folder: nil, config_file: nil, vault: nil, vault_password: nil)
         Aspera.assert_type(context, Context) { 'context' }
+        Aspera.assert_type(main_folder, String, NilClass) { 'main_folder' }
+        Aspera.assert_type(config_file, String, NilClass) { 'config_file' }
+        Aspera.assert_type(vault, Hash, NilClass) { 'vault' }
+        Aspera.assert_type(vault_password, String, NilClass) { 'vault_password' }
         @context = context
+        @main_folder = main_folder
+        @config_file = config_file
+        @vault = vault
+        @vault_password = vault_password
         @pac_exec = nil
       end
 
@@ -85,7 +91,7 @@ module Aspera
         setup_extended_value_handlers
         setup_progress_bar
         setup_pac_executor
-        setup_rest_and_transfer_runtime
+        setup_rest_runtime
       end
 
       private
@@ -97,6 +103,8 @@ module Aspera
           on_set: @context.method(:main_folder=), complete: :folder, security: :low,
           default: default_app_main_folder(app_name: Info::CMD_NAME)
         )
+        # Set by code before parsing: a value on the command line has the same priority, and is refused if the security level does not allow option `home`
+        @context.options.set_option(:home, @main_folder, source: :code, final: true) unless @main_folder.nil?
         @context.options.parse_options!
         Log.log.debug { "#{Info::CMD_NAME} folder: #{@context.main_folder}" }
       end
@@ -110,9 +118,11 @@ module Aspera
       # Declare + parse :config_file option: sets context.presets + context.http_config
       def setup_config_file
         @context.options.declare(
-          :config_file, description: 'Path to YAML file with preset configuration', complete: :file,
+          :config_file, description: 'Path to YAML file with preset configuration', complete: :file, security: :low,
           default: File.join(@context.main_folder, DEFAULT_CONFIG_FILENAME)
         )
+        # Set by code before parsing: a value on the command line has the same priority, and is refused if the security level does not allow option `config_file`
+        @context.options.set_option(:config_file, @config_file, source: :code, final: true) unless @config_file.nil?
         @context.options.parse_options!
         @context.presets = PresetManager.new(config_file: @context.options.get_option(:config_file))
         @context.http_config = Http.new
@@ -121,8 +131,11 @@ module Aspera
       # context.vault + register @preset and @vault extended-value handlers + global config default preset
       def setup_extended_value_handlers
         @context.options.declare(:secret, description: 'Secret for access keys')
-        @context.options.declare(:vault, schema: Schema::Registry::VAULT_OPTIONS, convert: VaultManager.method(:convert_option))
-        @context.options.declare(:vault_password, description: 'Vault password')
+        @context.options.declare(:vault, schema: Schema::Registry::VAULT_OPTIONS, convert: VaultManager.method(:convert_option), security: :low)
+        @context.options.declare(:vault_password, description: 'Vault password', security: :low)
+        # Set by code before parsing: a value on the command line has the same priority, and is refused if the security level does not allow these options
+        @context.options.set_option(:vault, @vault, source: :code, final: true) unless @vault.nil?
+        @context.options.set_option(:vault_password, @vault_password, source: :code, final: true) unless @vault_password.nil?
         @context.vault = VaultManager.new(@context.options, @context.main_folder)
         # Register @preset and @vault handlers BEFORE parse_options! so that
         # values like --secret=@preset:name are correctly evaluated at parse time.
@@ -139,7 +152,7 @@ module Aspera
 
       # Declare + parse :progress_bar: sets context.progress_bar
       def setup_progress_bar
-        @context.options.declare(:progress_bar, description: 'Display progress bar', allowed: Type::BOOLEAN, default: $stderr.tty?)
+        @context.options.declare(:progress_bar, description: 'Display progress bar', allowed: Option::Type::BOOLEAN, default: $stderr.tty?)
         @context.options.parse_options!
         @context.progress_bar = TransferProgress.new if @context.options.get_option(:progress_bar)
         # Log lines do not overwrite the progress bar
@@ -163,17 +176,15 @@ module Aspera
         end
       end
 
-      # Configure global singletons: Rest::Parameters, SSL, Transfer, Rest::ErrorAnalyzer.
+      # Configure global singletons: Rest::Parameters, SSL, Rest::ErrorAnalyzer.
       # OAuth persist_mgr is NOT set here: it depends on :cache_tokens which is parsed later
       # by Config#initialize. Runner sets it after Config.new.
-      def setup_rest_and_transfer_runtime
+      def setup_rest_runtime
         Rest::Parameters.instance.user_agent    = Info::CMD_NAME
         Rest::Parameters.instance.progress_bar  = @context.progress_bar
         Rest::Parameters.instance.session_cb    = ->(http_session) { @context.http_config.update_session(http_session) }
         Rest::Parameters.instance.spinner_cb    = ->(title = nil, action: :spin) { @context.formatter.long_operation(title, action: action) }
         OAuth::Web.additional_info = "#{Info::CMD_NAME} v#{Cli::VERSION}"
-        Ascp::Installation.instance.referer_url = "#{Info::GEM_URL}/versions/#{Cli::VERSION}"
-        Transfer::Parameters.file_list_folder = File.join(@context.main_folder, FILE_LIST_FOLDER_NAME)
         Rest::ErrorAnalyzer.instance.log_file = File.join(@context.main_folder, REST_EXCEPTIONS_LOG_FILENAME)
       end
 

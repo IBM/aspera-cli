@@ -211,18 +211,12 @@ module Aspera
       end
 
       # Create a token creator instance for the specified grant method
+      # The class of the grant method is registered by its file (`register_token_creator`): the caller requires it.
       # @param parameters [Hash] Parameters including :grant_method and creator-specific options
       # @return [Object] An instance of the registered token creator class
       def create(**parameters)
         Aspera.assert_type(parameters, Hash)
         id = parameters[:grant_method]
-        unless @token_type_classes.key?(id)
-          begin
-            require "aspera/oauth/client/#{id}"
-          rescue LoadError
-            # ignored, handled by assert
-          end
-        end
         Aspera.assert(@token_type_classes.key?(id)) { "token grant method unknown: '#{id}'" }
         create_parameters = parameters.reject { |k, _v| k.eql?(:grant_method) }
         @token_type_classes[id].new(**create_parameters)

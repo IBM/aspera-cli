@@ -208,6 +208,8 @@ A test that waits for a value (e.g. a package received, a folder created) repeat
 When the previous test is a deletion done asynchronously by the server (e.g. `node service delete`) and the next one creates the same item again, a read test tagged `no_doc` polls between them until the item is gone (e.g. `nd_service_clean_wait`).
 
 A `background` test is started when its process has written its PID file (at most `BACKGROUND_START_TIMEOUT` seconds).
+Its process is usually stopped by the `post` of the test that uses it, but its state stays `passed`.
+So `test:reset` resets the tests that depend on the selected ones, and also the `background` tests that the selected ones depend on (directly or not) and whose process has ended (no PID file), with their own dependents: e.g. `rake "test:reset[conf_web_login]"` also resets `f5_mock_idp_https_start`, so that the mock IdP is started again.
 
 In `pre`/`post` Ruby code, `t.saved_output(name)` reads output saved by a test with `save_output`; `t.stop_process(name)` stops a process started with `background`.
 `wait_listening(port, tls: false)` waits until a server accepts connections (`tls: true` for an HTTPS server: completes the TLS handshake), e.g. in `post` of a `background` test that starts a server, or before the first request to it.

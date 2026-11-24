@@ -1,0 +1,39 @@
+name: xfer
+title: Aspera transfer agents, ascp and async
+schemas:
+  - key: transfer_opts
+    file: schemas/options.yaml
+    owned: true
+extension_points:
+  - name: agent
+    schema: schemas/agent_extension.schema.yaml
+services:
+  - name: transfer
+    file: transfer_agent.rb
+    class: TransferAgent
+# Included in this order: options `sql`, `ascp_logs` and the DSL methods of the action modules are used by ConfigCommands
+mounts:
+  - target: config
+    file: sync_actions.rb
+    module: SyncActions
+  - target: config
+    file: ascp_logs_actions.rb
+    module: AscpLogsActions
+  - target: config
+    file: ascp_actions.rb
+    module: AscpActions
+  - target: config
+    file: transfer_actions.rb
+    module: TransferActions
+  - target: config
+    file: config_commands.rb
+    module: ConfigCommands
+# Section of the instructions of the MCP server
+mcp: |-
+  TRANSFERS
+  Pass verbatim any flag the user requests (--transfer.agent=<agent>, --to-folder, …).
+  Agents (default: direct): %{agent}.
+  Transfers are asynchronous: the command returns a job_id immediately — never retry it.
+    monitor → ["config", "transfer", "status", "<job_id>"]
+    list    → ["config", "transfer", "list"]
+    cleanup → ["config", "transfer", "cleanup"]

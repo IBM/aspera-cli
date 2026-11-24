@@ -82,13 +82,15 @@ def pdf_rule(pdf, md = nil, extra: [])
 end
 
 # Generated Paths::MD_MANUAL uses these files
+# The first ones are also the arguments of `DocHelper.new`, in its order: the test definitions of the bundles (a list that grows) come last
 DOC_FILES = [
   Paths::MD_ERB,
   Paths::COMMAND,
   Paths::ASESSION,
   Paths::TEST_DEFS,
   Paths::GEMSPEC,
-  Paths::GEMFILE
+  Paths::GEMFILE,
+  *Paths::TOP.glob(Paths::BUNDLE_TEST_DEFS_GLOB)
 ].freeze
 
 # Source file that contain constants used to generate doc (version, urls)
@@ -117,7 +119,7 @@ namespace :doc do
     ASPERA_CONF_XSD.write(Aspera::Conf::Generator.new(%x{asuserdata -+}).generate)
   end
 
-  file Paths::MD_MANUAL => DOC_FILES + [Paths::BUILD_TOOLS, Paths::DOC_HELPER, Paths::DOC_MARKUP, Paths::MARKDOWN_FORMATTER, Paths::TSPEC_YAML_SCHEMA, Paths::ASYNC_YAML_SCHEMA, Paths::ASYNC_TABLES_YAML_SCHEMA, Paths::GEMSPEC] + CONST_SOURCES do
+  file Paths::MD_MANUAL => DOC_FILES + Paths::TOP.glob(Paths::BUNDLE_MANUAL_GLOB) + [Paths::BUILD_TOOLS, Paths::DOC_HELPER, Paths::DOC_MARKUP, Paths::MARKDOWN_FORMATTER, Paths::TSPEC_YAML_SCHEMA, Paths::ASYNC_YAML_SCHEMA, Paths::ASYNC_TABLES_YAML_SCHEMA, Paths::GEMSPEC] + CONST_SOURCES do
     Aspera::Environment.force_terminal_c
     DocHelper.new([Paths::MD_MANUAL] + DOC_FILES).generate
   end
@@ -140,7 +142,7 @@ namespace :doc do
 
   desc 'Check commands and options of examples in manual and README'
   task :check_commands do
-    DocCommandChecker.new(files: [Paths::MD_ERB, Paths::TOP / 'README.md'], ascli: Paths::COMMAND).check
+    DocCommandChecker.new(files: [Paths::MD_ERB, *Paths::TOP.glob(Paths::BUNDLE_MANUAL_GLOB), Paths::TOP / 'README.md'], ascli: Paths::COMMAND).check
   end
 
   desc 'Check internal links (#anchor) in manual, for GitHub and PDF (requires gfm2pdf-toolchain)'

@@ -8,11 +8,13 @@ require_relative 'extended_value'
 require_relative 'error'
 require_relative 'special_values'
 require_relative 'terminal_formatter'
-require_relative 'option_types'
-require_relative 'option_value'
-require_relative 'option_registry'
+require_relative 'bool_value'
+require_relative 'option/type'
+require_relative 'option/source'
+require_relative 'option/value'
+require_relative 'option/registry'
 require_relative 'command_line'
-require_relative 'prompt'
+require_relative '../prompt'
 require_relative '../schema/validator'
 require_relative '../log'
 require_relative '../assert'
@@ -29,7 +31,7 @@ module Aspera
     # Command line options are applied when their option is declared: explicitly with `parse_options!`,
     # or automatically on next read of an option or argument. Unknown options are kept for later.
     #
-    # Option values come from several sources, see `OptionSource`: highest priority wins, whatever the order.
+    # Option values come from several sources, see `Option::Source`: highest priority wins, whatever the order.
     class Parser
       include Prompt
 
@@ -71,14 +73,14 @@ module Aspera
         # @param name [String] option name with dash separators
         # @return [String] option name with underscore separators
         def option_line_to_name(name)
-          name.gsub(Option::NAME_SEP_LINE, Option::NAME_SEP_SYMBOL)
+          name.gsub(CommandLine::Option::NAME_SEP_LINE, CommandLine::Option::NAME_SEP_SYMBOL)
         end
 
         # Convert option symbol to CLI line flag format
         # @param name [Symbol, String] option name
         # @return [String] option flag (e.g. "--option-name")
         def option_name_to_line(name)
-          "#{Option::PREFIX}#{name.to_s.gsub(Option::NAME_SEP_SYMBOL, Option::NAME_SEP_LINE)}"
+          "#{CommandLine::Option::PREFIX}#{name.to_s.gsub(CommandLine::Option::NAME_SEP_SYMBOL, CommandLine::Option::NAME_SEP_LINE)}"
         end
 
         # Parse percent-selector string into field name and value (extended value is parsed in value)
@@ -116,7 +118,7 @@ module Aspera
       # @param program_name [String] Name of the program
       # @param argv [Array<String>, nil] Command line arguments to parse
       def initialize(program_name, argv = nil)
-        @registry = OptionRegistry.new
+        @registry = Option::Registry.new
         # do we ask missing options and arguments to user ?
         @ask_missing_mandatory = false # STDIN.isatty
         # ask optional options if not provided and in interactive
@@ -128,21 +130,21 @@ module Aspera
         # `true` when options were declared or presets added since last parse
         @parse_needed = true
         # options can also be provided by env vars : --param-name -> ASCLI_PARAM_NAME
-        env_prefix = program_name.upcase + Option::NAME_SEP_SYMBOL
+        env_prefix = program_name.upcase + CommandLine::Option::NAME_SEP_SYMBOL
         ENV.each do |k, v|
           add_pending_value(k.delete_prefix(env_prefix).downcase.to_sym, v, :env, replace: true) if k.start_with?(env_prefix)
         end
         Log.dump(:env, @pending_values)
         @command_line = CommandLine.new(argv || [])
-        declare(:interactive, description: 'Use interactive input of missing params', allowed: Type::BOOLEAN, default: false, on_set: method(:ask_missing_mandatory=))
-        declare(:ask_options, description: 'Ask even optional options', allowed: Type::BOOLEAN, default: false, on_set: method(:ask_missing_optional=))
+        declare(:interactive, description: 'Use interactive input of missing params', allowed: Option::Type::BOOLEAN, default: false, on_set: method(:ask_missing_mandatory=))
+        declare(:ask_options, description: 'Ask even optional options', allowed: Option::Type::BOOLEAN, default: false, on_set: method(:ask_missing_optional=))
       end
 
       # Declare an option
       # @param option_symbol [Symbol] option name
       # @param description   [String, nil] description for help; if nil, derived from schema
       # @param short         [String] short option name
-      # @param allowed       [Object] Allowed values, see `OptionValue`.
+      # @param allowed       [Object] Allowed values, see `Option::Value`.
       #   When `schema:` is provided:
       #   - Omit `allowed:` when the schema has a single type (`type: object/array`): it is inferred automatically.
       #   - Omit `allowed:` when the schema uses `oneOf`/`anyOf` and all branches are `object`: `Hash` is inferred.
@@ -150,7 +152,7 @@ module Aspera
       #     the schema then documents the Hash form and `=help` still shows it.
       # @param default       [Object] default value
       # @param on_set       [#call]  Called with the new value each time the value is set (e.g. a `Method`, or a lambda).
-      #   For a flag (`Type::NONE`): called without argument when the flag is found
+      #   For a flag (`Option::Type::NONE`): called without argument when the flag is found
       # @param shorthand     [String] For a `Hash` option: a `String` value is stored as `{shorthand => value}`
       # @param convert       [#call]  For a `Hash` option: called with a new `Hash` value, returns the value to store, before merge (e.g. conversion of a deprecated form)
       # @param deprecation   [Hash, nil] deprecation: `{last:, message:}`, see `Deprecation`
@@ -161,7 +163,7 @@ module Aspera
       def declare(option_symbol, description: nil, short: nil, allowed: nil, default: nil, on_set: nil, shorthand: nil, convert: nil, deprecation: nil, schema: nil, complete: nil, security: nil, &block)
         Aspera.assert_type(option_symbol, Symbol)
         Aspera.assert(!@registry.declared?(option_symbol)) { "#{option_symbol} already declared" }
-        if on_set && allowed.eql?(Type::NONE)
+        if on_set && allowed.eql?(Option::Type::NONE)
           Aspera.assert(block.nil?) { "#{option_symbol}: flag with both on_set and block" }
           block = on_set
           on_set = nil
@@ -173,7 +175,7 @@ module Aspera
           end
         end
         option = @registry.add(
-          OptionValue.new(
+          Option::Value.new(
             option:      option_symbol,
             description: description,
             allowed:     allowed,
@@ -219,7 +221,7 @@ module Aspera
       # @param default     [Object] default value
       # @param evaluate    [Symbol]  `:extended`: extended value, `:smart`: also `true`, `yes`, `false`, `no` and numbers, `:none`: as typed
       # @return [Object, Array, nil] one value, list or nil (if optional and no default)
-      def get_next_argument(descr, mandatory: true, multiple: false, accept_list: nil, validation: Type::STRING, aliases: nil, default: nil, schema: nil, evaluate: :extended)
+      def get_next_argument(descr, mandatory: true, multiple: false, accept_list: nil, validation: Option::Type::STRING, aliases: nil, default: nil, schema: nil, evaluate: :extended)
         ensure_parsed
         Aspera.assert_array_all(accept_list, Symbol) unless accept_list.nil?
         Aspera.assert_hash_all(aliases, Symbol, Symbol) unless aliases.nil?
@@ -277,12 +279,12 @@ module Aspera
         @registry.declared?(option_symbol)
       end
 
-      # @return [Hash{Symbol => OptionValue}] all declared options (read-only view)
+      # @return [Hash{Symbol => Option::Value}] all declared options (read-only view)
       def declared_options = @registry.options
 
       # Get an option definition by name
       # @param option_symbol [Symbol] name of the option
-      # @return [OptionValue] Option definition
+      # @return [Option::Value] Option definition
       # @raise [Cli::BadArgument] if option not found
       def option_def(option_symbol)
         @registry.fetch(option_symbol)
@@ -294,7 +296,8 @@ module Aspera
       # @param mandatory [Boolean] if true, raise error if option not set
       # @param schema [String, nil] contextual schema path override; when set, raises SchemaRequest
       #   if the option value is 'help' (used for --query whose schema depends on the current command)
-      def get_option(option_symbol, mandatory: false, schema: nil)
+      # @param complete [Boolean] `true`: the value is used as is (no other source completes it): checked against the schema of the option, with its `required` properties
+      def get_option(option_symbol, mandatory: false, schema: nil, complete: false)
         Aspera.assert_type(option_symbol, Symbol)
         ensure_parsed
         option = option_def(option_symbol)
@@ -311,6 +314,7 @@ module Aspera
             set_option(option_symbol, result, source: :interactive)
           end
         end
+        option.validate_complete(result) if complete
         result
       end
 
@@ -318,10 +322,11 @@ module Aspera
       # String is given to extended value
       # @param option_symbol [Symbol] option name
       # @param value  [String] Value to set
-      # @param source [Symbol] `OptionSource` of value
-      def set_option(option_symbol, value, source: :code, warn_deprecation: true)
+      # @param source [Symbol] `Option::Source` of value
+      # @param final [Boolean] Value is final: values from a lower source (preset, environment) are ignored
+      def set_option(option_symbol, value, source: :code, warn_deprecation: true, final: false)
         Aspera.assert_type(option_symbol, Symbol)
-        option_def(option_symbol).assign_value(value, source: source, warn_deprecation: warn_deprecation)
+        option_def(option_symbol).assign_value(value, source: source, warn_deprecation: warn_deprecation, final: final)
       end
 
       # Set option to `nil`
@@ -492,8 +497,8 @@ module Aspera
         result = nil
         @command_line.with_arguments_after_current_option do
           get_next_argument('args', multiple: end_marker).each do |argument|
-            Aspera.assert(argument.include?(Option::VALUE_SEP), type: BadArgument) { "Argument collected by @: does not include #{Option::VALUE_SEP}: #{argument} (end marker: #{end_marker})" }
-            path, value = argument.split(Option::VALUE_SEP, 2)
+            Aspera.assert(argument.include?(CommandLine::Option::VALUE_SEP), type: BadArgument) { "Argument collected by @: does not include #{CommandLine::Option::VALUE_SEP}: #{argument} (end marker: #{end_marker})" }
+            path, value = argument.split(CommandLine::Option::VALUE_SEP, 2)
             result = DotContainer.dotted_to_container(path.split(DotContainer::SEPARATOR), Parser.smart_convert(value), result)
           end
         end
@@ -542,7 +547,7 @@ module Aspera
       # @param types [Array<Class>] types to add
       # @return [String] Types if relevant
       def add_types_info(types)
-        return '' if !types || types.empty? || types.eql?(Type::ENUM) || types.eql?(Type::BOOLEAN) || types.eql?(Type::STRING)
+        return '' if !types || types.empty? || types.eql?(Option::Type::ENUM) || types.eql?(Option::Type::BOOLEAN) || types.eql?(Option::Type::STRING)
         " (#{types.map(&:name).join(', ')})"
       end
 
@@ -572,8 +577,8 @@ module Aspera
       # @return [Object] converted value
       def convert_argument(value, validation)
         # if value comes from JSON/YAML, it may come as Integer
-        return value.to_s if value.is_a?(Integer) && validation.eql?(Type::STRING)
-        return value unless value.is_a?(String) && validation.eql?(Type::INTEGER)
+        return value.to_s if value.is_a?(Integer) && validation.eql?(Option::Type::STRING)
+        return value unless value.is_a?(String) && validation.eql?(Option::Type::INTEGER)
         Integer(value, 10, exception: false).tap { |i| raise Cli::BadArgument, "Invalid integer: #{value}" if i.nil? }
       end
 
@@ -594,7 +599,7 @@ module Aspera
         raise BadArgument, "Argument #{descr}: #{errors.join('; ')} (give `#{SchemaRequest::KEYWORD}` as argument for schema)" unless errors.nil? || errors.empty?
       end
 
-      # @param opt [OptionValue] option descriptor
+      # @param opt [Option::Value] option descriptor
       # @return [String, nil] placeholder shown in flag column, or nil for flags
       def option_display_value(opt)
         case opt.kind
@@ -655,8 +660,8 @@ module Aspera
 
       # Flags to execute for a flag token: `--help`, `-h`, or combined `-hN`
       # @param tok    [Option]      flag token
-      # @param option [OptionValue] declared flag option
-      # @return [Array<OptionValue>, nil] flags, or `nil` if combined flags are not all declared yet
+      # @param option [Option::Value] declared flag option
+      # @return [Array<Option::Value>, nil] flags, or `nil` if combined flags are not all declared yet
       # @raise [BadArgument] if a value is given
       def flag_options(tok, option)
         if tok.short_char.nil?
@@ -671,7 +676,7 @@ module Aspera
 
       # Resolve long option name: exact match, or unique abbreviation (recorded on token).
       # @param tok [Option] long option token
-      # @return [OptionValue, nil] declared option, or `nil` if not declared yet
+      # @return [Option::Value, nil] declared option, or `nil` if not declared yet
       # @raise [BadArgument] if abbreviation is ambiguous
       def resolve_long_name(tok)
         # No abbreviation with dotted notation
@@ -686,13 +691,13 @@ module Aspera
       # @return [String] formatted option string (e.g. "--option=VALUE")
       def symbol_to_option(symbol, opt_val = nil)
         result = self.class.option_name_to_line(symbol)
-        opt_val.nil? ? result : "#{result}#{Option::VALUE_SEP}#{opt_val}"
+        opt_val.nil? ? result : "#{result}#{CommandLine::Option::VALUE_SEP}#{opt_val}"
       end
 
       # Keep value from preset or env until option is declared
       # @param option_symbol [Symbol]  option name
       # @param value         [Object]  value
-      # @param source        [Symbol]  `OptionSource`
+      # @param source        [Symbol]  `Option::Source`
       # @param replace       [Boolean] replace a pending value from same source
       def add_pending_value(option_symbol, value, source, replace:)
         declare_secrets(option_symbol, value)
@@ -705,7 +710,7 @@ module Aspera
         end
       end
 
-      # Declare secret values of an option not declared yet, by option name (as `OptionValue#store` does for a declared option),
+      # Declare secret values of an option not declared yet, by option name (as `Option::Value#store` does for a declared option),
       # so that they are hidden wherever they appear (logs, results), also in a structure (e.g. `{value:, source:}` of a pending value)
       # @param name  [Symbol, String] option name
       # @param value [Object]         value
@@ -718,7 +723,7 @@ module Aspera
         ready = @pending_values.select { |k, _| @registry.declared?(k) }
         ready.each_key { |k| @pending_values.delete(k) }
         ready.each do |option_symbol, entries|
-          entries.sort_by { |e| OptionSource.priority(e[:source]) }.each do |e|
+          entries.sort_by { |e| Option::Source.priority(e[:source]) }.each do |e|
             set_option(option_symbol, e[:value], source: e[:source])
           end
         end

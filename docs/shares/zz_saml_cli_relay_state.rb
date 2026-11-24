@@ -82,6 +82,8 @@ module SamlCliRelayState
     cipher = OpenSSL::Cipher.new('aes-256-gcm').encrypt
     cipher.key = OpenSSL::Digest.digest('SHA256', "#{CODE_KEY_BASE}#{state}#{Time.now.to_i / CODE_PERIOD}")
     iv = cipher.random_iv
+    # The code starts with the IV: an IV that gives `-` as first character (`+` before URL-safe) is drawn again, so that ascli does not read the code as an option
+    iv = cipher.random_iv while [iv].pack('m0').start_with?('+')
     body = cipher.update(Zlib::Deflate.deflate(JSON.generate(data), Zlib::BEST_COMPRESSION)) + cipher.final
     [iv + cipher.auth_tag(16) + body].pack('m0').tr('+/', '-_').delete('=')
   end

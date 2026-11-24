@@ -1,0 +1,80 @@
+openapi: 3.1.0
+info:
+  title: Options of bundle transferd
+  version: 1.0.0
+  description: Schema definitions of the options of bundle `transferd`
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+paths: {}
+components:
+  schemas:
+    ServiceOptions:
+      type: object
+      description: >-
+        Installation parameters of the transfer daemon (`transferd`) as a system service.
+        The content of the daemon configuration file is described by its own schema.
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          description: >-
+            Name of the service.
+            The unit file is `<name>.service`.
+          default: aspera-transferd
+          minLength: 1
+        user:
+          type: string
+          description: >-
+            Account that runs the daemon.
+            It must exist, it is not created.
+          default: asperadaemon
+          minLength: 1
+        group:
+          type: string
+          description: Group that runs the daemon. Defaults to the primary group of `user`.
+          minLength: 1
+        unit_dir:
+          type: string
+          description: Folder where the unit file is created.
+          default: /etc/systemd/system
+          minLength: 1
+        after:
+          type: array
+          description: Units that shall be started before the daemon (`After=` in the unit).
+          items:
+            type: string
+          default:
+            - network.target
+        environment:
+          type: object
+          description: >-
+            Environment variables set in the unit.
+            None is set unless given here.
+            `TRANSFERD_ADDRESS`, `TRANSFERD_PORT`, `TRANSFERD_MGMT_PORT` and `TRANSFERD_MGMT_ADDRESS` override the configuration file.
+          additionalProperties:
+            type: string
+        version:
+          type: string
+          description: >-
+            Version of the SDK to install, used by `install` when the SDK folder is named `current` (versions side by side).
+            Defaults to the SDK version of this tool.
+          pattern: '^\d+(\.\d+)*$'
+        purge:
+          type: boolean
+          description: Used by `uninstall`. Also remove the configuration file and the log folder.
+          default: false
+    TransferdServiceConfig:
+      type: object
+      description: >-
+        Configuration of the transfer daemon (`transferd`) as a system service.
+      additionalProperties: false
+      properties:
+        service:
+          $ref: "#/components/schemas/ServiceOptions"
+        config:
+          type: object
+          # Open: content of `transferd.json`, checked with the schema of the transfer daemon configuration (`transferd`)
+          additionalProperties: true
+          description: >-
+            Content of `transferd.json`, validated against the transfer daemon configuration schema.

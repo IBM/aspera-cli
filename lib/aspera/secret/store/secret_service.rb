@@ -67,7 +67,7 @@ module Aspera
           if !status.success?
             # no error message when the item does not exist
             raise Error, stderr.strip unless stderr.strip.empty?
-            raise "Secret '#{label}' not found" if exception
+            raise NotFound, "Secret '#{label}' not found" if exception
             return
           end
           attributes = search(label).last
@@ -82,7 +82,7 @@ module Aspera
 
         # @param label [String] Label of the secret
         def delete(label:)
-          raise "Secret '#{label}' not found" if get(label: label, exception: false).nil?
+          raise NotFound, "Secret '#{label}' not found" if get(label: label, exception: false).nil?
           _, stderr, status = secret_tool('clear', ATTR_SERVICE, @name, 'label', label)
           raise Error, stderr.strip unless status.success?
           nil

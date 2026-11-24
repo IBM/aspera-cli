@@ -52,18 +52,18 @@ module Aspera
         end
 
         def validate_set(options)
-          Aspera.assert_type(options, Hash) { 'options' }
+          Aspera.assert_type(options, Hash, type: Error) { 'options' }
           unsupported = options.keys - CONTENT_KEYS
-          Aspera.assert(unsupported.empty?) { "unsupported options: #{unsupported}, use #{CONTENT_KEYS.join(', ')}" }
+          Aspera.assert(unsupported.empty?, type: Error) { "unsupported options: #{unsupported}, use #{CONTENT_KEYS.join(', ')}" }
           options.each_pair do |k, v|
-            Aspera.assert_type(v, String) { k.to_s }
+            Aspera.assert_type(v, String, type: Error) { k.to_s }
           end
-          Aspera.assert(options.key?(:label), 'label is required')
+          Aspera.assert(options.key?(:label), 'label is required', type: Error)
         end
 
         # Labels are unique: `set` does not overwrite an existing secret
         def assert_new_label(label)
-          Aspera.assert(get(label: label, exception: false).nil?) { "secret #{label} already exist, delete first" }
+          Aspera.assert(get(label: label, exception: false).nil?, type: Error) { "secret #{label} already exist, delete first" }
         end
 
         # Checks before access: options of reference, paths allowed by configuration
@@ -77,9 +77,10 @@ module Aspera
         # Read a secret by reference: the path is the label, the field is `password` by default
         # @param ref [Reference]
         # @return [Hash] `value` (`String`), `version` (`nil` if store has no version), `updated_time` (`Time` or `nil`)
+        # @raise [NotFound] No secret for the label, or no such field
         def read_reference(ref)
           entry = get(label: ref.path, exception: false)
-          raise Error, "no label: #{ref.path}" if entry.nil?
+          raise NotFound, "no label: #{ref.path}" if entry.nil?
           {value: field_value(entry, ref, default: DEFAULT_FIELD), version: nil, updated_time: nil}
         end
 
@@ -97,10 +98,10 @@ module Aspera
         # Field names of a secret by reference, without values: the path is the label
         # @param ref [Reference] Reference, its field is not used
         # @return [Hash] `fields` (`Array<String>`, fields that a reference can read), `version` (`nil`), `updated_time` (`nil`)
-        # @raise [Error] No secret
+        # @raise [NotFound] No secret
         def read_fields(ref)
           entry = get(label: ref.path, exception: false)
-          raise Error, "no label: #{ref.path}" if entry.nil?
+          raise NotFound, "no label: #{ref.path}" if entry.nil?
           {fields: field_names(entry.reject { |name, _| name.to_s.eql?('label') }), version: nil, updated_time: nil}
         end
 
@@ -141,7 +142,7 @@ module Aspera
           raise Error, 'field required: #<field>' if field.nil?
           value = data.key?(field.to_sym) ? data[field.to_sym] : data[field]
           case value
-          when nil then raise Error, "no field: #{field}"
+          when nil then raise NotFound, "no field: #{field}"
           when String then value
           when Numeric, true, false then value.to_s
           else raise Error, "field #{field} is not a string"

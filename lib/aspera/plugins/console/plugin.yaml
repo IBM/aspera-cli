@@ -1,0 +1,8 @@
+name: console
+title: IBM Aspera Console
+commands: true
+schemas:
+  - key: console
+    file: schemas/IBM Aspera Console-enhanced.yaml
+    source:
+      url: https://raw.githubusercontent.com/laurent-martin/aspera-api-examples/refs/heads/main/openapi/IBM%20Aspera%20Console-enhanced.yaml

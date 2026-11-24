@@ -125,6 +125,10 @@ module Aspera
         it 'rejects an invalid duration' do
           expect { build_http(['--http-options=@json:{"retry_sleep":"abc"}']) }.to(raise_error(BadArgument, /retry_sleep: Invalid duration: abc/))
         end
+
+        it 'rejects an unknown SSL option as a command line error' do
+          expect { build_http(['--http-options=@json:{"ssl_options":["NO_SUCH_OPTION"]}']) }.to(raise_error(BadArgument, /Unknown ssl_option: OP_NO_SUCH_OPTION/))
+        end
       end
 
       describe 'option insecure' do

@@ -1,0 +1,30 @@
+openapi: 3.1.0
+info:
+  title: Options of bundle server
+  version: 1.0.0
+  description: Schema definitions of the options of bundle `server`
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+paths: {}
+components:
+  schemas:
+    SshOptions:
+      type: object
+      description: >-
+        Options of the SSH client library `Net::SSH` (method `start`), for the commands executed over SSH (e.g. `browse`, `delete`).
+        Refer to https://net-ssh.github.io/net-ssh/Net/SSH.html#method-c-start
+      # Open: any option of `Net::SSH.start`, checked by the gem (the list depends on its version)
+      additionalProperties: true
+      properties:
+        use_agent:
+          type: boolean
+          description: Use the keys of a running `ssh-agent`.
+          default: false
+        passphrase:
+          type: string
+          description: Passphrase of the SSH private keys (also set by option `passphrase`).
+        verbose:
+          description: >-
+            Log level of `Net::SSH`: an `Integer`, from `0` (debug) to `4` (fatal).
+            Default: warnings.

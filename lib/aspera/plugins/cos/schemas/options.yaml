@@ -1,0 +1,30 @@
+openapi: 3.1.0
+info:
+  title: Options of bundle cos
+  version: 1.0.0
+  description: Schema definitions of the options of bundle `cos`
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+paths: {}
+components:
+  schemas:
+    CosServiceCredentials:
+      type: object
+      description: Service credentials of IBM Cloud Object Storage, as saved from the IBM Cloud console (JSON).
+      # Open: the credentials saved from the IBM Cloud console have other fields, not used
+      additionalProperties: true
+      required:
+        - apikey
+        - resource_instance_id
+        - endpoints
+      properties:
+        apikey:
+          type: string
+          description: API key of the service.
+        resource_instance_id:
+          type: string
+          description: Identifier (CRN) of the instance of the service.
+        endpoints:
+          type: string
+          description: URL of the list of endpoints of the service, by region.

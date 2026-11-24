@@ -8,11 +8,15 @@ require_relative '../parser'
 require_relative '../../assert'
 require_relative '../result'
 require_relative '../poll'
-require_relative '../command_registry'
-require_relative '../option_declarator'
+require_relative '../command/registry'
+require_relative '../option/declarator'
+require_relative '../security'
 require_relative '../special_values'
+require_relative '../../bundle_registry'
+require_relative '../../log'
 require_relative '../../rest/list'
 require_relative '../../schema/registry'
+require_relative '../../string_ext'
 
 module Aspera
   module Cli
@@ -30,7 +34,7 @@ module Aspera
           ALL = (GLOBAL + INSTANCE).freeze
         end
         class << self
-          include OptionDeclarator
+          include Option::Declarator
 
           # Option sources added with `use_options`, with their `on_set` target.
           # @return [Hash{Class, Module => Proc, nil}]
@@ -38,7 +42,7 @@ module Aspera
             @used_option_sources ||= {}
           end
 
-          # Include options from another plugin or OptionDeclarator module.
+          # Include options from another plugin or Option::Declarator module.
           # @param source [Class, Module]
           # @param target [Proc, nil] Executed on the plugin instance, returns the object for Symbol and Proc `on_set` callbacks
           #                           of `source` (e.g. `-> { http_config }`); nil: the plugin instance
@@ -47,18 +51,20 @@ module Aspera
           end
 
           # Per-class DSL registry (not inherited: each subclass gets its own instance).
-          # @return [CommandRegistry]
+          # @return [Command::Registry]
           def command_registry
-            @command_registry ||= CommandRegistry.new
+            @command_registry ||= Command::Registry.new
           end
 
           # DSL class method: register a command in this plugin's registry.
           # Inherits parent from the enclosing commands_under block when parent: is omitted.
-          # @param id [Symbol]
-          # @param kwargs [Hash] forwarded to [CommandSpec]
-          def command(id, **kwargs)
+          # @param id     [Symbol]
+          # @param before [Symbol, nil] Command of the same parent before which this one is placed (e.g. by a mounted module), `nil`: after the others
+          # @param kwargs [Hash] forwarded to [Command]
+          def command(id, before: nil, **kwargs)
             kwargs[:parent] = @current_parent if kwargs[:parent].nil? && @current_parent
-            command_registry.register(CommandSpec.new(id: id, **kwargs))
+            kwargs[:security] = mounted_level(kwargs[:security])
+            command_registry.register(Command.new(id: id, **kwargs), before: before)
           end
 
           # Words displayed with specific case in descriptions
@@ -94,7 +100,7 @@ module Aspera
 
           # DSL class method: declare CRUD commands for a REST entity.
           #
-          # For each verb in operations:, registers one CommandSpec with:
+          # For each verb in operations:, registers one Command with:
           #   - description: operation_description(verb, name)
           #   - arguments:   [{name: id_name, type: :identifier, lookup: lookup}] for instance verbs
           #                  (:show, :modify, :delete) when not a singleton; none for global verbs
@@ -171,11 +177,11 @@ module Aspera
           end
 
           # DSL class method: define an instance method whose name is derived from a path array.
-          # Equivalent to: define_method(CommandSpec.action_method(path), &block)
+          # Equivalent to: define_method(Command.action_method(path), &block)
           # @param path [Array<Symbol>] command path segments, e.g. [:admin, :user, :list]
           # @yieldparam [Hash] keyword context forwarded from dispatch
           def define_action_method(path, &block)
-            define_method(CommandSpec.action_method(path), &block)
+            define_method(Command.action_method(path), &block)
           end
 
           # DSL class method: scope block that sets a default parent for nested command() calls.
@@ -208,26 +214,28 @@ module Aspera
             @current_parent = previous
           end
 
-          # Options of this plugin class (`option` DSL, see OptionDeclarator).
-          # Metadata is stored as an OptionSpec at class-load time; the actual
+          # Options of this plugin class (`option` DSL, see Option::Declarator).
+          # Metadata is stored as an Option at class-load time; the actual
           # options.declare call happens in Base#initialize once the instance exists.
-          # @return [Hash{Symbol => OptionSpec}]
+          # @return [Hash{Symbol => Option}]
           def option_specs
             command_registry.option_specs
           end
 
-          # Store an OptionSpec in the command registry.
+          # Store an Option in the command registry.
           # Raises ArgumentError at class-load time if the same option name is already
           # declared by any ancestor class, preventing silent shadowing.
-          # @param spec [OptionSpec]
-          def register_option_spec(spec)
+          # @param spec   [Option]
+          # @param before [Symbol, nil] Name of an option of this class to place it before (see `Command::Registry#register_option`)
+          def register_option_spec(spec, before: nil)
             ancestor_owner = ancestors.drop(1).find do |klass|
               klass.is_a?(Class) && klass <= Base &&
                 klass.instance_variable_defined?(:@command_registry) &&
-                klass.command_registry.option_specs.key?(spec.name)
+                klass.command_registry.option_registered?(spec.name)
             end
             raise ArgumentError, "#{self}: option :#{spec.name} already declared in ancestor #{ancestor_owner}" if ancestor_owner
-            command_registry.register_option(spec)
+            spec.security = mounted_level(spec.security)
+            command_registry.register_option(spec, before: before)
           end
 
           # Classes and modules whose options apply to this plugin:
@@ -258,14 +266,50 @@ module Aspera
             options.parse_options! if parse
           end
 
+          # Name of the plugin: its top level command, set by `Factory` when it loads the class: name of the file (single file) or of the bundle.
+          # Default (class not loaded by `Factory`, e.g. `Config`): from the class name `Aspera::Cli::Plugins::<Name>` or `Aspera::Plugins::<Name>::Commands`.
+          # @return [String]
+          def plugin_name
+            @plugin_name || (name[/\AAspera::Plugins::(\w+)::Commands\z/, 1] || name.split('::').last).capital_to_snake
+          end
+
+          # @!attribute [w] plugin_name
+          #   @param value [String] Name of the plugin, set by `Factory`
+          attr_writer :plugin_name
+
+          # Include the modules that bundles mount on this plugin (manifest `mounts`), each once, by name of bundle, then in the order of the manifest.
+          # The `included` hook of a module declares its commands and options in this class, as an `include` of the module at this place of the class body would.
+          # Called by `Factory` when it loads the class: mounted commands come after the ones of the class body; a class body may call it to place them.
+          # The module of a bundle whose source is refused at the current security level is not loaded; the commands and options declared by a module
+          # get the security level of its source, if more restrictive.
+          # @param registry [BundleRegistry] Registry of the bundles
+          # @return [nil]
+          def include_mounts(registry = BundleRegistry.instance)
+            @included_mounts ||= []
+            registry.mounts(plugin_name.to_sym).each do |mount|
+              next if @included_mounts.include?(mount) || !registry.allowed?(mount.bundle)
+              @included_mounts.push(mount)
+              mounted = registry.load_entry(mount)
+              Aspera.assert(mounted.instance_of?(Module)) { "plugin #{mount.bundle}: #{mount.constant} is not a module" }
+              @mount_security = registry[mount.bundle].security
+              include(mounted)
+            rescue BundleRegistry::Unavailable, AssertError, NameError, ScriptError, ArgumentError => e
+              # A broken module (wrong constant, syntax error, failing hook) is skipped as an unavailable bundle: the target plugin still works
+              Log.log.warn { "Commands of plugin #{mount.bundle} are not added to #{plugin_name}: #{e.message}" }
+            ensure
+              @mount_security = nil
+            end
+            nil
+          end
+
           # DSL class method: declare the human-readable application name shown in wizards.
           # When called with an argument, sets the name. When called with no argument, returns it.
-          # Falls back to the last component of the class name if never set.
+          # Falls back to the plugin name in CamelCase if never set.
           # @param name [String, nil]
           # @return [String]
           def application_name(name = nil)
             @application_name = name unless name.nil?
-            @application_name || self.name.split('::').last
+            @application_name || plugin_name.snake_to_capital
           end
 
           # Build a filter lambda from a match expression (String glob, Regexp, Proc, or nil).
@@ -280,6 +324,16 @@ module Aspera
             else Aspera.error_unexpected_value(match_expression.class.name, type: ParameterError)
             end
           end
+
+          private
+
+          # @param level [Symbol, nil] Security level of a command or option declared in this class
+          # @return [Symbol, nil] The most restrictive of this level and the one of the source of the module being mounted (see `include_mounts`)
+          def mounted_level(level)
+            return level if @mount_security.nil?
+            return @mount_security if level.nil?
+            [level, @mount_security].min_by { |item| Security::LEVELS.index(item) }
+          end
         end
 
         # Shared positional argument for commands that accept an optional file name filter.
@@ -288,8 +342,8 @@ module Aspera
         FILTER_ARGS = [{name: :filter, type: [String, Regexp, Proc], description: 'File name filter: String (glob), Regexp, or Proc', mandatory: false, default: nil}].freeze
 
         option :query, description: 'Additional filter for for some commands (list/delete)', allowed: [Hash, Array, NilClass]
-        option :bulk,  description: 'Bulk operation (only some)',                            allowed: Type::BOOLEAN, default: false
-        option :bfail, description: 'Bulk operation error handling',                         allowed: Type::BOOLEAN, default: true
+        option :bulk,  description: 'Bulk operation (only some)',                            allowed: Option::Type::BOOLEAN, default: false
+        option :bfail, description: 'Bulk operation error handling',                         allowed: Option::Type::BOOLEAN, default: true
         option :poll,  description: 'Repeat a read-only command (dot-notation: interval, max, timeout, until, show, errors)', schema: Schema::Registry::POLL_OPTIONS
 
         def initialize(context:)
@@ -299,9 +353,9 @@ module Aspera
           # Switch to the plugin-specific options group so that all options declared
           # below (DSL-registered and imperative) appear under the plugin section in
           # --help output, separate from the global options.
-          options.group(self.class.name.split('::').last.downcase) if @context.man_header
+          options.group(self.class.plugin_name) if @context.man_header
           # Auto-declare all options registered via the DSL `option` class method,
-          # including those of parent plugin classes (e.g. Oauth, BasicAuth) and `use_options` sources.
+          # including those of modules that give theirs when included (e.g. Oauth, BasicAuth) and `use_options` sources.
           self.class.declare_options(options, target: self)
         end
 
@@ -313,7 +367,8 @@ module Aspera
 
         # @return [Aspera::Cli::Parser]
         def options; @context.options; end
-        # @return [Aspera::Cli::TransferAgent]
+        # Plugins of bundles use `Aspera::Plugins::Xfer::Helper#transfer` (bundle `xfer`)
+        # @return [Object] Service `transfer` of the context (`Aspera::Plugins::Xfer::TransferAgent`)
         def transfer; @context.transfer; end
         # @return [Aspera::Cli::Plugins::Config]
         def config; @context.config; end
@@ -358,7 +413,7 @@ module Aspera
             Security.instance.check_level(spec.security, "command #{current_path.join(' ')}") if spec
             # Before anything is executed (setup, arguments, action)
             poll = poll_result(current_path, spec) if is_leaf
-            # Phase A - for intermediate nodes only: resolve all ArgumentSpec declared on this node
+            # Phase A - for intermediate nodes only: resolve all Argument declared on this node
             # before dispatching to children (leaf nodes resolve their arguments inside execute_leaf).
             ctx = resolve_arguments(spec.arguments, ctx) if !is_leaf && spec&.arguments
             ctx = ctx.merge(send(spec.setup, **ctx)) if spec&.setup
@@ -375,7 +430,7 @@ module Aspera
         # Phase B, leaf branch: execute a spec that is already a leaf (no children).
         # Intercepts --help before calling execute_leaf.
         # @param current_path [Array<Symbol>]
-        # @param spec [CommandSpec]
+        # @param spec [Command]
         # @param ctx [Hash]
         # @param poll [Result::Poll, nil] With option `poll`: result that executes the action when displayed
         # @return [Object]
@@ -389,13 +444,13 @@ module Aspera
 
         # With option `poll`, check that the command is read-only, and the parameters of `poll`
         # @param current_path [Array<Symbol>] path of the leaf command
-        # @param spec         [CommandSpec]   leaf command
+        # @param spec         [Command]   leaf command
         # @return [Result::Poll, nil] `nil` if option `poll` is not set
         # @raise [Cli::BadArgument] if the command is not read-only, or a parameter is invalid
         def poll_result(current_path, spec)
           parameters = options.get_option(:poll)
           return if parameters.nil? || parameters.empty?
-          command = [self.class.name.split('::').last.downcase, *current_path].join(' ')
+          command = [self.class.plugin_name, *current_path].join(' ')
           Aspera.assert(spec.read_only?, type: Cli::BadArgument) do
             "Option poll: refused on `#{command}`: only a read-only command can be repeated (e.g. list, show, status)"
           end
@@ -414,7 +469,7 @@ module Aspera
         #   2. After get_next_command when no further args remain: raises HelpRequest scoped
         #      to the consumed command (e.g. `aoc files find -h`).
         # @param current_path [Array<Symbol>]
-        # @param registry     [CommandRegistry]
+        # @param registry     [Command::Registry]
         # @param ctx          [Hash]
         # @return [Object]
         def dispatch_child(current_path, registry, ctx)
@@ -458,7 +513,7 @@ module Aspera
         # Setups of the mount point `at` and of its ancestors in the target are not executed:
         # the seed ctx returned by the host's `instance` method replaces them.
         # The mount's own arguments (if any) are read first, and passed to `instance` in ctx.
-        # @param mount   [MountSpec]
+        # @param mount   [Command::Mount]
         # @param command [Symbol] mounted child id, already consumed
         # @param ctx     [Hash]   host context, passed to the `instance` method
         # @return [Object]
@@ -479,11 +534,11 @@ module Aspera
           self.class.instance_variable_set(:@registry_validated, true)
         end
 
-        # Resolve the action for a leaf CommandSpec.
+        # Resolve the action for a leaf Command.
         # Returns spec.action (Symbol or Proc) if explicitly set; otherwise derives a Symbol
         # from the full path as :action_<path_segment_1>_<path_segment_2>_...
         # (e.g. [:access_key, :list] -> :action_access_key_list).
-        # @param spec [CommandSpec]
+        # @param spec [Command]
         # @return [Symbol, Proc]
         def action_for(spec)
           spec.action || spec.action_method_name
@@ -504,10 +559,10 @@ module Aspera
           end
         end
 
-        # Execute a leaf CommandSpec: resolve arguments and call action.
+        # Execute a leaf Command: resolve arguments and call action.
         # Arguments already present in `ctx` (e.g. provided by a caller or a mount seed) are skipped:
         # they are not read again from the command line.
-        # @param spec [CommandSpec] a leaf node (no children)
+        # @param spec [Command] a leaf node (no children)
         # @param ctx  [Hash]        accumulated context (pre-resolved keys are not re-consumed)
         # @param poll [Result::Poll, nil] With option `poll`: the action is executed when this result is displayed
         # @return [Object]
@@ -527,7 +582,7 @@ module Aspera
         # If the next CLI argument is that same value, or `ALL`, it is skipped, so that it is not mistaken for a later argument
         # (e.g. `faspex5 packages receive ALL` with a public link to a package).
         # For type: :identifier, the percent-selector lookup receives the ctx accumulated so far.
-        # @param arg_specs [Array<ArgumentSpec>]
+        # @param arg_specs [Array<Argument>]
         # @param ctx       [Hash] accumulated context
         # @return [Hash] ctx merged with the resolved arguments
         def resolve_arguments(arg_specs, ctx)
@@ -555,7 +610,7 @@ module Aspera
         # When arg_spec.bulk is true, always returns an Array (normalized to [value] when non-bulk).
         # Only such arguments are read as a list with `--bulk=yes`: others (e.g. the id of a parent node) are single values.
         # For type: :identifier, an optional block provides the percent-selector lookup.
-        # @param arg_spec [ArgumentSpec]
+        # @param arg_spec [Argument]
         # @yieldparam field [String]  field name from a percent-selector (%field:value)
         # @yieldparam value [String]  value from a percent-selector
         # @yieldreturn [String]       resolved identifier
@@ -660,7 +715,7 @@ module Aspera
         # --- Per-verb entity action methods ---
         # Each method handles exactly one CRUD verb.
         # The resource id (when needed) is received as `id:` from ctx — it must be
-        # resolved upstream via an ArgumentSpec(type: :identifier) on the command,
+        # resolved upstream via an Argument(type: :identifier) on the command,
         # NOT read from the CLI queue inside the method.
 
         # List all instances of an entity.

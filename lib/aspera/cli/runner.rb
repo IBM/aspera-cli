@@ -3,7 +3,7 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-require_relative 'command_spec'
+require_relative 'argument'
 require_relative 'context'
 require_relative 'parser'
 require_relative 'formatter'
@@ -16,14 +16,14 @@ require_relative 'mailer'
 require_relative 'secret_finder'
 require_relative 'extended_value'
 require_relative 'security'
-require_relative 'transfer_agent'
 require_relative 'version'
 require_relative 'info'
 require_relative 'hints'
 require_relative 'result'
-require_relative '../transfer/result'
 require_relative '../units/duration'
 require_relative '../secret/hider'
+require_relative '../secret/reference'
+require_relative '../ssh'
 require_relative '../log'
 require_relative '../assert'
 require_relative '../schema/documentation'
@@ -36,71 +36,18 @@ module Aspera
   module Cli
     # The main CLI class
     class Runner
-      # Plugins store transfer result using this key and use result_transfer_multiple()
-      STATUS_FIELD = 'status'
-
-      class << self
-        # Process the typed result of a finished (or submitted) transfer.
-        # @param transfer_result [Transfer::Result] typed result from TransferAgent#start
-        # @raise [StandardError] if the transfer failed
-        # @return [Result] CLI result object
-        def result_transfer(transfer_result)
-          case transfer_result
-          when Transfer::Result::Async
-            return Result::SingleObject.new(transfer_result.to_h)
-          when Transfer::Result::Error
-            raise transfer_result.exception
-          when Transfer::Result::Success
-            return Result::Nothing.new
-          when Transfer::Result::DryRun
-            # Secrets are hidden by the formatter, as in any result
-            return Result::SingleObject.new(transfer_result.transfer_spec)
-          else
-            raise "Unexpected transfer result type: #{transfer_result.class}"
-          end
-        end
-
-        # Result of a command that creates an object and transfers its files, e.g. `packages send`.
-        # @param object          [Hash]             Created object
-        # @param transfer_result [Transfer::Result] Typed result from TransferAgent#start
-        # @raise [StandardError] if the transfer failed
-        # @return [Result::SingleObject] The object, with field `transfer` (`job_id`) if the transfer is asynchronous
-        def result_object_transfer(object, transfer_result)
-          status = result_transfer(transfer_result)
-          object = object.merge('transfer' => status.data) if status.is_a?(Result::SingleObject)
-          Result::SingleObject.new(object)
-        end
-
-        # Used when one command executes several transfer jobs (each job being possibly multi session)
-        # @param status_table [Array] [{STATUS_FIELD=>Transfer::Result,...},...]
-        # @return [Result] a status object suitable as command result
-        def result_transfer_multiple(status_table)
-          failed_result = nil
-          status_table.each do |item|
-            tr = item[STATUS_FIELD]
-            case tr
-            when Transfer::Result::Error
-              failed_result ||= tr
-              item[STATUS_FIELD] = tr.exception.message
-            when Transfer::Result::Success
-              item[STATUS_FIELD] = 'success'
-            when Transfer::Result::Async
-              item[STATUS_FIELD] = "async:#{tr.job_id}"
-            when Transfer::Result::DryRun
-              item[STATUS_FIELD] = 'dry_run'
-            else
-              item[STATUS_FIELD] = tr.to_s
-            end
-          end
-          raise failed_result.exception unless failed_result.nil?
-          return Result::ObjectList.new(status_table)
-        end
-      end
-
       # Minimum initialization, no exception raised
       # @param argv [Array<String>] command line arguments
+      # @param main_folder [String, nil] main folder set by the program (not by the arguments), e.g. the one of the MCP server; `nil`: option `home`
+      # @param config_file [String, nil] configuration file set by the program (not by the arguments), e.g. the one of the MCP server; `nil`: option `config_file`
+      # @param vault [Hash, nil] option `vault` set by the program (not by the arguments), e.g. the one of the MCP server; `nil`: option `vault`
+      # @param vault_password [String, nil] option `vault_password` set by the program (not by the arguments); `nil`: option `vault_password`
       # @return [nil]
-      def initialize(argv)
+      def initialize(argv, main_folder: nil, config_file: nil, vault: nil, vault_password: nil)
+        @main_folder = main_folder
+        @config_file = config_file
+        @vault = vault
+        @vault_password = vault_password
         # Dumped (trace2) with secrets hidden by `CommandLine`
         @argv = argv
         @option_help = false
@@ -117,10 +64,19 @@ module Aspera
         init_agents_and_options
         @context.config.add_plugin_lookup_folders
         Plugins::Factory.instance.add_plugins_from_lookup_folders
+        # Config is created before the plugin folders are added: modules mounted on config by their bundles, with their options
+        Plugins::Config.include_mounts(Plugins::Factory.instance.registry)
+        Plugins::Config.declare_options(@context.options, target: @context.config, parse: true)
+        # The service `transfer` declares its options (after those of config), and parses option `transfer`: agents of the bundles of the plugin folders are known
+        @context.transfer
         # Help requested without command? Show global options + plugin list
         return result_usage if @option_help && @context.options.command_or_arg_empty?
         # Shell completion is executed on each `Tab`: no network access
         @context.config.periodic_check_newer_gem_version unless @context.options.next_arguments?(COMPLETION_COMMAND)
+        # A plugin that cannot be loaded is not in the list of commands: give the reason, not an unknown command
+        Plugins::Factory.instance.unavailable_plugins.each do |name, reason|
+          raise Cli::Error, reason if @context.options.next_arguments?([name.to_s])
+        end
         command_sym =
           if @option_show_config && @context.options.command_or_arg_empty?
             COMMAND_CONFIG
@@ -186,16 +142,22 @@ module Aspera
           @context.formatter.display_results(result) if result
         rescue Net::SSH::AuthenticationFailed => e;    exception_info = {e: e, t: 'SSH', security: true, exit: ExitCode::AUTH}
         rescue OpenSSL::SSL::SSLError => e;            exception_info = {e: e, t: 'SSL', exit: ExitCode::NETWORK}
-        rescue Cli::BadArgument => e;                  exception_info = {e: e, t: 'Argument', usage: true, exit: ExitCode::USAGE}
+        rescue Cli::BadArgument, ParameterError => e;  exception_info = {e: e, t: 'Argument', usage: true, exit: ExitCode::USAGE}
         rescue Cli::MissingArgument => e;              exception_info = {e: e, t: 'Missing', exit: ExitCode::USAGE}
-        rescue Cli::BadIdentifier, EntityNotFound => e; exception_info = {e: e, t: 'Identifier', exit: ExitCode::NOT_FOUND}
+        rescue Cli::BadIdentifier, EntityNotFound, Aspera::Secret::NotFound => e
+          exception_info = {e: e, t: 'Identifier', exit: ExitCode::NOT_FOUND}
+        rescue AuthenticationError, Aspera::Secret::AuthenticationError => e
+          exception_info = {e: e, t: 'Authentication', exit: ExitCode::AUTH}
         rescue Cli::SchemaRequest => e;                exception_info = {e: e, t: 'Schema', exit: ExitCode::SUCCESS}
         rescue Cli::PollConditionNotMet => e;          exception_info = {e: e, t: 'Poll', exit: ExitCode::ERROR}
         rescue Cli::Error => e;                        exception_info = {e: e, t: 'Tool', usage: true, exit: ExitCode::ERROR}
-        rescue Transfer::Error => e;                   exception_info = {e: e, t: 'Transfer', exit: ExitCode::TRANSFER}
+        rescue EnvironmentError => e;                  exception_info = {e: e, t: 'Environment', exit: ExitCode::ERROR}
+        # Label `Vault`, as the option: with `Secret`, the log would hide a message of one word, as a secret value
+        rescue Aspera::Secret::Error => e;             exception_info = {e: e, t: 'Vault', exit: ExitCode::ERROR}
+        rescue Aspera::Ssh::Error => e;                exception_info = {e: e, t: 'SSH', exit: ExitCode::ERROR}
         rescue Rest::CallError => e;                   exception_info = {e: e, t: 'Rest', exit: ExitCode.for_call_error(e)}
         rescue *NETWORK_ERRORS => e;                   exception_info = {e: e, t: 'Network', exit: ExitCode::NETWORK}
-        rescue StandardError => e;                     exception_info = {e: e, t: "Other(#{e.class.name})", debug: true, exit: ExitCode::ERROR}
+        rescue StandardError => e;                     exception_info = other_error_info(e)
         rescue Interrupt => e;                         exception_info = {e: e, t: 'Interruption', debug: true, exit: ExitCode::INTERRUPTED}
         end
         # 1- processing of error condition
@@ -308,7 +270,7 @@ module Aspera
               when Numeric then v
               else Units::Duration.new(v).to_unit('s')
               end
-          else Aspera.error_unexpected_value(k, type: BadArgument) { 'temp sub-option (folder, clean, expiry)' }
+          else Aspera.error_unexpected_value(k) { 'temp sub-option (folder, clean, expiry)' }
           end
         end
       rescue ParameterError => e
@@ -316,6 +278,16 @@ module Aspera
       end
 
       private
+
+      # @param error [StandardError] Error that is neither of the CLI, nor of a REST call, nor of the network
+      # @return [Hash] Information on the error: label and exit code of its category if a bundle added one (`ExitCode.add_error`),
+      #   else `Error` for an error raised on purpose by the gem, else `Other` with location: a bug (`AssertError`, `InternalError`), or an error not of the gem
+      def other_error_info(error)
+        category = ExitCode.error_category(error)
+        return {e: error, t: category[:label], exit: category[:code]} unless category.nil?
+        return {e: error, t: 'Error', exit: ExitCode::ERROR} if error.is_a?(Aspera::Error) && !error.is_a?(AssertError) && !error.is_a?(InternalError)
+        {e: error, t: "Other(#{error.class.name})", debug: true, exit: ExitCode::ERROR}
+      end
 
       # Location of an unexpected error in the code of a plugin (built-in or from option `plugin_folder`)
       # @param error [Exception] Error
@@ -341,14 +313,20 @@ module Aspera
           lines << "\nPLUGINS"
           col_w = plugin_names.map { |n| n.to_s.length }.max + 2
           plugin_names.each do |name|
-            app = Plugins::Factory.instance.plugin_class(name).application_name
+            app =
+              begin
+                Plugins::Factory.instance.plugin_class(name).application_name
+              rescue Cli::Error => e
+                # A plugin that cannot be loaded does not prevent the help
+                e.message
+              end
             lines << "    #{name.to_s.ljust(col_w)}  #{app}"
           end
         else
           path     = plugin.help_path || []
           registry = plugin.class.command_registry
           cmds     = registry.children_of(path)
-          label    = plugin.class.name.split('::').last.downcase
+          label    = plugin.class.plugin_name
           # Build label with positional argument slots inserted after each command
           # e.g. [:access_keys, :do, :download] -> "node access_keys do <access_key_id> download"
           path.each_index do |i|
@@ -371,15 +349,8 @@ module Aspera
             lines << "\nCOMMAND: #{label}"
             lines << "    #{spec.description}" if spec&.description
             display_args = registry.arguments_at(path)
-            # transfer_paths commands use --sources for the file list; default is positional args (@args)
-            if spec&.transfer_paths
-              file_desc = if spec.transfer_paths == :receive
-                "Remote path(s) to download (default --sources=#{TransferAgent::FILE_LIST_FROM_ARGS}; see also --to-folder)"
-              else
-                "Source file(s) to upload (default --sources=#{TransferAgent::FILE_LIST_FROM_ARGS}; see also --src-type, --to-folder)"
-              end
-              display_args += [ArgumentSpec.new(name: :source_file, description: file_desc, mandatory: false, multiple: true)]
-            end
+            # The files of a command with `transfer_paths` are given as the service `transfer` reads them (e.g. positional arguments)
+            display_args += [@context.transfer.paths_argument(spec.transfer_paths)] if spec&.transfer_paths
             if display_args.any?
               lines << "\nARGUMENTS:"
               col_w = display_args.map { |a| a.name.to_s.length }.max + 2
@@ -404,7 +375,7 @@ module Aspera
       end
 
       # Render the structure of a Hash argument's JSON schema in command help.
-      # @param arg [ArgumentSpec]
+      # @param arg [Argument]
       # @return [Array<String>]
       def schema_help_lines(arg)
         description = free_form_description(arg.schema)
@@ -451,10 +422,9 @@ module Aspera
       end
 
       # @param schema_path [String] Path of the schema in the registry
-      # @return [Schema::Documentation] Documentation of the schema, for the terminal
+      # @return [Schema::Documentation] Documentation of the schema, for the terminal, with the options given by the code that registered it
       def schema_documentation(schema_path)
-        options = schema_path.eql?(Schema::Registry::TRANSFER_SPEC) ? Transfer::Spec.doc_options : {}
-        Schema::Documentation.new(TerminalFormatter, Schema::Registry.instance.reader(schema_path), **options).build
+        Schema::Documentation.new(TerminalFormatter, Schema::Registry.instance.reader(schema_path), **Schema::Registry.instance.doc_options(schema_path)).build
       end
 
       # Initialize agents and options
@@ -476,7 +446,7 @@ module Aspera
         declare_global_options
         # Bootstrap: populate context services (main_folder, persistency, presets, vault, http_config,
         # progress_bar) and configure global singletons before any plugin is instantiated.
-        @bootstrapper = Bootstrapper.new(@context)
+        @bootstrapper = Bootstrapper.new(@context, main_folder: @main_folder, config_file: @config_file, vault: @vault, vault_password: @vault_password)
         @bootstrapper.run(gem_plugins_folder: Plugins::Config.gem_plugins_folder)
         # Do not display config commands if help is asked
         @context.man_header = false
@@ -489,8 +459,7 @@ module Aspera
         @context.mailer = Mailer.new(@context.options, @context.main_folder)
         # Secret finder: depends on options (:secret) and presets, both set by Bootstrapper
         @context.secret_finder = SecretFinder.new(@context.options, @context.presets)
-        # The TransferAgent plugin may use the @preset parser
-        @context.transfer = TransferAgent.new(@context)
+        # The service `transfer` is created once the plugin folders are added (see `run_with_result`)
         @context.validate
         # Set banner when all environment is created so that additional extended value modifiers are known, e.g. @preset
       end
@@ -539,12 +508,12 @@ module Aspera
       # @return [nil]
       def declare_global_options
         Log.log.debug('declare_global_options')
-        @context.options.declare(:help, description: 'Show this message', allowed: Type::NONE, short: 'h') do
+        @context.options.declare(:help, description: 'Show this message', allowed: Option::Type::NONE, short: 'h') do
           @option_help = true
           @context.help_requested = true
         end
-        @context.options.declare(:show_config, description: 'Display parameters used for the provided action', allowed: Type::NONE) { @option_show_config = true }
-        @context.options.declare(:version, description: 'Display version', allowed: Type::NONE, short: 'v') { @context.formatter.display_message(:data, Cli::VERSION); ::Process.exit(0) } # rubocop:disable Style/Semicolon
+        @context.options.declare(:show_config, description: 'Display parameters used for the provided action', allowed: Option::Type::NONE) { @option_show_config = true }
+        @context.options.declare(:version, description: 'Display version', allowed: Option::Type::NONE, short: 'v') { @context.formatter.display_message(:data, Cli::VERSION); ::Process.exit(0) } # rubocop:disable Style/Semicolon
         @context.options.declare(
           :ui, description: 'User interface (dot-notation: mode, web_auth, hidden_silent, command)',
           allowed: [Hash, String], shorthand: 'mode', schema: Schema::Registry::UI_OPTIONS,
@@ -560,16 +529,16 @@ module Aspera
         @context.options.declare(:logger, description: 'Logging method', allowed: Log::LOG_TYPES, on_set: Log.instance.method(:logger_type=))
         @context.options.declare(:log, description: 'Logging options (dot-notation: level, type, format, secrets)', on_set: method(:option_log=), schema: Schema::Registry::LOG_OPTIONS)
         @context.options.declare(:security, description: 'Security restrictions (dot-notation: level, allowed_paths)', on_set: Security.instance.method(:options=), schema: Schema::Registry::SECURITY_OPTIONS)
-        @context.options.declare(:lock_port, description: 'Prevent dual execution of a command, e.g. in cron', allowed: Type::INTEGER)
-        @context.options.declare(:once_only, description: 'Process only new items (some commands)', allowed: Type::BOOLEAN, default: false)
-        @context.options.declare(:dry_run, description: 'Do not perform changes, only show what would be done', allowed: Type::BOOLEAN, default: false)
-        @context.options.declare(:log_secrets, description: 'Show passwords in logs', allowed: Type::BOOLEAN, default: Secret::Hider.instance.log_secrets, on_set: Secret::Hider.instance.method(:log_secrets=))
+        @context.options.declare(:lock_port, description: 'Prevent dual execution of a command, e.g. in cron', allowed: Option::Type::INTEGER)
+        @context.options.declare(:once_only, description: 'Process only new items (some commands)', allowed: Option::Type::BOOLEAN, default: false)
+        @context.options.declare(:dry_run, description: 'Do not perform changes, only show what would be done', allowed: Option::Type::BOOLEAN, default: false)
+        @context.options.declare(:log_secrets, description: 'Show passwords in logs', allowed: Option::Type::BOOLEAN, default: Secret::Hider.instance.log_secrets, on_set: Secret::Hider.instance.method(:log_secrets=))
         @context.options.declare(
           :temp, description: 'Temporary files (dot-notation: folder, clean, expiry)',
           allowed: [Hash, String], shorthand: 'folder', schema: Schema::Registry::TEMP_OPTIONS,
           on_set: method(:option_temp=)
         )
-        @context.options.declare(:clean_temp, description: 'Cleanup temporary files on exit', allowed: Type::BOOLEAN, on_set: TempFileManager.instance.method(:cleanup_on_exit=), deprecation: {last: '4.27.5', message: 'use --temp.clean'})
+        @context.options.declare(:clean_temp, description: 'Cleanup temporary files on exit', allowed: Option::Type::BOOLEAN, on_set: TempFileManager.instance.method(:cleanup_on_exit=), deprecation: {last: '4.27.5', message: 'use --temp.clean'})
         @context.options.declare(:temp_folder, description: 'Temporary folder', on_set: TempFileManager.instance.method(:global_temp=), deprecation: {last: '4.27.5', message: 'use --temp.folder'}, complete: :folder)
         @context.options.declare(:pid_file, description: 'Write process identifier to file, delete on exit', complete: :file, security: :low)
         @context.options.declare(

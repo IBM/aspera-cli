@@ -1,0 +1,8 @@
+name: faspio
+title: IBM Aspera faspio Gateway
+commands: true
+schemas:
+  - key: faspio
+    file: schemas/IBM Aspera faspio Gateway API-1.0.0-enhanced.yaml
+    source:
+      url: https://raw.githubusercontent.com/laurent-martin/aspera-api-examples/refs/heads/main/openapi/IBM%20Aspera%20faspio%20Gateway%20API-1.0.0-enhanced.yaml

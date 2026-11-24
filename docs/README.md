@@ -2921,6 +2921,8 @@ Features that execute code (own, or downloaded), load code, or write a file chos
 | Options `sdk_url` and `locations_url` | The SDK, including `ascp`, is downloaded from this location, then executed |
 | Option `out`, key `file` (and `output`), option `pid_file` | Write (or truncate, or delete) a file chosen by the client |
 | Option `home` | Configuration folder: its presets, and its folder `plugins` (Ruby code) are used |
+| Option `config_file` | Configuration file: its presets are used, and a command that changes presets writes it |
+| Options `vault` and `vault_password` | Secret stores of `@vault:`: a file store is created and written at the path given, other stores connect to the server given |
 | Option `plugin_folder` | Plugins are Ruby code |
 | Plugins of the folders of option `plugin_folder` (by default, folder `plugins` of the configuration folder) | Ruby code: not loaded at other levels, also if the file was there before |
 | Command `config plugins create` | Creates Ruby code, loaded as a plugin |
@@ -3370,6 +3372,7 @@ options server
 options server --select=@json:'{"option":"--display"}' --fields=replacement
 plugins create my_command .
 plugins list
+plugins show node
 preset delete conf_name
 preset list
 preset overview
@@ -6726,13 +6729,20 @@ ascli config plugins list
 ```
 
 ```text
-╭────────┬────────┬────────┬─────────────────────────────────────────────────╮
-│ plugin │ detect │ wizard │ path                                            │
-╞════════╪════════╪════════╪═════════════════════════════════════════════════╡
-│ shares │ ✓      │ ✓      │ .../aspera-cli/lib/aspera/cli/plugins/shares.rb │
-│ node   │ ✓      │ ✓      │ .../aspera-cli/lib/aspera/cli/plugins/node.rb   │
+╭────────┬────────┬────────┬───────────┬─────────────────────────────────────────────────╮
+│ plugin │ detect │ wizard │ status    │ path                                            │
+╞════════╪════════╪════════╪═══════════╪═════════════════════════════════════════════════╡
+│ shares │ ✓      │ ✓      │ available │ .../aspera-cli/lib/aspera/plugins/shares        │
+│ node   │ ✓      │ ✓      │ available │ .../aspera-cli/lib/aspera/plugins/node          │
 ...
-╰────────┴────────┴────────┴─────────────────────────────────────────────────╯
+╰────────┴────────┴────────┴───────────┴─────────────────────────────────────────────────╯
+```
+
+Column `status` is `available`, or the reason why the plugin cannot be used (e.g. `missing gem <gem>`).
+Details of one plugin (source, form, capabilities, dependencies, gems, security level):
+
+```shell
+ascli config plugins show node
 ```
 
 Most plugins will take the URL option: `url` to identify their location.
@@ -6770,17 +6780,18 @@ ascli --plugin-folder=. foo
 
 #### Writing a plugin
 
-A plugin is a Ruby file in a plugin folder (option `plugin_folder`, by default folder `plugins` of the configuration folder).
+A plugin is, in a plugin folder (option `plugin_folder`, by default folder `plugins` of the configuration folder), either a Ruby file (this section), or a folder with a manifest, for a plugin with several files, a transfer agent or schemas (see [Writing a plugin bundle](#writing-a-plugin-bundle)).
 
 - **Name**: the file name is the plugin name, which is the first command, e.g. file `my_app.rb` for command `my_app`.
-  The file defines class `Aspera::Cli::Plugins::<Class>`, the name in CamelCase (`MyApp`), subclass of:
-  - `Base`: no common option.
+  The file defines class `Aspera::Cli::Plugins::<Class>`, the name in CamelCase (`MyApp`), subclass of `Base` (`aspera/cli/plugins/base`).
+  For common options, the class includes one of these modules (`include <Module>`):
   - `BasicAuth` (`aspera/cli/plugins/basic_auth`): options `url`, `username`, `password`, method `basic_auth_api` returns a REST client with HTTP Basic authentication.
   - `Oauth` (`aspera/cli/plugins/oauth`): options of `BasicAuth`, and `auth` (default `jwt`), `client_id`, `client_secret`, `redirect_uri`, `private_key`, `passphrase`.
 - **Requires**: the plugin requires the files of the gem that it uses, e.g. `require 'aspera/cli/plugins/base'` (the `lib` folder of the gem is in the Ruby load path).
-  Built-in plugins load only what they use: a class of the gem (for example `Plugins::Oauth`, `Rest::Client`) may not be loaded yet when the plugin is read (`NameError: uninitialized constant`).
+  Built-in plugins load only what they use: a class or module of the gem (for example `Plugins::Oauth`, `Rest::Client`) may not be loaded yet when the plugin is read (`NameError: uninitialized constant`).
 - **Options**: `option :<name>, description: '...'` (optional: `default:`, `allowed:` a type or a list of values), value read with `options.get_option(:<name>)` (`mandatory: true` to require it).
   `use_options <Module>` adds the options of a module, e.g. `use_options OauthWebOptions` (`client_id`, `client_secret`, `redirect_uri`) for the OAuth web flow only, without the other options of `Oauth`.
+  In the help, the options of `use_options` and of an included module (`BasicAuth`, `Oauth`) are listed in the order of these lines in the class.
 - **Commands**: `command :<name>, description: '...'`, inside `commands_under :<name> do ... end` for sub-commands.
   Positional arguments: `arguments: [{name: :<name>, description: '...'}]` (optional: `mandatory: false`, `default:`, `type: Hash`, `multiple: true`).
   `read_only: true` for a command that changes nothing (allowed with option `poll`).
@@ -6806,8 +6817,10 @@ require 'aspera/cli/plugins/basic_auth'
 module Aspera
   module Cli
     module Plugins
-      # Options `url`, `username` and `password` of `BasicAuth`
-      class MyApp < BasicAuth
+      class MyApp < Base
+        # Options `url`, `username` and `password`, method `basic_auth_api`
+        include BasicAuth
+
         application_name 'My Application'
         option :page_size, description: 'Number of items per page', allowed: Integer, default: 100
 
@@ -6837,6 +6850,122 @@ end
 ```
 
 ```shell
+ascli --plugin-folder=<FOLDER> my_app item list --url=https://app.example.com/api --username=<USERNAME> --password=<PASSWORD> --page-size=10
+```
+
+#### Writing a plugin bundle
+
+A bundle is a folder `<name>/` of a plugin folder, with a manifest `plugin.yaml`: the built-in plugins (`aoc`, `node`, `transferd`, ...) are bundles, in `lib/aspera/plugins/<name>/` of the gem.
+A single file stays the simplest form, for a plugin that has commands only.
+The manifest is data: reading it never runs code of the bundle, and `config plugins list` and `config plugins show <NAME>` show the plugin, also when it is unavailable (invalid manifest, missing dependency), with the reason.
+
+```text
+<PLUGIN_FOLDER>/my_app/
+  plugin.yaml     manifest
+  commands.rb     class Aspera::Plugins::MyApp::Commands: top level command `my_app`
+  <other>.rb      other files, declared in the manifest if the manifest loads them
+  schemas/        schemas (JSON or YAML), declared in the manifest
+```
+
+- **Names**: the name of the folder is the name of the plugin, and the field `name` of the manifest: lower case letters, digits and `_`, starting with a letter.
+  A file `<file>.rb` of the bundle defines the constant `Aspera::Plugins::<Name>::<Const>`, where `<Name>` is the name in CamelCase (`MyApp`): `commands.rb` defines `Commands`, a subclass of `Cli::Plugins::Base`, as a single file, with `include Cli::Plugins::BasicAuth` or `Oauth` for the common options.
+  Constants in the manifest (`class`, `module`) are relative to `Aspera::Plugins::<Name>`, file names to the folder of the bundle (no `..`, no hidden file).
+- **Same name**: for a name that is both a file `<name>.rb` and a folder `<name>/` of the same plugin folder, the bundle is used, with a warning.
+- **Requires**: as for a single file, the code requires the files of the gem that it uses.
+  The code is loaded when the plugin is used (command, agent, service), not when it is listed.
+- **Options**: as for a single file.
+  `option <NAME>, before: <OTHER>` places an option before another one in the help, also an option of a module mounted on another plugin (e.g. before `smtp` of `config`).
+  An option placed `before:` an unknown option, or in a cycle of `before:`, goes at the end, with a warning in the log: the other options and the commands work.
+
+Manifest `plugin.yaml` (schema `lib/aspera/plugin.schema.yaml`: no other field than these, at each level):
+
+| Field | Default | Content |
+| --- | --- | --- |
+| `name` | (mandatory) | Name of the plugin, same as the folder |
+| `title` | (mandatory) | Name of the product, in the lists and in the instructions of `mcp server` |
+| `mcp` | none | Section added to the instructions of `mcp server` for the AI client, about the use of the plugin (e.g. development guides). `%{<POINT>}` is replaced by the list of the entries of the extension point `<POINT>`: the field `name` of each entry, with the title of its bundle, so the schema of an extension point used this way requires `name` |
+| `depends` | `[]` | Bundles that this one uses. If one is missing or unavailable, this bundle is unavailable |
+| `gems` | `[]` | Optional gems required by the code, checked when the code is loaded: the error tells `gem install <GEM>` |
+| `commands` | `false` | `true`: `commands.rb` defines `Commands`, the top level command `<name>` |
+| `schemas` | `[]` | Schemas added to the registry: `key` (unique), `file`, `owned` (default `false`: schema of a vendor API, not used to check values), `source` (`url`, `version` of a downloaded schema, used by `rake tools:openapi`) |
+| `extension_points` | `[]` | Points that other bundles extend: `name`, `schema` (file: schema of one entry) |
+| `extensions` | `{}` | Entries for the extension points of other bundles, by name of point: `file` and `class` of the code, and the fields defined by the schema of the point |
+| `mounts` | `[]` | Modules added to the commands of another plugin: `target` (plugin name), `file`, `module` |
+| `services` | `[]` | Objects shared through the context, created on first use: `name`, `file`, `class` |
+
+A bundle can add a transfer agent: the built-in bundle `xfer` declares the extension point `agent`. An entry has `name` (value of option `transfer`), `short` (one letter, unique), `file`, `class` (subclass of `Aspera::Agent::Base`) and `options_schema` (schema file of the parameters of the agent):
+
+```yaml
+name: my_agent
+title: My transfer agent
+depends:
+  - xfer
+extensions:
+  agent:
+    - name: my_agent
+      short: m
+      file: agent.rb
+      class: Agent
+      options_schema: schemas/agent_options.yaml
+```
+
+Example: bundle `my_app`, the same plugin as above, in folder `<PLUGIN_FOLDER>/my_app/`.
+
+File `plugin.yaml`:
+
+```yaml
+name: my_app
+title: My Application
+commands: true
+mcp: >-
+  Use `my_app` to manage the items of My Application.
+```
+
+File `commands.rb`:
+
+```ruby
+# Files of the gem used by the plugin (its `lib` folder is in the load path)
+require 'aspera/cli/plugins/base'
+require 'aspera/cli/plugins/basic_auth'
+
+module Aspera
+  module Plugins
+    module MyApp
+      # Top level command `my_app`
+      class Commands < Cli::Plugins::Base
+        # Options `url`, `username` and `password`, method `basic_auth_api`
+        include Cli::Plugins::BasicAuth
+
+        application_name 'My Application'
+        option :page_size, description: 'Number of items per page', allowed: Integer, default: 100
+
+        command :info, description: 'Show application information', read_only: true
+        commands_under :item, description: 'Manage items' do
+          command :list, description: 'List items', read_only: true
+          command :show, description: 'Show an item', arguments: [{name: :id, description: 'Item identifier'}], read_only: true
+        end
+
+        # Command `info`
+        def action_info(**) = Cli::Result::SingleObject.new(api.read('info'))
+
+        # Command `item list`
+        def action_item_list(**) = Cli::Result::ObjectList.new(api.read('items', {limit: options.get_option(:page_size)}))
+
+        # Command `item show <ID>`, with arguments as keyword arguments
+        def action_item_show(id:, **) = Cli::Result::SingleObject.new(api.read("items/#{id}"))
+
+        private
+
+        # REST client of the application, with Basic authentication
+        def api = @api ||= basic_auth_api
+      end
+    end
+  end
+end
+```
+
+```shell
+ascli --plugin-folder=<FOLDER> config plugins show my_app
 ascli --plugin-folder=<FOLDER> my_app item list --url=https://app.example.com/api --username=<USERNAME> --password=<PASSWORD> --page-size=10
 ```
 
@@ -9225,9 +9354,11 @@ For a list of SSH client options, refer to the Ruby documentation of [Net::SSH](
 
 Among the 50 available SSH options:
 
-- `verbose`
-- `use_agent`
-- `passphrase`
+| Field | Type | Description |
+| ---------- | ------ | -------------------------------------------------------------------------------- |
+| `passphrase` | `String` | Passphrase of the SSH private keys (also set by option `passphrase`). |
+| `use_agent` | `Bool` | Use the keys of a running `ssh-agent`.<br/>Default: `false`. |
+| `verbose` |  | Log level of `Net::SSH`: an `Integer`, from `0` (debug) to `4` (fatal). Default: warnings. |
 
 By default, the SSH library will check if a local `ssh-agent` is running.
 
@@ -9358,14 +9489,17 @@ Special parameters can be placed in option `query` for "gen3" browse:
 
 This is when executing `browse` in `aoc files` or in `node access_keys do`.
 
-Option `node_api` (`Hash`) controls some options of API used, with the following parameters:
+Option `node_api` controls the use of the Node API, with the following parameters:
 
-| Parameter| Default | Description |
-|----------|---------|-------------|
-| `cache`  | `true`  | `true` Folder content is retrieved from the Redis database (faster).<br/>`false` Folder content retrieved from storage. |
-| `standard_ports` | `true` | `true` Use hard coded standard ports (`33001`)<br/>`false` Retrieve server ports from an API call (`download_setup`) which reads the information from `aspera.conf` on the server. |
-| `accept_v4` | `true` | `true` (default) uses API header: `Accept-Version: 4.0`.<br/>`false` uses legacy method (refer to node API). |
-| `per_page` | - | Requested number of items per API call.<br/>Set to `nil` (`@none:`) to deactivate paging.<br/>Default: `1000` when `accept_v4` is `true`. |
+| Field | Type | Description |
+| -------------- | ---- | -------------------------------------------------------------------------------- |
+| `accept_v4` | `Bool` | `true`: use API header `Accept-Version: 4.0`. `false`: use the legacy method (refer to Node API).<br/>Default: `true`. |
+| `cache` | `Bool` | `true`: folder content is retrieved from the Redis database (faster). `false`: folder content is retrieved from storage.<br/>Default: `true`. |
+| `standard_ports` | `Bool` | `true`: use hard coded standard ports (`33001`). `false`: retrieve server ports from an API call (`download_setup`), which reads the information from `aspera.conf` on the server.<br/>Default: `true`. |
+
+The number of items requested per API call is the parameter `per_page` of option `query`.
+Set to `nil` (`@none:`) to deactivate paging.
+Default: `1000` when `accept_v4` is `true`.
 
 ### Operation `find` on **gen4/access key**
 
@@ -9740,7 +9874,7 @@ ascli node access_keys modify %id:self @ruby:'{token_verification_key: File.read
 > [!NOTE]
 > The Bearer token can also be created using command `asnodeadmin` on HSTS.
 > See the [HSTS manual](https://www.ibm.com/docs/en/ahts): `Bearer tokens` section.
-> Code for token generation is provided in [`lib/aspera/api/node.rb`](../lib/aspera/api/node.rb)
+> Code for token generation is provided in [`lib/aspera/plugins/node/api.rb`](../lib/aspera/plugins/node/api.rb)
 
 #### Bearer token: User side
 
@@ -11839,6 +11973,9 @@ With the `http` transport:
 With both transports:
 
 - Extended value `@stdin:` is refused.
+- Commands sent by the client run in the main folder of the server (option `home`, `ASCLI_HOME`, or the default one), and use its configuration file (option `config_file`) and its vault (options `vault` and `vault_password`, also when set in a preset of the server).
+  The client cannot change them: these options are refused at levels `medium` and `high`.
+  If the command line of the server sets option `security` to `medium` or `high`, the server cannot set them on its command line or in a preset either: set them in its environment, for example `ASCLI_VAULT` and `ASCLI_VAULT_PASSWORD`.
 - `@secret:` is entered by the user on a web page, see [Secrets entered in a web page](#secrets-entered-in-a-web-page).
 - Secrets are hidden in responses, also a value shorter than 8 characters as a word in a text (for example, a short password in an error message).
 - The [Security Level](#security-level) is `high` by default: `@ruby:`, `@file:` (also in the parameters of stores of option `vault`), `@uri:`, `@env:`, and `@zlib:` are refused, and a secret must be the whole value: hidden in results, it cannot be processed by another extended value.
@@ -12918,7 +13055,7 @@ The `smtp` option is a `Hash` ([Extended Value](#extended-value-syntax)) with th
 
 | Field | Type | Description |
 | ---------- | ------- | -------------------------------------------------------------------------------- |
-| `domain` | `String` | Email domain of the user. Defaults to the domain part of `server`.<br/>Example: `gmail.com`. |
+| `domain` | `String` | Email domain of the user. Defaults to the domain part of `from_email`.<br/>Example: `gmail.com`. |
 | `from_email` | `String` | Sender address (used in `From:` header and as reply-to). Defaults to `username` when defined.<br/>Example: `johnny@example.com`. |
 | `from_name` | `String` | Display name of the sender. Defaults to the local-part of `from_email`.<br/>Example: `John Wayne`. |
 | `password` | `String` | Password for the above `username`.<br/>Example: `<PASSWORD>`. |
@@ -13117,7 +13254,9 @@ EXAMPLES
 Main components:
 
 - `Aspera` generic classes for REST and OAuth
-- `Aspera::Agent::Direct`: Starting and monitoring transfers using `ascp`.
+- `Aspera::Plugins::Direct::Agent`: Starting and monitoring transfers using `ascp`.
+- `Aspera::Plugins::<Name>`: the code of each product (bundle `lib/aspera/plugins/<name>/`): `Api` (client of the product API, e.g. `Aspera::Plugins::Node::Api`), `Agent`, `Commands`. The files other than `commands.rb` do not use the command line: `require 'aspera/plugins/<name>/api'`.
+- `Aspera::Agent::Factory.instance.create(<AGENT>, <OPTIONS>)`: creates a transfer agent by its name (`direct`, `node`, ...).
 - `Aspera::Cli`: `ascli`.
 
 Working examples can be found in repo: <https://github.com/laurent-martin/aspera-api-examples> in Ruby examples.

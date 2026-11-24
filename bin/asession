@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require_relative '../lib/aspera/coverage'
-require_relative '../lib/aspera/agent/direct'
+require_relative '../lib/aspera/plugins/direct/agent'
 require_relative '../lib/aspera/cli/extended_value'
 require_relative '../lib/aspera/products/transferd'
 require_relative '../lib/aspera/log'
@@ -95,7 +95,7 @@ class SimpleTransferManager
       puts JSON.generate(Aspera::Ascp::Management.event_native_to_snake(event))
     end
     # Get local agent (ascp), disable ascp output on stdout to not mix with JSON events
-    @client = Aspera::Agent::Direct.new(**agent_params.symbolize_keys)
+    @client = Aspera::Plugins::Direct::Agent.new(**agent_params.symbolize_keys)
   end
 
   def start

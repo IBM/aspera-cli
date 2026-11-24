@@ -1,0 +1,1031 @@
+# nodegen3
+nd_health:
+  tags:
+    - health
+  args:
+    - node
+    - health
+nd_health_bad:
+  tags:
+    - no_doc
+  args:
+    - node
+    - health
+    - --url=https://wrong.example.com
+nd_detect:
+  args:
+    - config
+    - detect
+    - "@:"
+    - url=@preset:node_user.url
+nd_wizard:
+  tags:
+    - node
+  pre: generated_secret(:dummy)
+  args:
+    - config
+    - wizard
+    - "@:"
+    - url=@preset:node_user.url
+    - plugin=node
+    - override=yes
+    - --username=test
+    - --password=$(secret :dummy)
+nd_info:
+  args:
+    - node
+    - info
+    - --fpac=function FindProxyForURL(url,host){return "DIRECT"}
+nd_license:
+  $comment: Requires special node ACL.
+  args:
+    - node
+    - license
+    - --preset=node_ak_adm
+nd_api_details:
+  args:
+    - node
+    - api_details
+nd_transport:
+  args:
+    - node
+    - transport
+nd_spec_show:
+  args:
+    - node
+    - spec
+nd_browse:
+  args:
+    - node
+    - browse
+    - /
+    - --log-level=trace2
+nd_search:
+  args:
+    - node
+    - search
+    - /
+    - --query.sort=mtime
+nd_space:
+  args:
+    - node
+    - space
+    - /
+nd_delete_error:
+  tags:
+    - cleanup
+    - no_doc
+  args:
+    - node
+    - delete
+    - "@extend:@preset:server1_info.upload_folder@/a_folder"
+nd_folder:
+  depends_on:
+    - nd_delete_error
+  args:
+    - node
+    - mkdir
+    - "@extend:@preset:server1_info.upload_folder@/a_folder"
+nd_mklink:
+  depends_on:
+    - nd_folder
+  args:
+    - node
+    - mklink
+    - "@extend:@preset:server1_info.upload_folder@/a_folder"
+    - "@extend:@preset:server1_info.upload_folder@/tdlink"
+nd_mkfile:
+  depends_on:
+    - nd_folder
+  args:
+    - node
+    - mkfile
+    - "@extend:@preset:server1_info.upload_folder@/a_file1"
+    - hello world
+nd_rename:
+  depends_on:
+    - nd_mkfile
+  args:
+    - node
+    - rename
+    - "@preset:server1_info.upload_folder"
+    - a_file1
+    - a_file
+nd_delete_multi:
+  depends_on:
+    - nd_folder
+    - nd_mklink
+    - nd_mkfile
+    - nd_rename
+  args:
+    - node
+    - delete
+    - "@list:@extend:,@preset:server1_info.upload_folder@/a_folder,@preset:server1_info.upload_folder@/tdlink,@preset:server1_info.upload_folder@/a_file"
+nd_upload_ascii:
+  tags:
+    - no_doc
+  args:
+    - node
+    - upload
+    - $(PATH_TST_ASC_LCL)
+    - --to-folder=@preset:server1_info.upload_folder
+    - --ts.target_rate_cap_kbps=10000
+nd_download_ascii:
+  depends_on:
+    - nd_upload_ascii
+  args:
+    - node
+    - download
+    - "@extend:@preset:server1_info.upload_folder@/$(FILENAME_ASCII)"
+    - --to-folder=$(TMP)
+nd_delete_ascii:
+  depends_on:
+    - nd_download_ascii
+  args:
+    - node
+    - delete
+    - "@extend:@preset:server1_info.upload_folder@/$(FILENAME_ASCII)"
+nd_slash:
+  args:
+    - node
+    - slash
+nd_http_upload:
+  tags:
+    - no_doc
+  args:
+    - node
+    - upload
+    - $(PATH_TST_ASC_LCL)
+    - --to-folder=@preset:server1_info.upload_folder
+    - --ts.target_rate_cap_kbps=10000
+nd_http_cat:
+  depends_on:
+    - nd_http_upload
+  args:
+    - node
+    - cat
+    - "@extend:@preset:server1_info.upload_folder@/$(FILENAME_ASCII)"
+nd_http_delete:
+  depends_on:
+    - nd_http_cat
+  args:
+    - node
+    - delete
+    - "@extend:@preset:server1_info.upload_folder@/$(FILENAME_ASCII)"
+nd_2_nd_xfer:
+  args:
+    - node
+    - upload
+    - --to-folder=@preset:server1_info.upload_folder
+    - --sources=@ts
+    - --ts=@json:{"paths":[{"source":"/aspera-test-dir-small/10MB.2"}],"precalculate_job_size":true}
+    - --transfer.agent=node
+    - --transfer.url=@preset:node_user.url
+    - --transfer.username=@preset:node_user.username
+    - --transfer.password=@preset:node_user.password
+nd_2_nd_xfer_cleanup:
+  depends_on:
+    - nd_2_nd_xfer
+  tags:
+    - no_doc
+  args:
+    - node
+    - delete
+    - "@extend:@preset:server1_info.upload_folder@/10MB.2"
+nd_service_clean:
+  tags:
+    - cleanup
+    - no_doc
+  args:
+    - --preset=node_ak_adm
+    - node
+    - service
+    - delete
+    - service1
+nd_service_clean_wait:
+  description: The service is deleted asynchronously.
+  tags:
+    - no_doc
+  depends_on:
+    - nd_service_clean
+  args:
+    - --preset=node_ak_adm
+    - node
+    - service
+    - list
+  harness:
+    poll:
+      interval: 5
+      max: 60
+      until: "!contains([].id,'service1')"
+      show: last
+nd_service_create:
+  depends_on:
+    - nd_service_clean_wait
+  args:
+    - --preset=node_ak_adm
+    - node
+    - service
+    - create
+    - '@json:{"id":"service1","type":"WATCHD","run_as":{"user":"user1"}}'
+nd_service_list:
+  depends_on:
+    - nd_service_create
+  args:
+    - --preset=node_ak_adm
+    - node
+    - service
+    - list
+  harness:
+    poll:
+      interval: 5
+      max: 60
+      until: "contains([].id,'service1')"
+      show: last
+nd_service_delete:
+  depends_on:
+    - nd_service_list
+  args:
+    - --preset=node_ak_adm
+    - node
+    - service
+    - delete
+    - service1
+nd_service_list_after_delete:
+  depends_on:
+    - nd_service_delete
+  args:
+    - --preset=node_ak_adm
+    - node
+    - service
+    - list
+  harness:
+    poll:
+      interval: 5
+      max: 60
+      until: "!contains([].id,'service1')"
+      show: last
+nd_xfer_list:
+  args:
+    - node
+    - transfer
+    - list
+    - --query.active_only=true
+nd_xfer_list_once:
+  args:
+    - node
+    - transfer
+    - list
+    - --query.reset=true
+    - --once-only=yes
+nd_xfer_list_once_first:
+  description: First --once-only call, returns transfers since reset
+  tags:
+    - no_doc
+  depends_on:
+    - nd_xfer_list_once
+  args:
+    - node
+    - transfer
+    - list
+    - --once-only=yes
+nd_xfer_list_once_second:
+  description: Second --once-only call, returns empty (already consumed)
+  tags:
+    - no_doc
+  depends_on:
+    - nd_xfer_list_once_first
+  args:
+    - node
+    - transfer
+    - list
+    - --once-only=yes
+nd_xfer_sessions:
+  args:
+    - node
+    - transfer
+    - sessions
+nd_xfer_upload_bg:
+  tags:
+    - no_doc
+    - background
+  args:
+    - node
+    - upload
+    - --to-folder=@preset:server1_info.upload_folder
+    - --ts=@json:{"target_rate_kbps":1000,"resume_policy":"none"}
+    - faux:///big-file?10G
+    - --progress=no
+nd_xfer_active_id:
+  depends_on:
+    - nd_xfer_upload_bg
+  tags:
+    - save_output
+    - no_doc
+  args:
+    - node
+    - transfer
+    - list
+    - --query=@json:{"active_only":true,"count":1}
+    - --fields=id
+  harness:
+    poll:
+      interval: 5
+      max: 60
+      until: "@"
+      show: last
+nd_xfer_show:
+  depends_on:
+    - nd_xfer_active_id
+  args:
+    - node
+    - transfer
+    - show
+    - $(t.saved_output :nd_xfer_active_id)
+nd_xfer_modify:
+  depends_on:
+    - nd_xfer_active_id
+  args:
+    - node
+    - transfer
+    - modify
+    - $(t.saved_output :nd_xfer_active_id)
+    - "@:"
+    - target_rate_kbps=10000
+nd_xfer_show_after_modify:
+  depends_on:
+    - nd_xfer_active_id
+  args:
+    - node
+    - transfer
+    - show
+    - $(t.saved_output :nd_xfer_active_id)
+nd_xfer_cancel:
+  depends_on:
+    - nd_xfer_active_id
+    - nd_xfer_show
+    - nd_xfer_modify
+    - nd_xfer_show_after_modify
+  args:
+    - node
+    - transfer
+    - cancel
+    - $(t.saved_output :nd_xfer_active_id)
+  post: t.stop_process :nd_xfer_upload_bg
+nd_xfer_bandwidth:
+  args:
+    - node
+    - transfer
+    - bandwidth_average
+nd_xfer_sessions_after:
+  args:
+    - node
+    - transfer
+    - sessions
+nd_basic_token:
+  args:
+    - node
+    - basic_token
+nd_asperabrowser:
+  priority: 1
+  description: The URL of Aspera Browser carries the node in its fragment (not sent to the web server). The URL is displayed on the terminal, and decoded here.
+  tags:
+    - interactive
+    - tty
+  env:
+    ASCLI_UI: ~
+  pre: generated_secret(:dummy)
+  post: |
+    tty = t.out_file.sub_ext('.tty').read.gsub(/\e\[[0-9;]*m/, '')
+    raise 'URL of Aspera Browser not displayed' unless (m = tty.match(%r{https://laurent-martin\.github\.io/aspera-browser-react/#goto=([A-Za-z0-9_-]+)}))
+    data = Aspera::SealedHash.unseal(m[1], encrypt: false, reverse: true)
+    expected = {'nodeUser' => 'user1', 'nodePW' => secret(:dummy), 'nodeURL' => 'https://node.example.com:9092'}
+    raise "Unexpected parameters: #{data.keys}" unless data.eql?(expected)
+  args:
+    - node
+    - --url=https://node.example.com:9092
+    - --username=user1
+    - --password=$(secret :dummy)
+    - --ui=text
+    - asperabrowser
+nd_asperabrowser_no_password:
+  priority: 1
+  description: Without password (empty), the key is not in the URL, the application asks it.
+  tags:
+    - interactive
+    - tty
+    - no_doc
+  env:
+    ASCLI_UI: ~
+  post: |
+    tty = t.out_file.sub_ext('.tty').read.gsub(/\e\[[0-9;]*m/, '')
+    raise 'URL of Aspera Browser not displayed' unless (m = tty.match(%r{https://laurent-martin\.github\.io/aspera-browser-react/#goto=([A-Za-z0-9_-]+)}))
+    data = Aspera::SealedHash.unseal(m[1], encrypt: false, reverse: true)
+    raise "Unexpected parameters: #{data}" unless data.eql?({'nodeUser' => 'user1', 'nodeURL' => 'https://node.example.com:9092'})
+  args:
+    - node
+    - --url=https://node.example.com:9092
+    - --username=user1
+    - --password=
+    - --ui=text
+    - asperabrowser
+nd_upload_ak_creds:
+  args:
+    - node
+    - upload
+    - --username=@preset:awa.ak_name
+    - --password=@preset:awa.ak_secret
+    - $(PATH_TST_ASC_LCL)
+nd_central_session_list:
+  args:
+    - node
+    - central
+    - session
+    - list
+nd_central_file_list:
+  args:
+    - node
+    - central
+    - file
+    - list
+nd_central_file_modify:
+  args:
+    - node
+    - central
+    - file
+    - modify
+    - --validator=1
+    - "@:"
+    - files=@list:.
+nd_watch_list:
+  args:
+    - node
+    - watch_folder
+    - list
+    - --preset=node_ak_adm
+nd_watch_folder_create:
+  $comment: Fails because watchfolderd is not running
+  tags:
+    - flaky
+    - no_doc
+  args:
+    - node
+    - watch_folder
+    - create
+    - '@json:{"source":{"path":"/src1"},"target":{"path":"/dst1"}}'
+    - --preset=node_ak_adm
+nd_stream_list:
+  args:
+    - --preset=node_ak_adm
+    - node
+    - stream
+    - list
+nd_ak_list:
+  args:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - list
+nd_ak_node_info:
+  args:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:awa.ak_name"
+    - node_info
+    - /
+    - --secret=@preset:awa.ak_secret
+nd_ak_browse:
+  args:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:awa.ak_name"
+    - browse
+    - /
+    - --secret=@preset:awa.ak_secret
+nd_ak_find:
+  $comment: TODO Check
+  tags:
+    - must_fail
+    - no_doc
+  expect: Please provide secret
+  args:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:awa.ak_name"
+    - find
+    - "@json:{}"
+nd_ak_find_ruby:
+  args:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:awa.ak_name"
+    - find
+    - "@preset:awa.test_folder"
+    - |
+      @ruby:->(f){f["name"].end_with?(".jpg")}
+    - --secret=@preset:awa.ak_secret
+nd_ak_find_regex:
+  args:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:awa.ak_name"
+    - find
+    - "@preset:awa.test_folder"
+    - '@re:\.jpg$'
+    - --secret=@preset:awa.ak_secret
+nd_ak_find_all:
+  args:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:awa.ak_name"
+    - find
+    - "@preset:awa.test_folder"
+    - --secret=@preset:awa.ak_secret
+nd_ak_mkdir_cleanup:
+  tags:
+    - cleanup
+    - no_doc
+  args:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:awa.ak_name"
+    - delete
+    - /tst_nd_ak
+    - --secret=@preset:awa.ak_secret
+nd_ak_mkdir:
+  depends_on:
+    - nd_ak_mkdir_cleanup
+  args:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:awa.ak_name"
+    - mkdir
+    - /tst_nd_ak
+    - --secret=@preset:awa.ak_secret
+nd_ak_mkfile_cleanup:
+  tags:
+    - cleanup
+    - no_doc
+  args:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:awa.ak_name"
+    - delete
+    - /mkfile.txt
+    - --secret=@preset:awa.ak_secret
+nd_ak_mkfile:
+  args:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:awa.ak_name"
+    - mkfile
+    - /mkfile.txt
+    - hello world
+    - --secret=@preset:awa.ak_secret
+nd_ak_mklink_cleanup:
+  depends_on:
+    - nd_ak_mkfile_cleanup
+  tags:
+    - cleanup
+    - no_doc
+  args:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:awa.ak_name"
+    - delete
+    - /mklink.txt
+    - --secret=@preset:awa.ak_secret
+nd_ak_mklink:
+  args:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:awa.ak_name"
+    - mklink
+    - /mklink.txt
+    - --query=@json:{"target":"/mkfile.txt","target_node_id":"123"}
+    - --secret=@preset:awa.ak_secret
+nd_ak_mvdir_browse:
+  tags:
+    - no_doc
+  depends_on:
+    - nd_ak_mkdir_cleanup
+  args:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:awa.ak_name"
+    - browse
+    - /
+    - --node-api.cache=false
+    - --secret=@preset:awa.ak_secret
+nd_ak_mvdir:
+  args:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:awa.ak_name"
+    - rename
+    - /tst_nd_ak
+    - test_nd_ak2
+    - --secret=@preset:awa.ak_secret
+nd_ak_deldir:
+  depends_on:
+    - nd_ak_mvdir_browse
+  args:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:awa.ak_name"
+    - delete
+    - /test_nd_ak2
+    - --secret=@preset:awa.ak_secret
+nd_ak_upload:
+  args:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:awa.ak_name"
+    - upload
+    - "faux:///test_nd_ak3?100k"
+    - --node-api.standard_ports=false
+    - --secret=@preset:awa.ak_secret
+nd_ak_download:
+  depends_on:
+    - nd_ak_upload
+  args:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:awa.ak_name"
+    - download
+    - test_nd_ak3
+    - --to-folder=$(TMP)
+    - --secret=@preset:awa.ak_secret
+nd_ak_show_file:
+  tags:
+    #- flaky
+    - no_doc
+  depends_on:
+    - nd_ak_upload
+  args:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:awa.ak_name"
+    - show
+    - /test_nd_ak3
+    - --secret=@preset:awa.ak_secret
+nd_ak_thumbnail:
+  $comment: No preview is available.
+  tags:
+    - flaky
+    - no_doc
+  depends_on:
+    - nd_ak_upload
+  args:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:awa.ak_name"
+    - thumbnail
+    - /test_nd_ak3
+    - --secret=@preset:awa.ak_secret
+nd_ak_upload_cleanup:
+  depends_on:
+    - nd_ak_download
+    - nd_ak_show_file
+    - nd_ak_thumbnail
+  args:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:awa.ak_name"
+    - delete
+    - test_nd_ak3
+    - --secret=@preset:awa.ak_secret
+nd_ak_show:
+  depends_on:
+    - nd_ak_upload_cleanup
+  args:
+    - --preset=node_ak_adm
+    - node
+    - access_key
+    - do
+    - "@preset:awa.ak_name"
+    - show
+    - "%id:1"
+    - --secret=@preset:awa.ak_secret
+nd_ak_bearer_reset:
+  $comment: Reset preview access key if present
+  tags:
+    - cleanup
+    - no_doc
+  args:
+    - -N
+    - node
+    - --preset=tst_node_preview
+    - access_key
+    - delete
+    - "@preset:ak_creds.username"
+nd_ak_bearer_create:
+  depends_on:
+    - nd_ak_bearer_reset
+  pre: system('ensure_local_node')
+  args:
+    - -N
+    - node
+    - --preset=tst_node_preview
+    - access_key
+    - create
+    - '@json:@extend:{"id":"@preset:ak_creds.username@","secret":"@preset:ak_creds.password@","storage":{"type":"local","path":"/"}}'
+nd_ak_bearer_show:
+  depends_on:
+    - nd_ak_bearer_create
+  args:
+    - -N
+    - --preset=tst_node_preview
+    - --preset=ak_creds
+    - node
+    - access_key
+    - show
+    - "%id:self"
+nd_ak_bearer_set_key:
+  depends_on:
+    - nd_ak_bearer_create
+  args:
+    - -N
+    - --preset=tst_node_preview
+    - --preset=ak_creds
+    - node
+    - access_key
+    - set_bearer_key
+    - self
+    - "@file:@preset:file.private_key"
+nd_ak_bearer_root_id:
+  depends_on:
+    - nd_ak_bearer_create
+  tags:
+    - save_output
+    - no_doc
+  args:
+    - -N
+    - --preset=tst_node_preview
+    - --preset=ak_creds
+    - node
+    - access_key
+    - do
+    - self
+    - show
+    - /
+    - --fields=id
+nd_ak_bearer_perm_create:
+  depends_on:
+    - nd_ak_bearer_create
+  args:
+    - -N
+    - --preset=tst_node_preview
+    - --preset=ak_creds
+    - node
+    - access_key
+    - do
+    - self
+    - permission
+    - "%id:$(t.saved_output :nd_ak_bearer_root_id)"
+    - create
+    - '@json:{"access_type":"user","access_id":"666"}'
+nd_ak_bearer_perm_show:
+  depends_on:
+    - nd_ak_bearer_perm_create
+  args:
+    - -N
+    - --preset=tst_node_preview
+    - --preset=ak_creds
+    - node
+    - access_key
+    - do
+    - self
+    - permission
+    - /
+    - show
+    - 1
+nd_ak_bearer_perm_modify:
+  depends_on:
+    - nd_ak_bearer_perm_create
+  args:
+    - -N
+    - --preset=tst_node_preview
+    - --preset=ak_creds
+    - node
+    - access_key
+    - do
+    - self
+    - permission
+    - /
+    - modify
+    - 1
+    - "@:"
+    - "access_levels=@list: read list"
+nd_bearer_token:
+  depends_on:
+    - nd_ak_bearer_create
+  tags:
+    - save_output
+    - no_doc
+  args:
+    - -N
+    - --preset=tst_node_preview
+    - --preset=ak_creds
+    - node
+    - bearer_token
+    - "@file:@preset:file.private_key"
+    - "@:"
+    - user_id=@val:666
+    - --out.secrets=yes
+nd_ak_bearer_browse:
+  depends_on:
+    - nd_ak_bearer_create
+  args:
+    - -N
+    - node
+    - --url=@preset:tst_node_preview.url
+    - --password
+    - Bearer $(t.saved_output :nd_bearer_token)
+    - --root-id=$(t.saved_output :nd_ak_bearer_root_id)
+    - access_key
+    - do
+    - self
+    - browse
+    - /
+nd_ak_bearer_del_perm:
+  depends_on:
+    - nd_ak_bearer_browse
+  args:
+    - -N
+    - --preset=tst_node_preview
+    - node
+    - --preset=ak_creds
+    - access_key
+    - do
+    - self
+    - permission
+    - /
+    - delete
+    - 1
+nd_ak_bearer_delete:
+  depends_on:
+    - nd_ak_bearer_del_perm
+  args:
+    - -N
+    - --preset=tst_node_preview
+    - node
+    - access_key
+    - delete
+    - "@preset:ak_creds.username"
+nd_sync_pull_flat:
+  pre: |
+    (PATH_TMP_SYNCS / 'nd_sync_pull_flat').rmtree
+    (PATH_TMP_SYNCS / 'nd_sync_pull_flat').mkdir
+  args:
+    - node
+    - sync
+    - pull
+    - /aspera-test-dir-tiny
+    - --to-folder=$(PATH_TMP_SYNCS / 'nd_sync_pull_flat')
+    - "@:"
+    - reset=true
+nd_sync_status_flat:
+  depends_on:
+    - nd_sync_pull_flat
+  args:
+    - node
+    - sync
+    - admin
+    - status
+    - $(PATH_TMP_SYNCS / 'nd_sync_pull_flat')
+nd_sync_pull_json:
+  pre: |
+    (PATH_TMP_SYNCS / 'nd_sync_pull_json').rmtree
+    (PATH_TMP_SYNCS / 'nd_sync_pull_json').mkdir
+  args:
+    - node
+    - sync
+    - pull
+    - /aspera-test-dir-tiny
+    - --to-folder=$(PATH_TMP_SYNCS / 'nd_sync_pull_json')
+    - '@json:{"name":"my_sync_session_name","reset":true}'
+nd_sync_status:
+  depends_on:
+    - nd_sync_pull_json
+  args:
+    - node
+    - sync
+    - admin
+    - status
+    - $(PATH_TMP_SYNCS / 'nd_sync_pull_json')
+nd_async_show_invalid_id:
+  $comment: Fails because only search by name is supported
+  tags:
+    - must_fail
+    - no_doc
+  expect: 'search field: expecting one of ["name"], but have "foo"'
+  args:
+    - node
+    - async
+    - show
+    - "%foo:bar"
+nd_async_list:
+  args:
+    - node
+    - async
+    - list
+nd_async_show:
+  args:
+    - node
+    - async
+    - show
+    - ALL
+nd_async_show_named:
+  depends_on:
+    - nd_sync_pull_json
+  args:
+    - node
+    - async
+    - show
+    - "%name:my_sync_session_name"
+nd_async_counters:
+  depends_on:
+    - nd_sync_pull_json
+  args:
+    - node
+    - async
+    - counters
+    - "%name:my_sync_session_name"
+nd_async_bandwidth:
+  depends_on:
+    - nd_sync_pull_json
+  args:
+    - node
+    - async
+    - bandwidth
+    - "%name:my_sync_session_name"
+nd_async_files:
+  depends_on:
+    - nd_sync_pull_json
+  args:
+    - node
+    - async
+    - files
+    - "%name:my_sync_session_name"
+nd_async_files_once:
+  depends_on:
+    - nd_sync_pull_json
+  args:
+    - node
+    - async
+    - files
+    - "%name:my_sync_session_name"
+    - --once-only=yes
+nd_async_delete:
+  depends_on:
+    - nd_async_show_named
+    - nd_async_counters
+    - nd_async_bandwidth
+    - nd_async_files
+    - nd_async_files_once
+  args:
+    - node
+    - async
+    - delete
+    - ALL

@@ -59,13 +59,22 @@ unless defined?(MCP::Server)
 end
 
 require_relative '../../lib/aspera/cli/plugins/mcp'
+require_relative '../../lib/aspera/schema/validator'
 require_relative '../../lib/aspera/oauth/server/pkce'
+require_relative '../bundle_registry_helper'
 require 'securerandom'
+require 'tmpdir'
 
 RSpec.describe(Aspera::Cli::Plugins::Mcp) do
+  let(:server_vault) { {'default' => 'f', 'stores' => {'f' => {'type' => 'file', 'file' => '/server/home/v.vault'}}} }
   # Build a minimal plugin instance without a real CLI context.
   subject(:plugin) do
-    described_class.allocate
+    described_class.allocate.tap do |p|
+      allow(p).to(receive(:context).and_return(instance_double(Aspera::Cli::Context, main_folder: '/server/home', presets: instance_double(Aspera::Cli::PresetManager, config_file: '/server/home/config.yaml'))))
+      allow(p).to(receive(:options).and_return(instance_double(Aspera::Cli::Parser)))
+      allow(p.options).to(receive(:get_option).with(:vault, mandatory: false).and_return(server_vault))
+      allow(p.options).to(receive(:get_option).with(:vault_password, mandatory: false).and_return('<PASSWORD>'))
+    end
   end
 
   # -------------------------------------------------------------------------
@@ -80,6 +89,9 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
     let(:mounted) { [] }
 
     around do |example|
+      # Loaded on use by the plugin, also when this spec runs alone
+      require_relative '../../lib/aspera/cli/mcp/tool'
+      require_relative '../../lib/aspera/cli/mcp/http_servlet'
       saved = Aspera::Cli::Mcp::Tool.web_secret
       example.run
     ensure
@@ -87,8 +99,6 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
     end
 
     before do
-      require_relative '../../lib/aspera/cli/mcp/tool'
-      require_relative '../../lib/aspera/cli/mcp/http_servlet'
       web_server = instance_double(Aspera::WebServerSimple, start: nil)
       allow(web_server).to(receive(:mount)) { |*args| mounted.replace(args) }
       allow(Aspera::WebServerSimple).to(receive(:new)) do |uri, **tls|
@@ -216,7 +226,28 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
       security.reset
     end
 
-    before { allow(plugin).to(receive(:start_mcp_server)) }
+    before do
+      allow(plugin).to(receive(:start_mcp_server))
+    end
+
+    after do
+      Aspera::Cli::Mcp::Tool.main_folder = nil
+      Aspera::Cli::Mcp::Tool.config_file = nil
+      Aspera::Cli::Mcp::Tool.vault = nil
+      Aspera::Cli::Mcp::Tool.vault_password = nil
+    end
+
+    it 'gives the main folder and the configuration file of the server to the tool' do
+      plugin.action_server
+      expect(Aspera::Cli::Mcp::Tool.main_folder).to(eq('/server/home'))
+      expect(Aspera::Cli::Mcp::Tool.config_file).to(eq('/server/home/config.yaml'))
+    end
+
+    it 'gives the vault of the server to the tool' do
+      plugin.action_server
+      expect(Aspera::Cli::Mcp::Tool.vault).to(eq(server_vault))
+      expect(Aspera::Cli::Mcp::Tool.vault_password).to(eq('<PASSWORD>'))
+    end
 
     it 'is high by default, and cannot be changed by the client' do
       plugin.action_server
@@ -248,8 +279,50 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
         .to(raise_error(Aspera::Cli::BadArgument, /not used with transport http: max_line_bytes/))
     end
 
-    it 'refuses unknown options' do
-      expect { plugin.action_server(mcp_options: {'foo' => 1}) }.to(raise_error(Aspera::Cli::BadArgument, /Unknown MCP option\(s\): foo/))
+    it 'refuses unknown options and transports, with the schema of the argument' do
+      schema = 'opts:components.schemas.McpServerOptions'
+      expect(Aspera::Schema::Validator.instance.errors({'foo' => 1}, schema)).to(eq(['object property at `/foo` is a disallowed additional property']))
+      expect(Aspera::Schema::Validator.instance.errors({'transport' => 'ftp'}, schema).first).to(include('/transport'))
+    end
+  end
+
+  # -------------------------------------------------------------------------
+  # default_instructions: generated from the manifests of the bundles
+  # -------------------------------------------------------------------------
+  describe '.default_instructions' do
+    include BundleRegistrySpecHelper
+
+    let(:folder) { Dir.mktmpdir('mcp_spec') }
+    let(:registry) { Aspera::BundleRegistry.send(:new, builtin: false) }
+    let(:factory) { Aspera::Cli::Plugins::Factory.send(:new, registry: registry) }
+
+    after { FileUtils.rm_rf(folder) }
+
+    it 'lists the plugins with the title of their bundle, and adds the sections of the bundles, with the names of the entries of an extension point (agents of a bundle, whatever the name of the bundle)' do
+      write_bundle(folder, 'spec_bundle_point', manifest: {'commands' => false, 'mcp' => "TRANSFERS\nAgents: %{spec_point}.\n", 'extension_points' => [{'name' => 'spec_point', 'schema' => 'point.yaml'}]}, code: nil)
+      File.write(File.join(folder, 'spec_bundle_point', 'point.yaml'), {'type' => 'object'}.to_yaml)
+      write_bundle(folder, 'spec_bundle_agent', manifest: {'commands' => false, 'depends' => ['spec_bundle_point'], 'extensions' => {'spec_point' => [{'name' => 'alpha', 'file' => 'agent.rb', 'class' => 'Agent'}, {'name' => 'beta', 'file' => 'other.rb', 'class' => 'Other'}]}}, code: nil)
+      write_bundle(folder, 'spec_bundle_cmd', manifest: {'mcp' => 'GUIDE'})
+      write_single(folder, 'spec_bundle_single')
+      write_single(folder, 'config')
+      write_single(folder, 'mcp')
+      factory.add_lookup_folder(folder)
+      factory.add_plugins_from_lookup_folders
+      instructions = described_class.default_instructions(factory)
+      expect(instructions).to(start_with(described_class::INSTRUCTIONS_START))
+      expect(instructions).to(include("\n\nPlugins: config (local configuration), spec_bundle_cmd (Product spec_bundle_cmd), spec_bundle_single.\n\nCREDENTIALS\n"))
+      expect(instructions).to(include("#{described_class::CREDENTIALS_INSTRUCTIONS}\n\nGUIDE\n\nTRANSFERS\nAgents: alpha (Product spec_bundle_agent), beta (Product spec_bundle_agent).\n\nGENERAL GUIDANCE"))
+      expect(instructions).to(end_with(described_class::INSTRUCTIONS_END))
+    end
+
+    it 'gives the sections of the bundles of the gem: transfers with the agents, guides of Orchestrator and AoC Automation' do
+      gem_factory = Aspera::Cli::Plugins::Factory.send(:new, registry: Aspera::BundleRegistry.send(:new))
+      gem_factory.add_plugins_from_lookup_folders
+      instructions = described_class.default_instructions(gem_factory)
+      expect(instructions).to(include('aoc (IBM Aspera on Cloud)', 'faspex5 (IBM Aspera Faspex 5)', 'transferd (IBM Aspera Transfer Daemon)'))
+      expect(instructions).not_to(include('mcp ('))
+      expect(instructions).to(include('ORCHESTRATOR WORKFLOW DEVELOPMENT', 'AOC AUTOMATION WORKFLOW DEVELOPMENT', "TRANSFERS\n"))
+      expect(instructions).to(include('Agents (default: direct): connect (IBM Aspera Connect), desktop (IBM Aspera for Desktop), direct (Local ascp), httpgw (HTTP Gateway), node ('))
     end
   end
 end

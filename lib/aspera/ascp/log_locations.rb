@@ -6,6 +6,7 @@
 require_relative '../environment'
 require_relative '../log'
 require_relative '../products/desktop'
+require_relative '../products/transferd'
 require_relative 'log_analyzer'
 require 'json'
 require 'set'
@@ -121,8 +122,7 @@ module Aspera
 
         # @return [String, nil] `fasp_runtime.log.dir` (folder given to `ascp -L`) of the transferd service installed by `transferd service install`
         def transferd_service_log_folder
-          require_relative '../products/transferd_service'
-          file = Products::TransferdService::CONFIG_FILE
+          file = Products::Transferd::SERVICE_CONFIG_FILE
           return unless File.file?(file) && File.readable?(file)
           folder = JSON.parse(File.read(file)).dig('fasp_runtime', 'log', 'dir')
           folder if folder.is_a?(String) && File.absolute_path?(folder)

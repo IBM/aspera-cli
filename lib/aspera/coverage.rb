@@ -26,8 +26,7 @@ module Aspera
     NO_COV_PATHS = %w[
       build/
       tmp/
-      lib/transferd_pb.rb
-      lib/transferd_services_pb.rb
+      lib/aspera/plugins/transferd/grpc/
       lib/aspera/secret/store/macos_security.rb
       lib/aspera/assert.rb
     ].freeze

@@ -7,14 +7,14 @@
 
 require_relative '../lib/aspera/cli/runner'
 require_relative '../lib/aspera/cli/poll'
-require_relative '../lib/aspera/cli/plugins/orchestrator'
-require_relative '../lib/aspera/cli/plugins/faspex5'
-require_relative '../lib/aspera/cli/plugins/node'
-require_relative '../lib/aspera/cli/plugins/aoc'
-require_relative '../lib/aspera/cli/plugins/server'
-require_relative '../lib/aspera/cli/plugins/shares'
-require_relative '../lib/aspera/cli/plugins/ats'
-require_relative '../lib/aspera/cli/plugins/httpgw'
+require_relative '../lib/aspera/plugins/orchestrator/commands'
+require_relative '../lib/aspera/plugins/faspex5/commands'
+require_relative '../lib/aspera/plugins/node/commands'
+require_relative '../lib/aspera/plugins/aoc/commands'
+require_relative '../lib/aspera/plugins/server/commands'
+require_relative '../lib/aspera/plugins/shares/commands'
+require_relative '../lib/aspera/plugins/ats/commands'
+require_relative '../lib/aspera/plugins/httpgw/commands'
 require 'json'
 require 'tmpdir'
 
@@ -213,12 +213,29 @@ module Aspera
       end
 
       describe 'parameters' do
-        it 'refuses an unknown parameter, a bad value or format nagios' do
-          expect { described_class.new({'every' => 1}) }.to(raise_error(BadArgument, /unknown parameter: every/))
-          expect { described_class.new({'max' => 0}) }.to(raise_error(BadArgument, /poll.max/))
-          expect { described_class.new({'show' => 'all'}) }.to(raise_error(BadArgument))
+        # @param json [String] Value of option `poll`, on a read-only command, not executed
+        def poll_option(json)
+          Dir.mktmpdir do |home|
+            stub_const('ENV', ENV.to_h.merge('ASCLI_HOME' => home))
+            Runner.new(['config', 'echo', 'test-value', "--poll=@json:#{json}", '--version-check-days=0']).run_with_result
+          end
+        end
+
+        it 'refuses an unknown parameter or a bad value, with the schema of the option' do
+          expect { poll_option('{"every":1}') }.to(raise_error(BadArgument, %r{`/every` is a disallowed additional property}))
+          expect { poll_option('{"max":0}') }.to(raise_error(BadArgument, %r{`/max`}))
+          expect { poll_option('{"show":"all"}') }.to(raise_error(BadArgument, %r{`/show`}))
+          expect { poll_option('{"errors":"ignore"}') }.to(raise_error(BadArgument, %r{`/errors`}))
+          expect { poll_option('{"interval":-1}') }.to(raise_error(BadArgument, %r{`/interval`}))
+        end
+
+        it 'takes a null parameter as absent (default value)' do
+          expect { described_class.new({'show' => nil, 'errors' => nil, 'interval' => nil, 'max' => nil, 'timeout' => nil, 'until' => nil}) }.not_to(raise_error)
+        end
+
+        it 'refuses a duration that is not valid, or format nagios' do
           expect { described_class.new({'interval' => 'soon'}) }.to(raise_error(BadArgument, /poll.interval/))
-          expect { described_class.new({'errors' => 'ignore'}) }.to(raise_error(BadArgument))
+          expect { described_class.new({'timeout' => '-5s'}) }.to(raise_error(BadArgument, /poll.timeout/))
           expect { described_class.new({}, format: :nagios) }.to(raise_error(BadArgument, /nagios/))
         end
       end
@@ -250,40 +267,40 @@ module Aspera
 
         it 'marks the generic list and show operations, and the commands of the demo' do
           {
-            Plugins::Orchestrator => [%i[workflows workorders], %i[workorders status], %i[tasks list], %i[pools status], %i[queues list], %i[queues items]],
-            Plugins::Faspex5      => [%i[packages list], %i[packages show], %i[admin workgroups list]],
-            Plugins::Node         => [%i[ls], %i[transfer list], %i[access_keys list], %i[access_keys show], %i[access_keys do thumbnail]],
-            Plugins::Aoc          => [%i[packages list], %i[admin analytics transfers]]
+            Aspera::Plugins::Orchestrator::Commands => [%i[workflows workorders], %i[workorders status], %i[tasks list], %i[pools status], %i[queues list], %i[queues items]],
+            Aspera::Plugins::Faspex5::Commands => [%i[packages list], %i[packages show], %i[admin workgroups list]],
+            Aspera::Plugins::Node::Commands => [%i[ls], %i[transfer list], %i[access_keys list], %i[access_keys show], %i[access_keys do thumbnail]],
+            Aspera::Plugins::Aoc::Commands => [%i[packages list], %i[admin analytics transfers]]
           }.each do |plugin, paths|
             paths.each { |path| expect(plugin.command_registry[path].read_only?).to(be(true), "#{plugin} #{path}") }
           end
-          expect(Plugins::Faspex5.command_registry[%i[packages send]].read_only?).to(be(false))
-          expect(Plugins::Node.command_registry[%i[access_keys delete]].read_only?).to(be(false))
+          expect(Aspera::Plugins::Faspex5::Commands.command_registry[%i[packages send]].read_only?).to(be(false))
+          expect(Aspera::Plugins::Node::Commands.command_registry[%i[access_keys delete]].read_only?).to(be(false))
         end
 
         it 'marks the read-only commands of server, and other commands that only read' do
           {
-            Plugins::Server  => [%i[ls], %i[df], %i[du], %i[md5sum], %i[info]],
-            Plugins::Node    => [%i[async list], %i[ssync state], %i[stream list], %i[service list], %i[watch_folder show]],
-            Plugins::Faspex5 => [%i[user profile show], %i[admin configuration show], %i[admin smtp show]],
-            Plugins::Shares  => [%i[info], %i[share list]],
-            Plugins::Ats     => [%i[cluster list], %i[access_key show]],
-            Plugins::Httpgw  => [%i[info]]
+            Aspera::Plugins::Server::Commands => [%i[ls], %i[df], %i[du], %i[md5sum], %i[info]],
+            Aspera::Plugins::Node::Commands => [%i[async list], %i[ssync state], %i[stream list], %i[service list], %i[watch_folder show]],
+            Aspera::Plugins::Faspex5::Commands => [%i[user profile show], %i[admin configuration show], %i[admin smtp show]],
+            Aspera::Plugins::Shares::Commands => [%i[info], %i[share list]],
+            Aspera::Plugins::Ats::Commands => [%i[cluster list], %i[access_key show]],
+            Aspera::Plugins::Httpgw::Commands => [%i[info]]
           }.each do |plugin, paths|
             paths.each { |path| expect(plugin.command_registry[path].read_only?).to(be(true), "#{plugin} #{path}") }
           end
-          %i[rm mv cp mkdir upload download].each { |cmd| expect(Plugins::Server.command_registry[[cmd]].read_only?).to(be(false), "server #{cmd}") }
+          %i[rm mv cp mkdir upload download].each { |cmd| expect(Aspera::Plugins::Server::Commands.command_registry[[cmd]].read_only?).to(be(false), "server #{cmd}") }
         end
 
         it 'makes read-only by default the commands with a generic id, unless explicit' do
-          expect(CommandSpec.new(id: :list).read_only).to(eq(:default))
-          READ_ONLY_IDS.each { |id| expect(CommandSpec.new(id: id).read_only?).to(be(true), id.to_s) }
-          expect(CommandSpec.new(id: :delete).read_only?).to(be(false))
-          expect(CommandSpec.new(id: :show, read_only: false).read_only?).to(be(false))
-          expect(CommandSpec.new(id: :stats, read_only: true).read_only?).to(be(true))
-          expect { CommandSpec.new(id: :list, read_only: :yes) }.to(raise_error(StandardError, /read_only/))
-          require_relative '../lib/aspera/cli/plugins/preview'
-          expect(Plugins::Preview.command_registry[%i[show]].read_only?).to(be(false))
+          expect(Command.new(id: :list).read_only).to(eq(:default))
+          Command::READ_ONLY_IDS.each { |id| expect(Command.new(id: id).read_only?).to(be(true), id.to_s) }
+          expect(Command.new(id: :delete).read_only?).to(be(false))
+          expect(Command.new(id: :show, read_only: false).read_only?).to(be(false))
+          expect(Command.new(id: :stats, read_only: true).read_only?).to(be(true))
+          expect { Command.new(id: :list, read_only: :yes) }.to(raise_error(StandardError, /read_only/))
+          require_relative '../lib/aspera/plugins/preview/commands'
+          expect(Aspera::Plugins::Preview::Commands.command_registry[%i[show]].read_only?).to(be(false))
         end
       end
     end

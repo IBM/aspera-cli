@@ -11,6 +11,7 @@ components:
   schemas:
     LogOptions:
       type: object
+      additionalProperties: false
       description: Logging options.
       properties:
         level:
@@ -167,6 +168,7 @@ components:
           default: 5d
     McpServerOptions:
       type: object
+      additionalProperties: false
       description: MCP server configuration for the `mcp server` command.
       properties:
         transport:
@@ -274,199 +276,9 @@ components:
           type: boolean
           description: Validate MCP tool call arguments.
           default: true
-    DirectAgentOptions:
-      type: object
-      description: Parameters for the `ascp` transfer agent.
-      properties:
-        wss:
-          type: boolean
-          description: Enable Web Socket Session when available.
-          default: true
-        quiet:
-          type: boolean
-          description: >-
-            Suppress the `ascp` progress bar display.
-
-            If `false`, the progress bar of option `progress_bar` is not displayed, unless that option is set.
-          default: true
-        file_list:
-          type: boolean
-          description: >-
-            If `true`, source paths are written to a temp file passed to `ascp` via `--file-list` or `--file-pair-list`.
-
-            If `false`, source paths are placed directly on the `ascp` command line.
-          default: true
-        trusted_certs:
-          type: array
-          description: List of trusted certificate repositories.
-          items:
-            type: string
-        client_ssh_key:
-          type: string
-          description: SSH key type to use for token-based transfers.
-          enum:
-            - rsa
-            - dsa_rsa
-            - per_client
-          default: rsa
-        ascp_args:
-          type: array
-          description: List of native `ascp` command-line arguments.
-          items:
-            type: string
-          default: []
-        spawn_timeout_sec:
-          type: number
-          description: Multi session - Maximum time (in seconds) to verify that `ascp` is running.
-          default: 2
-        spawn_delay_sec:
-          type: number
-          description: Multi session - Delay (in seconds) between starting each `ascp` session.
-          default: 2
-        multi_incr_udp:
-          type: boolean
-          description: >-
-            Multi session - Increment UDP port for each session.
-
-            If `true`, each session uses a different UDP port starting at `fasp_port` (default: 33001).
-
-            If `false`, all sessions use the same `fasp_port` (or `ascp` default).
-
-            Default: `true` on Windows, `false` on other platforms.
-        resume:
-          type: object
-          description: Configuration for automatic transfer resume on interruption.
-          properties:
-            iter_max:
-              type: integer
-              description: Maximum number of retry attempts on error.
-              default: 7
-            sleep_initial:
-              type: integer
-              description: Initial sleep duration (in seconds) before first retry.
-              default: 2
-            sleep_factor:
-              type: integer
-              description: Multiplier applied to sleep duration between consecutive retry attempts.
-              default: 2
-            sleep_max:
-              type: integer
-              description: Maximum sleep duration (in seconds) between retry attempts.
-              default: 60
-        monitor:
-          type: boolean
-          description: Enable use of the `ascp` management port for transfer monitoring.
-          default: true
-    NodeAgentOptions:
-      type: object
-      description: Parameters for the Node API transfer agent.
-      required:
-        - url
-        - username
-        - password
-      properties:
-        url:
-          type: string
-          description: URL of the Node API.
-        username:
-          type: string
-          description: Node API user or access key.
-        password:
-          type: string
-          description: Password, secret, or bearer token.
-        root_id:
-          type: string
-          description: Root file ID. Mandatory only when `password` is a bearer token.
-    HttpgwAgentOptions:
-      type: object
-      description: Parameters for the HTTP Gateway transfer agent.
-      required:
-        - url
-      properties:
-        url:
-          type: string
-          description: URL of the HTTP Gateway.
-        upload_chunk_size:
-          type: integer
-          description: Size in bytes of each upload chunk.
-          default: 64000
-        api_version:
-          type: string
-          description: Force use of a specific API version.
-          enum:
-            - v1
-            - v2
-          default: v2
-        synchronous:
-          type: boolean
-          description: Wait for acknowledgment after each message.
-          default: false
-    DesktopAgentOptions:
-      type: object
-      description: >-
-        Parameters for the IBM Aspera Desktop Client transfer agent.
-        The Desktop Client must be running locally. No additional options are required.
-      properties: {}
-    ConnectAgentOptions:
-      type: object
-      description: >-
-        Parameters for the IBM Aspera Connect Client transfer agent.
-        The Connect Client must be running locally. No additional options are required.
-      properties: {}
-    TransferdAgentOptions:
-      type: object
-      description: Parameters for the Transfer Daemon transfer agent.
-      properties:
-        url:
-          type: string
-          description: >-
-            Address and port listened by the daemon (e.g. `:55002`).
-            If port is `0`, the daemon listens on a random available port.
-            If no address is given, `127.0.0.1` is used.
-          default: ":0"
-        start:
-          type: boolean
-          description: Start a new daemon instance.
-          default: true
-        stop:
-          type: boolean
-          description: Stop the daemon when `ascli` exits.
-          default: true
-        api_key:
-          type: string
-          description: >-
-            API key of the daemon, sent in the metadata `api_key` of each call.
-            For an existing daemon: required if it has `authentication` enabled in its configuration.
-            For a daemon started by `ascli`: it is given `authentication` with this key, else with a random key if `stop` is `true`,
-            else without authentication (warning): set it so that a daemon left running can be used only by the executions that know it.
-        ca_file:
-          type: string
-          description: >-
-            Path to the certificate authority file (PEM) that signed the certificate of an existing daemon (`start` is `false`)
-            that has `tls` enabled in its configuration. A self-signed certificate is its own authority.
-    TransferAgentOptions:
-      description: >-
-        Transfer agent selector and agent-specific parameters.
-        Set `agent` to select the agent type (default: `direct`).
-        Remaining keys are passed to the selected agent.
-      oneOf:
-        - $ref: "#/components/schemas/DirectAgentOptions"
-        - $ref: "#/components/schemas/NodeAgentOptions"
-        - $ref: "#/components/schemas/HttpgwAgentOptions"
-        - $ref: "#/components/schemas/TransferdAgentOptions"
-        - $ref: "#/components/schemas/DesktopAgentOptions"
-        - $ref: "#/components/schemas/ConnectAgentOptions"
-      discriminator:
-        propertyName: agent
-        mapping:
-          direct: "#/components/schemas/DirectAgentOptions"
-          node: "#/components/schemas/NodeAgentOptions"
-          httpgw: "#/components/schemas/HttpgwAgentOptions"
-          transferd: "#/components/schemas/TransferdAgentOptions"
-          desktop: "#/components/schemas/DesktopAgentOptions"
-          connect: "#/components/schemas/ConnectAgentOptions"
     SmtpOptions:
       type: object
+      additionalProperties: false
       description: SMTP email server configuration.
       required:
         - server
@@ -494,7 +306,7 @@ components:
             - 587
         domain:
           type: string
-          description: Email domain of the user. Defaults to the domain part of `server`.
+          description: Email domain of the user. Defaults to the domain part of `from_email`.
           examples:
             - gmail.com
         username:
@@ -519,73 +331,6 @@ components:
           description: Display name of the sender. Defaults to the local-part of `from_email`.
           examples:
             - John Wayne
-    ServiceOptions:
-      type: object
-      description: >-
-        Installation parameters of the transfer daemon (`transferd`) as a system service.
-        The content of the daemon configuration file is described by its own schema.
-      additionalProperties: false
-      properties:
-        name:
-          type: string
-          description: >-
-            Name of the service.
-            The unit file is `<name>.service`.
-          default: aspera-transferd
-          minLength: 1
-        user:
-          type: string
-          description: >-
-            Account that runs the daemon.
-            It must exist, it is not created.
-          default: asperadaemon
-          minLength: 1
-        group:
-          type: string
-          description: Group that runs the daemon. Defaults to the primary group of `user`.
-          minLength: 1
-        unit_dir:
-          type: string
-          description: Folder where the unit file is created.
-          default: /etc/systemd/system
-          minLength: 1
-        after:
-          type: array
-          description: Units that shall be started before the daemon (`After=` in the unit).
-          items:
-            type: string
-          default:
-            - network.target
-        environment:
-          type: object
-          description: >-
-            Environment variables set in the unit.
-            None is set unless given here.
-            `TRANSFERD_ADDRESS`, `TRANSFERD_PORT`, `TRANSFERD_MGMT_PORT` and `TRANSFERD_MGMT_ADDRESS` override the configuration file.
-          additionalProperties:
-            type: string
-        version:
-          type: string
-          description: >-
-            Version of the SDK to install, used by `install` when the SDK folder is named `current` (versions side by side).
-            Defaults to the SDK version of this tool.
-          pattern: '^\d+(\.\d+)*$'
-        purge:
-          type: boolean
-          description: Used by `uninstall`. Also remove the configuration file and the log folder.
-          default: false
-    TransferdServiceConfig:
-      type: object
-      description: >-
-        Configuration of the transfer daemon (`transferd`) as a system service.
-      additionalProperties: false
-      properties:
-        service:
-          $ref: "#/components/schemas/ServiceOptions"
-        config:
-          type: object
-          description: >-
-            Content of `transferd.json`, validated against the transfer daemon configuration schema.
     HttpOptions:
       type: object
       description: >-
@@ -747,6 +492,7 @@ components:
             - "<TOKEN>"
         approle:
           type: object
+          additionalProperties: false
           description: >-
             AppRole authentication: the token is obtained by login, renewed, and obtained again when refused.
           properties:
@@ -890,6 +636,7 @@ components:
             For the default store, defaults to the value of `vault_password`.
     VaultSecret:
       type: object
+      additionalProperties: false
       description: Secret entry in the vault
       required:
         - label
@@ -963,6 +710,7 @@ components:
         - $ref: "#/components/schemas/VaultStore"
     ImageOptions:
       type: object
+      additionalProperties: false
       description: Options for displaying images and thumbnails in the terminal.
       properties:
         reserve:
@@ -982,411 +730,6 @@ components:
           type: number
           description: Terminal font aspect ratio (height divided by width).
           default: 2.3
-    AscpLogsOptions:
-      type: object
-      description: Analysis of `ascp` log files (`config ascp logs`).
-      additionalProperties: false
-      properties:
-        period:
-          type: integer
-          description: Snapshot period, in minutes.
-          default: 1
-        zero_bytes:
-          type: boolean
-          description: Include sessions without transferred bytes.
-          default: false
-        mtu:
-          type: integer
-          description: MTU, when not found in logs.
-        resolve:
-          type: boolean
-          description: Resolve peer addresses to host names.
-          default: false
-        timezone:
-          type: string
-          description: Time zone of the log lines (`UTC` or `+HH:MM`), to read a log from another time zone. Default is the local time zone.
-        health_minutes:
-          type: integer
-          description: Window in minutes to report transfer errors and low efficiency.
-          default: 60
-        remote_max_size:
-          type: integer
-          description: Maximum total size in bytes of the log files read from a server (`server logs`).
-          default: 536870912
-        thresholds:
-          type: object
-          description: Diagnostic thresholds.
-          additionalProperties: false
-          properties:
-            efficiency:
-              type: number
-              description: Minimum efficiency percentage below which a warning is emitted.
-              default: 90.0
-            control_loss_percent:
-              type: number
-              description: Minimum percentage of lost control messages to trigger a warning.
-              default: 5.0
-            control_loss_sent:
-              type: integer
-              description: Minimum number of control messages sent before checking control loss.
-              default: 10
-            retry_window:
-              type: integer
-              description: Maximum interval in seconds between sessions to link a retry.
-              default: 3600
-            last_error_window:
-              type: integer
-              description: Window in seconds before exit to attribute the last logged error.
-              default: 60
-            rate_decline_ratio:
-              type: number
-              description: Ratio of second half rate to first half rate below which rate decline is diagnosed.
-              default: 0.7
-            rate_decline_min_samples:
-              type: integer
-              description: Minimum number of samples to evaluate rate decline.
-              default: 10
-            rate_decline_delay:
-              type: integer
-              description: Delay in seconds after session start before evaluating rate decline samples.
-              default: 20
-            rate_decline_end_fraction:
-              type: number
-              description: Fraction of samples to discard from the end of a session when evaluating rate decline.
-              default: 0.1
-            license_expiry_days:
-              type: integer
-              description: Number of days before the expiry of the license of ascp (or less, if already expired) at which a warning is emitted.
-              default: 30
-            small_files_min_count:
-              type: integer
-              description: Minimum number of transferred files to check for the small-files diagnostic.
-              default: 100
-            small_files_max_mean:
-              type: integer
-              description: Maximum mean file size in bytes below which the small-files diagnostic is emitted.
-              default: 1000000
-            small_mtu_max:
-              type: integer
-              description: Path MTU in bytes below which the small-MTU diagnostic is emitted (ascp measures 1492, 1006, 508 or 296).
-              default: 1400
-    PackageFolderOptions:
-      type: object
-      title: Package download folder organization
-      description: >-
-        Controls how downloaded packages are organized into subfolders under `to_folder`.
-        If not specified or empty, packages are downloaded directly into `to_folder`.
-      properties:
-        fld:
-          type: array
-          description: >-
-            List of package fields (up to 2) used to build the subfolder name.
-            Field values are joined with `.`.
-          items:
-            type: string
-          maxItems: 2
-          examples:
-            - - name
-              - id
-        seq:
-          type: boolean
-          description: >-
-            If `true`, appends an incrementing number to the folder name when a conflict occurs.
-          default: false
-        opt:
-          type: boolean
-          description: >-
-            If `false` (default), all fields in `fld` are always used.
-            If `true`, the first field is used unless the folder already exists.
-          default: false
-        inf:
-          type: boolean
-          description: >-
-            If `true`, creates a `<ID>.info.json` sidecar file inside the folder
-            containing package metadata.
-          default: false
-    NodeBearerTokenOptions:
-      type: object
-      description: >-
-        JWT payload used to generate an Aspera Node bearer token (`node bearer_token`).
-        `user_id` is the only mandatory field.
-        The CLI strips the `_validity` and `_scope` convenience keys before signing;
-        remaining fields are embedded verbatim in the token.
-      required:
-        - user_id
-      properties:
-        user_id:
-          type: string
-          description: Identifier of the user for whom the token is generated.
-          examples:
-            - jdoe # cspell:disable-line
-        _validity:
-          type: integer
-          description: Token lifetime in seconds (convenience key, removed before signing).
-          default: 86400
-        _scope:
-          type: string
-          description: >-
-            Scope shorthand used to build the `scope` field (convenience key, removed before signing).
-            Maps to `node.<access_key>:<scope>`.
-          enum: [user, admin]
-          default: user
-        scope:
-          type: string
-          description: >-
-            Full scope string. Computed automatically from `_scope` when absent.
-            Example: `node::ik-00000000-0000-0000-0000-000000000000:user`.
-        auth_type:
-          type: string
-          description: Authentication type embedded in the token.
-          default: access_key
-        expires_at:
-          type: string
-          description: >-
-            Token expiry timestamp in ISO 8601 format (`YYYY-MM-DDTHH:MM:SSZ`).
-            Computed automatically from `_validity` when absent.
-          examples:
-            - "2030-01-01T00:00:00Z"
-    NodeEmulatorOptions:
-      type: object
-      description: >-
-        Configuration for the embedded Node API emulator (`node emulator`), for testing without HSTS.
-        The emulator starts a local web server that answers a subset of the Node API:
-        `/info`, `/ops/transfers` (list, start), `/ops/transfers/{id}` (show, modify, cancel) and `/files/browse`.
-        Transfers are executed by the Transfer Daemon (`transferd`), started by the emulator.
-        Clients authenticate with HTTP Basic when `username` and `password` are set.
-      additionalProperties: false
-      properties:
-        url:
-          type: string
-          description: >-
-            Address and port the emulator listens on.
-            Use `https://` with `cert`/`key` for TLS.
-          default: http://localhost:8080
-        cert:
-          type: string
-          x-cli-complete: file
-          description: >-
-            Path to the TLS certificate file.
-            Accepted formats: PEM (`.pem`) or PKCS12 (`.p12` / `.pfx`).
-          examples:
-            - /path/to/cert.pem
-        key:
-          type: string
-          x-cli-complete: file
-          description: >-
-            Path to the PEM private key file, or the PKCS12 passphrase when `cert` is a `.p12`/`.pfx` file.
-          examples:
-            - /path/to/key.pem
-        chain:
-          type: string
-          x-cli-complete: file
-          description: Path to the PEM certificate chain file (appended as extra chain certificates).
-          examples:
-            - /path/to/chain.pem
-        docroot:
-          type: string
-          x-cli-complete: folder
-          description: >-
-            Local folder of the node files.
-            Paths of `/files/browse` and local paths of transfers (sources of `send`, destination of `receive`) are relative to it, and confined in it.
-            Defaults to the current working directory.
-          examples:
-            - /data/aspera
-        retention_sec:
-          type: integer
-          minimum: 1
-          description: Time in seconds a transfer stays in the list of transfers after it ended (completed, failed or canceled, and no more retried).
-          default: 86400
-        username:
-          type: string
-          description: >-
-            Username expected from clients in HTTP Basic authentication.
-            Set together with `password`.
-            When not set, requests are accepted without authentication.
-            Mandatory when `url` is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`).
-          examples:
-            - node_user
-        password:
-          type: string
-          description: >-
-            Password expected from clients in HTTP Basic authentication, for the above `username`.
-            Generate it with `openssl rand -hex 32`: a weak password is refused (see `password_min_bits`).
-          examples:
-            - "<PASSWORD>"
-        password_min_bits:
-          type: integer
-          minimum: 0
-          default: 80
-          description: >-
-            Minimum estimated strength of `password`, in bits (log2 of the number of guesses to find it).
-            The strength is estimated with gem `zxcvbn` if installed, else with a built-in estimate
-            that detects repeats, sequences, keyboard rows, words and years.
-            `0` disables the check.
-            A random password of 32 bytes (`openssl rand -hex 32`) is far above the default.
-    NodeTelemetryOptions:
-      type: object
-      description: >-
-        Configuration for the telemetry reporter (`node telemetry`).
-        The command periodically queries `ops/transfers?active_only=true` and sends
-        an OpenTelemetry gauge metric to an Instana backend.
-      required:
-        - url
-        - key
-      properties:
-        url:
-          type: string
-          description: Base URL of the Instana backend (without `/v1`).
-          examples:
-            - https://my-instana.example.com
-        key:
-          type: string
-          description: Instana API key sent in the `x-instana-key` header.
-          examples:
-            - my-instana-api-key
-        interval:
-          type: number
-          description: >-
-            Polling interval in seconds. Use `0` for a single-shot run (no loop).
-          default: 10
-        hostname:
-          type: string
-          description: >-
-            Value sent in the `x-instana-host` header.
-            Defaults to the local machine's hostname.
-          examples:
-            - hsts-prod-01
-    OrchestratorWorkflowStart:
-      type: object
-      description: >-
-        Execution of the work order created by `orchestrator workflows start`.
-        By default, the call is asynchronous and returns the work order information.
-        A synchronous call returns the value of the output variable, if specified.
-      additionalProperties: false
-      properties:
-        synchronous:
-          type: boolean
-          description: Wait for completion of the work order.
-          default: false
-        step:
-          type: string
-          description: >-
-            Name of the work step providing the result.
-            Requires `variable`, and implies `synchronous`.
-          examples:
-            - ResultStep
-        variable:
-          type: string
-          description: >-
-            Name of the output variable of `step` returned as result.
-            Requires `step`, and implies `synchronous`.
-          examples:
-            - Complete_status_message
-    OrchestratorInitiateParameters:
-      type: object
-      description: >-
-        Input parameters for the workflow (key-value pairs).
-        Valid keys are defined by the workflow's input specification.
-        Use `orchestrator workflows inputs WORKFLOW_ID` to discover required parameters.
-      additionalProperties: true
-    OrchestratorWorkflowExport:
-      type: object
-      description: Options of `orchestrator workflows export`.
-      additionalProperties: false
-      properties:
-        dependencies:
-          type: boolean
-          description: >-
-            Export the sub-workflows and remote nodes used by the workflow in a package (`.wkf`),
-            saved in the folder given by option `to_folder` (default: current folder), instead of displaying the workflow.
-          default: false
-    OrchestratorWorkflowImport:
-      type: object
-      description: Options of `orchestrator workflows import`.
-      additionalProperties: false
-      properties:
-        folder_id:
-          type: integer
-          description: >-
-            Folder of the new workflow (default: the default folder).
-            The `folder_id` of existing workflows is in `orchestrator workflows list`.
-        publish:
-          type: boolean
-          description: >-
-            Publish the workflow after import.
-            If not set, the server option `publish_api_imported_workflow` decides.
-        link_to_subworkflows:
-          type: boolean
-          description: Link to existing sub-workflows instead of importing those of the package (`.wkf`).
-          default: false
-    OrchestratorImportWithConstraints:
-      type: object
-      description: >-
-        Import of a workflow file present on the Orchestrator host, as a new workflow or as a new revision of an existing workflow.
-        `orchestrator workflows import` stores each uploaded file in `<run_dir>/workflows/import/`.
-        Conflicts with existing global templates, sub-workflows and remote nodes are resolved by name.
-        Use `orchestrator workflows find_constraints` to list the conflicts, and `orchestrator workflows check_import` to check the file beforehand.
-      additionalProperties: false
-      required:
-        - filename
-      properties:
-        filename:
-          type: string
-          description: Path of the workflow file (`.yml` or `.wkf`) on the Orchestrator host.
-          examples:
-            - /opt/aspera/orchestrator/var/run/orchestrator/workflows/import/my_workflow.yml
-        add_as_revision:
-          type: [integer, 'null']
-          description: >-
-            ID of an existing workflow: the file is imported as a new revision of this workflow (to be published).
-            If not set, or `null`, a new workflow is created.
-          examples:
-            - 123
-        subwf_constraints:
-          type: object
-          description: 'Resolution for each sub-workflow, by name: `Map to the Existing Sub-Workflow`, `Create a new Sub-Workflow with a unique name`, or `Add a new revision to the existing Sub-Workflow`.'
-          additionalProperties:
-            type: string
-            enum:
-              - Map to the Existing Sub-Workflow
-              - Create a new Sub-Workflow with a unique name
-              - Add a new revision to the existing Sub-Workflow
-        action_template_constraints:
-          type: object
-          description: 'Resolution for each global action template, by name: `Map to the existing Global Template`, `Create a new Global Template with a different name`, or `Override the existing Global Template with this new template`.'
-          additionalProperties:
-            type: string
-            enum:
-              - Map to the existing Global Template
-              - Create a new Global Template with a different name
-              - Override the existing Global Template with this new template
-        remote_node_constraints:
-          type: object
-          description: 'Resolution for each remote node, by name: `Map to the existing Remote Node`, `Create a new Remote Node with a different name`, or `Override the Existing Remote Node with this importing node`.'
-          additionalProperties:
-            type: string
-            enum:
-              - Map to the existing Remote Node
-              - Create a new Remote Node with a different name
-              - Override the Existing Remote Node with this importing node
-        auto_enable_missing_plugins:
-          type: boolean
-          description: Enable the plugins used by the workflow that are not enabled.
-          default: false
-    OrchestratorReloadPluginSet:
-      type: object
-      description: Set of plugins to reload.
-      required:
-        - plugin_names
-      properties:
-        plugin_names:
-          type: array
-          description: List of plugin names to reload.
-          items:
-            type: string
-          examples:
-            - - soap_requests
-              - frameio_operations # cspell:disable-line
     DetectOptions:
       type: object
       description: Application to detect (`config detect`).
@@ -1446,6 +789,8 @@ components:
           description: 'Set the preset as default configuration for the plugin (default: yes).'
     TableOptions:
       type: object
+      # Open: the other keys are the style of the table, given to the gem `terminal-table` (format `table`) or to the Ruby `CSV` library (format `csv`)
+      additionalProperties: true
       description: Terminal table rendering options.
       properties:
         pivot:
@@ -1454,6 +799,7 @@ components:
           default: false
     OutOptions:
       type: object
+      additionalProperties: false
       description: Output rendering options (dot-notation sub-properties).
       properties:
         format:
@@ -1578,6 +924,8 @@ components:
           default: fail
     WebServerOptions:
       type: object
+      # Open: base of the options of web servers of bundles (e.g. `faspex5 postprocessing`), which add their own keys with `allOf`, and refuse other keys
+      additionalProperties: true
       description: >-
         Address and TLS configuration for a local web server (`WebServerSimple`).
         Used by commands that start an embedded HTTP(S) listener (`faspex5 gateway`,
@@ -1610,123 +958,3 @@ components:
           description: Path to the PEM certificate chain file (appended as extra chain certificates).
           examples:
             - /path/to/chain.pem
-    Faspex4GatewayOptions:
-      description: >-
-        Configuration for the Faspex 4 gateway emulator (`faspex5 gateway`, `aoc gateway`).
-        The command starts a local HTTP server that accepts Faspex 4 API calls and translates them
-        to Faspex 5 / AoC API calls.
-        Clients authenticate with HTTP Basic, as on Faspex 4, when `username` and `password` are set.
-        By default the server binds to loopback; use a routable address only when clients must reach
-        the host from outside: then `username` and `password` are required.
-      allOf:
-        - $ref: "#/components/schemas/WebServerOptions"
-        - type: object
-          # List properties solely to allow them under additionalProperties: false.
-          # Types and descriptions are already defined in WebServerOptions above.
-          additionalProperties: false
-          properties:
-            url: {}
-            cert: {}
-            key: {}
-            chain: {}
-            username:
-              type: string
-              description: >-
-                Username expected from clients in HTTP Basic authentication.
-                Set together with `password`.
-                When not set, requests are accepted without authentication.
-                Mandatory when `url` is not a loopback address (`localhost`, `127.0.0.0/8`, `::1`).
-              examples:
-                - fx4_user
-            password:
-              type: string
-              description: >-
-                Password expected from clients in HTTP Basic authentication, for the above `username`.
-                Generate it with `openssl rand -hex 32`: a weak password is refused (see `password_min_bits`).
-              examples:
-                - "<PASSWORD>"
-            password_min_bits:
-              type: integer
-              minimum: 0
-              default: 80
-              description: >-
-                Minimum estimated strength of `password`, in bits (log2 of the number of guesses to find it).
-                The strength is estimated with gem `zxcvbn` if installed, else with a built-in estimate
-                that detects repeats, sequences, keyboard rows, words and years.
-                `0` disables the check.
-                A random password of 32 bytes (`openssl rand -hex 32`) is far above the default.
-    Faspex4PostProcOptions:
-      description: >-
-        Configuration for the Faspex 4-style post-processing webhook receiver (`faspex5 postprocessing`).
-        The command starts a local HTTP(S) server that Faspex 5 calls after each package upload.
-        It maps the URL path to a script under `script_folder` and executes it with the values of the
-        webhook JSON body whose key starts with `faspex_` as environment variables.
-        By default the server binds to loopback; use a routable address only when Faspex containers
-        must reach the host: then `secret_token` or `allowed_ips` is required.
-      allOf:
-        - $ref: "#/components/schemas/WebServerOptions"
-        - type: object
-          additionalProperties: false
-          properties:
-            # Listed solely to allow them under additionalProperties: false (defined in WebServerOptions).
-            url: {}
-            cert: {}
-            key: {}
-            chain: {}
-            script_folder:
-              type: string
-              x-cli-complete: folder
-              description: >-
-                Folder containing the post-processing scripts.
-                The URL path (after the base path) is appended to this folder to locate the script to execute.
-              default: "."
-              examples:
-                - /opt/faspex/scripts
-            fail_on_error:
-              type: boolean
-              description: >-
-                When `true`, return HTTP 500 if the script exits with a non-zero status code.
-                When `false` (default), the exit code is reported in the response body but HTTP 200 is returned.
-              default: false
-            timeout_seconds:
-              type: integer
-              minimum: 1
-              description: >-
-                Maximum time in seconds to wait for the script to complete before killing it.
-              default: 60
-            secret_token:
-              type: string
-              minLength: 1
-              description: >-
-                Shared secret for webhook authentication.
-                When set, every incoming request must include `?token=<value>` in the URL;
-                requests without the correct token are rejected with HTTP 401.
-                Configure the Faspex webhook URL as `http://host:port/path/script.sh?token=<value>`.
-                This parameter or `allowed_ips` is required when `url` is not a local address.
-                Generate it with `openssl rand -hex 32`: a weak token is refused (see `secret_token_min_bits`).
-            secret_token_min_bits:
-              type: integer
-              minimum: 0
-              default: 80
-              description: >-
-                Minimum estimated strength of `secret_token`, in bits (log2 of the number of guesses to find it).
-                The strength is estimated with gem `zxcvbn` if installed, else with a built-in estimate
-                that detects repeats, sequences, keyboard rows, words and years.
-                `0` disables the check.
-                A random token of 32 bytes (`openssl rand -hex 32`) is far above the default.
-            allowed_ips:
-              description: >-
-                IP address or network (CIDR, e.g. `10.89.0.0/24`), or list of them, allowed to call the listener.
-                Requests from any other source IP are rejected with HTTP 403.
-                When not set, no IP restriction is applied.
-                This parameter or `secret_token` is required when `url` is not a local address.
-              oneOf:
-                - type: string
-                  examples:
-                    - "192.168.1.10"
-                - type: array
-                  items:
-                    type: string
-                  examples:
-                    - - "192.168.1.10"
-                      - "10.89.0.0/24"

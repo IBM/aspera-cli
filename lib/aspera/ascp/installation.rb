@@ -6,7 +6,7 @@
 # cspell:ignore ckpt
 require_relative '../yaml'
 require_relative '../environment'
-require_relative '../data_repository'
+require_relative 'data_repository'
 require_relative '../log'
 require_relative '../rest'
 require_relative '../uri_reader'
@@ -16,7 +16,10 @@ require_relative '../hash_ext'
 require_relative '../products/desktop'
 require_relative '../products/connect'
 require_relative '../products/transferd'
-require_relative '../products/other'
+require_relative '../products'
+require_relative '../products/cli_v3'
+require_relative '../products/hsts'
+require_relative '../products/drive'
 require 'fileutils'
 require 'openssl'
 require 'singleton'
@@ -75,7 +78,7 @@ module Aspera
       # @return [nil]
       def sdk_folder=(ascp_location)
         Aspera.assert_type(ascp_location, String) { 'ascp_location' }
-        Aspera.assert(!ascp_location.empty?, 'ascp location cannot be empty: check your config file')
+        Aspera.assert(!ascp_location.empty?, 'ascp location cannot be empty: check your config file', type: ParameterError)
         @ascp_folder = nil
         if self.class.product_selector?(ascp_location)
           # Resolved on first use: product scan requires the SDK folder, which is set later
@@ -252,10 +255,10 @@ module Aspera
         platform = Environment.instance.architecture if platform.nil?
         all_locations = sdk_locations(download: {sdk: version || LATEST_VERSION, platform: platform})
         locations = all_locations.select { |l| l['platform'].eql?(platform) }
-        Aspera.assert(!locations.empty?) { "No SDK for platform: #{platform}, available: #{all_locations.map { |i| i['platform'] }.uniq}" }
+        Aspera.assert(!locations.empty?, type: ParameterError) { "No SDK for platform: #{platform}, available: #{all_locations.map { |i| i['platform'] }.uniq}" }
         version = locations.max_by { |entry| Gem::Version.new(entry['version']) }['version'] if version.nil?
         info = locations.select { |entry| entry['version'].eql?(version) }
-        Aspera.assert(!info.empty?) { "No such version: #{version} for #{platform}" }
+        Aspera.assert(!info.empty?, type: ParameterError) { "No such version: #{version} for #{platform}" }
         return info.first
       end
 
@@ -267,7 +270,7 @@ module Aspera
       # @return [String, nil] Version of the SDK installed in the SDK folder (from its meta data file), or nil if not installed
       def installed_sdk_version
         return unless File.exist?(sdk_exe_path(:transferd))
-        meta_data_file = File.join(Products::Transferd.sdk_directory, Products::Other::INFO_META_FILE)
+        meta_data_file = File.join(Products::Transferd.sdk_directory, Products::INFO_META_FILE)
         return unless File.exist?(meta_data_file)
         return File.read(meta_data_file).scan(%r{<version>(.*?)</version>}).flatten.first
       end
@@ -424,7 +427,7 @@ module Aspera
           end
         end
         # Generate meta data XML file in SDK if needed, based on actual binaries versions
-        meta_data_file = File.join(folder, Products::Other::INFO_META_FILE)
+        meta_data_file = File.join(folder, Products::INFO_META_FILE)
         if File.exist?(meta_data_file)
           # file is there, read values:
           meta_data = File.read(meta_data_file)
@@ -525,10 +528,10 @@ module Aspera
         if @ascp_folder.nil?
           if @ascp_product.eql?(FIRST_FOUND)
             pl = installed_products.first
-            Aspera.assert(!pl.nil?) { "No Aspera transfer module or SDK found.\nRefer to the manual or install SDK with command:\nascli config ascp install" }
+            Aspera.assert(!pl.nil?, type: EnvironmentError) { "No Aspera transfer module or SDK found.\nRefer to the manual or install SDK with command:\nascli config ascp install" }
           else
             pl = installed_products.find { |i| i[:name].eql?(@ascp_product) }
-            Aspera.assert(!pl.nil?) { "No such product installed: #{@ascp_product}" }
+            Aspera.assert(!pl.nil?, type: ParameterError) { "No such product installed: #{@ascp_product}" }
           end
           @ascp_folder = File.dirname(pl[:ascp_path])
           Log.log.debug { "ascp_folder=#{@ascp_folder}" }
@@ -549,9 +552,11 @@ module Aspera
         scan_locations = Products::Transferd.locations +
           Products::Desktop.locations +
           Products::Connect.locations +
-          Products::Other::LOCATION_ON_THIS_OS
+          Products::CliV3.locations +
+          Products::Hsts.locations +
+          Products::Drive.locations
         # search installed products: with ascp
-        @found_products = Products::Other.find(scan_locations)
+        @found_products = Products.find(scan_locations)
       end
     end
   end

@@ -1,0 +1,347 @@
+# Orchestrator ------------------------------------------------------
+orch_health:
+  args:
+    - orchestrator
+    - health
+orch_health_bad:
+  $comment: With nagios format, error goes to stdout and exit code is set.
+  description: Try to use wrong URL.
+  tags:
+    - must_fail
+    - no_doc
+  expect: ""
+  args:
+    - orchestrator
+    - health
+    - --url=https://wrong.url
+    - --format=nagios
+orch_detect:
+  tags:
+    - no_doc
+  args:
+    - config
+    - detect
+    - "@:"
+    - url=@preset:orch_user.url
+orch_wizard:
+  tags:
+    - orchestrator
+  pre: generated_secret(:dummy)
+  args:
+    - config
+    - wizard
+    - "@:"
+    - url=@preset:orch_user.url
+    - plugin=orchestrator
+    - override=yes
+    - --username=test
+    - --password=$(secret :dummy)
+orch_info:
+  args:
+    - orchestrator
+    - info
+orch_wf_dev_toc:
+  args:
+    - orchestrator
+    - workflows
+    - development
+    - guide
+    - toc
+orch_wf_dev_section:
+  args:
+    - orchestrator
+    - workflows
+    - development
+    - templates
+    - section
+    - customruby # cspell:disable-line
+orch_plugin_spec_list:
+  args:
+    - orchestrator
+    - plugins
+    - spec
+    - toc
+    - --select=@json:{"category":"Triggers"}
+orch_plugin_spec_show:
+  args:
+    - orchestrator
+    - plugins
+    - spec
+    - show
+    - AmazonS3Operation
+    - --format=yaml
+orch_plugin_spec_section:
+  args:
+    - orchestrator
+    - plugins
+    - spec
+    - show
+    - ascpclient # cspell:disable-line
+    - inputs
+orch_wf_list:
+  args:
+    - orchestrator
+    - workflow
+    - list
+orch_wf_list_token:
+  tags:
+    - flaky
+  args:
+    - orchestrator
+    - --auth_style=token
+    - workflow
+    - list
+orch_wf_list_query:
+  tags:
+    - flaky
+  args:
+    - orchestrator
+    - --auth_style=query
+    - workflow
+    - list
+orch_wf_sta:
+  args:
+    - orchestrator
+    - workflow
+    - status
+    - ALL
+orch_wf_inp:
+  args:
+    - orchestrator
+    - workflow
+    - inputs
+    - "@preset:orch.workflow_id"
+orch_wf_sti:
+  args:
+    - orchestrator
+    - workflow
+    - status
+    - "@preset:orch.workflow_id"
+orch_wf_start:
+  args:
+    - orchestrator
+    - workflow
+    - start
+    - "@preset:orch.workflow_id"
+    - "@:"
+    - Param=world !
+orch_wf_start_with_result:
+  args:
+    - orchestrator
+    - workflow
+    - start
+    - "@preset:orch.workflow_id"
+    - "@:"
+    - Param=world !
+    - END
+    - "@:"
+    - step=ResultStep
+    - variable=Complete_status_message
+orch_plugins:
+  args:
+    - orchestrator
+    - plugins
+    - list
+orch_processes:
+  args:
+    - orchestrator
+    - processes
+orch_portlets:
+  args:
+    - orchestrator
+    - portlets
+    - list
+orch_queue_stats:
+  args:
+    - orchestrator
+    - queues
+    - stats
+orch_workorder_stats:
+  args:
+    - orchestrator
+    - workorders
+    - stats
+orch_workstep_stats:
+  args:
+    - orchestrator
+    - worksteps
+    - stats
+orch_alerts_list:
+  args:
+    - orchestrator
+    - alerts
+    - list
+orch_tasks_list:
+  args:
+    - orchestrator
+    - tasks
+    - list
+orch_monitors:
+  args:
+    - orchestrator
+    - monitors
+    - snapshot
+orch_monitors_list:
+  args:
+    - orchestrator
+    - monitors
+    - list
+    - node
+orch_queues_list:
+  args:
+    - orchestrator
+    - queues
+    - list
+orch_journal_files:
+  args:
+    - orchestrator
+    - journal
+    - files
+    - journal
+    - --query=@json:{"details":"false"}
+orch_wf_details:
+  args:
+    - orchestrator
+    - workflow
+    - details
+    - "@preset:orch.workflow_id"
+orch_wf_outputs:
+  args:
+    - orchestrator
+    - workflow
+    - outputs
+    - "@preset:orch.workflow_id"
+orch_wf_workorders:
+  args:
+    - orchestrator
+    - workflow
+    - workorders
+    - "@preset:orch.workflow_id"
+orch_wf_export:
+  args:
+    - orchestrator
+    - workflow
+    - export
+    - "@preset:orch.workflow_id"
+orch_wf_check_import:
+  pre: |
+    (TMP / 'orch_wf_check.yml').write(<<~YAML)
+      ---
+      - !ruby/object:Workflow
+        attributes:
+          name: check_import_test
+          run_as: SYSTEM
+      - !ruby/object:Whiteboard
+        attributes:
+          error_free: true
+          xml_export: |
+            <?xml version="1.0" encoding="UTF-8"?>
+            <Workflow id="0">
+            <Start x="100" y="50" id="start"><Parameters></Parameters></Start>
+            <Error x="900" y="350" id="error"><Synch_factor>0</Synch_factor><Prerequisites></Prerequisites></Error>
+            <End x="900" y="50" id="end"><Synch_factor>0</Synch_factor><Prerequisites><Prerequisite id="step1" status="Complete"/></Prerequisites></End>
+            <Fail x="900" y="200" id="fail"><Synch_factor>0</Synch_factor><Prerequisites></Prerequisites></Fail>
+            <Steps>
+            <Step x="400" y="50" id="step1"><Action_id>1</Action_id><Step_name>Say hello</Step_name><Step_type>CustomRuby</Step_type><Synch_factor>0</Synch_factor><Prerequisites><Prerequisite id="start" status="true"/></Prerequisites><Parameters></Parameters><Inputs></Inputs><Outputs></Outputs></Step>
+            </Steps>
+            <Parameters></Parameters>
+            <Notes></Notes>
+            </Workflow>
+      - CustomRuby__1: !ruby/object:CustomRuby
+          attributes:
+            name: W0__Say hello
+            execute_code: "outputs['message'] = 'Hello'"
+      - CustomRuby__1: []
+      - {}
+      - CustomRuby: 0.7.0
+    YAML
+  args:
+    - orchestrator
+    - workflow
+    - check_import
+    - $(TMP / 'orch_wf_check.yml')
+orch_workorder_id:
+  tags:
+    - save_output
+  args:
+    - orchestrator
+    - workflow
+    - workorders
+    - "@preset:orch.workflow_id"
+    - --fields=id
+    - --query.max_results=1
+orch_workorder_status:
+  depends_on:
+    - orch_workorder_id
+  args:
+    - orchestrator
+    - workorder
+    - status
+    - $(t.saved_output :orch_workorder_id)
+orch_workorder_cancel:
+  depends_on:
+    - orch_workorder_id
+  args:
+    - orchestrator
+    - workorder
+    - cancel
+    - $(t.saved_output :orch_workorder_id)
+orch_workorder_reset:
+  depends_on:
+    - orch_workorder_id
+  args:
+    - orchestrator
+    - workorder
+    - reset
+    - $(t.saved_output :orch_workorder_id)
+orch_workorder_output:
+  depends_on:
+    - orch_workorder_id
+  args:
+    - orchestrator
+    - workorder
+    - output
+    - $(t.saved_output :orch_workorder_id)
+orch_wf_start_sleep:
+  tags:
+    - save_output
+  args:
+    - orchestrator
+    - workflow
+    - start
+    - "@preset:orch.sleep_workflow_id"
+    - --fields=work_order.id
+orch_workstep_id:
+  tags:
+    - save_output
+  depends_on:
+    - orch_wf_start_sleep
+  args:
+    - orchestrator
+    - workorders
+    - worksteps
+    - $(t.saved_output :orch_wf_start_sleep)
+    - --select.status=In Progress
+    - --fields=id
+  harness:
+    poll:
+      interval: 5
+      max: 60
+      until: "@"
+      show: last
+orch_workstep_status:
+  depends_on:
+    - orch_workstep_id
+  args:
+    - orchestrator
+    - worksteps
+    - status
+    - $(t.saved_output :orch_workstep_id)
+orch_workstep_cancel:
+  depends_on:
+    - orch_workstep_id
+  args:
+    - orchestrator
+    - worksteps
+    - cancel
+    - $(t.saved_output :orch_workstep_id)

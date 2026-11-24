@@ -9,7 +9,7 @@ require_relative '../assert'
 require_relative '../line_logger'
 require_relative '../units/duration'
 require_relative '../schema/registry'
-require_relative 'option_declarator'
+require_relative 'option/declarator'
 require_relative '../rest'
 require_relative '../oauth/client/factory'
 require_relative '../ssl'
@@ -21,7 +21,7 @@ module Aspera
     # Extracted from Plugins::Config so it can be referenced independently
     # via Context#http_config without coupling to the plugin machinery.
     class Http
-      extend OptionDeclarator
+      extend Option::Declarator
 
       # Certificate file extensions recognized when scanning a folder
       CERT_EXT = %w[crt cer pem der].freeze
@@ -48,10 +48,10 @@ module Aspera
       end
 
       # `on_set` callbacks are methods of the instance given as `target:` to `declare_options`
-      option :insecure,           description: 'HTTP/S: Do not validate any certificate',                   allowed: Type::BOOLEAN, default: false, on_set: :insecure=
-      option :ignore_certificate, description: 'HTTP/S: Do not validate certificate for these URLs',        allowed: Type::STRING_ARRAY,            on_set: :ignore_cert_host_port=
-      option :warn_insecure,      description: 'HTTP/S: Issue a warning if certificate is ignored',         allowed: Type::BOOLEAN, default: true,  on_set: :warn_insecure=
-      option :cert_stores,        description: 'HTTP/S: List of folder with trusted certificates',          allowed: Type::STRING_ARRAY,            on_set: :trusted_cert_locations=
+      option :insecure,           description: 'HTTP/S: Do not validate any certificate',                   allowed: Option::Type::BOOLEAN, default: false, on_set: :insecure=
+      option :ignore_certificate, description: 'HTTP/S: Do not validate certificate for these URLs',        allowed: Option::Type::STRING_ARRAY,            on_set: :ignore_cert_host_port=
+      option :warn_insecure,      description: 'HTTP/S: Issue a warning if certificate is ignored',         allowed: Option::Type::BOOLEAN, default: true,  on_set: :warn_insecure=
+      option :cert_stores,        description: 'HTTP/S: List of folder with trusted certificates',          allowed: Option::Type::STRING_ARRAY,            on_set: :trusted_cert_locations=
       option :http_options,       schema: Schema::Registry::HTTP_OPTIONS,                                                                           on_set: :http_options=
       option :http_proxy,         description: 'HTTP/S: URL for proxy with optional credentials',                                                   on_set: :http_proxy=
 
@@ -77,7 +77,7 @@ module Aspera
       # Durations (`DURATION_KEYS`) are converted to seconds first.
       # @param new_options [Hash] merged http_options hash
       # @return [nil]
-      # @raise [BadArgument] if a duration is invalid
+      # @raise [BadArgument] if a duration or an SSL option is invalid
       def http_options=(new_options)
         Aspera.assert_type(new_options, Hash)
         kept = {}
@@ -91,7 +91,11 @@ module Aspera
           if Rest::Parameters.instance.respond_to?(method)
             Rest::Parameters.instance.send(method, v)
           elsif k.to_s.eql?('ssl_options')
-            Aspera::SSL.option_list = v
+            begin
+              Aspera::SSL.option_list = v
+            rescue ParameterError => e
+              raise BadArgument, e.message
+            end
           elsif OAuth::Factory.instance.parameters.key?(k.to_sym)
             OAuth::Factory.instance.parameters[k.to_sym] = v
           else
@@ -120,7 +124,7 @@ module Aspera
         Aspera.assert_type(url_list, Array) { 'ignore certificate URLs' }
         @ignore_cert_host_port = url_list.map do |url|
           uri = URI.parse(url)
-          Aspera.assert(uri.scheme.eql?('https')) { "Expecting https scheme: #{url}" }
+          Aspera.assert(uri.scheme.eql?('https'), type: Cli::BadArgument) { "Expecting https scheme: #{url}" }
           [uri.host, uri.port].freeze
         end
       end
@@ -159,7 +163,6 @@ module Aspera
         @certificate_store = OpenSSL::X509::Store.new
         @certificate_paths = []
         path_list.each do |path|
-          Aspera.assert_type(path, String) { 'Expecting a String for certificate location' }
           paths_to_add = [path]
           Log.log.debug { "Adding cert location: #{path}" }
           if path.eql?(SpecialValues::DEF)

@@ -113,7 +113,7 @@ module Aspera
         found = store(name)
         found.list_folder(path, options)
       rescue StandardError => e
-        raise Error, "secret store #{name}#{", folder #{path}" unless path.empty?}: #{reason(e, found)}"
+        raise error_class(e), "secret store #{name}#{", folder #{path}" unless path.empty?}: #{reason(e, found)}"
       end
 
       # Write a new secret to a writable store
@@ -155,7 +155,7 @@ module Aspera
       rescue Aspera::Secret::Error => e
         # Re-raise with store context if the message doesn't already include it
         raise e if e.message.start_with?('secret references configuration:')
-        raise Error, "secret references configuration: store #{name}: #{e.message}"
+        raise e.class, "secret references configuration: store #{name}: #{e.message}"
       rescue StandardError => e
         raise Error, "secret references configuration: store #{name}: #{e.message}"
       end
@@ -164,7 +164,7 @@ module Aspera
       def create_store(name, params)
         Store::Factory.create(params)
       rescue StandardError => e
-        raise Error, "store #{name}: #{e.message}"
+        raise error_class(e), "store #{name}: #{e.message}"
       end
 
       # Checks reference and calls block with its store
@@ -175,8 +175,12 @@ module Aspera
         found.check_reference(ref)
         yield(found)
       rescue StandardError => e
-        raise Error, "secret reference #{ref.text}: #{reason(e, found)}"
+        raise error_class(e), "secret reference #{ref.text}: #{reason(e, found)}"
       end
+
+      # @param error [StandardError] Error
+      # @return [Class] Class of the error raised with the reference or store: the one of a `Secret::Error` (e.g. `NotFound`), else `Error`
+      def error_class(error) = error.is_a?(Error) ? error.class : Error
 
       # @param error [StandardError]   Error
       # @param store [Store::Base, nil] Store that raised the error

@@ -5,6 +5,7 @@
   "description": "Information defining an Aspera transfer.",
   "$comment": "DO NOT EDIT, this file was generated from the YAML.",
   "type": "object",
+  "additionalProperties": true,
   "required": [
     "destination_root",
     "direction",
@@ -176,6 +177,7 @@
     "fasp_proxy": {
       "description": "Proxy for communications between the remote server and the (local) client.",
       "type": "object",
+      "additionalProperties": true,
       "x-agents": [
         "transferd"
       ]
@@ -229,6 +231,7 @@
     "icos": {
       "description": "Configuration parameters for IBM Cloud Object Storage (ICOS).",
       "type": "object",
+      "additionalProperties": true,
       "x-agents": [
         "transferd"
       ]
@@ -748,6 +751,7 @@
     "tags": {
       "description": "Metadata for transfer as JSON. Key `aspera` is reserved. Key `aspera.xfer_retry` specifies a \"retry timeout\" but is not actually used for node API initiated transfers.",
       "type": "object",
+      "additionalProperties": true,
       "x-cli-option": "--tags64",
       "x-cli-convert": "json64"
     },

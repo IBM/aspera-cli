@@ -222,9 +222,16 @@ module TestEnv
   # the members of that template.
   # Tests are then ordered by `order`: dependencies, `priority`, then position in `tests.yml`.
   #
+  # @param files [Array<Pathname>] Files of definitions: `tests/tests.yml`, then those of the bundles
   # @return [Hash{String=>Hash}] Executable test definitions indexed by final test name
-  def descriptions
-    entries = Aspera::Yaml.safe_load(Paths::TEST_DEFS.read).transform_values(&:symbolize_keys)
+  def descriptions(files = definition_files)
+    entries = {}
+    files.each do |file|
+      Aspera::Yaml.safe_load(file.read).each do |name, properties|
+        raise "Test #{name} of #{file} is already defined" if entries.key?(name)
+        entries[name] = properties.symbolize_keys
+      end
+    end
     templates = {}
     entries.each do |name, properties|
       next unless properties.key?(:template)
@@ -255,6 +262,12 @@ module TestEnv
     single = declared.select { |tag| tests.count { |_name, properties| properties[:tags].include?(tag) } < 2 }
     raise "Grouping tag(s) used by a single test (typo?): #{single.to_a.join(', ')}. Active tags: #{ACTIVE_TAGS.join(', ')}" unless single.empty?
     order(tests)
+  end
+
+  # @param top [Pathname] Top folder of the project
+  # @return [Array<Pathname>] `tests/tests.yml`, then the `spec/tests.yml` of each bundle in `lib/aspera/plugins/`, by name of bundle
+  def definition_files(top = Paths::TOP)
+    [top / Paths::TEST_DEFS.relative_path_from(Paths::TOP)].concat(top.glob(Paths::BUNDLE_TEST_DEFS_GLOB).sort)
   end
 
   # Order tests for execution.
@@ -298,5 +311,5 @@ module TestEnv
       "--#{name}=#{value.is_a?(Hash) || value.is_a?(Array) ? "@json:#{JSON.generate(value)}" : value}"
     end
   end
-  module_function :configuration, :conf_data, :normalize_test, :instantiate, :descriptions, :order, :harness_args
+  module_function :configuration, :conf_data, :normalize_test, :instantiate, :descriptions, :definition_files, :order, :harness_args
 end

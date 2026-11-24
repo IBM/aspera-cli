@@ -1,0 +1,175 @@
+# Preview ---------------------------------------------------
+prev_check:
+  args:
+    - preview
+    - check
+    - --skip-types=office
+prev_dcm:
+  args:
+    - preview
+    - test
+    - "@preset:file.dcm"
+    - --base=$(TMP / 'prev_dcm')
+prev_dcm_mm:
+  args:
+    - preview
+    - test
+    - "@preset:file.dcm"
+    - --base=$(TMP / 'prev_dcm_mm')
+    - --detect-mime=yes
+prev_jpg_unk_mm:
+  args:
+    - preview
+    - test
+    - "@preset:file.jpg_unk"
+    - --base=$(TMP / 'prev_jpg_unk_mm')
+    - --detect-mime=yes
+prev_mxf_blend:
+  args:
+    - preview
+    - test
+    - "@preset:file.mxf"
+    - mp4
+    - --base=$(TMP / 'prev_mxf_blend')
+    - --video-conversion=blend
+    - --query.text=true
+    - --query.double=true
+prev_pdf:
+  args:
+    - preview
+    - show
+    - "@preset:file.pdf"
+    - --base=$(TMP / 'prev_pdf')
+prev_txt:
+  args:
+    - preview
+    - show
+    - /etc/hosts
+    - --base=$(TMP / 'prev_txt')
+prev_docx:
+  args:
+    - preview
+    - show
+    - "@preset:file.docx"
+    - --base=$(TMP / 'prev_docx')
+prev_mpg_png_fix:
+  args:
+    - preview
+    - show
+    - "@preset:file.mpg"
+    - --base=$(TMP / 'prev_mpg_png_fix')
+    - --video-png-conv=fixed
+prev_mpg_png_ani:
+  args:
+    - preview
+    - show
+    - "@preset:file.mpg"
+    - --base=$(TMP / 'prev_mpg_png_ani')
+    - --video-png-conv=animated
+prev_small_mp4_png_ani:
+  description: Test animated preview with short video
+  args:
+    - preview
+    - show
+    - "@preset:file.small_mp4"
+    - --base=$(TMP / 'prev_small_mp4_png_ani')
+    - --video-png-conv=animated
+prev_small_mp4_png_fix:
+  description: Test fixed frame preview with short video
+  args:
+    - preview
+    - show
+    - "@preset:file.small_mp4"
+    - --base=$(TMP / 'prev_small_mp4_png_fix')
+    - --video-png-conv=fixed
+prev_mpg_reencode:
+  args:
+    - preview
+    - test
+    - "@preset:file.mpg"
+    - mp4
+    - --base=$(TMP / 'prev_mpg_reencode')
+    - --video-conversion=reencode
+prev_mpg_clips:
+  args:
+    - preview
+    - test
+    - "@preset:file.mpg"
+    - mp4
+    - --base=$(TMP / 'testprev_mpg_clips_name')
+    - --video-conversion=clips
+prev_trevents_prep:
+  args:
+    - --preset=preview_ak
+    - node
+    - upload
+    - "@preset:file.mxf"
+    - "@preset:file.docx"
+    - --ts=@json:{"target_rate_kbps":1000000,"resume_policy":"none"}
+  post: sleep 4
+prev_trevents:
+  depends_on:
+    - prev_trevents_prep
+  args:
+    - preview
+    - trevents
+    - --once-only=yes
+    - --skip-types=office
+    - --log-level=info
+prev_events_prep:
+  args:
+    - --preset=preview_ak
+    - node
+    - upload
+    - "@preset:file.mxf"
+    - "@preset:file.docx"
+    - --ts=@json:{"target_rate_kbps":1000000,"resume_policy":"none"}
+  post: sleep 4
+prev_events:
+  depends_on:
+    - prev_events_prep
+  args:
+    - preview
+    - events
+    - --once-only=yes
+    - --skip-types=office
+    - --log-level=info
+prev_scan_skip:
+  args:
+    - preview
+    - scan
+    - --skip-types=office
+    - --log-level=info
+    - --skip-folders=/special/folder
+prev_scan_skip_folders_multi:
+  tags:
+    - no_doc
+  args:
+    - preview
+    - scan
+    - --skip-folders=foo
+    - --skip-folders=bar
+    - --skip-folders=@list:,1,2
+prev_scan_filter_glob:
+  tags:
+    - no_doc
+  args:
+    - preview
+    - scan
+    - --filter=*.mxf
+prev_scan_filter_regex:
+  tags:
+    - no_doc
+  args:
+    - preview
+    - scan
+    - --filter=@ruby:/\.mxf$/
+prev_folder:
+  args:
+    - preview
+    - scan
+    - "%id:1"
+    - --skip-types=office
+    - --log-level=info
+    - "--root-url=aspera:"
+    - --ts.target_rate_kbps=1000000

@@ -9,7 +9,7 @@ require_relative '../../lib/aspera/rest'
 require_relative '../../lib/aspera/products/transferd'
 require_relative '../../lib/aspera/products/desktop'
 require_relative '../../lib/aspera/products/connect'
-require_relative '../../lib/aspera/products/other'
+require_relative '../../lib/aspera/products'
 require_relative 'paths'
 require_relative 'test_env'
 require 'uri'
@@ -115,15 +115,27 @@ module TestedVersions
         Aspera::Log.log.warn('server: no Node API on the same host')
         nil
       when :node
-        require_relative '../../lib/aspera/api/node'
-        normalize(Aspera::Api::Node.new(
+        require_relative '../../lib/aspera/plugins/node/api'
+        normalize(Aspera::Plugins::Node::Api.new(
           base_url: url,
           auth:     {type: :basic, username: preset_param(preset, 'username'), password: preset_param(preset, 'password')}
         ).read('info')['version'])
       else
-        require "aspera/cli/plugins/#{plugin}"
-        normalize(Aspera::Cli::Plugins.const_get(plugin.to_s.capitalize).detect(url)&.dig(:version))
+        normalize(plugin_class(plugin).detect(url)&.dig(:version))
       end
+    end
+
+    # @param plugin [Symbol] Name of a plugin that provides commands (single file or bundle)
+    # @return [Class] Commands class of the plugin
+    def plugin_class(plugin)
+      require 'aspera/cli/plugins/config'
+      factory = Aspera::Cli::Plugins::Factory.instance
+      unless @plugins_scanned
+        factory.add_lookup_folder(Aspera::Cli::Plugins::Config.gem_plugins_folder)
+        factory.add_plugins_from_lookup_folders
+        @plugins_scanned = true
+      end
+      factory.plugin_class(plugin)
     end
 
     # @return [Array<Hash>] `agent`, `product`, `version`
@@ -131,7 +143,7 @@ module TestedVersions
       agents = []
       # Default SDK folder, as `ascli` (the test configuration does not set `sdk_folder`)
       require 'aspera/cli/plugins/config'
-      Aspera::Products::Transferd.sdk_directory = Aspera::Cli::Plugins::Config.default_app_main_folder(app_name: Aspera::Cli::AscpActions::TRANSFERD_APP_NAME)
+      Aspera::Products::Transferd.sdk_directory = Aspera::Cli::Plugins::Config.default_app_main_folder(app_name: Aspera::Plugins::Xfer::AscpActions::TRANSFERD_APP_NAME)
       sdk = find_product(Aspera::Products::Transferd)
       if sdk
         # `ascp` of the SDK (the SDK version is the one of `transferd`)
@@ -162,7 +174,7 @@ module TestedVersions
 
     # @return [Hash, nil] First installed product of this class (with `ascp`)
     def find_product(product_class)
-      Aspera::Products::Other.find(product_class.locations).first
+      Aspera::Products.find(product_class.locations).first
     rescue StandardError => e
       Aspera::Log.log.warn(e.message)
       nil

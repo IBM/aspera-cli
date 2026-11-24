@@ -4,6 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require_relative '../assert'
+require_relative '../bundle_registry'
+require_relative 'error'
 require_relative 'mailer'
 require_relative 'secret_finder'
 
@@ -13,11 +15,9 @@ module Aspera
     class Context
       # @type [Array<Symbol>]
       # Members that must be non-nil after bootstrap (validated in #validate)
-      MEMBERS = %i[options transfer config formatter persistency man_header presets vault http_config main_folder mailer secret_finder].freeze
+      MEMBERS = %i[options config formatter persistency man_header presets vault http_config main_folder mailer secret_finder].freeze
       # @!attribute [rw] options
       #   @return [Parser] the command line options manager
-      # @!attribute [rw] transfer
-      #   @return [TransferAgent] the transfer agent, used by transfer plugins
       # @!attribute [rw] config
       #   @return [Plugins::Config] the configuration plugin, used by plugins to get configuration values and presets
       # @!attribute [rw] formatter
@@ -45,12 +45,35 @@ module Aspera
       attr_accessor :help_requested
 
       # Initialize all members to nil, so that they are defined and can be validated later
+      # @param registry [BundleRegistry] Registry of the bundles that provide services
       # @return [nil]
-      def initialize
+      def initialize(registry: BundleRegistry.instance)
         MEMBERS.each { |i| instance_variable_set(:"@#{i}", nil) }
         @progress_bar = nil
         @pac_executor = nil
         @help_requested = false
+        @registry = registry
+        # Services created, by name
+        @services = {}
+      end
+
+      # Object shared by plugins, provided by a bundle (manifest `services`): created once, on first use, with the context (`new(context)`).
+      # @param name [Symbol] Name of the service
+      # @return [Object] The service
+      # @raise [Cli::Error] If no available bundle provides the service, or its code cannot be loaded
+      def service(name)
+        @services[name] ||= @registry.load_entry(@registry.service(name)).new(self)
+      rescue BundleRegistry::Unavailable => e
+        raise Cli::Error, e.message
+      end
+
+      # Service `transfer`: transfer agent of bundle `xfer`, used by plugins that transfer files
+      # @return [Object] The service, see `service`
+      def transfer = service(:transfer)
+
+      # @param value [Object] Object used as service `transfer` (e.g. a test double)
+      def transfer=(value)
+        @services[:transfer] = value
       end
 
       # Validate that all mandatory members are non-nil (detect bootstrap bugs)
@@ -66,13 +89,13 @@ module Aspera
       # Check if the context is in manual-only mode
       # @return [Boolean] true if in manual-only mode
       def only_manual?
-        transfer.eql?(:only_manual)
+        @services[:transfer].eql?(:only_manual)
       end
 
       # Set the context to manual-only mode
       # @return [Symbol] :only_manual
       def only_manual!
-        @transfer = :only_manual
+        self.transfer = :only_manual
       end
     end
   end

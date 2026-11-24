@@ -4,12 +4,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require_relative '../ascp/installation'
-require_relative '../agent/direct'
+require_relative '../agent/factory'
 require_relative '../transfer/spec'
 require_relative '../units/decimal'
 require_relative '../exec_spec'
-require_relative '../command_line_converter'
-require_relative '../command_line_builder'
+require_relative '../transfer/command_line_converter'
+require_relative '../transfer/command_line_builder'
 require_relative '../log'
 require_relative '../assert'
 require_relative '../units/duration'
@@ -94,14 +94,14 @@ module Aspera
         def start(sync_info, opt_ts = nil)
           Log.dump(:sync_params_initial, sync_info)
           Aspera.assert_type(sync_info, Hash)
-          Aspera.assert(PARAM_KEYS.any? { |k| sync_info.key?(k) }, 'At least one of `local` or `sessions` must be present in async parameters', type: Error)
+          Aspera.assert(PARAM_KEYS.any? { |k| sync_info.key?(k) }, 'At least one of `local` or `sessions` must be present in async parameters', type: ParameterError)
           exec_spec = ExecSpec.new(exec: :async)
           if sync_info.key?('local')
             # `conf` format
-            Aspera.assert_type(sync_info['local'], Hash) { 'local' }
+            Aspera.assert_type(sync_info['local'], Hash, type: ParameterError) { 'local' }
             remote = sync_info['remote']
-            Aspera.assert_type(remote, Hash) { 'remote' }
-            Aspera.assert_type(remote['path'], String) { 'remote path' }
+            Aspera.assert_type(remote, Hash, type: ParameterError) { 'remote' }
+            Aspera.assert_type(remote['path'], String, type: ParameterError) { 'remote path' }
             normalize_target_rate(sync_info['transport'])
             # get transfer spec if possible, and feed back to new structure
             if block_given?
@@ -121,19 +121,20 @@ module Aspera
             # '--exclusive-mgmt-port=12345', '--arg-err-path=-',
             exec_spec.args = ["--conf64=#{Base64.strict_encode64(JSON.generate(sync_info))}"]
             Log.dump(:sync_conf, sync_info)
-            agent = Agent::Direct.new
+            agent = Agent::Factory.instance.create(:direct, {})
+            Aspera.assert(agent.respond_to?(:start_and_monitor_process)) { "agent direct (#{agent.class}) cannot run async: it does not provide start_and_monitor_process" }
             agent.start_and_monitor_process(session: {}, exec_spec: exec_spec)
           else
             # `args` format
             raise StandardError, "Only 'sessions', and optionally 'instance' keys are allowed" unless
               sync_info.keys.push('instance').uniq.sort.eql?(CMDLINE_PARAMS_KEYS)
-            Aspera.assert_type(sync_info['sessions'], Array)
-            Aspera.assert_type(sync_info['sessions'].first, Hash)
+            Aspera.assert_type(sync_info['sessions'], Array, type: ParameterError) { 'sessions' }
+            Aspera.assert_type(sync_info['sessions'].first, Hash, type: ParameterError) { 'session' }
             sync_info['sessions'].each { |session| normalize_target_rate(session) }
             if block_given?
               sync_info['sessions'].each do |session|
-                Aspera.assert_type(session['local_dir'], String) { 'local_dir' }
-                Aspera.assert_type(session['remote_dir'], String) { 'remote_dir' }
+                Aspera.assert_type(session['local_dir'], String, type: ParameterError) { 'local_dir' }
+                Aspera.assert_type(session['remote_dir'], String, type: ParameterError) { 'remote_dir' }
                 transfer_spec = yield(direction_sym(session), session['local_dir'], session['remote_dir'])
                 Log.dump(:auth_ts, transfer_spec)
                 transfer_spec.deep_merge!(opt_ts) unless opt_ts.nil?
@@ -144,15 +145,15 @@ module Aspera
               end
             end
             if sync_info.key?('instance')
-              Aspera.assert_type(sync_info['instance'], Hash)
-              instance_builder = CommandLineBuilder.new(sync_info['instance'], ARGS_INSTANCE_SCHEMA, CommandLineConverter)
+              Aspera.assert_type(sync_info['instance'], Hash, type: ParameterError) { 'instance' }
+              instance_builder = Transfer::CommandLineBuilder.new(sync_info['instance'], ARGS_INSTANCE_SCHEMA, Transfer::CommandLineConverter)
               instance_builder.process_params
               instance_builder.add_to_exec_spec(exec_spec)
             end
             sync_info['sessions'].each do |session_params|
-              Aspera.assert_type(session_params, Hash)
-              Aspera.assert(session_params.key?('name'), 'session must contain at least: name')
-              session_builder = CommandLineBuilder.new(session_params, ARGS_SESSION_SCHEMA, CommandLineConverter)
+              Aspera.assert_type(session_params, Hash, type: ParameterError) { 'session' }
+              Aspera.assert(session_params.key?('name'), 'session must contain at least: name', type: ParameterError)
+              session_builder = Transfer::CommandLineBuilder.new(session_params, ARGS_SESSION_SCHEMA, Transfer::CommandLineConverter)
               session_builder.process_params
               session_builder.add_to_exec_spec(exec_spec)
             end
@@ -183,7 +184,7 @@ module Aspera
         # @param sync_info [Hash] sync parameters in conf or args format
         # @return [Hash] parsed output of asyncadmin
         def admin_status(sync_info)
-          Aspera.assert(PARAM_KEYS.any? { |k| sync_info.key?(k) }, 'At least one of `local` or `sessions` must be present in async parameters', type: Error)
+          Aspera.assert(PARAM_KEYS.any? { |k| sync_info.key?(k) }, 'At least one of `local` or `sessions` must be present in async parameters', type: ParameterError)
           arguments = [ASYNC_ADMIN_EXECUTABLE, '--quiet']
           if sync_info.key?('local')
             # `conf` format
@@ -193,7 +194,7 @@ module Aspera
             elsif sync_info.dig('local', 'path')
               arguments.push("--local-dir=#{sync_info.dig('local', 'path')}")
             else
-              raise Error, 'Missing either local_db_dir or local.path'
+              raise ParameterError, 'Missing either local_db_dir or local.path'
             end
           else
             # `args` format
@@ -204,7 +205,7 @@ module Aspera
             elsif session.key?('local_dir')
               arguments.push("--local-dir=#{session['local_dir']}")
             else
-              raise Error, 'Missing either local_db_dir or local_dir'
+              raise ParameterError, 'Missing either local_db_dir or local_dir'
             end
           end
           stdout = Environment.secure_execute(*arguments, mode: :capture).first
@@ -215,7 +216,7 @@ module Aspera
         # @param sync_info [Hash] sync parameters in conf or args format
         # @return [String, nil] Path to "local DB dir", i.e. folder that contains folders that contain `snap.db`
         def local_db_folder(sync_info)
-          Aspera.assert(PARAM_KEYS.any? { |k| sync_info.key?(k) }, 'At least one of `local` or `sessions` must be present in async parameters', type: Error)
+          Aspera.assert(PARAM_KEYS.any? { |k| sync_info.key?(k) }, 'At least one of `local` or `sessions` must be present in async parameters', type: ParameterError)
           if sync_info.key?('local')
             # `conf` format
             if sync_info.key?('local_db_dir')
@@ -223,7 +224,7 @@ module Aspera
             elsif (local_path = sync_info.dig('local', 'path'))
               return local_path
             else
-              raise Error, 'Missing either local_db_dir or local.path'
+              raise ParameterError, 'Missing either local_db_dir or local.path'
             end
           else
             # `args` format
@@ -233,13 +234,13 @@ module Aspera
             elsif session.key?('local_dir')
               return session['local_dir']
             else
-              raise Error, 'Missing either local_db_dir or local_dir'
+              raise ParameterError, 'Missing either local_db_dir or local_dir'
             end
           end
         end
 
         def session_name(sync_info)
-          Aspera.assert(PARAM_KEYS.any? { |k| sync_info.key?(k) }, 'At least one of `local` or `sessions` must be present in async parameters', type: Error)
+          Aspera.assert(PARAM_KEYS.any? { |k| sync_info.key?(k) }, 'At least one of `local` or `sessions` must be present in async parameters', type: ParameterError)
           if sync_info.key?('local')
             # `conf` format
             return sync_info['name']
@@ -251,7 +252,7 @@ module Aspera
 
         def session_db_file(sync_info)
           db_file = File.join(local_db_folder(sync_info), PRIVATE_FOLDER, session_name(sync_info), ASYNC_DB)
-          Aspera.assert(File.exist?(db_file)) { "Database file #{db_file} does not exist" }
+          Aspera.assert(File.exist?(db_file), type: ParameterError) { "Database file #{db_file} does not exist" }
           db_file
         end
 
@@ -282,7 +283,7 @@ module Aspera
             if property.key?('x-ts-name')
               tspec_param = property['x-ts-name']
               if transfer_spec.key?(tspec_param) && !sync_info.key?(name)
-                sync_info[name] = property['x-ts-convert'] ? CommandLineConverter.send(property['x-ts-convert'], transfer_spec[tspec_param]) : transfer_spec[tspec_param]
+                sync_info[name] = property['x-ts-convert'] ? Transfer::CommandLineConverter.send(property['x-ts-convert'], transfer_spec[tspec_param]) : transfer_spec[tspec_param]
               end
             end
             if property['type'].eql?('object') && property.key?('properties')
@@ -358,11 +359,15 @@ module Aspera
         end
       end
       # Private stuff:
+      # Schemas of the arguments of `async`, of the configuration of sync, and of the tables of the `async` database (see `Database`)
+      Schema::Registry.register(Schema::Registry::SYNC_ARGS, File.join(__dir__, 'args.schema.yaml'))
+      Schema::Registry.register(Schema::Registry::SYNC_CONF, File.join(__dir__, 'conf.schema.yaml'))
+      Schema::Registry.register(Schema::Registry::ASYNC_TABLES, File.join(__dir__, 'async_tables.yaml'))
       # Read JSON schema and mapping to command line options
-      ARGS_INSTANCE_SCHEMA = CommandLineBuilder.read_schema(Schema::Registry::SYNC_ARGS)
+      ARGS_INSTANCE_SCHEMA = Transfer::CommandLineBuilder.read_schema(Schema::Registry::SYNC_ARGS)
       ARGS_SESSION_SCHEMA = ARGS_INSTANCE_SCHEMA.dig(*%w[properties sessions items])
       ARGS_INSTANCE_SCHEMA.dig('properties').current.delete('sessions')
-      CONF_SCHEMA = CommandLineBuilder.read_schema(Schema::Registry::SYNC_CONF)
+      CONF_SCHEMA = Transfer::CommandLineBuilder.read_schema(Schema::Registry::SYNC_CONF)
       CMDLINE_PARAMS_KEYS = %w[instance sessions].freeze
       ASYNC_ADMIN_EXECUTABLE = 'asyncadmin'
       PRIVATE_FOLDER = "#{Environment.instance.os.eql?(Environment::OS_WINDOWS) ? '~' : '.'}private-asp".freeze

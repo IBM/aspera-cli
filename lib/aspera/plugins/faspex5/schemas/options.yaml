@@ -1,0 +1,87 @@
+openapi: 3.1.0
+info:
+  title: Options of bundle faspex5
+  version: 1.0.0
+  description: Schema definitions of the options of bundle `faspex5`
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+paths: {}
+components:
+  schemas:
+    Faspex4PostProcOptions:
+      description: >-
+        Configuration for the Faspex 4-style post-processing webhook receiver (`faspex5 postprocessing`).
+        The command starts a local HTTP(S) server that Faspex 5 calls after each package upload.
+        It maps the URL path to a script under `script_folder` and executes it with the values of the
+        webhook JSON body whose key starts with `faspex_` as environment variables.
+        By default the server binds to loopback; use a routable address only when Faspex containers
+        must reach the host: then `secret_token` or `allowed_ips` is required.
+      allOf:
+        # Schema of the framework, copied when this file is read: see `Schema::Registry`
+        - $ref: "opts:#/components/schemas/WebServerOptions"
+        - type: object
+          additionalProperties: false
+          properties:
+            # Listed solely to allow them under additionalProperties: false (defined in WebServerOptions).
+            url: {}
+            cert: {}
+            key: {}
+            chain: {}
+            script_folder:
+              type: string
+              x-cli-complete: folder
+              description: >-
+                Folder containing the post-processing scripts.
+                The URL path (after the base path) is appended to this folder to locate the script to execute.
+              default: "."
+              examples:
+                - /opt/faspex/scripts
+            fail_on_error:
+              type: boolean
+              description: >-
+                When `true`, return HTTP 500 if the script exits with a non-zero status code.
+                When `false` (default), the exit code is reported in the response body but HTTP 200 is returned.
+              default: false
+            timeout_seconds:
+              type: integer
+              minimum: 1
+              description: >-
+                Maximum time in seconds to wait for the script to complete before killing it.
+              default: 60
+            secret_token:
+              type: string
+              minLength: 1
+              description: >-
+                Shared secret for webhook authentication.
+                When set, every incoming request must include `?token=<value>` in the URL;
+                requests without the correct token are rejected with HTTP 401.
+                Configure the Faspex webhook URL as `http://host:port/path/script.sh?token=<value>`.
+                This parameter or `allowed_ips` is required when `url` is not a local address.
+                Generate it with `openssl rand -hex 32`: a weak token is refused (see `secret_token_min_bits`).
+            secret_token_min_bits:
+              type: integer
+              minimum: 0
+              default: 80
+              description: >-
+                Minimum estimated strength of `secret_token`, in bits (log2 of the number of guesses to find it).
+                The strength is estimated with gem `zxcvbn` if installed, else with a built-in estimate
+                that detects repeats, sequences, keyboard rows, words and years.
+                `0` disables the check.
+                A random token of 32 bytes (`openssl rand -hex 32`) is far above the default.
+            allowed_ips:
+              description: >-
+                IP address or network (CIDR, e.g. `10.89.0.0/24`), or list of them, allowed to call the listener.
+                Requests from any other source IP are rejected with HTTP 403.
+                When not set, no IP restriction is applied.
+                This parameter or `secret_token` is required when `url` is not a local address.
+              oneOf:
+                - type: string
+                  examples:
+                    - "192.168.1.10"
+                - type: array
+                  items:
+                    type: string
+                  examples:
+                    - - "192.168.1.10"
+                      - "10.89.0.0/24"

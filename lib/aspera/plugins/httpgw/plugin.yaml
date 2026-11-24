@@ -1,0 +1,12 @@
+name: httpgw
+title: HTTP Gateway
+depends:
+  - xfer
+commands: true
+extensions:
+  agent:
+    - name: httpgw
+      short: h
+      file: agent.rb
+      class: Agent
+      options_schema: schemas/agent_options.yaml

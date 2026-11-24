@@ -3,7 +3,6 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-require_relative '../transfer/error'
 require_relative '../rest'
 require_relative '../log'
 require_relative '../ssh'
@@ -15,19 +14,10 @@ require 'openssl'
 module Aspera
   module Cli
     # Provide hints on errors
+    # Hints of a product are added by its bundle (`add`), when its code is loaded.
     class Hints
       # Well know issues that users may get
       ERROR_HINTS = [
-        {
-          exception:   Transfer::Error,
-          match:       'Remote host is not who we expected',
-          remediation: [
-            'For this specific error, refer to:',
-            "#{Info::SRC_URL}#error-remote-host-is-not-who-we-expected",
-            'Add this to arguments:',
-            %q{--ts=@json:'{"sshfp":null}'"}
-          ]
-        },
         {
           exception:   Aspera::Rest::CallError,
           match:       /Signature has expired/,
@@ -52,24 +42,6 @@ module Aspera
             'option: private_key expects a key PEM value, not path to file',
             'if you provide a path: prefix with @file:',
             'e.g. --private-key=@file:/path/to/key.pem'
-          ]
-        },
-        {
-          exception:   RuntimeError,
-          match:       /unexpected last event type: INIT/,
-          remediation: [
-            'ascp exited unexpectedly',
-            'it might be due to SSH handshake failure',
-            'one can check SSH connection using ssh command'
-          ]
-        },
-        {
-          exception:   RuntimeError,
-          match:       /Wrong remote host:/,
-          remediation: [
-            'If remote node is Cloud Pak For Integration',
-            'Make sure that a LoadBalancer is active on cluster',
-            'Check the external address of Aspera tcp-proxy Pod'
           ]
         },
         {
@@ -105,21 +77,6 @@ module Aspera
           ]
         },
         {
-          exception:   Aspera::Rest::CallError,
-          match:       /Server is not configured for this request/,
-          remediation: [
-            'Transfer user shall have those parameters in aspera.conf set to: token',
-            'authorization_transfer_in_value authorization_transfer_out_value'
-          ]
-        },
-        {
-          exception:   Aspera::Rest::CallError,
-          match:       /invalid_grant/,
-          remediation: [
-            'Check your public key in your AoC user profile.'
-          ]
-        },
-        {
           exception:   StandardError,
           match:       /1Password CLI failed.*(not currently signed in|no active session)/m,
           remediation: [
@@ -128,22 +85,30 @@ module Aspera
             'Sign in with: eval $(op signin)',
             'or enable "Integrate with 1Password CLI" in the 1Password desktop application (Settings > Developer)'
           ]
-        },
-        {
-          exception:   Aspera::Rest::CallError,
-          match:       /Please configure ACLs for this URI/,
-          remediation: [
-            'server must have: asnodeadmin -mu <node user> --acl-add=internal --internal'
-          ]
         }
       ].freeze
       private_constant :ERROR_HINTS
+      # Hints added by bundles, see `add`
+      @added = []
 
       class << self
+        # Add a hint, shown after the built-in hints that match the same error.
+        # @param exception   [Class]                 Class of the error
+        # @param match       [String, Regexp, Array] Message of the error (String: whole message), or a list of them
+        # @param remediation [Array<String>]         Lines of the hint
+        # @return [nil]
+        def add(exception:, match:, remediation:)
+          Aspera.assert_type(exception, Class) { 'exception' }
+          Aspera.assert(Array(match).all? { |m| m.is_a?(String) || m.is_a?(Regexp) }) { 'hint match: String or Regexp' }
+          Aspera.assert_array_all(remediation, String) { 'remediation' }
+          @added.push({exception: exception, match: match, remediation: remediation}.freeze)
+          nil
+        end
+
         # @param error [Exception] exception object
         def hint_for(error, formatter)
           # Loop on known error hints
-          ERROR_HINTS.each do |hint|
+          (ERROR_HINTS + @added).each do |hint|
             next unless error.is_a?(hint[:exception])
             message = error.message
             matches = hint[:match]

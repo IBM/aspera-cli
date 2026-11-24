@@ -23,11 +23,11 @@ module Aspera
 
         context 'when the URI is malformed' do
           it 'raises when the size part is missing' do
-            expect { described_class.create('faux:///file.bin') }.to(raise_error(Aspera::Transfer::Error))
+            expect { described_class.create('faux:///file.bin') }.to(raise_error(Aspera::ParameterError, /Format: /))
           end
 
           it 'raises when the unit is unknown' do
-            expect { described_class.create('faux:///file.bin?42x') }.to(raise_error(Aspera::Transfer::Error))
+            expect { described_class.create('faux:///file.bin?42x') }.to(raise_error(Aspera::ParameterError, /Format: /))
           end
         end
 

@@ -29,7 +29,7 @@ module Aspera
         # @return [Integer] value in bps
         def rate_string_to_bps(value)
           m = RATE_INPUT.match(value.to_s.strip)
-          Aspera.assert(m) { "Invalid rate value: #{value.inspect}. Expected integer with optional suffix #{PREFIX.drop(1).join(', ')} (case ignored)." }
+          Aspera.assert(m, type: ParameterError) { "Invalid rate value: #{value.inspect}. Expected integer with optional suffix #{PREFIX.drop(1).join(', ')} (case ignored)." }
           return m[1].to_i * MULTIPLIER.fetch(m[2].to_s.upcase)
         end
 

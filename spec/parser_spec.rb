@@ -49,7 +49,7 @@ module Aspera
 
         it 'does not consume the next token for flag options (TYPES_NONE) with -N syntax' do
           opts = build_parser(['-N', 'myarg'])
-          opts.declare(:no_default, description: 'No default flag', short: 'N', allowed: Type::NONE) do
+          opts.declare(:no_default, description: 'No default flag', short: 'N', allowed: Option::Type::NONE) do
             # flag callback — no-op
           end
           opts.parse_options!
@@ -121,7 +121,7 @@ module Aspera
 
         it 'does not consume next token for TYPES_NONE flags (--show-config style)' do
           opts = build_parser(['--no-flag', 'myarg'])
-          opts.declare(:no_flag, description: 'No flag', allowed: Type::NONE) do
+          opts.declare(:no_flag, description: 'No flag', allowed: Option::Type::NONE) do
             # flag callback — no-op
           end
           opts.parse_options!
@@ -237,7 +237,7 @@ module Aspera
 
         it 'accepts a negative number and a single dash as values' do
           opts = build_parser(['--count', '-5', '--name', '-'])
-          opts.declare(:count, description: 'Count', allowed: Type::INTEGER)
+          opts.declare(:count, description: 'Count', allowed: Option::Type::INTEGER)
           opts.declare(:name, description: 'Name')
           opts.parse_options!
           expect(opts.get_option(:count)).to(eq(-5))
@@ -246,8 +246,8 @@ module Aspera
 
         it 'converts a float option value' do
           opts = build_parser(['--ratio=0.25', '--whole=@json:2'])
-          opts.declare(:ratio, description: 'Ratio', allowed: Type::FLOAT)
-          opts.declare(:whole, description: 'Whole', allowed: Type::FLOAT)
+          opts.declare(:ratio, description: 'Ratio', allowed: Option::Type::FLOAT)
+          opts.declare(:whole, description: 'Whole', allowed: Option::Type::FLOAT)
           opts.parse_options!
           expect(opts.get_option(:ratio)).to(eq(0.25))
           expect(opts.get_option(:whole)).to(eql(2.0))
@@ -255,29 +255,41 @@ module Aspera
 
         it 'raises for an invalid float option value' do
           opts = build_parser(['--ratio=abc'])
-          opts.declare(:ratio, description: 'Ratio', allowed: Type::FLOAT)
+          opts.declare(:ratio, description: 'Ratio', allowed: Option::Type::FLOAT)
           expect { opts.parse_options! }.to(raise_error(BadArgument, /ratio: invalid number: abc/))
         end
 
         it 'converts a decimal integer option value, also with leading zero' do
           opts = build_parser(['--count=08'])
-          opts.declare(:count, description: 'Count', allowed: Type::INTEGER)
+          opts.declare(:count, description: 'Count', allowed: Option::Type::INTEGER)
           expect(opts.get_option(:count)).to(eq(8))
         end
 
         it 'raises for an invalid integer option value' do
           opts = build_parser(['--count=abc'])
-          opts.declare(:count, description: 'Count', allowed: Type::INTEGER)
+          opts.declare(:count, description: 'Count', allowed: Option::Type::INTEGER)
           expect { opts.parse_options! }.to(raise_error(BadArgument, /count: invalid integer: abc/))
         end
 
+        it 'converts a String to a list for a list option' do
+          opts = build_parser(['--folders=a'])
+          opts.declare(:folders, description: 'Folders', allowed: Option::Type::STRING_ARRAY)
+          expect(opts.get_option(:folders)).to(eq(['a']))
+        end
+
+        it 'raises for a list option with an element that is not a String' do
+          opts = build_parser(['--folders=@json:["a",1]'])
+          opts.declare(:folders, description: 'Folders', allowed: Option::Type::STRING_ARRAY)
+          expect { opts.parse_options! }.to(raise_error(BadArgument, /Option folders: expecting all as String, but have \[String, Integer\]/))
+        end
+
         it 'converts a decimal integer argument, also with leading zero' do
-          expect(build_parser(['08']).get_next_argument('count', validation: Type::INTEGER)).to(eq(8))
+          expect(build_parser(['08']).get_next_argument('count', validation: Option::Type::INTEGER)).to(eq(8))
         end
 
         it 'raises BadArgument for a flag given a value' do
           opts = build_parser(['--flag=x'])
-          opts.declare(:flag, description: 'Flag', allowed: Type::NONE) { nil }
+          opts.declare(:flag, description: 'Flag', allowed: Option::Type::NONE) { nil }
           expect { opts.parse_options! }.to(raise_error(BadArgument, /does not take a value/))
         end
       end
@@ -307,8 +319,8 @@ module Aspera
           opts = build_parser(['-N', 'cmd', '--help', 'sub'])
           opts.parse_options!
           count = 0
-          opts.declare(:no_default, description: 'No default', short: 'N', allowed: Type::NONE) { count += 1 }
-          opts.declare(:help, description: 'Help', short: 'h', allowed: Type::NONE) { count += 1 }
+          opts.declare(:no_default, description: 'No default', short: 'N', allowed: Option::Type::NONE) { count += 1 }
+          opts.declare(:help, description: 'Help', short: 'h', allowed: Option::Type::NONE) { count += 1 }
           opts.parse_options!
           expect(count).to(eq(2))
           expect(opts.get_next_argument('a', multiple: true)).to(eq(%w[cmd sub]))
@@ -317,8 +329,8 @@ module Aspera
         it 'supports combined short flags' do
           opts = build_parser(['-hN'])
           called = []
-          opts.declare(:help, description: 'Help', short: 'h', allowed: Type::NONE) { called << :help }
-          opts.declare(:no_default, description: 'No default', short: 'N', allowed: Type::NONE) { called << :no_default }
+          opts.declare(:help, description: 'Help', short: 'h', allowed: Option::Type::NONE) { called << :help }
+          opts.declare(:no_default, description: 'No default', short: 'N', allowed: Option::Type::NONE) { called << :no_default }
           opts.parse_options!
           expect(called).to(eq(%i[help no_default]))
         end
@@ -326,7 +338,7 @@ module Aspera
         it 'calls on_set method of a flag' do
           opts = build_parser(['-N'])
           target = Struct.new(:called) { def flag_found = self.called = true }.new(false)
-          opts.declare(:no_default, description: 'No default', short: 'N', allowed: Type::NONE, on_set: target.method(:flag_found))
+          opts.declare(:no_default, description: 'No default', short: 'N', allowed: Option::Type::NONE, on_set: target.method(:flag_found))
           opts.parse_options!
           expect(target.called).to(be(true))
         end
@@ -659,6 +671,36 @@ module Aspera
         end
       end
 
+      describe 'schema of an option' do
+        smtp = Aspera::Schema::Registry::SMTP_OPTIONS
+
+        it 'checks a declared default value' do
+          expect { build_parser([]).declare(:smtp, description: 'Mail server', schema: smtp, default: {'port' => 'x'}) }
+            .to(raise_error(BadArgument, %r{`/port` is not an integer}))
+        end
+
+        it 'does not check a value set by the program' do
+          opts = build_parser([])
+          opts.declare(:smtp, description: 'Mail server', schema: smtp)
+          expect { opts.set_option(:smtp, {'port' => 'x'}) }.not_to(raise_error)
+        end
+
+        it 'enforces required properties of a complete value only' do
+          opts = build_parser(['--smtp=@json:{"port":25}'])
+          opts.declare(:smtp, description: 'Mail server', schema: smtp)
+          opts.parse_options!
+          expect(opts.get_option(:smtp)).to(eq({'port' => 25}))
+          expect { opts.get_option(:smtp, complete: true) }.to(raise_error(BadArgument, /missing required properties: server/))
+        end
+
+        it 'takes a null value of a complete value as a removed key' do
+          opts = build_parser(['--smtp=@json:{"server":"smtp.example.com","port":null}'])
+          opts.declare(:smtp, description: 'Mail server', schema: smtp)
+          opts.parse_options!
+          expect(opts.get_option(:smtp, complete: true)).to(eq({'server' => 'smtp.example.com', 'port' => nil}))
+        end
+      end
+
       describe '#get_option with schema: contextual override' do
         def build_query_option(opts)
           opts.declare(:query, description: 'Query filter', allowed: [Hash, NilClass])
@@ -715,12 +757,12 @@ module Aspera
       describe '#help_text' do
         it 'displays semantic placeholders based on option type and schema' do
           opts = build_parser([])
-          opts.declare(:bool_opt, description: 'Boolean option', allowed: Type::BOOLEAN)
+          opts.declare(:bool_opt, description: 'Boolean option', allowed: Option::Type::BOOLEAN)
           opts.declare(:enum_opt, description: 'Enum option', allowed: %i[alpha beta])
-          opts.declare(:int_opt, description: 'Integer option', allowed: Type::INTEGER)
-          opts.declare(:float_opt, description: 'Float option', allowed: Type::FLOAT)
+          opts.declare(:int_opt, description: 'Integer option', allowed: Option::Type::INTEGER)
+          opts.declare(:float_opt, description: 'Float option', allowed: Option::Type::FLOAT)
           opts.declare(:object_opt, description: 'Object option', allowed: Hash)
-          opts.declare(:list_opt, description: 'List option', allowed: Type::STRING_ARRAY)
+          opts.declare(:list_opt, description: 'List option', allowed: Option::Type::STRING_ARRAY)
           opts.declare(:str_opt, description: 'String option')
           help = opts.help_text
           expect(help).to(include('--bool-opt=yes|no'))

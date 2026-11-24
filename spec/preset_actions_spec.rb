@@ -7,7 +7,7 @@ require_relative '../lib/aspera/cli/preset_actions'
 require_relative '../lib/aspera/cli/vault_actions'
 require_relative '../lib/aspera/cli/result'
 require_relative '../lib/aspera/cli/parser'
-require_relative '../lib/aspera/cli/option_value'
+require_relative '../lib/aspera/cli/option/value'
 require_relative '../lib/aspera/cli/security'
 require_relative '../lib/aspera/schema/registry'
 require_relative '../lib/aspera/log'
@@ -219,7 +219,7 @@ module Aspera
 
           it 'refuses command of option ui' do
             Security.instance.lock('in MCP server mode', default: :high)
-            option = OptionValue.new(option: :ui, allowed: [Hash, String], schema: Schema::Registry::UI_OPTIONS)
+            option = Option::Value.new(option: :ui, allowed: [Hash, String], schema: Schema::Registry::UI_OPTIONS)
             h = host_with_options({'ui' => {'command' => ['/bin/true']}})
             allow(h).to(receive(:options).and_return(double('options', unprocessed_options_with_value: {'ui' => {'command' => ['/bin/true']}}, option_declared?: true, option_def: option)))
             expect { h.action_preset_update(name: 'p1') }.to(raise_error(BadArgument, /option ui.command: disabled by security level high/))
@@ -229,7 +229,7 @@ module Aspera
           it 'refuses an option that requires a lower level' do
             Security.instance.lock('in MCP server mode', default: :high)
             h = host_with_options({'notify_template' => 'x'})
-            option = OptionValue.new(option: :notify_template, security: :low)
+            option = Option::Value.new(option: :notify_template, security: :low)
             allow(h).to(receive(:options).and_return(double('options', unprocessed_options_with_value: {'notify_template' => 'x'}, option_declared?: true, option_def: option)))
             expect { h.action_preset_update(name: 'p1') }.to(raise_error(BadArgument, /option notify_template: disabled by security level high/))
           end

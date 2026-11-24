@@ -7,8 +7,8 @@
 # These tests are intentionally self-contained: they do NOT require spec_helper
 # (which needs a live server config) because all dependencies of Base are doubled.
 
-require_relative '../lib/aspera/cli/command_registry'
-require_relative '../lib/aspera/cli/command_spec'
+require_relative '../lib/aspera/cli/command/registry'
+require_relative '../lib/aspera/cli/command'
 require_relative '../lib/aspera/cli/context'
 require_relative '../lib/aspera/cli/parser'
 require_relative '../lib/aspera/cli/plugins/base'
@@ -30,7 +30,7 @@ module Aspera
             allow(o).to(receive(:get_next_argument)) { raise 'get_next_argument not stubbed' }
             allow(o).to(receive(:instance_identifier)) { raise 'instance_identifier not stubbed' }
             allow(o).to(receive(:with_interactive)) { |**, &blk| blk.call }
-            # DSL auto-declare stubs: Base#initialize calls these for every OptionSpec
+            # DSL auto-declare stubs: Base#initialize calls these for every Option
             # found in the ancestor chain (query, bulk, bfail on Base itself).
             allow(o).to(receive(:option_declared?)).and_return(false)
             allow(o).to(receive(:declare))
@@ -74,8 +74,8 @@ module Aspera
         # ------------------------------------------------------------------
 
         describe '.command_registry' do
-          it 'returns a CommandRegistry for every subclass' do
-            expect(plugin_class.command_registry).to(be_a(CommandRegistry))
+          it 'returns a Command::Registry for every subclass' do
+            expect(plugin_class.command_registry).to(be_a(Command::Registry))
           end
 
           it 'is isolated per subclass (not shared with Base)' do
@@ -118,10 +118,10 @@ module Aspera
         end
 
         describe '.command' do
-          it 'registers a CommandSpec in the registry' do
+          it 'registers a Command in the registry' do
             klass = Class.new(Base)
             klass.command(:ping, description: 'Ping')
-            expect(klass.command_registry[[:ping]]).to(be_a(CommandSpec))
+            expect(klass.command_registry[[:ping]]).to(be_a(Command))
           end
 
           it 'stores the correct id and description' do
@@ -135,10 +135,10 @@ module Aspera
         end
 
         describe '.option' do
-          it 'registers an OptionSpec in the registry' do
+          it 'registers an Option in the registry' do
             klass = Class.new(Base)
             klass.option(:verbose, description: 'Enable verbose output')
-            expect(klass.command_registry.option_specs[:verbose]).to(be_a(OptionSpec))
+            expect(klass.command_registry.option_specs[:verbose]).to(be_a(Option))
           end
         end
 
@@ -158,9 +158,9 @@ module Aspera
             expect(options).to(have_received(:declare).with(:target_opt, hash_including(description: 'From target plugin')))
           end
 
-          it 'includes options from an OptionDeclarator module' do
+          it 'includes options from an Option::Declarator module' do
             source_mod = Module.new do
-              extend OptionDeclarator
+              extend Option::Declarator
 
               option(:mod_opt, description: 'From module')
             end
@@ -178,16 +178,42 @@ module Aspera
             expect(names).not_to(include(:auth, :private_key, :passphrase, :url, :username, :password))
           end
 
-          it 'keeps the options of Oauth, in the same order' do
-            names = Oauth.option_sources.each_key.flat_map { |src| src.option_specs.keys }
+          it 'gives the options of Oauth to a class that includes it, in the same order as its former subclass' do
+            klass = Class.new(Base) { include Oauth }
+            names = klass.option_sources.each_key.flat_map { |src| src.option_specs.keys }
             expect(names.first(9)).to(eq(%i[auth client_id client_secret redirect_uri private_key passphrase url username password]))
             expect(names).to(include(*Oauth::AUTH_OPTIONS))
+          end
+
+          it 'can be included by a module, which declares no option' do
+            expect { Module.new { include Oauth } }.not_to(raise_error)
+          end
+
+          it 'gives the options of BasicAuth to a class that includes it, not those of Oauth' do
+            klass = Class.new(Base) { include BasicAuth }
+            names = klass.option_sources.each_key.flat_map { |src| src.option_specs.keys }
+            expect(names.first(3)).to(eq(%i[url username password]))
+            expect(names).not_to(include(:auth, :client_id))
+          end
+
+          it 'keeps the options of the class before those of Oauth' do
+            own = Module.new do
+              extend Option::Declarator
+
+              option(:own_opt, description: 'Own')
+            end
+            klass = Class.new(Base) do
+              use_options own
+              include Oauth
+            end
+            names = klass.option_sources.each_key.flat_map { |src| src.option_specs.keys }
+            expect(names.first(2)).to(eq(%i[own_opt auth]))
           end
 
           it 'binds on_set callbacks of a source to the given target' do
             holder = Struct.new(:val).new
             source_mod = Module.new do
-              extend OptionDeclarator
+              extend Option::Declarator
 
               option(:held_opt, description: 'Held', on_set: :val=)
             end
@@ -261,7 +287,7 @@ module Aspera
               :greet,
               description: 'Greet',
               action:     :handle_greet,
-              arguments:   [ArgumentSpec.new(name: :name, type: String)]
+              arguments:   [Argument.new(name: :name, type: String)]
             )
             klass.define_method(:handle_greet) { |name:, **| Result::Status.new("hello #{name}") }
             allow(options).to(receive(:get_next_command).with([:greet], aliases: nil).and_return(:greet))
@@ -496,31 +522,31 @@ module Aspera
         describe '#resolve_argument' do
           it 'calls instance_identifier for :identifier type' do
             allow(options).to(receive(:instance_identifier).and_return('abc-123'))
-            arg_spec = ArgumentSpec.new(name: :id, type: :identifier)
+            arg_spec = Argument.new(name: :id, type: :identifier)
             expect(plugin.resolve_argument(arg_spec)).to(eq('abc-123'))
           end
 
           it 'calls get_next_argument with correct params for a Class type' do
             allow(options).to(receive(:get_next_argument).with('path', mandatory: true, multiple: false, validation: String, accept_list: nil, default: nil, schema: nil, evaluate: :extended).and_return('/tmp/foo'))
-            arg_spec = ArgumentSpec.new(name: :path, type: String)
+            arg_spec = Argument.new(name: :path, type: String)
             expect(plugin.resolve_argument(arg_spec)).to(eq('/tmp/foo'))
           end
 
           it 'passes mandatory: false and default: correctly' do
             allow(options).to(receive(:get_next_argument).with('sync_info', mandatory: false, multiple: false, validation: Hash, accept_list: nil, default: {}, schema: nil, evaluate: :extended).and_return({}))
-            arg_spec = ArgumentSpec.new(name: :sync_info, type: Hash, mandatory: false, default: {})
+            arg_spec = Argument.new(name: :sync_info, type: Hash, mandatory: false, default: {})
             expect(plugin.resolve_argument(arg_spec)).to(eq({}))
           end
 
           it 'defaults to evaluate: :extended, and refuses another value than :extended, :smart and :none' do
-            expect(ArgumentSpec.new(name: :a).evaluate).to(eq(:extended))
-            expect(ArgumentSpec.new(name: :a, evaluate: :smart).evaluate).to(eq(:smart))
-            expect { ArgumentSpec.new(name: :a, evaluate: :raw) }.to(raise_error(ArgumentError, /evaluate: :raw, expecting one of: extended, smart, none/))
+            expect(Argument.new(name: :a).evaluate).to(eq(:extended))
+            expect(Argument.new(name: :a, evaluate: :smart).evaluate).to(eq(:smart))
+            expect { Argument.new(name: :a, evaluate: :raw) }.to(raise_error(ArgumentError, /evaluate: :raw, expecting one of: extended, smart, none/))
           end
 
           it 'passes multiple: true correctly' do
             allow(options).to(receive(:get_next_argument).with('files', mandatory: true, multiple: true, validation: String, accept_list: nil, default: nil, schema: nil, evaluate: :extended).and_return(%w[a b]))
-            arg_spec = ArgumentSpec.new(name: :files, type: String, multiple: true)
+            arg_spec = Argument.new(name: :files, type: String, multiple: true)
             expect(plugin.resolve_argument(arg_spec)).to(eq(%w[a b]))
           end
 
@@ -569,7 +595,7 @@ module Aspera
 
           context 'with interactive: true' do
             let(:options) { Parser.new('test', argv) }
-            let(:arg_spec) { ArgumentSpec.new(name: :url, interactive: true) }
+            let(:arg_spec) { Argument.new(name: :url, interactive: true) }
 
             context 'when the argument is on the command line' do
               let(:argv) { ['https://example.com'] }
@@ -749,7 +775,7 @@ module Aspera
             end
           end
 
-          it 'adds ArgumentSpec for verbs appropriately' do
+          it 'adds Argument for verbs appropriately' do
             klass = build_klass
             reg   = klass.command_registry
             # Instance operations have identifier named after entity as first argument
@@ -768,7 +794,7 @@ module Aspera
             expect(reg[[:list]].arguments).to(be_nil)
           end
 
-          it 'omits id ArgumentSpec for instance verbs when is_singleton: true' do
+          it 'omits id Argument for instance verbs when is_singleton: true' do
             klass = build_klass(is_singleton: true)
             reg   = klass.command_registry
             # show has no id argument when singleton
@@ -869,27 +895,27 @@ module Aspera
         end
 
         # ------------------------------------------------------------------
-        # CommandRegistry#register_option
+        # Command::Registry#register_option
         # ------------------------------------------------------------------
 
-        describe 'CommandRegistry#register_option' do
-          let(:registry) { CommandRegistry.send(:new) }
+        describe 'Command::Registry#register_option' do
+          let(:registry) { Command::Registry.send(:new) }
 
-          it 'stores and retrieves an OptionSpec by name' do
-            spec = OptionSpec.new(name: :verbose, description: 'Verbose mode')
+          it 'stores and retrieves an Option by name' do
+            spec = Option.new(name: :verbose, description: 'Verbose mode')
             registry.register_option(spec)
             expect(registry.option_specs[:verbose]).to(be(spec))
           end
 
           it 'raises on duplicate option name' do
-            registry.register_option(OptionSpec.new(name: :verbose, description: 'v1'))
+            registry.register_option(Option.new(name: :verbose, description: 'v1'))
             expect do
-              registry.register_option(OptionSpec.new(name: :verbose, description: 'v2'))
+              registry.register_option(Option.new(name: :verbose, description: 'v2'))
             end.to(raise_error(ArgumentError, /Duplicate option/))
           end
 
           it 'returns a dup so mutations do not affect the registry' do
-            registry.register_option(OptionSpec.new(name: :foo, description: 'foo'))
+            registry.register_option(Option.new(name: :foo, description: 'foo'))
             copy = registry.option_specs
             copy[:bar] = :something
             expect(registry.option_specs).not_to(have_key(:bar))

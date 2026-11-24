@@ -23,7 +23,7 @@ module Aspera
         end
 
         it 'renders the properties of a Hash argument schema' do
-          argument = ArgumentSpec.new(
+          argument = Argument.new(
             name: :mcp_options,
             type: [Hash],
             schema: 'opts:components.schemas.McpServerOptions'
@@ -38,10 +38,10 @@ module Aspera
         end
 
         it 'renders the title of variants, prefixed by the discriminant value' do
-          argument = ArgumentSpec.new(
+          argument = Argument.new(
             name: :action,
             type: [Hash],
-            schema: Schema::Registry.req_body(Schema::Registry::AUTOMATION, 'actions.post')
+            schema: Schema::Registry.req_body('automation', 'actions.post')
           )
 
           output = Runner.new([]).send(:schema_help_lines, argument).join("\n")
@@ -187,8 +187,9 @@ module Aspera
           expect { runner.send(:option_temp=, {'expiry' => '5x'}) }.to(raise_error(BadArgument, /Invalid duration/))
         end
 
-        it 'rejects an unknown sub-option' do
-          expect { runner.send(:option_temp=, {other: 'x'}) }.to(raise_error(BadArgument))
+        it 'rejects an unknown sub-option: refused before by the schema of the option' do
+          expect { runner.send(:option_temp=, {other: 'x'}) }.to(raise_error(InternalError, /temp sub-option/))
+          expect(Schema::Validator.instance.errors({'other' => 'x'}, Schema::Registry::TEMP_OPTIONS, partial: true)).not_to(be_empty)
         end
       end
 
@@ -256,29 +257,6 @@ module Aspera
 
         it 'still reports unknown options with --show-config' do
           expect(logged_errors('config', 'echo', '1', '--show-config', '--unknown-option=1')).to(eq(['Argument: unprocessed options: ["--unknown-option=1"]']))
-        end
-      end
-
-      describe '.result_transfer' do
-        it 'raises on an unexpected result type' do
-          expect { Runner.result_transfer('done') }.to(raise_error(/Unexpected transfer result type: String/))
-        end
-
-        it 'returns the transfer spec of a dry run' do
-          transfer_spec = {'remote_host' => 'localhost', 'direction' => 'send'}
-          expect(Runner.result_transfer(Transfer::Result.dry_run(transfer_spec)).data).to(eq(transfer_spec))
-        end
-      end
-
-      describe '.result_transfer_multiple' do
-        it 'converts each status to text' do
-          table = [
-            {'id' => 1, Runner::STATUS_FIELD => Transfer::Result::Success.new},
-            {'id' => 2, Runner::STATUS_FIELD => Transfer::Result::Async.new(job_id: 'j1')},
-            {'id' => 3, Runner::STATUS_FIELD => Transfer::Result.dry_run({})},
-            {'id' => 4, Runner::STATUS_FIELD => 'other'}
-          ]
-          expect(Runner.result_transfer_multiple(table).data.map { |item| item[Runner::STATUS_FIELD] }).to(eq(%w[success async:j1 dry_run other]))
         end
       end
 
@@ -380,7 +358,7 @@ module Aspera
       end
 
       describe 'free-form schema' do
-        let(:schema) { 'opts:components.schemas.OrchestratorInitiateParameters' }
+        let(:schema) { 'orchestrator_opts:components.schemas.OrchestratorInitiateParameters' }
 
         it 'is displayed as its description' do
           runner = Runner.new([])
@@ -391,7 +369,7 @@ module Aspera
         end
 
         it 'is shown as its description in the help of an argument' do
-          lines = Runner.new([]).send(:schema_help_lines, ArgumentSpec.new(name: :params, type: [Hash], schema: schema))
+          lines = Runner.new([]).send(:schema_help_lines, Argument.new(name: :params, type: [Hash], schema: schema))
           expect(lines.first).to(include('SCHEMA: params'))
         end
       end

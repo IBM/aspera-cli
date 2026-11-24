@@ -29,6 +29,8 @@ module Aspera
   # So a text is valid from 1 to 2 periods after its creation (15 to 30 minutes by default), and is also accepted if the clock of the receiver is up to 1 period behind.
   # When unsealing, spaces and line breaks are ignored (a text split on several lines is valid), as well as quotes and punctuation around the text.
   # Letter case matters.
+  # Unless reversed, the text never starts with `-`, so that it can be given as an argument on a command line (it would be read as an option):
+  # with encryption, an IV that gives `-` is drawn again; without, the text starts with the header of deflate.
   #
   # With `encrypt: false`, there is no encryption and no validity period: the text is only Hash -> JSON -> deflate -> Base64 URL-safe, readable by anyone, without detection of errors.
   # It is used for links that must stay valid and are decoded by other programs (e.g. JavaScript in a browser).
@@ -67,6 +69,8 @@ module Aspera
             cipher = OpenSSL::Cipher.new(CIPHER).encrypt
             cipher.key = derive_key(base_key, secret, time.to_i / period)
             iv = cipher.random_iv
+            # The text starts with the IV: an IV that gives `-` as first character (`+` before URL-safe) is drawn again
+            iv = cipher.random_iv while [iv].pack('m0').start_with?('+')
             body = cipher.update(deflated) + cipher.final
             iv + cipher.auth_tag(TAG_SIZE) + body
           else
