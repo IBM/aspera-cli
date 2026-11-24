@@ -9,7 +9,7 @@ require 'json'
 require 'time'
 
 # Generated gRPC files (`rake tools:grpc`): `transferd_services_pb.rb` requires `transferd_pb` through the load path.
-# Their folder comes first in the load path; the file is required by its absolute path, so that the shims left in `lib/` are not loaded.
+# Their folder is put first in the load path; the file is required by its absolute path.
 grpc_folder = File.join(__dir__, 'grpc')
 $LOAD_PATH.unshift(grpc_folder) unless $LOAD_PATH.include?(grpc_folder)
 require File.join(grpc_folder, 'transferd_services_pb')

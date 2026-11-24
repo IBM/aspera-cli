@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Tests for Api: transfer_status, info, transfer_cancel (async re-query interface), create_client;
-# and the old entry points of the agent (deprecated `Aspera::Agent::Transferd`), that delegate to it.
+# and the entry points of the agent that delegate to it.
 # The gRPC stub is doubled: no daemon required. Requires the optional gem grpc.
 
 require 'bundler/setup'
@@ -197,41 +197,6 @@ RSpec.describe(Aspera::Plugins::Transferd::Agent) do
   it 'stops a transfer with Api' do
     allow(stub).to(receive(:stop_transfer).and_return(api::StopTransferResponse.new(stopResult: [api::StopInfo.new(transferId: 'tid', stopped: true)])))
     expect(described_class.transfer_cancel('tid', params)).to(be(true))
-  end
-
-  it 'creates a client with Api, with a deprecation warning given once' do
-    described_class.instance_variable_set(:@deprecation_shown, nil)
-    expect(Aspera::Log.log).to(receive(:warn).with(/Agent.create_client is deprecated: use Aspera::Plugins::Transferd::Api.create_client/).once)
-    expect(described_class.create_client('127.0.0.1:55002')).to(be(stub))
-    expect(described_class.create_client('127.0.0.1:55002')).to(be(stub))
-  end
-
-  it 'forwards client, info and normalize_status to Api, each with a deprecation warning given once' do
-    described_class.instance_variable_set(:@deprecation_shown, nil)
-    response = api::InstanceInfoResponse.new
-    allow(stub).to(receive(:get_info).and_return(response))
-    %i[client info normalize_status].each do |name|
-      expect(Aspera::Log.log).to(receive(:warn).with(/Agent.#{name} is deprecated: use Aspera::Plugins::Transferd::Api.#{name}/).once)
-    end
-    expect(described_class.client(params)).to(be(stub))
-    expect(described_class.client(params)).to(be(stub))
-    expect(described_class.info(params)).to(be_a(Hash))
-    expect(described_class.normalize_status(api::QueryTransferResponse.new(transferId: 'tid', status: :RUNNING))).to(include('status' => 'running'))
-    expect(described_class.normalize_status(api::QueryTransferResponse.new(transferId: 'tid', status: :RUNNING))).to(include('status' => 'running'))
-  end
-
-  it 'keeps the moved constants as deprecated aliases' do
-    # the warning of a deprecated constant is shown in verbose mode only
-    verbose = $VERBOSE
-    deprecated = Warning[:deprecated]
-    $VERBOSE = true
-    Warning[:deprecated] = true
-    expect { expect(described_class::ApiKeyInterceptor).to(be(Aspera::Plugins::Transferd::Api::ApiKeyInterceptor)) }.to(output(/ApiKeyInterceptor is deprecated/).to_stderr)
-    expect { expect(described_class::CALL_TIMEOUT_SEC).to(eq(Aspera::Plugins::Transferd::Api::CALL_TIMEOUT_SEC)) }.to(output(/CALL_TIMEOUT_SEC is deprecated/).to_stderr)
-    expect { expect(described_class::FINAL_STATUSES).to(be(Aspera::Plugins::Transferd::Api::FINAL_STATUSES)) }.to(output(/FINAL_STATUSES is deprecated/).to_stderr)
-  ensure
-    Warning[:deprecated] = deprecated
-    $VERBOSE = verbose
   end
 
   it 'is not supported by the base agent' do

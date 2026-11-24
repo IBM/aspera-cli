@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Bundle `transfer_agents`: modules mounted on plugin config, service `transfer` and helper of the bundles that transfer files,
-# extension point `agent`, shims of the files moved from `cli/`, and bundles of a plugin folder that use its hooks.
+# extension point `agent`, and bundles of a plugin folder that use its hooks.
 
 require 'spec_helper'
 require_relative '../../../bundle_registry'
@@ -111,39 +111,6 @@ module Aspera
               entry.merge('short' => 'S'), entry.merge('options_schema' => '../options.yaml'), entry.merge('other' => 1)
             ].each do |invalid|
               expect(schema.valid?(invalid)).to(be(false), invalid.inspect)
-            end
-          end
-        end
-
-        describe 'shims of the moved files' do
-          # Former path => former constant, new constant
-          MOVED = {
-            'aspera/cli/ascp_actions'          => %w[Aspera::Cli::AscpActions Aspera::Plugins::TransferAgents::AscpActions],
-            'aspera/cli/ascp_logs_actions'     => %w[Aspera::Cli::AscpLogsActions Aspera::Plugins::TransferAgents::AscpLogsActions],
-            'aspera/cli/async_transfer_store'  => %w[Aspera::Cli::AsyncTransferStore Aspera::Plugins::TransferAgents::AsyncTransferStore],
-            'aspera/cli/sync_actions'          => %w[Aspera::Cli::SyncActions Aspera::Plugins::TransferAgents::SyncActions],
-            'aspera/cli/transfer_actions'      => %w[Aspera::Cli::TransferActions Aspera::Plugins::TransferAgents::TransferActions],
-            'aspera/cli/transfer_agent'        => %w[Aspera::Cli::TransferAgent Aspera::Plugins::TransferAgents::TransferAgent],
-            'aspera/command_line_builder'      => %w[Aspera::CommandLineBuilder Aspera::Transfer::CommandLineBuilder],
-            'aspera/command_line_converter'    => %w[Aspera::CommandLineConverter Aspera::Transfer::CommandLineConverter],
-            'aspera/data_repository'           => %w[Aspera::DataRepository Aspera::Ascp::DataRepository]
-          }.freeze
-
-          # Loaded in another process: the former constants are not defined in the process of the specs
-          it 'warn once when loaded, and give the moved constants under their former names' do
-            script = <<~RUBY
-              #{MOVED.to_a.inspect}.each do |path, (former, _)|
-                2.times { require path }
-                puts "\#{former}=\#{Object.const_get(former).name}"
-              end
-            RUBY
-            stdout, stderr, status = Open3.capture3(RbConfig.ruby, '-I', File.join(source_root, 'lib'), '-e', script)
-            expect(status.success?).to(be(true), stderr)
-            expect(stdout.lines(chomp: true)).to(eq(MOVED.values.map { |former, moved| "#{former}=#{moved}" }))
-            MOVED.each_key do |path|
-              moved = path.sub(%r{\Aaspera/(cli/)?}, '')
-              new_path = path.start_with?('aspera/cli/') ? "aspera/plugins/transfer_agents/#{moved}" : MOVED[path].last.delete_prefix('Aspera::').split('::').map(&:capital_to_snake).join('/').prepend('aspera/')
-              expect(stderr.scan("#{path} is deprecated: use #{new_path} (removed in 5.0)").length).to(eq(1), stderr)
             end
           end
         end

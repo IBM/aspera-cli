@@ -121,7 +121,7 @@ module Aspera
     # Messages logged at level warn
     let(:warnings) { [] }
 
-    # A shim warns with a message, not a block
+    # A warning is given with a message, or with a block
     before { allow(Log.log).to(receive(:warn)) { |message = nil, &block| warnings.push(block.nil? ? message : block.call) } }
 
     after do

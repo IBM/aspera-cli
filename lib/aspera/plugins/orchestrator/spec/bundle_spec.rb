@@ -3,7 +3,7 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Bundle `orchestrator`: commands, workflow checker, schemas, shims of the moved files.
+# Bundle `orchestrator`: commands, workflow checker, schemas.
 
 require 'spec_helper'
 require_relative '../../../bundle_registry'
@@ -25,14 +25,14 @@ module Aspera
         # The registry scans the plugin folders on first use: this spec also runs alone
         before { registry.extensions(:agent) }
 
-        # @param script [String] Ruby code run in another process: the former constants are not defined in the process of the specs
+        # @param script [String] Ruby code run in another process: only what it requires is loaded in it
         # @return [Array(String, String, Process::Status)] stdout, stderr, status
         def run_ruby(script)
           Open3.capture3(RbConfig.ruby, '-w', '-I', File.join(source_root, 'lib'), '-e', script)
         end
 
         describe 'commands' do
-          it 'are those of plugin orchestrator, from the bundle (which hides the shim of the former plugin file)' do
+          it 'are those of plugin orchestrator, from the bundle' do
             expect(registry.unavailable_reason(:orchestrator)).to(be_nil)
             expect(registry[:orchestrator].depends).to(eq([:transfer_agents]))
             expect(registry[:orchestrator].gems).to(eq([]))
@@ -99,25 +99,6 @@ module Aspera
           it 'gives the status of a failed work order and the missing parameters' do
             error = call_error({'work_order' => {'statusDetails' => 'Failed'}, 'missing_parameters' => ['name']}, code: '400', message: 'Bad Request')
             expect(error.message.lines.map(&:chomp)).to(include('Failed', 'missing parameter: name'))
-          end
-        end
-
-        describe 'shims of the moved files' do
-          # Former path => former constant, new constant, path to use
-          MOVED = {
-            'aspera/cli/plugins/orchestrator'    => %w[Aspera::Cli::Plugins::Orchestrator Aspera::Plugins::Orchestrator::Commands aspera/plugins/orchestrator/commands],
-            'aspera/orchestrator_workflow_checker' => %w[Aspera::OrchestratorWorkflowChecker Aspera::Plugins::Orchestrator::WorkflowChecker aspera/plugins/orchestrator/workflow_checker]
-          }.freeze
-
-          it 'warn once when loaded, and give the moved constants under their former names' do
-            MOVED.each do |path, (former, current, new_path)|
-              stdout, stderr, status = run_ruby("2.times { require #{path.inspect} }\nputs Object.const_get(#{former.inspect}).name\n")
-              expect(status.success?).to(be(true), stderr)
-              expect(stdout.chomp).to(eq(current))
-              expect(stderr.scan("#{path} is deprecated: use #{new_path} (removed in 5.0)").length).to(eq(1), stderr)
-              # `-w`: warning of `deprecate_constant`, and no other warning
-              expect(stderr.lines(chomp: true).grep(/warning:/)).to(eq(["-e:2: warning: constant #{former} is deprecated"]), stderr)
-            end
           end
         end
       end

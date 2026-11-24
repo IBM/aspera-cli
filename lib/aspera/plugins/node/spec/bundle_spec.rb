@@ -3,7 +3,7 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Bundle `node`: commands, API, agent of the extension point `agent`, Node API emulator, schemas, mounts by the plugins that use the Node API, shims of the moved files.
+# Bundle `node`: commands, API, agent of the extension point `agent`, Node API emulator, schemas, mounts by the plugins that use the Node API.
 
 require 'spec_helper'
 require_relative '../../../agent/factory'
@@ -36,14 +36,14 @@ module Aspera
         # The entries of the registry scan the plugin folders on first use: this spec also runs alone
         before { registry.extensions(:agent) }
 
-        # @param script [String] Ruby code run in another process: the former constants are not defined in the process of the specs
+        # @param script [String] Ruby code run in another process: only what it requires is loaded in it
         # @return [Array(String, String, Process::Status)] stdout, stderr, status
         def run_ruby(script)
           Open3.capture3(RbConfig.ruby, '-w', '-I', File.join(source_root, 'lib'), '-e', script)
         end
 
         describe 'commands' do
-          it 'are those of plugin node, from the bundle (which hides the shim of the former plugin file)' do
+          it 'are those of plugin node, from the bundle' do
             expect(registry.unavailable_reason(:node)).to(be_nil)
             # no `transferd`: the emulator gets the agent `transferd` from the factory when it starts
             expect(registry[:node].depends).to(eq(%i[transfer_agents]))
@@ -164,29 +164,6 @@ module Aspera
           it 'fails to start the emulator, naming transferd' do
             allow(Aspera::Agent::Factory).to(receive(:instance).and_return(factory))
             expect { Emulator.new(retention_sec: 60) }.to(raise_error(BundleRegistry::Unavailable, /\Aplugin transferd is unavailable: /))
-          end
-        end
-
-        describe 'shims of the moved files' do
-          # Former path => former constants, new constants, path to use
-          MOVED = {
-            'aspera/cli/plugins/node' => [%w[Aspera::Cli::Plugins::Node], %w[Aspera::Plugins::Node::Commands], 'aspera/plugins/node/commands'],
-            'aspera/agent/node'       => [%w[Aspera::Agent::Node], %w[Aspera::Plugins::Node::Agent], 'aspera/plugins/node/agent'],
-            'aspera/api/node'         => [%w[Aspera::Api::Node Aspera::Api::NodeFileId], %w[Aspera::Plugins::Node::Api Aspera::Plugins::Node::NodeFileId], 'aspera/plugins/node/api'],
-            'aspera/node_emulator'    => [
-              %w[Aspera::NodeEmulator Aspera::NodeEmulatorServlet], %w[Aspera::Plugins::Node::Emulator Aspera::Plugins::Node::NodeEmulatorServlet], 'aspera/plugins/node/emulator'
-            ]
-          }.freeze
-
-          it 'warn once when loaded, and give the moved constants under their former names' do
-            MOVED.each do |path, (formers, currents, new_path)|
-              stdout, stderr, status = run_ruby("2.times { require #{path.inspect} }\n#{formers.map { |former| "puts Object.const_get(#{former.inspect}).name\n" }.join}")
-              expect(status.success?).to(be(true), stderr)
-              expect(stdout.lines(chomp: true)).to(eq(currents))
-              expect(stderr.scan("#{path} is deprecated: use #{new_path} (removed in 5.0)").length).to(eq(1), stderr)
-              # `-w`: warning of `deprecate_constant`, and no other warning
-              expect(stderr.lines(chomp: true).grep(/warning:/)).to(eq(formers.each_with_index.map { |former, index| "-e:#{index + 2}: warning: constant #{former} is deprecated" }), stderr)
-            end
           end
         end
       end

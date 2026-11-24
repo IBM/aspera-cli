@@ -47,7 +47,6 @@ module Aspera
 
         # add a folder to the list of folders to look for plugins
         # (absolute, as `require` resolves a relative path against $LOAD_PATH)
-        # The folder of the single files of the gem comes after the folder of the bundles of the gem: a bundle hides the shim left at the path of its former single file.
         # @param folder   [String]      Folder
         # @param security [Symbol, nil] Most restrictive security level at which plugins of this folder are used, `nil` for all levels (folder of the gem).
         #   A folder that a user or a client can write is `:low`: a file written there would be loaded as code.

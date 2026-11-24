@@ -3,7 +3,7 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Bundle `direct`: agent of the extension point `agent` (the default agent), schema of the agent parameters, shim of the moved file.
+# Bundle `direct`: agent of the extension point `agent` (the default agent), schema of the agent parameters.
 
 require 'spec_helper'
 require_relative '../../../../../spec/bundle_registry_helper'
@@ -14,8 +14,6 @@ require_relative '../../../schema/validator'
 require_relative '../../transfer_agents/transfer_agent'
 require_relative '../agent'
 require 'fileutils'
-require 'open3'
-require 'rbconfig'
 require 'tmpdir'
 
 module Aspera
@@ -27,12 +25,6 @@ module Aspera
         let(:source_root) { File.expand_path('../../../../..', __dir__) }
         let(:bundle_folder) { File.expand_path('..', __dir__) }
         let(:registry) { BundleRegistry.instance }
-
-        # @param script [String] Ruby code run in another process: the former constant is not defined in the process of the specs
-        # @return [Array(String, String, Process::Status)] stdout, stderr, status
-        def run_ruby(script)
-          Open3.capture3(RbConfig.ruby, '-w', '-I', File.join(source_root, 'lib'), '-e', script)
-        end
 
         describe 'manifest' do
           it 'is available, depends on the bundle transfer_agents, has no command and no gem' do
@@ -92,20 +84,9 @@ module Aspera
             expect { factory.create(:direct, {}) }.to(raise_error(BundleRegistry::Unavailable, /\Aplugin direct is unavailable: invalid manifest .*plugin.yaml/))
           end
 
-          it 'is unknown when no bundle provides it (no agent of the former folder of the agents)' do
+          it 'is unknown when no bundle provides it' do
             expect(factory.all).not_to(include(:direct))
             expect { factory.agent_class(:direct) }.to(raise_error(AssertError, 'assertion failed: unknown agent: direct'))
-          end
-        end
-
-        describe 'shim of the moved file' do
-          it 'warns once when loaded, and gives the moved constant under its former name' do
-            path = 'aspera/agent/direct'
-            stdout, stderr, status = run_ruby("2.times { require #{path.inspect} }\nputs Aspera::Agent::Direct.name\n")
-            expect(status.success?).to(be(true), stderr)
-            expect(stdout.chomp).to(eq('Aspera::Plugins::Direct::Agent'))
-            expect(stderr.scan("#{path} is deprecated: use aspera/plugins/direct/agent (removed in 5.0)").length).to(eq(1), stderr)
-            expect(stderr.lines(chomp: true).grep(/warning:/)).to(eq(['-e:2: warning: constant Aspera::Agent::Direct is deprecated']), stderr)
           end
         end
       end

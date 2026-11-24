@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Bundle `transferd`: commands, agent of the extension point `agent`, schemas, module mounted on plugin config,
-# generated gRPC files, shims of the moved files.
+# generated gRPC files.
 
 require 'spec_helper'
 require_relative '../../../agent/factory'
@@ -37,14 +37,14 @@ module Aspera
           "optional gem grpc: #{e.message}"
         end
 
-        # @param script [String] Ruby code run in another process: the former constants are not defined in the process of the specs
+        # @param script [String] Ruby code run in another process: only what it requires is loaded in it
         # @return [Array(String, String, Process::Status)] stdout, stderr, status
         def run_ruby(script)
           Open3.capture3(RbConfig.ruby, '-w', '-I', File.join(source_root, 'lib'), '-e', script)
         end
 
         describe 'commands' do
-          it 'are those of plugin transferd, from the bundle (which hides the shim of the former plugin file)' do
+          it 'are those of plugin transferd, from the bundle' do
             expect(registry.unavailable_reason(:transferd)).to(be_nil)
             expect(registry[:transferd].depends).to(eq([:transfer_agents]))
             expect(registry[:transferd].gems).to(eq([]))
@@ -135,7 +135,7 @@ module Aspera
         end
 
         describe 'generated gRPC files' do
-          it 'are in the folder grpc, put in the load path by the API: the shims of lib are not loaded' do
+          it 'are in the folder grpc, put in the load path by the API' do
             reason = grpc_missing
             skip(reason) unless reason.nil?
             stdout, stderr, status = run_ruby(<<~RUBY)
@@ -147,45 +147,6 @@ module Aspera
             expect(stderr).to(be_empty)
             grpc = File.join(bundle_folder, 'grpc')
             expect(stdout.lines(chomp: true)).to(eq(%W[#{grpc}/transferd_pb.rb #{grpc}/transferd_services_pb.rb Transferd::Api::TransferService::Stub]))
-          end
-        end
-
-        describe 'shims of the moved files' do
-          # Former path => former constant (`nil`: generated file, no constant of its own), new constant, path to use
-          MOVED = {
-            'aspera/cli/plugins/transferd'      => %w[Aspera::Cli::Plugins::Transferd Aspera::Plugins::Transferd::Commands aspera/plugins/transferd/commands],
-            'aspera/products/transferd_service' => %w[Aspera::Products::TransferdService Aspera::Plugins::Transferd::Service aspera/plugins/transferd/service]
-          }.freeze
-          # Moved files that require the gem grpc
-          MOVED_GRPC = {
-            'aspera/agent/transferd' => %w[Aspera::Agent::Transferd Aspera::Plugins::Transferd::Agent aspera/plugins/transferd/agent],
-            'transferd_pb'           => [nil, 'Transferd::Api::TransferInfo', 'aspera/plugins/transferd/grpc/transferd_pb'],
-            'transferd_services_pb'  => [nil, 'Transferd::Api::TransferService::Stub', 'aspera/plugins/transferd/api']
-          }.freeze
-
-          # @param moved [Hash] Former path => former constant, new constant, path to use
-          # Each shim in its own process: once the API is loaded, `require 'transferd_pb'` is the generated file, not the shim
-          # @param moved [Hash] Former path => former constant, new constant, path to use
-          def check_shims(moved)
-            moved.each do |path, (former, current, new_path)|
-              stdout, stderr, status = run_ruby("2.times { require #{path.inspect} }\nputs Object.const_get(#{(former || current).inspect}).name\n")
-              expect(status.success?).to(be(true), stderr)
-              expect(stdout.chomp).to(eq(current))
-              expect(stderr.scan("#{path} is deprecated: use #{new_path} (removed in 5.0)").length).to(eq(1), stderr)
-              # `-w`: warning of `deprecate_constant`, and no other warning
-              deprecated = former.nil? ? [] : ["-e:2: warning: constant #{former} is deprecated"]
-              expect(stderr.lines(chomp: true).grep(/warning:/)).to(eq(deprecated), stderr)
-            end
-          end
-
-          it 'warn once when loaded, and give the moved constants under their former names' do
-            check_shims(MOVED)
-          end
-
-          it 'warn once when loaded, and give the moved constants under their former names, with the gem grpc' do
-            reason = grpc_missing
-            skip(reason) unless reason.nil?
-            check_shims(MOVED_GRPC)
           end
         end
       end

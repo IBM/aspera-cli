@@ -11596,7 +11596,7 @@ asession -h
 Main components:
 
 - `Aspera` generic classes for REST and OAuth
-- `Aspera::Plugins::Direct::Agent`: Starting and monitoring transfers using `ascp` (former name `Aspera::Agent::Direct`: deprecated, removed in 5.0).
+- `Aspera::Plugins::Direct::Agent`: Starting and monitoring transfers using `ascp`.
 - `Aspera::Cli`: <%=tool%>.
 
 Working examples can be found in repo: <https://github.com/laurent-martin/aspera-api-examples> in Ruby examples.

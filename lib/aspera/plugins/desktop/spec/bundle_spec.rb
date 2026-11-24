@@ -3,7 +3,7 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Bundles `desktop` and `connect`: agents of the extension point `agent`, schemas of the agent parameters, shims of the moved files.
+# Bundles `desktop` and `connect`: agents of the extension point `agent`, schemas of the agent parameters.
 
 require 'spec_helper'
 require_relative '../../../agent/factory'
@@ -13,8 +13,6 @@ require_relative '../../../schema/validator'
 require_relative '../../transfer_agents/transfer_agent'
 require_relative '../../desktop/agent'
 require_relative '../../connect/agent'
-require 'open3'
-require 'rbconfig'
 
 module Aspera
   module Plugins
@@ -24,12 +22,6 @@ module Aspera
 
       # The registry scans the plugin folders on first use: this spec also runs alone
       before { registry.extensions(:agent) }
-
-      # @param script [String] Ruby code run in another process: the former constant is not defined in the process of the specs
-      # @return [Array(String, String, Process::Status)] stdout, stderr, status
-      def run_ruby(script)
-        Open3.capture3(RbConfig.ruby, '-w', '-I', File.join(source_root, 'lib'), '-e', script)
-      end
 
       {
         desktop: {letter: 'd', klass: 'Desktop', agent_class: Desktop::Agent},
@@ -69,15 +61,6 @@ module Aspera
             selector_file = Yaml.safe_load(File.read(File.join(source_root, 'lib/aspera/plugins/transfer_agents/schemas/options.yaml')))['components']['schemas']
             expect(framework.keys).not_to(include("#{info[:klass]}AgentOptions"))
             expect(selector_file['TransferAgentOptions']['discriminator'].fetch('mapping', {})).not_to(include(name.to_s))
-          end
-
-          it 'has a shim that warns once when loaded, and gives the moved constant under its former name' do
-            path = "aspera/agent/#{name}"
-            stdout, stderr, status = run_ruby("2.times { require #{path.inspect} }\nputs Aspera::Agent::#{info[:klass]}.name\n")
-            expect(status.success?).to(be(true), stderr)
-            expect(stdout.chomp).to(eq("Aspera::Plugins::#{info[:klass]}::Agent"))
-            expect(stderr.scan("#{path} is deprecated: use aspera/plugins/#{name}/agent (removed in 5.0)").length).to(eq(1), stderr)
-            expect(stderr.lines(chomp: true).grep(/warning:/)).to(eq(["-e:2: warning: constant Aspera::Agent::#{info[:klass]} is deprecated"]), stderr)
           end
         end
       end

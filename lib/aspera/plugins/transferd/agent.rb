@@ -28,13 +28,6 @@ module Aspera
 
         private_constant :LOCAL_SOCKET_ADDR, :PORT_SEP, :AUTO_LOCAL_TCP_PORT
 
-        # Moved to `Api`, removed in 5.0
-        ApiKeyInterceptor = Api::ApiKeyInterceptor
-        CALL_TIMEOUT_SEC = Api::CALL_TIMEOUT_SEC
-        FINAL_STATUSES = Api::FINAL_STATUSES
-
-        deprecate_constant :ApiKeyInterceptor, :CALL_TIMEOUT_SEC, :FINAL_STATUSES
-
         class << self
           # @param stub [Transferd::Api::TransferService::Stub] gRPC client of a daemon
           # @return [Client] Calls to this daemon with plain Ruby arguments
@@ -63,51 +56,6 @@ module Aspera
           # @raise [Aspera::Transfer::Error] The daemon did not stop it: unknown or terminated transfer
           def transfer_cancel(transfer_id, agent_params)
             Api.transfer_cancel(transfer_id, agent_params)
-          end
-
-          # @deprecated Use `Api.create_client` (removed in 5.0)
-          # @param url     [String]      Endpoint of the daemon, e.g. `127.0.0.1:55002`
-          # @param api_key [String, nil] API key, if the daemon has `authentication` enabled
-          # @param ca_file [String, nil] File with the certificate authority of the daemon (PEM), if the daemon has `tls` enabled
-          # @return [Transferd::Api::TransferService::Stub] gRPC client
-          def create_client(url, api_key: nil, ca_file: nil)
-            deprecated_to_api(:create_client)
-            Api.create_client(url, api_key: api_key, ca_file: ca_file)
-          end
-
-          # @deprecated Use `Api.client` (removed in 5.0)
-          # @param agent_params [Hash] `url`: endpoint of the daemon; optional `api_key`, `ca_file`
-          # @return [Transferd::Api::TransferService::Stub] Client of the daemon
-          def client(agent_params)
-            deprecated_to_api(:client)
-            Api.client(agent_params)
-          end
-
-          # @deprecated Use `Api.info` (removed in 5.0)
-          # @param agent_params [Hash] `url`: endpoint of the daemon; optional `timeout`: seconds, `api_key`, `ca_file`
-          # @return [Hash] Version of the API (`apiVersion`) and information on the instance (`info`)
-          def info(agent_params)
-            deprecated_to_api(:info)
-            Api.info(agent_params)
-          end
-
-          # @deprecated Use `Api.normalize_status` (removed in 5.0)
-          # @param response [Object] Response of the daemon
-          # @return [Hash] Normalized status
-          def normalize_status(response)
-            deprecated_to_api(:normalize_status)
-            Api.normalize_status(response)
-          end
-
-          private
-
-          # Warn once for each deprecated method moved to `Api`
-          # @param method_name [Symbol] Name of the method of `Api`
-          def deprecated_to_api(method_name)
-            @deprecation_shown ||= {}
-            return if @deprecation_shown[method_name]
-            @deprecation_shown[method_name] = true
-            Log.log.warn("Agent.#{method_name} is deprecated: use Aspera::Plugins::Transferd::Api.#{method_name} (removed in 5.0)")
           end
         end
 

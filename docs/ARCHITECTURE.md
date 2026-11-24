@@ -128,10 +128,10 @@ The plugin architecture enables modular command implementation for different Asp
 - [`orchestrator/commands.rb`](../lib/aspera/plugins/orchestrator/commands.rb) - Aspera Orchestrator
 - [`server/commands.rb`](../lib/aspera/plugins/server/commands.rb) - HSTS (High-Speed Transfer Server)
 - [`cos/commands.rb`](../lib/aspera/plugins/cos/commands.rb) - IBM Cloud Object Storage
-- [`httpgw.rb`](../lib/aspera/cli/plugins/httpgw.rb) - HTTP Gateway
+- [`httpgw/commands.rb`](../lib/aspera/plugins/httpgw/commands.rb) - HTTP Gateway
 - [`faspio/commands.rb`](../lib/aspera/plugins/faspio/commands.rb) - Fasp.io Gateway
 - [`alee/commands.rb`](../lib/aspera/plugins/alee/commands.rb) - Aspera Line Enterprise Edition
-- [`transferd.rb`](../lib/aspera/cli/plugins/transferd.rb) - Transfer Daemon: SDK installation and system service
+- [`transferd/commands.rb`](../lib/aspera/plugins/transferd/commands.rb) - Transfer Daemon: SDK installation and system service
 
 The Faspex 4 plugin was removed (end of support).
 
@@ -539,8 +539,8 @@ Transfer outcomes are typed ([`transfer/result.rb`](../lib/aspera/transfer/resul
 - **Connect**: Aspera Connect browser plugin
 - **Node**: Node API-based transfers
 - **Desktop**: Aspera Desktop Client, which runs the Transfer SDK underneath
-- **Transfer Daemon (trSDK)**: gRPC-based transfer service ([`transferd.rb`](../lib/aspera/agent/transferd.rb))
-- **HTTPGW**: HTTP Gateway, transfers over HTTPS and WebSocket ([`httpgw.rb`](../lib/aspera/agent/httpgw.rb))
+- **Transfer Daemon (trSDK)**: gRPC-based transfer service ([`transferd/agent.rb`](../lib/aspera/plugins/transferd/agent.rb))
+- **HTTPGW**: HTTP Gateway, transfers over HTTPS and WebSocket ([`httpgw/agent.rb`](../lib/aspera/plugins/httpgw/agent.rb))
 
 ### API Communication Layer
 
@@ -571,7 +571,7 @@ Global HTTP settings are held in the `Rest::Parameters` singleton. The CLI HTTP/
 
 #### Product API Clients
 
-**Directory**: [`lib/aspera/api/`](../lib/aspera/api/) — `httpgw`, and the shims `aoc` (`plugins/aoc/api.rb`), `alee` (`plugins/alee/api.rb`), `ats` (`plugins/ats/api.rb`), `faspex` (`plugins/faspex5/api.rb`), `node` (`plugins/node/api.rb`), `cos_node` (`plugins/cos/api.rb`)
+**Directory**: `api.rb` of each bundle in [`lib/aspera/plugins/`](../lib/aspera/plugins/)
 
 **Node API Client** ([`api.rb`](../lib/aspera/plugins/node/api.rb)):
 
@@ -960,7 +960,7 @@ The **framework** finds, validates and loads bundles, and offers the hooks they 
 | Domain library | `agent/` (`base.rb`, `factory.rb`), `ascp/`, `products/`, `sync/`, `transfer/` | Framework except `cli/`, domain |
 | Bundle | `plugins/<name>/` | Framework, domain, the bundles listed in its `depends` |
 
-- A reference is a `require` or `require_relative` path, or a constant. Comments are not references. Shims (see [Compatibility until 5.0](#compatibility-until-50)) are exempt.
+- A reference is a `require` or `require_relative` path, or a constant. Comments are not references.
 - The rules are checked by `spec/layer_boundary_spec.rb`, with no list of known violations.
 - Library rule: the files used without the CLI never reference `cli/`: framework files outside `cli/`, and files of bundles other than `commands.rb`, `commands/`, their mounted modules and services. The only exception is `cli/info` (identity of the gem: name of the command and URLs, constants only), used by the web login that gives a code for `ascli` on another host (`web_auth/`) and by the SAML login of Shares.
 - The domain library is the Aspera transfer library, without CLI: transfer spec, `ascp`, `async`, base class and factory of agents, locations of installed Aspera products (`products/`: where `ascp` and the logs are, used by `Ascp::Installation`).
@@ -1092,7 +1092,7 @@ Sources of plugins, first one wins for a given name:
 | --- | --- | --- |
 | Folders of option `plugin_folder` (default: `plugins` of the configuration folder) | `low` | Single files and bundles |
 | `lib/aspera/plugins/` of the gem | all | Built-in bundles |
-| `lib/aspera/cli/plugins/` of the gem | all | `config`, `mcp` (base classes and shims are not plugins) |
+| `lib/aspera/cli/plugins/` of the gem | all | `config`, `mcp` (base classes are not plugins) |
 | Other gems: `Gem.find_files('aspera/plugins/*/plugin.yaml')`, only if decided (GATE 0) | `low` | Bundles; never replace a built-in name |
 
 - In a folder, `<name>.rb` is a single-file plugin and `<name>/plugin.yaml` a bundle; with both for the same name, the bundle is used and a warning is logged.
@@ -1109,31 +1109,10 @@ Sources of plugins, first one wins for a given name:
 - **Other hooks of the framework**, used by the code of bundles when it is loaded: `Rest::ErrorAnalyzer#add_handler` (errors of a product API), `Cli::Hints.add` (hints of errors), `Cli::ExitCode.add_error` (label and exit code of an error class of the domain library); the help of a command with `transfer_paths` gets its argument from the service `transfer` (`paths_argument`); the instructions of the MCP server list the plugins with the titles of their bundles, then add the section `mcp` of each manifest.
 - **Services**: `Context#service(:transfer)` creates the `TransferAgent` of bundle `transfer_agents` once, on first use, with the context (`Context#transfer` gives it). Plugins of bundles use it through the helper module `Aspera::Plugins::TransferAgents::Helper` (method `transfer`) and declare `depends: - transfer_agents`. `Plugins::Base#transfer` remains for single-file plugins: it asks the service by name, without reference to the bundle.
 
-### Compatibility until 5.0
+### Moved names
 
 - Framework names used by external plugins do not move: `cli/plugins/base`, `basic_auth`, `oauth`.
-- A moved file leaves a shim at its old path: it logs a warning (once: `require` loads it once), requires the new file, and defines the old constants as deprecated aliases. Internal code uses only the new paths and names: an old constant exists only once its shim is loaded.
-- `deprecate_constant` warns only when deprecation warnings are enabled (`Warning[:deprecated]`, off by default): the warning of the shim is the visible one.
-- Shims are not plugins and are exempt from the layer rules (recognized by the comment `# Shim:` of the template below). They are listed in the CHANGELOG and removed in 5.0.
-
-```ruby
-# frozen_string_literal: true
-
-# SPDX-FileCopyrightText: IBM Corp.
-# SPDX-License-Identifier: Apache-2.0
-
-# Shim: moved to aspera/plugins/node/api, removed in 5.0
-require_relative '../log'
-require_relative '../plugins/node/api'
-Aspera::Log.log.warn('aspera/api/node is deprecated: use aspera/plugins/node/api (removed in 5.0)')
-module Aspera
-  module Api
-    Node = Plugins::Node::Api
-    NodeFileId = Plugins::Node::NodeFileId
-    deprecate_constant :Node, :NodeFileId
-  end
-end
-```
+- A moved file leaves nothing at its old path: no shim file, no constant alias. The gem is used through `ascli`: code that uses the library directly changes to the new paths and names (listed in the CHANGELOG).
 
 ### Development files
 
