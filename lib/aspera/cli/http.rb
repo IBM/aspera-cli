@@ -9,7 +9,7 @@ require_relative '../assert'
 require_relative '../line_logger'
 require_relative '../units/duration'
 require_relative '../schema/registry'
-require_relative 'option_declarator'
+require_relative 'option/declarator'
 require_relative '../rest'
 require_relative '../oauth/client/factory'
 require_relative '../ssl'
@@ -21,7 +21,7 @@ module Aspera
     # Extracted from Plugins::Config so it can be referenced independently
     # via Context#http_config without coupling to the plugin machinery.
     class Http
-      extend OptionDeclarator
+      extend Option::Declarator
 
       # Certificate file extensions recognized when scanning a folder
       CERT_EXT = %w[crt cer pem der].freeze
@@ -48,10 +48,10 @@ module Aspera
       end
 
       # `on_set` callbacks are methods of the instance given as `target:` to `declare_options`
-      option :insecure,           description: 'HTTP/S: Do not validate any certificate',                   allowed: Type::BOOLEAN, default: false, on_set: :insecure=
-      option :ignore_certificate, description: 'HTTP/S: Do not validate certificate for these URLs',        allowed: Type::STRING_ARRAY,            on_set: :ignore_cert_host_port=
-      option :warn_insecure,      description: 'HTTP/S: Issue a warning if certificate is ignored',         allowed: Type::BOOLEAN, default: true,  on_set: :warn_insecure=
-      option :cert_stores,        description: 'HTTP/S: List of folder with trusted certificates',          allowed: Type::STRING_ARRAY,            on_set: :trusted_cert_locations=
+      option :insecure,           description: 'HTTP/S: Do not validate any certificate',                   allowed: Option::Type::BOOLEAN, default: false, on_set: :insecure=
+      option :ignore_certificate, description: 'HTTP/S: Do not validate certificate for these URLs',        allowed: Option::Type::STRING_ARRAY,            on_set: :ignore_cert_host_port=
+      option :warn_insecure,      description: 'HTTP/S: Issue a warning if certificate is ignored',         allowed: Option::Type::BOOLEAN, default: true,  on_set: :warn_insecure=
+      option :cert_stores,        description: 'HTTP/S: List of folder with trusted certificates',          allowed: Option::Type::STRING_ARRAY,            on_set: :trusted_cert_locations=
       option :http_options,       schema: Schema::Registry::HTTP_OPTIONS,                                                                           on_set: :http_options=
       option :http_proxy,         description: 'HTTP/S: URL for proxy with optional credentials',                                                   on_set: :http_proxy=
 

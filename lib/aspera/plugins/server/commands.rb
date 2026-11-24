@@ -173,7 +173,7 @@ module Aspera
 
         # --- DSL ---
 
-        option :ssh_keys,    description: 'SSH key path list', allowed: Cli::Type::STRING_ARRAY
+        option :ssh_keys,    description: 'SSH key path list', allowed: Cli::Option::Type::STRING_ARRAY
         option :passphrase,  description: 'SSH private key passphrase'
         option :ssh_options, description: 'SSH options', allowed: Hash
 

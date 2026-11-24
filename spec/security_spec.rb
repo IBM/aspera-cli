@@ -8,8 +8,8 @@
 require_relative '../lib/aspera/cli/security'
 require_relative '../lib/aspera/cli/extended_value'
 require_relative '../lib/aspera/cli/preset_manager'
-require_relative '../lib/aspera/cli/option_value'
-require_relative '../lib/aspera/cli/command_spec'
+require_relative '../lib/aspera/cli/option/value'
+require_relative '../lib/aspera/cli/command'
 require_relative '../lib/aspera/schema/registry'
 require 'base64'
 require 'zlib'
@@ -168,20 +168,20 @@ module Aspera
         end
 
         it 'refuses a sub-option marked `x-security` in the schema, however it is given' do
-          option = OptionValue.new(option: :out, allowed: [Hash, String], schema: Schema::Registry::OUT_OPTIONS)
+          option = Option::Value.new(option: :out, allowed: [Hash, String], schema: Schema::Registry::OUT_OPTIONS)
           security.lock('in MCP server mode', default: :high)
           expect { option.assign_value({'file' => '/tmp/x'}, source: :cmdline) }.to(raise_error(BadArgument, /option out.file: disabled by security level high/))
           expect { option.assign_value({'format' => 'json'}, source: :cmdline) }.not_to(raise_error)
           expect { option.check_security({file: '/tmp/x'}) }.to(raise_error(BadArgument, /out.file/))
-          ui = OptionValue.new(option: :ui, allowed: [Hash, String], schema: Schema::Registry::UI_OPTIONS)
+          ui = Option::Value.new(option: :ui, allowed: [Hash, String], schema: Schema::Registry::UI_OPTIONS)
           expect { ui.assign_value({'command' => ['x']}, source: :preset) }.to(raise_error(BadArgument, /ui.command/))
           expect { ui.assign_value({'mode' => 'terminal'}, source: :preset) }.not_to(raise_error)
         end
 
         it 'does not restrict values set by the program or by the environment of the process' do
           security.lock('in MCP server mode', default: :high)
-          %i[default code env].each { |source| expect { OptionValue.new(option: :home, security: :low).assign_value('/x', source: source) }.not_to(raise_error) }
-          %i[cmdline preset plugin_preset].each { |source| expect { OptionValue.new(option: :home, security: :low).assign_value('/x', source: source) }.to(raise_error(BadArgument)) }
+          %i[default code env].each { |source| expect { Option::Value.new(option: :home, security: :low).assign_value('/x', source: source) }.not_to(raise_error) }
+          %i[cmdline preset plugin_preset].each { |source| expect { Option::Value.new(option: :home, security: :low).assign_value('/x', source: source) }.to(raise_error(BadArgument)) }
         end
 
         it 'refuses an unknown level' do
@@ -266,7 +266,7 @@ module Aspera
 
       describe 'attribute `security:`' do
         it 'refuses to set an option from command line or preset above its level, not from the program' do
-          option = OptionValue.new(option: :notify_template, security: :low)
+          option = Option::Value.new(option: :notify_template, security: :low)
           security.lock('in MCP server mode', default: :high)
           expect { option.assign_value('<%= 1 %>', source: :cmdline) }.to(raise_error(BadArgument, /option notify_template: disabled by security level high/))
           expect { option.assign_value('<%= 1 %>', source: :preset) }.to(raise_error(BadArgument))
@@ -275,19 +275,19 @@ module Aspera
         end
 
         it 'allows the option at level low' do
-          option = OptionValue.new(option: :notify_template, security: :low)
+          option = Option::Value.new(option: :notify_template, security: :low)
           expect { option.assign_value('x', source: :cmdline) }.not_to(raise_error)
         end
 
         it 'refuses an unknown level' do
-          expect { OptionValue.new(option: :x, security: :none) }.to(raise_error(Aspera::AssertError))
-          expect { CommandSpec.new(id: :x, description: 'x', security: :none) }.to(raise_error(Aspera::AssertError))
+          expect { Option::Value.new(option: :x, security: :none) }.to(raise_error(Aspera::AssertError))
+          expect { Command.new(id: :x, description: 'x', security: :none) }.to(raise_error(Aspera::AssertError))
         end
 
         it 'refuses a command above its level' do
-          expect(Security.instance.allowed?(CommandSpec.new(id: :x, description: 'x', security: :low).security)).to(be(true))
+          expect(Security.instance.allowed?(Command.new(id: :x, description: 'x', security: :low).security)).to(be(true))
           security.lock('in MCP server mode', default: :high)
-          expect(security.allowed?(CommandSpec.new(id: :x, description: 'x', security: :low).security)).to(be(false))
+          expect(security.allowed?(Command.new(id: :x, description: 'x', security: :low).security)).to(be(false))
         end
       end
 

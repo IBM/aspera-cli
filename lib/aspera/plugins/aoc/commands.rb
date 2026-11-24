@@ -287,9 +287,9 @@ module Aspera
 
         option :workspace,         description: 'Name of workspace', allowed: [String, NilClass], default: Api::DEFAULT_WORKSPACE
         option :new_user_option,   description: 'New user creation option for unknown package recipients', allowed: [Hash, NilClass]
-        option :validate_metadata, description: 'Validate shared inbox metadata', allowed: Cli::Type::BOOLEAN, default: true
+        option :validate_metadata, description: 'Validate shared inbox metadata', allowed: Cli::Option::Type::BOOLEAN, default: true
         option :package_folder,    schema: PACKAGE_FOLDER_OPTIONS
-        option :use_generic_client, description: 'Wizard: AoC: use global or org specific jwt client id (default: global for SaaS URL)', allowed: Cli::Type::BOOLEAN
+        option :use_generic_client, description: 'Wizard: AoC: use global or org specific jwt client id (default: global for SaaS URL)', allowed: Cli::Option::Type::BOOLEAN
 
         use_options Node::Commands
 
@@ -668,7 +668,7 @@ module Aspera
                 # For non-global ops, prepend the identifier spec
                 arg_list = (Operations::GLOBAL.include?(op) ? [] : id_arg_spec) + extra_arg_list
                 merged = arg_list.empty? ? base_attrs : base_attrs.merge(arguments: arg_list)
-                # Attach query_schema (full path) to :list CommandSpec so --help shows the tip
+                # Attach query_schema (full path) to :list Command so --help shows the tip
                 if op.eql?(:list)
                   c = aoc_res_cfg(res)
                   merged = merged.merge(query_schema: Schema::Registry.query_params(c[:query_component], c[:path]))
@@ -1529,7 +1529,7 @@ module Aspera
         # user > contacts > list|show|create|modify|delete (same API path as admin > contact)
         Operations::ALL.each do |op|
           define_action_method([:user, :contacts, op]) do |**ctx|
-            send(Cli::CommandSpec.action_method([:admin, :contact, op]), **ctx)
+            send(Cli::Command.action_method([:admin, :contact, op]), **ctx)
           end
         end
 

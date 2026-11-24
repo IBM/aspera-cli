@@ -9,7 +9,7 @@ require_relative '../../schema/reader'
 require_relative '../../schema/documentation'
 require_relative '../../ascp/session_errors'
 require_relative '../../ascp/installation'
-require_relative '../../cli/option_types'
+require_relative '../../cli/option/type'
 require_relative '../../cli/special_values'
 require_relative 'transfer_agent'
 
@@ -25,7 +25,7 @@ module Aspera
           # @param base [Class] Plugin class
           def included(base)
             base.option(:sdk_url,       description: 'Ascp: URL to get Aspera Transfer Executables',                    default: Cli::SpecialValues::DEF, security: :low, before: :smtp)
-            base.option(:locations_url, description: 'Ascp: URLs to get download locations of Aspera Transfer Daemon', allowed: Cli::Type::STRING_ARRAY, default: Ascp::Installation.instance.transferd_urls, on_set: Ascp::Installation.instance.method(:transferd_urls=), security: :low, before: :smtp)
+            base.option(:locations_url, description: 'Ascp: URLs to get download locations of Aspera Transfer Daemon', allowed: Cli::Option::Type::STRING_ARRAY, default: Ascp::Installation.instance.transferd_urls, on_set: Ascp::Installation.instance.method(:transferd_urls=), security: :low, before: :smtp)
             base.option(:sdk_folder,    description: 'Ascp: Path to folder with ascp (or product with "product:")',    on_set: Ascp::Installation.instance.method(:sdk_folder=), complete: :folder, before: :smtp)
           end
         end

@@ -1,0 +1,352 @@
+# frozen_string_literal: true
+
+# SPDX-FileCopyrightText: IBM Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+require_relative '../option'
+require_relative 'type'
+require_relative 'source'
+require_relative '../bool_value'
+require_relative '../complete'
+require_relative '../error'
+require_relative '../extended_value'
+require_relative '../security'
+require_relative '../deprecation'
+require_relative '../../secret/hider'
+require_relative '../../schema/registry'
+require_relative '../../schema/validator'
+require_relative '../../log'
+require_relative '../../assert'
+
+module Aspera
+  module Cli
+    class Option
+      # Declared option: type, value, and where the value is stored.
+      class Value
+        # [Symbol] Name of option
+        attr_reader :option
+        # [Array<Class>, nil] List of allowed types, `nil` for no validation
+        attr_reader :types
+        # [Symbol] How values are converted: :flag, :boolean, :integer, :float, :enum, :enum_list, :string_list, :other
+        attr_reader :kind
+        # [Symbol, nil] `Option::Source` of current value, `nil` if never set
+        attr_reader :source
+        attr_reader :sensitive, :schema, :deprecation
+        # [Symbol, nil] Most restrictive security level at which the option is available, `nil`: all levels, see `Security`
+        attr_reader :security
+        # [String, nil] For a `Hash` option: key of a `String` value
+        attr_reader :shorthand
+        # [Symbol, nil] Values proposed by shell completion, one of `Complete::KINDS`
+        attr_reader :complete
+        # [Array] List of allowed values (Symbols and specific values)
+        attr_accessor :values
+        # [String] Help section group name (set by Option::Registry)
+        attr_accessor :group
+        # [String, nil] Short option char (set by Option::Registry)
+        attr_accessor :short
+        # [Proc, nil] Block to call for flag options
+        attr_accessor :block
+
+        # @param option [Symbol] Name of option
+        # @param description [String, nil] Description for help; if nil, derived from schema
+        # @param allowed [nil,Class,Array<Class>,Array<Symbol>] Allowed values
+        # @param on_set [#call, nil] Called with the new value each time the value is set
+        # @param shorthand [String, nil] For a `Hash` option: a `String` value is stored as `{shorthand => value}`
+        # @param convert [#call, nil] For a `Hash` option: called with a new `Hash` value, returns the value to store, before merge (e.g. conversion of a deprecated form)
+        # @param deprecation [Hash, Deprecation, nil] Deprecation: `{last:, message:}`, see `Deprecation`
+        # @param schema [String] Declaration of schema
+        # @param complete [Symbol, nil] Values proposed by shell completion, one of `Complete::KINDS`
+        # @param security [Symbol, nil] Most restrictive security level at which the option is available (e.g. `:low`: executes code), see `Security`
+        # `allowed`:
+        # - `nil` No validation, so just a string
+        # - `Class` The single allowed Class
+        # - `Array<Class>` Multiple allowed classes
+        # - `Array<Symbol>` List of allowed values
+        def initialize(option:, description: nil, allowed: Type::STRING, on_set: nil, shorthand: nil, convert: nil, deprecation: nil, schema: nil, complete: nil, security: nil)
+          Log.log.trace1 { "option: #{option}, allowed: #{allowed}" }
+          @option = option
+          @description = description
+          @group = nil
+          @short = nil
+          @block = nil
+          # by default passwords and secrets are sensitive, else specify when declaring the option
+          @sensitive = Secret::Hider.instance.secret?(@option, '')
+          @deprecation = Deprecation.create(deprecation)
+          @schema = schema
+          @shorthand = shorthand
+          Aspera.assert(convert.nil? || convert.respond_to?(:call)) { "#{@option}: convert must respond to call" }
+          @convert = convert
+          Aspera.assert_values(complete, Complete::KINDS + [nil]) { "#{@option}: complete" }
+          @complete = complete
+          Aspera.assert_values(security, Security::LEVELS + [nil]) { "#{@option}: security" }
+          @security = security
+          @source = nil
+          @value = nil
+          Aspera.assert(on_set.nil? || on_set.respond_to?(:call)) { "#{@option}: on_set callback must respond to call" }
+          @on_set = on_set
+          @types = nil
+          @values = nil
+          @kind = :other
+          allowed = infer_allowed_from_schema(schema, allowed) if schema
+          apply_allowed(allowed) unless allowed.nil?
+        end
+
+        # @return [String] description of the option: explicit one, or first line of schema description
+        def description
+          return @description unless @description.nil?
+          return if @schema.nil?
+          schema_node = Schema::Registry.instance.reader(@schema).current
+          first_line = (schema_node['title'] || schema_node['description'].to_s).lines.first.to_s.strip
+          first_line.end_with?('.') ? first_line[0..-2] : first_line
+        end
+
+        # @return [String, nil] allowed values, or expected types when not plain `String`, e.g. `Hash|String`
+        def allowed_info
+          return @values.join('|') if @values&.any?
+          types = @types&.reject { |t| t.eql?(NilClass) }
+          return if types.nil? || types.empty? || types.eql?(Type::STRING)
+          types.map(&:name).join('|')
+        end
+
+        # @return [Boolean] `true` if option takes no value
+        def flag? = @kind.eql?(:flag)
+
+        # @param value [Object] value given to option
+        # @return [Boolean] `true` if value asks for the schema of option
+        def schema_request?(value) = value.eql?(SchemaRequest::KEYWORD) && @types&.include?(Hash)
+
+        # Reset stored value to nil
+        # @return [nil]
+        def clear
+          store(nil, nil)
+        end
+
+        # Get current option value
+        # @param log [Boolean] whether to log the value retrieval
+        # @return [Object] current value
+        def value(log: true)
+          Log.log.trace1 { "#{@option} -> (#{@value.class})#{Secret::Hider.instance.hidden_copy(@value)}" } if log
+          @value
+        end
+
+        # Assign value to option.
+        # Value can be a `String`, then evaluated with `ExtendedValue`, or directly a value.
+        # `Hash` and `Array` values are merged with current value.
+        # @param value [String, Object] Value to assign to option
+        # @param source [Symbol] `Option::Source` of value
+        # @param warn_deprecation [Boolean] Emit deprecation warning (false for internal transfers)
+        # @param merge [Boolean] Merge `Hash` and `Array` with current value (false: value is already complete)
+        # @return [nil]
+        # @raise [SchemaRequest] if value is `help` and schema is known
+        def assign_value(value, source:, warn_deprecation: true, merge: true)
+          # Value from a source with lower priority than current value: only fills containers
+          lower = !@source.nil? && Option::Source.priority(source) < Option::Source.priority(@source)
+          if lower && ![Hash, Array].include?(@types&.first)
+            Log.log.debug { "#{source}: #{@option}: ignored, already set from #{@source}" }
+            return
+          end
+          Aspera.assert(!@deprecation, type: :warn) { "Option #{@option} is #{@deprecation}" } if warn_deprecation
+          # Values set by the program itself are not restricted: those from command line, preset, environment are
+          Security.instance.check_level(@security, "option #{@option}") if restricted_source?(source)
+          if schema_request?(value)
+            return if lower
+            raise SchemaRequest.new(:option, @option, @schema) unless @schema.nil?
+            # Schema depends on command: kept as-is, raised by Parser#get_option(schema:)
+            store(value, source)
+            return
+          end
+          new_value = coerce(ExtendedValue.instance.evaluate(value, context: "option: #{@option}", allowed: @types))
+          check_sub_options_security(new_value) if restricted_source?(source)
+          new_value = {@shorthand => new_value} if @shorthand && new_value.is_a?(String)
+          declare_secrets(new_value)
+          Log.log.trace1 { "#{source}: #{@option} <- (#{new_value.class})#{Secret::Hider.instance.hidden_copy(new_value)}" }
+          Aspera.assert_type(new_value, *@types, type: BadArgument) { "Option #{@option}" } if @types
+          new_value = @convert.call(new_value) if @convert && new_value.is_a?(Hash)
+          if merge && (new_value.is_a?(Hash) || new_value.is_a?(Array))
+            current_value = @value
+            # An `Array` default value is replaced, not appended to
+            mergeable = current_value.is_a?(new_value.is_a?(Hash) ? Hash : Array) && !current_value.empty? &&
+              !(new_value.is_a?(Array) && [source, @source].include?(:default))
+            if lower
+              # Current value has priority: merge new value under it, unless explicitly emptied
+              return unless mergeable
+              new_value, current_value = current_value, new_value
+              source = @source
+            end
+            new_value = new_value.is_a?(Hash) ? current_value.deep_merge(new_value) : current_value + new_value if mergeable
+          end
+          validate_schema(new_value) unless %i[code default].include?(source)
+          store(new_value, source)
+          nil
+        end
+
+        # Check that the option, and the sub-options present in a `Hash` value (`x-security` in schema), are available at current security level.
+        # Used for a value that is not assigned yet, e.g. to store in a preset.
+        # @param value [Object] Value of the option
+        # @raise [BadArgument] If refused at current level
+        def check_security(value)
+          Security.instance.check_level(@security, "option #{@option}")
+          check_sub_options_security(value)
+        end
+
+        private
+
+        # Values set by the program, or by the environment of the process (under control of the one who starts it), are not restricted:
+        # those from command line, presets (that a client can modify) and interactive input are.
+        # @param source [Symbol] `Option::Source`
+        # @return [Boolean] `true` if a value from this source is checked against security level
+        def restricted_source?(source)
+          !%i[default code env].include?(source)
+        end
+
+        # @param value [Object] Value of the option
+        # @raise [BadArgument] If a sub-option with `x-security` in the schema is present and refused at current level
+        def check_sub_options_security(value)
+          return unless @schema && value.is_a?(Hash)
+          Schema::Registry.instance.reader(@schema).each_property do |property, _name, full_name, _required|
+            level = property['x-security']
+            next if level.nil?
+            # Value of the sub-option, if given (a `nil` value clears it)
+            given = full_name.split('.').reduce(value) { |node, key| node.is_a?(Hash) ? node.find { |k, _| k.to_s.eql?(key) }&.last : nil }
+            Security.instance.check_level(level.to_sym, "option #{@option}.#{full_name}") unless given.nil?
+          end
+        end
+
+        # Validate a structured value against the schema of the option.
+        # Value may be partial: completed by other sources or defaults, so `required` is not enforced.
+        # @param value [Object] value to validate
+        # @raise [BadArgument] if value does not match schema
+        def validate_schema(value)
+          return unless @schema && (value.is_a?(Hash) || value.is_a?(Array))
+          errors = Schema::Validator.instance.errors(value, @schema, partial: true)
+          raise BadArgument, "Option #{@option}: #{errors.join('; ')} (use --#{@option.to_s.tr('_', '-')}=#{SchemaRequest::KEYWORD} for schema)" unless errors.empty?
+        end
+
+        # Derive the `allowed:` value from the schema when not explicitly provided.
+        # Returns `allowed` unchanged when the schema provides no usable type information.
+        # @param schema  [String] schema identifier
+        # @param allowed [Object] caller-supplied allowed value (may be nil or Type::STRING)
+        # @return [Object] resolved allowed (Hash, Array, or the original value)
+        def infer_allowed_from_schema(schema, allowed)
+          return allowed unless allowed.nil? || allowed.eql?(Type::STRING)
+
+          schema_reader = Schema::Registry.instance.reader(schema) rescue nil
+          schema_node   = schema_reader&.current
+          return allowed unless schema_node
+
+          case schema_node['type']
+          when 'object' then return Hash
+          when 'array'  then return Array
+          end
+          # No top-level type: inspect oneOf/anyOf branches; if all resolve to 'object', infer Hash
+          composite_key = (%w[oneOf anyOf] & schema_node.keys).first
+          return allowed unless composite_key
+
+          branch_types = schema_node[composite_key].map do |branch|
+            resolved = branch['$ref'] ? schema_reader.resolve_ref(branch['$ref']).current : branch
+            resolved['type']
+          end
+          if branch_types.all?('object')
+            Hash
+          else
+            Aspera.assert(
+              !allowed.nil? && !allowed.eql?(Type::STRING),
+              "option :#{@option}: schema '#{schema}' has mixed-type oneOf branches #{branch_types.uniq}: specify allowed: explicitly"
+            )
+            allowed
+          end
+        end
+
+        # Initialize @types, @values and @kind from the resolved `allowed` specifier.
+        # @param allowed [Class, Array<Class>, Array<Symbol>] resolved allowed value (never nil)
+        def apply_allowed(allowed)
+          allowed = [allowed] if allowed.is_a?(Class)
+          Aspera.assert_type(allowed, Array)
+          if allowed.eql?(Type::NONE)
+            @kind = :flag
+            @types = Type::NONE
+          elsif allowed.take(Type::SYMBOL_ARRAY.length) == Type::SYMBOL_ARRAY
+            # Array of defined symbol values
+            @kind = :enum_list
+            @types = Type::SYMBOL_ARRAY
+            @values = allowed[Type::SYMBOL_ARRAY.length..]
+          elsif allowed.all?(Symbol)
+            @kind = :enum
+            @types = Type::ENUM
+            @values = allowed
+          elsif allowed.all?(Class)
+            @types = allowed
+            @kind =
+              if allowed.sort_by(&:name).eql?(Type::BOOLEAN) then :boolean
+              elsif allowed.eql?(Type::INTEGER) then :integer
+              elsif allowed.eql?(Type::FLOAT) then :float
+              elsif allowed.eql?(Type::STRING_ARRAY) then :string_list
+              else :other
+              end
+            @values = BoolValue::ALL if @kind.eql?(:boolean)
+          else
+            Aspera.error_unexpected_value(allowed)
+          end
+          # Containers start empty, unless nil is allowed
+          default = {Array => [], Hash => {}}[@types.first]
+          store(default, :default) if !default.nil? && !@types.include?(NilClass) && @value.nil?
+        end
+
+        # Convert value from command line, env or preset (String) to the type of option
+        # @param value [Object] evaluated value
+        # @return [Object] converted value
+        def coerce(value)
+          case @kind
+          when :enum
+            # Boolean from dot-path value, e.g. `no` for `%i[no header read]`
+            value = (value ? BoolValue::YES_SYM : BoolValue::NO_SYM).to_s if BoolValue::TYPES.include?(value.class)
+            value.is_a?(String) ? Parser.get_from_list(value, @option, @values) : value
+          when :boolean
+            BoolValue.true?(value.is_a?(String) ? Parser.get_from_list(value, @option, BoolValue::ALL) : value)
+          when :integer
+            # Decimal, also with leading zeros (e.g. `08`)
+            if value.is_a?(String)
+              Integer(value, 10, exception: false).tap { |i| raise BadArgument, "Option #{@option}: invalid integer: #{value}" if i.nil? }
+            else
+              value.nil? ? value : Integer(value)
+            end
+          when :float
+            if value.is_a?(String)
+              Float(value, exception: false).tap { |f| raise BadArgument, "Option #{@option}: invalid number: #{value}" if f.nil? }
+            else
+              value.nil? ? value : Float(value)
+            end
+          when :string_list
+            value.is_a?(String) ? [value] : value
+          when :enum_list
+            value = [value] if value.is_a?(String)
+            Aspera.assert_array_all(value, String, type: BadArgument)
+            value.map { |v| Parser.get_from_list(v, @option, @values) }
+          else
+            # nil on a Hash/Array option resets to empty container
+            value.nil? && [Hash, Array].include?(@types&.first) ? @types.first.new : value
+          end
+        end
+
+        # Secret values are hidden wherever they appear: logs, results
+        # @param value [Object] value of option
+        def declare_secrets(value)
+          if @sensitive
+            Secret::Hider.instance.add_secret_values(value)
+          else
+            Secret::Hider.instance.add_secrets_in(value)
+          end
+        end
+
+        # @param new_value [Object] value to store
+        # @param source [Symbol, nil] `Option::Source` of value
+        def store(new_value, source)
+          declare_secrets(new_value)
+          @value = new_value
+          @source = source
+          @on_set&.call(new_value)
+        end
+      end
+    end
+  end
+end

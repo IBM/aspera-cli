@@ -276,12 +276,12 @@ module Aspera
         end
 
         it 'makes read-only by default the commands with a generic id, unless explicit' do
-          expect(CommandSpec.new(id: :list).read_only).to(eq(:default))
-          READ_ONLY_IDS.each { |id| expect(CommandSpec.new(id: id).read_only?).to(be(true), id.to_s) }
-          expect(CommandSpec.new(id: :delete).read_only?).to(be(false))
-          expect(CommandSpec.new(id: :show, read_only: false).read_only?).to(be(false))
-          expect(CommandSpec.new(id: :stats, read_only: true).read_only?).to(be(true))
-          expect { CommandSpec.new(id: :list, read_only: :yes) }.to(raise_error(StandardError, /read_only/))
+          expect(Command.new(id: :list).read_only).to(eq(:default))
+          Command::READ_ONLY_IDS.each { |id| expect(Command.new(id: id).read_only?).to(be(true), id.to_s) }
+          expect(Command.new(id: :delete).read_only?).to(be(false))
+          expect(Command.new(id: :show, read_only: false).read_only?).to(be(false))
+          expect(Command.new(id: :stats, read_only: true).read_only?).to(be(true))
+          expect { Command.new(id: :list, read_only: :yes) }.to(raise_error(StandardError, /read_only/))
           require_relative '../lib/aspera/plugins/preview/commands'
           expect(Aspera::Plugins::Preview::Commands.command_registry[%i[show]].read_only?).to(be(false))
         end

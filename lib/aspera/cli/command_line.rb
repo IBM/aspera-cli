@@ -13,103 +13,6 @@ require 'yaml'
 
 module Aspera
   module Cli
-    # Positional (non-option) command line token.
-    class Argument
-      # @return [String] the raw argument value
-      attr_reader :value
-      # @return [Option, nil] option token claiming this token as its value (`--opt value` form)
-      attr_accessor :owner
-      # @return [Boolean] `true` once used, as positional argument or as option value
-      attr_accessor :consumed
-
-      def initialize(value)
-        @value = value
-        @owner = nil
-        @consumed = false
-      end
-
-      # @return [Boolean] `true` if available as positional argument
-      def positional? = !@consumed && @owner.nil?
-
-      # @return [String] raw argument value
-      def to_s = @value
-    end
-
-    # Option command line token (long or short form).
-    class Option
-      # @return [String] raw token as it appeared in argv (e.g. "--log-level=debug", "-Pval")
-      attr_reader :raw
-      # @return [String, nil] option name with underscores (e.g. "log_level"), nil for short options
-      attr_reader :name
-      # @return [String, nil] single-char short option letter (e.g. "P"), nil for long options
-      attr_reader :short_char
-      # @return [Array<String>, nil] sub-keys for dot-path notation (e.g. ["field"] for --custom.field)
-      attr_reader :dot_path
-      # @return [String, nil] value given in the same token (`--opt=val` or `-Oval`)
-      attr_reader :inline_value
-      # @return [Argument, nil] next token, claimed as value when there is no inline value (`--opt val` or `-O val`)
-      attr_accessor :value_token
-      # @return [Boolean] `true` once applied to a declared option
-      attr_accessor :consumed
-      # @return [Symbol, nil] option this token was resolved to, when `name` is an abbreviation
-      attr_accessor :abbreviation_of
-
-      def initialize(raw:, name: nil, short_char: nil, dot_path: nil, inline_value: nil)
-        @raw          = raw
-        @name         = name
-        @short_char   = short_char
-        @dot_path     = dot_path
-        @inline_value = inline_value
-        @value_token  = nil
-        @consumed     = false
-        @abbreviation_of = nil
-      end
-
-      # @return [Boolean] `true` if value is in the same token
-      def inline? = !@inline_value.nil?
-
-      # @return [String, nil] inline value, or value of next token
-      def value = @inline_value || @value_token&.value
-
-      # @return [String] raw token, with declared secret value hidden (logs, messages)
-      def raw_hidden = inline? ? "#{@raw.delete_suffix(@inline_value)}#{Secret::Hider.instance.hidden_copy(@inline_value)}" : @raw
-
-      # @return [String] raw token, followed by its separate value if any, with declared secret value hidden (logs, messages)
-      def to_s = @value_token.nil? ? raw_hidden : "#{@raw} #{Secret::Hider.instance.hidden_copy(@value_token.value)}"
-
-      class << self
-        # @param token [String] command line token
-        # @return [Boolean] `true` if token is an option, i.e. not `-`, `--`, or a negative number
-        def option?(token)
-          token.match?(/\A-\D/) && !token.eql?(STOP)
-        end
-
-        # Build an Option from a raw token
-        # @param raw [String] e.g. "--log-level=debug", "--custom.field", "-P", "-Pval"
-        # @return [Option]
-        def parse(raw)
-          if raw.start_with?(PREFIX)
-            name_raw, value = raw.delete_prefix(PREFIX).split(VALUE_SEP, 2)
-            root, *dot_path = name_raw.to_s.split(DotContainer::SEPARATOR)
-            new(raw: raw, name: root.to_s.gsub(NAME_SEP_LINE, NAME_SEP_SYMBOL), dot_path: dot_path.empty? ? nil : dot_path, inline_value: value)
-          else
-            new(raw: raw, short_char: raw[1], inline_value: raw.length > 2 ? raw[2..] : nil)
-          end
-        end
-      end
-
-      # Option name separator on command line (e.g. `--option-name`, the `-` between words)
-      NAME_SEP_LINE   = '-'
-      # Option name separator in code/symbol (e.g. `:option_name`, the `_` between words)
-      NAME_SEP_SYMBOL = '_'
-      # Separator between option name and its inline value (e.g. `--opt=val`, the `=`)
-      VALUE_SEP = '='
-      # Long-option prefix (e.g. `--opt`)
-      PREFIX = '--'
-      # When alone, stops option processing: following tokens are positional arguments
-      STOP = '--'
-    end
-
     # Command line split in tokens, in original order.
     # Tokens are never removed, only marked as consumed, so that positions are kept.
     #
@@ -117,6 +20,103 @@ module Aspera
     # unless that token looks like an option.
     # If the option turns out to be a flag, the claimed token is given back to positional arguments.
     class CommandLine
+      # Positional (non-option) command line token.
+      class Argument
+        # @return [String] the raw argument value
+        attr_reader :value
+        # @return [Option, nil] option token claiming this token as its value (`--opt value` form)
+        attr_accessor :owner
+        # @return [Boolean] `true` once used, as positional argument or as option value
+        attr_accessor :consumed
+
+        def initialize(value)
+          @value = value
+          @owner = nil
+          @consumed = false
+        end
+
+        # @return [Boolean] `true` if available as positional argument
+        def positional? = !@consumed && @owner.nil?
+
+        # @return [String] raw argument value
+        def to_s = @value
+      end
+
+      # Option command line token (long or short form).
+      class Option
+        # @return [String] raw token as it appeared in argv (e.g. "--log-level=debug", "-Pval")
+        attr_reader :raw
+        # @return [String, nil] option name with underscores (e.g. "log_level"), nil for short options
+        attr_reader :name
+        # @return [String, nil] single-char short option letter (e.g. "P"), nil for long options
+        attr_reader :short_char
+        # @return [Array<String>, nil] sub-keys for dot-path notation (e.g. ["field"] for --custom.field)
+        attr_reader :dot_path
+        # @return [String, nil] value given in the same token (`--opt=val` or `-Oval`)
+        attr_reader :inline_value
+        # @return [Argument, nil] next token, claimed as value when there is no inline value (`--opt val` or `-O val`)
+        attr_accessor :value_token
+        # @return [Boolean] `true` once applied to a declared option
+        attr_accessor :consumed
+        # @return [Symbol, nil] option this token was resolved to, when `name` is an abbreviation
+        attr_accessor :abbreviation_of
+
+        def initialize(raw:, name: nil, short_char: nil, dot_path: nil, inline_value: nil)
+          @raw          = raw
+          @name         = name
+          @short_char   = short_char
+          @dot_path     = dot_path
+          @inline_value = inline_value
+          @value_token  = nil
+          @consumed     = false
+          @abbreviation_of = nil
+        end
+
+        # @return [Boolean] `true` if value is in the same token
+        def inline? = !@inline_value.nil?
+
+        # @return [String, nil] inline value, or value of next token
+        def value = @inline_value || @value_token&.value
+
+        # @return [String] raw token, with declared secret value hidden (logs, messages)
+        def raw_hidden = inline? ? "#{@raw.delete_suffix(@inline_value)}#{Secret::Hider.instance.hidden_copy(@inline_value)}" : @raw
+
+        # @return [String] raw token, followed by its separate value if any, with declared secret value hidden (logs, messages)
+        def to_s = @value_token.nil? ? raw_hidden : "#{@raw} #{Secret::Hider.instance.hidden_copy(@value_token.value)}"
+
+        class << self
+          # @param token [String] command line token
+          # @return [Boolean] `true` if token is an option, i.e. not `-`, `--`, or a negative number
+          def option?(token)
+            token.match?(/\A-\D/) && !token.eql?(STOP)
+          end
+
+          # Build an Option from a raw token
+          # @param raw [String] e.g. "--log-level=debug", "--custom.field", "-P", "-Pval"
+          # @return [Option]
+          def parse(raw)
+            if raw.start_with?(PREFIX)
+              name_raw, value = raw.delete_prefix(PREFIX).split(VALUE_SEP, 2)
+              root, *dot_path = name_raw.to_s.split(DotContainer::SEPARATOR)
+              new(raw: raw, name: root.to_s.gsub(NAME_SEP_LINE, NAME_SEP_SYMBOL), dot_path: dot_path.empty? ? nil : dot_path, inline_value: value)
+            else
+              new(raw: raw, short_char: raw[1], inline_value: raw.length > 2 ? raw[2..] : nil)
+            end
+          end
+        end
+
+        # Option name separator on command line (e.g. `--option-name`, the `-` between words)
+        NAME_SEP_LINE   = '-'
+        # Option name separator in code/symbol (e.g. `:option_name`, the `_` between words)
+        NAME_SEP_SYMBOL = '_'
+        # Separator between option name and its inline value (e.g. `--opt=val`, the `=`)
+        VALUE_SEP = '='
+        # Long-option prefix (e.g. `--opt`)
+        PREFIX = '--'
+        # When alone, stops option processing: following tokens are positional arguments
+        STOP = '--'
+      end
+
       # Decoders of extended values whose content is checked for secrets by key name
       STRUCTURED_DECODERS = {
         '@json:' => ->(v) { JSON.parse(v) },

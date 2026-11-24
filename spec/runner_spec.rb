@@ -23,7 +23,7 @@ module Aspera
         end
 
         it 'renders the properties of a Hash argument schema' do
-          argument = ArgumentSpec.new(
+          argument = Argument.new(
             name: :mcp_options,
             type: [Hash],
             schema: 'opts:components.schemas.McpServerOptions'
@@ -38,7 +38,7 @@ module Aspera
         end
 
         it 'renders the title of variants, prefixed by the discriminant value' do
-          argument = ArgumentSpec.new(
+          argument = Argument.new(
             name: :action,
             type: [Hash],
             schema: Schema::Registry.req_body('automation', 'actions.post')
@@ -368,7 +368,7 @@ module Aspera
         end
 
         it 'is shown as its description in the help of an argument' do
-          lines = Runner.new([]).send(:schema_help_lines, ArgumentSpec.new(name: :params, type: [Hash], schema: schema))
+          lines = Runner.new([]).send(:schema_help_lines, Argument.new(name: :params, type: [Hash], schema: schema))
           expect(lines.first).to(include('SCHEMA: params'))
         end
       end

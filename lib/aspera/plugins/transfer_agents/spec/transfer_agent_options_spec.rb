@@ -20,7 +20,7 @@ module Aspera
         # Declared by the config plugin
         context.options.declare(:notify_to, description: 'Notify')
         # Declared by the runner
-        context.options.declare(:dry_run, description: 'Dry run', allowed: Type::BOOLEAN, default: false)
+        context.options.declare(:dry_run, description: 'Dry run', allowed: Option::Type::BOOLEAN, default: false)
         context.options.add_option_preset(preset, 'test') unless preset.nil?
         described_class.new(context)
       end

@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require_relative '../schema/registry'
-require_relative 'option_declarator'
+require_relative 'option/declarator'
 require_relative 'special_values'
 require_relative 'terminal_formatter'
 require_relative 'table_fitter'
@@ -27,7 +27,7 @@ module Aspera
   module Cli
     # Take care of CLI output on terminal
     class Formatter
-      extend OptionDeclarator
+      extend Option::Declarator
 
       # `-` remove a fields from the list
       FIELDS_LESS = '-'
@@ -51,9 +51,9 @@ module Aspera
       option :fields,       description: "Comma separated list of: fields, or #{SpecialValues::ALL}, or #{SpecialValues::DEF} (also: --out.fields)", allowed: [String, Array, Regexp, Proc], default: SpecialValues::DEF
       option :select,       description: 'Select only some items in lists: column, value (also: --out.select)', allowed: [Hash, Proc]
       option :table_style,  description: '(Table) Display style',                                                                             allowed: [Hash], deprecation: {last: '4.27.0', message: 'use --out.table'}
-      option :flat_hash,    description: '(Table) Display deep values as additional keys',                                                    allowed: Type::BOOLEAN, default: true,                    deprecation: {last: '4.27.0', message: 'use --out.flat'}
+      option :flat_hash,    description: '(Table) Display deep values as additional keys',                                                    allowed: Option::Type::BOOLEAN, default: true,                    deprecation: {last: '4.27.0', message: 'use --out.flat'}
       option :multi_single, description: '(Table) Control how object list is displayed as single table, or multiple objects',                 allowed: %i[no yes single], default: :no,                 deprecation: {last: '4.27.0', message: 'use --out.table.pivot'}
-      option :show_secrets, description: 'Show secrets on command output',                                                                    allowed: Type::BOOLEAN, default: false,                   deprecation: {last: '4.27.0', message: 'use --out.secrets'}
+      option :show_secrets, description: 'Show secrets on command output',                                                                    allowed: Option::Type::BOOLEAN, default: false,                   deprecation: {last: '4.27.0', message: 'use --out.secrets'}
       option :image,        schema: Schema::Registry::IMAGE_OPTIONS, deprecation: {last: '4.27.0', message: 'use --out.img'}
       # All formatter options are handled by `option_handler`, executed on the formatter instance
       option_specs.each_value { |spec| spec.on_set = ->(value) { option_handler(spec.name, value) } }

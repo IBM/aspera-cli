@@ -8,9 +8,8 @@ detectors:
     max_instance_variables: 10
     exclude:
       - Aspera::Plugins::Direct::Agent # 12: complex ascp process manager
-      - Aspera::Cli::Options::OptionValue # 11: full CLI option descriptor
       - Aspera::Plugins::Preview::Commands # 17: preview generator with many config fields
-      - Aspera::Cli::OptionValue
+      - Aspera::Cli::Option::Value # 11: full CLI option descriptor
   # --- Disabled: equivalent to rubocop Metrics/MethodLength + Metrics/AbcSize disabled ---
   TooManyStatements:
     enabled: false

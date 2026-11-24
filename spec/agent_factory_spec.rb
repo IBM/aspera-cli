@@ -435,7 +435,7 @@ module Aspera
         context.options = Cli::Parser.new('test', argv)
         # Declared by the config plugin and the bootstrapper
         context.options.declare(:notify_to, description: 'Notify')
-        context.options.declare(:progress_bar, description: 'Display progress bar', allowed: Cli::Type::BOOLEAN, default: true)
+        context.options.declare(:progress_bar, description: 'Display progress bar', allowed: Cli::Option::Type::BOOLEAN, default: true)
         context.main_folder = folder
         context.http_config = double('Http', trusted_cert_locations: [])
         described_class.new(context).agent_instance
@@ -456,7 +456,7 @@ module Aspera
         context = Cli::Context.new(registry: registry)
         context.options = Cli::Parser.new('test', ['--transfer=fake'])
         context.options.declare(:notify_to, description: 'Notify')
-        context.options.declare(:progress_bar, description: 'Display progress bar', allowed: Cli::Type::BOOLEAN, default: true)
+        context.options.declare(:progress_bar, description: 'Display progress bar', allowed: Cli::Option::Type::BOOLEAN, default: true)
         context.main_folder = folder
         context.http_config = double('Http', trusted_cert_locations: [])
         transfer = described_class.new(context)

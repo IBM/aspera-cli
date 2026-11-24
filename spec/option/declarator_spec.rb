@@ -4,13 +4,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require 'spec_helper'
-require_relative '../lib/aspera/cli/option_declarator'
-require_relative '../lib/aspera/cli/parser'
+require_relative '../../lib/aspera/cli/option/declarator'
+require_relative '../../lib/aspera/cli/parser'
 
-RSpec.describe(Aspera::Cli::OptionDeclarator) do
+RSpec.describe(Aspera::Cli::Option::Declarator) do
   let(:dummy_class) do
     Class.new do
-      extend Aspera::Cli::OptionDeclarator
+      extend Aspera::Cli::Option::Declarator
 
       option :opt_a, description: 'Option A', default: 'val_a'
       option :opt_b, description: 'Option B', allowed: %i[one two]
@@ -64,9 +64,9 @@ RSpec.describe(Aspera::Cli::OptionDeclarator) do
   describe 'Proc on_set' do
     let(:flag_class) do
       Class.new do
-        extend Aspera::Cli::OptionDeclarator
+        extend Aspera::Cli::Option::Declarator
 
-        option :flag, description: 'Flag', allowed: Aspera::Cli::Type::NONE, short: 'F', on_set: -> { @flag_found = true }
+        option :flag, description: 'Flag', allowed: Aspera::Cli::Option::Type::NONE, short: 'F', on_set: -> { @flag_found = true }
       end
     end
 
@@ -80,7 +80,7 @@ RSpec.describe(Aspera::Cli::OptionDeclarator) do
 
     it 'executes a value on_set callback on the target with the new value' do
       value_class = Class.new do
-        extend Aspera::Cli::OptionDeclarator
+        extend Aspera::Cli::Option::Declarator
 
         option :val, description: 'Value', on_set: ->(v) { @received = v }
       end
@@ -94,7 +94,7 @@ RSpec.describe(Aspera::Cli::OptionDeclarator) do
 
     it 'calls a Symbol on_set method of the target' do
       value_class = Class.new do
-        extend Aspera::Cli::OptionDeclarator
+        extend Aspera::Cli::Option::Declarator
 
         option :val, description: 'Value', on_set: :load_val
       end

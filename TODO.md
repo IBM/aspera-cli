@@ -25,10 +25,10 @@ single-executable distribution method.
 
 ## OCRAN packaging
 
-## Add `description:` to all `ArgumentSpec` declarations
+## Add `description:` to all `Argument` declarations
 
 The `description` field is user-facing (shown in `--help` output) and should be present on
-every `ArgumentSpec`. Arguments that already carry a `schema:` key or whose name is
+every `Argument`. Arguments that already carry a `schema:` key or whose name is
 self-explanatory are lower priority, but all should have explicit descriptions eventually.
 
 Example fix:

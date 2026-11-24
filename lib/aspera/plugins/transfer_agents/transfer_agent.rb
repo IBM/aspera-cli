@@ -7,10 +7,10 @@ require_relative '../../agent/factory'
 require_relative '../../bundle_registry'
 require_relative '../../schema/registry'
 require_relative '../../ascp/installation'
-require_relative '../../cli/command_spec'
+require_relative '../../cli/argument'
 require_relative '../../cli/error'
 require_relative '../../cli/hints'
-require_relative '../../cli/option_declarator'
+require_relative '../../cli/option/declarator'
 require_relative '../../cli/result'
 require_relative '../../cli/version'
 require_relative '../../transfer/error'
@@ -65,7 +65,7 @@ module Aspera
           :FILE_LIST_FOLDER_NAME,
           :TS_DEFAULTS
 
-        extend Cli::OptionDeclarator
+        extend Cli::Option::Declarator
 
         option :ts,            description: 'Override transfer spec values', schema: Schema::Registry::TRANSFER_SPEC, on_set: :user_transfer_spec=
         option :to_folder,     description: 'Destination folder for transferred files', complete: :destination_folder
@@ -167,7 +167,7 @@ module Aspera
 
         # Argument shown in the help of a command with `transfer_paths`: the files are read by `ts_source_paths`
         # @param direction [Symbol] `:send` (files to upload) or `:receive` (remote paths to download)
-        # @return [Cli::ArgumentSpec] Description of the list of files, depending on option `sources`
+        # @return [Cli::Argument] Description of the list of files, depending on option `sources`
         def paths_argument(direction)
           description =
             case direction
@@ -175,7 +175,7 @@ module Aspera
             when :send then "Source file(s) to upload (default --sources=#{FILE_LIST_FROM_ARGS}; see also --src-type, --to-folder)"
             else Aspera.error_unexpected_value(direction) { 'transfer_paths' }
             end
-          Cli::ArgumentSpec.new(name: :source_file, description: description, mandatory: false, multiple: true)
+          Cli::Argument.new(name: :source_file, description: description, mandatory: false, multiple: true)
         end
 
         # `on_set` callback of option `ts`: values override defaults

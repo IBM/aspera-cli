@@ -209,7 +209,7 @@ class DocCommandChecker
   end
 
   # Find the identifier of a command from its name or one of its aliases.
-  # @param children [Hash{Symbol => CommandSpec}] commands
+  # @param children [Hash{Symbol => Command}] commands
   # @param word     [String] command on command line
   # @return [Symbol, nil] command identifier, if word is the command or one of its aliases
   def child_id(children, word)

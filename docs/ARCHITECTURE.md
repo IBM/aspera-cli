@@ -88,7 +88,9 @@ Then `run_with_result` adds the plugin folders (option `plugin_folder`), include
 **Files**:
 
 - [`parser.rb`](../lib/aspera/cli/parser.rb) — `Cli::Parser`: command-line argument processing, `get_next_command`, `get_next_argument`, `instance_identifier`
-- [`option_declarator.rb`](../lib/aspera/cli/option_declarator.rb), [`option_registry.rb`](../lib/aspera/cli/option_registry.rb), [`option_value.rb`](../lib/aspera/cli/option_value.rb), [`option_types.rb`](../lib/aspera/cli/option_types.rb) — option declaration, storage and type validation
+- [`option.rb`](../lib/aspera/cli/option.rb) (`Cli::Option`, the declaration of an option) and, in [`option/`](../lib/aspera/cli/option), [`declarator.rb`](../lib/aspera/cli/option/declarator.rb), [`registry.rb`](../lib/aspera/cli/option/registry.rb), [`value.rb`](../lib/aspera/cli/option/value.rb), [`type.rb`](../lib/aspera/cli/option/type.rb), [`source.rb`](../lib/aspera/cli/option/source.rb) — option declaration, storage, type validation and sources of values
+- [`bool_value.rb`](../lib/aspera/cli/bool_value.rb), [`complete.rb`](../lib/aspera/cli/complete.rb), [`error.rb`](../lib/aspera/cli/error.rb) (`SchemaRequest`) — boolean values, kinds of completion, request of a schema
+- [`command_line.rb`](../lib/aspera/cli/command_line.rb) — the command line as tokens: `CommandLine::Option` and `CommandLine::Argument` (words of the command line, not declarations)
 - [`extended_value.rb`](../lib/aspera/cli/extended_value.rb) — Extended Value Syntax (`@json:`, `@yaml:`, `@ruby:`, `@preset:`, `@vault:`, `@args:`, …)
 - [`options.schema.yaml`](../lib/aspera/cli/options.schema.yaml) — schema for global options
 
@@ -99,7 +101,7 @@ Key responsibilities:
 - Handle sensitive data (passwords, secrets) with masking ([`secret/hider.rb`](../lib/aspera/secret/hider.rb))
 - Provide option inheritance and defaults from presets
 
-Options are declared with the `option` DSL of [`OptionDeclarator`](../lib/aspera/cli/option_declarator.rb), not only by plugins: `Formatter`, `TransferAgent`, `Http` and `Wizard` `extend OptionDeclarator` (plugins include it through `Base`). `Formatter` and `TransferAgent` declare their options on the parser with `declare_options(parser, target: self)`, so that `on_set:` callbacks are methods of that instance. `Config` includes the options of `Wizard` and `Http` with `use_options` (for `Http`, `target:` gives the object of the `on_set:` callbacks: `Context#http_config`).
+Options are declared with the `option` DSL of [`Option::Declarator`](../lib/aspera/cli/option/declarator.rb), not only by plugins: `Formatter`, `TransferAgent`, `Http` and `Wizard` `extend Option::Declarator` (plugins include it through `Base`). `Formatter` and `TransferAgent` declare their options on the parser with `declare_options(parser, target: self)`, so that `on_set:` callbacks are methods of that instance. `Config` includes the options of `Wizard` and `Http` with `use_options` (for `Http`, `target:` gives the object of the `on_set:` callbacks: `Context#http_config`).
 
 Global and bootstrap options (`Runner#declare_global_options`, `Bootstrapper`, `Parser#initialize`) are intentionally declared with `options.declare`, not with the `option` DSL: their defaults are read at runtime (current state of `Log`, `TempFileManager`, `Secret::Hider` and `Environment` singletons, `config_file` under the `home` folder, `home` after `Environment#fix_home`), and each bootstrap phase parses its options right before using them.
 
@@ -156,30 +158,30 @@ All plugins declare their command tree using a class-level DSL defined in `Base`
 
 **Key files**:
 
-- [`lib/aspera/cli/command_spec.rb`](../lib/aspera/cli/command_spec.rb) — data classes: `CommandSpec`, `ArgumentSpec`, `OptionSpec`
-- [`lib/aspera/cli/command_registry.rb`](../lib/aspera/cli/command_registry.rb) — flat registry keyed by full path (`Array<Symbol>`), with `validate!`
+- [`lib/aspera/cli/command.rb`](../lib/aspera/cli/command.rb), [`command/mount.rb`](../lib/aspera/cli/command/mount.rb), [`argument.rb`](../lib/aspera/cli/argument.rb), [`option.rb`](../lib/aspera/cli/option.rb) — declarations by kind: `Cli::Command` (with `Command::Mount`), `Cli::Argument`, `Cli::Option`
+- [`lib/aspera/cli/command/registry.rb`](../lib/aspera/cli/command/registry.rb) — `Command::Registry`: flat registry keyed by full path (`Array<Symbol>`), with `validate!`
 - [`lib/aspera/cli/plugins/base.rb`](../lib/aspera/cli/plugins/base.rb) — DSL class methods and dispatcher
 
 **DSL class methods** (in `Base`):
 
 | Method | Purpose |
 | --- | --- |
-| `command(id, **kwargs)` | Register a `CommandSpec`; `parent:` defaults to the enclosing `commands_under` scope |
+| `command(id, **kwargs)` | Register a `Command`; `parent:` defaults to the enclosing `commands_under` scope |
 | `commands_under(parent, description: nil) { … }` | Scope block setting the default parent for nested `command` calls. Re-entrant; `parent` is relative to the current scope. Auto-declares the parent node (`"Manage <name>"`) if not yet declared |
 | `crud_commands(api:, entity:, operations:, name:, lookup:, **kwargs)` | Declare one leaf command per CRUD verb for a REST entity (see below) |
 | `define_action_method(path) { … }` | `define_method` with the conventional `action_<path>` name; used for homogeneous generated commands |
-| `option(name, description:, short:, allowed:, default:, on_set:, shorthand:, deprecation:, schema:)` | Declare a plugin option (stored as `OptionSpec`, declared on the parser in `Base#initialize`). Raises if an ancestor already declares it. The option always stores its value (read with `get_option`, shown by `--show-config`, merged for `Hash`/`Array`). `on_set:` is only needed to push the value to another object: called with the new (merged) value each time it is set, or without argument when a flag (`allowed: Type::NONE`) is found. Symbol: instance method; lambda: executed on the plugin instance (same style rule as actions); other: object responding to `call`, e.g. `Log.instance.method(:level=)`. `shorthand:` for a `Hash` option: a `String` value is stored as `{shorthand => value}` (e.g. `--transfer=node`). `deprecation:` `{last: '4.27.0', message: 'use --out.level'}`: `last` is the last released version supporting the option without deprecation (the next version is not known when coding), shown in the warning, in help (`deprecated after 4.27.0: use --out.level`) and by `config options` |
-| `use_options(source, target:)` | Include options declared by another plugin class or `OptionDeclarator` module. `target:` lambda executed on the plugin instance, returns the object for Symbol and lambda `on_set:` callbacks of `source` (default: the plugin instance), e.g. `use_options Http, target: -> { http_config }` |
+| `option(name, description:, short:, allowed:, default:, on_set:, shorthand:, deprecation:, schema:)` | Declare a plugin option (stored as `Option`, declared on the parser in `Base#initialize`). Raises if an ancestor already declares it. The option always stores its value (read with `get_option`, shown by `--show-config`, merged for `Hash`/`Array`). `on_set:` is only needed to push the value to another object: called with the new (merged) value each time it is set, or without argument when a flag (`allowed: Option::Type::NONE`) is found. Symbol: instance method; lambda: executed on the plugin instance (same style rule as actions); other: object responding to `call`, e.g. `Log.instance.method(:level=)`. `shorthand:` for a `Hash` option: a `String` value is stored as `{shorthand => value}` (e.g. `--transfer=node`). `deprecation:` `{last: '4.27.0', message: 'use --out.level'}`: `last` is the last released version supporting the option without deprecation (the next version is not known when coding), shown in the warning, in help (`deprecated after 4.27.0: use --out.level`) and by `config options` |
+| `use_options(source, target:)` | Include options declared by another plugin class or `Option::Declarator` module. `target:` lambda executed on the plugin instance, returns the object for Symbol and lambda `on_set:` callbacks of `source` (default: the plugin instance), e.g. `use_options Http, target: -> { http_config }` |
 | `application_name(name)` | Human-readable application name shown in wizards |
 
-**Command declaration** (`CommandSpec` attributes):
+**Command declaration** (`Command` attributes):
 
 | Parameter | Type | Meaning |
 | --- | --- | --- |
 | `id` | `Symbol` | Unique identifier within its parent's namespace |
 | `parent` | `Symbol \| Array<Symbol> \| nil` | Full path to parent; `nil` for root commands (usually implied by `commands_under`) |
 | `description` | `String` | User-facing help text |
-| `arguments` | `Array<ArgumentSpec \| Hash>` | Positional arguments in parse order. On an **intermediate** node they are resolved before child dispatch (e.g. parent instance id); on a **leaf** they are resolved just before the action |
+| `arguments` | `Array<Argument \| Hash>` | Positional arguments in parse order. On an **intermediate** node they are resolved before child dispatch (e.g. parent instance id); on a **leaf** they are resolved just before the action |
 | `action` | `Symbol \| Proc \| nil` | Leaf action. **(1)** omitted → convention `action_<full_path_joined_by_underscores>`; **(2)** `Symbol` → named instance method; **(3)** `Proc` → inline, executed with `instance_exec` |
 | `setup` | `Symbol \| nil` | Instance method called with `**ctx` after the node's `arguments` are resolved; returns a `Hash` merged into `ctx` for all descendants |
 | `aliases` | `Array<Symbol> \| nil` | Alternative names accepted for this command (e.g. `aliases: [:recv]`), not accepted when the command is excluded by `condition:` |
@@ -188,7 +190,7 @@ All plugins declare their command tree using a class-level DSL defined in `Base`
 | `query_schema` | `String \| nil` | Schema path for `--query` help; the runner then hints `--query=help` |
 | `mount` | `Hash \| nil` | Expose a sub-tree of another plugin class under this node (see [Mounting another plugin's commands](#mounting-another-plugins-commands)) |
 
-**Argument declaration** (`ArgumentSpec`, usually given as a `Hash`):
+**Argument declaration** (`Argument`, usually given as a `Hash`):
 
 | Parameter | Type | Meaning |
 | --- | --- | --- |
@@ -221,7 +223,7 @@ def setup_package_id(**)
 end
 ```
 
-**Static validation**: `CommandRegistry#validate!` is run for every plugin by [`plugin_registry_spec.rb`](../spec/plugin_registry_spec.rb), and once per class at first dispatch. It checks that:
+**Static validation**: `Command::Registry#validate!` is run for every plugin by [`plugin_registry_spec.rb`](../spec/plugin_registry_spec.rb), and once per class at first dispatch. It checks that:
 
 - the parent of each `commands_under` is declared
 - each leaf has an action (explicit, or method `action_<path>`) accepting any keyword (`**`)
@@ -230,7 +232,7 @@ end
 - an alias designates a single command, and does not hide a sibling command
 - mounts are consistent (see [Mounting another plugin's commands](#mounting-another-plugins-commands))
 
-The spec also checks that the test command displayed by the wizard of each plugin (`test_args`) is a leaf command of the plugin (`CommandRegistry#command_path`).
+The spec also checks that the test command displayed by the wizard of each plugin (`test_args`) is a leaf command of the plugin (`Command::Registry#command_path`).
 
 **`crud_commands` helper**:
 
@@ -250,7 +252,7 @@ end
 
 **Dispatcher algorithm** (`Base#execute_action` → `dispatch_from_registry`):
 
-`execute_action` validates the registry once per class (`CommandRegistry#validate!`), then calls `dispatch_from_registry([])`.
+`execute_action` validates the registry once per class (`Command::Registry#validate!`), then calls `dispatch_from_registry([])`.
 
 ```text
 dispatch_from_registry(current_path, ctx = {})
@@ -346,7 +348,7 @@ All forms receive the `ctx` hash as keyword arguments and behave identically at 
 | `setup:` runs on the current node before dispatching | Derived context (entity paths, sub-tree specific API or scope, e.g. `aoc automation`, `preview scan`) computed once for the whole sub-tree; no virtual nodes needed |
 | Main plugin API built by a lazy memoized accessor (e.g. `aoc_api`, `api_v5`, `api_node`), not in `initialize` nor by a `setup:` on each root command | Built on first use only: `--help` and `config commands` never need the URL or credentials; commands without authentication (e.g. `faspex5 health`) just do not call it |
 | `condition:` commands visible in help but excluded at runtime | Static documentation is complete; runtime filtering via a method |
-| `crud_commands` generates one leaf per verb | CRUD declarations stay DRY while each verb remains a real, introspectable `CommandSpec`; `api:` is resolved at runtime so the API object can be created lazily |
+| `crud_commands` generates one leaf per verb | CRUD declarations stay DRY while each verb remains a real, introspectable `Command`; `api:` is resolved at runtime so the API object can be created lazily |
 | `mount:` instead of re-declaring another plugin's commands | The target sub-tree is declared once: dispatch, `--help`, completion and `config commands` see it entirely, and changes in the target need no change in the hosts |
 | `transfer_paths: :send\|:receive` | The `--sources` mechanism in `TransferAgent` cannot be expressed as static arguments |
 | `define_action_method` for homogeneous command groups | Avoids repetitive action definitions for commands sharing the same body (e.g. `ADMIN_OBJECTS` in `aoc/commands.rb`, `RESOURCE_CONFIG` in `faspex5/commands.rb`) |
@@ -433,9 +435,9 @@ end
 
 Semantics:
 
-- **Registry**: `CommandRegistry#[]`, `children_of`, `leaf_paths` follow mounts, with paths in the host namespace. Host children declared under the mount node are merged with the mounted ones and take precedence on an id conflict.
+- **Registry**: `Command::Registry#[]`, `children_of`, `leaf_paths` follow mounts, with paths in the host namespace. Host children declared under the mount node are merged with the mounted ones and take precedence on an id conflict.
 - **Dispatch**: when a mounted child is selected, `dispatch_mount` resolves the mount `arguments`, calls `instance`, then `target.dispatch_from_registry(at + [command], seed_ctx)`. Arguments and setups **below** the mount point run normally in the target; those of `at` and its ancestors do not run: `seed_ctx` provides what they would have put in `ctx` (e.g. `do_root_file_id:` for `at: %i[access_keys do]`).
-- **Arguments**: `CommandRegistry#arguments_at(path)` returns the mount `arguments` followed by the node's own, e.g. `aoc packages ls <package_id> <path>`: `--help` and `config commands` use it.
+- **Arguments**: `Command::Registry#arguments_at(path)` returns the mount `arguments` followed by the node's own, e.g. `aoc packages ls <package_id> <path>`: `--help` and `config commands` use it.
 - **Help**: with `--help`, the host keeps walking its mount-aware registry: the target is never instantiated (no API connection), and `condition:` of mounted commands is not evaluated.
 - **Validation**: `validate!` checks that `instance` exists, that `at` and the `only`/`except` ids exist in the target, that the mount node has no `action:`, and that mount `arguments` are mandatory.
 
@@ -854,7 +856,7 @@ StandardError
 │   ├── MissingArgument
 │   ├── NoSuchElement
 │   ├── BadIdentifier
-│   └── SchemaRequest (control flow: `help` given as option or argument value — lib/aspera/cli/option_types.rb)
+│   └── SchemaRequest (control flow: `help` given as option or argument value — lib/aspera/cli/error.rb)
 ├── Aspera::Cli::HelpRequest (control flow: --help reached in dispatch)
 ├── Aspera::Rest::CallError (HTTP call errors — lib/aspera/rest/call_error.rb)
 ├── Aspera::Plugins::Server::AsCmd::Error (ascmd errors — lib/aspera/plugins/server/ascmd.rb)
@@ -902,9 +904,9 @@ The runner gives each category of error a label and an exit code (`Cli::ExitCode
 
 - Unit tests, fully self-contained, e.g.:
   - `base_dsl_spec.rb` — `Base` DSL dispatcher
-  - `command_registry_spec.rb` — `CommandRegistry` validation rules
+  - `command/registry_spec.rb` — `Command::Registry` validation rules
   - `plugin_registry_spec.rb` — `validate!(plugin_class:)` consistency of every plugin registry (every leaf has an action or a matching `action_*` method, and every action accepts `**`)
-  - `parser_spec.rb`, `option_declarator_spec.rb`, `preset_actions_spec.rb`, `vault_manager_spec.rb`, `runner_spec.rb`, `mcp/tool_spec.rb`, `formatter_spec.rb`, `http_spec.rb`
+  - `parser_spec.rb`, `option/declarator_spec.rb`, `preset_actions_spec.rb`, `vault_manager_spec.rb`, `runner_spec.rb`, `mcp/tool_spec.rb`, `formatter_spec.rb`, `http_spec.rb`
   - `transfer_result_spec.rb`, `agent_transfer_status_spec.rb`; in `lib/aspera/plugins/transfer_agents/spec/`: `async_transfer_store_spec.rb`, `transfer_agent_async_spec.rb`, `transfer_agent_options_spec.rb`
   - `secret/store_spec.rb`, `secret/store/factory_spec.rb`, `secret/reference_spec.rb`, `secret/reference_vault_spec.rb` (fake Vault server), `secret/reference_encrypted_file_spec.rb`, `secret/strength_spec.rb`
   - `rest/client_spec.rb`, `secret/hider_spec.rb`, `proxy_auto_config_spec.rb`, `schema_reader_spec.rb`, `string_ext_spec.rb`, `uri_reader_spec.rb`, `temp_file_manager_spec.rb`, `assert_spec.rb`, `environment_spec.rb`, `version_spec.rb`, …
@@ -928,7 +930,7 @@ GitHub Actions workflows (`.github/workflows/`):
 3. Declare options with `option(...)` and commands with `command(...)` / `commands_under` / `crud_commands` at class level
 4. Implement `action_<path>` methods for leaf commands without an inline `action:`
 
-The plugin factory discovers the plugin automatically; `CommandRegistry#validate!` checks the tree at first execution.
+The plugin factory discovers the plugin automatically; `Command::Registry#validate!` checks the tree at first execution.
 
 ### Adding a New Transfer Agent
 
@@ -1187,9 +1189,9 @@ How it is enforced, in one place for each kind of feature:
 
 | Kind | Declaration | Enforced in |
 | --- | --- | --- |
-| Option | `security: :low` of `option` / `Parser#declare` (`OptionSpec#security`, `OptionValue#security`) | `OptionValue#assign_value`: command line, presets and interactive input; not default, code and environment of the process |
-| Sub-option of an option with a schema | `x-security: low` on the property in the schema (e.g. `ui.command`, `out.file`) | `OptionValue#check_sub_options_security`, also for `--out.file=...` (dot notation) |
-| Command | `security: :low` of `command` (`CommandSpec#security`) | `Plugins::Base#dispatch_from_registry`; refused commands are not listed by `config commands` |
+| Option | `security: :low` of `option` / `Parser#declare` (`Option#security`, `Option::Value#security`) | `Option::Value#assign_value`: command line, presets and interactive input; not default, code and environment of the process |
+| Sub-option of an option with a schema | `x-security: low` on the property in the schema (e.g. `ui.command`, `out.file`) | `Option::Value#check_sub_options_security`, also for `--out.file=...` (dot notation) |
+| Command | `security: :low` of `command` (`Command#security`) | `Plugins::Base#dispatch_from_registry`; refused commands are not listed by `config commands` |
 | Plugin folder | `security:` of `Factory#add_lookup_folder` | `Factory#add_plugins_from_lookup_folders` and `Factory#plugin_class`: a file written after start is not loaded |
 | Extended value | `Security::EXTENDED_VALUE_LEVELS` | `Security#check_extended_value` |
 | Written file | `Security#writable_path` | `config download`, `TransferAgent#start` (receive) |

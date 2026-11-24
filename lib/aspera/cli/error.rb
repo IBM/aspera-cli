@@ -95,6 +95,23 @@ module Aspera
     # Raised when the condition of option `poll` (`until`) is not met after the last run.
     class PollConditionNotMet < Error; end
 
+    # Exception raised when schema is asked (`help`)
+    class SchemaRequest < Error
+      # Value of option or argument that requests its schema
+      KEYWORD = 'help'
+
+      # @return [String, nil] path to schema file
+      attr_reader :path
+
+      # @param type [Symbol] :argument or :option
+      # @param name [String] name of the option/argument
+      # @param schema_path [String, nil] path to schema file, or `nil` if not available
+      def initialize(type, name, schema_path)
+        super("#{type}: #{name}")
+        @path = schema_path
+      end
+    end
+
     # Raised when a lookup for a specific entity fails to return exactly one result.
     #
     # Provides a formatted message indicating whether the entity was missing

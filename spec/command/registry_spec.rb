@@ -3,21 +3,21 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-require_relative '../lib/aspera/cli/command_registry'
-require_relative '../lib/aspera/cli/command_spec'
+require_relative '../../lib/aspera/cli/command/registry'
+require_relative '../../lib/aspera/cli/command'
 
-RSpec.describe(Aspera::Cli::CommandRegistry) do
+RSpec.describe(Aspera::Cli::Command::Registry) do
   subject(:registry) { described_class.send(:new) }
 
-  # Helper: build a minimal CommandSpec
+  # Helper: build a minimal Command
   def spec(id:, parent: nil, **kwargs)
-    Aspera::Cli::CommandSpec.new(id: id, parent: parent, **kwargs)
+    Aspera::Cli::Command.new(id: id, parent: parent, **kwargs)
   end
 
   # -----------------------------------------------------------------------
-  # CommandSpec#full_path
+  # Command#full_path
   # -----------------------------------------------------------------------
-  describe Aspera::Cli::CommandSpec do
+  describe Aspera::Cli::Command do
     describe '#full_path' do
       it 'returns [id] for a root command (parent: nil)' do
         expect(spec(id: :foo).full_path).to(eq([:foo]))
@@ -86,9 +86,9 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
       expect(children.keys).to(contain_exactly(:list, :cancel))
     end
 
-    it 'maps each child id to its CommandSpec' do
+    it 'maps each child id to its Command' do
       children = registry.children_of([:transfer])
-      expect(children[:list]).to(be_a(Aspera::Cli::CommandSpec))
+      expect(children[:list]).to(be_a(Aspera::Cli::Command))
       expect(children[:list].id).to(eq(:list))
     end
 
@@ -282,7 +282,7 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
 
     context 'transfer_paths combined with arguments' do
       it 'does not raise when both transfer_paths and arguments are present' do
-        args = [Aspera::Cli::ArgumentSpec.new(name: :path, type: String)]
+        args = [Aspera::Cli::Argument.new(name: :path, type: String)]
         registry.register(spec(id: :upload, transfer_paths: :send, arguments: args))
         expect { registry.validate! }.not_to(raise_error)
       end
@@ -293,7 +293,7 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
       end
 
       it 'does not raise when only arguments are set' do
-        args = [Aspera::Cli::ArgumentSpec.new(name: :path, type: String)]
+        args = [Aspera::Cli::Argument.new(name: :path, type: String)]
         registry.register(spec(id: :cmd, arguments: args))
         expect { registry.validate! }.not_to(raise_error)
       end
@@ -386,9 +386,9 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
       registry
     end
 
-    it 'coerces a Hash into a MountSpec with a frozen Array at:' do
+    it 'coerces a Hash into a Command::Mount with a frozen Array at:' do
       m = spec(id: :files, mount: {plugin: target_class, instance: :build, at: :keys}).mount
-      expect(m).to(be_a(Aspera::Cli::MountSpec))
+      expect(m).to(be_a(Aspera::Cli::Command::Mount))
       expect(m.at).to(eq([:keys]))
     end
 
@@ -408,7 +408,7 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
       mount_host(at: %i[keys do])
       expect(registry.local?([:files])).to(be(true))
       expect(registry.local?(%i[files ls])).to(be(false))
-      expect(registry.mount_of([:files])).to(be_a(Aspera::Cli::MountSpec))
+      expect(registry.mount_of([:files])).to(be_a(Aspera::Cli::Command::Mount))
     end
 
     it 'filters with only: and except:' do
@@ -442,7 +442,7 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
     it 'finds the mount of a node reached through a mount' do
       target_registry.register(spec(id: :nested, parent: %i[keys do], mount: {plugin: target_class, instance: :build, at: [:keys]}))
       mount_host(at: %i[keys do])
-      expect(registry.mount_at([:files])).to(be_a(Aspera::Cli::MountSpec))
+      expect(registry.mount_at([:files])).to(be_a(Aspera::Cli::Command::Mount))
       expect(registry.mount_at(%i[files nested]).at).to(eq([:keys]))
       expect(registry.mount_at(%i[files ls])).to(be_nil)
     end
@@ -523,41 +523,41 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
   end
 
   # -----------------------------------------------------------------------
-  # ArgumentSpec defaults
+  # Argument defaults
   # -----------------------------------------------------------------------
-  describe Aspera::Cli::ArgumentSpec do
+  describe Aspera::Cli::Argument do
     it 'evaluates allowed values given as a callable each time they are read, and gives a list as it is' do
       values = %i[a]
-      spec = Aspera::Cli::ArgumentSpec.new(name: :x, allowed: -> { values })
+      spec = Aspera::Cli::Argument.new(name: :x, allowed: -> { values })
       expect(spec.allowed).to(eq(%i[a]))
       values = %i[a b]
       expect(spec.allowed).to(eq(%i[a b]))
       expect(spec.syntax).to(eq('<a|b>'))
-      expect(Aspera::Cli::ArgumentSpec.new(name: :x, allowed: %i[c]).allowed).to(eq(%i[c]))
-      expect(Aspera::Cli::ArgumentSpec.new(name: :x).allowed).to(be_nil)
+      expect(Aspera::Cli::Argument.new(name: :x, allowed: %i[c]).allowed).to(eq(%i[c]))
+      expect(Aspera::Cli::Argument.new(name: :x).allowed).to(be_nil)
     end
 
     it 'defaults mandatory to true' do
-      expect(Aspera::Cli::ArgumentSpec.new(name: :x, type: String).mandatory).to(be(true))
+      expect(Aspera::Cli::Argument.new(name: :x, type: String).mandatory).to(be(true))
     end
 
     it 'defaults multiple to false' do
-      expect(Aspera::Cli::ArgumentSpec.new(name: :x, type: String).multiple).to(be(false))
+      expect(Aspera::Cli::Argument.new(name: :x, type: String).multiple).to(be(false))
     end
 
     it 'accepts mandatory: false' do
-      a = Aspera::Cli::ArgumentSpec.new(name: :x, type: String, mandatory: false, default: 'foo')
+      a = Aspera::Cli::Argument.new(name: :x, type: String, mandatory: false, default: 'foo')
       expect(a.mandatory).to(be(false))
       expect(a.default).to(eq('foo'))
     end
 
     it 'defaults omit_absent to false, and accepts it for an optional argument' do
-      expect(Aspera::Cli::ArgumentSpec.new(name: :x).omit_absent).to(be(false))
-      expect(Aspera::Cli::ArgumentSpec.new(name: :x, mandatory: false, omit_absent: true).omit_absent).to(be(true))
+      expect(Aspera::Cli::Argument.new(name: :x).omit_absent).to(be(false))
+      expect(Aspera::Cli::Argument.new(name: :x, mandatory: false, omit_absent: true).omit_absent).to(be(true))
     end
 
     it 'refuses omit_absent for a mandatory argument' do
-      expect { Aspera::Cli::ArgumentSpec.new(name: :x, omit_absent: true) }.to(raise_error(ArgumentError, /omit_absent/))
+      expect { Aspera::Cli::Argument.new(name: :x, omit_absent: true) }.to(raise_error(ArgumentError, /omit_absent/))
     end
   end
 
@@ -569,7 +569,7 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
     def register(*names)
       names.each do |name|
         name, before = name.is_a?(Hash) ? name.first : [name, nil]
-        registry.register_option(Aspera::Cli::OptionSpec.new(name: name), before: before)
+        registry.register_option(Aspera::Cli::Option.new(name: name), before: before)
       end
       registry.option_specs.keys
     end
@@ -592,13 +592,13 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
     end
 
     it 'refuses an option whose anchor is never registered' do
-      registry.register_option(Aspera::Cli::OptionSpec.new(name: :x), before: :none)
+      registry.register_option(Aspera::Cli::Option.new(name: :x), before: :none)
       expect { registry.option_specs }.to(raise_error(ArgumentError, /x before none/))
     end
 
     it 'refuses a cycle of placements' do
-      registry.register_option(Aspera::Cli::OptionSpec.new(name: :x), before: :y)
-      registry.register_option(Aspera::Cli::OptionSpec.new(name: :y), before: :x)
+      registry.register_option(Aspera::Cli::Option.new(name: :x), before: :y)
+      registry.register_option(Aspera::Cli::Option.new(name: :y), before: :x)
       expect { registry.option_specs }.to(raise_error(ArgumentError, /Cycle in option placement/))
     end
 

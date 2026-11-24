@@ -118,7 +118,7 @@ module Aspera
         option :auth_style,  description: 'Authentication style', allowed: %i[basic query token], default: :token
         option :ret_style,   description: 'Method to specify the expected response format ("Accept")', allowed: %i[header query path], default: :query
         option :result,      description: "Specify result value as: 'work_step:parameter'", deprecation: {last: '4.27.2', message: 'use keys `step` and `variable` of argument `execution` of `workflows start`'}
-        option :synchronous, description: 'Wait for completion', allowed: Cli::Type::BOOLEAN, deprecation: {last: '4.27.2', message: 'use key `synchronous` of argument `execution` of `workflows start`'}
+        option :synchronous, description: 'Wait for completion', allowed: Cli::Option::Type::BOOLEAN, deprecation: {last: '4.27.2', message: 'use key `synchronous` of argument `execution` of `workflows start`'}
         option :plugin_specs, description: 'URL or path of the plugin specifications (YAML) used by `plugins spec`', default: "#{DOC_BASE_URL}/plugins.yml"
 
         # Call orchestrator API (handles ret_style negotiation and XML parsing)

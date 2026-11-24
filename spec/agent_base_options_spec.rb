@@ -248,7 +248,7 @@ module Aspera
         context.options = Parser.new('test', argv)
         # Declared by the config plugin and the bootstrapper
         context.options.declare(:notify_to, description: 'Notify')
-        context.options.declare(:progress_bar, description: 'Display progress bar', allowed: Type::BOOLEAN, default: true)
+        context.options.declare(:progress_bar, description: 'Display progress bar', allowed: Option::Type::BOOLEAN, default: true)
         context.main_folder = '/config'
         context.http_config = http_config
         context.presets = presets

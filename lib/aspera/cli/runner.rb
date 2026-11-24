@@ -3,7 +3,7 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-require_relative 'command_spec'
+require_relative 'argument'
 require_relative 'context'
 require_relative 'parser'
 require_relative 'formatter'
@@ -352,7 +352,7 @@ module Aspera
       end
 
       # Render the structure of a Hash argument's JSON schema in command help.
-      # @param arg [ArgumentSpec]
+      # @param arg [Argument]
       # @return [Array<String>]
       def schema_help_lines(arg)
         description = free_form_description(arg.schema)
@@ -485,12 +485,12 @@ module Aspera
       # @return [nil]
       def declare_global_options
         Log.log.debug('declare_global_options')
-        @context.options.declare(:help, description: 'Show this message', allowed: Type::NONE, short: 'h') do
+        @context.options.declare(:help, description: 'Show this message', allowed: Option::Type::NONE, short: 'h') do
           @option_help = true
           @context.help_requested = true
         end
-        @context.options.declare(:show_config, description: 'Display parameters used for the provided action', allowed: Type::NONE) { @option_show_config = true }
-        @context.options.declare(:version, description: 'Display version', allowed: Type::NONE, short: 'v') { @context.formatter.display_message(:data, Cli::VERSION); ::Process.exit(0) } # rubocop:disable Style/Semicolon
+        @context.options.declare(:show_config, description: 'Display parameters used for the provided action', allowed: Option::Type::NONE) { @option_show_config = true }
+        @context.options.declare(:version, description: 'Display version', allowed: Option::Type::NONE, short: 'v') { @context.formatter.display_message(:data, Cli::VERSION); ::Process.exit(0) } # rubocop:disable Style/Semicolon
         @context.options.declare(
           :ui, description: 'User interface (dot-notation: mode, web_auth, hidden_silent, command)',
           allowed: [Hash, String], shorthand: 'mode', schema: Schema::Registry::UI_OPTIONS,
@@ -506,16 +506,16 @@ module Aspera
         @context.options.declare(:logger, description: 'Logging method', allowed: Log::LOG_TYPES, on_set: Log.instance.method(:logger_type=))
         @context.options.declare(:log, description: 'Logging options (dot-notation: level, type, format, secrets)', on_set: method(:option_log=), schema: Schema::Registry::LOG_OPTIONS)
         @context.options.declare(:security, description: 'Security restrictions (dot-notation: level, allowed_paths)', on_set: Security.instance.method(:options=), schema: Schema::Registry::SECURITY_OPTIONS)
-        @context.options.declare(:lock_port, description: 'Prevent dual execution of a command, e.g. in cron', allowed: Type::INTEGER)
-        @context.options.declare(:once_only, description: 'Process only new items (some commands)', allowed: Type::BOOLEAN, default: false)
-        @context.options.declare(:dry_run, description: 'Do not perform changes, only show what would be done', allowed: Type::BOOLEAN, default: false)
-        @context.options.declare(:log_secrets, description: 'Show passwords in logs', allowed: Type::BOOLEAN, default: Secret::Hider.instance.log_secrets, on_set: Secret::Hider.instance.method(:log_secrets=))
+        @context.options.declare(:lock_port, description: 'Prevent dual execution of a command, e.g. in cron', allowed: Option::Type::INTEGER)
+        @context.options.declare(:once_only, description: 'Process only new items (some commands)', allowed: Option::Type::BOOLEAN, default: false)
+        @context.options.declare(:dry_run, description: 'Do not perform changes, only show what would be done', allowed: Option::Type::BOOLEAN, default: false)
+        @context.options.declare(:log_secrets, description: 'Show passwords in logs', allowed: Option::Type::BOOLEAN, default: Secret::Hider.instance.log_secrets, on_set: Secret::Hider.instance.method(:log_secrets=))
         @context.options.declare(
           :temp, description: 'Temporary files (dot-notation: folder, clean, expiry)',
           allowed: [Hash, String], shorthand: 'folder', schema: Schema::Registry::TEMP_OPTIONS,
           on_set: method(:option_temp=)
         )
-        @context.options.declare(:clean_temp, description: 'Cleanup temporary files on exit', allowed: Type::BOOLEAN, on_set: TempFileManager.instance.method(:cleanup_on_exit=), deprecation: {last: '4.27.5', message: 'use --temp.clean'})
+        @context.options.declare(:clean_temp, description: 'Cleanup temporary files on exit', allowed: Option::Type::BOOLEAN, on_set: TempFileManager.instance.method(:cleanup_on_exit=), deprecation: {last: '4.27.5', message: 'use --temp.clean'})
         @context.options.declare(:temp_folder, description: 'Temporary folder', on_set: TempFileManager.instance.method(:global_temp=), deprecation: {last: '4.27.5', message: 'use --temp.folder'}, complete: :folder)
         @context.options.declare(:pid_file, description: 'Write process identifier to file, delete on exit', complete: :file, security: :low)
         @context.options.declare(

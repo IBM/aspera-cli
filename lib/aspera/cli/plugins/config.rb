@@ -9,7 +9,7 @@ require_relative '../error'
 require_relative '../gem_checker'
 require_relative '../http'
 require_relative '../info'
-require_relative '../option_types'
+require_relative '../option/type'
 require_relative '../parser'
 require_relative '../preset_actions'
 require_relative '../preset_manager'
@@ -342,14 +342,14 @@ module Aspera
         # Options of config come after the options of the mounted modules (`sql`, `ascp_logs`): same order as when config included them.
         # Mounted modules may place theirs before an option of config (`option ..., before:`).
         option :preset,             description: 'Load the named option preset from current config file',             short: 'P', on_set: :load_preset, complete: :preset
-        option :version_check_days, description: 'Period in days to check new version (zero to disable)',             allowed: Type::INTEGER, default: DEFAULT_CHECK_NEW_VERSION_DAYS
-        option :plugin_folder,      description: "Folders where to find additional plugins (#{SpecialValues::DEF}: folder plugins of the configuration folder)", allowed: Type::STRING_ARRAY, default: [SpecialValues::DEF], complete: :folder, security: :low
+        option :version_check_days, description: 'Period in days to check new version (zero to disable)',             allowed: Option::Type::INTEGER, default: DEFAULT_CHECK_NEW_VERSION_DAYS
+        option :plugin_folder,      description: "Folders where to find additional plugins (#{SpecialValues::DEF}: folder plugins of the configuration folder)", allowed: Option::Type::STRING_ARRAY, default: [SpecialValues::DEF], complete: :folder, security: :low
         option :smtp,               schema: Schema::Registry::SMTP_OPTIONS
         option :notify_to,          description: 'Email: Recipient for notification of transfers'
         option :notify_template,    description: 'Email: ERB template for notification of transfers', security: :low
-        option :cache_tokens,       description: 'Save and reuse OAuth tokens', allowed: Type::BOOLEAN, default: true
-        option :expand_mounts,      description: 'Commands: list commands of sub-trees provided by another plugin', allowed: Type::BOOLEAN, default: false
-        option :no_default,         description: 'Do not load default configuration for plugin', allowed: Type::NONE, short: 'N', on_set: -> { presets.use_plugin_defaults = false }
+        option :cache_tokens,       description: 'Save and reuse OAuth tokens', allowed: Option::Type::BOOLEAN, default: true
+        option :expand_mounts,      description: 'Commands: list commands of sub-trees provided by another plugin', allowed: Option::Type::BOOLEAN, default: false
+        option :no_default,         description: 'Do not load default configuration for plugin', allowed: Option::Type::NONE, short: 'N', on_set: -> { presets.use_plugin_defaults = false }
         # `on_set` callbacks of HTTP options are methods of `http_config`
         use_options Http, target: -> { http_config }
 
@@ -606,7 +606,7 @@ module Aspera
         # Command path to list, from words that may include positional arguments, as on a command line.
         # e.g. `faspex5 packages receive ALL` lists `faspex5 packages receive`.
         # @param name  [Symbol]          plugin name
-        # @param reg   [CommandRegistry] registry of plugin
+        # @param reg   [Command::Registry] registry of plugin
         # @param words [Array<Symbol>]   sub-commands (or aliases), possibly mixed with their arguments
         # @return [Array<Symbol>] command path
         # @raise [Cli::BadArgument] if a word is neither a sub-command nor an expected argument
@@ -618,7 +618,7 @@ module Aspera
 
         # Build syntax by interleaving each path segment with the arguments declared on that node
         # @param name [String, Symbol]       plugin name
-        # @param reg  [CommandRegistry]      registry of plugin
+        # @param reg  [Command::Registry]      registry of plugin
         # @param path [Array<Symbol>]        command path
         # @return [String] e.g. `node access_keys do <access_key_id> ls <path>`
         def command_syntax(name, reg, path)

@@ -3,9 +3,9 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Validates that the CommandRegistry of each plugin is internally consistent:
+# Validates that the Command::Registry of each plugin is internally consistent:
 # every leaf command has either an explicit action or a matching action_* method,
-# and every action accepts any keyword (the dispatch context), see `CommandRegistry#validate!`.
+# and every action accepts any keyword (the dispatch context), see `Command::Registry#validate!`.
 # Also checks that the test command displayed by the wizard of each plugin exists.
 # Plugins: single files of the gem and commands of the bundles of the gem.
 # This spec does NOT require spec_helper (no live server config needed).

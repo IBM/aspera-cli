@@ -55,12 +55,12 @@ module Aspera
         option :skip_format,        description: 'Skip this preview format',                                                                                                      allowed: Generator::PREVIEW_FORMATS
         # TODO: use the same option as in `node` plugin
         option :folder_reset_cache, description: 'Force detection of generated preview by refresh cache',                                                                         allowed: %i[no header read], default: :no
-        option :skip_types,         description: 'Skip generation for those types of files',                                                                                      allowed: Cli::Type::SYMBOL_ARRAY + FileTypes::CONVERSION_TYPES
+        option :skip_types,         description: 'Skip generation for those types of files',                                                                                      allowed: Cli::Option::Type::SYMBOL_ARRAY + FileTypes::CONVERSION_TYPES
         option :previews_folder,    description: 'Preview folder in storage root',                                                                                                default: DEFAULT_PREVIEWS_FOLDER
-        option :skip_folders,       description: 'List of folder to skip',                                                                                                        allowed: Cli::Type::STRING_ARRAY
+        option :skip_folders,       description: 'List of folder to skip',                                                                                                        allowed: Cli::Option::Type::STRING_ARRAY
         option :base,               description: 'Basename of output for for test'
         option :filter,             description: 'File name filter: String (glob), Regexp, or Proc', allowed: [String, Regexp, Proc, NilClass]
-        option :detect_mime,        description: 'Detect Mime type by analyzing file', allowed: Cli::Type::BOOLEAN, default: false
+        option :detect_mime,        description: 'Detect Mime type by analyzing file', allowed: Cli::Option::Type::BOOLEAN, default: false
         option :overwrite,          description: 'When to overwrite result file', allowed: %i[always never mtime], default: :mtime
         option :root_url,           description: "How to read and write files on storage (#{REMOTE_ACCESS}, or #{UriReader.file_url('<folder>')})", default: REMOTE_ACCESS
         # Generator options, defined in schema: values set in @gen_options
@@ -69,7 +69,7 @@ module Aspera
           option(
             key,
             description: property['description'].lines.first.strip.delete_suffix('.'),
-            allowed:     property.key?('enum') ? property['enum'].map(&:to_sym) : {'integer' => Cli::Type::INTEGER, 'number' => Cli::Type::FLOAT, 'boolean' => Cli::Type::BOOLEAN}[property['type']],
+            allowed:     property.key?('enum') ? property['enum'].map(&:to_sym) : {'integer' => Cli::Option::Type::INTEGER, 'number' => Cli::Option::Type::FLOAT, 'boolean' => Cli::Option::Type::BOOLEAN}[property['type']],
             default:     property['default'],
             # `Hash` value: validated with schema
             schema:      ("#{Generator::OPTIONS_SCHEMA}:properties.#{name}" if property['type'].eql?('object')),

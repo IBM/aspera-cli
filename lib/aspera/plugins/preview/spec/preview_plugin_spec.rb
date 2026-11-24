@@ -73,7 +73,7 @@ module Aspera
           context = Cli::Context.new
           context.man_header = false
           context.options = Cli::Parser.new('test', argv + ['--url=https://node.example.com', '--username=ak1', "--password=#{SecureRandom.alphanumeric(12)}"])
-          context.options.declare(:once_only, description: 'Process only new items', allowed: Cli::Type::BOOLEAN, default: false)
+          context.options.declare(:once_only, description: 'Process only new items', allowed: Cli::Option::Type::BOOLEAN, default: false)
           context.transfer = transfer
           context.persistency = PersistencyFolder.new(File.join(tmp, 'persistency'))
           described_class.new(context: context).execute_action

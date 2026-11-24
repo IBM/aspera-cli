@@ -12,7 +12,7 @@ module Aspera
       # Options of OAuth web authentication (authorization code): client and redirect URI.
       # For a plugin that uses only this flow: `use_options OauthWebOptions` (without the options of `Oauth`)
       module OauthWebOptions
-        extend OptionDeclarator
+        extend Option::Declarator
         option :client_id,     description: 'OAuth client identifier'
         option :client_secret, description: 'OAuth client secret'
         option :redirect_uri,  description: 'OAuth (Web) redirect URI for web authentication'
@@ -20,7 +20,7 @@ module Aspera
 
       # Options of OAuth JWT authentication: private key
       module OauthJwtOptions
-        extend OptionDeclarator
+        extend Option::Declarator
         option :private_key,   description: 'OAuth (JWT) RSA private key PEM value (prefix file path with @file:)'
         option :passphrase,    description: 'OAuth (JWT) RSA private key passphrase'
       end
