@@ -439,6 +439,22 @@ module Aspera
           expect(factory.plugin_class(:spec_bundle_target).command_registry.children_of([]).keys).to(eq(%i[first placed last]))
         end
 
+        it 'does not break its target when an option of the mounted module has an unknown anchor' do
+          write_single(other, 'spec_bundle_target', body: BundleHooksSpecHelper::TARGET_BODY)
+          write_one_mount('spec_bundle_anchor', <<~RUBY)
+            module Mount
+              def self.included(base)
+                base.option(:spec_mount_x, description: 'Wrong anchor', before: :no_such_option)
+                base.option(:spec_mount_y, description: 'Other option')
+              end
+            end
+          RUBY
+          scan
+          klass = factory.plugin_class(:spec_bundle_target)
+          expect(klass.option_specs.keys.last(2)).to(eq(%i[spec_mount_y spec_mount_x]))
+          expect(klass.command_registry.leaf_paths).to(include(%i[first one], %i[last]))
+        end
+
         it 'mounts on the commands of a bundle' do
           write_bundle(other, 'spec_bundle_target')
           write_mounting_bundle(folder)

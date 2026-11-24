@@ -214,7 +214,8 @@ module Aspera
         # Register an Option. Raises if the option name is already registered.
         # @param spec   [Option]
         # @param before [Symbol, nil] Name of an option to place this one before, also when that option is registered later
-        #                             (e.g. by the body of a plugin class, after the modules mounted on it); the anchor can itself be placed before another option
+        #                             (e.g. by the body of a plugin class, after the modules mounted on it); the anchor can itself be placed before another option.
+        #                             An option whose anchor is not registered, or that is in a cycle of anchors, is not an error: see `option_specs`
         # @raise [ArgumentError] on duplicate option name
         # @return [Option] the registered spec
         def register_option(spec, before: nil)
@@ -229,8 +230,10 @@ module Aspera
           @option_specs.key?(name)
         end
 
+        # Options that cannot be placed (the anchor of their `before:` is not registered, or the anchors form a cycle) do not raise,
+        # so that a wrong anchor in one module does not break every command: they go at the end, in order of registration,
+        # and a warning names each of them and its anchor (logged once per registry, as the list is built several times).
         # @return [Hash{Symbol => Option}] all registered option specs, in order of registration, except those placed before another one (see `register_option`)
-        # @raise [ArgumentError] if the anchor of a `before:` is not registered, or if the anchors form a cycle
         def option_specs
           return @option_specs.dup if @option_before.empty?
           ordered = @option_specs.except(*@option_before.keys)
@@ -249,9 +252,10 @@ module Aspera
               end
               next
             end
-            unknown = pending.reject { |_name, anchor| pending.key?(anchor) }
-            raise ArgumentError, "Option placed before unknown option: #{unknown.map { |name, anchor| "#{name} before #{anchor}" }.join(', ')}" unless unknown.empty?
-            raise ArgumentError, "Cycle in option placement: #{pending.map { |name, anchor| "#{name} before #{anchor}" }.join(', ')}"
+            # the remaining ones cannot be placed: unknown anchor, or cycle
+            warn_unplaced(pending)
+            @option_specs.each { |name, spec| ordered[name] = spec if pending.key?(name) }
+            break
           end
           ordered
         end
@@ -399,6 +403,15 @@ module Aspera
           mount ? [mount.registry.object_id, mount.at] : [registry.object_id, local_path]
         end
 
+        # Log a warning for the options that cannot be placed, once per option
+        # @param unplaced [Hash{Symbol => Symbol}] option name => anchor
+        def warn_unplaced(unplaced)
+          fresh = unplaced.reject { |name, _anchor| @option_warned.key?(name) }
+          return if fresh.empty?
+          fresh.each_key { |name| @option_warned[name] = true }
+          Log.log.warn { "Options not placed before their anchor (unknown option or cycle), put at the end: #{fresh.map { |name, anchor| "#{name} before #{anchor}" }.join(', ')}" }
+        end
+
         def initialize
           # Keyed by Array<Symbol> full path
           @specs = {}
@@ -406,6 +419,8 @@ module Aspera
           @option_specs = {}
           # Option name => name of the option it is placed before
           @option_before = {}
+          # Names of the options already reported by warn_unplaced
+          @option_warned = {}
           # Children index: parent Array<Symbol> -> Hash{child_id Symbol => Command}
           # Built incrementally in register(); enables O(1) children_of lookups.
           @children_index = {}

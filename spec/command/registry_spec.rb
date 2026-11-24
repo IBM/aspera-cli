@@ -591,15 +591,31 @@ RSpec.describe(Aspera::Cli::Command::Registry) do
       expect(register({y: :smtp}, {x: :y}, :a, :smtp)).to(eq(%i[a x y smtp]))
     end
 
-    it 'refuses an option whose anchor is never registered' do
-      registry.register_option(Aspera::Cli::Option.new(name: :x), before: :none)
-      expect { registry.option_specs }.to(raise_error(ArgumentError, /x before none/))
-    end
+    context 'when an option cannot be placed' do
+      before { allow(Aspera::Log.log).to(receive(:warn)) }
 
-    it 'refuses a cycle of placements' do
-      registry.register_option(Aspera::Cli::Option.new(name: :x), before: :y)
-      registry.register_option(Aspera::Cli::Option.new(name: :y), before: :x)
-      expect { registry.option_specs }.to(raise_error(ArgumentError, /Cycle in option placement/))
+      it 'puts an option whose anchor is never registered at the end, with one warning' do
+        expect(register(:a, {x: :none}, :b)).to(eq(%i[a b x]))
+        3.times { registry.option_specs }
+        expect(Aspera::Log.log).to(have_received(:warn).once)
+        expect(Aspera::Log.log).to(have_received(:warn) { |&block| expect(block.call).to(include('x before none')) })
+      end
+
+      it 'puts the options of a cycle at the end, in order of registration, with one warning' do
+        expect(register({x: :y}, :a, {y: :x}, :b)).to(eq(%i[a b x y]))
+        registry.option_specs
+        expect(Aspera::Log.log).to(have_received(:warn).once)
+        expect(Aspera::Log.log).to(have_received(:warn) { |&block| expect(block.call).to(include('x before y, y before x')) })
+      end
+
+      it 'keeps the chains that can be placed' do
+        expect(register({x: :y}, {y: :smtp}, {z: :none}, :a, :smtp)).to(eq(%i[a x y smtp z]))
+      end
+
+      it 'does not warn when every option can be placed' do
+        register({x: :y}, :y)
+        expect(Aspera::Log.log).not_to(have_received(:warn))
+      end
     end
 
     it 'refuses a duplicate option' do
