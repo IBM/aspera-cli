@@ -28,4 +28,14 @@ RSpec.describe(Aspera::Rest::ErrorAnalyzer) do
     names = described_class.instance.instance_variable_get(:@error_handlers).map { |handler| handler[:name] }
     expect(names).to(include('Type 1: error:user_message', 'Type 4: error', 'Type 7: errors[]', 'Type Generic'))
   end
+
+  it 'places a handler before another one, and refuses an unknown name' do
+    analyzer = described_class.send(:new)
+    handlers = -> { analyzer.instance_variable_get(:@error_handlers).map { |handler| handler[:name] } }
+    analyzer.add_handler('a') {}
+    analyzer.add_handler('b', before: 'Type Generic') {}
+    analyzer.add_handler('c') {}
+    expect(handlers.call).to(eq(['c', 'a', 'b', 'Type Generic']))
+    expect { analyzer.add_handler('d', before: 'none') {} }.to(raise_error(ArgumentError, /no error handler named none/))
+  end
 end

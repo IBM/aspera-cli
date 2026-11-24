@@ -96,7 +96,7 @@ module Aspera
 
         # Description of the plugins of the framework in the list of plugins (a bundle has its title)
         FRAMEWORK_PLUGINS = {config: 'local configuration'}.freeze
-        # In the section of a bundle (manifest `mcp`): list of the bundles that provide an entry of an extension point, e.g. `%{agent}`
+        # In the section of a bundle (manifest `mcp`): list of the names of the entries of an extension point (and the title of their bundle), e.g. `%{agent}`
         POINT_PLACEHOLDER = /%\{([a-z][a-z0-9_]*)\}/
 
         class << self
@@ -127,9 +127,12 @@ module Aspera
 
           # @param registry [BundleRegistry] Registry of the bundles
           # @param point    [Symbol]         Name of an extension point
-          # @return [String] Bundles that provide an entry of the extension point, with their title
+          # @return [String] Names of the entries of the extension point (field `name`, e.g. the value of `--transfer.agent` for agents), with the title of their bundle
           def bundles_of_point(registry, point)
-            registry.extensions(point).map(&:bundle).uniq.map { |bundle| described(bundle, registry[bundle].title) }.join(', ')
+            registry.extensions(point).map do |entry|
+              Aspera.assert(entry.fields.key?('name')) { "extension #{point} of #{entry.bundle}: no field name" }
+              described(entry.fields['name'], registry[entry.bundle].title)
+            end.join(', ')
           end
         end
 

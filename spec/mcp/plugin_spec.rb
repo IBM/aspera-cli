@@ -268,10 +268,10 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
 
     after { FileUtils.rm_rf(folder) }
 
-    it 'lists the plugins with the title of their bundle, and adds the sections of the bundles, with the bundles of an extension point' do
+    it 'lists the plugins with the title of their bundle, and adds the sections of the bundles, with the names of the entries of an extension point (agents of a bundle, whatever the name of the bundle)' do
       write_bundle(folder, 'spec_bundle_point', manifest: {'commands' => false, 'mcp' => "TRANSFERS\nAgents: %{spec_point}.\n", 'extension_points' => [{'name' => 'spec_point', 'schema' => 'point.yaml'}]}, code: nil)
       File.write(File.join(folder, 'spec_bundle_point', 'point.yaml'), {'type' => 'object'}.to_yaml)
-      write_bundle(folder, 'spec_bundle_agent', manifest: {'commands' => false, 'depends' => ['spec_bundle_point'], 'extensions' => {'spec_point' => [{'file' => 'agent.rb', 'class' => 'Agent'}]}}, code: nil)
+      write_bundle(folder, 'spec_bundle_agent', manifest: {'commands' => false, 'depends' => ['spec_bundle_point'], 'extensions' => {'spec_point' => [{'name' => 'alpha', 'file' => 'agent.rb', 'class' => 'Agent'}, {'name' => 'beta', 'file' => 'other.rb', 'class' => 'Other'}]}}, code: nil)
       write_bundle(folder, 'spec_bundle_cmd', manifest: {'mcp' => 'GUIDE'})
       write_single(folder, 'spec_bundle_single')
       write_single(folder, 'config')
@@ -281,7 +281,7 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
       instructions = described_class.default_instructions(factory)
       expect(instructions).to(start_with(described_class::INSTRUCTIONS_START))
       expect(instructions).to(include("\n\nPlugins: config (local configuration), spec_bundle_cmd (Product spec_bundle_cmd), spec_bundle_single.\n\nCREDENTIALS\n"))
-      expect(instructions).to(include("#{described_class::CREDENTIALS_INSTRUCTIONS}\n\nGUIDE\n\nTRANSFERS\nAgents: spec_bundle_agent (Product spec_bundle_agent).\n\nGENERAL GUIDANCE"))
+      expect(instructions).to(include("#{described_class::CREDENTIALS_INSTRUCTIONS}\n\nGUIDE\n\nTRANSFERS\nAgents: alpha (Product spec_bundle_agent), beta (Product spec_bundle_agent).\n\nGENERAL GUIDANCE"))
       expect(instructions).to(end_with(described_class::INSTRUCTIONS_END))
     end
 

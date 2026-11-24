@@ -101,11 +101,6 @@ module Aspera
           @registry.scan
         end
 
-        # @return [String] path to source file of a single file plugin, or folder of a bundle
-        def plugin_source(plugin_name_sym)
-          command_plugin(plugin_name_sym).path
-        end
-
         # @return [Class] class object for plugin, with its plugin name set and the modules mounted on it by bundles included
         def plugin_class(plugin_name_sym)
           plugin = command_plugin(plugin_name_sym)
@@ -136,13 +131,27 @@ module Aspera
 
         private
 
+        # The only place that tells whether a plugin can be loaded.
+        # @param name [Symbol] name of a registered plugin
+        # @return [Array(Symbol, Object), nil] `[:unavailable, <reason>]` or `[:missing_gems, <gems>]`, `nil` if the plugin can be loaded
+        def blocked(name)
+          reason = @registry.unavailable_reason(name)
+          return [:unavailable, reason] unless reason.nil?
+          missing = @registry.missing_gems(name)
+          return [:missing_gems, missing] unless missing.empty?
+          nil
+        end
+
         # @param name [Symbol] name of a registered plugin
         # @return [String, nil] Why the plugin cannot be loaded, short form: unavailable reason, or missing gems; `nil` if it can
         def status_reason(name)
-          reason = @registry.unavailable_reason(name)
-          return reason unless reason.nil?
-          missing = @registry.missing_gems(name)
-          "missing gem #{missing.join(', ')}" unless missing.empty?
+          kind, detail = blocked(name)
+          case kind
+          when nil then nil
+          when :unavailable then detail
+          when :missing_gems then "missing gem #{detail.join(', ')}"
+          else Aspera.error_unexpected_value(kind)
+          end
         end
 
         # @param plugin [BundleRegistry::Plugin] Registered plugin
@@ -155,11 +164,13 @@ module Aspera
         # @param name [Symbol] name of a registered plugin
         # @return [String, nil] Why the code of the plugin cannot be loaded: unavailable or missing gem, `nil` if it can
         def load_reason(name)
-          reason = @registry.unavailable_reason(name)
-          return "plugin #{name} is unavailable: #{reason}" unless reason.nil?
-          missing = @registry.missing_gems(name)
-          return if missing.empty?
-          "plugin #{name} requires gem #{missing.join(', ')}: gem install #{missing.join(' ')}"
+          kind, detail = blocked(name)
+          case kind
+          when nil then nil
+          when :unavailable then "plugin #{name} is unavailable: #{detail}"
+          when :missing_gems then "plugin #{name} requires gem #{detail.join(', ')}: gem install #{detail.join(' ')}"
+          else Aspera.error_unexpected_value(kind)
+          end
         end
 
         # @param plugin_name_sym [Symbol] name of plugin

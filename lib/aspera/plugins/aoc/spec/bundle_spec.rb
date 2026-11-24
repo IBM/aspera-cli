@@ -27,7 +27,7 @@ module Aspera
             expect(registry.unavailable_reason(:aoc)).to(be_nil)
             expect(registry[:aoc].depends).to(eq(%i[node ats transfer_agents faspex4]))
             expect(registry[:aoc].gems).to(eq([]))
-            expect(Cli::Plugins::Factory.instance.plugin_source(:aoc)).to(eq(bundle_folder))
+            expect(Cli::Plugins::Factory.instance.describe(:aoc)[:path]).to(eq(bundle_folder))
             expect(Cli::Plugins::Factory.instance.plugin_class(:aoc)).to(be(Commands))
             expect(Commands.plugin_name).to(eq('aoc'))
           end

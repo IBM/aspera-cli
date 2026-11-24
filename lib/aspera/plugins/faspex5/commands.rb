@@ -21,6 +21,7 @@ require_relative '../../environment'
 require_relative '../../assert'
 require_relative '../../rainbow'
 require_relative '../transfer_agents/transfer_agent'
+require_relative '../faspex4/gateway_options'
 require 'securerandom'
 require 'digest'
 require 'json'
@@ -32,8 +33,6 @@ module Aspera
       class Commands < Cli::Plugins::Oauth
         # Key of the Faspex 5 API in the schemas of the bundle (manifest)
         API_SCHEMA = 'faspex'
-        # Options of the Faspex 4 gateway, in the schemas of the bundle faspex4
-        GATEWAY_OPTIONS = 'faspex4_opts:components.schemas.Faspex4GatewayOptions'
         # Options of the Faspex 4 post-processing servlet, in the schemas of the bundle
         POSTPROC_OPTIONS = 'faspex5_opts:components.schemas.Faspex4PostProcOptions'
         application_name 'Faspex v5'
@@ -541,7 +540,7 @@ module Aspera
         command :user,           description: 'Manage current user'
         command :shared_folders, description: 'Browse shared folders'
         command :gateway,        description: 'Start Faspex 4 gateway emulation',
-          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: GATEWAY_OPTIONS}]
+          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: Faspex4::GatewayOptions::SCHEMA}]
         command :postprocessing, description: 'Start Faspex 4 post-processing server', security: :low,
           arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: POSTPROC_OPTIONS}]
         command :invitations,    description: 'Manage invitations'

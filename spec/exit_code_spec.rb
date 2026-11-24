@@ -66,6 +66,18 @@ module Aspera
           expect(described_class.error_category(StandardError.new)).to(be_nil)
         end
 
+        it 'gives the most specific added class, in both orders of `add_error`' do
+          child = Class.new(spec_error)
+          described_class.add_error(spec_error, label: 'Parent', code: ExitCode::TRANSFER)
+          described_class.add_error(child, label: 'Child', code: ExitCode::API)
+          expect(described_class.error_category(child.new)).to(eq({label: 'Child', code: ExitCode::API}))
+          described_class.instance_variable_set(:@errors, {})
+          described_class.add_error(child, label: 'Child', code: ExitCode::API)
+          described_class.add_error(spec_error, label: 'Parent', code: ExitCode::TRANSFER)
+          expect(described_class.error_category(child.new)).to(eq({label: 'Child', code: ExitCode::API}))
+          expect(described_class.error_category(spec_error.new)).to(eq({label: 'Parent', code: ExitCode::TRANSFER}))
+        end
+
         it 'refuses a class that is not an error, or an unknown exit code' do
           expect { described_class.add_error(String, label: 'Spec', code: ExitCode::ERROR) }.to(raise_error(ArgumentError, /not an error class/))
           expect { described_class.add_error(spec_error, label: 'Spec', code: 42) }.to(raise_error(ArgumentError, /unknown exit code: 42/))

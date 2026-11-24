@@ -30,7 +30,7 @@ module Aspera
             expect(registry.unavailable_reason(:httpgw)).to(be_nil)
             expect(registry[:httpgw].depends).to(eq([:transfer_agents]))
             expect(registry[:httpgw].gems).to(eq([]))
-            expect(Cli::Plugins::Factory.instance.plugin_source(:httpgw)).to(eq(bundle_folder))
+            expect(Cli::Plugins::Factory.instance.describe(:httpgw)[:path]).to(eq(bundle_folder))
             expect(Cli::Plugins::Factory.instance.plugin_class(:httpgw)).to(be(Commands))
             expect(Commands.plugin_name).to(eq('httpgw'))
           end

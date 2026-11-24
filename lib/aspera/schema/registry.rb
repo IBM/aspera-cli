@@ -33,6 +33,11 @@ module Aspera
           key = key.to_sym
           Aspera.assert(!LOCATIONS.key?(key)) { "schema #{key} is a built-in schema" }
           Aspera.assert(!@registered.key?(key) || @registered[key][:file].eql?(file)) { "schema #{key} is registered with another file: #{@registered[key][:file]}" }
+          # A reserved key cannot be claimed by a bundle (`built_in?`): no need to look at the bundles, which keeps the load of the domain files cheap
+          unless RESERVED.include?(key)
+            claimed = bundle_schema(key)
+            Aspera.assert(claimed.nil?) { "schema #{key} is registered with #{file} and provided by plugin #{claimed.bundle} (#{claimed.file})" }
+          end
           Aspera.assert_type(doc_options, Proc, NilClass) { 'doc_options' }
           @registered[key] = {file: file, doc_options: doc_options}.freeze
           nil
@@ -50,9 +55,9 @@ module Aspera
         end
 
         # @param sym [Symbol] Key of a schema
-        # @return [Boolean] `true` if the key is a schema of the gem or added by a library: a bundle cannot use it
+        # @return [Boolean] `true` if the key is a schema of the gem, reserved for a library (even if its file is not loaded yet) or added by a library: a bundle cannot use it
         def built_in?(sym)
-          LOCATIONS.key?(sym) || @registered.key?(sym)
+          LOCATIONS.key?(sym) || RESERVED.include?(sym) || @registered.key?(sym)
         end
 
         # @param name_path [String] schema path, e.g. `opts:components.schemas.HttpOptions`
@@ -117,6 +122,8 @@ module Aspera
       SYNC_ARGS = 'args'
       ASYNC_TABLES = 'async_tables'
       ASCP_LOG = 'ascp_log'
+      # Keys reserved for the domain library: a bundle cannot claim them, whether or not their file is loaded (plain data: the framework does not require the domain files)
+      RESERVED = [TRANSFER_SPEC, SYNC_CONF, SYNC_ARGS, ASYNC_TABLES, ASCP_LOG].map(&:to_sym).freeze
       # Manifest `plugin.yaml` of a plugin bundle, see `BundleRegistry`
       MANIFEST = 'manifest'
       LOG_OPTIONS             = "#{OPTIONS}:components.schemas.LogOptions".freeze
@@ -218,21 +225,25 @@ module Aspera
 
       # Replace each `$ref` to a node of another schema of the registry (`<key>:#/<path>`) with a copy of that node:
       # the readers and the validator see one document, with local references only. The node may not contain references.
-      # @param node [Object] Document read from a schema file, or a node of it
+      # @param node [Object] Document read from a schema file, or a node of it: modified in place
       # @param sym  [Symbol] Key of the document
-      # @return [Object] The node, with the references replaced
+      # @return [Object] The node, with the references replaced (the same object, unless it is a reference)
       def add_references(node, sym)
         case node
         when Hash
           match = node['$ref'].is_a?(String) ? EXTERNAL_REF.match(node['$ref']) : nil
-          return node.transform_values { |value| add_references(value, sym) } if match.nil?
+          if match.nil?
+            # replaced in place (the document was just read): no copy of the nodes without reference
+            node.each { |key, value| node[key] = add_references(value, sym) }
+            return node
+          end
           Aspera.assert(node.keys.eql?(['$ref'])) { "schema #{sym}: #{node['$ref']}: a reference to another schema has no sibling keys" }
           Aspera.assert(!match[1].to_sym.eql?(sym)) { "schema #{sym}: #{node['$ref']}: use a local reference" }
           target = reader(match[1]).current.dig(*match[2].split('/'))
           Aspera.assert_type(target, Hash) { "schema #{sym}: #{node['$ref']}" }
           Aspera.assert(!reference?(target)) { "schema #{sym}: #{node['$ref']}: the referenced node may not contain references" }
           Marshal.load(Marshal.dump(target))
-        when Array then node.map { |value| add_references(value, sym) }
+        when Array then node.map! { |value| add_references(value, sym) }
         else node
         end
       end

@@ -26,7 +26,7 @@ module Aspera
             expect(registry.unavailable_reason(:faspio)).to(be_nil)
             expect(registry[:faspio].depends).to(eq([]))
             expect(registry[:faspio].gems).to(eq([]))
-            expect(Cli::Plugins::Factory.instance.plugin_source(:faspio)).to(eq(bundle_folder))
+            expect(Cli::Plugins::Factory.instance.describe(:faspio)[:path]).to(eq(bundle_folder))
             expect(Cli::Plugins::Factory.instance.plugin_class(:faspio)).to(be(Commands))
             expect(Commands.plugin_name).to(eq('faspio'))
           end

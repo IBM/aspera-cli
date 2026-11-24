@@ -25,7 +25,7 @@ module Aspera
             expect(registry.unavailable_reason(:cos)).to(be_nil)
             expect(registry[:cos].depends).to(eq([:node]))
             expect(registry[:cos].gems).to(eq([]))
-            expect(Cli::Plugins::Factory.instance.plugin_source(:cos)).to(eq(bundle_folder))
+            expect(Cli::Plugins::Factory.instance.describe(:cos)[:path]).to(eq(bundle_folder))
             expect(Cli::Plugins::Factory.instance.plugin_class(:cos)).to(be(Commands))
             expect(Commands.plugin_name).to(eq('cos'))
           end

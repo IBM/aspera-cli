@@ -48,7 +48,7 @@ module Aspera
             expect(registry.unavailable_reason(:transferd)).to(be_nil)
             expect(registry[:transferd].depends).to(eq([:transfer_agents]))
             expect(registry[:transferd].gems).to(eq([]))
-            expect(Cli::Plugins::Factory.instance.plugin_source(:transferd)).to(eq(bundle_folder))
+            expect(Cli::Plugins::Factory.instance.describe(:transferd)[:path]).to(eq(bundle_folder))
             expect(Cli::Plugins::Factory.instance.plugin_class(:transferd)).to(be(Commands))
             expect(Commands.plugin_name).to(eq('transferd'))
           end

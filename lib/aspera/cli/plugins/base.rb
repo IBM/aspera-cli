@@ -231,7 +231,7 @@ module Aspera
             ancestor_owner = ancestors.drop(1).find do |klass|
               klass.is_a?(Class) && klass <= Base &&
                 klass.instance_variable_defined?(:@command_registry) &&
-                klass.command_registry.option_specs.key?(spec.name)
+                klass.command_registry.option_registered?(spec.name)
             end
             raise ArgumentError, "#{self}: option :#{spec.name} already declared in ancestor #{ancestor_owner}" if ancestor_owner
             spec.security = mounted_level(spec.security)

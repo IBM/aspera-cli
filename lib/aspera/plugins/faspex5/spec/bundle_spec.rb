@@ -27,7 +27,7 @@ module Aspera
             expect(registry.unavailable_reason(:faspex5)).to(be_nil)
             expect(registry[:faspex5].depends).to(eq(%i[transfer_agents faspex4]))
             expect(registry[:faspex5].gems).to(eq([]))
-            expect(Cli::Plugins::Factory.instance.plugin_source(:faspex5)).to(eq(bundle_folder))
+            expect(Cli::Plugins::Factory.instance.describe(:faspex5)[:path]).to(eq(bundle_folder))
             expect(Cli::Plugins::Factory.instance.plugin_class(:faspex5)).to(be(Commands))
             expect(Commands.plugin_name).to(eq('faspex5'))
           end
@@ -57,7 +57,7 @@ module Aspera
           it 'give the options of the Faspex 4 servlets: post-processing in the bundle, gateway in the bundle faspex4' do
             expect(registry.schema(:faspex5_opts)).to(have_attributes(bundle: :faspex5, file: File.join(bundle_folder, 'schemas/options.yaml'), owned: true))
             expect(Schema::Registry.instance.reader(Commands::POSTPROC_OPTIONS).current).to(be_a(Hash))
-            expect(Schema::Registry.instance.reader(Commands::GATEWAY_OPTIONS).current).to(be_a(Hash))
+            expect(Schema::Registry.instance.reader(Faspex4::GatewayOptions::SCHEMA).current).to(be_a(Hash))
             expect(Schema::Registry.instance.reader(Commands::POSTPROC_OPTIONS)['allOf'].first).to(eq(Schema::Registry.instance.reader(Schema::Registry::WEB_SERVER_OPTIONS).current))
           end
         end

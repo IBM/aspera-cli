@@ -26,7 +26,7 @@ module Aspera
             expect(registry.unavailable_reason(:console)).to(be_nil)
             expect(registry[:console].depends).to(eq([]))
             expect(registry[:console].gems).to(eq([]))
-            expect(Cli::Plugins::Factory.instance.plugin_source(:console)).to(eq(bundle_folder))
+            expect(Cli::Plugins::Factory.instance.describe(:console)[:path]).to(eq(bundle_folder))
             expect(Cli::Plugins::Factory.instance.plugin_class(:console)).to(be(Commands))
             expect(Commands.plugin_name).to(eq('console'))
           end

@@ -26,7 +26,7 @@ module Aspera
             expect(registry.unavailable_reason(:ats)).to(be_nil)
             expect(registry[:ats].depends).to(eq(%i[node alee]))
             expect(registry[:ats].gems).to(eq([]))
-            expect(Cli::Plugins::Factory.instance.plugin_source(:ats)).to(eq(bundle_folder))
+            expect(Cli::Plugins::Factory.instance.describe(:ats)[:path]).to(eq(bundle_folder))
             expect(Cli::Plugins::Factory.instance.plugin_class(:ats)).to(be(Commands))
             expect(Commands.plugin_name).to(eq('ats'))
           end

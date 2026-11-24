@@ -583,8 +583,23 @@ RSpec.describe(Aspera::Cli::CommandRegistry) do
       expect(register({z: :a})).to(eq(%i[z a b x y c d]))
     end
 
-    it 'places at the end an option whose anchor is never registered' do
-      expect(register({x: :none}, :a, :b)).to(eq(%i[a b x]))
+    it 'places a chain of options before an anchor, whatever the declaration order' do
+      expect(register({x: :y}, {y: :smtp}, :a, :smtp)).to(eq(%i[a x y smtp]))
+    end
+
+    it 'places a chain of options when the anchors are declared first' do
+      expect(register({y: :smtp}, {x: :y}, :a, :smtp)).to(eq(%i[a x y smtp]))
+    end
+
+    it 'refuses an option whose anchor is never registered' do
+      registry.register_option(Aspera::Cli::OptionSpec.new(name: :x), before: :none)
+      expect { registry.option_specs }.to(raise_error(ArgumentError, /x before none/))
+    end
+
+    it 'refuses a cycle of placements' do
+      registry.register_option(Aspera::Cli::OptionSpec.new(name: :x), before: :y)
+      registry.register_option(Aspera::Cli::OptionSpec.new(name: :y), before: :x)
+      expect { registry.option_specs }.to(raise_error(ArgumentError, /Cycle in option placement/))
     end
 
     it 'refuses a duplicate option' do

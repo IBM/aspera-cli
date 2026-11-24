@@ -26,7 +26,7 @@ module Aspera
             expect(registry.unavailable_reason(:shares)).to(be_nil)
             expect(registry[:shares].depends).to(eq([:node]))
             expect(registry[:shares].gems).to(eq([]))
-            expect(Cli::Plugins::Factory.instance.plugin_source(:shares)).to(eq(bundle_folder))
+            expect(Cli::Plugins::Factory.instance.describe(:shares)[:path]).to(eq(bundle_folder))
             expect(Cli::Plugins::Factory.instance.plugin_class(:shares)).to(be(Commands))
             expect(Commands.plugin_name).to(eq('shares'))
           end

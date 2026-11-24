@@ -22,6 +22,7 @@ require_relative '../../assert'
 require_relative 'graphql'
 require_relative '../../rainbow'
 require_relative '../transfer_agents/transfer_agent'
+require_relative '../faspex4/gateway_options'
 require 'securerandom'
 require 'date'
 using Rainbow
@@ -34,8 +35,6 @@ module Aspera
         AOC_SCHEMA = 'aoc'
         AUTOMATION_SCHEMA = 'automation'
         PACKAGE_FOLDER_OPTIONS = 'aoc_opts:components.schemas.PackageFolderOptions'
-        # Options of the Faspex 4 gateway, in the schemas of the bundle faspex4
-        GATEWAY_OPTIONS = 'faspex4_opts:components.schemas.Faspex4GatewayOptions'
         # default redirect for AoC web auth
         REDIRECT_LOCALHOST = 'http://localhost:12345'
         # admin objects that can be manipulated
@@ -820,7 +819,7 @@ module Aspera
         end
         command :automation,        description: 'Manage automation'
         command :gateway,           description: 'Start AoC Faspex4 gateway',
-          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: GATEWAY_OPTIONS}]
+          arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: Faspex4::GatewayOptions::SCHEMA}]
 
         # user sub-commands
         commands_under :user do

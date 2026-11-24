@@ -36,7 +36,7 @@ module Aspera
             expect(registry.unavailable_reason(:orchestrator)).to(be_nil)
             expect(registry[:orchestrator].depends).to(eq([:transfer_agents]))
             expect(registry[:orchestrator].gems).to(eq([]))
-            expect(Cli::Plugins::Factory.instance.plugin_source(:orchestrator)).to(eq(bundle_folder))
+            expect(Cli::Plugins::Factory.instance.describe(:orchestrator)[:path]).to(eq(bundle_folder))
             expect(Cli::Plugins::Factory.instance.plugin_class(:orchestrator)).to(be(Commands))
             expect(Commands.plugin_name).to(eq('orchestrator'))
           end

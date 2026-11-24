@@ -48,7 +48,7 @@ module Aspera
             # no `transferd`: the emulator gets the agent `transferd` from the factory when it starts
             expect(registry[:node].depends).to(eq(%i[transfer_agents]))
             expect(registry[:node].gems).to(eq([]))
-            expect(Cli::Plugins::Factory.instance.plugin_source(:node)).to(eq(bundle_folder))
+            expect(Cli::Plugins::Factory.instance.describe(:node)[:path]).to(eq(bundle_folder))
             expect(Cli::Plugins::Factory.instance.plugin_class(:node)).to(be(Commands))
             expect(Commands.plugin_name).to(eq('node'))
           end
@@ -81,6 +81,17 @@ module Aspera
             http = instance_double(Net::HTTPResponse, code: '200', message: 'OK')
             body = {'transfer_specs' => [{'transfer_spec' => {'error' => {'code' => 1, 'reason' => 'Forbidden'}}}]}
             expect { Rest::ErrorAnalyzer.instance.raise_on_error(req, body, http) }.to(raise_error(Rest::CallError, '1: Forbidden'))
+          end
+        end
+
+        describe 'order of the messages' do
+          it 'gives the error of the transfer specs of a *_setup answer before the top-level message, as before the handlers were registered by bundles' do
+            req = Net::HTTP::Post.new('/files/upload_setup')
+            req['host'] = 'node.example.com'
+            http = instance_double(Net::HTTPResponse, code: '400', message: 'Bad Request')
+            body = {'message' => 'Top level', 'transfer_specs' => [{'transfer_spec' => {'error' => {'code' => 1, 'reason' => 'Forbidden'}}}]}
+            expect { Rest::ErrorAnalyzer.instance.raise_on_error(req, body, http) }
+              .to(raise_error(Rest::CallError, "1: Forbidden\nTop level\nnode.example.com 400 Bad Request"))
           end
         end
 

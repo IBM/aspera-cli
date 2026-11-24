@@ -52,6 +52,20 @@ RSpec.describe(Aspera::Schema::Registry) do
       expect { described_class.register(:opts, file) }.to(raise_error(Aspera::AssertError, /built-in schema/))
     end
 
+    it 'reserves the keys of the domain library, whether or not their file is loaded' do
+      expect(described_class::RESERVED).to(eq(%i[spec conf args async_tables ascp_log]))
+      described_class.instance_variable_set(:@registered, {})
+      expect(described_class.built_in?(:conf)).to(be(true))
+      expect(described_class.registered(:conf)).to(be_nil)
+    end
+
+    it 'refuses a key already provided by a bundle, naming both owners' do
+      file = write_schema('a.yaml', {'type' => 'object'})
+      claimed = Struct.new(:bundle, :file).new(:spec_bundle_x, '/x/api.yaml')
+      allow(described_class).to(receive(:bundle_schema).with(:spec_registry_a).and_return(claimed))
+      expect { described_class.register(:spec_registry_a, file) }.to(raise_error(Aspera::AssertError, /#{Regexp.escape(file)}.*spec_bundle_x/))
+    end
+
     it 'gives the options of documentation of the whole schema' do
       file = write_schema('a.yaml', {'type' => 'object'})
       described_class.register(:spec_registry_a, file, doc_options: -> { {code_highlight: true} })

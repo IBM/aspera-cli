@@ -26,7 +26,7 @@ module Aspera
             expect(registry.unavailable_reason(:preview)).to(be_nil)
             expect(registry[:preview].depends).to(eq(%i[node transfer_agents]))
             expect(registry[:preview].gems).to(eq(['marcel']))
-            expect(Cli::Plugins::Factory.instance.plugin_source(:preview)).to(eq(bundle_folder))
+            expect(Cli::Plugins::Factory.instance.describe(:preview)[:path]).to(eq(bundle_folder))
             expect(Cli::Plugins::Factory.instance.plugin_class(:preview)).to(be(Commands))
             expect(Commands.plugin_name).to(eq('preview'))
           end

@@ -50,9 +50,10 @@ module Aspera
         end
 
         # @param error [Exception] An error
-        # @return [Hash, nil] `label` and `code` of the first added class of the error, `nil` if none
+        # @return [Hash, nil] `label` and `code` of the most specific added class of the error (whatever the order of `add_error`), `nil` if none
         def error_category(error)
-          @errors.find { |error_class, _| error.is_a?(error_class) }&.last
+          error.class.ancestors.each { |klass| return @errors[klass] if @errors.key?(klass) }
+          nil
         end
 
         # @param error [Rest::CallError] Failed API call

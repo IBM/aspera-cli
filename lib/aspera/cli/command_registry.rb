@@ -213,7 +213,7 @@ module Aspera
       # Register an OptionSpec. Raises if the option name is already registered.
       # @param spec   [OptionSpec]
       # @param before [Symbol, nil] Name of an option to place this one before, also when that option is registered later
-      #                             (e.g. by the body of a plugin class, after the modules mounted on it); at the end if it is never registered
+      #                             (e.g. by the body of a plugin class, after the modules mounted on it); the anchor can itself be placed before another option
       # @raise [ArgumentError] on duplicate option name
       # @return [OptionSpec] the registered spec
       def register_option(spec, before: nil)
@@ -222,19 +222,35 @@ module Aspera
         @option_specs[spec.name] = spec
       end
 
+      # @param name [Symbol] option name
+      # @return [Boolean] true if an option of this name is registered (no ordering)
+      def option_registered?(name)
+        @option_specs.key?(name)
+      end
+
       # @return [Hash{Symbol => OptionSpec}] all registered option specs, in order of registration, except those placed before another one (see `register_option`)
+      # @raise [ArgumentError] if the anchor of a `before:` is not registered, or if the anchors form a cycle
       def option_specs
+        return @option_specs.dup if @option_before.empty?
         ordered = @option_specs.except(*@option_before.keys)
-        @option_before.each do |name, anchor|
-          spec = @option_specs[name]
-          if ordered.key?(anchor)
-            ordered = ordered.each_with_object({}) do |(id, other), placed|
-              placed[name] = spec if id.eql?(anchor)
-              placed[id] = other
+        pending = @option_before.dup
+        until pending.empty?
+          # an option whose anchor is itself a pending option waits for the anchor to be placed (chains, whatever the declaration order)
+          ready = pending.select { |_name, anchor| ordered.key?(anchor) }
+          unless ready.empty?
+            ready.each do |name, anchor|
+              spec = @option_specs[name]
+              ordered = ordered.each_with_object({}) do |(id, other), placed|
+                placed[name] = spec if id.eql?(anchor)
+                placed[id] = other
+              end
+              pending.delete(name)
             end
-          else
-            ordered[name] = spec
+            next
           end
+          unknown = pending.reject { |_name, anchor| pending.key?(anchor) }
+          raise ArgumentError, "Option placed before unknown option: #{unknown.map { |name, anchor| "#{name} before #{anchor}" }.join(', ')}" unless unknown.empty?
+          raise ArgumentError, "Cycle in option placement: #{pending.map { |name, anchor| "#{name} before #{anchor}" }.join(', ')}"
         end
         ordered
       end

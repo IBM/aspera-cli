@@ -89,6 +89,16 @@ module Aspera
         expect(registry.schemas).to(eq([]))
       end
 
+      it 'makes a bundle unavailable if its key is reserved for the domain library, also when the file of the domain is not loaded' do
+        saved = Schema::Registry.instance_variable_get(:@registered)
+        Schema::Registry.instance_variable_set(:@registered, {})
+        fake_bundle('spec_bundle_schema', schemas: [{'key' => 'conf', 'file' => 'api.schema.yaml'}])
+        registry.scan
+        expect(registry.unavailable_reason(:spec_bundle_schema)).to(eq('schema conf is a built-in schema'))
+      ensure
+        Schema::Registry.instance_variable_set(:@registered, saved)
+      end
+
       it 'makes the second bundle unavailable if a key is declared twice' do
         fake_bundle('spec_bundle_a', schemas: [{'key' => 'spec_bundle_api', 'file' => 'api.schema.yaml'}])
         fake_bundle('spec_bundle_b', schemas: [{'key' => 'spec_bundle_api', 'file' => 'api.schema.yaml'}])

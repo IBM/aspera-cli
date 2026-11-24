@@ -25,7 +25,7 @@ module Aspera
             expect(registry.unavailable_reason(:server)).to(be_nil)
             expect(registry[:server].depends).to(eq([:transfer_agents]))
             expect(registry[:server].gems).to(eq([]))
-            expect(Cli::Plugins::Factory.instance.plugin_source(:server)).to(eq(bundle_folder))
+            expect(Cli::Plugins::Factory.instance.describe(:server)[:path]).to(eq(bundle_folder))
             expect(Cli::Plugins::Factory.instance.plugin_class(:server)).to(be(Commands))
             expect(Commands.plugin_name).to(eq('server'))
           end

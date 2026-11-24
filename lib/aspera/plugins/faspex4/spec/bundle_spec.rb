@@ -36,12 +36,12 @@ module Aspera
           expect(registry[:faspex5].depends).to(include(:faspex4))
           expect(registry[:aoc].depends).not_to(include(:faspex5))
           expect(registry[:faspex5].depends).not_to(include(:aoc))
-          expect(Aoc::Commands.command_registry[%i[gateway]].arguments.first.schema).to(eq(Aoc::Commands::GATEWAY_OPTIONS))
-          expect(Faspex5::Commands.command_registry[%i[gateway]].arguments.first.schema).to(eq(Aoc::Commands::GATEWAY_OPTIONS))
+          expect(Aoc::Commands.command_registry[%i[gateway]].arguments.first.schema).to(eq(Faspex4::GatewayOptions::SCHEMA))
+          expect(Faspex5::Commands.command_registry[%i[gateway]].arguments.first.schema).to(eq(Faspex4::GatewayOptions::SCHEMA))
         end
 
         describe 'options of the gateway' do
-          let(:schema_path) { Aoc::Commands::GATEWAY_OPTIONS }
+          let(:schema_path) { Faspex4::GatewayOptions::SCHEMA }
 
           it 'are an owned schema of the bundle, no longer in the framework' do
             expect(registry.schema(:faspex4_opts)).to(have_attributes(bundle: :faspex4, file: File.join(bundle_folder, 'schemas/options.yaml'), owned: true))

@@ -355,7 +355,7 @@ module Aspera
           klass = factory.plugin_class(:spec_bundle_one)
           expect(klass).to(be(SpecBundleOne))
           expect(klass).to(have_attributes(plugin_name: 'spec_bundle_one', application_name: 'SpecBundleOne'))
-          expect(factory.plugin_source(:spec_bundle_one)).to(eq(path))
+          expect(factory.describe(:spec_bundle_one)[:path]).to(eq(path))
         end
 
         it 'gives the class Commands of a bundle, with its plugin name' do
@@ -364,7 +364,7 @@ module Aspera
           klass = factory.plugin_class(:spec_bundle_two)
           expect(klass).to(be(Aspera::Plugins::SpecBundleTwo::Commands))
           expect(klass).to(have_attributes(plugin_name: 'spec_bundle_two', application_name: 'SpecBundleTwo'))
-          expect(factory.plugin_source(:spec_bundle_two)).to(eq(bundle))
+          expect(factory.describe(:spec_bundle_two)[:path]).to(eq(bundle))
         end
 
         it 'refuses to load a bundle with a missing gem' do

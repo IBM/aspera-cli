@@ -11,7 +11,7 @@ require_relative '../../assert'
 require_relative '../../oauth/client/json_credentials'
 require_relative '../../transfer/spec'
 require_relative '../../schema/registry'
-require_relative '../../rest/error_analyzer'
+require_relative '../../rest/aspera_errors'
 require 'xmlsimple'
 
 module Aspera
@@ -795,7 +795,7 @@ module Aspera
         end
       end
       # Errors of the Orchestrator API: XML document, or failed work order
-      Rest::ErrorAnalyzer.instance.add_handler('Orchestrator') do |type, context|
+      Rest::ErrorAnalyzer.instance.add_handler('Orchestrator', before: 'T10:faspex v4') do |type, context|
         next if context[:response].code.start_with?('2')
         data = context[:data]
         if data.is_a?(String) && data.start_with?('<?xml')

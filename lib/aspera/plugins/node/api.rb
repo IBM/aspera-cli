@@ -6,6 +6,7 @@
 require_relative '../../link_header'
 require_relative '../../transfer/spec'
 require_relative '../../rest'
+require_relative '../../rest/aspera_errors'
 require_relative '../../oauth/client/factory'
 require_relative '../../log'
 require_relative '../../assert'
@@ -683,7 +684,7 @@ module Aspera
         end
       end
       # Errors of the transfer specs in the answer of `upload_setup` and `download_setup`
-      Rest::ErrorAnalyzer.instance.add_handler('T8:node: *_setup') do |type, context|
+      Rest::ErrorAnalyzer.instance.add_handler('T8:node: *_setup', before: 'Type 7: errors[]') do |type, context|
         next unless context[:data].is_a?(Hash)
         d_t_s = context[:data]['transfer_specs']
         next unless d_t_s.is_a?(Array)

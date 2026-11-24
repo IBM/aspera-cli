@@ -77,7 +77,7 @@ module Aspera
           FileUtils.mkdir_p(File.join(other, 'bundled'))
           File.write(File.join(other, 'bundled', BundleRegistry::MANIFEST), "name: bundled\ntitle: Bundled\ncommands: true\n")
           expect(plugins_with([SpecialValues::DEF, other])).to(eq(%i[bundled mine theirs]))
-          expect(factory.plugin_source(:bundled)).to(eq(File.join(other, 'bundled')))
+          expect(factory.describe(:bundled)[:path]).to(eq(File.join(other, 'bundled')))
         end
 
         it 'does not warn when the folder plugins of the configuration folder has no plugin' do
@@ -90,7 +90,7 @@ module Aspera
         it 'combines DEF and other folders, the last one with priority' do
           File.write(File.join(other, 'mine.rb'), "# other plugin mine\n")
           expect(plugins_with([SpecialValues::DEF, other])).to(eq(%i[mine theirs]))
-          expect(factory.plugin_source(:mine)).to(eq(File.join(other, 'mine.rb')))
+          expect(factory.describe(:mine)[:path]).to(eq(File.join(other, 'mine.rb')))
         end
 
         it 'uses no folder for an empty list' do
