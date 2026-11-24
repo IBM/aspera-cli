@@ -119,7 +119,7 @@ namespace :doc do
     ASPERA_CONF_XSD.write(Aspera::Conf::Generator.new(%x{asuserdata -+}).generate)
   end
 
-  file Paths::MD_MANUAL => DOC_FILES + [Paths::BUILD_TOOLS, Paths::DOC_HELPER, Paths::DOC_MARKUP, Paths::MARKDOWN_FORMATTER, Paths::TSPEC_YAML_SCHEMA, Paths::ASYNC_YAML_SCHEMA, Paths::ASYNC_TABLES_YAML_SCHEMA, Paths::GEMSPEC] + CONST_SOURCES do
+  file Paths::MD_MANUAL => DOC_FILES + Paths::TOP.glob(Paths::BUNDLE_MANUAL_GLOB) + [Paths::BUILD_TOOLS, Paths::DOC_HELPER, Paths::DOC_MARKUP, Paths::MARKDOWN_FORMATTER, Paths::TSPEC_YAML_SCHEMA, Paths::ASYNC_YAML_SCHEMA, Paths::ASYNC_TABLES_YAML_SCHEMA, Paths::GEMSPEC] + CONST_SOURCES do
     Aspera::Environment.force_terminal_c
     DocHelper.new([Paths::MD_MANUAL] + DOC_FILES).generate
   end
@@ -142,7 +142,7 @@ namespace :doc do
 
   desc 'Check commands and options of examples in manual and README'
   task :check_commands do
-    DocCommandChecker.new(files: [Paths::MD_ERB, Paths::TOP / 'README.md'], ascli: Paths::COMMAND).check
+    DocCommandChecker.new(files: [Paths::MD_ERB, *Paths::TOP.glob(Paths::BUNDLE_MANUAL_GLOB), Paths::TOP / 'README.md'], ascli: Paths::COMMAND).check
   end
 
   desc 'Check internal links (#anchor) in manual, for GitHub and PDF (requires gfm2pdf-toolchain)'

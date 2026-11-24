@@ -3,6 +3,7 @@
 `docs//README.md` is generated after compilation of `docs/README.erb.md`.
 
 `docs/README.erb.md` uses the Markdown format with embedded Ruby macros (`erb`).
+The section of a bundle's plugin is in `lib/aspera/plugins/<name>/manual.erb.md`, included by `docs/README.erb.md`.
 
 Those macros are basically functions defined in `doc_tools.rb`, for example:
 

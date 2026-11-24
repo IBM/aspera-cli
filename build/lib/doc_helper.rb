@@ -537,6 +537,16 @@ class DocHelper
     ].join.chomp.chomp
   end
 
+  # Manual section of a plugin bundle, ERB template `manual.erb.md` of the bundle folder, evaluated in the context of the main template
+  # @param plugin_name_sym [Symbol] Bundle name
+  # @return [String] Markdown
+  # @raise [RuntimeError] If the bundle has no manual
+  def include_plugin_manual(plugin_name_sym)
+    file = Paths::LIB / 'aspera/plugins' / plugin_name_sym.to_s / 'manual.erb.md'
+    raise "Bundle #{plugin_name_sym} has no manual: #{file}" unless file.file?
+    return ERB.new(file.read, trim_mode: '-').result(binding)
+  end
+
   # All tested commands not yet included in doc
   # @return [String] One command per line
   def include_commands
@@ -570,12 +580,13 @@ class DocHelper
   # Read markdown file line by line, and check that all links are valid
   # Remote links are fetched, local links must exist, anchors and ERB links are skipped
   # @param file_path [String] Path of markdown file
+  # @param folder [Pathname, nil] Folder that local links are relative to, default: the folder of the file
   # @return [void]
   # @raise [RuntimeError] If a local file does not exist
-  def check_links_file(file_path)
+  def check_links_file(file_path, folder: nil)
     require 'uri'
     require 'net/http'
-    file_folder = Pathname.new(file_path).parent
+    file_folder = folder || Pathname.new(file_path).parent
     File.open(file_path) do |file|
       file.each_line do |line|
         line.scan(/(?:\[(.*?)\]\((.*?)\))/) do |match|
@@ -616,6 +627,7 @@ class DocHelper
   # @return [void]
   def check_links_manual
     check_links_file(@paths[:template])
+    Paths::TOP.glob(Paths::BUNDLE_MANUAL_GLOB).each { |f| check_links_file(f, folder: Paths::DOC) }
   end
 
   # Generate README.md from README.erb.md
@@ -625,6 +637,7 @@ class DocHelper
   def generate
     Aspera::Log.log.info("Generating markdown doc for version #{build_version}")
     check_headings(@paths[:template])
+    Paths::TOP.glob(Paths::BUNDLE_MANUAL_GLOB).each { |f| check_headings(f) }
     # get current plugins
     plugin_manager = Aspera::Cli::Plugins::Factory.instance
     plugin_manager.add_lookup_folder(Aspera::Cli::Plugins::Config.gem_plugins_folder)

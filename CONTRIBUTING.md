@@ -138,6 +138,7 @@ bundle exec rake test:run'[conf_agents_list conf_agents_show_bad]'
 
 `docs/README.erb.md` is the source for the generated documentation (`docs/README.md` and the PDF manual).
 **Never edit `docs/README.md` directly.**
+The section of a plugin that is a bundle is in `lib/aspera/plugins/<name>/manual.erb.md`, included by `docs/README.erb.md`.
 
 - Find the section closest to the new command (search for the parent command or a sibling).
 - Add a short prose paragraph and one or more fenced `shell` blocks showing usage.

@@ -40,8 +40,9 @@ Gem::Specification.new do |spec|
   spec.bindir        = 'bin'
   # list git files from specified location in root folder of project (this gemspec is in project root folder)
   files = Dir.chdir(File.dirname(gemspec_file)) { %x(git ls-files -z lib bin examples skills *.md LICENSE llms.txt docs/README.md docs/test-mcp-with-ai.md).split("\x0") }
-  # development files of plugin bundles (specs, fixtures, tests) stay in the repository
-  spec.files = files.reject { |file| File.fnmatch?('lib/aspera/plugins/*/spec/**/*', file, File::FNM_PATHNAME) }
+  # development files of plugin bundles (specs, fixtures, tests, manual section) stay in the repository
+  dev_patterns = %w[lib/aspera/plugins/*/spec/**/* lib/aspera/plugins/*/manual.erb.md]
+  spec.files = files.reject { |file| dev_patterns.any? { |pattern| File.fnmatch?(pattern, file, File::FNM_PATHNAME) } }
   # specify executable names: must be after lines defining: spec.bindir and spec.files
   spec.executables = spec.files.grep(/^#{spec.bindir}/) { |f| File.basename(f) }
   spec.cert_chain  = ['certs/aspera-cli-public-cert.pem']
