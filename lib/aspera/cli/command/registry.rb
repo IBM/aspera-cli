@@ -376,6 +376,9 @@ module Aspera
             raise ArgumentError, "#{where}: mandatory after optional #{previous.name}" if previous && arg.mandatory && !previous.mandatory
             raise ArgumentError, "#{where}: after #{previous.name}, which takes all remaining arguments" if previous&.multiple.eql?(true)
             raise ArgumentError, "#{where}: complete: #{arg.complete.inspect} is not one of #{Complete::KINDS.inspect}" unless arg.complete.nil? || Complete::KINDS.include?(arg.complete)
+            # Rule: an argument that completes to a local path (`complete: :file` or `:folder`) must declare how the command uses it (`access:`),
+            # so that a path chosen by the client is checked against the security level, or marked `:none` when it is not a local path read or written here.
+            raise ArgumentError, "#{where}: complete: #{arg.complete.inspect} requires access: (one of #{Argument::ACCESSES.inspect})" if Complete::LOCAL_PATH_KINDS.include?(arg.complete) && arg.access.nil?
             unless arg.lookup.nil?
               # Rule: the percent-selector lookup is only used for identifiers
               raise ArgumentError, "#{where}: lookup: requires type: :identifier" unless arg.type.eql?(:identifier)

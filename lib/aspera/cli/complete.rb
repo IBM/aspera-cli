@@ -15,6 +15,8 @@ module Aspera
     # - `transfer_job`: identifier of an asynchronous transfer job
     module Complete
       KINDS = %i[file folder destination_folder preset preset_parameter transfer_job].freeze
+      # Kinds that complete to a local path chosen by the client: an argument with one of these must declare `access:` (see `Argument`)
+      LOCAL_PATH_KINDS = %i[file folder].freeze
     end
   end
 end

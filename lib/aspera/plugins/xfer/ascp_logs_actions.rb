@@ -14,7 +14,7 @@ module Aspera
       module AscpLogsActions
         # Schema of option `ascp_logs`, in the schemas of the bundle (manifest `schemas`)
         OPTIONS_SCHEMA = 'transfer_opts:components.schemas.AscpLogsOptions'
-        LOG_FILES = [{name: :paths, description: 'Log files (gzip supported), `-` for standard input, or folders with log files', multiple: true, complete: :file}].freeze
+        LOG_FILES = [{name: :paths, description: 'Log files (gzip supported), `-` for standard input, or folders with log files', multiple: true, complete: :file, access: :read}].freeze
         # Command => description, and default fields
         LISTS = {
           sessions:          ['Sessions, with diagnostics',                                           %w[pid session user direction peer status error error_category start transmitted_bytes average_rate loss_rate diagnostics]],

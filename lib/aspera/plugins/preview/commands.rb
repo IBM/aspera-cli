@@ -445,10 +445,10 @@ module Aspera
         command :trevents, description: 'Process transfer events and generate previews',    setup: :setup_node_api, action: ->(**) { run_event_loop(:trevents) }
         command :check,    description: 'Check required tools are installed', action: ->(**) { tools_cleanup { Cli::Result::Status.new('Tools validated') } }
         command :show,     read_only: false, description: 'Generate and display preview of a source file',
-          arguments: [{name: :source_file, description: 'Local file to preview', complete: :file}]
+          arguments: [{name: :source_file, description: 'Local file to preview', complete: :file, access: :read}]
         command :test,     description: 'Test preview generation for a source file',
           arguments: [
-            {name: :source_file, description: 'Local file to preview', complete: :file},
+            {name: :source_file, description: 'Local file to preview', complete: :file, access: :read},
             {name: :format, description: 'Preview output format', allowed: Generator::PREVIEW_FORMATS, mandatory: false, default: :png}
           ]
 

@@ -251,8 +251,13 @@ RSpec.describe(Aspera::Cli::Command::Registry) do
       end
 
       it 'raises for an unknown kind of completion' do
-        registry.register(spec(id: :leaf, action: leaf_action, arguments: [{name: :a, complete: :file}, {name: :b, complete: :nope}]))
+        registry.register(spec(id: :leaf, action: leaf_action, arguments: [{name: :a, complete: :file, access: :read}, {name: :b, complete: :nope}]))
         expect { registry.validate! }.to(raise_error(ArgumentError, /argument b: complete: :nope is not one of/))
+      end
+
+      it 'raises for a file or folder argument without access' do
+        registry.register(spec(id: :leaf, action: leaf_action, arguments: [{name: :a, complete: :folder}]))
+        expect { registry.validate! }.to(raise_error(ArgumentError, /argument a: complete: :folder requires access:/))
       end
     end
 

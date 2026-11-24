@@ -352,11 +352,11 @@ module Aspera
             ]
           command :import,     description: 'Import a workflow from a file created by `workflows export`, local problems are reported as warnings (see `check_import`)',
             arguments: [
-              {name: :file_path, complete: :file},
+              {name: :file_path, complete: :file, access: :read},
               {name: :import, type: Hash, mandatory: false, default: {}, schema: 'orchestrator_opts:components.schemas.OrchestratorWorkflowImport'}
             ]
           command :check_import, description: 'Check a workflow file (no access to Orchestrator): rules that Orchestrator does not check on import, but that make the workflow fail to publish or to run',
-            arguments: [{name: :file_path, complete: :file}]
+            arguments: [{name: :file_path, complete: :file, access: :read}]
           command :find_constraints, description: 'List the conflicts and missing plugins of a workflow file present on the Orchestrator host, before `import_with_constraints`',
             arguments: [
               {name: :filename},
@@ -655,11 +655,11 @@ module Aspera
           response
         end
 
-        # The file is read as `@file:`: the issues show parts of its content
+        # The argument `file_path` is a local path read by the command (`access: :read`): checked against the security level when it is read.
         # @param file_path [String] Workflow file
         # @return [Result] The issues found, or a status if none
         def action_workflows_check_import(file_path:, **)
-          response = check_workflow(File.basename(file_path), Cli::Security.instance.read_file(file_path, binmode: true))
+          response = check_workflow(File.basename(file_path), File.binread(file_path))
           return Cli::Result::Status.new('no problem found') if response['issues'].empty?
           Cli::Result::ObjectList.new(response['issues'], fields: %w[severity code file path message])
         end
@@ -711,8 +711,8 @@ module Aspera
           raise Cli::BadArgument, "Import refused: #{problems.join('; ')}" unless problems.empty?
         end
 
-        # The file is uploaded as a multipart form
-        # It is sent, as a transfer sends files: not restricted by the security level, see `Security#read_file`
+        # The file is read by the command and uploaded as a multipart form: the argument `file_path` is a local path (`access: :read`),
+        # checked against the security level when it is read (`ascli` reads the file, so it is restricted like any local read, not like a transfer).
         # @param import [Hash] Options: `folder_id`, `publish`, `link_to_subworkflows`
         def action_workflows_import(file_path:, import: {}, **)
           import = import.transform_keys(&:to_s)

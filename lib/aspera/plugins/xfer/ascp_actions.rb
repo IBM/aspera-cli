@@ -26,7 +26,7 @@ module Aspera
           def included(base)
             base.option(:sdk_url,       description: 'Ascp: URL to get Aspera Transfer Executables',                    default: Cli::SpecialValues::DEF, security: :low, before: :smtp)
             base.option(:locations_url, description: 'Ascp: URLs to get download locations of Aspera Transfer Daemon', allowed: Cli::Option::Type::STRING_ARRAY, default: Ascp::Installation.instance.transferd_urls, on_set: Ascp::Installation.instance.method(:transferd_urls=), security: :low, before: :smtp)
-            base.option(:sdk_folder,    description: 'Ascp: Path to folder with ascp (or product with "product:")',    on_set: Ascp::Installation.instance.method(:sdk_folder=), complete: :folder, before: :smtp)
+            base.option(:sdk_folder,    description: 'Ascp: Path to folder with ascp (or product with "product:")',    on_set: Ascp::Installation.instance.method(:sdk_folder=), complete: :folder, security: :low, before: :smtp)
           end
         end
 

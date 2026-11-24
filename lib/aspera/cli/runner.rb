@@ -539,7 +539,7 @@ module Aspera
           on_set: method(:option_temp=)
         )
         @context.options.declare(:clean_temp, description: 'Cleanup temporary files on exit', allowed: Option::Type::BOOLEAN, on_set: TempFileManager.instance.method(:cleanup_on_exit=), deprecation: {last: '4.27.5', message: 'use --temp.clean'})
-        @context.options.declare(:temp_folder, description: 'Temporary folder', on_set: TempFileManager.instance.method(:global_temp=), deprecation: {last: '4.27.5', message: 'use --temp.folder'}, complete: :folder)
+        @context.options.declare(:temp_folder, description: 'Temporary folder', on_set: TempFileManager.instance.method(:global_temp=), deprecation: {last: '4.27.5', message: 'use --temp.folder'}, complete: :folder, security: :low)
         @context.options.declare(:pid_file, description: 'Write process identifier to file, delete on exit', complete: :file, security: :low)
         @context.options.declare(
           :parser, description: 'Default parser for structured parameters and options',

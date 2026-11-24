@@ -19,14 +19,18 @@ module Aspera
           (1..18).map { |i| "P(#{i})" } +
           %w[Syncd Error Confl Pconf] +
           (23..24).map { |i| "P(#{i})" }).freeze
-        # Positional arguments shared by sync transfer commands (push/pull/bidi) and sync admin commands.
-        PATH_AND_INFO_ARGS = [{name: :path, complete: :folder}, {name: :sync_info, type: Hash, mandatory: false, default: {}}].freeze
+        # Positional arguments of sync transfer commands (push/pull/bidi): the positional `path` is the local folder (push, bidi)
+        # or the remote path (pull), so it is not declared as a local path here (the local side is checked when the transfer starts).
+        PATH_AND_INFO_ARGS = [{name: :path, complete: :folder, access: :none}, {name: :sync_info, type: Hash, mandatory: false, default: {}}].freeze
+        # Positional arguments of sync admin commands: the positional `path` is always the local database folder, read to show its state.
+        ADMIN_PATH_AND_INFO_ARGS = [{name: :path, complete: :folder, access: :read}, {name: :sync_info, type: Hash, mandatory: false, default: {}}].freeze
         # When a plugin class includes SyncActions, register the :sql option
         # in that class's DSL registry so Base#initialize auto-declares it,
         # and add the class-level DSL methods of ClassMethods.
         class << self
           def included(base)
-            base.option(:sql, description: 'SQL suffix appended to sqlite3 queries for admin subcommands (e.g. WHERE clause)')
+            # Raw SQL appended to the queries of the admin commands: executes code (e.g. `VACUUM INTO` writes a file), allowed at level `low` only
+            base.option(:sql, description: 'SQL suffix appended to sqlite3 queries for admin subcommands (e.g. WHERE clause)', security: :low)
             base.extend(ClassMethods)
           end
         end
@@ -38,40 +42,40 @@ module Aspera
           def sync_admin_commands(parent)
             commands_under(parent, description: 'Manage sync database (admin operations)') do
               command(
-                :find, description: 'Find sync database files', arguments: [{name: :path, complete: :folder}],
+                :find, description: 'Find sync database files', arguments: [{name: :path, complete: :folder, access: :read}],
                 action: lambda do |path:, **|
                   dbs = Sync::Operations.list_db_files(path)
                   Cli::Result::ObjectList.new(dbs.keys.map { |n| {name: n, path: dbs[n]} })
                 end
               )
               command(
-                :status, description: 'Show sync session status', arguments: PATH_AND_INFO_ARGS,
+                :status, description: 'Show sync session status', arguments: ADMIN_PATH_AND_INFO_ARGS,
                 action: ->(path:, sync_info: {}, **) { Cli::Result::SingleObject.new(Sync::Operations.admin_status(async_info_from_args(path: path, sync_info: sync_info))) }
               )
               command(
-                :meta, description: 'Show sync session metadata', arguments: PATH_AND_INFO_ARGS,
+                :meta, description: 'Show sync session metadata', arguments: ADMIN_PATH_AND_INFO_ARGS,
                 action: lambda do |path:, sync_info: {}, **|
                   require_relative '../../sync/database'
                   Cli::Result::SingleObject.new(db_from_args(path: path, sync_info: sync_info).meta(options.get_option(:sql)))
                 end
               )
               command(
-                :counters, description: 'Show sync counters', arguments: PATH_AND_INFO_ARGS,
+                :counters, description: 'Show sync counters', arguments: ADMIN_PATH_AND_INFO_ARGS,
                 action: lambda do |path:, sync_info: {}, **|
                   require_relative '../../sync/database'
                   Cli::Result::SingleObject.new(db_from_args(path: path, sync_info: sync_info).counters(options.get_option(:sql)))
                 end
               )
-              command(:file_info, description: 'Show per-file sync state', arguments: PATH_AND_INFO_ARGS, action: :action_sync_admin_file_info)
+              command(:file_info, description: 'Show per-file sync state', arguments: ADMIN_PATH_AND_INFO_ARGS, action: :action_sync_admin_file_info)
               command(
-                :overview, description: 'Show sync database overview', arguments: PATH_AND_INFO_ARGS,
+                :overview, description: 'Show sync database overview', arguments: ADMIN_PATH_AND_INFO_ARGS,
                 action: lambda do |path:, sync_info: {}, **|
                   require_relative '../../sync/database'
                   Cli::Result::ObjectList.new(db_from_args(path: path, sync_info: sync_info).overview, fields: %w[table name type])
                 end
               )
               command(
-                :query, description: 'Execute a raw SQL query', arguments: PATH_AND_INFO_ARGS,
+                :query, description: 'Execute a raw SQL query', arguments: ADMIN_PATH_AND_INFO_ARGS,
                 action: lambda do |path:, sync_info: {}, **|
                   require_relative '../../sync/database'
                   Cli::Result.auto(db_from_args(path: path, sync_info: sync_info).execute(options.get_option(:sql, mandatory: true)))
@@ -172,7 +176,9 @@ module Aspera
         # @param sync_info [Hash]      extra sync configuration (may be empty)
         # @param block     [Proc, nil] block to generate transfer spec; receives (direction, local_dir, remote_dir)
         def run_sync_transfer(direction, path:, sync_info: {}, &block)
-          # Not a transfer of `TransferAgent`: the sync session is started directly
+          # Not a transfer of `TransferAgent`: the sync session runs the local `async` program on a local folder, so it is refused at level `high`,
+          # as an agent that runs on the local host (see `Cli::Security` and `TransferAgent`).
+          Cli::Security.instance.check_level(:medium, 'sync (local async)')
           transfer.assert_no_dry_run
           Sync::Operations.start(async_info_from_args(path: path, sync_info: sync_info, direction: direction), transfer.user_transfer_spec, &block)
           Cli::Result::Success.new

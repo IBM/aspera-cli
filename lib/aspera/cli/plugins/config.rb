@@ -27,6 +27,7 @@ require_relative '../../bundle_registry'
 require_relative '../../environment'
 require_relative '../../hash_ext'
 require_relative '../../log'
+require_relative '../../uri_reader'
 require_relative '../../oauth/client/factory'
 require_relative '../../oauth/client/jwt'
 require_relative '../../prompt'
@@ -141,7 +142,7 @@ module Aspera
         command(
           :genkey, description: 'Generate a new RSA private key',
           arguments: [
-            {name: :private_key_path, complete: :file},
+            {name: :private_key_path, complete: :file, access: :write},
             {name: :private_key_length, type: Integer, mandatory: false, default: OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH}
           ],
           action: lambda do |private_key_path:, private_key_length: OAuth::Jwt::DEFAULT_PRIV_KEY_LENGTH, **|
@@ -159,7 +160,7 @@ module Aspera
         command :download, description: 'Download a file from a URL',
           arguments: [
             {name: :file_url},
-            {name: :file_dest, mandatory: false, complete: :file}
+            {name: :file_dest, mandatory: false, complete: :file, access: :write}
           ]
         command :web_login, description: 'Web login for ascli on another host (option ui.web_auth=paste): open the login page, show a code to paste there',
           security: :low,
@@ -191,9 +192,15 @@ module Aspera
           end
         )
         command :coffee, description: 'Show a coffee image', action: ->(**) { Result::Image.new(COFFEE_IMAGE_URL) }
-        command :image, description: 'Show an image',
+        command(
+          :image, description: 'Show an image',
           arguments: [{name: :image_uri, type: nil}],
-          action: ->(image_uri:, **) { Result::Image.new(image_uri) }
+          # A `file:` URL reads a local file chosen by the client: checked against the security level (refused at `high`), like `access: :read`.
+          action: lambda do |image_uri:, **|
+            image_uri = UriReader.file_url(Security.instance.readable_path(UriReader.file_path(image_uri))) if image_uri.is_a?(String) && UriReader.file?(image_uri)
+            Result::Image.new(image_uri)
+          end
+        )
         command :gem, description: 'Show gem information'
         command :folder, description: 'Show the configuration folder path', action: ->(**) { Result::Text.new(context.main_folder) }
         command :file, description: 'Show the configuration file path', action: ->(**) { Result::Text.new(context.presets.config_file) }
@@ -331,7 +338,7 @@ module Aspera
           command :create, description: 'Create a new plugin skeleton file', security: :low,
             arguments: [
               {name: :name},
-              {name: :folder, mandatory: false, complete: :folder}
+              {name: :folder, mandatory: false, complete: :folder, access: :write}
             ]
         end
 

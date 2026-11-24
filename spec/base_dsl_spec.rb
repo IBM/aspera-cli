@@ -921,6 +921,37 @@ module Aspera
             expect(registry.option_specs).not_to(have_key(:bar))
           end
         end
+
+        # The central check of a local path given as an argument, applied by `resolve_arguments`.
+        describe '#check_argument_access' do
+          def check(access, value) = plugin.send(:check_argument_access, Argument.new(name: :p, complete: :file, access: access), value)
+
+          after { Security.instance.reset }
+
+          it 'does not check a path without access, or with access :none' do
+            Security.instance.options = {'level' => 'high'}
+            expect(check(nil, '/etc/hosts')).to(eq('/etc/hosts'))
+            expect(check(:none, '/etc/hosts')).to(eq('/etc/hosts'))
+          end
+
+          it 'refuses a read at level high, and resolves it at level low' do
+            Security.instance.options = {'level' => 'high'}
+            expect { check(:read, '/etc/hosts') }.to(raise_error(BadArgument, /reading files is disabled by security level high/))
+            Security.instance.reset
+            expect(check(:read, '/etc/hosts')).to(eq(File.expand_path('/etc/hosts')))
+          end
+
+          it 'refuses a write at level high without writable_paths' do
+            Security.instance.options = {'level' => 'high'}
+            expect { check(:write, '/tmp/some/file') }.to(raise_error(BadArgument, /writing is refused by security level high/))
+          end
+
+          it 'leaves `-` (standard input) unchanged, and checks each path of an Array' do
+            Security.instance.options = {'level' => 'high'}
+            expect(check(:read, '-')).to(eq('-'))
+            expect { check(:read, ['-', '/etc/hosts']) }.to(raise_error(BadArgument, /reading files is disabled/))
+          end
+        end
       end
     end
   end

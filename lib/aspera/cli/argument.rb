@@ -32,6 +32,10 @@ module Aspera
     # @!attribute complete    [Symbol, nil]               Values proposed by shell completion, one of `Complete::KINDS` (e.g. `:file`)
     # @!attribute omit_absent [Boolean]                   For an optional argument: when not given, it is not passed to the action,
     #                                                     so that the action (with its own default) can tell it from a value `nil` (`@none:`)
+    # @!attribute access      [Symbol, nil]               For a local path chosen by the client (`complete: :file` or `:folder`): how the command uses it,
+    #                                                     one of `ACCESSES`. The value is checked against the security level when the argument is read (`Cli::Security`),
+    #                                                     and replaced by the real path: `:read` (content read or displayed, even to send it to a remote service),
+    #                                                     `:write` (file created or modified). A path only sent by a transfer agent (not read by `ascli`) has no `access`.
     Argument = Struct.new(
       :name,
       :description,
@@ -47,6 +51,7 @@ module Aspera
       :evaluate,
       :complete,
       :omit_absent,
+      :access,
       keyword_init: true
     ) do
       def initialize(**kwargs)
@@ -59,6 +64,7 @@ module Aspera
         raise ArgumentError, "omit_absent: only for an optional argument: #{kwargs[:name]}" if kwargs[:omit_absent] && kwargs[:mandatory]
         kwargs[:type] = String unless kwargs.key?(:type) || kwargs[:allowed]
         raise ArgumentError, "evaluate: #{kwargs[:evaluate].inspect}, expecting one of: #{Argument::EVALUATIONS.join(', ')}" unless Argument::EVALUATIONS.include?(kwargs[:evaluate])
+        raise ArgumentError, "access: #{kwargs[:access].inspect}, expecting one of: #{Argument::ACCESSES.join(', ')}" unless kwargs[:access].nil? || Argument::ACCESSES.include?(kwargs[:access])
         super
       end
 
@@ -86,6 +92,9 @@ module Aspera
     class Argument
       # Ways to evaluate the value of an argument, see `Argument#evaluate`
       EVALUATIONS = %i[extended smart none].freeze
+      # How a command uses a path given as an argument, see `Argument#access`.
+      # `:none`: not a local path read or written by `ascli` (a remote path, or a path checked elsewhere, e.g. a sync folder given to the local `async`).
+      ACCESSES = %i[read write none].freeze
     end
   end
 end

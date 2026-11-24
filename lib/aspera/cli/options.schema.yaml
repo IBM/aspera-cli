@@ -135,6 +135,8 @@ components:
         folder:
           type: string
           x-cli-complete: folder
+          # The client chooses where temporary files are written: refused at levels medium and high (as option `temp_folder`)
+          x-security: low
           description: >-
             Folder for temporary files, e.g. certificate for WSS transfers, logs of `transferd`.
 

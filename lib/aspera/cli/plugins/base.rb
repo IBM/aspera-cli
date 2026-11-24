@@ -23,6 +23,9 @@ module Aspera
     module Plugins
       # Base class for command plugins
       class Base
+        # Value of a path argument that means the standard input, not a local file (see `check_argument_access`)
+        STDIN_ARGUMENT = '-'
+
         module Operations
           # Operations without id: `create` `list`
           GLOBAL = %i[create list].freeze
@@ -601,9 +604,29 @@ module Aspera
               when Symbol then ->(f, v) { send(lookup_cb, f, v, **current) }
               else ->(f, v) { instance_exec(f, v, **current, &lookup_cb) }
               end
-            ctx = ctx.merge(arg_spec.name => resolve_argument(arg_spec, &block))
+            ctx = ctx.merge(arg_spec.name => check_argument_access(arg_spec, resolve_argument(arg_spec, &block)))
           end
           ctx
+        end
+
+        # A local path given as an argument (`access: :read` or `:write`) is checked against the security level when it is read,
+        # and replaced by its real path, so that the action receives a checked path (see `Cli::Security`).
+        # `-` (standard input) is not a local path: it is left unchanged.
+        # @param arg_spec [Argument] declaration of the argument
+        # @param value    [Object]   resolved value (a path, an Array of paths, or nil)
+        # @return [Object] the value, with each path checked and resolved
+        def check_argument_access(arg_spec, value)
+          return value if value.nil?
+          security = Security.instance
+          resolver =
+            case arg_spec.access
+            when nil, :none then return value
+            when :read      then security.method(:readable_path)
+            when :write     then security.method(:writable_path)
+            else Aspera.error_unexpected_value(arg_spec.access) { "access of argument #{arg_spec.name}" }
+            end
+          mapper = ->(one) { one.is_a?(String) && one != STDIN_ARGUMENT ? resolver.call(one) : one }
+          value.is_a?(Array) ? value.map(&mapper) : mapper.call(value)
         end
 
         # Resolve a single positional argument from the CLI argument stream.

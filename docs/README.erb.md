@@ -2820,10 +2820,12 @@ With level `medium`, the real path of the file is checked: a symbolic link leadi
 With levels `medium` and `high`, files are written only in `writable_paths` (none by default): downloaded files (`config download`, and transfers that receive files), because a file written where the client chooses could replace a file that is used later, for example a plugin or a shell startup file.
 The real path of the folder is checked: neither `..` nor a symbolic link leading outside of `writable_paths` is accepted.
 
+A command that reads or writes a local path given by the client checks it against the security level, like `@file:`: the content read (for example `config ascp logs`, `preview show`, `orchestrator workflows import` and `check_import`, `config sync admin`), or the file written (for example `config genkey`, `config download`).
+It is refused at level `high`, and at level `medium` the path must be in `allowed_paths` (read) or `writable_paths` (write); a path that does not exist and a path outside those give the same error, so the existence of a file is not revealed.
+
 > [!NOTE]
-> Reading files is not restricted for transfers: a command that sends files (for example `server upload`, or `orchestrator workflows import`) reads the files that it is given, whatever the level.
-> The security level restricts extended values, not the paths of transfers.
-> A command that reads a local file to display something about its content (for example `orchestrator workflows check_import`) reads it as `@file:`.
+> A transfer that uses a remote agent (`node`, or `transferd` attached to a remote daemon) sends and receives the files on the host of the agent, not the local host: those paths are not local, and are not restricted by the security level.
+> At level `high`, a transfer that would run on the local host is refused (see above).
 
 The same applies to `@file:<path>` in the parameters of stores of option `vault`, and in option `vault_password` (for example, `token`), although the file is read when used, not when the option is evaluated.
 
@@ -6199,6 +6201,7 @@ A plugin is, in a plugin folder (option `plugin_folder`, by default folder `plug
   In the help, the options of `use_options` and of an included module (`BasicAuth`, `Oauth`) are listed in the order of these lines in the class.
 - **Commands**: `command :<name>, description: '...'`, inside `commands_under :<name> do ... end` for sub-commands.
   Positional arguments: `arguments: [{name: :<name>, description: '...'}]` (optional: `mandatory: false`, `default:`, `type: Hash`, `multiple: true`).
+  An argument that is a local path adds `complete: :file` (or `:folder`) for shell completion, and then `access:` so the path is checked against the [Security Level](#security-level): `:read` (the command reads it), `:write` (the command writes it), or `:none` (not a local path read or written by <%=tool%>, for example a remote path, or a path given to another program).
   `read_only: true` for a command that changes nothing (allowed with option `poll`).
 - **Actions**: the method `action_<command path>`, e.g. `action_item_show` for `item show`, receives the arguments as keyword arguments (and `**` for others).
   It returns a result, displayed according to option `format`: `Result::SingleObject.new(<Hash>)`, `Result::ObjectList.new(<Array of Hash>)`, `Result::Status.new('<text>')`, `Result::Nothing.new`.
