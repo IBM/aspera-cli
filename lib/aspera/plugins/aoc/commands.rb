@@ -30,7 +30,7 @@ using Rainbow
 module Aspera
   module Plugins
     module Aoc
-      class Commands < Cli::Plugins::Oauth
+      class Commands < Cli::Plugins::Base
         # Keys of the schemas of the bundle (see `plugin.yaml`): AoC API, AoC Automation API, options
         AOC_SCHEMA = 'aoc'
         AUTOMATION_SCHEMA = 'automation'
@@ -292,6 +292,8 @@ module Aspera
         option :use_generic_client, description: 'Wizard: AoC: use global or org specific jwt client id (default: global for SaaS URL)', allowed: Cli::Option::Type::BOOLEAN
 
         use_options Node::Commands
+        # After `use_options`: options of the plugin, then of `Oauth`
+        include Cli::Plugins::Oauth
 
         def initialize(**_)
           super

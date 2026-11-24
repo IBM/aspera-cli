@@ -30,7 +30,9 @@ using Rainbow
 module Aspera
   module Plugins
     module Faspex5
-      class Commands < Cli::Plugins::Oauth
+      class Commands < Cli::Plugins::Base
+        include Cli::Plugins::Oauth
+
         # Key of the Faspex 5 API in the schemas of the bundle (manifest)
         API_SCHEMA = 'faspex'
         # Options of the Faspex 4 post-processing servlet, in the schemas of the bundle
@@ -418,7 +420,7 @@ module Aspera
         RESOURCE_CONFIG = {
           accounts:            {
             display_fields:  Cli::Formatter.all_but('user_profile_data_attributes'),
-            extra_commands:  {reset_password: {description: 'Send password reset email to account', arguments: [{name: :account_id, type: :identifier, lookup: ->(field, value, **) { res_lookup_id(:accounts, field, value) }}]}},
+            extra_commands:  {reset_password: {description: 'Send password reset email to account', arguments: [{name: :account_id, type: :identifier, lookup: ->(field, value, **) { res_lookup_id(:accounts, field, value) }}]}}, # HashiCorpIgnore
             query_component: API_SCHEMA,
             body_component:  API_SCHEMA
           },

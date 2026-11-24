@@ -21,7 +21,9 @@ module Aspera
   module Plugins
     module Server
       # Operations on HSTS with SSH/FASP (ascmd/ascp)
-      class Commands < Cli::Plugins::BasicAuth
+      class Commands < Cli::Plugins::Base
+        include Cli::Plugins::BasicAuth
+
         include Aspera::Plugins::TransferAgents::SyncActions
         include Aspera::Plugins::TransferAgents::AscpLogsActions
 

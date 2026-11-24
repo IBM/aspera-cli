@@ -16,7 +16,9 @@ module Aspera
   module Plugins
     module Shares
       # Plugin for Aspera Shares v1
-      class Commands < Cli::Plugins::BasicAuth
+      class Commands < Cli::Plugins::Base
+        include Cli::Plugins::BasicAuth
+
         # Key of the Shares API in the schemas of the bundle (manifest), with the path prefix of the admin API
         API_SCHEMA = 'shares+/api/v1'
         # path for node API after base url

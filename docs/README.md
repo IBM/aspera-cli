@@ -6783,14 +6783,15 @@ ascli --plugin-folder=. foo
 A plugin is a Ruby file in a plugin folder (option `plugin_folder`, by default folder `plugins` of the configuration folder).
 
 - **Name**: the file name is the plugin name, which is the first command, e.g. file `my_app.rb` for command `my_app`.
-  The file defines class `Aspera::Cli::Plugins::<Class>`, the name in CamelCase (`MyApp`), subclass of:
-  - `Base`: no common option.
+  The file defines class `Aspera::Cli::Plugins::<Class>`, the name in CamelCase (`MyApp`), subclass of `Base` (`aspera/cli/plugins/base`).
+  For common options, the class includes one of these modules (`include <Module>`):
   - `BasicAuth` (`aspera/cli/plugins/basic_auth`): options `url`, `username`, `password`, method `basic_auth_api` returns a REST client with HTTP Basic authentication.
   - `Oauth` (`aspera/cli/plugins/oauth`): options of `BasicAuth`, and `auth` (default `jwt`), `client_id`, `client_secret`, `redirect_uri`, `private_key`, `passphrase`.
 - **Requires**: the plugin requires the files of the gem that it uses, e.g. `require 'aspera/cli/plugins/base'` (the `lib` folder of the gem is in the Ruby load path).
-  Built-in plugins load only what they use: a class of the gem (for example `Plugins::Oauth`, `Rest::Client`) may not be loaded yet when the plugin is read (`NameError: uninitialized constant`).
+  Built-in plugins load only what they use: a class or module of the gem (for example `Plugins::Oauth`, `Rest::Client`) may not be loaded yet when the plugin is read (`NameError: uninitialized constant`).
 - **Options**: `option :<name>, description: '...'` (optional: `default:`, `allowed:` a type or a list of values), value read with `options.get_option(:<name>)` (`mandatory: true` to require it).
   `use_options <Module>` adds the options of a module, e.g. `use_options OauthWebOptions` (`client_id`, `client_secret`, `redirect_uri`) for the OAuth web flow only, without the other options of `Oauth`.
+  In the help, the options of `use_options` and of an included module (`BasicAuth`, `Oauth`) are listed in the order of these lines in the class.
 - **Commands**: `command :<name>, description: '...'`, inside `commands_under :<name> do ... end` for sub-commands.
   Positional arguments: `arguments: [{name: :<name>, description: '...'}]` (optional: `mandatory: false`, `default:`, `type: Hash`, `multiple: true`).
   `read_only: true` for a command that changes nothing (allowed with option `poll`).
@@ -6816,8 +6817,10 @@ require 'aspera/cli/plugins/basic_auth'
 module Aspera
   module Cli
     module Plugins
-      # Options `url`, `username` and `password` of `BasicAuth`
-      class MyApp < BasicAuth
+      class MyApp < Base
+        # Options `url`, `username` and `password`, method `basic_auth_api`
+        include BasicAuth
+
         application_name 'My Application'
         option :page_size, description: 'Number of items per page', allowed: Integer, default: 100
 

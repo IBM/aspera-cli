@@ -11,7 +11,9 @@ require_relative '../../cli/plugins/basic_auth'
 module Aspera
   module Plugins
     module Alee
-      class Commands < Cli::Plugins::BasicAuth
+      class Commands < Cli::Plugins::Base
+        include Cli::Plugins::BasicAuth
+
         application_name 'Aspera License Entitlement Engine'
         command :health, description: 'Check ALEE metering server health'
         command :entitlement, description: 'Show entitlement information'

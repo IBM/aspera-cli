@@ -25,9 +25,22 @@ module Aspera
         option :passphrase,    description: 'OAuth (JWT) RSA private key passphrase'
       end
 
-      # base class for applications supporting OAuth 2.0 authentication
-      class Oauth < BasicAuth
+      # Module for plugins of applications supporting OAuth 2.0 authentication: `include Cli::Plugins::Oauth` in a plugin class.
+      # Includes `BasicAuth`. Its `included` hook gives the options of the module, `OauthWebOptions`, `OauthJwtOptions` and `BasicAuth` to the plugin class.
+      module Oauth
+        extend Option::Declarator
+        include BasicAuth
+
         class << self
+          # @param base [Class] Plugin class that includes the module
+          def included(base)
+            super
+            base.use_options(self)
+            base.use_options(OauthWebOptions)
+            base.use_options(OauthJwtOptions)
+            base.use_options(BasicAuth)
+          end
+
           # Get command line `options` specified by `AUTH_OPTIONS`
           # @param options [Cli::Parser] Object to get command line options.
           # @return [Hash{Symbol => Object}] Options
@@ -49,8 +62,6 @@ module Aspera
         # Options used for authentication (url, auth, client_id, etc...)
         AUTH_OPTIONS = %i[url auth client_id client_secret redirect_uri private_key passphrase username password].freeze
         option :auth,          description: 'OAuth type of authentication', allowed: AUTH_TYPES, default: :jwt
-        use_options OauthWebOptions
-        use_options OauthJwtOptions
       end
     end
   end

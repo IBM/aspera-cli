@@ -10,7 +10,9 @@ require_relative '../../nagios'
 module Aspera
   module Plugins
     module Console
-      class Commands < Cli::Plugins::BasicAuth
+      class Commands < Cli::Plugins::Base
+        include Cli::Plugins::BasicAuth
+
         API_SCHEMA = 'console'
         STANDARD_PATH = '/aspera/console'
         DEFAULT_FILTER_AGE_SECONDS = 24 * 3600

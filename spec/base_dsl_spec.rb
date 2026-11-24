@@ -178,10 +178,32 @@ module Aspera
             expect(names).not_to(include(:auth, :private_key, :passphrase, :url, :username, :password))
           end
 
-          it 'keeps the options of Oauth, in the same order' do
-            names = Oauth.option_sources.each_key.flat_map { |src| src.option_specs.keys }
+          it 'gives the options of Oauth to a class that includes it, in the same order as its former subclass' do
+            klass = Class.new(Base) { include Oauth }
+            names = klass.option_sources.each_key.flat_map { |src| src.option_specs.keys }
             expect(names.first(9)).to(eq(%i[auth client_id client_secret redirect_uri private_key passphrase url username password]))
             expect(names).to(include(*Oauth::AUTH_OPTIONS))
+          end
+
+          it 'gives the options of BasicAuth to a class that includes it, not those of Oauth' do
+            klass = Class.new(Base) { include BasicAuth }
+            names = klass.option_sources.each_key.flat_map { |src| src.option_specs.keys }
+            expect(names.first(3)).to(eq(%i[url username password]))
+            expect(names).not_to(include(:auth, :client_id))
+          end
+
+          it 'keeps the options of the class before those of Oauth' do
+            own = Module.new do
+              extend Option::Declarator
+
+              option(:own_opt, description: 'Own')
+            end
+            klass = Class.new(Base) do
+              use_options own
+              include Oauth
+            end
+            names = klass.option_sources.each_key.flat_map { |src| src.option_specs.keys }
+            expect(names.first(2)).to(eq(%i[own_opt auth]))
           end
 
           it 'binds on_set callbacks of a source to the given target' do

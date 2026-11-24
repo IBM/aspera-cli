@@ -11,7 +11,9 @@ require_relative '../../cli/plugins/basic_auth'
 module Aspera
   module Plugins
     module Faspio
-      class Commands < Cli::Plugins::BasicAuth
+      class Commands < Cli::Plugins::Base
+        include Cli::Plugins::BasicAuth
+
         API_SCHEMA = 'faspio'
         application_name 'faspio Gateway'
 

@@ -26,7 +26,9 @@ using Rainbow
 module Aspera
   module Plugins
     module Preview
-      class Commands < Cli::Plugins::BasicAuth
+      class Commands < Cli::Plugins::Base
+        include Cli::Plugins::BasicAuth
+
         # Reserved transfer tag used to identify preview-generation transfers.
         PREV_GEN_TAG = 'preview_generator'
         # Node API suffix for the per-file preview folder.

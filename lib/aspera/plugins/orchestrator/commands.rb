@@ -18,7 +18,9 @@ module Aspera
   module Plugins
     module Orchestrator
       # Aspera Orchestrator
-      class Commands < Cli::Plugins::BasicAuth
+      class Commands < Cli::Plugins::Base
+        include Cli::Plugins::BasicAuth
+
         # Key of the Orchestrator API in the schemas of the bundle (manifest)
         API_SCHEMA = 'orchestrator'
         STANDARD_PATH = '/aspera/orchestrator'
@@ -477,7 +479,7 @@ module Aspera
                 password: password
               }
             when :query
-              {type: :url, url_query: {'login' => username}.merge(apikey ? {'api_key' => apikey} : {'password' => password})}
+              {type: :url, url_query: {'login' => username}.merge(apikey ? {'api_key' => apikey} : {'password' => password})} # HashiCorpIgnore
             when :token
               {
                 type:         :oauth2,
@@ -485,7 +487,7 @@ module Aspera
                 base_url:     base_url,
                 path_token:   'api/login',
                 token_field:  'token',
-                json:         {username: username}.merge(apikey ? {api_key: apikey} : {password: password})
+                json:         {username: username}.merge(apikey ? {api_key: apikey} : {password: password}) # HashiCorpIgnore
               }
             else Aspera.error_unexpected_value(style)
             end

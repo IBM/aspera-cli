@@ -355,7 +355,7 @@ module Aspera
           # --help output, separate from the global options.
           options.group(self.class.plugin_name) if @context.man_header
           # Auto-declare all options registered via the DSL `option` class method,
-          # including those of parent plugin classes (e.g. Oauth, BasicAuth) and `use_options` sources.
+          # including those of modules that give theirs when included (e.g. Oauth, BasicAuth) and `use_options` sources.
           self.class.declare_options(options, target: self)
         end
 

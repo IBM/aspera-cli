@@ -957,7 +957,7 @@ GitHub Actions workflows (`.github/workflows/`):
 ### Adding a New Plugin
 
 1. Create plugin file in `lib/aspera/cli/plugins/` (or in a plugin lookup folder)
-2. Inherit from `Plugins::Base` (or `BasicAuth` / `Oauth`)
+2. Inherit from `Plugins::Base`, and `include` the module `BasicAuth` or `Oauth` for the options and methods of basic or OAuth authentication
 3. Declare options with `option(...)` and commands with `command(...)` / `commands_under` / `crud_commands` at class level
 4. Implement `action_<path>` methods for leaf commands without an inline `action:`
 
@@ -1004,7 +1004,7 @@ The **framework** finds, validates and loads bundles, and offers the hooks they 
 ```text
 lib/aspera/plugins/<name>/
   plugin.yaml      manifest: data only
-  commands.rb      Aspera::Plugins::<Name>::Commands < Cli::Plugins::Base (or BasicAuth, Oauth)
+  commands.rb      Aspera::Plugins::<Name>::Commands < Cli::Plugins::Base (and `include` of BasicAuth or Oauth)
   api.rb           Aspera::Plugins::<Name>::Api: client of the product API
   agent.rb         Aspera::Plugins::<Name>::Agent < Aspera::Agent::Base
   product.rb       Aspera::Plugins::<Name>::Product: local runtime of the product

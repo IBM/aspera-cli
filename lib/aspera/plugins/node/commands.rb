@@ -24,7 +24,9 @@ require 'base64'
 module Aspera
   module Plugins
     module Node
-      class Commands < Cli::Plugins::BasicAuth
+      class Commands < Cli::Plugins::Base
+        include Cli::Plugins::BasicAuth
+
         include Aspera::Plugins::TransferAgents::SyncActions
 
         application_name 'HSTS Node API'
@@ -1156,7 +1158,7 @@ module Aspera
           Secret::Strength.assert_strong(config[:password], name: 'password', min_bits: password_min_bits, type: Cli::BadArgument) unless config[:password].nil?
           # Files of the docroot can be sent to, or received from, any host by anyone who can reach the server
           WebServerSimple.serve(parameters, NodeEmulatorServlet, protected: !config[:username].nil?, what: 'username and password', type: Cli::BadArgument) do
-            Log.log.warn('No username and password: emulator accepts requests without authentication') if config[:username].nil?
+            Log.log.warn('No username and password: emulator accepts requests without authentication') if config[:username].nil? # HashiCorpIgnore
             [config, Emulator.new(docroot: docroot, retention_sec: retention_sec)]
           end
           return Cli::Result::Status.new('Emulator terminated')
