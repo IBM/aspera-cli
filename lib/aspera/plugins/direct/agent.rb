@@ -323,6 +323,8 @@ module Aspera
           stderr_r, stderr_w = nil
           spawn_args = {}
           command_pid = nil
+          # `true` when `async` ended reporting on the management port, but may keep running (continuous mode)
+          async_keeps_running = false
           # Get location of command executable (ascp, async)
           command_path = Aspera::Ascp::Installation.instance.path(exec)
           command_arguments = [command_path]
@@ -396,6 +398,9 @@ module Aspera
             case last_event['Type']
             when 'DONE'
               Log.log.trace1 { 'Graceful shutdown, DONE message received' }
+              # In continuous mode, `async` reports activity as "virtual sessions" (based on idleness): after the first one,
+              # it sends DONE and closes this exclusive management port, but keeps running: wait for its end, do not stop it.
+              async_keeps_running = exec.eql?(:async)
             when 'ERROR'
               if /bearer token/i.match?(last_event['Description']) &&
                   !session[:token_regenerator].nil?
@@ -419,7 +424,7 @@ module Aspera
             session.delete(:io)
             # if command was successfully started, check its status
             unless command_pid.nil?
-              ::Process.kill(:INT, command_pid) if @monitor && !Environment.instance.os.eql?(Environment::OS_WINDOWS)
+              ::Process.kill(:INT, command_pid) if @monitor && !async_keeps_running && !Environment.instance.os.eql?(Environment::OS_WINDOWS)
               # collect process exit status or wait for termination
               _, status = ::Process.wait2(command_pid)
               if capture_stderr

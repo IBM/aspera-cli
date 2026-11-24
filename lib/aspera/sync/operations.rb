@@ -118,8 +118,17 @@ module Aspera
               remote['private_key_paths'] ||= []
               remote['private_key_paths'].concat(add_certificates)
             end
+            # Secrets go in environment variables, not in `--conf64`: the command line is visible to other users (`ps`), and logged
+            CONF_REMOTE_SECRETS_ENV.each do |key, env_var|
+              value = remote.delete(key)
+              exec_spec.env[env_var] = value unless value.nil?
+            end
             # '--exclusive-mgmt-port=12345', '--arg-err-path=-',
-            exec_spec.args = ["--conf64=#{Base64.strict_encode64(JSON.generate(sync_info))}"]
+            conf64 = Base64.strict_encode64(JSON.generate(sync_info))
+            # A secret that `async` reads only from the configuration (e.g. the proxy password) is in the encoded value: hide it in logs.
+            # The configuration is logged decoded below, with its secrets hidden.
+            Secret::Hider.instance.add_secret_values(conf64)
+            exec_spec.args = ["--conf64=#{conf64}"]
             Log.dump(:sync_conf, sync_info)
             agent = Agent::Factory.instance.create(:direct, {})
             Aspera.assert(agent.respond_to?(:start_and_monitor_process)) { "agent direct (#{agent.class}) cannot run async: it does not provide start_and_monitor_process" }
@@ -373,8 +382,10 @@ module Aspera
       PRIVATE_FOLDER = "#{Environment.instance.os.eql?(Environment::OS_WINDOWS) ? '~' : '.'}private-asp".freeze
       ASYNC_DB = 'snap.db'
       PARAM_KEYS = %w[local sessions].freeze
+      # `conf` format: keys of `remote` that `async` also reads from an environment variable, when absent from the configuration
+      CONF_REMOTE_SECRETS_ENV = [%w[pass ASPERA_SCP_PASS], %w[token ASPERA_SCP_TOKEN]].freeze
 
-      private_constant :ARGS_INSTANCE_SCHEMA, :ARGS_SESSION_SCHEMA, :CMDLINE_PARAMS_KEYS, :ASYNC_ADMIN_EXECUTABLE, :PRIVATE_FOLDER, :ASYNC_DB, :PARAM_KEYS
+      private_constant :ARGS_INSTANCE_SCHEMA, :ARGS_SESSION_SCHEMA, :CMDLINE_PARAMS_KEYS, :ASYNC_ADMIN_EXECUTABLE, :PRIVATE_FOLDER, :ASYNC_DB, :PARAM_KEYS, :CONF_REMOTE_SECRETS_ENV
     end
   end
 end

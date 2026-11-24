@@ -103,6 +103,19 @@ RSpec.describe(Aspera::Sync::Operations) do
       expect { described_class.start(conf_info, {}) { server_ts.dup } }.to(raise_error(Aspera::AssertError, /agent direct \(Object\) cannot run async.*start_and_monitor_process/))
     end
 
+    it 'gives the remote password and token in environment variables, not in the command line (conf)' do
+      exec_spec = nil
+      allow_any_instance_of(Aspera::Plugins::Direct::Agent).to(receive(:start_and_monitor_process)) { |_agent, **kwargs| exec_spec = kwargs[:exec_spec] }
+      described_class.start(conf_info, {}) { server_ts.merge('remote_password' => '<PASSWORD>', 'token' => '<TOKEN>') }
+      expect(exec_spec.env).to(include('ASPERA_SCP_PASS' => '<PASSWORD>', 'ASPERA_SCP_TOKEN' => '<TOKEN>'))
+      command_line = exec_spec.args.join(' ')
+      conf = JSON.parse(Base64.strict_decode64(exec_spec.args.first.delete_prefix('--conf64=')))
+      expect(conf['remote']).not_to(include('pass', 'token'))
+      expect(conf.dig('remote', 'host')).to(eq('h'))
+      # the encoded configuration may still contain a secret that async reads only from it (e.g. proxy password)
+      expect(Aspera::Secret::Hider.instance.hidden_copy(command_line)).not_to(include(exec_spec.args.first.delete_prefix('--conf64=')))
+    end
+
     it 'uses target_rate_kbps of transfer spec (conf)' do
       expect(start_conf(conf_info, {}).dig('transport', 'target_rate')).to(eq(5_000))
     end
