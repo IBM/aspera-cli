@@ -43,20 +43,20 @@ RSpec.describe(Aspera::Plugins::Orchestrator::Commands) do
       expect(client.auth_params[:grant_method]).to(eq(:json_credentials))
       expect(client.auth_params[:path_token]).to(eq('api/login'))
       expect(client.auth_params[:token_field]).to(eq('token'))
-      expect(client.auth_params[:json]).to(eq(username: 'admin', password: password))
+      expect(client.auth_params[:json]).to(eq(username: 'admin', password: password)) # HashiCorpIgnore
     end
 
     it 'configures Rest::Client for basic auth with username and password' do
       parse_argv(%W[--url=https://orch.example.com --username=admin --password=#{password} --auth_style=basic])
       client = orchestrator.api_orch
       expect(client.base_url).to(eq('https://orch.example.com'))
-      expect(client.auth_params).to(eq(type: :basic, username: 'admin', password: password))
+      expect(client.auth_params).to(eq(type: :basic, username: 'admin', password: password)) # HashiCorpIgnore
     end
 
     it 'configures Rest::Client for query auth with username and password' do
       parse_argv(%W[--url=https://orch.example.com --username=admin --password=#{password} --auth_style=query])
       client = orchestrator.api_orch
-      expect(client.auth_params).to(eq(type: :url, url_query: {'login' => 'admin', 'password' => password}))
+      expect(client.auth_params).to(eq(type: :url, url_query: {'login' => 'admin', 'password' => password})) # HashiCorpIgnore
     end
 
     it 'configures Rest::Client for token auth (JWT credentials) with username and password' do
@@ -66,7 +66,7 @@ RSpec.describe(Aspera::Plugins::Orchestrator::Commands) do
       expect(client.auth_params[:grant_method]).to(eq(:json_credentials))
       expect(client.auth_params[:path_token]).to(eq('api/login'))
       expect(client.auth_params[:token_field]).to(eq('token'))
-      expect(client.auth_params[:json]).to(eq(username: 'admin', password: password))
+      expect(client.auth_params[:json]).to(eq(username: 'admin', password: password)) # HashiCorpIgnore
     end
 
     it 'configures Rest::Client for query auth with username and apikey' do

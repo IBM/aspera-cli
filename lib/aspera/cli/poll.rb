@@ -72,7 +72,8 @@ module Aspera
         # @raise [Cli::BadArgument] if a parameter is invalid
         def initialize(parameters, format: nil)
           super()
-          parameters = parameters.transform_keys(&:to_sym)
+          # A `null` value removes the entry (as for all options): the parameter is absent, its default applies
+          parameters = parameters.transform_keys(&:to_sym).compact
           # Nagios plugins exit after the first result
           raise BadArgument, 'poll: not with format nagios' if format.eql?(:nagios)
           @interval = seconds(parameters.fetch(:interval, DEFAULT_INTERVAL), :interval)

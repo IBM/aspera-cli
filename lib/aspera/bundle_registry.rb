@@ -141,7 +141,7 @@ module Aspera
       @scanned = false
       # Cache of `claims`
       @claims = nil
-      # Cache of `extensions` (key `[:extensions, <point>]`) and of `schemas` (key `:schemas`): emptied when plugins, sources or security checks change
+      # Cache of `extensions` (key `[:extensions, <point>]`), of `unavailable_extensions` (key `[:unavailable_extensions, <point>]`), of `mounts` (key `[:mounts, <target>]`) and of `schemas` (key `:schemas`): emptied when plugins, sources or security checks change
       @cache = {}
       # Compiled schemas of extension points, by file
       @point_schemas = {}
@@ -322,6 +322,17 @@ module Aspera
       @cache[[:extensions, point]] ||= available_plugins.flat_map { |plugin| plugin.extensions.select { |extension| extension.point.eql?(point) } }.freeze
     end
 
+    # Entries of an extension point, from the unavailable bundles whose manifest is valid: data only, to tell why an entry is not used (see `load_error`).
+    # @param point [Symbol] Name of the extension point
+    # @return [Array<Extension>] Entries, by name of bundle, then in the order of the manifest
+    def unavailable_extensions(point)
+      Aspera.assert_type(point, Symbol)
+      scan unless @scanned
+      @cache[[:unavailable_extensions, point]] ||= names.reject { |name| unavailable_reason(name).nil? }.map { |name| @plugins[name] }
+        .select { |plugin| plugin.error.nil? }
+        .flat_map { |plugin| plugin.extensions.select { |extension| extension.point.eql?(point) } }.freeze
+    end
+
     # Modules mounted on a plugin, from the available bundles, data only: the code of a module is loaded by `load_entry`.
     # Registers the plugins of the sources first if it was not done (e.g. `config` includes its mounts when it is loaded).
     # @param target [Symbol] Name of the plugin that includes the modules
@@ -329,7 +340,7 @@ module Aspera
     def mounts(target)
       Aspera.assert_type(target, Symbol)
       scan unless @scanned
-      dependencies_first(available_plugins).flat_map { |plugin| plugin.mounts.select { |mount| mount.target.eql?(target) } }
+      @cache[[:mounts, target]] ||= dependencies_first(available_plugins).flat_map { |plugin| plugin.mounts.select { |mount| mount.target.eql?(target) } }.freeze
     end
 
     # Service of the bundle that declares it, data only: its class is loaded by `load_entry`.

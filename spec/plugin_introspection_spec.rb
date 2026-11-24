@@ -58,6 +58,24 @@ module Aspera
           expect { factory.plugin_class(:node) }.to(raise_error(LoadError))
         end
 
+        it 'does not convert a NameError of the gem code called by the class body of an external plugin: it is a bug of ascli' do
+          bundle = write_bundle(folder, 'spec_bundle_dsl', code: nil)
+          File.write(File.join(bundle, 'commands.rb'), "module Aspera; module Plugins; module SpecBundleDsl; class Commands; end; end; end; end\n")
+          bundle = write_bundle(folder, 'spec_bundle_own', code: nil)
+          File.write(File.join(bundle, 'commands.rb'), "module Aspera; module Plugins; module SpecBundleOwn; class Commands; Missing.call; end; end; end; end\n")
+          factory.add_plugins_from_lookup_folders
+          # Error raised in the code of the gem
+          allow(registry).to(receive(:load_constant).and_wrap_original do |_original, *|
+            Aspera::Cli::Plugins::Base.no_such_dsl_method
+          end)
+          expect { factory.plugin_class(:spec_bundle_dsl) }.to(raise_error(NoMethodError, /no_such_dsl_method/))
+          # Error raised in a file of the plugin
+          allow(registry).to(receive(:load_constant).and_call_original)
+          expect { factory.plugin_class(:spec_bundle_own) }.to(raise_error(Cli::Error, /\Aplugin spec_bundle_own cannot be loaded: NameError/))
+        ensure
+          remove_spec_constants
+        end
+
         it 'gives the reason of a bundle whose manifest is invalid, with the plugins that cannot be loaded' do
           write_bundle(folder, 'spec_bundle_invalid', manifest: "name: [\n")
           factory.add_plugins_from_lookup_folders

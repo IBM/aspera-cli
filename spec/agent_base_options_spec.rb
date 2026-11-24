@@ -161,18 +161,18 @@ module Aspera
 
     it 'uses the given URL, without the preset lookup' do
       described_class.new(url: 'https://node.example.com', username: 'u', password: password, preset_lookup: ->(_plugin) { raise 'not expected' })
-      expect(rest_params.first).to(include(base_url: 'https://node.example.com', auth: {type: :basic, username: 'u', password: password}))
+      expect(rest_params.first).to(include(base_url: 'https://node.example.com', auth: {type: :basic, username: 'u', password: password})) # HashiCorpIgnore
     end
 
     it 'takes the parameters of the default preset of plugin node when `url` is not given' do
       plugins = []
       lookup = ->(plugin) do
         plugins.push(plugin)
-        {'url' => 'https://preset.example.com', 'username' => 'p', 'password' => password}
+        {'url' => 'https://preset.example.com', 'username' => 'p', 'password' => password} # HashiCorpIgnore
       end
       described_class.new(username: 'u', preset_lookup: lookup)
       expect(plugins).to(eq([:node]))
-      expect(rest_params.first).to(include(base_url: 'https://preset.example.com', auth: {type: :basic, username: 'p', password: password}))
+      expect(rest_params.first).to(include(base_url: 'https://preset.example.com', auth: {type: :basic, username: 'p', password: password})) # HashiCorpIgnore
     end
 
     it 'requires a URL without preset lookup' do

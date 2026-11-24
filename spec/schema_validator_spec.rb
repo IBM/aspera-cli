@@ -50,7 +50,7 @@ RSpec.describe(Aspera::Schema::Validator) do
   end
 
   it 'ignores missing discriminator in partial value' do
-    expect(validator.errors({'multi_session' => 2}, agent_options, partial: true)).to(be_empty)
+    expect(validator.errors({'wss' => true}, agent_options, partial: true)).to(be_empty)
   end
 
   describe 'keys of variants (unevaluatedProperties of the selector)' do
@@ -60,6 +60,10 @@ RSpec.describe(Aspera::Schema::Validator) do
 
     it 'refuses a key that is not of the selected variant' do
       expect(validator.errors({'agent' => 'node', 'wss' => true}, agent_options, partial: true)).to(eq(['object property at `/wss` is a disallowed additional property']))
+    end
+
+    it 'refuses an unknown key when the selector is missing in a partial value (default variant)' do
+      expect(validator.errors({'spawn_timout_sec' => 5}, agent_options, partial: true)).to(eq(['object property at `/spawn_timout_sec` is a disallowed additional property']))
     end
 
     it 'reports only the error of the variant when its value is wrong' do

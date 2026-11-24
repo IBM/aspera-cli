@@ -229,6 +229,10 @@ module Aspera
           expect { poll_option('{"interval":-1}') }.to(raise_error(BadArgument, %r{`/interval`}))
         end
 
+        it 'takes a null parameter as absent (default value)' do
+          expect { described_class.new({'show' => nil, 'errors' => nil, 'interval' => nil, 'max' => nil, 'timeout' => nil, 'until' => nil}) }.not_to(raise_error)
+        end
+
         it 'refuses a duration that is not valid, or format nagios' do
           expect { described_class.new({'interval' => 'soon'}) }.to(raise_error(BadArgument, /poll.interval/))
           expect { described_class.new({'timeout' => '-5s'}) }.to(raise_error(BadArgument, /poll.timeout/))

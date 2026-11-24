@@ -37,7 +37,9 @@ module Aspera
         data = JSON.parse(JSON.generate(value))
         data = without_null(data) if ignore_null
         results = schema.validate(data).to_a
-        results.reject { |error| unreliable_unevaluated?(error, results) }.filter_map { |error| message(error, partial) }
+        # Only an error that is reported cancels the unknown-key error (not the missing selector of a partial value)
+        reported = results.select { |error| message(error, partial) }
+        results.reject { |error| unreliable_unevaluated?(error, reported, results, key, partial) }.filter_map { |error| message(error, partial) }
       end
 
       private
@@ -82,16 +84,38 @@ module Aspera
       end
 
       # A key refused by `unevaluatedProperties` is unknown only if the variants of the object are evaluated without error.
-      # Else (selector of variants missing or invalid, or error in the variant), no key of the variant is evaluated, and all are refused.
-      # @param error   [Hash]        json_schemer error
-      # @param results [Array<Hash>] All errors of the validation
-      # @return [Boolean] `true` if the error is a key refused by `unevaluatedProperties` while the object has another error
-      def unreliable_unevaluated?(error, results)
+      # Else (selector of variants invalid, or error in the variant), no key of the variant is evaluated, and all are refused.
+      # With the selector missing in a partial value (ignored error), the variant is not known: a key of any variant is accepted.
+      # @param error    [Hash]        json_schemer error
+      # @param reported [Array<Hash>] Errors of the validation that are reported
+      # @param results  [Array<Hash>] All errors of the validation
+      # @param key      [String]      registry key
+      # @param partial  [Boolean]     partial validation
+      # @return [Boolean] `true` if the error is a key refused by `unevaluatedProperties`, that is not a real unknown key
+      def unreliable_unevaluated?(error, reported, results, key, partial)
         return false unless error['schema_pointer'].end_with?('/unevaluatedProperties')
         object = error['data_pointer'].sub(%r{/[^/]*\z}, '')
-        results.any? do |other|
+        inside = lambda do |other|
           !other['schema_pointer'].eql?(error['schema_pointer']) &&
             (other['data_pointer'].eql?(object) || other['data_pointer'].start_with?("#{object}/"))
+        end
+        return true if reported.any?(&inside)
+        return false unless partial && results.any? { |other| inside.call(other) && other['type'].eql?('discriminator') }
+        variant_key?(key, error['schema_pointer'].delete_suffix('/unevaluatedProperties'), error['data_pointer'].split('/').last)
+      end
+
+      # @param key     [String] registry key
+      # @param pointer [String] JSON pointer of a schema node with `oneOf` variants
+      # @param name    [String] property name
+      # @return [Boolean] `true` if a variant of the node has a property of that name
+      def variant_key?(key, pointer, name)
+        source = Registry.instance.reader(key).current
+        node = source.dig(*pointer.split('/').drop(1).map { |s| s.gsub('~1', '/').gsub('~0', '~') })
+        return false unless node.is_a?(Hash)
+        node.fetch('oneOf', []).any? do |variant|
+          ref = variant['$ref']
+          variant = source.dig(*ref.delete_prefix('#/').split('/')) if ref
+          variant.is_a?(Hash) && variant.fetch('properties', {}).key?(name)
         end
       end
 
@@ -106,6 +130,9 @@ module Aspera
         object = error['data']
         # Partial value: selector may come from another source or a default
         return if partial && object.is_a?(Hash) && !object.key?(property)
+        # Value of an agent of a bundle that is unavailable: tell why, instead of listing the available ones
+        reason = error['schema'][Registry::UNAVAILABLE]&.[](object[property]) if object.is_a?(Hash) && object[property].is_a?(String)
+        return reason unless reason.nil?
         allowed = error['schema'].dig('discriminator', 'mapping')&.keys
         "value at `#{error['data_pointer']}/#{property}` is not one of: #{allowed}"
       end

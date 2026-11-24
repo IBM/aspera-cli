@@ -120,9 +120,11 @@ module Aspera
           klass
         rescue BundleRegistry::Unavailable => e
           raise Cli::Error, e.message
-        rescue NameError, ScriptError => e
+        rescue NameError, LoadError, SyntaxError => e
           # Broken code of a plugin of the gem is a bug of ascli: reported as such, with its location
           raise if !plugin.nil? && source_of(plugin).eql?('gem')
+          # Else only the error of the plugin itself: not a bug of the gem code that it calls (DSL of `Base`, `use_options`, mounts), which is reported as such
+          raise unless plugin_error?(plugin, e)
           # Broken code of an external plugin (no `commands.rb`, wrong constant, syntax error): same error as an unavailable plugin
           Log.log.debug { "plugin #{plugin_name_sym}: #{e.class}: #{e.message}" }
           raise Cli::Error, "plugin #{plugin_name_sym} cannot be loaded: #{e.class}: #{e.message}"
@@ -137,6 +139,22 @@ module Aspera
         end
 
         private
+
+        # @param plugin [BundleRegistry::Plugin, nil] External plugin that is loaded
+        # @param error  [NameError, LoadError, SyntaxError] Error raised while it is loaded
+        # @return [Boolean] `true` if the error comes from the plugin itself: a `LoadError` (no file) or `SyntaxError` of its files,
+        #   or a `NameError` raised from a file of the plugin, or by the lookup of its class (wrong constant)
+        def plugin_error?(plugin, error)
+          return true if error.is_a?(LoadError) || error.is_a?(SyntaxError)
+          # `const_get` may or may not be a location, according to the Ruby version and tools (coverage)
+          location = error.backtrace_locations&.find { |loc| !loc.label.to_s.end_with?('const_get') }
+          return false if plugin.nil? || location.nil?
+          # The class is searched by name (a wrong constant): the first location is the lookup of the loader
+          return true if error.instance_of?(NameError) && location.label.to_s.end_with?('#load_constant', '#plugin_class') && [__FILE__, BundleRegistry.instance_method(:load_constant).source_location.first].include?(location.path)
+          path = File.realpath(plugin.path)
+          file = File.expand_path(location.absolute_path || location.path)
+          file.eql?(path) || file.start_with?(File.join(path, ''))
+        end
 
         # @param name [Symbol] name of a registered plugin
         # @return [String, nil] Why the plugin cannot be loaded, short form: unavailable reason, or missing gems; `nil` if it can

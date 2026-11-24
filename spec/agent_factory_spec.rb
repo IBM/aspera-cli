@@ -84,9 +84,9 @@ module AgentFactorySpecHelper
   # @param options_schema [Hash, nil]   Schema of the parameters of the agents, `nil`: no file
   # @param code           [String]      Code at the top of `agent.rb`
   # @return [String] Folder of the bundle
-  def write_agent_bundle(folder, name = 'spec_bundle_agent', entries: [{}], options_schema: OPTIONS_SCHEMA, code: '')
+  def write_agent_bundle(folder, name = 'spec_bundle_agent', entries: [{}], options_schema: OPTIONS_SCHEMA, code: '', depends: %w[spec_bundle_transfer])
     entries = entries.map { |entry| ENTRY.merge(entry) }
-    bundle = write_bundle(folder, name, manifest: {'commands' => false, 'depends' => %w[spec_bundle_transfer], 'extensions' => {'agent' => entries}}, code: nil)
+    bundle = write_bundle(folder, name, manifest: {'commands' => false, 'depends' => depends, 'extensions' => {'agent' => entries}}, code: nil)
     File.write(File.join(bundle, 'agent_options.yaml'), options_schema.to_yaml) unless options_schema.nil?
     write_bundle_file(bundle, 'agent.rb', <<~RUBY, code: code)
       class Agent
@@ -343,6 +343,35 @@ module Aspera
         marker = {'point' => 'agent', 'value' => 'name', 'schema' => 'options_schema', 'suffix' => 'AgentOptions'}
         document = {'components' => {'schemas' => {'Selector' => selector.merge(Schema::Registry::VARIANTS => marker)}.merge(others)}}
         schemas.send(:add_variants, document, File.join(folder, 'document.yaml')).dig('components', 'schemas')
+      end
+
+      it 'gives the reason when the agent is declared by an unavailable bundle, and keeps the message for an unknown agent' do
+        write_agent_bundle(folder, 'spec_bundle_agent')
+        write_agent_bundle(folder, 'spec_bundle_down', entries: [{'name' => 'foo', 'short' => 'x'}], depends: %w[spec_bundle_transfer spec_bundle_nowhere])
+        expect(variants.keys).to(eq(AgentFactorySpecHelper::SCHEMA_VARIANTS.keys + %w[fake]))
+        option = AgentFactorySpecHelper::OPTION_SCHEMA
+        reason = registry.load_error(:spec_bundle_down)
+        expect(reason).to(match(/\Aplugin spec_bundle_down is unavailable: /))
+        expect(validator.errors({'agent' => 'foo'}, option, partial: true)).to(eq([reason]))
+        expect(validator.errors({'agent' => 'bogus'}, option, partial: true).first).to(match(/is not one of: .*"fake"/))
+        expect(validator.errors({'agent' => 'fake', 'color' => 'blue'}, option)).to(be_empty)
+        expect(selector[Schema::Registry::UNAVAILABLE]).to(eq('foo' => reason))
+        expect(variants.keys).not_to(include('foo'))
+      end
+
+      it 'skips an entry whose letter is missing or is not one letter, as Agent::Factory does, with a warning' do
+        write_point_bundle(folder)
+        write_agent_bundle(folder)
+        entry = registry.extensions(:agent).first
+        entries = [{'name' => 'one', 'short' => nil}, {'name' => 'two', 'short' => 'tt'}, {'name' => 'three', 'short' => 4}, {'name' => 'four', 'short' => ''}]
+        extensions = entries.map { |fields| entry.with(fields: AgentFactorySpecHelper::ENTRY.except('file', 'class').merge(fields)) }
+        allow(registry).to(receive(:extensions).with(:agent).and_return(extensions))
+        marker = {'point' => 'agent', 'value' => 'name', 'schema' => 'options_schema', 'suffix' => 'AgentOptions', 'unique' => 'short'}
+        document = {'components' => {'schemas' => {'Selector' => {'oneOf' => [], 'discriminator' => {'propertyName' => 'agent'}, Schema::Registry::VARIANTS => marker}}}}
+        components = schemas.send(:add_variants, document, File.join(folder, 'document.yaml')).dig('components', 'schemas')
+        expect(components.keys).to(eq(['Selector']))
+        expect(warnings.grep(/one-letter string/).size).to(eq(4))
+        expect(factory.send(:provided_agents, extensions)).to(be_empty)
       end
 
       it 'replaces a variant of the document by the one of the bundle with the same agent, at its place' do

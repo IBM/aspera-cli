@@ -269,6 +269,18 @@ module Aspera
         expect(registry.mounts(:config).map(&:bundle)).to(eq(%i[spec_bundle_z spec_bundle_a spec_bundle_m]))
       end
 
+      it 'orders the bundles once, until the sources change' do
+        write_bundle(folder, 'spec_bundle_a', manifest: {'mounts' => [{'target' => 'config', 'file' => 'mount.rb', 'module' => 'Mount'}]})
+        scan(folder)
+        allow(registry).to(receive(:dependencies_first).and_call_original)
+        first = registry.mounts(:config)
+        expect(registry.mounts(:config)).to(be(first))
+        expect(registry).to(have_received(:dependencies_first).once)
+        write_bundle(other, 'spec_bundle_b', manifest: {'mounts' => [{'target' => 'config', 'file' => 'mount.rb', 'module' => 'Mount'}]})
+        registry.add_source(other)
+        expect(registry.mounts(:config).map(&:bundle)).to(eq(%i[spec_bundle_a spec_bundle_b]))
+      end
+
       it 'keeps available a bundle whose dependencies are available, in other sources' do
         write_bundle(folder, 'spec_bundle_two', manifest: {'depends' => %w[spec_bundle_one]})
         write_bundle(other, 'spec_bundle_one')

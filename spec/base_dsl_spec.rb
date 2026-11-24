@@ -185,6 +185,10 @@ module Aspera
             expect(names).to(include(*Oauth::AUTH_OPTIONS))
           end
 
+          it 'can be included by a module, which declares no option' do
+            expect { Module.new { include Oauth } }.not_to(raise_error)
+          end
+
           it 'gives the options of BasicAuth to a class that includes it, not those of Oauth' do
             klass = Class.new(Base) { include BasicAuth }
             names = klass.option_sources.each_key.flat_map { |src| src.option_specs.keys }

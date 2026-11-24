@@ -52,7 +52,7 @@ module Aspera
 
         it 'queries with the secret from current options, and keeps stored parameters' do
           result = host.action_agents_jobs_status(job_id: 'job1')
-          expect(host.queried['agent_params']).to(eq({'url' => 'https://node', 'username' => 'ak', 'password' => secret}))
+          expect(host.queried['agent_params']).to(eq({'url' => 'https://node', 'username' => 'ak', 'password' => secret})) # HashiCorpIgnore
           expect(result.data['status']).to(eq('completed'))
           expect(result.data['agent_params']).not_to(have_key('password'))
           expect(store.read('job1')['status']).to(eq('completed'))

@@ -35,6 +35,8 @@ module Aspera
           # @param base [Class] Plugin class that includes the module
           def included(base)
             super
+            # A module that includes `Oauth` has no options to declare
+            return unless base.is_a?(Class)
             base.use_options(self)
             base.use_options(OauthWebOptions)
             base.use_options(OauthJwtOptions)

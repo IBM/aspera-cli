@@ -149,6 +149,8 @@ module Aspera
       QUERY_PARAMS_SUFFIX = '.parameters'
       # Marker of a component whose `oneOf` variants are also given by the entries of an extension point of bundles, see `add_variants`
       VARIANTS = 'x-cli-variants'
+      # Added to such a component: values of the selector that are not variants because their entry is declared by an unavailable bundle, with the reason
+      UNAVAILABLE = 'x-cli-unavailable'
       # `$ref` to a node of another schema of the registry: `<key>:#/<path>`, see `add_references`
       EXTERNAL_REF = %r{\A([a-z][a-z0-9_]*):#/(.+)\z}
 
@@ -263,12 +265,13 @@ module Aspera
       def variants_current?(spec_file)
         entries = @variant_entries.fetch(spec_file, {})
         return true if entries.empty?
-        entries.all? { |point, used| BundleRegistry.instance.extensions(point).eql?(used) }
+        entries.all? { |point, used| [BundleRegistry.instance.extensions(point), BundleRegistry.instance.unavailable_extensions(point)].eql?(used) }
       end
 
       # Add the variants given by bundles to the components of `components.schemas` that have the marker `x-cli-variants`
       # (`point`: extension point, `value`: field of an entry with the value of the discriminator, `schema`: field with the schema file of the variant,
-      # relative to the folder of the bundle, `suffix`: of the name of the component, optional `unique`: field whose value is unique among the variants).
+      # relative to the folder of the bundle, `suffix`: of the name of the component, optional `unique`: field whose value, a one-letter string, is unique among the variants:
+      # an entry without it is skipped, as `Agent::Factory#provided_agents` does).
       # For each entry of the point: a component `<Value><suffix>` read from the file, a `$ref` in `oneOf`, an entry in `discriminator.mapping`
       # (both created if the document has none).
       # An entry with the value of a variant of the document replaces it; an entry with the value of an earlier entry,
@@ -298,13 +301,17 @@ module Aspera
           unique = marker['unique']
           point = marker.fetch('point').to_sym
           entries = BundleRegistry.instance.extensions(point)
-          @variant_entries[spec_file][point] = entries
+          @variant_entries[spec_file][point] = [entries, BundleRegistry.instance.unavailable_extensions(point)]
           entries.each do |entry|
             value, file = entry.fields.values_at(marker.fetch('value'), marker.fetch('schema'))
             label = "Variant #{value} of bundle #{entry.bundle} is skipped"
             next Log.log.warn { "#{label}: no #{marker['value']} or #{marker['schema']}" } unless value.is_a?(String) && file.is_a?(String)
             next Log.log.warn { "#{label}: added by an earlier entry" } if added.include?(value)
-            owner = taken.key(entry.fields[unique]) unless unique.nil?
+            unless unique.nil?
+              letter = entry.fields[unique]
+              next Log.log.warn { "#{label}: #{unique} #{letter.inspect} is not a one-letter string" } unless letter.is_a?(String) && letter.length.eql?(1)
+              owner = taken.key(letter)
+            end
             next Log.log.warn { "#{label}: #{unique} #{entry.fields[unique]} is taken by #{owner}" } unless owner.nil?
             component = "#{value.snake_to_capital}#{marker.fetch('suffix')}"
             ref = "#/components/schemas/#{component}"
@@ -323,8 +330,21 @@ module Aspera
             added.push(value)
             taken[value] = entry.fields[unique] unless unique.nil?
           end
+          unavailable = unavailable_variants(marker, point, mapping)
+          selector[UNAVAILABLE] = unavailable unless unavailable.empty?
         end
         document
+      end
+
+      # @param marker  [Hash]   Marker `x-cli-variants`
+      # @param point   [Symbol] Extension point
+      # @param mapping [Hash]   Variants of the selector
+      # @return [Hash{String => String}] Why a value of the selector is not a variant: its entry is declared by a bundle that is unavailable
+      def unavailable_variants(marker, point, mapping)
+        BundleRegistry.instance.unavailable_extensions(point).each_with_object({}) do |entry, result|
+          value = entry.fields[marker.fetch('value')]
+          result[value] ||= BundleRegistry.instance.load_error(entry.bundle) if value.is_a?(String) && !mapping.key?(value)
+        end
       end
 
       # @param path [String] Schema file of a variant (YAML or JSON)
