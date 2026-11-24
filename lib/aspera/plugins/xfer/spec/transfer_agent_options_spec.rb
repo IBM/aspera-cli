@@ -22,6 +22,8 @@ module Aspera
         # Declared by the runner
         context.options.declare(:dry_run, description: 'Dry run', allowed: Option::Type::BOOLEAN, default: false)
         context.options.add_option_preset(preset, 'test') unless preset.nil?
+        # Needed by `agent_instance`, which sets the agent's trusted certificates from the HTTP configuration
+        context.http_config = instance_double('Aspera::Cli::Http', trusted_cert_locations: [])
         described_class.new(context)
       end
 
@@ -80,6 +82,28 @@ module Aspera
         it 'refuses a command that changes something before the transfer' do
           expect { build_transfer_agent(['--dry-run=yes']).assert_no_dry_run }.to(raise_error(Cli::BadArgument, /dry_run is not supported/))
           expect { build_transfer_agent([]).assert_no_dry_run }.not_to(raise_error)
+        end
+      end
+
+      # Security level `high` (MCP default): a transfer agent that runs on the local host is refused, and raw program arguments are refused.
+      describe 'security level high' do
+        before { Security.instance.options = {'level' => 'high'} }
+        after  { Security.instance.reset }
+
+        it 'refuses a transfer agent that runs on the local host (explicit direct)' do
+          expect { build_transfer_agent(['--transfer=direct']).agent_instance }.to(raise_error(Cli::BadArgument, /transfer agent direct: runs on the local host/))
+        end
+
+        it 'refuses the default agent (direct), which runs on the local host' do
+          expect { build_transfer_agent([]).agent_instance }.to(raise_error(Cli::BadArgument, /runs on the local host/))
+        end
+
+        it 'refuses raw ascp_args (they can start a local program)' do
+          expect { build_transfer_agent(['--transfer=@json:{"ascp_args":["-L."]}']).transfer_options }.to(raise_error(BadArgument, /ascp_args: disabled by security level high/))
+        end
+
+        it 'refuses ssh_args in the transfer spec (they can start a local program)' do
+          expect { build_transfer_agent(['--ts=@json:{"ssh_args":["-x"]}']).user_transfer_spec }.to(raise_error(BadArgument, /ssh_args: disabled by security level high/))
         end
       end
 

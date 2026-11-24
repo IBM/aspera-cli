@@ -211,4 +211,18 @@ RSpec.describe(Aspera::Plugins::Transferd::Agent) do
       expect(agent.client).to(be(agent.client))
     end
   end
+
+  describe '.required_security_level' do
+    # A daemon on a remote host is provided and controlled by the user: allowed at any level (`nil`)
+    it 'is any level for a daemon on a remote host' do
+      expect(Aspera::Plugins::Transferd::Agent.required_security_level(url: 'daemon.example.com:55002')).to(be_nil)
+    end
+
+    # A daemon started here, or attached to on the local host, runs on the local host: refused at `high` (`:medium`)
+    it 'is medium for a local daemon (default, loopback, wildcard)' do
+      [nil, ':0', ':55002', '127.0.0.1:55002', 'localhost:55002', '::1:55002', '0.0.0.0:55002'].each do |url|
+        expect(Aspera::Plugins::Transferd::Agent.required_security_level(url: url)).to(eq(:medium))
+      end
+    end
+  end
 end

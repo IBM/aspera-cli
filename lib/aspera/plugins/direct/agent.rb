@@ -28,6 +28,9 @@ module Aspera
       # Execute a local `ascp` and use its management port to monitor progress
       class Agent < Aspera::Agent::Base
         class << self
+          # Runs `ascp` on the local host: refused at level `high` (see `Cli::Security`).
+          def required_security_level(_options) = :medium
+
           # Re-query the status of a direct transfer that was started in-process.
           # Only works if the same Ruby process is still alive (e.g. MCP mode).
           # agent_params must contain '_agent_ref' pointing to the live Direct instance.

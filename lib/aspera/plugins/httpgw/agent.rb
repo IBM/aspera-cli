@@ -14,6 +14,9 @@ module Aspera
     module Httpgw
       class Agent < Aspera::Agent::Base
         class << self
+          # Reads and writes the local files through this process: refused at level `high` (see `Cli::Security`).
+          def required_security_level(_options) = :medium
+
           # Re-query the status of an httpgw transfer that was started in-process.
           # Only works if the same Ruby process is still alive (e.g. MCP mode).
           # agent_params must contain '_agent_ref' pointing to the live Httpgw instance.

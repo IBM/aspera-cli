@@ -211,12 +211,21 @@ module Aspera
           agent_type = Aspera::Agent::Factory.instance.unavailable_reason(raw_type).nil? ? Cli::Parser.get_from_list(raw_type.to_s, 'transfer agent', Aspera::Agent::Factory::ALL.keys) : raw_type.to_s
           # set keys as symbols, strip internal keys not forwarded to the agent constructor
           agent_options = transfer_options.except('agent', 'asynchronous').symbolize_keys
-          # Same base options for every agent, each agent uses those it needs (see `Aspera::Agent::Base#initialize`)
-          # JRuby: given value, else trusted certificates of the HTTP configuration
-          agent_options[:trusted_certs] = @context.http_config.trusted_cert_locations unless agent_options.key?(:trusted_certs)
-          agent_options.merge!(base_agent_options)
           # get agent instance
           begin
+            agent_class = Aspera::Agent::Factory.instance.agent_class(agent_type)
+            # A transfer agent that runs on the local host (local `ascp`, a local daemon, a local application) is refused at level `high`:
+            # at `high`, transfers use a remote agent (e.g. `node`, or `transferd` attached to a remote daemon) that the user controls.
+            # Checked before the base options are built: the decision needs only the agent parameters (e.g. the daemon `url`).
+            unless Cli::Security.instance.allowed?(agent_class.required_security_level(agent_options))
+              raise Cli::BadArgument,
+                "transfer agent #{agent_type}: runs on the local host, disabled by security level #{Cli::Security.instance.level}. " \
+                'Use a remote agent (--transfer.agent=node, or --transfer.agent=transferd with a url to a remote daemon), or a lower security level'
+            end
+            # Same base options for every agent, each agent uses those it needs (see `Aspera::Agent::Base#initialize`)
+            # JRuby: given value, else trusted certificates of the HTTP configuration
+            agent_options[:trusted_certs] = @context.http_config.trusted_cert_locations unless agent_options.key?(:trusted_certs)
+            agent_options.merge!(base_agent_options)
             self.agent_instance = Aspera::Agent::Factory.instance.create(agent_type, agent_options)
             @agent_type = agent_type.to_s
           rescue BundleRegistry::Unavailable => e

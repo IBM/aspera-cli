@@ -2927,11 +2927,17 @@ Features that execute code (own, or downloaded), load code, or write a file chos
 | Plugins of the folders of option `plugin_folder` (by default, folder `plugins` of the configuration folder) | Ruby code: not loaded at other levels, also if the file was there before |
 | Command `config plugins create` | Creates Ruby code, loaded as a plugin |
 | Command `faspex5 postprocessing` | Executes scripts, or Ruby code |
+| Transfer parameters `ascp_args` (agent `direct`) and `ssh_args` (transfer spec) | Raw arguments to `ascp` or the external `ssh`: can start a local program (for example an `ssh` `ProxyCommand`) |
 
 At other levels, an option is refused whatever the way it is set (command line, or preset), and a command is not listed by `config commands`.
 Values from the environment of the process (for example `ASCLI_HOME`) are not restricted: they are set by the one who starts the process, not by a client.
 A sub-option of an option is restricted in the same way: it is marked `x-security: low` in the schema of the option (for example, `file` of option `out`), and refused when given, by dot notation (`--out.file=...`) or in a `Hash`.
 A preset is used later, maybe at level `low`: at level `medium` and `high`, `config preset set` refuses such an option, and a value that contains an extended value that the level refuses (for example `@val:@ruby:...`).
+
+At level `high`, a transfer uses an agent that runs on a host that the user controls, not the local host: agent `node`, or agent `transferd` attached to a remote daemon (parameter `url` of a daemon on another host).
+An agent that runs on the local host is refused: `direct` (local `ascp`), a local `transferd` daemon (started by `ascli`, or on a loopback address), `connect` and `desktop` (local applications), and `httpgw` (the files pass through the process).
+These agents read and write local files and run local programs, so they are available at levels `low` and `medium` only.
+The default agent is `direct`, so a transfer at level `high` without an agent is refused: set option `transfer` to a remote agent, for example `--transfer.agent=node`.
 
 Options are evaluated in the order of the command line: place `--security` before options that use extended values.
 

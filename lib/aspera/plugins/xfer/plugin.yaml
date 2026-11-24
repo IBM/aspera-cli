@@ -33,6 +33,9 @@ mcp: |-
   TRANSFERS
   Pass verbatim any flag the user requests (--transfer.agent=<agent>, --to-folder, …).
   Agents (default: direct): %{agent}.
+  At security level high (the default of this server), a transfer uses an agent on a host the user controls:
+  set --transfer.agent=node, or --transfer.agent=transferd with --transfer.url=<remote daemon>.
+  An agent that runs on this host (direct, connect, desktop, httpgw, a local transferd daemon) is refused.
   Transfers are asynchronous: the command returns a job_id immediately — never retry it.
     monitor → ["config", "transfer", "status", "<job_id>"]
     list    → ["config", "transfer", "list"]

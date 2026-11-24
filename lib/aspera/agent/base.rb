@@ -36,6 +36,16 @@ module Aspera
         def transfer_cancel(_transfer_id, _agent_params)
           nil
         end
+
+        # Most restrictive security level (see `Cli::Security`) at which this agent may be used, given its parameters.
+        # An agent that runs on the local host (executes a local program, reads or writes local files, starts a local daemon)
+        # returns `:medium`, so that it is refused at level `high`: at `high`, transfers use a remote agent that the user controls.
+        # An agent that only talks to a remote system (e.g. `node`, or `transferd` attached to a remote daemon) returns `nil` (any level).
+        # @param options [Hash] parameters passed to the agent constructor (keys as symbols)
+        # @return [Symbol, nil] `nil`, `:low`, `:medium` or `:high`
+        def required_security_level(options)
+          nil
+        end
       end
 
       # Where received files are written (direction `receive`).

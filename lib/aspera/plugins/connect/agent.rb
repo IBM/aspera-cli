@@ -27,6 +27,9 @@ module Aspera
         private_constant :CONNECT_START_URIS, :SLEEP_SEC_BETWEEN_RETRY, :DEPRECATION_MESSAGE
 
         class << self
+          # Uses the local Connect application, on the local host: refused at level `high` (see `Cli::Security`).
+          def required_security_level(_options) = :medium
+
           # Re-query a previously started transfer via the Connect REST API.
           # agent_params must contain 'app_id'; the Connect URL is auto-discovered.
           # @return [Hash] normalized status hash

@@ -88,8 +88,8 @@ module AgentFactorySpecHelper
     entries = entries.map { |entry| ENTRY.merge(entry) }
     bundle = write_bundle(folder, name, manifest: {'commands' => false, 'depends' => depends, 'extensions' => {'agent' => entries}}, code: nil)
     File.write(File.join(bundle, 'agent_options.yaml'), options_schema.to_yaml) unless options_schema.nil?
-    write_bundle_file(bundle, 'agent.rb', <<~RUBY, code: code)
-      class Agent
+    write_bundle_file(bundle, 'agent.rb', <<~RUBY, code: "require 'aspera/agent/base'\n#{code}")
+      class Agent < Aspera::Agent::Base
         attr_reader :options
 
         def initialize(**options)

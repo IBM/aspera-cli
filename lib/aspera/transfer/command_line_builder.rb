@@ -34,6 +34,7 @@ module Aspera
         'x-cli-special',  # [Boolean]      `true` if special handling (deferred)
         'x-cli-convert',  # [String,Hash]  Method name for Convert object or Conversion for enum ts to arg
         'x-cli-complete', # [String]       Values proposed by shell completion: `file`, `folder` (see `Cli::Complete::KINDS`)
+        'x-security',     # [String]       Most restrictive security level that allows the key (see `Cli::Security`); enforced when the option is set, ignored here
         'x-agents',       # [Array]        Supported agents (for doc only), if not specified: all
         'x-ts-name',      # [Boolean,String] (async) true if same name in transfer spec, else real name in transfer spec, else ignored
         'x-ts-convert',   # [String]       (async) Name of methods to convert value from transfer spec to `conf` API.

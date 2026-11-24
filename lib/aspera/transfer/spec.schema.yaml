@@ -820,6 +820,8 @@ properties:
       - transferd
     x-cli-option: --ssh-arg
     x-cli-special: true
+    # Arguments to the external `ssh` program can start a local program (e.g. an ssh `ProxyCommand`): executing code, allowed at level `low` only
+    x-security: low
   keepalive:
     description: The session is running in persistent session mode.
     type: boolean

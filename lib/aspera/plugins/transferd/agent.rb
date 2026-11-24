@@ -26,9 +26,29 @@ module Aspera
         # port zero means select a random available high port
         AUTO_LOCAL_TCP_PORT = "#{PORT_SEP}0".freeze
 
-        private_constant :LOCAL_SOCKET_ADDR, :PORT_SEP, :AUTO_LOCAL_TCP_PORT
+        # Daemon addresses that run on the local host (loopback or wildcard bind): a daemon there is started or attached to locally
+        LOCAL_DAEMON_HOSTS = ['127.0.0.1', 'localhost', '::1', '0.0.0.0', '::'].freeze
+
+        private_constant :LOCAL_SOCKET_ADDR, :PORT_SEP, :AUTO_LOCAL_TCP_PORT, :LOCAL_DAEMON_HOSTS
 
         class << self
+          # A daemon started here, or attached to on the local host, runs on the local host: refused at level `high` (see `Cli::Security`).
+          # A daemon on a remote host is provided and controlled by the user: allowed at any level.
+          # @param options [Hash] agent parameters (`url` is the daemon endpoint, default: a local daemon)
+          # @return [Symbol, nil] `:medium` for a local daemon, `nil` (any level) for a remote one
+          def required_security_level(options)
+            remote_daemon?(options[:url]) ? nil : :medium
+          end
+
+          # @param url [String, nil] daemon endpoint `<address>:<port>` (or `:<port>`, or absent: a local daemon)
+          # @return [Boolean] `true` if the daemon is on a remote host
+          def remote_daemon?(url)
+            return false if url.nil?
+            host = url.to_s.sub(%r{\A\w+://}, '')
+            host = host[0...host.rindex(':')] if host.include?(':')
+            !host.empty? && !LOCAL_DAEMON_HOSTS.include?(host.downcase)
+          end
+
           # @param stub [Transferd::Api::TransferService::Stub] gRPC client of a daemon
           # @return [Client] Calls to this daemon with plain Ruby arguments
           def wrap_client(stub)

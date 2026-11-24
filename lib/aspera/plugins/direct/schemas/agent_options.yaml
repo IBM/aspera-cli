@@ -39,6 +39,8 @@ properties:
     items:
       type: string
     default: []
+    # Raw `ascp` arguments can start a local program (e.g. a system `ssh` helper): executing code, allowed at level `low` only
+    x-security: low
   spawn_timeout_sec:
     type: number
     description: Multi session - Maximum time (in seconds) to verify that `ascp` is running.

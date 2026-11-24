@@ -24,6 +24,9 @@ module Aspera
         private_constant :START_URIS, :SLEEP_SEC_BETWEEN_RETRY
 
         class << self
+          # Uses the local Aspera for Desktop application, on the local host: refused at level `high` (see `Cli::Security`).
+          def required_security_level(_options) = :medium
+
           # Re-query a previously started transfer from the Desktop JSON-RPC daemon.
           # agent_params must contain 'application_id'; the JSON-RPC URL is auto-discovered.
           # @return [Hash] normalized status hash
