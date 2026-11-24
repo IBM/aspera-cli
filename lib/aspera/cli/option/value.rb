@@ -136,11 +136,17 @@ module Aspera
         # @param source [Symbol] `Option::Source` of value
         # @param warn_deprecation [Boolean] Emit deprecation warning (false for internal transfers)
         # @param merge [Boolean] Merge `Hash` and `Array` with current value (false: value is already complete)
+        # @param final [Boolean] The value is final: values from a lower source (preset, environment) are ignored, not merged nor checked
         # @return [nil]
         # @raise [SchemaRequest] if value is `help` and schema is known
-        def assign_value(value, source:, warn_deprecation: true, merge: true)
+        def assign_value(value, source:, warn_deprecation: true, merge: true, final: false)
           # Value from a source with lower priority than current value: only fills containers
           lower = !@source.nil? && Option::Source.priority(source) < Option::Source.priority(@source)
+          # Final value (set by the program for the whole run): a lower source is ignored, even for a container
+          if lower && @final
+            Log.log.debug { "#{source}: #{@option}: ignored, final value set from #{@source}" }
+            return
+          end
           if lower && ![Hash, Array].include?(@types&.first)
             Log.log.debug { "#{source}: #{@option}: ignored, already set from #{@source}" }
             return
@@ -178,6 +184,7 @@ module Aspera
           # A value set by the program is not checked, e.g. `--out.img` sets option `image` with a value checked as part of option `out`
           validate_schema(new_value, partial: true) unless source.eql?(:code)
           store(new_value, source)
+          @final = true if final
           nil
         end
 

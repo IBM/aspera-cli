@@ -197,6 +197,18 @@ module Aspera
           expect { Option::Value.new(option: :config_file, security: :low).assign_value('/x', source: :cmdline) }.to(raise_error(BadArgument, /option config_file: disabled by security level medium/))
         end
 
+        it 'refuses options vault and vault_password from the command line and presets, accepts them at level low' do
+          security.lock('in MCP server mode', default: :high)
+          refused = %i[cmdline preset plugin_preset]
+          accepted = %i[default code env]
+          {vault: [[Hash], {'default' => 'f'}], vault_password: [Option::Type::STRING, 'x']}.each do |option, (types, value)|
+            refused.each { |source| expect { Option::Value.new(option: option, security: :low, allowed: types).assign_value(value, source: source) }.to(raise_error(BadArgument, /option #{option}: disabled by security level high/)) }
+            accepted.each { |source| expect { Option::Value.new(option: option, security: :low, allowed: types).assign_value(value, source: source) }.not_to(raise_error) }
+          end
+          security.reset
+          expect { Option::Value.new(option: :vault, security: :low, allowed: [Hash]).assign_value({'default' => 'f'}, source: :cmdline) }.not_to(raise_error)
+        end
+
         it 'refuses an unknown level' do
           expect { security.options = {'level' => 'none'} }.to(raise_error(BadArgument, /security.level: expecting one of/))
         end

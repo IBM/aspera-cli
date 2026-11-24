@@ -62,13 +62,19 @@ module Aspera
       # @param context [Context] the shared context to populate
       # @param main_folder [String, nil] main folder set by the program, as by code: not restricted by the security level; `nil`: option `home`
       # @param config_file [String, nil] configuration file set by the program, as by code: not restricted by the security level; `nil`: option `config_file`
-      def initialize(context, main_folder: nil, config_file: nil)
+      # @param vault [Hash, nil] option `vault` set by the program, as by code: not restricted by the security level; `nil`: option `vault`
+      # @param vault_password [String, nil] option `vault_password` set by the program, as by code; `nil`: option `vault_password`
+      def initialize(context, main_folder: nil, config_file: nil, vault: nil, vault_password: nil)
         Aspera.assert_type(context, Context) { 'context' }
         Aspera.assert_type(main_folder, String, NilClass) { 'main_folder' }
         Aspera.assert_type(config_file, String, NilClass) { 'config_file' }
+        Aspera.assert_type(vault, Hash, NilClass) { 'vault' }
+        Aspera.assert_type(vault_password, String, NilClass) { 'vault_password' }
         @context = context
         @main_folder = main_folder
         @config_file = config_file
+        @vault = vault
+        @vault_password = vault_password
         @pac_exec = nil
       end
 
@@ -98,7 +104,7 @@ module Aspera
           default: default_app_main_folder(app_name: Info::CMD_NAME)
         )
         # Set by code before parsing: a value on the command line has the same priority, and is refused if the security level does not allow option `home`
-        @context.options.set_option(:home, @main_folder, source: :code) unless @main_folder.nil?
+        @context.options.set_option(:home, @main_folder, source: :code, final: true) unless @main_folder.nil?
         @context.options.parse_options!
         Log.log.debug { "#{Info::CMD_NAME} folder: #{@context.main_folder}" }
       end
@@ -116,7 +122,7 @@ module Aspera
           default: File.join(@context.main_folder, DEFAULT_CONFIG_FILENAME)
         )
         # Set by code before parsing: a value on the command line has the same priority, and is refused if the security level does not allow option `config_file`
-        @context.options.set_option(:config_file, @config_file, source: :code) unless @config_file.nil?
+        @context.options.set_option(:config_file, @config_file, source: :code, final: true) unless @config_file.nil?
         @context.options.parse_options!
         @context.presets = PresetManager.new(config_file: @context.options.get_option(:config_file))
         @context.http_config = Http.new
@@ -125,8 +131,11 @@ module Aspera
       # context.vault + register @preset and @vault extended-value handlers + global config default preset
       def setup_extended_value_handlers
         @context.options.declare(:secret, description: 'Secret for access keys')
-        @context.options.declare(:vault, schema: Schema::Registry::VAULT_OPTIONS, convert: VaultManager.method(:convert_option))
-        @context.options.declare(:vault_password, description: 'Vault password')
+        @context.options.declare(:vault, schema: Schema::Registry::VAULT_OPTIONS, convert: VaultManager.method(:convert_option), security: :low)
+        @context.options.declare(:vault_password, description: 'Vault password', security: :low)
+        # Set by code before parsing: a value on the command line has the same priority, and is refused if the security level does not allow these options
+        @context.options.set_option(:vault, @vault, source: :code, final: true) unless @vault.nil?
+        @context.options.set_option(:vault_password, @vault_password, source: :code, final: true) unless @vault_password.nil?
         @context.vault = VaultManager.new(@context.options, @context.main_folder)
         # Register @preset and @vault handlers BEFORE parse_options! so that
         # values like --secret=@preset:name are correctly evaluated at parse time.

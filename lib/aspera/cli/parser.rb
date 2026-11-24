@@ -323,9 +323,10 @@ module Aspera
       # @param option_symbol [Symbol] option name
       # @param value  [String] Value to set
       # @param source [Symbol] `Option::Source` of value
-      def set_option(option_symbol, value, source: :code, warn_deprecation: true)
+      # @param final [Boolean] Value is final: values from a lower source (preset, environment) are ignored
+      def set_option(option_symbol, value, source: :code, warn_deprecation: true, final: false)
         Aspera.assert_type(option_symbol, Symbol)
-        option_def(option_symbol).assign_value(value, source: source, warn_deprecation: warn_deprecation)
+        option_def(option_symbol).assign_value(value, source: source, warn_deprecation: warn_deprecation, final: final)
       end
 
       # Set option to `nil`

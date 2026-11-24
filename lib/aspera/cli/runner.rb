@@ -40,10 +40,14 @@ module Aspera
       # @param argv [Array<String>] command line arguments
       # @param main_folder [String, nil] main folder set by the program (not by the arguments), e.g. the one of the MCP server; `nil`: option `home`
       # @param config_file [String, nil] configuration file set by the program (not by the arguments), e.g. the one of the MCP server; `nil`: option `config_file`
+      # @param vault [Hash, nil] option `vault` set by the program (not by the arguments), e.g. the one of the MCP server; `nil`: option `vault`
+      # @param vault_password [String, nil] option `vault_password` set by the program (not by the arguments); `nil`: option `vault_password`
       # @return [nil]
-      def initialize(argv, main_folder: nil, config_file: nil)
+      def initialize(argv, main_folder: nil, config_file: nil, vault: nil, vault_password: nil)
         @main_folder = main_folder
         @config_file = config_file
+        @vault = vault
+        @vault_password = vault_password
         # Dumped (trace2) with secrets hidden by `CommandLine`
         @argv = argv
         @option_help = false
@@ -436,7 +440,7 @@ module Aspera
         declare_global_options
         # Bootstrap: populate context services (main_folder, persistency, presets, vault, http_config,
         # progress_bar) and configure global singletons before any plugin is instantiated.
-        @bootstrapper = Bootstrapper.new(@context, main_folder: @main_folder, config_file: @config_file)
+        @bootstrapper = Bootstrapper.new(@context, main_folder: @main_folder, config_file: @config_file, vault: @vault, vault_password: @vault_password)
         @bootstrapper.run(gem_plugins_folder: Plugins::Config.gem_plugins_folder)
         # Do not display config commands if help is asked
         @context.man_header = false

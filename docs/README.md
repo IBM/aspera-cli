@@ -2922,6 +2922,7 @@ Features that execute code (own, or downloaded), load code, or write a file chos
 | Option `out`, key `file` (and `output`), option `pid_file` | Write (or truncate, or delete) a file chosen by the client |
 | Option `home` | Configuration folder: its presets, and its folder `plugins` (Ruby code) are used |
 | Option `config_file` | Configuration file: its presets are used, and a command that changes presets writes it |
+| Options `vault` and `vault_password` | Secret stores of `@vault:`: a file store is created and written at the path given, other stores connect to the server given |
 | Option `plugin_folder` | Plugins are Ruby code |
 | Plugins of the folders of option `plugin_folder` (by default, folder `plugins` of the configuration folder) | Ruby code: not loaded at other levels, also if the file was there before |
 | Command `config plugins create` | Creates Ruby code, loaded as a plugin |
@@ -11853,8 +11854,9 @@ With the `http` transport:
 With both transports:
 
 - Extended value `@stdin:` is refused.
-- Commands sent by the client run in the main folder of the server (option `home`, `ASCLI_HOME`, or the default one), and use its configuration file (option `config_file`).
-  The client cannot change them: options `home` and `config_file` are refused at levels `medium` and `high`.
+- Commands sent by the client run in the main folder of the server (option `home`, `ASCLI_HOME`, or the default one), and use its configuration file (option `config_file`) and its vault (options `vault` and `vault_password`, also when set in a preset of the server).
+  The client cannot change them: these options are refused at levels `medium` and `high`.
+  If the command line of the server sets option `security` to `medium` or `high`, the server cannot set them on its command line or in a preset either: set them in its environment, for example `ASCLI_VAULT` and `ASCLI_VAULT_PASSWORD`.
 - `@secret:` is entered by the user on a web page, see [Secrets entered in a web page](#secrets-entered-in-a-web-page).
 - Secrets are hidden in responses, also a value shorter than 8 characters as a word in a text (for example, a short password in an error message).
 - The [Security Level](#security-level) is `high` by default: `@ruby:`, `@file:` (also in the parameters of stores of option `vault`), `@uri:`, `@env:`, and `@zlib:` are refused, and a secret must be the whole value: hidden in results, it cannot be processed by another extended value.

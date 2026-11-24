@@ -170,6 +170,9 @@ module Aspera
           # Commands of the client use the main folder of the server (set by option `home`, env or default), and its configuration file (option `config_file`)
           Cli::Mcp::Tool.main_folder    = context.main_folder
           Cli::Mcp::Tool.config_file    = context.presets.config_file
+          # and its vault, options `vault` and `vault_password` (the stores of `@vault:`), not chosen by the client
+          Cli::Mcp::Tool.vault          = options.get_option(:vault, mandatory: false)
+          Cli::Mcp::Tool.vault_password = options.get_option(:vault_password, mandatory: false)
           transport = mcp_options.delete(:transport) || 'stdio'
           # Options of the other transport would be ignored
           ignored = mcp_options.keys & (transport.to_s.eql?('stdio') ? HTTP_KEYS + HTTP_SERVER_KEYS : STDIO_KEYS)

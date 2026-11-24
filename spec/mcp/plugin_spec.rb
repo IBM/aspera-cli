@@ -66,10 +66,14 @@ require 'securerandom'
 require 'tmpdir'
 
 RSpec.describe(Aspera::Cli::Plugins::Mcp) do
+  let(:server_vault) { {'default' => 'f', 'stores' => {'f' => {'type' => 'file', 'file' => '/server/home/v.vault'}}} }
   # Build a minimal plugin instance without a real CLI context.
   subject(:plugin) do
     described_class.allocate.tap do |p|
       allow(p).to(receive(:context).and_return(instance_double(Aspera::Cli::Context, main_folder: '/server/home', presets: instance_double(Aspera::Cli::PresetManager, config_file: '/server/home/config.yaml'))))
+      allow(p).to(receive(:options).and_return(instance_double(Aspera::Cli::Parser)))
+      allow(p.options).to(receive(:get_option).with(:vault, mandatory: false).and_return(server_vault))
+      allow(p.options).to(receive(:get_option).with(:vault_password, mandatory: false).and_return('<PASSWORD>'))
     end
   end
 
@@ -229,12 +233,20 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
     after do
       Aspera::Cli::Mcp::Tool.main_folder = nil
       Aspera::Cli::Mcp::Tool.config_file = nil
+      Aspera::Cli::Mcp::Tool.vault = nil
+      Aspera::Cli::Mcp::Tool.vault_password = nil
     end
 
     it 'gives the main folder and the configuration file of the server to the tool' do
       plugin.action_server
       expect(Aspera::Cli::Mcp::Tool.main_folder).to(eq('/server/home'))
       expect(Aspera::Cli::Mcp::Tool.config_file).to(eq('/server/home/config.yaml'))
+    end
+
+    it 'gives the vault of the server to the tool' do
+      plugin.action_server
+      expect(Aspera::Cli::Mcp::Tool.vault).to(eq(server_vault))
+      expect(Aspera::Cli::Mcp::Tool.vault_password).to(eq('<PASSWORD>'))
     end
 
     it 'is high by default, and cannot be changed by the client' do
