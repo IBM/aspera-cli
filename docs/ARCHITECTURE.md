@@ -1162,6 +1162,11 @@ A program that embeds the library (e.g. an add-on of Orchestrator) uses the file
 
 ### Bundles
 
+![Plugin bundles: dependencies](plugin-dependencies.svg)
+
+The diagram is generated from the manifests: after a change of a field `depends`, or of a bundle, run `rake doc:plugin_dependencies` (requires Graphviz `dot`), then `rake doc:diagrams` for its images.
+A spec fails when the diagram does not match the manifests.
+
 | Bundle | Commands | Agent | Other content | `depends` |
 | --- | --- | --- | --- | --- |
 | `xfer` | under `config`: `ascp`, `agents`, `sync` | extension point `agent` | service `transfer` | |

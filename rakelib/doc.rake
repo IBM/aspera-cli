@@ -197,4 +197,13 @@ namespace :doc do
       end
     end
   end
+
+  # Then `rake doc:diagrams` exports its images. A spec fails when the diagram does not match the manifests.
+  desc 'Write the diagram of the dependencies between plugin bundles from their manifests (requires Graphviz dot)'
+  task :plugin_dependencies do
+    require_relative '../build/lib/plugin_dependencies'
+    out_file = Paths::DOC / "#{PluginDependencies::TAB}.drawio"
+    PluginDependencies.write((Paths::LIB / 'aspera' / 'plugins').to_s, out_file.to_s)
+    Aspera::Log.log.info { "Generated: #{out_file}" }
+  end
 end

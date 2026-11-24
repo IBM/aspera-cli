@@ -307,6 +307,7 @@ See its `README.md` for the tools it requires.
 - The look of the PDF manual (cover, fonts) comes from the theme `build/doc/pdf_theme`, also used by other IBM Aspera projects (`GFM2PDF_THEME`).
 - Options of the PDF manual: comment `<!-- gfm2pdf` in `docs/README.erb.md` (subtitle, author), and `docs/README.gfm2pdf.yaml` (page after the cover: `docs/README.preface.tex`).
 - draw.io diagrams of the manual (`docs/*.drawio`): their images (SVG for GitHub, PDF for the PDF manual) are committed, export them again with `rake doc:diagrams` (requires draw.io desktop).
+  The diagram of the dependencies between plugin bundles (`docs/plugin-dependencies.drawio`) is generated from their manifests by `rake doc:plugin_dependencies` (requires Graphviz `dot`): run it when a bundle or a field `depends` changes; a spec checks it.
 
 The project utilizes the **IBM Plex font**.
 Installation instructions can be found at [IBM Plex](https://www.ibm.com/plex/).
