@@ -2375,6 +2375,8 @@ mcp_http_server:
   tags:
     - mcp
     - background
+  env:
+    ASCLI_HOME: "$(PATH_CLI_HOME)"
   args:
     - mcp
     - server
@@ -2413,6 +2415,8 @@ mcp_stdio_call:
   stdin: |
     {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"0"}}}
     {"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"execute_ascli_command","arguments":{"args":["config","gem","version"]}}}
+  env:
+    ASCLI_HOME: "$(PATH_CLI_HOME)"
   args:
     - mcp
     - server
@@ -2521,6 +2525,8 @@ mcp_http_secret:
     - background
     - no_doc
   pre: generated_secret(:mcp_auth_token)
+  env:
+    ASCLI_HOME: "$(PATH_CLI_HOME)"
   args:
     - mcp
     - server
