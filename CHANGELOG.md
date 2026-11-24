@@ -35,6 +35,7 @@ Released: [Place date of release here]
 * `mcp server`: the commands sent by the client ran in the default home (`~/.aspera/ascli`, or env `ASCLI_HOME`) instead of the main folder of the server (option `home`). They now run in the main folder of the server; the client still cannot change it at security levels `medium` and `high`.
 * `mcp server`: the commands sent by the client could choose the configuration file with option `config_file`, and so read, create, modify or rename a file of the server, also outside `writable_paths`. The option is now refused at security levels `medium` and `high`, and the commands of the client use the configuration file of the server.
 * `mcp server`: the commands sent by the client could choose the vault with option `vault` (and its password with `vault_password`), and so create a vault file outside `writable_paths`, or make the server connect to a host of their choice (HashiCorp Vault, Keeper, ...). The options are now refused at security levels `medium` and `high`, and the commands of the client use the vault of the server, also when it is set in a preset of its configuration file.
+* `config web_login`: about 1 code in 64 started with `-`, and `ascli config web_login <code>` then read the code as an option (`Missing argument: code`). A code no longer starts with `-`.
 
 ### Breaking Changes
 

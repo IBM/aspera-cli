@@ -29,6 +29,15 @@ RSpec.describe(Aspera::SealedHash) do
     expect(described_class.seal(data)).not_to(eq(described_class.seal(data)))
   end
 
+  it 'never starts with -, which a command line reads as an option' do
+    # 1 IV in 64 gives `-` as first character: here the first one, so it is drawn again
+    ivs = ["\xF8".b + ("\x00".b * 11), "\x00".b * 12]
+    allow_any_instance_of(OpenSSL::Cipher).to(receive(:random_iv)) { |cipher| cipher.iv = ivs.shift }
+    text = described_class.seal(data, time: now)
+    expect(text).to(start_with('AAAA'))
+    expect(described_class.unseal(text, time: now)).to(eq(data))
+  end
+
   it 'refuses another base key' do
     expect { described_class.unseal(described_class.seal(data, base_key: 'key'), base_key: 'other') }.to(raise_error(Aspera::ParameterError, /Invalid code/))
   end
