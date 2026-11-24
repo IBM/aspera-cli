@@ -2930,6 +2930,7 @@ Features that execute code (own, or downloaded), load code, or write a file chos
 | Command `config plugins create` | Creates Ruby code, loaded as a plugin |
 | Command `faspex5 postprocessing` | Executes scripts, or Ruby code |
 | Commands `node emulator` (`simulator`), `aoc gateway`, `faspex5 gateway` | Start a local server that listens on the network, serves a local folder, or accepts transfers |
+| Options `insecure`, `ignore_certificate`, `cert_stores`, `http_proxy`, and keys `ca_file`, `verify_mode`, `ssl_options` of option `http_options` | Disable or redirect the validation of a server certificate, or route through a proxy: a client could intercept the connections (and the credentials) of the server |
 | Transfer parameters `ascp_args` (agent `direct`) and `ssh_args` (transfer spec) | Raw arguments to `ascp` or the external `ssh`: can start a local program (for example an `ssh` `ProxyCommand`) |
 
 At other levels, an option is refused whatever the way it is set (command line, or preset), and a command is not listed by `config commands`.
@@ -4538,6 +4539,7 @@ HTTP connection parameters (not `ascp` WSS) can be adjusted using option `http_o
 
 | Field | Type | Description |
 | ----------------------- | -------------- | -------------------------------------------------------------------------------- |
+| `ca_file` | `String` | File with the CA certificates that verify the certificate of the server (HTTPS). (SSL) |
 | `download_partial_suffix` | `String` | File suffix appended to the target filename while a download is in progress. (Rest)<br/>Default: `.http_partial`. |
 | `jwt_accepted_offset_sec` | `String, Number` | Tolerance of clock difference with the server: a generated JWT is valid since this duration in the past (`nbf`). (OAuth) A duration, e.g. `30s`, `12h`, `1d`, `1h 30m`, a plain number is seconds.<br/>Default: `300`. |
 | `jwt_expiry_offset_sec` | `String, Number` | Validity of a generated JWT, used to request a token. (OAuth) A duration, e.g. `30s`, `12h`, `1d`, `1h 30m`, a plain number is seconds.<br/>Default: `3600`. |
@@ -4554,6 +4556,7 @@ HTTP connection parameters (not `ascp` WSS) can be adjusted using option `http_o
 | `token_refresh_max_age` | `String, Number` | Age in seconds (since it was obtained) above which the token is proactively refreshed, `0` for no limit. E.g. keeps a session alive when the refresh token expires at the same time as the token (Shares). (OAuth) A duration, e.g. `30s`, `12h`, `1d`, `1h 30m`, a plain number is seconds.<br/>Default: `0`. |
 | `token_refresh_threshold` | `String, Number` | Remaining token lifetime in seconds below which the token is proactively refreshed. (OAuth) A duration, e.g. `30s`, `12h`, `1d`, `1h 30m`, a plain number is seconds.<br/>Default: `120`. |
 | `user_agent` | `String` | Value sent in the `User-Agent` HTTP request header. (Rest) |
+| `verify_mode` | `String` | OpenSSL verify mode of the server certificate, e.g. `none` to disable validation. (SSL) |
 | `write_timeout` | `String, Number` | Maximum time in seconds to wait for data to be written to the server. (Net::HTTP) A duration, e.g. `30s`, `12h`, `1d`, `1h 30m`, a plain number is seconds.<br/>Default: `60`. |
 
 Time values are durations: a number of **seconds** (`Integer` or `Float`), or a `String`, e.g. `30s`, `12h`, `1d`, `1h 30m`, `1d 02:00:00`.

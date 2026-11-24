@@ -137,6 +137,27 @@ module Aspera
           expect(http.ignore_cert?('any.example.com', 443)).to(be(true))
         end
       end
+
+      # Disabling or redirecting the validation of a server certificate lets a client intercept the server's connections (man-in-the-middle):
+      # these options are available at security level `low` only.
+      describe 'security level high' do
+        before { Security.instance.options = {'level' => 'high'} }
+        after  { Security.instance.reset }
+
+        [
+          '--insecure=yes',
+          '--ignore-certificate=@json:["https://x"]',
+          '--cert-stores=@json:["/tmp"]',
+          '--http-proxy=http://proxy:8080',
+          '--http-options=@json:{"ca_file":"/x"}',
+          '--http-options=@json:{"verify_mode":"none"}',
+          '--http-options=@json:{"ssl_options":["IGNORE_UNEXPECTED_EOF"]}'
+        ].each do |option|
+          it "refuses #{option}" do
+            expect { build_http([option]) }.to(raise_error(BadArgument, /disabled by security level high/))
+          end
+        end
+      end
     end
   end
 end

@@ -386,6 +386,19 @@ components:
           description: List of OpenSSL option flags to set on the HTTP session (e.g. `IGNORE_UNEXPECTED_EOF`). (SSL)
           items:
             type: string
+          # OpenSSL flags can weaken the validation of the server certificate (man-in-the-middle): available at level low only
+          x-security: low
+        ca_file:
+          type: string
+          x-cli-complete: file
+          description: File with the CA certificates that verify the certificate of the server (HTTPS). (SSL)
+          # The client chooses which certificate authority the server trusts (man-in-the-middle): available at level low only
+          x-security: low
+        verify_mode:
+          type: string
+          description: OpenSSL verify mode of the server certificate, e.g. `none` to disable validation. (SSL)
+          # Disabling the validation of the server certificate (man-in-the-middle): available at level low only
+          x-security: low
         user_agent:
           type: string
           description: Value sent in the `User-Agent` HTTP request header. (Rest)

@@ -47,13 +47,15 @@ module Aspera
         end
       end
 
-      # `on_set` callbacks are methods of the instance given as `target:` to `declare_options`
-      option :insecure,           description: 'HTTP/S: Do not validate any certificate',                   allowed: Option::Type::BOOLEAN, default: false, on_set: :insecure=
-      option :ignore_certificate, description: 'HTTP/S: Do not validate certificate for these URLs',        allowed: Option::Type::STRING_ARRAY,            on_set: :ignore_cert_host_port=
+      # `on_set` callbacks are methods of the instance given as `target:` to `declare_options`.
+      # Disabling or redirecting the validation of a server certificate, or routing through a proxy, lets a client intercept the connections
+      # (and the credentials) of the server (man-in-the-middle): these options are available at security level `low` only.
+      option :insecure,           description: 'HTTP/S: Do not validate any certificate',                   allowed: Option::Type::BOOLEAN, default: false, on_set: :insecure=, security: :low
+      option :ignore_certificate, description: 'HTTP/S: Do not validate certificate for these URLs',        allowed: Option::Type::STRING_ARRAY,            on_set: :ignore_cert_host_port=, security: :low
       option :warn_insecure,      description: 'HTTP/S: Issue a warning if certificate is ignored',         allowed: Option::Type::BOOLEAN, default: true,  on_set: :warn_insecure=
-      option :cert_stores,        description: 'HTTP/S: List of folder with trusted certificates',          allowed: Option::Type::STRING_ARRAY,            on_set: :trusted_cert_locations=
+      option :cert_stores,        description: 'HTTP/S: List of folder with trusted certificates',          allowed: Option::Type::STRING_ARRAY,            on_set: :trusted_cert_locations=, security: :low
       option :http_options,       schema: Schema::Registry::HTTP_OPTIONS,                                                                           on_set: :http_options=
-      option :http_proxy,         description: 'HTTP/S: URL for proxy with optional credentials',                                                   on_set: :http_proxy=
+      option :http_proxy,         description: 'HTTP/S: URL for proxy with optional credentials',                                                   on_set: :http_proxy=, security: :low
 
       def initialize
         @insecure              = false
