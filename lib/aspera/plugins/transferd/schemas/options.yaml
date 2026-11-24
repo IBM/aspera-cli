@@ -74,5 +74,7 @@ components:
           $ref: "#/components/schemas/ServiceOptions"
         config:
           type: object
+          # Open: content of `transferd.json`, checked with the schema of the transfer daemon configuration (`transferd`)
+          additionalProperties: true
           description: >-
             Content of `transferd.json`, validated against the transfer daemon configuration schema.

@@ -110,3 +110,15 @@ components:
         suffix: AgentOptions
       discriminator:
         propertyName: agent
+      # Keys common to all agents. The parameters of the variant selected by `agent` are evaluated by it, other keys are refused.
+      # Variants do not state `additionalProperties`: `false` would refuse the keys of this node, `true` would accept any key.
+      properties:
+        agent:
+          type: string
+          description: Name of the transfer agent.
+          default: direct
+        asynchronous:
+          type: boolean
+          description: Return after the start of the transfer, with the identifier of the job, instead of waiting for its end (see `config agents jobs`).
+          default: false
+      unevaluatedProperties: false

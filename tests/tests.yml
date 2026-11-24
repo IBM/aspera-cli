@@ -2388,7 +2388,7 @@ mcp_bad_option:
     - mcp
     - must_fail
     - no_doc
-  expect: "Unknown MCP option(s): unknown_key"
+  expect: "`/unknown_key` is a disallowed additional property"
   args:
     - mcp
     - server

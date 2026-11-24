@@ -350,10 +350,12 @@ module Aspera
       # @param key    [String]      key of a `String` value
       # @return [Array(Array<String>, Symbol)] allowed values of the key, from its schema or the discriminator of its variants, and kind of value
       def completion_shorthand(schema, key)
-        row = completion_schema_row(schema, [key])
-        return [completion_row_values(row), row['complete']&.to_sym] unless row.nil?
         node = Schema::Registry.instance.reader(schema).current
-        [(node.dig('discriminator', 'mapping')&.keys if node.dig('discriminator', 'propertyName').eql?(key)), nil]
+        # Key that selects the variant: its values are those of the variants
+        return [node.dig('discriminator', 'mapping')&.keys, nil] if node.dig('discriminator', 'propertyName').eql?(key)
+        row = completion_schema_row(schema, [key])
+        return [nil, nil] if row.nil?
+        [completion_row_values(row), row['complete']&.to_sym]
       rescue StandardError
         [nil, nil]
       end

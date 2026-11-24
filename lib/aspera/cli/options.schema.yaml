@@ -11,6 +11,7 @@ components:
   schemas:
     LogOptions:
       type: object
+      additionalProperties: false
       description: Logging options.
       properties:
         level:
@@ -167,6 +168,7 @@ components:
           default: 5d
     McpServerOptions:
       type: object
+      additionalProperties: false
       description: MCP server configuration for the `mcp server` command.
       properties:
         transport:
@@ -276,6 +278,7 @@ components:
           default: true
     SmtpOptions:
       type: object
+      additionalProperties: false
       description: SMTP email server configuration.
       required:
         - server
@@ -303,7 +306,7 @@ components:
             - 587
         domain:
           type: string
-          description: Email domain of the user. Defaults to the domain part of `server`.
+          description: Email domain of the user. Defaults to the domain part of `from_email`.
           examples:
             - gmail.com
         username:
@@ -489,6 +492,7 @@ components:
             - "<TOKEN>"
         approle:
           type: object
+          additionalProperties: false
           description: >-
             AppRole authentication: the token is obtained by login, renewed, and obtained again when refused.
           properties:
@@ -632,6 +636,7 @@ components:
             For the default store, defaults to the value of `vault_password`.
     VaultSecret:
       type: object
+      additionalProperties: false
       description: Secret entry in the vault
       required:
         - label
@@ -705,6 +710,7 @@ components:
         - $ref: "#/components/schemas/VaultStore"
     ImageOptions:
       type: object
+      additionalProperties: false
       description: Options for displaying images and thumbnails in the terminal.
       properties:
         reserve:
@@ -783,6 +789,8 @@ components:
           description: 'Set the preset as default configuration for the plugin (default: yes).'
     TableOptions:
       type: object
+      # Open: the other keys are the style of the table, given to the gem `terminal-table` (format `table`) or to the Ruby `CSV` library (format `csv`)
+      additionalProperties: true
       description: Terminal table rendering options.
       properties:
         pivot:
@@ -791,6 +799,7 @@ components:
           default: false
     OutOptions:
       type: object
+      additionalProperties: false
       description: Output rendering options (dot-notation sub-properties).
       properties:
         format:
@@ -915,6 +924,8 @@ components:
           default: fail
     WebServerOptions:
       type: object
+      # Open: base of the options of web servers of bundles (e.g. `faspex5 postprocessing`), which add their own keys with `allOf`, and refuse other keys
+      additionalProperties: true
       description: >-
         Address and TLS configuration for a local web server (`WebServerSimple`).
         Used by commands that start an embedded HTTP(S) listener (`faspex5 gateway`,

@@ -175,9 +175,17 @@ module Aspera
             end
             new_value = new_value.is_a?(Hash) ? current_value.deep_merge(new_value) : current_value + new_value if mergeable
           end
-          validate_schema(new_value) unless %i[code default].include?(source)
+          # A value set by the program is not checked, e.g. `--out.img` sets option `image` with a value checked as part of option `out`
+          validate_schema(new_value, partial: true) unless source.eql?(:code)
           store(new_value, source)
           nil
+        end
+
+        # Validate the value of the option once all sources are applied: `required` of the schema is enforced.
+        # @param value [Object] Value of the option
+        # @raise [BadArgument] if value does not match schema
+        def validate_complete(value)
+          validate_schema(value, partial: false)
         end
 
         # Check that the option, and the sub-options present in a `Hash` value (`x-security` in schema), are available at current security level.
@@ -213,12 +221,13 @@ module Aspera
         end
 
         # Validate a structured value against the schema of the option.
-        # Value may be partial: completed by other sources or defaults, so `required` is not enforced.
-        # @param value [Object] value to validate
+        # `null` values (removal of an entry) are ignored.
+        # @param value   [Object]  value to validate
+        # @param partial [Boolean] `true`: value may be completed by other sources, so `required` is not enforced
         # @raise [BadArgument] if value does not match schema
-        def validate_schema(value)
+        def validate_schema(value, partial:)
           return unless @schema && (value.is_a?(Hash) || value.is_a?(Array))
-          errors = Schema::Validator.instance.errors(value, @schema, partial: true)
+          errors = Schema::Validator.instance.errors(value, @schema, partial: partial, ignore_null: true)
           raise BadArgument, "Option #{@option}: #{errors.join('; ')} (use --#{@option.to_s.tr('_', '-')}=#{SchemaRequest::KEYWORD} for schema)" unless errors.empty?
         end
 

@@ -9,8 +9,33 @@ info:
 paths: {}
 components:
   schemas:
+    NodeApiOptions:
+      type: object
+      description: Use of the Node API (option `node_api`), e.g. for `browse` in `aoc files` or in `node access_keys do`.
+      additionalProperties: false
+      properties:
+        cache:
+          type: boolean
+          description: >-
+            `true`: folder content is retrieved from the Redis database (faster).
+            `false`: folder content is retrieved from storage.
+          default: true
+        standard_ports:
+          type: boolean
+          description: >-
+            `true`: use hard coded standard ports (`33001`).
+            `false`: retrieve server ports from an API call (`download_setup`), which reads the information from `aspera.conf` on the server.
+          default: true
+        accept_v4:
+          type: boolean
+          description: >-
+            `true`: use API header `Accept-Version: 4.0`.
+            `false`: use the legacy method (refer to Node API).
+          default: true
     NodeBearerTokenOptions:
       type: object
+      # Open: the other keys are added as is to the payload of the token
+      additionalProperties: true
       description: >-
         JWT payload used to generate an Aspera Node bearer token (`node bearer_token`).
         `user_id` is the only mandatory field.
@@ -132,6 +157,7 @@ components:
             A random password of 32 bytes (`openssl rand -hex 32`) is far above the default.
     NodeTelemetryOptions:
       type: object
+      additionalProperties: false
       description: >-
         Configuration for the telemetry reporter (`node telemetry`).
         The command periodically queries `ops/transfers?active_only=true` and sends

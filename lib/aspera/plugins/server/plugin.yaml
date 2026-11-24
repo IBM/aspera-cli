@@ -3,3 +3,7 @@ title: IBM Aspera High-Speed Transfer Server
 depends:
   - transfer_agents
 commands: true
+schemas:
+  - key: server_opts
+    file: schemas/options.yaml
+    owned: true

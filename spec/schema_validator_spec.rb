@@ -53,6 +53,30 @@ RSpec.describe(Aspera::Schema::Validator) do
     expect(validator.errors({'multi_session' => 2}, agent_options, partial: true)).to(be_empty)
   end
 
+  describe 'keys of variants (unevaluatedProperties of the selector)' do
+    it 'accepts the keys of the selector and of the selected variant' do
+      expect(validator.errors({'agent' => 'direct', 'wss' => true, 'asynchronous' => true}, agent_options, partial: true)).to(be_empty)
+    end
+
+    it 'refuses a key that is not of the selected variant' do
+      expect(validator.errors({'agent' => 'node', 'wss' => true}, agent_options, partial: true)).to(eq(['object property at `/wss` is a disallowed additional property']))
+    end
+
+    it 'reports only the error of the variant when its value is wrong' do
+      expect(validator.errors({'agent' => 'direct', 'wss' => 'yes', 'quiet' => true}, agent_options, partial: true)).to(eq(['value at `/wss` is not a boolean']))
+    end
+
+    it 'reports only the selector when it is not valid' do
+      expect(validator.errors({'agent' => 'bogus', 'wss' => true}, agent_options, partial: true).size).to(eq(1))
+    end
+  end
+
+  it 'ignores null values when asked, with required enforced' do
+    telemetry = 'node_opts:components.schemas.NodeTelemetryOptions'
+    expect(validator.errors({'url' => 'https://x', 'key' => nil}, telemetry, ignore_null: true).first).to(include('key'))
+    expect(validator.errors({'url' => 'https://x', 'key' => 'k', 'hostname' => nil}, telemetry, ignore_null: true)).to(be_empty)
+  end
+
   it 'skips vendor API schemas' do
     expect(validator.errors({'foo' => 1}, 'node:components.schemas.transferPostRequest')).to(be_empty)
   end

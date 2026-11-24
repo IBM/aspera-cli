@@ -59,6 +59,7 @@ properties:
       Default: `true` on Windows, `false` on other platforms.
   resume:
     type: object
+    additionalProperties: false
     description: Configuration for automatic transfer resume on interruption.
     properties:
       iter_max:

@@ -6,6 +6,7 @@
 require_relative '../environment'
 require_relative '../log'
 require_relative '../assert'
+require_relative 'error'
 require 'erb'
 
 module Aspera
@@ -14,11 +15,6 @@ module Aspera
     # (TransferAgent, plugins, ...) can send emails via SMTP and ERB templates.
     # Provides :smtp, :notify_to, :notify_template options via the Options manager.
     class Mailer
-      SMTP_CONF_PARAMS = %i[server tls ssl port domain username password from_name from_email].freeze
-      SMTP_BOOL_PARAMS = %i[tls ssl].freeze
-      SMTP_INT_PARAMS  = %i[port].freeze
-      SMTP_STR_PARAMS  = %i[server domain username password from_email from_name].freeze
-
       # @param options     [Parser]  CLI options manager (provides :smtp, :notify_to, :notify_template)
       # @param main_folder [String]   application main folder (unused directly but kept for symmetry)
       def initialize(options, main_folder)
@@ -31,21 +27,10 @@ module Aspera
 
       # @return [Hash] email server settings with defaults applied
       def email_settings
-        smtp = options.get_option(:smtp, mandatory: true)
-        # Change keys from string into symbol
-        smtp = smtp.symbolize_keys
-        unsupported = smtp.keys - SMTP_CONF_PARAMS
-        Aspera.assert(unsupported.empty?, type: Cli::Error) { "Unsupported SMTP parameter: #{unsupported.join(', ')}, use: #{SMTP_CONF_PARAMS.join(', ')}" }
-        # Boolean fields must be actual booleans, not strings like "false"
-        SMTP_BOOL_PARAMS.each do |k|
-          Aspera.assert_values(smtp[k], [true, false], type: Cli::Error) { "smtp.#{k}" } if smtp.key?(k)
-        end
-        SMTP_INT_PARAMS.each do |k|
-          Aspera.assert_type(smtp[k], Integer, type: Cli::Error) { "smtp.#{k}" } if smtp.key?(k)
-        end
-        SMTP_STR_PARAMS.each do |k|
-          Aspera.assert_type(smtp[k], String, type: Cli::Error) { "smtp.#{k}" } if smtp.key?(k)
-        end
+        # Keys and types of values: see schema `SmtpOptions`
+        smtp = options.get_option(:smtp, mandatory: true, complete: true)
+        # Change keys from string into symbol, a `nil` value is a removed key
+        smtp = smtp.symbolize_keys.compact
         # smtp[:ssl] = nil (false)
         smtp[:tls] = !smtp[:ssl] unless smtp.key?(:tls)
         smtp[:port] ||= if smtp[:tls]
@@ -58,9 +43,7 @@ module Aspera
         smtp[:from_email] ||= smtp[:username] if smtp.key?(:username)
         smtp[:from_name] ||= smtp[:from_email].sub(/@.*$/, '').gsub(/[^a-zA-Z]/, ' ').capitalize if smtp.key?(:username)
         smtp[:domain] ||= smtp[:from_email].sub(/^.*@/, '') if smtp.key?(:from_email)
-        %i[server port domain].each do |n|
-          Aspera.assert(smtp.key?(n), type: Cli::BadArgument) { "Missing mandatory smtp parameter: #{n}" }
-        end
+        Aspera.assert(smtp.key?(:domain), type: BadArgument) { 'Option smtp: missing domain: set domain, from_email or username' }
         Log.dump(:smtp, smtp)
         return smtp
       end

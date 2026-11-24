@@ -15,6 +15,9 @@ module Aspera
       class Commands < Cli::Plugins::Base
         application_name 'IBM Cloud Object Storage'
 
+        # Schema of option `service_credentials`, in the schemas of the bundle (manifest `schemas`)
+        SERVICE_CREDENTIALS = 'cos_opts:components.schemas.CosServiceCredentials'
+
         command :node, description: 'Execute COS node commands',
           mount: {plugin: Node::Commands, instance: :cos_node_plugin, only: Node::Commands::COMMANDS_COS}
 
@@ -22,7 +25,7 @@ module Aspera
         option :endpoint,            description: 'Storage endpoint (URL)'
         option :apikey,              description: 'Storage API key'
         option :crn,                 description: 'Resource instance id (CRN)'
-        option :service_credentials, description: 'IBM Cloud service credentials', allowed: [Hash, NilClass]
+        option :service_credentials, description: 'IBM Cloud service credentials', allowed: [Hash, NilClass], schema: SERVICE_CREDENTIALS
         option :region,              description: 'Storage region'
         option :identity,            description: "Authentication URL (#{Api::IBM_CLOUD_TOKEN_URL})", default: Api::IBM_CLOUD_TOKEN_URL
 
@@ -32,7 +35,7 @@ module Aspera
         # @return [Node::Commands] Node plugin instance on the COS bucket
         def cos_node_plugin(**)
           # get service credentials, Hash, e.g. @json:@file:...
-          service_credentials = options.get_option(:service_credentials)
+          service_credentials = options.get_option(:service_credentials, complete: true)
           cos_node_params = {
             auth_url: options.get_option(:identity, mandatory: true),
             bucket:   options.get_option(:bucket, mandatory: true),

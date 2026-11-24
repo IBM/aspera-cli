@@ -59,6 +59,7 @@ unless defined?(MCP::Server)
 end
 
 require_relative '../../lib/aspera/cli/plugins/mcp'
+require_relative '../../lib/aspera/schema/validator'
 require_relative '../../lib/aspera/oauth/server/pkce'
 require_relative '../bundle_registry_helper'
 require 'securerandom'
@@ -266,8 +267,10 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
         .to(raise_error(Aspera::Cli::BadArgument, /not used with transport http: max_line_bytes/))
     end
 
-    it 'refuses unknown options' do
-      expect { plugin.action_server(mcp_options: {'foo' => 1}) }.to(raise_error(Aspera::Cli::BadArgument, /Unknown MCP option\(s\): foo/))
+    it 'refuses unknown options and transports, with the schema of the argument' do
+      schema = 'opts:components.schemas.McpServerOptions'
+      expect(Aspera::Schema::Validator.instance.errors({'foo' => 1}, schema)).to(eq(['object property at `/foo` is a disallowed additional property']))
+      expect(Aspera::Schema::Validator.instance.errors({'transport' => 'ftp'}, schema).first).to(include('/transport'))
     end
   end
 

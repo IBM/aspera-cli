@@ -266,7 +266,7 @@ module Aspera
               when Numeric then v
               else Units::Duration.new(v).to_unit('s')
               end
-          else Aspera.error_unexpected_value(k, type: BadArgument) { 'temp sub-option (folder, clean, expiry)' }
+          else Aspera.error_unexpected_value(k) { 'temp sub-option (folder, clean, expiry)' }
           end
         end
       rescue ParameterError => e

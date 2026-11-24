@@ -11,6 +11,7 @@ components:
   schemas:
     PackageFolderOptions:
       type: object
+      additionalProperties: false
       title: Package download folder organization
       description: >-
         Controls how downloaded packages are organized into subfolders under `to_folder`.

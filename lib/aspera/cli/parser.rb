@@ -296,7 +296,8 @@ module Aspera
       # @param mandatory [Boolean] if true, raise error if option not set
       # @param schema [String, nil] contextual schema path override; when set, raises SchemaRequest
       #   if the option value is 'help' (used for --query whose schema depends on the current command)
-      def get_option(option_symbol, mandatory: false, schema: nil)
+      # @param complete [Boolean] `true`: the value is used as is (no other source completes it): checked against the schema of the option, with its `required` properties
+      def get_option(option_symbol, mandatory: false, schema: nil, complete: false)
         Aspera.assert_type(option_symbol, Symbol)
         ensure_parsed
         option = option_def(option_symbol)
@@ -313,6 +314,7 @@ module Aspera
             set_option(option_symbol, result, source: :interactive)
           end
         end
+        option.validate_complete(result) if complete
         result
       end
 

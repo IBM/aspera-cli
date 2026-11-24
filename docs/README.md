@@ -9234,9 +9234,11 @@ For a list of SSH client options, refer to the Ruby documentation of [Net::SSH](
 
 Among the 50 available SSH options:
 
-- `verbose`
-- `use_agent`
-- `passphrase`
+| Field | Type | Description |
+| ---------- | ------ | -------------------------------------------------------------------------------- |
+| `passphrase` | `String` | Passphrase of the SSH private keys (also set by option `passphrase`). |
+| `use_agent` | `Bool` | Use the keys of a running `ssh-agent`.<br/>Default: `false`. |
+| `verbose` |  | Log level of `Net::SSH`: an `Integer`, from `0` (debug) to `4` (fatal). Default: warnings. |
 
 By default, the SSH library will check if a local `ssh-agent` is running.
 
@@ -9367,14 +9369,17 @@ Special parameters can be placed in option `query` for "gen3" browse:
 
 This is when executing `browse` in `aoc files` or in `node access_keys do`.
 
-Option `node_api` (`Hash`) controls some options of API used, with the following parameters:
+Option `node_api` controls the use of the Node API, with the following parameters:
 
-| Parameter| Default | Description |
-|----------|---------|-------------|
-| `cache`  | `true`  | `true` Folder content is retrieved from the Redis database (faster).<br/>`false` Folder content retrieved from storage. |
-| `standard_ports` | `true` | `true` Use hard coded standard ports (`33001`)<br/>`false` Retrieve server ports from an API call (`download_setup`) which reads the information from `aspera.conf` on the server. |
-| `accept_v4` | `true` | `true` (default) uses API header: `Accept-Version: 4.0`.<br/>`false` uses legacy method (refer to node API). |
-| `per_page` | - | Requested number of items per API call.<br/>Set to `nil` (`@none:`) to deactivate paging.<br/>Default: `1000` when `accept_v4` is `true`. |
+| Field | Type | Description |
+| -------------- | ---- | -------------------------------------------------------------------------------- |
+| `accept_v4` | `Bool` | `true`: use API header `Accept-Version: 4.0`. `false`: use the legacy method (refer to Node API).<br/>Default: `true`. |
+| `cache` | `Bool` | `true`: folder content is retrieved from the Redis database (faster). `false`: folder content is retrieved from storage.<br/>Default: `true`. |
+| `standard_ports` | `Bool` | `true`: use hard coded standard ports (`33001`). `false`: retrieve server ports from an API call (`download_setup`), which reads the information from `aspera.conf` on the server.<br/>Default: `true`. |
+
+The number of items requested per API call is the parameter `per_page` of option `query`.
+Set to `nil` (`@none:`) to deactivate paging.
+Default: `1000` when `accept_v4` is `true`.
 
 ### Operation `find` on **gen4/access key**
 
@@ -12929,7 +12934,7 @@ The `smtp` option is a `Hash` ([Extended Value](#extended-value-syntax)) with th
 
 | Field | Type | Description |
 | ---------- | ------- | -------------------------------------------------------------------------------- |
-| `domain` | `String` | Email domain of the user. Defaults to the domain part of `server`.<br/>Example: `gmail.com`. |
+| `domain` | `String` | Email domain of the user. Defaults to the domain part of `from_email`.<br/>Example: `gmail.com`. |
 | `from_email` | `String` | Sender address (used in `From:` header and as reply-to). Defaults to `username` when defined.<br/>Example: `johnny@example.com`. |
 | `from_name` | `String` | Display name of the sender. Defaults to the local-part of `from_email`.<br/>Example: `John Wayne`. |
 | `password` | `String` | Password for the above `username`.<br/>Example: `<PASSWORD>`. |

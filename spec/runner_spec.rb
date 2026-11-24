@@ -187,8 +187,9 @@ module Aspera
           expect { runner.send(:option_temp=, {'expiry' => '5x'}) }.to(raise_error(BadArgument, /Invalid duration/))
         end
 
-        it 'rejects an unknown sub-option' do
-          expect { runner.send(:option_temp=, {other: 'x'}) }.to(raise_error(BadArgument))
+        it 'rejects an unknown sub-option: refused before by the schema of the option' do
+          expect { runner.send(:option_temp=, {other: 'x'}) }.to(raise_error(InternalError, /temp sub-option/))
+          expect(Schema::Validator.instance.errors({'other' => 'x'}, Schema::Registry::TEMP_OPTIONS, partial: true)).not_to(be_empty)
         end
       end
 

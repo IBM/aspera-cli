@@ -99,7 +99,7 @@ module Aspera
       end
 
       it 'ignores option transfer when its agent is not transferd' do
-        expect { run_cli('transferd', 'info', '--transfer=@json:{"agent":"direct","url":"h:2"}') }.to(raise_error(SystemExit))
+        expect { run_cli('transferd', 'info', '--transfer=@json:{"agent":"direct","wss":false}') }.to(raise_error(SystemExit))
         expect(fake.calls).to(be_empty)
       end
 

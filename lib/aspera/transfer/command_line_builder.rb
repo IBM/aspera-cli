@@ -23,6 +23,7 @@ module Aspera
         'enum',           # [Array]        Set with list of values for enum types accepted in transfer spec
         'items',          # [Array]
         'properties',     # [Array]
+        'additionalProperties', # [Boolean] `true`: other keys are accepted
         'required',       # [Array]
         '$comment',       # [String]
         'x-cli-envvar',   # [String]       Name of env var

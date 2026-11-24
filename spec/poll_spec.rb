@@ -213,12 +213,25 @@ module Aspera
       end
 
       describe 'parameters' do
-        it 'refuses an unknown parameter, a bad value or format nagios' do
-          expect { described_class.new({'every' => 1}) }.to(raise_error(BadArgument, /unknown parameter: every/))
-          expect { described_class.new({'max' => 0}) }.to(raise_error(BadArgument, /poll.max/))
-          expect { described_class.new({'show' => 'all'}) }.to(raise_error(BadArgument))
+        # @param json [String] Value of option `poll`, on a read-only command, not executed
+        def poll_option(json)
+          Dir.mktmpdir do |home|
+            stub_const('ENV', ENV.to_h.merge('ASCLI_HOME' => home))
+            Runner.new(['config', 'echo', 'test-value', "--poll=@json:#{json}", '--version-check-days=0']).run_with_result
+          end
+        end
+
+        it 'refuses an unknown parameter or a bad value, with the schema of the option' do
+          expect { poll_option('{"every":1}') }.to(raise_error(BadArgument, %r{`/every` is a disallowed additional property}))
+          expect { poll_option('{"max":0}') }.to(raise_error(BadArgument, %r{`/max`}))
+          expect { poll_option('{"show":"all"}') }.to(raise_error(BadArgument, %r{`/show`}))
+          expect { poll_option('{"errors":"ignore"}') }.to(raise_error(BadArgument, %r{`/errors`}))
+          expect { poll_option('{"interval":-1}') }.to(raise_error(BadArgument, %r{`/interval`}))
+        end
+
+        it 'refuses a duration that is not valid, or format nagios' do
           expect { described_class.new({'interval' => 'soon'}) }.to(raise_error(BadArgument, /poll.interval/))
-          expect { described_class.new({'errors' => 'ignore'}) }.to(raise_error(BadArgument))
+          expect { described_class.new({'timeout' => '-5s'}) }.to(raise_error(BadArgument, /poll.timeout/))
           expect { described_class.new({}, format: :nagios) }.to(raise_error(BadArgument, /nagios/))
         end
       end

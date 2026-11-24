@@ -108,6 +108,8 @@ properties:
       items:
         description: Data validated by the schema of the extension point, with the code of the entry.
         type: object
+        # Open: the other fields are defined by the schema of the extension point, which checks them
+        additionalProperties: true
         required:
           - file
           - class

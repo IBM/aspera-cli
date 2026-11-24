@@ -48,14 +48,13 @@ Special parameters can be placed in option `query` for "gen3" browse:
 
 This is when executing `browse` in `aoc files` or in `node access_keys do`.
 
-Option `node_api` (`Hash`) controls some options of API used, with the following parameters:
+Option `node_api` controls the use of the Node API, with the following parameters:
 
-| Parameter| Default | Description |
-|----------|---------|-------------|
-| `cache`  | `true`  | `true` Folder content is retrieved from the Redis database (faster).<%=br%>`false` Folder content retrieved from storage. |
-| `standard_ports` | `true` | `true` Use hard coded standard ports (`33001`)<%=br%>`false` Retrieve server ports from an API call (`download_setup`) which reads the information from `aspera.conf` on the server. |
-| `accept_v4` | `true` | `true` (default) uses API header: `Accept-Version: 4.0`.<%=br%>`false` uses legacy method (refer to node API). |
-| `per_page` | - | Requested number of items per API call.<%=br%>Set to `nil` (`@none:`) to deactivate paging.<%=br%>Default: `1000` when `accept_v4` is `true`. |
+<%=schema_to_table('node_opts:components.schemas.NodeApiOptions')%>
+
+The number of items requested per API call is the parameter `per_page` of option `query`.
+Set to `nil` (`@none:`) to deactivate paging.
+Default: `1000` when `accept_v4` is `true`.
 
 ### Operation `find` on **gen4/access key**
 

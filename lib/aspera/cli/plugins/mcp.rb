@@ -163,17 +163,14 @@ module Aspera
         def action_server(mcp_options: nil, **)
           require_relative '../mcp/tool'
           require_relative '../extended_value'
+          # Keys and values checked by the schema of the argument
           mcp_options = (mcp_options || {}).transform_keys(&:to_sym)
-          unknown = mcp_options.keys - SERVER_KEYS - CONFIG_KEYS - STDIO_KEYS - HTTP_KEYS - HTTP_SERVER_KEYS - TOOL_KEYS - %i[transport]
-          Aspera.assert(unknown.empty?, type: Cli::BadArgument) { "Unknown MCP option(s): #{unknown.join(', ')}" }
           Cli::Mcp::Tool.max_text_bytes = mcp_options.delete(:max_text_bytes)
           Cli::Mcp::Tool.extra_args     = mcp_options.delete(:extra_args)
           # Commands of the client use the main folder of the server (set by option `home`, env or default), and its configuration file (option `config_file`)
           Cli::Mcp::Tool.main_folder    = context.main_folder
           Cli::Mcp::Tool.config_file    = context.presets.config_file
           transport = mcp_options.delete(:transport) || 'stdio'
-          raise Cli::BadArgument, "Unknown transport: #{transport}. Use 'stdio' or 'http'" \
-            unless %w[stdio http].include?(transport.to_s)
           # Options of the other transport would be ignored
           ignored = mcp_options.keys & (transport.to_s.eql?('stdio') ? HTTP_KEYS + HTTP_SERVER_KEYS : STDIO_KEYS)
           Aspera.assert(ignored.empty?, type: Cli::BadArgument) { "MCP option(s) not used with transport #{transport}: #{ignored.join(', ')}" }
@@ -224,6 +221,7 @@ module Aspera
             MCP::Server::Transports::StdioTransport.new(server, **stdio_opts).open
           when :http
             start_http_transport(server, mcp_options)
+          else Aspera.error_unexpected_value(transport) { 'MCP transport' }
           end
         end
 

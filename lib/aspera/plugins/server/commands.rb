@@ -29,6 +29,8 @@ module Aspera
         LOCAL_SCHEME = 'local'
         HTTPS_SCHEME = 'https'
         URI_SCHEMES = [SSH_SCHEME, LOCAL_SCHEME, HTTPS_SCHEME].freeze
+        # Schema of option `ssh_options`, in the schemas of the bundle (manifest `schemas`)
+        SSH_OPTIONS = 'server_opts:components.schemas.SshOptions'
 
         private_constant :SSH_SCHEME, :URI_SCHEMES
 
@@ -174,7 +176,7 @@ module Aspera
 
         option :ssh_keys,    description: 'SSH key path list', allowed: Cli::Option::Type::STRING_ARRAY
         option :passphrase,  description: 'SSH private key passphrase'
-        option :ssh_options, description: 'SSH options', allowed: Hash
+        option :ssh_options, description: 'SSH options', schema: SSH_OPTIONS
 
         command :health, description: 'Check transfer health'
         command(:upload, description: 'Upload files to server', transfer_paths: :send, action: lambda do |**|

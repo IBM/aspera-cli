@@ -14,6 +14,9 @@ $comment: >-
   x-deprecation  [String]       Deprecation message for doc
   `x-` fields are also documented in `command_line_builder.rb`
 type: object
+# Open: the transfer spec is also given as is to other agents (Node API, Connect, transferd), which accept parameters not described here.
+# Agent `direct` warns about a parameter it does not use.
+additionalProperties: true
 required:
   - destination_root
   - direction
@@ -170,6 +173,8 @@ properties:
   fasp_proxy:
     description: Proxy for communications between the remote server and the (local) client.
     type: object
+    # Open: parameters of the proxy, given as is to the transfer agent
+    additionalProperties: true
     x-agents:
       - transferd
   file_checksum:
@@ -208,6 +213,8 @@ properties:
   icos:
     description: Configuration parameters for IBM Cloud Object Storage (ICOS).
     type: object
+    # Open: parameters of IBM Cloud Object Storage, given as is to the transfer agent
+    additionalProperties: true
     x-agents:
       - transferd
   lock_min_rate:
@@ -733,6 +740,8 @@ properties:
       Key `aspera` is reserved.
       Key `aspera.xfer_retry` specifies a "retry timeout" but is not actually used for node API initiated transfers.
     type: object
+    # Open: metadata of the user
+    additionalProperties: true
     x-cli-option: --tags64
     x-cli-convert: json64
   tags64:

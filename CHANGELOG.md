@@ -8,6 +8,7 @@ Released: [Place date of release here]
 
 * Option `plugin_folder`: `--show-config` lists all the folders given (it showed only the last one), and `DEF` (the default) is the folder `plugins` of the configuration folder. `--plugin-folder=@json:[]` uses no plugin folder other than the one of the gem.
 * Development version of the gem: built from `main` every day it changes, not signed, and attached as `aspera-cli-nightly.gem` to the GitHub pre-release `nightly`. Its version is the version in development followed by the number of commits of `main`, e.g. `4.30.0.pre.5592`. See the manual, section "Installing the development version of the gem".
+* Options `node_api`, `ssh_options` (`server`) and `service_credentials` (`cos`) have a schema: `help` as value shows their parameters (e.g. `--node-api=help`), and a value is checked when the option is set. `--transfer=help` shows the parameter `asynchronous`, common to all agents.
 
 ### Issues Fixed
 
@@ -19,12 +20,17 @@ Released: [Place date of release here]
 * Other errors that are not a bug were also reported as `Other(<class>)`, with the location in the code. They are now reported without location: errors of secret references and of option `vault` as `Vault`; a secret not found, or several secrets with the same label, in all stores, as `Identifier` (exit code 4), as is a lookup by name (`%name:`) that matches several entities; a wrong password of the vault file, and a passcode or public link refused by Faspex 5, as `Authentication` (exit code 3); parameters of `sync` (`local_db_dir`), metadata of an `aoc` package (`missing mandatory field: ...`), the URL of `httpgw` and a `faux:` path (it was `Transfer`, exit code 5) as `Argument` (exit code 2); a graphical environment required (agents `connect` and `desktop`) and the requirements of the service of `transferd` (Linux with systemd, root) as `Environment`; a remote command that failed as `SSH`; other failures of a remote service as `Error`.
 * Agent `node` with a bearer token and no `root_id`: the error said `root_id not allowed for access key`, it is required.
 * Agent `transferd`: a `url` without port is refused, with the expected format (the daemon was started, and the connection to it failed).
+* Options `log`, `out` and `node_api`: an unknown key was reported as a bug (`Other(Aspera::InternalError)` or `assertion failed`). It is now refused with its path, like for the other options with a schema, e.g. ``object property at `/levl` is a disallowed additional property``, as is a value of `node_api` that is not a boolean.
+* Option `smtp`: an unknown key, or a value of a wrong type, was refused only when an email was sent: it is now refused when the option is set. The manual stated that the default of `domain` is the domain part of `server`: it is the one of `from_email`.
+* Option `transfer`: an unknown parameter, or a parameter of another agent (e.g. `wss` with agent `node`), was refused only when the transfer started, with the Ruby error `unknown keyword`: it is now refused when the option is set. Same for parameter `resume` of agent `direct`, and for option `image` (`out.img`), refused only when an image was displayed.
+* Manual: option `node_api` has no parameter `per_page`: it is a parameter of option `query`.
 
 ### Breaking Changes
 
 * Option `plugin_folder`: the folders given replace the folder `plugins` of the configuration folder (they were added to it). To use both, add `DEF`, e.g. `--plugin-folder=DEF --plugin-folder=<FOLDER>`. A warning tells when that folder has plugins and is not used.
 * `server du` and `server md5sum`: the result is a list with one row per path, with column `path` (it was a single object, of the last path only).
 * `server df`: the column of the type of file system is `type` (it was `is_a`).
+* An unknown key in options `smtp`, `transfer` and `image` (`out.img`) is refused when the option is set: a preset with such a key makes every command fail, also one that does not send an email, transfer or display an image. An unknown key is refused (it was ignored) in option `package_folder` (`aoc`), in the parameters of `node telemetry`, and in the plugin set of `orchestrator plugins reload_set` (it was sent to Orchestrator).
 
 ## 4.29.1
 

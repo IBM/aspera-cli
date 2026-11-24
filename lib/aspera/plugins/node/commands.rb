@@ -34,6 +34,7 @@ module Aspera
         # Keys of the schemas of the bundle (manifest): Node API, options of the commands
         API_SCHEMA = 'node'
         EMULATOR_OPTIONS = 'node_opts:components.schemas.NodeEmulatorOptions'
+        API_OPTIONS = 'node_opts:components.schemas.NodeApiOptions'
 
         class << self
           # directory: node, container: shares
@@ -82,8 +83,7 @@ module Aspera
         # Included by other plugins (Ats, Cos, Aoc) via `use_options Node`.
         option :validator,        description: 'Identifier of validator (optional for central)'
         option :asperabrowserurl, description: 'URL of Aspera Browser, web application to browse the node', default: 'https://laurent-martin.github.io/aspera-browser-react/'
-        option :node_api,         description: 'Gen4: standard_ports: Use standard FASP ports (true) or get from node API (false). cache: Set to false to force actual file system read',
-          allowed: Hash, on_set: Api.method(:api_options=)
+        option :node_api,         description: 'Gen4: use of the Node API (dot-notation: cache, standard_ports, accept_v4)', schema: API_OPTIONS, on_set: Api.method(:api_options=)
         option :root_id,          description: 'Gen4: File id of top folder when using access key (override AK root id)'
         option :dynamic_key,      description: 'Private key PEM to use for dynamic key auth', on_set: Api.method(:use_dynamic_key=)
 

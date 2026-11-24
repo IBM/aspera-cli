@@ -25,17 +25,19 @@ module Aspera
       # Validate a value against a schema.
       # @param value   [Object]  value to validate
       # @param path    [String]  schema path, e.g. `opts:components.schemas.HttpOptions`
-      # @param partial [Boolean] `true`: value may be incomplete, `required` is not enforced, `null` values (removal) are ignored
+      # @param partial [Boolean] `true`: value may be incomplete, `required` is not enforced, the selector of variants (`discriminator`) may be missing
+      # @param ignore_null [Boolean] `true`: `null` values (removal of an entry) are ignored, as if absent
       # @return [Array<String>] error messages, empty if valid or schema not validated
-      def errors(value, path, partial: false)
+      def errors(value, path, partial: false, ignore_null: partial)
         return [] unless path.is_a?(String) && Registry.owned?(path)
         key, dotted = path.split(':', 2)
         schema = document(key, partial)
         schema = schema.ref("#/#{dotted.split('.').map { |s| s.gsub('~', '~0').gsub('/', '~1') }.join('/')}") if dotted
         # JSON view of value: symbol keys and values become strings
         data = JSON.parse(JSON.generate(value))
-        data = without_null(data) if partial
-        schema.validate(data).filter_map { |error| message(error, partial) }
+        data = without_null(data) if ignore_null
+        results = schema.validate(data).to_a
+        results.reject { |error| unreliable_unevaluated?(error, results) }.filter_map { |error| message(error, partial) }
       end
 
       private
@@ -79,10 +81,26 @@ module Aspera
         end
       end
 
+      # A key refused by `unevaluatedProperties` is unknown only if the variants of the object are evaluated without error.
+      # Else (selector of variants missing or invalid, or error in the variant), no key of the variant is evaluated, and all are refused.
+      # @param error   [Hash]        json_schemer error
+      # @param results [Array<Hash>] All errors of the validation
+      # @return [Boolean] `true` if the error is a key refused by `unevaluatedProperties` while the object has another error
+      def unreliable_unevaluated?(error, results)
+        return false unless error['schema_pointer'].end_with?('/unevaluatedProperties')
+        object = error['data_pointer'].sub(%r{/[^/]*\z}, '')
+        results.any? do |other|
+          !other['schema_pointer'].eql?(error['schema_pointer']) &&
+            (other['data_pointer'].eql?(object) || other['data_pointer'].start_with?("#{object}/"))
+        end
+      end
+
       # @param error   [Hash]    json_schemer error
       # @param partial [Boolean] partial validation
       # @return [String, nil] message, or nil if error is ignored
       def message(error, partial)
+        # Same message for both ways of refusing other keys
+        return "object property at `#{error['data_pointer']}` is a disallowed additional property" if error['schema_pointer'].end_with?('/unevaluatedProperties')
         return error['error'] unless error['type'].eql?('discriminator')
         property = error['schema'].dig('discriminator', 'propertyName')
         object = error['data']

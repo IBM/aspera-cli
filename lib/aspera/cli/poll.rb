@@ -18,8 +18,6 @@ module Aspera
       # once or several times, and each result is displayed according to `show`.
       # The command is not executed by `Runner#run_with_result` (MCP server): only by `Runner#run`, which displays the result.
       class Poll < Result
-        # Parameters of option `poll`, see schema `PollOptions`
-        PARAMETERS = %i[interval max timeout until show errors].freeze
         # Values of parameter `show`
         SHOW_MODES = %i[change each last].freeze
         # Values of parameter `errors`
@@ -40,7 +38,7 @@ module Aspera
           def isatty = tty?
           def winsize = @terminal.winsize
         end
-        private_constant :PARAMETERS, :SHOW_MODES, :ERROR_MODES, :DEFAULT_INTERVAL, :Capture
+        private_constant :SHOW_MODES, :ERROR_MODES, :DEFAULT_INTERVAL, :Capture
 
         class << self
           # Truth of a JMESPath value: `false`, `null`, empty string, empty list and empty object are false
@@ -68,29 +66,22 @@ module Aspera
           end
         end
 
-        # Parameters are checked before the first run.
+        # Parameters are checked before the first run: keys, types and values by the schema of the option, the rest here.
         # @param parameters [Hash]  Value of option `poll`, see schema `PollOptions`
         # @param format     [Symbol] Output format (`--format`)
         # @raise [Cli::BadArgument] if a parameter is invalid
         def initialize(parameters, format: nil)
           super()
-          Aspera.assert_type(parameters, Hash, type: BadArgument) { 'poll' }
           parameters = parameters.transform_keys(&:to_sym)
-          unknown = parameters.keys - PARAMETERS
-          raise BadArgument, "poll: unknown parameter: #{unknown.join(', ')}, expecting: #{PARAMETERS.join(', ')}" unless unknown.empty?
           # Nagios plugins exit after the first result
           raise BadArgument, 'poll: not with format nagios' if format.eql?(:nagios)
           @interval = seconds(parameters.fetch(:interval, DEFAULT_INTERVAL), :interval)
           @max = parameters[:max]
-          Aspera.assert(@max.nil? || (@max.is_a?(Integer) && @max.positive?), type: BadArgument) { "poll.max: expecting a positive integer, not #{@max.inspect}" }
           @timeout = parameters[:timeout].nil? ? nil : seconds(parameters[:timeout], :timeout)
           @until = parameters[:until]
-          Aspera.assert_type(@until, String, NilClass, type: BadArgument) { 'poll.until' }
           Formatter.check_jmespath(@until, 'poll.until') unless @until.nil?
-          @show = parameters.fetch(:show, SHOW_MODES.first).to_s.to_sym
-          Aspera.assert_values(@show, SHOW_MODES, type: BadArgument) { 'poll.show' }
-          @errors = parameters.fetch(:errors, ERROR_MODES.first).to_s.to_sym
-          Aspera.assert_values(@errors, ERROR_MODES, type: BadArgument) { 'poll.errors' }
+          @show = parameters.fetch(:show, SHOW_MODES.first).to_sym
+          @errors = parameters.fetch(:errors, ERROR_MODES.first).to_sym
           # Set by the dispatcher: executes the command, and returns its result
           @action = nil
         end
@@ -121,8 +112,11 @@ module Aspera
               begin
                 result = @action.call
               rescue StandardError => e
-                raise if @errors.eql?(:fail)
-                error = e
+                case @errors
+                when :fail then raise
+                when :retry then error = e
+                else Aspera.error_unexpected_value(@errors) { 'poll.errors' }
+                end
                 status(formatter, "poll: run #{run}#{"/#{@max}" unless @max.nil?} #{timestamp} error: #{e.message}")
               end
               if error.nil?
@@ -133,6 +127,7 @@ module Aspera
                 when :each then display(formatter, run, output)
                 when :change then display(formatter, run, output) unless output.eql?(previous)
                 when :last then last = [run, output]
+                else Aspera.error_unexpected_value(@show) { 'poll.show' }
                 end
                 previous = output
               end
@@ -162,10 +157,8 @@ module Aspera
         # @param name  [Symbol]          Parameter name, for errors
         # @return [Integer] Seconds
         def seconds(value, name)
-          Aspera.assert_type(value, Numeric, String, type: BadArgument) { "poll.#{name}" }
-          value = Units::Duration.new(value).to_unit('s')
-          Aspera.assert(!value.negative?, type: BadArgument) { "poll.#{name}: must not be negative" }
-          value
+          # The schema checks that a number is not negative, `Duration` refuses a negative text
+          Units::Duration.new(value).to_unit('s')
         rescue ParameterError => e
           raise BadArgument, "poll.#{name}: #{e.message}"
         end

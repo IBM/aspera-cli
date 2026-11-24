@@ -62,9 +62,7 @@ For a list of SSH client options, refer to the Ruby documentation of [Net::SSH](
 
 Among the 50 available SSH options:
 
-- `verbose`
-- `use_agent`
-- `passphrase`
+<%=schema_to_table('server_opts:components.schemas.SshOptions')%>
 
 By default, the SSH library will check if a local `ssh-agent` is running.
 

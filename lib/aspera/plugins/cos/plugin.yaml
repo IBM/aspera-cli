@@ -3,3 +3,7 @@ title: IBM Cloud Object Storage
 depends:
   - node
 commands: true
+schemas:
+  - key: cos_opts
+    file: schemas/options.yaml
+    owned: true

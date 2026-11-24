@@ -70,8 +70,8 @@ module Aspera
           expect(build_formatter(['--out.table.pivot=single']).instance_variable_get(:@options)[:multi_single]).to(eq(:single))
         end
 
-        it 'rejects an unknown sub-option' do
-          expect { build_formatter(['--out.foo=bar']) }.to(raise_error(/out sub-option/))
+        it 'rejects an unknown sub-option, with the schema of the option' do
+          expect { build_formatter(['--out.foo=bar']) }.to(raise_error(BadArgument, %r{`/foo` is a disallowed additional property}))
         end
 
         it 'accepts a Ruby lambda for select' do

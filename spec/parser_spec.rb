@@ -671,6 +671,36 @@ module Aspera
         end
       end
 
+      describe 'schema of an option' do
+        smtp = Aspera::Schema::Registry::SMTP_OPTIONS
+
+        it 'checks a declared default value' do
+          expect { build_parser([]).declare(:smtp, description: 'Mail server', schema: smtp, default: {'port' => 'x'}) }
+            .to(raise_error(BadArgument, %r{`/port` is not an integer}))
+        end
+
+        it 'does not check a value set by the program' do
+          opts = build_parser([])
+          opts.declare(:smtp, description: 'Mail server', schema: smtp)
+          expect { opts.set_option(:smtp, {'port' => 'x'}) }.not_to(raise_error)
+        end
+
+        it 'enforces required properties of a complete value only' do
+          opts = build_parser(['--smtp=@json:{"port":25}'])
+          opts.declare(:smtp, description: 'Mail server', schema: smtp)
+          opts.parse_options!
+          expect(opts.get_option(:smtp)).to(eq({'port' => 25}))
+          expect { opts.get_option(:smtp, complete: true) }.to(raise_error(BadArgument, /missing required properties: server/))
+        end
+
+        it 'takes a null value of a complete value as a removed key' do
+          opts = build_parser(['--smtp=@json:{"server":"smtp.example.com","port":null}'])
+          opts.declare(:smtp, description: 'Mail server', schema: smtp)
+          opts.parse_options!
+          expect(opts.get_option(:smtp, complete: true)).to(eq({'server' => 'smtp.example.com', 'port' => nil}))
+        end
+      end
+
       describe '#get_option with schema: contextual override' do
         def build_query_option(opts)
           opts.declare(:query, description: 'Query filter', allowed: [Hash, NilClass])

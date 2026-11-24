@@ -106,11 +106,11 @@ module Aspera
           attr_reader :api_options
           attr_reader :use_dynamic_key
 
+          # @param options_hash [Hash] Value of option `node_api`: keys and values checked by its schema (`NodeApiOptions`)
           def api_options=(options_hash)
             Aspera.assert_type(options_hash, Hash)
             options_hash.each do |key, val|
               Aspera.assert(@api_options.key?(key.to_sym)) { "unknown api option: #{key} (#{OPTIONS.join(', ')})" }
-              Aspera.assert_type(val, TrueClass, FalseClass) { "api options value for #{key} should be boolean" }
               @api_options[key.to_sym] = val
             end
           end
