@@ -348,6 +348,27 @@ def select_test_cases(selection)
   end
 end
 
+# @param names [Array<String>] Test case names
+# @return [Array<String>] Names of the tests that the given tests depend on, directly or not
+def all_dependencies(names)
+  result = []
+  pending = names.dup
+  until pending.empty?
+    (ALL_TESTS[pending.shift][:depends_on] || []).each do |dependency|
+      next if result.include?(dependency)
+      result.push(dependency)
+      pending.push(dependency)
+    end
+  end
+  result
+end
+
+# @param name [String] Test case name
+# @return [Boolean] `true` if a `background` test passed, but its process has ended (no pid file), e.g. stopped by the `post` of a test that uses it
+def background_ended?(name)
+  ALL_TESTS[name][:tags].include?(:background) && STATES[name].eql?('passed') && !TestEnv::Context.new(name).pid_file.exist?
+end
+
 # @return [Integer] Percentage of completed tests
 def percent_completed
   completed = STATES.count { |_, v| SKIP_STATES.include?(v) }
@@ -414,15 +435,16 @@ namespace :test do
   selector_desc 'Reset tests'
   task :reset, [:name_list] do |_, args|
     to_reset = select_test_cases(args[:name_list])
-    # find all reverse dependencies
     loop do
       # find tests that depend on current selection
-      revdep = ALL_TESTS.filter_map do |name, info|
+      added = ALL_TESTS.filter_map do |name, info|
         name if info[:depends_on]&.intersect?(to_reset)
       end
-      # end if no new dependency
-      break if (revdep - to_reset).empty?
-      to_reset |= revdep
+      # `background` tests needed by the selection, whose process has ended: started again, with the tests that stop them
+      added |= all_dependencies(to_reset).select { |name| background_ended?(name) }
+      # end if no new test
+      break if (added - to_reset).empty?
+      to_reset |= added
     end
     to_reset.each do |name|
       log.info("[RESET] #{name}") if STATES.delete(name)
