@@ -146,11 +146,11 @@ The Faspex 4 plugin was removed (end of support).
 **Internal Base Classes** (excluded from factory registration via `IGNORE_PLUGINS`):
 
 - [`base.rb`](../lib/aspera/cli/plugins/base.rb) - Abstract base class for all plugins
-- [`basic_auth.rb`](../lib/aspera/cli/plugins/basic_auth.rb) - Abstract base class for plugins using basic authentication (url/username/password)
-- [`oauth.rb`](../lib/aspera/cli/plugins/oauth.rb) - Abstract base class for plugins using OAuth; its options come from modules `OauthWebOptions` (`client_id`, `client_secret`, `redirect_uri`) and `OauthJwtOptions` (`private_key`, `passphrase`), which a plugin of the web flow only can include with `use_options`
+- [`basic_auth.rb`](../lib/aspera/cli/plugins/basic_auth.rb) - Module included by plugins using basic authentication (url/username/password): its `included` hook gives them its options
+- [`oauth.rb`](../lib/aspera/cli/plugins/oauth.rb) - Module included by plugins using OAuth (it includes `BasicAuth`); its options come from modules `OauthWebOptions` (`client_id`, `client_secret`, `redirect_uri`) and `OauthJwtOptions` (`private_key`, `passphrase`), which a plugin of the web flow only can add with `use_options`
 - [`factory.rb`](../lib/aspera/cli/plugins/factory.rb) - Plugin factory (singleton); discovers plugins by scanning the plugin folders
 
-**External Plugins**: files `<name>.rb` of the folders of option `plugin_folder` and of folder `plugins` of the main folder (added by `Bootstrapper`), registered by `Factory` at security level `low`. The file name is the plugin name, the class is `Plugins::<CamelCase name>`. The file is loaded with `require`: it requires the files of the gem it uses (e.g. `require 'aspera/cli/plugins/base'`), since built-in files use `require_relative` and load only what they need. On an unexpected error (not a `Cli::Error`), `Runner` logs at level `info` the first line of the backtrace in a plugin folder. See "Writing a plugin" in the manual.
+**External Plugins**: files `<name>.rb`, and bundles `<name>/plugin.yaml` (see "Plugin bundles"), of the folders of option `plugin_folder` and of folder `plugins` of the main folder (added by `Bootstrapper`), registered by `Factory` at security level `low`. The file name is the plugin name, the class is `Plugins::<CamelCase name>`. The file is loaded with `require`: it requires the files of the gem it uses (e.g. `require 'aspera/cli/plugins/base'`), since built-in files use `require_relative` and load only what they need. On an unexpected error (not a `Cli::Error`), `Runner` logs at level `info` the first line of the backtrace in a plugin folder. See "Writing a plugin" in the manual.
 
 #### Command DSL
 
@@ -980,8 +980,6 @@ The plugin factory discovers the plugin automatically; `Command::Registry#valida
 
 ## Plugin bundles
 
-> **In progress**: this section is the target design. Files move bundle after bundle; until the move of a product is done, the sections above describe its code.
-
 Each Aspera product is a **bundle**: one folder `lib/aspera/plugins/<name>/` with a manifest and all its capabilities (commands, API client, transfer agent, local runtime, schemas), its specs and its integration tests.
 The **framework** finds, validates and loads bundles, and offers the hooks they use (extension points, mounts, services): it knows nothing of Aspera products.
 
@@ -1144,8 +1142,17 @@ Sources of plugins, first one wins for a given name:
 
 ### Moved names
 
-- Framework names used by external plugins do not move: `cli/plugins/base`, `basic_auth`, `oauth`.
+- Names used by external plugins: `cli/plugins/base`, `basic_auth`, `oauth` keep their path and name, but `BasicAuth` and `Oauth` are modules (`include`), not base classes. The declarations of the command line are `Cli::Command`, `Cli::Option` (`Option::Type`, `Option::Declarator`, `Option::Value`, `Option::Registry`, `Option::Source`), `Cli::Argument`, and the tokens are `CommandLine::Option` and `CommandLine::Argument`.
+- Naming rule of bundle code: `Aspera::Plugins::<Name>::{Commands, Api, Agent, Product}`. Never define a top level `Aspera::Node`, `Aspera::Process`, `Aspera::SSH`, `Aspera::Ascmd`, `Aspera::Directory`, `Aspera::Utils`: Orchestrator defines some of them in the same process. Write `::Process` qualified.
 - A moved file leaves nothing at its old path: no shim file, no constant alias. The gem is used through `ascli`: code that uses the library directly changes to the new paths and names (listed in the CHANGELOG).
+
+### Using bundles without the CLI
+
+A program that embeds the library (e.g. an add-on of Orchestrator) uses the files of a bundle that never reference `cli/`: `api.rb`, `agent.rb`, `product.rb` and the other library classes.
+
+- **Entry files**: `require 'aspera/plugins/<name>/api'` (or `agent`, ...) loads the file of a built-in bundle, and `Aspera::Agent::Factory.instance.create(<name>, <options>)` creates an agent by its name: the factory reads the manifests and loads the file of the agent by its absolute path, not through `$LOAD_PATH`, with no CLI object (see the agent library contract).
+- **Logger**: the library logs through `Aspera::Log.log`. A host application gives its own logger with `Log.instance.logger = <logger>` (level and formatter unchanged), before the first use.
+- **Process-global settings**: `Log` (logger, level), the singletons (`Agent::Factory`, `Schema::Registry`, `Ascp::Installation`, `Ascp::DataRepository`) and the settings of REST calls (`Rest::Parameters.instance`: user agent, retries, `session_cb`) are shared by every user of the library in the process. A host application sets them once, and a bundle does not change them when loaded.
 
 ### Development files
 

@@ -6780,7 +6780,7 @@ ascli --plugin-folder=. foo
 
 #### Writing a plugin
 
-A plugin is a Ruby file in a plugin folder (option `plugin_folder`, by default folder `plugins` of the configuration folder).
+A plugin is, in a plugin folder (option `plugin_folder`, by default folder `plugins` of the configuration folder), either a Ruby file (this section), or a folder with a manifest, for a plugin with several files, a transfer agent or schemas (see [Writing a plugin bundle](#writing-a-plugin-bundle)).
 
 - **Name**: the file name is the plugin name, which is the first command, e.g. file `my_app.rb` for command `my_app`.
   The file defines class `Aspera::Cli::Plugins::<Class>`, the name in CamelCase (`MyApp`), subclass of `Base` (`aspera/cli/plugins/base`).
@@ -6850,6 +6850,122 @@ end
 ```
 
 ```shell
+ascli --plugin-folder=<FOLDER> my_app item list --url=https://app.example.com/api --username=<USERNAME> --password=<PASSWORD> --page-size=10
+```
+
+#### Writing a plugin bundle
+
+A bundle is a folder `<name>/` of a plugin folder, with a manifest `plugin.yaml`: the built-in plugins (`aoc`, `node`, `transferd`, ...) are bundles, in `lib/aspera/plugins/<name>/` of the gem.
+A single file stays the simplest form, for a plugin that has commands only.
+The manifest is data: reading it never runs code of the bundle, and `config plugins list` and `config plugins show <NAME>` show the plugin, also when it is unavailable (invalid manifest, missing dependency), with the reason.
+
+```text
+<PLUGIN_FOLDER>/my_app/
+  plugin.yaml     manifest
+  commands.rb     class Aspera::Plugins::MyApp::Commands: top level command `my_app`
+  <other>.rb      other files, declared in the manifest if the manifest loads them
+  schemas/        schemas (JSON or YAML), declared in the manifest
+```
+
+- **Names**: the name of the folder is the name of the plugin, and the field `name` of the manifest: lower case letters, digits and `_`, starting with a letter.
+  A file `<file>.rb` of the bundle defines the constant `Aspera::Plugins::<Name>::<Const>`, where `<Name>` is the name in CamelCase (`MyApp`): `commands.rb` defines `Commands`, a subclass of `Cli::Plugins::Base`, as a single file, with `include Cli::Plugins::BasicAuth` or `Oauth` for the common options.
+  Constants in the manifest (`class`, `module`) are relative to `Aspera::Plugins::<Name>`, file names to the folder of the bundle (no `..`, no hidden file).
+- **Same name**: for a name that is both a file `<name>.rb` and a folder `<name>/` of the same plugin folder, the bundle is used, with a warning.
+- **Requires**: as for a single file, the code requires the files of the gem that it uses.
+  The code is loaded when the plugin is used (command, agent, service), not when it is listed.
+- **Options**: as for a single file.
+  `option <NAME>, before: <OTHER>` places an option before another one in the help, also an option of a module mounted on another plugin (e.g. before `smtp` of `config`).
+  An option placed `before:` an unknown option, or in a cycle of `before:`, goes at the end, with a warning in the log: the other options and the commands work.
+
+Manifest `plugin.yaml` (schema `lib/aspera/plugin.schema.yaml`: no other field than these, at each level):
+
+| Field | Default | Content |
+| --- | --- | --- |
+| `name` | (mandatory) | Name of the plugin, same as the folder |
+| `title` | (mandatory) | Name of the product, in the lists and in the instructions of `mcp server` |
+| `mcp` | none | Section added to the instructions of `mcp server` for the AI client, about the use of the plugin (e.g. development guides). `%{<POINT>}` is replaced by the list of the entries of the extension point `<POINT>`: the field `name` of each entry, with the title of its bundle, so the schema of an extension point used this way requires `name` |
+| `depends` | `[]` | Bundles that this one uses. If one is missing or unavailable, this bundle is unavailable |
+| `gems` | `[]` | Optional gems required by the code, checked when the code is loaded: the error tells `gem install <GEM>` |
+| `commands` | `false` | `true`: `commands.rb` defines `Commands`, the top level command `<name>` |
+| `schemas` | `[]` | Schemas added to the registry: `key` (unique), `file`, `owned` (default `false`: schema of a vendor API, not used to check values), `source` (`url`, `version` of a downloaded schema, used by `rake tools:openapi`) |
+| `extension_points` | `[]` | Points that other bundles extend: `name`, `schema` (file: schema of one entry) |
+| `extensions` | `{}` | Entries for the extension points of other bundles, by name of point: `file` and `class` of the code, and the fields defined by the schema of the point |
+| `mounts` | `[]` | Modules added to the commands of another plugin: `target` (plugin name), `file`, `module` |
+| `services` | `[]` | Objects shared through the context, created on first use: `name`, `file`, `class` |
+
+A bundle can add a transfer agent: the built-in bundle `transfer_agents` declares the extension point `agent`. An entry has `name` (value of option `transfer`), `short` (one letter, unique), `file`, `class` (subclass of `Aspera::Agent::Base`) and `options_schema` (schema file of the parameters of the agent):
+
+```yaml
+name: my_agent
+title: My transfer agent
+depends:
+  - transfer_agents
+extensions:
+  agent:
+    - name: my_agent
+      short: m
+      file: agent.rb
+      class: Agent
+      options_schema: schemas/agent_options.yaml
+```
+
+Example: bundle `my_app`, the same plugin as above, in folder `<PLUGIN_FOLDER>/my_app/`.
+
+File `plugin.yaml`:
+
+```yaml
+name: my_app
+title: My Application
+commands: true
+mcp: >-
+  Use `my_app` to manage the items of My Application.
+```
+
+File `commands.rb`:
+
+```ruby
+# Files of the gem used by the plugin (its `lib` folder is in the load path)
+require 'aspera/cli/plugins/base'
+require 'aspera/cli/plugins/basic_auth'
+
+module Aspera
+  module Plugins
+    module MyApp
+      # Top level command `my_app`
+      class Commands < Cli::Plugins::Base
+        # Options `url`, `username` and `password`, method `basic_auth_api`
+        include Cli::Plugins::BasicAuth
+
+        application_name 'My Application'
+        option :page_size, description: 'Number of items per page', allowed: Integer, default: 100
+
+        command :info, description: 'Show application information', read_only: true
+        commands_under :item, description: 'Manage items' do
+          command :list, description: 'List items', read_only: true
+          command :show, description: 'Show an item', arguments: [{name: :id, description: 'Item identifier'}], read_only: true
+        end
+
+        # Command `info`
+        def action_info(**) = Cli::Result::SingleObject.new(api.read('info'))
+
+        # Command `item list`
+        def action_item_list(**) = Cli::Result::ObjectList.new(api.read('items', {limit: options.get_option(:page_size)}))
+
+        # Command `item show <ID>`, with arguments as keyword arguments
+        def action_item_show(id:, **) = Cli::Result::SingleObject.new(api.read("items/#{id}"))
+
+        private
+
+        # REST client of the application, with Basic authentication
+        def api = @api ||= basic_auth_api
+      end
+    end
+  end
+end
+```
+
+```shell
+ascli --plugin-folder=<FOLDER> config plugins show my_app
 ascli --plugin-folder=<FOLDER> my_app item list --url=https://app.example.com/api --username=<USERNAME> --password=<PASSWORD> --page-size=10
 ```
 
@@ -13139,6 +13255,8 @@ Main components:
 
 - `Aspera` generic classes for REST and OAuth
 - `Aspera::Plugins::Direct::Agent`: Starting and monitoring transfers using `ascp`.
+- `Aspera::Plugins::<Name>`: the code of each product (bundle `lib/aspera/plugins/<name>/`): `Api` (client of the product API, e.g. `Aspera::Plugins::Node::Api`), `Agent`, `Commands`. The files other than `commands.rb` do not use the command line: `require 'aspera/plugins/<name>/api'`.
+- `Aspera::Agent::Factory.instance.create(<AGENT>, <OPTIONS>)`: creates a transfer agent by its name (`direct`, `node`, ...).
 - `Aspera::Cli`: `ascli`.
 
 Working examples can be found in repo: <https://github.com/laurent-martin/aspera-api-examples> in Ruby examples.
