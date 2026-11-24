@@ -168,8 +168,9 @@ module Aspera
           Aspera.assert(unknown.empty?, type: Cli::BadArgument) { "Unknown MCP option(s): #{unknown.join(', ')}" }
           Cli::Mcp::Tool.max_text_bytes = mcp_options.delete(:max_text_bytes)
           Cli::Mcp::Tool.extra_args     = mcp_options.delete(:extra_args)
-          # Commands of the client use the main folder of the server (set by option `home`, env or default), and its presets
+          # Commands of the client use the main folder of the server (set by option `home`, env or default), and its configuration file (option `config_file`)
           Cli::Mcp::Tool.main_folder    = context.main_folder
+          Cli::Mcp::Tool.config_file    = context.presets.config_file
           transport = mcp_options.delete(:transport) || 'stdio'
           raise Cli::BadArgument, "Unknown transport: #{transport}. Use 'stdio' or 'http'" \
             unless %w[stdio http].include?(transport.to_s)

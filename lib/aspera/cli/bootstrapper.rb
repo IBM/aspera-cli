@@ -61,11 +61,14 @@ module Aspera
 
       # @param context [Context] the shared context to populate
       # @param main_folder [String, nil] main folder set by the program, as by code: not restricted by the security level; `nil`: option `home`
-      def initialize(context, main_folder: nil)
+      # @param config_file [String, nil] configuration file set by the program, as by code: not restricted by the security level; `nil`: option `config_file`
+      def initialize(context, main_folder: nil, config_file: nil)
         Aspera.assert_type(context, Context) { 'context' }
         Aspera.assert_type(main_folder, String, NilClass) { 'main_folder' }
+        Aspera.assert_type(config_file, String, NilClass) { 'config_file' }
         @context = context
         @main_folder = main_folder
+        @config_file = config_file
         @pac_exec = nil
       end
 
@@ -109,9 +112,11 @@ module Aspera
       # Declare + parse :config_file option: sets context.presets + context.http_config
       def setup_config_file
         @context.options.declare(
-          :config_file, description: 'Path to YAML file with preset configuration', complete: :file,
+          :config_file, description: 'Path to YAML file with preset configuration', complete: :file, security: :low,
           default: File.join(@context.main_folder, DEFAULT_CONFIG_FILENAME)
         )
+        # Set by code before parsing: a value on the command line has the same priority, and is refused if the security level does not allow option `config_file`
+        @context.options.set_option(:config_file, @config_file, source: :code) unless @config_file.nil?
         @context.options.parse_options!
         @context.presets = PresetManager.new(config_file: @context.options.get_option(:config_file))
         @context.http_config = Http.new

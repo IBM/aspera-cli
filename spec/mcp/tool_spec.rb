@@ -78,14 +78,40 @@ RSpec.describe(Aspera::Cli::Mcp::Tool) do
   # Main folder of the server
   # -----------------------------------------------------------------------
   describe 'main folder of the server' do
-    after { described_class.main_folder = nil }
+    after do
+      described_class.main_folder = nil
+      described_class.config_file = nil
+    end
 
     it 'is given to the runner of each call' do
       described_class.main_folder = '/server/home'
+      described_class.config_file = '/server/home/config.yaml'
       runner = instance_double(Aspera::Cli::Runner, run_with_result: Aspera::Cli::Result::Nothing.new, context: context_stub)
       allow(Aspera::Cli::Runner).to(receive(:new).and_return(runner))
       described_class.call(args: %w[config gem version])
-      expect(Aspera::Cli::Runner).to(have_received(:new).with(array_including('config', 'gem', 'version'), main_folder: '/server/home'))
+      expect(Aspera::Cli::Runner).to(have_received(:new).with(array_including('config', 'gem', 'version'), main_folder: '/server/home', config_file: '/server/home/config.yaml'))
+    end
+
+    it 'gives the configuration file of the server to the commands, and a value of the client is refused' do
+      Dir.mktmpdir do |server_home|
+        Dir.mktmpdir do |client_home|
+          server_file = File.join(server_home, 'config.yaml')
+          client_file = File.join(client_home, 'config.yaml')
+          Aspera::Cli::Security.instance.reset
+          Aspera::Cli::Security.instance.lock('spec', default: :high)
+          described_class.main_folder = server_home
+          described_class.config_file = server_file
+          resp = described_class.call(args: %w[config preset set p1 key val])
+          expect(resp.error?).to(be(false))
+          expect(File.exist?(server_file)).to(be(true))
+          resp = described_class.call(args: ['config', 'preset', 'set', 'p2', 'key', 'val', "--config-file=#{client_file}"])
+          expect(resp.error?).to(be(true))
+          expect(resp.content.first[:text]).to(include('option config_file: disabled by security level high'))
+          expect(File.exist?(client_file)).to(be(false))
+        ensure
+          Aspera::Cli::Security.instance.reset
+        end
+      end
     end
 
     it 'is the home of the command, at security level high, and a value of the client is refused' do

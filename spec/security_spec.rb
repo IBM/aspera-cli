@@ -184,6 +184,19 @@ module Aspera
           %i[cmdline preset plugin_preset].each { |source| expect { Option::Value.new(option: :home, security: :low).assign_value('/x', source: source) }.to(raise_error(BadArgument)) }
         end
 
+        it 'refuses option config_file from the command line and presets, accepts it at level low' do
+          security.lock('in MCP server mode', default: :high)
+          %i[cmdline preset plugin_preset].each { |source| expect { Option::Value.new(option: :config_file, security: :low).assign_value('/x', source: source) }.to(raise_error(BadArgument, /option config_file: disabled by security level high/)) }
+          %i[default code env].each { |source| expect { Option::Value.new(option: :config_file, security: :low).assign_value('/x', source: source) }.not_to(raise_error) }
+          security.reset
+          expect { Option::Value.new(option: :config_file, security: :low).assign_value('/x', source: :cmdline) }.not_to(raise_error)
+        end
+
+        it 'refuses option config_file at level medium' do
+          security.options = {'level' => 'medium'}
+          expect { Option::Value.new(option: :config_file, security: :low).assign_value('/x', source: :cmdline) }.to(raise_error(BadArgument, /option config_file: disabled by security level medium/))
+        end
+
         it 'refuses an unknown level' do
           expect { security.options = {'level' => 'none'} }.to(raise_error(BadArgument, /security.level: expecting one of/))
         end

@@ -68,7 +68,7 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
   # Build a minimal plugin instance without a real CLI context.
   subject(:plugin) do
     described_class.allocate.tap do |p|
-      allow(p).to(receive(:context).and_return(instance_double(Aspera::Cli::Context, main_folder: '/server/home')))
+      allow(p).to(receive(:context).and_return(instance_double(Aspera::Cli::Context, main_folder: '/server/home', presets: instance_double(Aspera::Cli::PresetManager, config_file: '/server/home/config.yaml'))))
     end
   end
 
@@ -225,11 +225,15 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
       allow(plugin).to(receive(:start_mcp_server))
     end
 
-    after { Aspera::Cli::Mcp::Tool.main_folder = nil }
+    after do
+      Aspera::Cli::Mcp::Tool.main_folder = nil
+      Aspera::Cli::Mcp::Tool.config_file = nil
+    end
 
-    it 'gives the main folder of the server to the tool' do
+    it 'gives the main folder and the configuration file of the server to the tool' do
       plugin.action_server
       expect(Aspera::Cli::Mcp::Tool.main_folder).to(eq('/server/home'))
+      expect(Aspera::Cli::Mcp::Tool.config_file).to(eq('/server/home/config.yaml'))
     end
 
     it 'is high by default, and cannot be changed by the client' do

@@ -122,6 +122,8 @@ module Aspera
           attr_accessor :web_secret
           # @return [String, nil] Main folder of the server: the commands of the client run in it, whatever the client gives
           attr_accessor :main_folder
+          # @return [String, nil] Configuration file (presets) of the server: the commands of the client use it, whatever the client gives
+          attr_accessor :config_file
 
           # Executes the command.
           # If it needs a secret (`@secret:`), returns an `input_required` result: the client opens the page where the user
@@ -152,7 +154,7 @@ module Aspera
           def execute(args)
             effective_args = Array(extra_args || DEFAULT_EXTRA_ARGS) + args
             Log.dump(:mcp_execute, effective_args)
-            runner = Runner.new(effective_args, main_folder: main_folder)
+            runner = Runner.new(effective_args, main_folder: main_folder, config_file: config_file)
             result = runner.run_with_result
             # The command of a poll is executed when the result is displayed, on the command line only
             raise Cli::BadArgument, 'Option poll: not available in MCP server mode, call the tool again instead' if result.is_a?(Result::Poll)
