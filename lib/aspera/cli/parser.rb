@@ -315,7 +315,23 @@ module Aspera
           end
         end
         option.validate_complete(result) if complete
+        check_credential_host(option_symbol) if !result.nil? && CREDENTIAL_OPTIONS.include?(option_symbol)
         result
+      end
+
+      # Options that hold a secret sent to the server at option `url`: a client must not redirect them to a host it chooses, see `Security#check_credential_host`
+      CREDENTIAL_OPTIONS = %i[password client_secret private_key passphrase].freeze
+
+      # When a credential is read while a host option `url` is declared, refuse (at levels medium and high) to send a secret from the server's configuration
+      # to a `url` chosen on the command line by a client.
+      # @param secret_symbol [Symbol] the credential option being read
+      def check_credential_host(secret_symbol)
+        return unless option_declared?(:url)
+        Security.instance.check_credential_host(
+          what:          "option #{secret_symbol}",
+          secret_source: option_def(secret_symbol).source,
+          host_source:   option_def(:url).source
+        )
       end
 
       # Set an option value by name: store value and call the `on_set` callback

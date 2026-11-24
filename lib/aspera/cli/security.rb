@@ -32,7 +32,9 @@ module Aspera
       }.freeze
       # Levels that allow processing a secret (e.g. by an extended value): the result could reveal it, as only declared values are hidden
       SECRET_PROCESSING_LEVELS = %i[low].freeze
-      private_constant :EXTENDED_VALUE_LEVELS, :SECRET_PROCESSING_LEVELS
+      # Sources (`Option::Source`) of an option value controlled by a client (a command of an MCP client), not the operator's configuration of the server
+      CLIENT_SOURCES = %i[cmdline interactive].freeze
+      private_constant :EXTENDED_VALUE_LEVELS, :SECRET_PROCESSING_LEVELS, :CLIENT_SOURCES
 
       def initialize
         reset
@@ -139,6 +141,23 @@ module Aspera
       def check_secret_processing(what, hint: 'give the secret as the whole value')
         return if SECRET_PROCESSING_LEVELS.include?(level) || !yield
         raise BadArgument, "#{what}: cannot process a secret at security level #{level}, as the result could reveal it: #{hint}, or use level low (#{where_to_set})"
+      end
+
+      # A secret from the configuration of the server (a preset, the environment, a default: an operator source) must not be sent to a host (option `url`)
+      # chosen by a client (on the command line), so that a client cannot redirect the saved credentials of the server to a host it controls.
+      # At levels `medium` and `high`, refused when the secret comes from an operator source and the host from a client source (the two must come from the same place).
+      # It does not catch a secret the client fetches itself from a store by its reference (e.g. `@preset:name.password`), which keeps the secret from being
+      # revealed to the client but not from being sent: that case needs the provenance of the secret value, see the manual.
+      # @param secret_source [Symbol, nil] source of the secret option value (`Option::Source`)
+      # @param host_source   [Symbol, nil] source of the host option (`url`)
+      # @param what          [String] For the error message, e.g. `option password`
+      # @raise [BadArgument] If the secret is from an operator source and the host from a client source, at level `medium` or `high`
+      def check_credential_host(secret_source:, host_source:, what:)
+        return if level.eql?(:low)
+        # The secret is the client's own (a client source), or the host is not chosen by the client: not a redirection of the server's credentials
+        return if CLIENT_SOURCES.include?(secret_source) || !CLIENT_SOURCES.include?(host_source)
+        raise BadArgument, "#{what}: a secret from the configuration cannot be sent to a URL given on the command line at security level #{level}: " \
+          "give the URL in the same preset as the secret, or the secret as the value of option password (#{where_to_set})"
       end
 
       # At level `medium`, the real path is checked, so that neither `..` nor a symbolic link leads outside of allowed paths.

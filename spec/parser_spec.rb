@@ -825,6 +825,40 @@ module Aspera
           expect(opts.with_interactive(enabled: false) { opts.ask_missing_mandatory }).to(be(false))
         end
       end
+
+      # A secret from a preset (the server's configuration) must not be sent to a `url` given on the command line by a client.
+      describe 'credential and host from different sources (security)' do
+        after { Security.instance.reset }
+
+        # @param argv          [Array<String>] command line
+        # @param preset        [Hash]          values applied with source `preset`
+        # @return [Parser] parser with options `url` and `password` declared and parsed
+        def build_with_secret(argv, preset)
+          opts = build_parser(argv)
+          opts.declare(:url, description: 'URL')
+          opts.declare(:password, description: 'Password')
+          opts.add_option_preset(preset, 'myserver')
+          opts.parse_options!
+          opts
+        end
+
+        it 'refuses at level high a preset secret with a command-line url' do
+          Security.instance.options = {'level' => 'high'}
+          opts = build_with_secret(['--url=https://elsewhere.example.com'], {'password' => '<PASSWORD>'})
+          expect { opts.get_option(:password) }.to(raise_error(BadArgument, /secret from the configuration cannot be sent/))
+        end
+
+        it 'allows the preset secret with the url of the same preset' do
+          Security.instance.options = {'level' => 'high'}
+          opts = build_with_secret([], {'url' => 'https://server.example.com', 'password' => '<PASSWORD>'})
+          expect { opts.get_option(:password) }.not_to(raise_error)
+        end
+
+        it 'allows at level low (the command line default)' do
+          opts = build_with_secret(['--url=https://elsewhere.example.com'], {'password' => '<PASSWORD>'})
+          expect { opts.get_option(:password) }.not_to(raise_error)
+        end
+      end
     end
   end
 end

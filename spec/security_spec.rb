@@ -329,6 +329,34 @@ module Aspera
         end
       end
 
+      # A secret from the server's configuration (preset: an operator source) must not be sent to a `url` chosen on the command line (a client source).
+      describe '#check_credential_host' do
+        def check(level, secret_source, host_source)
+          security.options = {'level' => level}
+          security.check_credential_host(what: 'option password', secret_source: secret_source, host_source: host_source)
+        end
+
+        it 'refuses an operator secret sent to a client-chosen host, at level medium and high' do
+          %w[medium high].each do |level|
+            expect { check(level, :preset, :cmdline) }.to(raise_error(BadArgument, /a secret from the configuration cannot be sent to a URL given on the command line/))
+            expect { check(level, :env, :interactive) }.to(raise_error(BadArgument, /security level #{level}/))
+          end
+        end
+
+        it 'allows when the secret is the client\'s own, when both come from the same place, or when the host is not client-chosen' do
+          %w[medium high].each do |level|
+            expect { check(level, :cmdline, :cmdline) }.not_to(raise_error) # client's own secret to its own host
+            expect { check(level, :preset, :preset) }.not_to(raise_error)   # both from the same preset
+            expect { check(level, :preset, :env) }.not_to(raise_error)      # host not chosen by the client
+            expect { check(level, :cmdline, :preset) }.not_to(raise_error)  # client secret to an operator host
+          end
+        end
+
+        it 'does not restrict at level low (the command line default)' do
+          expect { check('low', :preset, :cmdline) }.not_to(raise_error)
+        end
+      end
+
       describe 'error message' do
         it 'gives the level that allows a refused extended value, and where to set it' do
           security.options = {'level' => 'high'}

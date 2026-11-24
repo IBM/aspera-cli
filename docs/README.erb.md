@@ -2832,6 +2832,9 @@ The same applies to `@file:<path>` in the parameters of stores of option `vault`
 A secret (read by `@secret:`, `@vault:`, or `@preset:`) is hidden in results by its value: processed by another extended value, it could be revealed (for example, split by `@list:@vault:...`, or with a short value in a text by `@extend:`).
 With levels `medium` and `high`, a secret must be the whole value of an option or argument, for example `@preset:<%=ph :preset_name%>.password` for option `password`, and it cannot be a parameter name of `config preset set`.
 
+At levels `medium` and `high`, a secret that comes from the configuration of the server (a preset, or the environment) is not sent to a `url` given on the command line: a secret (option `password`, `client_secret`, `private_key`, `passphrase`) and the `url` it is sent to must come from the same place (both from a preset, or both given on the command line).
+This prevents a client that drives <%=tool%> (for example through the MCP server) from redirecting the saved credentials of the server to a host that it chooses.
+
 Features that execute code (own, or downloaded), load code, or write a file chosen by the client, are available only at level `low`:
 
 | Feature | Why |
