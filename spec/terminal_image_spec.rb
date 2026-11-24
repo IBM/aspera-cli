@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require_relative 'spec_helper'
-require_relative '../lib/aspera/preview/terminal'
+require_relative '../lib/aspera/cli/terminal_image'
 require 'chunky_png'
 begin
   require 'rmagick'
@@ -12,7 +12,7 @@ rescue LoadError
   # optional gem rmagick not installed (e.g. BUNDLE_WITHOUT=optional, or JRuby): its examples are skipped
 end
 
-RSpec.describe(Aspera::Preview::Terminal) do
+RSpec.describe(Aspera::Cli::TerminalImage) do
   # Image of 4 x 4 pixels: top half red, bottom half blue
   let(:png_blob) do
     image = ChunkyPNG::Image.new(4, 4, ChunkyPNG::Color.rgb(255, 0, 0))
@@ -61,7 +61,7 @@ RSpec.describe(Aspera::Preview::Terminal) do
   end
 
   it 'raises when the image cannot be decoded and gem rmagick is not installed' do
-    allow(Aspera::Preview::Backend::RMagick).to(receive(:new).and_raise(LoadError, 'cannot load such file -- rmagick'))
+    allow(Aspera::Cli::TerminalImage::Backend::RMagick).to(receive(:new).and_raise(LoadError, 'cannot load such file -- rmagick'))
     expect { described_class.build('not an image', text: true) }.to(raise_error(RuntimeError, 'Cannot decode picture.'))
   end
 

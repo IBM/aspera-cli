@@ -989,7 +989,7 @@ The **framework** finds, validates and loads bundles, and offers the hooks they 
 
 | Layer | Paths under `lib/aspera/` | May reference |
 | --- | --- | --- |
-| Framework | All the others: `cli/` (built-in plugins `config` and `mcp`, base classes `base`, `basic_auth`, `oauth`, `factory` in `cli/plugins/`), `rest/`, `oauth/`, `secret/`, `schema/`, `web_auth/`, `json_rpc/`, `units/`, `preview/terminal.rb`, `*.rb` | Framework |
+| Framework | All the others: `cli/` (built-in plugins `config` and `mcp`, base classes `base`, `basic_auth`, `oauth`, `factory` in `cli/plugins/`), `rest/`, `oauth/`, `secret/`, `schema/`, `web_auth/`, `json_rpc/`, `units/`, `*.rb` | Framework |
 | Domain library | `agent/` (`base.rb`, `factory.rb`), `ascp/`, `products/`, `sync/`, `transfer/` | Framework except `cli/`, domain |
 | Bundle | `plugins/<name>/` | Framework, domain, the bundles listed in its `depends` |
 

@@ -8,7 +8,7 @@ require_relative 'option/declarator'
 require_relative 'special_values'
 require_relative 'terminal_formatter'
 require_relative 'table_fitter'
-require_relative '../preview/terminal'
+require_relative 'terminal_image'
 require_relative '../secret/hider'
 require_relative '../environment'
 require_relative '../log'
@@ -220,7 +220,7 @@ module Aspera
           apply_colors
         when :image
           # get list if key arguments of method
-          allowed_options = Preview::Terminal.method(:build).parameters.select { |i| i[0].eql?(:key) }.map { |i| i[1] }
+          allowed_options = TerminalImage.method(:build).parameters.select { |i| i[0].eql?(:key) }.map { |i| i[1] }
           # check that only supported options are given
           unknown_options = value.keys.map(&:to_sym) - allowed_options
           Aspera.assert(unknown_options.empty?, type: Cli::BadArgument) { "Invalid parameter(s) for option image: #{unknown_options.join(', ')}, use #{allowed_options.join(', ')}" }

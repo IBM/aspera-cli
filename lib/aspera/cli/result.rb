@@ -9,7 +9,7 @@ require_relative '../nagios'
 require_relative '../log'
 require_relative '../environment'
 require_relative '../uri_reader'
-require_relative '../preview/terminal'
+require_relative 'terminal_image'
 require_relative '../dot_container'
 require 'base64'
 require 'uri'
@@ -83,7 +83,7 @@ module Aspera
               data
             end
             # here, data is the image blob
-            formatter.display_message(:data, Preview::Terminal.build(data, **formatter.image_options))
+            formatter.display_message(:data, TerminalImage.build(data, **formatter.image_options))
           end
         else Aspera.error_unexpected_value(formatter.format_type) { 'format' }
         end

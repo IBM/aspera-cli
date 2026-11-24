@@ -29,7 +29,7 @@ module LayerBoundary
   FOLDER_STAYS = {
     'agent'    => %w[base factory],
     'products' => %w[connect desktop other transferd],
-    'preview'  => %w[terminal]
+    'preview'  => []
   }.freeze
   # files (and constants, in snake case) of those folders -> bundle that will own them
   FOLDER_BUNDLE = {
@@ -551,8 +551,8 @@ RSpec.describe(LayerBoundary) do
 
     it 'maps the files of agent, products and preview to their layer' do
       with_tree(
-        'rest/a.rb'    => "require_relative '../agent/node'\nrequire_relative '../agent/base'\nrequire_relative '../preview/terminal'\nrequire_relative '../preview/generator'\nPreview::Utils\nProducts::TransferdService\n",
-        'agent/base.rb' => "require_relative '../preview/generator'\nrequire_relative '../preview/terminal'\nrequire_relative '../products/transferd_service'\nrequire_relative '../products/desktop'\n"
+        'rest/a.rb'    => "require_relative '../agent/node'\nrequire_relative '../agent/base'\nrequire_relative '../log'\nrequire_relative '../preview/generator'\nPreview::Utils\nProducts::TransferdService\n",
+        'agent/base.rb' => "require_relative '../preview/generator'\nrequire_relative '../log'\nrequire_relative '../products/transferd_service'\nrequire_relative '../products/desktop'\n"
       ) do |dir|
         expect(described_class.violations(dir)).to(eq(
           'agent/base.rb' => ['require preview/generator', 'require products/transferd_service'],
