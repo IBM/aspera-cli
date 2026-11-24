@@ -600,7 +600,7 @@ module Aspera
             Cli::Result::Text.new(Api.bearer_token(payload: token, access_key: access_key, private_key: private_key))
           end
         )
-        command :emulator,      description: 'Start node emulator',
+        command :emulator,      description: 'Start node emulator', security: :low,
           aliases: [:simulator],
           arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: EMULATOR_OPTIONS}]
         command :telemetry,     description: 'Report telemetry to external system',

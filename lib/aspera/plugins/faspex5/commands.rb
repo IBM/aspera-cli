@@ -541,7 +541,7 @@ module Aspera
         command :admin,          description: 'Administer Faspex 5'
         command :user,           description: 'Manage current user'
         command :shared_folders, description: 'Browse shared folders'
-        command :gateway,        description: 'Start Faspex 4 gateway emulation',
+        command :gateway,        description: 'Start Faspex 4 gateway emulation', security: :low,
           arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: Faspex4::GatewayOptions::SCHEMA}]
         command :postprocessing, description: 'Start Faspex 4 post-processing server', security: :low,
           arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: POSTPROC_OPTIONS}]

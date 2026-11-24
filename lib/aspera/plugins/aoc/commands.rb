@@ -820,7 +820,7 @@ module Aspera
           command :create, description: 'Create an app membership', arguments: [{name: :membership, type: Hash}]
         end
         command :automation,        description: 'Manage automation'
-        command :gateway,           description: 'Start AoC Faspex4 gateway',
+        command :gateway,           description: 'Start AoC Faspex4 gateway', security: :low,
           arguments: [{name: :parameters, type: Hash, mandatory: false, default: {}, schema: Faspex4::GatewayOptions::SCHEMA}]
 
         # user sub-commands

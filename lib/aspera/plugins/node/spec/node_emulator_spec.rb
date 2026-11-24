@@ -881,6 +881,11 @@ module Aspera
     end
 
     RSpec.describe(Plugins::Node::Commands) do
+      # The emulator starts a local server that listens on the network and serves a docroot: it executes at security level `low` only (refused in MCP server mode, level `high`).
+      it 'declares the emulator command at security level low' do
+        expect(described_class.command_registry[[:emulator]].security).to(eq(:low))
+      end
+
       describe '#action_emulator' do
         let(:password) { SecureRandom.hex(32) }
 

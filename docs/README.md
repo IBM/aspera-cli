@@ -2929,6 +2929,7 @@ Features that execute code (own, or downloaded), load code, or write a file chos
 | Plugins of the folders of option `plugin_folder` (by default, folder `plugins` of the configuration folder) | Ruby code: not loaded at other levels, also if the file was there before |
 | Command `config plugins create` | Creates Ruby code, loaded as a plugin |
 | Command `faspex5 postprocessing` | Executes scripts, or Ruby code |
+| Commands `node emulator` (`simulator`), `aoc gateway`, `faspex5 gateway` | Start a local server that listens on the network, serves a local folder, or accepts transfers |
 | Transfer parameters `ascp_args` (agent `direct`) and `ssh_args` (transfer spec) | Raw arguments to `ascp` or the external `ssh`: can start a local program (for example an `ssh` `ProxyCommand`) |
 
 At other levels, an option is refused whatever the way it is set (command line, or preset), and a command is not listed by `config commands`.
