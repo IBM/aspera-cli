@@ -7,6 +7,7 @@
 [![coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/IBM/aspera-cli/main/docs/coverage.json)](tests/README.md#coverage)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5861/badge)](https://bestpractices.coreinfrastructure.org/projects/5861)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![IBM/aspera-cli MCP server](https://glama.ai/mcp/servers/IBM/aspera-cli/badges/score.svg)](https://glama.ai/mcp/servers/IBM/aspera-cli)
 
 ![Hootput the Owl](docs/art/mascot.svg)
 
