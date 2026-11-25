@@ -36,6 +36,11 @@ module Aspera
 
         private_constant :SSH_SCHEME, :URI_SCHEMES
 
+        # A command of `ascmd` refused by the server exits with the code of its category
+        Cli::ExitCode.add_error(AsCmd::Error, label: 'ascmd', code: Cli::ExitCode::API)
+        Cli::ExitCode.add_error(AsCmd::NotFound, label: 'ascmd', code: Cli::ExitCode::NOT_FOUND)
+        Cli::ExitCode.add_error(AsCmd::AccessDenied, label: 'ascmd', code: Cli::ExitCode::AUTH)
+
         class LocalExecutor
           def execute(ascmd_path, input:)
             Environment.secure_execute(ascmd_path, mode: :capture, stdin_data: input, binmode: true, exception: false).first
@@ -374,7 +379,8 @@ module Aspera
             result = ascmd.execute_single(op, arguments)
             yield(result)
           rescue AsCmd::Error => e
-            raise Cli::BadArgument, e.extended_message
+            # Same class, for the exit code of its category, with the arguments of each failed command
+            raise e.exception(e.extended_message)
           rescue ParameterError => e
             raise Cli::BadArgument, e.message
           end

@@ -148,7 +148,40 @@ RSpec.describe(Aspera::Plugins::Server::AsCmd) do
     rescue described_class::Error => e
       expect(e.failures.map(&:arguments)).to(eq([%w[/a], %w[/c]]))
       expect(e.message).to(eq("ascmd: No such file or directory (2)\nascmd: Permission denied (13)"))
-      expect(e.extended_message.lines.last).to(eq('ascmd: errno=13 errstr="Permission denied" command=rm arguments=/c'))
+      expect(e.extended_message.lines.last).to(eq('errno=13 errstr="Permission denied" command=rm arguments=/c'))
+    end
+
+    # @return [Class] class of the error raised for the replies
+    def error_class(replies, arguments = %w[/a])
+      execute(replies, :rm, arguments)
+      raise 'shall fail'
+    rescue described_class::Error => e
+      e.class
+    end
+
+    it 'raises the class of the error number of the platform when all commands failed for the same reason' do
+      {
+        'Linux 6.8.0 #1 SMP'                       => {NotFound: [2, 20], AccessDenied: [1, 13, 28_672], Error: [3, 5, 17, 39, -1]},
+        'Darwin 27.2.0 Darwin Kernel Version 27.2' => {NotFound: [2, 20], AccessDenied: [1, 13, 28_672], Error: [3, 66]},
+        'Microsoft Windows 10.0 '                  => {NotFound: [2, 3, 267], AccessDenied: [5, 28_672], Error: [1, 13, 20, 145]}
+      }.each do |platform, classes|
+        classes.each do |name, codes|
+          codes.each do |errno|
+            expect(error_class(info(platform) + error(errno, 'text') + error(errno, 'text'), %w[/a /b])).to(be(described_class.const_get(name)), "#{platform}: #{errno}")
+          end
+        end
+      end
+    end
+
+    it 'raises Error when the commands failed for different reasons, or without reply' do
+      expect(error_class(info + error(2, 'No such file or directory') + error(13, 'Permission denied'), %w[/a /b])).to(be(described_class::Error))
+      expect(error_class(info + error(2, 'No such file or directory'), %w[/a /b])).to(be(described_class::Error))
+    end
+
+    it 'raises the class of an error at start only for the error numbers of all platforms' do
+      expect(error_class(error(2, 'Invalid docroot'))).to(be(described_class::NotFound))
+      expect(error_class(error(28_672, 'Invalid doc root path'))).to(be(described_class::AccessDenied))
+      expect(error_class(error(13, 'Access denied due to invalid authorization'))).to(be(described_class::Error))
     end
 
     it 'decodes errno as signed (-1: error of ascmd itself)' do
@@ -217,9 +250,17 @@ RSpec.describe(Aspera::Plugins::Server::Commands) do
     expect(result.data.map { |r| r.values_at('path', 'size') }).to(eq([['/a', 100], ['/b', 200]]))
   end
 
-  it 'reports the failed commands as a bad argument' do
-    executor(info + success + error(2, 'No such file or directory'))
-    expect { server.action_rm(paths: %w[/a /b]) }.to(raise_error(Aspera::Cli::BadArgument, %r{errno=2 .* arguments=/b}))
+  it 'reports the failed commands with their arguments and the exit code of their category' do
+    {
+      error(2, 'No such file or directory') => Aspera::Cli::ExitCode::NOT_FOUND,
+      error(13, 'Permission denied')        => Aspera::Cli::ExitCode::AUTH,
+      error(17, 'File exists')              => Aspera::Cli::ExitCode::API
+    }.each do |reply, code|
+      executor(info + success + reply)
+      expect { server.action_rm(paths: %w[/a /b]) }.to(raise_error(Aspera::Plugins::Server::AsCmd::Error, %r{\Aerrno=\d+ .* command=rm arguments=/b\z}) do |e|
+        expect(Aspera::Cli::ExitCode.error_category(e)).to(eq({label: 'ascmd', code: code}))
+      end)
+    end
   end
 
   it 'reports a path that cannot be sent as a bad argument' do

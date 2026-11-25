@@ -24,6 +24,10 @@ Typically:
 
 <%=include_commands_for_plugin(:server)%>
 
+The file commands (`ls`, `rm`, `mkdir`, ...) are executed by `ascmd`, which processes all the paths given, even after one failed, and reports each failed path with its error.
+The exit code (see [Exit status](#exit-status)) is then `4` when the file or folder is not found, `3` when the access is refused (permissions, or a path outside the docroot), else `7`.
+With several paths, it is `4` or `3` only when all failed for that reason.
+
 ### Authentication on Server with SSH session
 
 If SSH is the session protocol (by default, that is, not WSS), then the following session authentication methods are supported:

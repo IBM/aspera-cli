@@ -9412,6 +9412,10 @@ upload /test_file.bin --to-folder=my_upload_folder --transfer.agent=node --trans
 upload test_file.bin --to-folder=my_inside_folder --ts=@json:'{"multi_session":3,"multi_session_threshold":1,"resume_policy":"none","target_rate_kbps":100000}' --transfer=@json:'{"spawn_delay_sec":2.5,"multi_incr_udp":false}' --progress-bar=yes
 ```
 
+The file commands (`ls`, `rm`, `mkdir`, ...) are executed by `ascmd`, which processes all the paths given, even after one failed, and reports each failed path with its error.
+The exit code (see [Exit status](#exit-status)) is then `4` when the file or folder is not found, `3` when the access is refused (permissions, or a path outside the docroot), else `7`.
+With several paths, it is `4` or `3` only when all failed for that reason.
+
 ### Authentication on Server with SSH session
 
 If SSH is the session protocol (by default, that is, not WSS), then the following session authentication methods are supported:

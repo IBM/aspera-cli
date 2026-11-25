@@ -3,7 +3,7 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# cspell:ignore errstr fstat zstr zmode zuid zgid zctime zatime zmtime fcount dcount ascmdtypes
+# cspell:ignore errstr fstat zstr zmode zuid zgid zctime zatime zmtime fcount dcount ascmdtypes EDOCROOT
 require_relative '../../log'
 require_relative '../../assert'
 
@@ -83,6 +83,7 @@ module Aspera
         OPERATIONS = OPERATION_SPECS.keys.freeze
 
         # Raised when one or more commands of `ascmd` failed. The other commands were executed.
+        # Subclass `NotFound` or `AccessDenied` when all commands failed for this reason.
         class Error < StandardError
           # A failed command
           # @!attribute [r] errno     [Integer, nil]  Error number (-1: error of `ascmd` itself), `nil` if no reply
@@ -105,9 +106,31 @@ module Aspera
 
           # @return [String] one line per failed command, with its arguments
           def extended_message
-            @failures.map { |f| %Q{ascmd: errno=#{f.errno} errstr="#{f.errstr}" command=#{@operation} arguments=#{f.arguments.join(',')}} }.join("\n")
+            @failures.map { |f| %Q{errno=#{f.errno} errstr="#{f.errstr}" command=#{@operation} arguments=#{f.arguments.join(',')}} }.join("\n")
           end
         end
+
+        # All commands failed: file or folder not found
+        class NotFound < Error; end
+
+        # All commands failed: access refused (permissions of the file, or path outside the docroot)
+        class AccessDenied < Error; end
+
+        # Code `AS_EDOCROOT` of Aspera (path outside the docroot), the same on all platforms
+        AS_EDOCROOT = 28_672
+        # Error numbers (`as_err_t` in `aserrno.h`) by error class: they are error codes of the system of the server.
+        # As in `aserrno.h`, a platform other than Windows is POSIX (same values on Linux, macOS, AIX).
+        # `unknown`: `ascmd` failed at start, before the system information: only the codes with the same meaning on both.
+        ERRNO_CLASSES = {
+          # ENOENT ENOTDIR, EPERM EACCES
+          posix:   {NotFound => [2, 20], AccessDenied => [1, 13, AS_EDOCROOT]},
+          # ERROR_FILE_NOT_FOUND ERROR_PATH_NOT_FOUND ERROR_DIRECTORY, ERROR_ACCESS_DENIED
+          windows: {NotFound => [2, 3, 267], AccessDenied => [5, AS_EDOCROOT]},
+          unknown: {NotFound => [2], AccessDenied => [AS_EDOCROOT]}
+        }.freeze
+        # Start of field `platform` of the system information on Windows (`as_platform_os`), else the output of `uname`
+        WINDOWS_PLATFORM = 'Microsoft Windows '
+        private_constant :AS_EDOCROOT, :ERRNO_CLASSES, :WINDOWS_PLATFORM
 
         # @param command_executor [Object] provides the "execute" method, taking a command to execute, and stdin to feed to it, typically: ssh or local
         def initialize(command_executor)
@@ -126,7 +149,7 @@ module Aspera
         #   `du`, `md5sum`: one Hash per path, with key `path`;
         #   `df`: mount points;
         #   `info`: system information.
-        # @raise [Error] if one or more commands failed
+        # @raise [Error] if one or more commands failed: `NotFound` or `AccessDenied` when all failed for this reason
         # @raise [ParameterError] if the arguments do not fit the operation, or cannot be sent to `ascmd`
         def execute_single(operation, arguments, version: 2, host: nil)
           arguments = [] if arguments.nil?
@@ -154,7 +177,7 @@ module Aspera
           Log.log.trace1 { "execute_single:replies=#{replies}" }
           system_info = replies.shift
           # `ascmd` failed to start, e.g. invalid docroot
-          raise Error.new(operation, [failure(system_info.value, [])]) if system_info.type.eql?(:error)
+          raise error_for(operation, [failure(system_info.value, [])], nil) if system_info.type.eql?(:error)
           Aspera.assert(system_info.type.eql?(:info)) { "ascmd: expecting system information first, but have: #{system_info.type}" }
           Aspera.assert(replies.length <= commands.length) { "ascmd: #{replies.length} replies for #{commands.length} commands" }
           failures = []
@@ -169,7 +192,7 @@ module Aspera
               Aspera.assert_values(reply.type, OPERATION_SPECS[operation][:reply]) { "ascmd: reply to #{operation}" }
             end
           end
-          raise Error.new(operation, failures) unless failures.empty?
+          raise error_for(operation, failures, system_info.value) unless failures.empty?
           return result_of(operation, commands, replies)
         end
 
@@ -208,6 +231,24 @@ module Aspera
         # @return [Error::Failure]
         def failure(error, arguments)
           Error::Failure.new(errno: error[:errno], errstr: error[:errstr], arguments: arguments)
+        end
+
+        # @param operation [Symbol]                the operation
+        # @param failures  [Array<Error::Failure>] failed commands
+        # @param info      [Hash, nil]             system information of the server, `nil` if `ascmd` failed at start
+        # @return [Error] of the class of the error numbers of the failures when they all have the same, else `Error`
+        def error_for(operation, failures, info)
+          classes = ERRNO_CLASSES[errno_platform(info)]
+          failure_classes = failures.map { |f| classes.find { |_, codes| codes.include?(f.errno) }&.first || Error }.uniq
+          (failure_classes.one? ? failure_classes.first : Error).new(operation, failures)
+        end
+
+        # @param info [Hash, nil] system information of the server, `nil` if `ascmd` failed at start
+        # @return [Symbol] key of `ERRNO_CLASSES`
+        def errno_platform(info)
+          platform = info&.dig(:platform)
+          return :unknown if platform.nil? || platform.empty?
+          platform.start_with?(WINDOWS_PLATFORM) ? :windows : :posix
         end
 
         # Result of the operation, from the replies of its successful commands
