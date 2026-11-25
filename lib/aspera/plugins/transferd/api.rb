@@ -49,22 +49,31 @@ module Aspera
         FINAL_STATUSES = %i[COMPLETED FAILED CANCELED].freeze
         # Time in the daemon is in microseconds, but some versions give milliseconds: values below this are milliseconds
         MIN_USEC_EPOCH = 10**14
+        # Address of an endpoint given without address (e.g. `:55002`)
+        LOCAL_ADDRESS = '127.0.0.1'
 
-        private_constant :ASYNC_STATUS, :MIN_USEC_EPOCH
+        private_constant :ASYNC_STATUS, :MIN_USEC_EPOCH, :LOCAL_ADDRESS
 
         class << self
+          # @param url [String] Endpoint of a daemon, e.g. `127.0.0.1:55002`, or only its port, e.g. `:55002`
+          # @return [String] The endpoint, with address `127.0.0.1` if it has none
+          def endpoint(url)
+            url.match?(/\A:[0-9]+\z/) ? "#{LOCAL_ADDRESS}#{url}" : url
+          end
+
           # Client of a daemon
-          # @param url     [String]      Endpoint of the daemon, e.g. `127.0.0.1:55002`
+          # @param url     [String]      Endpoint of the daemon, e.g. `127.0.0.1:55002`, or `:55002` for address `127.0.0.1` (see `endpoint`)
           # @param api_key [String, nil] API key, if the daemon has `authentication` enabled
           # @param ca_file [String, nil] File with the certificate authority of the daemon (PEM), if the daemon has `tls` enabled
           # @return [Transferd::Api::TransferService::Stub] gRPC client
           def create_client(url, api_key: nil, ca_file: nil)
+            url = endpoint(url)
             credentials = ca_file.nil? ? :this_channel_is_insecure : GRPC::Core::ChannelCredentials.new(File.read(ca_file))
             return ::Transferd::Api::TransferService::Stub.new(url, credentials) if api_key.nil?
             ::Transferd::Api::TransferService::Stub.new(url, credentials, interceptors: [ApiKeyInterceptor.new(api_key)])
           end
 
-          # @param agent_params [Hash] `url`: endpoint of the daemon; optional `api_key`, `ca_file`
+          # @param agent_params [Hash] `url`: endpoint of the daemon (see `create_client`); optional `api_key`, `ca_file`
           # @return [Transferd::Api::TransferService::Stub] Client of the daemon
           def client(agent_params)
             Aspera.assert(agent_params['url'].is_a?(String) && !agent_params['url'].empty?) { 'agent_params: missing url' }

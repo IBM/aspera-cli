@@ -72,13 +72,7 @@ module Aspera
 
               # async transfer jobs: moved to `agents jobs`, `transfer` is kept as deprecated alias
               commands_under %i[agents jobs], description: 'Manage asynchronous transfer jobs' do
-                command(
-                  :list, description: 'List all async transfer jobs',
-                  action: lambda do |**|
-                    rows = async_transfer_store.list
-                    Cli::Result::ObjectList.new(rows, fields: %w[job_id agent_type status started_at ended_at bytes_transferred transfer_id])
-                  end
-                )
+                command :list,    description: 'List all async transfer jobs'
                 command :status,  description: 'Show status of an async transfer job',
                   arguments: [{name: :job_id, complete: :transfer_job}]
                 command :cleanup, description: 'Remove completed/failed/cancelled transfer entries'

@@ -414,7 +414,8 @@ module Aspera
               'ended_at'          => nil,
               'error'             => nil
             })
-            Log.log.info { "Async transfer started: job_id=#{job_id}, agent=#{agent_type}" }
+            # The result gives the job_id and status
+            Log.log.debug { "Async transfer started: job_id=#{job_id}, agent=#{agent_type}" }
             return Aspera::Transfer::Result.async(job_id: job_id)
           end
           # --- synchronous mode (default) ---

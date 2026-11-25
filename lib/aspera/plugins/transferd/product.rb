@@ -72,20 +72,20 @@ module Aspera
           Log.log.debug { "transferd base tmp #{transferd_base_tmp}" }
           conf_file = "#{transferd_base_tmp}.conf"
           @log_stdout = "#{transferd_base_tmp}.out"
-          log_stderr = "#{transferd_base_tmp}.err"
+          @log_stderr = "#{transferd_base_tmp}.err"
           self.class.write_config(conf_file, config)
           @pid = Environment.secure_execute(
             Ascp::Installation.instance.path(:transferd), '--config', conf_file,
             mode: :background,
             out: @log_stdout,
-            err: log_stderr
+            err: @log_stderr
           )
           begin
             # wait for process to initialize, max 2 seconds
             Timeout.timeout(2.0) do
               # this returns if process dies (within 2 seconds)
               _, status = ::Process.wait2(@pid)
-              raise "Transfer daemon exited with status #{status.exitstatus}. Check files: #{@log_stdout} and #{log_stderr}"
+              raise "Transfer daemon exited with status #{status.exitstatus}. Check files: #{log_files.join(' and ')}"
             end
           rescue Timeout::Error
             nil
@@ -98,6 +98,11 @@ module Aspera
         attr_reader :pid
         # @return [String, nil] API key of the daemon, `nil`: no authentication
         attr_reader :api_key
+
+        # @return [Array(String, String)] Files of the standard output and error of the daemon
+        def log_files
+          [@log_stdout, @log_stderr]
+        end
 
         # @return [Integer] Port the daemon listens on, from its log (when started with port `0`)
         def port_from_log

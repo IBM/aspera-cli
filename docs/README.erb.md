@@ -4617,7 +4617,7 @@ The returned `job_id` can be used at any time to check progress:
 # Poll status later
 <%=cmd%> config agents jobs status <job_id>
 
-# List all pending/completed async transfers
+# List all pending/completed async transfers (status of jobs not ended is queried)
 <%=cmd%> config agents jobs list
 
 # Remove completed/failed entries
@@ -4634,15 +4634,29 @@ All transfer agents support asynchronous mode:
 | `desktop`   | JSON-RPC `get_transfer` (auto-discovered URL)                                 | Yes |
 | `node`      | REST `ops/transfers/{id}`                                                     | Yes |
 | `connect`   | REST `transfers/info/{id}` (auto-discovered URL)                              | Yes |
-| `transferd` | gRPC `monitor_transfers`                                                      | Yes |
-| `direct`    | In-process thread state (re-queryable while process lives, e.g. MCP mode)    | No: returns `unknown` after restart |
-| `httpgw`    | In-process thread state (re-queryable while process lives, e.g. MCP mode)    | No: returns `unknown` after restart |
+| `transferd` | gRPC `QueryTransfer` (daemon left running, see below)                         | Yes |
+| `direct`    | In-process thread state (re-queryable while process lives, e.g. MCP mode)    | No: last saved status after restart |
+| `httpgw`    | In-process thread state (re-queryable while process lives, e.g. MCP mode)    | No: last saved status after restart |
 
 For `direct` and `httpgw`, the transfer runs as a Ruby thread inside the <%=tool%> process.
 The `job_id` is persisted on disk but the live thread state is only available as long as the same process is running.
-If the process is restarted, `config agents jobs status` returns `unknown` for those jobs.
+If the process is restarted, `config agents jobs status` shows the last saved status of those jobs, with a `note`.
 
-Parameters of the agent are persisted, except secrets (e.g. `password` of agent `node`): `config agents jobs status` takes them from the current `transfer` option, if it is for the same agent (e.g. same option on command line, or in a preset).
+With agent `transferd`, the transfer runs in the daemon: an asynchronous transfer needs a daemon that stays after <%=tool%> exits, with parameter `stop` set to `false`, a fixed port in `url`, and parameter `api_key` (see [Agent: Transfer Daemon](#agent-transfer-daemon)).
+With the default (`stop` is `true`), the daemon started by <%=tool%> stops when <%=tool%> exits: the transfer stops, and its status can no longer be queried.
+The first command starts the daemon, the next ones use it.
+For example, with a preset:
+
+```shell
+<%=cmd%> config preset set daemon @json:'{"agent":"transferd","url":"127.0.0.1:55002","stop":false,"asynchronous":true,"api_key":"<%=ph :api_key%>"}'
+<%=cmd%> server download /aspera-test-dir-large/1GB --transfer=@preset:daemon
+<%=cmd%> config agents jobs list --transfer=@preset:daemon
+```
+
+Parameters of the agent are persisted, except secrets (e.g. `password` of agent `node`, `api_key` of agent `transferd`): `config agents jobs status` and `list` take them from the current `transfer` option, if it is for the same agent (e.g. same option on command line, or in a preset).
+
+`config agents jobs status` and `list` query the agent for the status of the jobs not ended (not `completed`, `failed` or `cancelled`), and save it.
+When the agent gives no status (e.g. agent not reachable, missing secret), the last saved status is kept: `status` shows it with the `error`, and `list` shows it with a warning.
 
 > [!NOTE]
 > **`asynchronous` and MCP** - When <%=tool%> is used as an MCP server, an AI assistant calling

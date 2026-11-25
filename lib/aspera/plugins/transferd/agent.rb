@@ -28,15 +28,18 @@ module Aspera
       class Agent < Aspera::Agent::Base
         # https://github.com/grpc/grpc/blob/master/doc/naming.md
         # https://grpc.io/docs/guides/custom-name-resolution/
-        LOCAL_SOCKET_ADDR = '127.0.0.1'
         PORT_SEP = ':'
         # port zero means select a random available high port
         AUTO_LOCAL_TCP_PORT = "#{PORT_SEP}0".freeze
+        # Seconds to wait for a daemon started here to answer
+        START_TIMEOUT_SEC = 10
+        # Seconds between two connection attempts to a daemon started here
+        START_RETRY_SEC = 0.2
 
         # Daemon addresses that run on the local host (loopback or wildcard bind): a daemon there is started or attached to locally
         LOCAL_DAEMON_HOSTS = ['127.0.0.1', 'localhost', '::1', '0.0.0.0', '::'].freeze
 
-        private_constant :LOCAL_SOCKET_ADDR, :PORT_SEP, :AUTO_LOCAL_TCP_PORT, :LOCAL_DAEMON_HOSTS
+        private_constant :PORT_SEP, :AUTO_LOCAL_TCP_PORT, :LOCAL_DAEMON_HOSTS, :START_TIMEOUT_SEC, :START_RETRY_SEC
 
         class << self
           # A daemon started here, or attached to on the local host, runs on the local host: refused at level `high` (see `Cli::Security`).
@@ -86,12 +89,14 @@ module Aspera
           end
         end
 
-        # @param url   [String]  URL of the transfer manager daemon
+        # Connect to the daemon of `url`, and start it if it does not answer (unless `start` is `false`)
+        # @param url   [String]  URL of the transfer manager daemon, e.g. `127.0.0.1:55002`, or only its port (address `127.0.0.1`)
         # @param start [Boolean] If `false`, expect that an external daemon is already running
         # @param stop  [Boolean] If `false`, do not shutdown daemon on exit
         # @param api_key [String, nil] API key of the daemon: of an external daemon with `authentication` enabled, or of the daemon started here (else a random one)
         # @param ca_file [String, nil] Certificate authority (PEM file) of an external daemon with `tls` enabled
         # @param base  [Hash]    Base class options
+        # @raise [Aspera::Transfer::Error] The daemon started here does not answer within `START_TIMEOUT_SEC`
         def initialize(
           url:     AUTO_LOCAL_TCP_PORT,
           start:   true,
@@ -107,39 +112,18 @@ module Aspera
           Aspera.assert(!(is_local_auto_port && (!@stop || !start)), type: ParameterError) { 'Cannot set options `stop` or `start` to false with port zero' }
           # daemon started here, kept for optional shutdown
           @daemon = nil
-          @daemon_endpoint = nil
-          daemon_endpoint = url
-          Log.dump(:daemon_endpoint, daemon_endpoint)
-          # retry loop
+          # no address: local address
+          @daemon_endpoint = Api.endpoint(url)
+          Log.dump(:daemon_endpoint, @daemon_endpoint)
           begin
-            # no address: local bind
-            daemon_endpoint = "#{LOCAL_SOCKET_ADDR}#{daemon_endpoint}" if daemon_endpoint.match?(/^#{PORT_SEP}[0-9]+$/o)
-            # Create stub: API key of the daemon (given, or the one of the daemon started here), TLS only for an external daemon
-            @transfer_client = Api.create_client(daemon_endpoint, api_key: api_key, ca_file: ca_file)
-            # Initiate actual connection
-            get_info_response = @transfer_client.get_info(::Transferd::Api::InstanceInfoRequest.new)
-            @daemon_endpoint = daemon_endpoint
-            Log.log.debug { "Daemon info: #{get_info_response}" }
-            Log.log.warn('Attached to existing daemon') unless @daemon || !start || !@stop
+            connect(api_key, ca_file)
+            Log.log.warn('Attached to existing daemon') if start && @stop
             # `shutdown` is registered with `at_exit` only when the daemon is started here:
             # a long-running process (e.g. Orchestrator) that attaches to an external daemon for each transfer would accumulate them
           rescue GRPC::Unavailable => e
             # if transferd is external: do not start it, or other error
             raise if !start || !e.message.include?('failed to connect')
-            # we already tried to start a daemon, but it failed
-            Aspera.assert(@daemon.nil?) { "Daemon started with PID #{@daemon.pid}, but connection failed to #{daemon_endpoint}" }
-            Log.log.warn('no daemon present, starting daemon...')
-            # transferd only supports local ip and port
-            daemon_uri = URI.parse("ipv4://#{daemon_endpoint}")
-            Aspera.assert(!daemon_uri.host.to_s.empty? && !daemon_uri.port.nil?, type: ParameterError) { "Invalid address of daemon: #{daemon_endpoint}, expecting <ADDRESS>:<PORT> or :<PORT>" }
-            @daemon = Product.new(address: daemon_uri.host, port: daemon_uri.port, api_key: api_key, stop: @stop)
-            # API key of the daemon started here, for next connection attempt
-            api_key = @daemon.api_key
-            at_exit { shutdown }
-            # update port for next connection attempt (if auto high port was requested)
-            daemon_endpoint = "#{LOCAL_SOCKET_ADDR}#{PORT_SEP}#{@daemon.port_from_log}" if is_local_auto_port
-            # local daemon started, try again
-            retry
+            start_daemon(api_key, ca_file, auto_port: is_local_auto_port)
           end
         end
 
@@ -214,6 +198,51 @@ module Aspera
 
         def shutdown
           @daemon&.stop if @stop
+        end
+
+        private
+
+        # Create the client of the daemon of `@daemon_endpoint`, and get its information: the actual connection
+        # @param api_key  [String, nil] API key of the daemon
+        # @param ca_file  [String, nil] Certificate authority (PEM file) of the daemon
+        # @param deadline [Time, nil]   Time limit of the call, `nil`: none
+        # @raise [GRPC::BadStatus] The daemon does not answer
+        def connect(api_key, ca_file, deadline: nil)
+          # Create stub: API key of the daemon (given, or the one of the daemon started here)
+          @transfer_client = Api.create_client(@daemon_endpoint, api_key: api_key, ca_file: ca_file)
+          get_info_response = @transfer_client.get_info(::Transferd::Api::InstanceInfoRequest.new, deadline: deadline)
+          Log.log.debug { "Daemon info: #{get_info_response}" }
+        end
+
+        # Start a daemon on `@daemon_endpoint`, then connect to it: it may need some time before it listens (e.g. first start of its executable)
+        # @param api_key   [String, nil] API key given by the user (see `Product.daemon_api_key`)
+        # @param ca_file   [String, nil] Certificate authority (PEM file) of the daemon
+        # @param auto_port [Boolean]     `true` if started with port zero: the port is read from its log
+        # @raise [Aspera::Transfer::Error] The daemon does not answer within `START_TIMEOUT_SEC`
+        def start_daemon(api_key, ca_file, auto_port:)
+          # Expected for the first execution when the daemon is left running
+          Log.log.public_send(@stop ? :warn : :info, 'no daemon present, starting daemon...')
+          # transferd only supports local ip and port
+          daemon_uri = URI.parse("ipv4://#{@daemon_endpoint}")
+          Aspera.assert(!daemon_uri.host.to_s.empty? && !daemon_uri.port.nil?, type: ParameterError) { "Invalid address of daemon: #{@daemon_endpoint}, expecting <ADDRESS>:<PORT> or :<PORT>" }
+          @daemon = Product.new(address: daemon_uri.host, port: daemon_uri.port, api_key: api_key, stop: @stop)
+          at_exit { shutdown }
+          deadline = Time.now + START_TIMEOUT_SEC
+          begin
+            # Port written in the log once it listens (if auto high port was requested)
+            @daemon_endpoint = Api.endpoint("#{PORT_SEP}#{@daemon.port_from_log}") if auto_port
+            # API key of the daemon started here
+            connect(@daemon.api_key, ca_file, deadline: deadline)
+          rescue GRPC::Unavailable, GRPC::DeadlineExceeded, AssertError => e
+            reason = e.is_a?(GRPC::BadStatus) ? "#{e.class.name.split('::').last}: #{e.details}" : e.message
+            Aspera.assert(Time.now < deadline, type: Aspera::Transfer::Error) do
+              "Transfer daemon started with PID #{@daemon.pid} does not answer on #{@daemon_endpoint} after #{START_TIMEOUT_SEC} seconds (#{reason}). " \
+                "Check files: #{@daemon.log_files.join(' and ')}"
+            end
+            Log.log.debug { "Daemon does not answer yet: #{reason}" }
+            sleep(START_RETRY_SEC)
+            retry
+          end
         end
       end
     end

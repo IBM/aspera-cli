@@ -173,5 +173,61 @@ RSpec.describe(Aspera::Plugins::Transferd::Agent) do
       agents.first.shutdown
       expect { ::Process.kill(0, daemon_pid) }.to(raise_error(Errno::ESRCH))
     end
+
+    it 'retries the connection until the daemon started answers (e.g. first start of its executable)' do
+      attempts = 0
+      allow(daemon).to(receive(:get_info)) do |_request, deadline:|
+        expect(deadline).to(be_within(2).of(Time.now + 10))
+        attempts += 1
+        raise GRPC::Unavailable, 'failed to connect to all addresses' if attempts < 3
+        info
+      end
+      allow(Aspera::Log.log).to(receive(:warn))
+      agents.push(described_class.new(url: ':55002'))
+      expect(attempts).to(eq(3))
+      expect(agents.first.daemon_endpoint).to(eq(url))
+      expect(Aspera::Log.log).to(have_received(:warn).with('no daemon present, starting daemon...'))
+    end
+
+    it 'fails with the files of its logs when the daemon started does not answer' do
+      stub_const('Aspera::Plugins::Transferd::Agent::START_TIMEOUT_SEC', 0.3)
+      allow(daemon).to(receive(:get_info).and_raise(GRPC::Unavailable.new('failed to connect to all addresses')))
+      allow(Aspera::Log.log).to(receive(:warn))
+      base = File.join(tmp_dir, 'transferd')
+      # The daemon started is stopped on exit (`at_exit` of the agent)
+      expect { described_class.new(url: ':55002') }.to(raise_error(
+        Aspera::Transfer::Error,
+        /\ATransfer daemon started with PID #{daemon_pid} does not answer on #{url} after 0.3 seconds \(Unavailable: failed to connect to all addresses\)\. Check files: #{Regexp.escape(base)}\.out and #{Regexp.escape(base)}\.err\z/
+      ))
+    end
+
+    it 'waits for the port of the daemon started with port zero in its log' do
+      allow(Transferd::Api::TransferService::Stub).to(receive(:new).with('127.0.0.1:0', :this_channel_is_insecure).and_return(offline))
+      allow(Transferd::Api::TransferService::Stub).to(receive(:new).with('127.0.0.1:55010', :this_channel_is_insecure, interceptors: anything).and_return(daemon))
+      reads = 0
+      allow(Aspera::Products::Transferd).to(receive(:daemon_port_from_log).with(File.join(tmp_dir, 'transferd.out'))) do
+        reads += 1
+        Aspera.assert(reads > 1, 'Port not found in daemon logs')
+        55_010
+      end
+      allow(Aspera::Log.log).to(receive(:warn))
+      agents.push(described_class.new)
+      expect(reads).to(eq(2))
+      expect(agents.first.daemon_endpoint).to(eq('127.0.0.1:55010'))
+      expect(started.dig('config', 'port')).to(eq(0))
+    end
+
+    it 'starts a daemon left running with an information, not a warning' do
+      allow(Transferd::Api::TransferService::Stub).to(receive(:new).with(url, :this_channel_is_insecure, interceptors: anything)) do
+        started.empty? ? offline : daemon
+      end
+      allow(Aspera::Log.log).to(receive_messages(info: nil, warn: nil))
+      agents.push(described_class.new(url: '127.0.0.1:55002', stop: false, api_key: '<API_KEY>'))
+      expect(Aspera::Log.log).to(have_received(:info).with('no daemon present, starting daemon...'))
+      expect(Aspera::Log.log).not_to(have_received(:warn).with('no daemon present, starting daemon...'))
+    ensure
+      # Left running by the agent
+      ::Process.kill(:KILL, daemon_pid)
+    end
   end
 end

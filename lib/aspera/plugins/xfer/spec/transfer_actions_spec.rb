@@ -3,7 +3,7 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-# Unit tests for Aspera::Plugins::Xfer::TransferActions (`config agents jobs status`) — no server needed.
+# Unit tests for Aspera::Plugins::Xfer::TransferActions (`config agents jobs status` and `list`) — no server needed.
 
 require_relative '../../../persistency_folder'
 require_relative '../async_transfer_store'
@@ -20,20 +20,25 @@ module Aspera
       let(:tmpdir) { Dir.mktmpdir('transfer_actions_spec') }
       let(:store) { Aspera::Plugins::Xfer::AsyncTransferStore.new(PersistencyFolder.new(tmpdir)) }
       let(:transfer_options) { {} }
+      # Status given by the agent for the entry of a job
+      let(:live) { ->(_entry) { {'status' => 'completed'} } }
       # Host of the mixin, as Plugins::Config: provides `context`
       let(:host) do
         transfer = instance_double(Aspera::Plugins::Xfer::TransferAgent, async_store: store, transfer_options: transfer_options)
         context = Struct.new(:transfer).new(transfer)
+        answer = live
         Class.new do
           include Aspera::Plugins::Xfer::TransferActions
 
           define_method(:context) { context }
-          attr_reader :queried
+          # Last entry used to query the agent, and the jobs queried
+          attr_reader :queried, :queried_jobs
 
           # Records the entry used to query the agent, instead of querying it
           define_method(:query_live_status) do |entry|
             @queried = entry
-            {'status' => 'completed'}
+            (@queried_jobs ||= []).push(entry['job_id'])
+            answer.call(entry)
           end
         end.new
       end
@@ -65,6 +70,105 @@ module Aspera
         it 'queries with the stored parameters only' do
           host.action_agents_jobs_status(job_id: 'job1')
           expect(host.queried['agent_params']).to(eq({'url' => 'https://node', 'username' => 'ak'}))
+        end
+      end
+
+      describe 'status' do
+        it 'removes the error of a previous query when the agent gives the status' do
+          store.write('job1', store.read('job1').merge('status' => 'unknown', 'error' => 'Unauthenticated: missing api_key', 'error_code' => '1', 'note' => 'other'))
+          result = host.action_agents_jobs_status(job_id: 'job1')
+          expect(result.data).to(include('status' => 'completed'))
+          expect(result.data).not_to(include('error', 'error_code', 'note'))
+          expect(store.read('job1')).not_to(include('error', 'error_code', 'note'))
+        end
+
+        it 'keeps the error given by the agent with its status' do
+          allow(live).to(receive(:call).and_return({'status' => 'failed', 'error' => 'Failed to open TCP connection for SSH'}))
+          expect(host.action_agents_jobs_status(job_id: 'job1').data).to(include('status' => 'failed', 'error' => 'Failed to open TCP connection for SSH'))
+          expect(store.read('job1')).to(include('status' => 'failed', 'error' => 'Failed to open TCP connection for SSH'))
+        end
+
+        context 'when the agent gives no status' do
+          let(:live) { ->(_entry) { {'status' => 'unknown', 'bytes_transferred' => 0, 'error' => 'Unauthenticated: missing api_key'} } }
+
+          it 'shows the saved status with the error, and does not save unknown' do
+            store.write('job1', store.read('job1').merge('bytes_transferred' => 1024))
+            saved = store.read('job1')
+            result = host.action_agents_jobs_status(job_id: 'job1')
+            expect(result.data).to(include('status' => 'running', 'bytes_transferred' => 1024, 'error' => 'Unauthenticated: missing api_key'))
+            expect(store.read('job1')).to(eq(saved))
+          end
+        end
+
+        it 'shows the saved status, without error, when the agent cannot be queried' do
+          allow(live).to(receive(:call).and_return(nil))
+          result = host.action_agents_jobs_status(job_id: 'job1')
+          expect(result.data).to(include('status' => 'running'))
+          expect(result.data).not_to(have_key('error'))
+          expect(store.read('job1')['status']).to(eq('running'))
+        end
+
+        it 'does not query the agent of a job ended' do
+          store.write('job1', store.read('job1').merge('status' => 'completed', 'bytes_transferred' => 4096))
+          expect(host.action_agents_jobs_status(job_id: 'job1').data).to(include('status' => 'completed', 'bytes_transferred' => 4096))
+          expect(host.queried_jobs).to(be_nil)
+        end
+      end
+
+      describe 'list' do
+        let(:live) do
+          lambda do |entry|
+            case entry['job_id']
+            when 'job1' then {'status' => 'running', 'bytes_transferred' => 2048}
+            when 'job2' then {'status' => 'completed', 'bytes_transferred' => 4096, 'ended_at' => '2026-11-23T10:00:00Z'}
+            else {'status' => 'unknown', 'bytes_transferred' => 0, 'error' => 'Unavailable: failed to connect to all addresses'}
+            end
+          end
+        end
+
+        before do
+          %w[job2 job3 job4].each do |job_id|
+            store.write(job_id, {'job_id' => job_id, 'agent_type' => 'transferd', 'transfer_id' => "t-#{job_id}", 'agent_params' => {'url' => '127.0.0.1:55002'}, 'status' => 'running', 'bytes_transferred' => 0})
+          end
+          store.write('job5', {'job_id' => 'job5', 'agent_type' => 'transferd', 'transfer_id' => 't5', 'status' => 'failed', 'error' => 'ended before'})
+          allow(Log.log).to(receive(:warn))
+        end
+
+        # @return [Hash] Rows of the result of list, by job_id
+        def list_rows
+          result = host.action_agents_jobs_list
+          expect(result).to(be_a(Cli::Result::ObjectList))
+          expect(result.fields).to(eq(%w[job_id agent_type status started_at ended_at bytes_transferred transfer_id]))
+          result.data.to_h { |row| [row['job_id'], row] }
+        end
+
+        it 'refreshes and saves the status of the jobs not ended' do
+          rows = list_rows
+          expect(rows['job1']).to(include('status' => 'running', 'bytes_transferred' => 2048))
+          expect(rows['job2']).to(include('status' => 'completed', 'bytes_transferred' => 4096, 'ended_at' => '2026-11-23T10:00:00Z'))
+          expect(store.read('job2')).to(include('status' => 'completed', 'bytes_transferred' => 4096))
+        end
+
+        it 'keeps the saved status of the jobs not refreshed, with one warning for each reason' do
+          rows = list_rows
+          expect(rows['job3']).to(include('status' => 'running', 'bytes_transferred' => 0))
+          expect(rows['job3']).not_to(have_key('error'))
+          expect(store.read('job4')['status']).to(eq('running'))
+          expect(store.read('job4')).not_to(have_key('error'))
+          expect(Log.log).to(have_received(:warn).once) { |&block| expect(block.call).to(eq('Status not refreshed for job job3, job4: Unavailable: failed to connect to all addresses')) }
+        end
+
+        it 'does not query the agent of the jobs ended' do
+          rows = list_rows
+          expect(host.queried_jobs).to(contain_exactly('job1', 'job2', 'job3', 'job4'))
+          expect(rows['job5']).to(include('status' => 'failed', 'error' => 'ended before'))
+        end
+
+        it 'queries with the secret from current options' do
+          transfer_options.merge!('agent' => 'transferd', 'api_key' => '<API_KEY>')
+          list_rows
+          expect(host.queried['agent_params']).to(include('api_key' => '<API_KEY>', 'url' => '127.0.0.1:55002'))
+          expect(store.read('job4')['agent_params']).not_to(have_key('api_key'))
         end
       end
 

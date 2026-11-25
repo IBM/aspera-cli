@@ -14,7 +14,7 @@ module Aspera
       # Mounted on plugin config (manifest `mounts`): async transfer management actions.
       # Exposes three sub-commands under `config agents jobs` (`config transfer` is a deprecated alias):
       #   status  <job_id>        Re-query a running/completed transfer
-      #   list                    List all persisted async transfer entries
+      #   list                    List all persisted async transfer entries (jobs not ended are re-queried)
       #   cleanup                 Remove completed/failed/cancelled entries
       #
       # Architecture:
@@ -23,28 +23,40 @@ module Aspera
       #     status is re-queried via Agent::Xxx.transfer_status
       #   - direct agent: transfers live in Ruby threads - store is the agent's @sessions;
       #     status is not persistable across process restarts (returns an informational message)
+      # A status `unknown` (agent not reachable, missing secret, agent of another process...) does not replace the saved status.
       module TransferActions
+        # Statuses after which a job does not change: its agent is not queried again
+        TERMINAL_STATUSES = %w[completed failed cancelled].freeze
+        # Fields of the result of a previous query that a new status replaces, also when it does not have them
+        QUERY_FIELDS = %w[error error_code note].freeze
+        # Columns of `list`
+        LIST_FIELDS = %w[job_id agent_type status started_at ended_at bytes_transferred transfer_id].freeze
+        private_constant :TERMINAL_STATUSES, :QUERY_FIELDS, :LIST_FIELDS
+
         # Re-query the status of a single async transfer job.
+        # When its agent gives no status, the saved state is shown, with the reason (`error` or `note`).
         # @param job_id [String] UUID returned at submission time
         def action_agents_jobs_status(job_id:, **)
           store = async_transfer_store
           entry = store.read(job_id)
           Aspera.assert(!entry.nil?, type: Cli::BadArgument) { "Unknown job_id: #{job_id}" }
-          # Secrets are not persisted: take them from current transfer options (e.g. `--transfer`), for the same agent type
-          agent_params = current_agent_params(entry['agent_type']).merge(entry['agent_params'] || {})
-          # Inject the in-process agent reference (direct/httpgw) if still alive in this process.
-          ref = store.agent_ref(job_id)
-          agent_params['_agent_ref'] = ref if ref
-          live = query_live_status(entry.merge('agent_params' => agent_params))
-          if live
-            entry.merge!(live)
-            store.write(job_id, entry)
-          end
-          Cli::Result::SingleObject.new(entry)
+          entry, not_refreshed = refresh_job(store, entry)
+          Cli::Result::SingleObject.new(entry.merge(not_refreshed || {}))
         end
 
-        TERMINAL_STATUSES = %w[completed failed cancelled].freeze
-        private_constant :TERMINAL_STATUSES
+        # List async transfer jobs: the jobs not ended are re-queried as with `status`, else their saved state is shown, with a warning.
+        def action_agents_jobs_list(**)
+          store = async_transfer_store
+          # Job identifiers by reason of a status not refreshed: one warning for each reason
+          not_refreshed_jobs = Hash.new { |hash, reason| hash[reason] = [] }
+          rows = store.list.map do |entry|
+            entry, not_refreshed = refresh_job(store, entry)
+            not_refreshed_jobs[not_refreshed['error']].push(entry['job_id']) if not_refreshed&.key?('error')
+            entry
+          end
+          not_refreshed_jobs.each { |reason, job_ids| Log.log.warn { "Status not refreshed for job #{job_ids.join(', ')}: #{reason}" } }
+          Cli::Result::ObjectList.new(rows, fields: LIST_FIELDS)
+        end
 
         # Delete completed, failed, and cancelled entries from the store.
         def action_agents_jobs_cleanup(**)
@@ -59,6 +71,26 @@ module Aspera
         end
 
         private
+
+        # Status of a job from its agent, if not ended: saved when the agent gives it
+        # @param store [AsyncTransferStore] Store of the jobs
+        # @param entry [Hash]               Saved entry of the job
+        # @return [Array(Hash, Hash)] The entry, refreshed if the agent gave a status; and if it did not: the reason (`error` or `note` of the agent, can be empty), else `nil`
+        def refresh_job(store, entry)
+          return [entry, nil] if TERMINAL_STATUSES.include?(entry['status'])
+          job_id = entry['job_id']
+          # Secrets are not persisted: take them from current transfer options (e.g. `--transfer`), for the same agent type
+          agent_params = current_agent_params(entry['agent_type']).merge(entry['agent_params'] || {})
+          # Inject the in-process agent reference (direct/httpgw) if still alive in this process.
+          ref = store.agent_ref(job_id)
+          agent_params['_agent_ref'] = ref if ref
+          live = query_live_status(entry.merge('agent_params' => agent_params))
+          # No status from the agent: the saved one is kept
+          return [entry, (live || {}).slice(*QUERY_FIELDS)] if live.nil? || live['status'].eql?('unknown')
+          entry = entry.except(*QUERY_FIELDS).merge(live)
+          store.write(job_id, entry)
+          [entry, nil]
+        end
 
         # @param agent_type [String] agent of the async transfer
         # @return [Hash] agent parameters from current transfer options (e.g. `--transfer`), if for the same agent type

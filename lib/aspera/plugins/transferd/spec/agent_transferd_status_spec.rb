@@ -135,6 +135,34 @@ RSpec.describe(Aspera::Plugins::Transferd::Api) do
     end
   end
 
+  describe '.endpoint' do
+    it 'gives the address 127.0.0.1 to an endpoint without address' do
+      expect(described_class.endpoint(':55002')).to(eq('127.0.0.1:55002'))
+    end
+
+    it 'keeps an endpoint with an address' do
+      expect(described_class.endpoint('127.0.0.1:55002')).to(eq('127.0.0.1:55002'))
+      expect(described_class.endpoint('localhost:55002')).to(eq('localhost:55002'))
+      expect(described_class.endpoint('[::1]:55002')).to(eq('[::1]:55002'))
+    end
+  end
+
+  describe 'endpoint without address' do
+    let(:params) { {'url' => ':55002'} }
+
+    it 'is used with address 127.0.0.1 by transfer_status, info and transfer_cancel' do
+      allow(stub).to(receive_messages(
+        query_transfer: query_response(:QUEUED),
+        get_info:       api::InstanceInfoResponse.new(apiVersion: 'v1'),
+        stop_transfer:  api::StopTransferResponse.new(stopResult: [api::StopInfo.new(transferId: 'tid', stopped: true)])
+      ))
+      expect(described_class.transfer_status('tid', params)).to(include('status' => 'running'))
+      expect(described_class.info(params)).to(include('apiVersion' => 'v1'))
+      expect(described_class.transfer_cancel('tid', params)).to(be(true))
+      expect(Transferd::Api::TransferService::Stub).to(have_received(:new).with('127.0.0.1:55002', :this_channel_is_insecure).exactly(3).times)
+    end
+  end
+
   describe '.create_client' do
     let(:ca_file) { File.join(Dir.mktmpdir('transferd_ca'), 'ca.pem') }
 
