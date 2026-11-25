@@ -17,10 +17,16 @@ class SqLite3Wrapper
     @db_path = db_path
   end
 
+  # `async` may have the database open while it synchronizes: the connection is set read-only (`PRAGMA query_only`,
+  # a core SQLite feature, so it works the same with the JDBC driver), so that a query (for example option `sql`)
+  # cannot modify the live database (it blocks `UPDATE`, `DELETE`, `INSERT` and `VACUUM INTO`). The database is still
+  # opened read-write so that a database in WAL mode can be read (a read-only open needs to write the `-shm` index).
+  READ_ONLY = 'PRAGMA query_only = ON'
   if defined?(JRUBY_VERSION)
     def execute(sql)
       db = Sequel.connect("jdbc:sqlite:#{@db_path}")
       begin
+        db.run(READ_ONLY)
         normalize_rows(db.fetch(sql).all)
       ensure
         db.disconnect
@@ -30,6 +36,7 @@ class SqLite3Wrapper
     def execute(sql)
       db = SQLite3::Database.new(@db_path).tap { |d| d.results_as_hash = true }
       begin
+        db.execute(READ_ONLY)
         normalize_rows(db.execute(sql))
       ensure
         db.close

@@ -12770,6 +12770,8 @@ The `admin` command provides subcommands to inspect the state of an Async sync s
 Most subcommands read the local snap database (`snap.db`) directly - no server connection is required.
 The exception is `status`, which calls the `asyncadmin` utility available only on server products.
 
+The snap database is opened **read-only** (even with option `sql`), so the `admin` subcommands never modify it, even while `async` is synchronizing.
+
 These commands can also be run from the `config` plugin:
 
 ```shell
