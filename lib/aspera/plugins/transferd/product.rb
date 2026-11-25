@@ -10,6 +10,7 @@ require_relative '../../temp_file_manager'
 require_relative '../../ascp/installation'
 require_relative '../../products/transferd'
 require 'json'
+require 'fileutils'
 require 'securerandom'
 require 'timeout'
 
@@ -47,7 +48,7 @@ module Aspera
 
         # Start the daemon, and wait for its initialization
         # @param address [String]      Local address the daemon listens on
-        # @param port    [Integer]     Port the daemon listens on, `0`: a random available port (see `port_from_log`)
+        # @param port    [Integer]     Port the daemon listens on, `0`: a random available port (see `listen_port`)
         # @param api_key [String, nil] API key given by the user (see `daemon_api_key`)
         # @param stop    [Boolean]     `false`: the daemon is left running on exit
         # @raise [RuntimeError] The daemon exited during its initialization
@@ -73,6 +74,14 @@ module Aspera
           conf_file = "#{transferd_base_tmp}.conf"
           @log_stdout = "#{transferd_base_tmp}.out"
           @log_stderr = "#{transferd_base_tmp}.err"
+          # Folder of the port file of a daemon started with port zero (see `listen_port`): of this daemon only (the default is shared),
+          # created here, readable only by the user
+          @runtime_dir = nil
+          if port.zero?
+            @runtime_dir = "#{transferd_base_tmp}.run"
+            Dir.mkdir(@runtime_dir, 0o700)
+            config[:runtime_dir] = @runtime_dir
+          end
           self.class.write_config(conf_file, config)
           @pid = Environment.secure_execute(
             Ascp::Installation.instance.path(:transferd), '--config', conf_file,
@@ -85,6 +94,7 @@ module Aspera
             Timeout.timeout(2.0) do
               # this returns if process dies (within 2 seconds)
               _, status = ::Process.wait2(@pid)
+              remove_runtime_dir
               raise "Transfer daemon exited with status #{status.exitstatus}. Check files: #{log_files.join(' and ')}"
             end
           rescue Timeout::Error
@@ -104,9 +114,12 @@ module Aspera
           [@log_stdout, @log_stderr]
         end
 
-        # @return [Integer] Port the daemon listens on, from its log (when started with port `0`)
-        def port_from_log
-          Products::Transferd.daemon_port_from_log(@log_stdout)
+        # @return [Integer] Port the daemon started with port `0` listens on: from its port file (transferd 1.1.7 and later), else from its log
+        # @raise [AssertError] The daemon does not listen yet
+        def listen_port
+          Aspera.assert(!@runtime_dir.nil?) { 'Daemon not started with port zero' }
+          # Written before the log
+          Products::Transferd.daemon_port_from_file(@runtime_dir) || Products::Transferd.daemon_port_from_log(@log_stdout)
         end
 
         # Stop the daemon, if not stopped yet
@@ -117,6 +130,14 @@ module Aspera
           _, status = ::Process.wait2(@pid)
           Log.log.debug("daemon stopped #{status}")
           @pid = nil
+          remove_runtime_dir
+        end
+
+        private
+
+        # Delete the folder of the port file: the daemon deletes its port file only when interrupted (`SIGINT`), not when killed
+        def remove_runtime_dir
+          FileUtils.rm_rf(@runtime_dir) unless @runtime_dir.nil?
         end
       end
     end

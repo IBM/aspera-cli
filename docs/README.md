@@ -5441,6 +5441,7 @@ Options for `transfer` are:
 
 > [!NOTE]
 > If port zero is specified in the URL, then the daemon will listen on a random available port.
+> `ascli` reads that port in the file that `transferd` (version 1.1.7 and later) writes in a folder of its own, next to its configuration file, else in its log.
 > If no address is specified, then `127.0.0.1` is used.
 
 A daemon started by `ascli` requires an API key, so that other users of the host cannot use it: the one of parameter `api_key`, else a random one.

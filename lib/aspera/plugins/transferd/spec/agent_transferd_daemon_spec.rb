@@ -70,6 +70,33 @@ RSpec.describe(Aspera::Plugins::Transferd::Product) do
     end
   end
 
+  describe 'Aspera::Products::Transferd.daemon_port_from_file' do
+    # Folder with characters of a glob pattern: not used as a pattern
+    let(:runtime_dir) { File.join(tmp_dir, 'run[1]*').tap { |dir| Dir.mkdir(dir) } }
+
+    it 'reads the port of the file' do
+      File.write(File.join(runtime_dir, 'transferd.55005.optport'), '55005')
+      expect(Aspera::Products::Transferd.daemon_port_from_file(runtime_dir)).to(eq(55_005))
+    end
+
+    it 'gives nil when there is no file, or no folder' do
+      File.write(File.join(runtime_dir, 'other'), '55005')
+      expect(Aspera::Products::Transferd.daemon_port_from_file(runtime_dir)).to(be_nil)
+      expect(Aspera::Products::Transferd.daemon_port_from_file(File.join(tmp_dir, 'missing'))).to(be_nil)
+    end
+
+    it 'fails while the file is being written' do
+      File.write(File.join(runtime_dir, 'transferd.55005.optport'), '')
+      expect { Aspera::Products::Transferd.daemon_port_from_file(runtime_dir) }.to(raise_error(Aspera::AssertError, /No port in file .*transferd\.55005\.optport/))
+    end
+
+    it 'fails when there are several files' do
+      File.write(File.join(runtime_dir, 'transferd.55005.optport'), '55005')
+      File.write(File.join(runtime_dir, 'transferd.55006.optport'), '55006')
+      expect { Aspera::Products::Transferd.daemon_port_from_file(runtime_dir) }.to(raise_error(Aspera::AssertError, /Several port files/))
+    end
+  end
+
   describe '#initialize' do
     let(:base) { File.join(tmp_dir, 'transferd') }
 
@@ -80,20 +107,48 @@ RSpec.describe(Aspera::Plugins::Transferd::Product) do
       allow(Aspera::Environment).to(receive(:secure_execute).and_return(12_345))
     end
 
-    it 'fails when the daemon exits during its initialization' do
+    it 'fails when the daemon exits during its initialization, and deletes the folder of its port file' do
       allow(::Process).to(receive(:wait2).with(12_345).and_return([12_345, instance_double(::Process::Status, exitstatus: 3)]))
       expect { described_class.new(address: '127.0.0.1', port: 0, api_key: '<API_KEY>', stop: true) }
         .to(raise_error(RuntimeError, /exited with status 3\. Check files: #{Regexp.escape(base)}\.out and #{Regexp.escape(base)}\.err/))
+      expect(File).not_to(exist("#{base}.run"))
     end
 
-    it 'gives the port of its log, and the API key of its configuration' do
+    it 'gives the port of its log (transferd before 1.1.7), and the API key of its configuration' do
       allow(::Process).to(receive(:wait2).with(12_345).and_raise(Timeout::Error))
       daemon = described_class.new(address: '127.0.0.1', port: 0, api_key: '<API_KEY>', stop: true)
       File.write("#{base}.out", "Info: API Server: Listening on 127.0.0.1:55004 (x)\n")
-      expect(daemon.port_from_log).to(eq(55_004))
+      expect(daemon.listen_port).to(eq(55_004))
       expect(daemon.api_key).to(eq('<API_KEY>'))
       expect(daemon.pid).to(eq(12_345))
       expect(JSON.parse(File.read("#{base}.conf"))).to(include('address' => '127.0.0.1', 'port' => 0, 'authentication' => {'enabled' => true, 'api_key' => '<API_KEY>'}))
+    end
+
+    it 'gives the port of its port file, in a folder of its own, deleted when stopped' do
+      allow(::Process).to(receive(:wait2).with(12_345).and_raise(Timeout::Error))
+      daemon = described_class.new(address: '127.0.0.1', port: 0, api_key: '<API_KEY>', stop: true)
+      runtime_dir = "#{base}.run"
+      expect(JSON.parse(File.read("#{base}.conf"))).to(include('runtime_dir' => runtime_dir))
+      expect(File.stat(runtime_dir).mode & 0o777).to(eq(0o700)) unless Gem.win_platform?
+      # Not listening yet: neither file nor log
+      File.write("#{base}.out", '')
+      expect { daemon.listen_port }.to(raise_error(Aspera::AssertError, /Port not found/))
+      # The file, written before the log, has precedence
+      File.write(File.join(runtime_dir, 'transferd.55007.optport'), '55007')
+      File.write("#{base}.out", "Info: API Server: Listening on 127.0.0.1:55004 (x)\n")
+      expect(daemon.listen_port).to(eq(55_007))
+      allow(::Process).to(receive(:kill).with(:KILL, 12_345))
+      allow(::Process).to(receive(:wait2).with(12_345).and_return([12_345, instance_double(::Process::Status)]))
+      daemon.stop
+      expect(File).not_to(exist(runtime_dir))
+    end
+
+    it 'has no folder for a port file with a port given' do
+      allow(::Process).to(receive(:wait2).with(12_345).and_raise(Timeout::Error))
+      daemon = described_class.new(address: '127.0.0.1', port: 55_002, api_key: '<API_KEY>', stop: true)
+      expect(JSON.parse(File.read("#{base}.conf"))).not_to(have_key('runtime_dir'))
+      expect(File).not_to(exist("#{base}.run"))
+      expect { daemon.listen_port }.to(raise_error(Aspera::AssertError, /not started with port zero/))
     end
   end
 end
@@ -201,7 +256,25 @@ RSpec.describe(Aspera::Plugins::Transferd::Agent) do
       ))
     end
 
-    it 'waits for the port of the daemon started with port zero in its log' do
+    it 'reads the port of the daemon started with port zero in its port file, deleted on shutdown' do
+      allow(Transferd::Api::TransferService::Stub).to(receive(:new).with('127.0.0.1:0', :this_channel_is_insecure).and_return(offline))
+      allow(Transferd::Api::TransferService::Stub).to(receive(:new).with('127.0.0.1:55011', :this_channel_is_insecure, interceptors: anything).and_return(daemon))
+      # The daemon writes its port file in its `runtime_dir`
+      allow(Aspera::Environment).to(receive(:secure_execute)) do |_exe, _option, conf_file, **_kwargs|
+        started['config'] = JSON.parse(File.read(conf_file))
+        File.write(File.join(started.dig('config', 'runtime_dir'), 'transferd.55011.optport'), '55011')
+        daemon_pid
+      end
+      allow(Aspera::Log.log).to(receive(:warn))
+      agents.push(described_class.new)
+      expect(agents.first.daemon_endpoint).to(eq('127.0.0.1:55011'))
+      expect(started.dig('config', 'runtime_dir')).to(eq(File.join(tmp_dir, 'transferd.run')))
+      allow(::Process).to(receive(:wait2).and_call_original)
+      agents.first.shutdown
+      expect(File).not_to(exist(File.join(tmp_dir, 'transferd.run')))
+    end
+
+    it 'waits for the port of the daemon started with port zero in its log (transferd before 1.1.7)' do
       allow(Transferd::Api::TransferService::Stub).to(receive(:new).with('127.0.0.1:0', :this_channel_is_insecure).and_return(offline))
       allow(Transferd::Api::TransferService::Stub).to(receive(:new).with('127.0.0.1:55010', :this_channel_is_insecure, interceptors: anything).and_return(daemon))
       reads = 0

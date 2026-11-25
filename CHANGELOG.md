@@ -17,6 +17,7 @@ Released: [Place date of release here]
 * Every transfer agent accepts every base option of the transfer (e.g. `trusted_certs` with agent `node`).
 * A hint for the product of an error is shown only when the plugin of that product is loaded. `INFO Location:` of an error raised in a bundle points to the file of the bundle.
 * New command `sync logs` (also `server sync logs`, `node sync logs`): it reads the `async` (IBM Aspera Sync) log files of the local host and reports only the notable events, so a drift between two folders is easy to find: file conflicts and errors (`SYNC FILE STOP` with `status=CONFLICT` or `ERROR`), unsupported file-system events, session start/stop/idle, and `ERR`-level lines. With no argument it reads the log at the default location (`~/Library/Logs/Aspera/async.log` on macOS, `syslog` on Linux and Unix); a path, a folder, a `gzip` file, or `-` (standard input) can be given. The paths are checked against the security level, like `@file:`.
+* Agent `transferd` with port zero (the default `url`): the port of the daemon started is read from the file that `transferd` 1.1.7 and later writes once it listens, else from its log (it was read only from the log). The file is in a folder of this daemon only (parameter `runtime_dir` of its configuration, next to its configuration file, readable only by the user), deleted when the daemon is stopped: in the default folder (`../var/run/aspera` of the SDK), shared by all daemons, the daemons killed by `ascli` left their port file.
 
 ### Issues Fixed
 

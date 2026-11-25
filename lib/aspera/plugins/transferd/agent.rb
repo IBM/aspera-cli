@@ -217,7 +217,7 @@ module Aspera
         # Start a daemon on `@daemon_endpoint`, then connect to it: it may need some time before it listens (e.g. first start of its executable)
         # @param api_key   [String, nil] API key given by the user (see `Product.daemon_api_key`)
         # @param ca_file   [String, nil] Certificate authority (PEM file) of the daemon
-        # @param auto_port [Boolean]     `true` if started with port zero: the port is read from its log
+        # @param auto_port [Boolean]     `true` if started with port zero: the port is read from its port file or its log (see `Product#listen_port`)
         # @raise [Aspera::Transfer::Error] The daemon does not answer within `START_TIMEOUT_SEC`
         def start_daemon(api_key, ca_file, auto_port:)
           # Expected for the first execution when the daemon is left running
@@ -229,8 +229,8 @@ module Aspera
           at_exit { shutdown }
           deadline = Time.now + START_TIMEOUT_SEC
           begin
-            # Port written in the log once it listens (if auto high port was requested)
-            @daemon_endpoint = Api.endpoint("#{PORT_SEP}#{@daemon.port_from_log}") if auto_port
+            # Port written once it listens, in its port file or its log (if auto high port was requested)
+            @daemon_endpoint = Api.endpoint("#{PORT_SEP}#{@daemon.listen_port}") if auto_port
             # API key of the daemon started here
             connect(@daemon.api_key, ca_file, deadline: deadline)
           rescue GRPC::Unavailable, GRPC::DeadlineExceeded, AssertError => e
