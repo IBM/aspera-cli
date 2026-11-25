@@ -8,6 +8,7 @@
 # No transfer is started: REST clients are doubled.
 
 require_relative '../lib/aspera/agent/base'
+require_relative '../lib/aspera/bundle_registry'
 require_relative '../lib/aspera/plugins/direct/agent'
 require_relative '../lib/aspera/plugins/httpgw/agent'
 require_relative '../lib/aspera/plugins/node/agent'
@@ -176,7 +177,7 @@ module Aspera
     end
 
     it 'requires a URL without preset lookup' do
-      expect { described_class.new(username: 'u', password: password) }.to(raise_error(ArgumentError, /missing keyword: :url/))
+      expect { described_class.new(username: 'u', password: password) }.to(raise_error(ArgumentError, /missing keyword: :?url/))
     end
 
     it 'refuses an unknown parameter in the preset' do
@@ -210,7 +211,7 @@ module Aspera
     it 'gives the endpoint of transferd' do
       begin
         require_relative '../lib/aspera/plugins/transferd/agent'
-      rescue LoadError => e
+      rescue BundleRegistry::Unavailable => e
         skip("optional gem grpc: #{e.message}")
       end
       agent = Plugins::Transferd::Agent.allocate.tap do |a|
@@ -264,7 +265,14 @@ module Aspera
 
       it 'gives the same base options to every agent' do
         Agent::Factory::ALL.each_key do |type|
-          options = agent_options(["--transfer=#{type}"])
+          options =
+            begin
+              agent_options(["--transfer=#{type}"])
+            rescue Cli::Error => e
+              # Agent unavailable, e.g. transferd without the optional gem grpc
+              raise unless e.cause.is_a?(BundleRegistry::Unavailable)
+              next
+            end
           expect(created.last.first).to(eq(type))
           expect(options.keys).to(match_array(base_option_keys))
           expect(options).to(include(progress: progress, progress_default: true, config_dir: '/config', trusted_certs: ['/os/certs'], url_provider: nil))

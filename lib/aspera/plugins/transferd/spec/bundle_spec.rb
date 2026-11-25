@@ -69,6 +69,27 @@ module Aspera
             expect(Aspera::Agent::Factory.instance.agent_class(:transferd)).to(be(Aspera::Plugins::Transferd::Agent))
           end
 
+          it 'is unavailable without the gem grpc, with the gem to install' do
+            stdout, stderr, status = run_ruby(<<~RUBY)
+              # The gem grpc is not installed
+              Kernel.prepend(Module.new do
+                def require(feature)
+                  return super unless feature.eql?('grpc')
+                  raise LoadError.new("cannot load such file -- \#{feature}").tap { |e| e.define_singleton_method(:path) { feature } }
+                end
+              end)
+              require 'aspera/agent/factory'
+              begin
+                Aspera::Agent::Factory.instance.agent_class(:transferd)
+              rescue Aspera::BundleRegistry::Unavailable => e
+                puts e.message
+              end
+            RUBY
+            expect(status.success?).to(be(true), stderr)
+            expect(stderr).to(be_empty)
+            expect(stdout).to(eq("agent transferd requires gem grpc: gem install grpc\n"))
+          end
+
           it 'has its parameters in the schema of option transfer, from the file of its entry' do
             selector = Schema::Registry.instance.reader(Xfer::TransferAgent::TRANSFER_OPTION_SCHEMA)
             expect(selector['discriminator']['mapping']['transferd']).to(eq('#/components/schemas/TransferdAgentOptions'))

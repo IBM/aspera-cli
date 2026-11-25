@@ -10,7 +10,7 @@ require 'bundler/setup'
 begin
   require_relative '../product'
   require_relative '../agent'
-rescue LoadError => e
+rescue LoadError, Aspera::BundleRegistry::Unavailable => e
   warn("Skipping transferd daemon specs: #{e.message}")
   return
 end

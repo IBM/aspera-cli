@@ -4,10 +4,17 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require_relative '../../agent/base'
+require_relative '../../bundle_registry'
 require_relative '../../log'
 require_relative '../../transfer/error'
 require_relative '../../transfer/spec'
-require_relative 'api'
+begin
+  require_relative 'api'
+rescue LoadError => e
+  # The optional gem grpc is not a gem of the bundle: the commands `install`, `list` and `service` work without it
+  raise unless e.path.eql?('grpc')
+  raise Aspera::BundleRegistry::Unavailable, 'agent transferd requires gem grpc: gem install grpc'
+end
 require_relative 'client'
 require_relative 'product'
 require 'json'

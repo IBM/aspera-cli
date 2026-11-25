@@ -44,6 +44,7 @@ Released: [Place date of release here]
 * `config web_login`: about 1 code in 64 started with `-`, and `ascli config web_login <code>` then read the code as an option (`Missing argument: code`). A code no longer starts with `-`. For Shares, install the updated patch `docs/shares/zz_saml_cli_relay_state.rb`, which makes the codes on the server.
 * `sync push|pull|bidi` with `sync_info` in `conf` format: the remote password and token were in the command line of `async` (`--conf64`, base64 of the configuration), visible to the other users of the host (`ps`), and shown in the debug log (`--log-level=debug`). They are now given in environment variables `ASPERA_SCP_PASS` and `ASPERA_SCP_TOKEN`, hidden in logs, and the value of `--conf64` is hidden in logs.
 * `sync push|pull|bidi` in continuous mode (`"mode":"continuous"`): `ascli` stopped `async` about 10 seconds after the end of the first activity, when `async` closes its management port (it reports each activity period as a session). `ascli` now waits for the end of `async` (e.g. Ctrl-C, or `asyncadmin --terminate`).
+* `--transfer=transferd` without the optional gem `grpc`: `ascli` stopped with a Ruby error and a stack trace (`cannot load such file -- grpc (LoadError)`). It now tells to install the gem: `agent transferd requires gem grpc: gem install grpc`.
 
 ### Breaking Changes
 
