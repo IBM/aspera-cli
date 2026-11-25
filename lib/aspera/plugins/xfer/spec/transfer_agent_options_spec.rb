@@ -67,6 +67,35 @@ module Aspera
         end
       end
 
+      describe '#sync_agent_options' do
+        # base options are built from a fuller context; isolate the forwarding logic added for sync
+        def sync_options(argv)
+          ta = build_transfer_agent(argv)
+          allow(ta).to(receive(:base_agent_options).and_return(progress_default: true))
+          ta.sync_agent_options
+        end
+
+        it 'forwards the parameters of the default (direct) agent' do
+          expect(sync_options(['--transfer=@json:{"quiet":false,"spawn_timeout_sec":5}']))
+            .to(eq(quiet: false, spawn_timeout_sec: 5, trusted_certs: [], progress_default: true))
+        end
+
+        it 'forwards the parameters of the explicit direct agent' do
+          expect(sync_options(['--transfer=@json:{"agent":"direct","quiet":false}']))
+            .to(eq(quiet: false, trusted_certs: [], progress_default: true))
+        end
+
+        it 'ignores the parameters of another agent (sync always uses direct)' do
+          # `url` of node is not forwarded to the direct agent, only the base options and trusted_certs
+          expect(sync_options(['--transfer=node', '--transfer.url=https://u']))
+            .to(eq(trusted_certs: [], progress_default: true))
+        end
+
+        it 'gives base options even without any parameter' do
+          expect(sync_options([])).to(eq(trusted_certs: [], progress_default: true))
+        end
+      end
+
       describe 'option dry_run' do
         let(:transfer_spec) { {'remote_host' => 'localhost', 'direction' => 'send', 'remote_password' => '<PASSWORD>', 'paths' => [{'source' => 'file'}]} }
 

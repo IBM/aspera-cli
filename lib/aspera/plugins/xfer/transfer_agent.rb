@@ -189,6 +189,20 @@ module Aspera
           @context.options.get_option(:transfer_info).deep_merge(@context.options.get_option(:transfer))
         end
 
+        # Options to create the `direct` agent that runs the local `async` program for a `sync` command.
+        # `sync` always uses the `direct` agent, whatever the `agent` key of option `transfer`, so the parameters of
+        # `transfer` (and the deprecated `transfer_info`) are forwarded only when they are those of the `direct` agent
+        # (its default); parameters meant for another agent (e.g. the `url` of `node`) are ignored. For `async`, `quiet`
+        # and `spawn_timeout_sec` have an effect; the `ascp`-only parameters (e.g. `ascp_args`, `wss`, `resume`) do not.
+        # The base options (e.g. `progress`, `config_dir`) are always given, as for any agent.
+        # @return [Hash] options for `Aspera::Agent::Factory.create(:direct, ...)`
+        def sync_agent_options
+          raw_type = transfer_options['agent']
+          agent_options = raw_type.nil? || raw_type.to_s.eql?('direct') ? transfer_options.except('agent', 'asynchronous').symbolize_keys : {}
+          agent_options[:trusted_certs] = @context.http_config.trusted_cert_locations unless agent_options.key?(:trusted_certs)
+          agent_options.merge(base_agent_options)
+        end
+
         def agent_instance=(instance)
           @agent = instance
           # Name of the agent is found from the instance when needed, see `agent_name`

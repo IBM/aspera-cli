@@ -214,7 +214,12 @@ module Aspera
           # as an agent that runs on the local host (see `Cli::Security` and `TransferAgent`).
           Cli::Security.instance.check_level(:medium, 'sync (local async)')
           transfer.assert_no_dry_run
-          Sync::Operations.start(async_info_from_args(path: path, sync_info: sync_info, direction: direction), transfer.user_transfer_spec, &block)
+          Sync::Operations.start(
+            async_info_from_args(path: path, sync_info: sync_info, direction: direction),
+            transfer.user_transfer_spec,
+            agent_options: transfer.sync_agent_options,
+            &block
+          )
           Cli::Result::Success.new
         end
       end

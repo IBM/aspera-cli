@@ -85,13 +85,15 @@ module Aspera
         end
 
         # Start the sync process
-        # @param sync_info [Hash] Sync parameters, old or new format
-        # @param opt_ts    [Hash] Optional transfer spec
+        # @param sync_info     [Hash] Sync parameters, old or new format
+        # @param opt_ts        [Hash] Optional transfer spec
+        # @param agent_options [Hash] Options of the `direct` agent that runs `async` (`conf` format): parameters of option
+        #   `transfer` (e.g. `quiet`, `spawn_timeout_sec`) and base options (e.g. `progress`). Empty for the defaults.
         # @yieldparam direction [Symbol] Sync direction (one of DIRECTIONS: :push, :pull, :bidi)
         # @yieldparam local_dir [String] Local directory path
         # @yieldparam remote_dir [String] Remote directory path
         # @yieldreturn [Hash] Transfer spec to use for authentication
-        def start(sync_info, opt_ts = nil)
+        def start(sync_info, opt_ts = nil, agent_options: {})
           Log.dump(:sync_params_initial, sync_info)
           Aspera.assert_type(sync_info, Hash)
           Aspera.assert(PARAM_KEYS.any? { |k| sync_info.key?(k) }, 'At least one of `local` or `sessions` must be present in async parameters', type: ParameterError)
@@ -130,7 +132,7 @@ module Aspera
             Secret::Hider.instance.add_secret_values(conf64)
             exec_spec.args = ["--conf64=#{conf64}"]
             Log.dump(:sync_conf, sync_info)
-            agent = Agent::Factory.instance.create(:direct, {})
+            agent = Agent::Factory.instance.create(:direct, agent_options)
             Aspera.assert(agent.respond_to?(:start_and_monitor_process)) { "agent direct (#{agent.class}) cannot run async: it does not provide start_and_monitor_process" }
             agent.start_and_monitor_process(session: {}, exec_spec: exec_spec)
           else
