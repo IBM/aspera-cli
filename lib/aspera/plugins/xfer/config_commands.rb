@@ -96,6 +96,7 @@ module Aspera
                   end
                 )
                 sync_admin_commands :admin
+                sync_logs_command :logs
                 command :translate, description: 'Translate async-style arguments to sync config format',
                   arguments: [{name: :async_arguments, multiple: true}],
                   action: ->(async_arguments:, **) { Cli::Result::SingleObject.new(Sync::Operations.args_to_conf(async_arguments)) }

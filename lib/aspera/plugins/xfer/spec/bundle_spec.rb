@@ -44,7 +44,7 @@ module Aspera
             expect(top.last(5)).to(eq(%i[completion ascp agents transfer transferd]))
             expect(commands.children_of([:ascp]).keys).to(eq(%i[show info install spec schema errors logs products]))
             expect(commands.children_of([:agents]).keys).to(eq(%i[list show parameters jobs]))
-            expect(commands.children_of([:sync]).keys).to(eq(%i[spec admin translate]))
+            expect(commands.children_of([:sync]).keys).to(eq(%i[spec admin logs translate]))
           end
 
           it 'declare their options before the options of config' do

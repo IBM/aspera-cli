@@ -24,6 +24,15 @@ module Aspera
         PATH_AND_INFO_ARGS = [{name: :path, complete: :folder, access: :none}, {name: :sync_info, type: Hash, mandatory: false, default: {}}].freeze
         # Positional arguments of sync admin commands: the positional `path` is always the local database folder, read to show its state.
         ADMIN_PATH_AND_INFO_ARGS = [{name: :path, complete: :folder, access: :read}, {name: :sync_info, type: Hash, mandatory: false, default: {}}].freeze
+        # Argument of `sync logs`: the async log files to analyze, read locally (default: the local async log)
+        SYNC_LOG_ARGS = [{
+          name:        :paths,
+          description: 'async log files (gzip supported), folders, or `-` for standard input (default: the local async log)',
+          multiple:    true,
+          mandatory:   false,
+          complete:    :file,
+          access:      :read
+        }].freeze
         # When a plugin class includes SyncActions, register the :sql option
         # in that class's DSL registry so Base#initialize auto-declares it,
         # and add the class-level DSL methods of ClassMethods.
@@ -82,6 +91,12 @@ module Aspera
                 end
               )
             end
+          end
+
+          # DSL class method: declare the `sync logs` command (analysis of async log files).
+          # @param name [Symbol, Array<Symbol>] command path relative to current scope, e.g. :logs
+          def sync_logs_command(name)
+            command(name, description: 'Analyze async log files: conflicts, errors, and session lifecycle', arguments: SYNC_LOG_ARGS, action: :action_sync_logs)
           end
         end
 
@@ -168,6 +183,25 @@ module Aspera
             r['sstate'] = SyncActions::STATE_STR[r['state']] if r['state']
           end
           Cli::Result::ObjectList.new(result, fields: %w[sstate record_id f_meta_path message])
+        end
+
+        # Analyze async log files: the notable events (conflicts, errors, session lifecycle).
+        # @param paths [Array<String>, nil] log files, folders, or `-`; already checked against the security level (`access: :read`).
+        #   When not given, the local async log is read (also checked against the security level).
+        def action_sync_logs(paths: nil, **)
+          require_relative '../../sync/log_parser'
+          files =
+            if paths.nil? || paths.empty?
+              default = Sync::LogParser.default_log_paths.map { |path| Cli::Security.instance.readable_path(path) }
+              Aspera.assert(!default.empty?, type: Cli::BadArgument) { "No async log found at the default location (#{Sync::LogParser.default_location_hint}); give a path" }
+              default
+            else
+              paths
+            end
+          files.each do |file|
+            Aspera.assert(file == Cli::Plugins::Base::STDIN_ARGUMENT || File.exist?(file), type: Cli::BadArgument) { "No such file or folder: #{file}" }
+          end
+          Cli::Result::ObjectList.new(Sync::LogParser.notable_events(files), fields: Sync::LogParser::FIELDS)
         end
 
         # Execute a sync transfer for a given direction.

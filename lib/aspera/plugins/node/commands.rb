@@ -368,6 +368,7 @@ module Aspera
             command dir, description: "#{dir.capitalize}-sync (Gen3)", transfer_paths: :send, arguments: Aspera::Plugins::Xfer::SyncActions::PATH_AND_INFO_ARGS
           end
           sync_admin_commands :admin
+          sync_logs_command :logs
         end
         # access_keys sub-tree
         command :access_keys, description: 'Manage access keys'
@@ -398,6 +399,7 @@ module Aspera
               command dir, description: "#{dir.capitalize}-sync", transfer_paths: :send, arguments: Aspera::Plugins::Xfer::SyncActions::PATH_AND_INFO_ARGS
             end
             sync_admin_commands :admin
+            sync_logs_command :logs
           end
         end
         commands_under %i[access_keys do permission] do

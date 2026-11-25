@@ -7541,6 +7541,30 @@ The sqlite3-based subcommands (`meta`, `counters`, `file_info`) accept `--sql` o
 
 <%=schema_to_table('async_tables:properties.file_info')%>
 
+#### Sync log analysis: `logs`
+
+The `logs` command reads the `async` log files of the local host and reports only the **notable** events, skipping the bulk of the log (synchronized files, transfers, periodic statistics):
+
+- File conflicts and errors: a `SYNC FILE STOP` line with `status=CONFLICT` or `status=ERROR` (a conflict is reported until both copies are identical).
+- Unsupported file-system events (`Unsupported file system event`).
+- Session lifecycle: session `start`, `stop` and `idle`.
+- Any `ERR`-level line (for example a connection or algorithm error).
+
+```shell
+<%=cmd%> ... sync logs [<%=ph :paths%>...]
+```
+
+- `<%=ph :paths%>` - one or more `async` log files (`gzip` is supported), folders (only the `async*.log` files in them are read), or `-` for the standard input.
+- When no path is given, the log at the default location of the local host is read: `~/Library/Logs/Aspera/async.log` on macOS, the `syslog` files on Linux and Unix (`async` logs to `syslog`); on Windows `async` logs in its own working folder, so a path must be given.
+
+The result is a list with the fields: `time`, `level`, `session` (pair name), `kind`, `path`, `status` and `detail`. Filter it with the standard output options, for example to show only conflicts:
+
+```shell
+<%=cmd%> config sync logs --out.select=@json:'{"kind":"file conflict"}'
+```
+
+> **Note:** as for any command that reads a local path chosen by the client, the paths are checked against the security level (option `security`): reading is refused at level `high` and limited to `allowed_paths` at level `medium` (see [Security Level](#security-level)).
+
 ### Hot folder
 
 <%=tool%> does **not** have a standalone `hotfolder` command.

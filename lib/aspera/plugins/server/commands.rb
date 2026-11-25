@@ -200,6 +200,7 @@ module Aspera
             command dir, description: "#{dir.capitalize}-sync with server", transfer_paths: :send, arguments: Aspera::Plugins::Xfer::SyncActions::PATH_AND_INFO_ARGS
           end
           sync_admin_commands :admin
+          sync_logs_command :logs
         end
 
         commands_under :health do
