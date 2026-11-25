@@ -151,6 +151,11 @@ module Aspera
             expect(config_presets['GLOBAL']['secret']).to(eq(secret))
           end
 
+          it 'refuses a preset that does not exist' do
+            expect { host.action_preset_secure(config_name: 'missing') }.to(raise_error(Cli::BadArgument, /no such preset: missing/))
+            expect(vault_store).to(be_empty)
+          end
+
           it 'processes all presets when no config_name is given' do
             config_presets['preset_a'] = {'password' => secret} # HashiCorpIgnore
             config_presets['preset_b'] = {'password' => other} # HashiCorpIgnore

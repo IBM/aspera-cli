@@ -364,9 +364,18 @@ def all_dependencies(names)
 end
 
 # @param name [String] Test case name
-# @return [Boolean] `true` if a `background` test passed, but its process has ended (no pid file), e.g. stopped by the `post` of a test that uses it
+# @return [Boolean] `true` if a `background` test passed, but its process has ended (no pid file), e.g. stopped by the `post` of a test that uses it,
+#   or if it was skipped, e.g. because the tests that use it were skipped (see {background_unused?})
 def background_ended?(name)
-  ALL_TESTS[name][:tags].include?(:background) && STATES[name].eql?('passed') && !TestEnv::Context.new(name).pid_file.exist?
+  ALL_TESTS[name][:tags].include?(:background) && SKIP_STATES.include?(STATES[name]) && !TestEnv::Context.new(name).pid_file.exist?
+end
+
+# @param name [String] Test case name
+# @return [Boolean] `true` for a `background` test used by other tests, all skipped: none of them would stop its process (in `post`), that would keep its port
+def background_unused?(name)
+  return false unless ALL_TESTS[name][:tags].include?(:background)
+  users = ALL_TESTS.filter_map { |other, info| other if info[:depends_on]&.include?(name) }
+  !users.empty? && users.all? { |user| STATES[user].eql?('skipped') }
 end
 
 # @return [Integer] Percentage of completed tests
@@ -513,6 +522,12 @@ namespace TEST_CASE_NS do
       started = nil
       if SKIP_STATES.include?(STATES[name]) && !ENV['FORCE']
         # log.info "[SKIP] #{name}"
+        next
+      end
+      if background_unused?(name) && !ENV['FORCE']
+        STATES[name] = 'skipped'
+        log.info("[SKIP] #{name} : the tests that use it are skipped")
+        save_state
         next
       end
       started = clock_now

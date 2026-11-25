@@ -5,7 +5,8 @@ Add improvement ideas here.
 
 ## Preview: deletion of orphaned preview files
 
-Deletion of preview files for deleted source files is not yet implemented.
+`preview events` deletes the previews of deleted files (event `file.deleted`).
+`preview scan` does not: the previews of files deleted while no event was processed stay in the preview folder.
 
 ## Architecture: replace custom REST client with `rest-client` gem
 
@@ -22,8 +23,6 @@ Evaluate replacing the custom OAuth 2.0 implementation with the standard
 Explore [Traveling Ruby](https://github.com/phusion/traveling-ruby)
 (or [truby Traveling Ruby](https://github.com/trubygems/traveling-ruby)) as an alternative
 single-executable distribution method.
-
-## OCRAN packaging
 
 ## Add `description:` to all `Argument` declarations
 

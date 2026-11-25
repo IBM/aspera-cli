@@ -50,7 +50,14 @@ module Aspera
 
       def action_preset_secure(config_name: nil, **)
         cp = presets.config_presets
-        preset_names = config_name.nil? ? cp.keys : [config_name]
+        preset_names =
+          if config_name.nil?
+            cp.keys
+          else
+            config_name = preset_name(config_name)
+            raise Cli::BadArgument, "no such preset: #{config_name}" unless cp.key?(config_name)
+            [config_name]
+          end
         preset_names.each do |preset_name|
           preset = cp[preset_name]
           next unless preset.is_a?(Hash)
