@@ -6379,6 +6379,24 @@ The following is an extract of the man page of `ascp`.
 
 To discard data at the destination, the destination argument is set to `faux://`.
 
+> [!IMPORTANT]
+> A `faux:` URL, as source or destination, is used as is only on a side where no docroot applies.
+> Where a docroot applies, `ascp` builds the storage URL by prepending the docroot to the path given by the client, so a URL cannot be given:
+>
+> - Server side: the transfer user has a docroot, or the transfer uses an access key (its storage root plays the role of the docroot).
+>   This is the case on most servers, and with `node` and `shares`.
+> - Client side: no docroot applies, unless the local docroot is applied with `--ts.apply_local_docroot=true` (added automatically when the Node API starts a transfer).
+>
+> Then, a `faux://` destination fails with `Destination cannot be URI if docroot defined`, and a `faux:` source with `No such file or directory`.
+> With `node` and `shares`, the Node API (`files/upload_setup`) first checks that the destination folder exists, so the error is `Path not found`.
+>
+> So, `--to-folder=faux://` works for a download, and for an upload only if the transfer user on the server has no docroot, or an empty one.
+> The source and the destination can both be `faux:`, to test the network with no disk I/O on either side, when no docroot applies on either side.
+>
+> When a docroot applies at the destination, give a real destination folder and the `ascp` option `--no-write` (not listed by `ascp -h`), with the `direct` agent: `--transfer.ascp_args.0=--no-write`.
+> The data is transferred but not written: each file is created at the destination with a size of 0.
+> This works for upload and download.
+
 To send uninitialized data in place of an actual source file, the source file is replaced with an argument of the form:
 
 ```shell
@@ -6445,10 +6463,28 @@ Examples:
 ascli server upload faux:///myfile\?20g --to-folder=/Upload
 ```
 
-- Upload a file /tmp/sample but do not save results to disk (no docroot on destination)
+- Upload a file /tmp/sample but do not save results to disk (the transfer user has no docroot on the server)
 
 ```shell
 ascli server upload /tmp/sample --to-folder=faux://
+```
+
+- Upload 1 gibibyte of generated data and discard it at the destination: network only, no disk I/O on either side (the transfer user has no docroot on the server)
+
+```shell
+ascli server upload 'faux:///myfile?1g' --to-folder=faux://
+```
+
+- Upload 1 gibibyte of generated data to `/Upload` without writing it to disk on the server, also when the transfer user has a docroot (file `myfile` is created with size 0)
+
+```shell
+ascli server upload 'faux:///myfile?1g' --to-folder=/Upload --transfer.ascp_args.0=--no-write
+```
+
+- Download file `/Upload/myfile` but do not save it on the local disk
+
+```shell
+ascli server download /Upload/myfile --to-folder=faux://
 ```
 
 - Upload a faux directory `mydir` containing 1 million files, sequentially with sizes ranging from 0 to 2 Mebibyte - 2 bytes, with the base name of each file being `testfile` to /Upload
