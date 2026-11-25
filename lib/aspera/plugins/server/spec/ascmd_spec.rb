@@ -243,6 +243,23 @@ RSpec.describe(Aspera::Plugins::Server::Commands) do
     AscmdExecutor.new(output).tap { |e| allow(server).to(receive(:ascmd_executor).and_return(e)) }
   end
 
+  describe 'SSH options' do
+    # @return [Hash] options of Net::SSH of a plugin created with the arguments
+    def ssh_options_for(argv)
+      ctx = Aspera::Cli::Context.new
+      ctx.man_header = false
+      ctx.options = Aspera::Cli::Parser.new('server', argv)
+      described_class.new(context: ctx).instance_variable_get(:@ssh_opts)
+    end
+
+    it 'lets Net::SSH ask for a password only with option interactive, unless set in ssh_options' do
+      expect(ssh_options_for([])[:non_interactive]).to(be(true))
+      expect(ssh_options_for(['--interactive=no'])[:non_interactive]).to(be(true))
+      expect(ssh_options_for(['--interactive=yes'])[:non_interactive]).to(be(false))
+      expect(ssh_options_for(['--ssh-options=@json:{"non_interactive":false}'])[:non_interactive]).to(be(false))
+    end
+  end
+
   it 'shows one row per path for du' do
     executor(info + size(100) + size(200))
     result = server.action_du(paths: %w[/a /b])

@@ -100,6 +100,8 @@ module Aspera
           @ascmd_executor = nil
           @server_transfer_spec = nil
           @ssh_opts = options.get_option(:ssh_options).symbolize_keys
+          # After a failed authentication, Net::SSH asks for a password (or the passphrase of a key) in a terminal: only with option `interactive`
+          @ssh_opts[:non_interactive] = !options.get_option(:interactive) unless @ssh_opts.key?(:non_interactive)
         end
 
         # Read command line options

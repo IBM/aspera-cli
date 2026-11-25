@@ -9425,6 +9425,9 @@ If SSH is the session protocol (by default, that is, not WSS), then the followin
 
 If `username` is not provided then the default transfer user `xfer` is used.
 
+When the authentication fails, the command fails (exit code `3`): the password, or the passphrase of a key, is asked in a terminal only with `--interactive=yes`.
+Parameter `non_interactive` of option `ssh_options` overrides this.
+
 If neither SSH password nor key is provided and a transfer token is provided in transfer spec (option `ts`), then the standard SSH bypass keys are used.
 
 Example:
