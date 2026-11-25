@@ -146,11 +146,12 @@ module Aspera
         #   or a `NameError` raised from a file of the plugin, or by the lookup of its class (wrong constant)
         def plugin_error?(plugin, error)
           return true if error.is_a?(LoadError) || error.is_a?(SyntaxError)
-          # `const_get` may or may not be a location, according to the Ruby version and tools (coverage)
-          location = error.backtrace_locations&.find { |loc| !loc.label.to_s.end_with?('const_get') }
+          # `const_get` (and `const_missing` on JRuby) may or may not be a location, according to the Ruby version and tools (coverage)
+          # `base_label` is the method name alone: `label` is qualified (`Class#method`) only from Ruby 3.4
+          location = error.backtrace_locations&.find { |loc| !%w[const_get const_missing].include?(loc.base_label) }
           return false if plugin.nil? || location.nil?
           # The class is searched by name (a wrong constant): the first location is the lookup of the loader
-          return true if error.instance_of?(NameError) && location.label.to_s.end_with?('#load_constant', '#plugin_class') && [__FILE__, BundleRegistry.instance_method(:load_constant).source_location.first].include?(location.path)
+          return true if error.instance_of?(NameError) && %w[load_constant plugin_class].include?(location.base_label) && [__FILE__, BundleRegistry.instance_method(:load_constant).source_location.first].include?(location.path)
           path = File.realpath(plugin.path)
           file = File.expand_path(location.absolute_path || location.path)
           file.eql?(path) || file.start_with?(File.join(path, ''))
