@@ -337,31 +337,118 @@ module Aspera
         end
       end
 
-      # A secret from the server's configuration (preset: an operator source) must not be sent to a `url` chosen on the command line (a client source).
+      # A secret of the server's configuration (preset, vault, environment) must not be sent to a `url` that is not in its configuration (e.g. chosen by a client).
       describe '#check_credential_host' do
-        def check(level, secret_source, host_source)
+        let(:secret) { SecureRandom.hex(16) }
+        let(:configured_url) { 'https://server.example.com' }
+        let(:client_url) { 'https://elsewhere.example.com' }
+
+        # @param secret_source [Symbol] source of the option holding the secret
+        # @param url_source    [Symbol] source of option `url`
+        def check(level, secret_source, url_source, url: client_url)
           security.options = {'level' => level}
-          security.check_credential_host(what: 'option password', secret_source: secret_source, host_source: host_source)
+          security.check_credential_host(what: 'option password', secret: secret, secret_source: secret_source, url: url, url_source: url_source)
         end
 
-        it 'refuses an operator secret sent to a client-chosen host, at level medium and high' do
+        it 'refuses, at level medium and high, a secret read from the configuration sent to a URL that is not in it, whatever the source of the option' do
+          security.add_configured({'url' => configured_url, 'password' => secret})
           %w[medium high].each do |level|
-            expect { check(level, :preset, :cmdline) }.to(raise_error(BadArgument, /a secret from the configuration cannot be sent to a URL given on the command line/))
-            expect { check(level, :env, :interactive) }.to(raise_error(BadArgument, /security level #{level}/))
+            # e.g. `--preset=myserver --url=...`
+            expect { check(level, :preset, :cmdline) }.to(raise_error(BadArgument, /a secret of the configuration cannot be sent to a URL that is not in the configuration at security level #{level}/))
+            # e.g. `--password=@preset:myserver.password --url=...`
+            expect { check(level, :cmdline, :cmdline) }.to(raise_error(BadArgument, /security level #{level}/))
+            # e.g. `--preset=@json:{"url":"...","password":"@preset:myserver.password"}`: a preset given by the client
+            expect { check(level, :preset, :preset) }.to(raise_error(BadArgument, /security level #{level}/))
           end
         end
 
-        it 'allows when the secret is the client\'s own, when both come from the same place, or when the host is not client-chosen' do
+        it 'refuses a secret of the environment sent to a URL that is not in the configuration' do
+          expect { check('high', :env, :interactive) }.to(raise_error(BadArgument, /security level high/))
+        end
+
+        it 'allows a secret of the configuration sent to a URL of the configuration, or of the environment' do
+          security.add_configured({'url' => configured_url, 'password' => secret})
           %w[medium high].each do |level|
-            expect { check(level, :cmdline, :cmdline) }.not_to(raise_error) # client's own secret to its own host
-            expect { check(level, :preset, :preset) }.not_to(raise_error)   # both from the same preset
-            expect { check(level, :preset, :env) }.not_to(raise_error)      # host not chosen by the client
-            expect { check(level, :cmdline, :preset) }.not_to(raise_error)  # client secret to an operator host
+            expect { check(level, :preset, :preset, url: configured_url) }.not_to(raise_error)
+            # the same URL, given on the command line
+            expect { check(level, :cmdline, :cmdline, url: configured_url) }.not_to(raise_error)
+            expect { check(level, :preset, :env) }.not_to(raise_error)
+          end
+        end
+
+        it 'allows the secret of the client, sent anywhere, and no URL' do
+          %w[medium high].each do |level|
+            expect { check(level, :cmdline, :cmdline) }.not_to(raise_error)
+            # a preset given by the client, with its own secret
+            expect { check(level, :preset, :preset) }.not_to(raise_error)
+            expect { check(level, :env, :env, url: nil) }.not_to(raise_error)
           end
         end
 
         it 'does not restrict at level low (the command line default)' do
+          security.add_configured({'password' => secret})
           expect { check('low', :preset, :cmdline) }.not_to(raise_error)
+        end
+
+        it 'declares the strings of a structure, and only strings' do
+          security.add_configured({'a' => [configured_url, {'b' => secret}], 'n' => 1})
+          expect(security.configured?(configured_url)).to(be(true))
+          expect(security.configured?(secret)).to(be(true))
+          expect(security.configured?(1)).to(be(false))
+          expect(security.configured?(client_url)).to(be(false))
+          security.reset
+          expect(security.configured?(secret)).to(be(false))
+        end
+      end
+
+      # e.g. parameters of agent `node` in option `transfer`
+      describe '#check_credentials_in' do
+        let(:secret) { SecureRandom.hex(16) }
+
+        before do
+          security.add_configured({'url' => 'https://node.example.com', 'password' => secret})
+          security.options = {'level' => 'high'}
+        end
+
+        it 'refuses a secret of the configuration with a URL that is not in it' do
+          expect { security.check_credentials_in({'agent' => 'node', 'url' => 'https://elsewhere.example.com', 'password' => secret}, what: 'option transfer') }
+            .to(raise_error(BadArgument, /option transfer: password: a secret of the configuration cannot be sent/))
+          expect { security.check_credentials_in({url: 'https://elsewhere.example.com', api_key: secret}, what: 'option transfer') }.to(raise_error(BadArgument, /api_key/))
+        end
+
+        it 'allows the URL of the configuration, a secret of the client, and a value without URL' do
+          expect { security.check_credentials_in({'url' => 'https://node.example.com', 'password' => secret}, what: 'o') }.not_to(raise_error)
+          expect { security.check_credentials_in({'url' => 'https://elsewhere.example.com', 'password' => SecureRandom.hex(16)}, what: 'o') }.not_to(raise_error)
+          expect { security.check_credentials_in({'password' => secret}, what: 'o') }.not_to(raise_error)
+          expect { security.check_credentials_in('text', what: 'o') }.not_to(raise_error)
+        end
+      end
+
+      # Option `ts` merged into the transfer spec of a command
+      describe '#check_transfer_host' do
+        let(:application_spec) { {'remote_host' => 'server.example.com', 'remote_password' => SecureRandom.hex(16)} }
+
+        def check(user_spec, level: 'high', spec: application_spec)
+          security.options = {'level' => level}
+          security.check_transfer_host(spec.merge(user_spec), user_spec, application_host: spec['remote_host'])
+        end
+
+        it 'refuses another host for the credentials of the command, at level medium and high' do
+          %w[medium high].each do |level|
+            expect { check({'remote_host' => 'elsewhere.example.com'}, level: level) }
+              .to(raise_error(BadArgument, /option ts: remote_host: the credentials of the transfer \(remote_password\) cannot be sent to a host that is not in the configuration at security level #{level}/))
+          end
+          expect { check({'remote_host' => 'elsewhere.example.com'}, spec: {'remote_host' => 'server.example.com', 'token' => 'Bearer x'}) }.to(raise_error(BadArgument, /\(token\)/))
+        end
+
+        it 'allows the host of the command, a host of the configuration, the credentials of the client, a transfer spec without credentials, and level low' do
+          expect { check({'remote_host' => 'server.example.com'}) }.not_to(raise_error)
+          expect { check({}) }.not_to(raise_error)
+          expect { check({'remote_host' => 'elsewhere.example.com', 'remote_password' => SecureRandom.hex(16)}) }.not_to(raise_error)
+          expect { check({'remote_host' => 'elsewhere.example.com'}, spec: {'remote_host' => 'server.example.com'}) }.not_to(raise_error)
+          expect { check({'remote_host' => 'elsewhere.example.com'}, level: 'low') }.not_to(raise_error)
+          security.add_configured('elsewhere.example.com')
+          expect { check({'remote_host' => 'elsewhere.example.com'}) }.not_to(raise_error)
         end
       end
 

@@ -826,17 +826,19 @@ module Aspera
         end
       end
 
-      # A secret from a preset (the server's configuration) must not be sent to a `url` given on the command line by a client.
+      # A secret of a preset (the server's configuration) must not be sent to a `url` that is not in the configuration, e.g. given on the command line by a client.
       describe 'credential and host from different sources (security)' do
         after { Security.instance.reset }
 
-        # @param argv          [Array<String>] command line
-        # @param preset        [Hash]          values applied with source `preset`
+        # @param argv       [Array<String>] command line
+        # @param preset     [Hash]          values applied with source `preset`
+        # @param configured [Boolean]       `true`: values read from the configuration, as by `PresetManager#by_name`, else a preset given by the client
         # @return [Parser] parser with options `url` and `password` declared and parsed
-        def build_with_secret(argv, preset)
+        def build_with_secret(argv, preset, configured: true)
           opts = build_parser(argv)
           opts.declare(:url, description: 'URL')
           opts.declare(:password, description: 'Password')
+          Security.instance.add_configured(preset) if configured
           opts.add_option_preset(preset, 'myserver')
           opts.parse_options!
           opts
@@ -845,7 +847,20 @@ module Aspera
         it 'refuses at level high a preset secret with a command-line url' do
           Security.instance.options = {'level' => 'high'}
           opts = build_with_secret(['--url=https://elsewhere.example.com'], {'password' => '<PASSWORD>'})
-          expect { opts.get_option(:password) }.to(raise_error(BadArgument, /secret from the configuration cannot be sent/))
+          expect { opts.get_option(:password) }.to(raise_error(BadArgument, /secret of the configuration cannot be sent/))
+        end
+
+        it 'refuses at level high a secret of the configuration given on the command line with a command-line url' do
+          Security.instance.options = {'level' => 'high'}
+          Security.instance.add_configured('<PASSWORD>')
+          opts = build_with_secret(['--url=https://elsewhere.example.com', '--password=<PASSWORD>'], {}, configured: false)
+          expect { opts.get_option(:password) }.to(raise_error(BadArgument, /secret of the configuration cannot be sent/))
+        end
+
+        it 'allows at level high the secret of a preset given by the client' do
+          Security.instance.options = {'level' => 'high'}
+          opts = build_with_secret([], {'url' => 'https://elsewhere.example.com', 'password' => '<PASSWORD>'}, configured: false)
+          expect { opts.get_option(:password) }.not_to(raise_error)
         end
 
         it 'allows the preset secret with the url of the same preset' do
@@ -857,6 +872,35 @@ module Aspera
         it 'allows at level low (the command line default)' do
           opts = build_with_secret(['--url=https://elsewhere.example.com'], {'password' => '<PASSWORD>'})
           expect { opts.get_option(:password) }.not_to(raise_error)
+        end
+      end
+
+      # The configuration is read-only for a client at levels `medium` and `high`: the values of a preset read from it are the ones of the operator
+      describe 'option of level low in a preset (security)' do
+        before { Security.instance.options = {'level' => 'high'} }
+        after { Security.instance.reset }
+
+        # @param argv       [Array<String>] command line
+        # @param configured [Boolean]       see Parser#add_option_preset
+        # @return [Parser] parser with option `insecure` (level `low`) set by a preset, and parsed
+        def build_with_preset(argv, configured:)
+          opts = build_parser(argv)
+          opts.declare(:insecure, description: 'Insecure', allowed: Option::Type::BOOLEAN, security: :low)
+          opts.add_option_preset({'insecure' => true}, 'test', configured: configured)
+          opts.parse_options!
+          opts
+        end
+
+        it 'accepts at level high the value of a preset read from the configuration' do
+          expect(build_with_preset([], configured: true).get_option(:insecure)).to(be(true))
+        end
+
+        it 'refuses at level high the value of a preset given by the client' do
+          expect { build_with_preset([], configured: false) }.to(raise_error(BadArgument, /option insecure: disabled by security level high/))
+        end
+
+        it 'refuses at level high the value of the command line, also over a preset read from the configuration' do
+          expect { build_with_preset(['--insecure=no'], configured: true) }.to(raise_error(BadArgument, /option insecure: disabled by security level high/))
         end
       end
     end

@@ -101,17 +101,23 @@ RSpec.describe(Aspera::Cli::Mcp::Tool) do
         Dir.mktmpdir do |client_home|
           server_file = File.join(server_home, 'config.yaml')
           client_file = File.join(client_home, 'config.yaml')
+          File.write(server_file, {'config' => {'version' => Aspera::Cli::VERSION}, 'p1' => {'key' => 'val'}}.to_yaml)
           Aspera::Cli::Security.instance.reset
           Aspera::Cli::Security.instance.lock('spec', default: :high)
           described_class.main_folder = server_home
           described_class.config_file = server_file
-          resp = described_class.call(args: %w[config preset set p1 key val])
+          resp = described_class.call(args: %w[config preset get p1 key])
           expect(resp.error?).to(be(false))
-          expect(File.exist?(server_file)).to(be(true))
-          resp = described_class.call(args: ['config', 'preset', 'set', 'p2', 'key', 'val', "--config-file=#{client_file}"])
+          expect(resp.content.first[:text]).to(eq('val'))
+          resp = described_class.call(args: ['config', 'preset', 'get', 'p1', 'key', "--config-file=#{client_file}"])
           expect(resp.error?).to(be(true))
           expect(resp.content.first[:text]).to(include('option config_file: disabled by security level high'))
           expect(File.exist?(client_file)).to(be(false))
+          # The configuration of the server is read-only for the client
+          resp = described_class.call(args: %w[config preset set p1 key other])
+          expect(resp.error?).to(be(true))
+          expect(resp.content.first[:text]).to(include('command preset set: disabled by security level high'))
+          expect(Aspera::Yaml.safe_load(File.read(server_file))['p1']).to(eq({'key' => 'val'}))
         ensure
           Aspera::Cli::Security.instance.reset
         end
@@ -157,13 +163,17 @@ RSpec.describe(Aspera::Cli::Mcp::Tool) do
           described_class.main_folder = server_home
           described_class.vault = {'default' => 'f', 'stores' => {'f' => {'type' => 'file'}}}
           described_class.vault_password = pw
+          # The server creates its vault, at level low
           Aspera::Cli::Security.instance.reset
+          resp = described_class.call(args: ['config', 'vault', 'create', '@json:{"label":"a","password":"<SECRET>"}'])
+          expect(resp.error?).to(be(false))
+          expect(File.exist?(File.join(server_home, 'vault.bin'))).to(be(true))
           Aspera::Cli::Security.instance.lock('spec', default: :high)
           client_vault = {'stores' => {'f' => {'file' => client_file, 'password' => SecureRandom.hex(8)}}}
-          resp = described_class.call(args: ['config', 'vault', 'create', '@json:{"label":"a","password":"<SECRET>"}', '-P', "@json:#{{'vault' => client_vault}.to_json}"])
+          resp = described_class.call(args: ['config', 'vault', 'show', 'a', '-P', "@json:#{{'vault' => client_vault}.to_json}"])
           expect(resp.error?).to(be(false))
+          expect(resp.content.first[:text]).to(include('"label":"a"'))
           expect(File.exist?(client_file)).to(be(false))
-          expect(File.exist?(File.join(server_home, 'vault.bin'))).to(be(true))
         ensure
           Aspera::Cli::Security.instance.reset
         end

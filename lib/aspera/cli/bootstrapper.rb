@@ -146,7 +146,7 @@ module Aspera
         default_config_name = @context.presets.plugin_default_name(CONF_GLOBAL_SYM)
         unless default_config_name.nil?
           Log.log.debug { "add_plugin_default_preset:#{CONF_GLOBAL_SYM}:#{default_config_name}" }
-          @context.options.add_option_preset(@context.presets.by_name(default_config_name), 'default_plugin', override: false)
+          @context.options.add_option_preset(@context.presets.by_name(default_config_name), 'default_plugin', override: false, configured: true)
         end
       end
 

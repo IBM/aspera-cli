@@ -137,9 +137,11 @@ module Aspera
         # @param warn_deprecation [Boolean] Emit deprecation warning (false for internal transfers)
         # @param merge [Boolean] Merge `Hash` and `Array` with current value (false: value is already complete)
         # @param final [Boolean] The value is final: values from a lower source (preset, environment) are ignored, not merged nor checked
+        # @param configured [Boolean] Value of a preset read from the configuration (by its name): set by the operator, not restricted by the security level
+        #   (a client cannot change the configuration at levels `medium` and `high`), see `Parser#add_option_preset`
         # @return [nil]
         # @raise [SchemaRequest] if value is `help` and schema is known
-        def assign_value(value, source:, warn_deprecation: true, merge: true, final: false)
+        def assign_value(value, source:, warn_deprecation: true, merge: true, final: false, configured: false)
           # Value from a source with lower priority than current value: only fills containers
           lower = !@source.nil? && Option::Source.priority(source) < Option::Source.priority(@source)
           # Final value (set by the program for the whole run): a lower source is ignored, even for a container
@@ -152,8 +154,9 @@ module Aspera
             return
           end
           Aspera.assert(!@deprecation, type: :warn) { "Option #{@option} is #{@deprecation}" } if warn_deprecation
-          # Values set by the program itself are not restricted: those from command line, preset, environment are
-          Security.instance.check_level(@security, "option #{@option}") if restricted_source?(source)
+          # Values set by the program, the environment or the configuration are not restricted: those from command line, a preset given by the client, interactive input are
+          restricted = restricted_source?(source) && !configured
+          Security.instance.check_level(@security, "option #{@option}") if restricted
           if schema_request?(value)
             return if lower
             raise SchemaRequest.new(:option, @option, @schema) unless @schema.nil?
@@ -162,7 +165,9 @@ module Aspera
             return
           end
           new_value = coerce(ExtendedValue.instance.evaluate(value, context: "option: #{@option}", allowed: @types))
-          check_sub_options_security(new_value) if restricted_source?(source)
+          check_sub_options_security(new_value) if restricted
+          # Set by the one who starts the process: a secret (e.g. in a `Hash`) of the environment can be sent to a URL of the environment, see `Security#check_credentials_in`
+          Security.instance.add_configured(new_value) if source.eql?(:env)
           new_value = {@shorthand => new_value} if @shorthand && new_value.is_a?(String)
           declare_secrets(new_value)
           Log.log.trace1 { "#{source}: #{@option} <- (#{new_value.class})#{Secret::Hider.instance.hidden_copy(new_value)}" }
@@ -207,7 +212,7 @@ module Aspera
         private
 
         # Values set by the program, or by the environment of the process (under control of the one who starts it), are not restricted:
-        # those from command line, presets (that a client can modify) and interactive input are.
+        # those from command line, presets and interactive input are, unless the preset is read from the configuration (`configured:` of #assign_value).
         # @param source [Symbol] `Option::Source`
         # @return [Boolean] `true` if a value from this source is checked against security level
         def restricted_source?(source)

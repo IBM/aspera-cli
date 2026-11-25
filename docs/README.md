@@ -2928,12 +2928,21 @@ The argument `-` is the standard input (`@stdin:stream`) only for `config ascp l
 The same applies to `@file:<path>` in the parameters of stores of option `vault`, and in option `vault_password` (for example, `token`), although the file is read when used, not when the option is evaluated.
 
 A secret (read by `@secret:`, `@vault:`, or `@preset:`) is hidden in results by its value: processed by another extended value, it could be revealed (for example, split by `@list:@vault:...`, or with a short value in a text by `@extend:`).
-With levels `medium` and `high`, a secret must be the whole value of an option or argument, for example `@preset:<PRESET_NAME>.password` for option `password`, and it cannot be a parameter name of `config preset set`.
+With levels `medium` and `high`, a secret must be the whole value of an option or argument, for example `@preset:<PRESET_NAME>.password` for option `password`.
 
-At levels `medium` and `high`, a secret that comes from the configuration of the server (a preset, or the environment) is not sent to a `url` given on the command line: a secret (option `password`, `client_secret`, `private_key`, `passphrase`) and the `url` it is sent to must come from the same place (both from a preset, or both given on the command line).
+At levels `medium` and `high`, a secret of the configuration of the server is sent only to a URL of its configuration: a secret (option `password`, `client_secret`, `private_key`, `passphrase`) read from a preset or from the vault, or set in the environment, is refused when option `url` is neither read from the configuration nor set in the environment.
+The value is checked, whatever the way it is given: `--preset=<PRESET_NAME>` with another `--url`, a reference to the secret (`@preset:<PRESET_NAME>.password` or `@vault:...`) as value of option `password` with another `--url`, or a preset given as a `Hash` (`--preset=@json:...`) that refers to a secret of the configuration.
+The same URL as the one of the preset, given on the command line, is accepted, and so is a secret given by the client itself.
+The same applies to the keys of an option that is a `Hash` with a key `url` and a secret (`password`, `client_secret`, `private_key`, `passphrase`, `api_key`), for example the parameters of agent `node` of option `transfer` (`--transfer=@preset:<PRESET_NAME> --transfer.url=...` is refused).
+And the credentials of the transfer spec of a command (`remote_password`, `token`, `ssh_private_key`, `ssh_private_key_passphrase`), for example the password of a `server` preset or a token of the application, are not sent to another `remote_host` given in option `ts`, unless that host is in the configuration (for example, option `ts` in a preset), or the credentials are given in `ts` with it.
 This prevents a client that drives `ascli` (for example through the MCP server) from redirecting the saved credentials of the server to a host that it chooses.
+A secret of a preset sent to the URL of another preset of the configuration is not refused.
 
-Features that execute code (own, or downloaded), load code, or write a file chosen by the client, are available only at level `low`:
+At levels `medium` and `high`, the configuration is read-only: commands that change presets or the vault are refused (see the table below), and the configuration file is not saved when a command changed it.
+So its presets are the ones of the operator: a client cannot add its own URL to a preset that holds a secret, or copy a secret to a preset of its own.
+Change the configuration at level `low`, for example on the command line, before starting the MCP server.
+
+Features that execute code (own, or downloaded), load code, write a file chosen by the client, or change the configuration, are available only at level `low`:
 
 | Feature | Why |
 |---|---|
@@ -2944,6 +2953,7 @@ Features that execute code (own, or downloaded), load code, or write a file chos
 | Option `out`, key `file` (and `output`), option `pid_file` | Write (or truncate, or delete) a file chosen by the client |
 | Option `home` | Configuration folder: its presets, and its folder `plugins` (Ruby code) are used |
 | Option `config_file` | Configuration file: its presets are used, and a command that changes presets writes it |
+| Commands that change the configuration: `config preset set`, `delete`, `unset`, `initialize`, `update`, `ask`, `secure`, `config wizard`, `config initdemo`, `config vault create`, `delete`, `import`, `password` | The presets and the vault are the ones of the operator: changed by a client, a secret of the server could be sent to a host of the client |
 | Options `vault` and `vault_password` | Secret stores of `@vault:`: a file store is created and written at the path given, other stores connect to the server given |
 | Option `plugin_folder` | Plugins are Ruby code |
 | Plugins of the folders of option `plugin_folder` (by default, folder `plugins` of the configuration folder) | Ruby code: not loaded at other levels, also if the file was there before |
@@ -2953,10 +2963,11 @@ Features that execute code (own, or downloaded), load code, or write a file chos
 | Options `insecure`, `ignore_certificate`, `cert_stores`, `http_proxy`, and keys `ca_file`, `verify_mode`, `ssl_options` of option `http_options` | Disable or redirect the validation of a server certificate, or route through a proxy: a client could intercept the connections (and the credentials) of the server |
 | Transfer parameters `ascp_args` (agent `direct`) and `ssh_args` (transfer spec) | Raw arguments to `ascp` or the external `ssh`: can start a local program (for example an `ssh` `ProxyCommand`) |
 
-At other levels, an option is refused whatever the way it is set (command line, or preset), and a command is not listed by `config commands`.
+At other levels, an option is refused when the client sets it (command line, or preset given as a `Hash`, for example `--preset=@json:...`), and a command is not listed by `config commands`.
 Values from the environment of the process (for example `ASCLI_HOME`) are not restricted: they are set by the one who starts the process, not by a client.
+Neither are the values of a preset read from the configuration (a default preset, or `--preset=<PRESET_NAME>`), as the configuration is read-only at these levels: for example, option `ignore_certificate` in the default preset of the server.
+Extended values in a preset are restricted as on the command line (for example `@ruby:`).
 A sub-option of an option is restricted in the same way: it is marked `x-security: low` in the schema of the option (for example, `file` of option `out`), and refused when given, by dot notation (`--out.file=...`) or in a `Hash`.
-A preset is used later, maybe at level `low`: at level `medium` and `high`, `config preset set` refuses such an option, and a value that contains an extended value that the level refuses (for example `@val:@ruby:...`).
 
 At level `high`, a transfer uses an agent that runs on a host that the user controls, not the local host: agent `node`, or agent `transferd` attached to a remote daemon (parameter `url` of a daemon on another host).
 An agent that runs on the local host is refused: `direct` (local `ascp`), a local `transferd` daemon (started by `ascli`, or on a loopback address), `connect` and `desktop` (local applications), and `httpgw` (the files pass through the process).
@@ -12009,11 +12020,12 @@ With both transports:
 - Extended value `@stdin:` is refused, and so is the argument `-` (standard input, `@stdin:stream`) of `config ascp logs` and `sync logs`.
 - Commands sent by the client run in the main folder of the server (option `home`, `ASCLI_HOME`, or the default one), and use its configuration file (option `config_file`) and its vault (options `vault` and `vault_password`, also when set in a preset of the server).
   The client cannot change them: these options are refused at levels `medium` and `high`.
-  If the command line of the server sets option `security` to `medium` or `high`, the server cannot set them on its command line or in a preset either: set them in its environment, for example `ASCLI_VAULT` and `ASCLI_VAULT_PASSWORD`.
+  If the command line of the server sets option `security` to `medium` or `high`, the server cannot set them on its command line: set them in its environment, for example `ASCLI_VAULT` and `ASCLI_VAULT_PASSWORD`.
 - `@secret:` is entered by the user on a web page, see [Secrets entered in a web page](#secrets-entered-in-a-web-page).
 - Secrets are hidden in responses, also a value shorter than 8 characters as a word in a text (for example, a short password in an error message).
 - The [Security Level](#security-level) is `high` by default: `@ruby:`, `@file:` (also in the parameters of stores of option `vault`), `@uri:`, `@env:`, and `@zlib:` are refused, and a secret must be the whole value: hidden in results, it cannot be processed by another extended value.
-  It applies to commands sent by the client, and to presets, because the client can modify presets.
+  It applies to commands sent by the client, and to presets of the server.
+  The configuration of the server (presets and vault) is read-only for the client, and a secret of the configuration is sent only to a URL of the configuration: the client uses the presets of the server, but cannot send their secrets to another host.
   Commands sent by the client cannot change option `security`.
   Features that execute code, such as option `notify_template` or command `config plugins create`, plugins, and writing to a file chosen by the client (option `out.file`), are refused, see [Security Level](#security-level).
   Files can be written (for example by `config download`, or by a transfer that receives files) only in `writable_paths`, none by default: without it, the client cannot download files.

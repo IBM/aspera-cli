@@ -36,5 +36,18 @@ RSpec.describe(Aspera::Cli::Option::Value) do
     ensure
       Aspera::Cli::Security.instance.reset
     end
+
+    # The configuration is read-only for a client at levels `medium` and `high`: the values of a preset read from it are the ones of the operator
+    it 'checks the security level of a preset given by the client, not of a preset read from the configuration' do
+      Aspera::Cli::Security.instance.options = {'level' => 'high'}
+      expect { hash_option(:vault, security: :low).assign_value({'a' => 1}, source: :preset) }.to(raise_error(Aspera::Cli::BadArgument, /option vault: disabled by security level high/))
+      %i[preset plugin_preset].each do |source|
+        option = hash_option(:vault, security: :low)
+        expect { option.assign_value({'a' => 1}, source: source, configured: true) }.not_to(raise_error)
+        expect(option.value).to(eq({'a' => 1}))
+      end
+    ensure
+      Aspera::Cli::Security.instance.reset
+    end
   end
 end

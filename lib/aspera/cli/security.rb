@@ -32,15 +32,20 @@ module Aspera
       }.freeze
       # Levels that allow processing a secret (e.g. by an extended value): the result could reveal it, as only declared values are hidden
       SECRET_PROCESSING_LEVELS = %i[low].freeze
-      # Sources (`Option::Source`) of an option value controlled by a client (a command of an MCP client), not the operator's configuration of the server
-      CLIENT_SOURCES = %i[cmdline interactive].freeze
-      private_constant :EXTENDED_VALUE_LEVELS, :SECRET_PROCESSING_LEVELS, :CLIENT_SOURCES
+      # Sources (`Option::Source`) of an option value set by the one who starts the process (environment, defaults, the program itself), not by a client.
+      # A value from a preset is not one of them: a preset can also be given by the client (e.g. `--preset=@json:...`), see #add_configured.
+      OPERATOR_SOURCES = %i[default code env].freeze
+      # Keys of a `Hash` option (e.g. parameters of agent `node` in option `transfer`) that hold a secret sent to its key `url`
+      CREDENTIAL_KEYS = %w[password client_secret private_key passphrase api_key].freeze
+      # Keys of a transfer spec that hold a credential for its `remote_host`
+      TRANSFER_CREDENTIAL_KEYS = %w[remote_password token ssh_private_key ssh_private_key_passphrase].freeze
+      private_constant :EXTENDED_VALUE_LEVELS, :SECRET_PROCESSING_LEVELS, :OPERATOR_SOURCES, :CREDENTIAL_KEYS, :TRANSFER_CREDENTIAL_KEYS
 
       def initialize
         reset
       end
 
-      # Back to default: level `low`, no allowed path, not locked
+      # Back to default: level `low`, no allowed path, not locked, no value read from the configuration
       # @return [nil]
       def reset
         @level = nil
@@ -48,6 +53,8 @@ module Aspera
         @allowed_paths = []
         @writable_paths = []
         @locked = nil
+        @configured_values = Set.new
+        nil
       end
 
       # @return [Symbol] Level set by option `security`, else default level
@@ -143,21 +150,78 @@ module Aspera
         raise BadArgument, "#{what}: cannot process a secret at security level #{level}, as the result could reveal it: #{hint}, or use level low (#{where_to_set})"
       end
 
-      # A secret from the configuration of the server (a preset, the environment, a default: an operator source) must not be sent to a host (option `url`)
-      # chosen by a client (on the command line), so that a client cannot redirect the saved credentials of the server to a host it controls.
-      # At levels `medium` and `high`, refused when the secret comes from an operator source and the host from a client source (the two must come from the same place).
-      # It does not catch a secret the client fetches itself from a store by its reference (e.g. `@preset:name.password`), which keeps the secret from being
-      # revealed to the client but not from being sent: that case needs the provenance of the secret value, see the manual.
-      # @param secret_source [Symbol, nil] source of the secret option value (`Option::Source`)
-      # @param host_source   [Symbol, nil] source of the host option (`url`)
-      # @param what          [String] For the error message, e.g. `option password`
-      # @raise [BadArgument] If the secret is from an operator source and the host from a client source, at level `medium` or `high`
-      def check_credential_host(secret_source:, host_source:, what:)
-        return if level.eql?(:low)
-        # The secret is the client's own (a client source), or the host is not chosen by the client: not a redirection of the server's credentials
-        return if CLIENT_SOURCES.include?(secret_source) || !CLIENT_SOURCES.include?(host_source)
-        raise BadArgument, "#{what}: a secret from the configuration cannot be sent to a URL given on the command line at security level #{level}: " \
-          "give the URL in the same preset as the secret, or the secret as the value of option password (#{where_to_set})"
+      # Declare values of the configuration of the server: read from a preset (by its name) or the vault, or set in the environment of the process.
+      # The provenance of a value is known by the value itself, whatever the way it is referenced (`--preset=<name>`, `@preset:`, `@vault:`, in a preset),
+      # so that #check_credential_host knows that a secret is the one of the server, and that a URL is one of its configuration.
+      # @param value [Object] Value read: a `String`, or a `Hash` or `Array` of values
+      # @return [Object] The value
+      def add_configured(value)
+        case value
+        when Hash then value.each_value { |v| add_configured(v) }
+        when Array then value.each { |v| add_configured(v) }
+        when String then @configured_values.add(value)
+        end
+        value
+      end
+
+      # @param value [Object] Value of an option
+      # @return [Boolean] `true` if the value was read from the configuration, see #add_configured
+      def configured?(value)
+        value.is_a?(String) && @configured_values.include?(value)
+      end
+
+      # A secret of the server must not be sent to a host (option `url`) chosen by a client, so that a client cannot redirect the saved credentials of the server
+      # to a host it controls: at levels `medium` and `high`, a secret of the server can be sent only to a URL of its configuration.
+      # A secret is the one of the server when it is read from the configuration (preset, vault), whatever the way it is referenced (e.g. `@preset:<name>.password`),
+      # or when it comes from an operator source (environment). Same for the URL.
+      # The configuration cannot be changed by a client at these levels (commands that write presets and the vault are refused), so its URLs are the ones of the operator.
+      # A secret of the server sent to the URL of another of its presets is not refused.
+      # @param what          [String]      For the error message, e.g. `option password`
+      # @param secret        [Object]      Value of the secret option
+      # @param secret_source [Symbol, nil] Source of the secret option value (`Option::Source`)
+      # @param url           [String, nil] Value of option `url`
+      # @param url_source    [Symbol, nil] Source of option `url`
+      # @raise [BadArgument] If, at level `medium` or `high`, the secret is the one of the server, and the URL is not one of its configuration
+      def check_credential_host(what:, secret:, secret_source:, url:, url_source:)
+        return if level.eql?(:low) || url.nil?
+        # The secret is not the one of the server: the client's own
+        return unless configured?(secret) || OPERATOR_SOURCES.include?(secret_source)
+        return if configured?(url) || OPERATOR_SOURCES.include?(url_source)
+        raise BadArgument, "#{what}: a secret of the configuration cannot be sent to a URL that is not in the configuration at security level #{level}: " \
+          "use the preset that has both the URL and the secret, or give the secret itself (#{where_to_set})"
+      end
+
+      # Same as #check_credential_host for the keys of a `Hash`, e.g. the parameters of agent `node` in option `transfer`: key `url` and secret keys.
+      # The provenance of a key is known only by its value, see #add_configured.
+      # @param value [Object] Value of an option, checked if it is a `Hash` with key `url`
+      # @param what  [String] For the error message, e.g. `option transfer`
+      # @raise [BadArgument] If, at level `medium` or `high`, a secret of the configuration is sent to a URL that is not in the configuration
+      def check_credentials_in(value, what:)
+        return unless value.is_a?(Hash)
+        url = value['url'] || value[:url]
+        return unless url.is_a?(String)
+        CREDENTIAL_KEYS.each do |key|
+          secret = value[key] || value[key.to_sym]
+          check_credential_host(what: "#{what}: #{key}", secret: secret, secret_source: nil, url: url, url_source: nil) unless secret.nil?
+        end
+      end
+
+      # A transfer spec built by a command holds credentials for its `remote_host` (e.g. a token of the application, or the password of a preset):
+      # at levels `medium` and `high`, option `ts` cannot send them to another host, unless that host is in the configuration (see #add_configured).
+      # Credentials given in option `ts` with the host are the ones of the client.
+      # @param transfer_spec      [Hash]        Final transfer spec, option `ts` merged
+      # @param user_transfer_spec [Hash]        Option `ts`
+      # @param application_host   [String, nil] `remote_host` of the transfer spec of the command, before option `ts`
+      # @raise [BadArgument] If, at level `medium` or `high`, option `ts` changes the host of credentials that it does not give
+      def check_transfer_host(transfer_spec, user_transfer_spec, application_host:)
+        host = user_transfer_spec['remote_host']
+        return if level.eql?(:low) || host.nil? || host.eql?(application_host) || configured?(host)
+        credentials = TRANSFER_CREDENTIAL_KEYS.select do |key|
+          transfer_spec.key?(key) && (!user_transfer_spec.key?(key) || configured?(user_transfer_spec[key]))
+        end
+        return if credentials.empty?
+        raise BadArgument, "option ts: remote_host: the credentials of the transfer (#{credentials.join(', ')}) cannot be sent to a host that is not in the configuration " \
+          "at security level #{level}: use the host of the command, or give the credentials with the host (#{where_to_set})"
       end
 
       # At level `medium`, the real path is checked, so that neither `..` nor a symbolic link leads outside of allowed paths.

@@ -560,7 +560,7 @@ module Aspera
         # Load default preset options for this plugin from config file
         default_config_name = @context.presets.plugin_default_name(plugin_name_sym)
         Log.log.debug { "add_plugin_default_preset:#{plugin_name_sym}:#{default_config_name}" }
-        @context.options.add_option_preset(@context.presets.by_name(default_config_name), 'default_plugin', override: false) unless default_config_name.nil?
+        @context.options.add_option_preset(@context.presets.by_name(default_config_name), 'default_plugin', override: false, configured: true) unless default_config_name.nil?
         command_plugin = Plugins::Factory.instance.create(plugin_name_sym, context: @context)
         return command_plugin
       end

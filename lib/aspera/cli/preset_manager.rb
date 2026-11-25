@@ -5,6 +5,7 @@
 
 require_relative 'extended_value'
 require_relative 'vault_manager'
+require_relative 'security'
 require_relative '../dot_container'
 require_relative 'version'
 require_relative 'info'
@@ -58,6 +59,7 @@ module Aspera
         @use_plugin_defaults = use_plugin_defaults
         @config_presets      = {}
         @checksum_on_disk    = nil
+        @checksum_loaded     = nil
         read_config_file
       end
 
@@ -114,19 +116,26 @@ module Aspera
         end
         # Hidden wherever they appear (logs, results), also when copied under another key name
         Secret::Hider.instance.add_secrets_in(@config_presets)
+        # After the changes made by the load itself (version stamp): saved also at a security level that refuses changes
+        @checksum_loaded = checksum
       end
 
       # Save to disk only if content changed since last load/save.
+      # At security levels `medium` and `high`, the configuration is read-only: a command shall not change it (the commands that write it are refused),
+      # so that its presets are the ones of the operator, see `Security#check_credential_host`.
       # @return [Boolean] true if actually written
+      # @raise [BadArgument] If the presets were changed, at security level `medium` or `high`
       def save_if_needed
         Aspera.assert(!@config_presets.nil?, type: Cli::Error) { 'no configuration loaded' }
         current = checksum
         return false if @checksum_on_disk.eql?(current)
+        Security.instance.check_level(:low, 'saving the configuration file') unless current.eql?(@checksum_loaded)
         FileUtils.mkdir_p(File.dirname(@config_file))
         Environment.restrict_file_access(File.dirname(@config_file))
         Log.log.info { "Saving config file: #{@config_file}" }
         Environment.write_file_restricted(@config_file, force: true) { @config_presets.to_yaml }
         @checksum_on_disk = current
+        @checksum_loaded = current
         true
       end
 
@@ -160,7 +169,7 @@ module Aspera
 
       # Resolve and return a deep-cloned, extended copy of a named preset.
       # Supports dot-notation (e.g. "outer.inner").
-      # Meta keys (prefix `_`) are removed, extended values are evaluated, and a secret read alone is declared to the secret hider.
+      # Meta keys (prefix `_`) are removed, extended values are evaluated, a secret read alone is declared to the secret hider, and values are declared as read from the configuration.
       # @param config_name  [String]        Preset name, optionally followed by dot-separated sub keys
       # @param include_path [Array<String>] Names already being resolved, to detect include loops
       # @return [Hash, String, Object] Copy of the preset, or of the selected sub value
@@ -184,7 +193,8 @@ module Aspera
         current = ExtendedValue.instance.evaluate(current, context: 'preset')
         # A secret read alone has no key name: declared, so that it is hidden wherever it appears
         Secret::Hider.instance.add_secret_values(current) if Secret::Hider.instance.secret?(names.last, current)
-        current
+        # Values of the configuration: a secret can be sent to its URLs only, see `Security#check_credential_host`
+        Security.instance.add_configured(current)
       end
 
       # Set a single key in a preset hash (creates the preset if absent).

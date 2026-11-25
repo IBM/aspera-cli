@@ -186,7 +186,10 @@ module Aspera
 
         # @return [Hash] agent type (key `agent`) and agent parameters, from options `transfer` and deprecated `transfer_info`
         def transfer_options
-          @context.options.get_option(:transfer_info).deep_merge(@context.options.get_option(:transfer))
+          result = @context.options.get_option(:transfer_info).deep_merge(@context.options.get_option(:transfer))
+          # e.g. the `url` of agent `node` from one option, its `password` from the other
+          Cli::Security.instance.check_credentials_in(result, what: 'option transfer')
+          result
         end
 
         # Options to create the `direct` agent that runs the local `async` program for a `sync` command.
@@ -366,7 +369,10 @@ module Aspera
           # update command line paths, unless destination already has one
           @user_transfer_spec['paths'] = transfer_spec['paths'] || ts_source_paths
           # updated transfer spec with command line
+          application_host = transfer_spec['remote_host']
           transfer_spec.deep_merge!(@user_transfer_spec)
+          # The credentials of the transfer spec of the command are for its host
+          Cli::Security.instance.check_transfer_host(transfer_spec, @user_transfer_spec, application_host: application_host)
           # Files are written where the client chooses, see Security: only for an agent that writes on the local system
           receives_locally = transfer_spec['direction'].eql?(Aspera::Transfer::Spec::DIRECTION_RECEIVE) && agent_instance.local_destination?
           transfer_spec['destination_root'] = Cli::Security.instance.writable_path(transfer_spec['destination_root']) if receives_locally && transfer_spec['destination_root']

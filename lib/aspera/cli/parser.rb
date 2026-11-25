@@ -316,21 +316,26 @@ module Aspera
         end
         option.validate_complete(result) if complete
         check_credential_host(option_symbol) if !result.nil? && CREDENTIAL_OPTIONS.include?(option_symbol)
+        Security.instance.check_credentials_in(result, what: "option #{option_symbol}")
         result
       end
 
       # Options that hold a secret sent to the server at option `url`: a client must not redirect them to a host it chooses, see `Security#check_credential_host`
       CREDENTIAL_OPTIONS = %i[password client_secret private_key passphrase].freeze
 
-      # When a credential is read while a host option `url` is declared, refuse (at levels medium and high) to send a secret from the server's configuration
-      # to a `url` chosen on the command line by a client.
+      # When a credential is read while a host option `url` is declared, refuse (at levels medium and high) to send a secret of the server's configuration
+      # to a `url` that is not in its configuration, e.g. chosen by a client.
       # @param secret_symbol [Symbol] the credential option being read
       def check_credential_host(secret_symbol)
         return unless option_declared?(:url)
+        secret = option_def(secret_symbol)
+        url = option_def(:url)
         Security.instance.check_credential_host(
           what:          "option #{secret_symbol}",
-          secret_source: option_def(secret_symbol).source,
-          host_source:   option_def(:url).source
+          secret:        secret.value,
+          secret_source: secret.source,
+          url:           url.value,
+          url_source:    url.source
         )
       end
 
@@ -340,9 +345,10 @@ module Aspera
       # @param value  [String] Value to set
       # @param source [Symbol] `Option::Source` of value
       # @param final [Boolean] Value is final: values from a lower source (preset, environment) are ignored
-      def set_option(option_symbol, value, source: :code, warn_deprecation: true, final: false)
+      # @param configured [Boolean] Value of a preset read from the configuration, see #add_option_preset
+      def set_option(option_symbol, value, source: :code, warn_deprecation: true, final: false, configured: false)
         Aspera.assert_type(option_symbol, Symbol)
-        option_def(option_symbol).assign_value(value, source: source, warn_deprecation: warn_deprecation, final: final)
+        option_def(option_symbol).assign_value(value, source: source, warn_deprecation: warn_deprecation, final: final, configured: configured)
       end
 
       # Set option to `nil`
@@ -358,14 +364,16 @@ module Aspera
       # @param preset_hash [Hash]    Options to add
       # @param where       [String]  Where the value comes from (for logs)
       # @param override    [Boolean] `false` for plugin default presets: lower priority than other presets
-      def add_option_preset(preset_hash, where, override: true)
+      # @param configured  [Boolean] `true`: preset read from the configuration (by its name), its values are the ones of the operator, as a client cannot change
+      #   the configuration at levels `medium` and `high`: not restricted by the security level. `false`: e.g. a `Hash` given by the client
+      def add_option_preset(preset_hash, where, override: true, configured: false)
         Aspera.assert_type(preset_hash, Hash)
         Log.log.debug { "add_option_preset: #{preset_hash}, #{where}, #{override}" }
         source = override ? :preset : :plugin_preset
         preset_hash.each do |k, v|
           # Ignore comment/meta keys (e.g. _comment, _description)
           next if k.to_s.start_with?(PresetManager::Key::META_PREFIX)
-          add_pending_value(k.to_sym, v, source, replace: override)
+          add_pending_value(k.to_sym, v, source, replace: override, configured: configured)
         end
         @parse_needed = true
       end
@@ -717,14 +725,15 @@ module Aspera
       # @param value         [Object]  value
       # @param source        [Symbol]  `Option::Source`
       # @param replace       [Boolean] replace a pending value from same source
-      def add_pending_value(option_symbol, value, source, replace:)
+      # @param configured    [Boolean] value of a preset read from the configuration, see #add_option_preset
+      def add_pending_value(option_symbol, value, source, replace:, configured: false)
         declare_secrets(option_symbol, value)
         entries = (@pending_values[option_symbol] ||= [])
         index = entries.index { |e| e[:source].eql?(source) }
         if index.nil?
-          entries.push({value: value, source: source})
+          entries.push({value: value, source: source, configured: configured})
         elsif replace
-          entries[index] = {value: value, source: source}
+          entries[index] = {value: value, source: source, configured: configured}
         end
       end
 
@@ -742,7 +751,7 @@ module Aspera
         ready.each_key { |k| @pending_values.delete(k) }
         ready.each do |option_symbol, entries|
           entries.sort_by { |e| Option::Source.priority(e[:source]) }.each do |e|
-            set_option(option_symbol, e[:value], source: e[:source])
+            set_option(option_symbol, e[:value], source: e[:source], configured: e[:configured])
           end
         end
       end

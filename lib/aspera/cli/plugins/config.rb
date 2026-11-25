@@ -97,25 +97,25 @@ module Aspera
           command :overview, description: 'Show all options from all presets'
           command :lookup,   description: 'Find preset matching URL and username',
             arguments: [{name: :criteria, type: Hash, schema: Schema::Registry::PRESET_LOOKUP_CRITERIA}]
-          command :secure,   description: 'Move secrets to vault',
+          command :secure,   description: 'Move secrets to vault', security: :low,
             arguments: [{name: :config_name, mandatory: false, complete: :preset}]
           command :show,       description: 'Show a preset',
             arguments: [{name: :name, type: :identifier, complete: :preset}]
-          command :delete,     description: 'Delete a preset',
+          command :delete,     description: 'Delete a preset', security: :low,
             arguments: [{name: :name, type: :identifier, complete: :preset}]
           command :get,        description: 'Show a single parameter of a preset',
             arguments: [{name: :name, type: :identifier, complete: :preset}, {name: :param_name, complete: :preset_parameter}]
-          command :unset,      description: "Remove a parameter from a preset (#{Deprecation.new(last: DEPRECATED_LAST, message: 'use set <name> <param> @none:')})",
+          command :unset,      description: "Remove a parameter from a preset (#{Deprecation.new(last: DEPRECATED_LAST, message: 'use set <name> <param> @none:')})", security: :low,
             arguments: [{name: :name, type: :identifier, complete: :preset}, {name: :param_name, complete: :preset_parameter}]
-          command :set, description: 'Merge into presets: <Hash> of presets, <name> <Hash>, or <name> <param> <value> (@none: removes)',
+          command :set, description: 'Merge into presets: <Hash> of presets, <name> <Hash>, or <name> <param> <value> (@none: removes)', security: :low,
             arguments: [{name: :name, type: [String, Hash], complete: :preset},
                         {name: :param_name, type: [String, Hash], mandatory: false, omit_absent: true, complete: :preset_parameter},
                         {name: :param_value, type: nil, mandatory: false, omit_absent: true, evaluate: :smart}]
-          command :initialize, description: "Initialize a preset with a value (#{Deprecation.new(last: DEPRECATED_LAST, message: 'use delete, then set <name> <Hash>')})",
+          command :initialize, description: "Initialize a preset with a value (#{Deprecation.new(last: DEPRECATED_LAST, message: 'use delete, then set <name> <Hash>')})", security: :low,
             arguments: [{name: :name, type: :identifier, complete: :preset}, {name: :preset, type: Hash}]
-          command :update,     description: "Update a preset with option values (#{Deprecation.new(last: DEPRECATED_LAST, message: 'use set <name> <Hash>')})",
+          command :update,     description: "Update a preset with option values (#{Deprecation.new(last: DEPRECATED_LAST, message: 'use set <name> <Hash>')})", security: :low,
             arguments: [{name: :name, type: :identifier, complete: :preset}]
-          command :ask,        description: 'Ask for option values interactively',
+          command :ask,        description: 'Ask for option values interactively', security: :low,
             arguments: [{name: :name, type: :identifier, complete: :preset},
                         {name: :option_names, multiple: true, interactive: true}]
         end
@@ -175,7 +175,7 @@ module Aspera
           end
         )
         command(
-          :wizard, description: 'Run the setup wizard for an Aspera product (interactive)',
+          :wizard, description: 'Run the setup wizard for an Aspera product (interactive)', security: :low,
           arguments: [{name: :params, type: Hash, mandatory: false, default: {}, schema: Schema::Registry::WIZARD_OPTIONS}],
           action: lambda do |params:, **|
             apps = @wizard.identify_plugins_for_url(url: ask_url(params), plugin_name: params['plugin']).freeze
@@ -221,7 +221,7 @@ module Aspera
           end
         )
         command :check_update, description: 'Check if a newer version of the gem is available', action: ->(**) { Result::SingleObject.new(check_gem_version) }
-        command :initdemo, description: 'Initialize the demo server preset'
+        command :initdemo, description: 'Initialize the demo server preset', security: :low
         command :vault, description: 'Manage secrets in the vault'
         commands_under :vault do
           command :info,     description: 'Show vault information',
@@ -249,17 +249,17 @@ module Aspera
             end
           )
           command(
-            :create,   description: 'Add a new secret to the vault',
+            :create,   description: 'Add a new secret to the vault', security: :low,
             arguments: [{name: :secret, type: Hash, schema: Schema::Registry::VAULT_SECRET}],
             action: lambda do |secret:, **|
               vault_required.set(secret.symbolize_keys)
               Result::Status.new('Secret added')
             end
           )
-          command :delete, description: 'Delete a secret by label (or id)',
+          command :delete, description: 'Delete a secret by label (or id)', security: :low,
             arguments: [{name: :label}, {name: :id, mandatory: false, default: nil}]
           command(
-            :password, description: 'Set a new password for the vault',
+            :password, description: 'Set a new password for the vault', security: :low,
             arguments: [{name: :new_password}],
             action: lambda do |new_password:, **|
               Aspera.assert(vault_required.respond_to?(:change_password), 'Vault does not support password change', type: Cli::BadArgument)
@@ -267,7 +267,7 @@ module Aspera
               Result::Status.new('Vault password updated')
             end
           )
-          command :import, description: 'Import secrets from a JSON array (supports --bulk)',
+          command :import, description: 'Import secrets from a JSON array (supports --bulk)', security: :low,
             arguments: [{name: :secrets, type: Array, schema: {type: 'array', items: {'$ref' => Schema::Registry::VAULT_SECRET}}}]
           command :check, description: 'Check that a reference to a store of option vault can be read, without its value',
             arguments: [{name: :reference, evaluate: :none}]
@@ -418,7 +418,7 @@ module Aspera
           when Hash
             options.add_option_preset(value, 'set')
           when String
-            options.add_option_preset(presets.by_name(value), 'set_by_name')
+            options.add_option_preset(presets.by_name(value), 'set_by_name', configured: true)
           else
             raise BadArgument, 'Preset definition must be a String for preset name, or Hash for set of values'
           end

@@ -78,18 +78,18 @@ module Aspera
         @resolver.store(@default) unless @default.nil?
       end
 
-      # Value of `@vault:`
+      # Value of `@vault:`, declared as read from the configuration: a secret of the vault can be sent only to a URL of the configuration, see `Security#check_credential_host`
       # @param name [String] `<label>.<field>` or `//<store>/<path>[?<options>][#<field>]`
       # @return [String] Value of secret
       def value(name)
-        return resolver(mandatory: true).resolve(reference_text(name)) if name.start_with?(REFERENCE_PREFIX)
+        return Security.instance.add_configured(resolver(mandatory: true).resolve(reference_text(name))) if name.start_with?(REFERENCE_PREFIX)
         # Label may contain dots (e.g. preset name)
         label, _, param = name.rpartition('.')
         Aspera.assert(!label.empty? && !param.empty?, type: BadArgument) { 'vault name shall match <name>.<param>' }
         info = store(mandatory: true).get(label: label)
         value = info[param.to_sym]
         raise "no such entry value: #{param}" if value.nil?
-        value
+        Security.instance.add_configured(value)
       end
 
       # Checks that a reference can be read, without its value
