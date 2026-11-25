@@ -23,9 +23,6 @@ module Aspera
     module Plugins
       # Base class for command plugins
       class Base
-        # Value of a path argument that means the standard input, not a local file, when the argument declares `stdin: true` (see `check_argument_access`)
-        STDIN_ARGUMENT = '-'
-
         module Operations
           # Operations without id: `create` `list`
           GLOBAL = %i[create list].freeze
@@ -611,11 +608,11 @@ module Aspera
 
         # A local path given as an argument (`access: :read` or `:write`) is checked against the security level when it is read,
         # and replaced by its real path, so that the action receives a checked path (see `Cli::Security`).
-        # For an argument with `stdin: true`, `-` (standard input) is not a local path: it is left unchanged, unless the standard input is disabled
-        # (`@stdin:`, e.g. in MCP server mode). Elsewhere, `-` is a path, checked as any other.
+        # For an argument with `stdin: true`, `-` is not a local path: it is `@stdin:stream`, the standard input read by the command (`StandardInput`),
+        # refused where `@stdin:` is disabled (MCP server mode). Elsewhere, `-` is a path, checked as any other.
         # @param arg_spec [Argument] declaration of the argument
-        # @param value    [Object]   resolved value (a path, an Array of paths, or nil)
-        # @return [Object] the value, with each path checked and resolved
+        # @param value    [Object]   resolved value (a path, a `StandardInput`, an Array of those, or nil)
+        # @return [Object] the value, with each path checked and resolved, and `-` replaced by a `StandardInput`
         def check_argument_access(arg_spec, value)
           return value if value.nil?
           security = Security.instance
@@ -628,9 +625,8 @@ module Aspera
             end
           mapper = lambda do |one|
             next one unless one.is_a?(String)
-            next resolver.call(one) unless arg_spec.stdin && one.eql?(STDIN_ARGUMENT)
-            ExtendedValue.instance.check_enabled(:stdin, what: "argument #{arg_spec.name}: #{STDIN_ARGUMENT} (standard input)")
-            one
+            next resolver.call(one) unless arg_spec.stdin && one.eql?(StandardInput::NAME)
+            ExtendedValue.instance.evaluate('@stdin:stream', context: "argument #{arg_spec.name} (#{StandardInput::NAME})", allowed: arg_spec.type)
           end
           value.is_a?(Array) ? value.map(&mapper) : mapper.call(value)
         end

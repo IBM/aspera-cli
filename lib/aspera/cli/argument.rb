@@ -3,6 +3,8 @@
 # SPDX-FileCopyrightText: IBM Corp.
 # SPDX-License-Identifier: Apache-2.0
 
+require_relative '../standard_input'
+
 module Aspera
   module Cli
     # Declares a positional argument consumed by a command.
@@ -36,7 +38,8 @@ module Aspera
     #                                                     one of `ACCESSES`. The value is checked against the security level when the argument is read (`Cli::Security`),
     #                                                     and replaced by the real path: `:read` (content read or displayed, even to send it to a remote service),
     #                                                     `:write` (file created or modified). A path only sent by a transfer agent (not read by `ascli`) has no `access`.
-    # @!attribute stdin       [Boolean]                   With `access: :read`: the value `-` is the standard input, read by the command (not checked as a path).
+    # @!attribute stdin       [Boolean]                   With `access: :read`: the command reads the standard input as a file, given as `-` or `@stdin:stream`:
+    #                                                     the value is then a `StandardInput` (type `String` or `StandardInput`), not checked as a path.
     #                                                     Refused where `@stdin:` is disabled (MCP server mode). Without it, `-` is a path like any other.
     Argument = Struct.new(
       :name,
@@ -66,6 +69,8 @@ module Aspera
         kwargs[:omit_absent]  = false if kwargs[:omit_absent].nil?
         kwargs[:stdin]        = false if kwargs[:stdin].nil?
         raise ArgumentError, "omit_absent: only for an optional argument: #{kwargs[:name]}" if kwargs[:omit_absent] && kwargs[:mandatory]
+        raise ArgumentError, "stdin: sets the type: #{kwargs[:name]}" if kwargs[:stdin] && (kwargs.key?(:type) || kwargs[:allowed])
+        kwargs[:type] = [String, StandardInput] if kwargs[:stdin]
         kwargs[:type] = String unless kwargs.key?(:type) || kwargs[:allowed]
         raise ArgumentError, "evaluate: #{kwargs[:evaluate].inspect}, expecting one of: #{Argument::EVALUATIONS.join(', ')}" unless Argument::EVALUATIONS.include?(kwargs[:evaluate])
         raise ArgumentError, "access: #{kwargs[:access].inspect}, expecting one of: #{Argument::ACCESSES.join(', ')}" unless kwargs[:access].nil? || Argument::ACCESSES.include?(kwargs[:access])

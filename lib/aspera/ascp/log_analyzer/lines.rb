@@ -4,12 +4,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # cspell:words getlocal MSGID PROCID rsyslog
+require_relative '../../standard_input'
+
 module Aspera
   module Ascp
     class LogAnalyzer
-      # Path that designates the standard input
-      STDIN_PATH = '-'
-      # Formats and timestamps of log lines: shared by LogFile and Records, which define `@path` and `@timezone` (nil: time zone of the analyst)
+      # Formats and timestamps of log lines: shared by LogFile and Records, which define `@source` (file or standard input), `@path` (its name) and `@timezone` (nil: time zone of the analyst)
       module Lines
         MONTHS = %w[Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec].freeze
         # Line of ascp: FASP message, or syslog line of process `ascp`
@@ -66,7 +66,7 @@ module Aspera
         # (a log from December to January analyzed in March: December is of the previous year).
         # @return [Integer] year of the line
         def syslog_year(month, day)
-          @reference ||= (@path == STDIN_PATH ? Time.now : File.mtime(@path)).getlocal(@timezone)
+          @reference ||= (@source.is_a?(StandardInput) ? Time.now : File.mtime(@source)).getlocal(@timezone)
           month > @reference.month || (month == @reference.month && day > @reference.day) ? @reference.year - 1 : @reference.year
         end
       end

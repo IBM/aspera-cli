@@ -719,11 +719,19 @@ RSpec.describe(Aspera::Ascp::LogAnalyzer) do
     input = $stdin
     begin
       $stdin = StringIO.new(ascp_log)
-      expect(described_class.new.add('-').summary['sessions']).to(eq(2))
+      expect(described_class.new.add(Aspera::StandardInput.new).summary['sessions']).to(eq(2))
       $stdin = StringIO.new(Zlib.gzip(ascp_log))
-      expect(described_class.new.add('-').summary['sessions']).to(eq(2))
+      expect(described_class.new.add(Aspera::StandardInput.new).summary['sessions']).to(eq(2))
+      $stdin = StringIO.new(ascp_log)
+      expect(described_class::Records.list(:sessions, [Aspera::StandardInput.new]).size).to(eq(2))
     ensure
       $stdin = input
+    end
+  end
+
+  it 'reads a path `-` as a file named `-`, not the standard input' do
+    Dir.mktmpdir do |dir|
+      Dir.chdir(dir) { expect { described_class.new.add('-') }.to(raise_error(Errno::ENOENT)) }
     end
   end
 

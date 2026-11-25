@@ -6,6 +6,7 @@
 require_relative '../../schema/registry'
 require_relative '../../assert'
 require_relative '../../log'
+require_relative '../../standard_input'
 
 module Aspera
   module Plugins
@@ -185,10 +186,10 @@ module Aspera
         # @return [#call] tells if a file or folder found in a folder can be read
         def ascp_logs_readable = Cli::Security.instance.method(:readable_path?)
 
-        # Standard input (`-`) is read by the analyzer
+        # The standard input (`-`, `StandardInput`) is read by the analyzer
         def check_ascp_logs_paths(paths)
           paths.each do |path|
-            Aspera.assert(path == Ascp::LogAnalyzer::STDIN_PATH || File.exist?(path), type: Cli::BadArgument) { "No such file or folder: #{path}" }
+            Aspera.assert(path.is_a?(StandardInput) || File.exist?(path), type: Cli::BadArgument) { "No such file or folder: #{path}" }
           end
         end
       end

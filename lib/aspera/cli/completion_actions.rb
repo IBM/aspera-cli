@@ -57,14 +57,12 @@ module Aspera
       MODIFIERS_DECODING = %i[base64 csvt json lines list re ruby s yaml zlib].freeze
       # Modifiers whose value is not evaluated
       MODIFIERS_LITERAL = %i[val extend].freeze
-      # Modes of `@stdin:`
-      STDIN_MODES = ['', 'bin', 'chomp'].freeze
       # End of sentence in a description: a period, not of `e.g.` or `i.e.`, followed by a word not in lower case
       REGEX_SENTENCE_END = /(?<!\be\.g|\bi\.e)\.\s+(?=[^a-z])/
       # Maximum length of a hint listing the keys of a structure
       HINT_MAX_LENGTH = 72
       private_constant :COMPLETION_SHELLS, :COMPLETION_FOLDER, :Completion, :Collecting, :Position, :REGEX_EXTEND_ARGS, :REGEX_MODIFIER,
-        :MARKER_MODIFIER, :MODIFIERS_DECODING, :MODIFIERS_LITERAL, :STDIN_MODES, :REGEX_SENTENCE_END, :HINT_MAX_LENGTH
+        :MARKER_MODIFIER, :MODIFIERS_DECODING, :MODIFIERS_LITERAL, :REGEX_SENTENCE_END, :HINT_MAX_LENGTH
 
       # List words that can follow the given words, one per line.
       # When a value is expected but cannot be proposed, its type is listed (e.g. `<String>`), or `<file>` (or `<folder>`) for a local path.
@@ -491,7 +489,7 @@ module Aspera
             when :file, :path then Completion.new(candidates: [], files: complete.eql?(:folder) ? :folder : :file)
             when :preset then Completion.new(candidates: completion_preset_names(rest))
             when :env then Completion.new(candidates: ENV.keys.sort.map { |k| [k, nil] })
-            when :stdin then Completion.new(candidates: STDIN_MODES.map { |m| [m, nil] })
+            when :stdin then Completion.new(candidates: ExtendedValue::STDIN_MODES.map { |m| [m, nil] })
             when *MODIFIERS_DECODING then Completion.new(candidates: [])
             else Completion.new(candidates: [], hint: ExtendedValue.instance.description(last))
             end

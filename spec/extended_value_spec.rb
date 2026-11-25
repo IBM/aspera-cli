@@ -73,6 +73,24 @@ module Aspera
         it 'reads standard input without final newline with chomp' do
           expect(evaluate('@stdin:chomp')).to(eq('line'))
         end
+
+        it 'gives the standard input, read by the command, with stream' do
+          stream = extended.evaluate('@stdin:stream', context: 'test', allowed: [String, StandardInput])
+          expect(stream).to(be_a(StandardInput))
+          expect(stream.to_s).to(eq('-'))
+          expect(stream.read).to(eq("line\n"))
+        end
+
+        it 'refuses stream where a command does not read a file, or with a decoder' do
+          expect { evaluate('@stdin:stream') }.to(raise_error(BadArgument, /@stdin:stream is only for a command that reads a file, not for test: use @stdin:/))
+          expect { evaluate('@extend:x@stdin:stream@') }.to(raise_error(BadArgument, /@stdin:stream is only for a command that reads a file/))
+          expect { extended.evaluate('@json:@stdin:stream', context: 'test', allowed: [String, StandardInput]) }.to(raise_error(BadArgument, /@json: for test: @stdin:stream is read by the command, it cannot be decoded/))
+          expect($stdin.read).to(eq("line\n"))
+        end
+
+        it 'refuses an unknown mode' do
+          expect { evaluate('@stdin:foo') }.to(raise_error(BadArgument, /supports only: "", "bin", "chomp", "stream"/))
+        end
       end
 
       describe '@secret:' do

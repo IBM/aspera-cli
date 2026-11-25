@@ -69,7 +69,7 @@ module Aspera
 
         class << self
           # @param kind  [Symbol]        One of the keys of SCHEMAS
-          # @param paths [Array<String>] Log files, `-` (standard input) or folders
+          # @param paths [Array<String, StandardInput>] Log files, standard input or folders
           # @param timezone [String, nil] Time zone of the log lines: `UTC` or `+HH:MM`. Time zone of the analyst if nil.
           # @param readable [#call, nil] For a folder: tells if a file or folder found in it can be read, see `LogAnalyzer.log_paths`
           # @return [Array<Hash>] records of all log files, with field `log_file` when there are several log files
@@ -226,10 +226,12 @@ module Aspera
         # @return [Array<Hash>] one record per sample of a session
         attr_reader :samples
 
-        # @param path     [String]      Log file
+        # @param path     [String, StandardInput] Log file, or standard input
         # @param timezone [String, nil] Time zone of the log lines: `UTC` or `+HH:MM`. Time zone of the analyst if nil.
         def initialize(path, timezone: nil)
-          @path = path
+          @source = path
+          # Name in results: `-` for the standard input
+          @path = path.to_s
           @timezone = timezone
           @samples = []
           # uuid => session record
@@ -248,7 +250,7 @@ module Aspera
         # Read and parse the log file
         # @return [self]
         def parse
-          LogAnalyzer.read_lines(@path, Encoding::UTF_8) do |line|
+          LogAnalyzer.read_lines(@source, Encoding::UTF_8) do |line|
             line = line.scrub unless line.valid_encoding?
             parse_line(normalize(line))
           end

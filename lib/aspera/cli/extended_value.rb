@@ -13,6 +13,7 @@ require_relative 'error'
 require_relative '../prompt'
 require_relative 'security'
 require_relative '../rainbow'
+require_relative '../standard_input'
 require 'json'
 require 'base64'
 require 'zlib'
@@ -32,6 +33,8 @@ module Aspera
 
       # First is default
       DEFAULT_DECODERS = %i[none json ruby yaml].freeze
+      # Modes of `@stdin:`: text, binary, text without the last end of line, or the standard input read by the command (where a file is read)
+      STDIN_MODES = ['', 'bin', 'chomp', 'stream'].freeze
 
       class << self
         # Decode comma separated table text
@@ -88,12 +91,15 @@ module Aspera
           WebSecret.ask(prompt)
         end
 
+        # @param mode [String] one of `STDIN_MODES`
+        # @return [String, StandardInput] the content of the standard input, or for mode `stream` the standard input itself, read by the command
         def read_stdin(mode)
           case mode
           when '' then $stdin.read
           when 'bin' then $stdin.binmode.read
           when 'chomp' then $stdin.read.chomp
-          else raise BadArgument, "`stdin` supports only: '', 'bin' or 'chomp'"
+          when 'stream' then StandardInput.new
+          else raise BadArgument, "`stdin` supports only: #{STDIN_MODES.map(&:inspect).join(', ')}"
           end
         end
       end
@@ -144,14 +150,11 @@ module Aspera
           ruby:   'Evaluate Ruby code',
           s:      'Convert to String',
           secret: 'Ask secret, with prompt',
-          stdin:  'Read standard input: empty, bin or chomp',
+          stdin:  'Read standard input: empty, bin, chomp, or stream (read by a command that reads a file)',
           yaml:   'Decode YAML',
           zlib:   'Decompress zlib',
           extend: 'Evaluate embedded @<modifier>:<value>@'
         }
-        # Handlers disabled (see `disable`), with the reason
-        # @type [Hash{Symbol => String}]
-        @disabled = {}
         @regex_single = nil
         @regex_inner = nil
         @default_decoder = nil
@@ -197,21 +200,12 @@ module Aspera
         update_regex
       end
 
-      # Disable a handler: its use raises an error, and so does reading its source by other means (see `check_enabled`),
-      # e.g. `@stdin:` and the argument `-` in MCP server mode, where the standard input is the JSON-RPC stream.
+      # Disable a handler: its use raises an error.
+      # e.g. `@stdin:` in MCP server mode, where the standard input is the JSON-RPC stream: also the argument `-`, which is `@stdin:stream`.
       # @param name   [Symbol] Extended Value method
       # @param reason [String] Why it is disabled, for the error message, e.g. `in MCP server mode`
       def disable(name, reason)
-        @disabled[name] = reason
-        on(name) { |_| check_enabled(name) }
-      end
-
-      # @param name [Symbol] Extended Value method
-      # @param what [String] What reads the source of the handler, for the error message
-      # @raise [BadArgument] If the handler is disabled
-      def check_enabled(name, what: "@#{name}: extended value")
-        reason = @disabled[name]
-        raise BadArgument, "#{what} is disabled #{reason}" unless reason.nil?
+        on(name) { |_| raise BadArgument, "@#{name}: extended value is disabled #{reason}" }
       end
 
       # Parses a `String` value to extended value.
@@ -238,6 +232,8 @@ module Aspera
         end
         Log.log.trace1 { "evaluating: #{handlers_reversed}, value: #{value.class}:#{Secret::Hider.instance.hidden_copy(value)}" }
         handlers_reversed.each_with_index do |handler, index|
+          # The standard input read by the command is not a value
+          raise BadArgument, '@stdin:stream is read by the command, it cannot be decoded: use @stdin:' if value.is_a?(StandardInput)
           Security.instance.check_extended_value(handler)
           # The value read by the previous handler may be a secret
           Security.instance.check_secret_processing("@#{handler}") { Secret::Hider.instance.contains_secret?(value) } if index.positive?
@@ -249,6 +245,8 @@ module Aspera
         rescue => e
           raise BadArgument, "Evaluation of #{MARKER_START}#{handler}#{MARKER_END} for #{context}: #{e.message}"
         end
+        # Only where a command reads a file, see `Argument#stdin`
+        raise BadArgument, "@stdin:stream is only for a command that reads a file, not for #{context}: use @stdin:" if value.is_a?(StandardInput) && !allowed&.include?(StandardInput)
         return value
       end
 

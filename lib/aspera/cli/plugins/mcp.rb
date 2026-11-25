@@ -149,7 +149,7 @@ module Aspera
         # Keys consumed locally (not forwarded to MCP gem)
         TOOL_KEYS        = %i[max_text_bytes extra_args].freeze
         # Extended-value handlers disabled in MCP server mode whatever the security level:
-        # @stdin: is the JSON-RPC stream (stdio), so is the argument `-` of a command that reads the standard input (`Argument#stdin`).
+        # @stdin: is the JSON-RPC stream (stdio), and so is the argument `-` of a command that reads the standard input as a file: `@stdin:stream` (`Argument#stdin`).
         # Other unsafe handlers depend on the security level, see Security.
         # @secret: is entered on a web page instead of the terminal, see Mcp::Secrets.
         DISABLED_EXTENDED_VALUE_HANDLERS = %i[stdin].freeze

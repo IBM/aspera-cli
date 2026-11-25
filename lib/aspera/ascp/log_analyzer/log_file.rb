@@ -44,14 +44,16 @@ module Aspera
 
         attr_reader :path, :stats, :licenses, :first_time, :last_time, :thresholds
 
-        # @param path       [String]       Log file
+        # @param path       [String, StandardInput] Log file, or standard input
         # @param period     [Integer]      Snapshot period in seconds
         # @param zero_bytes [Boolean]      Include sessions without transferred bytes
         # @param mtu        [Integer, nil] MTU to use when not found in logs
         # @param thresholds [Hash]         Diagnostic thresholds
         # @param timezone   [String, nil]  Time zone of the log lines: `UTC` or `+HH:MM`. Time zone of the analyst if nil.
         def initialize(path, period: 60, zero_bytes: false, mtu: nil, thresholds: {}, timezone: nil)
-          @path = path
+          @source = path
+          # Name in results: `-` for the standard input
+          @path = path.to_s
           @timezone = timezone
           @period = period
           @zero_bytes = zero_bytes
@@ -80,7 +82,7 @@ module Aspera
         # Read and analyze the log file
         # @return [self]
         def analyze
-          LogAnalyzer.read_lines(@path, Encoding::BINARY) { |line| parse_line(normalize(line)) }
+          LogAnalyzer.read_lines(@source, Encoding::BINARY) { |line| parse_line(normalize(line)) }
           @sessions.each(&:evaluate_atm)
           @periods.sort.each { |time, period| end_of_period(time, period) }
           compute_statistics

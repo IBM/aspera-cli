@@ -946,9 +946,11 @@ module Aspera
             expect { check(:write, '/tmp/some/file') }.to(raise_error(BadArgument, /writing is refused by security level high/))
           end
 
-          it 'leaves `-` (standard input) unchanged with stdin: true, and checks each path of an Array' do
+          it 'replaces `-` by the standard input with stdin: true, keeps `@stdin:stream`, and checks each path of an Array' do
             Security.instance.options = {'level' => 'high'}
-            expect(check(:read, '-', stdin: true)).to(eq('-'))
+            expect(check(:read, '-', stdin: true)).to(be_a(StandardInput))
+            stream = StandardInput.new
+            expect(check(:read, stream, stdin: true)).to(be(stream))
             expect { check(:read, ['-', '/etc/hosts'], stdin: true) }.to(raise_error(BadArgument, /reading files is disabled/))
           end
 
@@ -961,17 +963,20 @@ module Aspera
           it 'refuses `-` (standard input) where @stdin: is disabled (MCP server mode)' do
             extended = ExtendedValue.instance
             saved_handlers = extended.instance_variable_get(:@handlers).dup
-            saved_disabled = extended.instance_variable_get(:@disabled).dup
             extended.disable(:stdin, 'in MCP server mode')
-            expect { check(:read, '-', stdin: true) }.to(raise_error(BadArgument, /argument p: - \(standard input\) is disabled in MCP server mode/))
+            expect { check(:read, '-', stdin: true) }.to(raise_error(BadArgument, /@stdin: for argument p \(-\): @stdin: extended value is disabled in MCP server mode/))
           ensure
             extended.instance_variable_set(:@handlers, saved_handlers)
-            extended.instance_variable_set(:@disabled, saved_disabled)
             extended.send(:update_regex)
           end
 
           it 'refuses stdin: without access: :read' do
             expect { Argument.new(name: :p, complete: :file, access: :write, stdin: true) }.to(raise_error(ArgumentError, /stdin: only with access: :read/))
+          end
+
+          it 'accepts a String or the standard input with stdin:, which sets the type' do
+            expect(Argument.new(name: :p, complete: :file, access: :read, stdin: true).type).to(eq([String, StandardInput]))
+            expect { Argument.new(name: :p, complete: :file, access: :read, stdin: true, type: Hash) }.to(raise_error(ArgumentError, /stdin: sets the type/))
           end
         end
       end

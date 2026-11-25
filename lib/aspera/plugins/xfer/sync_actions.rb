@@ -6,6 +6,7 @@
 require_relative '../../sync/operations'
 require_relative '../../assert'
 require_relative '../../environment'
+require_relative '../../standard_input'
 require 'pathname'
 
 module Aspera
@@ -210,7 +211,7 @@ module Aspera
         end
 
         # Analyze async log files: the notable events (conflicts, errors, session lifecycle).
-        # @param paths [Array<String>, nil] log files, folders, or `-`; already checked against the security level (`access: :read`).
+        # @param paths [Array<String, StandardInput>, nil] log files, folders, or the standard input (`-`); already checked against the security level (`access: :read`).
         #   When not given, the local async log is read (also checked against the security level).
         def action_sync_logs(paths: nil, **)
           require_relative '../../sync/log_parser'
@@ -223,7 +224,7 @@ module Aspera
               paths
             end
           files.each do |file|
-            Aspera.assert(file == Cli::Plugins::Base::STDIN_ARGUMENT || File.exist?(file), type: Cli::BadArgument) { "No such file or folder: #{file}" }
+            Aspera.assert(file.is_a?(StandardInput) || File.exist?(file), type: Cli::BadArgument) { "No such file or folder: #{file}" }
           end
           Cli::Result::ObjectList.new(Sync::LogParser.notable_events(files, readable: Cli::Security.instance.method(:readable_path?)), fields: Sync::LogParser::FIELDS)
         end

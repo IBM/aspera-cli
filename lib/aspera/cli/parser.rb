@@ -563,6 +563,8 @@ module Aspera
       # @param types [Array<Class>] types to add
       # @return [String] Types if relevant
       def add_types_info(types)
+        # The standard input is given as `-` or `@stdin:stream`, see `Argument#stdin`
+        types -= [StandardInput] if types
         return '' if !types || types.empty? || types.eql?(Option::Type::ENUM) || types.eql?(Option::Type::BOOLEAN) || types.eql?(Option::Type::STRING)
         " (#{types.map(&:name).join(', ')})"
       end

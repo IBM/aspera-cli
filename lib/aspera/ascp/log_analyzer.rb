@@ -6,6 +6,7 @@
 # cspell:ignore asperascp asws getname lastlog lsass pcap tokengen trapd userdata winuser wtmp
 require_relative '../assert'
 require_relative '../log'
+require_relative '../standard_input'
 require_relative 'log_analyzer/log_file'
 require_relative 'log_analyzer/records'
 require 'resolv'
@@ -86,21 +87,30 @@ module Aspera
           raise ParameterError, "Invalid time zone: #{timezone.inspect}, expected `UTC` or `+HH:MM`"
         end
 
-        # @param path     [String]      log file, `-` (standard input), or folder
+        # @param path [String, StandardInput] log file, standard input, or folder
+        # @return [Boolean] true if it is a folder
+        def folder?(path) = path.is_a?(String) && File.directory?(path)
+
+        # @param path     [String, StandardInput] log file, standard input, or folder
         # @param readable [#call, nil]  For a folder: tells if a file or folder found in it can be read (e.g. it is in the allowed paths
         #                               of the caller, also through a symbolic link), else it is skipped. `nil`: all are read.
-        # @return [Array<String>] the log file, or the log files in the folder (recursively)
+        # @return [Array<String, StandardInput>] the log file (or standard input), or the log files in the folder (recursively)
         def log_paths(path, readable: nil)
-          return [path] unless File.directory?(path)
+          return [path] unless folder?(path)
           without_links(scan_folder(path, path, [], readable))
         end
 
         # Read the lines of a log file: plain, or compressed with gzip (detected with its first bytes)
-        # @param path     [String]   Log file, or `-` for the standard input
+        # @param path     [String, StandardInput] Log file, or the standard input
         # @param encoding [Encoding] Encoding of lines
         # @yieldparam line [String]
         def read_lines(path, encoding, &block)
-          io = path == STDIN_PATH ? StringIO.new($stdin.binmode.read) : File.open(path, 'rb')
+          io =
+            case path
+            when StandardInput then StringIO.new(path.read)
+            when String then File.open(path, 'rb')
+            else Aspera.error_unexpected_value(path.class) { 'log file' }
+            end
           gzip = io.read(2) == GZIP_MAGIC
           io.rewind
           io = Zlib::GzipReader.new(io, external_encoding: encoding) if gzip
@@ -112,13 +122,13 @@ module Aspera
 
         # Load the log files of a path
         # In a folder, a file that is not an ascp log is ignored. A file given explicitly must be an ascp log.
-        # @param path     [String]     log file, `-` (standard input), or folder
+        # @param path     [String, StandardInput] log file, standard input, or folder
         # @param readable [#call, nil] see `log_paths`
-        # @yieldparam file [String] log file
+        # @yieldparam file [String, StandardInput] log file, or standard input
         # @yieldreturn [#ascp?] the loaded log
         # @return [Array] the loaded logs that are ascp logs
         def load_logs(path, readable: nil)
-          explicit = !File.directory?(path)
+          explicit = !folder?(path)
           log_paths(path, readable: readable).filter_map do |file|
             log = yield(file)
             next log if log.ascp?
@@ -191,7 +201,7 @@ module Aspera
       end
 
       # Analyze a log file, or the log files in a folder (recursively)
-      # @param path     [String]     file, `-` (standard input) or folder
+      # @param path     [String, StandardInput] file, standard input or folder
       # @param readable [#call, nil] see `log_paths`
       # @return [self]
       def add(path, readable: nil)

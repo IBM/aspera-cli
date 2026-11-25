@@ -37,7 +37,7 @@ module Aspera
       FIELD_RE = Hash.new { |cache, key| cache[key] = /\b#{Regexp.escape(key)}=(?:"([^"]*)"|(\S+))/ }
 
       class << self
-        # @param paths    [Array<String>] log files, folders (scanned for `async*.log`), or `-` (standard input)
+        # @param paths    [Array<String, StandardInput>] log files, folders (scanned for `async*.log`), or standard input
         # @param readable [#call, nil]    For a folder: tells if a file found in it can be read (e.g. it is in the allowed paths of the caller,
         #                                 also through a symbolic link), else it is skipped. `nil`: all are read.
         # @return [Array<Hash>] notable events, oldest first (across files, by timestamp)
@@ -71,16 +71,16 @@ module Aspera
 
         private
 
-        # @param path     [String]     a log file, `-`, or a folder (then only the `async*.log` files in it are kept)
+        # @param path     [String, StandardInput] a log file, the standard input, or a folder (then only the `async*.log` files in it are kept)
         # @param readable [#call, nil] see `notable_events`
-        # @return [Array<String>] the files to read
+        # @return [Array<String, StandardInput>] the files to read
         def path_files(path, readable)
-          return [path] unless File.directory?(path)
+          return [path] unless Ascp::LogAnalyzer.folder?(path)
           Dir.children(path).sort.select { |name| name.match?(ASYNC_FILE) }.map { |name| File.join(path, name) }
             .select { |file| readable.nil? || readable.call(file) }
         end
 
-        # @param file [String] a log file (plain or gzip), or `-`
+        # @param file [String, StandardInput] a log file (plain or gzip), or the standard input
         # @return [Array<Hash>] the notable events of the file
         def file_events(file)
           events = []
