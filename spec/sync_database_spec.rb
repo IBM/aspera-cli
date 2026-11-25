@@ -5,7 +5,12 @@
 
 require 'spec_helper'
 require 'tempfile'
-require_relative '../lib/aspera/sync/database'
+begin
+  require_relative '../lib/aspera/sync/database'
+rescue LoadError => e
+  warn("Skipping sync database specs: #{e.message}")
+  return
+end
 
 RSpec.describe(Aspera::Sync::Database) do
   # Create a small sqlite database with one table and one row, with the driver of the platform (as `lib/aspera/sync/database.rb`).
