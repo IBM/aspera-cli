@@ -7447,6 +7447,11 @@ The following parameters are automatically filled from mandatory arguments, and 
 Parameter `name` is set to a default value if not provided in `sync_info`.
 Parameter `quiet` is set to `false` if not provided in `sync_info` and a terminal is detected.
 
+> [!NOTE]
+> The configuration is passed to `async` on its command line (`--conf64`, the base64 of the JSON), which is visible to the other users of the host (for example with `ps`).
+> The remote password and token (`remote.pass`, `remote.token`) are **not** put there: they are passed in the environment variables `ASPERA_SCP_PASS` and `ASPERA_SCP_TOKEN`, which `async` reads when they are absent from the configuration.
+> `async` has no environment variable for the other secrets it reads only from the configuration (the proxy password, and `local.pass`): these stay in `--conf64`. They are hidden in the logs of <%=tool%>, but a user of the host can still read them (base64) while `async` runs. Prefer token-based authentication, or run on a host where other users are trusted.
+
 The documentation is available in the terminal with:
 
 ```shell
