@@ -309,6 +309,13 @@ module Aspera
           expect(host.action_preset_get(name: 'p1', param_name: 'username').data).to(eq(username))
           expect(Secret::Hider.instance.hidden_copy(username)).to(eq(username))
         end
+
+        it 'shows an extended value that is not a String as config echo does' do
+          config_presets['p1'].merge!('n' => '@none:', 'l' => '@json:[1,2]', 'h' => '@json:{"a":1}')
+          expect(host.action_preset_get(name: 'p1', param_name: 'n')).to(be_a(Result::Null))
+          expect(host.action_preset_get(name: 'p1', param_name: 'l')).to(be_a(Result::ValueList))
+          expect(host.action_preset_get(name: 'p1', param_name: 'h').data).to(eq({'a' => 1}))
+        end
       end
 
       # -----------------------------------------------------------------------

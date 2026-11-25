@@ -49,6 +49,19 @@ module Aspera
           ENV.delete('ASCLI_TEST_EXTEND')
         end
 
+        it 'refuses @env: of a variable that is not set, with its name, also embedded' do
+          ENV.delete('ASCLI_TEST_NOT_SET')
+          expect { evaluate('@env:ASCLI_TEST_NOT_SET') }.to(raise_error(BadArgument, /environment variable ASCLI_TEST_NOT_SET is not set/))
+          expect { evaluate('@extend:a=@env:ASCLI_TEST_NOT_SET@') }.to(raise_error(BadArgument, /environment variable ASCLI_TEST_NOT_SET is not set/))
+        end
+
+        it 'gives the value of @env: of a variable set to an empty string' do
+          ENV['ASCLI_TEST_EMPTY'] = ''
+          expect(evaluate('@env:ASCLI_TEST_EMPTY')).to(eq(''))
+        ensure
+          ENV.delete('ASCLI_TEST_EMPTY')
+        end
+
         it 'does not evaluate again a value inserted by @extend:' do
           ENV['ASCLI_TEST_EXTEND'] = '@env:HOME@'
           expect(evaluate('@extend:a=@env:ASCLI_TEST_EXTEND@ b')).to(eq('a=@env:HOME@ b'))

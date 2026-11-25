@@ -2444,7 +2444,7 @@ The following decoders are supported:
 |----------|----------|----------|------------------------------------------------------------------------------------------|
 | `base64` | `String` | `String` | Decode a base64 encoded string. |
 | `csvt`   | `String` | `Array`  | Decode a titled CSV value. |
-| `env`    | `String` | `String` | Read from the named environment variable. For example, `--password=@env:MYPASSVAR` |
+| `env`    | `String` | `String` | Read from the named environment variable, an error if it is not set. For example, `--password=@env:MYPASSVAR` |
 | `file`   | `String` | `String` | Read value from specified file (prefix `~/` is replaced with the user's home folder). For example, `--key=@file:~/.ssh/mykey` |
 | `json`   | `String` | Any      | Decode JSON values. Convenient to provide complex structures. |
 | `lines`  | `String` | `Array`  | Split a string in multiple lines and return an `Array`. |

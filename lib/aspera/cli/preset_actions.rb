@@ -149,7 +149,8 @@ module Aspera
           value = ExtendedValue.instance.evaluate(value.to_s, context: 'preset')
           # A secret has no key name in a text result: declared, so that it is hidden
           Secret::Hider.instance.add_secret_values(value) if Secret::Hider.instance.secret?(param_name, value)
-          return Result::Text.new(value)
+          # The value of an extended value can be of another type, e.g. `null` for `@none:`, a list for `@json:`
+          return Result.auto(value)
         end
         Result::SingleObject.new(value)
       end
