@@ -219,9 +219,11 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
 
     around do |example|
       saved = extended.instance_variable_get(:@handlers).dup
+      saved_disabled = extended.instance_variable_get(:@disabled).dup
       example.run
     ensure
       extended.instance_variable_set(:@handlers, saved)
+      extended.instance_variable_set(:@disabled, saved_disabled)
       extended.send(:update_regex)
       security.reset
     end
@@ -254,6 +256,8 @@ RSpec.describe(Aspera::Cli::Plugins::Mcp) do
       expect(security.level).to(eq(:high))
       expect { security.options = {'level' => 'low'} }.to(raise_error(Aspera::Cli::BadArgument, /security cannot be changed in MCP server mode/))
       expect { extended.evaluate('@stdin:', context: 'test') }.to(raise_error(Aspera::Cli::BadArgument, /disabled in MCP server mode/))
+      # The argument `-` of a command that reads the standard input (e.g. `config ascp logs`) is refused the same way
+      expect { extended.check_enabled(:stdin, what: '-') }.to(raise_error(Aspera::Cli::BadArgument, /- is disabled in MCP server mode/))
     end
 
     it 'keeps the level set by option' do

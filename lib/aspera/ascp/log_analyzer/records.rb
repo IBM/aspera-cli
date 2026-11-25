@@ -71,11 +71,12 @@ module Aspera
           # @param kind  [Symbol]        One of the keys of SCHEMAS
           # @param paths [Array<String>] Log files, `-` (standard input) or folders
           # @param timezone [String, nil] Time zone of the log lines: `UTC` or `+HH:MM`. Time zone of the analyst if nil.
+          # @param readable [#call, nil] For a folder: tells if a file or folder found in it can be read, see `LogAnalyzer.log_paths`
           # @return [Array<Hash>] records of all log files, with field `log_file` when there are several log files
-          def list(kind, paths, timezone: nil)
+          def list(kind, paths, timezone: nil, readable: nil)
             Aspera.assert_values(kind, SCHEMAS.keys)
             LogAnalyzer.check_timezone(timezone)
-            logs = paths.flat_map { |path| LogAnalyzer.load_logs(path) { |file| new(file, timezone: timezone).parse } }
+            logs = paths.flat_map { |path| LogAnalyzer.load_logs(path, readable: readable) { |file| new(file, timezone: timezone).parse } }
             logs.flat_map do |log|
               rows = log.public_send(kind)
               logs.size > 1 ? rows.map { |row| {'log_file' => log.path}.merge(row) } : rows

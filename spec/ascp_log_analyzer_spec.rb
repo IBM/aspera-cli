@@ -652,6 +652,24 @@ RSpec.describe(Aspera::Ascp::LogAnalyzer) do
     end
   end
 
+  # The caller (e.g. the security level of the CLI) refuses what is outside of a folder: a symbolic link to a folder or file is not followed there
+  it 'skips the files and folders of a folder that the caller cannot read' do
+    Dir.mktmpdir do |base|
+      logs = File.join(base, 'logs').tap { |path| Dir.mkdir(path) }
+      outside = File.join(base, 'outside').tap { |path| Dir.mkdir(path) }
+      File.write(File.join(logs, 'aspera-scp-transfer.log'), ascp_log)
+      File.write(File.join(outside, 'aspera-scp-transfer.1.log'), ascp_log)
+      File.symlink(outside, File.join(logs, 'linked_folder'))
+      File.write(File.join(base, 'other.log'), ascp_log)
+      File.symlink(File.join(base, 'other.log'), File.join(logs, 'aspera-scp-transfer.2.log'))
+      inside = ->(path) { File.realpath(path).start_with?(File.join(File.realpath(logs), '')) }
+      expect(described_class.log_paths(logs).size).to(eq(3))
+      expect(described_class.log_paths(logs, readable: inside).map { |p| File.basename(p) }).to(eq(['aspera-scp-transfer.log']))
+      expect(described_class.new.add(logs, readable: inside).summary['files']).to(eq(1))
+      expect(described_class::Records.list(:sessions, [logs], readable: inside).size).to(eq(2))
+    end
+  end
+
   it 'analyzes log files of a circular rotation with a missing hole in a folder' do
     Dir.mktmpdir do |dir|
       [0, 1, 2, 3, 5, 6].each do |n|

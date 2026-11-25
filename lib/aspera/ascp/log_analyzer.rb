@@ -86,11 +86,13 @@ module Aspera
           raise ParameterError, "Invalid time zone: #{timezone.inspect}, expected `UTC` or `+HH:MM`"
         end
 
-        # @param path [String] log file, `-` (standard input), or folder
+        # @param path     [String]      log file, `-` (standard input), or folder
+        # @param readable [#call, nil]  For a folder: tells if a file or folder found in it can be read (e.g. it is in the allowed paths
+        #                               of the caller, also through a symbolic link), else it is skipped. `nil`: all are read.
         # @return [Array<String>] the log file, or the log files in the folder (recursively)
-        def log_paths(path)
+        def log_paths(path, readable: nil)
           return [path] unless File.directory?(path)
-          without_links(scan_folder(path, path, []))
+          without_links(scan_folder(path, path, [], readable))
         end
 
         # Read the lines of a log file: plain, or compressed with gzip (detected with its first bytes)
@@ -110,13 +112,14 @@ module Aspera
 
         # Load the log files of a path
         # In a folder, a file that is not an ascp log is ignored. A file given explicitly must be an ascp log.
-        # @param path [String] log file, `-` (standard input), or folder
+        # @param path     [String]     log file, `-` (standard input), or folder
+        # @param readable [#call, nil] see `log_paths`
         # @yieldparam file [String] log file
         # @yieldreturn [#ascp?] the loaded log
         # @return [Array] the loaded logs that are ascp logs
-        def load_logs(path)
+        def load_logs(path, readable: nil)
           explicit = !File.directory?(path)
-          log_paths(path).filter_map do |file|
+          log_paths(path, readable: readable).filter_map do |file|
             log = yield(file)
             next log if log.ascp?
             Aspera.assert(!explicit, type: ParameterError) { "Not an ascp log: #{file}" }
@@ -153,8 +156,10 @@ module Aspera
           end
         end
 
+        # A file or sub-folder that `readable` refuses is skipped before it is read or listed: a symbolic link does not lead outside of what the caller may read.
+        # @param readable [#call, nil] see `log_paths`
         # @return [Array<String>] files, with the log files of folder added
-        def scan_folder(root, folder, files)
+        def scan_folder(root, folder, files, readable)
           children = begin
             Dir.children(folder)
           rescue SystemCallError => e
@@ -167,20 +172,30 @@ module Aspera
             next if name.start_with?('.')
             path = File.join(folder, name)
             if File.directory?(path)
-              scan_folder(root, path, files) unless name.match?(EXCLUDED_FOLDERS)
-            elsif name.match?(INCLUDED_FILES) && !path.delete_prefix(root).match?(EXCLUDED_FILES)
+              scan_folder(root, path, files, readable) if !name.match?(EXCLUDED_FOLDERS) && accepted?(path, readable)
+            elsif name.match?(INCLUDED_FILES) && !path.delete_prefix(root).match?(EXCLUDED_FILES) && accepted?(path, readable)
               files.push(path)
             end
           end
           files
         end
+
+        # @param path     [String]     file or folder found in a folder
+        # @param readable [#call, nil] see `log_paths`
+        # @return [Boolean] `true` if it can be read, else it is skipped
+        def accepted?(path, readable)
+          return true if readable.nil? || readable.call(path)
+          Log.log.debug { "Ignored, not readable: #{path}" }
+          false
+        end
       end
 
       # Analyze a log file, or the log files in a folder (recursively)
-      # @param path [String] file, `-` (standard input) or folder
+      # @param path     [String]     file, `-` (standard input) or folder
+      # @param readable [#call, nil] see `log_paths`
       # @return [self]
-      def add(path)
-        @log_files.concat(self.class.load_logs(path) { |file| LogFile.new(file, **@options).analyze })
+      def add(path, readable: nil)
+        @log_files.concat(self.class.load_logs(path, readable: readable) { |file| LogFile.new(file, **@options).analyze })
         self
       end
 

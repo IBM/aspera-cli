@@ -2822,6 +2822,8 @@ The real path of the folder is checked: neither `..` nor a symbolic link leading
 
 A command that reads or writes a local path given by the client checks it against the security level, like `@file:`: the content read (for example `config ascp logs`, `preview show`, `orchestrator workflows import` and `check_import`, `config sync admin`), or the file written (for example `config genkey`, `config download`).
 It is refused at level `high`, and at level `medium` the path must be in `allowed_paths` (read) or `writable_paths` (write); a path that does not exist and a path outside those give the same error, so the existence of a file is not revealed.
+At level `medium`, a file or folder found in a folder given to a command (for example `config ascp logs <folder>`) is skipped when its real path is outside of `allowed_paths` (a symbolic link), and the database of `sync admin` is checked also when its folder is given in `sync_info` (`local_db_dir`).
+The argument `-` is the standard input only for `config ascp logs` and `sync logs` (refused in MCP server mode, as `@stdin:`); for other commands, `-` is a file name, checked as any path.
 
 > [!NOTE]
 > A transfer that uses a remote agent (`node`, or `transferd` attached to a remote daemon) sends and receives the files on the host of the agent, not the local host: those paths are not local, and are not restricted by the security level.
@@ -6207,6 +6209,7 @@ A plugin is, in a plugin folder (option `plugin_folder`, by default folder `plug
 - **Commands**: `command :<name>, description: '...'`, inside `commands_under :<name> do ... end` for sub-commands.
   Positional arguments: `arguments: [{name: :<name>, description: '...'}]` (optional: `mandatory: false`, `default:`, `type: Hash`, `multiple: true`).
   An argument that is a local path adds `complete: :file` (or `:folder`) for shell completion, and then `access:` so the path is checked against the [Security Level](#security-level): `:read` (the command reads it), `:write` (the command writes it), or `:none` (not a local path read or written by <%=tool%>, for example a remote path, or a path given to another program).
+  With `access: :read`, `stdin: true` makes `-` the standard input, read by the action (refused in MCP server mode); without it, `-` is a path like any other.
   `read_only: true` for a command that changes nothing (allowed with option `poll`).
 - **Actions**: the method `action_<command path>`, e.g. `action_item_show` for `item show`, receives the arguments as keyword arguments (and `**` for others).
   It returns a result, displayed according to option `format`: `Result::SingleObject.new(<Hash>)`, `Result::ObjectList.new(<Array of Hash>)`, `Result::Status.new('<text>')`, `Result::Nothing.new`.
@@ -6841,7 +6844,7 @@ With the `http` transport:
 
 With both transports:
 
-- Extended value `@stdin:` is refused.
+- Extended value `@stdin:` is refused, and so is the argument `-` (standard input) of `config ascp logs` and `sync logs`.
 - Commands sent by the client run in the main folder of the server (option `home`, `<%=opt_env :home%>`, or the default one), and use its configuration file (option `config_file`) and its vault (options `vault` and `vault_password`, also when set in a preset of the server).
   The client cannot change them: these options are refused at levels `medium` and `high`.
   If the command line of the server sets option `security` to `medium` or `high`, the server cannot set them on its command line or in a preset either: set them in its environment, for example `<%=opt_env :vault%>` and `<%=opt_env :vault_password%>`.

@@ -23,7 +23,7 @@ module Aspera
     module Plugins
       # Base class for command plugins
       class Base
-        # Value of a path argument that means the standard input, not a local file (see `check_argument_access`)
+        # Value of a path argument that means the standard input, not a local file, when the argument declares `stdin: true` (see `check_argument_access`)
         STDIN_ARGUMENT = '-'
 
         module Operations
@@ -611,7 +611,8 @@ module Aspera
 
         # A local path given as an argument (`access: :read` or `:write`) is checked against the security level when it is read,
         # and replaced by its real path, so that the action receives a checked path (see `Cli::Security`).
-        # `-` (standard input) is not a local path: it is left unchanged.
+        # For an argument with `stdin: true`, `-` (standard input) is not a local path: it is left unchanged, unless the standard input is disabled
+        # (`@stdin:`, e.g. in MCP server mode). Elsewhere, `-` is a path, checked as any other.
         # @param arg_spec [Argument] declaration of the argument
         # @param value    [Object]   resolved value (a path, an Array of paths, or nil)
         # @return [Object] the value, with each path checked and resolved
@@ -625,7 +626,12 @@ module Aspera
             when :write     then security.method(:writable_path)
             else Aspera.error_unexpected_value(arg_spec.access) { "access of argument #{arg_spec.name}" }
             end
-          mapper = ->(one) { one.is_a?(String) && one != STDIN_ARGUMENT ? resolver.call(one) : one }
+          mapper = lambda do |one|
+            next one unless one.is_a?(String)
+            next resolver.call(one) unless arg_spec.stdin && one.eql?(STDIN_ARGUMENT)
+            ExtendedValue.instance.check_enabled(:stdin, what: "argument #{arg_spec.name}: #{STDIN_ARGUMENT} (standard input)")
+            one
+          end
           value.is_a?(Array) ? value.map(&mapper) : mapper.call(value)
         end
 

@@ -149,7 +149,7 @@ module Aspera
         # Keys consumed locally (not forwarded to MCP gem)
         TOOL_KEYS        = %i[max_text_bytes extra_args].freeze
         # Extended-value handlers disabled in MCP server mode whatever the security level:
-        # @stdin: is the JSON-RPC stream (stdio).
+        # @stdin: is the JSON-RPC stream (stdio), so is the argument `-` of a command that reads the standard input (`Argument#stdin`).
         # Other unsafe handlers depend on the security level, see Security.
         # @secret: is entered on a web page instead of the terminal, see Mcp::Secrets.
         DISABLED_EXTENDED_VALUE_HANDLERS = %i[stdin].freeze
@@ -177,9 +177,7 @@ module Aspera
           # Options of the other transport would be ignored
           ignored = mcp_options.keys & (transport.to_s.eql?('stdio') ? HTTP_KEYS + HTTP_SERVER_KEYS : STDIO_KEYS)
           Aspera.assert(ignored.empty?, type: Cli::BadArgument) { "MCP option(s) not used with transport #{transport}: #{ignored.join(', ')}" }
-          DISABLED_EXTENDED_VALUE_HANDLERS.each do |handler|
-            ExtendedValue.instance.on(handler) { |_| raise Cli::BadArgument, "@#{handler}: extended value is disabled in MCP server mode" }
-          end
+          DISABLED_EXTENDED_VALUE_HANDLERS.each { |handler| ExtendedValue.instance.disable(handler, 'in MCP server mode') }
           ExtendedValue.instance.on(:secret) { |prompt| Cli::Mcp::Secrets.value(prompt) }
           # Applies to commands of the client, and to presets, which the client can modify
           Security.instance.lock('in MCP server mode', default: DEFAULT_SECURITY_LEVEL)

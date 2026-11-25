@@ -117,6 +117,14 @@ module Aspera
             expect { evaluate(value) }.to(raise_error(BadArgument, /extended value is disabled by security level medium/))
           end
         end
+
+        # A file found by a command in a folder it reads (e.g. `config ascp logs <folder>`) is skipped when outside of allowed paths
+        it 'tells if a path found in a folder can be read: not through a symbolic link outside of allowed paths' do
+          outside = File.join(folder, 'outside').tap { |path| Dir.mkdir(path) }
+          link = File.join(allowed_folder, 'link').tap { |path| File.symlink(outside, path) }
+          expect(security.readable_path?(allowed_file)).to(be(true))
+          [outside, link, File.join(allowed_folder, 'missing')].each { |path| expect(security.readable_path?(path)).to(be(false)) }
+        end
       end
 
       # Secret read by @secret: on terminal

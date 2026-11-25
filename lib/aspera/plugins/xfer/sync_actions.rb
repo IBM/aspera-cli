@@ -31,7 +31,8 @@ module Aspera
           multiple:    true,
           mandatory:   false,
           complete:    :file,
-          access:      :read
+          access:      :read,
+          stdin:       true
         }].freeze
         # When a plugin class includes SyncActions, register the :sql option
         # in that class's DSL registry so Base#initialize auto-declares it,
@@ -53,13 +54,13 @@ module Aspera
               command(
                 :find, description: 'Find sync database files', arguments: [{name: :path, complete: :folder, access: :read}],
                 action: lambda do |path:, **|
-                  dbs = Sync::Operations.list_db_files(path)
+                  dbs = readable_db_files(path)
                   Cli::Result::ObjectList.new(dbs.keys.map { |n| {name: n, path: dbs[n]} })
                 end
               )
               command(
                 :status, description: 'Show sync session status', arguments: ADMIN_PATH_AND_INFO_ARGS,
-                action: ->(path:, sync_info: {}, **) { Cli::Result::SingleObject.new(Sync::Operations.admin_status(async_info_from_args(path: path, sync_info: sync_info))) }
+                action: ->(path:, sync_info: {}, **) { Cli::Result::SingleObject.new(Sync::Operations.admin_status(admin_sync_info(path: path, sync_info: sync_info))) }
               )
               command(
                 :meta, description: 'Show sync session metadata', arguments: ADMIN_PATH_AND_INFO_ARGS,
@@ -160,16 +161,39 @@ module Aspera
           sync_info
         end
 
+        # Sync info of an admin command, which reads the database of the session (directly, or by `asyncadmin`).
+        # The database is in the folder given by the argument `path`, or by `sync_info` (`local_db_dir`): that folder is checked against the security level,
+        # as the argument (`access: :read`), and so is the database file of the session when it is named (a name can contain `..`, a folder can be a symbolic link).
+        # @param path      [String] local path, checked against the security level
+        # @param sync_info [Hash]   extra sync info (may be empty)
+        # @return [Hash] sync info
+        def admin_sync_info(path:, sync_info:)
+          sync_info = async_info_from_args(path: path, sync_info: sync_info)
+          security = Cli::Security.instance
+          security.readable_path(Sync::Operations.local_db_folder(sync_info))
+          security.readable_path(Sync::Operations.session_db_path(sync_info)) unless Sync::Operations.session_name(sync_info).nil?
+          sync_info
+        end
+
+        # Database files of the sync sessions in a folder, that can be read at the security level
+        # (the folder of the databases, of a session, or a database file can be a symbolic link).
+        # @param local_db_dir [String] folder of the databases, checked against the security level
+        # @return [Hash{String => String}] name of session => database file
+        def readable_db_files(local_db_dir)
+          security = Cli::Security.instance
+          Sync::Operations.list_db_files(security.readable_path(local_db_dir)).select { |_, file| security.readable_path?(file) }
+        end
+
         # Provide database object from path + sync_info for admin ops
         # @param path      [String] local path
         # @param sync_info [Hash]   extra sync info (may be empty)
         def db_from_args(path:, sync_info: {})
-          sync_info = async_info_from_args(path: path, sync_info: sync_info)
+          sync_info = admin_sync_info(path: path, sync_info: sync_info)
           session = sync_info.key?('sessions') ? sync_info['sessions'].first : sync_info
           # if name not provided, check in db folder if there is only one name
           if !session.key?('name')
             local_db_dir = Sync::Operations.local_db_folder(sync_info)
-            dbs = Sync::Operations.list_db_files(local_db_dir)
+            dbs = readable_db_files(local_db_dir)
             Aspera.assert(dbs.length == 1, type: Cli::BadArgument) { "#{dbs.length} session found in #{local_db_dir}, please provide a name" }
             session['name'] = dbs.keys.first
           end
@@ -201,7 +225,7 @@ module Aspera
           files.each do |file|
             Aspera.assert(file == Cli::Plugins::Base::STDIN_ARGUMENT || File.exist?(file), type: Cli::BadArgument) { "No such file or folder: #{file}" }
           end
-          Cli::Result::ObjectList.new(Sync::LogParser.notable_events(files), fields: Sync::LogParser::FIELDS)
+          Cli::Result::ObjectList.new(Sync::LogParser.notable_events(files, readable: Cli::Security.instance.method(:readable_path?)), fields: Sync::LogParser::FIELDS)
         end
 
         # Execute a sync transfer for a given direction.

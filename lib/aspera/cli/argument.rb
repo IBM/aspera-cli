@@ -36,6 +36,8 @@ module Aspera
     #                                                     one of `ACCESSES`. The value is checked against the security level when the argument is read (`Cli::Security`),
     #                                                     and replaced by the real path: `:read` (content read or displayed, even to send it to a remote service),
     #                                                     `:write` (file created or modified). A path only sent by a transfer agent (not read by `ascli`) has no `access`.
+    # @!attribute stdin       [Boolean]                   With `access: :read`: the value `-` is the standard input, read by the command (not checked as a path).
+    #                                                     Refused where `@stdin:` is disabled (MCP server mode). Without it, `-` is a path like any other.
     Argument = Struct.new(
       :name,
       :description,
@@ -52,6 +54,7 @@ module Aspera
       :complete,
       :omit_absent,
       :access,
+      :stdin,
       keyword_init: true
     ) do
       def initialize(**kwargs)
@@ -61,10 +64,12 @@ module Aspera
         kwargs[:interactive]  = false if kwargs[:interactive].nil?
         kwargs[:evaluate]     = :extended if kwargs[:evaluate].nil?
         kwargs[:omit_absent]  = false if kwargs[:omit_absent].nil?
+        kwargs[:stdin]        = false if kwargs[:stdin].nil?
         raise ArgumentError, "omit_absent: only for an optional argument: #{kwargs[:name]}" if kwargs[:omit_absent] && kwargs[:mandatory]
         kwargs[:type] = String unless kwargs.key?(:type) || kwargs[:allowed]
         raise ArgumentError, "evaluate: #{kwargs[:evaluate].inspect}, expecting one of: #{Argument::EVALUATIONS.join(', ')}" unless Argument::EVALUATIONS.include?(kwargs[:evaluate])
         raise ArgumentError, "access: #{kwargs[:access].inspect}, expecting one of: #{Argument::ACCESSES.join(', ')}" unless kwargs[:access].nil? || Argument::ACCESSES.include?(kwargs[:access])
+        raise ArgumentError, "stdin: only with access: :read: #{kwargs[:name]}" if kwargs[:stdin] && !kwargs[:access].eql?(:read)
         super
       end
 

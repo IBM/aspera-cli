@@ -187,6 +187,17 @@ module Aspera
       # @raise [BadArgument] If reading the file is refused at current level
       def read_file(path, ...) = File.read(readable_path(path), ...)
 
+      # A file or folder found by a command, e.g. in a folder given by the client, can be outside of allowed paths (symbolic link):
+      # the command skips it, instead of failing. Same rules as `readable_path`.
+      # @param path [String] Path of a file or folder to read
+      # @return [Boolean] `true` if reading it is allowed at current level
+      def readable_path?(path)
+        readable_path(path)
+        true
+      rescue BadArgument
+        false
+      end
+
       # Writing a file where the client chooses (e.g. downloaded file) could replace a file that is used later (e.g. plugin, shell startup file).
       # At level `medium` and `high`, files can be written only in `writable_paths` (none by default): the real path of the folder is checked,
       # so that neither `..` nor a symbolic link leads outside of them.

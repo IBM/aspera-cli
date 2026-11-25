@@ -261,8 +261,15 @@ module Aspera
           end
         end
 
+        # @param sync_info [Hash] sync parameters in conf or args format, with the name of the session
+        # @return [String] Path of the database file of the session, that may not exist
+        def session_db_path(sync_info) = File.join(local_db_folder(sync_info), PRIVATE_FOLDER, session_name(sync_info), ASYNC_DB)
+
+        # @param sync_info [Hash] sync parameters in conf or args format, with the name of the session
+        # @return [String] Path of the database file of the session
+        # @raise [ParameterError] If the file does not exist
         def session_db_file(sync_info)
-          db_file = File.join(local_db_folder(sync_info), PRIVATE_FOLDER, session_name(sync_info), ASYNC_DB)
+          db_file = session_db_path(sync_info)
           Aspera.assert(File.exist?(db_file), type: ParameterError) { "Database file #{db_file} does not exist" }
           db_file
         end

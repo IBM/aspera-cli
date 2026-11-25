@@ -149,6 +149,9 @@ module Aspera
           zlib:   'Decompress zlib',
           extend: 'Evaluate embedded @<modifier>:<value>@'
         }
+        # Handlers disabled (see `disable`), with the reason
+        # @type [Hash{Symbol => String}]
+        @disabled = {}
         @regex_single = nil
         @regex_inner = nil
         @default_decoder = nil
@@ -192,6 +195,23 @@ module Aspera
         @handlers[name] = block
         @descriptions[name] = description unless description.nil?
         update_regex
+      end
+
+      # Disable a handler: its use raises an error, and so does reading its source by other means (see `check_enabled`),
+      # e.g. `@stdin:` and the argument `-` in MCP server mode, where the standard input is the JSON-RPC stream.
+      # @param name   [Symbol] Extended Value method
+      # @param reason [String] Why it is disabled, for the error message, e.g. `in MCP server mode`
+      def disable(name, reason)
+        @disabled[name] = reason
+        on(name) { |_| check_enabled(name) }
+      end
+
+      # @param name [Symbol] Extended Value method
+      # @param what [String] What reads the source of the handler, for the error message
+      # @raise [BadArgument] If the handler is disabled
+      def check_enabled(name, what: "@#{name}: extended value")
+        reason = @disabled[name]
+        raise BadArgument, "#{what} is disabled #{reason}" unless reason.nil?
       end
 
       # Parses a `String` value to extended value.

@@ -14,7 +14,7 @@ module Aspera
       module AscpLogsActions
         # Schema of option `ascp_logs`, in the schemas of the bundle (manifest `schemas`)
         OPTIONS_SCHEMA = 'transfer_opts:components.schemas.AscpLogsOptions'
-        LOG_FILES = [{name: :paths, description: 'Log files (gzip supported), `-` for standard input, or folders with log files', multiple: true, complete: :file, access: :read}].freeze
+        LOG_FILES = [{name: :paths, description: 'Log files (gzip supported), `-` for standard input, or folders with log files', multiple: true, complete: :file, access: :read, stdin: true}].freeze
         # Command => description, and default fields
         LISTS = {
           sessions:          ['Sessions, with diagnostics',                                           %w[pid session user direction peer status error error_category start transmitted_bytes average_rate loss_rate diagnostics]],
@@ -125,7 +125,7 @@ module Aspera
           require_relative '../../ascp/log_analyzer'
           ascp_logs_files(paths) do |files|
             check_ascp_logs_paths(files)
-            Cli::Result::ObjectList.new(Ascp::LogAnalyzer::Records.list(kind, files, timezone: ascp_logs_params['timezone']), fields: RECORDS[kind].last)
+            Cli::Result::ObjectList.new(Ascp::LogAnalyzer::Records.list(kind, files, timezone: ascp_logs_params['timezone'], readable: ascp_logs_readable), fields: RECORDS[kind].last)
           end
         rescue ParameterError => e
           raise Cli::BadArgument, e.message
@@ -158,7 +158,7 @@ module Aspera
             check_ascp_logs_paths(files)
             files.each do |path|
               Log.log.debug { "Analyzing: #{path}" }
-              analyzer.add(path)
+              analyzer.add(path, readable: ascp_logs_readable)
             end
           end
           analyzer.warnings.each { |warning| Log.log.warn(warning) }
@@ -179,6 +179,11 @@ module Aspera
         def ascp_logs_params
           DEFAULTS.merge((options.get_option(:ascp_logs) || {}).transform_keys(&:to_s))
         end
+
+        # A folder given as argument is checked against the security level (`access: :read`), and so is each file or folder found in it,
+        # which can be a symbolic link outside of the allowed paths: those are skipped.
+        # @return [#call] tells if a file or folder found in a folder can be read
+        def ascp_logs_readable = Cli::Security.instance.method(:readable_path?)
 
         # Standard input (`-`) is read by the analyzer
         def check_ascp_logs_paths(paths)

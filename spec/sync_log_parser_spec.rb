@@ -82,6 +82,19 @@ RSpec.describe(Aspera::Sync::LogParser) do
         expect(described_class.notable_events([dir]).size).to(eq(8))
       end
     end
+
+    # The caller (e.g. the security level of the CLI) refuses what is outside of the folder: a symbolic link to a file is not followed there
+    it 'skips the files of a folder that the caller cannot read' do
+      Dir.mktmpdir do |base|
+        logs = File.join(base, 'logs').tap { |path| Dir.mkdir(path) }
+        File.write(File.join(logs, 'async.log'), "#{lines.join("\n")}\n")
+        File.write(File.join(base, 'outside.log'), "#{lines.join("\n")}\n")
+        File.symlink(File.join(base, 'outside.log'), File.join(logs, 'async.1.log'))
+        inside = ->(path) { File.realpath(path).start_with?(File.join(File.realpath(logs), '')) }
+        expect(described_class.notable_events([logs]).size).to(eq(16))
+        expect(described_class.notable_events([logs], readable: inside).size).to(eq(8))
+      end
+    end
   end
 
   describe '.default_log_paths' do

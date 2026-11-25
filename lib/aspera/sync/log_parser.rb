@@ -37,10 +37,12 @@ module Aspera
       FIELD_RE = Hash.new { |cache, key| cache[key] = /\b#{Regexp.escape(key)}=(?:"([^"]*)"|(\S+))/ }
 
       class << self
-        # @param paths [Array<String>] log files, folders (scanned for `async*.log`), or `-` (standard input)
+        # @param paths    [Array<String>] log files, folders (scanned for `async*.log`), or `-` (standard input)
+        # @param readable [#call, nil]    For a folder: tells if a file found in it can be read (e.g. it is in the allowed paths of the caller,
+        #                                 also through a symbolic link), else it is skipped. `nil`: all are read.
         # @return [Array<Hash>] notable events, oldest first (across files, by timestamp)
-        def notable_events(paths)
-          paths.flat_map { |path| path_files(path) }
+        def notable_events(paths, readable: nil)
+          paths.flat_map { |path| path_files(path, readable) }
             .flat_map { |file| file_events(file) }
             .sort_by { |event| event['time'] }
         end
@@ -69,11 +71,13 @@ module Aspera
 
         private
 
-        # @param path [String] a log file, `-`, or a folder (then only the `async*.log` files in it are kept)
+        # @param path     [String]     a log file, `-`, or a folder (then only the `async*.log` files in it are kept)
+        # @param readable [#call, nil] see `notable_events`
         # @return [Array<String>] the files to read
-        def path_files(path)
+        def path_files(path, readable)
           return [path] unless File.directory?(path)
           Dir.children(path).sort.select { |name| name.match?(ASYNC_FILE) }.map { |name| File.join(path, name) }
+            .select { |file| readable.nil? || readable.call(file) }
         end
 
         # @param file [String] a log file (plain or gzip), or `-`
