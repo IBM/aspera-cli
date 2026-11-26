@@ -48,6 +48,7 @@ module Aspera
           dropbox_membership
           group
           group_membership
+          group_permission
           kms_profile
           network_policy
           node
@@ -513,6 +514,7 @@ module Aspera
           group:                     {},
           # A membership cannot be modified (no `PUT` in the API): delete it and create another one
           group_membership:          {list_fields: %w[id group_id member_type member_id], ops: %i[create list show delete]},
+          group_permission:          {list_fields: %w[id group_id level entity_type entity_id]},
           kms_profile:               {path: 'integrations/kms_profiles', create_schema: false},
           network_policy:            {list_fields: nil},
           node:                      {

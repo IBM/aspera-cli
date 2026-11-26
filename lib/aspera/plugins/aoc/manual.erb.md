@@ -502,7 +502,7 @@ api.ibmaspera.com 422 Unprocessable Entity
 Remove the offending parameters and try again.
 
 > [!NOTE]
-> Some properties that are shown in the web UI, such as membership, are not listed directly in the resource, but instead another resource is created to link a user and its group: `group_membership`
+> Some properties that are shown in the web UI, such as membership, are not listed directly in the resource, but instead another resource is created to link a user and its group: `group_membership`, or the owners and managers of a group: `group_permission`
 
 #### Access Key secrets
 
@@ -846,6 +846,36 @@ User: <%=ph :user_id%>
 
 ```shell
 <%=cmd%> aoc admin group_membership create @json:'{"group_id":<%=ph :group_id%>,"member_type":"user","member_id":<%=ph :user_id%>}'
+```
+
+#### Example: Owners and managers of a group
+
+An owner or a manager of a group can manage its members, an owner can also modify or delete the group.
+A `group_permission` gives the level `owner` or `manager` on a group to a user or a group (`entity_type` and `entity_id`).
+Organization administrators are owners of all groups, without `group_permission`.
+
+- List the owners and managers of a group (tab **Managers** of the group in the web UI)
+
+```shell
+<%=cmd%> aoc admin group_permission list --query=@json:'{"group_id":<%=ph :group_id%>,"embed[]":["entity"],"sort":"entity_name"}' --fields=id,level,entity_type,entity.name
+```
+
+- Make a user manager of a group
+
+```shell
+<%=cmd%> aoc admin group_permission create @json:'{"group_id":<%=ph :group_id%>,"entity_type":"user","entity_id":<%=ph :user_id%>,"level":"manager"}'
+```
+
+- Change the level of a permission (only the level can be changed)
+
+```shell
+<%=cmd%> aoc admin group_permission modify <%=ph :permission_id%> @json:'{"level":"owner"}'
+```
+
+- Revoke a permission
+
+```shell
+<%=cmd%> aoc admin group_permission delete <%=ph :permission_id%>
 ```
 
 #### Example: Perform a multi Gbps transfer between two remote shared folders

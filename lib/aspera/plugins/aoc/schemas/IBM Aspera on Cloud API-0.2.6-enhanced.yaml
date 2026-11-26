@@ -169,6 +169,10 @@ tags:
       all their members at once. System groups are managed by AoC.
   - name: Group Memberships
     description: Manage members of groups. Add or remove users and groups as members of a group.
+  - name: Group Permissions
+    description: >-
+      Manage owners and managers of groups. An owner or a manager of a group can manage its members, an owner can also
+      modify or delete the group.
   - name: Nodes
     description: >-
       Manage Aspera transfer servers that provide storage and transfer capabilities. Nodes contain the connection
@@ -239,6 +243,7 @@ x-tagGroups:
       - Organizations
       - Groups
       - Group Memberships
+      - Group Permissions
   - name: Workspaces & Collaboration
     tags:
       - Workspaces
@@ -2571,6 +2576,320 @@ paths:
                 $ref: '#/components/schemas/InternalServerError'
       tags:
         - Group Memberships
+  /group_permissions:
+    get:
+      operationId: get_group_permissions
+      summary: Get a Listing of Group Owners and Managers
+      description: >
+        Get a listing of group permissions. A group permission makes a user or a group (`entity_type`, `entity_id`) an
+        owner or a manager (`level`) of a group (`group_id`). The members of a group that has a permission (directly or
+        through a group) have this permission too. Organization administrators are owners of all groups, without group
+        permission.
+
+        Requires a token with admin scope, for an organization administrator or a workspace manager. An organization
+        administrator gets the permissions of the organization. A workspace manager gets the permissions of the groups
+        they own or manage.
+
+        Parameter `inherited` (sent by the web UI) has no effect: only direct permissions are listed.
+      parameters:
+        - name: page
+          in: query
+          description: Page number, starting at 1.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          description: Number of items per page (at most 1000).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+        - name: sort
+          in: query
+          description: >-
+            Comma-separated list of fields (at most 5), prefixed with `-` for descending order. Fields: `level`,
+            `entity_name` (name of the user or group), `group_name`, `user_name`. An unknown field is refused
+            (`unknown_sort_field`).
+          schema:
+            type: string
+          example: entity_name
+        - name: q
+          in: query
+          description: >-
+            Search (case-insensitive substring) in the `email`, `first_name`, `last_name` and `name` of the user, and the
+            `name` of the group, that has the permission. A token `<field>:<value>`, with `<field>` one of the filter
+            parameters, keeps permissions whose field starts with `<value>`.
+          schema:
+            type: string
+          example: group_id:123
+        - name: group_id
+          in: query
+          description: Filter by group ID.
+          schema:
+            type: string
+        - name: entity_id
+          in: query
+          description: Filter by ID of the user or group that has the permission (according to `entity_type`).
+          schema:
+            type: string
+        - name: entity_type
+          in: query
+          description: Filter by kind of entity that has the permission.
+          schema:
+            type: string
+            enum:
+              - user
+              - group
+        - name: embed[]
+          in: query
+          description: >-
+            embed[]=entity (user or group object from entity_id), embed[]=group (group object from group_id). Repeat the
+            parameter for several values.
+          schema:
+            type: string
+            enum:
+              - entity
+              - group
+      responses:
+        '200':
+          description: OK
+          headers:
+            X-Total-Count:
+              description: Total number of permissions matching the query (all pages).
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/group_permissions_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user neither organization administrator nor workspace manager)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '422':
+          description: Unprocessable Entity (e.g. unknown sort field)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Group Permissions
+    post:
+      operationId: add_group_permission
+      summary: Make a User or a Group Owner or Manager of a Group
+      description: >
+        Give a user or a group the permission `owner` or `manager` on a group. Requires a token with admin scope, for an
+        organization administrator or a workspace manager. An owner of the group can give both levels, a manager of the
+        group only `manager`.
+
+        A user or a group has at most one permission on a group: to change its level, update the permission.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/group_permissions_params'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/group_permissions_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user neither organization administrator nor workspace manager)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '422':
+          description: >-
+            Unprocessable Entity (e.g. level not `owner` or `manager`, user or group not found, group not found, the
+            entity already has a permission on the group, level not allowed for the user)
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Group Permissions
+  /group_permissions/{id}:
+    get:
+      operationId: get_group_permission_by_id
+      summary: Get Information on a Specific Group Permission
+      description: >-
+        Get information on a specific group permission. Requires a token with admin scope, for an organization
+        administrator or a workspace manager (in the scope given in the listing).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique identifier of the resource.
+        - name: embed[]
+          in: query
+          description: >-
+            embed[]=entity (user or group object from entity_id), embed[]=group (group object from group_id). Repeat the
+            parameter for several values.
+          schema:
+            type: string
+            enum:
+              - entity
+              - group
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/group_permissions_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Group Permissions
+    put:
+      operationId: update_group_permission
+      summary: Change the Level of a Group Permission
+      description: >-
+        Change the level (`owner` or `manager`) of a group permission. Only the level can be changed. Requires a token
+        with admin scope, for an organization administrator or a workspace manager. A manager of the group cannot change
+        a permission from or to `owner`.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique identifier of the resource.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/group_permissions_update_params'
+      responses:
+        '204':
+          description: No Content
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '422':
+          description: Unprocessable Entity (level not `owner` or `manager`, or not allowed for the user)
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Group Permissions
+    delete:
+      operationId: delete_group_permission
+      summary: Revoke a Group Permission
+      description: >-
+        Revoke the permission of a user or a group on a group. Requires a token with admin scope, for an organization
+        administrator or a workspace manager. Revoking `owner` requires an owner of the group, revoking `manager` an owner
+        or a manager of the group.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique identifier of the resource.
+      responses:
+        '204':
+          description: No Content
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, level not allowed for the user)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Group Permissions
   /groups:
     get:
       operationId: get_groups
@@ -9402,6 +9721,111 @@ components:
         - group_id
         - member_id
         - member_type
+    group_permissions_params:
+      description: Permission to give to a user or a group on a group.
+      type: object
+      properties:
+        group_id:
+          description: ID of the group.
+          type: string
+          examples:
+            - '123'
+        entity_id:
+          description: ID of the user or group that gets the permission (according to `entity_type`).
+          type: string
+          examples:
+            - '42'
+        entity_type:
+          description: Kind of entity that gets the permission.
+          type: string
+          examples:
+            - user
+          enum:
+            - user
+            - group
+        level:
+          description: '`owner` or `manager` of the group.'
+          type: string
+          examples:
+            - manager
+          enum:
+            - owner
+            - manager
+      required:
+        - group_id
+        - entity_id
+        - entity_type
+        - level
+    group_permissions_update_params:
+      description: New level of a group permission.
+      type: object
+      properties:
+        level:
+          description: '`owner` or `manager` of the group.'
+          type: string
+          examples:
+            - owner
+          enum:
+            - owner
+            - manager
+      required:
+        - level
+    group_permissions_response:
+      description: Permission of a user or a group (owner or manager) on a group.
+      type: object
+      properties:
+        id:
+          description: ID of this group permission.
+          type: string
+          examples:
+            - '30086'
+        group_id:
+          description: ID of the group.
+          type: string
+          examples:
+            - '123'
+        entity_id:
+          description: ID of the user or group that has the permission (according to `entity_type`).
+          type: string
+          examples:
+            - '42'
+        entity_type:
+          description: Kind of entity that has the permission.
+          type: string
+          examples:
+            - user
+          enum:
+            - user
+            - group
+        level:
+          description: '`owner` or `manager` of the group.'
+          type: string
+          examples:
+            - manager
+          enum:
+            - owner
+            - manager
+        entity:
+          description: >-
+            User or group that has the permission, with `embed[]=entity`. `null` if it cannot be read with the token
+            used.
+          anyOf:
+            - $ref: '#/components/schemas/users_response'
+            - $ref: '#/components/schemas/groups_response'
+            - enum:
+                - null
+        group:
+          description: Group, with `embed[]=group`. `null` if the group cannot be read with the token used.
+          anyOf:
+            - $ref: '#/components/schemas/groups_response'
+            - enum:
+                - null
+      required:
+        - id
+        - group_id
+        - entity_id
+        - entity_type
+        - level
     groups_params:
       description: Group to create.
       type: object
