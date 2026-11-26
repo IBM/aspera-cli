@@ -117,6 +117,7 @@ module Aspera
 
         # :reek:UnusedParameters token_regenerator
         def start_transfer(transfer_spec, token_regenerator: nil)
+          Aspera::Transfer::Spec.integer_exclude_times(transfer_spec)
           if transfer_spec['direction'] == 'send'
             Log.log.warn { "Connect requires upload selection using GUI, ignoring #{transfer_spec['paths']}".red }
             transfer_spec.delete('paths')

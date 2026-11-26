@@ -378,6 +378,7 @@ module Aspera
           transfer_spec['destination_root'] = Cli::Security.instance.writable_path(transfer_spec['destination_root']) if receives_locally && transfer_spec['destination_root']
           # resolve pseudo-parameter: target_rate -> target_rate_kbps (overrides target_rate_kbps if both are present)
           Aspera::Transfer::Spec.resolve_target_rate(transfer_spec)
+          Aspera::Transfer::Spec.stringify_exclude_times(transfer_spec)
           # recursively remove values that are nil (user wants to delete)
           transfer_spec.deep_do { |hash, key, value, _unused| hash.delete(key) if value.nil? }
           # if TS from app has content_protection (e.g. F5), that means content is protected: ask password if not provided

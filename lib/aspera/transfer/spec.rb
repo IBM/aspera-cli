@@ -27,6 +27,8 @@ module Aspera
       }.freeze
       # fields for WSS
       WSS_FIELDS = %w[wss_enabled wss_port].freeze
+      # Modification times of the source files: `Integer` or `String`, see `stringify_exclude_times`
+      EXCLUDE_TIMES = %w[exclude_newer_than exclude_older_than].freeze
       # all fields for transport
       TRANSPORT_FIELDS = (%w[remote_host] + AK_TSPEC_BASE.keys + WSS_FIELDS).freeze
       # reserved tag for Aspera
@@ -60,6 +62,28 @@ module Aspera
           return unless transfer_spec.key?('target_rate')
           rate = transfer_spec.delete('target_rate')
           transfer_spec['target_rate_kbps'] = Units::Decimal.rate_string_to_bps(rate) / 1000 unless rate.nil?
+        end
+
+        # Parameters `exclude_newer_than` and `exclude_older_than` given as an `Integer` are sent as a `String`:
+        # the Node API ignores a number, `transferd` refuses it, and `ascp` reads a text anyway.
+        # @param transfer_spec [Hash] Transfer spec, modified in place
+        def stringify_exclude_times(transfer_spec)
+          EXCLUDE_TIMES.each { |key| transfer_spec[key] = transfer_spec[key].to_s if transfer_spec[key].is_a?(Integer) }
+        end
+
+        # Parameters `exclude_newer_than` and `exclude_older_than` as an `Integer`: Connect ignores a string, or a negative number
+        # @param transfer_spec [Hash] Transfer spec, modified in place
+        # @raise [ParameterError] if a value is not an integer, or is negative
+        def integer_exclude_times(transfer_spec)
+          EXCLUDE_TIMES.each do |key|
+            next unless transfer_spec.key?(key)
+            value = transfer_spec[key]
+            value = Integer(value, 10, exception: false) if value.is_a?(String)
+            Aspera.assert(value.is_a?(Integer) && !value.negative?, type: ParameterError) do
+              "agent connect: #{key} must be a time after the epoch (positive integer), not #{transfer_spec[key].inspect}"
+            end
+            transfer_spec[key] = value
+          end
         end
 
         def fix_transferd_resume_policy(transfer_spec)

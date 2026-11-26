@@ -5352,6 +5352,8 @@ An optional parameter can be specified to display the schema for a specific tran
 
 The description gives the supported agents, if not all, and the corresponding `ascp` argument or environment variable.
 
+Values are given in the form described here, whatever the agent: <%=tool%> converts them for an agent that reads another form (e.g. `resume_policy` for `transferd`, `exclude_newer_than` for `connect`).
+
 #### Transfer Specification Reference
 
 <%=agent_table%>

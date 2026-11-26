@@ -5,6 +5,7 @@
 
 require_relative '../../lib/aspera/transfer/spec'
 require_relative '../../lib/aspera/schema/documentation'
+require_relative '../../lib/aspera/schema/validator'
 require 'bundler/setup'
 
 module Aspera
@@ -39,6 +40,40 @@ module Aspera
           ts = {'target_rate_kbps' => 5}
           described_class.resolve_target_rate(ts)
           expect(ts).to(eq({'target_rate_kbps' => 5}))
+        end
+      end
+
+      describe '.stringify_exclude_times' do
+        it 'sends an integer as a string, for the Node API and transferd, and leaves a string unchanged' do
+          ts = {'exclude_newer_than' => -30, 'exclude_older_than' => '-86400', 'target_rate_kbps' => 5}
+          described_class.stringify_exclude_times(ts)
+          expect(ts).to(eq({'exclude_newer_than' => '-30', 'exclude_older_than' => '-86400', 'target_rate_kbps' => 5}))
+        end
+      end
+
+      describe '.integer_exclude_times' do
+        it 'sends an integer, for Connect' do
+          ts = {'exclude_newer_than' => '1700000000', 'exclude_older_than' => 1_600_000_000}
+          described_class.integer_exclude_times(ts)
+          expect(ts).to(eq({'exclude_newer_than' => 1_700_000_000, 'exclude_older_than' => 1_600_000_000}))
+        end
+
+        it 'refuses a negative (relative) time and a value that is not an integer, that Connect ignores' do
+          ['-30', -30, 'abc', '2026-01-01T00:00:00Z'].each do |value|
+            expect { described_class.integer_exclude_times({'exclude_older_than' => value}) }
+              .to(raise_error(ParameterError, /agent connect: exclude_older_than must be a time after the epoch/), value.inspect)
+          end
+        end
+      end
+
+      describe 'schema of exclude_newer_than and exclude_older_than' do
+        it 'accepts an integer and a string, as the manual shows (hot folder)' do
+          errors = ->(ts) { Schema::Validator.instance.errors(ts, Schema::Registry::TRANSFER_SPEC, partial: true) }
+          valid_values = [-8, '-8']
+          described_class::EXCLUDE_TIMES.each do |key|
+            valid_values.each { |value| expect(errors.call({key => value})).to(be_empty, "#{key}: #{value.inspect}") }
+            expect(errors.call({key => 1.5})).not_to(be_empty)
+          end
         end
       end
 

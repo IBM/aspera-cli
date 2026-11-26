@@ -144,18 +144,32 @@ properties:
   exclude_newer_than:
     description: >-
       Exclude files, but not directories, from the transfer if they are newer
-      than the specified number of seconds added to the source computer's epoch.
+      than this modification time: number of seconds since the epoch of the
+      source file system (usually 1970-01-01), or, if negative, relative to the
+      present time.
 
       e.g. `-86400` for newer than a day back.
-    type: string
+
+      An integer, or a string of an integer.
+      Agent `connect` accepts only a time after the epoch (not negative).
+    type:
+      - integer
+      - string
     x-cli-option: true
   exclude_older_than:
     description: >-
       Exclude files, but not directories, from the transfer if they are older
-      than the specified number of seconds added to the source computer's epoch.
+      than this modification time: number of seconds since the epoch of the
+      source file system (usually 1970-01-01), or, if negative, relative to the
+      present time.
 
       e.g. `-86400` for older than a day back.
-    type: string
+
+      An integer, or a string of an integer.
+      Agent `connect` accepts only a time after the epoch (not negative).
+    type:
+      - integer
+      - string
     x-cli-option: true
   fail_bad_filepass:
     description: Fail on bad file decryption passphrase.
@@ -591,7 +605,7 @@ properties:
 
       - `full_csum` : Compare file attributes and the full file checksums; resume if they match, and re-transfer if they do not.
 
-      Note: transferd uses values: `attributes`, `sparse_checksum`, `full_checksum`.
+      Agents `transferd` and `desktop` use values `attributes`, `sparse_checksum`, `full_checksum`: `ascli` converts them.
     default: faspmgr:none;other:sparse_csum
     type: string
     enum:
