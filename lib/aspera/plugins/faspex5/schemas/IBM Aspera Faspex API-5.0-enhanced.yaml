@@ -236,6 +236,7 @@ paths:
               default: /aspera/faspex
             version_path:
               default: /auth
+      security: []
       tags:
         - Authorization
   /authenticate:
@@ -505,6 +506,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalError'
+      security: []
       tags:
         - Server configuration
     put:
@@ -1012,6 +1014,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalError'
+      security:
+        - OAuth2:
+            - user
       tags:
         - Distribution lists
     delete:
@@ -1958,6 +1963,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalError'
+      security:
+        - OAuth2:
+            - admin
+            - client_only
       tags:
         - Jobs
   /jobs/{id}:
@@ -2016,6 +2025,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalError'
+      security:
+        - OAuth2:
+            - admin
+            - client_only
       tags:
         - Jobs
     put:
@@ -2078,6 +2091,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalError'
+      security:
+        - OAuth2:
+            - admin
+            - client_only
       tags:
         - Jobs
     delete:
@@ -2131,6 +2148,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalError'
+      security:
+        - OAuth2:
+            - admin
+            - client_only
       tags:
         - Jobs
   /jobs/retry:
@@ -2187,6 +2208,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalError'
+      security:
+        - OAuth2:
+            - admin
+            - client_only
       tags:
         - Jobs
   /configuration/metadata_profiles/{metadata_profile_id}/fields/{id}:
@@ -2237,6 +2262,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalError'
+      security:
+        - OAuth2:
+            - admin
       tags:
         - Metadata fields
   /configuration/metadata_profiles:
@@ -2289,6 +2317,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalError'
+      security:
+        - OAuth2:
+            - user
       tags:
         - Metadata profiles
     post:
@@ -2326,6 +2357,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalError'
+      security:
+        - OAuth2:
+            - admin
       tags:
         - Metadata profiles
   /configuration/metadata_profiles/{id}:
@@ -2421,6 +2455,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalError'
+      security:
+        - OAuth2:
+            - admin
       tags:
         - Metadata profiles
     delete:
@@ -2462,6 +2499,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalError'
+      security:
+        - OAuth2:
+            - admin
       tags:
         - Metadata profiles
   /configuration/metadata_profiles/default:
@@ -2481,6 +2521,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalError'
+      security:
+        - OAuth2:
+            - user
+        - PasscodeAuth: []
       tags:
         - Metadata profiles
   /mfa/send_code:
@@ -6485,6 +6529,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalError'
+      security:
+        - OAuth2:
+            - admin
       tags:
         - SAML
   /saml_configs:
@@ -6520,6 +6567,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalError'
+      security:
+        - OAuth2:
+            - admin
+            - manager
       tags:
         - SAML
     post:
@@ -7161,6 +7212,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalError'
+      security:
+        - OAuth2:
+            - admin
       tags:
         - Shared folders custom access
     post:
@@ -7224,6 +7278,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalError'
+      security:
+        - OAuth2:
+            - admin
       tags:
         - Shared folders custom access
   /nodes/{node_id}/shared_folders/{shared_folder_id}/custom_access_users/{id}:
@@ -7282,6 +7339,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalError'
+      security:
+        - OAuth2:
+            - admin
       tags:
         - Shared folders custom access
   /nodes/{node_id}/shared_folders/{shared_folder_id}/custom_access_groups:
@@ -7356,6 +7416,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalError'
+      security:
+        - OAuth2:
+            - admin
       tags:
         - Shared folders custom access
     post:
@@ -7421,6 +7484,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalError'
+      security:
+        - OAuth2:
+            - admin
       tags:
         - Shared folders custom access
   /nodes/{node_id}/shared_folders/{shared_folder_id}/custom_access_groups/{id}:
@@ -7479,6 +7545,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalError'
+      security:
+        - OAuth2:
+            - admin
       tags:
         - Shared folders custom access
   /shared_folders:
@@ -10205,6 +10274,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalError'
+      security:
+        - OAuth2: []
       tags:
         - Transfers
     put:
@@ -10243,7 +10314,7 @@ paths:
                   type: integer
                 rate_policy:
                   description: The new rate policy to apply to the transfer.
-                  type: integer
+                  type: string
                   enum:
                     - fixed
                     - high
@@ -10274,6 +10345,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalError'
+      security:
+        - OAuth2: []
       tags:
         - Transfers
   /configuration/alternate_addresses:
@@ -10827,6 +10900,7 @@ paths:
       responses:
         '200':
           description: ' - OK - Successful response'
+      security: []
       tags:
         - Server configuration
   /events_purge_policies:
@@ -11510,6 +11584,9 @@ paths:
     get:
       operationId: getMyAccountPreferences
       summary: Get your account preferences
+      description: |-
+        Returns the preferences of the user of the access token.
+        To read the preferences of another user, get a token for this user: see `PUT /account/preferences`.
       responses:
         '200':
           description: ' - OK - Successful response'
@@ -11533,6 +11610,15 @@ paths:
     put:
       operationId: updateMyAccountPreferences
       summary: Update account preferences for the logged in user
+      description: |-
+        Updates the preferences of the user of the access token: only the properties given are changed.
+        The properties can also be given in an object `preference`, for example `{"preference":{"rows_per_page":10}}`.
+        A property that is not in the schema is refused with error 1014 (`ParameterNotPermitted`), for example `email` for a SAML user.
+
+        **Preferences of another user**: no endpoint lets an administrator change them, and `PUT /accounts/{id}` refuses them.
+        To change them, get a token for this user with the JWT grant (impersonation, see `POST /token`),
+        with an API client that has `allow_jwt_grant`, `allow_global_key` with a `public_key`, and `access_grant_all_users`.
+        Then call this endpoint with this token.
       parameters: []
       requestBody:
         content:
@@ -11551,7 +11637,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ParameterMissing'
+                oneOf:
+                  - $ref: '#/components/schemas/ParameterMissing'
+                  - $ref: '#/components/schemas/ParameterNotPermitted'
+                  - $ref: '#/components/schemas/InvalidParam'
+                  - $ref: '#/components/schemas/StringOutOfRange'
         '401':
           description: ' - Unauthorized'
           content:
@@ -11987,6 +12077,12 @@ paths:
     post:
       operationId: requestOAuthToken
       summary: Request an OAuth token
+      description: |-
+        Returns an access token for the grant given in `grant_type`.
+
+        With the JWT grant (`urn:ietf:params:oauth:grant-type:jwt-bearer`), the API client must have `allow_jwt_grant`, and the token is for the subject of the assertion (see `JwtPostTokenRequest`).
+        For a user, the client must have `access_grant_all_users`, or the user must be in `access_grant_to_users` of the client: else error 2016 (`InvalidSubject`).
+        A locked account (error 3813) or a deactivated account (error 3814) gets no token.
       parameters: []
       requestBody:
         content:
@@ -12005,13 +12101,33 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ParameterMissing'
-        '403':
+                oneOf:
+                  - $ref: '#/components/schemas/ParameterMissing'
+                  - $ref: '#/components/schemas/PayloadVerificationFailed'
+        '401':
           description: ' - Unauthorized'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InvalidClient'
+                $ref: '#/components/schemas/UsernameNeeded'
+        '403':
+          description: ' - Forbidden'
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/InvalidClient'
+                  - $ref: '#/components/schemas/JwtUnauthorized'
+                  - $ref: '#/components/schemas/InvalidSubject'
+                  - $ref: '#/components/schemas/InvalidKeypair'
+                  - $ref: '#/components/schemas/AccountLocked'
+                  - $ref: '#/components/schemas/Inactive'
+        '404':
+          description: ' - Not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientNotFound'
       servers:
         - url: https://{host}{main_path}{version_path}
           variables:
@@ -12021,6 +12137,7 @@ paths:
               default: /aspera/faspex
             version_path:
               default: /auth
+      security: []
       tags:
         - Authorization
     delete:
@@ -12044,6 +12161,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/IncorrectCredentials'
+      security:
+        - OAuth2: []
       tags:
         - Authorization
   /accounts:
@@ -12082,9 +12201,9 @@ paths:
               - user
             maxLength: 255
             minLength: 1
-        - name: type
+        - name: type[]
           in: query
-          description: Filter by a user type or types.
+          description: 'Filter by a user type or types: repeat the parameter, for example `type[]=local_user&type[]=saml_user`. Without `[]`, the value is refused (`InvalidArray`).'
           required: false
           schema:
             description: Filter by a user type or types.
@@ -12099,7 +12218,8 @@ paths:
                 - saml_user
                 - self_registered_user
                 - external_user
-          style: deepObject
+          style: form
+          explode: true
         - name: active
           in: query
           description: Filter by user's active/inactive status.
@@ -12108,12 +12228,24 @@ paths:
             type: boolean
         - name: q
           in: query
-          description: Searches through users for matching emails, names, first names, and last names.
+          description: Searches through users for matching emails, login names, first names, last names, and full names (first and last name).
           required: false
           schema:
             type: string
             maxLength: 255
             minLength: 1
+        - name: saml_config_id
+          in: query
+          description: Filter by SAML configuration ID.
+          required: false
+          schema:
+            type: integer
+        - name: exclude_group_id
+          in: query
+          description: Excludes the members of the directory group (AD group) with this ID.
+          required: false
+          schema:
+            type: integer
       responses:
         '200':
           description: ' - OK - Successful response'
@@ -12345,7 +12477,13 @@ paths:
     put:
       operationId: updateUser
       summary: Update a user
-      description: To update your own account, use your user ID. Administrators and managers can update all user accounts.
+      description: |-
+        To update your own account, use your user ID. Administrators and managers can update all user accounts.
+
+        The preferences of the user (`client_settings`, `table_data`, `rows_per_page`, `locale`, `show_only_completed_packages`, `transfer_client_disabled`, `public_url_enabled`) cannot be changed here.
+        In the object `user`, they are refused with error 1014 (`ParameterNotPermitted`).
+        At the top level of the body, they are ignored (error 1003 `ParameterMissing` if no other property is given).
+        The user changes them with `PUT /account/preferences`: see this endpoint to change them for another user.
       parameters:
         - name: id
           in: path
@@ -14778,7 +14916,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalError'
       security:
-        - BearerToken: []
+        - OAuth2:
+            - admin
+            - client_only
       tags:
         - Packages (Internal)
   /internal/packages/deliver_failed_uploads:
@@ -14812,7 +14952,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalError'
       security:
-        - BearerToken: []
+        - OAuth2:
+            - admin
+            - client_only
       tags:
         - Packages (Internal)
   /internal/packages/mark_expired:
@@ -14846,7 +14988,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalError'
       security:
-        - BearerToken: []
+        - OAuth2:
+            - admin
+            - client_only
       tags:
         - Packages (Internal)
   /internal/packages/mark_as_deleted:
@@ -14890,7 +15034,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalError'
       security:
-        - BearerToken: []
+        - OAuth2:
+            - admin
+            - client_only
       tags:
         - Packages (Internal)
   /internal/packages/pending_deletion:
@@ -14924,7 +15070,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalError'
       security:
-        - BearerToken: []
+        - OAuth2:
+            - admin
+            - client_only
       tags:
         - Packages (Internal)
   /internal/packages/expire:
@@ -14958,7 +15106,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalError'
       security:
-        - BearerToken: []
+        - OAuth2:
+            - admin
+            - client_only
       tags:
         - Packages (Internal)
   /internal/packages/post_process:
@@ -14992,7 +15142,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalError'
       security:
-        - BearerToken: []
+        - OAuth2:
+            - admin
+            - client_only
       tags:
         - Packages (Internal)
   /internal/packages/{id}/relay_status:
@@ -15024,7 +15176,9 @@ paths:
         '500':
           description: ' - Internal Error'
       security:
-        - BearerToken: []
+        - OAuth2:
+            - admin
+            - client_only
       tags:
         - Packages (Internal)
   /internal/packages/monitor_relays:
@@ -15058,7 +15212,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalError'
       security:
-        - BearerToken: []
+        - OAuth2:
+            - admin
+            - client_only
       tags:
         - Packages (Internal)
   /internal/packages/clean_deleted:
@@ -15096,7 +15252,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalError'
       security:
-        - BearerToken: []
+        - OAuth2:
+            - admin
+            - client_only
       tags:
         - Packages (Internal)
   /internal/packages/data_collection_watcher:
@@ -15146,7 +15304,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalError'
       security:
-        - BearerToken: []
+        - OAuth2:
+            - admin
+            - client_only
       tags:
         - Packages (Internal)
   /internal/packages/poller_watcher:
@@ -15178,7 +15338,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalError'
       security:
-        - BearerToken: []
+        - OAuth2:
+            - admin
+            - client_only
       tags:
         - Packages (Internal)
   /transfers:
@@ -15291,6 +15453,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalError'
+      security:
+        - OAuth2: []
       tags:
         - Transfers
   /internal/accounts:
@@ -15330,7 +15494,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/IncorrectCredentials'
       security:
-        - BearerToken: []
+        - OAuth2:
+            - admin
+            - client_only
       tags:
         - Accounts (Internal)
   /accounts/deactivate:
@@ -15396,6 +15562,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InternalError'
+      security:
+        - OAuth2:
+            - admin
+            - client_only
       tags:
         - Jobs (Internal)
   /internal/jobs/purge:
@@ -15427,7 +15597,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalError'
       security:
-        - BearerToken: []
+        - OAuth2:
+            - admin
+            - client_only
       tags:
         - Jobs (Internal)
 components:
@@ -16104,10 +16276,10 @@ components:
                       description: Specifies whether JWT grants are allowed.
                       type: boolean
                     allow_global_key:
-                      description: Specifies whether you can sign your JWT payload using the client's private key.
+                      description: 'Specifies whether a JWT assertion can be signed with the private key of the client (verified with `public_key`) instead of the private key of the user. With `access_grant_all_users`, the owner of this private key gets a token for any user: impersonation.'
                       type: boolean
                     public_key:
-                      description: Public key for service registrations. Required when **allow_global_key** is **true**.
+                      description: Public key (PEM) of the client, verifies the JWT assertions signed with the private key of the client. Required when **allow_global_key** is **true**.
                       type:
                         - string
                         - 'null'
@@ -16166,7 +16338,7 @@ components:
                       default: 12
                       maximum: 720
                     access_grant_all_users:
-                      description: All users can use the OAuth 2 client to access the APIs. **Admin only**
+                      description: 'Specifies whether all users can get a token with this OAuth 2 client. If `false`, only the users in `access_grant_to_users` can: for other users, the JWT grant fails with error 2016 (`InvalidSubject`). **Admin only**'
                       type: boolean
                       default: true
                     access_grant_to_users:
@@ -16560,10 +16732,10 @@ components:
                 description: Specifies whether JWT grants are allowed.
                 type: boolean
               allow_global_key:
-                description: Specifies whether you can sign your JWT payload using the client's private key.
+                description: 'Specifies whether a JWT assertion can be signed with the private key of the client (verified with `public_key`) instead of the private key of the user. With `access_grant_all_users`, the owner of this private key gets a token for any user: impersonation.'
                 type: boolean
               public_key:
-                description: Public key for service registrations. Required when **allow_global_key** is **true**.
+                description: Public key (PEM) of the client, verifies the JWT assertions signed with the private key of the client. Required when **allow_global_key** is **true**.
                 type:
                   - string
                   - 'null'
@@ -16622,7 +16794,7 @@ components:
                 default: 12
                 maximum: 720
               access_grant_all_users:
-                description: All users can use the OAuth 2 client to access the APIs. **Admin only**
+                description: 'Specifies whether all users can get a token with this OAuth 2 client. If `false`, only the users in `access_grant_to_users` can: for other users, the JWT grant fails with error 2016 (`InvalidSubject`). **Admin only**'
                 type: boolean
                 default: true
               access_grant_to_users:
@@ -24215,10 +24387,10 @@ components:
           description: Specifies whether JWT grants are allowed.
           type: boolean
         allow_global_key:
-          description: Specifies whether you can sign your JWT payload using the client's private key.
+          description: 'Specifies whether a JWT assertion can be signed with the private key of the client (verified with `public_key`) instead of the private key of the user. With `access_grant_all_users`, the owner of this private key gets a token for any user: impersonation.'
           type: boolean
         public_key:
-          description: Public key for service registrations. Required when **allow_global_key** is **true**.
+          description: Public key (PEM) of the client, verifies the JWT assertions signed with the private key of the client. Required when **allow_global_key** is **true**.
           type:
             - string
             - 'null'
@@ -24277,7 +24449,7 @@ components:
           default: 12
           maximum: 720
         access_grant_all_users:
-          description: All users can use the OAuth 2 client to access the APIs. **Admin only**
+          description: 'Specifies whether all users can get a token with this OAuth 2 client. If `false`, only the users in `access_grant_to_users` can: for other users, the JWT grant fails with error 2016 (`InvalidSubject`). **Admin only**'
           type: boolean
           default: true
         access_grant_to_users:
@@ -27715,10 +27887,10 @@ components:
                 description: Specifies whether JWT grants are allowed.
                 type: boolean
               allow_global_key:
-                description: Specifies whether you can sign your JWT payload using the client's private key.
+                description: 'Specifies whether a JWT assertion can be signed with the private key of the client (verified with `public_key`) instead of the private key of the user. With `access_grant_all_users`, the owner of this private key gets a token for any user: impersonation.'
                 type: boolean
               public_key:
-                description: Public key for service registrations. Required when **allow_global_key** is **true**.
+                description: Public key (PEM) of the client, verifies the JWT assertions signed with the private key of the client. Required when **allow_global_key** is **true**.
                 type:
                   - string
                   - 'null'
@@ -27777,7 +27949,7 @@ components:
                 default: 12
                 maximum: 720
               access_grant_all_users:
-                description: All users can use the OAuth 2 client to access the APIs. **Admin only**
+                description: 'Specifies whether all users can get a token with this OAuth 2 client. If `false`, only the users in `access_grant_to_users` can: for other users, the JWT grant fails with error 2016 (`InvalidSubject`). **Admin only**'
                 type: boolean
                 default: true
               access_grant_to_users:
@@ -27880,10 +28052,10 @@ components:
           description: Specifies whether JWT grants are allowed.
           type: boolean
         allow_global_key:
-          description: Specifies whether you can sign your JWT payload using the client's private key.
+          description: 'Specifies whether a JWT assertion can be signed with the private key of the client (verified with `public_key`) instead of the private key of the user. With `access_grant_all_users`, the owner of this private key gets a token for any user: impersonation.'
           type: boolean
         public_key:
-          description: Public key for service registrations. Required when **allow_global_key** is **true**.
+          description: Public key (PEM) of the client, verifies the JWT assertions signed with the private key of the client. Required when **allow_global_key** is **true**.
           type:
             - string
             - 'null'
@@ -27942,7 +28114,7 @@ components:
           default: 12
           maximum: 720
         access_grant_all_users:
-          description: All users can use the OAuth 2 client to access the APIs. **Admin only**
+          description: 'Specifies whether all users can get a token with this OAuth 2 client. If `false`, only the users in `access_grant_to_users` can: for other users, the JWT grant fails with error 2016 (`InvalidSubject`). **Admin only**'
           type: boolean
           default: true
         access_grant_to_users:
@@ -28028,10 +28200,10 @@ components:
           description: Specifies whether JWT grants are allowed.
           type: boolean
         allow_global_key:
-          description: Specifies whether you can sign your JWT payload using the client's private key.
+          description: 'Specifies whether a JWT assertion can be signed with the private key of the client (verified with `public_key`) instead of the private key of the user. With `access_grant_all_users`, the owner of this private key gets a token for any user: impersonation.'
           type: boolean
         public_key:
-          description: Public key for service registrations. Required when **allow_global_key** is **true**.
+          description: Public key (PEM) of the client, verifies the JWT assertions signed with the private key of the client. Required when **allow_global_key** is **true**.
           type:
             - string
             - 'null'
@@ -28090,7 +28262,7 @@ components:
           default: 12
           maximum: 720
         access_grant_all_users:
-          description: All users can use the OAuth 2 client to access the APIs. **Admin only**
+          description: 'Specifies whether all users can get a token with this OAuth 2 client. If `false`, only the users in `access_grant_to_users` can: for other users, the JWT grant fails with error 2016 (`InvalidSubject`). **Admin only**'
           type: boolean
           default: true
         access_grant_to_users:
@@ -33880,10 +34052,10 @@ components:
           description: Specifies whether JWT grants are allowed.
           type: boolean
         allow_global_key:
-          description: Specifies whether you can sign your JWT payload using the client's private key.
+          description: 'Specifies whether a JWT assertion can be signed with the private key of the client (verified with `public_key`) instead of the private key of the user. With `access_grant_all_users`, the owner of this private key gets a token for any user: impersonation.'
           type: boolean
         public_key:
-          description: Public key for service registrations. Required when **allow_global_key** is **true**.
+          description: Public key (PEM) of the client, verifies the JWT assertions signed with the private key of the client. Required when **allow_global_key** is **true**.
           type:
             - string
             - 'null'
@@ -33942,7 +34114,7 @@ components:
           default: 12
           maximum: 720
         access_grant_all_users:
-          description: All users can use the OAuth 2 client to access the APIs. **Admin only**
+          description: 'Specifies whether all users can get a token with this OAuth 2 client. If `false`, only the users in `access_grant_to_users` can: for other users, the JWT grant fails with error 2016 (`InvalidSubject`). **Admin only**'
           type: boolean
           default: true
         access_grant_to_users:
@@ -39786,17 +39958,27 @@ components:
           description: The grant type used to request the access token.
           type: string
           enum:
-            - refresh_token
-            - authorization_code
             - urn:ietf:params:oauth:grant-type:jwt-bearer
           maxLength: 255
           minLength: 1
         assertion:
-          description: The assertion for the urn:ietf:params:oauth:grant-type:jwt-bearer grant_type.
+          description: |-
+            JWT signed with RS256: header `alg` is `RS256` and `typ` is `JWT`. Claims:
+
+            - `iss` and `aud`: the client ID.
+            - `sub`: `user:<EMAIL_OR_LOGIN>` for a token of a user, or `client:<CLIENT_ID>` for a token of the client.
+              Faspex looks up `<EMAIL_OR_LOGIN>` as an email first (if a single account has it), then as a login name: if several accounts have this email and none has this login, error 2010 (`UsernameNeeded`).
+              Faspex splits the subject on `:`: a login that contains `:` cannot be used.
+            - `exp`: expiration time. `iat`: issue time, not in the future.
+            - `jti`: unique ID: an assertion with a `jti` already used is refused.
+
+            The assertion is signed with the private key of the user (the `public_key` of the user verifies it),
+            or, if the client has `allow_global_key`, with the private key of the client (the `public_key` of the client verifies it).
+            Faspex tries the key of the client first, then the key of the user.
+            With `allow_global_key` and `access_grant_all_users`, the owner of the private key of the client gets a token for any user (impersonation).
           type: string
           examples:
             - <JWT>
-          maxLength: 255
           minLength: 1
       required:
         - client_id
@@ -40941,7 +41123,7 @@ components:
               aQabSZMrWiIDJKNLwXjsi0PsZqjJCb5/cz1+cOUMzJzZ+5bIQR68/jfrvigLRtys
               bwIDAQAB
               -----END PUBLIC KEY-----
-          maxLength: 451
+          maxLength: 65535
           minLength: 1
         account_activated:
           description: Specifies whether the account is operational.
@@ -41682,7 +41864,7 @@ components:
               aQabSZMrWiIDJKNLwXjsi0PsZqjJCb5/cz1+cOUMzJzZ+5bIQR68/jfrvigLRtys
               bwIDAQAB
               -----END PUBLIC KEY-----
-          maxLength: 451
+          maxLength: 65535
           minLength: 1
         account_activated:
           description: Specifies whether the account is operational.
@@ -42159,7 +42341,7 @@ components:
               aQabSZMrWiIDJKNLwXjsi0PsZqjJCb5/cz1+cOUMzJzZ+5bIQR68/jfrvigLRtys
               bwIDAQAB
               -----END PUBLIC KEY-----
-          maxLength: 451
+          maxLength: 65535
           minLength: 1
         account_activated:
           description: Specifies whether the account is operational.
@@ -42477,7 +42659,7 @@ components:
               aQabSZMrWiIDJKNLwXjsi0PsZqjJCb5/cz1+cOUMzJzZ+5bIQR68/jfrvigLRtys
               bwIDAQAB
               -----END PUBLIC KEY-----
-          maxLength: 451
+          maxLength: 65535
           minLength: 1
         account_activated:
           description: Specifies whether the account is operational.
@@ -42989,7 +43171,7 @@ components:
               aQabSZMrWiIDJKNLwXjsi0PsZqjJCb5/cz1+cOUMzJzZ+5bIQR68/jfrvigLRtys
               bwIDAQAB
               -----END PUBLIC KEY-----
-          maxLength: 451
+          maxLength: 65535
           minLength: 1
         account_activated:
           description: Specifies whether the account is operational.
@@ -43613,7 +43795,7 @@ components:
               aQabSZMrWiIDJKNLwXjsi0PsZqjJCb5/cz1+cOUMzJzZ+5bIQR68/jfrvigLRtys
               bwIDAQAB
               -----END PUBLIC KEY-----
-          maxLength: 451
+          maxLength: 65535
           minLength: 1
         account_activated:
           description: Specifies whether the account is operational.
@@ -44029,7 +44211,7 @@ components:
               aQabSZMrWiIDJKNLwXjsi0PsZqjJCb5/cz1+cOUMzJzZ+5bIQR68/jfrvigLRtys
               bwIDAQAB
               -----END PUBLIC KEY-----
-          maxLength: 451
+          maxLength: 65535
           minLength: 1
         account_expires:
           description: Specifies whether the account will expire.
@@ -44268,7 +44450,7 @@ components:
               aQabSZMrWiIDJKNLwXjsi0PsZqjJCb5/cz1+cOUMzJzZ+5bIQR68/jfrvigLRtys
               bwIDAQAB
               -----END PUBLIC KEY-----
-          maxLength: 451
+          maxLength: 65535
           minLength: 1
         account_expires:
           description: Specifies whether the account will expire.
@@ -44976,8 +45158,8 @@ components:
         can_create_from_remote:
           description: Specifies whether this user can create a package from a remote source.
           type: boolean
-        can_disable_connect:
-          description: Specifies whether the user can choose not to use Connect. Make sure HTTP Gateway is available. Otherwise, the user cannot upload or download files.
+        can_disable_transfer_client:
+          description: Specifies whether the user can choose not to use a transfer client (IBM Aspera Connect or IBM Aspera for desktop). Make sure HTTP Gateway is available. Otherwise, the user cannot upload or download files.
           type: boolean
         can_change_password:
           description: Specifies whether the user can change the current password.
@@ -44988,8 +45170,11 @@ components:
         public_url_enabled:
           description: Specifies whether anyone with the link can submit packages to the user.
           type: boolean
-        connect_disabled:
-          description: Specifies whether Connect is disabled for the user.
+        transfer_client_disabled:
+          description: |-
+            Specifies whether the transfer client (IBM Aspera Connect or IBM Aspera for desktop) is disabled for the user: transfers use HTTP Gateway.
+            This is the effective value: it is also `true` when the server setting `connect_install_prompt` is `none`, or is `faspex_users` and the token comes from a passcode (public link).
+            The choice between Connect and IBM Aspera for desktop is the key `transferClient` of `client_settings`.
           type: boolean
         show_only_completed_packages:
           description: Specifies whether to show only completed packages when getting received packages.
@@ -45008,8 +45193,13 @@ components:
           maxLength: 255
           minLength: 1
         client_settings:
-          description: Settings for persisting UI features
+          description: |-
+            Settings of the web UI for the user: a JSON object, as a string. The web UI reads and writes it, the server only checks its length.
+            Key `transferClient`: transfer client chosen by the user, `CONNECT` (IBM Aspera Connect) or `DESKTOP` (IBM Aspera for desktop).
+            On update, the new string replaces the previous one: to change one key, read the string, change the key, and send the whole object.
           type: string
+          examples:
+            - '{"darkLightMode":"LIGHT","transferClient":"DESKTOP"}'
           maxLength: 255
           minLength: 0
         table_data:
@@ -45033,17 +45223,20 @@ components:
               aQabSZMrWiIDJKNLwXjsi0PsZqjJCb5/cz1+cOUMzJzZ+5bIQR68/jfrvigLRtys
               bwIDAQAB
               -----END PUBLIC KEY-----
-          maxLength: 451
+          maxLength: 65535
           minLength: 1
     PutUserPreferences:
-      description: Email preferences parameters.
+      description: Preferences of the user of the access token. Only the properties given are changed.
       type: object
       properties:
         public_url_enabled:
           description: Specifies whether anyone with the link can submit packages to the user.
           type: boolean
-        connect_disabled:
-          description: Specifies whether Connect is disabled for the user.
+        transfer_client_disabled:
+          description: |-
+            Specifies whether the transfer client (IBM Aspera Connect or IBM Aspera for desktop) is disabled for the user: transfers use HTTP Gateway.
+            Set it to `true` only when `can_disable_transfer_client` is `true`.
+            The choice between Connect and IBM Aspera for desktop is the key `transferClient` of `client_settings`.
           type: boolean
         show_only_completed_packages:
           description: Specifies whether to show only completed packages when getting received packages.
@@ -45062,8 +45255,13 @@ components:
           maxLength: 255
           minLength: 1
         client_settings:
-          description: Settings for persisting UI features
+          description: |-
+            Settings of the web UI for the user: a JSON object, as a string. The web UI reads and writes it, the server only checks its length.
+            Key `transferClient`: transfer client chosen by the user, `CONNECT` (IBM Aspera Connect) or `DESKTOP` (IBM Aspera for desktop).
+            On update, the new string replaces the previous one: to change one key, read the string, change the key, and send the whole object.
           type: string
+          examples:
+            - '{"darkLightMode":"LIGHT","transferClient":"DESKTOP"}'
           maxLength: 255
           minLength: 0
         table_data:
@@ -45087,7 +45285,7 @@ components:
               aQabSZMrWiIDJKNLwXjsi0PsZqjJCb5/cz1+cOUMzJzZ+5bIQR68/jfrvigLRtys
               bwIDAQAB
               -----END PUBLIC KEY-----
-          maxLength: 451
+          maxLength: 65535
           minLength: 1
         password:
           description: Password params.
@@ -45435,10 +45633,10 @@ components:
           description: Specifies whether JWT grants are allowed.
           type: boolean
         allow_global_key:
-          description: Specifies whether you can sign your JWT payload using the client's private key.
+          description: 'Specifies whether a JWT assertion can be signed with the private key of the client (verified with `public_key`) instead of the private key of the user. With `access_grant_all_users`, the owner of this private key gets a token for any user: impersonation.'
           type: boolean
         public_key:
-          description: Public key for service registrations. Required when **allow_global_key** is **true**.
+          description: Public key (PEM) of the client, verifies the JWT assertions signed with the private key of the client. Required when **allow_global_key** is **true**.
           type:
             - string
             - 'null'
@@ -45497,7 +45695,7 @@ components:
           default: 12
           maximum: 720
         access_grant_all_users:
-          description: All users can use the OAuth 2 client to access the APIs. **Admin only**
+          description: 'Specifies whether all users can get a token with this OAuth 2 client. If `false`, only the users in `access_grant_to_users` can: for other users, the JWT grant fails with error 2016 (`InvalidSubject`). **Admin only**'
           type: boolean
           default: true
         access_grant_to_users:
