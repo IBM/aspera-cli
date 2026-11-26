@@ -2832,17 +2832,18 @@ With level `medium`, the real path of the file is checked: a symbolic link leadi
 
 `@zlib:` is refused with levels `medium` and `high`: a small value can decompress to gigabytes and exhaust the memory of the system.
 
-With levels `medium` and `high`, files are written only in `writable_paths` (none by default): downloaded files (`config download`, and transfers that receive files), because a file written where the client chooses could replace a file that is used later, for example a plugin or a shell startup file.
+With levels `medium` and `high`, files are written only in `writable_paths` (none by default): downloaded files (`config download`, and, at level `medium`, transfers that receive files on the local host), because a file written where the client chooses could replace a file that is used later, for example a plugin or a shell startup file.
 The real path of the folder is checked: neither `..` nor a symbolic link leading outside of `writable_paths` is accepted.
 
 A command that reads or writes a local path given by the client checks it against the security level, like `@file:`: the content read (for example `config ascp logs`, `preview show`, `orchestrator workflows import` and `check_import`, `config sync admin`), or the file written (for example `config genkey`, `config download`).
-It is refused at level `high`, and at level `medium` the path must be in `allowed_paths` (read) or `writable_paths` (write); a path that does not exist and a path outside those give the same error, so the existence of a file is not revealed.
+A path read is refused at level `high`, and at level `medium` it must be in `allowed_paths`: a path that does not exist and a path outside those give the same error, so the existence of a file is not revealed.
+A path written must be in `writable_paths`, at levels `medium` and `high`.
 At level `medium`, a file or folder found in a folder given to a command (for example `config ascp logs <folder>`) is skipped when its real path is outside of `allowed_paths` (a symbolic link), and the database of `sync admin` is checked also when its folder is given in `sync_info` (`local_db_dir`).
 The argument `-` is the standard input (`@stdin:stream`) only for `config ascp logs` and `sync logs` (refused in MCP server mode, as `@stdin:`, see [Standard Input](#standard-input)); for other commands, `-` is a file name, checked as any path.
 
 > [!NOTE]
 > A transfer that uses a remote agent (`node`, or `transferd` attached to a remote daemon) sends and receives the files on the host of the agent, not the local host: those paths are not local, and are not restricted by the security level.
-> At level `high`, a transfer that would run on the local host is refused (see above).
+> At level `high`, a transfer that would run on the local host is refused (see below).
 
 The same applies to `@file:<path>` in the parameters of stores of option `vault`, and in option `vault_password` (for example, `token`), although the file is read when used, not when the option is evaluated.
 
@@ -6934,8 +6935,8 @@ With both transports:
   The configuration of the server (presets and vault) is read-only for the client, and a secret of the configuration is sent only to a URL of the configuration: the client uses the presets of the server, but cannot send their secrets to another host.
   Commands sent by the client cannot change option `security`.
   Features that execute code, such as option `notify_template` or command `config plugins create`, plugins, and writing to a file chosen by the client (option `out.file`), are refused, see [Security Level](#security-level).
-  Files can be written (for example by `config download`, or by a transfer that receives files) only in `writable_paths`, none by default: without it, the client cannot download files.
-  It applies to files written on the system that runs the server: not to a transfer with agent `node` (`--transfer=node`), which writes on the node.
+  A transfer agent that runs on the system of the server, such as `direct` (the default), is refused: a transfer uses a remote agent, for example agent `node` (`--transfer=node`), which sends and receives the files on the node.
+  Other files written on the system that runs the server (for example by `config download`) go only in `writable_paths`, none by default.
 
 To use another level, set option `security` when starting the server, for example:
 
@@ -6943,14 +6944,18 @@ To use another level, set option `security` when starting the server, for exampl
 <%=cmd%> mcp server --security.level=medium --security.allowed_paths.0=$HOME/.aspera/<%=cmd%>/my_private_key
 ```
 
-To let the client download files in a folder, keep the level `high` and give the folder:
+To let the client download files to a folder of the system that runs the server, use level `medium`, which allows a local agent (for example `direct`), and give the folder:
 
 ```shell
-<%=cmd%> mcp server --security.writable_paths.0=$HOME/Downloads/<%=cmd%>
+<%=cmd%> mcp server --security.level=medium --security.writable_paths.0=$HOME/Downloads/<%=cmd%>
 ```
+
+At level `medium`, a local agent also sends any file that the server can read, for example its configuration file: use it with a client that you trust.
+Or keep the level `high`, and use agent `node`: the files are received on the node, not on the system that runs the server.
 
 > [!NOTE]
 > A level set by option also applies to the parameters of the `server` command: for example, `auth_token=@env:MCP_TOKEN` requires level `low`.
+> At levels `medium` and `high`, read the token from the standard input instead, for example: `printenv MCP_TOKEN | <%=cmd%> mcp server --security.level=medium @: transport=http url=http://0.0.0.0:3000 auth_token=@stdin:chomp`.
 > Without option `security`, the parameters of the `server` command are not restricted.
 >
 > A preset created by `aoc wizard` or `faspex5 wizard` reads the private key with `@file:`.
@@ -7284,11 +7289,14 @@ export MCP_TOKEN=$(openssl rand -hex 32)
 ```
 
 <%=tool%> can also run in its own container, next to Langflow: the [container image](#container) includes the gems `mcp` and `rack`.
-To keep the presets and the transferred files, mount the configuration folder and a transfer folder (see [Container: Details](#container-details)), and let the agent write files in the transfer folder only (see [Security](#security)).
+To keep the presets and the transferred files, mount the configuration folder and a transfer folder (see [Container: Details](#container-details)).
+The transfers run in the container, with the local agent `direct`: use level `medium`, and let the agent write files in the transfer folder only (see [Security](#security)).
+At level `medium`, `@env:` is refused, also in the parameters of the server: the token is read from the standard input (`@stdin:chomp`).
+As user `root`, set the SDK folder of the image (`/home/cliuser/.aspera/sdk`), else `ascp` is looked for in `/root/.aspera/sdk`.
 With the same variable `MCP_TOKEN`:
 
 ```shell
-podman run --rm --name <%=cmd%> --publish 3000:3000 --env MCP_TOKEN --user root --env <%=opt_env :home%>=/home/cliuser/.aspera/<%=cmd%> --volume $HOME/.aspera/<%=cmd%>:/home/cliuser/.aspera/<%=cmd%> --volume $HOME/xferdir:/xferfiles <%=container_image%>:latest mcp server --security.writable_paths.0=/xferfiles @: transport=http url=http://0.0.0.0:3000 auth_token=@env:MCP_TOKEN
+printenv MCP_TOKEN | podman run --interactive --rm --name <%=cmd%> --publish 3000:3000 --user root --env <%=opt_env :home%>=/home/cliuser/.aspera/<%=cmd%> --env <%=opt_env :sdk_folder%>=/home/cliuser/.aspera/sdk --volume $HOME/.aspera/<%=cmd%>:/home/cliuser/.aspera/<%=cmd%> --volume $HOME/xferdir:/xferfiles <%=container_image%>:latest mcp server --security.level=medium --security.writable_paths.0=/xferfiles @: transport=http url=http://0.0.0.0:3000 auth_token=@stdin:chomp
 ```
 
 The agent then uploads from, and downloads to, folder `/xferfiles`.

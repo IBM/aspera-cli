@@ -127,6 +127,10 @@ environment is available.
 
 ### 4.2 Demo server — download a file
 
+At the default security level `high` of the server, a transfer with the local agent `direct` (the default) is refused.
+For this test, start the server with level `medium` and `/tmp` in `writable_paths`:
+add `--security.level=medium --security.writable_paths.0=/tmp` after `mcp server` (in `args` of the MCP configuration).
+
 > "Download the file `/aspera-test-dir-small/10KB.1` from the demo server
 > (same credentials as above) to `/tmp`."
 

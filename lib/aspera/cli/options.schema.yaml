@@ -104,7 +104,7 @@ components:
 
             - `medium`: `@file:` reads only files in `allowed_paths`, `@ruby:`, `@uri:`, `@env:` and `@zlib:` are refused, files are written only in `writable_paths`.
 
-            - `high`: `@ruby:`, `@file:`, `@uri:`, `@env:` and `@zlib:` are refused, files are written only in `writable_paths`.
+            - `high`: `@ruby:`, `@file:`, `@uri:`, `@env:` and `@zlib:` are refused, a transfer agent that runs on the local host (e.g. `direct`, the default) is refused, files are written only in `writable_paths`.
 
             Features that execute code, load plugins, or write a file chosen by the client (e.g. `--out.file`) are available only at level `low`.
           enum:
