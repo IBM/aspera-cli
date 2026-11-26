@@ -163,6 +163,12 @@ tags:
     description: >-
       Configure user notifications for file uploads. Manage notification preferences and resolve effective settings for
       specific files and nodes.
+  - name: Groups
+    description: >-
+      Manage groups of users. Groups can be members of workspaces, shared inboxes and other groups, to give access to
+      all their members at once. System groups are managed by AoC.
+  - name: Group Memberships
+    description: Manage members of groups. Add or remove users and groups as members of a group.
   - name: Nodes
     description: >-
       Manage Aspera transfer servers that provide storage and transfer capabilities. Nodes contain the connection
@@ -231,6 +237,8 @@ x-tagGroups:
       - Users
       - Contacts
       - Organizations
+      - Groups
+      - Group Memberships
   - name: Workspaces & Collaboration
     tags:
       - Workspaces
@@ -2232,6 +2240,635 @@ paths:
                 $ref: '#/components/schemas/InternalServerError'
       tags:
         - Dropboxes
+  /group_memberships:
+    get:
+      operationId: get_group_memberships
+      summary: Get a Listing of Group Members
+      description: >
+        Get a listing of group memberships. A group membership makes a user or a group (`member_type`, `member_id`) a
+        member of a group (`group_id`).
+
+        Requires a token with admin scope, for an organization administrator or a workspace manager. An organization
+        administrator gets the memberships of the organization. A workspace manager gets the memberships of the members
+        (direct or through a group) of the workspaces and groups they manage. With `workspace_id`, only the memberships
+        of the members of that workspace are listed.
+
+        Parameter `inherited` (sent by the web UI) has no effect: only direct memberships are listed.
+      parameters:
+        - name: page
+          in: query
+          description: Page number, starting at 1.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          description: Number of items per page (at most 1000).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+        - name: sort
+          in: query
+          description: >-
+            Comma-separated list of fields (at most 5), prefixed with `-` for descending order. Fields: `created_at`,
+            `updated_at`, `group_id`, `member_id`, `member_type`, `member.name` (or `name`), `member.email`,
+            `member.first_name`, `member.last_name`, `member.last_login_at`, `member.system_group`, `deactivated`,
+            `group.system_group`. An unknown field is refused (`unknown_sort_field`).
+          schema:
+            type: string
+          example: member.name
+        - name: q
+          in: query
+          description: >-
+            Search (case-insensitive substring) in member (user or group) fields `email`, `first_name`, `last_name`, and
+            `name`. A token `<field>:<value>`, with `<field>` one of the filter parameters, keeps memberships whose field
+            starts with `<value>` (for a date, a comparison, e.g. `created_at:>2024-01-01`).
+          schema:
+            type: string
+          example: member.last_name:smi
+        - name: group_id
+          in: query
+          description: Filter by group ID.
+          schema:
+            type: string
+        - name: member_id
+          in: query
+          description: Filter by member ID (user or group ID, according to `member_type`).
+          schema:
+            type: string
+        - name: member_type
+          in: query
+          description: Filter by member type.
+          schema:
+            type: string
+            enum:
+              - user
+              - group
+        - name: member.email
+          in: query
+          description: Filter by member (user) email address.
+          schema:
+            type: string
+        - name: member.first_name
+          in: query
+          description: Filter by member (user) first name.
+          schema:
+            type: string
+        - name: member.last_name
+          in: query
+          description: Filter by member (user) last name.
+          schema:
+            type: string
+        - name: member.last_login_at
+          in: query
+          description: Filter by member (user) last login date (exact match).
+          schema:
+            type: string
+            format: date-time
+        - name: member.system_group
+          in: query
+          description: Filter memberships whose member is a group, by its `system_group` attribute.
+          schema:
+            type: boolean
+        - name: deactivated
+          in: query
+          description: Filter memberships whose member is a user, by its `deactivated` attribute.
+          schema:
+            type: boolean
+        - name: group.system_group
+          in: query
+          description: Filter by the `system_group` attribute of the group (e.g. `false` for groups created by users).
+          schema:
+            type: boolean
+        - name: system_group
+          in: query
+          deprecated: true
+          description: Same as `group.system_group`.
+          schema:
+            type: boolean
+        - name: created_at
+          in: query
+          description: Filter by creation date (exact match).
+          schema:
+            type: string
+            format: date-time
+        - name: updated_at
+          in: query
+          description: Filter by last update date (exact match).
+          schema:
+            type: string
+            format: date-time
+        - name: workspace_id
+          in: query
+          description: List only the memberships of the members (direct or through a group) of this workspace.
+          schema:
+            type: string
+        - name: embed[]
+          in: query
+          description: >-
+            embed[]=member (user or group object from member_id), embed[]=group (group object from group_id). Repeat the
+            parameter for several values.
+          schema:
+            type: string
+            enum:
+              - member
+              - group
+      responses:
+        '200':
+          description: OK
+          headers:
+            X-Total-Count:
+              description: Total number of memberships matching the query (all pages).
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/group_memberships_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '422':
+          description: Unprocessable Entity (e.g. unknown sort field)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Group Memberships
+    post:
+      operationId: add_group_membership
+      summary: Add a Member to a Group
+      description: >
+        Add a user or a group as a member of a group. Requires a token with admin scope, for an organization
+        administrator, or an owner or a manager of the group.
+
+        Members cannot be added to a system group or to a SAML group, and a system group cannot be a member. A group
+        cannot be a member of itself, directly or indirectly.
+
+        The membership is created, and the response is `202`: an operation then creates the home folders of the users
+        that become members of workspaces through the group. Header `Location` gives the operation, also listed by
+        `/operations?group_membership_id=<id>`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/group_memberships_params'
+      responses:
+        '202':
+          description: Accepted (membership created, home folders are being created by an operation)
+          headers:
+            Location:
+              description: Path of the operation, `/api/v1/group_memberships/{id}/operations/{operation_id}`.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/group_memberships_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, system group or SAML group)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '409':
+          description: Conflict (the member is already a member of this group)
+        '422':
+          description: Unprocessable Entity (e.g. group or member not found, no permission on the group, cycle of groups)
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Group Memberships
+  /group_memberships/{id}:
+    get:
+      operationId: get_group_membership_by_id
+      summary: Get Information on a Specific Group Membership
+      description: >-
+        Get information on a specific group membership. Requires a token with admin scope, for an organization
+        administrator or a workspace manager (in the scope given in the listing).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique identifier of the resource.
+        - name: embed[]
+          in: query
+          description: >-
+            embed[]=member (user or group object from member_id), embed[]=group (group object from group_id). Repeat the
+            parameter for several values.
+          schema:
+            type: string
+            enum:
+              - member
+              - group
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/group_memberships_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Group Memberships
+    delete:
+      operationId: delete_group_membership
+      summary: Remove a Member from a Group
+      description: >-
+        Remove a member from a group. Requires a token with admin scope, for an organization administrator, or an owner
+        or a manager of the group. Members of a system group or of a SAML group cannot be removed. A group membership
+        cannot be modified: delete it and create another one.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique identifier of the resource.
+      responses:
+        '204':
+          description: No Content
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, system group or SAML group)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Group Memberships
+  /groups:
+    get:
+      operationId: get_groups
+      summary: Get a Listing of Groups
+      description: >
+        Get a listing of groups. With a token with admin scope, an organization administrator gets all groups of the
+        organization. Otherwise, the user gets the groups that they manage, the system groups of their workspaces (of the
+        workspaces they manage, for a workspace manager with admin scope), and the groups that are members of these
+        workspaces, directly or through a group.
+
+        System groups are created by AoC for workspaces, shared inboxes and apps (`system_group_type`): they are
+        included unless `system_group=false`.
+      parameters:
+        - name: page
+          in: query
+          description: Page number, starting at 1.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          description: Number of items per page (at most 1000).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+        - name: sort
+          in: query
+          description: >-
+            Comma-separated list of fields (at most 5), prefixed with `-` for descending order. Fields: `name`,
+            `created_at`, `updated_at`, `saml_group`, `system_group`. An unknown field is refused
+            (`unknown_sort_field`).
+          schema:
+            type: string
+          example: name
+        - name: q
+          in: query
+          description: >-
+            Search (case-insensitive substring) in the group name. A token `<field>:<value>`, with `<field>` one of the
+            filter parameters, keeps groups whose field starts with `<value>` (for a date, a comparison, e.g.
+            `created_at:>2024-01-01`).
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: Filter by group name (exact match).
+          schema:
+            type: string
+        - name: system_group
+          in: query
+          description: Filter by the `system_group` attribute (e.g. `false` for groups created by users).
+          schema:
+            type: boolean
+        - name: saml_group
+          in: query
+          description: Filter by the `saml_group` attribute.
+          schema:
+            type: boolean
+        - name: created_at
+          in: query
+          description: Filter by creation date (exact match).
+          schema:
+            type: string
+            format: date-time
+        - name: updated_at
+          in: query
+          description: Filter by last update date (exact match).
+          schema:
+            type: string
+            format: date-time
+        - name: member_of_workspace_id
+          in: query
+          description: List only the groups that are direct members of this workspace.
+          schema:
+            type: string
+        - name: manager
+          in: query
+          description: >-
+            With `true`, and without admin rights on the organization, list only the groups that the user owns or
+            manages.
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: OK
+          headers:
+            X-Total-Count:
+              description: Total number of groups matching the query (all pages).
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/groups_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '422':
+          description: Unprocessable Entity (e.g. unknown sort field)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Groups
+    post:
+      operationId: create_group
+      summary: Create a Group
+      description: >-
+        Create a group. Requires a token with admin scope, for an organization administrator or a workspace manager. A
+        workspace manager becomes owner of the group. Members are added with `/group_memberships`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/groups_params'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/groups_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '409':
+          description: Conflict (`saml_group_dn` already used by another group)
+        '422':
+          description: Unprocessable Entity (e.g. `name` missing, `saml_group_dn` missing for a SAML group)
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Groups
+  /groups/{id}:
+    get:
+      operationId: get_group_by_id
+      summary: Get Information on a Specific Group
+      description: Get information on a specific group of the organization.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique identifier of the resource.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/groups_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Groups
+    put:
+      operationId: update_group
+      summary: Update a Specific Group
+      description: >-
+        Update a group. Requires a token with admin scope, for an organization administrator or an owner of the group.
+        A system group cannot be modified.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique identifier of the resource.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/groups_update_params'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/groups_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, not owner of the group, system group)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '409':
+          description: Conflict (`saml_group_dn` already used by another group)
+        '422':
+          description: Unprocessable Entity
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Groups
+    delete:
+      operationId: delete_group
+      summary: Delete a Specific Group
+      description: >-
+        Delete a group and its memberships. Requires a token with admin scope, for an organization administrator or an
+        owner of the group. A system group cannot be deleted.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique identifier of the resource.
+      responses:
+        '204':
+          description: No Content
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, not owner of the group, system group)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Groups
   /nodes:
     get:
       operationId: get_nodes
@@ -8678,6 +9315,251 @@ components:
           type: boolean
           examples:
             - true
+    group_memberships_params:
+      description: Member to add to a group.
+      type: object
+      properties:
+        group_id:
+          description: ID of the group to which the member is added.
+          type: string
+          examples:
+            - '123'
+        member_id:
+          description: ID of the member (user ID or group ID, according to `member_type`).
+          type: string
+          examples:
+            - '42'
+        member_type:
+          description: Kind of member.
+          type: string
+          examples:
+            - user
+          enum:
+            - user
+            - group
+      required:
+        - group_id
+        - member_id
+        - member_type
+    group_memberships_response:
+      description: Membership of a user or a group in a group.
+      type: object
+      properties:
+        id:
+          description: ID of this group membership.
+          type: string
+          examples:
+            - '99458'
+        group_id:
+          description: ID of the group.
+          type: string
+          examples:
+            - '123'
+        member_id:
+          description: ID of the member (user ID or group ID, according to `member_type`).
+          type: string
+          examples:
+            - '42'
+        member_type:
+          description: Kind of member.
+          type: string
+          examples:
+            - user
+          enum:
+            - user
+            - group
+        queued_operation_count:
+          description: Number of queued operations of this membership (creation of home folders).
+          type: integer
+          examples:
+            - 0
+        running_operation_count:
+          description: Number of running operations of this membership.
+          type: integer
+          examples:
+            - 0
+        stopped_operation_count:
+          description: Number of stopped operations of this membership (e.g. folder conflict).
+          type: integer
+          examples:
+            - 0
+        member:
+          description: >-
+            Member (user or group), with `embed[]=member`. `null` if the member cannot be read with the token used.
+          anyOf:
+            - $ref: '#/components/schemas/users_response'
+            - $ref: '#/components/schemas/groups_response'
+            - enum:
+                - null
+        group:
+          description: Group, with `embed[]=group`. `null` if the group cannot be read with the token used.
+          anyOf:
+            - $ref: '#/components/schemas/groups_response'
+            - enum:
+                - null
+      required:
+        - id
+        - group_id
+        - member_id
+        - member_type
+    groups_params:
+      description: Group to create.
+      type: object
+      properties:
+        name:
+          description: Name of the group (not necessarily unique).
+          type: string
+          examples:
+            - Engineering
+        description:
+          description: Description of the group.
+          type:
+            - string
+            - 'null'
+          examples:
+            - Members of the engineering team
+        saml_group:
+          description: >-
+            Indicates whether the members of this group are given by the SAML identity provider (attribute
+            `saml_group_dn`). Members of a SAML group cannot be added or removed with `/group_memberships`.
+          type: boolean
+          default: false
+          examples:
+            - false
+        saml_group_dn:
+          description: >-
+            Distinguished name of the group in the SAML assertion. Required if `saml_group` is `true`, unique in the
+            organization.
+          type: string
+          examples:
+            - CN=Engineering,OU=Groups,DC=example,DC=com
+      required:
+        - name
+    groups_update_params:
+      description: Group attributes to modify.
+      type: object
+      properties:
+        name:
+          description: Name of the group.
+          type: string
+          examples:
+            - Engineering
+        description:
+          description: Description of the group.
+          type:
+            - string
+            - 'null'
+          examples:
+            - Members of the engineering team
+        saml_group:
+          description: Indicates whether the members of this group are given by the SAML identity provider.
+          type: boolean
+          examples:
+            - false
+        saml_group_dn:
+          description: Distinguished name of the group in the SAML assertion. Required if `saml_group` is `true`.
+          type: string
+          examples:
+            - CN=Engineering,OU=Groups,DC=example,DC=com
+    groups_response:
+      description: Group of users and groups.
+      type: object
+      properties:
+        id:
+          description: ID of this group.
+          type: string
+          examples:
+            - '31204'
+        name:
+          description: Name of the group.
+          type: string
+          examples:
+            - Engineering
+        description:
+          description: Description of the group.
+          type:
+            - string
+            - 'null'
+          examples:
+            - Members of the engineering team
+        created_at:
+          description: Creation date.
+          type: string
+          format: date-time
+          examples:
+            - '2018-04-23T18:09:43.000Z'
+        updated_at:
+          description: Last update date.
+          type: string
+          format: date-time
+          examples:
+            - '2024-07-04T15:29:37.000Z'
+        manager:
+          description: Indicates whether the current user is a manager of this group.
+          type: boolean
+          examples:
+            - false
+        owner:
+          description: Indicates whether the current user is an owner of this group.
+          type: boolean
+          examples:
+            - false
+        saml_group:
+          description: Indicates whether the members of this group are given by the SAML identity provider.
+          type: boolean
+          examples:
+            - false
+        saml_group_dn:
+          description: >-
+            Distinguished name of the group in the SAML assertion, for a SAML group. Returned only with a token with admin
+            scope.
+          type:
+            - string
+            - 'null'
+          examples:
+            - null
+        system_group:
+          description: >-
+            Indicates whether this group is created and managed by AoC (e.g. members of a workspace or of a shared
+            inbox). A system group cannot be modified or deleted, and its members are not managed with
+            `/group_memberships`.
+          type: boolean
+          examples:
+            - false
+        system_group_type:
+          description: Kind of system group. Returned only for a system group.
+          type: string
+          enum:
+            - activity_members_group
+            - dropbox_members
+            - dropbox_recipients
+            - dropbox_senders
+            - saml_users
+            - workspace_all_sent_group
+            - workspace_managers
+            - workspace_members
+            - workspace_node_owners
+          examples:
+            - workspace_members
+        queued_operation_count:
+          description: Number of queued operations of this group.
+          type: integer
+          examples:
+            - 0
+        running_operation_count:
+          description: Number of running operations of this group.
+          type: integer
+          examples:
+            - 0
+        stopped_operation_count:
+          description: Number of stopped operations of this group.
+          type: integer
+          examples:
+            - 0
+      required:
+        - id
+        - name
+        - system_group
     metadata:
       description: >
         A metadata schema is used to present a form to a user when the user is submitting content to a dropbox. It is an

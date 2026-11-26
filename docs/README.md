@@ -7783,14 +7783,21 @@ empty
 
 ### Calling AoC APIs from command line
 
-The command `ascli aoc bearer_token` can be used to generate an OAuth token suitable to call any AoC API.
+The command `ascli aoc bearer_token` generates an OAuth token to call AoC APIs as user (scope `user:all`).
+The command `ascli aoc admin bearer_token` generates a token with scope `admin:all`, required by administration APIs, such as `group_memberships`.
 This can be useful when a command is not yet available.
 The token is a secret: it is hidden in the output, unless option `--out.secrets=yes` is used.
 
-Example:
+Example: list members of groups, with the name of group and member (option `-g` of `curl`: the brackets of `embed[]` are not a URL range):
 
 ```shell
-curl -s -H "Authorization: $(ascli aoc bearer_token --out.secrets=yes)" 'https://api.ibmaspera.com/api/v1/group_memberships?embed[]=dropbox&embed[]=workspace'|jq -r '.[]|(.workspace.name + " -> " + .dropbox.name)'
+curl -s -g -H "Authorization: $(ascli aoc admin bearer_token --out.secrets=yes)" 'https://api.ibmaspera.com/api/v1/group_memberships?embed[]=group&embed[]=member'|jq -r '.[]|(.group.name + " -> " + .member.name)'
+```
+
+The same with `ascli` (a parameter with several values is given as an array, with `[]` in its name):
+
+```shell
+ascli aoc admin group_membership list --query=@json:'{"embed[]":["group","member"]}' --fields=group.name,member.name
 ```
 
 It is also possible to get the bearer token for node, as user or as admin using:
@@ -9068,7 +9075,7 @@ admin contact list
 admin dropbox list
 admin dropbox_membership list
 admin group list
-admin group_membership list --fields=ALL --query=@json:'{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}'
+admin group_membership list --fields=id,group.name,member_type,member.name --query=@json:'{"max":50,"per_page":50,"embed[]":["group","member"],"sort":"member.name"}'
 admin kms_profile list
 admin network_policy list
 admin network_policy show <ID>
@@ -10318,8 +10325,9 @@ Activation is in two steps:
   - As Admin, Navigate to the web UI: Admin &rarr; Configurations &rarr; API Clients &rarr; Create
   - Give a name, like `ascli`
   - Activate JWT
-  - There is an option to set a global public key allowing the owner of the private key to impersonate any user.
-    Unless you want to do this, leave this field empty.
+  - Leave **Global key** off, unless you want impersonation: with a global public key and **Access**: **All users**,
+    the owner of the matching private key gets a token for any user.
+    See [Faspex 5: Admin: Change the preferences of users](#faspex-5-admin-change-the-preferences-of-users).
   - Click **Create**
   - Take note of Client ID (and Client Secret, but not used in current version)
 
@@ -10867,6 +10875,37 @@ ascli faspex5 admin accounts modify %name:some.user@example.com @json:'{"account
 > This example uses the [percent selector](#percent-selector), but the numerical ID can be used as well.
 
 To send a password reset link to a user, use command `faspex5 admin accounts reset_password <ACCOUNT_ID>`.
+
+### Faspex 5: Admin: Change the preferences of users
+
+Command `faspex5 user profile modify` changes the preferences of the user of the token only (`PUT /api/v5/account/preferences`):
+`client_settings`, `rows_per_page`, `locale`, and so on.
+Command `faspex5 admin accounts modify` refuses them (error 1014: unpermitted parameter).
+
+To change them for other users, an administrator creates an API client that allows impersonation.
+In the web UI: Admin &rarr; Configurations &rarr; API Clients &rarr; Create:
+
+- **Enable JWT grant type**: checked (`allow_jwt_grant`)
+- **Authentication**: **Global key** (`allow_global_key`), and paste the public key of `<PRIVATE_KEY_FILE>` in **Global public key in PEM format** (`public_key`)
+- **Access**: **All users** (`access_grant_all_users`)
+
+With the private key of this client, `ascli` gets a token for the user given in option `username`:
+
+```shell
+ascli faspex5 user profile show --auth=jwt --client-id=<CLIENT_ID> --private-key=@file:<PRIVATE_KEY_FILE> --username=<USERNAME>
+```
+
+> [!WARNING]
+> The private key of this client opens a session as any user: keep it secret, or delete the client after use.
+
+`client_settings` is a JSON object in a string, written by the web UI, and a new value replaces the previous one.
+To change one key, read the value, change the key, and write the whole object.
+For example, key `transferClient` is the transfer client chosen by the user, `CONNECT` or `DESKTOP`.
+With options `url`, `auth`, `client_id` and `private_key` in the default preset:
+
+```shell
+ascli faspex5 user profile show --username=<USERNAME> --format=text --out.query=@ruby:'->(p){(JSON.parse(p["client_settings"]) rescue {}).merge("transferClient"=>"DESKTOP").to_json}' | ascli faspex5 user profile modify --username=<USERNAME> @: client_settings=@stdin:chomp
+```
 
 ### Faspex 5: Faspex 4-style post-processing
 

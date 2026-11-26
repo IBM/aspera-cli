@@ -510,8 +510,9 @@ module Aspera
           contact:                   {list_fields: %w[source_type source_id name email]},
           dropbox:                   {path: 'dropboxes', require_ws_id: true},
           dropbox_membership:        {},
-          group:                     {create_schema: false},
-          group_membership:          {list_fields: %w[id group_id member_type member_id], create_schema: false},
+          group:                     {},
+          # A membership cannot be modified (no `PUT` in the API): delete it and create another one
+          group_membership:          {list_fields: %w[id group_id member_type member_id], ops: %i[create list show delete]},
           kms_profile:               {path: 'integrations/kms_profiles', create_schema: false},
           network_policy:            {list_fields: nil},
           node:                      {

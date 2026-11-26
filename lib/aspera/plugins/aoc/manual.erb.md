@@ -362,14 +362,21 @@ empty
 
 ### Calling AoC APIs from command line
 
-The command `<%=cmd%> aoc bearer_token` can be used to generate an OAuth token suitable to call any AoC API.
+The command `<%=cmd%> aoc bearer_token` generates an OAuth token to call AoC APIs as user (scope `user:all`).
+The command `<%=cmd%> aoc admin bearer_token` generates a token with scope `admin:all`, required by administration APIs, such as `group_memberships`.
 This can be useful when a command is not yet available.
 The token is a secret: it is hidden in the output, unless option `--out.secrets=yes` is used.
 
-Example:
+Example: list members of groups, with the name of group and member (option `-g` of `curl`: the brackets of `embed[]` are not a URL range):
 
 ```shell
-curl -s -H "Authorization: $(<%=cmd%> aoc bearer_token --out.secrets=yes)" 'https://api.ibmaspera.com/api/v1/group_memberships?embed[]=dropbox&embed[]=workspace'|jq -r '.[]|(.workspace.name + " -> " + .dropbox.name)'
+curl -s -g -H "Authorization: $(<%=cmd%> aoc admin bearer_token --out.secrets=yes)" 'https://api.ibmaspera.com/api/v1/group_memberships?embed[]=group&embed[]=member'|jq -r '.[]|(.group.name + " -> " + .member.name)'
+```
+
+The same with `<%=cmd%>` (a parameter with several values is given as an array, with `[]` in its name):
+
+```shell
+<%=cmd%> aoc admin group_membership list --query=@json:'{"embed[]":["group","member"]}' --fields=group.name,member.name
 ```
 
 It is also possible to get the bearer token for node, as user or as admin using:

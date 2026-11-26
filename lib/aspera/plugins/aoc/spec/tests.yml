@@ -1195,8 +1195,8 @@ aoc_adm_grm_list:
     - admin
     - group_membership
     - list
-    - --fields=ALL
-    - --query=@json:{"page":1,"per_page":50,"embed":"member","inherited":false,"workspace_id":11363,"sort":"name"}
+    - --fields=id,group.name,member_type,member.name
+    - --query=@json:{"max":50,"per_page":50,"embed[]":["group","member"],"sort":"member.name"}
 aoc_adm_analytics_xfer_org:
   args:
     - --preset=aoc_admin

@@ -107,8 +107,9 @@ Activation is in two steps:
   - As Admin, Navigate to the web UI: Admin &rarr; Configurations &rarr; API Clients &rarr; Create
   - Give a name, like <%=tool%>
   - Activate JWT
-  - There is an option to set a global public key allowing the owner of the private key to impersonate any user.
-    Unless you want to do this, leave this field empty.
+  - Leave **Global key** off, unless you want impersonation: with a global public key and **Access**: **All users**,
+    the owner of the matching private key gets a token for any user.
+    See [Faspex 5: Admin: Change the preferences of users](#faspex-5-admin-change-the-preferences-of-users).
   - Click **Create**
   - Take note of Client ID (and Client Secret, but not used in current version)
 
@@ -569,6 +570,37 @@ To unlock a user, you can deactivate and then re-activate the user:
 > This example uses the [percent selector](#percent-selector), but the numerical ID can be used as well.
 
 To send a password reset link to a user, use command `faspex5 admin accounts reset_password <%=ph :account_id%>`.
+
+### Faspex 5: Admin: Change the preferences of users
+
+Command `faspex5 user profile modify` changes the preferences of the user of the token only (`PUT /api/v5/account/preferences`):
+`client_settings`, `rows_per_page`, `locale`, and so on.
+Command `faspex5 admin accounts modify` refuses them (error 1014: unpermitted parameter).
+
+To change them for other users, an administrator creates an API client that allows impersonation.
+In the web UI: Admin &rarr; Configurations &rarr; API Clients &rarr; Create:
+
+- **Enable JWT grant type**: checked (`allow_jwt_grant`)
+- **Authentication**: **Global key** (`allow_global_key`), and paste the public key of `<%=ph :private_key_file%>` in **Global public key in PEM format** (`public_key`)
+- **Access**: **All users** (`access_grant_all_users`)
+
+With the private key of this client, <%=tool%> gets a token for the user given in option `username`:
+
+```shell
+<%=cmd%> faspex5 user profile show --auth=jwt --client-id=<%=ph :client_id%> --private-key=@file:<%=ph :private_key_file%> --username=<%=ph :username%>
+```
+
+> [!WARNING]
+> The private key of this client opens a session as any user: keep it secret, or delete the client after use.
+
+`client_settings` is a JSON object in a string, written by the web UI, and a new value replaces the previous one.
+To change one key, read the value, change the key, and write the whole object.
+For example, key `transferClient` is the transfer client chosen by the user, `CONNECT` or `DESKTOP`.
+With options `url`, `auth`, `client_id` and `private_key` in the default preset:
+
+```shell
+<%=cmd%> faspex5 user profile show --username=<%=ph :username%> --format=text --out.query=@ruby:'->(p){(JSON.parse(p["client_settings"]) rescue {}).merge("transferClient"=>"DESKTOP").to_json}' | <%=cmd%> faspex5 user profile modify --username=<%=ph :username%> @: client_settings=@stdin:chomp
+```
 
 ### Faspex 5: Faspex 4-style post-processing
 

@@ -709,7 +709,8 @@ components:
           description: |
             Protocol accepted on the local side. Typically `tcp` or `udp`.
           example: tcp
-          $ref: '#/components/schemas/Protocol'
+          allOf:
+            - $ref: '#/components/schemas/Protocol'
         tls_enabled:
           description: |
             When `true`, the local abutment expects TLS-wrapped connections.
@@ -754,7 +755,8 @@ components:
           description: |
             Protocol used to connect to the remote peer. Typically `fasp` for acceleration.
           example: fasp
-          $ref: '#/components/schemas/Protocol'
+          allOf:
+            - $ref: '#/components/schemas/Protocol'
         tls_enabled:
           description: |
             When `true`, the outgoing connection to the remote peer is TLS-wrapped.
