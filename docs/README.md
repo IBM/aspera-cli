@@ -9093,6 +9093,7 @@ admin ats cluster list
 admin ats cluster show --cloud=aws --region=eu-west-1
 admin ats cluster show 1f412ae7-869a-445c-9c05-02ad16813be2
 admin auth_providers list
+admin auth_providers show <ID>
 admin bearer_token --out.level=data --out.secrets=yes
 admin client list
 admin client_access_key list

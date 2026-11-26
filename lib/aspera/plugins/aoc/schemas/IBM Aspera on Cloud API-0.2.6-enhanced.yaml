@@ -4689,6 +4689,83 @@ paths:
       tags:
         - Workspaces
   /workspaces/{id}:
+    get:
+      operationId: get_workspace_by_id
+      summary: Get Information on a Specific Workspace
+      description: Retrieve information on a specific workspace.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique identifier of the resource.
+        - name: embed[]
+          in: query
+          description: embed[]=node (node from node_id) embed[]=group (from group_id) embed[]=organization
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/workspaces_response'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+      tags:
+        - Workspaces
+    put:
+      operationId: update_workspace
+      summary: Update a Workspace
+      description: Make changes to an existing workspace; for example, change collaboration settings.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique identifier of the resource.
+      requestBody:
+        $ref: '#/components/requestBodies/workspaces_params'
+      responses:
+        '204':
+          description: No Content
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+      tags:
+        - Workspaces
     delete:
       operationId: delete_workspace
       summary: Delete a Specific Workspace
@@ -5341,7 +5418,38 @@ paths:
           application/json:
             schema:
               type: object
-              additionalProperties: true
+              description: Fields to change (others are unchanged).
+              properties:
+                name:
+                  type: string
+                  description: Name of the authentication provider.
+                enabled:
+                  type: boolean
+                  description: Whether users can log in with this provider. At least one provider of the organization must stay enabled.
+                login_text:
+                  type: string
+                  description: Text of the login button.
+                configuration:
+                  type: object
+                  description: Options of the login page.
+                  properties:
+                    instructions:
+                      type: string
+                      maxLength: 118
+                      description: Instructions shown on the login page.
+                    allow_admin_backdoor_access:
+                      type: boolean
+                      description: IBMid provider only. When IBMid login is disabled, whether organization admins can still sign in with IBMid, on the admin login page (`admin_backdoor=true`).
+                included_domains:
+                  type: array
+                  description: Email domains that use this provider. Must be empty if `excluded_domains` is set.
+                  items:
+                    type: string
+                excluded_domains:
+                  type: array
+                  description: Email domains that do not use this provider. Must be empty if `included_domains` is set.
+                  items:
+                    type: string
       responses:
         '200':
           description: OK
@@ -5571,44 +5679,6 @@ paths:
                 $ref: '#/components/schemas/UnauthorizedError'
       tags:
         - Client Registration Tokens
-    post:
-      operationId: create_client_registration_token
-      summary: Create Client Registration Token
-      description: Create a new client registration token for the current organization.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                data:
-                  $ref: '#/components/schemas/ClientRegistrationTokenData'
-              required:
-                - data
-      responses:
-        '201':
-          description: Created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ClientRegistrationToken'
-        '400':
-          description: Bad Request
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UnauthorizedError'
-        '422':
-          description: Unprocessable Entity
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-      tags:
-        - Client Registration Tokens
   /client_registration_tokens/{id}:
     get:
       operationId: get_client_registration_token_by_id
@@ -5723,6 +5793,113 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotFoundError'
+      tags:
+        - Client Registration Tokens
+  /client_registration/token:
+    post:
+      operationId: create_client_registration_token
+      summary: Create Client Registration Token
+      description: |
+        Create a new client registration token for the current organization (admin only).
+        The token is valid 24 hours, and can be used once, to register a client with `POST /client_registration`.
+        The client is created with `jwt_grant_enabled` and `client_subject_enabled` set to `true`, whatever the values given.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/ClientRegistrationTokenData'
+              required:
+                - data
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: Value of the token, to use in `POST /client_registration`.
+                  expires_at:
+                    type: string
+                    format: date-time
+                    description: Timestamp when the token expires.
+                required:
+                  - token
+                  - expires_at
+        '400':
+          description: Bad Request (invalid payload)
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+      tags:
+        - Client Registration Tokens
+  /client_registration:
+    post:
+      operationId: register_client
+      summary: Register a Client with a Client Registration Token
+      description: |
+        Create a client in the organization of the client registration token, with the public key given.
+        The bearer token is the value of the client registration token (`Authorization: Bearer <TOKEN>`), not an OAuth token.
+        The client registration token is deleted after this call, even if the payload is invalid.
+      security:
+        - ClientRegistrationToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                public_key:
+                  type: string
+                  description: Public key of the client, in PEM format.
+              required:
+                - public_key
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Client created (a subset of the fields of `GET /clients/{id}`).
+                properties:
+                  id:
+                    type: string
+                    description: Identifier of the client (`client_id`).
+                  name:
+                    type: string
+                    description: Name of the client, from the client registration token.
+                  organization_id:
+                    type: string
+                    description: Identifier of the organization.
+                  public_key:
+                    type: string
+                    description: Public key of the client, in PEM format.
+                  jwt_grant_enabled:
+                    type: boolean
+                    description: Whether the client can use the JWT grant.
+                  client_subject_enabled:
+                    type: boolean
+                    description: Whether the client can request a token with itself as subject.
+                  client_subject_scopes:
+                    type: array
+                    description: Scopes allowed when the client is the subject.
+                    items:
+                      type: string
+        '400':
+          description: Bad Request (invalid payload)
+        '401':
+          description: Unauthorized (missing, invalid or expired client registration token)
       tags:
         - Client Registration Tokens
   /email_templates:
@@ -13450,6 +13627,14 @@ components:
         For JWT-based authentication, the token must be signed with either:
         - User-specific private key (user's public key must be registered in AoC)
         - Global private key (configured in client settings)
+    ClientRegistrationToken:
+      type: http
+      scheme: bearer
+      description: |
+        Value of a client registration token (created with `POST /client_registration/token`), used only by `POST /client_registration`:
+        ```
+        Authorization: Bearer <TOKEN>
+        ```
 security:
   - OAuth2: []
   - BearerAuth: []

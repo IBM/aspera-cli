@@ -136,19 +136,29 @@ module Aspera
             "#{res}s".gsub(/ys$/, 'ies')
           end
 
-          # @return [Hash] {path:, ops:, id_result:, require_ws_id:, list_fields:, schema:, query_component:}
+          # Path of an endpoint in the OpenAPI description: AoC accepts the prefix `admin/` on all endpoints, the description has none
+          # @param path [String] REST path, e.g. `admin/client_access_keys`
+          # @return [String] path in the OpenAPI description, e.g. `client_access_keys`
+          def aoc_schema_path(path) = path.delete_prefix('admin/')
+
+          # @return [Hash] {path:, create_path:, schema_path:, ops:, id_result:, require_ws_id:, list_fields:, schema:, modify_schema:, query_component:}
           def aoc_res_cfg(res)
-            cfg    = ADMIN_OBJECT_CONFIG.fetch(res, {})
-            path   = aoc_res_path(res)
-            ops    = cfg[:ops] || (Cli::Plugins::Base::Operations::ALL + (cfg[:extra_ops] || []))
-            schema = cfg[:create_schema] == false ? nil : Schema::Registry.req_body(AOC_SCHEMA, "#{path}.post")
+            cfg         = ADMIN_OBJECT_CONFIG.fetch(res, {})
+            path        = aoc_res_path(res)
+            create_path = cfg[:create_path] || path
+            schema_path = aoc_schema_path(path)
+            ops         = cfg[:ops] || (Cli::Plugins::Base::Operations::ALL + (cfg[:extra_ops] || []))
+            in_schema   = cfg[:schema] != false
             {
               path:            path,
+              create_path:     create_path,
+              schema_path:     schema_path,
               ops:             ops,
               id_result:       cfg[:id_result] || 'id',
               require_ws_id:   cfg[:require_ws_id] || false,
               list_fields:     cfg.key?(:list_fields) ? cfg[:list_fields] : %w[id name],
-              schema:          schema,
+              schema:          (Schema::Registry.req_body(AOC_SCHEMA, "#{aoc_schema_path(create_path)}.post") if in_schema),
+              modify_schema:   (Schema::Registry.req_body(AOC_SCHEMA, "#{schema_path}/{id}.put") if in_schema),
               query_component: AOC_SCHEMA
             }
           end
@@ -384,7 +394,7 @@ module Aspera
         def result_list(resource_class_path, fields: nil, base_query: {}, default_query: {}, query_component: nil)
           Aspera.assert_type(base_query, Hash)
           Aspera.assert_type(default_query, Hash)
-          qs_path = query_component ? Schema::Registry.query_params(query_component, resource_class_path) : nil
+          qs_path = query_component ? Schema::Registry.query_params(query_component, aoc_schema_path(resource_class_path)) : nil
           query = query_read_delete(default: default_query, schema: qs_path)
           # caller may add specific modifications or checks to query
           yield(query) if block_given?
@@ -494,7 +504,9 @@ module Aspera
         end
 
         # Per-resource configuration for admin CRUD resources.
-        # Keys: path, list_fields, id_result, require_ws_id, create_schema, extra_ops, singleton, op_setup, op_mount, op_descriptions
+        # Keys: path, create_path, list_fields, id_result, require_ws_id, schema, ops, extra_ops, singleton, op_setup, op_mount, op_descriptions
+        # create_path: path of `create`, when it is not `path`.
+        # schema: false when the resource is not in the OpenAPI description (no help on fields and query).
         # Ops other than `create` and `list` read the identifier `<res>_id` (argument of the op node).
         # op_setup: Hash of op => setup method name, for ops that need context derived from the identifier.
         # op_mount: Hash of op => mount: of that op's node.
@@ -506,16 +518,22 @@ module Aspera
             op_descriptions: {set_pub_key: 'Set public key of client from a private key'}
           },
           client_access_key:         {path: 'admin/client_access_keys'},
-          client_registration_token: {path: 'admin/client_registration_tokens', list_fields: %w[id value data.client_subject_scopes data.name created_at], id_result: 'token'},
+          client_registration_token: {
+            path:        'admin/client_registration_tokens',
+            create_path: 'admin/client_registration/token',
+            list_fields: %w[id value data.client_subject_scopes data.name created_at],
+            id_result:   'token'
+          },
           configuration_policy:      {list_fields: nil},
-          contact:                   {list_fields: %w[source_type source_id name email]},
+          # A contact is a user, group, shared inbox or distribution list: no identifier of its own, so no `show`, `modify` or `delete`
+          contact:                   {list_fields: %w[source_type source_id name email], ops: %i[create list]},
           dropbox:                   {path: 'dropboxes', require_ws_id: true},
           dropbox_membership:        {},
           group:                     {},
           # A membership cannot be modified (no `PUT` in the API): delete it and create another one
           group_membership:          {list_fields: %w[id group_id member_type member_id], ops: %i[create list show delete]},
           group_permission:          {list_fields: %w[id group_id level entity_type entity_id]},
-          kms_profile:               {path: 'integrations/kms_profiles', create_schema: false},
+          kms_profile:               {path: 'integrations/kms_profiles', schema: false},
           network_policy:            {list_fields: nil},
           node:                      {
             list_fields:     %w[id name host access_key],
@@ -527,9 +545,13 @@ module Aspera
           operation:                 {list_fields: %w[id type status created_at updated_at workspace_id user_id workspace_membership_id group_membership_id], ops: %i[list show modify]},
           organization:              {singleton: true},
           package:                   {},
-          saml_configuration:        {create_schema: false},
+          saml_configuration:        {schema: false},
           self:                      {singleton: true, op_descriptions: {show: 'Show current user'}},
-          short_link:                {list_fields: %w[id short_url data.url_token_data.purpose password_enabled password_protected updated_by_user_id updated_at]},
+          # No `show`: AoC has no `GET /short_links/{id}`, and the list cannot be filtered by identifier
+          short_link:                {
+            list_fields: %w[id short_url data.url_token_data.purpose password_enabled password_protected updated_by_user_id updated_at],
+            ops:         %i[create list modify delete]
+          },
           user:                      {
             list_fields:     %w[id name email],
             extra_ops:       %i[preferences notifications],
@@ -544,9 +566,10 @@ module Aspera
         }.freeze
         private_constant :ADMIN_OBJECT_CONFIG
 
-        # Instance delegators so instance methods can call aoc_res_path/aoc_res_cfg without self.class.
-        def aoc_res_path(res) = self.class.aoc_res_path(res)
-        def aoc_res_cfg(res)  = self.class.aoc_res_cfg(res)
+        # Instance delegators so instance methods can call aoc_res_path/aoc_res_cfg/aoc_schema_path without self.class.
+        def aoc_res_path(res)     = self.class.aoc_res_path(res)
+        def aoc_res_cfg(res)      = self.class.aoc_res_cfg(res)
+        def aoc_schema_path(path) = self.class.aoc_schema_path(path)
 
         # Known fixed set of AoC application types (verified against API: activity, automation, files, packages)
         APP_TYPES = %i[activity automation files packages].freeze
@@ -664,7 +687,7 @@ module Aspera
                     [{name: res, type: Hash, bulk: true, schema: c[:schema]}]
                   elsif !is_singleton && op.eql?(:modify)
                     c = aoc_res_cfg(res)
-                    [{name: res, type: Hash, schema: c[:schema]}]
+                    [{name: res, type: Hash, schema: c[:modify_schema]}]
                   elsif extra_op_args.key?(op)
                     extra_op_args[op]
                   else
@@ -676,7 +699,7 @@ module Aspera
                 # Attach query_schema (full path) to :list Command so --help shows the tip
                 if op.eql?(:list)
                   c = aoc_res_cfg(res)
-                  merged = merged.merge(query_schema: Schema::Registry.query_params(c[:query_component], c[:path]))
+                  merged = merged.merge(query_schema: Schema::Registry.query_params(c[:query_component], c[:schema_path]))
                 end
                 description = cfg.dig(:op_descriptions, op) ||
                   (Operations::ALL.include?(op) ? operation_description(op, entity_noun(res, singular: false)) : op.to_s.tr('_', ' ').capitalize)
@@ -729,9 +752,14 @@ module Aspera
           end
         end
         commands_under %i[admin auth_providers] do
-          command :list, description: 'List auth providers',
-            action: ->(**) { result_list('admin/auth_providers') }
-          command :update, description: 'Update auth provider', action: ->(**) { Aspera.error_not_implemented }
+          auth_provider_id = {name: :auth_provider_id, type: :identifier}
+          command :list, description: operation_description(:list, 'auth provider'), query_schema: Schema::Registry.query_params(AOC_SCHEMA, 'auth_providers'),
+            action: ->(**) { result_list('admin/auth_providers', query_component: AOC_SCHEMA) }
+          command :show, description: operation_description(:show, 'auth provider'), arguments: [auth_provider_id],
+            action: ->(auth_provider_id:, **) { Cli::Result::SingleObject.new(aoc_api.read("admin/auth_providers/#{auth_provider_id}")) }
+          command :modify, description: operation_description(:modify, 'auth provider'),
+            arguments: [auth_provider_id, {name: :auth_provider, type: Hash, schema: Schema::Registry.req_body(AOC_SCHEMA, 'auth_providers/{id}.put')}],
+            action: ->(auth_provider_id:, auth_provider:, **) { aoc_api.update("admin/auth_providers/#{auth_provider_id}", auth_provider).then { Cli::Result::Status.new('modified') } }
         end
         commands_under %i[admin subscription] do
           command(
@@ -846,15 +874,10 @@ module Aspera
           command :preferences,   description: 'Manage interaction preferences'
           command :notifications, description: 'Manage notification preferences'
           command :contacts,      description: 'Manage contacts'
-          # user > contacts sub-commands (same CRUD as admin > contact)
+          # user > contacts sub-commands (same as admin > contact)
           commands_under %i[contacts] do
-            contact_id = {name: :contact_id, type: :identifier, lookup: :lookup_aoc_contact_id}
-            contact_schema = aoc_res_cfg(:contact)[:schema]
             command :list,   description: operation_description(:list, 'contact')
-            command :show,   description: operation_description(:show, 'contact'), arguments: [contact_id]
-            command :create, description: operation_description(:create, 'contact'), arguments: [{name: :contact, type: Hash, bulk: true, schema: contact_schema}]
-            command :modify, description: operation_description(:modify, 'contact'), arguments: [contact_id, {name: :contact, type: Hash, schema: contact_schema}]
-            command :delete, description: operation_description(:delete, 'contact'), arguments: [contact_id]
+            command :create, description: operation_description(:create, 'contact'), arguments: [{name: :contact, type: Hash, bulk: true, schema: aoc_res_cfg(:contact)[:schema]}]
           end
           command :settings, description: 'Manage client settings'
           commands_under %i[settings] do
@@ -1494,13 +1517,10 @@ module Aspera
           define_action_method([:admin, res, :create]) do |**kwargs|
             data = kwargs.fetch(res)
             c = aoc_res_cfg(res)
-            path = c[:path]
-            # Special case: client_registration_token has a different creation URL
-            path = 'admin/client_registration/token' if path.eql?('admin/client_registration_tokens')
             workspace_id = aoc_api.workspace_info[:id] if c[:require_ws_id]
             bulk_result(data, command: :create, id_result: c[:id_result]) do |params|
               params['workspace_id'] = workspace_id if c[:require_ws_id] && workspace_id && !params.key?('workspace_id')
-              aoc_api.create(path, params)
+              aoc_api.create(c[:create_path], params)
             end
           end
         end
@@ -1531,8 +1551,8 @@ module Aspera
           end
         end
 
-        # user > contacts > list|show|create|modify|delete (same API path as admin > contact)
-        Operations::ALL.each do |op|
+        # user > contacts > list|create (same API path as admin > contact)
+        %i[list create].each do |op|
           define_action_method([:user, :contacts, op]) do |**ctx|
             send(Cli::Command.action_method([:admin, :contact, op]), **ctx)
           end

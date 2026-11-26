@@ -141,6 +141,31 @@ module Aspera
               [:aoc, :update, 'users/u2/notification_preferences', {'d' => 4}]
             ]))
           end
+
+          it 'creates a client registration token with the path of creation' do
+            responses[[:create, 'admin/client_registration/token']] = {'token' => 't1'}
+            execute('admin', 'client_registration_token', 'create', '@json:{"data":{"name":"n1"}}')
+            expect(calls).to(eq([[:aoc, :create, 'admin/client_registration/token', {'data' => {'name' => 'n1'}}]]))
+          end
+
+          it 'shows and modifies an auth provider' do
+            execute('admin', 'auth_providers', 'show', 'a1')
+            expect(execute('admin', 'auth_providers', 'modify', 'a1', '@json:{"enabled":true}').data).to(eq('modified'))
+            expect(calls).to(eq([[:aoc, :read, 'admin/auth_providers/a1'], [:aoc, :update, 'admin/auth_providers/a1', {'enabled' => true}]]))
+          end
+
+          # `help` as value of the argument reads these schemas: a missing one is an error
+          it 'finds the schemas of create and modify in the API description' do
+            config = described_class.const_get(:ADMIN_OBJECT_CONFIG)
+            schema_of_op = {create: :schema, modify: :modify_schema}
+            described_class.const_get(:ADMIN_OBJECTS).reject { |res| config.dig(res, :singleton) }.each do |res|
+              cfg = described_class.aoc_res_cfg(res)
+              schema_of_op.each do |op, key|
+                next unless cfg[:ops].include?(op) && cfg[key]
+                expect { Schema::Registry.instance.reader(cfg[key]) }.not_to(raise_error, "#{res} #{op}: #{cfg[key]}")
+              end
+            end
+          end
         end
 
         describe 'admin analytics' do

@@ -936,6 +936,29 @@ aoc_adm_authp_list:
     - admin
     - auth_providers
     - list
+aoc_adm_authp_local_id:
+  tags:
+    - save_output
+    - no_doc
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - auth_providers
+    - list
+    - --query=@json:{"type":"LocalAuthProvider"}
+    - --fields=id
+    - --out.level=data
+aoc_adm_authp_show:
+  depends_on:
+    - aoc_adm_authp_local_id
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - auth_providers
+    - show
+    - $(t.saved_output :aoc_adm_authp_local_id)
 aoc_adm_subscription_account:
   args:
     - --preset=aoc_admin
