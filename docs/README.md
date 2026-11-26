@@ -9130,7 +9130,11 @@ admin node list
 admin operation list
 admin organization show
 admin package list --http-options.read_timeout=120.0
+admin saml_configuration create @json:'{"name":"test_saml_ascli","enabled":false,"sso_target_url":"https://idp.example.com/saml/sso","fingerprint":"00:01:02:03:04:05:06:07:08:09:0A:0B:0C:0D:0E:0F:10:11:12:13","attribute_mapping":{"email":"email","first_name":"given_name","last_name":"surname","member_of":"groups"}}'
+admin saml_configuration delete %name:test_saml_ascli
 admin saml_configuration list
+admin saml_configuration modify %name:test_saml_ascli @json:'{"login_text":"Sign in with test SAML"}'
+admin saml_configuration show %name:test_saml_ascli
 admin self show
 admin short_link list
 admin subscription account

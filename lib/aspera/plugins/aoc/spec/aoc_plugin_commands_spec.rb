@@ -154,6 +154,13 @@ module Aspera
             expect(calls).to(eq([[:aoc, :read, 'admin/auth_providers/a1'], [:aoc, :update, 'admin/auth_providers/a1', {'enabled' => true}]]))
           end
 
+          # AoC fails with 500 on parameter `q` for this resource: the name is searched in the whole list
+          it 'finds a SAML configuration by name without parameter q' do
+            responses[[:read_with_paging, 'saml_configurations']] = {items: [{'id' => 's1', 'name' => 'sso'}, {'id' => 's2', 'name' => 'sso2'}], total: 2}
+            execute('admin', 'saml_configuration', 'show', '%name:sso')
+            expect(calls).to(eq([[:aoc, :read_with_paging, 'saml_configurations', {}], [:aoc, :read, 'saml_configurations/s1', nil]]))
+          end
+
           # `help` as value of the argument reads these schemas: a missing one is an error
           it 'finds the schemas of create and modify in the API description' do
             config = described_class.const_get(:ADMIN_OBJECT_CONFIG)

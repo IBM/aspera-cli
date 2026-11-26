@@ -1404,6 +1404,48 @@ aoc_adm_saml_list:
     - admin
     - saml_configuration
     - list
+aoc_adm_saml_create:
+  $comment: disabled (not on the login page), creates a group and an auth provider, deleted with it
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - saml_configuration
+    - create
+    - '@json:{"name":"test_saml_ascli","enabled":false,"sso_target_url":"https://idp.example.com/saml/sso","fingerprint":"00:01:02:03:04:05:06:07:08:09:0A:0B:0C:0D:0E:0F:10:11:12:13","attribute_mapping":{"email":"email","first_name":"given_name","last_name":"surname","member_of":"groups"}}'
+aoc_adm_saml_modify:
+  depends_on:
+    - aoc_adm_saml_create
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - saml_configuration
+    - modify
+    - "%name:test_saml_ascli"
+    - '@json:{"login_text":"Sign in with test SAML"}'
+aoc_adm_saml_show:
+  depends_on:
+    - aoc_adm_saml_modify
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - saml_configuration
+    - show
+    - "%name:test_saml_ascli"
+aoc_adm_saml_delete:
+  depends_on:
+    - aoc_adm_saml_create
+    - aoc_adm_saml_modify
+    - aoc_adm_saml_show
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - saml_configuration
+    - delete
+    - "%name:test_saml_ascli"
 aoc_adm_dropbox_membership_list:
   args:
     - --preset=aoc_admin

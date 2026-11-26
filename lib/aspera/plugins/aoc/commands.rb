@@ -504,9 +504,10 @@ module Aspera
         end
 
         # Per-resource configuration for admin CRUD resources.
-        # Keys: path, create_path, list_fields, id_result, require_ws_id, schema, ops, extra_ops, singleton, op_setup, op_mount, op_descriptions
+        # Keys: path, create_path, list_fields, id_result, require_ws_id, schema, q, ops, extra_ops, singleton, op_setup, op_mount, op_descriptions
         # create_path: path of `create`, when it is not `path`.
         # schema: false when the resource is not in the OpenAPI description (no help on fields and query).
+        # q: false when `list` does not accept `q` (AoC fails with 500): the percent selector reads the whole list.
         # Ops other than `create` and `list` read the identifier `<res>_id` (argument of the op node).
         # op_setup: Hash of op => setup method name, for ops that need context derived from the identifier.
         # op_mount: Hash of op => mount: of that op's node.
@@ -522,9 +523,10 @@ module Aspera
             path:        'admin/client_registration_tokens',
             create_path: 'admin/client_registration/token',
             list_fields: %w[id value data.client_subject_scopes data.name created_at],
-            id_result:   'token'
+            id_result:   'token',
+            q:           false
           },
-          configuration_policy:      {list_fields: nil},
+          configuration_policy:      {list_fields: nil, q: false},
           # A contact is a user, group, shared inbox or distribution list: no identifier of its own, so no `show`, `modify` or `delete`
           contact:                   {list_fields: %w[source_type source_id name email], ops: %i[create list]},
           dropbox:                   {path: 'dropboxes', require_ws_id: true},
@@ -533,7 +535,7 @@ module Aspera
           # A membership cannot be modified (no `PUT` in the API): delete it and create another one
           group_membership:          {list_fields: %w[id group_id member_type member_id], ops: %i[create list show delete]},
           group_permission:          {list_fields: %w[id group_id level entity_type entity_id]},
-          kms_profile:               {path: 'integrations/kms_profiles', schema: false},
+          kms_profile:               {path: 'integrations/kms_profiles', q: false},
           network_policy:            {list_fields: nil},
           node:                      {
             list_fields:     %w[id name host access_key],
@@ -545,12 +547,13 @@ module Aspera
           operation:                 {list_fields: %w[id type status created_at updated_at workspace_id user_id workspace_membership_id group_membership_id], ops: %i[list show modify]},
           organization:              {singleton: true},
           package:                   {},
-          saml_configuration:        {schema: false},
+          saml_configuration:        {q: false},
           self:                      {singleton: true, op_descriptions: {show: 'Show current user'}},
           # No `show`: AoC has no `GET /short_links/{id}`, and the list cannot be filtered by identifier
           short_link:                {
             list_fields: %w[id short_url data.url_token_data.purpose password_enabled password_protected updated_by_user_id updated_at],
-            ops:         %i[create list modify delete]
+            ops:         %i[create list modify delete],
+            q:           false
           },
           user:                      {
             list_fields:     %w[id name email],
@@ -743,12 +746,15 @@ module Aspera
           command :transfer, description: 'Transfer files (node-to-node)', arguments: TRANSFER_ARGS,
             action: ->(node_id:, direction:, source_folder:, **) { nodegen4_transfer(node_id, scope: Node::Api::Scope::ADMIN, direction: direction, source_folder: source_folder) }
         end
+        # API path of the preferences of a user, by command
+        USER_PREF_PATHS = {preferences: 'user_interaction_preferences', notifications: 'notification_preferences'}.freeze
+        private_constant :USER_PREF_PATHS
         # admin > user > preferences|notifications sub-trees
-        %i[preferences notifications].each do |pref|
+        USER_PREF_PATHS.each do |pref, pref_path|
           commands_under [:admin, :user, pref] do
             command :show,   description: "Show user #{pref}"
             command :modify, description: "Modify user #{pref}",
-              arguments: [{name: pref, type: Hash}]
+              arguments: [{name: pref, type: Hash, schema: Schema::Registry.req_body(AOC_SCHEMA, "users/{id}/#{pref_path}.put")}]
           end
         end
         commands_under %i[admin auth_providers] do
@@ -885,42 +891,19 @@ module Aspera
           end
         end
 
-        commands_under %i[user preferences] do
-          command(
-            :show, description: 'Show user preferences',
-            action: lambda do |**|
-              user_id = aoc_api.current_user_info(exception: true)['id']
-              Cli::Result::SingleObject.new(aoc_api.read("users/#{user_id}/user_interaction_preferences"))
-            end
-          )
-          command(
-            :modify, description: 'Modify user preferences',
-            arguments: [{name: :preferences, type: Hash}],
-            action: lambda do |preferences:, **|
-              user_id = aoc_api.current_user_info(exception: true)['id']
-              aoc_api.update("users/#{user_id}/user_interaction_preferences", preferences)
-              Cli::Result::Status.new('modified')
-            end
-          )
-        end
-
-        commands_under %i[user notifications] do
-          command(
-            :show, description: 'Show notification preferences',
-            action: lambda do |**|
-              user_id = aoc_api.current_user_info(exception: true)['id']
-              Cli::Result::SingleObject.new(aoc_api.read("users/#{user_id}/notification_preferences"))
-            end
-          )
-          command(
-            :modify, description: 'Modify notification preferences',
-            arguments: [{name: :notifications, type: Hash}],
-            action: lambda do |notifications:, **|
-              user_id = aoc_api.current_user_info(exception: true)['id']
-              aoc_api.update("users/#{user_id}/notification_preferences", notifications)
-              Cli::Result::Status.new('modified')
-            end
-          )
+        # user > preferences|notifications > show|modify (preferences of the current user)
+        {preferences: 'user preferences', notifications: 'notification preferences'}.each do |pref, label|
+          pref_path = USER_PREF_PATHS[pref]
+          commands_under [:user, pref] do
+            command :show, description: "Show #{label}",
+              action: ->(**) { Cli::Result::SingleObject.new(aoc_api.read("users/#{aoc_api.current_user_info(exception: true)['id']}/#{pref_path}")) }
+            command :modify, description: "Modify #{label}",
+              arguments: [{name: pref, type: Hash, schema: Schema::Registry.req_body(AOC_SCHEMA, "users/{id}/#{pref_path}.put")}],
+              action: lambda { |**kwargs|
+                aoc_api.update("users/#{aoc_api.current_user_info(exception: true)['id']}/#{pref_path}", kwargs.fetch(pref))
+                Cli::Result::Status.new('modified')
+              }
+          end
         end
 
         # packages sub-commands — instance commands consume package_id
@@ -1481,10 +1464,12 @@ module Aspera
         end
 
         # Lookup methods for arguments:(:identifier) + lookup: on admin resources.
-        # One method per non-singleton resource: percent selector searches with `q=<value>`.
+        # One method per non-singleton resource: percent selector searches with `q=<value>`, or in the whole list if `q: false`.
         ADMIN_OBJECTS.reject { |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton) }.each do |res|
-          define_method(:"lookup_aoc_#{res}_id") do |_field, value, **|
-            aoc_api.lookup_with_q(aoc_res_path(res), value: value)['id']
+          define_method(:"lookup_aoc_#{res}_id") do |field, value, **|
+            path = aoc_res_path(res)
+            next aoc_api.lookup_with_q(path, value: value)['id'] unless ADMIN_OBJECT_CONFIG.dig(res, :q).eql?(false)
+            Rest::List.lookup_entity_generic(field: field, value: value, entity: path) { aoc_api.read_with_paging(path, {})[:items] }['id']
           end
         end
 
@@ -1839,8 +1824,7 @@ module Aspera
 
         # admin > user > preferences|notifications > show|modify
         # (user_id: argument of the preferences|notifications node)
-        %i[preferences notifications].each do |pref|
-          pref_path = pref.eql?(:preferences) ? 'user_interaction_preferences' : 'notification_preferences'
+        USER_PREF_PATHS.each do |pref, pref_path|
           define_action_method([:admin, :user, pref, :show]) do |user_id:, **|
             Cli::Result::SingleObject.new(aoc_api.read("#{aoc_res_path(:user)}/#{user_id}/#{pref_path}"))
           end

@@ -227,6 +227,19 @@ tags:
     description: >-
       Manage collaborative workspaces where members can share files and send packages. Workspaces provide isolated
       storage contexts with configurable member permissions and roles.
+  - name: Events
+    description: Notify AoC of events on nodes, such as a folder shared with a user or a group.
+  - name: KMS Profiles
+    description: >-
+      Manage access to root keys in your own Key Management Service (bring your own key), to encrypt the content of
+      nodes at rest.
+  - name: SAML Configurations
+    description: >-
+      Manage login with SAML identity providers. Each configuration has a group of its users and an auth provider.
+  - name: Servers
+    description: List the servers of AoC and their public IP addresses.
+  - name: URL Tokens
+    description: Read URL tokens, which give access to a resource through a link, without an account.
 x-tagGroups:
   - name: Authentication & Authorization
     tags:
@@ -235,6 +248,7 @@ x-tagGroups:
       - Client Registration Tokens
       - Client Settings
       - Auth Providers
+      - SAML Configurations
   - name: User & Organization Management
     tags:
       - Self
@@ -270,11 +284,17 @@ x-tagGroups:
     tags:
       - Email Templates
       - File Upload Notifications
+      - Events
   - name: Utilities & Reporting
     tags:
       - Short Links
+      - URL Tokens
+      - Servers
       - Usage Reports
       - Tier Restrictions
+  - name: Integrations
+    tags:
+      - KMS Profiles
   - name: Policies & Governance
     tags:
       - Configuration Policies
@@ -4325,6 +4345,116 @@ paths:
                 $ref: '#/components/schemas/InternalServerError'
       tags:
         - Users
+  /users/{id}/notification_preferences:
+    get:
+      operationId: get_notification_preferences
+      summary: Get Notification Preferences of a User
+      description: >-
+        Get the notification preferences of a user: for each kind of event, whether the user gets an email (`*_email`)
+        and a message in the web app (`*_message`). A user can read their own preferences, an organization
+        administrator those of all users of the organization.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the user.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/notification_preferences_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (preferences of another user, for a user who is not organization administrator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found (no such user in the organization)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Users
+    put:
+      operationId: update_notification_preferences
+      summary: Modify Notification Preferences of a User
+      description: >
+        Modify the notification preferences of a user: only the preferences given change. A user can modify their own
+        preferences, an organization administrator those of all users of the organization.
+
+        Some preferences of the response cannot be modified (`package_recalled_message`, `package_resent_message`,
+        `package_sidecar_failed_email`, `package_sidecar_failed_message`): sending one gives 422
+        (`unpermitted_parameters`), so the response of `GET` cannot be sent back as is.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the user.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/notification_preferences_params'
+      responses:
+        '204':
+          description: No Content (preferences modified)
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (preferences of another user, for a user who is not organization administrator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found (no such user in the organization)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '422':
+          description: >-
+            Unprocessable Entity: errors of fields (value not a boolean), or parameter error (other field:
+            `unpermitted_parameters`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/FieldValidationError'
+                  - $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Users
   /workspace_memberships:
     get:
       operationId: get_workspace_memberships
@@ -6047,6 +6177,55 @@ paths:
                 $ref: '#/components/schemas/UnauthorizedError'
       tags:
         - Email Templates
+  /events:
+    post:
+      operationId: create_event
+      summary: Notify a Shared Folder
+      description: >
+        Tell AoC that a folder of a workspace was shared, after the creation of the permission with the Node API (`POST
+        /permissions` on the node). For type `permission.created`, AoC records that the user shared the folder with
+        the user or group of the permission (`access_type`, `access_id`), notifies them (email and message, according
+        to their notification preferences), and adds them to the contacts of the user. Processed in the background.
+
+        Requires a token with user scope, or with admin scope for an organization administrator or a workspace manager.
+        The workspace and the node must be in the organization.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/events_params'
+      responses:
+        '201':
+          description: Created (no body)
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '422':
+          description: >-
+            Unprocessable Entity: `parameter_missing` (`node_id`, `types` or `workspace_id`), `invalid_parameter_value`
+            (workspace, node, or user or group of the permission, not in the organization)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error (also when `data` is missing)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Events
   /feature_flags:
     get:
       operationId: get_feature_flags
@@ -6413,6 +6592,330 @@ paths:
                 $ref: '#/components/schemas/InternalServerError'
       tags:
         - File Upload Notifications
+  /integrations/kms_profiles:
+    get:
+      operationId: get_kms_profiles
+      summary: Get a Listing of KMS Profiles
+      description: >-
+        Get a listing of the KMS profiles of the organization. A KMS profile gives access to a root key in a Key
+        Management Service (bring your own key), to encrypt the content of nodes at rest: a node refers to it with
+        `kms_profile_id`, which cannot change once set. Requires a token with admin scope, for an organization
+        administrator.
+
+        Parameter `q` is not supported (500).
+      parameters:
+        - name: page
+          in: query
+          description: Page number, starting at 1.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          description: Number of items per page (at most 1000).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+        - name: sort
+          in: query
+          description: >-
+            Comma-separated list of fields (at most 5), prefixed with `-` for descending order. Fields: `name`,
+            `provider`, `created_at`, `updated_at`. Or `associated_nodes` alone (number of nodes that use the
+            profile, `too_many_sort_fields` with other fields). An unknown field is refused (`unknown_sort_field`).
+          schema:
+            type: string
+          example: name
+      responses:
+        '200':
+          description: OK
+          headers:
+            X-Total-Count:
+              description: Total number of profiles (all pages).
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/kms_profiles_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user not organization administrator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '422':
+          description: Unprocessable Entity (e.g. unknown sort field)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - KMS Profiles
+    post:
+      operationId: create_kms_profile
+      summary: Create a KMS Profile
+      description: >-
+        Create a KMS profile. AoC records the profile, then gives it to its KMS service, which checks the access to the
+        root key and keeps the API key (not in the response). When the KMS service refuses the profile (400), the
+        profile stays recorded, and deleting it can then fail. Requires a token with admin scope, for an organization
+        administrator.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/kms_profiles_create_params'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/kms_profiles_response'
+        '400':
+          description: >-
+            Bad Request: refused by the KMS service (e.g. wrong API key, instance or root key: the profile is recorded),
+            or invalid profile (name missing or already used: not recorded)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorList'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user not organization administrator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '422':
+          description: Unprocessable Entity (e.g. missing body, other field)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error (also when `config` is missing)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - KMS Profiles
+  /integrations/kms_profiles/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID of the KMS profile.
+        schema:
+          type: string
+    get:
+      operationId: get_kms_profile
+      summary: Get a KMS Profile
+      description: Get a KMS profile. Requires a token with admin scope, for an organization administrator.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/kms_profiles_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user not organization administrator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorList'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - KMS Profiles
+    put:
+      operationId: update_kms_profile
+      summary: Modify a KMS Profile
+      description: >-
+        Change the name or the API key of a KMS profile (the KMS, instance and root key cannot change). Requires a token
+        with admin scope, for an organization administrator. With `config.api_key`, AoC gives the new key to its KMS
+        service, and the response is the profile. Without it, the response is 204.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/kms_profiles_update_params'
+      responses:
+        '200':
+          description: OK (API key changed)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/kms_profiles_response'
+        '204':
+          description: No Content (only the name changed)
+        '400':
+          description: Bad Request (API key refused by the KMS, name already used)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorList'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user not organization administrator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorList'
+        '422':
+          description: Unprocessable Entity (e.g. missing body, other field)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - KMS Profiles
+    delete:
+      operationId: delete_kms_profile
+      summary: Delete a KMS Profile
+      description: >-
+        Delete a KMS profile, in the KMS service of AoC and in the organization. Requires a token with admin scope, for
+        an organization administrator. The response is the deleted profile.
+      responses:
+        '200':
+          description: OK (deleted)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/kms_profiles_response'
+        '400':
+          description: Bad Request (refused by the KMS service, the profile is not deleted)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorList'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user not organization administrator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorList'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - KMS Profiles
+  /integrations/kms_profiles/{id}/nodes:
+    get:
+      operationId: get_kms_profile_nodes
+      summary: Get the Nodes That Use a KMS Profile
+      description: >-
+        Get the nodes of the organization that use a KMS profile (`kms_profile_id`), not paginated. An empty list if the
+        profile does not exist. Requires a token with admin scope, for an organization administrator.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the KMS profile.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/kms_profile_nodes_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user not organization administrator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - KMS Profiles
   /operations:
     get:
       operationId: get_operations
@@ -6621,6 +7124,46 @@ paths:
                 $ref: '#/components/schemas/InternalServerError'
       tags:
         - Organizations
+  /organization_reminders:
+    post:
+      operationId: create_organization_reminder
+      summary: Send the Organizations of a User by Email
+      description: >-
+        Send an email to an address with the list of the organizations where it is the email of a user ("Your IBM Aspera
+        on Cloud organization memberships"), e.g. for a user who forgot the address of their organization. No
+        authentication.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/organization_reminders_params'
+      responses:
+        '201':
+          description: Created (email sent in the background)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/organization_reminders_params'
+        '422':
+          description: >-
+            Unprocessable Entity: errors of fields (`email` missing or invalid), or parameter error (missing body,
+            other field: `unpermitted_parameters`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/FieldValidationError'
+                  - $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Organizations
   /packages_count:
     get:
       operationId: get_packages_count
@@ -6651,6 +7194,272 @@ paths:
                 $ref: '#/components/schemas/InternalServerError'
       tags:
         - Packages
+  /saml_configurations:
+    get:
+      operationId: get_saml_configurations
+      summary: Get a Listing of SAML Configurations
+      description: >
+        Get a listing of the SAML configurations of the organization: login of users with a SAML identity provider.
+        Requires a token with admin scope, for an organization administrator or a workspace manager. A workspace manager
+        gets only `id`, `name` and `enabled`.
+
+        No sort field and no filter. Parameter `q` is not supported (500).
+      parameters:
+        - name: page
+          in: query
+          description: Page number, starting at 1.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          description: Number of items per page (at most 1000).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+      responses:
+        '200':
+          description: OK
+          headers:
+            X-Total-Count:
+              description: Total number of SAML configurations (all pages).
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/saml_configurations_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user neither organization administrator nor workspace manager)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '422':
+          description: Unprocessable Entity (e.g. parameter `sort`, `unknown_sort_field`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - SAML Configurations
+    post:
+      operationId: create_saml_configuration
+      summary: Create a SAML Configuration
+      description: >
+        Create a SAML configuration. Requires a token with admin scope, for an organization administrator, and a
+        subscription that includes SAML.
+
+        AoC also creates a system group (`system_group_type`: `saml_users`, `group_id`), which gets the users who log in
+        with this configuration, and an auth provider (`SamlAuthProvider`, last on the login page). The `name`,
+        `enabled`, `login_text`, `instructions`, `included_domains` and `excluded_domains` of the configuration are
+        copied to the auth provider, and the `name` to the group, at each change.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/saml_configurations_params'
+      responses:
+        '201':
+          description: Created
+          headers:
+            Location:
+              description: URL of the SAML configuration, `https://api.ibmaspera.com/api/v1/saml_configurations/{id}`.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/saml_configurations_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: >-
+            Forbidden (token without admin scope, user not organization administrator, subscription without SAML)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '422':
+          description: >-
+            Unprocessable Entity: errors of fields (`name`, `sso_target_url` or `attribute_mapping` missing, neither
+            `fingerprint` nor `certificate`, invalid certificate, fingerprint that does not match the certificate,
+            mapping missing for an attribute, both `included_domains` and `excluded_domains`), or parameter error
+            (missing body, other field: `unpermitted_parameters`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/FieldValidationError'
+                  - $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - SAML Configurations
+  /saml_configurations/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID of the SAML configuration.
+        schema:
+          type: string
+    get:
+      operationId: get_saml_configuration
+      summary: Get a SAML Configuration
+      description: >-
+        Get a SAML configuration. Requires a token with admin scope, for an organization administrator or a workspace
+        manager. A workspace manager gets only `id`, `name` and `enabled`.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/saml_configurations_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user neither organization administrator nor workspace manager)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - SAML Configurations
+    put:
+      operationId: update_saml_configuration
+      summary: Modify a SAML Configuration
+      description: >
+        Modify a SAML configuration: only the fields given change. Requires a token with admin scope, for an
+        organization administrator. The changes are copied to the auth provider and to the group of the configuration.
+
+        When `restrict_login_to_known_groups` becomes `true`, AoC removes from the group of the configuration, in the
+        background, the users who are not members of a SAML group. At least one login method of the organization must
+        stay enabled.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/saml_configurations_params'
+      responses:
+        '204':
+          description: No Content (modified)
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user not organization administrator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '422':
+          description: >-
+            Unprocessable Entity: errors of fields (as for create, and `auth_method` when the last enabled login method
+            is disabled), or parameter error (other field: `unpermitted_parameters`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/FieldValidationError'
+                  - $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - SAML Configurations
+    delete:
+      operationId: delete_saml_configuration
+      summary: Delete a SAML Configuration
+      description: >-
+        Delete a SAML configuration, with its group and its auth provider. Requires a token with admin scope, for an
+        organization administrator. An enabled configuration that is the last enabled login method of the organization
+        is not deleted, but the response is still 204.
+      responses:
+        '204':
+          description: No Content (deleted)
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user not organization administrator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - SAML Configurations
   /self:
     get:
       operationId: get_self
@@ -6686,6 +7495,31 @@ paths:
                 $ref: '#/components/schemas/InternalServerError'
       tags:
         - Self
+  /servers:
+    get:
+      operationId: get_servers
+      summary: Get the Servers of AoC
+      description: >-
+        Get the servers of Aspera on Cloud: the API and the nodes managed by IBM, with their public IP addresses (e.g.
+        to configure a firewall). No authentication. Not paginated.
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/servers_response'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Servers
   /short_links:
     get:
       operationId: get_short_links
@@ -7122,6 +7956,161 @@ paths:
                 $ref: '#/components/schemas/InternalServerError'
       tags:
         - Transfers
+  /url_tokens:
+    get:
+      operationId: get_url_tokens
+      summary: Get a Listing of URL Tokens
+      description: >
+        Get a listing of URL tokens. A URL token gives access to a resource without an account, through a link: send a
+        package to a user or a shared inbox, view a shared folder or a received package (`purpose`). Its `value` gives
+        an access token (`grant_type=url_token`). Short links (`/short_links`) refer to URL tokens.
+
+        - With a token with user scope: the URL tokens that the user created.
+
+        - With a token with admin scope: all URL tokens of the organization for an organization administrator, those of
+          the workspaces they manage (`data.workspace_id`) for a workspace manager. `creator_id` keeps those that a user
+          created.
+
+        - With the access token of a URL token: only this URL token.
+
+        Parameter `q` is not supported (500).
+      parameters:
+        - name: page
+          in: query
+          description: Page number, starting at 1.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          description: Number of items per page (at most 1000).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+        - name: sort
+          in: query
+          description: >-
+            Comma-separated list of fields (at most 5), prefixed with `-` for descending order. Fields: `created_at`,
+            `purpose`, `updated_at`. An unknown field is refused (`unknown_sort_field`).
+          schema:
+            type: string
+          example: -created_at
+        - name: purpose
+          in: query
+          description: Filter by purpose.
+          schema:
+            $ref: '#/components/schemas/url_token_purpose'
+        - name: created_at
+          in: query
+          description: Filter by creation date and time (exact value).
+          schema:
+            type: string
+            format: date-time
+        - name: updated_at
+          in: query
+          description: Filter by date and time of last change (exact value).
+          schema:
+            type: string
+            format: date-time
+        - name: creator_id
+          in: query
+          description: With admin scope, ID of the user who created the URL tokens (404 if no such user).
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          headers:
+            X-Total-Count:
+              description: Total number of URL tokens matching the query (all pages).
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/url_tokens_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found (no such user for `creator_id`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '422':
+          description: Unprocessable Entity (e.g. unknown sort field)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - URL Tokens
+  /url_tokens/{id}:
+    get:
+      operationId: get_url_token
+      summary: Get a URL Token
+      description: Get a URL token, among those that the list gives with the same token.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the URL token.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/url_tokens_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - URL Tokens
   /workspace_collaborators:
     get:
       operationId: get_workspace_collaborators
@@ -8050,6 +9039,34 @@ components:
         code: internal_server_error
         message: "We're sorry, but something went wrong. We've been notified about this issue and we'll take a look at it shortly."
         request_id: 17a835e7-17d0-40f9-8ac3-ff23a45d461e
+    ErrorList:
+      type: object
+      description: |
+        Error response with a list of errors, returned by some endpoints (e.g. KMS profiles) instead of the standard
+        format.
+      properties:
+        errors:
+          type: array
+          description: Errors.
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+                description: Error code, e.g. `not_found`, `bad_request`.
+              message:
+                type: string
+                description: Human-readable error message
+        status_code:
+          type: integer
+          description: HTTP status code
+      required:
+        - errors
+      example:
+        errors:
+          - code: not_found
+            message: Not Found
+        status_code: 404
     ClientRegistrationToken:
       type: object
       description: Client registration token with metadata
@@ -13550,6 +14567,680 @@ components:
             - none
           examples:
             - allow_following
+    kms_profiles_response:
+      description: KMS profile (bring your own key).
+      type: object
+      properties:
+        id:
+          description: ID of the KMS profile.
+          type: string
+          examples:
+            - '12'
+        name:
+          description: Name of the profile, unique in the organization (case insensitive).
+          type: string
+          examples:
+            - Key Protect EU
+        provider:
+          description: Key Management Service. The web app offers `ibm-keyprotect` (IBM Key Protect).
+          type: string
+          examples:
+            - ibm-keyprotect
+        config:
+          description: Access to the root key in the KMS (the API key is not returned).
+          type: object
+          properties:
+            endpoint:
+              description: URL of the KMS API.
+              type: string
+              examples:
+                - https://eu-de.kms.cloud.ibm.com
+            instance_id:
+              description: ID of the KMS instance.
+              type: string
+            root_key_id:
+              description: ID of the root key in the KMS instance.
+              type: string
+        created_at:
+          description: Date and time of creation.
+          type: string
+          format: date-time
+        updated_at:
+          description: Date and time of the last change.
+          type: string
+          format: date-time
+    kms_profiles_create_params:
+      description: KMS profile to create.
+      type: object
+      properties:
+        name:
+          description: Name of the profile, unique in the organization (case insensitive).
+          type: string
+          examples:
+            - Key Protect EU
+        provider:
+          description: Key Management Service. The web app offers `ibm-keyprotect` (IBM Key Protect).
+          type: string
+          examples:
+            - ibm-keyprotect
+        config:
+          description: Access to the root key in the KMS.
+          type: object
+          properties:
+            endpoint:
+              description: URL of the KMS API.
+              type: string
+              examples:
+                - https://eu-de.kms.cloud.ibm.com
+            instance_id:
+              description: ID of the KMS instance.
+              type: string
+            root_key_id:
+              description: ID of the root key in the KMS instance.
+              type: string
+            api_key:
+              description: API key that gives access to the root key (not returned).
+              type: string
+              writeOnly: true
+      required:
+        - name
+        - provider
+        - config
+    kms_profiles_update_params:
+      description: Name or API key of a KMS profile to change.
+      type: object
+      properties:
+        name:
+          description: New name of the profile.
+          type: string
+        config:
+          description: New access to the root key.
+          type: object
+          properties:
+            api_key:
+              description: New API key that gives access to the root key (not returned).
+              type: string
+              writeOnly: true
+    kms_profile_nodes_response:
+      description: Node that uses a KMS profile.
+      type: object
+      properties:
+        node_id:
+          description: ID of the node.
+          type: string
+        organization_id:
+          description: ID of the organization.
+          type: string
+        access_key:
+          description: Access key of the node.
+          type: string
+        profile_id:
+          description: ID of the KMS profile.
+          type: string
+        name:
+          description: Name of the node.
+          type: string
+    saml_configurations_response:
+      description: >-
+        SAML configuration: login of users with a SAML identity provider. A workspace manager gets only `id`, `name` and
+        `enabled`.
+      type: object
+      properties:
+        id:
+          description: ID of the SAML configuration.
+          type: string
+          examples:
+            - '584'
+        name:
+          description: Name of the configuration, of its group and of its auth provider.
+          type: string
+        enabled:
+          description: Whether users can log in with this configuration.
+          type: boolean
+        login_text:
+          description: Text of the login button.
+          type: string
+          examples:
+            - Sign in with SAML
+        instructions:
+          description: Instructions shown on the login page.
+          type:
+            - string
+            - 'null'
+        sso_target_url:
+          description: URL of the single sign-on service of the identity provider.
+          type: string
+        certificate:
+          description: Signing certificate of the identity provider (PEM), or `null` if only `fingerprint` is set.
+          type:
+            - string
+            - 'null'
+        fingerprint:
+          description: Fingerprint of the signing certificate of the identity provider.
+          type:
+            - string
+            - 'null'
+        attribute_mapping:
+          $ref: '#/components/schemas/saml_attribute_mapping'
+        allowable_clock_drift:
+          description: Clock difference allowed with the identity provider, in seconds, when the SAML response is checked.
+          type: integer
+        restrict_login_to_known_groups:
+          description: >-
+            Whether only the users who are members of a SAML group of AoC (a group with `saml_group` and
+            `saml_group_dn` that matches the groups of the user, `member_of`) can log in.
+          type: boolean
+        included_domains:
+          description: Email domains of the users who can log in with this configuration (empty for all).
+          type: array
+          items:
+            type: string
+        excluded_domains:
+          description: Email domains of the users who cannot log in with this configuration.
+          type: array
+          items:
+            type: string
+        group_id:
+          description: ID of the system group of the users who logged in with this configuration (`saml_users`).
+          type: string
+        created_at:
+          description: Date and time of creation.
+          type: string
+          format: date-time
+        updated_at:
+          description: Date and time of the last change.
+          type: string
+          format: date-time
+    saml_configurations_params:
+      description: >-
+        SAML configuration to create or modify. For create, `name`, `sso_target_url`, `attribute_mapping`, and
+        `fingerprint` or `certificate` are required. If both `fingerprint` and `certificate` are given, the fingerprint
+        must match the certificate.
+      type: object
+      properties:
+        name:
+          description: Name of the configuration, of its group and of its auth provider.
+          type: string
+          examples:
+            - Corporate SSO
+        enabled:
+          description: Whether users can log in with this configuration.
+          type: boolean
+          default: false
+        login_text:
+          description: Text of the login button.
+          type: string
+          default: Sign in with SAML
+        instructions:
+          description: Instructions shown on the login page.
+          type: string
+        sso_target_url:
+          description: URL of the single sign-on service of the identity provider.
+          type: string
+          examples:
+            - https://idp.example.com/saml/sso
+        certificate:
+          description: Signing certificate of the identity provider (PEM, with or without header and footer).
+          type: string
+        fingerprint:
+          description: Fingerprint of the signing certificate of the identity provider (SHA-1).
+          type: string
+        attribute_mapping:
+          $ref: '#/components/schemas/saml_attribute_mapping'
+        allowable_clock_drift:
+          description: Clock difference allowed with the identity provider, in seconds, when the SAML response is checked.
+          type: integer
+          default: 0
+        restrict_login_to_known_groups:
+          description: >-
+            Whether only the users who are members of a SAML group of AoC (a group with `saml_group` and
+            `saml_group_dn` that matches the groups of the user, `member_of`) can log in.
+          type: boolean
+          default: false
+        included_domains:
+          description: Email domains of the users who can log in with this configuration (empty for all).
+          type: array
+          items:
+            type: string
+        excluded_domains:
+          description: Email domains of the users who cannot log in with this configuration (empty if `included_domains` is set).
+          type: array
+          items:
+            type: string
+    saml_attribute_mapping:
+      description: Names of the attributes of the SAML response that give the information of the user. All are required.
+      type: object
+      properties:
+        email:
+          description: Attribute with the email of the user.
+          type: string
+          examples:
+            - email
+        first_name:
+          description: Attribute with the first name of the user.
+          type: string
+          examples:
+            - given_name
+        last_name:
+          description: Attribute with the last name of the user.
+          type: string
+          examples:
+            - surname
+        member_of:
+          description: Attribute with the groups of the user, for the SAML groups of AoC (`saml_group_dn`).
+          type: string
+          examples:
+            - groups
+      required:
+        - email
+        - first_name
+        - last_name
+        - member_of
+    servers_response:
+      description: Server of Aspera on Cloud.
+      type: object
+      properties:
+        type:
+          description: '`api` for the API, `managed_node` for a node managed by IBM.'
+          type: string
+          enum:
+            - api
+            - managed_node
+        url:
+          description: URL of the server.
+          type: string
+          examples:
+            - https://api.ibmaspera.com
+        public_ips:
+          description: Public IP addresses of the server (address or CIDR range).
+          type: array
+          items:
+            type: string
+          examples:
+            - - 169.46.4.68/31
+    url_token_purpose:
+      description: >-
+        Purpose of a URL token: send a package to a user (`send_package_to_user`) or to a shared inbox
+        (`send_package_to_dropbox`), view a shared folder (`view_shared_file`), view a received package
+        (`view_received_package`).
+      type: string
+      enum:
+        - send_package_to_user
+        - send_package_to_dropbox
+        - view_shared_file
+        - view_received_package
+    url_tokens_response:
+      description: URL token, access to a resource without an account, through a link.
+      type: object
+      properties:
+        id:
+          description: ID of the URL token.
+          type: string
+        purpose:
+          $ref: '#/components/schemas/url_token_purpose'
+        data:
+          description: >-
+            Resource of the token, according to `purpose`: `workspace_id`, and `dropbox_id` (shared inbox), `user_id`
+            (user), `node_id`, `file_id` and `name` (shared folder), or `package_id` (received package).
+          type: object
+          additionalProperties: true
+        value:
+          description: Value of the token, to get an access token (`grant_type=url_token`).
+          type: string
+        short_url_path:
+          description: Path of the short URL of the token, if any.
+          type:
+            - string
+            - 'null'
+        short_url:
+          description: Short URL of the token, if any.
+          type:
+            - string
+            - 'null'
+        short_links:
+          description: Short links that refer to the token.
+          type: array
+          items:
+            $ref: '#/components/schemas/short_links_response'
+        user_selected_name:
+          description: Name given by the user who created the token.
+          type:
+            - string
+            - 'null'
+        expires_at:
+          description: Date and time of expiration, `null` if it does not expire.
+          type:
+            - string
+            - 'null'
+          format: date-time
+        expired:
+          description: Whether the token has expired.
+          type: boolean
+        created_at:
+          description: Date and time of creation.
+          type: string
+          format: date-time
+        updated_at:
+          description: Date and time of the last change.
+          type: string
+          format: date-time
+    events_params:
+      description: Event about a permission created on a node, for a folder of a workspace.
+      type: object
+      properties:
+        types:
+          description: Types of the event. AoC handles `permission.created`.
+          type: array
+          items:
+            type: string
+          examples:
+            - - permission.created
+        node_id:
+          description: ID of the node of the folder.
+          type: string
+        workspace_id:
+          description: ID of the workspace of the folder.
+          type: string
+        link_name:
+          description: >-
+            Name of the folder shown to the user or group, if different from `share_as` (tag
+            `aspera.files.workspace.share_as` of the permission).
+          type: string
+        data:
+          description: >-
+            Permission, as returned by the node when it is created (`POST /permissions`): `id`, `file_id`,
+            `access_type`, `access_id`, `tags`, `created_by_id`...
+          type: object
+          additionalProperties: true
+      required:
+        - types
+        - node_id
+        - workspace_id
+        - data
+    organization_reminders_params:
+      description: Email address that gets the list of its organizations.
+      type: object
+      properties:
+        email:
+          description: Email address.
+          type: string
+          format: email
+          examples:
+            - john.doe@example.com
+      required:
+        - email
+    notification_preferences_response:
+      description: >-
+        Notification preferences of a user, by kind of event: email (`*_email`) and message in the web app
+        (`*_message`). `default` is the value for a user who has not changed it.
+      type: object
+      properties:
+        added_to_dropbox_email:
+          description: Email when the user is added to a shared inbox.
+          type: boolean
+          default: false
+        added_to_dropbox_message:
+          description: Message in the web app when the user is added to a shared inbox.
+          type: boolean
+          default: false
+        added_to_group_email:
+          description: Email when the user is added to a group.
+          type: boolean
+          default: false
+        added_to_group_message:
+          description: Message in the web app when the user is added to a group.
+          type: boolean
+          default: false
+        added_to_workspace_email:
+          description: Email when the user is added to a workspace.
+          type: boolean
+          default: true
+        added_to_workspace_message:
+          description: Message in the web app when the user is added to a workspace.
+          type: boolean
+          default: true
+        file_shared_email:
+          description: Email when a folder is shared with the user.
+          type: boolean
+          default: true
+        file_shared_message:
+          description: Message in the web app when a folder is shared with the user.
+          type: boolean
+          default: true
+        file_upload_email:
+          description: Email when files are uploaded in a folder with a file upload notification for the user.
+          type: boolean
+          default: true
+        file_upload_message:
+          description: Message in the web app when files are uploaded in a folder with a file upload notification for the user.
+          type: boolean
+          default: true
+        invitation_to_send_to_dropbox_email:
+          description: Email when the user is invited to send a package to a shared inbox.
+          type: boolean
+          default: true
+        invitation_to_send_to_dropbox_message:
+          description: Message in the web app when the user is invited to send a package to a shared inbox.
+          type: boolean
+          default: true
+        invitation_to_send_to_individual_email:
+          description: Email when the user is invited to send a package to a user.
+          type: boolean
+          default: true
+        invitation_to_send_to_individual_message:
+          description: Message in the web app when the user is invited to send a package to a user.
+          type: boolean
+          default: true
+        package_contents_deleted_email:
+          description: Email when the files of a package are deleted.
+          type: boolean
+          default: true
+        package_downloaded_email:
+          description: Email when a package is downloaded, for the users to notify on download.
+          type: boolean
+          default: true
+        package_downloaded_email_to_sender:
+          description: Email to the user when a package that they sent is downloaded.
+          type: boolean
+          default: false
+        package_downloaded_message:
+          description: Message in the web app when a package is downloaded, for the users to notify on download.
+          type: boolean
+          default: true
+        package_expiration_reminder_email:
+          description: Email when a package expires soon.
+          type: boolean
+          default: true
+        package_expiration_reminder_message:
+          description: Message in the web app when a package expires soon.
+          type: boolean
+          default: true
+        package_expired_email:
+          description: Email when a package expired.
+          type: boolean
+          default: true
+        package_failed_email:
+          description: Email when the transfer of a package failed.
+          type: boolean
+          default: true
+        package_failed_message:
+          description: Message in the web app when the transfer of a package failed.
+          type: boolean
+          default: true
+        package_recalled_email:
+          description: Email when a package is recalled.
+          type: boolean
+          default: true
+        package_recalled_message:
+          description: Message in the web app when a package is recalled. Read only.
+          type: boolean
+          default: true
+        package_received_email:
+          description: Email when the user receives a package.
+          type: boolean
+          default: true
+        package_received_message:
+          description: Message in the web app when the user receives a package.
+          type: boolean
+          default: true
+        package_resent_email:
+          description: Email when a package is sent again.
+          type: boolean
+          default: true
+        package_resent_message:
+          description: Message in the web app when a package is sent again. Read only.
+          type: boolean
+          default: true
+        package_sent_email:
+          description: Email when the user sent a package.
+          type: boolean
+          default: false
+        package_sent_message:
+          description: Message in the web app when the user sent a package.
+          type: boolean
+          default: false
+        package_sidecar_failed_email:
+          description: Email when the metadata file (sidecar) of a package that the user sent could not be created. Read only.
+          type: boolean
+          default: true
+        package_sidecar_failed_message:
+          description: Message in the web app when the metadata file (sidecar) of a package that the user sent could not be created. Read only.
+          type: boolean
+          default: true
+        package_uploaded_email:
+          description: Email when the files of a package are uploaded.
+          type: boolean
+          default: true
+        package_uploaded_message:
+          description: Message in the web app when the files of a package are uploaded.
+          type: boolean
+          default: true
+        scheduled_package_failed_email:
+          description: Email when a scheduled package could not be sent.
+          type: boolean
+          default: true
+        scheduled_package_failed_message:
+          description: Message in the web app when a scheduled package could not be sent.
+          type: boolean
+          default: true
+        users_deactivated_email:
+          description: Email when users of the organization are deactivated.
+          type: boolean
+          default: true
+        users_deactivated_message:
+          description: Message in the web app when users of the organization are deactivated.
+          type: boolean
+          default: true
+    notification_preferences_params:
+      description: >-
+        Notification preferences to change. Only the preferences given change.
+      type: object
+      properties:
+        added_to_dropbox_email:
+          description: Email when the user is added to a shared inbox.
+          type: boolean
+        added_to_dropbox_message:
+          description: Message in the web app when the user is added to a shared inbox.
+          type: boolean
+        added_to_group_email:
+          description: Email when the user is added to a group.
+          type: boolean
+        added_to_group_message:
+          description: Message in the web app when the user is added to a group.
+          type: boolean
+        added_to_workspace_email:
+          description: Email when the user is added to a workspace.
+          type: boolean
+        added_to_workspace_message:
+          description: Message in the web app when the user is added to a workspace.
+          type: boolean
+        file_shared_email:
+          description: Email when a folder is shared with the user.
+          type: boolean
+        file_shared_message:
+          description: Message in the web app when a folder is shared with the user.
+          type: boolean
+        file_upload_email:
+          description: Email when files are uploaded in a folder with a file upload notification for the user.
+          type: boolean
+        file_upload_message:
+          description: Message in the web app when files are uploaded in a folder with a file upload notification for the user.
+          type: boolean
+        invitation_to_send_to_dropbox_email:
+          description: Email when the user is invited to send a package to a shared inbox.
+          type: boolean
+        invitation_to_send_to_dropbox_message:
+          description: Message in the web app when the user is invited to send a package to a shared inbox.
+          type: boolean
+        invitation_to_send_to_individual_email:
+          description: Email when the user is invited to send a package to a user.
+          type: boolean
+        invitation_to_send_to_individual_message:
+          description: Message in the web app when the user is invited to send a package to a user.
+          type: boolean
+        package_contents_deleted_email:
+          description: Email when the files of a package are deleted.
+          type: boolean
+        package_downloaded_email:
+          description: Email when a package is downloaded, for the users to notify on download.
+          type: boolean
+        package_downloaded_email_to_sender:
+          description: Email to the user when a package that they sent is downloaded.
+          type: boolean
+        package_downloaded_message:
+          description: Message in the web app when a package is downloaded, for the users to notify on download.
+          type: boolean
+        package_expiration_reminder_email:
+          description: Email when a package expires soon.
+          type: boolean
+        package_expiration_reminder_message:
+          description: Message in the web app when a package expires soon.
+          type: boolean
+        package_expired_email:
+          description: Email when a package expired.
+          type: boolean
+        package_failed_email:
+          description: Email when the transfer of a package failed.
+          type: boolean
+        package_failed_message:
+          description: Message in the web app when the transfer of a package failed.
+          type: boolean
+        package_recalled_email:
+          description: Email when a package is recalled.
+          type: boolean
+        package_received_email:
+          description: Email when the user receives a package.
+          type: boolean
+        package_received_message:
+          description: Message in the web app when the user receives a package.
+          type: boolean
+        package_resent_email:
+          description: Email when a package is sent again.
+          type: boolean
+        package_sent_email:
+          description: Email when the user sent a package.
+          type: boolean
+        package_sent_message:
+          description: Message in the web app when the user sent a package.
+          type: boolean
+        package_uploaded_email:
+          description: Email when the files of a package are uploaded.
+          type: boolean
+        package_uploaded_message:
+          description: Message in the web app when the files of a package are uploaded.
+          type: boolean
+        scheduled_package_failed_email:
+          description: Email when a scheduled package could not be sent.
+          type: boolean
+        scheduled_package_failed_message:
+          description: Message in the web app when a scheduled package could not be sent.
+          type: boolean
+        users_deactivated_email:
+          description: Email when users of the organization are deactivated.
+          type: boolean
+        users_deactivated_message:
+          description: Message in the web app when users of the organization are deactivated.
+          type: boolean
   requestBodies:
     clients_params:
       content:
