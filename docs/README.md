@@ -9106,7 +9106,7 @@ admin dropbox list
 admin dropbox_membership list
 admin group list
 admin group_membership list --fields=id,group.name,member_type,member.name --query=@json:'{"max":50,"per_page":50,"embed[]":["group","member"],"sort":"member.name"}'
-admin group_permission list --fields=id,group.name,level,entity_type,entity.name --query=@json:'{"max":50,"per_page":50,"embed[]":["group","entity"],"sort":"group_name"}'
+admin group_permission list --fields=id,group.name,level,entity_type,entity_id,entity.name --query=@json:'{"max":50,"per_page":50,"embed[]":["group","entity"],"sort":"group_name"}'
 admin kms_profile list
 admin network_policy list
 admin network_policy show <ID>
