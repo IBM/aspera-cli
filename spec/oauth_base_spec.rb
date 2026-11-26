@@ -6,10 +6,13 @@
 require 'spec_helper'
 require_relative '../lib/aspera/rest'
 require_relative '../lib/aspera/oauth/client/generic'
+require_relative '../lib/aspera/line_logger'
 require 'securerandom'
 require 'base64'
 require 'json'
 require 'time'
+require 'webrick'
+require 'stringio'
 
 RSpec.describe(Aspera::OAuth::Base) do
   # In-memory token cache
@@ -247,6 +250,54 @@ RSpec.describe(Aspera::OAuth::Base) do
 
     it 'keeps the token cache id of the base URL' do
       expect(oauth_abs.instance_variable_get(:@token_cache_id)).to(eq(oauth.instance_variable_get(:@token_cache_id)))
+    end
+  end
+
+  describe 'logs at trace level' do
+    let(:log) { Aspera::Log.instance }
+    let(:output) { StringIO.new }
+    let(:client_secret) { SecureRandom.alphanumeric(16) }
+
+    # Local OAuth server: each answer has new tokens, recorded in `@issued` (one Hash per answer)
+    around do |example|
+      parameters = Aspera::Rest::Parameters.instance
+      saved_session_cb = parameters.session_cb
+      saved_logger = log.logger
+      @issued = []
+      issued = @issued
+      server = WEBrick::HTTPServer.new(Port: 0, BindAddress: '127.0.0.1', Logger: WEBrick::Log.new(File::NULL), AccessLog: [])
+      server.mount_proc('/oauth2/token') do |_req, res|
+        tokens = %w[access_token refresh_token id_token].to_h { |k| [k, SecureRandom.alphanumeric(16)] }
+        issued.push(tokens)
+        res['Content-Type'] = 'application/json'
+        res.body = JSON.generate(tokens.merge('token_type' => 'bearer', 'expires_in' => 3600))
+      end
+      thread = Thread.new { server.start }
+      sleep(0.01) until server.status.eql?(:Running)
+      @url = "http://127.0.0.1:#{server.config[:Port]}/oauth2"
+      log.instance_variable_set(:@logger, Logger.new(output))
+      log.formatter = ->(_s, _d, _p, m) { "#{m}\n" }
+      log.level = :trace2
+      # As `ascli` at level trace2 (Cli::Http#update_session): debug output of Net::HTTP, i.e. data sent and received
+      parameters.session_cb = ->(http) { http.set_debug_output(Aspera::LineLogger.new(:trace2)) }
+      example.run
+    ensure
+      parameters.session_cb = saved_session_cb
+      log.instance_variable_set(:@logger, saved_logger)
+      server&.shutdown
+      thread&.join
+    end
+
+    it 'hides the tokens of the response and the credentials of the request, and shows their keys' do
+      local = Aspera::OAuth::Generic.new(grant_type: 'client_credentials', base_url: @url, params: {client_id: 'app', client_secret: client_secret})
+      local.token
+      # refresh: client secret and refresh token in the form body
+      local.renew_token
+      credentials = %w[code code_verifier assertion].to_h { |k| [k.to_sym, SecureRandom.alphanumeric(16)] }
+      local.create_token_base(include_secret: true, grant_type: 'authorization_code', **credentials)
+      expect(@issued.size).to(eq(3))
+      [*@issued.flat_map(&:values), client_secret, *credentials.values].each { |value| expect(output.string).not_to(include(value)) }
+      expect(output.string).to(include('result_data_raw', '-> "{', 'access_token', 'id_token', 'bearer', 'client_secret', 'refresh_token', 'code_verifier', 'assertion'))
     end
   end
 end

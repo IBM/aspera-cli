@@ -113,8 +113,9 @@ module Aspera
         return unless instance.logger.send(:"#{level}?")
         Aspera.assert(object.nil? || block.nil?, 'Use either object, or block, not both')
         object = yield if block_given?
-        # Secrets hidden by key name in the structure, whatever the dump format (the log formatter then hides secrets in text)
-        object = Secret::Hider.instance.hidden_copy(object) unless Secret::Hider.instance.log_secrets
+        # Secrets hidden by key name in the structure, whatever the dump format (the log formatter then hides secrets in text),
+        # and in structures serialized in strings (e.g. raw HTTP body): the dump escapes their quotes, the formatter would not find them
+        object = Secret::Hider.instance.hidden_copy(object, serialized: true) unless Secret::Hider.instance.log_secrets
         dump_text =
           case instance.dump_format
           when :json

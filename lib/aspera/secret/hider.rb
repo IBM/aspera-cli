@@ -62,7 +62,14 @@ module Aspera
         # cred in http dump
         /(?<begin>(?:#{HTTP_SECRETS.join('|')}): )[^\\]+(?<end>\\)/i
       ].freeze
-      private_constant :HIDDEN_PASSWORD, :ASCP_ENV_SECRETS, :KEY_SECRETS, :HTTP_SECRETS, :ALL_SECRETS, :NON_ENV_SECRETS, :KEY_FALSE_POSITIVES, :BOOLEAN_TEXTS, :SECRET_LENGTH, :VALUE_IN_STRING_LENGTH, :REGEX_LOG_REPLACES
+      # Key/value pairs of a structure serialized in a string (e.g. raw HTTP body), with named captures :begin, :key, :value and :end
+      REGEX_SERIALIZED_PAIRS = {
+        # JSON, string value: `"key":"value"`
+        json: /(?<begin>"(?<key>(?:[^"\\]|\\.)*)"\s*:\s*")(?<value>(?:[^"\\]|\\.)*)(?<end>")/,
+        # form or URL query: `key=value&key=value`, `?key=value`
+        form: /(?<begin>(?:\A|[?&])(?<key>[^=&\s"#?]+)=)(?<value>[^&\s"#]*)(?<end>)/
+      }.freeze
+      private_constant :HIDDEN_PASSWORD, :ASCP_ENV_SECRETS, :KEY_SECRETS, :HTTP_SECRETS, :ALL_SECRETS, :NON_ENV_SECRETS, :KEY_FALSE_POSITIVES, :BOOLEAN_TEXTS, :SECRET_LENGTH, :VALUE_IN_STRING_LENGTH, :REGEX_LOG_REPLACES, :REGEX_SERIALIZED_PAIRS
       attr_accessor :log_secrets
 
       # @return [Proc] new log formatter that hides secrets
@@ -110,18 +117,46 @@ module Aspera
       # @param obj           [Object]  Hash, Array, Struct, String, or other value (returned as is)
       # @param short_in_text [Boolean] `true`: a declared value shorter than 8 characters is also hidden inside a text, as a word
       #   (not next to a letter or digit), e.g. a short password in an error message of `mcp server`
+      # @param serialized    [Boolean] `true`: also hide secrets by key name in structures serialized in strings (see `hide_serialized_secrets`)
       # @return [Object] Copy of obj with secrets replaced by placeholder
-      def hidden_copy(obj, short_in_text: false)
+      def hidden_copy(obj, short_in_text: false, serialized: false)
+        copy = ->(item) { hidden_copy(item, short_in_text: short_in_text, serialized: serialized) }
         case obj
-        when Hash
-          obj.to_h do |k, v|
-            [k.is_a?(String) ? hidden_copy(k, short_in_text: short_in_text) : k, secret?(k, v) ? hidden_marker : hidden_copy(v, short_in_text: short_in_text)]
-          end
-        when Array then obj.map { |i| hidden_copy(i, short_in_text: short_in_text) }
-        when Struct then obj.dup.tap { |s| s.each_pair { |k, v| s[k] = secret?(k, v) ? hidden_marker : hidden_copy(v, short_in_text: short_in_text) } }
-        when String then hide_values_in_string(obj, hidden_marker, short_in_text: short_in_text)
+        when Hash then obj.to_h { |k, v| [k.is_a?(String) ? copy.call(k) : k, secret?(k, v) ? hidden_marker : copy.call(v)] }
+        when Array then obj.map(&copy)
+        when Struct then obj.dup.tap { |s| s.each_pair { |k, v| s[k] = secret?(k, v) ? hidden_marker : copy.call(v) } }
+        when String
+          text = hide_values_in_string(obj, hidden_marker, short_in_text: short_in_text)
+          serialized ? hide_serialized_secrets(text) : text
         else obj
         end
+      end
+
+      # Hides secrets by key name (see `secret?`) in a structure serialized in a string, e.g. the raw body of an HTTP request or response:
+      # JSON (`"key":"value"`), form or URL query (`key=value&...`). Keys and other values are kept.
+      # Needed before such a string is dumped in logs: the dump escapes its quotes, so the patterns of the log formatter would not match.
+      # @param value [String] Text
+      # @return [String] Text with the values of secret keys replaced by placeholder, or `value` itself if it has none
+      def hide_serialized_secrets(value)
+        marker = hidden_marker
+        text = value
+        unless text.valid_encoding? && Encoding.compatible?(text, marker)
+          # e.g. binary data with non-ASCII bytes (raw HTTP body): UTF-8 text if valid, else bytes
+          text = value.dup.force_encoding(Encoding::UTF_8)
+          text, marker = value.b, marker.b unless text.valid_encoding?
+        end
+        hidden = false
+        REGEX_SERIALIZED_PAIRS.each do |format, reg_ex|
+          text = text.gsub(reg_ex) do
+            match = Regexp.last_match
+            key = match[:key]
+            key = (URI.decode_www_form_component(key).scrub rescue key) if format.eql?(:form)
+            next match[0] unless secret?(key, match[:value])
+            hidden = true
+            "#{match[:begin]}#{marker}#{match[:end]}"
+          end
+        end
+        hidden ? text : value
       end
 
       # @param obj [Object] Hash, Array, Struct, String, or other value

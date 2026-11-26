@@ -22,6 +22,9 @@ module Aspera
     # Bearer Token Usage: https://tools.ietf.org/html/rfc6750
     class Base
       Aspera.require_method!(:create_token)
+      # Parameters of a token request that are credentials, but whose names do not denote a secret (see `Secret::Hider#secret?`)
+      CREDENTIAL_PARAMS = %w[assertion code code_verifier].freeze
+      private_constant :CREDENTIAL_PARAMS
       class << self
         # @param path [String] Path of an end point
         # @return [Boolean] `true` if `path` is an absolute URL (`http` or `https`)
@@ -92,6 +95,9 @@ module Aspera
       def create_token_base(include_secret: false, **other_params)
         Log.log.debug { 'Generating a new token'.bg(:green) }
         creation_params = base_parameters(include_secret: include_secret, **other_params)
+        # Credentials of the request are hidden wherever they appear, e.g. logs of its body or URL
+        Secret::Hider.instance.add_secrets_in(creation_params)
+        Secret::Hider.instance.add_secret_values(*creation_params.filter_map { |k, v| v if CREDENTIAL_PARAMS.include?(k.to_s) })
         token_api, subpath = endpoint_api(@path_token)
         return token_api.create(subpath, nil, query: creation_params, ret: :resp) if @use_query
         token_api.create(subpath, creation_params, content_type: Mime::WWW, ret: :resp)

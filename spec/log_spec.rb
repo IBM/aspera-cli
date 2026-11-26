@@ -82,6 +82,19 @@ RSpec.describe(Aspera::Log) do
       Aspera::Secret::Hider.instance.instance_variable_get(:@additional_keys).delete(key)
     end
 
+    it 'hides secrets by key name in a serialized structure in a string (e.g. raw HTTP body), whatever the dump format' do
+      log.level = :trace1
+      secret = SecureRandom.alphanumeric(12)
+      body = JSON.generate({'access_token' => secret, 'token_type' => 'bearer'})
+      %i[json ruby].each do |format|
+        log.dump_format = format
+        described_class.dump(:result_data_raw, body, level: :trace1)
+      end
+      expect(output.string).not_to(include(secret))
+      expect(output.string).to(include('access_token', 'bearer'))
+      expect(body).to(include(secret))
+    end
+
     it 'shows secrets when log_secrets is set' do
       log.level = :debug
       secret = SecureRandom.alphanumeric(12)

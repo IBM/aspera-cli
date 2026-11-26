@@ -228,6 +228,24 @@ RSpec.describe(Aspera::Secret::Hider) do
       expect(hider.hidden_copy(data).to_a).to(eq(['a', '🔑']))
       expect(data.password).to(eq(secret))
     end
+
+    it 'hides secrets by key name in structures serialized in strings, with serialized' do
+      json = JSON.generate({'access_token' => secret, 'token_type' => 'bearer', 'expires_in' => 3600, 'id_token' => other})
+      expect(hider.hidden_copy(json)).to(eq(json))
+      expect(hider.hidden_copy(json, serialized: true)).to(eq('{"access_token":"🔑","token_type":"bearer","expires_in":3600,"id_token":"🔑"}'))
+      expect(hider.hidden_copy(%Q({\n  "password": "#{secret}\\"#{other}"\n}), serialized: true)).to(eq(%Q({\n  "password": "🔑"\n})))
+      expect(hider.hidden_copy("client_secret=#{secret}&client_id=app&refresh_token=#{other}", serialized: true)).to(eq('client_secret=🔑&client_id=app&refresh_token=🔑'))
+      expect(hider.hidden_copy({'url' => "https://host/cb?state=1&api%5Fkey=#{secret}"}, serialized: true)).to(eq({'url' => 'https://host/cb?state=1&api%5Fkey=🔑'}))
+    end
+
+    it 'hides secrets by key name in binary data, e.g. raw HTTP body with non-ASCII characters' do
+      expect(hider.hide_serialized_secrets(%Q({"name":"é","password":"#{secret}"}).b)).to(eq('{"name":"é","password":"🔑"}'))
+      # not UTF-8: processed as bytes
+      expect(hider.hide_serialized_secrets("#{[0xFF].pack('C')}password=#{secret}".b)).to(eq("#{[0xFF].pack('C')}password=#{'🔑'.b}".b))
+      # no secret: same string
+      body = %Q({"name":"é"}).b
+      expect(hider.hide_serialized_secrets(body)).to(be(body))
+    end
   end
 
   describe '#contains_secret?' do
