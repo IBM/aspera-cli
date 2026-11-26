@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require_relative 'log'
+require_relative 'secret/hider'
 require_relative 'assert'
 require_relative 'hash_ext'
 require 'delegate'
@@ -180,9 +181,14 @@ module Aspera
       super
     end
 
-    # log web server access ( option AccessLog )
+    # Log of web server access (option `AccessLog`): the request line has the query, e.g. the code of a browser login, which is hidden
+    # (see `Secret::Hider#hide_serialized_secrets`), also with the logger of a host application
     def <<(access_log)
-      Log.log.debug { "webrick log #{access_log.chomp}" }
+      Log.log.debug do
+        line = access_log.chomp
+        line = Secret::Hider.instance.hide_serialized_secrets(line) unless Secret::Hider.instance.log_secrets
+        "webrick log #{line}"
+      end
     end
   end
 end

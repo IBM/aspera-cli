@@ -52,6 +52,8 @@ module Aspera
           )
           # code / state located in redirected URL query
           info = Rest.query_to_h(URI.parse(http['Location']).query)
+          # The code is a credential: hidden wherever it appears, also in this dump
+          Secret::Hider.instance.add_secret_values(info['code'])
           Log.dump(:info, info)
           raise AuthenticationError, info['action_message'] if info['action_message']
           Aspera.assert(info['code'], 'Missing code in answer')

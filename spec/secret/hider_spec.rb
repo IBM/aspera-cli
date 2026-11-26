@@ -71,7 +71,10 @@ RSpec.describe(Aspera::Secret::Hider) do
 
     it 'hides secrets in URL query parameters' do
       expect(log(%Q("POST /processing/x.sh?token=#{secret} HTTP/1.1" 200))).to(eq('"POST /processing/x.sh?token=🔑 HTTP/1.1" 200'))
-      expect(log(%Q("GET /cb?code=#{other}&client_secret=#{secret}&state=1 HTTP/1.1" 200))).to(eq(%Q("GET /cb?code=#{other}&client_secret=🔑&state=1 HTTP/1.1" 200)))
+      # OAuth authorization code: name does not denote a secret, but in a URL query it is a credential
+      expect(log(%Q("GET /cb?code=#{other}&client_secret=#{secret}&state=1 HTTP/1.1" 200))).to(eq('"GET /cb?code=🔑&client_secret=🔑&state=1 HTTP/1.1" 200'))
+      text = 'URI=https://host/authorize?response_type=code&code_challenge=c1&state=1'
+      expect(log(text)).to(eq(text))
     end
 
     it 'hides rendered Ruby Struct and object' do
@@ -245,6 +248,29 @@ RSpec.describe(Aspera::Secret::Hider) do
       # no secret: same string
       body = %Q({"name":"é"}).b
       expect(hider.hide_serialized_secrets(body)).to(be(body))
+    end
+  end
+
+  describe '#hide_serialized_secrets' do
+    it 'hides the OAuth credentials of a form or URL query, though their names do not denote a secret' do
+      expect(hider.hide_serialized_secrets("https://host/cb?code=#{secret}&state=s1")).to(eq('https://host/cb?code=🔑&state=s1'))
+      expect(hider.hide_serialized_secrets("grant_type=authorization_code&code=#{secret}&code_verifier=#{other}")).to(eq('grant_type=authorization_code&code=🔑&code_verifier=🔑'))
+      expect(hider.hide_serialized_secrets("grant_type=jwt&assertion=#{secret}")).to(eq('grant_type=jwt&assertion=🔑'))
+      # e.g. body of a redirect
+      expect(hider.hide_serialized_secrets(%Q(<a href="https://host/cb?code=#{secret}&amp;state=s1">))).to(eq('<a href="https://host/cb?code=🔑&amp;state=s1">'))
+      # not secrets: other keys of the query, and in JSON (e.g. code of an error)
+      text = %Q(?response_type=code&code_challenge=c1&country_code=fr {"code":"not_found"})
+      expect(hider.hide_serialized_secrets(text)).to(be(text))
+    end
+
+    it 'hides the values of cookies in HTTP headers, and shows their names and attributes' do
+      request = "GET / HTTP/1.1\r\nHost: host\r\nCookie: aoc.token=#{secret}; lang=#{other}\r\n\r\n"
+      expect(hider.hide_serialized_secrets(request)).to(eq("GET / HTTP/1.1\r\nHost: host\r\nCookie: aoc.token=🔑; lang=🔑\r\n\r\n"))
+      expect(hider.hide_serialized_secrets("set-cookie: session_id=#{secret}; Path=/; Max-Age=60; HttpOnly\r\n")).to(eq("set-cookie: session_id=🔑; Path=/; Max-Age=60; HttpOnly\r\n"))
+      expect(hider.hide_serialized_secrets("Set-Cookie: #{other}=#{secret}".b)).to(eq("Set-Cookie: #{other}=🔑"))
+      # not a header: e.g. cookie of a transfer spec
+      text = %Q({"cookie":"aspera.sync"} cookie: a=b)
+      expect(hider.hide_serialized_secrets(text)).to(be(text))
     end
   end
 

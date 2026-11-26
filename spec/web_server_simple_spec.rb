@@ -8,6 +8,9 @@ require 'openssl'
 require 'net/http'
 require 'tmpdir'
 require 'uri'
+require 'logger'
+require 'securerandom'
+require 'stringio'
 
 RSpec.describe(Aspera::WebServerSimple) do
   describe '.loopback?' do
@@ -113,6 +116,35 @@ RSpec.describe(Aspera::WebServerSimple) do
       ensure
         server&.shutdown
       end
+    end
+  end
+
+  describe 'access log' do
+    it 'hides the secrets of the query: code of a browser login, and by key name' do
+      log = Aspera::Log.instance
+      saved_logger = log.logger
+      output = StringIO.new
+      log.instance_variable_set(:@logger, Logger.new(output))
+      log.formatter = ->(_s, _d, _p, m) { "#{m}\n" }
+      log.level = :debug
+      code = SecureRandom.alphanumeric(16)
+      token = SecureRandom.alphanumeric(16)
+      server = described_class.new(URI('http://127.0.0.1:0'))
+      server.mount_proc('/cb') { |_, res| res.body = 'ok' }
+      thread = Thread.new { server.start }
+      # else a shutdown before the start would not stop the server
+      sleep(0.01) until server.status.eql?(:Running)
+      expect(Net::HTTP.get(URI("#{server.uri}/cb?code=#{code}&state=s1&access_token=#{token}"))).to(eq('ok'))
+      # the access log is written once the response is sent: by the thread of the request, which the server waits for
+      server.shutdown
+      thread.join
+      expect(output.string).to(include('webrick log', 'GET /cb?code=', '&state=s1&access_token='))
+      expect(output.string).not_to(include(code))
+      expect(output.string).not_to(include(token))
+    ensure
+      server&.shutdown
+      thread&.join
+      log.instance_variable_set(:@logger, saved_logger)
     end
   end
 end

@@ -34,6 +34,9 @@ module Aspera
       NON_ENV_SECRETS = (KEY_SECRETS + HTTP_SECRETS).freeze
       # not secrets: `*_file` is the path of a file (e.g. `ca_file`)
       KEY_FALSE_POSITIVES = [/^access_key$/, /^fallback_private_key$/, /public_key$/, /^token_type$/, /_file$/].freeze
+      # Keys of a form or URL query whose values are credentials, though their names do not denote a secret (not in JSON, e.g. `code` of an error):
+      # OAuth authorization code (RFC 6749 §4.1.2), e.g. in the URL of a redirect, PKCE code verifier (RFC 7636 §4.5), JWT assertion (RFC 7523 §2.1)
+      FORM_CREDENTIALS = %w[code code_verifier assertion].freeze
       # boolean values as text: not secrets, even for a name that denotes a secret (e.g. `show_secrets`)
       BOOLEAN_TEXTS = %w[yes no true false].freeze
       # min length of hidden secrets, use `+` or `{n,}`
@@ -57,6 +60,8 @@ module Aspera
         /(?<begin>@?\b\w*(?:#{ALL_SECRETS.join('|')})\w*=")(?:[^"\\]|\\.)+(?<end>")/i,
         # query parameter of URL: `?token=v` or `&client_secret=v`
         /(?<begin>[?&][^=&\s"]*(?:#{KEY_SECRETS.join('|')})[^=&\s"]*=)[^&\s"#]+(?<end>)/i,
+        # query parameter of URL, OAuth credential: `?code=v`
+        /(?<begin>[?&](?:#{FORM_CREDENTIALS.join('|')})=)[^&\s"#]+(?<end>)/,
         # logged data
         /(?<begin>(?:#{NON_ENV_SECRETS.join('|')})[ =:]+)[^ "\n]#{SECRET_LENGTH}(?<end>$)/i,
         # cred in http dump
@@ -69,7 +74,12 @@ module Aspera
         # form or URL query: `key=value&key=value`, `?key=value`
         form: /(?<begin>(?:\A|[?&])(?<key>[^=&\s"#?]+)=)(?<value>[^&\s"#]*)(?<end>)/
       }.freeze
-      private_constant :HIDDEN_PASSWORD, :ASCP_ENV_SECRETS, :KEY_SECRETS, :HTTP_SECRETS, :ALL_SECRETS, :NON_ENV_SECRETS, :KEY_FALSE_POSITIVES, :BOOLEAN_TEXTS, :SECRET_LENGTH, :VALUE_IN_STRING_LENGTH, :REGEX_LOG_REPLACES, :REGEX_SERIALIZED_PAIRS
+      # HTTP header with cookies, e.g. in the debug output of `Net::HTTP`: `Cookie: name=value; name=value`, `Set-Cookie: name=value; Path=/`
+      REGEX_COOKIE_HEADER = /^(?<begin>(?<name>(?:Set-)?Cookie):[ \t]*)(?<value>[^\r\n]*)/i
+      # `name=value` of a cookie in the header, with named capture :begin. `Set-Cookie`: the first one only, others are attributes (e.g. `Max-Age=60`)
+      REGEX_COOKIE_PAIR = /(?<begin>(?:\A|;)[ \t]*[^=;\s]+=)[^;\r\n]+/
+      private_constant :HIDDEN_PASSWORD, :ASCP_ENV_SECRETS, :KEY_SECRETS, :HTTP_SECRETS, :ALL_SECRETS, :NON_ENV_SECRETS, :KEY_FALSE_POSITIVES, :BOOLEAN_TEXTS, :SECRET_LENGTH, :VALUE_IN_STRING_LENGTH, :REGEX_LOG_REPLACES, :REGEX_SERIALIZED_PAIRS,
+        :FORM_CREDENTIALS, :REGEX_COOKIE_HEADER, :REGEX_COOKIE_PAIR
       attr_accessor :log_secrets
 
       # @return [Proc] new log formatter that hides secrets
@@ -133,7 +143,8 @@ module Aspera
       end
 
       # Hides secrets by key name (see `secret?`) in a structure serialized in a string, e.g. the raw body of an HTTP request or response:
-      # JSON (`"key":"value"`), form or URL query (`key=value&...`). Keys and other values are kept.
+      # JSON (`"key":"value"`), form or URL query (`key=value&...`, also OAuth credentials such as `code`, see `FORM_CREDENTIALS`),
+      # and the values of cookies in HTTP headers (`Cookie`, `Set-Cookie`). Keys, names of cookies and other values are kept.
       # Needed before such a string is dumped in logs: the dump escapes its quotes, so the patterns of the log formatter would not match.
       # @param value [String] Text
       # @return [String] Text with the values of secret keys replaced by placeholder, or `value` itself if it has none
@@ -151,10 +162,18 @@ module Aspera
             match = Regexp.last_match
             key = match[:key]
             key = (URI.decode_www_form_component(key).scrub rescue key) if format.eql?(:form)
-            next match[0] unless secret?(key, match[:value])
+            next match[0] unless secret?(key, match[:value]) || (format.eql?(:form) && FORM_CREDENTIALS.include?(key))
             hidden = true
             "#{match[:begin]}#{marker}#{match[:end]}"
           end
+        end
+        text = text.gsub(REGEX_COOKIE_HEADER) do
+          match = Regexp.last_match
+          pairs = match[:value].public_send(match[:name].casecmp?('Cookie') ? :gsub : :sub, REGEX_COOKIE_PAIR) do
+            hidden = true
+            "#{Regexp.last_match(:begin)}#{marker}"
+          end
+          "#{match[:begin]}#{pairs}"
         end
         hidden ? text : value
       end
