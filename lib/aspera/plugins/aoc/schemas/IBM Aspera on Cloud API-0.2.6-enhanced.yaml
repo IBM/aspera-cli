@@ -2590,6 +2590,9 @@ paths:
         administrator gets the permissions of the organization. A workspace manager gets the permissions of the groups
         they own or manage.
 
+        The permissions on a group are deleted with the group, and the permissions of a user with the user. The
+        permissions of a group on other groups remain when it is deleted: `embed[]=entity` gives `null` for them.
+
         Parameter `inherited` (sent by the web UI) has no effect: only direct permissions are listed.
       parameters:
         - name: page
@@ -2711,6 +2714,11 @@ paths:
       responses:
         '201':
           description: Created
+          headers:
+            Location:
+              description: URL of the permission, `https://api.ibmaspera.com/api/v1/group_permissions/{id}`.
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -2729,10 +2737,17 @@ paths:
                 $ref: '#/components/schemas/ForbiddenError'
         '422':
           description: >-
-            Unprocessable Entity (e.g. level not `owner` or `manager`, user or group not found, group not found, the
-            entity already has a permission on the group, level not allowed for the user)
+            Unprocessable Entity: errors of fields (level not `owner` or `manager`, `entity_type` not `user` or
+            `group`, entity that does not exist, entity that already has a permission on the group, level not allowed
+            for the user), or parameter error (missing body, other field: `unpermitted_parameters`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/FieldValidationError'
+                  - $ref: '#/components/schemas/ValidationError'
         '500':
-          description: Internal Server Error
+          description: Internal Server Error (also when the group does not exist)
           content:
             application/json:
               schema:
@@ -2838,7 +2853,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/NotFoundError'
         '422':
-          description: Unprocessable Entity (level not `owner` or `manager`, or not allowed for the user)
+          description: >-
+            Unprocessable Entity: errors of fields (level not `owner` or `manager`, or not allowed for the user), or
+            parameter error (missing body, field other than `level`: `unpermitted_parameters`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/FieldValidationError'
+                  - $ref: '#/components/schemas/ValidationError'
         '500':
           description: Internal Server Error
           content:
@@ -3150,8 +3173,8 @@ paths:
       operationId: delete_group
       summary: Delete a Specific Group
       description: >-
-        Delete a group and its memberships. Requires a token with admin scope, for an organization administrator or an
-        owner of the group. A system group cannot be deleted.
+        Delete a group, its memberships and the permissions on it (`/group_permissions`). Requires a token with admin
+        scope, for an organization administrator or an owner of the group. A system group cannot be deleted.
       parameters:
         - name: id
           in: path
@@ -7745,6 +7768,26 @@ components:
         code: parameter_missing
         message: param is missing or the value is empty
         request_id: 910723e1-d7ac-4d01-9b4a-5949cf870f98
+    FieldValidationError:
+      type: object
+      description: |
+        Validation error of the fields of a request body (422 Unprocessable Entity), with the messages for each field.
+      properties:
+        errors:
+          type: object
+          description: Messages for each field in error, by name of field.
+          additionalProperties:
+            type: array
+            items:
+              type: string
+      required:
+        - errors
+      example:
+        errors:
+          level:
+            - is not included in the list
+          entity:
+            - already has group permission
     NotFoundError:
       type: object
       description: |
@@ -9808,7 +9851,7 @@ components:
         entity:
           description: >-
             User or group that has the permission, with `embed[]=entity`. `null` if it cannot be read with the token
-            used.
+            used, or if the group was deleted.
           anyOf:
             - $ref: '#/components/schemas/users_response'
             - $ref: '#/components/schemas/groups_response'
