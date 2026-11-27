@@ -71,6 +71,15 @@ RSpec.describe(Aspera::Plugins::Faspex5::Api) do
         res['Content-Type'] = 'application/json'
         res.body = JSON.generate({'name' => 'external'})
       end
+      # Invitation (create or list): its access URL is a public link with its context, the last one of `@access_urls`
+      @access_urls = []
+      access_urls = @access_urls
+      server.mount_proc('/aspera/faspex/api/v5/invitations') do |req, res|
+        invitation = {'id' => '1', 'public' => true, 'recipient_type' => 'user', 'access_url' => access_urls.last}
+        res['Content-Type'] = 'application/json'
+        res.status = 201 if req.request_method.eql?('POST')
+        res.body = JSON.generate(req.request_method.eql?('POST') ? invitation : {'invitations' => [invitation], 'total_count' => 1})
+      end
       %w[/auth /aspera/faspex/auth].each do |path|
         server.mount_proc("#{path}/authorize_public_link") do |req, res|
           codes.push(SecureRandom.alphanumeric(16))
@@ -131,6 +140,22 @@ RSpec.describe(Aspera::Plugins::Faspex5::Api) do
       expect(output.string).to(include(
         "Client.new(#{@base_url}/?context=", 'GET /aspera/faspex/public/package?context=', '"passcode"', 'authorize_public_link?response_type=code&state=', 'callback?code=', '"name"'
       ))
+    end
+
+    it 'hides the context of the access URL of an invitation in logs, at all levels, and returns it' do
+      # A context for each level: the registry of secrets is shared
+      contexts = %i[debug trace1 trace2].map do |level|
+        log.level = level
+        # Passcode to send a package to a user: base64 with padding, not URL-encoded
+        context = Base64.strict_encode64(JSON.generate({'resource' => 'invitations', 'type' => 'external_upload_to_user', 'id' => '1', 'passcode' => SecureRandom.alphanumeric(16)}))
+        @access_urls.push("#{@base_url}/aspera/faspex/public/send?context=#{context}")
+        api = described_class.new(url: "#{@base_url}/aspera/faspex", auth: :boot, password: SecureRandom.alphanumeric(16))
+        expect(api.create('invitations', {'email_address' => 'john@example.com'})['access_url']).to(eq(@access_urls.last))
+        expect(api.read('invitations')['invitations'].first['access_url']).to(eq(@access_urls.last))
+        context
+      end
+      contexts.each { |context| expect(output.string).not_to(include(context.delete('='))) }
+      expect(output.string).to(include('"access_url": "', "#{@base_url}/aspera/faspex/public/send?context="))
     end
   end
 end

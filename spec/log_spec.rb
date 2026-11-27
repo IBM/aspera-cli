@@ -7,6 +7,8 @@ require 'spec_helper'
 require_relative '../lib/aspera/log'
 require 'stringio'
 require 'securerandom'
+require 'base64'
+require 'json'
 
 RSpec.describe(Aspera::Log) do
   let(:log) { described_class.instance }
@@ -93,6 +95,24 @@ RSpec.describe(Aspera::Log) do
       expect(output.string).not_to(include(secret))
       expect(output.string).to(include('access_token', 'bearer'))
       expect(body).to(include(secret))
+    end
+
+    it 'shows the values of keys that are not secrets, e.g. token_type of a token response' do
+      log.level = :debug
+      secret = SecureRandom.alphanumeric(12)
+      described_class.dump(:result_data, {'access_token' => secret, 'token_type' => 'bearer', 'expires_in' => 3600})
+      expect(output.string).not_to(include(secret))
+      expect(output.string).to(include('"access_token": "', '"token_type": "bearer"'))
+    end
+
+    it 'hides a structure encoded in base64 JSON with a secret in a URL query of a value, e.g. the context of a public link' do
+      log.level = :debug
+      context = Base64.strict_encode64(JSON.generate({'type' => 'external_upload_to_user', 'passcode' => SecureRandom.alphanumeric(12)}))
+      data = {'access_url' => "https://host/aspera/faspex/public/send?context=#{context}"}
+      described_class.dump(:result_data, data)
+      expect(output.string).not_to(include(context.delete('=')))
+      expect(output.string).to(include('"access_url": "https://host/aspera/faspex/public/send?context='))
+      expect(data['access_url']).to(include(context))
     end
 
     it 'shows secrets when log_secrets is set' do

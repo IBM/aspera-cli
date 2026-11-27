@@ -16,6 +16,8 @@ module Aspera
     # Secrets are identified:
     # - by key name, in structures (`secret?`, `hidden_copy`) and in strings with known patterns (`hide_secrets_in_string`)
     # - by value, when declared where they come from (`add_secret_values`, `add_secrets_in`): option values, tokens, ...
+    # - in a structure encoded in base64 JSON in a URL query (e.g. context of a Faspex 5 public link): declared by `add_secrets_in`,
+    #   else hidden in logs only (`hide_serialized_secrets`, e.g. in an API response)
     #
     # @!method self.instance
     #   Returns the singleton instance of Secret::Hider
@@ -44,7 +46,7 @@ module Aspera
       # min length of a declared secret value to be hidden inside a string: shorter ones are hidden only when they are the whole string,
       # else common words would be hidden (e.g. password `aspera` in URLs), or optionally as a word (`short_in_text`)
       VALUE_IN_STRING_LENGTH = 8
-      # regex that define named captures :begin and :end
+      # regex that define named captures :begin and :end, and :key for the name of a key (not hidden if it is not a secret, see `KEY_FALSE_POSITIVES`)
       REGEX_LOG_REPLACES = [
         # private key values (place first)
         /(?<begin>--+BEGIN [^-]+ KEY--+)[[:ascii:]]+?(?<end>--+?END [^-]+ KEY--+)\n*/,
@@ -53,17 +55,17 @@ module Aspera
         # env var ascp exec
         /(?<begin> (?:#{ASCP_ENV_SECRETS.join('|')})=)[^ \n]+(?<end> |$)/,
         # rendered JSON or Ruby (quoted key or legacy symbol key: `"k":"v"`, `"k" => "v"`, `:k=>"v"`)
-        /(?<begin>(?:(?<quote>["'])|:)[^"':=]*(?:#{ALL_SECRETS.join('|')})[^"':=]*\k<quote>? *(?:=>|:) *")(?:[^"\\]|\\.)+(?<end>")/i,
+        /(?<begin>(?:(?<quote>["'])|:)(?<key>[^"':=]*(?:#{ALL_SECRETS.join('|')})[^"':=]*)\k<quote>? *(?:=>|:) *")(?:[^"\\]|\\.)+(?<end>")/i,
         # rendered Ruby 3.4+ symbol key: `k: "v"`
-        /(?<begin>\b\w*(?:#{ALL_SECRETS.join('|')})\w*: *")(?:[^"\\]|\\.)+(?<end>")/i,
+        /(?<begin>\b(?<key>\w*(?:#{ALL_SECRETS.join('|')})\w*): *")(?:[^"\\]|\\.)+(?<end>")/i,
         # rendered Ruby Struct or object: `k="v"`, `@k="v"`
-        /(?<begin>@?\b\w*(?:#{ALL_SECRETS.join('|')})\w*=")(?:[^"\\]|\\.)+(?<end>")/i,
+        /(?<begin>@?\b(?<key>\w*(?:#{ALL_SECRETS.join('|')})\w*)=")(?:[^"\\]|\\.)+(?<end>")/i,
         # query parameter of URL: `?token=v` or `&client_secret=v`
-        /(?<begin>[?&][^=&\s"]*(?:#{KEY_SECRETS.join('|')})[^=&\s"]*=)[^&\s"#]+(?<end>)/i,
+        /(?<begin>[?&](?<key>[^=&\s"]*(?:#{KEY_SECRETS.join('|')})[^=&\s"]*)=)[^&\s"#]+(?<end>)/i,
         # query parameter of URL, OAuth credential: `?code=v`
         /(?<begin>[?&](?:#{FORM_CREDENTIALS.join('|')})=)[^&\s"#]+(?<end>)/,
-        # logged data
-        /(?<begin>(?:#{NON_ENV_SECRETS.join('|')})[ =:]+)[^ "\n]#{SECRET_LENGTH}(?<end>$)/i,
+        # logged data (:key is the end of the name, e.g. `_key` of `access_key: v`)
+        /(?<begin>(?<key>#{NON_ENV_SECRETS.join('|')})[ =:]+)[^ "\n]#{SECRET_LENGTH}(?<end>$)/i,
         # cred in http dump
         /(?<begin>(?:#{HTTP_SECRETS.join('|')}): )[^\\]+(?<end>\\)/i
       ].freeze
@@ -78,11 +80,13 @@ module Aspera
       REGEX_COOKIE_HEADER = /^(?<begin>(?<name>(?:Set-)?Cookie):[ \t]*)(?<value>[^\r\n]*)/i
       # `name=value` of a cookie in the header, with named capture :begin. `Set-Cookie`: the first one only, others are attributes (e.g. `Max-Age=60`)
       REGEX_COOKIE_PAIR = /(?<begin>(?:\A|;)[ \t]*[^=;\s]+=)[^;\r\n]+/
-      # Value of a query parameter of a URL, long enough to be a structure encoded in base64 (see `add_encoded_secrets`), with named capture :value.
-      # No `?` in the name: else polynomial on many `?`
-      REGEX_QUERY_ENCODED = /[?&][^=&\s"#?]+=(?<value>[^&\s"#]{16,})/
+      # Value of a query parameter of a URL, long enough to be a structure encoded in base64 (see `encoded_secret?`), with named captures :begin and :value.
+      # No `?` in the name: else polynomial on many `?`. No `\` in the value: end of a URL in JSON with `&` escaped (e.g. `\u0026` by Go)
+      REGEX_QUERY_ENCODED = /(?<begin>[?&][^=&\s"#?]+=)(?<value>[^&\s"#\\]{16,})/
+      # A character that is not in the name of a key in a log line (see `false_positive_key?`)
+      REGEX_NOT_IN_KEY = /[\s,;{}\[\]()<>@#|"':=&?]/
       private_constant :HIDDEN_PASSWORD, :ASCP_ENV_SECRETS, :KEY_SECRETS, :HTTP_SECRETS, :ALL_SECRETS, :NON_ENV_SECRETS, :KEY_FALSE_POSITIVES, :BOOLEAN_TEXTS, :SECRET_LENGTH, :VALUE_IN_STRING_LENGTH, :REGEX_LOG_REPLACES, :REGEX_SERIALIZED_PAIRS,
-        :FORM_CREDENTIALS, :REGEX_COOKIE_HEADER, :REGEX_COOKIE_PAIR, :REGEX_QUERY_ENCODED
+        :FORM_CREDENTIALS, :REGEX_COOKIE_HEADER, :REGEX_COOKIE_PAIR, :REGEX_QUERY_ENCODED, :REGEX_NOT_IN_KEY
       attr_accessor :log_secrets
 
       # @return [Proc] new log formatter that hides secrets
@@ -105,7 +109,7 @@ module Aspera
         marker = hidden_marker
         value = hide_values_in_string(value, marker)
         (all ? REGEX_LOG_REPLACES : REGEX_LOG_REPLACES.first(1)).each do |reg_ex|
-          value = value.gsub(reg_ex) { "#{Regexp.last_match(:begin)}#{marker}#{Regexp.last_match(:end)}" }
+          value = hide_pattern(value, reg_ex, marker)
         end
         return value
       end
@@ -120,7 +124,7 @@ module Aspera
         return true if @additional_keys.include?(keyword)
         keyword = keyword.downcase
         # those are not secrets
-        return false if KEY_FALSE_POSITIVES.any? { |f| f.match?(keyword) }
+        return false if false_positive?(keyword)
         # check if keyword (name) contains an element that designate it as a secret
         ALL_SECRETS.any? { |kw| keyword.include?(kw.downcase) }
       end
@@ -147,7 +151,9 @@ module Aspera
 
       # Hides secrets by key name (see `secret?`) in a structure serialized in a string, e.g. the raw body of an HTTP request or response:
       # JSON (`"key":"value"`), form or URL query (`key=value&...`, also OAuth credentials such as `code`, see `FORM_CREDENTIALS`),
-      # and the values of cookies in HTTP headers (`Cookie`, `Set-Cookie`). Keys, names of cookies and other values are kept.
+      # the values of cookies in HTTP headers (`Cookie`, `Set-Cookie`), and the value of a URL query that is a structure encoded in base64 JSON
+      # with a secret (e.g. the context of a Faspex 5 public link in an API response, not declared: shown in results, see `add_encoded_secrets`).
+      # Keys, names of cookies and other values are kept.
       # Needed before such a string is dumped in logs: the dump escapes its quotes, so the patterns of the log formatter would not match.
       # @param value [String] Text
       # @return [String] Text with the values of secret keys replaced by placeholder, or `value` itself if it has none
@@ -177,6 +183,14 @@ module Aspera
             "#{Regexp.last_match(:begin)}#{marker}"
           end
           "#{match[:begin]}#{pairs}"
+        end
+        if text.include?('=')
+          text = text.gsub(REGEX_QUERY_ENCODED) do
+            match = Regexp.last_match
+            next match[0] unless encoded_secret?(match[:value])
+            hidden = true
+            "#{match[:begin]}#{marker}"
+          end
         end
         hidden ? text : value
       end
@@ -254,17 +268,59 @@ module Aspera
         return unless text.include?('=') && text.valid_encoding?
         text.scan(REGEX_QUERY_ENCODED) do
           raw = Regexp.last_match(:value)
-          # `+` kept: it is one of base64, also when not URL-encoded
-          encoded = URI.decode_uri_component(raw)
-          # Standard or URL-safe base64
-          structure = JSON.parse(encoded.tr('-_', '+/').unpack1('m'))
-          next unless (structure.is_a?(Hash) || structure.is_a?(Array)) && contains_secret?(structure)
+          encoded, structure = decode_query_structure(raw)
+          next unless encoded_secret?(raw, structure)
           add_secrets_in(structure)
           add_secret_values(raw, encoded)
-        rescue StandardError
-          # Not a structure encoded in base64 JSON (e.g. `?context=packages`)
-          next
         end
+      end
+
+      # @param raw [String] Value of a query parameter of a URL, as in the URL
+      # @return [Array(String, Object), nil] The value URL-decoded, and the structure it encodes in base64 JSON (standard or URL-safe), or `nil`
+      def decode_query_structure(raw)
+        # `+` kept: it is one of base64, also when not URL-encoded
+        encoded = URI.decode_uri_component(raw)
+        [encoded, JSON.parse(encoded.tr('-_', '+/').unpack1('m'))]
+      rescue StandardError
+        # Not a structure encoded in base64 JSON (e.g. `?context=packages`)
+        nil
+      end
+
+      # @param raw       [String] Value of a query parameter of a URL, as in the URL
+      # @param structure [Object] Structure it encodes, if already decoded (see `decode_query_structure`)
+      # @return [Boolean] `true` if the value is a structure (Hash or Array) encoded in base64 JSON that contains a secret, by key name or declared value
+      def encoded_secret?(raw, structure = decode_query_structure(raw)&.last)
+        (structure.is_a?(Hash) || structure.is_a?(Array)) && contains_secret?(structure)
+      end
+
+      # @param keyword [String] Key name, in lower case
+      # @return [Boolean] `true` if the key is not a secret, though its name contains one that denotes a secret (e.g. `token_type`)
+      def false_positive?(keyword)
+        KEY_FALSE_POSITIVES.any? { |f| f.match?(keyword) }
+      end
+
+      # @param text   [String] Text
+      # @param reg_ex [Regexp] One of `REGEX_LOG_REPLACES`
+      # @param marker [String] Placeholder
+      # @return [String] Text with the values matched by reg_ex replaced by placeholder, but the values of keys that are not secrets (as `secret?`)
+      def hide_pattern(text, reg_ex, marker)
+        text.gsub(reg_ex) do
+          match = Regexp.last_match
+          next "#{match[:begin]}#{marker}#{match[:end]}" unless match.names.include?('key') && false_positive_key?(match)
+          # Not a secret: its value may contain others, e.g. `&token=` after `access_key=` for "logged data"
+          value = match[0][match[:begin].length...(match[0].length - match[:end].length)]
+          "#{match[:begin]}#{hide_pattern(value, reg_ex, marker)}#{match[:end]}"
+        end
+      end
+
+      # @param match [MatchData] Match of a regex of `REGEX_LOG_REPLACES` with a named capture :key
+      # @return [Boolean] `true` if the key is not a secret (see `secret?`). Its name ends with the capture, and starts after the last character that
+      #   cannot be in a name, e.g. `access_key` for `_key` in `data: access_key: v`, `token_type` for ` {token_type` in `text: {token_type: "v"}`
+      def false_positive_key?(match)
+        head = match.string[0, match.end(:key)]
+        start = head.rindex(REGEX_NOT_IN_KEY)
+        keyword = start.nil? ? head : head[(start + 1)..]
+        !@additional_keys.include?(keyword) && false_positive?(keyword.downcase)
       end
 
       # @param value         [String]  Input string

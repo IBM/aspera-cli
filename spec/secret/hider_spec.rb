@@ -78,6 +78,21 @@ RSpec.describe(Aspera::Secret::Hider) do
       expect(log(text)).to(eq(text))
     end
 
+    it 'shows the values of keys that are not secrets, as secret? does, and hides the others' do
+      # e.g. dump of an OAuth token response, Ruby inspect (legacy and 3.4+, after text), Struct, URL query, logged data
+      expect(log(%Q({\n  "access_token": "#{secret}",\n  "token_type": "bearer",\n  "access_key": "#{other}"\n})))
+        .to(eq(%Q({\n  "access_token": "🔑",\n  "token_type": "bearer",\n  "access_key": "#{other}"\n})))
+      expect(log(%Q({"token_type"=>"bearer", :access_key=>"#{other}", "client_secret"=>"#{secret}"}))).to(eq(%Q({"token_type"=>"bearer", :access_key=>"#{other}", "client_secret"=>"🔑"})))
+      expect(log(%Q(data: {token_type: "bearer", public_key: "#{other}", refresh_token: "#{secret}"}))).to(eq(%Q(data: {token_type: "bearer", public_key: "#{other}", refresh_token: "🔑"})))
+      expect(log(%Q(#<struct fallback_private_key="#{other}", secret="#{secret}">))).to(eq(%Q(#<struct fallback_private_key="#{other}", secret="🔑">)))
+      expect(log("GET https://host/?access_key=#{other}&token_type=bearer&token=#{secret}")).to(eq("GET https://host/?access_key=#{other}&token_type=bearer&token=🔑"))
+      expect(log("data: access_key: #{other}")).to(eq("data: access_key: #{other}"))
+      # The value of a key that is not a secret may contain a secret
+      expect(log("data: access_key: #{other},password:#{secret}")).to(eq("data: access_key: #{other},password:🔑"))
+      # Not a false positive: the whole name is checked
+      expect(log(%Q({"my-access_key":"#{secret}","token_types":"#{other}"}))).to(eq('{"my-access_key":"🔑","token_types":"🔑"}'))
+    end
+
     it 'hides rendered Ruby Struct and object' do
       expect(log(%Q(#<struct O user="john", password="#{secret}">))).to(eq('#<struct O user="john", password="🔑">'))
       expect(log(%Q(#<C:0x0001 @user="john", @password="#{secret}">))).to(eq('#<C:0x0001 @user="john", @password="🔑">'))
@@ -286,6 +301,23 @@ RSpec.describe(Aspera::Secret::Hider) do
       expect(hider.hide_serialized_secrets(%Q(<a href="https://host/cb?code=#{secret}&amp;state=s1">))).to(eq('<a href="https://host/cb?code=🔑&amp;state=s1">'))
       # not secrets: other keys of the query, and in JSON (e.g. code of an error)
       text = %Q(?response_type=code&code_challenge=c1&country_code=fr {"code":"not_found"})
+      expect(hider.hide_serialized_secrets(text)).to(be(text))
+    end
+
+    it 'hides a structure encoded in base64 JSON with a secret in a URL query, without declaring it' do
+      # e.g. access URL of a Faspex 5 invitation in an API response: base64 with padding, URL-encoded or not, also in JSON with `&` escaped (Go)
+      encoded = Base64.strict_encode64(JSON.generate({'type' => 'external_upload_to_user', 'id' => '1', 'passcode' => secret}))
+      [URI.encode_www_form_component(encoded), encoded].each do |value|
+        url = "https://host/aspera/faspex/public/send?context=#{value}&lang=en"
+        expect(hider.hide_serialized_secrets(url)).to(eq('https://host/aspera/faspex/public/send?context=🔑&lang=en'))
+        expect(hider.hide_serialized_secrets(%Q({"access_url":"#{url.gsub('&') { '\u0026' }}"})))
+          .to(eq('{"access_url":"https://host/aspera/faspex/public/send?context=🔑\u0026lang=en"}'))
+        expect(hider.hidden_copy({'access_url' => url}, serialized: true)).to(eq({'access_url' => 'https://host/aspera/faspex/public/send?context=🔑&lang=en'}))
+        # Not declared: shown in results
+        expect(hider.hidden_copy({'access_url' => url})).to(eq({'access_url' => url}))
+      end
+      # Not a structure with a secret: same string
+      text = "https://host/contacts?context=#{Base64.strict_encode64(JSON.generate({'type' => other}))}&a=#{Base64.strict_encode64(other * 2)}"
       expect(hider.hide_serialized_secrets(text)).to(be(text))
     end
 
