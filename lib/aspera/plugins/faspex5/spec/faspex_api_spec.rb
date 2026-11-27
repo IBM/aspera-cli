@@ -8,6 +8,7 @@
 require 'spec_helper'
 require_relative '../api'
 require_relative '../../../line_logger'
+require 'base64'
 require 'json'
 require 'logger'
 require 'securerandom'
@@ -49,8 +50,9 @@ RSpec.describe(Aspera::Plugins::Faspex5::Api) do
       end.new
     end
 
-    # Local Faspex: the passcode of the public link is exchanged for a code, in the URL of the redirect (`Location` and body), then for a token.
-    # Each code is recorded in `@codes`.
+    # Local Faspex: the public link redirects to the page of the package, with the same context; the context (with the passcode) is exchanged for a code,
+    # in the URL of the redirect (`Location` and body) with the state (the context), then for a token.
+    # Authorization at `/auth` (FaspexPubLink alone) and `/aspera/faspex/auth` (Api with the link). Each code is recorded in `@codes`.
     around do |example|
       factory = Aspera::OAuth::Factory.instance
       parameters = Aspera::Rest::Parameters.instance
@@ -59,19 +61,32 @@ RSpec.describe(Aspera::Plugins::Faspex5::Api) do
       @codes = []
       codes = @codes
       server = WEBrick::HTTPServer.new(Port: 0, BindAddress: '127.0.0.1', Logger: WEBrick::Log.new(File::NULL), AccessLog: [])
-      server.mount_proc('/auth/authorize_public_link') do |_req, res|
-        codes.push(SecureRandom.alphanumeric(16))
+      server.mount_proc('/') do |req, res|
         res.status = 302
-        res['Location'] = "https://127.0.0.1/aspera/faspex/callback?code=#{codes.last}&state=s1"
-        res.body = %Q(<a href="#{res['Location']}">Found</a>.)
+        res['Location'] = "/aspera/faspex/public/package?#{req.query_string}"
       end
-      server.mount_proc('/auth/token') do |_req, res|
+      server.mount_proc('/aspera/faspex/public/package') { |_req, res| res.body = '<html></html>' }
+      server.mount_proc('/aspera/faspex/config.js') { |_req, res| res.body = "window.config = {\n  client_id: 'app',\n  redirect_uri: '/aspera/faspex/callback'\n}\n" }
+      server.mount_proc('/aspera/faspex/api/v5/account') do |_req, res|
         res['Content-Type'] = 'application/json'
-        res.body = JSON.generate({'access_token' => SecureRandom.alphanumeric(16), 'token_type' => 'bearer', 'expires_in' => 3600})
+        res.body = JSON.generate({'name' => 'external'})
+      end
+      %w[/auth /aspera/faspex/auth].each do |path|
+        server.mount_proc("#{path}/authorize_public_link") do |req, res|
+          codes.push(SecureRandom.alphanumeric(16))
+          res.status = 302
+          res['Location'] = "https://127.0.0.1/aspera/faspex/callback?code=#{codes.last}&state=#{URI.encode_www_form_component(req.query['state'])}"
+          res.body = %Q(<a href="#{res['Location']}">Found</a>.)
+        end
+        server.mount_proc("#{path}/token") do |_req, res|
+          res['Content-Type'] = 'application/json'
+          res.body = JSON.generate({'access_token' => SecureRandom.alphanumeric(16), 'token_type' => 'bearer', 'expires_in' => 3600})
+        end
       end
       thread = Thread.new { server.start }
       sleep(0.01) until server.status.eql?(:Running)
-      @url = "http://127.0.0.1:#{server.config[:Port]}/auth"
+      @base_url = "http://127.0.0.1:#{server.config[:Port]}"
+      @url = "#{@base_url}/auth"
       log.instance_variable_set(:@logger, Logger.new(output))
       log.formatter = ->(_s, _d, _p, m) { "#{m}\n" }
       # As `ascli` at level trace2 (Cli::Http#update_session): debug output of Net::HTTP
@@ -93,6 +108,29 @@ RSpec.describe(Aspera::Plugins::Faspex5::Api) do
       expect(@codes.size).to(eq(3))
       @codes.each { |code| expect(output.string).not_to(include(code)) }
       expect(output.string).to(include('"code"', 'callback?code=', 'Location: https://127.0.0.1/aspera/faspex/callback?code=', 'grant_type=authorization_code&code='))
+    end
+
+    it 'hides the passcode of the link, and its context, in logs, at all levels' do
+      # A passcode and a context for each level: the registry of secrets is shared
+      links = %i[debug trace1 trace2].map do |level|
+        log.level = level
+        passcode = SecureRandom.alphanumeric(16)
+        # base64 with padding, URL-encoded in the link
+        context = Base64.strict_encode64(JSON.generate({'resource' => 'packages', 'type' => 'received_package', 'id' => '1', 'passcode' => passcode}))
+        api = described_class.new(url: "#{@base_url}/?context=#{URI.encode_www_form_component(context)}", auth: :public_link)
+        expect(api.pub_link_context['passcode']).to(eq(passcode))
+        api.read('account')
+        {passcode: passcode, context: context}
+      end
+      expect(@codes.size).to(eq(3))
+      links.each do |link|
+        # without padding: also URL-encoded
+        expect(output.string).not_to(include(link[:passcode], link[:context].delete('=')))
+      end
+      # The link is shown, but its context
+      expect(output.string).to(include(
+        "Client.new(#{@base_url}/?context=", 'GET /aspera/faspex/public/package?context=', '"passcode"', 'authorize_public_link?response_type=code&state=', 'callback?code=', '"name"'
+      ))
     end
   end
 end

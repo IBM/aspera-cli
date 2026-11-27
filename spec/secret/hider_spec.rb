@@ -6,6 +6,7 @@
 require_relative '../../lib/aspera/secret/hider'
 require_relative '../../lib/aspera/environment'
 require 'bundler/setup'
+require 'base64'
 require 'securerandom'
 
 RSpec.describe(Aspera::Secret::Hider) do
@@ -122,6 +123,9 @@ RSpec.describe(Aspera::Secret::Hider) do
       expect(hider.secret?('Password', secret)).to(be(true))
       expect(hider.secret?('API_KEY', secret)).to(be(true))
       expect(hider.secret?(:token, secret)).to(be(true))
+      # e.g. in the context of a Faspex 5 public link, header `Passcode`
+      expect(hider.secret?('passcode', secret)).to(be(true))
+      expect(hider.secret?('Passcode', secret)).to(be(true))
     end
 
     it 'ignores false positives and non-string values' do
@@ -195,6 +199,28 @@ RSpec.describe(Aspera::Secret::Hider) do
     it 'declares values found by key name' do
       hider.add_secrets_in({'list' => [{'remote_password' => secret, 'remote_user' => other}]})
       expect(hider.hidden_copy("#{secret} #{other}")).to(eq("🔑 #{other}"))
+    end
+
+    it 'declares the secrets of a structure encoded in base64 JSON in a URL query, and the encoded value, not the rest of the URL' do
+      # e.g. context of a Faspex 5 public link: base64 with padding, URL-encoded
+      encoded = Base64.strict_encode64(JSON.generate({'type' => 'received_package', 'id' => '1', 'passcode' => secret}))
+      url = "https://host/aspera/faspex/public/package?context=#{URI.encode_www_form_component(encoded)}&lang=fr"
+      hider.add_secrets_in({'url' => url})
+      expect(hider.hidden_copy(url)).to(eq('https://host/aspera/faspex/public/package?context=🔑&lang=fr'))
+      expect(hider.hidden_copy("state=#{encoded}: #{secret}")).to(eq('state=🔑: 🔑'))
+      # URL-safe base64, not URL-encoded
+      encoded = Base64.urlsafe_encode64(JSON.generate({'passcode' => other}))
+      hider.add_secrets_in("https://host/?a=1&context=#{encoded}")
+      expect(hider.hidden_copy("#{encoded} #{other}")).to(eq('🔑 🔑'))
+    end
+
+    it 'does not declare a query value that is not a structure with a secret' do
+      # e.g. context of a list of contacts of Faspex 5, structure without secret, not a structure, invalid URL encoding
+      ['packages', Base64.strict_encode64(JSON.generate({'type' => other})), Base64.strict_encode64(other * 2), "#{other}%ZZ#{other}"].each do |value|
+        url = "https://host/contacts?context=#{value}"
+        hider.add_secrets_in(url)
+        expect(hider.hidden_copy(url)).to(eq(url))
+      end
     end
   end
 

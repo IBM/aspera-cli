@@ -6,6 +6,7 @@
 # Unit tests for Aspera::Cli::Parser — no server, no config file needed.
 
 require_relative '../lib/aspera/cli/parser'
+require 'base64'
 require 'stringio'
 
 module Aspera
@@ -659,6 +660,15 @@ module Aspera
             [raw_json, raw_yaml, raw_json.delete_prefix('@json:'), '<JS>', '<YM>'].each do |value|
               expect(Secret::Hider.instance.hidden_copy(value)).not_to(eq(value))
             end
+          end
+
+          it 'hides the context of a Faspex 5 public link (with the passcode) in the URL, not the rest of the URL' do
+            # base64 with `+` and padding, not URL-encoded in the link
+            context = Base64.strict_encode64(JSON.generate({'type' => 'received_package', 'passcode' => '<LINK_PASSCODE>'}))
+            messages = trace1_messages { CommandLine.new(["--url=https://faspex.example.com/aspera/faspex/public/package?context=#{context}"]) }
+            expect(messages.join).to(include('--url=https://faspex.example.com/aspera/faspex/public/package?context='))
+            expect(messages.join).not_to(include(context, '<LINK_PASSCODE>'))
+            expect(hidden?('<LINK_PASSCODE>')).to(be(true))
           end
 
           it 'does not hide a structured value without secret, or that cannot be decoded' do

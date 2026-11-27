@@ -177,8 +177,13 @@ module Aspera
           super(**
             case auth
             when :public_link
+              # The passcode in the context of the link is a secret, and so is the context (base64 JSON), which reveals it once decoded:
+              # declared before any log (URL, `state` of the authorization), as in the URL and decoded
+              Secret::Hider.instance.add_secrets_in(url)
               # Get URL of final redirect of provided public link
               final_url = Rest::Client.new(base_url: url, redirect_max: 3).call(operation: 'GET', ret: :resp).uri.to_s
+              # Its context, if the link redirects to another one
+              Secret::Hider.instance.add_secrets_in(final_url)
               Log.dump(:final_url, final_url, level: :trace1)
               # Get context from query
               encoded_context = Rest.query_to_h(URI.parse(final_url).query)['context']

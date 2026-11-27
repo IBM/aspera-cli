@@ -27,8 +27,8 @@ module Aspera
       HIDDEN_PASSWORD = '🔑'
       # env vars for ascp with secrets
       ASCP_ENV_SECRETS = %w[ASPERA_SCP_PASS ASPERA_SCP_KEY ASPERA_SCP_FILEPASS ASPERA_PROXY_PASS ASPERA_SCP_TOKEN].freeze
-      # keys in hash that contain secrets
-      KEY_SECRETS = %w[password secret passphrase _key apikey crn token].freeze
+      # keys in hash that contain secrets (`passcode`: e.g. of a Faspex 5 public link, in its context, or in header `Passcode`)
+      KEY_SECRETS = %w[password secret passphrase passcode _key apikey crn token].freeze
       HTTP_SECRETS = %w[Authorization].freeze
       ALL_SECRETS = (ASCP_ENV_SECRETS + KEY_SECRETS + HTTP_SECRETS).freeze
       NON_ENV_SECRETS = (KEY_SECRETS + HTTP_SECRETS).freeze
@@ -78,8 +78,11 @@ module Aspera
       REGEX_COOKIE_HEADER = /^(?<begin>(?<name>(?:Set-)?Cookie):[ \t]*)(?<value>[^\r\n]*)/i
       # `name=value` of a cookie in the header, with named capture :begin. `Set-Cookie`: the first one only, others are attributes (e.g. `Max-Age=60`)
       REGEX_COOKIE_PAIR = /(?<begin>(?:\A|;)[ \t]*[^=;\s]+=)[^;\r\n]+/
+      # Value of a query parameter of a URL, long enough to be a structure encoded in base64 (see `add_encoded_secrets`), with named capture :value.
+      # No `?` in the name: else polynomial on many `?`
+      REGEX_QUERY_ENCODED = /[?&][^=&\s"#?]+=(?<value>[^&\s"#]{16,})/
       private_constant :HIDDEN_PASSWORD, :ASCP_ENV_SECRETS, :KEY_SECRETS, :HTTP_SECRETS, :ALL_SECRETS, :NON_ENV_SECRETS, :KEY_FALSE_POSITIVES, :BOOLEAN_TEXTS, :SECRET_LENGTH, :VALUE_IN_STRING_LENGTH, :REGEX_LOG_REPLACES, :REGEX_SERIALIZED_PAIRS,
-        :FORM_CREDENTIALS, :REGEX_COOKIE_HEADER, :REGEX_COOKIE_PAIR
+        :FORM_CREDENTIALS, :REGEX_COOKIE_HEADER, :REGEX_COOKIE_PAIR, :REGEX_QUERY_ENCODED
       attr_accessor :log_secrets
 
       # @return [Proc] new log formatter that hides secrets
@@ -203,12 +206,13 @@ module Aspera
         end
       end
 
-      # Declare the secret values found by key name in a structure
-      # @param obj [Object] Hash or Array, e.g. a transfer spec
+      # Declare the secret values found by key name in a structure, also in a structure encoded in the query of a URL (see `add_encoded_secrets`)
+      # @param obj [Object] Hash, Array or String, e.g. a transfer spec, the value of an option
       def add_secrets_in(obj)
         case obj
         when Array then obj.each { |i| add_secrets_in(i) }
         when Hash then obj.each { |k, v| secret?(k, v) ? add_secret_values(v) : add_secrets_in(v) }
+        when String then add_encoded_secrets(obj)
         end
       end
 
@@ -240,6 +244,27 @@ module Aspera
         # Matches shorter declared values as a word
         @short_values_regex = nil
         @mutex = Mutex.new
+      end
+
+      # Declare the secrets of a structure encoded in base64 JSON in the query of a URL, e.g. the passcode in the `context` of a Faspex 5 public link:
+      # the secrets found by key name in the structure, and the encoded value (as in the URL, and URL-decoded), as it reveals them once decoded.
+      # The rest of the URL is not hidden.
+      # @param text [String] Text, e.g. URL
+      def add_encoded_secrets(text)
+        return unless text.include?('=') && text.valid_encoding?
+        text.scan(REGEX_QUERY_ENCODED) do
+          raw = Regexp.last_match(:value)
+          # `+` kept: it is one of base64, also when not URL-encoded
+          encoded = URI.decode_uri_component(raw)
+          # Standard or URL-safe base64
+          structure = JSON.parse(encoded.tr('-_', '+/').unpack1('m'))
+          next unless (structure.is_a?(Hash) || structure.is_a?(Array)) && contains_secret?(structure)
+          add_secrets_in(structure)
+          add_secret_values(raw, encoded)
+        rescue StandardError
+          # Not a structure encoded in base64 JSON (e.g. `?context=packages`)
+          next
+        end
       end
 
       # @param value         [String]  Input string
