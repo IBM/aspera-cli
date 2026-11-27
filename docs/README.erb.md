@@ -3491,6 +3491,8 @@ Instead, they shall be hidden (logs, output) or encrypted (configuration).
 Terminal output (command result) secret removal is controlled by option `--out.secrets` (default: `no`).
 Log secret removal is controlled by option `log_secrets` (default: `no`).
 Secrets are identified by the name of their field (for example, `password`, `token`), and by their value: values of secret options and of presets, of [Extended Values](#extended-value-syntax) `@secret:` and `@vault:`, tokens obtained or generated, and secrets of transfer specs are hidden wherever they appear, also in field names.
+In logs, they are also hidden in the bodies of HTTP requests and responses (JSON, form, URL query), and so are the values of cookies at level `trace2`.
+A value of a URL query that is a structure in base64 JSON containing a secret, such as the context of a Faspex 5 public link, is hidden in logs, and in command output when it is given in an option.
 In presets, a secret made of digits only (for example, a password not quoted in the YAML file) is converted to a string, so that it is identified as a secret.
 A value shorter than 8 characters is hidden only when it is the whole value, not inside a text, except in responses of `mcp server`, where it is also hidden as a word (not next to a letter or digit).
 Mandatory command line options can be requested interactively (for example, password) using option `interactive`.
