@@ -459,7 +459,8 @@ class DocHelper
   # Replacements applied to each argument of test commands for the doc, in order
   # Each entry: pattern ([String, Regexp]), replacement ([String, Proc] called with the `MatchData`)
   REPLACEMENTS_YAML = [
-    ['@extend:', ''],
+    # `@extend:` is shown only for embedded values other than presets (replaced by their value below), e.g. `@date:now-1h@`
+    [/@extend:(.*)/m, ->(m) { m[1].gsub(/(?:@file:)?@preset:[^@]*@/, '').match?(/@[a-z]+:/) ? m[0] : m[1] }],
     ['.$(SecureRandom.uuid)', ''],
     [/\$\(TMP\)$/, '.'],
     [/\$\(\(?t\.saved_output( :|\(')([^)']+_id)'?.*\)/, DocMarkup.ph(:id)],
@@ -489,7 +490,7 @@ class DocHelper
     [/\$\(secret :[a-z0-9_]+\)/, DocMarkup.ph(:password)],
     [/\$\((?:name|t\.resolve :[a-z0-9_]+)\) \$\(TIMESTAMP_TEST_RUN\)/, 'package title'],
     [/^--base=.*/, '--base=test'],
-    [/^(--[a-z\-.]+=)?(@[a-z]+:)?(.*['"*! $\\?].*)$/, "\\1\\2'\\3'"]
+    [/^(--[a-z\-.]+=)?((?:@[a-z]+:)*)(.*['"*! $\\?].*)$/, "\\1\\2'\\3'"]
   ].freeze
 
   # Test commands to include in doc (not tagged `no_doc`), with test values replaced (see `REPLACEMENTS_YAML`)

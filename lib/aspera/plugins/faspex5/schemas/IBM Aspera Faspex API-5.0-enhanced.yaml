@@ -4905,18 +4905,20 @@ paths:
                 - purge_expired_codes
         - name: created_at_start
           in: query
-          description: Return application events created on or after this date time. Required when created_at_end time is provided.
+          description: 'Return application events created on or after this date time: ISO 8601 date and time (e.g. `2026-11-27T09:00:00Z`, fractional seconds optional), in UTC if it has no time zone. Required when created_at_end is provided.'
           required: false
           schema:
             type: string
+            format: date-time
             maxLength: 255
             minLength: 1
         - name: created_at_end
           in: query
-          description: Return application events created on or before this date time. When created_at_end is provided, created_at_end defaults to current time unless provided.
+          description: 'Return application events created on or before this date time: ISO 8601 date and time (e.g. `2026-11-27T09:00:00Z`, fractional seconds optional), in UTC if it has no time zone. When created_at_start is provided, defaults to the current time.'
           required: false
           schema:
             type: string
+            format: date-time
             maxLength: 255
             minLength: 1
         - name: q
@@ -10658,18 +10660,20 @@ paths:
                 - purge_expired_codes
         - name: created_at_start
           in: query
-          description: Return application events created on or after this date time. Required when created_at_end time is provided.
+          description: 'Return application events created on or after this date time: ISO 8601 date and time (e.g. `2026-11-27T09:00:00Z`, fractional seconds optional), in UTC if it has no time zone. Required when created_at_end is provided.'
           required: false
           schema:
             type: string
+            format: date-time
             maxLength: 255
             minLength: 1
         - name: created_at_end
           in: query
-          description: Return application events created on or before this date time. When created_at_end is provided, created_at_end defaults to current time unless provided.
+          description: 'Return application events created on or before this date time: ISO 8601 date and time (e.g. `2026-11-27T09:00:00Z`, fractional seconds optional), in UTC if it has no time zone. When created_at_start is provided, defaults to the current time.'
           required: false
           schema:
             type: string
+            format: date-time
             maxLength: 255
             minLength: 1
         - name: package_id
@@ -15265,10 +15269,11 @@ paths:
       parameters:
         - name: packages_created_after
           in: query
-          description: Updates package stats for packages created after this date. Defaults to update packages created 12 hours ago.
+          description: 'Updates package stats for packages created after this date: ISO 8601 date and time (e.g. `2026-11-27T09:00:00Z`, fractional seconds optional), in UTC if it has no time zone. Defaults to update packages created 12 hours ago.'
           required: false
           schema:
             type: string
+            format: date-time
             maxLength: 255
             minLength: 1
       responses:

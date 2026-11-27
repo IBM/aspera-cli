@@ -2525,6 +2525,7 @@ The following decoders are supported:
 |----------|----------|----------|------------------------------------------------------------------------------------------|
 | `base64` | `String` | `String` | Decode a base64 encoded string. |
 | `csvt`   | `String` | `Array`  | Decode a titled CSV value. |
+| `date`   | `String` | `String` | Date and time in UTC, ISO 8601 (e.g. `2026-11-27T09:00:00Z`): an absolute date, or a keyword with an optional duration, e.g. `now-24h`. See [Dates](#dates). |
 | `env`    | `String` | `String` | Read from the named environment variable, an error if it is not set. For example, `--password=@env:MYPASSVAR` |
 | `file`   | `String` | `String` | Read value from specified file (prefix `~/` is replaced with the user's home folder). For example, `--key=@file:~/.ssh/mykey` |
 | `json`   | `String` | Any      | Decode JSON values. Convenient to provide complex structures. |
@@ -2570,6 +2571,36 @@ ascli config echo @json:@extend:@file:<PATH>
 ```
 
 In the file, an embedded value without closing `@` (`"@vault:my_label.username"`) is not evaluated: it stays a string, and `@json:@file:<PATH>` does not evaluate values inside the JSON.
+
+##### Dates
+
+`@date:` gives a date and time in UTC, in the ISO 8601 format accepted by most APIs, e.g. `2026-11-27T09:00:00Z`.
+Its argument is either:
+
+- An absolute date, in a format of Ruby's `Time.parse`, e.g. `2026-11-27 10:00:00`, `2026-11-27`, `2026-11-27T10:00:00+01:00`, `Nov 27 10:00`, or `10:00` (today).
+  It is in local time, unless a time zone is given.
+- A keyword: `now`, or `today`, `yesterday`, `tomorrow` (at midnight, local time), optionally followed by `-` (in the past) or `+` (in the future) and a duration, as in the date math of Elasticsearch or Grafana.
+  A duration is a number of seconds, or a value with units `w`, `d`, `h`, `m`, `s`, `ms`, `us` (e.g. `2w`, `1h30m`), or `1d 02:00:00`.
+
+| Value | Date |
+|-------|------|
+| `now` | Current time |
+| `now-24h` | 24 hours ago |
+| `now+1w` | In one week |
+| `today+9h` | Today at 9:00 |
+| `yesterday` | Yesterday at midnight |
+
+A duration alone, without a keyword (e.g. `24h` or `-24h`), is refused: use `now-24h`.
+
+Inside a structure, use `@extend:`, for example a query of users not logged in for 2 years:
+
+```shell
+ascli config echo @json:@extend:'{"q":"last_login_at:<@date:now-730d@"}'
+```
+
+```json
+{"q":"last_login_at:<2024-11-27T09:00:00Z"}
+```
 
 Option `parser` allows definition of a default parser when the positional parameter or option expects a `Hash` or `Array`.
 For example, with `--parser=json`, the parameter `{}` will be parsed as an empty JSON Hash, even without prefix `@json:`.
@@ -6701,8 +6732,10 @@ COMMANDS
 OPTIONS
         Options begin with a '-' (minus), and value is provided on command line.
         Special values are supported beginning with special prefix @pfx:, where pfx is one of:
-        val, base64, csvt, env, file, uri, json, lines, list, none, path, re, ruby, s, secret, stdin, yaml, zlib, extend, preset, vault
-        Dates format is 'YYYY-MM-DD HH:MM:SS', or 'now' or '-<num>h'
+        val, base64, csvt, date, env, file, uri, json, lines, list, none, path, re, ruby, s, secret, stdin, yaml, zlib, extend, preset, vault
+        Durations: a number of seconds, or with units w, d, h, m, s, ms, us (e.g. 1h30m), or 1d 02:00:00
+        Dates: @date:<DATE> gives <DATE> in UTC, ISO 8601. <DATE> is a date (e.g. 2026-11-27 10:00:00),
+        or now, today, yesterday, tomorrow, optionally followed by -<DURATION> or +<DURATION> (e.g. now-24h)
 
 ARGS
         Some commands require mandatory arguments, e.g. a path.
@@ -8070,7 +8103,7 @@ ascli aoc admin user list --query.q=dummyuser --fields=id --out.level=data --for
 #### Example: Find deactivated users for more than 2 years
 
 ```shell
-ascli aoc admin user list --query=@ruby:'{"deactivated"=>true,"q"=>"last_login_at:<#{(DateTime.now.to_time.utc-2*365*86400).iso8601}"}'
+ascli aoc admin user list --query=@json:@extend:'{"deactivated":true,"q":"last_login_at:<@date:now-730d@"}'
 ```
 
 To delete them use the same method as before.
@@ -10497,7 +10530,7 @@ admin distribution_lists delete %name:test4
 admin distribution_lists list --query.type=global
 admin email_notifications list
 admin email_notifications show welcome_email
-admin event application --query=@ruby:'{"event_type[]"=>["login_success"],"created_at_start"=>(Time.now.utc-60).strftime("%Y-%m-%dT%H:%M:%S.%LZ")}'
+admin event application --query=@json:@extend:'{"event_type[]":["login_success"],"created_at_start":"@date:now-1h@"}'
 admin event webhook
 admin jobs list --query=@json:'{"job_type":"email","status":"failed"}' --fields=id,error_desc
 admin metadata_profiles list
@@ -11251,6 +11284,15 @@ share list
 ### Transfer filter
 
 Listing transfers supports the API syntax.
+
+Query parameters `from` and `to` select the period (at most 24 hours), by default the last 24 hours.
+They also accept the syntax of [`@date:`](#dates), for example:
+
+```shell
+ascli console transfer current list --query=@json:'{"from":"now-2h"}'
+```
+
+A date without time zone is in UTC, as for Console, e.g. `2013-02-28 12:00:00`.
 
 In addition, it is possible to place a single `query` parameter in the request to filter the results: `filter`, following the syntax:
 

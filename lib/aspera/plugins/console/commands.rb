@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require_relative '../../assert'
+require_relative '../../units/timestamp'
 require_relative '../../cli/plugins/basic_auth'
 require_relative '../../nagios'
 
@@ -15,9 +16,10 @@ module Aspera
 
         API_SCHEMA = 'console'
         STANDARD_PATH = '/aspera/console'
-        DEFAULT_FILTER_AGE_SECONDS = 24 * 3600
+        # Period of transfers listed if neither `from` nor `to` is given
+        DEFAULT_PERIOD = {'from' => 'now-24h', 'to' => 'now'}.freeze
         EXPR_RE = /\A(\S+) (\S+) (.*)\z/
-        private_constant :STANDARD_PATH, :DEFAULT_FILTER_AGE_SECONDS, :EXPR_RE
+        private_constant :STANDARD_PATH, :DEFAULT_PERIOD, :EXPR_RE
 
         class << self
           # @return [Hash,NilClass]
@@ -54,8 +56,10 @@ module Aspera
             return
           end
 
+          # @param time [Time] Point in time
+          # @return [String] Date and time in UTC, as expected by the API, e.g. `2013-02-28 12:00:00`
           def time_to_string(time)
-            return time.strftime('%Y-%m-%d %H:%M:%S')
+            return time.getutc.strftime('%Y-%m-%d %H:%M:%S')
           end
         end
 
@@ -230,10 +234,11 @@ module Aspera
 
         def action_transfer_current_list(**)
           query = query_read_delete(default: {})
-          if query['from'].nil? && query['to'].nil?
-            time_now = Time.now
-            query['from'] = self.class.time_to_string(time_now - DEFAULT_FILTER_AGE_SECONDS)
-            query['to'] = self.class.time_to_string(time_now)
+          query.merge!(DEFAULT_PERIOD) if query['from'].nil? && query['to'].nil?
+          # Dates of the API are in UTC: also a date given without time zone
+          now = Time.now
+          DEFAULT_PERIOD.each_key do |name|
+            query[name] = self.class.time_to_string(Units::Timestamp.parse(query[name], now: now, utc: true)) if query[name].is_a?(String)
           end
           parse_extended_filter(query.delete('filter'), query) if query['filter']
           Cli::Result::ObjectList.new(

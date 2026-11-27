@@ -264,6 +264,7 @@ module Aspera
           expect(run_candidates('--ts=@preset:my_preset.')).to(include('--ts=@preset:my_preset.url', '--ts=@preset:my_preset.username'))
           expect(run_candidates('--password=@env:', env: {'COMPLETION_TEST_VAR' => 'x'})).to(include('--password=@env:COMPLETION_TEST_VAR'))
           expect(run_candidates('--password=@val:@')).to(eq([":hint #{ExtendedValue.instance.description(:val)}"]))
+          expect(run_candidates('config', 'echo', '@date:')).to(include("@date:now\tCurrent time, e.g. now-24h", "@date:yesterday\tYesterday at midnight"))
           # Argument not evaluated as extended value
           expect(run_candidates('config', 'completion', 'words', '@')).to(eq([':hint <String>']))
         end

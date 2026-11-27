@@ -494,7 +494,9 @@ module Aspera
           #{t}Options begin with a '-' (minus), and value is provided on command line.
           #{t}Special values are supported beginning with special prefix @pfx:, where pfx is one of:
           #{t}#{ExtendedValue.instance.modifiers.reject(&:empty?).join(', ')}
-          #{t}Dates format is 'YYYY-MM-DD HH:MM:SS', or 'now' or '-<num>h'
+          #{t}Durations: a number of seconds, or with units w, d, h, m, s, ms, us (e.g. 1h30m), or 1d 02:00:00
+          #{t}Dates: @date:<DATE> gives <DATE> in UTC, ISO 8601. <DATE> is a date (e.g. 2026-11-27 10:00:00),
+          #{t}or now, today, yesterday, tomorrow, optionally followed by -<DURATION> or +<DURATION> (e.g. now-24h)
 
           ARGS
           #{t}Some commands require mandatory arguments, e.g. a path.

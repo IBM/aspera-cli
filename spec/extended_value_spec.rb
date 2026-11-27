@@ -70,6 +70,18 @@ module Aspera
         end
       end
 
+      describe '@date:' do
+        it 'gives a date in UTC, ISO 8601' do
+          expect(evaluate('@date:2026-07-01T12:00:00+05:00')).to(eq('2026-07-01T07:00:00Z'))
+          expect(Time.iso8601(evaluate('@date:now-24h'))).to(be_within(5).of(Time.now - 86_400))
+          expect(evaluate('@json:@extend:{"q":"last_login_at:<@date:2026-07-01T12:00:00Z@"}')).to(eq({'q' => 'last_login_at:<2026-07-01T12:00:00Z'}))
+        end
+
+        it 'refuses an invalid date' do
+          expect { evaluate('@date:1h') }.to(raise_error(BadArgument, /Evaluation of @date: for test: Invalid date: 1h: for a duration from now, use now-1h or now\+1h/))
+        end
+      end
+
       describe '@stdin:' do
         around do |example|
           saved = $stdin

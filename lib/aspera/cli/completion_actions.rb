@@ -11,6 +11,7 @@ require_relative 'special_values'
 require_relative '../environment'
 require_relative '../schema/documentation'
 require_relative '../schema/registry'
+require_relative '../units/timestamp'
 
 module Aspera
   module Cli
@@ -490,6 +491,7 @@ module Aspera
             when :preset then Completion.new(candidates: completion_preset_names(rest))
             when :env then Completion.new(candidates: ENV.keys.sort.map { |k| [k, nil] })
             when :stdin then Completion.new(candidates: ExtendedValue::STDIN_MODES.map { |m| [m, nil] })
+            when :date then Completion.new(candidates: Units::Timestamp::KEYWORDS.to_a)
             when *MODIFIERS_DECODING then Completion.new(candidates: [])
             else Completion.new(candidates: [], hint: ExtendedValue.instance.description(last))
             end

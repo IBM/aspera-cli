@@ -14,6 +14,7 @@ require_relative '../prompt'
 require_relative 'security'
 require_relative '../rainbow'
 require_relative '../standard_input'
+require_relative '../units/timestamp'
 require 'json'
 require 'base64'
 require 'zlib'
@@ -115,6 +116,7 @@ module Aspera
           val:    lambda { |i| i },
           base64: lambda { |i| Base64.decode64(i) },
           csvt:   lambda { |i| ExtendedValue.decode_csvt(i) },
+          date:   lambda { |i| Units::Timestamp.parse(i).getutc.iso8601 },
           env:    lambda { |i| ENV.fetch(i) { raise BadArgument, "environment variable #{i} is not set" } },
           file:   lambda { |i| Security.instance.read_file(i) },
           uri:    lambda { |i| UriReader.read(i) },
@@ -138,6 +140,7 @@ module Aspera
           val:    'Value as is: modifiers on the right are not evaluated',
           base64: 'Decode Base64',
           csvt:   'Decode titled CSV: Array of Hash',
+          date:   'Date in UTC, ISO 8601: a date, or now, today, yesterday, tomorrow, optionally followed by -<duration> or +<duration>, e.g. now-24h',
           env:    'Value of environment variable',
           file:   'Content of local file',
           uri:    'Content of URL: http:, https:, data:, file:',

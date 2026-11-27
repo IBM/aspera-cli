@@ -840,7 +840,7 @@ f5_adm_evt_app:
     - admin
     - event
     - application
-    - --query=@ruby:{"event_type[]"=>["login_success"],"created_at_start"=>(Time.now.utc-60).strftime("%Y-%m-%dT%H:%M:%S.%LZ")}
+    - --query=@json:@extend:{"event_type[]":["login_success"],"created_at_start":"@date:now-1h@"}
 f5_adm_evt_web:
   args:
     - --preset=f5_admin

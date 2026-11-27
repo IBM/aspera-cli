@@ -647,7 +647,7 @@ Current Workspace: Default (default)
 #### Example: Find deactivated users for more than 2 years
 
 ```shell
-<%=cmd%> aoc admin user list --query=@ruby:'{"deactivated"=>true,"q"=>"last_login_at:<#{(DateTime.now.to_time.utc-2*365*86400).iso8601}"}'
+<%=cmd%> aoc admin user list --query=@json:@extend:'{"deactivated":true,"q":"last_login_at:<@date:now-730d@"}'
 ```
 
 To delete them use the same method as before.

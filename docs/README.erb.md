@@ -2444,6 +2444,7 @@ The following decoders are supported:
 |----------|----------|----------|------------------------------------------------------------------------------------------|
 | `base64` | `String` | `String` | Decode a base64 encoded string. |
 | `csvt`   | `String` | `Array`  | Decode a titled CSV value. |
+| `date`   | `String` | `String` | Date and time in UTC, ISO 8601 (e.g. `2026-11-27T09:00:00Z`): an absolute date, or a keyword with an optional duration, e.g. `now-24h`. See [Dates](#dates). |
 | `env`    | `String` | `String` | Read from the named environment variable, an error if it is not set. For example, `--password=@env:MYPASSVAR` |
 | `file`   | `String` | `String` | Read value from specified file (prefix `~/` is replaced with the user's home folder). For example, `--key=@file:~/.ssh/mykey` |
 | `json`   | `String` | Any      | Decode JSON values. Convenient to provide complex structures. |
@@ -2489,6 +2490,36 @@ Example: a JSON file whose values are read from the [vault](#secret-vault):
 ```
 
 In the file, an embedded value without closing `@` (`"@vault:my_label.username"`) is not evaluated: it stays a string, and `@json:@file:<%=ph :path%>` does not evaluate values inside the JSON.
+
+##### Dates
+
+`@date:` gives a date and time in UTC, in the ISO 8601 format accepted by most APIs, e.g. `2026-11-27T09:00:00Z`.
+Its argument is either:
+
+- An absolute date, in a format of Ruby's `Time.parse`, e.g. `2026-11-27 10:00:00`, `2026-11-27`, `2026-11-27T10:00:00+01:00`, `Nov 27 10:00`, or `10:00` (today).
+  It is in local time, unless a time zone is given.
+- A keyword: `now`, or `today`, `yesterday`, `tomorrow` (at midnight, local time), optionally followed by `-` (in the past) or `+` (in the future) and a duration, as in the date math of Elasticsearch or Grafana.
+  A duration is a number of seconds, or a value with units `w`, `d`, `h`, `m`, `s`, `ms`, `us` (e.g. `2w`, `1h30m`), or `1d 02:00:00`.
+
+| Value | Date |
+|-------|------|
+| `now` | Current time |
+| `now-24h` | 24 hours ago |
+| `now+1w` | In one week |
+| `today+9h` | Today at 9:00 |
+| `yesterday` | Yesterday at midnight |
+
+A duration alone, without a keyword (e.g. `24h` or `-24h`), is refused: use `now-24h`.
+
+Inside a structure, use `@extend:`, for example a query of users not logged in for 2 years:
+
+```shell
+<%=cmd%> config echo @json:@extend:'{"q":"last_login_at:<@date:now-730d@"}'
+```
+
+```json
+{"q":"last_login_at:<2024-11-27T09:00:00Z"}
+```
 
 Option `parser` allows definition of a default parser when the positional parameter or option expects a `Hash` or `Array`.
 For example, with `--parser=json`, the parameter `{}` will be parsed as an empty JSON Hash, even without prefix `@json:`.
