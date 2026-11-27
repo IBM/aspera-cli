@@ -84,17 +84,27 @@ module Aspera
           distribution_list:             {list_fields: %w[id name owner_type owner_id]},
           # `q` accepts only tokens (`<field>:<value>`): the percent selector searches the whole list
           distribution_list_membership:  {list_fields: %w[id distribution_list_id member_type member_id name], ops: %i[create list show delete], q: false},
-          dropbox:                       {path: 'dropboxes', require_ws_id: true},
+          dropbox:                       {
+            path:            'dropboxes',
+            require_ws_id:   true,
+            extra_ops:       %i[join_request update_self_registration_link],
+            op_descriptions: {join_request: 'Manage join requests (self registration)', update_self_registration_link: 'Renew the self registration link'}
+          },
           email_template:                {list_fields: %w[id email_type source_type source_id subject], ops: %i[list show modify], q: false},
           # Query: `node_id`, or `host` and `bucket_name`
           file_deletion_policy:          {singleton: true, op_descriptions: {show: 'Show the nodes of a storage, for a file deletion policy'}},
           dropbox_membership:            {},
-          group:                         {},
+          group:                         {extra_ops: %i[shared_folders], op_descriptions: {shared_folders: 'List the shared folders that the group can access'}},
           # A membership cannot be modified (no `PUT` in the API): delete it and create another one
           group_membership:              {list_fields: %w[id group_id member_type member_id], ops: %i[create list show delete]},
           group_permission:              {list_fields: %w[id group_id level entity_type entity_id]},
-          kms_profile:                   {path: 'integrations/kms_profiles', q: false},
-          network_policy:                {list_fields: nil},
+          kms_profile:                   {path: 'integrations/kms_profiles', q: false, extra_ops: %i[nodes], op_descriptions: {nodes: 'List the nodes that use the profile'}},
+          # Rules: initiation (nodes to initiate with) and access control (nodes allowed or not)
+          network_policy:                {
+            list_fields:     nil,
+            extra_ops:       %i[initiation_rule access_control_rule],
+            op_descriptions: {initiation_rule: 'Manage the nodes to initiate transfers with', access_control_rule: 'Manage the nodes allowed or disallowed'}
+          },
           node:                          {
             list_fields:     %w[id name host access_key],
             extra_ops:       %i[do bearer_token update_status],
@@ -104,7 +114,7 @@ module Aspera
           },
           operation:                     {list_fields: %w[id type status created_at updated_at workspace_id user_id workspace_membership_id group_membership_id], ops: %i[list show modify]},
           organization:                  {singleton: true, ops: %i[show modify]},
-          package:                       {},
+          package:                       {extra_ops: %i[download_counts], op_descriptions: {download_counts: 'List the downloads of the package by user'}},
           saml_configuration:            {q: false},
           self:                          {singleton: true, op_descriptions: {show: 'Show current user'}},
           # No `show`: AoC has no `GET /short_links/{id}`, and the list cannot be filtered by identifier
@@ -116,8 +126,13 @@ module Aspera
           trend_micro_profile:           {path: 'integrations/trend_micro_profiles', list_fields: %w[id name provider region bucket_name]},
           user:                          {
             list_fields:     %w[id name email],
-            extra_ops:       %i[preferences notifications],
-            op_descriptions: {preferences: 'Manage user preferences', notifications: 'Manage user notification preferences'}
+            extra_ops:       %i[preferences notifications invite shared_folders],
+            op_descriptions: {
+              preferences:    'Manage user preferences',
+              notifications:  'Manage user notification preferences',
+              invite:         'Send again the invitation of the user to the organization (email)',
+              shared_folders: 'List the shared folders that the user can access'
+            }
           },
           watermark_profile:             {path: 'integrations/watermark_profiles', list_fields: %w[id name cloud_provider cloud_region]},
           workspace:                     {

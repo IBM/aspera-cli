@@ -154,11 +154,82 @@ module Aspera
             expect(calls).to(eq([[:aoc, :read, 'admin/auth_providers/a1'], [:aoc, :update, 'admin/auth_providers/a1', {'enabled' => true}]]))
           end
 
+          it 'sends again the invitation of a user' do
+            expect(execute('admin', 'user', 'invite', 'u2').data).to(eq('invited'))
+            expect(calls).to(eq([[:aoc, :create, 'admin/invitations', {'user_id' => 'u2'}]]))
+          end
+
+          it 'approves and rejects a join request of a shared inbox' do
+            execute('admin', 'dropbox', 'join_request', 'd1', 'approve', 'j1')
+            execute('admin', 'dropbox', 'join_request', 'd1', 'delete', 'j2')
+            expect(calls).to(eq([[:aoc, :create, 'admin/dropboxes/d1/dropbox_join_requests/j1/approve', {}], [:aoc, :delete, 'admin/dropboxes/d1/dropbox_join_requests/j2']]))
+          end
+
+          # As the web app: `allow` for `allow_following`, `disallow` for `disallow_following`
+          it 'derives the setting of an access control rule from the policy' do
+            responses[[:read, 'admin/network_policies/p1']] = {'access_control_type' => 'disallow_following'}
+            execute('admin', 'network_policy', 'access_control_rule', 'p1', 'create', 'n1')
+            expect(calls.last).to(eq([:aoc, :create, 'admin/network_policies/p1/access_control_policies', {'target_node_id' => 'n1', 'policy_setting' => 'disallow'}]))
+            responses[[:read, 'admin/network_policies/p1']] = {'access_control_type' => 'none'}
+            expect { execute('admin', 'network_policy', 'access_control_rule', 'p1', 'create', 'n1') }.to(raise_error(Cli::BadArgument, /policy_setting required/))
+          end
+
+          it 'lists the nodes of a KMS profile and modifies the organization' do
+            responses[[:read, 'integrations/kms_profiles/k1/nodes']] = []
+            execute('admin', 'kms_profile', 'nodes', 'k1')
+            execute('admin', 'organization', 'modify', '@json:{"name":"org"}')
+            expect(calls).to(eq([[:aoc, :read, 'integrations/kms_profiles/k1/nodes'], [:aoc, :update, 'organization', {'name' => 'org'}]]))
+          end
+
           # The path of a singleton resource is its name
           it 'shows a singleton resource' do
             execute('admin', 'file_deletion_policy', 'show')
             execute('admin', 'organization', 'show')
             expect(calls).to(eq([[:aoc, :read, 'file_deletion_policy', nil], [:aoc, :read, 'organization', nil]]))
+          end
+
+          it 'lists the shared folders of a user or a group' do
+            execute('admin', 'user', 'shared_folders', 'u2')
+            execute('admin', 'group', 'shared_folders', 'g2')
+            expect(calls).to(eq([
+              [:aoc, :read_with_paging, 'admin/shared_folders_memberships', {'member_type' => 'user', 'member_id' => 'u2'}],
+              [:aoc, :read_with_paging, 'admin/shared_folders_memberships', {'member_type' => 'group', 'member_id' => 'g2'}]
+            ]))
+          end
+
+          # The user is embedded also when a query is given
+          it 'lists the download counts of a package with the users' do
+            execute('admin', 'package', 'download_counts', 'p1')
+            execute('packages', 'download_counts', 'p1', '--query=@json:{"per_page":5}')
+            expect(calls).to(eq([
+              [:aoc, :read_with_paging, 'packages/p1/download_counts', {'embed[]' => 'user'}],
+              [:aoc, :read_with_paging, 'packages/p1/download_counts', {'embed[]' => 'user', 'per_page' => 5}]
+            ]))
+          end
+
+          it 'lists and shows join requests, and renews the self registration link of a shared inbox' do
+            execute('admin', 'dropbox', 'join_request', 'd1', 'list')
+            execute('admin', 'dropbox', 'join_request', 'd1', 'show', 'j1')
+            execute('admin', 'dropbox', 'update_self_registration_link', 'd1')
+            expect(calls).to(eq([
+              [:aoc, :read_with_paging, 'admin/dropboxes/d1/dropbox_join_requests', {}],
+              [:aoc, :read, 'admin/dropboxes/d1/dropbox_join_requests/j1'],
+              [:aoc, :create, 'admin/dropboxes/d1/update_self_registration_link', {}]
+            ]))
+          end
+
+          it 'lists, creates and deletes the rules of a network policy' do
+            responses[[:read, 'admin/network_policies/p1']] = {'initiation_policies' => [{'id' => 'r1'}]}
+            expect(execute('admin', 'network_policy', 'initiation_rule', 'p1', 'list').data).to(eq([{'id' => 'r1'}]))
+            execute('admin', 'network_policy', 'initiation_rule', 'p1', 'create', 'n1')
+            execute('admin', 'network_policy', 'initiation_rule', 'p1', 'delete', 'r1')
+            execute('admin', 'network_policy', 'access_control_rule', 'p1', 'create', 'n1', 'allow')
+            expect(calls.drop(1)).to(eq([
+              [:aoc, :create, 'admin/network_policies/p1/initiation_policies', {'target_node_id' => 'n1'}],
+              [:aoc, :delete, 'admin/network_policies/p1/initiation_policies/r1'],
+              [:aoc, :create, 'admin/network_policies/p1/access_control_policies', {'target_node_id' => 'n1', 'policy_setting' => 'allow'}]
+            ]))
+            expect { execute('admin', 'network_policy', 'access_control_rule', 'p1', 'list') }.to(raise_error(KeyError, /access_control_policies/))
           end
 
           it 'lists the integrations, finds the user of a watermark identity and the effective email templates' do

@@ -370,10 +370,11 @@ module Aspera
         # @param default_query       [Hash]       default query unless overridden by user
         # @param query_component     [String, nil] registry component key; when set, --query=help shows filter schema
         # @yieldparam query [Hash] The user's or default query for modification
-        def result_list(resource_class_path, fields: nil, base_query: {}, default_query: {}, query_component: nil)
+        # @param schema_path [String, nil] path in the API description, when the REST path has identifiers (e.g. `packages/{id}/download_counts`)
+        def result_list(resource_class_path, fields: nil, base_query: {}, default_query: {}, query_component: nil, schema_path: nil)
           Aspera.assert_type(base_query, Hash)
           Aspera.assert_type(default_query, Hash)
-          qs_path = query_component ? Schema::Registry.query_params(query_component, aoc_schema_path(resource_class_path)) : nil
+          qs_path = query_component ? Schema::Registry.query_params(query_component, schema_path || aoc_schema_path(resource_class_path)) : nil
           query = query_read_delete(default: default_query, schema: qs_path)
           # caller may add specific modifications or checks to query
           yield(query) if block_given?
@@ -669,6 +670,39 @@ module Aspera
               arguments: [{name: pref, type: Hash, schema: Schema::Registry.req_body(AOC_SCHEMA, "users/{id}/#{pref_path}.put")}]
           end
         end
+        # admin > dropbox > join_request (dropbox_id: argument of the join_request node)
+        commands_under %i[admin dropbox join_request] do
+          join_request_id = {name: :join_request_id, type: :identifier}
+          jr_path = ->(dropbox_id) { "admin/dropboxes/#{dropbox_id}/dropbox_join_requests" }
+          command :list, description: 'List the join requests', query_schema: Schema::Registry.query_params(AOC_SCHEMA, 'dropboxes/{id}/dropbox_join_requests'),
+            action: ->(dropbox_id:, **) { result_list(jr_path.call(dropbox_id), fields: %w[id name email], query_component: AOC_SCHEMA, schema_path: 'dropboxes/{id}/dropbox_join_requests') }
+          command :show, description: 'Show a join request', arguments: [join_request_id],
+            action: ->(dropbox_id:, join_request_id:, **) { Cli::Result::SingleObject.new(aoc_api.read("#{jr_path.call(dropbox_id)}/#{join_request_id}")) }
+          command :approve, description: 'Approve a join request (emails sent)', arguments: [join_request_id],
+            action: ->(dropbox_id:, join_request_id:, **) { aoc_api.create("#{jr_path.call(dropbox_id)}/#{join_request_id}/approve", {}).then { Cli::Result::Status.new('approved') } }
+          command :delete, description: 'Reject a join request (email sent)', arguments: [join_request_id],
+            action: ->(dropbox_id:, join_request_id:, **) { aoc_api.delete("#{jr_path.call(dropbox_id)}/#{join_request_id}").then { Cli::Result::Status.new('deleted') } }
+        end
+        # admin > network_policy > initiation_rule|access_control_rule (network_policy_id: argument of the rule node)
+        target_node_arg = {name: :target_node_id, type: :identifier, lookup: :lookup_aoc_node_id}
+        {
+          initiation_rule:     ['initiation_policies', [target_node_arg]],
+          access_control_rule: ['access_control_policies', [target_node_arg, {name: :policy_setting, allowed: %i[allow disallow], mandatory: false}]]
+        }.each do |rule, (rule_path, create_args)|
+          commands_under [:admin, :network_policy, rule] do
+            command :list, description: 'List the rules of the policy',
+              action: ->(network_policy_id:, **) { Cli::Result::ObjectList.new(aoc_api.read("admin/network_policies/#{network_policy_id}").fetch(rule_path)) }
+            command :create, description: 'Add a node to the rules of the policy',
+              arguments: create_args,
+              action: lambda { |network_policy_id:, target_node_id:, policy_setting: nil, **|
+                rule_body = {'target_node_id' => target_node_id}
+                rule_body['policy_setting'] = (policy_setting || access_control_setting(network_policy_id)).to_s if rule.eql?(:access_control_rule)
+                Cli::Result::SingleObject.new(aoc_api.create("admin/network_policies/#{network_policy_id}/#{rule_path}", rule_body))
+              }
+            command :delete, description: 'Delete a rule of the policy', arguments: [{name: :rule_id}],
+              action: ->(network_policy_id:, rule_id:, **) { aoc_api.delete("admin/network_policies/#{network_policy_id}/#{rule_path}/#{rule_id}").then { Cli::Result::Status.new('deleted') } }
+          end
+        end
         commands_under %i[admin integrations] do
           command :list, description: 'List the integrations available, with their options',
             action: ->(**) { Cli::Result::ObjectList.new(aoc_api.read('admin/integrations')) }
@@ -849,6 +883,8 @@ module Aspera
           command :show, description: 'Show a package',
             arguments: [PACKAGE_ID_ARG],
             action: ->(package_id:, **) { Cli::Result::SingleObject.new(aoc_api.read("packages/#{package_id}")) }
+          command :download_counts, description: 'List the downloads of a package by user', arguments: [PACKAGE_ID_ARG],
+            action: ->(**ctx) { action_admin_package_download_counts(**ctx) }
           command :delete, description: 'Delete packages',
             arguments: [PACKAGE_ID_ARG.merge(bulk: true)]
           command(
@@ -1692,6 +1728,46 @@ module Aspera
           scope ||= Node::Api::Scope::ADMIN
           node_api = aoc_api.node_api_from(node_id: node_id, scope: scope)
           Cli::Result::Text.new(node_api.oauth.authorization)
+        end
+
+        # Setting of an access control rule for the type of the policy, as the web app
+        def access_control_setting(network_policy_id)
+          type = aoc_api.read("admin/network_policies/#{network_policy_id}")['access_control_type']
+          case type
+          when 'allow_following' then :allow
+          when 'disallow_following' then :disallow
+          else raise Cli::BadArgument, "policy_setting required: access_control_type of the policy is #{type}"
+          end
+        end
+
+        # admin > dropbox > update_self_registration_link
+        def action_admin_dropbox_update_self_registration_link(dropbox_id:, **)
+          Cli::Result::SingleObject.new(aoc_api.create("admin/dropboxes/#{dropbox_id}/update_self_registration_link", {}), fields: %w[id name self_register_url_id])
+        end
+
+        # admin > user > invite
+        def action_admin_user_invite(user_id:, **)
+          aoc_api.create('admin/invitations', {'user_id' => user_id})
+          Cli::Result::Status.new('invited')
+        end
+
+        # admin > user|group > shared_folders
+        %i[user group].each do |member_type|
+          define_action_method([:admin, member_type, :shared_folders]) do |**kwargs|
+            result_list('admin/shared_folders_memberships', base_query: {'member_type' => member_type.to_s, 'member_id' => kwargs.fetch(:"#{member_type}_id")},
+              fields: %w[node_name file_id share_as workspace_id agg_access_levels], query_component: AOC_SCHEMA)
+          end
+        end
+
+        # admin > kms_profile > nodes
+        def action_admin_kms_profile_nodes(kms_profile_id:, **)
+          Cli::Result::ObjectList.new(aoc_api.read("#{aoc_res_path(:kms_profile)}/#{kms_profile_id}/nodes"))
+        end
+
+        # admin > package > download_counts (also packages > download_counts)
+        def action_admin_package_download_counts(package_id:, **)
+          result_list("packages/#{package_id}/download_counts", base_query: {'embed[]' => 'user'}, fields: %w[user_id user.email full partial failed active],
+            query_component: AOC_SCHEMA, schema_path: 'packages/{id}/download_counts')
         end
 
         # admin > node > update_status

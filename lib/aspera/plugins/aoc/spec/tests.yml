@@ -1673,6 +1673,132 @@ aoc_user_fun_list:
     - user
     - file_upload_notifications
     - list
+aoc_adm_jr_list:
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - dropbox
+    - join_request
+    - "%name:@preset:awa.shared_inbox_name"
+    - list
+aoc_adm_np_create:
+  $comment: assigned to no node, deleted at the end
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - network_policy
+    - create
+    - '@json:{"name":"test_np_ascli","initiation_policy_type":"listed","access_control_type":"allow_following"}'
+aoc_adm_np_init_create:
+  depends_on:
+    - aoc_adm_np_create
+    - aoc_adm_fdp_node
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - network_policy
+    - initiation_rule
+    - "%name:test_np_ascli"
+    - create
+    - $(t.saved_output :aoc_adm_fdp_node)
+aoc_adm_np_acl_create:
+  depends_on:
+    - aoc_adm_np_create
+    - aoc_adm_fdp_node
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - network_policy
+    - access_control_rule
+    - "%name:test_np_ascli"
+    - create
+    - $(t.saved_output :aoc_adm_fdp_node)
+aoc_adm_np_acl_list:
+  depends_on:
+    - aoc_adm_np_acl_create
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - network_policy
+    - access_control_rule
+    - "%name:test_np_ascli"
+    - list
+aoc_adm_np_init_id:
+  tags:
+    - save_output
+    - no_doc
+  depends_on:
+    - aoc_adm_np_init_create
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - network_policy
+    - initiation_rule
+    - "%name:test_np_ascli"
+    - list
+    - --fields=id
+    - --out.level=data
+aoc_adm_np_init_delete:
+  depends_on:
+    - aoc_adm_np_init_id
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - network_policy
+    - initiation_rule
+    - "%name:test_np_ascli"
+    - delete
+    - $(t.saved_output :aoc_adm_np_init_id)
+aoc_adm_np_delete:
+  depends_on:
+    - aoc_adm_np_init_delete
+    - aoc_adm_np_acl_list
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - network_policy
+    - delete
+    - "%name:test_np_ascli"
+aoc_adm_user_shared_folders:
+  $comment: reads all the nodes of the organization, slow
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - user
+    - shared_folders
+    - "@extend:%name:@preset:awa.user_email@"
+    - --http-options.read_timeout=300
+aoc_pack_dl_counts_id:
+  depends_on:
+    - aoc_pack_send_to_user
+  tags:
+    - save_output
+    - no_doc
+  template: awa_user_suite
+  args:
+    - packages
+    - list
+    - --format=csv
+    - --fields=id
+    - --out.level=data
+    - --query=@json:{"max":1,"received":true,"completed":true}
+aoc_pack_dl_counts:
+  depends_on:
+    - aoc_pack_dl_counts_id
+  template: awa_user_suite
+  args:
+    - packages
+    - download_counts
+    - $(t.saved_output :aoc_pack_dl_counts_id)
 aoc_adm_dropbox_membership_list:
   args:
     - --preset=aoc_admin

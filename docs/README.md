@@ -9115,6 +9115,7 @@ admin distribution_list modify %name:test_dl_ascli @json:'{"name":"test_dl_ascli
 admin distribution_list_membership create @json:'{"distribution_list_id":"<ID>","member_type":"email","member_id":"test.ascli@example.com"}' --fields=id
 admin distribution_list_membership delete <AOC_ADM_DL_MEMBER_CREATE>
 admin distribution_list_membership list --query=@json:'{"distribution_list_id":"<ID>"}'
+admin dropbox join_request %name:my_shared_inbox_name list
 admin dropbox list
 admin dropbox_membership list
 admin email_template effective --query=@json:'{"source_type":"organization","source_id":"<ID>","email_type":"invitation"}'
@@ -9125,6 +9126,12 @@ admin group_membership list --fields=id,group.name,member_type,member.name --que
 admin group_permission list --fields=id,group.name,level,entity_type,entity_id,entity.name --query=@json:'{"max":50,"per_page":50,"embed[]":["group","entity"],"sort":"group_name"}'
 admin integrations list
 admin kms_profile list
+admin network_policy access_control_rule %name:test_np_ascli create <AOC_ADM_FDP_NODE>
+admin network_policy access_control_rule %name:test_np_ascli list
+admin network_policy create @json:'{"name":"test_np_ascli","initiation_policy_type":"listed","access_control_type":"allow_following"}'
+admin network_policy delete %name:test_np_ascli
+admin network_policy initiation_rule %name:test_np_ascli create <AOC_ADM_FDP_NODE>
+admin network_policy initiation_rule %name:test_np_ascli delete <ID>
 admin network_policy list
 admin network_policy show <ID>
 admin node bearer_token %name:my_node_name user:all
@@ -9163,6 +9170,7 @@ admin user list --out.query='[?ats_admin].{name: name, email: email}'
 admin user modify %name:my_user_email @: deactivated=false
 admin user notifications %name:my_user_email show
 admin user preferences %name:my_user_email show
+admin user shared_folders %name:my_user_email --http-options.read_timeout=300
 admin watermark_profile list
 admin workspace dropbox %name:my_other_workspace list
 admin workspace list
@@ -9222,6 +9230,7 @@ organization
 organization --format=image --fields=background_image_url --ui=text
 organization --url=<PUBLIC_LINK_RECV_FROM_AOC_USER>
 packages browse <ID> /
+packages download_counts <ID>
 packages list
 packages list --query=@json:'{"dropbox_name":"my_shared_inbox_name","sort":"-received_at","archived":false,"received":true,"has_content":true,"exclude_dropbox_packages":false}'
 packages receive <ID> --to-folder=.
