@@ -31,7 +31,9 @@ module Aspera
         QUERY_FIELDS = %w[error error_code note].freeze
         # Columns of `list`
         LIST_FIELDS = %w[job_id agent_type status started_at ended_at bytes_transferred transfer_id].freeze
-        private_constant :TERMINAL_STATUSES, :QUERY_FIELDS, :LIST_FIELDS
+        # Jobs of `list` whose agent is queried at the same time: an agent that does not answer costs its call timeout once per batch, not once per job
+        MAX_PARALLEL_QUERIES = 10
+        private_constant :TERMINAL_STATUSES, :QUERY_FIELDS, :LIST_FIELDS, :MAX_PARALLEL_QUERIES
 
         # Re-query the status of a single async transfer job.
         # When its agent gives no status, the saved state is shown, with the reason (`error` or `note`).
@@ -45,12 +47,16 @@ module Aspera
         end
 
         # List async transfer jobs: the jobs not ended are re-queried as with `status`, else their saved state is shown, with a warning.
+        # Their agents are queried in parallel, by batches of `MAX_PARALLEL_QUERIES`.
         def action_agents_jobs_list(**)
           store = async_transfer_store
+          entries = store.list
+          live_statuses = query_live_statuses(entries.reject { |entry| ended?(entry) }.map { |entry| query_entry(store, entry) })
           # Job identifiers by reason of a status not refreshed: one warning for each reason
           not_refreshed_jobs = Hash.new { |hash, reason| hash[reason] = [] }
-          rows = store.list.map do |entry|
-            entry, not_refreshed = refresh_job(store, entry)
+          rows = entries.map do |entry|
+            next entry if ended?(entry)
+            entry, not_refreshed = apply_live_status(store, entry, live_statuses[entry['job_id']])
             not_refreshed_jobs[not_refreshed['error']].push(entry['job_id']) if not_refreshed&.key?('error')
             entry
           end
@@ -77,19 +83,58 @@ module Aspera
         # @param entry [Hash]               Saved entry of the job
         # @return [Array(Hash, Hash)] The entry, refreshed if the agent gave a status; and if it did not: the reason (`error` or `note` of the agent, can be empty), else `nil`
         def refresh_job(store, entry)
-          return [entry, nil] if TERMINAL_STATUSES.include?(entry['status'])
-          job_id = entry['job_id']
+          return [entry, nil] if ended?(entry)
+          apply_live_status(store, entry, query_live_status(query_entry(store, entry)))
+        end
+
+        # @param entry [Hash] Saved entry of a job
+        # @return [Boolean] `true` if the job does not change: its agent is not queried again
+        def ended?(entry) = TERMINAL_STATUSES.include?(entry['status'])
+
+        # @param store [AsyncTransferStore] Store of the jobs
+        # @param entry [Hash]               Saved entry of the job
+        # @return [Hash] The entry with the parameters of its agent for a query, not saved: secrets of the current options, reference of an in-process agent
+        def query_entry(store, entry)
           # Secrets are not persisted: take them from current transfer options (e.g. `--transfer`), for the same agent type
           agent_params = current_agent_params(entry['agent_type']).merge(entry['agent_params'] || {})
           # Inject the in-process agent reference (direct/httpgw) if still alive in this process.
-          ref = store.agent_ref(job_id)
+          ref = store.agent_ref(entry['job_id'])
           agent_params['_agent_ref'] = ref if ref
-          live = query_live_status(entry.merge('agent_params' => agent_params))
+          entry.merge('agent_params' => agent_params)
+        end
+
+        # Save the status given by the agent of a job
+        # @param store [AsyncTransferStore] Store of the jobs
+        # @param entry [Hash]               Saved entry of the job
+        # @param live  [Hash, nil]          Status given by the agent, `nil`: the agent could not be queried
+        # @return [Array(Hash, Hash)] See `refresh_job`
+        def apply_live_status(store, entry, live)
           # No status from the agent: the saved one is kept
           return [entry, (live || {}).slice(*QUERY_FIELDS)] if live.nil? || live['status'].eql?('unknown')
           entry = entry.except(*QUERY_FIELDS).merge(live)
-          store.write(job_id, entry)
+          store.write(entry['job_id'], entry)
           [entry, nil]
+        end
+
+        # Query the agents of several jobs, `MAX_PARALLEL_QUERIES` at the same time.
+        # Only the calls to the agents are in threads: the classes of the agents are loaded before, the store is written after.
+        # @param entries [Array<Hash>] Entries of jobs, see `query_entry`
+        # @return [Hash{String => Hash, nil}] Status of each job, by `job_id`, see `query_live_status`
+        def query_live_statuses(entries)
+          agent_classes = entries.map { |entry| entry['agent_type'] }.uniq.to_h { |agent_type| [agent_type, agent_class_of(agent_type)] }
+          entries.each_slice(MAX_PARALLEL_QUERIES).each_with_object({}) do |batch, statuses|
+            batch
+              .map { |entry| Thread.new { [entry['job_id'], query_live_status(entry, agent_classes[entry['agent_type']])] } }
+              .each { |thread| statuses.store(*thread.value) }
+          end
+        end
+
+        # @param agent_type [String] Agent of a job
+        # @return [Class, StandardError] Class of the agent: the file of the entry of its bundle, or the error that prevents loading it
+        def agent_class_of(agent_type)
+          Aspera::Agent::Factory.instance.agent_class(agent_type)
+        rescue StandardError => e
+          e
         end
 
         # @param agent_type [String] agent of the async transfer
@@ -114,14 +159,13 @@ module Aspera
         #   When the process has restarted, '_agent_ref' is nil and transfer_status returns
         #   {'status' => 'unknown'} — which is the correct and safe answer.
         # - daemon agents (node, desktop, connect, transferd): re-query via their REST/IPC API.
-        def query_live_status(entry)
-          agent_type   = entry['agent_type']
-          transfer_id  = entry['transfer_id']
-          agent_params = entry['agent_params'] || {}
-
-          # Class of the agent: the file of the entry of its bundle
-          agent_class = Aspera::Agent::Factory.instance.agent_class(agent_type)
-          agent_class.transfer_status(transfer_id, agent_params)
+        # @param entry       [Hash]                      Entry of the job, see `query_entry`
+        # @param agent_class [Class, StandardError, nil] Class of its agent, see `agent_class_of`; `nil`: loaded here
+        # @return [Hash, nil] Status given by the agent, `nil`: it could not be queried (warning)
+        def query_live_status(entry, agent_class = nil)
+          agent_class ||= agent_class_of(entry['agent_type'])
+          raise agent_class if agent_class.is_a?(StandardError)
+          agent_class.transfer_status(entry['transfer_id'], entry['agent_params'] || {})
         rescue StandardError => e
           Log.log.warn { "Could not re-query #{entry['agent_type']} agent for job #{entry['job_id']}: #{e}" }
           nil

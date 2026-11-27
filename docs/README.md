@@ -2590,7 +2590,8 @@ Its argument is either:
 | `today+9h` | Today at 9:00 |
 | `yesterday` | Yesterday at midnight |
 
-A duration alone, without a keyword (e.g. `24h` or `-24h`), is refused: use `now-24h`.
+A duration alone, without a keyword (e.g. `24h`, `-24h` or `3600`), is refused: use `now-24h`.
+A number of 8 digits or more is a date, in the ISO 8601 basic format, e.g. `20261127`.
 
 Inside a structure, use `@extend:`, for example a query of users not logged in for 2 years:
 
@@ -4981,6 +4982,7 @@ ascli config agents jobs list --transfer=@preset:daemon
 Parameters of the agent are persisted, except secrets (e.g. `password` of agent `node`, `api_key` of agent `transferd`): `config agents jobs status` and `list` take them from the current `transfer` option, if it is for the same agent (e.g. same option on command line, or in a preset).
 
 `config agents jobs status` and `list` query the agent for the status of the jobs not ended (not `completed`, `failed` or `cancelled`), and save it.
+`list` queries the agents of 10 jobs at a time: an agent that does not answer costs its call timeout (e.g. parameter `timeout` of agent `transferd`) once for 10 jobs.
 When the agent gives no status (e.g. agent not reachable, missing secret), the last saved status is kept: `status` shows it with the `error`, and `list` shows it with a warning.
 
 > [!NOTE]

@@ -271,6 +271,21 @@ module Aspera
           expect { security.writable_path(File.join(link, 'x.rb')) }.to(raise_error(BadArgument))
         end
 
+        it 'refuses a symbolic link to a missing file or folder: writing would create it where the link points' do
+          security.reset
+          security.options = {'level' => 'medium', 'writable_paths' => [writable_folder]}
+          outside = File.join(folder, 'plugins', 'evil.rb')
+          File.symlink(outside, File.join(writable_folder, 'out'))
+          File.symlink(File.join(folder, 'missing_dir'), File.join(writable_folder, 'dir'))
+          expect { security.writable_path(File.join(writable_folder, 'out')) }.to(raise_error(BadArgument, /symbolic link to a missing file/))
+          expect { security.writable_path(File.join(writable_folder, 'dir', 'x.rb')) }.to(raise_error(BadArgument, /symbolic link to a missing file/))
+          expect { security.writable_path(outside) }.to(raise_error(BadArgument, /not in security.writable_paths/))
+          # A link to an existing file in writable paths is allowed
+          File.write(File.join(writable_folder, 'target.txt'), 'x')
+          File.symlink(File.join(writable_folder, 'target.txt'), File.join(writable_folder, 'ok'))
+          expect(security.writable_path(File.join(writable_folder, 'ok'))).to(eq(File.join(File.realpath(writable_folder), 'target.txt')))
+        end
+
         it 'cannot be changed when locked' do
           expect { security.options = {'writable_paths' => [writable_folder]} }.to(raise_error(BadArgument, /cannot be changed/))
         end

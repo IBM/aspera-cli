@@ -49,8 +49,8 @@ module Aspera
 
         # Port of a daemon started locally with port zero, from the file it writes in its `runtime_dir` once it listens (from 1.1.7)
         # @param runtime_dir [String] Folder `runtime_dir` of the daemon, used by this daemon only
-        # @return [Integer, nil] Port of the file, `nil`: no file (version before 1.1.7, or not listening yet)
-        # @raise [AssertError] The file is being written (empty), or there are several
+        # @return [Integer, nil] Port of the file, `nil`: no file (version before 1.1.7, or not listening yet), or file being written (empty)
+        # @raise [AssertError] The file has no port, or there are several: retrying does not help
         def daemon_port_from_file(runtime_dir)
           # `base`: the path of the folder is not a pattern
           files = Dir.glob(PORT_FILE_PATTERN, base: runtime_dir).map { |name| File.join(runtime_dir, name) }
@@ -58,6 +58,7 @@ module Aspera
           Aspera.assert(files.length.eql?(1)) { "Several port files in #{runtime_dir}: #{files.join(', ')}" }
           # The file is created, then written
           content = File.read(files.first)
+          return if content.empty?
           Aspera.assert(content.match?(/\A[0-9]+\z/)) { "No port in file #{files.first}" }
           Log.log.debug { "Got port #{content} from #{files.first}" }
           return content.to_i
@@ -65,7 +66,7 @@ module Aspera
 
         # Port of a daemon started locally with port zero, from its log: transferd before 1.1.7 writes it only there (see `daemon_port_from_file`)
         # @param log_file [String] Log file (standard output) of a daemon started locally
-        # @return [Integer] Port of the last line of the API server
+        # @return [Integer, nil] Port of the last line of the API server, `nil`: not listening yet
         def daemon_port_from_log(log_file)
           result = nil
           # if port is zero, a dynamic port was created, get it
@@ -78,8 +79,7 @@ module Aspera
               end
             end
           end
-          Aspera.assert(!result.nil?, 'Port not found in daemon logs')
-          Log.log.debug { "Got port #{result} from log" }
+          Log.log.debug { "Got port #{result} from log" } unless result.nil?
           return result
         end
       end

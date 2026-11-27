@@ -64,9 +64,9 @@ RSpec.describe(Aspera::Plugins::Transferd::Product) do
       expect(Aspera::Products::Transferd.daemon_port_from_log(log_file)).to(eq(55_003))
     end
 
-    it 'fails when the log has no port' do
+    it 'gives nil when the log has no port (not listening yet)' do
       File.write(log_file, "other\n")
-      expect { Aspera::Products::Transferd.daemon_port_from_log(log_file) }.to(raise_error(Aspera::AssertError, /Port not found/))
+      expect(Aspera::Products::Transferd.daemon_port_from_log(log_file)).to(be_nil)
     end
   end
 
@@ -85,8 +85,13 @@ RSpec.describe(Aspera::Plugins::Transferd::Product) do
       expect(Aspera::Products::Transferd.daemon_port_from_file(File.join(tmp_dir, 'missing'))).to(be_nil)
     end
 
-    it 'fails while the file is being written' do
+    it 'gives nil while the file is being written (empty)' do
       File.write(File.join(runtime_dir, 'transferd.55005.optport'), '')
+      expect(Aspera::Products::Transferd.daemon_port_from_file(runtime_dir)).to(be_nil)
+    end
+
+    it 'fails when the file has no port' do
+      File.write(File.join(runtime_dir, 'transferd.55005.optport'), 'abc')
       expect { Aspera::Products::Transferd.daemon_port_from_file(runtime_dir) }.to(raise_error(Aspera::AssertError, /No port in file .*transferd\.55005\.optport/))
     end
 
@@ -132,7 +137,7 @@ RSpec.describe(Aspera::Plugins::Transferd::Product) do
       expect(File.stat(runtime_dir).mode & 0o777).to(eq(0o700)) unless Gem.win_platform?
       # Not listening yet: neither file nor log
       File.write("#{base}.out", '')
-      expect { daemon.listen_port }.to(raise_error(Aspera::AssertError, /Port not found/))
+      expect(daemon.listen_port).to(be_nil)
       # The file, written before the log, has precedence
       File.write(File.join(runtime_dir, 'transferd.55007.optport'), '55007')
       File.write("#{base}.out", "Info: API Server: Listening on 127.0.0.1:55004 (x)\n")
@@ -274,14 +279,28 @@ RSpec.describe(Aspera::Plugins::Transferd::Agent) do
       expect(File).not_to(exist(File.join(tmp_dir, 'transferd.run')))
     end
 
+    it 'fails at once, without waiting, when the port files of the daemon started with port zero are not valid' do
+      allow(Transferd::Api::TransferService::Stub).to(receive(:new).with('127.0.0.1:0', :this_channel_is_insecure).and_return(offline))
+      allow(Aspera::Environment).to(receive(:secure_execute)) do |_exe, _option, conf_file, **_kwargs|
+        runtime_dir = JSON.parse(File.read(conf_file))['runtime_dir']
+        File.write(File.join(runtime_dir, 'transferd.55011.optport'), '55011')
+        File.write(File.join(runtime_dir, 'transferd.55012.optport'), '55012')
+        daemon_pid
+      end
+      allow(Aspera::Log.log).to(receive(:warn))
+      started_at = Time.now
+      expect { described_class.new }.to(raise_error(Aspera::AssertError, /Several port files/))
+      expect(Time.now - started_at).to(be < 1)
+    end
+
     it 'waits for the port of the daemon started with port zero in its log (transferd before 1.1.7)' do
       allow(Transferd::Api::TransferService::Stub).to(receive(:new).with('127.0.0.1:0', :this_channel_is_insecure).and_return(offline))
       allow(Transferd::Api::TransferService::Stub).to(receive(:new).with('127.0.0.1:55010', :this_channel_is_insecure, interceptors: anything).and_return(daemon))
       reads = 0
       allow(Aspera::Products::Transferd).to(receive(:daemon_port_from_log).with(File.join(tmp_dir, 'transferd.out'))) do
         reads += 1
-        Aspera.assert(reads > 1, 'Port not found in daemon logs')
-        55_010
+        # Not listening yet on first read
+        reads > 1 ? 55_010 : nil
       end
       allow(Aspera::Log.log).to(receive(:warn))
       agents.push(described_class.new)

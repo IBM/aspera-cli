@@ -63,6 +63,15 @@ RSpec.describe(Aspera::Units::Timestamp) do
       expect { parse('+12:30') }.to(raise_error(Aspera::ParameterError, /use now\+12:30/))
     end
 
+    it 'refuses a number of seconds, read by Time.parse as a day of month or a time, but parses a compact date' do
+      expect { parse('30') }.to(raise_error(Aspera::ParameterError, /use now-30 or now\+30/))
+      expect { parse('3600') }.to(raise_error(Aspera::ParameterError, /use now-3600 or now\+3600/))
+      expect { parse('30.5') }.to(raise_error(Aspera::ParameterError, /use now-30.5 or now\+30.5/))
+      expect(parse('now-30')).to(eq(Time.local(2026, 11, 27, 9, 59, 30)))
+      expect(parse('20261101')).to(eq(Time.local(2026, 11, 1)))
+      expect(parse('20261101T083000Z')).to(eq(Time.utc(2026, 11, 1, 8, 30, 0)))
+    end
+
     it 'fails on an invalid date or duration' do
       expect { parse('foo') }.to(raise_error(Aspera::ParameterError, /Invalid date: foo .*expected a date/))
       expect { parse('2026-13-01') }.to(raise_error(Aspera::ParameterError, /Invalid date: 2026-13-01/))

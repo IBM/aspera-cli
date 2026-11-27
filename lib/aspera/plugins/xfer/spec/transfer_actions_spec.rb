@@ -34,8 +34,11 @@ module Aspera
           # Last entry used to query the agent, and the jobs queried
           attr_reader :queried, :queried_jobs
 
-          # Records the entry used to query the agent, instead of querying it
-          define_method(:query_live_status) do |entry|
+          # No agent class loaded
+          define_method(:agent_class_of) { |_agent_type| nil }
+
+          # Records the entry used to query the agent, instead of querying it (`list`: from several threads)
+          define_method(:query_live_status) do |entry, _agent_class = nil|
             @queried = entry
             (@queried_jobs ||= []).push(entry['job_id'])
             answer.call(entry)
@@ -162,6 +165,23 @@ module Aspera
           rows = list_rows
           expect(host.queried_jobs).to(contain_exactly('job1', 'job2', 'job3', 'job4'))
           expect(rows['job5']).to(include('status' => 'failed', 'error' => 'ended before'))
+        end
+
+        context 'with agents that do not answer' do
+          # Each query waits, as an agent that does not answer until the call timeout
+          let(:live) { ->(_entry) { sleep(0.3) && nil } }
+
+          it 'queries the agents in parallel, by batches: a timeout once per batch, not once per job' do
+            (6..12).each do |index|
+              store.write("job#{index}", {'job_id' => "job#{index}", 'agent_type' => 'transferd', 'transfer_id' => "t#{index}", 'agent_params' => {'url' => '10.0.0.1:55002'}, 'status' => 'running'})
+            end
+            started_at = Time.now
+            rows = list_rows
+            # 11 jobs not ended: 2 batches of at most 10
+            expect(Time.now - started_at).to(be_between(0.6, 1.5))
+            expect(host.queried_jobs.size).to(eq(11))
+            expect(rows.values.map { |row| row['status'] }.tally).to(eq('running' => 11, 'failed' => 1))
+          end
         end
 
         it 'queries with the secret from current options' do

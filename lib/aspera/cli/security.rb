@@ -272,12 +272,16 @@ module Aspera
       def writable_path(path)
         return path if level.eql?(:low)
         path = File.expand_path(path)
-        # The first existing parent gives the real path, the missing part contains no link
+        # The first existing parent gives the real path, the missing part contains no link.
+        # A symbolic link exists even when its target does not (`File.exist?` follows it): writing creates its target, wherever it is
         existing = path
         missing = []
-        until File.exist?(existing) || File.dirname(existing).eql?(existing)
+        until File.exist?(existing) || File.symlink?(existing) || File.dirname(existing).eql?(existing)
           missing.unshift(File.basename(existing))
           existing = File.dirname(existing)
+        end
+        Aspera.assert(File.exist?(existing), type: BadArgument) do
+          "writing is refused by security level #{level}: symbolic link to a missing file: #{existing}"
         end
         real_path = File.join(File.realpath(existing), *missing)
         Aspera.assert(@writable_paths.any? { |allowed| real_path.eql?(allowed) || real_path.start_with?(File.join(allowed, '')) }, type: BadArgument) do

@@ -24,9 +24,11 @@ module Aspera
       }.freeze
       # Keyword, optionally followed by sign and duration
       REGEX_KEYWORD = /\A(#{Regexp.union(KEYWORDS.keys).source})\s*(?:([-+])(.+))?\z/m
+      # Number of seconds, a {Duration} without units: 8 digits or more is a date (ISO 8601 basic format, e.g. `20261127`)
+      REGEX_SECONDS = /\A\d{1,7}(?:\.\d+)?\z/
       # Accepted syntax, for messages
       SYNTAX = "a date (e.g. 2026-11-27 10:00:00, ISO 8601), or #{KEYWORDS.keys.join(', ')} optionally followed by -<duration> or +<duration> (e.g. now-24h)".freeze
-      private_constant :MIDNIGHT_DAYS, :REGEX_KEYWORD
+      private_constant :MIDNIGHT_DAYS, :REGEX_KEYWORD, :REGEX_SECONDS
 
       class << self
         # @param value [String]  Absolute date (a format of `Time.parse`, e.g. ISO 8601), or `now`, `today`, `yesterday`, `tomorrow`
@@ -45,9 +47,9 @@ module Aspera
             offset = Duration.new(m[3]).microseconds.quo(1_000_000)
             return m[2].eql?('-') ? base - offset : base + offset
           end
-          # `Time.parse` reads a duration such as `30s` as a day of month, `1h30m` or `-1h` as a time of day
+          # `Time.parse` reads a duration such as `30s` or `30` as a day of month, `30.5` or `1h30m` or `-1h` as a time of day
           raise ParameterError, "Invalid date: #{value}: for a duration from now, use now#{text}" if text.match?(/\A[-+]/)
-          raise ParameterError, "Invalid date: #{value}: for a duration from now, use now-#{text} or now+#{text}" if duration_with_units?(text)
+          raise ParameterError, "Invalid date: #{value}: for a duration from now, use now-#{text} or now+#{text}" if duration?(text)
           text = "#{text} UTC" if utc && Date._parse(text)[:offset].nil?
           Time.parse(text, now)
         rescue ArgumentError => e
@@ -67,8 +69,9 @@ module Aspera
         end
 
         # @param text [String] Value given
-        # @return [Boolean] `true` if `text` is a duration with units, e.g. `30s`, `1d 02:00:00`
-        def duration_with_units?(text)
+        # @return [Boolean] `true` if `text` is a duration: a number of seconds (e.g. `30`), or with units (e.g. `30s`, `1d 02:00:00`)
+        def duration?(text)
+          return true if text.match?(REGEX_SECONDS)
           return false unless text.match?(/[a-z]/)
           Duration.new(text)
           true

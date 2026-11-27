@@ -228,20 +228,28 @@ module Aspera
           @daemon = Product.new(address: daemon_uri.host, port: daemon_uri.port, api_key: api_key, stop: @stop)
           at_exit { shutdown }
           deadline = Time.now + START_TIMEOUT_SEC
-          begin
+          # Only a daemon that does not listen yet is waited for: other errors (e.g. several port files) fail at once
+          loop do
             # Port written once it listens, in its port file or its log (if auto high port was requested)
-            @daemon_endpoint = Api.endpoint("#{PORT_SEP}#{@daemon.listen_port}") if auto_port
-            # API key of the daemon started here
-            connect(@daemon.api_key, ca_file, deadline: deadline)
-          rescue GRPC::Unavailable, GRPC::DeadlineExceeded, AssertError => e
-            reason = e.is_a?(GRPC::BadStatus) ? "#{e.class.name.split('::').last}: #{e.details}" : e.message
+            port = @daemon.listen_port if auto_port
+            if auto_port && port.nil?
+              reason = 'port not found in its port file or log'
+            else
+              @daemon_endpoint = Api.endpoint("#{PORT_SEP}#{port}") if auto_port
+              begin
+                # API key of the daemon started here
+                connect(@daemon.api_key, ca_file, deadline: deadline)
+                return
+              rescue GRPC::Unavailable, GRPC::DeadlineExceeded => e
+                reason = "#{e.class.name.split('::').last}: #{e.details}"
+              end
+            end
             Aspera.assert(Time.now < deadline, type: Aspera::Transfer::Error) do
               "Transfer daemon started with PID #{@daemon.pid} does not answer on #{@daemon_endpoint} after #{START_TIMEOUT_SEC} seconds (#{reason}). " \
                 "Check files: #{@daemon.log_files.join(' and ')}"
             end
             Log.log.debug { "Daemon does not answer yet: #{reason}" }
             sleep(START_RETRY_SEC)
-            retry
           end
         end
       end

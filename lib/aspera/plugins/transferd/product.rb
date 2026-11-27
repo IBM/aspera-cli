@@ -114,8 +114,9 @@ module Aspera
           [@log_stdout, @log_stderr]
         end
 
-        # @return [Integer] Port the daemon started with port `0` listens on: from its port file (transferd 1.1.7 and later), else from its log
-        # @raise [AssertError] The daemon does not listen yet
+        # @return [Integer, nil] Port the daemon started with port `0` listens on: from its port file (transferd 1.1.7 and later), else from its log;
+        #   `nil`: it does not listen yet
+        # @raise [AssertError] Not started with port zero, or port file not valid: retrying does not help
         def listen_port
           Aspera.assert(!@runtime_dir.nil?) { 'Daemon not started with port zero' }
           # Written before the log
