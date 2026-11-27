@@ -91,7 +91,7 @@ For more information on the JWT method, refer to the section below.
 If you have generated a private key with the wizard and lost the public key, you can retrieve the public key like this:
 
 ```shell
-<%=cmd%> faspex5 --show-config --out.secrets=yes --fields=private_key | <%=cmd%> config pubkey @stdin: --out.secrets=yes
+<%=cmd%> faspex5 --show-config --out.secrets=yes --fields=private_key | <%=cmd%> config pubkey @stdin:
 ```
 
 ### Faspex 5 JWT authentication

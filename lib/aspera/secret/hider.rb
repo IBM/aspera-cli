@@ -48,8 +48,8 @@ module Aspera
       VALUE_IN_STRING_LENGTH = 8
       # regex that define named captures :begin and :end, and :key for the name of a key (not hidden if it is not a secret, see `KEY_FALSE_POSITIVES`)
       REGEX_LOG_REPLACES = [
-        # private key values (place first)
-        /(?<begin>--+BEGIN [^-]+ KEY--+)[[:ascii:]]+?(?<end>--+?END [^-]+ KEY--+)\n*/,
+        # private key values, e.g. `PRIVATE`, `RSA PRIVATE`, `ENCRYPTED PRIVATE`, `OPENSSH PRIVATE` (place first); a public key is not a secret
+        /(?<begin>--+BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY--+)[[:ascii:]]+?(?<end>--+?END (?:[A-Z0-9]+ )*PRIVATE KEY--+)\n*/,
         # CLI manager get/set options
         /(?<begin>[sg]et (?:#{KEY_SECRETS.join('|')})=).*(?<end>)/i,
         # env var ascp exec

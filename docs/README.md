@@ -3057,6 +3057,7 @@ C:\Users\Kenji\.aspera\ascli
 ```
 
 When OAuth is used (AoC, Faspex 5), `ascli` keeps a cache of generated bearer tokens in folder `persist_store` located in the configuration folder by default.
+A token is cached for each server, user, API client (`client_id`) and scope.
 Option `cache_tokens` (**yes**/no) allows controlling if OAuth tokens are cached on file system, or generated for each request.
 The command `config tokens flush` clears that cache.
 Tokens are kept on disk for a maximum of 30 minutes and garbage collected after that.
@@ -10409,7 +10410,7 @@ For more information on the JWT method, refer to the section below.
 If you have generated a private key with the wizard and lost the public key, you can retrieve the public key like this:
 
 ```shell
-ascli faspex5 --show-config --out.secrets=yes --fields=private_key | ascli config pubkey @stdin: --out.secrets=yes
+ascli faspex5 --show-config --out.secrets=yes --fields=private_key | ascli config pubkey @stdin:
 ```
 
 ### Faspex 5 JWT authentication

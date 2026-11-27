@@ -157,6 +157,25 @@ RSpec.describe(Aspera::OAuth::Base) do
     end
   end
 
+  describe 'cache of tokens' do
+    # @return [String] Identifier of the token in cache
+    def cache_id(**params)
+      Aspera::OAuth::Generic.new(grant_type: 'client_credentials', base_url: 'https://example.com/oauth2', params: params).instance_variable_get(:@token_cache_id)
+    end
+
+    it 'has a token for each API client of the same server and user, with a digest of fixed size of the client' do
+      expect(cache_id(client_id: 'client_a')).not_to(eq(cache_id(client_id: 'client_b')))
+      expect(cache_id(client_id: 'client_a')).to(eq(cache_id(client_id: 'client_a')))
+      digest = OpenSSL::Digest::SHA256.hexdigest('client_a')[0, 8]
+      expect(cache_id(client_id: 'client_a', scope: 'user:all')).to(eq("token_example_com_generic_client_credentials_#{digest}_user_all"))
+      expect(cache_id(client_id: SecureRandom.uuid).length).to(eq(cache_id(client_id: 'a').length))
+    end
+
+    it 'keeps the identifier when there is no API client' do
+      expect(cache_id(scope: 'user:all')).to(eq('token_example_com_generic_client_credentials_user_all'))
+    end
+  end
+
   describe 'Factory#create' do
     it 'creates an instance of a registered grant method' do
       expect(Aspera::OAuth::Factory.instance.create(grant_method: :generic, base_url: 'https://example.com', grant_type: 'client_credentials')).to(be_a(Aspera::OAuth::Generic))

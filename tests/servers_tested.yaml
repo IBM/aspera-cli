@@ -5,7 +5,7 @@ servers:
   version: SaaS
 - plugin: console
   product: IBM Aspera Console
-  version: 3.4.11
+  version: 3.4.12
 - plugin: faspex5
   product: IBM Aspera Faspex
   version: 5.0.19
@@ -47,5 +47,5 @@ agents:
   product: IBM Aspera Transfer Daemon
   version: 1.1.9
 tested_with:
-  ruby: 4.0.9
+  ruby: 4.0.10
   platform: osx-arm64

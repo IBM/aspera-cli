@@ -2976,6 +2976,7 @@ C:\Users\Kenji\.aspera\<%=cmd%>
 ```
 
 When OAuth is used (AoC, Faspex 5), <%=tool%> keeps a cache of generated bearer tokens in folder `persist_store` located in the configuration folder by default.
+A token is cached for each server, user, API client (`client_id`) and scope.
 Option `cache_tokens` (**yes**/no) allows controlling if OAuth tokens are cached on file system, or generated for each request.
 The command `config tokens flush` clears that cache.
 Tokens are kept on disk for a maximum of 30 minutes and garbage collected after that.

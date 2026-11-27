@@ -11,6 +11,7 @@ require_relative '../../mime'
 require_relative '../../rainbow'
 require 'date'
 require 'time'
+require 'openssl'
 using Rainbow
 
 module Aspera
@@ -24,11 +25,22 @@ module Aspera
       Aspera.require_method!(:create_token)
       # Parameters of a token request that are credentials, but whose names do not denote a secret (see `Secret::Hider#secret?`)
       CREDENTIAL_PARAMS = %w[assertion code code_verifier].freeze
-      private_constant :CREDENTIAL_PARAMS
+      # Hexadecimal characters of the digest of the API client in the cache id: enough to separate the few clients of a user on a server
+      CLIENT_DIGEST_LENGTH = 8
+      private_constant :CREDENTIAL_PARAMS, :CLIENT_DIGEST_LENGTH
       class << self
         # @param path [String] Path of an end point
         # @return [Boolean] `true` if `path` is an absolute URL (`http` or `https`)
         def absolute_url?(path) = path.match?(%r{\Ahttps?://}i)
+
+        # A token is given to an API client: another client of the same server and user gets its own token.
+        # A digest, of fixed size, keeps the name of the cache file short, whatever the length of the identifier of the client.
+        # @param client_id [String, nil] Identifier of the API client
+        # @return [String, nil] Digest of the API client in the cache id, `nil`: no client (cache id unchanged)
+        def client_id_digest(client_id)
+          return if client_id.nil?
+          OpenSSL::Digest::SHA256.hexdigest(client_id.to_s)[0, CLIENT_DIGEST_LENGTH]
+        end
       end
       # @param params         [Hash]    Parameters for token creation (client_id, client_secret, scope, etc...)
       # @param path_token     [String]  API end point to create a token: path from base URL, or absolute URL (`http` or `https`), e.g. on another host
@@ -52,7 +64,7 @@ module Aspera
         @path_token = path_token
         @token_field = token_field
         @use_query = use_query
-        @token_cache_id = Factory.cache_id(@api.base_url, self.class, *cache_ids, @params[:scope])
+        @token_cache_id = Factory.cache_id(@api.base_url, self.class, *cache_ids, self.class.client_id_digest(@params[:client_id]), @params[:scope])
       end
 
       # The OAuth API Object

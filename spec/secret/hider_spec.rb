@@ -107,6 +107,17 @@ RSpec.describe(Aspera::Secret::Hider) do
       expect(log(pem)).not_to(include(secret))
     end
 
+    it 'hides private keys of all kinds, not public keys' do
+      ['PRIVATE', 'EC PRIVATE', 'ENCRYPTED PRIVATE', 'OPENSSH PRIVATE'].each do |kind|
+        expect(log("-----BEGIN #{kind} KEY-----\n#{secret}\n-----END #{kind} KEY-----\n")).not_to(include(secret))
+      end
+      ['PUBLIC', 'RSA PUBLIC'].each do |kind|
+        pem = "-----BEGIN #{kind} KEY-----\n#{other}\n-----END #{kind} KEY-----\n"
+        expect(log(pem)).to(include(other))
+        expect(hider.hide_secrets_in_string(pem)).to(include(other))
+      end
+    end
+
     it 'hides secrets in exception messages' do
       out = hider.log_formatter(nil).call('ERROR', Time.now, 'test', RuntimeError.new(%Q({"password":"#{secret}"})))
       expect(out).not_to(include(secret))
