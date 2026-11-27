@@ -378,8 +378,30 @@ module Aspera
           query = query_read_delete(default: default_query, schema: qs_path)
           # caller may add specific modifications or checks to query
           yield(query) if block_given?
-          result = aoc_api.read_with_paging(resource_class_path, base_query.merge(query).compact)
+          result = aoc_api.read_with_paging(resource_class_path, with_base_query(base_query, query).compact)
           return Cli::Result::ObjectList.new(result[:items], fields: fields, total: result[:total])
+        end
+
+        # Query of a command: the parameters that it sets (e.g. the identifier of its argument) cannot be changed by the query of the user
+        # @param base_query [Hash]      Parameters set by the command
+        # @param query      [Hash, nil] Query of the user (option `query`), or default query
+        # @return [Hash] Both, with `String` keys: for a parameter with several values (name ending with `[]`, e.g. `embed[]`), the values of the user are added
+        # @raise [Cli::BadArgument] If the query of the user gives another value to a parameter set by the command
+        def with_base_query(base_query, query)
+          result = base_query.transform_keys(&:to_s)
+          return result if query.nil?
+          Aspera.assert_type(query, Hash, type: Cli::BadArgument) { 'query' }
+          query.each do |key, value|
+            key = key.to_s
+            if !result.key?(key) || result[key].eql?(value)
+              result[key] = value
+            elsif key.end_with?('[]')
+              result[key] = (Array(result[key]) + Array(value)).uniq
+            else
+              raise Cli::BadArgument, "query: parameter #{key} is set by the command (#{result[key]}): remove it from option query"
+            end
+          end
+          result
         end
 
         # Translates `dropbox_name` to `dropbox_id` and fills current workspace_id

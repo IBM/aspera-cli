@@ -92,7 +92,7 @@ module Aspera
 
           it 'lists application instances of the current workspace' do
             expect(execute('admin', 'application', 'instance', 'list').data).to(eq([{'id' => 'i1'}]))
-            expect(calls).to(eq([[:aoc, :read_with_paging, 'admin/apps_new', {workspace_id: 'w1'}]]))
+            expect(calls).to(eq([[:aoc, :read_with_paging, 'admin/apps_new', {'workspace_id' => 'w1'}]]))
           end
 
           it 'shows, deletes and creates an application membership' do
@@ -114,7 +114,7 @@ module Aspera
         describe 'admin resources' do
           it 'lists usage reports of the current workspace' do
             execute('admin', 'usage_reports')
-            expect(calls).to(eq([[:aoc, :read_with_paging, 'usage_reports', {workspace_id: 'w1'}]]))
+            expect(calls).to(eq([[:aoc, :read_with_paging, 'usage_reports', {'workspace_id' => 'w1'}]]))
           end
 
           it 'sets the public key of a client from a private key' do
@@ -197,6 +197,15 @@ module Aspera
             ]))
           end
 
+          it 'refuses a query that changes a parameter set by the command, and accepts the same value' do
+            expect { execute('admin', 'user', 'shared_folders', 'u2', '--query=@json:{"member_id":"u3"}') }
+              .to(raise_error(Cli::BadArgument, 'query: parameter member_id is set by the command (u2): remove it from option query'))
+            expect { execute('admin', 'user', 'shared_folders', 'u2', '--query=@json:{"member_type":"group"}') }.to(raise_error(Cli::BadArgument, /member_type is set by the command \(user\)/))
+            expect { execute('admin', 'usage_reports', '--query=@json:{"workspace_id":"w2"}') }.to(raise_error(Cli::BadArgument, /workspace_id is set by the command \(w1\)/))
+            execute('admin', 'user', 'shared_folders', 'u2', '--query=@json:{"member_id":"u2","per_page":5}')
+            expect(calls.last).to(eq([:aoc, :read_with_paging, 'admin/shared_folders_memberships', {'member_type' => 'user', 'member_id' => 'u2', 'per_page' => 5}]))
+          end
+
           # The user is embedded also when a query is given
           it 'lists the download counts of a package with the users' do
             execute('admin', 'package', 'download_counts', 'p1')
@@ -204,6 +213,15 @@ module Aspera
             expect(calls).to(eq([
               [:aoc, :read_with_paging, 'packages/p1/download_counts', {'embed[]' => 'user'}],
               [:aoc, :read_with_paging, 'packages/p1/download_counts', {'embed[]' => 'user', 'per_page' => 5}]
+            ]))
+          end
+
+          it 'adds the embedded objects of the query to the user embedded by download counts' do
+            execute('packages', 'download_counts', 'p1', '--query=@json:{"embed[]":"package"}')
+            execute('packages', 'download_counts', 'p1', '--query=@json:{"embed[]":["user","package"]}')
+            expect(calls).to(eq([
+              [:aoc, :read_with_paging, 'packages/p1/download_counts', {'embed[]' => %w[user package]}],
+              [:aoc, :read_with_paging, 'packages/p1/download_counts', {'embed[]' => %w[user package]}]
             ]))
           end
 
