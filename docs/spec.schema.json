@@ -149,13 +149,19 @@
       }
     },
     "exclude_newer_than": {
-      "description": "Exclude files, but not directories, from the transfer if they are newer than the specified number of seconds added to the source computer's epoch.\ne.g. `-86400` for newer than a day back.",
-      "type": "string",
+      "description": "Exclude files, but not directories, from the transfer if they are newer than this modification time: number of seconds since the epoch of the source file system (usually 1970-01-01), or, if negative, relative to the present time.\ne.g. `-86400` for newer than a day back.\nAn integer, or a string of an integer. Agent `connect` accepts only a time after the epoch (not negative).",
+      "type": [
+        "integer",
+        "string"
+      ],
       "x-cli-option": "--exclude-newer-than"
     },
     "exclude_older_than": {
-      "description": "Exclude files, but not directories, from the transfer if they are older than the specified number of seconds added to the source computer's epoch.\ne.g. `-86400` for older than a day back.",
-      "type": "string",
+      "description": "Exclude files, but not directories, from the transfer if they are older than this modification time: number of seconds since the epoch of the source file system (usually 1970-01-01), or, if negative, relative to the present time.\ne.g. `-86400` for older than a day back.\nAn integer, or a string of an integer. Agent `connect` accepts only a time after the epoch (not negative).",
+      "type": [
+        "integer",
+        "string"
+      ],
       "x-cli-option": "--exclude-older-than"
     },
     "fail_bad_filepass": {
@@ -594,7 +600,7 @@
       "x-cli-option": "--remove-skipped"
     },
     "resume_policy": {
-      "description": "If a transfer is interrupted or fails to finish, this policy directs the transfer to resume without retransferring the files. Allowable values:\n- `none` : Always re-transfer the entire file.\n- `attrs` : Compare file attributes and resume if they match, and re-transfer if they do not.\n- `sparse_csum` : Compare file attributes and the sparse file checksums; resume if they match, and re-transfer if they do not.\n- `full_csum` : Compare file attributes and the full file checksums; resume if they match, and re-transfer if they do not.\nNote: transferd uses values: `attributes`, `sparse_checksum`, `full_checksum`.",
+      "description": "If a transfer is interrupted or fails to finish, this policy directs the transfer to resume without retransferring the files. Allowable values:\n- `none` : Always re-transfer the entire file.\n- `attrs` : Compare file attributes and resume if they match, and re-transfer if they do not.\n- `sparse_csum` : Compare file attributes and the sparse file checksums; resume if they match, and re-transfer if they do not.\n- `full_csum` : Compare file attributes and the full file checksums; resume if they match, and re-transfer if they do not.\nAgents `transferd` and `desktop` use values `attributes`, `sparse_checksum`, `full_checksum`: `ascli` converts them.",
       "default": "faspmgr:none;other:sparse_csum",
       "type": "string",
       "enum": [
@@ -696,7 +702,8 @@
         "transferd"
       ],
       "x-cli-option": "--ssh-arg",
-      "x-cli-special": true
+      "x-cli-special": true,
+      "x-security": "low"
     },
     "ssh_port": {
       "description": "Specifies SSH (TCP) port.",

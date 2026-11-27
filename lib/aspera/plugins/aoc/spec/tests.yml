@@ -1777,28 +1777,15 @@ aoc_adm_user_shared_folders:
     - shared_folders
     - "@extend:%name:@preset:awa.user_email@"
     - --http-options.read_timeout=300
-aoc_pack_dl_counts_id:
-  depends_on:
-    - aoc_pack_send_to_user
-  tags:
-    - save_output
-    - no_doc
-  template: awa_user_suite
-  args:
-    - packages
-    - list
-    - --format=csv
-    - --fields=id
-    - --out.level=data
-    - --query=@json:{"max":1,"received":true,"completed":true}
 aoc_pack_dl_counts:
+  $comment: Package found by aoc_pack_recv_id (polled until received) and downloaded by aoc_pack_recv.
   depends_on:
-    - aoc_pack_dl_counts_id
+    - aoc_pack_recv
   template: awa_user_suite
   args:
     - packages
     - download_counts
-    - $(t.saved_output :aoc_pack_dl_counts_id)
+    - $(t.saved_output :aoc_pack_recv_id)
 aoc_adm_dropbox_membership_list:
   args:
     - --preset=aoc_admin
