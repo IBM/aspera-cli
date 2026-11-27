@@ -240,6 +240,18 @@ tags:
     description: List the servers of AoC and their public IP addresses.
   - name: URL Tokens
     description: Read URL tokens, which give access to a resource through a link, without an account.
+  - name: App Collaborators
+    description: Manage the collaboration allow list of the Files and Packages apps of workspaces (external recipients).
+  - name: Connect Suppressed Permissions
+    description: Select the users and groups that use the HTTP Gateway instead of IBM Aspera Connect.
+  - name: Distribution Lists
+    description: Manage named lists of email addresses and groups, of a user or of a workspace, used as recipients of packages.
+  - name: Distribution List Memberships
+    description: Manage the members of distribution lists.
+  - name: Trend Micro Profiles
+    description: Manage the antivirus scan of the files of packages with Trend Micro File Storage Security.
+  - name: Watermark Profiles
+    description: Manage the digital watermarking of videos, and find the user of a watermark.
 x-tagGroups:
   - name: Authentication & Authorization
     tags:
@@ -258,6 +270,8 @@ x-tagGroups:
       - Groups
       - Group Memberships
       - Group Permissions
+      - Distribution Lists
+      - Distribution List Memberships
   - name: Workspaces & Collaboration
     tags:
       - Workspaces
@@ -274,12 +288,14 @@ x-tagGroups:
       - App Instances
       - App Memberships
       - Operations
+      - App Collaborators
   - name: Transfer Infrastructure
     tags:
       - Nodes
       - Client Access Keys
       - Transfers
       - Transfer Analytics
+      - Connect Suppressed Permissions
   - name: Notifications & Templates
     tags:
       - Email Templates
@@ -295,6 +311,8 @@ x-tagGroups:
   - name: Integrations
     tags:
       - KMS Profiles
+      - Trend Micro Profiles
+      - Watermark Profiles
   - name: Policies & Governance
     tags:
       - Configuration Policies
@@ -1126,6 +1144,274 @@ paths:
                 $ref: '#/components/schemas/InternalServerError'
       tags:
         - App Memberships
+  /app_collaborators:
+    get:
+      operationId: get_app_collaborators
+      summary: Get a Listing of App Collaborators
+      description: >
+        Get a listing of app collaborators: the users and groups of the collaboration allow list of the Files or
+        Packages app of a workspace (external recipients allowed when the allow list is enabled). Requires a token with
+        admin scope, for an organization administrator (all collaborators of the organization) or a workspace manager
+        (those of the workspaces they manage).
+
+        No sort field (any `sort` is refused, `unknown_sort_field`). Parameter `q` is not supported (500).
+      parameters:
+        - name: page
+          in: query
+          description: Page number, starting at 1.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          description: Number of items per page (at most 1000).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+        - name: aspera_app_id
+          in: query
+          description: Filter by ID of the app.
+          schema:
+            type: string
+        - name: aspera_app_type
+          in: query
+          description: Filter by type of app.
+          schema:
+            type: string
+            enum:
+              - files
+              - packages
+        - name: collaborator_id
+          in: query
+          description: Filter by ID of the user or group (according to `collaborator_type`).
+          schema:
+            type: string
+        - name: collaborator_type
+          in: query
+          description: Filter by kind of collaborator.
+          schema:
+            type: string
+            enum:
+              - user
+              - group
+        - name: workspace_id
+          in: query
+          description: Filter by ID of the workspace of the app.
+          schema:
+            type: string
+        - name: embed[]
+          in: query
+          description: embed[]=workspace (workspace object from workspace_id). Repeat the parameter for several values.
+          schema:
+            type: string
+            enum:
+              - workspace
+      responses:
+        '200':
+          description: OK
+          headers:
+            X-Total-Count:
+              description: Total number of collaborators matching the query (all pages).
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/app_collaborators_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: >-
+            Forbidden (token without admin scope, user neither organization administrator nor workspace manager)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '422':
+          description: Unprocessable Entity (e.g. unknown sort field)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - App Collaborators
+    post:
+      operationId: create_app_collaborator
+      summary: Add a Collaborator to an App
+      description: >-
+        Add a user or a group to the collaboration allow list of the Files or Packages app of a workspace. Requires a
+        token with admin scope, for an organization administrator or a manager of the workspace of the app. The body
+        must not be wrapped in a key `aspera_app_collaborator`: the app is read from the fields `aspera_app_type` and
+        `aspera_app_id` at the top level.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/app_collaborators_params'
+      responses:
+        '201':
+          description: Created
+          headers:
+            Location:
+              description: URL of the object, `https://api.ibmaspera.com/api/v1/app_collaborators/{id}`.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/app_collaborators_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: >-
+            Forbidden (token without admin scope, user neither organization administrator nor workspace manager)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found (`aspera_app_type` not `files` or `packages`, or no such app in the organization)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '409':
+          description: Conflict (the user or group is already a collaborator of the app)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictError'
+        '422':
+          description: >-
+            Unprocessable Entity: errors of fields (`collaborator_type` not `user` or `group`, collaborator not found,
+            app of no workspace, workspace not managed by the user), or parameter error (missing body, other field:
+            `unpermitted_parameters`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/FieldValidationError'
+                  - $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error (also for a `collaborator_type` in upper case)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - App Collaborators
+  /app_collaborators/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID of the app collaborator.
+        schema:
+          type: string
+    get:
+      operationId: get_app_collaborator
+      summary: Get an App Collaborator
+      description: >-
+        Get an app collaborator. Requires a token with admin scope, for an organization administrator or a manager of
+        its workspace.
+      parameters:
+        - name: embed[]
+          in: query
+          description: embed[]=workspace (workspace object from workspace_id). Repeat the parameter for several values.
+          schema:
+            type: string
+            enum:
+              - workspace
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/app_collaborators_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: >-
+            Forbidden (token without admin scope, user neither organization administrator nor workspace manager)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - App Collaborators
+    delete:
+      operationId: delete_app_collaborator
+      summary: Remove a Collaborator from an App
+      description: >-
+        Remove a user or a group from the collaboration allow list of an app. Requires a token with admin scope, for an
+        organization administrator or a manager of its workspace.
+      responses:
+        '204':
+          description: No Content (removed)
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: >-
+            Forbidden (token without admin scope, user neither organization administrator nor workspace manager)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - App Collaborators
   /client_access_keys:
     get:
       operationId: get_client_access_keys
@@ -1347,56 +1633,86 @@ paths:
   /client_authorizations:
     get:
       operationId: get_client_authorizations
-      summary: Get a Listing of Information on all Client Whitelists
-      description: Get a listing of information on all client whitelists.
+      summary: Get a Listing of Client Authorizations
+      description: >
+        Get a listing of client authorizations: the users and groups allowed to use an API client whose allow list is
+        enabled (members of an allowed group, also through groups). Requires a token with admin scope, for an
+        organization administrator.
+
+        No sort field (any `sort` is refused, `unknown_sort_field`). Parameter `q` is not supported (500).
       parameters:
+        - name: page
+          in: query
+          description: Page number, starting at 1.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          description: Number of items per page (at most 1000).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
         - name: client_id
           in: query
+          description: Filter by ID of the API client.
           schema:
             type: string
-          description: Filter by OAuth client ID.
         - name: entity_id
           in: query
+          description: Filter by ID of the user or group (according to `entity_type`).
           schema:
             type: string
-          description: Filter by entity ID (user or group).
         - name: entity_type
           in: query
+          description: Filter by kind of entity.
           schema:
             type: string
-          description: Filter by entity type (`user` or `group`).
+            enum:
+              - user
+              - group
         - name: embed[]
           in: query
-          description: embed[]=entity (gives back entity which should be user/group)
+          description: embed[]=entity (user or group object from entity_id). Repeat the parameter for several values.
           schema:
             type: string
+            enum:
+              - entity
       responses:
         '200':
           description: OK
+          headers:
+            X-Total-Count:
+              description: Total number of authorizations matching the query (all pages).
+              schema:
+                type: integer
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/client_authorizations_response'
-        '400':
-          description: Bad Request
         '401':
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UnauthorizedError'
-        '404':
-          description: Not Found
+        '403':
+          description: Forbidden (token without admin scope, user not organization administrator)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NotFoundError'
-        '409':
-          description: Conflict
+                $ref: '#/components/schemas/ForbiddenError'
         '422':
-          description: Unprocessable Entity
+          description: Unprocessable Entity (e.g. unknown sort field)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
         '500':
           description: Internal Server Error
           content:
@@ -1407,8 +1723,10 @@ paths:
         - Client Authorizations
     post:
       operationId: add_client_authorization
-      summary: Create a New Authorization
-      description: Create an authorization for an API client. Each entity to authorize requires a separate request.
+      summary: Allow a User or a Group to Use an API Client
+      description: >-
+        Add a user or a group to the allow list of an API client. Requires a token with admin scope, for an organization
+        administrator.
       requestBody:
         required: true
         content:
@@ -1418,28 +1736,43 @@ paths:
       responses:
         '201':
           description: Created
+          headers:
+            Location:
+              description: URL of the object, `https://api.ibmaspera.com/api/v1/client_authorizations/{id}`.
+              schema:
+                type: string
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/client_authorizations_response'
-        '400':
-          description: Bad Request
         '401':
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UnauthorizedError'
-        '404':
-          description: Not Found
+        '403':
+          description: Forbidden (token without admin scope, user not organization administrator)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NotFoundError'
+                $ref: '#/components/schemas/ForbiddenError'
         '409':
-          description: Conflict
+          description: Conflict (the user or group is already allowed for this client)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictError'
         '422':
-          description: Unprocessable Entity
+          description: >-
+            Unprocessable Entity: errors of fields (client or entity not found or of another organization, `entity_type`
+            not `user` or `group`), or parameter error (missing body, other field: `unpermitted_parameters`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/FieldValidationError'
+                  - $ref: '#/components/schemas/ValidationError'
         '500':
           description: Internal Server Error
           content:
@@ -1449,38 +1782,50 @@ paths:
       tags:
         - Client Authorizations
   /client_authorizations/{id}:
-    delete:
-      operationId: delete_client_authorization
-      summary: Delete a User from a Client Whitelist
-      description: Delete a user from a client whitelist.
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID of the client authorization.
+        schema:
+          type: string
+    get:
+      operationId: get_client_authorization_by_id
+      summary: Get a Client Authorization
+      description: Get a client authorization. Requires a token with admin scope, for an organization administrator.
       parameters:
-        - name: id
-          in: path
-          required: true
+        - name: embed[]
+          in: query
+          description: embed[]=entity (user or group object from entity_id). Repeat the parameter for several values.
           schema:
             type: string
-          description: Unique identifier of the resource.
+            enum:
+              - entity
       responses:
-        '204':
-          description: No Content
-        '400':
-          description: Bad Request
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/client_authorizations_response'
         '401':
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user not organization administrator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
         '404':
           description: Not Found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotFoundError'
-        '409':
-          description: Conflict
-        '422':
-          description: Unprocessable Entity
         '500':
           description: Internal Server Error
           content:
@@ -1489,47 +1834,33 @@ paths:
                 $ref: '#/components/schemas/InternalServerError'
       tags:
         - Client Authorizations
-    get:
-      operationId: get_client_authorization_by_id
-      summary: Get Information on Entities in a Whitelist for a Specific Client
-      description: Retrieve a listing with information on all entities in the whitelist for a specific client.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Unique identifier of the resource.
-        - name: embed[]
-          in: query
-          description: embed[]=entity (gives back entity which should be user/group)
-          schema:
-            type: string
+    delete:
+      operationId: delete_client_authorization
+      summary: Remove a User or a Group from an API Client
+      description: >-
+        Remove a user or a group from the allow list of an API client. Requires a token with admin scope, for an
+        organization administrator.
       responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/client_authorizations_response'
-        '400':
-          description: Bad Request
+        '204':
+          description: No Content (removed)
         '401':
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user not organization administrator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
         '404':
           description: Not Found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotFoundError'
-        '409':
-          description: Conflict
-        '422':
-          description: Unprocessable Entity
         '500':
           description: Internal Server Error
           content:
@@ -1748,6 +2079,590 @@ paths:
                 $ref: '#/components/schemas/InternalServerError'
       tags:
         - Clients
+  /distribution_lists:
+    get:
+      operationId: get_distribution_lists
+      summary: Get a Listing of Distribution Lists
+      description: >-
+        Get a listing of distribution lists: named lists of email addresses and groups, owned by a user (personal list)
+        or by a workspace, used as recipients of packages and in contacts. With a token with admin scope: all lists of
+        the organization for an organization administrator; for a workspace manager, the lists of the workspaces they
+        manage and their own lists. With a token with user scope: the lists of the user.
+      parameters:
+        - name: page
+          in: query
+          description: Page number, starting at 1.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          description: Number of items per page (at most 1000).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+        - name: sort
+          in: query
+          description: >-
+            Comma-separated list of fields (at most 5), prefixed with `-` for descending order. Fields: `name`,
+            `owner_type`, `owner_id`, `created_at`, `updated_at`. An unknown field is refused (`unknown_sort_field`).
+          schema:
+            type: string
+        - name: q
+          in: query
+          description: >-
+            Search (case-insensitive substring) in the name. A token `<field>:<value>`, with `<field>` one of `name`,
+            `owner_type`, `owner_id`, keeps lists whose field starts with `<value>`; `created_at:` and `updated_at:`
+            take a comparator, e.g. `created_at:>2026-01-01`.
+          schema:
+            type: string
+          example: owner_type:workspace
+        - name: name
+          in: query
+          description: Filter by name (exact).
+          schema:
+            type: string
+        - name: owner_type
+          in: query
+          description: Filter by kind of owner.
+          schema:
+            type: string
+            enum:
+              - user
+              - workspace
+        - name: owner_id
+          in: query
+          description: Filter by ID of the owner (according to `owner_type`).
+          schema:
+            type: string
+        - name: created_at
+          in: query
+          description: Filter by created at (exact date and time).
+          schema:
+            type: string
+            format: date-time
+        - name: updated_at
+          in: query
+          description: Filter by updated at (exact date and time).
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: OK
+          headers:
+            X-Total-Count:
+              description: Total number of lists matching the query (all pages).
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/distribution_lists_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '422':
+          description: Unprocessable Entity (e.g. unknown sort field)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Distribution Lists
+    post:
+      operationId: create_distribution_list
+      summary: Create a Distribution List
+      description: >
+        Create a distribution list. With a token with user scope, only `name`: the list belongs to the user. With a
+        token with admin scope, the owner is given: a workspace that the user manages, or the user (an organization
+        administrator can give any user or workspace of the organization). The list is added to the contacts.
+
+        The name must not be the name of a group of the organization, nor of another list of the same owner.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/distribution_lists_params'
+      responses:
+        '201':
+          description: Created
+          headers:
+            Location:
+              description: URL of the object, `https://api.ibmaspera.com/api/v1/distribution_lists/{id}`.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/distribution_lists_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '409':
+          description: Conflict (name already used by a group or by another list of the owner)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictError'
+        '422':
+          description: >-
+            Unprocessable Entity: errors of fields (`name` or `owner_id` missing, `owner_type` not `user` or
+            `workspace`, owner not found or not allowed, `available_to_*` set for a personal list or both `true`), or
+            parameter error (missing body, other field: `unpermitted_parameters`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/FieldValidationError'
+                  - $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error (also for an `owner_type` other than `user` or `workspace`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Distribution Lists
+  /distribution_lists/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID of the distribution list.
+        schema:
+          type: string
+    get:
+      operationId: get_distribution_list
+      summary: Get a Distribution List
+      description: >-
+        Get a distribution list. With a token with admin scope: all lists of the organization for an organization
+        administrator; for a workspace manager, the lists of the workspaces they manage and their own lists. With a
+        token with user scope: the lists of the user.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/distribution_lists_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Distribution Lists
+    put:
+      operationId: update_distribution_list
+      summary: Modify a Distribution List
+      description: >-
+        Modify the name of a distribution list, or who can use a list of a workspace. The owner cannot change. The name
+        of its contact changes too.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/distribution_lists_update_params'
+      responses:
+        '204':
+          description: No Content (modified)
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '409':
+          description: Conflict (name already used by a group or by another list of the owner)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictError'
+        '422':
+          description: >-
+            Unprocessable Entity: errors of fields, or parameter error (other field: `unpermitted_parameters`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/FieldValidationError'
+                  - $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Distribution Lists
+    delete:
+      operationId: delete_distribution_list
+      summary: Delete a Distribution List
+      description: Delete a distribution list, with its members and its contact.
+      responses:
+        '204':
+          description: No Content (deleted)
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Distribution Lists
+  /distribution_list_memberships:
+    get:
+      operationId: get_distribution_list_memberships
+      summary: Get a Listing of Members of Distribution Lists
+      description: >-
+        Get a listing of the members of distribution lists: email addresses and groups. The lists are those that the
+        user can read (see `GET /distribution_lists`). `name` is the name of the group, or of the user of the
+        organization with the email, else the email.
+      parameters:
+        - name: page
+          in: query
+          description: Page number, starting at 1.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          description: Number of items per page (at most 1000).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+        - name: sort
+          in: query
+          description: >-
+            Comma-separated list of fields (at most 5), prefixed with `-` for descending order. Fields:
+            `distribution_list_id`, `member_type`, `member_id`, `created_at`, `updated_at`. An unknown field is refused
+            (`unknown_sort_field`).
+          schema:
+            type: string
+        - name: q
+          in: query
+          description: >-
+            Only tokens `<field>:<value>`, with `<field>` one of the filter parameters: keeps members whose field starts
+            with `<value>` (`created_at:` and `updated_at:` take a comparator, e.g. `created_at:>2026-01-01`). Other
+            text is ignored.
+          schema:
+            type: string
+          example: member_type:email
+        - name: distribution_list_id
+          in: query
+          description: Filter by ID of the distribution list.
+          schema:
+            type: string
+        - name: member_type
+          in: query
+          description: Filter by kind of member.
+          schema:
+            type: string
+            enum:
+              - email
+              - group
+        - name: member_id
+          in: query
+          description: Filter by email address or group ID (exact).
+          schema:
+            type: string
+        - name: created_at
+          in: query
+          description: Filter by created at (exact date and time).
+          schema:
+            type: string
+            format: date-time
+        - name: updated_at
+          in: query
+          description: Filter by updated at (exact date and time).
+          schema:
+            type: string
+            format: date-time
+        - name: embed[]
+          in: query
+          description: >-
+            embed[]=distribution_list (list object from distribution_list_id), embed[]=member (group object, for a
+            member of type `group` only: 500 for an email member). Repeat the parameter for several values.
+          schema:
+            type: string
+            enum:
+              - distribution_list
+              - member
+      responses:
+        '200':
+          description: OK
+          headers:
+            X-Total-Count:
+              description: Total number of members matching the query (all pages).
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/distribution_list_memberships_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '422':
+          description: Unprocessable Entity (e.g. unknown sort field)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Distribution List Memberships
+    post:
+      operationId: create_distribution_list_membership
+      summary: Add a Member to a Distribution List
+      description: >-
+        Add an email address or a group to a distribution list (at most 500 members). The email address is not checked:
+        an invalid one is ignored when a package is sent to the list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/distribution_list_memberships_params'
+      responses:
+        '201':
+          description: Created
+          headers:
+            Location:
+              description: URL of the object, `https://api.ibmaspera.com/api/v1/distribution_list_memberships/{id}`.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/distribution_list_memberships_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '409':
+          description: Conflict (already a member of the list)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictError'
+        '422':
+          description: >-
+            Unprocessable Entity: errors of fields (`member_type` not `email` or `group`, group or list of another
+            organization, list of 500 members), or parameter error (missing body, other field: `unpermitted_parameters`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/FieldValidationError'
+                  - $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: >-
+            Internal Server Error (also when `distribution_list_id` is missing or not found, or the group does not
+            exist: the member is then added)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Distribution List Memberships
+  /distribution_list_memberships/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID of the member.
+        schema:
+          type: string
+    get:
+      operationId: get_distribution_list_membership
+      summary: Get a Member of a Distribution List
+      description: Get a member of a distribution list. `name` is the name of the group, or the email.
+      parameters:
+        - name: embed[]
+          in: query
+          description: >-
+            embed[]=distribution_list (list object from distribution_list_id), embed[]=member (group object, for a
+            member of type `group` only: 500 for an email member). Repeat the parameter for several values.
+          schema:
+            type: string
+            enum:
+              - distribution_list
+              - member
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/distribution_list_memberships_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Distribution List Memberships
+    delete:
+      operationId: delete_distribution_list_membership
+      summary: Remove a Member from a Distribution List
+      description: Remove a member from a distribution list.
+      responses:
+        '204':
+          description: No Content (removed)
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Distribution List Memberships
   /dropbox_memberships:
     get:
       operationId: get_dropbox_memberships
@@ -6035,99 +6950,172 @@ paths:
   /email_templates:
     get:
       operationId: get_email_templates
-      summary: Get Email Templates
-      description: List email templates visible to the current caller.
+      summary: Get a Listing of Email Templates
+      description: >
+        Get a listing of email templates: the global templates of AoC (`source_type` `null`), and those of the
+        organization, of its workspaces and of its shared inboxes. Requires a token with admin scope, for an
+        organization administrator (global templates and all templates of the organization) or a workspace manager
+        (global templates, templates of their workspaces and shared inboxes, not those of the organization).
+
+        No sort field (any `sort` is refused, `unknown_sort_field`). Parameter `q` is not supported (500).
       parameters:
+        - name: page
+          in: query
+          description: Page number, starting at 1.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          description: Number of items per page (at most 1000).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
         - name: source_type
           in: query
+          description: Filter by kind of source (class name; empty for the global templates).
           schema:
             type: string
-          description: Filter by source entity type.
+            enum:
+              - Organization
+              - Workspace
+              - Dropbox
         - name: source_id
           in: query
+          description: Filter by ID of the organization, workspace or shared inbox.
           schema:
             type: string
-          description: Filter by source entity ID (organization, workspace, or shared inbox).
         - name: email_type
           in: query
+          description: Filter by type of email.
           schema:
-            type: string
-          description: Filter by email template type.
+            $ref: '#/components/schemas/email_template_type'
       responses:
         '200':
           description: OK
-        '400':
-          description: Bad Request
+          headers:
+            X-Total-Count:
+              description: Total number of templates matching the query (all pages).
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/email_templates_response'
         '401':
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: >-
+            Forbidden (token without admin scope, user neither organization administrator nor workspace manager)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '422':
+          description: Unprocessable Entity (e.g. unknown sort field)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
       tags:
         - Email Templates
   /email_templates/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID of the email template.
+        schema:
+          type: string
     get:
       operationId: get_email_template_by_id
       summary: Get an Email Template
-      description: Retrieve a specific email template.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Unique identifier of the resource.
+      description: >-
+        Get an email template. Requires a token with admin scope, for an organization administrator (global templates
+        and all templates of the organization) or a workspace manager (global templates, templates of their workspaces
+        and shared inboxes, not those of the organization).
       responses:
         '200':
           description: OK
-        '400':
-          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/email_templates_response'
         '401':
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: >-
+            Forbidden (token without admin scope, user neither organization administrator nor workspace manager)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
         '404':
-          description: Not Found
+          description: Not Found (also a template that the user cannot read)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
       tags:
         - Email Templates
     put:
       operationId: update_email_template
-      summary: Update an Email Template
-      description: Update a specific email template.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Unique identifier of the resource.
+      summary: Modify an Email Template
+      description: >
+        Modify an email template: only the fields given change. Requires a token with admin scope, for an organization
+        administrator (templates of the organization, its workspaces and shared inboxes) or a manager of the workspace
+        (templates of the workspace and its shared inboxes, when the workspace allows it to managers). The global
+        templates cannot be modified.
+
+        The base templates (`base`, `base_external`) have the layout fields (`subject_prefix`, `from_display`,
+        `from_email` required, logo, `header_color`, `footer`), and no `subject`, `body` or `button_text`. The other
+        templates have `subject` (required), `body` and `button_text`, and no layout field.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/email_templates_params'
       responses:
-        '200':
-          description: OK
         '204':
-          description: No Content
-        '400':
-          description: Bad Request
+          description: No Content (modified)
         '401':
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (global template, or template that the user cannot modify)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
         '404':
           description: Not Found
           content:
@@ -6135,46 +7123,115 @@ paths:
               schema:
                 $ref: '#/components/schemas/NotFoundError'
         '422':
-          description: Unprocessable Entity
+          description: >-
+            Unprocessable Entity: errors of fields (field required or not allowed for the type of template: error
+            `fields`, logo too big, `header_color` or `logo_source` not allowed), or parameter error (missing body,
+            other field: `unpermitted_parameters`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/FieldValidationError'
+                  - $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
       tags:
         - Email Templates
   /effective_templates:
     get:
       operationId: get_effective_templates
-      summary: Get Effective Email Templates
-      description: |
-        Resolve effective email templates at global, organization, workspace, or shared inbox level.
+      summary: Get the Email Templates Used for a Source
+      description: >
+        Get the email templates used for the organization, a workspace or a shared inbox (`source_type` and
+        `source_id`): its own template, or the inherited one (shared inbox, then workspace, then organization, then
+        global, when `inherit_email_templates`), or the global one when the subscription has no email templates. One
+        template by type available for the source, or only `email_type`; `[]` when the type is not available for the
+        source. Not paginated.
+
+        Without `source_type`: the global templates, paginated, with filters `source_id` and `email_type`. Requires a
+        token with admin scope, for an organization administrator (global templates and all templates of the
+        organization) or a workspace manager (global templates, templates of their workspaces and shared inboxes, not
+        those of the organization).
       parameters:
+        - name: page
+          in: query
+          description: Without `source_type`, page number, starting at 1.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          description: Without `source_type`, number of items per page (at most 1000).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
         - name: source_type
           in: query
+          description: Kind of source (lower case).
           schema:
             type: string
             enum:
-              - dropbox
-              - workspace
               - organization
-          description: 'Type of the source entity. One of: `dropbox`, `workspace`, `organization`.'
+              - workspace
+              - dropbox
         - name: source_id
           in: query
+          description: >-
+            With `source_type`, required: ID of the organization (the current one), workspace or shared inbox.
           schema:
             type: string
-          description: ID of the source entity (organization, workspace, or shared inbox).
         - name: email_type
           in: query
+          description: Type of email.
           schema:
-            type: string
-          description: Email template type to resolve.
+            $ref: '#/components/schemas/email_template_type'
       responses:
         '200':
           description: OK
-        '400':
-          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/email_templates_response'
         '401':
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: >-
+            Forbidden (token without admin scope, user neither organization administrator nor workspace manager)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found (other `source_type`, `source_id` missing or not found)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '422':
+          description: Unprocessable Entity (e.g. unknown sort field)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
       tags:
         - Email Templates
   /events:
@@ -6414,94 +7471,55 @@ paths:
                 $ref: '#/components/schemas/InternalServerError'
       tags:
         - Feature Flags
-  /file_upload_notifications:
+  /file_deletion_policy:
     get:
-      operationId: get_file_upload_notifications
-      summary: Get File Upload Notifications
-      description: List file upload notifications for the current user.
-      responses:
-        '200':
-          description: OK
-        '400':
-          description: Bad Request
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UnauthorizedError'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InternalServerError'
-      tags:
-        - File Upload Notifications
-    post:
-      operationId: add_file_upload_notification
-      summary: Create a File Upload Notification
-      description: Create a file upload notification for the current user.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: true
-      responses:
-        '201':
-          description: Created
-        '400':
-          description: Bad Request
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UnauthorizedError'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InternalServerError'
-      tags:
-        - File Upload Notifications
-  /file_upload_notifications/{id}:
-    put:
-      operationId: update_file_upload_notification
-      summary: Update a File Upload Notification
-      description: Update a file upload notification.
+      operationId: get_file_deletion_policy
+      summary: Get the Nodes of a Storage for a File Deletion Policy
+      description: >
+        Get the nodes of the organization on the same storage (host and bucket) as a node, or as a host and bucket: a
+        file deletion policy of a node (`file_deletion_policy_expiration_days` of a node) applies to all of them. Also
+        tells whether another organization has a policy on this storage. Requires a token with admin scope, for an
+        organization administrator or a workspace manager.
+
+        Give `node_id`, or `host` and `bucket_name`. A node not managed by IBM (tethered) is alone on its storage.
       parameters:
-        - name: id
-          in: path
-          required: true
+        - name: node_id
+          in: query
+          description: ID of a node of the organization (then `host` and `bucket_name` are not used).
           schema:
             type: string
-          description: Unique identifier of the resource.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: true
+        - name: host
+          in: query
+          description: Host of the storage, with `bucket_name`.
+          schema:
+            type: string
+        - name: bucket_name
+          in: query
+          description: Bucket (or container) of the storage, with `host`.
+          schema:
+            type: string
       responses:
         '200':
           description: OK
-        '204':
-          description: No Content
-        '400':
-          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/file_deletion_policy_response'
         '401':
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: >-
+            Forbidden (token without admin scope, user neither organization administrator nor workspace manager)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
         '404':
-          description: Not Found
+          description: Not Found (no such node in the organization)
           content:
             application/json:
               schema:
@@ -6513,29 +7531,245 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalServerError'
       tags:
-        - File Upload Notifications
-    delete:
-      operationId: delete_file_upload_notification
-      summary: Delete a File Upload Notification
-      description: Delete a file upload notification.
+        - Nodes
+  /file_upload_notifications:
+    get:
+      operationId: get_file_upload_notifications
+      summary: Get a Listing of File Upload Notifications
+      description: >
+        Get a listing of the file upload notifications of the user: the user gets an email when files are uploaded in a
+        folder (`node_id`, `file_id`) or its subfolders. A notification with `enabled` `false` on a subfolder turns them
+        off below an enabled folder. Requires a token with user scope: only the notifications of the user.
+
+        Parameter `q` is not supported (500).
       parameters:
-        - name: id
-          in: path
-          required: true
+        - name: page
+          in: query
+          description: Page number, starting at 1.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          description: Number of items per page (at most 1000).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+        - name: sort
+          in: query
+          description: >-
+            Comma-separated list of fields (at most 5), prefixed with `-` for descending order. Fields: `node_id`,
+            `file_id`, `workspace_id`, `user_id`, `created_at`, `updated_at`. An unknown field is refused
+            (`unknown_sort_field`).
           schema:
             type: string
-          description: Unique identifier of the resource.
+        - name: node_id
+          in: query
+          description: Filter by node ID.
+          schema:
+            type: string
+        - name: file_id
+          in: query
+          description: Filter by file ID.
+          schema:
+            type: string
+        - name: workspace_id
+          in: query
+          description: Filter by workspace ID.
+          schema:
+            type: string
+        - name: user_id
+          in: query
+          description: Filter by user ID.
+          schema:
+            type: string
+        - name: created_at
+          in: query
+          description: Filter by created at (exact date and time).
+          schema:
+            type: string
+            format: date-time
+        - name: updated_at
+          in: query
+          description: Filter by updated at (exact date and time).
+          schema:
+            type: string
+            format: date-time
       responses:
-        '204':
-          description: No Content
-        '400':
-          description: Bad Request
+        '200':
+          description: OK
+          headers:
+            X-Total-Count:
+              description: Total number of notifications matching the query (all pages).
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/file_upload_notifications_response'
         '401':
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without user scope)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '422':
+          description: Unprocessable Entity (e.g. unknown sort field)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - File Upload Notifications
+    post:
+      operationId: add_file_upload_notification
+      summary: Create a File Upload Notification
+      description: >-
+        Create a file upload notification for the user, on a folder of a node that the user can read. Requires a token
+        with user scope: only the notifications of the user. The notifications of the user on the subfolders are
+        deleted, and the new one too when it has the same `enabled` as the notification of a parent folder (it is still
+        in the response).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/file_upload_notifications_params'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/file_upload_notifications_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without user scope, or the node refused to read the folder)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '422':
+          description: >-
+            Unprocessable Entity: errors of fields (`file_id` missing, `enabled` not a boolean, folder that the user
+            cannot read: error `user_id`), or parameter error (missing body, other field: `unpermitted_parameters`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/FieldValidationError'
+                  - $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error (also when `node_id` is missing, or for a notification that already exists)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - File Upload Notifications
+  /file_upload_notifications/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID of the file upload notification.
+        schema:
+          type: string
+    put:
+      operationId: update_file_upload_notification
+      summary: Turn a File Upload Notification On or Off
+      description: >-
+        Change `enabled` of a file upload notification of the user. Requires a token with user scope: only the
+        notifications of the user. The notifications of the user on the subfolders are deleted, and this one too when it
+        then has the same `enabled` as a parent folder.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/file_upload_notifications_update_params'
+      responses:
+        '204':
+          description: No Content (modified)
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without user scope)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '422':
+          description: >-
+            Unprocessable Entity: errors of fields (folder that the user cannot read), or parameter error (other field:
+            `unpermitted_parameters`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/FieldValidationError'
+                  - $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - File Upload Notifications
+    delete:
+      operationId: delete_file_upload_notification
+      summary: Delete a File Upload Notification
+      description: >-
+        Delete a file upload notification of the user, with the notifications of the user on its subfolders. Requires a
+        token with user scope: only the notifications of the user.
+      responses:
+        '204':
+          description: No Content (deleted)
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without user scope)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
         '404':
           description: Not Found
           content:
@@ -6553,25 +7787,29 @@ paths:
   /file_upload_notifications/get_toggle_state:
     get:
       operationId: get_file_upload_notification_toggle_state
-      summary: Get Effective File Upload Notification Toggle State
-      description: |
-        Resolve the effective upload notification state for a given file and node.
+      summary: Get the Notification State Inherited by a Folder
+      description: >-
+        Get the state that a folder inherits: `enabled` of the notification of the user on the closest parent folder
+        (not the folder itself), else `false` (also when the file is not found). Requires a token with user scope: only
+        the notifications of the user.
       parameters:
         - name: node_id
           in: query
+          description: ID of the node of the folder (required).
           schema:
             type: string
-          description: Filter by node ID.
         - name: file_id
           in: query
+          description: ID of the folder (required).
           schema:
             type: string
-          description: Filter by file ID.
       responses:
         '200':
           description: OK
-        '400':
-          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/file_upload_notification_toggle_state_response'
         '401':
           description: Unauthorized
           content:
@@ -6579,7 +7817,51 @@ paths:
               schema:
                 $ref: '#/components/schemas/UnauthorizedError'
         '403':
-          description: Forbidden. Also returned when neither `node_id` nor `file_id` is provided.
+          description: Forbidden (token without user scope)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found (`node_id` missing or not a node of the organization)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - File Upload Notifications
+  /integrations:
+    get:
+      operationId: get_integrations
+      summary: Get the Integrations Available
+      description: >-
+        Get the integrations available for the organization, with their options: watermarking, when the subscription
+        includes it, with the providers and regions allowed for `cloud_provider` and `cloud_region` of a watermark
+        profile (also for `provider` and `region` of a Trend Micro profile). Requires a token with admin scope, for an
+        organization administrator.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/integrations_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user not organization administrator)
           content:
             application/json:
               schema:
@@ -6591,7 +7873,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalServerError'
       tags:
-        - File Upload Notifications
+        - Watermark Profiles
   /integrations/kms_profiles:
     get:
       operationId: get_kms_profiles
@@ -6916,6 +8198,694 @@ paths:
                 $ref: '#/components/schemas/InternalServerError'
       tags:
         - KMS Profiles
+  /integrations/trend_micro_profiles:
+    get:
+      operationId: get_trend_micro_profiles
+      summary: Get a Listing of Trend Micro Profiles
+      description: >-
+        Get a listing of the Trend Micro profiles of the organization: antivirus scan of the files of packages, by Trend
+        Micro File Storage Security, on a bucket of a node of IBM Aspera Transfer Service (ATS). The packages sent in a
+        workspace of a node on this storage are held until scanned. Requires a token with admin scope, for an
+        organization administrator.
+      parameters:
+        - name: page
+          in: query
+          description: Page number, starting at 1.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          description: Number of items per page (at most 1000).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+        - name: sort
+          in: query
+          description: >-
+            Comma-separated list of fields (at most 5), prefixed with `-` for descending order. Fields: `name`,
+            `bucket_name`, `region`, `provider`, `sqs_queue_url`, `created_at`. An unknown field is refused
+            (`unknown_sort_field`).
+          schema:
+            type: string
+        - name: q
+          in: query
+          description: >-
+            Search (case-insensitive substring) in `name`, `bucket_name`, `region`, `provider` and `sqs_queue_url`. A
+            token `<field>:<value>` (`name`, `region`, `provider`, `sqs_queue_url`) keeps profiles whose field starts
+            with `<value>`; `created_at:` takes a comparator, e.g. `created_at:>2026-01-01`.
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: Filter by name (exact).
+          schema:
+            type: string
+        - name: bucket_name
+          in: query
+          description: Filter by bucket name (exact).
+          schema:
+            type: string
+        - name: region
+          in: query
+          description: Filter by region (exact).
+          schema:
+            type: string
+        - name: provider
+          in: query
+          description: Filter by provider (exact).
+          schema:
+            type: string
+        - name: sqs_queue_url
+          in: query
+          description: Filter by sqs queue url (exact).
+          schema:
+            type: string
+        - name: created_at
+          in: query
+          description: Filter by created at (exact date and time).
+          schema:
+            type: string
+            format: date-time
+        - name: include
+          in: query
+          description: >-
+            `associated_nodes`: add `associated_nodes`, the nodes of the organization on the storage of the profile (ATS
+            node of the provider and region, same bucket). A comma-separated string, not an array (500).
+          schema:
+            type: string
+            enum:
+              - associated_nodes
+      responses:
+        '200':
+          description: OK
+          headers:
+            X-Total-Count:
+              description: Total number of profiles matching the query (all pages).
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/trend_micro_profiles_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user not organization administrator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '422':
+          description: Unprocessable Entity (e.g. unknown sort field)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Trend Micro Profiles
+    post:
+      operationId: create_trend_micro_profile
+      summary: Create a Trend Micro Profile
+      description: >-
+        Create a Trend Micro profile. Requires a token with admin scope, for an organization administrator. The packages
+        sent in the workspaces of the nodes on this storage are then held until scanned (`trend_micro_enabled` of the
+        workspace). `provider` and `region` are those of watermarking (`GET /integrations`), and not those of a
+        watermark profile of the organization.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/trend_micro_profiles_params'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/trend_micro_profiles_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user not organization administrator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '422':
+          description: >-
+            Unprocessable Entity: errors of fields (field missing, provider or region not allowed, `iam_arn_role` not an
+            IAM role ARN, provider and region of a watermark profile, other profile on the same bucket, provider and
+            region: error `base`), or parameter error (missing body, other field: `unpermitted_parameters`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/FieldValidationError'
+                  - $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Trend Micro Profiles
+  /integrations/trend_micro_profiles/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID of the Trend Micro profile.
+        schema:
+          type: string
+    get:
+      operationId: get_trend_micro_profile
+      summary: Get a Trend Micro Profile
+      description: Get a Trend Micro profile. Requires a token with admin scope, for an organization administrator.
+      parameters:
+        - name: include
+          in: query
+          description: >-
+            `associated_nodes`: add `associated_nodes`, the nodes of the organization on the storage of the profile (ATS
+            node of the provider and region, same bucket). A comma-separated string, not an array (500).
+          schema:
+            type: string
+            enum:
+              - associated_nodes
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/trend_micro_profiles_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user not organization administrator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Trend Micro Profiles
+    put:
+      operationId: update_trend_micro_profile
+      summary: Modify a Trend Micro Profile
+      description: >-
+        Modify a Trend Micro profile: only the fields given change (`external_id` and `iam_arn_role` cannot change).
+        Requires a token with admin scope, for an organization administrator. A change of bucket, provider or region
+        updates the workspaces of the nodes concerned.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/trend_micro_profiles_update_params'
+      responses:
+        '204':
+          description: No Content (modified)
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user not organization administrator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '422':
+          description: >-
+            Unprocessable Entity: errors of fields (as for create), or parameter error (other field, also `external_id`
+            and `iam_arn_role`: `unpermitted_parameters`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/FieldValidationError'
+                  - $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Trend Micro Profiles
+    delete:
+      operationId: delete_trend_micro_profile
+      summary: Delete a Trend Micro Profile
+      description: >-
+        Delete a Trend Micro profile: the packages of the workspaces of the nodes on its storage are no longer held for
+        scanning. Requires a token with admin scope, for an organization administrator.
+      responses:
+        '204':
+          description: No Content (deleted)
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user not organization administrator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Trend Micro Profiles
+  /integrations/watermark_profiles:
+    get:
+      operationId: get_watermark_profiles
+      summary: Get a Listing of Watermark Profiles
+      description: >-
+        Get a listing of the watermark profiles of the organization: access to a service of digital watermarking of
+        videos, for the nodes of IBM Aspera Transfer Service (ATS) of a provider and region. A node uses a profile with
+        its field `watermark_profile_id`. Requires a token with admin scope, for an organization administrator.
+      parameters:
+        - name: page
+          in: query
+          description: Page number, starting at 1.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          description: Number of items per page (at most 1000).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+        - name: sort
+          in: query
+          description: >-
+            Comma-separated list of fields (at most 5), prefixed with `-` for descending order. Fields: `name`,
+            `description`, `tenant_id`, `dwm_api_url`, `cloud_provider`, `cloud_region`, `created_at`. An unknown field
+            is refused (`unknown_sort_field`).
+          schema:
+            type: string
+        - name: q
+          in: query
+          description: >-
+            Search (case-insensitive substring) in `name`. A token `<field>:<value>`, with `<field>` one of the filter
+            parameters, keeps profiles whose field starts with `<value>`; `created_at:` takes a comparator, e.g.
+            `created_at:>2026-01-01`.
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: Filter by name (exact).
+          schema:
+            type: string
+        - name: description
+          in: query
+          description: Filter by description (exact).
+          schema:
+            type: string
+        - name: tenant_id
+          in: query
+          description: Filter by tenant id (exact).
+          schema:
+            type: string
+        - name: dwm_api_url
+          in: query
+          description: Filter by dwm api url (exact).
+          schema:
+            type: string
+        - name: cloud_provider
+          in: query
+          description: Filter by cloud provider (exact).
+          schema:
+            type: string
+        - name: cloud_region
+          in: query
+          description: Filter by cloud region (exact).
+          schema:
+            type: string
+        - name: created_at
+          in: query
+          description: Filter by created at (exact date and time).
+          schema:
+            type: string
+            format: date-time
+        - name: include
+          in: query
+          description: >-
+            `available_nodes`: add `available_nodes`, the ATS nodes of the organization of the provider and region of
+            the profile, with the watermark profile that each one uses. A comma-separated string, not an array (500).
+          schema:
+            type: string
+            enum:
+              - available_nodes
+      responses:
+        '200':
+          description: OK
+          headers:
+            X-Total-Count:
+              description: Total number of profiles matching the query (all pages).
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/watermark_profiles_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user not organization administrator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '422':
+          description: Unprocessable Entity (e.g. unknown sort field)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Watermark Profiles
+    post:
+      operationId: create_watermark_profile
+      summary: Create a Watermark Profile
+      description: >-
+        Create a watermark profile. Requires a token with admin scope, for an organization administrator.
+        `cloud_provider` and `cloud_region` are those given by `GET /integrations`, and not those of a Trend Micro
+        profile of the organization.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/watermark_profiles_params'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/watermark_profiles_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user not organization administrator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '409':
+          description: Conflict (name already used by another profile of the organization)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictError'
+        '422':
+          description: >-
+            Unprocessable Entity: errors of fields (field missing, provider or region not allowed, `dwm_api_url` not an
+            HTTP URL, provider and region of a Trend Micro profile: error `base`), or parameter error (missing body,
+            other field: `unpermitted_parameters`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/FieldValidationError'
+                  - $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Watermark Profiles
+  /integrations/watermark_profiles/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID of the watermark profile.
+        schema:
+          type: string
+    get:
+      operationId: get_watermark_profile
+      summary: Get a Watermark Profile
+      description: Get a watermark profile. Requires a token with admin scope, for an organization administrator.
+      parameters:
+        - name: include
+          in: query
+          description: >-
+            `available_nodes`: add `available_nodes`, the ATS nodes of the organization of the provider and region of
+            the profile, with the watermark profile that each one uses. A comma-separated string, not an array (500).
+          schema:
+            type: string
+            enum:
+              - available_nodes
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/watermark_profiles_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user not organization administrator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Watermark Profiles
+    put:
+      operationId: update_watermark_profile
+      summary: Modify a Watermark Profile
+      description: >-
+        Modify a watermark profile: only the fields given change. Requires a token with admin scope, for an organization
+        administrator.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/watermark_profiles_update_params'
+      responses:
+        '204':
+          description: No Content (modified)
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user not organization administrator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '422':
+          description: >-
+            Unprocessable Entity: errors of fields (as for create), or parameter error (other field:
+            `unpermitted_parameters`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/FieldValidationError'
+                  - $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error (also for a name already used by another profile)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Watermark Profiles
+    delete:
+      operationId: delete_watermark_profile
+      summary: Delete a Watermark Profile
+      description: >-
+        Delete a watermark profile: its nodes no longer use a profile, and watermarking is turned off
+        (`watermark_allowed` and `watermark_required` `false`) in the Packages app of their workspaces. Requires a token
+        with admin scope, for an organization administrator.
+      responses:
+        '204':
+          description: No Content (deleted)
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user not organization administrator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Watermark Profiles
+  /integrations/watermark/identities:
+    get:
+      operationId: get_watermark_identities
+      summary: Find the User of a Watermark Identity
+      description: >-
+        Find the user of a watermark identity: the identity read in a watermark of a video gives the user who downloaded
+        it. Asks the watermarking service of AoC. Requires a token with admin scope, for an organization administrator.
+        Not paginated.
+      parameters:
+        - name: identity_id
+          in: query
+          required: true
+          description: Watermark identity, an integer written without sign `+`, spaces or leading zeros.
+          schema:
+            type: string
+          example: '123'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/watermark_identities_response'
+        '400':
+          description: Bad Request (`identity_id` missing or not an integer)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorList'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user not organization administrator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '500':
+          description: Internal Server Error (also when the watermarking service fails)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Watermark Profiles
   /operations:
     get:
       operationId: get_operations
@@ -7091,8 +9061,10 @@ paths:
         - Organizations
     put:
       operationId: update_current_organization
-      summary: Update Current Organization
-      description: Update the current organization.
+      summary: Modify the Organization
+      description: >-
+        Modify the settings of the organization: only the fields given change. Requires a token with admin scope, for an
+        organization administrator.
       requestBody:
         required: true
         content:
@@ -7100,24 +9072,38 @@ paths:
             schema:
               $ref: '#/components/schemas/organizations_params'
       responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/organizations_response'
         '204':
-          description: No Content
-        '400':
-          description: Bad Request
+          description: No Content (modified)
         '401':
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user not organization administrator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '409':
+          description: Conflict (`subdomain_name` already used)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictError'
+        '422':
+          description: >-
+            Unprocessable Entity: errors of fields (value out of range, see the fields), or parameter error (missing
+            body, other field or field reserved to IBM: `unpermitted_parameters`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/FieldValidationError'
+                  - $ref: '#/components/schemas/ValidationError'
         '500':
-          description: Internal Server Error
+          description: Internal Server Error (also for `null` in some boolean fields)
           content:
             application/json:
               schema:
@@ -8238,6 +10224,313 @@ paths:
                 $ref: '#/components/schemas/InternalServerError'
       tags:
         - Workspace Collaborators
+  /connect_suppressed_permissions:
+    get:
+      operationId: get_connect_suppressed_permissions
+      summary: Get a Listing of Users and Groups Without IBM Aspera Connect
+      description: >
+        Get a listing of the users and groups that do not use IBM Aspera Connect (HTTP Gateway instead) when the
+        organization setting `connect_suppressed_scope` is `user:selected`. A user is concerned when they have a record,
+        or one of their groups (field `connect_suppressed` of a user).
+
+        With a token with admin scope, for an organization administrator: all records of the organization. With a token
+        with user scope: only the record of the user (not those of their groups).
+      parameters:
+        - name: page
+          in: query
+          description: Page number, starting at 1.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          description: Number of items per page (at most 1000).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+        - name: sort
+          in: query
+          description: >-
+            Comma-separated list of fields (at most 5), prefixed with `-` for descending order. Fields: `name` (of the
+            user or group), `member_type`, `member_id`, `created_at`, `updated_at`, `last_login_at`, `deactivated`,
+            `member.email`, `member.first_name`, `member.last_name`, `member.system_group`. An unknown field is refused
+            (`unknown_sort_field`).
+          schema:
+            type: string
+        - name: q
+          in: query
+          description: >-
+            Search (case-insensitive substring) in the email, first name, last name and name of the user, and the name
+            of the group. A token `<field>:<value>`, with `<field>` one of the filter parameters (except `name`), keeps
+            records whose field starts with `<value>`.
+          schema:
+            type: string
+        - name: member_type
+          in: query
+          description: Filter by kind of member.
+          schema:
+            type: string
+            enum:
+              - user
+              - group
+        - name: member_id
+          in: query
+          description: Filter by ID of the user or group (according to `member_type`).
+          schema:
+            type: string
+        - name: deactivated
+          in: query
+          description: Filter by the `deactivated` attribute of the user (excludes groups).
+          schema:
+            type: boolean
+        - name: member.email
+          in: query
+          description: Filter by email of the user.
+          schema:
+            type: string
+        - name: member.first_name
+          in: query
+          description: Filter by first name of the user.
+          schema:
+            type: string
+        - name: member.last_name
+          in: query
+          description: Filter by last name of the user.
+          schema:
+            type: string
+        - name: member.system_group
+          in: query
+          description: Filter by the `system_group` attribute of the group.
+          schema:
+            type: boolean
+        - name: created_at
+          in: query
+          description: Filter by created at (exact date and time).
+          schema:
+            type: string
+            format: date-time
+        - name: updated_at
+          in: query
+          description: Filter by updated at (exact date and time).
+          schema:
+            type: string
+            format: date-time
+        - name: last_login_at
+          in: query
+          description: Filter by last login at (exact date and time).
+          schema:
+            type: string
+            format: date-time
+        - name: member.last_login_at
+          in: query
+          description: Filter by member last login at (exact date and time).
+          schema:
+            type: string
+            format: date-time
+        - name: embed[]
+          in: query
+          description: >-
+            embed[]=member (user or group object from member_id), embed[]=organization. Repeat the parameter for several
+            values.
+          schema:
+            type: string
+            enum:
+              - member
+              - organization
+      responses:
+        '200':
+          description: OK
+          headers:
+            X-Total-Count:
+              description: Total number of records matching the query (all pages).
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/connect_suppressed_permissions_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token with user scope asking for another member)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '422':
+          description: Unprocessable Entity (e.g. unknown sort field)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error (also for filter or token `name`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Connect Suppressed Permissions
+    post:
+      operationId: create_connect_suppressed_permission
+      summary: Stop IBM Aspera Connect for a User or a Group
+      description: >-
+        Add a record for a user or a group: with the organization setting `connect_suppressed_scope` `user:selected`,
+        they use the HTTP Gateway instead of IBM Aspera Connect. Requires a token with admin scope, for an organization
+        administrator. A user or group has at most one record.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/connect_suppressed_permissions_params'
+      responses:
+        '201':
+          description: Created
+          headers:
+            Location:
+              description: Path of the record, `/api/v1/connect_suppressed_permissions/{id}` (not a full URL).
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect_suppressed_permissions_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user not organization administrator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '409':
+          description: Conflict (the user or group already has a record)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictError'
+        '422':
+          description: >-
+            Unprocessable Entity: errors of fields (`member_type` not `user` or `group`, member of another
+            organization), or parameter error (missing body, other field: `unpermitted_parameters`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/FieldValidationError'
+                  - $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: >-
+            Internal Server Error (also when the member does not exist, or `member_type` or `member_id` is missing)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Connect Suppressed Permissions
+  /connect_suppressed_permissions/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID of the record.
+        schema:
+          type: string
+    get:
+      operationId: get_connect_suppressed_permission
+      summary: Get a Record of a User or Group Without IBM Aspera Connect
+      description: Get a record. With a token with user scope, only the record of the user.
+      parameters:
+        - name: embed[]
+          in: query
+          description: >-
+            embed[]=member (user or group object from member_id), embed[]=organization. Repeat the parameter for several
+            values.
+          schema:
+            type: string
+            enum:
+              - member
+              - organization
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect_suppressed_permissions_response'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Connect Suppressed Permissions
+    delete:
+      operationId: delete_connect_suppressed_permission
+      summary: Restore IBM Aspera Connect for a User or a Group
+      description: Delete a record. Requires a token with admin scope, for an organization administrator.
+      responses:
+        '204':
+          description: No Content (deleted)
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '403':
+          description: Forbidden (token without admin scope, user not organization administrator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+      tags:
+        - Connect Suppressed Permissions
   /contacts:
     get:
       operationId: get_contacts
@@ -9067,6 +11360,19 @@ components:
           - code: not_found
             message: Not Found
         status_code: 404
+    ConflictError:
+      type: object
+      description: |
+        Conflict (409): a value that must be unique is already used. The messages are by name of field, at the top level
+        (no `errors` key as in a validation error).
+      additionalProperties:
+        type: array
+        description: Messages of the field.
+        items:
+          type: string
+      example:
+        name:
+          - has already been taken
     ClientRegistrationToken:
       type: object
       description: Client registration token with metadata
@@ -9980,70 +12286,59 @@ components:
           examples:
             - '24'
     client_authorizations_params:
+      description: User or group to allow for an API client.
       type: object
       properties:
         client_id:
-          description: The ID of the client.
+          description: ID of the API client.
           type: string
-          examples:
-            - '23749'
-        entity_id:
-          description: The ID of the entity that can be authorized.
-          type: integer
-          examples:
-            - 0
         entity_type:
-          description: |
-            The type of entity who can be authorized. Default is user.
+          description: Kind of entity (any case).
           type: string
-          examples:
-            - user
           enum:
             - user
             - group
+        entity_id:
+          description: ID of the user or group (according to `entity_type`).
+          type: string
       required:
         - client_id
         - entity_type
         - entity_id
     client_authorizations_response:
+      description: User or group allowed for an API client.
       type: object
       properties:
+        id:
+          description: ID of the client authorization.
+          type: string
         client_id:
-          description: The ID of the client.
+          description: ID of the API client.
           type: string
-          examples:
-            - '0'
-        created_at:
-          description: The timestamp of authorization.
-          type: string
-          format: date-time
-          examples:
-            - 2018-02-06T00:03:24.000Z
-        entity_id:
-          description: The ID of the entity that can be authorized.
-          type: integer
-          examples:
-            - 151
         entity_type:
-          description: |
-            The type of entity who can be authorized. Default is user.
+          description: Kind of entity.
           type: string
-          examples:
-            - user
           enum:
             - user
             - group
-        id:
-          description: The client ID
+        entity_id:
+          description: ID of the user or group (according to `entity_type`).
           type: string
-          examples:
-            - '23749'
-        updated_at:
-          description: The timestamp of the most recent update.
+        entity:
+          description: With `embed[]=entity`, the user or group.
+          anyOf:
+            - $ref: '#/components/schemas/users_response'
+            - $ref: '#/components/schemas/groups_response'
+            - enum:
+                - null
+        created_at:
+          description: Date and time of creation.
           type: string
           format: date-time
-          examples:
-            - 2018-02-06T00:03:24.000Z
+        updated_at:
+          description: Date and time of the last change.
+          type: string
+          format: date-time
     clients_params:
       type: object
       properties:
@@ -11517,240 +13812,250 @@ components:
           examples:
             - true
     organizations_params:
+      description: >-
+        Settings of the organization to change. Other fields (reserved to IBM) give 422 `unpermitted_parameters`.
       type: object
       properties:
-        background_image_data:
-          description: >
-            Data for the image to be displayed on the organization sign-in page. The data must be binary and have a
-            maximum size of 4MB. Returned only when image_data is included in the request (e.g.,
-            include%5B%5D=image_data).
-          type: string
-          examples:
-            - iVBORw0KGgoAAAANSUhEUgAA...
-        background_image_type:
-          description: The file type of the background image.
-          type: string
-          examples:
-            - image/gif
-        consecutive_login_failures_limit:
-          description: >
-            The number of login failures allowed before the user is required to change passwords. Valid values: 2 - 10.
-            Requires organization admin permission to view or update.
-          type: integer
-          examples:
-            - 2
-        default_ear_setting:
-          description: >
-            Indicates the default encryption-at-rest setting for your organization. Defaults to false. Requires
-            organization admin permission to view or update.
-          type: boolean
-          examples:
-            - false
-        email_footer:
-          description: >
-            Text to be added as the footer in email notifications sent for your organization. Must have organization
-            admin permission to view or update.
-          type: string
-          examples:
-            - Thank you for using Aspera on Cloud.
-        email_notification_settings:
-          description: Must have organization admin permission to view or update.
-          allOf:
-            - $ref: '#/components/schemas/email_notification_settings'
-        enable_external_email_templates:
-          description: >
-            Indicates whether the organization has external email templates enabled. Requires organization admin
-            permission to view or update.
-          type: boolean
-          examples:
-            - false
-        enforce_password_history_count:
-          description: >
-            The number of password changes that must occur before a password can be reused. Valid values are 1 - 12, or
-            null to disable. Requires organization admin permission to view or update.
-          type: integer
-          examples:
-            - 3
-        event_reporting_uri:
-          description: >
-            Customer-configurable endpoint that can receive reporting for AoC events. Requires organization admin
-            permission to view or update.
-          type: string
-          examples:
-            - https://example.com/aoc/events
-        google_excluded_domains:
-          description: >
-            If Google OAuth is enabled, this parameter can be used to define a list of domains for email addresses that
-            are not allowed to log into your  organization. This parameter is mutually exclusive with
-            google_included_domains. Requires organization admin permission to view or update.
-          type: array
-          items:
-            type: string
-          examples:
-            - - example.com
-              - abc.io
-        google_included_domains:
-          description: >
-            If Google OAuth is enabled, this parameter can be used to define a list of domains for email addresses that
-            are allowed to log into your organization. This parameter is mutually exclusive with
-            google_excluded_domains. Requires organization admin permission to view or update.
-          type: array
-          items:
-            type: string
-          examples:
-            - []
-        google_oauth_included:
-          description: >
-            Indicates whether users can be authenticated through Google OAuth for your organization. Requires
-            organization admin permission to view or update.
-          type: boolean
-          examples:
-            - false
-        inherit_email_templates:
-          description: >
-            Indicates whether this organization is using customized email templates. Requires organization admin
-            permission to view or update.
-          type: boolean
-          examples:
-            - true
-        invitation_message:
-          description: >
-            Text for the email notification that is sent to new users when they are invited to join your organization.
-            Requires organization admin permission to view or update.
-          type: string
-          examples:
-            - Welcome to MyOrganization. Please activate your account.
-        local_excluded_domains:
-          description: >
-            If local OAuth is enabled, this parameter can be used to define a list of domains for email addresses that
-            are not allowed to log into your organization. This parameter is mutually exclusive with
-            local_included_domains. Requires organization admin permission to view or update.
-          type: array
-          items:
-            type: string
-          examples:
-            - []
-        local_included_domains:
-          description: >
-            If local OAuth is enabled, this parameter can be used to define a list of domains for email addresses that
-            are allowed to log into your organization. This parameter is mutually exclusive with local_excluded_domains.
-            Requires organization admin permission to view or update.
-          type: array
-          items:
-            type: string
-          examples:
-            - - example.com
-              - abc.io
-        local_login_button_text:
-          description: >
-            Customized text that will appear on the local login button. Requires organization admin permission to view
-            or update.
-          type: string
-          examples:
-            - Log into MyOrganization!
-        local_oauth_enabled:
-          description: >
-            Indicates whether users can be authenticated through local OAuth for your organization. Requires
-            organization admin permission to view or update.
-          type: boolean
-          examples:
-            - false
-        logo_image_data:
-          description: >
-            Data for the image to be used as the organization logo. The data must be binary and have a maximum size of
-            512KB. This field is included only when the query string includes "include%5B%5D=image_data".
-          type: string
-          examples:
-            - iVBORw0KGgoAAAANSUhEUgAA...
-        logo_image_type:
-          description: The data type of the provided logo image.
-          type: string
-          examples:
-            - image/gif
-        minimum_password_age:
-          description: >
-            Defines the minimum age for a password before it can be reset. Units: seconds. Valid values: 15 minutes to 1
-            year (900 - 31536000), or null to disable. Requires organization admin permission to view or update.
-          type: integer
-          examples:
-            - 900
-        minimum_password_length:
-          description: >
-            The minimum length for passwords for users in your organization. Valid values: 8 - 100. Requires
-            organization admin permission to view or update.
-          type: integer
-          examples:
-            - 8
         name:
-          description: The name of your organization.
+          description: Name of the organization (required, not empty).
           type: string
-          examples:
-            - MyOrganization
-        new_user_password_reset_token_duration:
-          description: >
-            How long a password reset link is valid, when it is sent as part of an invitation to a new user. Units:
-            seconds. Valid values: 1 hour - 1 week (3600 - 604800), or null to disable. Requires organization admin
-            permission to view or update.
+        subdomain_name:
+          description: >-
+            Subdomain of the organization, only while it has none (lower case, unique: else 409).
+          type: string
+        access_rules:
+          description: >-
+            Access rules: `policy`, `countries` (list of country codes) and `markdown_text`.
+          type: object
+        access_token_duration:
+          description: Duration of an access token. In seconds, 900 (15 minutes) to 86400 (24 hours).
           type: integer
-          examples:
-            - 3600
+        access_token_refresh_duration:
+          description: Duration of a refresh token. In seconds, 86400 (1 day) to 31536000 (365 days), or `null`.
+          type:
+            - integer
+            - 'null'
         node_token_duration:
-          description: >
-            Denotes the amount of time that a transfer node access token is valid. Must be at least as long as
-            access_token_duration. Units: seconds. Valid values: 1 hour - 14 days (3600 - 1209600). Requires
-            organization admin permission to view or update.
+          description: >-
+            Duration of a node token, not less than `access_token_duration`. In seconds, 3600 (1 hour) to 1209600 (14
+            days).
           type: integer
-          examples:
-            - 3600
-        organization_contacts_visible_to_managers:
-          description: >
-            If true, workspace managers can see all organization contacts. Otherwise, workspace managers can only see
-            the contacts for their workspace. Requires organization admin permission to view or update.
-          type: boolean
-          examples:
-            - true
-        password_expiration_interval:
-          description: >
-            How often a password change is required. Units: seconds. Valid values: 15 days to 1 year (129600 - 31536000)
-            or null to disable. Requires organization admin permission to view or update.
-          type: integer
-          examples:
-            - 129600
-        password_reset_token_duration:
-          description: >
-            How long the password reset link is good for. Units: seconds. Valid values: 1 hour - 1 week (3600 - 604800),
-            or null to disable. Requires organization admin permission to view or update.
-          type: integer
-          examples:
-            - 3600
-        require_strong_passwords:
-          description: >
-            Indicates whether to require users to set "strong" passwords. A "strong" password contains at least three of
-            the following: 1. A lowercase letter 2. An uppercase letter 3. A non-word  character (!, @, #, etc.) 4. A
-            number. Requires organization admin permission to view or update.
-          type: boolean
-          examples:
-            - false
         session_duration:
-          description: >
-            How long a user can be inactive before their session is terminated and their access token is invalidated.
-            Units: seconds. Valid values: 1 hour - 1 week (3600 - 604800), or null to disable.
+          description: >-
+            Inactivity timeout of a session of the web app (`null`: none). In seconds, 900 (15 minutes) to 604800 (7
+            days), or `null`.
+          type:
+            - integer
+            - 'null'
+        password_reset_token_duration:
+          description: Duration of a link to reset a password (required). In seconds, 3600 (1 hour) to 604800 (7 days).
           type: integer
-          examples:
-            - 3600
+        new_user_password_reset_token_duration:
+          description: >-
+            Duration of the link of a new user to set the password (required). In seconds, 3600 (1 hour) to 604800 (7
+            days).
+          type: integer
+        minimum_password_age:
+          description: >-
+            Time before a password can be changed again. In seconds, 900 (15 minutes) to 604800 (7 days), or `null`.
+          type:
+            - integer
+            - 'null'
+        password_expiration_interval:
+          description: Time before a password expires. In seconds, 1296000 (15 days) to 31536000 (365 days), or `null`.
+          type:
+            - integer
+            - 'null'
+        minimum_password_length:
+          description: Minimum length of a password, 8 to 100.
+          type: integer
+          minimum: 8
+          maximum: 100
+        require_strong_passwords:
+          description: Whether passwords must be strong.
+          type: boolean
+        enforce_password_history_count:
+          description: Number of previous passwords that cannot be used again, 1 to 12, or `null`.
+          type:
+            - integer
+            - 'null'
+          minimum: 1
+          maximum: 12
+        consecutive_login_failures_limit:
+          description: Number of failed logins before the account is locked, 2 to 10.
+          type: integer
+          minimum: 2
+          maximum: 10
+        mfa_enabled:
+          description: Whether multi-factor authentication is enabled.
+          type: boolean
+        local_oauth_enabled:
+          description: >-
+            Whether users can log in with a password of AoC (local auth provider). At least one login method must stay
+            enabled.
+          type: boolean
+        google_oauth_enabled:
+          description: Whether users can log in with Google (Google auth provider).
+          type: boolean
+        local_included_domains:
+          description: Email domains of the users who can log in with a password of AoC (empty for all).
+          type: array
+          items:
+            type: string
+        local_excluded_domains:
+          description: >-
+            Email domains of the users who cannot log in with a password of AoC (empty if `local_included_domains` is
+            set).
+          type: array
+          items:
+            type: string
+        google_included_domains:
+          description: Email domains of the users who can log in with Google (empty for all).
+          type: array
+          items:
+            type: string
+        google_excluded_domains:
+          description: >-
+            Email domains of the users who cannot log in with Google (empty if `google_included_domains` is set).
+          type: array
+          items:
+            type: string
+        local_login_button_text:
+          description: Text of the button of the login with a password of AoC.
+          type: string
         sign_on_message:
-          description: Message displayed to users on sign-in.
+          description: Message on the login page.
           type: string
-          examples:
-            - Welcome to MyOrganization!
+        force_ibm_id_opt_in:
+          description: Whether all users must use IBMid. Can only be turned on (not with `prevent_ibm_id_opt_in`).
+          type: boolean
+        prevent_ibm_id_opt_in:
+          description: Whether users cannot opt in to IBMid. Can only be turned off.
+          type: boolean
+        allow_admin_opt_in_only:
+          description: Whether only administrators can opt in to IBMid. Can only be turned off.
+          type: boolean
+        saml_can_reactivate_deactivated_users:
+          description: Whether a login with SAML reactivates a deactivated user.
+          type: boolean
+        users_can_reactivate_deactivated_users:
+          description: Whether deactivated users can reactivate themselves.
+          type: boolean
+        user_deactivation_policy:
+          description: >-
+            Deactivation of inactive users: `user_timeout` (since the last login) and `pending_user_timeout` (never
+            logged in), in seconds, 86400 (1 day) to 315360000 (10 years), or `null`. Only the keys given change. A
+            change deactivates at once the users concerned (not the administrators).
+          type: object
+        connect_suppressed_scope:
+          description: >-
+            Users who use the HTTP Gateway instead of IBM Aspera Connect: all, unauthenticated users (public links),
+            none, or those selected (`/connect_suppressed_permissions`).
+          type: string
+          enum:
+            - user:all
+            - user:unauthenticated
+            - user:none
+            - user:selected
+        connect_beta_opt_in:
+          description: Whether the organization uses the beta versions of IBM Aspera Connect.
+          type: boolean
+        http_gateway_enabled:
+          description: Whether the HTTP Gateway is enabled.
+          type: boolean
+        http_gateway_server_url:
+          description: URL of the HTTP Gateway.
+          type: string
+        default_ear_setting:
+          description: Default of encryption at rest for the packages (also set in the Packages app).
+          type: boolean
         workspace_container_node_id:
-          description: >
-            When creating a workspace, node_id is required, but the client app can choose to use this value as a
-            default. This is set automatically to the first transfer node created in your organization. Requires
-            organization admin permission to view or update.
+          description: ID of the default node of new workspaces (not checked).
+          type: string
+        organization_contacts_visible_to_managers:
+          description: Whether workspace managers can see all the users of the organization in contacts.
+          type: boolean
+        email_footer:
+          description: Footer of the emails.
+          type: string
+        invitation_message:
+          description: Message of the invitation emails.
+          type: string
+        inherit_email_templates:
+          description: >-
+            Whether the organization uses the global email templates. Turned off, the templates of the organization are
+            created from the global ones.
+          type: boolean
+        enable_external_email_templates:
+          description: Whether the email templates for external users (`*_external`) are used.
+          type: boolean
+        email_notification_settings:
+          $ref: '#/components/schemas/organization_email_notification_settings'
+        event_reporting_uri:
+          description: URL that receives the events of the organization.
+          type: string
+        event_reporting_headers:
+          description: HTTP headers sent with the events (any object).
+          type: object
+        support_contact:
+          description: Support contact shown to the users (any keys).
+          type: object
+        nps_enabled:
+          description: Whether the satisfaction survey (NPS) is shown to the users.
+          type: boolean
+        custom_theme:
+          description: Custom theme of the web app (any keys), or `null`. Only in a body not wrapped in `organization`.
+          type:
+            - object
+            - 'null'
+        logo_image_data:
+          description: Logo of the organization, base64 (at most 512 KB decoded), with `logo_image_type`.
+          type: string
+          format: byte
+        logo_image_type:
+          description: Media type of the logo image.
           type: string
           examples:
-            - '2'
+            - image/png
+        app_logo_image_data:
+          description: Logo of the web app, base64 (at most 512 KB decoded), with `app_logo_image_type`.
+          type: string
+          format: byte
+        app_logo_image_type:
+          description: Media type of the logo of the web app.
+          type: string
+          examples:
+            - image/png
+        app_logo_text:
+          description: Text next to the logo of the web app.
+          type: string
+        background_image_data:
+          description: Background image of the login page, base64 (at most 4 MB decoded), with `background_image_type`.
+          type: string
+          format: byte
+        background_image_type:
+          description: Media type of the background image.
+          type: string
+          examples:
+            - image/jpeg
+        background_image_position:
+          description: Position of the background image of the login page.
+          type: string
+        login_layout:
+          description: Layout of the login page.
+          type: string
+        announcement1_title:
+          description: Title of the first announcement of the login page.
+          type: string
+        announcement1_message:
+          description: Message of the first announcement of the login page.
+          type: string
+        announcement2_title:
+          description: Title of the second announcement of the login page.
+          type: string
+        announcement2_message:
+          description: Message of the second announcement of the login page.
+          type: string
     node_update_status_response:
       $ref: '#/components/schemas/nodes_response'
     organizations_response:
@@ -11826,7 +14131,7 @@ components:
         email_notification_settings:
           description: Must have organization admin permission to view or update.
           allOf:
-            - $ref: '#/components/schemas/email_notification_settings'
+            - $ref: '#/components/schemas/organization_email_notification_settings'
         enable_external_email_templates:
           description: >
             Indicates whether the organization has external email templates enabled. Requires organization admin
@@ -15241,6 +17546,1021 @@ components:
         users_deactivated_message:
           description: Message in the web app when users of the organization are deactivated.
           type: boolean
+    app_collaborators_response:
+      description: User or group of the collaboration allow list of the Files or Packages app of a workspace.
+      type: object
+      properties:
+        id:
+          description: ID of the app collaborator.
+          type: string
+        aspera_app_id:
+          description: ID of the app.
+          type: string
+        aspera_app_type:
+          description: Type of the app (class name, not the value given on creation).
+          type: string
+          enum:
+            - FilesApp
+            - PackagesApp
+        collaborator_id:
+          description: ID of the user or group (according to `collaborator_type`).
+          type: string
+        collaborator_type:
+          description: Kind of collaborator.
+          type: string
+          enum:
+            - user
+            - group
+        name:
+          description: Name of the user or group, `null` if it was deleted.
+          type:
+            - string
+            - 'null'
+        email:
+          description: Email of the user (for a user only).
+          type:
+            - string
+            - 'null'
+        workspace_id:
+          description: ID of the workspace of the app.
+          type: string
+    app_collaborators_params:
+      description: Collaborator to add to an app (body not wrapped).
+      type: object
+      properties:
+        aspera_app_type:
+          description: Type of the app.
+          type: string
+          enum:
+            - files
+            - packages
+        aspera_app_id:
+          description: ID of the app, of a workspace.
+          type: string
+        collaborator_type:
+          description: Kind of collaborator.
+          type: string
+          enum:
+            - user
+            - group
+        collaborator_id:
+          description: ID of the user or group of the organization.
+          type: string
+      required:
+        - aspera_app_type
+        - aspera_app_id
+        - collaborator_type
+        - collaborator_id
+    connect_suppressed_permissions_response:
+      description: User or group that does not use IBM Aspera Connect (organization setting `connect_suppressed_scope` `user:selected`).
+      type: object
+      properties:
+        id:
+          description: ID of the record.
+          type: string
+        member_type:
+          description: Kind of member.
+          type: string
+          enum:
+            - user
+            - group
+        member_id:
+          description: ID of the user or group (according to `member_type`).
+          type: string
+        member_name:
+          description: Name of the user or group.
+          type: string
+        organization_id:
+          description: ID of the organization.
+          type: string
+    connect_suppressed_permissions_params:
+      description: User or group that does not use IBM Aspera Connect.
+      type: object
+      properties:
+        member_type:
+          description: Kind of member.
+          type: string
+          enum:
+            - user
+            - group
+        member_id:
+          description: ID of the user or group of the organization.
+          type: string
+      required:
+        - member_type
+        - member_id
+    distribution_lists_response:
+      description: Distribution list, owned by a user (personal list) or a workspace.
+      type: object
+      properties:
+        id:
+          description: ID of the distribution list.
+          type: string
+        name:
+          description: Name of the list.
+          type: string
+        owner_type:
+          description: Kind of owner.
+          type: string
+          enum:
+            - user
+            - workspace
+        owner_id:
+          description: ID of the user or workspace (according to `owner_type`).
+          type: string
+        available_to_members:
+          description: >-
+            List of a workspace: whether the members of the workspace can use it (else only its managers and the
+            organization administrators). `null` for a personal list.
+          type:
+            - boolean
+            - 'null'
+        available_to_managers:
+          description: List of a workspace, whether it is offered to the managers of the workspace in contacts. `null` for a personal list.
+          type:
+            - boolean
+            - 'null'
+        created_at:
+          description: Date and time of creation.
+          type: string
+          format: date-time
+        updated_at:
+          description: Date and time of the last change.
+          type: string
+          format: date-time
+    distribution_lists_params:
+      description: >-
+        Distribution list to create. With a token with user scope, only `name` (the list belongs to the user). With
+        admin scope, `owner_type` and `owner_id` are required.
+      type: object
+      properties:
+        name:
+          description: Name of the list, not the name of a group, unique for the owner.
+          type: string
+          examples:
+            - Partners
+        owner_type:
+          description: Kind of owner.
+          type: string
+          enum:
+            - user
+            - workspace
+        owner_id:
+          description: ID of the user or workspace (according to `owner_type`).
+          type: string
+        available_to_members:
+          description: List of a workspace only. Whether the members of the workspace can use it. Not `true` with `available_to_managers`.
+          type: boolean
+        available_to_managers:
+          description: List of a workspace only. Whether it is offered to the managers of the workspace in contacts. Not `true` with `available_to_members`.
+          type: boolean
+      required:
+        - name
+    distribution_lists_update_params:
+      description: Fields of a distribution list to change.
+      type: object
+      properties:
+        name:
+          description: New name of the list.
+          type: string
+        available_to_members:
+          description: List of a workspace only. Whether the members of the workspace can use it.
+          type: boolean
+        available_to_managers:
+          description: List of a workspace only. Whether it is offered to the managers of the workspace in contacts.
+          type: boolean
+    distribution_list_memberships_response:
+      description: Member of a distribution list.
+      type: object
+      properties:
+        id:
+          description: ID of the member.
+          type: string
+        distribution_list_id:
+          description: ID of the distribution list.
+          type: string
+        member_type:
+          description: Kind of member.
+          type: string
+          enum:
+            - email
+            - group
+        member_id:
+          description: Email address, or ID of the group (according to `member_type`).
+          type: string
+        name:
+          description: >-
+            Name of the group; for an email, in a listing the name of the user of the organization with this email, else
+            the email.
+          type: string
+        created_at:
+          description: Date and time of creation.
+          type: string
+          format: date-time
+        updated_at:
+          description: Date and time of the last change.
+          type: string
+          format: date-time
+    distribution_list_memberships_params:
+      description: Member to add to a distribution list.
+      type: object
+      properties:
+        distribution_list_id:
+          description: ID of the distribution list.
+          type: string
+        member_type:
+          description: Kind of member.
+          type: string
+          enum:
+            - email
+            - group
+        member_id:
+          description: Email address, or ID of a group of the organization (according to `member_type`).
+          type: string
+          examples:
+            - john.doe@example.com
+      required:
+        - distribution_list_id
+        - member_type
+        - member_id
+    trend_micro_profiles_response:
+      description: >-
+        Trend Micro profile: antivirus scan of the files of packages on a bucket of a node of IBM Aspera Transfer
+        Service.
+      type: object
+      properties:
+        id:
+          description: ID of the profile.
+          type: string
+        name:
+          description: Name of the profile (not unique).
+          type: string
+        description:
+          description: Description of the profile.
+          type:
+            - string
+            - 'null'
+        provider:
+          description: Cloud provider of the storage (see `GET /integrations`; the web app offers `aws`).
+          type: string
+          examples:
+            - aws
+        region:
+          description: Region of the storage, a region of the provider (see `GET /integrations`).
+          type: string
+          examples:
+            - us-east-1
+        bucket_name:
+          description: Bucket of the storage of the nodes to scan.
+          type: string
+        sqs_queue_url:
+          description: URL of the AWS SQS queue of the Trend Micro File Storage Security stack.
+          type: string
+        external_id:
+          description: >-
+            External ID that AoC gives when it assumes the IAM role (the web app uses the `generic_uuid` of the
+            organization).
+          type:
+            - string
+            - 'null'
+        iam_arn_role:
+          description: ARN of the IAM role that AoC assumes to use the stack.
+          type:
+            - string
+            - 'null'
+        organization_id:
+          description: ID of the organization.
+          type: string
+        associated_nodes:
+          description: With `include=associated_nodes`, the nodes of the organization on the storage of the profile.
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                description: ID of the node.
+                type: string
+              name:
+                description: Name of the node.
+                type: string
+        created_at:
+          description: Date and time of creation.
+          type: string
+          format: date-time
+        updated_at:
+          description: Date and time of the last change.
+          type: string
+          format: date-time
+    trend_micro_profiles_params:
+      description: >-
+        Trend Micro profile to create. The bucket, provider and region must not be those of another profile of the
+        organization.
+      type: object
+      properties:
+        name:
+          description: Name of the profile (not unique).
+          type: string
+        description:
+          description: Description of the profile.
+          type: string
+        provider:
+          description: Cloud provider of the storage (see `GET /integrations`; the web app offers `aws`).
+          type: string
+          examples:
+            - aws
+        region:
+          description: Region of the storage, a region of the provider (see `GET /integrations`).
+          type: string
+          examples:
+            - us-east-1
+        bucket_name:
+          description: Bucket of the storage of the nodes to scan.
+          type: string
+        sqs_queue_url:
+          description: URL of the AWS SQS queue of the Trend Micro File Storage Security stack.
+          type: string
+        external_id:
+          description: External ID that AoC gives when it assumes the IAM role. Cannot change.
+          type: string
+        iam_arn_role:
+          description: >-
+            ARN of the IAM role that AoC assumes, `arn:aws:iam::<12-digit-account-id>:role/<role-name>` (partitions
+            `aws`, `aws-us-gov`, `aws-cn`). Cannot change.
+          type: string
+      required:
+        - name
+        - provider
+        - region
+        - bucket_name
+        - sqs_queue_url
+        - external_id
+        - iam_arn_role
+    trend_micro_profiles_update_params:
+      description: Fields of a Trend Micro profile to change.
+      type: object
+      properties:
+        name:
+          description: Name of the profile (not unique).
+          type: string
+        description:
+          description: Description of the profile.
+          type: string
+        provider:
+          description: Cloud provider of the storage (see `GET /integrations`; the web app offers `aws`).
+          type: string
+          examples:
+            - aws
+        region:
+          description: Region of the storage, a region of the provider (see `GET /integrations`).
+          type: string
+          examples:
+            - us-east-1
+        bucket_name:
+          description: Bucket of the storage of the nodes to scan.
+          type: string
+        sqs_queue_url:
+          description: URL of the AWS SQS queue of the Trend Micro File Storage Security stack.
+          type: string
+    watermark_profiles_response:
+      description: >-
+        Watermark profile: access to a service of digital watermarking of videos, for the nodes of IBM Aspera Transfer
+        Service of a provider and region.
+      type: object
+      properties:
+        id:
+          description: ID of the profile.
+          type: string
+        name:
+          description: Name of the profile, unique in the organization (case insensitive).
+          type: string
+        description:
+          description: Description of the profile.
+          type:
+            - string
+            - 'null'
+        tenant_id:
+          description: Tenant of the organization in the watermarking service.
+          type: string
+        dwm_api_url:
+          description: URL (http or https) of the API of the watermarking service.
+          type: string
+        cloud_provider:
+          description: Cloud provider of the nodes (see `GET /integrations`).
+          type: string
+          examples:
+            - aws
+        cloud_region:
+          description: Region of the nodes, a region of the provider (see `GET /integrations`).
+          type: string
+          examples:
+            - us-east-1
+        available_nodes:
+          description: >-
+            With `include=available_nodes`, the nodes of the organization of the provider and region of the profile, whatever
+            the profile they use.
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                description: ID of the node.
+                type: string
+              name:
+                description: Name of the node.
+                type: string
+              watermark_profile_id:
+                description: ID of the watermark profile of the node, empty string if none.
+                type: string
+        created_at:
+          description: Date and time of creation.
+          type: string
+          format: date-time
+        updated_at:
+          description: Date and time of the last change.
+          type: string
+          format: date-time
+    watermark_profiles_params:
+      description: >-
+        Watermark profile to create. The provider and region must not be those of a Trend Micro profile of the
+        organization.
+      type: object
+      properties:
+        name:
+          description: Name of the profile, unique in the organization (case insensitive).
+          type: string
+        description:
+          description: Description of the profile.
+          type: string
+        tenant_id:
+          description: Tenant of the organization in the watermarking service.
+          type: string
+        dwm_api_url:
+          description: URL (http or https) of the API of the watermarking service.
+          type: string
+        cloud_provider:
+          description: Cloud provider of the nodes (see `GET /integrations`).
+          type: string
+          examples:
+            - aws
+        cloud_region:
+          description: Region of the nodes, a region of the provider (see `GET /integrations`).
+          type: string
+          examples:
+            - us-east-1
+      required:
+        - name
+        - tenant_id
+        - dwm_api_url
+        - cloud_provider
+        - cloud_region
+    watermark_profiles_update_params:
+      description: Fields of a watermark profile to change.
+      type: object
+      properties:
+        name:
+          description: Name of the profile, unique in the organization (case insensitive).
+          type: string
+        description:
+          description: Description of the profile.
+          type: string
+        tenant_id:
+          description: Tenant of the organization in the watermarking service.
+          type: string
+        dwm_api_url:
+          description: URL (http or https) of the API of the watermarking service.
+          type: string
+        cloud_provider:
+          description: Cloud provider of the nodes (see `GET /integrations`).
+          type: string
+          examples:
+            - aws
+        cloud_region:
+          description: Region of the nodes, a region of the provider (see `GET /integrations`).
+          type: string
+          examples:
+            - us-east-1
+    watermark_identities_response:
+      description: Users of a watermark identity.
+      type: object
+      properties:
+        identities:
+          description: Identities found by the watermarking service.
+          type: array
+          items:
+            type: object
+            properties:
+              identity_id:
+                description: Watermark identity.
+                type: integer
+              dwm_endpoint:
+                description: Endpoint of the watermarking service.
+                type: string
+              tenant_id:
+                description: Tenant in the watermarking service.
+                type: string
+              user_id:
+                description: ID of the user.
+                type: string
+              user:
+                description: User of the organization, `null` if not found.
+                type:
+                  - object
+                  - 'null'
+                properties:
+                  id:
+                    description: ID of the user.
+                    type: string
+                  name:
+                    description: Name of the user.
+                    type: string
+                  email:
+                    description: Email of the user.
+                    type: string
+                  first_login_at:
+                    description: Date and time of the first login.
+                    type:
+                      - string
+                      - 'null'
+                    format: date-time
+                  last_login_at:
+                    description: Date and time of the last login.
+                    type:
+                      - string
+                      - 'null'
+                    format: date-time
+                  unique_hash:
+                    description: Unique hash of the user.
+                    type: string
+    integrations_response:
+      description: Integration available for the organization.
+      type: object
+      properties:
+        name:
+          description: Name of the integration.
+          type: string
+          enum:
+            - watermarking
+        create_options:
+          description: Options to create a profile.
+          type: object
+          properties:
+            providers:
+              description: Cloud providers allowed, with their regions.
+              type: array
+              items:
+                type: object
+                properties:
+                  value:
+                    description: Value of `cloud_provider` (or `provider`).
+                    type: string
+                    examples:
+                      - aws
+                  label:
+                    description: Name shown in the web app.
+                    type: string
+                  regions:
+                    description: Regions of the provider.
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        value:
+                          description: Value of `cloud_region` (or `region`).
+                          type: string
+                        label:
+                          description: Name shown in the web app.
+                          type: string
+    file_deletion_policy_response:
+      description: Nodes of a storage, for a file deletion policy.
+      type: object
+      properties:
+        nodes:
+          description: Nodes of the organization on the storage (empty when the bucket is not known).
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                description: ID of the node (an integer here, not a string).
+                type: integer
+              name:
+                description: Name of the node.
+                type: string
+              expiration_days:
+                description: Days before the files are deleted, according to AoC, `null` if no policy.
+                type:
+                  - integer
+                  - 'null'
+              metadata_expiration_days:
+                description: Days before the files are deleted, as reported by the node, `null` if none.
+                type:
+                  - integer
+                  - 'null'
+        nodes_on_other_org:
+          description: Whether another organization has a file deletion policy on this storage.
+          type: boolean
+    file_upload_notification_toggle_state_response:
+      description: Notification state inherited by a folder.
+      type: object
+      properties:
+        upload_notification:
+          description: '`enabled` of the notification of the user on the closest parent folder, `false` if none.'
+          type: boolean
+    email_template_type:
+      description: Type of email.
+      type: string
+      enum:
+        - account_locked
+        - added_to_workspace
+        - base
+        - base_external
+        - dropbox_invitation
+        - dropbox_invitation_external
+        - file_deletion_policy_changed
+        - file_shared
+        - file_shared_external
+        - file_upload
+        - ibm_id_opt_in
+        - invitation
+        - invitation_to_send_to_me
+        - notifier
+        - organization_ready
+        - organization_reminder
+        - package_contents_deleted
+        - package_deactivated_recipients
+        - package_downloaded
+        - package_expiration_reminder
+        - package_expired
+        - package_failed
+        - package_recalled
+        - package_received
+        - package_received_external
+        - package_resent
+        - package_sent
+        - package_sidecar_failed
+        - package_uploaded
+        - password_reset
+        - scheduled_package_failed
+        - self_registration_completed_to_me
+        - self_registration_completed_to_notify_list
+        - self_registration_rejected
+        - self_registration_request_submitted
+        - user_welcome
+        - users_deactivated
+        - virus_detected
+        - watermark_failed
+        - workflow_deactivated
+        - workflow_job_completed
+        - workflow_job_failed
+        - workflow_job_started
+        - workflow_shared
+    email_templates_response:
+      description: >-
+        Email template: of AoC (global), or of the organization, a workspace or a shared inbox.
+      type: object
+      properties:
+        id:
+          description: ID of the email template.
+          type: string
+        email_type:
+          $ref: '#/components/schemas/email_template_type'
+        organization_id:
+          description: ID of the organization, `null` for a global template.
+          type:
+            - string
+            - 'null'
+        source_type:
+          description: Kind of source, `null` for a global template.
+          type:
+            - string
+            - 'null'
+          enum:
+            - Organization
+            - Workspace
+            - Dropbox
+        source_id:
+          description: ID of the organization, workspace or shared inbox, `null` for a global template.
+          type:
+            - string
+            - 'null'
+        subject:
+          description: >-
+            Other templates: subject of the email (required), with substitutions (`template_substitutions`).
+          type: string
+        body:
+          description: >-
+            Other templates: body of the email, with substitutions.
+          type: string
+        button_text:
+          description: >-
+            Other templates: text of the button of the email.
+          type: string
+        subject_prefix:
+          description: >-
+            Base templates: prefix of the subject of all emails.
+          type: string
+        from_display:
+          description: >-
+            Base templates: name of the sender.
+          type: string
+        from_email:
+          description: >-
+            Base templates: email of the sender.
+          type: string
+          format: email
+        header_color:
+          description: >-
+            Base templates: color of the header.
+          type: string
+          enum:
+            - '#000000'
+            - '#ffffff'
+        logo_source:
+          description: >-
+            Base templates: logo to use: of the organization, the workspace or the shared inbox (a workspace template
+            cannot use `dropbox`, an organization template only `organization`), `null` for the default.
+          type: string
+          enum:
+            - organization
+            - workspace
+            - dropbox
+        logo_image_data:
+          description: >-
+            Base templates: image of the logo, base64 (at most 512 KB decoded), with `logo_image_type`.
+          type: string
+          format: byte
+        logo_image_type:
+          description: >-
+            Base templates: media type of the logo image.
+          type: string
+          examples:
+            - image/png
+        logo_name:
+          description: >-
+            Base templates: name of the logo.
+          type: string
+        logo_display_title:
+          description: >-
+            Base templates: title shown with the logo.
+          type: string
+        footer:
+          description: >-
+            Base templates: footer of the emails.
+          type: string
+        logo_source_url:
+          description: URL of the logo of `logo_source`.
+          type:
+            - string
+            - 'null'
+        template_substitutions:
+          description: Placeholders that the template can use, e.g. `{recipient_name}`.
+          type: array
+          items:
+            type: string
+    email_templates_params:
+      description: Fields of an email template to change, according to its type (see the operation).
+      type: object
+      properties:
+        subject:
+          description: >-
+            Other templates: subject of the email (required), with substitutions (`template_substitutions`).
+          type: string
+        body:
+          description: >-
+            Other templates: body of the email, with substitutions.
+          type: string
+        button_text:
+          description: >-
+            Other templates: text of the button of the email.
+          type: string
+        subject_prefix:
+          description: >-
+            Base templates: prefix of the subject of all emails.
+          type: string
+        from_display:
+          description: >-
+            Base templates: name of the sender.
+          type: string
+        from_email:
+          description: >-
+            Base templates: email of the sender.
+          type: string
+          format: email
+        header_color:
+          description: >-
+            Base templates: color of the header.
+          type: string
+          enum:
+            - '#000000'
+            - '#ffffff'
+        logo_source:
+          description: >-
+            Base templates: logo to use: of the organization, the workspace or the shared inbox (a workspace template
+            cannot use `dropbox`, an organization template only `organization`), `null` for the default.
+          type: string
+          enum:
+            - organization
+            - workspace
+            - dropbox
+        logo_image_data:
+          description: >-
+            Base templates: image of the logo, base64 (at most 512 KB decoded), with `logo_image_type`.
+          type: string
+          format: byte
+        logo_image_type:
+          description: >-
+            Base templates: media type of the logo image.
+          type: string
+          examples:
+            - image/png
+        logo_name:
+          description: >-
+            Base templates: name of the logo.
+          type: string
+        logo_display_title:
+          description: >-
+            Base templates: title shown with the logo.
+          type: string
+        footer:
+          description: >-
+            Base templates: footer of the emails.
+          type: string
+    file_upload_notifications_response:
+      description: File upload notification of a user on a folder.
+      type: object
+      properties:
+        id:
+          description: ID of the notification.
+          type: string
+        user_id:
+          description: ID of the user.
+          type: string
+        node_id:
+          description: ID of the node of the folder.
+          type: string
+        file_id:
+          description: ID of the folder on the node.
+          type: string
+        enabled:
+          description: >-
+            Whether the user gets an email for the files uploaded in the folder and its subfolders (`false` turns off a
+            parent folder).
+          type: boolean
+        workspace_id:
+          description: ID of the workspace of the folder (not checked).
+          type: string
+        link_node_id:
+          description: ID of the node of the shared folder (link) used to reach the folder, if any (not checked).
+          type: string
+        link_file_id:
+          description: ID of the shared folder (link) used to reach the folder, if any (not checked).
+          type: string
+        created_at:
+          description: Date and time of creation.
+          type: string
+          format: date-time
+        updated_at:
+          description: Date and time of the last change.
+          type: string
+          format: date-time
+    file_upload_notifications_params:
+      description: File upload notification to create, on a folder that the user can read.
+      type: object
+      properties:
+        node_id:
+          description: ID of the node of the folder.
+          type: string
+        file_id:
+          description: ID of the folder on the node.
+          type: string
+        enabled:
+          description: >-
+            Whether the user gets an email for the files uploaded in the folder and its subfolders (`false` turns off a
+            parent folder).
+          type: boolean
+          default: false
+        workspace_id:
+          description: ID of the workspace of the folder (not checked).
+          type: string
+        link_node_id:
+          description: ID of the node of the shared folder (link) used to reach the folder, if any (not checked).
+          type: string
+        link_file_id:
+          description: ID of the shared folder (link) used to reach the folder, if any (not checked).
+          type: string
+      required:
+        - node_id
+        - file_id
+    file_upload_notifications_update_params:
+      description: New state of a file upload notification.
+      type: object
+      properties:
+        enabled:
+          description: Whether the user gets an email for the files uploaded in the folder and its subfolders.
+          type: boolean
+      required:
+        - enabled
+    organization_email_notification_settings:
+      description: Emails that AoC sends for the organization, by type of email. Only the types given change.
+      type: object
+      properties:
+        added_to_workspace:
+          description: Send the emails of type `added_to_workspace`.
+          type: boolean
+          default: true
+        dropbox_invitation:
+          description: Send the emails of type `dropbox_invitation`.
+          type: boolean
+          default: true
+        file_shared:
+          description: Send the emails of type `file_shared`.
+          type: boolean
+          default: true
+        file_upload:
+          description: Send the emails of type `file_upload`.
+          type: boolean
+          default: true
+        invitation_to_send_to_me:
+          description: Send the emails of type `invitation_to_send_to_me`.
+          type: boolean
+          default: true
+        invitation:
+          description: Send the emails of type `invitation`.
+          type: boolean
+          default: true
+        notifier:
+          description: Send the emails of type `notifier`.
+          type: boolean
+          default: true
+        package_contents_deleted:
+          description: Send the emails of type `package_contents_deleted`.
+          type: boolean
+          default: true
+        package_downloaded:
+          description: Send the emails of type `package_downloaded`.
+          type: boolean
+          default: true
+        package_expiration_reminder:
+          description: Send the emails of type `package_expiration_reminder`.
+          type: boolean
+          default: true
+        package_expired:
+          description: Send the emails of type `package_expired`.
+          type: boolean
+          default: true
+        package_failed:
+          description: Send the emails of type `package_failed`.
+          type: boolean
+          default: true
+        package_recalled:
+          description: Send the emails of type `package_recalled`.
+          type: boolean
+          default: true
+        package_received:
+          description: Send the emails of type `package_received`.
+          type: boolean
+          default: true
+        package_resent:
+          description: Send the emails of type `package_resent`.
+          type: boolean
+          default: true
+        package_sent:
+          description: Send the emails of type `package_sent`.
+          type: boolean
+          default: true
+        package_uploaded:
+          description: Send the emails of type `package_uploaded`.
+          type: boolean
+          default: true
+        scheduled_package_failed:
+          description: Send the emails of type `scheduled_package_failed`.
+          type: boolean
+          default: true
+        users_deactivated:
+          description: Send the emails of type `users_deactivated`.
+          type: boolean
+          default: true
+        workflow_deactivated:
+          description: Send the emails of type `workflow_deactivated`.
+          type: boolean
+          default: true
+        workflow_job_completed:
+          description: Send the emails of type `workflow_job_completed`.
+          type: boolean
+          default: true
+        workflow_job_failed:
+          description: Send the emails of type `workflow_job_failed`.
+          type: boolean
+          default: true
+        workflow_job_started:
+          description: Send the emails of type `workflow_job_started`.
+          type: boolean
+          default: true
+        workflow_shared:
+          description: Send the emails of type `workflow_shared`.
+          type: boolean
+          default: true
+      additionalProperties: false
   requestBodies:
     clients_params:
       content:

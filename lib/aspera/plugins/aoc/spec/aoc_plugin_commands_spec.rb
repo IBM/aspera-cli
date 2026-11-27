@@ -154,6 +154,27 @@ module Aspera
             expect(calls).to(eq([[:aoc, :read, 'admin/auth_providers/a1'], [:aoc, :update, 'admin/auth_providers/a1', {'enabled' => true}]]))
           end
 
+          # The path of a singleton resource is its name
+          it 'shows a singleton resource' do
+            execute('admin', 'file_deletion_policy', 'show')
+            execute('admin', 'organization', 'show')
+            expect(calls).to(eq([[:aoc, :read, 'file_deletion_policy', nil], [:aoc, :read, 'organization', nil]]))
+          end
+
+          it 'lists the integrations, finds the user of a watermark identity and the effective email templates' do
+            responses[[:read, 'admin/integrations']] = [{'name' => 'kms'}]
+            responses[[:read, 'admin/integrations/watermark/identities']] = {'identities' => [{'user_id' => 'u2'}]}
+            responses[[:read, 'admin/effective_templates']] = []
+            execute('admin', 'integrations', 'list')
+            expect(execute('admin', 'integrations', 'watermark_identity', '42').data).to(eq([{'user_id' => 'u2'}]))
+            execute('admin', 'email_template', 'effective', '--query=@json:{"source_type":"workspace","source_id":"w2"}')
+            expect(calls).to(eq([
+              [:aoc, :read, 'admin/integrations'],
+              [:aoc, :read, 'admin/integrations/watermark/identities', {'identity_id' => '42'}],
+              [:aoc, :read, 'admin/effective_templates', {'source_type' => 'workspace', 'source_id' => 'w2'}]
+            ]))
+          end
+
           # AoC fails with 500 on parameter `q` for this resource: the name is searched in the whole list
           it 'finds a SAML configuration by name without parameter q' do
             responses[[:read_with_paging, 'saml_configurations']] = {items: [{'id' => 's1', 'name' => 'sso'}, {'id' => 's2', 'name' => 'sso2'}], total: 2}
@@ -165,7 +186,7 @@ module Aspera
           it 'finds the schemas of create and modify in the API description' do
             config = described_class.const_get(:ADMIN_OBJECT_CONFIG)
             schema_of_op = {create: :schema, modify: :modify_schema}
-            described_class.const_get(:ADMIN_OBJECTS).reject { |res| config.dig(res, :singleton) }.each do |res|
+            described_class.const_get(:ADMIN_OBJECTS).each do |res|
               cfg = described_class.aoc_res_cfg(res)
               schema_of_op.each do |op, key|
                 next unless cfg[:ops].include?(op) && cfg[key]
@@ -207,6 +228,24 @@ module Aspera
             execute('user', 'notifications', 'show')
             expect(execute('user', 'notifications', 'modify', '@json:{"e":5}').data).to(eq('modified'))
             expect(calls).to(eq([[:aoc, :read, 'users/u1/notification_preferences'], [:aoc, :update, 'users/u1/notification_preferences', {'e' => 5}]]))
+          end
+        end
+
+        describe 'user file_upload_notifications' do
+          it 'manages the file upload notifications of the current user' do
+            responses[[:read, 'file_upload_notifications']] = [[{'id' => 'f1'}], double(code: '200')]
+            execute('user', 'file_upload_notifications', 'create', '@json:{"node_id":"n1"}')
+            expect(execute('user', 'file_upload_notifications', 'list').data).to(eq([{'id' => 'f1'}]))
+            # query parameters of the list from the API description
+            expect { execute('user', 'file_upload_notifications', 'list', '--query=help') }.to(raise_error(Cli::SchemaRequest))
+            execute('user', 'file_upload_notifications', 'modify', 'f1', '@json:{"enabled":true}')
+            execute('user', 'file_upload_notifications', 'delete', 'f1')
+            expect(calls).to(eq([
+              [:aoc, :create, 'file_upload_notifications', {'node_id' => 'n1'}],
+              [:aoc, :read, 'file_upload_notifications', nil, {ret: :both}],
+              [:aoc, :update, 'file_upload_notifications/f1', {'enabled' => true}],
+              [:aoc, :delete, 'file_upload_notifications/f1', nil]
+            ]))
           end
         end
 

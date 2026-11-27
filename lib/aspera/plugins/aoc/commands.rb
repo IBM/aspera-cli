@@ -15,6 +15,7 @@ require_relative '../node/agent'
 require_relative '../../transfer/result'
 require_relative '../../transfer/spec'
 require_relative 'api'
+require_relative 'admin_resources'
 require_relative '../node/api'
 require_relative '../../persistency_action_once'
 require_relative '../../id_generator'
@@ -37,31 +38,8 @@ module Aspera
         PACKAGE_FOLDER_OPTIONS = 'aoc_opts:components.schemas.PackageFolderOptions'
         # default redirect for AoC web auth
         REDIRECT_LOCALHOST = 'http://localhost:12345'
-        # admin objects that can be manipulated
-        ADMIN_OBJECTS = %i[
-          client
-          client_access_key
-          client_registration_token
-          configuration_policy
-          contact
-          dropbox
-          dropbox_membership
-          group
-          group_membership
-          group_permission
-          kms_profile
-          network_policy
-          node
-          operation
-          organization
-          package
-          saml_configuration
-          self
-          short_link
-          user
-          workspace
-          workspace_membership
-        ].freeze
+        # admin objects that can be manipulated (see admin_resources.rb)
+        ADMIN_OBJECTS = AdminResources::OBJECTS
         # query to list fully received packages
         PACKAGE_RECEIVED_BASE_QUERY = {
           'archived'    => false,
@@ -133,6 +111,7 @@ module Aspera
           def aoc_res_path(res)
             cfg = ADMIN_OBJECT_CONFIG.fetch(res, {})
             return cfg[:path] if cfg[:path]
+            return res.to_s if cfg[:singleton]
             "#{res}s".gsub(/ys$/, 'ies')
           end
 
@@ -147,7 +126,7 @@ module Aspera
             path        = aoc_res_path(res)
             create_path = cfg[:create_path] || path
             schema_path = aoc_schema_path(path)
-            ops         = cfg[:ops] || (Cli::Plugins::Base::Operations::ALL + (cfg[:extra_ops] || []))
+            ops         = cfg[:ops] || (cfg[:singleton] ? %i[show] : Cli::Plugins::Base::Operations::ALL + (cfg[:extra_ops] || []))
             in_schema   = cfg[:schema] != false
             {
               path:            path,
@@ -158,7 +137,7 @@ module Aspera
               require_ws_id:   cfg[:require_ws_id] || false,
               list_fields:     cfg.key?(:list_fields) ? cfg[:list_fields] : %w[id name],
               schema:          (Schema::Registry.req_body(AOC_SCHEMA, "#{aoc_schema_path(create_path)}.post") if in_schema),
-              modify_schema:   (Schema::Registry.req_body(AOC_SCHEMA, "#{schema_path}/{id}.put") if in_schema),
+              modify_schema:   (Schema::Registry.req_body(AOC_SCHEMA, "#{schema_path}#{'/{id}' unless cfg[:singleton]}.put") if in_schema),
               query_component: AOC_SCHEMA
             }
           end
@@ -433,7 +412,7 @@ module Aspera
         # Arguments of the node-to-node `transfer` command (files, admin node do, shared folder node)
         TRANSFER_ARGS = [{name: :direction, allowed: %i[push pull]}, {name: :source_folder}].freeze
         # Mount of the Node plugin Gen4 commands (`node access_keys do <id> ...`), instance: set per mount point
-        NODE_GEN4_MOUNT = {plugin: Node::Commands, at: %i[access_keys do]}.freeze
+        NODE_GEN4_MOUNT = AdminResources::NODE_GEN4_MOUNT
         # Package identifier argument, `%name:` selector (lookup method shared with `admin package`)
         PACKAGE_ID_ARG = {name: :package_id, type: :identifier, lookup: :lookup_aoc_package_id}.freeze
         # Resource of analytics events (`admin analytics transfers|files`)
@@ -503,70 +482,8 @@ module Aspera
           )))
         end
 
-        # Per-resource configuration for admin CRUD resources.
-        # Keys: path, create_path, list_fields, id_result, require_ws_id, schema, q, ops, extra_ops, singleton, op_setup, op_mount, op_descriptions
-        # create_path: path of `create`, when it is not `path`.
-        # schema: false when the resource is not in the OpenAPI description (no help on fields and query).
-        # q: false when `list` does not accept `q` (AoC fails with 500): the percent selector reads the whole list.
-        # Ops other than `create` and `list` read the identifier `<res>_id` (argument of the op node).
-        # op_setup: Hash of op => setup method name, for ops that need context derived from the identifier.
-        # op_mount: Hash of op => mount: of that op's node.
-        # op_descriptions: Hash of op => description, for ops other than standard ones.
-        ADMIN_OBJECT_CONFIG = {
-          client:                    {
-            extra_ops:       %i[set_pub_key],
-            extra_op_args:   {set_pub_key: [{name: :private_key_pem}]},
-            op_descriptions: {set_pub_key: 'Set public key of client from a private key'}
-          },
-          client_access_key:         {path: 'admin/client_access_keys'},
-          client_registration_token: {
-            path:        'admin/client_registration_tokens',
-            create_path: 'admin/client_registration/token',
-            list_fields: %w[id value data.client_subject_scopes data.name created_at],
-            id_result:   'token',
-            q:           false
-          },
-          configuration_policy:      {list_fields: nil, q: false},
-          # A contact is a user, group, shared inbox or distribution list: no identifier of its own, so no `show`, `modify` or `delete`
-          contact:                   {list_fields: %w[source_type source_id name email], ops: %i[create list]},
-          dropbox:                   {path: 'dropboxes', require_ws_id: true},
-          dropbox_membership:        {},
-          group:                     {},
-          # A membership cannot be modified (no `PUT` in the API): delete it and create another one
-          group_membership:          {list_fields: %w[id group_id member_type member_id], ops: %i[create list show delete]},
-          group_permission:          {list_fields: %w[id group_id level entity_type entity_id]},
-          kms_profile:               {path: 'integrations/kms_profiles', q: false},
-          network_policy:            {list_fields: nil},
-          node:                      {
-            list_fields:     %w[id name host access_key],
-            extra_ops:       %i[do bearer_token update_status],
-            extra_op_args:   {bearer_token: [{name: :scope, mandatory: false, default: nil}]},
-            op_mount:        {do: NODE_GEN4_MOUNT.merge(instance: :admin_node_do_plugin)},
-            op_descriptions: {do: 'Execute command on node', bearer_token: 'Generate bearer token for node', update_status: 'Ask AoC to scan node and update its status'}
-          },
-          operation:                 {list_fields: %w[id type status created_at updated_at workspace_id user_id workspace_membership_id group_membership_id], ops: %i[list show modify]},
-          organization:              {singleton: true},
-          package:                   {},
-          saml_configuration:        {q: false},
-          self:                      {singleton: true, op_descriptions: {show: 'Show current user'}},
-          # No `show`: AoC has no `GET /short_links/{id}`, and the list cannot be filtered by identifier
-          short_link:                {
-            list_fields: %w[id short_url data.url_token_data.purpose password_enabled password_protected updated_by_user_id updated_at],
-            ops:         %i[create list modify delete],
-            q:           false
-          },
-          user:                      {
-            list_fields:     %w[id name email],
-            extra_ops:       %i[preferences notifications],
-            op_descriptions: {preferences: 'Manage user preferences', notifications: 'Manage user notification preferences'}
-          },
-          workspace:                 {
-            extra_ops:       %i[shared_folder dropbox],
-            op_setup:        {shared_folder: :setup_admin_workspace_shared_folder, dropbox: :setup_admin_workspace_dropbox},
-            op_descriptions: {shared_folder: 'Manage shared folders of workspace', dropbox: 'Manage shared inboxes of workspace'}
-          },
-          workspace_membership:      {list_fields: %w[id workspace_id member_type member_id]}
-        }.freeze
+        # Per-resource configuration for admin CRUD resources (see admin_resources.rb)
+        ADMIN_OBJECT_CONFIG = AdminResources::CONFIG
         private_constant :ADMIN_OBJECT_CONFIG
 
         # Instance delegators so instance methods can call aoc_res_path/aoc_res_cfg/aoc_schema_path without self.class.
@@ -577,7 +494,7 @@ module Aspera
         # Known fixed set of AoC application types (verified against API: activity, automation, files, packages)
         APP_TYPES = %i[activity automation files packages].freeze
 
-        ADMIN_ACTIONS = (%i[bearer_token application ats usage_reports analytics subscription auth_providers] + ADMIN_OBJECTS).freeze
+        ADMIN_ACTIONS = (%i[bearer_token application ats usage_reports analytics subscription auth_providers integrations] + ADMIN_OBJECTS).freeze
 
         # Build analytics REST API (shared by action_admin_analytics_*)
         def build_analytics_api
@@ -662,6 +579,7 @@ module Aspera
           command :usage_reports,  description: 'List usage reports',
             action: ->(**) { result_list('usage_reports', base_query: workspace_id_hash) }
           command :auth_providers, description: 'Manage auth providers'
+          command :integrations,   description: 'List integrations, find the user of a watermark'
           command :subscription,   description: 'Show subscription info'
           command :analytics,      description: 'Query analytics'
           ADMIN_OBJECTS.each do |res|
@@ -671,13 +589,7 @@ module Aspera
             extra_op_args  = cfg[:extra_op_args] || {}
             is_singleton   = cfg[:singleton]
             id_arg_spec    = is_singleton ? [] : [{name: :"#{res}_id", type: :identifier, lookup: :"lookup_aoc_#{res}_id"}]
-            ops            = if cfg[:ops]
-              cfg[:ops]
-            elsif is_singleton
-              %i[show]
-            else
-              Operations::ALL + (cfg[:extra_ops] || [])
-            end
+            ops            = aoc_res_cfg(res)[:ops]
             command res, description: "Manage #{entity_noun(res, singular: false)}"
             commands_under res do
               ops.each do |op|
@@ -688,7 +600,7 @@ module Aspera
                   if !is_singleton && op.eql?(:create)
                     c = aoc_res_cfg(res)
                     [{name: res, type: Hash, bulk: true, schema: c[:schema]}]
-                  elsif !is_singleton && op.eql?(:modify)
+                  elsif op.eql?(:modify)
                     c = aoc_res_cfg(res)
                     [{name: res, type: Hash, schema: c[:modify_schema]}]
                   elsif extra_op_args.key?(op)
@@ -756,6 +668,20 @@ module Aspera
             command :modify, description: "Modify user #{pref}",
               arguments: [{name: pref, type: Hash, schema: Schema::Registry.req_body(AOC_SCHEMA, "users/{id}/#{pref_path}.put")}]
           end
+        end
+        commands_under %i[admin integrations] do
+          command :list, description: 'List the integrations available, with their options',
+            action: ->(**) { Cli::Result::ObjectList.new(aoc_api.read('admin/integrations')) }
+          command :watermark_identity, description: 'Find the user of a watermark identity', arguments: [{name: :identity_id}],
+            action: ->(identity_id:, **) { Cli::Result::ObjectList.new(aoc_api.read('admin/integrations/watermark/identities', {'identity_id' => identity_id}).fetch('identities')) }
+        end
+        # Without `source_type`, the global templates (one page)
+        commands_under %i[admin email_template] do
+          command :effective, description: 'List the email templates used for a source', query_schema: Schema::Registry.query_params(AOC_SCHEMA, 'effective_templates'),
+            action: lambda { |**|
+              query = query_read_delete(default: {}, schema: Schema::Registry.query_params(AOC_SCHEMA, 'effective_templates'))
+              Cli::Result::ObjectList.new(aoc_api.read('admin/effective_templates', query), fields: %w[id email_type source_type source_id subject])
+            }
         end
         commands_under %i[admin auth_providers] do
           auth_provider_id = {name: :auth_provider_id, type: :identifier}
@@ -880,6 +806,11 @@ module Aspera
           command :preferences,   description: 'Manage interaction preferences'
           command :notifications, description: 'Manage notification preferences'
           command :contacts,      description: 'Manage contacts'
+          command :file_upload_notifications, description: 'Manage file upload notifications'
+          commands_under %i[file_upload_notifications] do
+            crud_commands api: :aoc_api, entity: 'file_upload_notifications', name: 'file upload notification', operations: %i[create list modify delete],
+              body_component: AOC_SCHEMA, query_component: AOC_SCHEMA
+          end
           # user > contacts sub-commands (same as admin > contact)
           commands_under %i[contacts] do
             command :list,   description: operation_description(:list, 'contact')
@@ -1490,10 +1421,10 @@ module Aspera
           end
         end
 
-        # admin > organization|self > show (singleton)
-        %i[organization self].each do |res|
+        # admin > <singleton> > show
+        ADMIN_OBJECTS.select { |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton) }.each do |res|
           define_action_method([:admin, res, :show]) do |**|
-            Cli::Result::SingleObject.new(aoc_api.read(res.to_s, query_read_delete), fields: Cli::Formatter.all_but('certificate'))
+            Cli::Result::SingleObject.new(aoc_api.read(aoc_res_path(res), query_read_delete), fields: Cli::Formatter.all_but('certificate'))
           end
         end
 
@@ -1510,13 +1441,12 @@ module Aspera
           end
         end
 
-        # admin > <res> > modify
-        ADMIN_OBJECTS.reject { |r| ADMIN_OBJECT_CONFIG.dig(r, :singleton) || ADMIN_OBJECT_CONFIG.dig(r, :ops)&.then { |o| !o.include?(:modify) } }.each do |res|
+        # admin > <res> > modify (a singleton has no identifier)
+        ADMIN_OBJECTS.select { |r| aoc_res_cfg(r)[:ops].include?(:modify) }.each do |res|
           define_action_method([:admin, res, :modify]) do |**kwargs|
             data = kwargs.fetch(res)
-            res_id = kwargs[:"#{res}_id"]
             c = aoc_res_cfg(res)
-            aoc_api.update("#{c[:path]}/#{res_id}", data)
+            aoc_api.update(ADMIN_OBJECT_CONFIG.dig(res, :singleton) ? c[:path] : "#{c[:path]}/#{kwargs[:"#{res}_id"]}", data)
             Cli::Result::Status.new('modified')
           end
         end

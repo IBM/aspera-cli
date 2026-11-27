@@ -1446,6 +1446,233 @@ aoc_adm_saml_delete:
     - saml_configuration
     - delete
     - "%name:test_saml_ascli"
+aoc_adm_dl_owner:
+  tags:
+    - save_output
+    - no_doc
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - self
+    - show
+    - --fields=id
+    - --out.level=data
+aoc_adm_dl_create:
+  $comment: personal list of the admin user, deleted at the end
+  depends_on:
+    - aoc_adm_dl_owner
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - distribution_list
+    - create
+    - '@json:{"name":"test_dl_ascli","owner_type":"user","owner_id":"$(t.saved_output :aoc_adm_dl_owner)"}'
+aoc_adm_dl_list:
+  depends_on:
+    - aoc_adm_dl_create
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - distribution_list
+    - list
+aoc_adm_dl_id:
+  tags:
+    - save_output
+    - no_doc
+  depends_on:
+    - aoc_adm_dl_create
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - distribution_list
+    - show
+    - "%name:test_dl_ascli"
+    - --fields=id
+    - --out.level=data
+aoc_adm_dl_member_create:
+  depends_on:
+    - aoc_adm_dl_id
+  tags:
+    - save_output
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - distribution_list_membership
+    - create
+    - '@json:{"distribution_list_id":"$(t.saved_output :aoc_adm_dl_id)","member_type":"email","member_id":"test.ascli@example.com"}'
+    - --fields=id
+aoc_adm_dl_member_list:
+  depends_on:
+    - aoc_adm_dl_member_create
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - distribution_list_membership
+    - list
+    - --query=@json:{"distribution_list_id":"$(t.saved_output :aoc_adm_dl_id)"}
+aoc_adm_dl_member_delete:
+  depends_on:
+    - aoc_adm_dl_member_list
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - distribution_list_membership
+    - delete
+    - $(t.saved_output :aoc_adm_dl_member_create)
+aoc_adm_dl_modify:
+  depends_on:
+    - aoc_adm_dl_id
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - distribution_list
+    - modify
+    - "%name:test_dl_ascli"
+    - '@json:{"name":"test_dl_ascli_2"}'
+aoc_adm_dl_delete:
+  depends_on:
+    - aoc_adm_dl_modify
+    - aoc_adm_dl_member_delete
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - distribution_list
+    - delete
+    - "%name:test_dl_ascli_2"
+aoc_adm_app_collab_list:
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - app_collaborator
+    - list
+aoc_adm_csp_list:
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - connect_suppressed_permission
+    - list
+aoc_adm_tm_list:
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - trend_micro_profile
+    - list
+aoc_adm_wm_list:
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - watermark_profile
+    - list
+aoc_adm_integrations_list:
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - integrations
+    - list
+aoc_adm_fdp_node:
+  tags:
+    - save_output
+    - no_doc
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - node
+    - list
+    - --fields=id
+    - --out.level=data
+    - --query.max=1
+aoc_adm_fdp_show:
+  depends_on:
+    - aoc_adm_fdp_node
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - file_deletion_policy
+    - show
+    - --query=@json:{"node_id":"$(t.saved_output :aoc_adm_fdp_node)"}
+aoc_adm_email_template_list:
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - email_template
+    - list
+    - --query.max=5
+aoc_adm_org_id:
+  tags:
+    - save_output
+    - no_doc
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - organization
+    - show
+    - --fields=id
+    - --out.level=data
+aoc_adm_email_template_effective:
+  depends_on:
+    - aoc_adm_org_id
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - email_template
+    - effective
+    - --query=@json:{"source_type":"organization","source_id":"$(t.saved_output :aoc_adm_org_id)","email_type":"invitation"}
+aoc_adm_client_authorization_list:
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - client_authorization
+    - list
+aoc_adm_org_name:
+  tags:
+    - save_output
+    - no_doc
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - organization
+    - show
+    - --fields=name
+    - --out.level=data
+aoc_adm_org_modify:
+  $comment: sets the name that the organization already has
+  depends_on:
+    - aoc_adm_org_name
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - admin
+    - organization
+    - modify
+    - '@json:{"name":"$(t.saved_output :aoc_adm_org_name)"}'
+aoc_user_fun_list:
+  args:
+    - --preset=aoc_admin
+    - aoc
+    - user
+    - file_upload_notifications
+    - list
 aoc_adm_dropbox_membership_list:
   args:
     - --preset=aoc_admin

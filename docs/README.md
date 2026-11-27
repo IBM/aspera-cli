@@ -9080,6 +9080,7 @@ admin analytics application_events
 admin analytics files organization '' <ID>
 admin analytics transfers organization --query=@json:'{"status":"completed","direction":"receive","limit":2}' --notify-to=my_email_external --notify-template=@ruby:'%Q{From: <%=from_name%> <<%=from_email%>>\nTo: <<%=to%>>\nSubject: <%=ev["files_completed"]%> files received\n\n<%=ev.to_yaml%>}'
 admin analytics transfers users --once-only=yes
+admin app_collaborator list
 admin application instance list
 admin application instance list --query.aspera_app_type=files
 admin application instance list --query.organization_apps=true
@@ -9099,17 +9100,30 @@ admin auth_providers show <ID>
 admin bearer_token --out.level=data --out.secrets=yes
 admin client list
 admin client_access_key list
+admin client_authorization list
 admin client_registration_token create @json:'{"data":{"name":"test_client_reg1","client_subject_scopes":["alee","aejd"],"client_subject_enabled":true}}'
 admin client_registration_token delete <ID>
 admin client_registration_token list
 admin configuration_policy list
 admin configuration_policy show <ID>
+admin connect_suppressed_permission list
 admin contact list
+admin distribution_list create @json:'{"name":"test_dl_ascli","owner_type":"user","owner_id":"<AOC_ADM_DL_OWNER>"}'
+admin distribution_list delete %name:test_dl_ascli_2
+admin distribution_list list
+admin distribution_list modify %name:test_dl_ascli @json:'{"name":"test_dl_ascli_2"}'
+admin distribution_list_membership create @json:'{"distribution_list_id":"<ID>","member_type":"email","member_id":"test.ascli@example.com"}' --fields=id
+admin distribution_list_membership delete <AOC_ADM_DL_MEMBER_CREATE>
+admin distribution_list_membership list --query=@json:'{"distribution_list_id":"<ID>"}'
 admin dropbox list
 admin dropbox_membership list
+admin email_template effective --query=@json:'{"source_type":"organization","source_id":"<ID>","email_type":"invitation"}'
+admin email_template list --query.max=5
+admin file_deletion_policy show --query=@json:'{"node_id":"<AOC_ADM_FDP_NODE>"}'
 admin group list
 admin group_membership list --fields=id,group.name,member_type,member.name --query=@json:'{"max":50,"per_page":50,"embed[]":["group","member"],"sort":"member.name"}'
 admin group_permission list --fields=id,group.name,level,entity_type,entity_id,entity.name --query=@json:'{"max":50,"per_page":50,"embed[]":["group","entity"],"sort":"group_name"}'
+admin integrations list
 admin kms_profile list
 admin network_policy list
 admin network_policy show <ID>
@@ -9130,6 +9144,7 @@ admin node do %name:my_node_name perm test_shared_folder create @json:'{"with":"
 admin node do %name:my_node_name perm test_shared_folder create @json:'{"with":"my_user_group","as":"other_name_shared"}' --workspace=my_workspace_shared_inbox
 admin node list
 admin operation list
+admin organization modify @json:'{"name":"<AOC_ADM_ORG_NAME>"}'
 admin organization show
 admin package list --http-options.read_timeout=120.0
 admin saml_configuration create @json:'{"name":"test_saml_ascli","enabled":false,"sso_target_url":"https://idp.example.com/saml/sso","fingerprint":"00:01:02:03:04:05:06:07:08:09:0A:0B:0C:0D:0E:0F:10:11:12:13","attribute_mapping":{"email":"email","first_name":"given_name","last_name":"surname","member_of":"groups"}}'
@@ -9142,11 +9157,13 @@ admin short_link list
 admin subscription account
 admin subscription usage
 admin subscription usage MONTH
+admin trend_micro_profile list
 admin user list
 admin user list --out.query='[?ats_admin].{name: name, email: email}'
 admin user modify %name:my_user_email @: deactivated=false
 admin user notifications %name:my_user_email show
 admin user preferences %name:my_user_email show
+admin watermark_profile list
 admin workspace dropbox %name:my_other_workspace list
 admin workspace list
 admin workspace shared_folder %name:my_other_workspace list
@@ -9232,6 +9249,7 @@ remind --username=my_user_email --url=https://aoc.example.com/path
 servers --url=https://aoc.example.com/path
 tier_restrictions
 user contacts list
+user file_upload_notifications list
 user pref modify @: default_language=en-us
 user pref show
 user profile modify @: 'name=dummy change'
