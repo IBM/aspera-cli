@@ -1,8 +1,8 @@
 # Changes (Release notes)
 
-## 4.30.0.pre
+## 4.30.0
 
-Released: [Place date of release here]
+Released: 2026-11-28
 
 ### New Features
 
@@ -91,6 +91,33 @@ Released: [Place date of release here]
 * Ruby library use (the `ascli` command line is unchanged): the code is reorganized, with classes renamed and files moved, and no alias left at the old names. The code of each product is in a bundle `lib/aspera/plugins/<name>/`, e.g. `Aspera::Api::Node` (`aspera/api/node`) is `Aspera::Plugins::Node::Api` (`aspera/plugins/node/api`), `Aspera::Agent::Direct` is `Aspera::Plugins::Direct::Agent`, `Aspera::Cli::Plugins::Aoc` is `Aspera::Plugins::Aoc::Commands`. Other classes moved too, e.g. `Aspera::Preview::Terminal` is `Aspera::Cli::TerminalImage`, and `Aspera::Products::Other` is split into one class per product. See the manual, section "Ruby Module: `Aspera`".
 * Plugins of a plugin folder: `BasicAuth` and `Oauth` are modules (they were classes). A plugin that subclasses `Cli::Plugins::BasicAuth` or `Cli::Plugins::Oauth` fails with `superclass must be a Class`: subclass `Cli::Plugins::Base` and write `include Cli::Plugins::BasicAuth` (or `Oauth`). In the help, the options of the module come where the `include` is, relative to `use_options`.
 * Plugins of a plugin folder that use the classes of the command line declarations (not needed by the plugins of the manual): they are renamed, with no alias, e.g. `Cli::Type::*` is `Cli::Option::Type::*`, `Cli::OptionDeclarator` is `Cli::Option::Declarator`, `Cli::CommandSpec` is `Cli::Command`, `Cli::ArgumentSpec` is `Cli::Argument`, `Cli::OptionSpec` is `Cli::Option`, and their files are in `aspera/cli/option/` and `aspera/cli/command/`.
+
+### Server Versions
+
+Tested with Ruby 4.0.10 on osx-arm64.
+
+| Plugin | Product | Version |
+| ------------ | ------------------------------------------------ | ---------------- |
+| `aoc` | IBM Aspera on Cloud | SaaS |
+| `console` | IBM Aspera Console | 3.4.12 |
+| `faspex5` | IBM Aspera Faspex | 5.0.19 |
+| `faspio` | IBM Aspera faspio Gateway | 1.3.7 |
+| `httpgw` | IBM Aspera HTTP Gateway | 2.3.4 |
+| `node` | IBM Aspera High-Speed Transfer Server (Node API) | 4.4.9.3472 |
+| `orchestrator` | IBM Aspera Orchestrator | 4.1.6.2036-00000 |
+| `server` | IBM Aspera High-Speed Transfer Server (SSH) | 4.4.9.3472 |
+| `shares` | IBM Aspera Shares | 1.11.5 |
+
+### Transfer Agent Versions
+
+| Agent | Product | Version |
+| --------- | ------------------------------------------------ | ---------- |
+| `connect` | IBM Aspera Connect | 4.2.16 |
+| `desktop` | IBM Aspera for Desktop | 1.1.2 |
+| `direct` | IBM Aspera ascp | 4.4.8.2592 |
+| `httpgw` | IBM Aspera HTTP Gateway | 2.3.4 |
+| `node` | IBM Aspera High-Speed Transfer Server (Node API) | 4.4.9.3472 |
+| `transferd` | IBM Aspera Transfer Daemon | 1.1.9 |
 
 ## 4.29.1
 
