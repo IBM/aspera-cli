@@ -433,6 +433,11 @@ Before a new release, ensure the following:
   bundle exec rake doc:check_links
   ```
 
+- **Review `CHANGELOG.md`**: the section of the version is the text of the GitHub release, written for users.
+  - **Highlights** (minor and major versions): at the top of the section, a list `Highlights:` of the main changes, then, if any, a paragraph in bold on the breaking changes (see 4.29.0).
+  - **Issues Fixed**: only bugs that users of the last release could meet. A fix of a feature new in this version is not listed: check the code of the last tag (e.g. `git grep <NAME> v<LAST_VERSION> -- lib`).
+  - **Internal changes** (code layout, class renames for library use, build, tests): one short entry, or nothing when users see no change.
+
 - **Check release procedure**:
 
   ```shell

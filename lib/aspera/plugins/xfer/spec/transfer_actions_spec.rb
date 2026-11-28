@@ -27,6 +27,8 @@ module Aspera
         transfer = instance_double(Aspera::Plugins::Xfer::TransferAgent, async_store: store, transfer_options: transfer_options)
         context = Struct.new(:transfer).new(transfer)
         answer = live
+        # `list` queries the agents from several threads, which run in parallel on JRuby
+        lock = Mutex.new
         Class.new do
           include Aspera::Plugins::Xfer::TransferActions
 
@@ -39,8 +41,10 @@ module Aspera
 
           # Records the entry used to query the agent, instead of querying it (`list`: from several threads)
           define_method(:query_live_status) do |entry, _agent_class = nil|
-            @queried = entry
-            (@queried_jobs ||= []).push(entry['job_id'])
+            lock.synchronize do
+              @queried = entry
+              (@queried_jobs ||= []).push(entry['job_id'])
+            end
             answer.call(entry)
           end
         end.new

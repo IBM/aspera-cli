@@ -154,7 +154,13 @@ RSpec.describe(Aspera::Rest) do
 
     after do
       @saved.each { |k, v| @params.send(:"#{k}=", v) }
-      @servers.each(&:shutdown)
+      @servers.each do |server|
+        server.shutdown
+      rescue Errno::EPIPE
+        # JRuby: writing to the shutdown pipe of WEBrick can fail with EPIPE (WEBrick rescues only IOError).
+        # The status of the server is already Shutdown: closing the pipe wakes its thread, which ends.
+        server.instance_variable_get(:@shutdown_pipe)&.each(&:close)
+      end
       @threads.each(&:join)
     end
 
